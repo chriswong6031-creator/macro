@@ -193,6 +193,15 @@ class TestEtfPerfund:
 # 3. btc_dat
 # =========================================================================
 class TestBtcDat:
+    @pytest.fixture(autouse=True)
+    def _force_enabled(self, monkeypatch):
+        # #4106 retired the live chip (vector.btc_dat.enabled: false until a
+        # maintained source is commissioned); force-enable so this class tests
+        # the math, not the flag — test_crypto_wave3 pins the flag itself.
+        from engine import btc_dat
+        monkeypatch.setattr(btc_dat.config, "load",
+                            lambda: {"vector": {"btc_dat": {"enabled": True}}})
+
     def _write_holdings(self, tmp_path: Path, data: dict) -> str:
         p = tmp_path / "dat_holdings.json"
         p.write_text(json.dumps(data))

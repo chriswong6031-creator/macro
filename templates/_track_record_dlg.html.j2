@@ -54,10 +54,10 @@
 
 <style>
 /* ── trd tokens: fallback chains so all four CSS families resolve ──────────────
-   Every var falls back through theme.css :root (--gbtn-*, --panel2, --text …),
-   then to a literal so a single missing var never drops the whole declaration
-   (the color-mix-undefined-var trap). Accent is set per-band by the .trd-band-*
-   class below, so the chip, sparkline and card numbers all read one stance. */
+   Every var falls back through theme.css :root, then to a literal, so a single
+   missing var never drops the whole declaration (the color-mix-undefined-var
+   trap). Accent is set per-band by .trd-band-* below, so chip, sparkline and card
+   numbers all read one stance. */
 .trd-wrap{
   --trd-accent: var(--link, #7aa7e0);
   --trd-bg:     var(--gbtn-bg, color-mix(in srgb, var(--panel2, var(--panel, #181b21)) 52%, transparent));
@@ -129,11 +129,10 @@
   /* sparkline draw-in, once on load */
   .trd-spark path.trd-live{ stroke-dasharray:120;stroke-dashoffset:120;animation:trd-draw .9s ease-out .15s forwards; }
   @keyframes trd-draw{ to{ stroke-dashoffset:0; } }
-  /* slow breathing halo — scored/interim winning states only; NOT accruing
-     (nothing to brag about — honesty in motion). Quieter than .gbtn-cta.
-     Perf: box-shadow breathing repaints on the main thread every frame, and
-     overflow:hidden clips any pseudo glow overlay — so touch devices hold the
-     resting state (2026-07-21 mobile audit; same call as .gbtn-cta). */
+  /* slow breathing halo — winning scored/interim states only, never accruing
+     (nothing to brag about yet). Touch devices hold the resting state: box-shadow
+     breathing repaints on the main thread every frame and overflow:hidden clips a
+     pseudo-element glow (2026-07-21 mobile audit; same call as .gbtn-cta). */
   .trd-btn.trd-breathe{ animation:trd-breathe 3.8s ease-in-out infinite; }
   @media (pointer: coarse){ .trd-btn.trd-breathe{ animation:none; } }
   @keyframes trd-breathe{
@@ -303,6 +302,28 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
 .trd-pg-btn:focus-visible{ outline:2px solid var(--trd-accent);outline-offset:2px; }
 .trd-pg-ell{ color:var(--trd-muted);padding:0 2px; }
 .trd-pg-count{ font-size:11px;color:var(--trd-muted);margin-left:6px; }
+
+/* ── Zone B′ — PRIOR-DEFINITION RECORD (optional; CN continuity, G5 2026-08-02) ──
+   Two records under one heading invite the reader to add them up; era-pooling is
+   exactly what this section must not create. Three devices keep them apart:
+     1. a DASHED rule — a break in continuity, not a sub-section;
+     2. no .trd-card-v numbers. The 26px treatment is the live record's alone; the
+        closed book gets prose, which a reader cannot mentally sum the way they
+        would sum two number cards;
+     3. no accent — the stance colour belongs to the record still accruing. Only
+        the per-row excess keeps up/down, because a beat was a beat. */
+.trd-prior{ margin-top:22px;padding-top:16px;
+  border-top:1px dashed color-mix(in srgb,var(--trd-text) 22%,transparent); }
+.trd-prior-hd{ display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin-bottom:7px; }
+.trd-prior-tag{ font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--trd-muted);border:1px solid var(--trd-line);border-radius:999px;padding:3px 9px; }
+.trd-prior-dt{ font-size:11.5px;color:var(--trd-muted);font-variant-numeric:tabular-nums; }
+.trd-prior-line{ margin:0 0 10px;font-size:12px;line-height:1.5;color:var(--trd-text);max-width:74ch; }
+.trd-prior-line b{ font-weight:700; }
+.trd-prior-shut{ color:var(--trd-muted); }
+.trd-prior .trd-tbl td{ color:var(--trd-muted); }
+.trd-prior .trd-tbl .trd-tk{ color:var(--trd-text); }
+.trd-prior-more{ margin:8px 0 0;font-size:10.5px;color:var(--trd-muted); }
 
 /* Zone C — footer */
 .trd-ft{ flex:none;padding:12px 22px;border-top:1px solid color-mix(in srgb,var(--trd-text) 8%,transparent);
@@ -503,6 +524,12 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
       {#- ── Zone B — filter rail + ledger table (client-side, lazy) ────────── -#}
       <div class="trd-stg trd-stg-2">
       <div class="trd-rail" id="trd-rail" role="toolbar" aria-label="Filter ledger">
+        {#- Era chips (Current / Previous board). Hidden unless the fetched ledger
+            carries a prior_record block (a retired board definition's own graded
+            era) — the chips flip the WHOLE table below to that era so any one of
+            its rows is searchable, not only the 25-row digest window further down.
+            A definition change retires the old record, it must never erase it. -#}
+        <div class="trd-chips" id="trd-cohort-chips" style="display:none"></div>
         <div class="trd-chips" id="trd-status-chips" data-market="{{ _m }}"></div>
         <input type="search" class="trd-search" id="trd-search" data-ph-en="Find a stock" data-ph-zh="搜索股票" aria-label="Find a stock">
         <div class="trd-chips" id="trd-window-chips"></div>
@@ -521,6 +548,140 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
       </div>
       <div class="trd-pg" id="trd-pg"></div>
       </div>{# /stg-2 #}
+
+      {#- ── Zone B′ — the PREVIOUS board definition's closed record ──────────────
+          Optional host key `trd.prior` (CN continuity G5): {label_en, label_zh,
+          board_definition, date_from, date_to, summary, rows, meta}. Absent → this
+          block emits nothing and the dialog is byte-identical to before, which is
+          every host that does not set it (us_stocks / hk / canada) and every China
+          night before the emitter ships it.
+
+          Server-rendered, unlike the live ledger above: this book is CLOSED, so it
+          can never go stale between build and open, and it costs no second fetch.
+          The row list is capped — a definition can span a thousand episodes and this
+          markup ships inside every China page. The cap is DISCLOSED, never silent,
+          and the 25 it keeps are the FINISHED trades first (see the sort below): a
+          window filled with still-running rows shows a reader nothing.
+
+          NEVER pooled with the record above. See the CSS block for the three devices
+          that enforce that, and read the summary sentence before changing it: it
+          says "closed book" in words as well as in layout. -#}
+      {%- if trd.prior %}
+      {%- set _p = trd.prior -%}
+      {#- `is mapping`, not `or {}`: a non-dict summary/meta would reach .get() and raise. -#}
+      {%- set _ps = _p.get('summary') if _p.get('summary') is mapping else {} -%}
+      {%- set _pmeta = _p.get('meta') if _p.get('meta') is mapping else {} -%}
+      {%- set _prow_all = _p.get('rows') or [] -%}
+      {#- COUNTS COME FROM THE PRODUCER, NOT FROM THE LIST WE WERE HANDED. `rows` is
+          already capped upstream (engine.track_ledger.MAX_ROWS) and the era's true size
+          ships as meta.n_total, so `rows|length` under-reports a long book — it would
+          report the cap as if it were the record. -#}
+      {%- set _pn_total = _pmeta.get('n_total') if _pmeta.get('n_total') is number else _prow_all|length -%}
+      {#- Both summary numbers are FORMATTED below (|round, %+g) and both calls raise on a
+          string, so one mistyped producer field would take the whole host page down. Type
+          them once here: a non-number becomes none and falls through to the null-disclosure
+          line, which is the same honest surface a missing field already gets. -#}
+      {%- set _pw_raw = _ps.get('win_pct') if _ps.get('win_pct') is not none else _ps.get('win_rate_pct') -%}
+      {%- set _pe_raw = _ps.get('expectancy_pct') if _ps.get('expectancy_pct') is not none else _ps.get('avg_pct') -%}
+      {%- set _pw = _pw_raw if _pw_raw is number else none -%}
+      {%- set _pe = _pe_raw if _pe_raw is number else none -%}
+      {%- set _PMN = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} -%}
+      {#- |string so a non-str date field can never crash the |length test below. -#}
+      {%- set _pf = (_p.get('date_from') or '')|string -%}{%- set _pt = (_p.get('date_to') or '')|string -%}
+      {#- The emitter derives its label FROM the era's own dates and ships them joined
+          ("previous board definition · Jul 1 – Jul 29 2026" / "上一版选股口径 · …"), so
+          splitting on the separator is what keeps the era NAME in the uppercase pill and
+          the SPAN in the muted slot beside it — printing the label whole would put a date
+          in small-caps, and re-deriving the span from date_from/date_to alongside it would
+          print the range twice. Each language splits independently and each falls back to
+          a locally formatted range, so a future bare label still gets its dates. -#}
+      {%- set _lpe = ((_p.get('label_en') or 'Previous board definition')|string).split(' · ') -%}
+      {%- set _lpz = ((_p.get('label_zh') or '前版榜单定义')|string).split(' · ') -%}
+      {%- set _dated = _pf|length >= 10 and _pt|length >= 10 -%}
+      {#- A span that crosses New Year needs BOTH years printed. Each language carries the
+          year on one end only — EN on the close, ZH on the open — which reads correctly
+          inside one year and lies across two: "Nov 3 – Feb 12 2026" dates the November to
+          2026, and "2025年11月3日–2月12日" dates the February to 2025. When the years
+          differ, print the other end's year too. -#}
+      {%- set _xyr = _dated and _pf[0:4] != _pt[0:4] -%}
+      {%- set _dte = (_lpe[1:]|join(' · ')) if _lpe|length > 1
+                     else ((_PMN.get(_pf[5:7], _pf[5:7]) ~ ' ' ~ _pf[8:10]|int ~ (' ' ~ _pf[0:4] if _xyr else '')
+                            ~ ' – ' ~ _PMN.get(_pt[5:7], _pt[5:7]) ~ ' ' ~ _pt[8:10]|int ~ ' ' ~ _pt[0:4]) if _dated else '') -%}
+      {%- set _dtz = (_lpz[1:]|join(' · ')) if _lpz|length > 1
+                     else ((_pf[0:4] ~ '年' ~ _pf[5:7]|int ~ '月' ~ _pf[8:10]|int ~ '日–'
+                            ~ (_pt[0:4] ~ '年' if _xyr else '') ~ _pt[5:7]|int ~ '月' ~ _pt[8:10]|int ~ '日') if _dated else '') -%}
+      <div class="trd-stg trd-stg-3 trd-prior">
+        <div class="trd-prior-hd">
+          <span class="trd-prior-tag"><span class="l-en">{{ _lpe[0] }}</span><span class="l-zh">{{ _lpz[0] }}</span></span>
+          {%- if _dte or _dtz %}
+          <span class="trd-prior-dt"><span class="l-en">{{ _dte }}</span><span class="l-zh">{{ _dtz }}</span></span>
+          {%- endif %}
+        </div>
+        {#- Plain words, numbers carrying their meaning (Law 3), and the non-pooling
+            rule stated where a reader would otherwise do the adding themselves. -#}
+        <p class="trd-prior-line">
+          {%- if _pw is not none -%}
+          <span class="l-en">Under the older rules, <b>{{ _pw|round|int }}%</b> of {{ _ps.get('n_matured', '—') }} finished trades beat the {{ trd.bench_en or 'index' }}{% if _pe is not none %}, <b>{{ '%+g'|format(_pe) }}%</b> on an average trade{% endif %}. <span class="trd-prior-shut">A closed book: these are kept visible for history and are never added to the record above.</span></span>
+          <span class="l-zh">在旧规则下，{{ _ps.get('n_matured', '—') }} 笔已完成交易中有 <b>{{ _pw|round|int }}%</b> 跑赢{{ trd.bench_zh or '指数' }}{% if _pe is not none %}，每笔平均 <b>{{ '%+g'|format(_pe) }}%</b>{% endif %}。<span class="trd-prior-shut">该账已封存：保留以供查阅历史，绝不并入上方记录。</span></span>
+          {%- else -%}
+          <span class="l-en">The older rules logged {{ _ps.get('n_logged') or _ps.get('n_calls') or _pn_total }} calls, too few of them finished to score. <span class="trd-prior-shut">Kept visible for history; never added to the record above.</span></span>
+          <span class="l-zh">旧规则共记录 {{ _ps.get('n_logged') or _ps.get('n_calls') or _pn_total }} 笔信号，其中已完成的数量不足以评分。<span class="trd-prior-shut">保留以供查阅历史；绝不并入上方记录。</span></span>
+          {%- endif -%}
+        </p>
+        {%- if _prow_all -%}
+        {#- WHICH 25. Newest-first spent the whole window on the least-matured rows — the
+            ones whose numbers mean the least, and whose excess column is mostly "—". A
+            closed book is read for its finished trades, so those come first, biggest
+            move first; the still-running tail follows, newest first, so the window is
+            never all placeholder. Ranked on the ABSOLUTE excess, not the signed one:
+            sorting by x descending would fill 25 slots with beats and turn a disclosed
+            cap into a cherry-pick. "Matured" here = a usable excess, which is exactly
+            what the cell below can print. -#}
+        {%- set _pmat = [] -%}{%- set _pinf = [] -%}
+        {%- for _r in _prow_all -%}
+          {%- set _rx0 = _r.get('x') -%}
+          {%- if _rx0 is number %}{%- set _ = _pmat.append({'k': _rx0|abs, 'r': _r}) -%}
+          {%- else %}{%- set _ = _pinf.append({'k': _r.get('d') or '', 'r': _r}) -%}{%- endif -%}
+        {%- endfor -%}
+        {%- set _prows = ((_pmat | sort(attribute='k', reverse=true))
+                          + (_pinf | sort(attribute='k', reverse=true)))[:25] -%}
+        <div class="trd-tbl-wrap">
+          <table class="trd-tbl"><thead><tr>
+            <th>{{ t('Stock', '个股') }}</th>
+            <th>{{ t('Logged', '上榜') }}</th>
+            <th class="trd-num"><span class="l-en">vs {{ trd.bench_en or 'index' }} %</span><span class="l-zh">超额</span></th>
+            <th class="trd-num">{{ t('Days', '天数') }}</th>
+            <th>{{ t('Status', '状态') }}</th>
+          </tr></thead><tbody>
+          {%- for _e in _prows %}{%- set _r = _e.r -%}
+          {#- EXCESS ONLY. This column is headed "vs <bench>", so it may print `x` and
+              nothing else: falling back to `p` (the ABSOLUTE return) put an unrelated
+              number under the excess header and silently reported it as a beat. A row
+              with no usable excess reads "—", the same null the live table above uses. -#}
+          {%- set _rx = _r.get('x') -%}
+          {%- set _rst = _r.get('st') or '' -%}
+          <tr>
+            <td class="trd-tk">{{ _r.get('t') or '—' }}{% if _r.get('nm') %}<span class="trd-sub-cell"><span class="l-en">{{ (_r.nm|string).split(' / ')[0] }}</span><span class="l-zh">{{ (_r.nm|string).split(' / ')[-1] }}</span></span>{% endif %}</td>
+            <td class="trd-mut">{{ _r.get('d') or '—' }}</td>
+            <td class="trd-num {{ (_up if _rx >= 0 else _dn) if _rx is number else 'trd-mut' }}">{% if _rx is number %}{{ '%+g'|format(_rx) }}%{% else %}—{% endif %}</td>
+            <td class="trd-num">{{ _r.get('dy') if _r.get('dy') is not none else '—' }}</td>
+            <td>
+              {%- if _rst in ('beat','up') -%}<span class="trd-dot trd-dot-up"></span>{{ t('Beat index', '跑赢') }}
+              {%- elif _rst in ('lag','stopped') -%}<span class="trd-dot trd-dot-dn"></span>{{ t('Lagged', '跑输') }}
+              {%- elif _rst == 'flat' -%}<span class="trd-dot trd-dot-flat"></span>{{ t('Flat', '持平') }}
+              {%- elif _rst == 'early' -%}<span class="trd-dot trd-dot-early"></span>{{ t('Unfinished', '未完成') }}
+              {%- else -%}<span class="trd-mut">—</span>{%- endif -%}
+            </td>
+          </tr>
+          {%- endfor %}
+          </tbody></table>
+        </div>
+        {%- if _pn_total > _prows|length %}
+        <p class="trd-prior-more"><span class="l-en">Showing {{ _prows|length }} of {{ _pn_total }} — finished trades first.</span><span class="l-zh">共 {{ _pn_total }} 笔，显示其中 {{ _prows|length }} 笔——已完成的交易优先。</span></p>
+        {%- endif -%}
+        {%- endif -%}
+      </div>{# /trd-prior #}
+      {%- endif %}
     </div>{# /trd-body #}
 
     {#- ── Zone C — footer (one merged note, one as-of) ──────────────────────-#}
@@ -624,7 +785,7 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
   // ── ledger table ──────────────────────────────────────────────────────────
   var mount = document.getElementById('trd-tbl-mount');
   var pgEl = document.getElementById('trd-pg');
-  var state = { status:'all', win:'all', q:'', sector:'all', sortKey:'d', sortDir:-1, page:1 };
+  var state = { cohort:'current', status:'all', win:'all', q:'', sector:'all', sortKey:'d', sortDir:-1, page:1 };
   var PAGE = 25;
   var market = dlg.dataset.market, benchEn = dlg.dataset.benchEn, benchZh = dlg.dataset.benchZh;
   var upC = dlg.dataset.upClass || 'az-up', dnC = dlg.dataset.dnClass || 'az-dn';
@@ -633,12 +794,14 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
          beat:'Beat index', lag:'Lagged', onboard:'On board', stock:'Stock', logged:'Logged', entry:'Entry', latest:'Latest',
          move:'Move %', vs:'vs '+(benchEn||'index')+' %', days:'Days', status:'Status', find:'Find a stock',
          prev:'Prev', next:'Next', err:'Ledger unavailable right now — the numbers above are still current.', retry:'Retry',
-         win90:'90d', win30:'30d', winall:'All', of:'of' },
+         win90:'90d', win30:'30d', winall:'All', of:'of',
+         cohortCur:'Current board', cohortLegacy:'Previous board' },
     zh:{ all:'全部', up:'上涨', stopped:'低于入场价', flat:'持平', early:'初期', matured:'已成熟', suspended:'停牌',
          beat:'跑赢', lag:'跑输', onboard:'在榜', stock:'个股', logged:'上榜', entry:'入场', latest:'最新',
          move:'涨跌', vs:'超额', days:'天数', status:'状态', find:'搜索股票',
          prev:'上一页', next:'下一页', err:'台账暂时不可用——上方数据仍然有效。', retry:'重试',
-         win90:'90天', win30:'30天', winall:'全部', of:'共' }
+         win90:'90天', win30:'30天', winall:'全部', of:'共',
+         cohortCur:'现行榜单', cohortLegacy:'上一版榜单' }
   };
   function L(k){ return (isZh()? T.zh : T.en)[k]; }
 
@@ -651,7 +814,26 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
     if(market === 'us') return [['all','all'],['up','up'],['stopped','stopped'],['onboard','onboard']];
     return [['all','all'],['early','early']]; // hk/ca
   }
+  // A retired board definition's record ships beside the current one as the
+  // artifact's prior_record era block (its own rows + summary, never pooled).
+  // Older artifacts / other markets carry none → the era rail stays hidden and
+  // every cohort branch below is a no-op.
+  function hasLegacy(){ return !!(DATA && DATA.prior_record && (DATA.prior_record.rows || []).length); }
   function buildRail(){
+    var coh = document.getElementById('trd-cohort-chips');
+    if(coh){
+      coh.innerHTML = '';
+      coh.style.display = hasLegacy() ? '' : 'none';
+      if(hasLegacy()){
+        [['current','cohortCur'],['legacy','cohortLegacy']].forEach(function(d){
+          var b=document.createElement('button'); b.type='button'; b.className='trd-chip'; b.dataset.cohort=d[0];
+          b.setAttribute('aria-pressed', d[0]===state.cohort ? 'true':'false');
+          b.textContent = L(d[1]); b.dataset.k=d[1];
+          b.addEventListener('click', function(){ state.cohort=d[0]; state.page=1; syncPressed(coh,'cohort'); render(); });
+          coh.appendChild(b);
+        });
+      }
+    }
     var host = document.getElementById('trd-status-chips'); host.innerHTML='';
     statusChipDefs().forEach(function(d){
       var b=document.createElement('button'); b.type='button'; b.className='trd-chip'; b.dataset.status=d[0];
@@ -703,7 +885,12 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
   function filtered(){
     if(!DATA) return [];
     var now = DATA.as_of ? new Date(DATA.as_of) : new Date();
-    return DATA.rows.filter(function(r){
+    // Eras never mix in one view: the summary cards above score only the current
+    // definition, so the default table lists exactly DATA.rows; the Previous-board
+    // chip swaps the SOURCE to the prior era's own row list.
+    var src = (hasLegacy() && state.cohort === 'legacy')
+      ? (DATA.prior_record.rows || []) : DATA.rows;
+    return src.filter(function(r){
       if(state.status !== 'all'){
         if(state.status === 'matured'){ if(!r.m) return false; }
         else if(state.status === 'early'){ if(r.st !== 'early' && r.m) return false; }
@@ -746,7 +933,35 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
     var pcol = primaryCol();
     var moveHdr = (market==='us') ? L('move') : L('vs');
     var zh = isZh();
-    var h = '<div class="trd-tbl-wrap"><table class="trd-tbl"><thead><tr>';
+    var h = '';
+    var inPrior = hasLegacy() && state.cohort === 'legacy';
+    // While the table shows the prior era, the 25-row digest below would repeat the
+    // same closed book — hide it, restore it when the reader flips back.
+    var priorDigest = dlg.querySelector('.trd-prior');
+    if(priorDigest) priorDigest.style.display = inPrior ? 'none' : '';
+    if(inPrior){
+      // The retired era explains itself in place: its producer-derived label, the
+      // same grading rules, its own record, and an explicit "never added to the
+      // record above" so the split stays honest. Single-language string by design —
+      // this partial re-renders on language flip (the data-lang MutationObserver).
+      var lg = DATA.prior_record, ls = lg.summary || {};
+      var lNote;
+      if(zh){
+        lNote = esc(lg.label_zh || '上一版选股口径')
+              + '——评分规则相同；该账已封存，绝不并入上方记录。';
+        if(ls.win_pct != null && ls.n_matured){
+          lNote += '往绩：' + ls.n_matured + ' 笔已完成，胜率 ' + Math.round(ls.win_pct) + '%。';
+        }
+      }else{
+        lNote = esc(lg.label_en || 'previous board definition')
+              + ' — same grading rules; a closed book, never added to the record above.';
+        if(ls.win_pct != null && ls.n_matured){
+          lNote += ' Record: ' + Math.round(ls.win_pct) + '% win of ' + ls.n_matured + ' finished trades.';
+        }
+      }
+      h += '<div class="trd-ribbon" style="margin:0 0 8px">' + lNote + '</div>';
+    }
+    h += '<div class="trd-tbl-wrap"><table class="trd-tbl"><thead><tr>';
     h += '<th>'+L('stock')+'</th>';
     h += sortTh('d', L('logged'));
     h += '<th class="trd-num trd-mut">'+L('entry')+'</th>';

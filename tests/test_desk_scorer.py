@@ -76,7 +76,10 @@ def test_run_with_custom_paths_and_schema_scores_and_persists():
     assert track["schema"] == SCHEMA                                  # custom schema honoured
     assert track["overall"]["hits"] == 1
     assert track["by_conviction"]["high"]["n"] == 1
-    assert track["calibration_note"] == "1 scored on a custom desk."  # injected note
+    # injected note leads; the placebo-null disclosure is appended beside it (here the
+    # honest-absence form — a bare tmp root has no data/calibration/summary.json)
+    assert track["calibration_note"].startswith("1 scored on a custom desk.")
+    assert "not yet measured" in track["calibration_note"]
     # persisted to the custom paths, not ai_desk's
     assert root.joinpath(*SCORED).exists()
     assert root.joinpath(*TRACK).exists()

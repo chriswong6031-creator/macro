@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_budget_edge.v1.schema.json",
+  "title": "Government Revenue Budget Evidence Edge v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "edge_id", "from_type", "from_id", "to_type", "to_id", "edge_type",
+    "review_state", "economic_weight", "effective_at", "known_at", "evidence"
+  ],
+  "properties": {
+    "contract": {"const": "government_budget_edge.v1"},
+    "edge_id": {"type": "string", "pattern": "^budget-edge:[a-f0-9]{24,64}$"},
+    "from_type": {"enum": ["budget_line", "program"]},
+    "from_id": {"type": "string", "minLength": 1, "maxLength": 600},
+    "to_type": {"enum": ["program", "award"]},
+    "to_id": {"type": "string", "minLength": 1, "maxLength": 800},
+    "edge_type": {"enum": ["source_native_identifier", "reviewed_documentary"]},
+    "review_state": {"enum": ["official", "reviewed", "confirmed"]},
+    "economic_weight": {"type": "null"},
+    "effective_at": {"type": "string", "format": "date-time"},
+    "known_at": {"type": "string", "format": "date-time"},
+    "evidence": {
+      "type": "array", "minItems": 1, "maxItems": 12,
+      "items": {"$ref": "#/$defs/evidence"}
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "from_type": {"const": "budget_line"},
+        "to_type": {"const": "program"},
+        "edge_type": {"const": "source_native_identifier"},
+        "review_state": {"const": "official"},
+        "evidence": {
+          "type": "array", "minItems": 1, "maxItems": 1,
+          "items": {"$ref": "#/$defs/budgetLineEvidence"}
+        }
+      }
+    },
+    {
+      "properties": {
+        "from_type": {"const": "program"},
+        "to_type": {"const": "award"},
+        "edge_type": {"const": "reviewed_documentary"},
+        "review_state": {"enum": ["reviewed", "confirmed"]},
+        "evidence": {
+          "type": "array", "minItems": 2, "maxItems": 12,
+          "items": {"$ref": "#/$defs/evidence"},
+          "allOf": [
+            {"contains": {"$ref": "#/$defs/budgetLineEvidence"}, "minContains": 1},
+            {"contains": {"$ref": "#/$defs/awardEvidence"}, "minContains": 1}
+          ]
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "evidence": {
+      "oneOf": [
+        {"$ref": "#/$defs/budgetLineEvidence"},
+        {"$ref": "#/$defs/awardEvidence"}
+      ]
+    },
+    "budgetLineEvidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "ref_id", "document_sha256", "page_number", "page_text_sha256", "note"],
+      "properties": {
+        "kind": {"const": "budget_line"},
+        "ref_id": {"type": "string", "minLength": 1, "maxLength": 800},
+        "document_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "page_number": {"type": "integer", "minimum": 1},
+        "page_text_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "note": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "awardEvidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "ref_id", "source_url", "note"],
+      "properties": {
+        "kind": {"const": "award"},
+        "ref_id": {"type": "string", "minLength": 1, "maxLength": 800},
+        "source_url": {"type": "string", "format": "uri", "maxLength": 2000},
+        "note": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    }
+  }
+}

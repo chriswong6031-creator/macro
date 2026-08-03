@@ -55,18 +55,35 @@ EXPECTED_ICON_FAMILIES = {
 # least one other user in this menu, so no FAMILY leaves the set — only the
 # per-span count moves. If a family ever does drop out, the families assertion
 # above fails first and this comment is the place to say why.
-# OIP W1.6-B "One Door" (nav 56 -> 55): the options flyout's gex.html "Options
+#
+# China Sector Intelligence consolidation (2026-08, nav 5 -> 3): a family DID drop
+# out, so per the note above, here is why. The China group's nested "Sector Central"
+# submenu (trigger + 5 rows = 6 spans) flattens to 3 rows, net -3, so 56 -> 53 —
+# counted off the re-rendered _navlinks.html.j2, not by hand. submenu-icon-rotation
+# leaves the EMITTED set: the China Subsector Rotation row was its last user in this
+# menu once the US row folded into the merged US page one program earlier. It stays
+# in EXPECTED_ICON_FAMILIES rather than leaving entirely (the submenu-icon-leader
+# precedent) because product-nav-icons.css still draws it and dashboard-icons.js
+# still uses it — it is used elsewhere, just not in THIS rendered menu, which is
+# exactly the allocation/bitcoin case. submenu-icon-baskets (5 -> 4) and
+# submenu-icon-intelligence (4 -> 3) lose spans but keep other users, so they stay.
+#
+# OIP W1.6-B "One Door" (nav 53 -> 52): the options flyout's gex.html "Options
 # Desk" row is deleted — the workspace absorbed that page, which is a redirect
 # stub now — removing exactly one submenu-icon span. The Intraday Flow Tracker
 # row MOVED (flyout -> United States group) and kept its icon, so it is net
-# zero. Counted off the diff of the real _navlinks.html.j2, not by hand.
-# EXPECTED_EMITTED_ICON_FAMILIES is unchanged on purpose: the deleted row used
-# submenu-icon-dashboard, which the Macro Dashboard and the relocated Intraday
-# Flow rows both still use, so no FAMILY leaves the set — only the per-span
-# count moves. If a family ever does drop out, the families assertion fires
-# first and this comment is the place to say why.
-EXPECTED_EMITTED_ICON_FAMILIES = EXPECTED_ICON_FAMILIES - {"allocation", "bitcoin"}
-EXPECTED_EMITTED_ICON_COUNT = 55
+# zero. The deleted row used submenu-icon-dashboard, which the Macro Dashboard
+# and the relocated Intraday Flow rows both still use, so this program removes
+# no FAMILY of its own — the emitted-minus set below is the China program's.
+#
+# This branch and the China consolidation landed against the same 56 and were
+# merged here, so the two deltas COMPOSE (-3 then -1) rather than either count
+# standing alone. 52 is the measured span count of the merged
+# _navlinks.html.j2 — the arithmetic is shown only to make the merge auditable.
+EXPECTED_EMITTED_ICON_FAMILIES = EXPECTED_ICON_FAMILIES - {
+    "allocation", "bitcoin", "rotation",
+}
+EXPECTED_EMITTED_ICON_COUNT = 52
 LEGACY_SUBMENU_MARKS = (
     "📊", "📈", "📶", "🧠", "🧺", "🌀", "💫", "🎛", "📰", "🚨",
     "🧲", "🌊", "🏆", "🌑", "🏗", "📡", "🔥", "🔬", "🛰", "🏛",
@@ -77,6 +94,7 @@ EXPECTED_PUBLIC_RESEARCH_DESTINATIONS = {
     "intelligence_hub.html",
     "reports.html",
     "research_vault.html",
+    "stocks/earnings/index.html",
     "neural_web.html",
     "foresight.html",
     "state_of_themes.html",
@@ -175,8 +193,9 @@ def test_research_mega_menu_uses_complete_semantic_icon_set() -> None:
 
     assert "submenu-icon" not in research
     assert destinations == EXPECTED_PUBLIC_RESEARCH_DESTINATIONS
-    assert public_grid.count('class="icon-drawing nm-ic') == 14
-    assert public_grid.count('<svg viewBox="0 0 48 48">') == 14
+    assert public_grid.count('class="icon-drawing nm-ic') == 15
+    assert public_grid.count('<svg viewBox="0 0 48 48">') == 15
+    assert 'data-nav-file="earnings_wire"' in public_grid
     assert "research-icon" not in public_grid
     assert '<span class="nm-ic">' not in research
 
@@ -186,8 +205,8 @@ def test_jinja_nav_partial_preserves_research_icon_markup_on_rerender() -> None:
     research = _research_menu(partial)
     public_grid = research.split('<aside class="mega-rail', 1)[0]
 
-    assert public_grid.count('class="icon-drawing nm-ic') == 14
-    assert public_grid.count('<svg viewBox="0 0 48 48">') == 14
+    assert public_grid.count('class="icon-drawing nm-ic') == 15
+    assert public_grid.count('<svg viewBox="0 0 48 48">') == 15
     assert "research-icon" not in public_grid
     assert '<span class="nm-ic">' not in partial
 

@@ -15,7 +15,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | agentic_media | 4 |
 | biopharma-seasonality-intelligence | 4 |
 | btc-vector | 6 |
-| capital-structure-intelligence | 16 |
+| capital-structure-intelligence | 20 |
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
 | ccw | 10 |
@@ -28,6 +28,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | crypto-cockpit | 3 |
 | cycle-intelligence | 14 |
 | dannytrades | 1 |
+| earnings-evidence-spine | 1 |
 | engine-fix | 18 |
 | entry-stack-expansion | 2 |
 | factor-intelligence | 7 |
@@ -106,8 +107,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 360 |
-| infrastructure | 133 |
+| display | 361 |
+| infrastructure | 137 |
 | scored | 4 |
 | shadow | 79 |
 
@@ -115,10 +116,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 548 |
+| git | 549 |
 | git+r2 | 2 |
-| gitignored-local | 14 |
-| r2 | 12 |
+| gitignored-local | 15 |
+| r2 | 15 |
 
 ## Artifacts by owner_program
 
@@ -167,10 +168,15 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| capital-structure-share-count-external-head | `capital_structure/share_counts/v2/current_head.json` | json | collect | infrastructure | 4 | 0 |
+| capital-structure-share-count-materialization-receipts | `capital_structure/share_counts/v2/receipts/*.json` | json | collect | infrastructure | 4 | 0 |
+| capital-structure-companyfacts-current-pointer | `data/capital_structure/companyfacts/coverage_receipt.json` | json | collect | infrastructure | 3 | 0 |
+| capital-structure-share-count-ledger | `capital_structure/share_counts/v2/generations/*/ledger.json` | json | collect | infrastructure | 3 | 0 |
+| capital-structure-companyfacts-coverage | `data/capital_structure/companyfacts/generations/*/coverage.parquet` | parquet | collect | infrastructure | 2 | 0 |
+| capital-structure-companyfacts-coverage-receipts | `data/capital_structure/companyfacts/receipts/*.json` | json | collect | infrastructure | 2 | 0 |
+| capital-structure-companyfacts-source-manifest | `data/capital_structure/companyfacts/generations/*/source_manifest.parquet` | parquet | collect | infrastructure | 2 | 0 |
+| capital-structure-share-count-current-pointer | `data/capital_structure/share_counts/v2/current_receipt.json` | json | collect | infrastructure | 2 | 0 |
 | capital-structure-source-manifest | `data/capital_structure/source_manifest.parquet` | parquet | collect | infrastructure | 2 | 0 |
-| capital-structure-companyfacts-coverage | `data/capital_structure/companyfacts/generations/*/coverage.parquet` | parquet | collect | infrastructure | 1 | 0 |
-| capital-structure-companyfacts-coverage-receipts | `data/capital_structure/companyfacts/receipts/*.json` | json | collect | infrastructure | 1 | 0 |
-| capital-structure-companyfacts-source-manifest | `data/capital_structure/companyfacts/generations/*/source_manifest.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-discovery | `data/capital_structure/discovery.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-event-edges | `data/capital_structure/event_edges.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-event-versions | `data/capital_structure/event_versions.parquet` | parquet | collect | infrastructure | 1 | 0 |
@@ -180,7 +186,6 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | capital-structure-retrieval-queue-receipt | `data/capital_structure/retrieval_queue_receipt.json` | json | collect | infrastructure | 1 | 0 |
 | capital-structure-review-queue | `data/capital_structure/review_queue.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-telemetry | `data/capital_structure/telemetry.json` | json | collect | infrastructure | 1 | 0 |
-| capital-structure-companyfacts-current-pointer | `data/capital_structure/companyfacts/coverage_receipt.json` | json | collect | infrastructure | 0 | 0 |
 | capital-structure-document-term-observations | `data/capital_structure/document_term_observations.parquet` | parquet | collect | infrastructure | 0 | 0 |
 | site-capital-structure-projection | `site/capital-structure-data/latest.json` | json | collect | display | 0 | 0 |
 
@@ -317,6 +322,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | dt-contra-state | `data/neuralweb/dt_contra_state.json` | json | daily-engine | display | 0 | 0 |
+
+### earnings-evidence-spine
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| earnings-evidence-context-latest | `site/premiumdata/earnings/context/latest.json` | json | intraday | display | 4 | 1 |
 
 ### engine-fix
 

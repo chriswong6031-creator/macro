@@ -371,6 +371,27 @@ def _ew_chg(tickers: list[str], quotes: dict[str, Any], now_ms: int,
     return round(sum(changes) / len(changes), 3), n_quoted, n_members, any_stale
 
 
+# ── frozen-levels chain gate ───────────────────────────────────────────────────
+
+def _chain_spans(anchors: Any, d1: Any, d2: Any) -> bool:
+    """True iff the frozen rows at d1 < d2 sit on the same chain segment.
+
+    `anchors` is the basket's `{id}__anchor` column (engine/basket_freeze.py schema
+    v2): the ISO date the row's chain segment is based on.  A ratio d1→d2 is a real
+    return only when d2's segment already covered d1 — i.e. anchor(d2) <= d1.  A
+    missing/NaN anchor is a pre-v2 row (its base moved with the price window) and a
+    later anchor means the chain BROKE in between; both are honest nulls, not returns.
+    """
+    try:
+        import pandas as pd
+        a2 = anchors.get(d2)
+        if a2 is None or (not isinstance(a2, str) and pd.isna(a2)):
+            return False
+        return pd.Timestamp(a2) <= pd.Timestamp(d1)
+    except Exception:  # noqa: BLE001 — unparseable anchor → honest null
+        return False
+
+
 # ── cum_2d computation ─────────────────────────────────────────────────────────
 
 def _cum_2d(basket_id: str, live_ew_chg_pct: float | None,
@@ -381,7 +402,14 @@ def _cum_2d(basket_id: str, live_ew_chg_pct: float | None,
     The 2d pct change is (yesterday_close / 2_days_ago_close - 1) + live_chg_pct/100,
     expressed as percentage.
 
-    Returns None if data unavailable or live_ew_chg_pct is None.
+    CHAIN GATE (2026-08): the ratio of two frozen rows is only a return when both sit
+    on the SAME chain segment.  Rows written before the chain-linked freeze writer were
+    each rebased on that night's rolling price window, so their ratio silently carries
+    the EW return of the day that dropped out of the window front — the same order of
+    magnitude as the 1d signal it is being read as.  Valid iff the newer row's
+    `{id}__anchor` is present and at/before the older row's date; otherwise honest null.
+
+    Returns None if data unavailable, unchained, or live_ew_chg_pct is None.
     """
     if live_ew_chg_pct is None:
         return None
@@ -391,12 +419,17 @@ def _cum_2d(basket_id: str, live_ew_chg_pct: float | None,
 
         p = config.data_dir() / "basket_levels" / MARKETS[market]["levels_parquet"]
         col = f"{basket_id}__level_price"
-        df = pd.read_parquet(p, columns=[col])
+        anchor_col = f"{basket_id}__anchor"
+        # A store with no anchor column raises here → honest null (nothing is chained).
+        df = pd.read_parquet(p, columns=[col, anchor_col])
         if df.empty or len(df) < 2:
             return None
         # last two rows: yesterday and day before
         vals = df[col].dropna()
         if len(vals) < 2:
+            return None
+        d1, d2 = vals.index[-2], vals.index[-1]
+        if not _chain_spans(df[anchor_col], d1, d2):
             return None
         yesterday = float(vals.iloc[-1])
         day_before = float(vals.iloc[-2])
@@ -514,6 +547,13 @@ def _eod_basket_chg_levels(basket_id: str, market: str) -> tuple[float | None, s
     the same quantity the member-OHLCV path computes for US. A basket absent
     from the levels file (e.g. a freshly seeded split whose levels have not
     accrued yet) returns (None, None) — honest null.
+
+    CHAIN GATE (2026-08): two frozen rows only divide into a return when they share a
+    chain segment.  Pre-v2 rows were each rebased on that night's rolling price
+    window, so their ratio carries the EW return of the day that fell out of the
+    window front — an error the size of the signal.  Gated on `{id}__anchor`
+    (anchor at the newer row must be at/before the older row's date); otherwise the
+    same honest (None, None) a missing basket returns.
     """
     try:
         import pandas as pd
@@ -521,8 +561,13 @@ def _eod_basket_chg_levels(basket_id: str, market: str) -> tuple[float | None, s
 
         p = config.data_dir() / "basket_levels" / MARKETS[market]["levels_parquet"]
         col = f"{basket_id}__level_price"
-        vals = pd.read_parquet(p, columns=[col])[col].dropna()
+        anchor_col = f"{basket_id}__anchor"
+        # A store with no anchor column raises here → honest null (nothing is chained).
+        df = pd.read_parquet(p, columns=[col, anchor_col])
+        vals = df[col].dropna()
         if len(vals) < 2:
+            return None, None
+        if not _chain_spans(df[anchor_col], vals.index[-2], vals.index[-1]):
             return None, None
         prev, last = float(vals.iloc[-2]), float(vals.iloc[-1])
         if prev == 0:

@@ -282,6 +282,19 @@ def run(*, ledger_path, scored_path, track_path, schema,
         track = aggregate(combined, ledger, today, schema=schema, by_kind_keys=by_kind_keys,
                           calibration_note_fn=calibration_note_fn,
                           calibration_note_zh_fn=calibration_note_zh_fn)
+        # Placebo-null disclosure: `hit` is a NOT-falsified endpoint whose no-skill base
+        # rate sits far above one-half (engine.desk_placebo). Print the measured null
+        # BESIDE the hit-rate in the notes — this note feeds the next brief's
+        # conviction-calibrating prompt, and a bare "hit-rate 0.889" reads as skill.
+        if (track.get("overall") or {}).get("n"):
+            slug = ledger_path[1] if len(ledger_path) >= 2 else None
+            if slug:
+                from engine import desk_ledger as _ledger_law   # leaf util, lazy is habit here
+                line_en, line_zh = _ledger_law.placebo_lines(root, slug)
+                if track.get("calibration_note"):
+                    track["calibration_note"] += " " + line_en
+                if track.get("calibration_note_zh"):
+                    track["calibration_note_zh"] += line_zh
         if persist:
             if new_rows:
                 append_scored(new_rows, root, scored_path)

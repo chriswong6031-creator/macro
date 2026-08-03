@@ -1,8 +1,9 @@
 # BioCatalyst Operations Runbook
 
 Status: the B1 source-state lane, authenticated B1b read surface, bounded B2
-Record History adapter, B4D prospective ledger, and B4E root-sealed R2
-activation control are implemented locally but **dark by default**. API/UI
+Record History adapter, B4D prospective ledger, B4E root-sealed R2 activation
+control, and the T1a explicit protocol peer matrix are implemented locally but
+**dark by default**. API/UI
 presence does not imply that live evidence exists. No Prophet signal, ranking,
 trade authority, or Neural Web decision authority is asserted by this document.
 
@@ -66,7 +67,7 @@ bucket, jurisdiction, and worker credential identity before it creates an
 attempt directory, constructs a source collector, or constructs an R2 store.
 `BIOCATALYST_R2_RETENTION_CONFIRMED=1` is deprecated compatibility evidence
 only: it is parsed for a bounded configuration error, but it cannot authorize
-prospective collection. Removing the prospective switch after a v1.3
+prospective collection. Removing the prospective switch after a v1.3 or later
 generation exists fails closed rather than silently dropping or resetting its
 ledger.
 
@@ -203,6 +204,7 @@ snapshot, private object key, absolute filesystem path, or credential):
 /var/lib/macro-biocatalyst/public/generations/{run_id}/trials/{nct_id}.json
 /var/lib/macro-biocatalyst/public/generations/{run_id}/trial_snapshots/{nct_id}.json
 /var/lib/macro-biocatalyst/public/generations/{run_id}/history/{nct_id}.json
+/var/lib/macro-biocatalyst/public/generations/{run_id}/protocols/{nct_id}.json
 /var/lib/macro-biocatalyst/public/generations/{run_id}/health.json
 /var/lib/macro-biocatalyst/public/health.json
 ```
@@ -231,6 +233,17 @@ allowlisted ClinicalTrials.gov paths with explicit missingness, and remains
 an even narrower response DTO and strips opaque snapshot/content identifiers.
 Historical observations, semantic change interpretation, issuer identity,
 probability, valuation, and signal authority remain outside this projection.
+
+Generation `1.4.0` adds immutable, pointer-bound
+`protocols/{nct_id}.json` `trial_protocol_projection.v1` artifacts beside the
+same-generation trial snapshots and history. Each is built only from a
+validated private source snapshot plus validated public trial snapshot. Its
+arm groups use the closed `label`, `type`, `description`, and
+`interventionNames` shape with item/list/string caps; unknown upstream keys do
+not cross the boundary. Generation `1.5.0` is the current superset of `1.4.0`:
+it retains the protocol layout and also carries the B4D prospective artifacts.
+Both schema generations are source-fact only and have no peer relationship,
+identity, ranking, or decision authority.
 
 ## 4. Source and version semantics
 
@@ -341,7 +354,10 @@ reference, and prior/observed pointer without exposing paths or secrets.
 B2 exact registry diffs and neutral change facts are a separate evidence plane.
 They do not alter B1 source-state watermarks and cannot substitute for missing
 raw history evidence. The public projection excludes raw bodies, receipts,
-object keys, filesystem paths, JSON paths, private hashes, and credentials.
+object keys, filesystem paths, private source-snapshot JSON-pointer machinery,
+private hashes, and credentials. The T1a response separately exposes only
+registered official ClinicalTrials.gov API-v2 field locators under its closed
+response contract; those locators are not storage paths or private handles.
 
 ## 6. Health and SLO accounting
 
@@ -620,6 +636,46 @@ consume that seam when it is available rather than create a parallel store.
 Issuer/security, asset, economic-rights, FDA-application, and ticker joins stay
 absent until the Corporate Intelligence-owned, point-in-time identity bridge
 has cleared its separate abstention and evidence gates.
+
+## 12A. T1a explicit protocol peer matrix
+
+`POST /api/biocatalyst/v1/trial-peer-sets:resolve` resolves a caller-supplied,
+exact-uppercase list of 2–100 NCT IDs. It is an entitled `private, no-store`
+facts-only comparison surface, not a peer-discovery system: cohort membership
+is supplied by the caller, and the response asserts no clinical, commercial,
+company, asset, security, or authority relationship among its rows. It cannot
+rank, score, select, gate, or originate a decision.
+
+The endpoint reads only `protocols/{nct_id}.json` and same-generation history
+models from a committed public generation `1.4.0` or `1.5.0`. Generation
+`1.0.0` through `1.3.0` lacks the protocol artifact contract and therefore
+returns the coarse private `503` unavailable response rather than misreporting
+all requested records as uncovered. A malformed, missing, tampered, or
+over-cap protocol artifact also fails the request closed with that response;
+the API never falls back to a private snapshot, raw source record, or a
+secondary database.
+
+Each rendered field evidence entry contains `source_field_locators`, not a
+source object key or private JSON-path key. Values are an exact closed
+allowlist of official ClinicalTrials.gov API-v2 `/protocolSection/...` fields
+used by the projection. They must never contain a filesystem path, object-store
+key, raw/archive/receipt identifier, snapshot reference, hash, arbitrary JSON
+pointer, or private-source locator. The protocol artifact and peer response
+both have aggregate byte ceilings; publication rejects oversized artifacts and
+serving rejects an oversized response rather than emitting a partial result.
+
+The route accepts at most 16 KB. Caddy applies an endpoint-scoped body cap,
+and the application rejects an oversized declared `Content-Length` or streams
+an undeclared/chunked body only until the same cap. Authentication is resolved
+before any JSON decoding. After successful authentication, empty or malformed
+JSON receives a private `400`; oversized input receives a private `413`.
+
+Its `t1` HMAC cursor binds the sorted explicit cohort, requested page limit,
+authenticated caller subject and tier, and committed generation. A changed
+cohort, limit, caller, or tier receives private `400`; a changed generation
+receives private `409` and requires restart. `BIOCATALYST_CURSOR_SECRET` may
+make cursor signatures restart-stable when it has at least 32 UTF-8 bytes;
+without it, process-random signing deliberately invalidates cursors on restart.
 
 ## 13. B4D official-v2 prospective change ledger
 

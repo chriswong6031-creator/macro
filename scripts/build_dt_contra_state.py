@@ -69,6 +69,11 @@ def build(stockdata_dir: Path | None = None) -> dict:
 
     # ---------- graceful degradation: absent dir --------------------------------
     if not stockdata_dir.exists():
+        # Bare print, never the logger — the prefixing log format makes GitHub drop
+        # the annotation silently (tests/test_gh_annotation_line_start.py).
+        print(f"::warning title=dt_contra_state::stockdata dir absent ({stockdata_dir}) "
+              "— DEGRADED dt_contra_state.json written (0 tickers); the NW cortex reads "
+              "an empty chip census until the next good run", flush=True)
         log.warning(
             "stockdata dir not found (%s) — emitting degraded dt_contra_state JSON",
             stockdata_dir,
@@ -149,7 +154,23 @@ def build(stockdata_dir: Path | None = None) -> dict:
     states_list.sort(key=lambda r: r["ticker"])
 
     if n_parse_errors:
+        print(f"::warning title=dt_contra_state::{n_parse_errors} stockdata JSON parse "
+              "errors — those tickers dropped from the chip census this run", flush=True)
         log.warning("%d stockdata JSON parse errors (skipped)", n_parse_errors)
+
+    if not universe_n:
+        # Dir exists but holds no readable dict-rooted stockdata JSON — same freeze
+        # shape as the absent-dir path (the committed artifact empties out), just
+        # quieter in the old code: no warning fired at all.
+        print(f"::warning title=dt_contra_state::stockdata dir empty ({stockdata_dir}) — "
+              "0 tickers scanned; dt_contra_state.json written with an empty census",
+              flush=True)
+        log.warning("stockdata dir empty (%s) — 0 tickers scanned", stockdata_dir)
+    elif not states_list:
+        print(f"::warning title=dt_contra_state::no ticker carries a dt_contra chip "
+              f"(universe={universe_n}) — states list empty; the upstream chip emit in "
+              "build_stock_library may be dark", flush=True)
+        log.warning("no dt_contra chip found across %d tickers", universe_n)
 
     output: dict = {
         "asof": asof,
@@ -178,7 +199,14 @@ def build(stockdata_dir: Path | None = None) -> dict:
 #  Entry point
 # ---------------------------------------------------------------------------
 
-def main() -> None:
+def main() -> dict:
+    """Nightly entrypoint (daily.yml run_py). Zero scanned tickers HERE is a real
+    fault — build_site's stock library writes site/stockdata/*.json earlier in the
+    same engine step, and the degraded JSON overwrites the committed artifact with an
+    empty census — so it exits non-zero: run_py only alerts on rc != 0 (the step runs
+    `set +e`, so the job never aborts). Tests and ad-hoc callers use build() directly,
+    which keeps its never-raise contract. A populated-but-chipless universe stays a
+    ::warning at rc 0 — chip sparsity is upstream's fault line, not structural absence."""
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
@@ -196,8 +224,14 @@ def main() -> None:
         ),
     )
     args = parser.parse_args()
-    build(stockdata_dir=args.stockdata_dir)
+    out = build(stockdata_dir=args.stockdata_dir)
+    ok = bool(out.get("universe_n"))
+    if not ok:
+        print("::error title=dt_contra_state::nightly scanned ZERO stockdata tickers — "
+              "see the ::warning above; the committed dt_contra_state.json now holds an "
+              "empty census", flush=True)
+    return {"ok": ok}
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(0 if main()["ok"] else 1)

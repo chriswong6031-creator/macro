@@ -1,0 +1,24 @@
+{
+  "fixture_id": "biocatalyst_d0a_reference_fixture_v1",
+  "synthetic_only": true,
+  "purpose": "Production-shaped visual reference data only. It is not a live source, source receipt, identity graph, model output, or product API payload.",
+  "as_known_at": "2026-08-02T16:00:00Z",
+  "objects": {
+    "trial": {"id": "NCT00000001", "title": "Synthetic therapy protocol with a deliberately long title for responsive review", "phase": "Phase 2", "status": "Recruiting", "enrollment": 184, "source": "ClinicalTrials.gov", "record_age": "6h"},
+    "company": {"id": "company:synthetic-aurora", "name": "Aurora Synthetic Therapeutics", "cash_context": "Unavailable — Capital Structure PIT adapter not connected", "identity_state": "No security inference"},
+    "asset": {"id": "asset:synthetic-01", "name": "SYN-01", "owner_state": "Ambiguous relationship; two reviewed candidates remain separate"},
+    "regulatory": {"id": "application:synthetic-001", "name": "Synthetic application dossier", "source_mix": "Regulator-native fact + company-reported statement kept distinct"}
+  },
+  "evidence": {
+    "source_class": "Registry fact",
+    "completeness": "Partial",
+    "authority": "Research context — no trade call",
+    "locator": "/protocolSection/statusModule/overallStatus",
+    "fact_count": 3,
+    "unresolved_relationship_count": 1,
+    "record_versions": ["v7", "v8", "v9"],
+    "current_version": "v9",
+    "submitted_at": "2026-08-02T15:42:00Z"
+  },
+  "states": ["catalyst_radar", "explorer_dense", "trial_peer_matrix", "company_partial", "asset_ambiguous_identity", "regulatory_mixed_sources", "change_tape_correction", "evidence_thread_expanded", "historical_mode", "source_outage", "locked", "empty"]
+}

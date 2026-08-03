@@ -55,11 +55,19 @@ def _load_closes() -> pd.DataFrame:
     for tier in _TIERS:
         p = config.data_dir() / tier / "_closes_cache.parquet"
         if not p.exists():
+            # Bare print, never the logger — the prefixing log format makes GitHub
+            # drop the annotation silently (tests/test_gh_annotation_line_start.py).
+            print(f"::warning title=dispersion_regime::close cache missing for tier "
+                  f"{tier} ({p}) — tier skipped; regime universe thinner than the "
+                  "board's", flush=True)
             log.warning("close cache missing for tier %s — skipped", tier)
             continue
         try:
             d = pd.read_parquet(p)
         except Exception as e:  # noqa: BLE001
+            print(f"::warning title=dispersion_regime::{tier}/_closes_cache unreadable "
+                  f"({e}) — tier skipped; regime universe thinner than the board's",
+                  flush=True)
             log.warning("%s/_closes_cache unreadable (%s) — skipped", tier, e)
             continue
         d = d.loc[:, ~d.columns.duplicated()]
@@ -125,11 +133,21 @@ def build() -> dict:
             returns = closes.pct_change(fill_method=None).tail(280)
             result = dispersion.assess(returns)
         except Exception as e:  # noqa: BLE001
-            log.warning("dispersion.assess() failed (%s) — emitting degraded JSON", e)
+            print(f"::warning title=dispersion_regime::dispersion.assess() crashed ({e}) "
+                  "— emitting degraded regime.json (state=null)", flush=True)
+            log.warning("dispersion.assess() failed (%s) — emitting degraded JSON", e,
+                        exc_info=True)
 
     # ---------- build output ----------------------------------------------
     if result is None:
-        # Degraded path: sparse universe or assess() failure.
+        # Degraded path: sparse universe or assess() failure. This overwrites the
+        # committed regime.json with state=null — leader radar reads it same-night —
+        # so the degrade must be loud (the silent form of this is how index_leadership
+        # froze for 18 nightlies, PR #4363).
+        print("::warning title=dispersion_regime::assess() produced no state (empty/"
+              "sparse close-cache universe, or the crash above) — DEGRADED regime.json "
+              "(state=null) written; leader radar + pick lab read a null regime until "
+              "the next good run", flush=True)
         log.warning(
             "dispersion.assess() returned None (sparse universe or error) — "
             "emitting degraded regime JSON"
@@ -212,13 +230,24 @@ def build() -> dict:
 #  Entry point
 # ---------------------------------------------------------------------------
 
-def main() -> None:
+def main() -> dict:
+    """Nightly entrypoint (daily.yml run_py). A degraded emit HERE is a real fault —
+    the engine job restores the breadth close caches before this runs, and the
+    degraded JSON overwrites the committed regime.json with state=null for every
+    same-night consumer (leader radar, pick lab) — so it exits non-zero: run_py only
+    alerts on rc != 0 (the step runs `set +e`, so the job never aborts). Tests and
+    ad-hoc callers use build() directly, which keeps its never-raise contract."""
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
     )
-    build()
+    out = build()
+    ok = out.get("state") is not None
+    if not ok:
+        print("::error title=dispersion_regime::nightly wrote a DEGRADED regime.json "
+              "(state=null) — see the ::warning above for the missing input", flush=True)
+    return {"ok": ok}
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(0 if main()["ok"] else 1)
