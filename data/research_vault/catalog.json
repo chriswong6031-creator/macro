@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T22:55:03.789978+00:00",
-  "count": 693,
+  "generated_at": "2026-08-03T23:06:49.630203+00:00",
+  "count": 694,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -48,6 +48,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-ovegn6rwo5n-3ac8f3",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:44:20Z",
+      "summary_points": [
+        "**Earnings/Disinflation Catalyst**: Megacap tech earnings (cloud revenue acceleration, hyperscaler spending) and moderating inflation support Fed rate hold; US-Iran tensions drive oil volatility but energy flows recovery expected.",
+        "**Global Earnings Momentum**: S&P 500 Q2 earnings growth estimate at 20% YoY, Europe Stoxx 600 upgrades, Asia profits rising 72%—fundamentals drive broad equity rally.",
+        "**Yen Vulnerability**: Japan’s coordinated yen-buying (USDJPY 156.7) caps near-term upside but underlying drivers (BoJ normalization, negative real rates) persist; geopolitics and policy flows keep yen weak."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-n5xvtkuy8ik-6f9902",
       "title": "GS FX JPY Intervention",
