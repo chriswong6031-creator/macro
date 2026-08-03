@@ -142,6 +142,7 @@ no new estimators without prereg.
 | Operator held-risk desk (Mastermind repo: lanes, alerts, Discord, outcome ledger) | ✅ separate organism — UNTOUCHED by PSI | PRD §5–§9 (placement ruling) |
 | Email estate: ledger-first sender (idempotent, suppression/opt-out law, queue+drain, mail-off mode) + RFC 8058 one-click unsubscribe | ✅ LIVE (the digest waves are just a new caller) | `app/mailer.py` (SEE program), `app/unsubscribe.py`, `email_log`/`email_prefs`/`email_suppression` tables |
 | Per-ticker news + alt-data bundle (`intelligence.by_ticker.v2`) | ✅ LIVE nightly (§19.6 surfaces it) | `engine/intelligence.py` → `site/intelligence/by_ticker.json`; `engine.financial_news` → `site/news/by_ticker.json` |
+| News machine: ticker-tagged multi-source feed (Polygon/Finnhub/GDELT), deterministic quality score + dedup, `qbus` event store, optional `news_llm` summary layer, breaking_summary citation gate, clustering floor | ✅ LIVE (TNI §19.6 composes it — build the delta, not the machine) | `engine/financial_news.py`, `engine/news_common.py`, `engine/news_llm.py`, `engine/marketing/breaking_summary.py`, intelligence desk (#4006) |
 | Company Intelligence public teaser endpoint (verified allowlisted projection, CDN-safe) + authenticated context contracts | ✅ LIVE (§19.7 consumes it) | `app/company_intelligence.py`; `engine/company_intelligence/` (`context_only` authority) |
 | Onboarding flow assets (landing signup estate) | ✅ LIVE (§19.4 adds a portfolio step) | `templates/onboard.js` / `onboard.css` (+ site copies; Caddy immutable list — ?v= restamp law applies) |
 
@@ -672,14 +673,21 @@ Numbers arrive with meaning (Law 3); receipts to LENS/Tier-2.
 | **W11 — Daily digests** | §19.5: change-detection composer (brief-v2 builders reused), mailer integration (`cls='marketing'`, idem per user-day), prefs toggle + account UI, digest-cursor table (DDL+RLS in-PR), quiet-day suppression, weekly heartbeat default. (macro) | Gate 12 end-to-end: opt-in → change → ONE email → one-click unsub honored (live test); no position values in email_log/server logs (grep gate); mail-off mode degrades clean |
 | **W12 — Ticker news feeds** | §19.6: portfolio news panel + drawer rows (anon client-join; packet `news` for accounts); news.html per-ticker feed views + "your book" filter. (macro) | ACTIVE_BUILD_MAP re-check vs live news/x-growth lanes recorded in-PR; verbatim display only (no LLM re-summary — A7) |
 | **W13 — Live layer + web-app polish** | §19.8: `/api/pfolio/quotes` batch endpoint (quote-ladder wrap, rate-limited, delay-honest), visible-tab polling, optimistic-edit recompute, per-name expandable rows + `ilx` sparklines, Company-Intel drawer card (§19.7), Terminal deep links. (macro + tiny terminal link PR) | Quote labels carry the honest delay vocabulary; hidden-tab pause proven; reduced-motion honored; endpoint added to the restart regex + self-heal test |
+| **W14 — TNI data plane** | §19.6.1: extend the financial_news bake with category tagging (`cats[]`: deterministic rules + our filings/analyst/earnings planes as first-class rows), per-ticker `ticker_news.v1` artifact (headlines cap, cluster-dedup, day grouping + `chg_pct` stamp from closes), R2 publish + `/api/news/ticker/{T}` read-through (+batch). (macro) | Price stamps hand-verified on fixtures; artifact size + nightly runtime budget printed; endpoint in restart regex + self-heal test; ACTIVE_BUILD_MAP re-check vs news/x-growth lanes recorded in-PR |
+| **W15 — Key Facts curation lane** | §19.6.2: nightly LLM lane behind the breaking_summary-class citation gate (digit-verbatim, stance-ban, deterministic fallback), material-news qualifier, cluster→bullet, source chips, budget cap + ceiling, append-only day timeline. (macro) | Zero LLM calls in tests (env-gate pattern); gate violations provably fall back (fixture with a fabricated digit → deterministic lead sentence); A7/NAR-R4 fence note in PR; cost log printed per night |
+| **W16 — TNI surfaces** | §19.6.3: Terminal Analysis-pane News section (Key facts / Headlines + category chips, timeline idiom); macro reader component (stock pages + portfolio drawer + news.html?t= views + "your book" filter); packet/digest `news` upgrade; X-growth supply-feed publication note. (macro + terminal; design-first, Luna) | Crops en+zh both idioms; east-flip-safe move colors; verbatim-content law (no re-summarization client-side); news.html lane collision check |
 | Come-backs (tracked, not built now) | Foreign factor models (WRI §5-A: Asia-close collection lane first); realized-corr client-side bake; UWP W2.5 multi-list UI; alerts/sentinel symbol-only extension (B6 pattern); regime-conditioned thresholds study; tape-character read prereg; deterministic fundamentals score-leg from forensics planes (§19.7); macro-quotes Worker upgrade (billing) | Each needs its own small charter/PR |
 
 Sequencing: W1 → W2 → W3 form the critical path. W4/W5/W6 are parallelizable after W2
 (W4's terminal render rides W3). W7/W8 independent after W2; **W9 requires W7 (ledger
 live) + W8 (sanity memo)**; W10 requires W9 (the score is the landing hook) and lands
 the packet re-tier with it; W11 requires W2+W3 (diff source + composer) and should
-follow W9 so digests carry the score; W12/W13 parallelizable after W2. Suggested order
-after the critical path: W7 → W8 → W9 → W10/W11 in parallel → W12/W13 → W4/W5/W6
+follow W9 so digests carry the score; W12/W13 parallelizable after W2. TNI is its own
+mini-chain W14 → W15 → W16, startable any time after W2 — the news.html + Terminal
+reader halves are independent of the portfolio waves entirely and may ship early if the
+operator wants the news product first (W16's drawer/digest touchpoints ride W3's
+packet). Suggested order after the critical path: W7 → W8 → W9 → W10/W11 in parallel →
+W14/W15 → W12/W16 → W13 → W4/W5/W6
 interleaved where idle. Every macro PR: label `merge-on-green` and let the sweeper land
 it; every terminal PR: the terminal repo's own definition-of-done (PR → CI → merge →
 `/opt/terminal/terminal-build.sh` deploy → live verify at app.mastermind-x.com).
@@ -689,10 +697,11 @@ it; every terminal PR: the terminal repo's own definition-of-done (PR → CI →
 - **Subagents**: run this program with **Sol, Luna, and Terra** as standing lanes —
   **Sol** = data/engine lanes (W2 ctx bake, W3 composer + goldens, W7 ledger, W9 score
   math, W11 digest engine, W13 quotes endpoint: pure functions, tests-first, budget
-  stamps); **Luna** = design + UI lanes (the §13/§19 design-spec-first waves: mockups →
-  crops → exact markup/CSS pinned → then build; Luna owns the score hero, the landing
-  page, the onboarding step, the web-app polish, and visual quality on BOTH idioms —
-  never ships a surface without the crops); **Terra** = verification/QA lanes
+  stamps — plus the W14 TNI bake and W15 curation lane); **Luna** = design + UI lanes
+  (the §13/§19 design-spec-first waves: mockups → crops → exact markup/CSS pinned →
+  then build; Luna owns the score hero, the landing page, the onboarding step, the
+  web-app polish, the W16 news reader/timeline on BOTH idioms — never ships a surface
+  without the crops); **Terra** = verification/QA lanes
   (field-presence census, golden parity harness, advice-filter/privacy/scope-fence grep
   gates, email-compliance live tests, anon-funnel e2e, live verification passes, the §0
   gate checklist on every PR). The main Codex loop plans, adjudicates, reviews Luna's
@@ -774,6 +783,11 @@ walls in the freebie flow (gate 11).
 3. **User conviction tag**: ships in W6 as an optional column. DEFAULT: ship.
 4. **Terminal risk panels placement**: below the PR #170 brief, above the Conviction
    Book. DEFAULT: as stated (Luna may re-order within the page with crops as evidence).
+5. **TNI knobs (§19.6)**: material-news qualifier = quality-score floor + cluster ≥1
+   top-tier source; Key Facts model = cheapest capable tier, batched, hard nightly
+   ceiling with carry-to-fallback; headlines cap 50/ticker; key_facts served window
+   90d; zh fact text = deterministic template + translated verbatim quotes only in v1
+   (full zh LLM parity is a v1.5 knob). DEFAULT: as stated.
 
 ---
 
@@ -854,22 +868,81 @@ degrade to skip cleanly.
   per-name sections inside one daily email, never N separate emails per user per day
   (frequency cap = 1 digest/day hard).
 
-### 19.6 Per-ticker news intelligence (surface + news.html build-out)
+### 19.6 Ticker News Intelligence (TNI) — the two-mode reader + Key Facts timeline
+### (operator directive round 3, 2026-08-03 — TradingView-benchmark assessment: FEASIBLE)
 
-The data plane EXISTS: `engine/intelligence.py` → `site/intelligence/by_ticker.json`
-(schema `intelligence.by_ticker.v2` — news flow from `engine.financial_news` →
-`site/news/by_ticker.json`, + alt-data signal side-by-side). PSI:
-- **Portfolio surface**: "News touching your book" panel + per-name drawer news rows
-  (headline, source, when, link), client-joined from the public JSON for anon, packet
-  `news` section for accounts (composer filters to holdings). Display-tier verbatim; no
-  LLM re-summarization in v1 (A7; the news system's own scored/calibrated fields render
-  as shipped).
-- **news.html ticker feeds**: build the per-ticker news view INTO the news estate —
-  `news.html?t=NVDA`-style filter or per-ticker anchor sections fed by `by_ticker.json`,
-  + a "your book" filter for signed-in users (client-side join of their symbols; no
-  server render). Check active x-growth/news lanes in ACTIVE_BUILD_MAP before this wave
-  (the news rail + wire lanes are hot).
-- **Digest reuse**: the packet `news` section is the digest's news block source.
+**Feasibility verdict (assessed against the repo 2026-08-03): YES — most of the machine
+exists.** The reference product (two reading modes: a raw **Headlines** feed with
+category filters, and a curated **Key Facts** day-timeline where each day carries the
+stock's move and 1–N sourced fact bullets) decomposes onto substrate we already run:
+
+| Reference capability | Our substrate (exists) | Gap to build |
+|---|---|---|
+| Per-ticker tagged headlines, many sources | `engine/financial_news.py` — Polygon `/v2/reference/news` (**pre-ticker-tagged corpus**), Finnhub, GDELT; deterministic `news_common.quality_score` (source tier × relevance × recency − clickbait) + dedup; per-ticker index already published (`site/news/by_ticker.json`) | Deepen retention per ticker; category tags |
+| Category filter tabs (Earnings/Divs/Buybacks/M&A/Insider/Analysts) | Earnings wire + earnings detector (x-growth), `engine/analyst_revisions.py`, insider/congress filings desks, capital-structure verified events | Deterministic keyword/rule tagger at ingest (`cats[]` per item) + OUR OWN regulatory rows as first-class entries (insider/analyst tabs fed by our filings data, not just headlines — better than the benchmark) |
+| Key Facts LLM curation w/ source chips | `engine.news_llm` layer (optional summaries + importance re-rank, "never gates a headline in or out"); `engine/marketing/breaking_summary.py` — the CITATION GATE: every digit-token verbatim in source, stance vocab banned, deterministic fallback, env-gated LLM; `qbus` item/event store + `news_events` identity layer; intelligence-desk clustering floor (#4006) for same-story grouping | The per-ticker nightly curation lane (below) |
+| Day grouping + that day's stock move | `data/stocks/*.parquet` closes at bake time | Pure-arithmetic join (close-to-close %) — trivial |
+
+The benchmark's Key Facts is almost certainly LLM-assisted; ours is lawful because every
+generated bullet passes the breaking_summary-class gates and carries its source chips.
+
+**19.6.1 Data plane — `ticker_news.v1`** (nightly lane, OFF the render path, R2 home —
+the per-ticker corpus is too heavy for `site/` git):
+- Per ticker with material coverage: `{headlines: [{ts, title, src, url, cats[],
+  cluster_n}], key_facts: [{date, close, chg_pct, title?, facts: [{text_en, text_zh?,
+  srcs[]}]}]}` — headlines capped (~50, cluster-deduped with `+N` source counts like the
+  benchmark), key_facts append-only forward by day (~90d window served; full archive
+  retained in the store).
+- Served via a new unauthenticated read-through `GET /api/news/ticker/{T}` (the
+  `app/hub.py` R2+TTL pattern; batch variant for books ≤60 syms). Endpoint joins the
+  restart-regex law (W3 gate). The compact `intelligence.by_ticker.v2` stays as the
+  cheap counts join for ctx/packet.
+- The existing live news rail machinery covers "today" freshness on news.html; the
+  per-ticker artifact updates nightly in v1 (intraday per-ticker appends = v1.5
+  come-back riding the existing live-rail plane, not a new one).
+
+**19.6.2 Key Facts curation lane (the LLM part — fenced):**
+- Runs nightly AFTER the news bake, only for tickers with ≥1 qualifying story that day
+  (`quality_score` floor + cluster size — most of the 1,500 universe has zero material
+  news most days, which is what makes this affordable; budget cap + per-night ceiling
+  printed in the job log; on cap breach the remainder carries to the deterministic
+  fallback).
+- Per (ticker, day): cluster same-story items → per-cluster ONE fact bullet via the
+  news_llm/breaking_summary path — **citation gate mandatory** (every digit-token
+  verbatim in source text; stance/advice vocab banned; deterministic
+  lead-sentence fallback on any violation or LLM failure), source chips per bullet,
+  cheap model tier, batched.
+- **Fences (binding):** the bullets are display CONTENT, never keys — no organ state,
+  no escalation, no tag feeding anything scored (A7; NAR-R4 frame-tag ban; CSP-R3's
+  killed LLM contagion-tagging stays dead; this lane writes prose + receipts only).
+  The day's `chg_pct` prints NEXT TO the day's facts as juxtaposed facts — copy never
+  asserts causation ("what happened that day", not "why it moved").
+- The (day, facts, move) archive is a genuinely valuable **event-study substrate** —
+  recorded as research-tier byproduct; any signal use needs its own prereg (display
+  now, science later).
+
+**19.6.3 Surfaces (all three, one artifact):**
+- **Terminal — Analysis pane News section** (new tab set: `Key facts | Headlines`,
+  category chips on Headlines): consumes `/api/news/ticker/{T}` via a same-origin proxy
+  route (nw/route.ts pattern). Timeline idiom per the benchmark: day nodes on a spine,
+  date + close + signed % (via `var(--up)/--down)` — east-flip safe), fact bullets with
+  source chips. v5/obs tokens; en+zh.
+- **Macro — portfolio drawer + stock pages**: drawer news rows (latest headlines +
+  latest key-facts day) already chartered above; `site/stocks/<T>.html` static dossiers
+  gain the Key Facts timeline section (render-time inline of the recent window from the
+  data copy, budget-checked) + client hydration for freshness.
+- **news.html**: the per-ticker feed views ("news.html?t=NVDA" + "your book" filter)
+  render BOTH modes with the same reader component (macro idiom twin of the terminal
+  component; LENS receipts for methodology).
+- **Portfolio packet/digest**: the `news` section upgrades to carry the latest
+  key-facts day per holding (digest shows "MSFT: 3 facts yesterday, +3.0%").
+- **X Growth**: `ticker_news.v1` becomes an available SUPPLY feed for the content
+  pipeline's existing admission lanes — no posting wired here (the queue-bypass law:
+  generation/admission laws live in the marketing estate; we only publish the artifact).
+
+Collision check before building: the news rail + x-growth wire lanes are hot
+(ACTIVE_BUILD_MAP re-check in-wave), and `engine.news_llm`'s existing importance re-rank
+must not be double-applied.
 
 ### 19.7 Company Intelligence context (the "insane" differentiator)
 
