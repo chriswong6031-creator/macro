@@ -1,0 +1,62 @@
+
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 'Inter',-apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:24px 0 28px; }
+  a { text-decoration:none; }
+  .wrap { padding:16px; }
+  @media (min-width:1100px){ .wrap{ padding:18px max(28px,calc((100vw - 1680px)/2)); } }
+  .hm-head { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 22px; margin:10px 2px 16px; }
+  .hm-head h1 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.015em; }
+  .hm-head .sub { color:var(--muted); font-size:12.5px; margin-top:5px; max-width:74ch; line-height:1.5; }
+  .hm-foot { color:var(--muted); font-size:11px; margin:14px 2px 0; line-height:1.6; }
+  /* Live-feed badge: populated by live.js when LIVE_FEED_LABEL is set.
+     Hidden (no layout footprint) when the span is empty (no live feed). */
+  .hm-live-badge { display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; color:var(--muted); font-weight:600;
+    background:color-mix(in srgb,#d97706 14%,transparent);
+    border:1px solid color-mix(in srgb,#d97706 35%,transparent);
+    color:#b45309; border-radius:7px; padding:3px 9px; margin-top:6px;
+    white-space:nowrap; align-self:flex-end; }
+  .hm-live-badge:empty { display:none; }
+  /* Hidden live-chg spans that live.js writes to (observer then recolors the tile) */
+  .hm-live-chg { display:none !important; }
+
+  /* ── the server-rendered summary layer (W2 spec §A2.3) ────────────────────
+     Deliberately class-compatible with heatmap.js's own dashboard chrome: the
+     renderer injects the .hx-* stylesheet at boot, so the SSR blocks and the
+     live blocks are the same pixels rather than a second, drifting copy. Only
+     the two rules below are SSR-specific. heatmap.js removes #hm-ssr the moment
+     the live map draws — and LEAVES it standing when the fetch fails, so a
+     visitor who never gets the tile map still keeps the breadth read. */
+  #hm-ssr { margin-bottom:2px; }
+  #hm-ssr .hx-boards { margin-top:14px; }
+
+  /* ── gate elements ────────────────────────────────────────────────────────
+     Transliterated from templates/special_situations.html.j2 (the shipped
+     reference) into THIS page's token vocabulary. That page defines --card /
+     --grid / --ink / --faint / --blue locally; this one has no local token
+     block at all and inherits theme.css, where the same roles are --panel /
+     --line / --text / --muted / --link. Pasting the reference verbatim would
+     resolve every colour to nothing — a note that renders transparent and
+     still "works", which is exactly the failure a review misses.
+
+     #8b5cf6 (the lock violet) stays a hard-coded hex, identical to the
+     reference mockup. The CTA gradient is brand blue → violet and never signal
+     amber (terminal-paywall lesson). The gate elements carry NO directional
+     colour: under html[data-lang="zh"] theme.css swaps --up/--down, and a wall
+     tinted by state would invert its meaning with the language. */
+  .gate-note { display:flex; align-items:flex-start; gap:8px; margin:20px 0 4px;
+    padding:11px 14px; border-radius:12px; font-size:12.5px; line-height:1.5; color:var(--muted);
+    background:color-mix(in srgb,#8b5cf6 7%,transparent);
+    border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent); }
+  .gate-note svg { width:14px; height:14px; flex:none; margin-top:2px; color:#8b5cf6; }
+  .gate-note a { color:var(--link); border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); }
+  .cta-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:16px;
+    padding:14px 16px; border-radius:14px; background:var(--panel); border:1px solid var(--line); }
+  .cta-txt { flex:1; min-width:220px; font-size:12.5px; color:var(--muted); line-height:1.5; }
+  .cta-txt b { color:var(--text); font-weight:700; }
+  .tw-btn { display:inline-flex; align-items:center; justify-content:center; padding:10px 22px;
+    border-radius:12px; font-size:13px; font-weight:700; color:#fff;
+    background:linear-gradient(135deg,var(--link),#8b5cf6);
+    box-shadow:0 8px 22px -10px color-mix(in srgb,#8b5cf6 70%,transparent); }
+  .tw-note { font-size:11px; color:var(--muted); }
