@@ -486,6 +486,13 @@ jobs:
         run: pip install pytest pyyaml jinja2 fastapi httpx
       - name: tier-preview split contract (no paid row in the free shell)
         run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py -q
+      - name: public dashboard preview-tier contracts (anon shell allowlist + controller caps)
+        # Found unwired by the 2026-08-02 adversarial review of #4331: the suite
+        # pins the public/anon split for the dashboard shells (site_access.yml
+        # allowlist, tier_preview.js 1/3/full caps, gate wiring) and ran in NO
+        # workflow. tests/test_site_access_boundary.py derives this job's inputs
+        # into ci.yml's paths filter, so this line also makes the suite reach.
+        run: python -m pytest tests/test_public_dashboard_preview.py -q
       - name: paywall fail-closed contract (incl. enforced-early payload lane)
         run: python -m pytest tests/test_paywall.py tests/test_api_paywall.py -q
       - name: static serving boundary (Caddy <-> site_access.yml, no leaked artifacts)
