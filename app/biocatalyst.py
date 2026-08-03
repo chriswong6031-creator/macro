@@ -68,6 +68,10 @@ _PEER_SET_CURSOR_DOMAIN = b"macro-biocatalyst:trial-peer-sets:cursor-key:v1"
 _PEER_SET_CURSOR_PROCESS_KEY = os.urandom(32)
 _PEER_SET_DEFAULT_LIMIT = 50
 _PEER_SET_MAX_BODY_BYTES = 16 * 1024
+_TRIAL_SCREEN_CURSOR_VERSION = "s1"
+_TRIAL_SCREEN_CURSOR_DOMAIN = b"macro-biocatalyst:trial-screen:cursor-key:v1"
+_TRIAL_SCREEN_CURSOR_PROCESS_KEY = os.urandom(32)
+_TRIAL_SCREEN_MAX_CURSOR_OFFSET = 10_000
 _PROSPECTIVE_ACCRUAL_STATES = frozenset(("baseline_established", "accruing"))
 _PROSPECTIVE_CHANGE_KINDS = frozenset(
     (
@@ -192,6 +196,22 @@ def _publication_runtime() -> tuple[type[Exception], type[Any]]:
     )
 
     return PublicationError, PublicGenerationPublisher
+
+
+def _trial_screen_runtime() -> tuple[type[Exception], Any, Any]:
+    """Load the pure screen contract without adding a second data reader."""
+
+    from engine.biocatalyst.trial_screen import (  # noqa: PLC0415
+        TrialScreenError,
+        build_trial_screen_read_model,
+        canonicalize_trial_screen_filters,
+    )
+
+    return (
+        TrialScreenError,
+        canonicalize_trial_screen_filters,
+        build_trial_screen_read_model,
+    )
 
 
 def _verify_serving_runtime() -> None:
@@ -894,9 +914,16 @@ async def _read_peer_set_payload(request: Request) -> Any:
 def _peer_set_caller_binding(user: Mapping[str, Any]) -> dict[str, str]:
     """Bind cursors to the stable authenticated subject and paid tier only."""
 
-    user_id = _text(user.get("id"), maximum=256)
-    entitlement = _text(user.get("tier"), maximum=80)
-    if user_id is None or entitlement is None:
+    user_id = user.get("id")
+    entitlement = user.get("tier")
+    if (
+        not isinstance(user_id, str)
+        or not user_id.strip()
+        or len(user_id) > 256
+        or not isinstance(entitlement, str)
+        or not entitlement.strip()
+        or len(entitlement) > 80
+    ):
         raise _unavailable()
     return {"subject": user_id, "entitlement": entitlement}
 
@@ -992,6 +1019,132 @@ def _decode_peer_set_cursor(
         query_digest=query_digest,
     )
     key = cursor_key if cursor_key is not None else _peer_set_cursor_key()
+    expected_signature = hmac.new(key, payload, sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected_signature):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    return offset, generation_digest, query_digest
+
+
+def _trial_screen_query_binding(
+    *, filters: Mapping[str, Any], page_limit: int, user: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Bind every normalized screen selector to one authenticated caller."""
+
+    expected = {
+        "sponsor",
+        "intervention",
+        "study_type",
+        "phase",
+        "status",
+        "condition",
+        "primary_completion_from",
+        "primary_completion_to",
+    }
+    if set(filters) != expected:
+        raise _unavailable()
+    return {
+        "sponsor": filters["sponsor"],
+        "intervention": filters["intervention"],
+        "study_type": filters["study_type"],
+        "phase": filters["phase"],
+        "status": filters["status"],
+        "condition": filters["condition"],
+        "primary_completion_from": filters["primary_completion_from"],
+        "primary_completion_to": filters["primary_completion_to"],
+        "limit": page_limit,
+        "caller": _peer_set_caller_binding(user),
+    }
+
+
+def _trial_screen_cursor_key() -> bytes:
+    """Return the screen-only HMAC key before any public projection read."""
+
+    configured = os.environ.get("BIOCATALYST_CURSOR_SECRET")
+    if configured is None:
+        return _TRIAL_SCREEN_CURSOR_PROCESS_KEY
+    try:
+        raw = configured.encode("utf-8")
+    except UnicodeEncodeError:
+        raise _unavailable() from None
+    if len(raw) < 32:
+        raise _unavailable()
+    return hmac.new(raw, _TRIAL_SCREEN_CURSOR_DOMAIN, sha256).digest()
+
+
+def _trial_screen_cursor_payload(
+    offset: int, *, generation_digest: str, query_digest: str
+) -> bytes:
+    return ":".join(
+        (
+            _TRIAL_SCREEN_CURSOR_VERSION,
+            str(offset),
+            generation_digest,
+            query_digest,
+        )
+    ).encode("ascii")
+
+
+def _encode_trial_screen_cursor(
+    offset: int,
+    *,
+    generation_id: str,
+    query_binding: Mapping[str, Any],
+    cursor_key: bytes | None = None,
+) -> str:
+    """Encode an opaque screen cursor without filter, caller, or generation text."""
+
+    if (
+        not isinstance(offset, int)
+        or isinstance(offset, bool)
+        or offset < 0
+        or offset > _TRIAL_SCREEN_MAX_CURSOR_OFFSET
+    ):
+        raise ValueError("offset must be a bounded non-negative integer")
+    payload = _trial_screen_cursor_payload(
+        offset,
+        generation_digest=_opaque_digest({"generation_id": generation_id}),
+        query_digest=_opaque_digest(dict(query_binding)),
+    )
+    key = cursor_key if cursor_key is not None else _trial_screen_cursor_key()
+    signature = hmac.new(key, payload, sha256).hexdigest()
+    return base64.urlsafe_b64encode(payload + b":" + signature.encode("ascii")).decode(
+        "ascii"
+    ).rstrip("=")
+
+
+def _decode_trial_screen_cursor(
+    cursor: str | None, *, cursor_key: bytes | None = None
+) -> tuple[int, str | None, str | None]:
+    """Authenticate an s1 cursor before opening the committed generation."""
+
+    if not cursor:
+        return 0, None, None
+    if len(cursor) > 384 or not re.fullmatch(r"[A-Za-z0-9_-]+", cursor):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    try:
+        raw = base64.urlsafe_b64decode((cursor + "=" * (-len(cursor) % 4)).encode("ascii"))
+        version, offset_text, generation_digest, query_digest, signature = raw.decode(
+            "ascii"
+        ).split(":")
+        offset = int(offset_text)
+    except (ValueError, UnicodeError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS) from exc
+    if (
+        version != _TRIAL_SCREEN_CURSOR_VERSION
+        or not re.fullmatch(r"[0-9]+", offset_text)
+        or offset < 0
+        or offset > _TRIAL_SCREEN_MAX_CURSOR_OFFSET
+        or not re.fullmatch(r"[0-9a-f]{64}", generation_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", query_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", signature)
+    ):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    payload = _trial_screen_cursor_payload(
+        offset,
+        generation_digest=generation_digest,
+        query_digest=query_digest,
+    )
+    key = cursor_key if cursor_key is not None else _trial_screen_cursor_key()
     expected_signature = hmac.new(key, payload, sha256).hexdigest()
     if not hmac.compare_digest(signature, expected_signature):
         raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
@@ -3313,6 +3466,148 @@ def trial_prospective_changes(
             "prospective_changes": page,
         }
     )
+    return _response(payload)
+
+
+@router.get("/api/biocatalyst/v1/trials:screen")
+def trial_screen(
+    sponsor: str | None = None,
+    intervention: str | None = None,
+    study_type: str | None = None,
+    phase: str | None = None,
+    status: str | None = None,
+    condition: str | None = None,
+    primary_completion_from: str | None = None,
+    primary_completion_to: str | None = None,
+    cursor: str | None = None,
+    limit: str = "50",
+    _user: dict = Depends(require_site_full_user),
+) -> JSONResponse:
+    """Screen the current committed trial cut using literal source facts only.
+
+    This route deliberately remains separate from the legacy ``/trials``
+    query surface.  It performs no ontology expansion, issuer or security
+    resolution, ranking, catalyst inference, forecasting, or alerting.
+    """
+
+    raw_filters = {
+        "sponsor": _query_text(sponsor, name="sponsor", maximum=240),
+        "intervention": _query_text(
+            intervention, name="intervention", maximum=240
+        ),
+        "study_type": _query_text(study_type, name="study_type", maximum=80),
+        "phase": _query_text(phase, name="phase", maximum=80),
+        "status": _query_text(status, name="status", maximum=80),
+        "condition": _query_text(condition, name="condition", maximum=240),
+        "primary_completion_from": primary_completion_from,
+        "primary_completion_to": primary_completion_to,
+    }
+    parsed_from = _query_iso_date(
+        primary_completion_from,
+        name="primary_completion_from",
+    )
+    parsed_to = _query_iso_date(
+        primary_completion_to,
+        name="primary_completion_to",
+    )
+    if parsed_from is not None and parsed_to is not None and parsed_from > parsed_to:
+        raise HTTPException(
+            status_code=400,
+            detail="invalid primary completion range",
+            headers=_PRIVATE_HEADERS,
+        )
+    raw_filters["primary_completion_from"] = (
+        parsed_from.isoformat() if parsed_from is not None else None
+    )
+    raw_filters["primary_completion_to"] = (
+        parsed_to.isoformat() if parsed_to is not None else None
+    )
+    page_limit = _query_limit(limit)
+    TrialScreenError, canonicalize_filters, build_read_model = (
+        _trial_screen_runtime()
+    )
+    try:
+        filters = canonicalize_filters(raw_filters)
+    except TrialScreenError:
+        raise HTTPException(
+            status_code=400,
+            detail="invalid trial screen query",
+            headers=_PRIVATE_HEADERS,
+        ) from None
+
+    query_binding = _trial_screen_query_binding(
+        filters=filters,
+        page_limit=page_limit,
+        user=_user,
+    )
+    # Authenticate syntax, signature, query, and caller binding before opening
+    # the pointer-bound public generation.
+    cursor_key = _trial_screen_cursor_key()
+    offset, cursor_generation_digest, cursor_query_digest = (
+        _decode_trial_screen_cursor(cursor, cursor_key=cursor_key)
+    )
+    expected_query_digest = _opaque_digest(query_binding)
+    if cursor_query_digest is not None and not hmac.compare_digest(
+        cursor_query_digest,
+        expected_query_digest,
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="cursor query mismatch",
+            headers=_PRIVATE_HEADERS,
+        )
+
+    projection, _operational = _read_bundle()
+    generation = getattr(projection, "generation", None)
+    generation_id = getattr(generation, "generation_id", None)
+    trials = getattr(projection, "trials", None)
+    if not isinstance(generation_id, str) or not generation_id:
+        raise _unavailable()
+    expected_generation_digest = _opaque_digest({"generation_id": generation_id})
+    if cursor_generation_digest is not None and not hmac.compare_digest(
+        cursor_generation_digest,
+        expected_generation_digest,
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="trial data changed; restart pagination",
+            headers=_PRIVATE_HEADERS,
+        )
+    if isinstance(trials, (str, bytes)) or not isinstance(trials, Sequence):
+        raise _unavailable()
+
+    publication_context = {
+        "as_of": getattr(generation, "last_success_at", None),
+        "last_success_at": getattr(generation, "last_success_at", None),
+        "source_dataset_timestamp_raw": getattr(
+            generation, "source_dataset_timestamp_raw", None
+        ),
+        "configured_nct_count": getattr(
+            generation, "configured_nct_count", None
+        ),
+        "observed_nct_count": getattr(generation, "observed_nct_count", None),
+    }
+
+    def next_cursor_factory(next_offset: int) -> str:
+        return _encode_trial_screen_cursor(
+            next_offset,
+            generation_id=generation_id,
+            query_binding=query_binding,
+            cursor_key=cursor_key,
+        )
+
+    try:
+        payload = build_read_model(
+            trial_snapshots=trials,
+            publication_context=publication_context,
+            filters=filters,
+            offset=offset,
+            limit=page_limit,
+            next_cursor_factory=next_cursor_factory,
+        )
+    except TrialScreenError as exc:
+        log.warning("BioCatalyst trial screen projection unavailable (%s)", exc)
+        raise _unavailable() from None
     return _response(payload)
 
 

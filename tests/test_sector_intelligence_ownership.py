@@ -134,7 +134,7 @@ def test_ownership_policy_is_one_writer_and_fail_closed() -> None:
     assert registry["schema"] == "sector_intelligence_ownership.v1"
     assert registry["status"] == "f0_reconciled_partial_freeze"
     assert registry["reconciled_against_commit"] == (
-        "8bd108d3084825ec03e18a620095da2ac1d192f9"
+        "e124f4ed2edcf77a82295c78f4feabc6c3e7bc90"
     )
     policy = registry["policy"]
     assert policy["one_writer_required"] is True
@@ -264,6 +264,7 @@ def test_f0_read_adapter_slots_are_exact_and_only_declared_facts_readers_are_eli
     assert trial["point_in_time_scope"] == "committed_current_public_generation"
     assert "no_model_or_signal_authority" in trial["limitations"]
     assert {
+        "trial_screen_read_model.v1",
         "trial_protocol_projection.v1",
         "trial_peer_set.v1",
     } <= set(trial["output_contracts"])
