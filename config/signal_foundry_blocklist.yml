@@ -423,13 +423,13 @@ entries:
   - id: BL-G014
     match:
       any_of:
-        - 'fused.{0,30}position.{0,30}composite'
+        - 'fused.{0,30}composite.{0,30}risk'
     reason: >
-      FORBIDDEN — aggregates are printed lane counts + named role
-      ladders only. (PRD-R1 placement exclusivity struck by operator
-      override 2026-07-18, PRD Amendment 1 — user-facing display-tier
-      watchlist+por
-    source: 'PRD-R2 + Amendment 1, `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md`; UWP-R1..R7, `UNIFIED_WATCHLIST_PORTFOLIO_MASTERPLAN_BY_FABLE.md`'
+      FORBIDDEN — the authority half of PRD-R2 stands in full.
+      **Amendment 2 (operator override 2026-08-03)**: the user-facing
+      DISPLAY-TIER composite (Portfolio Health Score + sub-scores) on
+      watchlist/portf
+    source: 'PRD-R2 + Amendments 1–2, `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md` §13; PSI §3.1, `PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md`; UWP-R1..R7'
 
   - id: BL-G015
     match:
