@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T11:05:24.215712+00:00",
-  "count": 659,
+  "generated_at": "2026-08-03T11:20:27.959416+00:00",
+  "count": 660,
   "institutions": [
     "Alger",
     "Amova",
@@ -46,6 +46,21 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-jpjm7habrsh-5ec3bc",
+      "title": "GS Utilities Daily Engie EPS upgrades and a new data center catalyst on the horizon Veolia Environnement Update numbers...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:23:55Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-wfck0fzgrei-8ff7c8",
       "title": "JPM U S Fixed Income Ma",
