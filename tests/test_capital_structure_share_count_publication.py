@@ -51,6 +51,9 @@ class _CountingGuard(publication.InMemoryShareCountHeadGuard):
         self.artifact_reads = 0
         self.artifact_read_keys: list[str] = []
         self.reject_ledger_reads = False
+        self.artifact_seals = 0
+        self.advances = 0
+        self.migrations = 0
 
     def read_artifact(self, *, key: str, max_bytes: int) -> bytes:
         self.artifact_reads += 1
@@ -63,6 +66,31 @@ class _CountingGuard(publication.InMemoryShareCountHeadGuard):
         self.artifact_reads = 0
         self.artifact_read_keys.clear()
         self.reject_ledger_reads = reject_ledgers
+
+    def seal_artifact(self, *, key: str, body: bytes, max_bytes: int) -> None:
+        self.artifact_seals += 1
+        return super().seal_artifact(key=key, body=body, max_bytes=max_bytes)
+
+    def advance(self, *, expected, expected_token, candidate) -> None:
+        self.advances += 1
+        return super().advance(
+            expected=expected,
+            expected_token=expected_token,
+            candidate=candidate,
+        )
+
+    def migrate_v2_to_v3(self, *, expected, expected_token, candidate) -> None:
+        self.migrations += 1
+        return super().migrate_v2_to_v3(
+            expected=expected,
+            expected_token=expected_token,
+            candidate=candidate,
+        )
+
+    def reset_writes(self) -> None:
+        self.artifact_seals = 0
+        self.advances = 0
+        self.migrations = 0
 
 
 def _forbid_local_ledger_reads(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -201,6 +229,324 @@ def test_hmac_domain_witness_authentication_and_exact_noop(tmp_path: Path) -> No
     guard._witness["signature"] = "0" * 64  # explicit hostile external mutation
     with pytest.raises(publication.ShareCountPublicationError, match="authentication"):
         guard.read()
+
+
+def test_v3_migration_preserves_exact_selection_and_binds_scope_and_v2_bytes(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
+    first = _publish(root, signer, guard)
+    v2_head, v2_token = guard.read()
+    assert v2_head is not None and v2_token == "1"
+    guard.reset_artifact_reads()
+    guard.reset_writes()
+
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v3=True,
+    )
+    v3_head, v3_token = guard.read()
+    assert recovered is not None and recovered.receipt_id == first.receipt_id
+    assert v3_head is not None and v3_head["schema"] == publication.WITNESS_V3_SCHEMA
+    assert v3_token == "2"
+    assert publication._head_selection(v3_head) == publication._head_selection(v2_head)
+    assert v3_head["guard_scope"] == guard.guard_scope
+    assert v3_head["migration"] == {
+        "from_schema": publication.WITNESS_V2_SCHEMA,
+        "from_witness_sha256": publication._sha(
+            publication._canonical_bytes(v2_head) + b"\n",
+        ),
+    }
+    assert guard.migrations == 1
+    assert guard.advances == 0
+    assert guard.artifact_seals == 0
+    assert guard.artifact_reads == 0
+
+
+def test_v3_head_signature_is_cross_domain_and_scope_exact(tmp_path: Path) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    first = _publish(root, signer, guard)
+    publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v3=True,
+    )
+    v3_head, _ = guard.read()
+    assert v3_head is not None
+
+    cross_domain = copy.deepcopy(v3_head)
+    cross_domain["signature"] = signer.sign(publication._head_v3_payload(cross_domain))
+    with pytest.raises(publication.ShareCountPublicationError, match="authentication"):
+        publication._validate_head_witness_v3(
+            cross_domain,
+            signer=signer,
+            expected_scope=guard.guard_scope,
+        )
+
+    wrong_scope = copy.deepcopy(v3_head)
+    wrong_scope["guard_scope"]["account_id"] = "f" * 32
+    wrong_scope["signature"] = signer.sign_head_v3(
+        publication._head_v3_payload(wrong_scope),
+    )
+    with pytest.raises(publication.ShareCountPublicationError, match="configured R2 authority"):
+        publication._validate_head_witness_v3(
+            wrong_scope,
+            signer=signer,
+            expected_scope=guard.guard_scope,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("account_id", "f" * 32),
+        ("bucket", "different-bucket"),
+        ("head_key", "capital_structure/share_counts/v2/other_head.json"),
+    ],
+)
+def test_signed_v3_scope_mismatch_full_recovery_reads_no_artifact_or_ledger(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    field: str,
+    value: str,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    source_root = tmp_path / "source"
+    _publish(source_root, signer, guard)
+    publication._recover_share_count_materialization_for_test(
+        root=source_root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v3=True,
+    )
+    hostile, _ = guard.read()
+    assert hostile is not None
+    hostile = copy.deepcopy(hostile)
+    hostile["guard_scope"][field] = value
+    hostile["signature"] = signer.sign_head_v3(
+        publication._head_v3_payload(hostile),
+    )
+    guard._witness = hostile
+    guard.reset_artifact_reads(reject_ledgers=True)
+    guard.reset_writes()
+    _forbid_local_ledger_reads(monkeypatch)
+
+    clean_root = tmp_path / field
+    with pytest.raises(publication.ShareCountPublicationError):
+        publication._recover_share_count_materialization_for_test(
+            root=clean_root,
+            signer=signer,
+            head_guard=guard,
+        )
+    assert guard.artifact_reads == 0
+    assert guard.artifact_seals == guard.advances == guard.migrations == 0
+    assert not (
+        clean_root
+        / "data/capital_structure/share_counts/v2"
+        / publication.POINTER_NAME
+    ).exists()
+
+
+def test_v3_migration_flag_false_leaves_v2_head_and_token_unchanged(tmp_path: Path) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    _publish(root, signer, guard)
+    before, token = guard.read()
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v3=False,
+    )
+    after, after_token = guard.read()
+    assert recovered is not None
+    assert before == after and token == after_token == "1"
+    assert after is not None and after["schema"] == publication.WITNESS_V2_SCHEMA
+
+
+def test_v3_clean_recovery_and_exact_noop_work_but_successor_blocks_before_staging(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    source_root = tmp_path / "source"
+    first = _publish(source_root, signer, guard)
+    publication._recover_share_count_materialization_for_test(
+        root=source_root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v3=True,
+    )
+    clean_root = tmp_path / "clean"
+    clean = publication._recover_share_count_materialization_for_test(
+        root=clean_root,
+        signer=signer,
+        head_guard=guard,
+    )
+    assert clean is not None and clean.receipt_id == first.receipt_id
+    noop = _publish(clean_root, signer, guard)
+    assert noop.published is False and noop.receipt_id == first.receipt_id
+
+    guard.reset_artifact_reads()
+    guard.reset_writes()
+    monkeypatch.setattr(
+        publication,
+        "_stage_ledger",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("v3 successor reached staging"),
+        ),
+    )
+    with pytest.raises(publication.ShareCountPublicationError, match="new publication is disabled"):
+        _publish(clean_root, signer, guard, b'{"generation":2}\n', suffix="b")
+    assert guard.artifact_reads == 0
+    assert guard.artifact_seals == guard.advances == guard.migrations == 0
+
+
+def test_v3_migration_mode_refuses_genesis_before_staging_or_remote_write(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    monkeypatch.setattr(
+        publication,
+        "_stage_ledger",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("v3 genesis reached staging"),
+        ),
+    )
+    with pytest.raises(publication.ShareCountPublicationError, match="cannot create a genesis"):
+        _publish(
+            tmp_path / "workspace",
+            signer,
+            guard,
+            migrate_head_v3=True,
+        )
+    assert guard.read()[0] is None
+    assert guard.artifact_reads == 0
+    assert guard.artifact_seals == guard.advances == guard.migrations == 0
+
+
+def test_old_v2_writer_wins_first_then_next_clean_run_migrates_latest_selection(
+    tmp_path: Path,
+) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    first = _publish(root, signer, guard)
+    first_head, first_token = guard.read()
+    assert first_head is not None and first_token == "1"
+    second = _publish(
+        tmp_path / "old-v2-writer",
+        signer,
+        guard,
+        b'{"generation":2}\n',
+        suffix="b",
+    )
+    second_head, _ = guard.read()
+    assert second_head is not None and second.sequence == 2
+    stale_candidate = publication._migrated_head_witness_v3(
+        first_head,
+        signer=signer,
+        guard_scope=guard.guard_scope,
+    )
+    with pytest.raises(publication.ShareCountPublicationConflict):
+        guard.migrate_v2_to_v3(
+            expected=first_head,
+            expected_token=first_token,
+            candidate=stale_candidate,
+        )
+
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v3=True,
+    )
+    migrated, _ = guard.read()
+    assert recovered is not None and recovered.receipt_id == second.receipt_id
+    assert migrated is not None and migrated["schema"] == publication.WITNESS_V3_SCHEMA
+    assert publication._head_selection(migrated) == publication._head_selection(second_head)
+    assert migrated["migration"]["from_witness_sha256"] == publication._sha(
+        publication._canonical_bytes(second_head) + b"\n",
+    )
+
+
+def test_v3_migration_wins_then_old_v2_writer_rejects_before_head_mutation(
+    tmp_path: Path,
+) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    first = _publish(root, signer, guard)
+    v2_head, v2_token = guard.read()
+    assert v2_head is not None and v2_token == "1"
+    publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v3=True,
+    )
+    v3_head, v3_token = guard.read()
+    assert v3_head is not None and v3_token == "2"
+    with pytest.raises(publication.ShareCountPublicationError, match="shape"):
+        # This is the old binary's read-before-PUT validator: v3 at the same key
+        # is an unsupported schema, so it cannot reach its conditional write.
+        publication._validate_head_witness(v3_head, signer=signer)
+
+    next_receipt, next_body = _synthetic_receipt(
+        signer,
+        2,
+        ledger=b'{"generation":2}\n',
+        ancestor_overrides={
+            0: {
+                "sequence": first.sequence,
+                "receipt_id": first.receipt_id,
+                "receipt_sha256": v2_head["receipt_sha256"],
+                "receipt_byte_length": v2_head["receipt_byte_length"],
+            },
+        },
+    )
+    old_candidate = publication._head_witness(
+        receipt=next_receipt,
+        receipt_body=next_body,
+        signer=signer,
+    )
+    with pytest.raises(publication.ShareCountPublicationError, match="migration fence"):
+        guard.advance(
+            expected=v2_head,
+            expected_token=v2_token,
+            candidate=old_candidate,
+        )
+    assert guard.read() == (v3_head, v3_token)
+
+
+def test_byte_identical_concurrent_v3_migration_is_success(tmp_path: Path) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+
+    class ConcurrentGuard(publication.InMemoryShareCountHeadGuard):
+        def migrate_v2_to_v3(self, *, expected, expected_token, candidate) -> None:
+            observed, token = self.read()
+            assert observed == expected and token == expected_token
+            self._witness = dict(candidate)
+            self._version += 1
+            raise publication.ShareCountPublicationConflict("concurrent identical winner")
+
+    guard = ConcurrentGuard(signer)
+    root = tmp_path / "workspace"
+    first = _publish(root, signer, guard)
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v3=True,
+    )
+    head, token = guard.read()
+    assert recovered is not None and recovered.receipt_id == first.receipt_id
+    assert head is not None and head["schema"] == publication.WITNESS_V3_SCHEMA
+    assert token == "2"
 
 
 def test_input_binding_is_constant_size_and_matches_exact_tail_prefixes() -> None:
@@ -616,8 +962,169 @@ def test_missing_production_environment_is_a_hard_stop(monkeypatch: pytest.Monke
     monkeypatch.delenv("SHARE_COUNT_HEAD_GUARD_BUCKET", raising=False)
     monkeypatch.delenv("R2_CAPITAL_STRUCTURE_BUCKET", raising=False)
     monkeypatch.delenv("R2_BUCKET", raising=False)
+    monkeypatch.delenv("SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID", raising=False)
     with pytest.raises(publication.ShareCountPublicationError, match="unconfigured"):
         publication.recover_share_count_materialization()
+
+
+def test_production_v2_flag_false_allows_missing_account_and_constructs_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from engine.capital_structure import source_store
+
+    monkeypatch.setenv("CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY", "s" * 32)
+    monkeypatch.setenv("SHARE_COUNT_HEAD_GUARD_BUCKET", "fixture")
+    monkeypatch.delenv("SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID", raising=False)
+    monkeypatch.delenv("SHARE_COUNT_HEAD_GUARD_KEY_ID", raising=False)
+    monkeypatch.delenv("CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_KEY_ID", raising=False)
+    calls = []
+    client = object()
+    monkeypatch.setattr(
+        source_store,
+        "_capital_structure_r2_client",
+        lambda: calls.append("constructed") or client,
+    )
+    signer, guard = publication._production_trust(migration_enabled=False)
+    assert signer.key_id == "share-count-head-v2"
+    assert isinstance(guard, publication.R2ShareCountHeadGuard)
+    assert guard._client is client
+    assert guard._guard_scope is None
+    assert calls == ["constructed"]
+
+
+def test_production_migration_requires_account_before_client_construction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from engine.capital_structure import source_store
+
+    monkeypatch.setenv("CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY", "s" * 32)
+    monkeypatch.setenv("SHARE_COUNT_HEAD_GUARD_BUCKET", "fixture")
+    monkeypatch.delenv("SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID", raising=False)
+    calls = []
+    monkeypatch.setattr(
+        source_store,
+        "_capital_structure_r2_client",
+        lambda: calls.append("constructed") or object(),
+    )
+    with pytest.raises(publication.ShareCountPublicationError, match="requires.*ACCOUNT_ID"):
+        publication._production_trust(migration_enabled=True)
+    assert calls == []
+
+
+def test_production_migration_rejects_malformed_account_before_client_construction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from engine.capital_structure import source_store
+
+    monkeypatch.setenv("CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY", "s" * 32)
+    monkeypatch.setenv("SHARE_COUNT_HEAD_GUARD_BUCKET", "fixture")
+    monkeypatch.setenv("SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID", "A" * 32)
+    monkeypatch.setenv(
+        "R2_CAPITAL_STRUCTURE_ENDPOINT",
+        "https://" + "a" * 32 + ".r2.cloudflarestorage.com",
+    )
+    calls = []
+    monkeypatch.setattr(
+        source_store,
+        "_capital_structure_r2_client",
+        lambda: calls.append("constructed") or object(),
+    )
+    with pytest.raises(publication.ShareCountPublicationError, match="lowercase hexadecimal"):
+        publication._production_trust(migration_enabled=True)
+    assert calls == []
+
+
+@pytest.mark.parametrize(
+    "endpoint",
+    [
+        "https://" + "b" * 32 + ".r2.cloudflarestorage.com",
+        "http://" + "a" * 32 + ".r2.cloudflarestorage.com",
+        "https://" + "a" * 32 + ".r2.cloudflarestorage.com/",
+        "https://" + "a" * 32 + ".r2.cloudflarestorage.com:443",
+        "https://user@" + "a" * 32 + ".r2.cloudflarestorage.com",
+    ],
+)
+def test_production_account_endpoint_mismatch_stops_before_client_construction(
+    monkeypatch: pytest.MonkeyPatch,
+    endpoint: str,
+) -> None:
+    from engine.capital_structure import source_store
+
+    monkeypatch.setenv("CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY", "s" * 32)
+    monkeypatch.setenv("SHARE_COUNT_HEAD_GUARD_BUCKET", "fixture")
+    monkeypatch.setenv("SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID", "a" * 32)
+    monkeypatch.setenv("R2_CAPITAL_STRUCTURE_ENDPOINT", endpoint)
+    calls = []
+    monkeypatch.setattr(
+        source_store,
+        "_capital_structure_r2_client",
+        lambda: calls.append("constructed") or object(),
+    )
+    with pytest.raises(publication.ShareCountPublicationError, match="exact Cloudflare R2 endpoint"):
+        publication._production_trust(migration_enabled=False)
+    assert calls == []
+
+
+@pytest.mark.parametrize("jurisdiction", ["", "eu.", "fedramp."])
+def test_production_account_accepts_only_exact_cloudflare_r2_hosts(
+    monkeypatch: pytest.MonkeyPatch,
+    jurisdiction: str,
+) -> None:
+    from engine.capital_structure import source_store
+
+    account_id = "a" * 32
+    monkeypatch.setenv("CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY", "s" * 32)
+    monkeypatch.setenv("SHARE_COUNT_HEAD_GUARD_BUCKET", "fixture")
+    monkeypatch.setenv("SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID", account_id)
+    monkeypatch.setenv(
+        "R2_CAPITAL_STRUCTURE_ENDPOINT",
+        f"https://{account_id}.{jurisdiction}r2.cloudflarestorage.com",
+    )
+    client = object()
+    monkeypatch.setattr(source_store, "_capital_structure_r2_client", lambda: client)
+    _, guard = publication._production_trust(migration_enabled=True)
+    assert guard._client is client
+
+
+def test_malformed_migration_flag_stops_before_production_trust(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED",
+        "True",
+    )
+    calls = []
+    monkeypatch.setattr(
+        publication,
+        "_production_trust",
+        lambda **_kwargs: calls.append("trust") or (_ for _ in ()).throw(
+            AssertionError("trust must not be constructed"),
+        ),
+    )
+    with pytest.raises(publication.ShareCountPublicationError, match="exactly true or false"):
+        publication.recover_share_count_materialization()
+    assert calls == []
+
+
+def test_production_migration_flag_parser_defaults_false_and_is_strict(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED",
+        "True",
+    )
+    with pytest.raises(publication.ShareCountPublicationError, match="exactly true or false"):
+        publication._head_v3_migration_enabled()
+    monkeypatch.setenv(
+        "CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED",
+        "true",
+    )
+    assert publication._head_v3_migration_enabled() is True
+    monkeypatch.delenv(
+        "CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED",
+        raising=False,
+    )
+    assert publication._head_v3_migration_enabled() is False
 
 
 @pytest.mark.parametrize("swap_level", ["share_counts", "data"])
@@ -1130,10 +1637,12 @@ def test_pending_expected_high_water_beats_replayed_older_local_pointer(
     ]
 
 
-def test_orphan_capsule_before_marker_converges_competing_successor(
+def test_orphan_capsule_before_marker_rejects_sibling_and_retains_exact_evidence(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    signer, guard, root = _publisher(tmp_path)
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
     first = _publish(root, signer, guard)
     original_write = publication._write_signed_record
 
@@ -1161,15 +1670,157 @@ def test_orphan_capsule_before_marker_converges_competing_successor(
     assert competitor.sequence == 2 and competitor.receipt_id != first.receipt_id
 
     base = root / "data/capital_structure/share_counts/v2"
+    capsule_path = base / publication.RECOVERY_NAME
+    pointer_path = base / publication.POINTER_NAME
+    capsule_before = capsule_path.read_bytes()
+    pointer_before = pointer_path.read_bytes()
+    guard.reset_artifact_reads(reject_ledgers=True)
+    guard.reset_writes()
+    with pytest.raises(publication.ShareCountPublicationError, match="orphan recovery capsule conflicts"):
+        publication._recover_share_count_materialization_for_test(
+            root=root,
+            signer=signer,
+            head_guard=guard,
+        )
+    assert capsule_path.read_bytes() == capsule_before
+    assert pointer_path.read_bytes() == pointer_before
+    assert guard.artifact_reads == 0
+    assert guard.artifact_seals == guard.advances == guard.migrations == 0
+    assert (base / publication.RECOVERY_NAME).exists()
+    assert not (base / publication.PENDING_NAME).exists()
+
+
+def test_v3_head_with_any_legacy_bytes_fails_unchanged_before_artifact_or_ledger_read(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
+    _publish(root, signer, guard)
+    publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v3=True,
+    )
+    base = root / "data/capital_structure/share_counts/v2"
+    pointer_path = base / publication.POINTER_NAME
+    capsule_path = base / publication.RECOVERY_NAME
+    pointer_before = pointer_path.read_bytes()
+    malformed = b"malformed-legacy-capsule\n"
+    capsule_path.write_bytes(malformed)
+    guard.reset_artifact_reads(reject_ledgers=True)
+    guard.reset_writes()
+    _forbid_local_ledger_reads(monkeypatch)
+
+    with pytest.raises(publication.ShareCountPublishIndeterminate, match="cannot coexist"):
+        publication._recover_share_count_materialization_for_test(
+            root=root,
+            signer=signer,
+            head_guard=guard,
+            migrate_head_v3=True,
+        )
+    assert pointer_path.read_bytes() == pointer_before
+    assert capsule_path.read_bytes() == malformed
+    assert guard.artifact_reads == 0
+    assert guard.artifact_seals == guard.advances == guard.migrations == 0
+
+
+def test_legacy_seen_at_entry_defers_v3_migration_until_next_clean_invocation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
+    _publish(root, signer, guard)
+    original_write = publication._write_signed_record
+
+    def crash_after_capsule(lane, name, record, *, max_bytes, label):
+        body = original_write(
+            lane,
+            name,
+            record,
+            max_bytes=max_bytes,
+            label=label,
+        )
+        if name == publication.RECOVERY_NAME:
+            raise SystemExit("crash after recovery capsule")
+        return body
+
+    monkeypatch.setattr(publication, "_write_signed_record", crash_after_capsule)
+    with pytest.raises(SystemExit, match="after recovery capsule"):
+        _publish(root, signer, guard, b'{"candidate":true}\n', suffix="b")
+    monkeypatch.setattr(publication, "_write_signed_record", original_write)
+    guard.reset_writes()
+
     recovered = publication._recover_share_count_materialization_for_test(
         root=root,
         signer=signer,
         head_guard=guard,
+        migrate_head_v3=True,
     )
-    assert recovered is not None and recovered.receipt_id == competitor.receipt_id
-    assert recovered.ledger_bytes == b'{"competing":true}\n'
-    assert not (base / publication.RECOVERY_NAME).exists()
-    assert not (base / publication.PENDING_NAME).exists()
+    head, token = guard.read()
+    assert recovered is not None
+    assert head is not None and head["schema"] == publication.WITNESS_V2_SCHEMA
+    assert token == "1" and guard.migrations == 0
+    assert not (
+        root
+        / "data/capital_structure/share_counts/v2"
+        / publication.RECOVERY_NAME
+    ).exists()
+
+    publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v3=True,
+    )
+    head, token = guard.read()
+    assert head is not None and head["schema"] == publication.WITNESS_V3_SCHEMA
+    assert token == "2" and guard.migrations == 1
+
+
+def test_v3_migration_exactly_rereads_both_legacy_names_absent_after_recovery(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
+    _publish(root, signer, guard)
+    original_recover = publication._recover_locked
+    injected = b"appeared-after-recovery\n"
+    capsule_path = (
+        root
+        / "data/capital_structure/share_counts/v2"
+        / publication.RECOVERY_NAME
+    )
+
+    def recover_then_inject(lane, *, signer, guard, trace=None):
+        result = original_recover(
+            lane,
+            signer=signer,
+            guard=guard,
+            trace=trace,
+        )
+        capsule_path.write_bytes(injected)
+        return result
+
+    monkeypatch.setattr(publication, "_recover_locked", recover_then_inject)
+    guard.reset_writes()
+    with pytest.raises(publication.ShareCountPublishIndeterminate, match="exact post-recovery"):
+        publication._recover_share_count_materialization_for_test(
+            root=root,
+            signer=signer,
+            head_guard=guard,
+            migrate_head_v3=True,
+        )
+    head, token = guard.read()
+    assert head is not None and head["schema"] == publication.WITNESS_V2_SCHEMA
+    assert token == "1" and guard.migrations == 0
+    assert capsule_path.read_bytes() == injected
 
 
 def test_orphan_capsule_accepts_bounded_descendant_of_committed_candidate(
@@ -1218,6 +1869,69 @@ def test_orphan_capsule_accepts_bounded_descendant_of_committed_candidate(
     assert not (base / publication.RECOVERY_NAME).exists()
 
 
+def test_orphan_capsule_rejects_divergent_descendant_proof_before_ledger_and_retains_bytes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
+    _publish(root, signer, guard)
+    original_remove = publication._remove_exact_at
+
+    def crash_after_marker(directory_fd, name, body, *, max_bytes, label, operation):
+        original_remove(
+            directory_fd,
+            name,
+            body,
+            max_bytes=max_bytes,
+            label=label,
+            operation=operation,
+        )
+        if name == publication.PENDING_NAME:
+            raise SystemExit("crash after pending marker cleanup")
+
+    monkeypatch.setattr(publication, "_remove_exact_at", crash_after_marker)
+    with pytest.raises(publication.ShareCountPublishIndeterminate):
+        _publish(root, signer, guard, b'{"generation":2}\n', suffix="b")
+    monkeypatch.setattr(publication, "_remove_exact_at", original_remove)
+
+    hostile_ledger = b'{"hostile":3}\n'
+    hostile_receipt, hostile_body = _synthetic_receipt(
+        signer,
+        3,
+        ledger=hostile_ledger,
+        ancestor_overrides={0: _dummy_ref(2, salt="sibling-of-candidate")},
+    )
+    _select_external_head(
+        guard,
+        signer,
+        hostile_receipt,
+        hostile_body,
+        hostile_ledger,
+    )
+    base = root / "data/capital_structure/share_counts/v2"
+    capsule_path = base / publication.RECOVERY_NAME
+    pointer_path = base / publication.POINTER_NAME
+    capsule_before = capsule_path.read_bytes()
+    pointer_before = pointer_path.read_bytes()
+    guard.reset_artifact_reads(reject_ledgers=True)
+    guard.reset_writes()
+
+    with pytest.raises(publication.ShareCountPublicationError, match="diverges from pending"):
+        publication._recover_share_count_materialization_for_test(
+            root=root,
+            signer=signer,
+            head_guard=guard,
+        )
+    assert guard.artifact_read_keys == [
+        publication._receipt_external_key(hostile_receipt["receipt_id"]),
+    ]
+    assert capsule_path.read_bytes() == capsule_before
+    assert pointer_path.read_bytes() == pointer_before
+    assert guard.artifact_seals == guard.advances == guard.migrations == 0
+
+
 def test_capsule_embedded_pointers_must_match_its_signed_witnesses(
     tmp_path: Path,
 ) -> None:
@@ -1254,6 +1968,7 @@ class _FakeR2:
     def __init__(self) -> None:
         self.objects: dict[str, bytes] = {}
         self.etags: dict[str, str] = {}
+        self.put_calls: list[dict] = []
 
     def head_object(self, *, Bucket: str, Key: str):
         if Key not in self.objects:
@@ -1271,6 +1986,7 @@ class _FakeR2:
         return {"ContentLength": len(body), "ETag": IfMatch, "Body": BytesIO(body)}
 
     def put_object(self, *, Bucket: str, Key: str, Body: bytes, **kwargs):
+        self.put_calls.append({"Bucket": Bucket, "Key": Key, "Body": Body, **kwargs})
         if kwargs.get("IfNoneMatch") == "*" and Key in self.objects:
             error = RuntimeError("exists")
             error.response = {"Error": {"Code": "412"}, "ResponseMetadata": {"HTTPStatusCode": 412}}
@@ -1289,3 +2005,69 @@ def test_r2_guard_uses_head_then_bounded_ifmatch_get_and_conditional_put(tmp_pat
     head, etag = guard.read()
     assert head is not None and etag is not None and result.sequence == 1
     assert publication.HEAD_GUARD_KEY in r2.objects
+
+
+def test_r2_v3_migration_uses_same_key_exact_token_and_old_reader_never_puts(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _FakeR2()
+    guard = publication.R2ShareCountHeadGuard(
+        client=r2,
+        bucket="fixture",
+        signer=signer,
+        account_id="a" * 32,
+    )
+    root = tmp_path / "r2"
+    first = _publish(root, signer, guard)
+    v2_head, v2_token = guard.read()
+    assert v2_head is not None and v2_token is not None
+    puts_before_migration = len(r2.put_calls)
+    publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v3=True,
+    )
+    v3_head, _ = guard.read()
+    assert v3_head is not None and v3_head["schema"] == publication.WITNESS_V3_SCHEMA
+    migration_puts = r2.put_calls[puts_before_migration:]
+    assert len(migration_puts) == 1
+    assert migration_puts[0]["Key"] == publication.HEAD_GUARD_KEY
+    assert migration_puts[0]["IfMatch"] == v2_token
+    assert "IfNoneMatch" not in migration_puts[0]
+
+    puts_before_old_read = len(r2.put_calls)
+    raw = publication._parse_canonical_json(
+        r2.objects[publication.HEAD_GUARD_KEY],
+        label="old v2 reader fixture",
+    )
+    with pytest.raises(publication.ShareCountPublicationError, match="shape"):
+        publication._validate_head_witness(raw, signer=signer)
+    assert len(r2.put_calls) == puts_before_old_read
+
+    next_receipt, next_body = _synthetic_receipt(
+        signer,
+        2,
+        ledger=b'{"old-writer":2}\n',
+        ancestor_overrides={
+            0: {
+                "sequence": first.sequence,
+                "receipt_id": first.receipt_id,
+                "receipt_sha256": v2_head["receipt_sha256"],
+                "receipt_byte_length": v2_head["receipt_byte_length"],
+            },
+        },
+    )
+    old_v2_candidate = publication._head_witness(
+        receipt=next_receipt,
+        receipt_body=next_body,
+        signer=signer,
+    )
+    with pytest.raises(publication.ShareCountPublicationError, match="migration fence"):
+        guard.advance(
+            expected=v2_head,
+            expected_token=v2_token,
+            candidate=old_v2_candidate,
+        )
+    assert len(r2.put_calls) == puts_before_old_read

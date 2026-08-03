@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_share_count_head_guard_scope.schema.json",
+  "title": "Share-count external head guard scope",
+  "description": "The exact R2 authority tuple authenticated by a v3 share-count head. Values are compared byte-for-byte and are never normalized.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "backend", "account_id", "bucket", "head_key"],
+  "properties": {
+    "schema": {"const": "capital_structure.share_count_head_guard_scope/v1"},
+    "backend": {"const": "r2"},
+    "account_id": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "bucket": {"type": "string", "minLength": 1},
+    "head_key": {"const": "capital_structure/share_counts/v2/current_head.json"}
+  }
+}

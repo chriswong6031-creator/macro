@@ -61,7 +61,7 @@ flowchart LR
 | `data/capital_structure/companyfacts/generations/<sha256>/*` | `collectors/sec_capital_structure_companyfacts.py` | Immutable Company Facts manifest/coverage generation selected by a signed receipt and external head |
 | R2 `capital_structure/share_counts/v2/generations/<sha256>/ledger.json` | `scripts/materialize_capital_structure_share_counts.py` | Immutable v2 direct share/public-float observations bound to authenticated Company Facts bytes |
 | R2 `capital_structure/share_counts/v2/receipts/<sha256>.json` | same | HMAC-authenticated exact-predecessor publication receipt with constant-size rolling-prefix binding, bounded skip refs, and all-false authority |
-| R2 `capital_structure/share_counts/v2/current_head.json` | same | Mutable HMAC-authenticated compare-and-swap selector for exactly one immutable receipt/generation |
+| R2 `capital_structure/share_counts/v2/current_head.json` | same | Mutable HMAC-authenticated compare-and-swap selector for exactly one immutable receipt/generation; dual-read v2/v3, with v3 a scope-bound same-selection migration fence rather than a new publisher |
 | ignored local `data/capital_structure/share_counts/v2/current_receipt.json` | same | Runner-local recovery/high-water cache; never an independent selector and never staged by the nightly broad `git add data/` |
 | `data/edgar/dilution_events.parquet` | `collectors/edgar_dilution.py` | Existing legacy feed; unchanged in Wave 1 |
 
@@ -113,12 +113,17 @@ missing source, oversize input, split-brain, or an indeterminate post-CAS result
 fails closed. A clean runner has no independent monotonic witness and therefore
 cannot detect credential-level restoration of an older, otherwise valid signed
 head; global rollback protection requires a separate durable witness
-or signer domain. The current two-record local recovery journal has the same
-boundary: if its marker and retained local pointer are both lost while only the
-signed capsule survives, it cannot distinguish a pre-marker competing successor
-from a credential-level post-commit fork. Recovery anchors that state at the
-signed expected witness. Activation therefore requires a single signed journal
-(or an equivalent unambiguous cleanup protocol), not another ancestry heuristic.
+or signer domain. Capsule-only legacy recovery is now deliberately asymmetric:
+an external head equal to the capsule's expected witness validates that expected
+bundle and clears; a head equal to, or an authenticated descendant of, the
+capsule candidate must prove the candidate as high-water before clearing; a
+sibling, equal-sequence fork, rollback, malformed proof, or missing proof fails
+closed and retains the exact capsule and pointer without opening a ledger. Any
+legacy recovery bytes beside a v3 head fail unchanged, and legacy state observed
+at lease entry prevents migration in that invocation. Activation still requires
+replacing the two-record marker/capsule cleanup with one signed journal (or an
+equivalent atomic protocol); stricter ambiguity handling does not make two
+independently cleaned records a single transaction.
 Zero authenticated source manifests remain explicitly unavailable and do not
 create an empty green ledger.
 
@@ -140,8 +145,20 @@ They do not remove the upstream dependency: the Company Facts source selector
 still authenticates a v1 predecessor chain capped at 512 receipts and will block
 at that checkpoint until its own authenticated migration lands.
 
-The v2 R2 head, immutable receipts, and immutable generations are the publication
-data plane. Local generation, receipt, pointer, pending, recovery, and lease files
+The immutable v2 receipts/generations and the dual-read v2/v3 R2 head are the
+publication data plane. A one-time, default-off migration may replace an exact
+canonical v2 head at the same key and CAS token with
+`capital_structure.share_count_head_witness/v3`. The v3 witness keeps all eleven
+selection fields and the sequence unchanged, signs an exact R2 scope
+(`backend`, 32-hex account ID, bucket, and fixed head key) in a distinct v3 HMAC
+domain, and commits to the exact canonical v2 witness bytes including their
+newline. It cannot create genesis, advance v3, or publish a new generation.
+While present at the same key, v3 makes an old v2-only writer reject the schema
+before conditional PUT. The migration flag gates only that v2-to-v3 rewrite;
+dual-read v3 recovery and exact no-op behavior remain active when the flag is
+false, while every v3 successor publication remains blocked.
+
+Local generation, receipt, pointer, pending, recovery, and lease files
 are crash-recovery mirrors and are excluded by `.gitignore`; this lane never turns
 a cumulative ledger into a Git object or public site payload. The publisher never
 deletes, and ancestry receipts remain retained. A bounded retention planner and
@@ -152,7 +169,15 @@ covering publisher staging through head CAS and each retention delete, and a
 verifier-only/minted capability that can never write the signed head or receipts.
 The selector/receipt-only high-water split is implemented and CI-pinned; it does
 not activate publication. Publication activation still requires the unambiguous
-single-journal recovery change above. One 15-minute in-process deadline is
+single-journal recovery change above. The migration additionally requires exact
+`SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID` configuration and a strict lowercase
+`CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED=true`; the default is
+false, and migration-false v2 operation does not require the account ID. Any
+configured account ID is bound before client construction to the exact resolved
+Cloudflare R2 endpoint (`R2_CAPITAL_STRUCTURE_ENDPOINT`, then `R2_ENDPOINT`):
+HTTPS only, no URL credentials/port/path/query/fragment, and only the account's
+global, EU, or FedRAMP R2 hostname is accepted. The endpoint itself is not copied
+into signed scope. One 15-minute in-process deadline is
 propagated through recovery, authenticated source reading, and publication, and
 the nightly command has a process-level timeout backstop for a blocking storage
 SDK call.

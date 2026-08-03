@@ -493,6 +493,14 @@ def test_share_count_publication_workspace_is_excluded_from_nightly_git_checkpoi
         in daily_workflow
     )
     assert (
+        "SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID: "
+        "${{ secrets.SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID }}"
+    ) in daily_workflow
+    assert (
+        "CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED: "
+        "${{ vars.CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED || 'false' }}"
+    ) in daily_workflow
+    assert (
         "timeout --signal=TERM --kill-after=30s 15m30s "
         "python -m scripts.materialize_capital_structure_share_counts"
     ) in daily_workflow
