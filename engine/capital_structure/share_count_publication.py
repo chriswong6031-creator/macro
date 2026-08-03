@@ -38,6 +38,7 @@ MAX_POINTER_BYTES = 32 * 1024
 MAX_HEAD_WITNESS_BYTES = 32 * 1024
 MAX_PENDING_MARKER_BYTES = 512 * 1024
 MAX_RECOVERY_CAPSULE_BYTES = 768 * 1024
+MAX_PUBLISH_JOURNAL_BYTES = 512 * 1024
 MAX_ANCESTOR_REFS = 64
 MAX_RECEIPT_SEQUENCE = 1 << MAX_ANCESTOR_REFS
 MAX_PREFIX_COUNT = 1_000_000
@@ -57,10 +58,12 @@ WITNESS_SCHEMA = WITNESS_V2_SCHEMA
 HEAD_GUARD_SCOPE_SCHEMA = "capital_structure.share_count_head_guard_scope/v1"
 PENDING_SCHEMA = "capital_structure.share_count_publish_pending/v2"
 RECOVERY_SCHEMA = "capital_structure.share_count_publish_recovery/v2"
+JOURNAL_SCHEMA = "capital_structure.share_count_publish_journal/v1"
 AUTH_SCHEME = "hmac-sha256/v1"
 HEAD_GUARD_KEY = "capital_structure/share_counts/v2/current_head.json"
 PENDING_NAME = ".share_count_publish_pending.json"
 RECOVERY_NAME = ".share_count_publish_recovery.json"
+JOURNAL_NAME = ".share_count_publish_journal.json"
 POINTER_NAME = "current_receipt.json"
 LOCK_NAME = ".share_count_publish.lock"
 
@@ -121,12 +124,17 @@ class ShareCountSigner(Protocol):
 
     def verify_head_v3(self, payload: bytes, signature: str, *, key_id: str) -> bool: ...
 
+    def sign_journal(self, payload: bytes) -> str: ...
+
+    def verify_journal(self, payload: bytes, signature: str, *, key_id: str) -> bool: ...
+
 
 class HmacShareCountSigner:
     """Domain-separated HMAC signer for this publication lane only."""
 
     _DOMAIN = b"capital-structure-share-count-publication-head-v2\0"
     _HEAD_V3_DOMAIN = b"capital-structure-share-count-publication-head-v3\0"
+    _JOURNAL_DOMAIN = b"capital-structure-share-count-publish-journal-v1\0"
 
     def __init__(self, secret: str | bytes, *, key_id: str) -> None:
         raw = secret.encode("utf-8") if isinstance(secret, str) else secret
@@ -155,6 +163,14 @@ class HmacShareCountSigner:
     def verify_head_v3(self, payload: bytes, signature: str, *, key_id: str) -> bool:
         return key_id == self.key_id and isinstance(signature, str) and hmac.compare_digest(
             self.sign_head_v3(payload), signature,
+        )
+
+    def sign_journal(self, payload: bytes) -> str:
+        return hmac.new(self._secret, self._JOURNAL_DOMAIN + payload, sha256).hexdigest()
+
+    def verify_journal(self, payload: bytes, signature: str, *, key_id: str) -> bool:
+        return key_id == self.key_id and isinstance(signature, str) and hmac.compare_digest(
+            self.sign_journal(payload), signature,
         )
 
 
@@ -762,6 +778,11 @@ def _recovery_payload(record: Mapping[str, Any]) -> bytes:
     return _canonical_bytes({"domain": RECOVERY_SCHEMA, "recovery": material})
 
 
+def _journal_payload(record: Mapping[str, Any]) -> bytes:
+    material = dict(record); material.pop("signature", None)
+    return _canonical_bytes({"domain": JOURNAL_SCHEMA, "journal": material})
+
+
 def _validate_external_artifact_key(key: object) -> None:
     if not isinstance(key, str) or not (
         re.fullmatch(r"capital_structure/share_counts/v2/receipts/[a-f0-9]{64}\.json", key)
@@ -1150,6 +1171,41 @@ def _validate_head_migration(
         )
 
 
+def _virtual_v2_witness_from_v3(
+    record: Mapping[str, Any],
+    *,
+    signer: ShareCountSigner,
+    expected_scope: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Reconstruct and authenticate the sole v2 witness a v3 fence may wrap.
+
+    A v3 witness is migration-only.  Recovery protocols whose durable intent
+    predates that fence may reason about it only after proving that its signed
+    migration digest names the deterministic same-selection v2 bytes.
+    """
+    migrated = _validate_head_witness_v3(
+        record,
+        signer=signer,
+        expected_scope=expected_scope,
+    )
+    virtual: dict[str, Any] = {
+        "schema": WITNESS_V2_SCHEMA,
+        "key_id": migrated["key_id"],
+        **_head_selection(migrated),
+        "signature": "",
+    }
+    virtual["signature"] = signer.sign(_head_payload(virtual))
+    virtual = _validate_head_witness(virtual, signer=signer)
+    if migrated["migration"] != {
+        "from_schema": WITNESS_V2_SCHEMA,
+        "from_witness_sha256": _sha(_canonical_bytes(virtual) + b"\n"),
+    }:
+        raise ShareCountPublicationError(
+            "share-count v3 head migration is detached from its virtual v2 witness",
+        )
+    return virtual
+
+
 def _validate_head_transition(*, previous: Mapping[str, Any] | None, candidate: Mapping[str, Any], signer: ShareCountSigner) -> None:
     candidate = _validate_head_witness(candidate, signer=signer)
     if previous is None:
@@ -1381,6 +1437,8 @@ class _RecoveryTrace:
     """Entry-state facts that must survive legacy cleanup during one lease."""
 
     legacy_seen_at_entry: bool = False
+    journal_seen_at_entry: bool = False
+    recovery_seen_at_entry: bool = False
     selected_head: Mapping[str, Any] | None = None
 
 
@@ -1558,6 +1616,7 @@ class _PublicationLane:
         self.generations_fd = generations_fd
         self.staging_fd = staging_fd
         self._lock_binding: _EntryBinding | None = None
+        self._terminal_cleanup_armed = False
 
     @classmethod
     def open(cls, root: Path, *, operation: _OperationDeadline) -> "_PublicationLane":
@@ -1706,6 +1765,21 @@ class _PublicationLane:
 
     def detach_lock(self) -> None:
         self._lock_binding = None
+
+    def arm_terminal_cleanup(self, *, label: str) -> None:
+        """Complete every fallible lease check before journal removal.
+
+        Once armed, the caller may perform only the exact journal unlink and
+        return an already-built result.  Lease teardown then becomes
+        best-effort and nonthrowing so a successful cleanup cannot be followed
+        by an error that falsely claims durable recovery evidence remains.
+        """
+        if self._terminal_cleanup_armed:
+            raise ShareCountPublicationError(
+                "share-count terminal journal cleanup was already armed",
+            )
+        self.assert_bound(label=label)
+        self._terminal_cleanup_armed = True
 
     @contextlib.contextmanager
     def directory(self, parent_fd: int, name: str, *, create: bool, label: str) -> Iterator[int]:
@@ -2177,15 +2251,17 @@ def _publication_lease(
         except BaseException:
             raise
         else:
-            lane.assert_bound(label="publication lease release")
+            if not lane._terminal_cleanup_armed:
+                lane.assert_bound(label="publication lease release")
             completed_normally = True
     finally:
         with contextlib.suppress(Exception):
             fcntl.flock(fd, fcntl.LOCK_UN)
         lane.detach_lock()
-        os.close(fd)
+        with contextlib.suppress(OSError):
+            os.close(fd)
         lane.close()
-        if completed_normally:
+        if completed_normally and not lane._terminal_cleanup_armed:
             operation.check("publication lease release")
 
 
@@ -2739,6 +2815,88 @@ def _install_external_bundle(
     return ShareCountPublicationResult(receipt=latest, pointer=pointer, ledger_path=ledger_path, ledger_bytes=ledger, published=False, recovered=True)
 
 
+def _journal(
+    *,
+    expected: Mapping[str, Any] | None,
+    candidate: Mapping[str, Any],
+    expected_pointer: bytes | None,
+    candidate_pointer: bytes,
+    signer: ShareCountSigner,
+) -> dict[str, Any]:
+    """Build the one-write durable commit intent for a v2 head transition."""
+    record: dict[str, Any] = {
+        "schema": JOURNAL_SCHEMA,
+        "key_id": signer.key_id,
+        "expected_witness": dict(expected) if expected is not None else None,
+        "candidate_witness": dict(candidate),
+        "expected_pointer_b64": (
+            base64.b64encode(expected_pointer).decode("ascii")
+            if expected_pointer is not None
+            else None
+        ),
+        "candidate_pointer_b64": base64.b64encode(candidate_pointer).decode("ascii"),
+        "signature": "",
+    }
+    sign = getattr(signer, "sign_journal", None)
+    if not callable(sign):
+        raise ShareCountPublicationError("share-count publish journal signer is unavailable")
+    record["signature"] = sign(_journal_payload(record))
+    return _validate_journal(record, signer=signer)
+
+
+def _validate_journal(
+    record: Mapping[str, Any], *, signer: ShareCountSigner,
+) -> dict[str, Any]:
+    required = {
+        "schema", "key_id", "expected_witness", "candidate_witness",
+        "expected_pointer_b64", "candidate_pointer_b64", "signature",
+    }
+    verify = getattr(signer, "verify_journal", None)
+    if (
+        not isinstance(record, Mapping)
+        or set(record) != required
+        or record.get("schema") != JOURNAL_SCHEMA
+        or not isinstance(record.get("key_id"), str)
+        or not callable(verify)
+        or not verify(
+            _journal_payload(record),
+            record.get("signature"),
+            key_id=record["key_id"],
+        )
+    ):
+        raise ShareCountPublicationError(
+            "share-count publish journal authentication mismatch",
+        )
+    _validate_contract(
+        record,
+        "capital_structure_share_count_publish_journal.schema.json",
+        label="publish journal",
+    )
+    expected = record.get("expected_witness")
+    candidate = record.get("candidate_witness")
+    if expected is not None and not isinstance(expected, Mapping):
+        raise ShareCountPublicationError(
+            "share-count publish journal predecessor witness is invalid",
+        )
+    if not isinstance(candidate, Mapping):
+        raise ShareCountPublicationError(
+            "share-count publish journal candidate witness is invalid",
+        )
+    _validate_head_transition(
+        previous=expected,
+        candidate=candidate,
+        signer=signer,
+    )
+    _validate_embedded_pointer_transition(
+        expected=expected,
+        candidate=candidate,
+        expected_pointer_b64=record.get("expected_pointer_b64"),
+        candidate_pointer_b64=record.get("candidate_pointer_b64"),
+        label="publish journal",
+    )
+    return dict(record)
+
+
 def _capsule(*, expected: Mapping[str, Any] | None, candidate: Mapping[str, Any], expected_pointer: bytes | None, candidate_pointer: bytes, signer: ShareCountSigner) -> dict[str, Any]:
     record: dict[str, Any] = {
         "schema": RECOVERY_SCHEMA,
@@ -2840,6 +2998,228 @@ def _write_signed_record(
     return body
 
 
+def _write_publish_journal(
+    lane: _PublicationLane, record: Mapping[str, Any],
+) -> bytes:
+    """Durably link a fully fsynced journal into an absent-only pathname.
+
+    The target is never replaced.  A hostile or stale existing entry is
+    evidence, not something a new publisher may normalize away.
+    """
+    body = _canonical_bytes(dict(record)) + b"\n"
+    if not 1 <= len(body) <= MAX_PUBLISH_JOURNAL_BYTES:
+        raise ShareCountPublicationTooLarge("share-count publish journal exceeds byte cap")
+    lane.operation.check("publish journal encoding")
+    if _bounded_read_at(
+        lane.base_fd,
+        JOURNAL_NAME,
+        max_bytes=MAX_PUBLISH_JOURNAL_BYTES,
+        label="publish journal",
+        operation=lane.operation,
+        missing_ok=True,
+    ) is not None:
+        raise ShareCountPublicationConflict(
+            "share-count publish journal already exists",
+        )
+    fd, temporary, temporary_identity = _open_temporary_at(
+        lane.base_fd,
+        operation=lane.operation,
+        label="publish journal",
+    )
+    linked = False
+    try:
+        _write_all(fd, body, operation=lane.operation, label="publish journal")
+        lane.operation.check("publish journal temporary fsync")
+        os.fsync(fd)
+        lane.operation.check("publish journal temporary fsync")
+        os.close(fd)
+        fd = -1
+        lane.assert_bound(label="publish journal absent-only link")
+        lane.operation.check("publish journal absent-only link")
+        try:
+            os.link(
+                temporary,
+                JOURNAL_NAME,
+                src_dir_fd=lane.base_fd,
+                dst_dir_fd=lane.base_fd,
+                follow_symlinks=False,
+            )
+            linked = True
+        except FileExistsError as exc:
+            raise ShareCountPublicationConflict(
+                "share-count publish journal appeared before durable create",
+            ) from exc
+        except OSError as exc:
+            raise ShareCountPublicationError(
+                "share-count publish journal cannot be created safely",
+            ) from exc
+        _fsync_directory_at(
+            lane.base_fd,
+            operation=lane.operation,
+            label="publish journal create",
+        )
+    finally:
+        if fd >= 0:
+            os.close(fd)
+        _cleanup_temporary_at(lane.base_fd, temporary, temporary_identity)
+        if linked:
+            # Persisting cleanup of the temporary hard link is hygiene only;
+            # the named journal was already durable before this point.
+            _fsync_directory_at(
+                lane.base_fd,
+                operation=lane.operation,
+                label="publish journal temporary cleanup",
+            )
+    if _bounded_read_at(
+        lane.base_fd,
+        JOURNAL_NAME,
+        max_bytes=MAX_PUBLISH_JOURNAL_BYTES,
+        label="publish journal",
+        operation=lane.operation,
+    ) != body:
+        raise ShareCountPublicationError(
+            "share-count publish journal exact read-back mismatch",
+        )
+    return body
+
+
+def _emergency_restore_publish_journal(
+    lane: _PublicationLane, body: bytes,
+) -> bool:
+    """Best-effort exact evidence restoration after cleanup fault injection."""
+    flags = (
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NONBLOCK | os.O_NOFOLLOW
+        | getattr(os, "O_CLOEXEC", 0)
+    )
+    try:
+        existing = _emergency_read_exact_at(
+            lane.base_fd,
+            JOURNAL_NAME,
+            max_bytes=MAX_PUBLISH_JOURNAL_BYTES,
+        )
+        if existing is not None:
+            return existing == body
+        temporary = ".share-count-journal-restore-" + secrets.token_hex(16)
+        fd = os.open(temporary, flags, 0o600, dir_fd=lane.base_fd)
+        try:
+            offset = 0
+            while offset < len(body):
+                written = os.write(fd, body[offset:])
+                if written <= 0:
+                    return False
+                offset += written
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        try:
+            os.link(
+                temporary,
+                JOURNAL_NAME,
+                src_dir_fd=lane.base_fd,
+                dst_dir_fd=lane.base_fd,
+                follow_symlinks=False,
+            )
+        except FileExistsError:
+            pass
+        finally:
+            _emergency_remove_exact_at(
+                lane.base_fd,
+                temporary,
+                body,
+                max_bytes=MAX_PUBLISH_JOURNAL_BYTES,
+            )
+        os.fsync(lane.base_fd)
+        return _emergency_read_exact_at(
+            lane.base_fd,
+            JOURNAL_NAME,
+            max_bytes=MAX_PUBLISH_JOURNAL_BYTES,
+        ) == body
+    except OSError:
+        return False
+
+
+def _emergency_read_exact_at(
+    directory_fd: int, name: str, *, max_bytes: int,
+) -> bytes | None:
+    flags = os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+    try:
+        linked = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+        if not stat.S_ISREG(linked.st_mode) or not 1 <= linked.st_size <= max_bytes:
+            return b""
+        fd = os.open(name, flags, dir_fd=directory_fd)
+    except FileNotFoundError:
+        return None
+    except OSError:
+        return b""
+    try:
+        opened = os.fstat(fd)
+        if (
+            not stat.S_ISREG(opened.st_mode)
+            or _file_identity(opened) != _file_identity(linked)
+            or opened.st_size != linked.st_size
+        ):
+            return b""
+        chunks: list[bytes] = []
+        observed = 0
+        while observed < max_bytes + 1:
+            chunk = os.read(fd, min(64 * 1024, max_bytes + 1 - observed))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            observed += len(chunk)
+        body = b"".join(chunks)
+        final_opened = os.fstat(fd)
+        try:
+            final_linked = os.stat(
+                name,
+                dir_fd=directory_fd,
+                follow_symlinks=False,
+            )
+        except OSError:
+            return b""
+        if (
+            not 1 <= len(body) <= max_bytes
+            or len(body) != linked.st_size
+            or not stat.S_ISREG(final_opened.st_mode)
+            or not stat.S_ISREG(final_linked.st_mode)
+            or _file_identity(final_opened) != _file_identity(linked)
+            or _file_identity(final_linked) != _file_identity(linked)
+            or final_opened.st_size != linked.st_size
+            or final_linked.st_size != linked.st_size
+        ):
+            return b""
+        return body
+    except OSError:
+        return b""
+    finally:
+        os.close(fd)
+
+
+def _clear_publish_journal(lane: _PublicationLane, body: bytes) -> None:
+    if not lane._terminal_cleanup_armed:
+        raise ShareCountPublicationError(
+            "share-count publish journal cleanup was not terminally armed",
+        )
+    try:
+        _remove_exact_at(
+            lane.base_fd,
+            JOURNAL_NAME,
+            body,
+            max_bytes=MAX_PUBLISH_JOURNAL_BYTES,
+            label="publish journal",
+            operation=lane.operation,
+        )
+    except BaseException as exc:  # noqa: BLE001 - retain commit evidence on every caught failure
+        retained = _emergency_restore_publish_journal(lane, body)
+        if not retained:
+            raise ShareCountPublishIndeterminate(
+                "share-count publish journal cleanup failed and exact evidence could not be restored",
+            ) from exc
+        raise ShareCountPublishIndeterminate(
+            "share-count publish journal cleanup failed; exact evidence retained",
+        ) from exc
+
+
 def _read_signed_record(
     lane: _PublicationLane, name: str, *, max_bytes: int, label: str,
 ) -> tuple[dict[str, Any], bytes] | None:
@@ -2901,7 +3281,7 @@ def _maybe_migrate_head_v3(
 ) -> Mapping[str, Any] | None:
     """Replace one clean v2 selector with a scope-bound same-selection v3 fence."""
     entry_head = trace.selected_head
-    if not enabled or trace.legacy_seen_at_entry:
+    if not enabled or trace.recovery_seen_at_entry:
         return entry_head
     if entry_head is None:
         if current is not None:
@@ -2916,6 +3296,14 @@ def _maybe_migrate_head_v3(
             )
         return entry_head
     entry_head = _validate_head_witness(entry_head, signer=signer)
+    journal_after_recovery = _bounded_read_at(
+        lane.base_fd,
+        JOURNAL_NAME,
+        max_bytes=MAX_PUBLISH_JOURNAL_BYTES,
+        label="post-recovery publish journal",
+        operation=lane.operation,
+        missing_ok=True,
+    )
     marker_after_recovery = _bounded_read_at(
         lane.base_fd,
         PENDING_NAME,
@@ -2932,9 +3320,13 @@ def _maybe_migrate_head_v3(
         operation=lane.operation,
         missing_ok=True,
     )
-    if marker_after_recovery is not None or capsule_after_recovery is not None:
+    if (
+        journal_after_recovery is not None
+        or marker_after_recovery is not None
+        or capsule_after_recovery is not None
+    ):
         raise ShareCountPublishIndeterminate(
-            "share-count v3 migration requires exact post-recovery legacy-record absence",
+            "share-count v3 migration requires exact post-recovery recovery-record absence",
         )
     if current is None or not _pointer_matches_witness(current.pointer, entry_head):
         raise ShareCountPublicationError(
@@ -3118,6 +3510,164 @@ def _clear_pending_recovery_records(
         )
 
 
+def _recover_publish_journal_locked(
+    lane: _PublicationLane,
+    *,
+    journal: Mapping[str, Any],
+    journal_body: bytes,
+    signer: ShareCountSigner,
+    guard: ShareCountHeadGuard,
+    trace: _RecoveryTrace | None,
+) -> ShareCountPublicationResult | None:
+    """Converge one durable v1 journal without ever inventing a new intent."""
+    journal = _validate_journal(journal, signer=signer)
+    expected = journal["expected_witness"]
+    candidate = journal["candidate_witness"]
+    local = _read_local_selector(lane, signer=signer, witness=None)
+    current_pointer = _local_pointer_body(lane)
+    head, _ = _read_authenticated_head(
+        lane,
+        guard=guard,
+        signer=signer,
+        label="publish journal external head read",
+    )
+    if trace is not None:
+        trace.selected_head = None if head is None else dict(head)
+
+    virtual_head = head
+    migrated_head = head is not None and head.get("schema") == WITNESS_V3_SCHEMA
+    if migrated_head:
+        virtual_head = _virtual_v2_witness_from_v3(
+            head,
+            signer=signer,
+            expected_scope=guard.guard_scope,
+        )
+    _assert_local_high_water(local, head)
+
+    candidate_receipt: dict[str, Any] | None = None
+    candidate_receipt_body: bytes | None = None
+    candidate_ledger: bytes | None = None
+    if virtual_head == expected and not migrated_head:
+        # A journal is commit intent, but not permission to select bytes that
+        # disappeared after sealing.  Re-read and authenticate both immutable
+        # candidate objects before the first recovery CAS.
+        candidate_receipt, candidate_receipt_body = _read_selected_external_receipt(
+            lane,
+            candidate,
+            guard=guard,
+            signer=signer,
+        )
+        candidate_ledger = _read_selected_external_ledger(
+            lane,
+            candidate,
+            receipt=candidate_receipt,
+            receipt_body=candidate_receipt_body,
+            guard=guard,
+            signer=signer,
+        )
+        head, _ = _replay_cas_started_transition(
+            lane,
+            expected=expected,
+            candidate=candidate,
+            guard=guard,
+            signer=signer,
+        )
+        if trace is not None:
+            trace.selected_head = None if head is None else dict(head)
+        virtual_head = head
+        migrated_head = head is not None and head.get("schema") == WITNESS_V3_SCHEMA
+        if migrated_head:
+            virtual_head = _virtual_v2_witness_from_v3(
+                head,
+                signer=signer,
+                expected_scope=guard.guard_scope,
+            )
+
+    if head is None or virtual_head is None:
+        raise ShareCountPublishIndeterminate(
+            "share-count publish journal external head remains unresolved",
+        )
+
+    # A scope-valid v3 migration of E wins over the pending v2 successor: the
+    # old writer is fenced and recovery converges to E.  Every other accepted
+    # head must be C or an authenticated descendant of E.  A direct sibling C'
+    # is therefore a legitimate external winner, not a fork.
+    selected_receipt: dict[str, Any]
+    selected_receipt_body: bytes
+    selected_ledger: bytes
+    if virtual_head == candidate and candidate_receipt is not None:
+        selected_receipt = candidate_receipt
+        assert candidate_receipt_body is not None and candidate_ledger is not None
+        selected_receipt_body = candidate_receipt_body
+        selected_ledger = candidate_ledger
+    else:
+        selected_receipt, selected_receipt_body = _read_selected_external_receipt(
+            lane,
+            head,
+            guard=guard,
+            signer=signer,
+        )
+        if expected is not None:
+            _prove_pending_expected_high_water(
+                lane,
+                expected=expected,
+                head=virtual_head,
+                head_receipt=selected_receipt,
+                head_receipt_body=selected_receipt_body,
+                guard=guard,
+                signer=signer,
+            )
+        selected_ledger = _read_selected_external_ledger(
+            lane,
+            head,
+            receipt=selected_receipt,
+            receipt_body=selected_receipt_body,
+            guard=guard,
+            signer=signer,
+        )
+    if expected is not None and virtual_head == candidate:
+        # Pin the exact predecessor even when the selected body is C.  This is
+        # redundant with C's transition validation but makes the journal's
+        # temporary high-water explicit and keeps the proof matrix uniform.
+        _prove_pending_expected_high_water(
+            lane,
+            expected=expected,
+            head=virtual_head,
+            head_receipt=selected_receipt,
+            head_receipt_body=selected_receipt_body,
+            guard=guard,
+            signer=signer,
+        )
+    _prove_local_high_water(
+        lane,
+        local=local,
+        head=head,
+        head_receipt=selected_receipt,
+        head_receipt_body=selected_receipt_body,
+        guard=guard,
+        signer=signer,
+    )
+
+    if local is not None and _pointer_matches_witness(local.pointer, head):
+        result = _load_local_result(lane, selection=local)
+        if result.ledger_bytes != selected_ledger:
+            raise ShareCountPublicationError(
+                "share-count local ledger differs from journal-selected external bytes",
+            )
+    else:
+        result = _install_external_bundle(
+            lane,
+            head=head,
+            receipt=selected_receipt,
+            receipt_body=selected_receipt_body,
+            ledger=selected_ledger,
+            expected_pointer=current_pointer,
+        )
+    lane.arm_terminal_cleanup(label="publish journal recovery completion")
+    _clear_publish_journal(lane, journal_body)
+    return result
+
+
 def _recover_locked(
     lane: _PublicationLane,
     *,
@@ -3125,20 +3675,18 @@ def _recover_locked(
     guard: ShareCountHeadGuard,
     trace: _RecoveryTrace | None = None,
 ) -> ShareCountPublicationResult | None:
-    head, _ = _read_authenticated_head(
-        lane,
-        guard=guard,
-        signer=signer,
-        label="external head read",
+    # All local intent names are observed before the first remote operation.
+    # Mixed protocols are terminal ambiguity: exact bytes stay untouched and
+    # even an authenticated remote selector cannot adjudicate which writer had
+    # authority to proceed.
+    journal_body_at_entry = _bounded_read_at(
+        lane.base_fd,
+        JOURNAL_NAME,
+        max_bytes=MAX_PUBLISH_JOURNAL_BYTES,
+        label="publish journal",
+        operation=lane.operation,
+        missing_ok=True,
     )
-    if trace is not None:
-        trace.selected_head = None if head is None else dict(head)
-    # Read and authenticate the retained selector before processing any marker
-    # that could install external bytes.  This selector and its signed receipt
-    # form the local high-water; a replayed signed head may not erase it.
-    local = _read_local_selector(lane, signer=signer, witness=None)
-    _assert_local_high_water(local, head)
-    expected_pointer = None if local is None else _canonical_bytes(dict(local.pointer)) + b"\n"
     marker_body_at_entry = _bounded_read_at(
         lane.base_fd,
         PENDING_NAME,
@@ -3158,8 +3706,45 @@ def _recover_locked(
     legacy_seen_at_entry = (
         marker_body_at_entry is not None or capsule_body_at_entry is not None
     )
+    journal_seen_at_entry = journal_body_at_entry is not None
     if trace is not None:
         trace.legacy_seen_at_entry = legacy_seen_at_entry
+        trace.journal_seen_at_entry = journal_seen_at_entry
+        trace.recovery_seen_at_entry = legacy_seen_at_entry or journal_seen_at_entry
+    if journal_seen_at_entry and legacy_seen_at_entry:
+        raise ShareCountPublishIndeterminate(
+            "share-count publish journal cannot coexist with legacy recovery records",
+        )
+    if journal_body_at_entry is not None:
+        journal = _parse_canonical_json(
+            journal_body_at_entry,
+            label="publish journal",
+            max_bytes=MAX_PUBLISH_JOURNAL_BYTES,
+        )
+        journal = _validate_journal(journal, signer=signer)
+        lane.operation.check("publish journal validation")
+        return _recover_publish_journal_locked(
+            lane,
+            journal=journal,
+            journal_body=journal_body_at_entry,
+            signer=signer,
+            guard=guard,
+            trace=trace,
+        )
+    head, _ = _read_authenticated_head(
+        lane,
+        guard=guard,
+        signer=signer,
+        label="external head read",
+    )
+    if trace is not None:
+        trace.selected_head = None if head is None else dict(head)
+    # Read and authenticate the retained selector before processing any marker
+    # that could install external bytes.  This selector and its signed receipt
+    # form the local high-water; a replayed signed head may not erase it.
+    local = _read_local_selector(lane, signer=signer, witness=None)
+    _assert_local_high_water(local, head)
+    expected_pointer = None if local is None else _canonical_bytes(dict(local.pointer)) + b"\n"
     if (
         head is not None
         and head.get("schema") == WITNESS_V3_SCHEMA
@@ -3590,8 +4175,6 @@ def _publish_share_count_materialization_for_test(
     deadline: float | None = None, monotonic: Callable[[], float] = time.monotonic,
 ) -> ShareCountPublicationResult:
     """Injected test seam; production callers must use the public entry point."""
-    if not isinstance(canonical_ledger_bytes, bytes) or not 1 <= len(canonical_ledger_bytes) <= MAX_LEDGER_BYTES:
-        raise ShareCountPublicationTooLarge("share-count candidate ledger exceeds byte cap")
     start_deadline = deadline if deadline is not None else monotonic() + LEASE_TIMEOUT_SECONDS
     _require_deadline(start_deadline, monotonic, label="trust and lease acquisition")
     with _publication_lease(root, deadline=start_deadline, monotonic=monotonic) as lane:
@@ -3603,6 +4186,23 @@ def _publish_share_count_materialization_for_test(
             guard=head_guard,
             trace=trace,
         )
+        if trace.recovery_seen_at_entry:
+            # An invocation that entered with any durable recovery evidence is
+            # recovery-only.  Even successfully cleared evidence may not be
+            # followed by migration or by validation of a fresh candidate.
+            if current is not None:
+                lane.assert_bound(label="recovery-only publication completion")
+                return current
+            raise ShareCountPublishIndeterminate(
+                "share-count recovery-only invocation selected no head; retry from a second clean invocation",
+            )
+        if (
+            not isinstance(canonical_ledger_bytes, bytes)
+            or not 1 <= len(canonical_ledger_bytes) <= MAX_LEDGER_BYTES
+        ):
+            raise ShareCountPublicationTooLarge(
+                "share-count candidate ledger exceeds byte cap",
+            )
         active_head = _maybe_migrate_head_v3(
             lane,
             current=current,
@@ -3753,49 +4353,51 @@ def _publish_share_count_materialization_for_test(
                 "max_bytes": MAX_RECEIPT_BYTES,
             },
         )
-        capsule = _capsule(expected=expected_head, candidate=witness, expected_pointer=expected_pointer, candidate_pointer=pointer_body, signer=signer)
-        lane.operation.check("recovery capsule construction")
-        capsule_body = _write_signed_record(
+        # Explicit exact re-reads close the gap between an idempotent seal and
+        # durable commit intent.  A journal may never name bytes that were not
+        # independently observed in the external immutable store.
+        sealed_ledger = _guard_call(
             lane,
-            RECOVERY_NAME,
-            capsule,
-            max_bytes=MAX_RECOVERY_CAPSULE_BYTES,
-            label="recovery capsule",
+            label="external immutable ledger exact read-back",
+            call=head_guard.read_artifact,
+            kwargs={
+                "key": witness["ledger_object_key"],
+                "max_bytes": MAX_LEDGER_BYTES,
+            },
         )
-        capsule_ref = {"sha256": _sha(capsule_body), "byte_length": len(capsule_body)}
-        marker = _marker(expected=expected_head, candidate=witness, expected_pointer=expected_pointer, candidate_pointer=pointer_body, capsule=capsule_ref, signer=signer)
-        lane.operation.check("pending marker construction")
-        marker_body = _write_signed_record(
+        sealed_receipt = _guard_call(
             lane,
-            PENDING_NAME,
-            marker,
-            max_bytes=MAX_PENDING_MARKER_BYTES,
-            label="pending marker",
+            label="external immutable receipt exact read-back",
+            call=head_guard.read_artifact,
+            kwargs={
+                "key": witness["receipt_object_key"],
+                "max_bytes": MAX_RECEIPT_BYTES,
+            },
         )
+        if sealed_ledger != canonical_ledger_bytes or sealed_receipt != receipt_body:
+            raise ShareCountPublicationError(
+                "share-count external immutable artifact exact read-back mismatch",
+            )
+        lane.assert_bound(label="publish journal preflight")
+        journal = _journal(
+            expected=expected_head,
+            candidate=witness,
+            expected_pointer=expected_pointer,
+            candidate_pointer=pointer_body,
+            signer=signer,
+        )
+        lane.operation.check("publish journal construction")
+        journal_body = _write_publish_journal(lane, journal)
         lane.operation.check("before-CAS fault hook")
         _fault(fault, "before_cas")
         lane.operation.check("before-CAS fault hook")
-        # Reassert while the durable marker still says ``prepared``.  Any
-        # failure here is provably pre-CAS and restart recovery may discard it.
+        # The single journal is already durable commit intent.  From here every
+        # failure preserves its exact bytes for deterministic recovery.
         lane.assert_bound(label="before external head CAS")
         lane.operation.check("external head commit")
-        prepared_marker_body = marker_body
-        marker["phase"] = "cas_started"
-        marker["signature"] = signer.sign(_pending_payload(marker))
-        cas_started_body = _canonical_bytes(marker) + b"\n"
-        # Do not use the generic wrapper here: once advance returns, a deadline
-        # or pathname-identity failure is a post-CAS indeterminate outcome and
-        # the signed recovery records must remain installed.
         invoked = False
         advanced = False
         try:
-            marker_body = _write_signed_record(
-                lane,
-                PENDING_NAME,
-                marker,
-                max_bytes=MAX_PENDING_MARKER_BYTES,
-                label="pending marker",
-            )
             owner = getattr(head_guard.advance, "__self__", None)
             bind_deadline = getattr(owner, "_bind_deadline", None)
             deadline_context = (
@@ -3811,20 +4413,9 @@ def _publish_share_count_materialization_for_test(
                     candidate=witness,
                 )
                 advanced = True
-            # Identity reassertion is independent of the clock check.  Even if
-            # the non-cancellable SDK call consumed the remaining budget, we
-            # still prove whether every held pathname is bound to its fd before
-            # reporting the post-CAS indeterminate outcome.
             lane.assert_bound(label="after external head CAS", check_deadline=False)
             lane.operation.check("external head commit")
         except (ShareCountPublicationConflict, _ShareCountPreCasFailure):
-            # A conditional rejection (including an unchanged body with a new
-            # ETag/token) proves the candidate did not land.  Leaving
-            # ``cas_started`` would make the next recovery permanently
-            # indeterminate when the witness body is still ``expected``.
-            _abandon_pre_cas_records(
-                lane, marker_body=cas_started_body, capsule_body=capsule_body,
-            )
             raise
         except ShareCountPublishIndeterminate as exc:
             try:
@@ -3843,27 +4434,14 @@ def _publish_share_count_materialization_for_test(
                     "share-count external head committed after publication deadline or lane rebind",
                 ) from exc
             if not invoked:
-                # Marker replacement may have completed just before its
-                # post-write deadline check failed.  CAS was never called, so
-                # remove only the exact cas_started bytes using the held base.
-                _abandon_pre_cas_records(
-                    lane,
-                    marker_body=cas_started_body,
-                    alternate_marker_body=prepared_marker_body,
-                    capsule_body=capsule_body,
-                )
                 raise
-            # Once invoked, a generic transport exception is outcome-unknown;
-            # retain both signed recovery records and expose that status to the
-            # caller.  R2 normally converts this case after exact read-back,
-            # while custom guards get the same fail-closed protocol here.
             with contextlib.suppress(ShareCountPublicationError):
                 lane.assert_bound(
                     label="after failed external head CAS",
                     check_deadline=False,
                 )
             raise ShareCountPublishIndeterminate(
-                "share-count external head CAS outcome is indeterminate; recovery marker retained",
+                "share-count external head CAS outcome is indeterminate; publish journal retained",
             ) from exc
         try:
             lane.operation.check("after-CAS fault hook")
@@ -3891,18 +4469,19 @@ def _publish_share_count_materialization_for_test(
                 selection=confirmed_selector,
                 published=True,
             )
-            _clear_pending_recovery_records(
-                lane,
-                marker_body=marker_body,
-                capsule_body=capsule_body,
-            )
-            lane.assert_bound(label="publication completion")
-            return ShareCountPublicationResult(
-                receipt=confirmed.receipt, pointer=confirmed.pointer, ledger_path=confirmed.ledger_path,
-                ledger_bytes=confirmed.ledger_bytes, published=True, recovered=confirmed.recovered,
-            )
-        except BaseException as exc:  # noqa: BLE001 - post-CAS must restart through external head
-            raise ShareCountPublishIndeterminate("share-count publication failed after external head commit; recovery marker retained") from exc
+            lane.arm_terminal_cleanup(label="publication completion")
+            _clear_publish_journal(lane, journal_body)
+            # Return the already-built result.  Journal cleanup is the final
+            # fallible protocol operation; allocating a duplicate result after
+            # the unlink could otherwise fail after exact recovery evidence is
+            # gone.
+            return confirmed
+        except BaseException as exc:  # noqa: BLE001 - durable intent must restart through recovery
+            if isinstance(exc, ShareCountPublishIndeterminate):
+                raise
+            raise ShareCountPublishIndeterminate(
+                "share-count publication failed after durable intent; publish journal retained",
+            ) from exc
 
 
 def _recover_share_count_materialization_for_test(
@@ -3951,9 +4530,9 @@ def _publish_share_count_materialization_with_production_trust(
     migrate_head_v3 = _head_v3_migration_enabled()
     signer, guard = _production_trust(migration_enabled=migrate_head_v3)
     _require_deadline(deadline, monotonic, label="production trust")
-    # Defense in depth at the storage boundary. Semantic validation does not
-    # replace the orchestrator's authenticated raw-byte recompilation.
-    _validate_production_ledger(canonical_ledger_bytes, input_binding)
+    # The storage boundary validates the candidate after recovery.  Do not
+    # pre-validate here: an invocation that enters with durable recovery state
+    # must remain recovery-only even when the caller supplied unusable bytes.
     return _publish_share_count_materialization_for_test(
         root=_storage_root(), canonical_ledger_bytes=canonical_ledger_bytes, input_binding=input_binding,
         signer=signer, head_guard=guard, now=datetime.now(timezone.utc), deadline=deadline,

@@ -113,17 +113,36 @@ missing source, oversize input, split-brain, or an indeterminate post-CAS result
 fails closed. A clean runner has no independent monotonic witness and therefore
 cannot detect credential-level restoration of an older, otherwise valid signed
 head; global rollback protection requires a separate durable witness
-or signer domain. Capsule-only legacy recovery is now deliberately asymmetric:
+or signer domain. New publications use exactly one absent-only, signed
+`capital_structure.share_count_publish_journal/v1` commit-intent record. Its
+dedicated HMAC domain binds only exact v2 predecessor/candidate witnesses and
+their canonical local pointer bytes: no phase, CAS token, timestamp, or
+duplicated receipt metadata exists. The publisher fully seals and exact-reads
+both external immutable objects, reasserts the held descriptor-relative lane,
+then durably creates the journal before CAS. Once durable, every caught failure
+retains or restores the exact journal. Restart re-authenticates the candidate
+receipt and ledger before replaying `E -> C`, uses a fresh token, and permits at
+most two conditional conflicts. `H == C`, an authenticated descendant of `E`
+(including a competing direct child), or a genesis winner converges after the
+same logarithmic ancestry proof; rollback and divergent ancestry retain the
+journal and fail closed. Any recovery state observed at publisher entry makes
+that invocation recovery-only, so migration and new candidate validation need
+a second clean lease. A scope-valid v3 same-selection migration of virtual v2
+`E`, `C`, or a proven descendant can be drained; wrong scope or migration digest
+fails before external artifact or ledger reads. Native v3 publication remains
+impossible.
+
+Capsule-only legacy recovery remains deliberately asymmetric:
 an external head equal to the capsule's expected witness validates that expected
 bundle and clears; a head equal to, or an authenticated descendant of, the
 capsule candidate must prove the candidate as high-water before clearing; a
 sibling, equal-sequence fork, rollback, malformed proof, or missing proof fails
 closed and retains the exact capsule and pointer without opening a ledger. Any
 legacy recovery bytes beside a v3 head fail unchanged, and legacy state observed
-at lease entry prevents migration in that invocation. Activation still requires
-replacing the two-record marker/capsule cleanup with one signed journal (or an
-equivalent atomic protocol); stricter ambiguity handling does not make two
-independently cleaned records a single transaction.
+at lease entry prevents migration in that invocation. Legacy marker/capsule
+readers remain only to drain old crash state; the normal publisher never writes
+them. A journal beside either legacy name is terminal ambiguity before remote
+I/O, with every exact local byte preserved.
 Zero authenticated source manifests remain explicitly unavailable and do not
 create an empty green ledger.
 
@@ -158,7 +177,7 @@ before conditional PUT. The migration flag gates only that v2-to-v3 rewrite;
 dual-read v3 recovery and exact no-op behavior remain active when the flag is
 false, while every v3 successor publication remains blocked.
 
-Local generation, receipt, pointer, pending, recovery, and lease files
+Local generation, receipt, pointer, journal, legacy pending/recovery, and lease files
 are crash-recovery mirrors and are excluded by `.gitignore`; this lane never turns
 a cumulative ledger into a Git object or public site payload. The publisher never
 deletes, and ancestry receipts remain retained. A bounded retention planner and
@@ -167,9 +186,10 @@ credential lookup or remote I/O. Release requires all three of: a live isolated
 proof that the provider offers atomic conditional delete, a shared external fence
 covering publisher staging through head CAS and each retention delete, and a
 verifier-only/minted capability that can never write the signed head or receipts.
-The selector/receipt-only high-water split is implemented and CI-pinned; it does
-not activate publication. Publication activation still requires the unambiguous
-single-journal recovery change above. The migration additionally requires exact
+The selector/receipt-only high-water split and single-journal recovery protocol
+are implemented and CI-pinned; they do not activate publication. Activation
+still requires isolated live-provider proof and an explicit operator decision.
+The migration additionally requires exact
 `SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID` configuration and a strict lowercase
 `CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED=true`; the default is
 false, and migration-false v2 operation does not require the account ID. Any

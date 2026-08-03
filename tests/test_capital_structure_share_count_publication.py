@@ -843,7 +843,7 @@ def test_signed_malformed_binary_lifting_table_is_rejected(tmp_path: Path) -> No
         )
 
 
-def test_fault_before_cas_is_cleaned_and_after_cas_recovers(tmp_path: Path) -> None:
+def test_fault_after_durable_journal_before_and_after_cas_recovers(tmp_path: Path) -> None:
     signer, guard, root = _publisher(tmp_path)
     first = _publish(root, signer, guard)
 
@@ -853,7 +853,15 @@ def test_fault_before_cas_is_cleaned_and_after_cas_recovers(tmp_path: Path) -> N
 
     with pytest.raises(RuntimeError, match="pre-CAS"):
         _publish(root, signer, guard, b'{"generation":2}\n', suffix="b", fault=before)
-    assert publication._recover_share_count_materialization_for_test(root=root, signer=signer, head_guard=guard).receipt_id == first.receipt_id
+    base = root / "data/capital_structure/share_counts/v2"
+    journal = base / publication.JOURNAL_NAME
+    assert journal.exists()
+    healed_before = publication._recover_share_count_materialization_for_test(
+        root=root, signer=signer, head_guard=guard,
+    )
+    assert healed_before is not None and healed_before.sequence == first.sequence + 1
+    assert healed_before.ledger_bytes == b'{"generation":2}\n'
+    assert not journal.exists()
 
     def after(stage: str) -> None:
         if stage == "after_cas":
@@ -864,6 +872,7 @@ def test_fault_before_cas_is_cleaned_and_after_cas_recovers(tmp_path: Path) -> N
     healed = publication._recover_share_count_materialization_for_test(root=root, signer=signer, head_guard=guard)
     assert healed is not None and healed.recovered is True
     assert healed.ledger_bytes == b'{"generation":3}\n'
+    assert not journal.exists()
 
 
 def test_concurrent_head_conflict_does_not_rebind_the_selected_head(tmp_path: Path) -> None:
@@ -1292,7 +1301,7 @@ def test_slow_external_head_read_cannot_return_success_after_deadline(tmp_path: 
     assert clock[0] == pytest.approx(0.35)
 
 
-def test_same_head_new_token_conflict_clears_cas_started_recovery_state(tmp_path: Path) -> None:
+def test_same_head_token_churn_is_bounded_and_retains_journal(tmp_path: Path) -> None:
     signer, guard, root = _publisher(tmp_path)
     first = _publish(root, signer, guard)
     original_advance = guard.advance
@@ -1312,18 +1321,31 @@ def test_same_head_new_token_conflict_clears_cas_started_recovery_state(tmp_path
     base = root / "data/capital_structure/share_counts/v2"
     assert not (base / publication.PENDING_NAME).exists()
     assert not (base / publication.RECOVERY_NAME).exists()
+    journal = base / publication.JOURNAL_NAME
+    journal_body = journal.read_bytes()
+    with pytest.raises(
+        publication.ShareCountPublishIndeterminate,
+        match="remains contested",
+    ):
+        publication._recover_share_count_materialization_for_test(
+            root=root, signer=signer, head_guard=guard,
+        )
+    assert journal.read_bytes() == journal_body
+    guard.advance = original_advance
     recovered = publication._recover_share_count_materialization_for_test(
         root=root, signer=signer, head_guard=guard,
     )
-    assert recovered is not None and recovered.receipt_id == first.receipt_id
+    assert recovered is not None and recovered.sequence == first.sequence + 1
+    assert recovered.ledger_bytes == b'{"generation":2}\n'
+    assert not journal.exists()
 
 
-def test_exception_after_cas_started_write_but_before_advance_cleans_marker(
+def test_exception_after_journal_write_before_advance_retains_intent(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     signer, guard, root = _publisher(tmp_path)
     first = _publish(root, signer, guard)
-    original_write = publication._write_signed_record
+    original_write = publication._write_publish_journal
     advance_calls = 0
     original_advance = guard.advance
 
@@ -1336,16 +1358,12 @@ def test_exception_after_cas_started_write_but_before_advance_cleans_marker(
             candidate=candidate,
         )
 
-    def fail_after_write(lane, name, record, *, max_bytes, label):
-        body = original_write(
-            lane, name, record, max_bytes=max_bytes, label=label,
-        )
-        if name == publication.PENDING_NAME and record.get("phase") == "cas_started":
-            raise publication.ShareCountPublicationError("injected pre-invocation failure")
-        return body
+    def fail_after_write(lane, record):
+        original_write(lane, record)
+        raise publication.ShareCountPublicationError("injected pre-invocation failure")
 
     guard.advance = count_advance
-    monkeypatch.setattr(publication, "_write_signed_record", fail_after_write)
+    monkeypatch.setattr(publication, "_write_publish_journal", fail_after_write)
     with pytest.raises(publication.ShareCountPublicationError, match="pre-invocation"):
         _publish(root, signer, guard, b'{"generation":2}\n', suffix="b")
     assert advance_calls == 0
@@ -1353,54 +1371,70 @@ def test_exception_after_cas_started_write_but_before_advance_cleans_marker(
     base = root / "data/capital_structure/share_counts/v2"
     assert not (base / publication.PENDING_NAME).exists()
     assert not (base / publication.RECOVERY_NAME).exists()
-    monkeypatch.setattr(publication, "_write_signed_record", original_write)
+    assert (base / publication.JOURNAL_NAME).exists()
+    monkeypatch.setattr(publication, "_write_publish_journal", original_write)
     recovered = publication._recover_share_count_materialization_for_test(
         root=root, signer=signer, head_guard=guard,
     )
-    assert recovered is not None and recovered.receipt_id == first.receipt_id
+    assert recovered is not None and recovered.sequence == first.sequence + 1
+    assert not (base / publication.JOURNAL_NAME).exists()
 
 
-def test_abrupt_crash_after_capsule_before_marker_recovers_authoritative_head(
+def test_failure_before_journal_create_never_calls_external_cas(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
+    first = _publish(root, signer, guard)
+    guard.reset_writes()
+
+    def fail_before_create(lane, record):
+        raise publication.ShareCountPublicationError("injected before journal create")
+
+    monkeypatch.setattr(publication, "_write_publish_journal", fail_before_create)
+    with pytest.raises(publication.ShareCountPublicationError, match="before journal"):
+        _publish(root, signer, guard, b'{"candidate":true}\n', suffix="b")
+    base = root / "data/capital_structure/share_counts/v2"
+    assert not (base / publication.JOURNAL_NAME).exists()
+    assert guard.advances == 0
+    assert guard.read()[0]["receipt_id"] == first.receipt_id
+
+
+def test_abrupt_crash_after_journal_before_cas_replays_candidate(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     signer, guard, root = _publisher(tmp_path)
     first = _publish(root, signer, guard)
-    original_write = publication._write_signed_record
+    original_write = publication._write_publish_journal
 
-    def crash_after_capsule(lane, name, record, *, max_bytes, label):
-        body = original_write(
-            lane, name, record, max_bytes=max_bytes, label=label,
-        )
-        if name == publication.RECOVERY_NAME:
-            # Deliberately bypass the publisher's ordinary error cleanup: this
-            # models process death after capsule fsync and before marker write.
-            raise SystemExit("crash after recovery capsule")
-        return body
+    def crash_after_journal(lane, record):
+        original_write(lane, record)
+        raise SystemExit("crash after publish journal")
 
-    monkeypatch.setattr(publication, "_write_signed_record", crash_after_capsule)
-    with pytest.raises(SystemExit, match="after recovery capsule"):
+    monkeypatch.setattr(publication, "_write_publish_journal", crash_after_journal)
+    with pytest.raises(SystemExit, match="after publish journal"):
         _publish(root, signer, guard, b'{"generation":2}\n', suffix="b")
 
     base = root / "data/capital_structure/share_counts/v2"
-    assert (base / publication.RECOVERY_NAME).exists()
+    assert (base / publication.JOURNAL_NAME).exists()
     assert not (base / publication.PENDING_NAME).exists()
     assert guard.read()[0] is not None and guard.read()[0]["receipt_id"] == first.receipt_id
 
-    monkeypatch.setattr(publication, "_write_signed_record", original_write)
+    monkeypatch.setattr(publication, "_write_publish_journal", original_write)
     recovered = publication._recover_share_count_materialization_for_test(
         root=root, signer=signer, head_guard=guard,
     )
-    assert recovered is not None and recovered.receipt_id == first.receipt_id
-    assert not (base / publication.RECOVERY_NAME).exists()
+    assert recovered is not None and recovered.sequence == first.sequence + 1
+    assert not (base / publication.JOURNAL_NAME).exists()
     assert not (base / publication.PENDING_NAME).exists()
 
 
-def test_abrupt_crash_after_cas_started_before_advance_replays_intent(
+def test_fault_hook_before_cas_observes_durable_journal_and_replays_intent(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     signer, guard, root = _publisher(tmp_path)
     _publish(root, signer, guard)
-    original_write = publication._write_signed_record
     original_advance = guard.advance
     advance_calls = 0
 
@@ -1413,46 +1447,41 @@ def test_abrupt_crash_after_cas_started_before_advance_replays_intent(
             candidate=candidate,
         )
 
-    def crash_after_cas_started(lane, name, record, *, max_bytes, label):
-        body = original_write(
-            lane, name, record, max_bytes=max_bytes, label=label,
-        )
-        if name == publication.PENDING_NAME and record.get("phase") == "cas_started":
-            # This is the former unrecoverable gap: the durable marker claims
-            # CAS intent, but no guard call has been entered.
-            raise SystemExit("crash after cas_started")
-        return body
+    def crash_before_cas(stage: str) -> None:
+        if stage == "before_cas":
+            raise SystemExit("crash after durable journal")
 
     guard.advance = count_advance
-    monkeypatch.setattr(publication, "_write_signed_record", crash_after_cas_started)
-    with pytest.raises(SystemExit, match="after cas_started"):
-        _publish(root, signer, guard, b'{"generation":2}\n', suffix="b")
+    with pytest.raises(SystemExit, match="durable journal"):
+        _publish(
+            root, signer, guard, b'{"generation":2}\n', suffix="b",
+            fault=crash_before_cas,
+        )
     assert advance_calls == 0
 
     base = root / "data/capital_structure/share_counts/v2"
-    assert (base / publication.PENDING_NAME).exists()
-    assert (base / publication.RECOVERY_NAME).exists()
+    assert (base / publication.JOURNAL_NAME).exists()
+    assert not (base / publication.PENDING_NAME).exists()
+    assert not (base / publication.RECOVERY_NAME).exists()
     assert guard.read()[0] is not None and guard.read()[0]["sequence"] == 1
 
-    monkeypatch.setattr(publication, "_write_signed_record", original_write)
     recovered = publication._recover_share_count_materialization_for_test(
         root=root, signer=signer, head_guard=guard,
     )
     assert recovered is not None and recovered.sequence == 2
     assert recovered.ledger_bytes == b'{"generation":2}\n'
     assert advance_calls == 1
-    assert not (base / publication.PENDING_NAME).exists()
-    assert not (base / publication.RECOVERY_NAME).exists()
+    assert not (base / publication.JOURNAL_NAME).exists()
 
 
-def test_marker_first_cleanup_crash_leaves_capsule_only_and_recovers(
+def test_journal_cleanup_fault_restores_exact_evidence_and_recovers(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     signer, guard, root = _publisher(tmp_path)
     _publish(root, signer, guard)
     original_remove = publication._remove_exact_at
 
-    def crash_after_marker(directory_fd, name, body, *, max_bytes, label, operation):
+    def crash_after_unlink(directory_fd, name, body, *, max_bytes, label, operation):
         original_remove(
             directory_fd,
             name,
@@ -1461,19 +1490,17 @@ def test_marker_first_cleanup_crash_leaves_capsule_only_and_recovers(
             label=label,
             operation=operation,
         )
-        if name == publication.PENDING_NAME:
-            # The external head and local pointer have both committed.  An
-            # abrupt death in the historical marker-first cleanup order leaves
-            # the capsule alone for the next process.
-            raise SystemExit("crash after pending marker cleanup")
+        if name == publication.JOURNAL_NAME:
+            raise SystemExit("crash after publish journal unlink")
 
-    monkeypatch.setattr(publication, "_remove_exact_at", crash_after_marker)
+    monkeypatch.setattr(publication, "_remove_exact_at", crash_after_unlink)
     with pytest.raises(publication.ShareCountPublishIndeterminate):
         _publish(root, signer, guard, b'{"generation":2}\n', suffix="b")
 
     base = root / "data/capital_structure/share_counts/v2"
+    assert (base / publication.JOURNAL_NAME).exists()
     assert not (base / publication.PENDING_NAME).exists()
-    assert (base / publication.RECOVERY_NAME).exists()
+    assert not (base / publication.RECOVERY_NAME).exists()
     selected, version = guard.read()
     assert selected is not None and selected["sequence"] == 2 and version == "2"
 
@@ -1484,57 +1511,207 @@ def test_marker_first_cleanup_crash_leaves_capsule_only_and_recovers(
     assert recovered is not None and recovered.sequence == 2
     assert recovered.ledger_bytes == b'{"generation":2}\n'
     assert guard.read()[1] == "2"  # recovery did not re-drive a committed CAS
-    assert not (base / publication.PENDING_NAME).exists()
-    assert not (base / publication.RECOVERY_NAME).exists()
+    assert not (base / publication.JOURNAL_NAME).exists()
 
 
-def test_prepared_records_survive_delayed_selected_local_ledger_failure(
+def test_emergency_journal_read_rejects_path_swap_during_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base = tmp_path / "journal-race"
+    base.mkdir()
+    journal_path = base / publication.JOURNAL_NAME
+    expected = b'{"expected":"journal"}\n'
+    hostile = b'{"hostile":"replacement"}\n'
+    journal_path.write_bytes(expected)
+    replacement_path = base / ".replacement"
+    replacement_path.write_bytes(hostile)
+    original_read = publication.os.read
+    swapped = False
+
+    def swap_path_then_read(fd: int, size: int) -> bytes:
+        nonlocal swapped
+        if not swapped:
+            swapped = True
+            os.replace(replacement_path, journal_path)
+        return original_read(fd, size)
+
+    monkeypatch.setattr(publication.os, "read", swap_path_then_read)
+    directory_fd = os.open(base, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        observed = publication._emergency_read_exact_at(
+            directory_fd,
+            publication.JOURNAL_NAME,
+            max_bytes=publication.MAX_PUBLISH_JOURNAL_BYTES,
+        )
+    finally:
+        os.close(directory_fd)
+
+    assert swapped is True
+    assert observed == b""
+    assert journal_path.read_bytes() == hostile
+
+
+def test_terminal_journal_cleanup_has_no_fallible_lease_exit_checks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    _publish(root, signer, guard)
+    original_clear = publication._clear_publish_journal
+
+    def clear_then_poison_teardown(lane, body):
+        original_clear(lane, body)
+
+        def fail_after_cleanup(*args, **kwargs):
+            raise AssertionError("fallible operation ran after journal cleanup")
+
+        monkeypatch.setattr(lane, "assert_bound", fail_after_cleanup)
+        monkeypatch.setattr(
+            type(lane.operation),
+            "check",
+            fail_after_cleanup,
+        )
+
+    monkeypatch.setattr(
+        publication,
+        "_clear_publish_journal",
+        clear_then_poison_teardown,
+    )
+    published = _publish(
+        root,
+        signer,
+        guard,
+        b'{"generation":2}\n',
+        suffix="b",
+    )
+    base = root / "data/capital_structure/share_counts/v2"
+    head, _ = guard.read()
+    assert published.sequence == 2 and published.published is True
+    assert head is not None and head["sequence"] == 2
+    assert not (base / publication.JOURNAL_NAME).exists()
+
+
+def test_armed_cleanup_error_is_not_masked_by_lease_teardown(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    _publish(root, signer, guard)
+    original_arm = publication._PublicationLane.arm_terminal_cleanup
+    original_remove = publication._remove_exact_at
+    original_close = publication.os.close
+    lock_fd: list[int] = []
+    expected_journal: list[bytes] = []
+
+    def arm_then_break_lock_close(lane, *, label):
+        original_arm(lane, label=label)
+        assert lane._lock_binding is not None
+        lock_fd.append(lane._lock_binding.fd)
+
+        def close_with_injected_lock_failure(fd: int) -> None:
+            if fd == lock_fd[-1]:
+                raise OSError("injected lock close failure")
+            original_close(fd)
+
+        monkeypatch.setattr(publication.os, "close", close_with_injected_lock_failure)
+
+    def fail_journal_cleanup(
+        directory_fd,
+        name,
+        body,
+        *,
+        max_bytes,
+        label,
+        operation,
+    ):
+        if name == publication.JOURNAL_NAME:
+            expected_journal.append(body)
+            raise publication.ShareCountPublicationError("injected journal cleanup failure")
+        return original_remove(
+            directory_fd,
+            name,
+            body,
+            max_bytes=max_bytes,
+            label=label,
+            operation=operation,
+        )
+
+    monkeypatch.setattr(
+        publication._PublicationLane,
+        "arm_terminal_cleanup",
+        arm_then_break_lock_close,
+    )
+    monkeypatch.setattr(publication, "_remove_exact_at", fail_journal_cleanup)
+    try:
+        with pytest.raises(
+            publication.ShareCountPublishIndeterminate,
+            match="cleanup failed; exact evidence retained",
+        ):
+            _publish(
+                root,
+                signer,
+                guard,
+                b'{"generation":2}\n',
+                suffix="b",
+            )
+    finally:
+        monkeypatch.setattr(publication.os, "close", original_close)
+        for fd in lock_fd:
+            try:
+                original_close(fd)
+            except OSError:
+                pass
+
+    base = root / "data/capital_structure/share_counts/v2"
+    journal_path = base / publication.JOURNAL_NAME
+    head, _ = guard.read()
+    assert expected_journal and journal_path.read_bytes() == expected_journal[-1]
+    assert head is not None and head["sequence"] == 2
+
+
+def test_journal_survives_delayed_candidate_local_ledger_corruption(
     tmp_path: Path,
 ) -> None:
     signer, guard, root = _publisher(tmp_path)
-    selected = _publish(root, signer, guard)
+    _publish(root, signer, guard)
+    candidate_bytes = b'{"candidate":true}\n'
 
-    def crash_with_prepared_records(stage: str) -> None:
-        if stage == "before_cas":
-            raise SystemExit("crash with prepared records")
+    def crash_after_cas(stage: str) -> None:
+        if stage == "after_cas":
+            raise RuntimeError("crash after candidate CAS")
 
-    with pytest.raises(SystemExit, match="prepared records"):
+    with pytest.raises(publication.ShareCountPublishIndeterminate):
         _publish(
             root,
             signer,
             guard,
-            b'{"candidate":true}\n',
+            candidate_bytes,
             suffix="b",
-            fault=crash_with_prepared_records,
+            fault=crash_after_cas,
         )
 
     base = root / "data/capital_structure/share_counts/v2"
-    marker_path = base / publication.PENDING_NAME
-    capsule_path = base / publication.RECOVERY_NAME
-    marker_body = marker_path.read_bytes()
-    capsule_body = capsule_path.read_bytes()
-
-    selected.ledger_path.unlink()
-    with pytest.raises(publication.ShareCountPublicationError, match="immutable ledger is missing"):
+    journal_path = base / publication.JOURNAL_NAME
+    journal_body = journal_path.read_bytes()
+    generation_name = publication._sha(candidate_bytes)
+    candidate_path = base / "generations" / generation_name / "ledger.json"
+    candidate_path.write_bytes(b'{"tampered":true}\n')
+    with pytest.raises(publication.ShareCountPublicationConflict, match="already differs"):
         publication._recover_share_count_materialization_for_test(
             root=root,
             signer=signer,
             head_guard=guard,
         )
 
-    assert marker_path.read_bytes() == marker_body
-    assert capsule_path.read_bytes() == capsule_body
+    assert journal_path.read_bytes() == journal_body
 
-    selected.ledger_path.write_bytes(selected.ledger_bytes)
+    candidate_path.write_bytes(candidate_bytes)
     recovered = publication._recover_share_count_materialization_for_test(
         root=root,
         signer=signer,
         head_guard=guard,
     )
-    assert recovered is not None and recovered.receipt_id == selected.receipt_id
-    assert recovered.ledger_bytes == selected.ledger_bytes
-    assert not marker_path.exists()
-    assert not capsule_path.exists()
+    assert recovered is not None and recovered.sequence == 2
+    assert recovered.ledger_bytes == candidate_bytes
+    assert not journal_path.exists()
 
 
 def test_pending_expected_witness_is_temporary_high_water_when_pointer_is_lost(
@@ -1637,27 +1814,26 @@ def test_pending_expected_high_water_beats_replayed_older_local_pointer(
     ]
 
 
-def test_orphan_capsule_before_marker_rejects_sibling_and_retains_exact_evidence(
+def test_journal_accepts_competing_direct_descendant_of_expected(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
     guard = _CountingGuard(signer)
     root = tmp_path / "workspace"
     first = _publish(root, signer, guard)
-    original_write = publication._write_signed_record
+    def crash_before_cas(stage: str) -> None:
+        if stage == "before_cas":
+            raise SystemExit("crash with durable journal")
 
-    def crash_after_capsule(lane, name, record, *, max_bytes, label):
-        body = original_write(
-            lane, name, record, max_bytes=max_bytes, label=label,
+    with pytest.raises(SystemExit, match="durable journal"):
+        _publish(
+            root,
+            signer,
+            guard,
+            b'{"candidate":true}\n',
+            suffix="b",
+            fault=crash_before_cas,
         )
-        if name == publication.RECOVERY_NAME:
-            raise SystemExit("crash after recovery capsule")
-        return body
-
-    monkeypatch.setattr(publication, "_write_signed_record", crash_after_capsule)
-    with pytest.raises(SystemExit, match="after recovery capsule"):
-        _publish(root, signer, guard, b'{"candidate":true}\n', suffix="b")
-    monkeypatch.setattr(publication, "_write_signed_record", original_write)
 
     # A separate clean publisher observes E and legitimately wins E -> C'.
     competitor = _publish(
@@ -1670,24 +1846,47 @@ def test_orphan_capsule_before_marker_rejects_sibling_and_retains_exact_evidence
     assert competitor.sequence == 2 and competitor.receipt_id != first.receipt_id
 
     base = root / "data/capital_structure/share_counts/v2"
-    capsule_path = base / publication.RECOVERY_NAME
+    journal_path = base / publication.JOURNAL_NAME
     pointer_path = base / publication.POINTER_NAME
-    capsule_before = capsule_path.read_bytes()
-    pointer_before = pointer_path.read_bytes()
+    assert journal_path.exists()
     guard.reset_artifact_reads(reject_ledgers=True)
+    guard.reject_ledger_reads = False
     guard.reset_writes()
-    with pytest.raises(publication.ShareCountPublicationError, match="orphan recovery capsule conflicts"):
-        publication._recover_share_count_materialization_for_test(
-            root=root,
-            signer=signer,
-            head_guard=guard,
-        )
-    assert capsule_path.read_bytes() == capsule_before
-    assert pointer_path.read_bytes() == pointer_before
-    assert guard.artifact_reads == 0
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+    )
+    assert recovered is not None and recovered.receipt_id == competitor.receipt_id
+    assert not journal_path.exists()
+    assert pointer_path.exists()
     assert guard.artifact_seals == guard.advances == guard.migrations == 0
-    assert (base / publication.RECOVERY_NAME).exists()
     assert not (base / publication.PENDING_NAME).exists()
+
+
+def test_journal_genesis_race_converges_to_authenticated_external_winner(
+    tmp_path: Path,
+) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    journal = _crash_with_journal(
+        root, signer, guard, b'{"candidate":"loser"}\n', suffix="a",
+    )
+    assert journal["expected_witness"] is None
+    winner = _publish(
+        tmp_path / "genesis-winner",
+        signer,
+        guard,
+        b'{"candidate":"winner"}\n',
+        suffix="b",
+    )
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root, signer=signer, head_guard=guard,
+    )
+    assert recovered is not None and recovered.receipt_id == winner.receipt_id
+    assert recovered.ledger_bytes == b'{"candidate":"winner"}\n'
+    assert not (
+        root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME
+    ).exists()
 
 
 def test_v3_head_with_any_legacy_bytes_fails_unchanged_before_artifact_or_ledger_read(
@@ -1727,7 +1926,7 @@ def test_v3_head_with_any_legacy_bytes_fails_unchanged_before_artifact_or_ledger
     assert guard.artifact_seals == guard.advances == guard.migrations == 0
 
 
-def test_legacy_seen_at_entry_defers_v3_migration_until_next_clean_invocation(
+def test_journal_seen_at_entry_defers_v3_migration_until_next_clean_invocation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1735,24 +1934,19 @@ def test_legacy_seen_at_entry_defers_v3_migration_until_next_clean_invocation(
     guard = _CountingGuard(signer)
     root = tmp_path / "workspace"
     _publish(root, signer, guard)
-    original_write = publication._write_signed_record
+    def crash_before_cas(stage: str) -> None:
+        if stage == "before_cas":
+            raise SystemExit("crash with publish journal")
 
-    def crash_after_capsule(lane, name, record, *, max_bytes, label):
-        body = original_write(
-            lane,
-            name,
-            record,
-            max_bytes=max_bytes,
-            label=label,
+    with pytest.raises(SystemExit, match="publish journal"):
+        _publish(
+            root,
+            signer,
+            guard,
+            b'{"candidate":true}\n',
+            suffix="b",
+            fault=crash_before_cas,
         )
-        if name == publication.RECOVERY_NAME:
-            raise SystemExit("crash after recovery capsule")
-        return body
-
-    monkeypatch.setattr(publication, "_write_signed_record", crash_after_capsule)
-    with pytest.raises(SystemExit, match="after recovery capsule"):
-        _publish(root, signer, guard, b'{"candidate":true}\n', suffix="b")
-    monkeypatch.setattr(publication, "_write_signed_record", original_write)
     guard.reset_writes()
 
     recovered = publication._recover_share_count_materialization_for_test(
@@ -1764,11 +1958,11 @@ def test_legacy_seen_at_entry_defers_v3_migration_until_next_clean_invocation(
     head, token = guard.read()
     assert recovered is not None
     assert head is not None and head["schema"] == publication.WITNESS_V2_SCHEMA
-    assert token == "1" and guard.migrations == 0
+    assert token == "2" and guard.migrations == 0
     assert not (
         root
         / "data/capital_structure/share_counts/v2"
-        / publication.RECOVERY_NAME
+        / publication.JOURNAL_NAME
     ).exists()
 
     publication._recover_share_count_materialization_for_test(
@@ -1779,7 +1973,7 @@ def test_legacy_seen_at_entry_defers_v3_migration_until_next_clean_invocation(
     )
     head, token = guard.read()
     assert head is not None and head["schema"] == publication.WITNESS_V3_SCHEMA
-    assert token == "2" and guard.migrations == 1
+    assert token == "3" and guard.migrations == 1
 
 
 def test_v3_migration_exactly_rereads_both_legacy_names_absent_after_recovery(
@@ -1823,14 +2017,14 @@ def test_v3_migration_exactly_rereads_both_legacy_names_absent_after_recovery(
     assert capsule_path.read_bytes() == injected
 
 
-def test_orphan_capsule_accepts_bounded_descendant_of_committed_candidate(
+def test_journal_accepts_bounded_descendant_after_cleanup_fault(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     signer, guard, root = _publisher(tmp_path)
     _publish(root, signer, guard)
     original_remove = publication._remove_exact_at
 
-    def crash_after_marker(directory_fd, name, body, *, max_bytes, label, operation):
+    def crash_after_journal_unlink(directory_fd, name, body, *, max_bytes, label, operation):
         original_remove(
             directory_fd,
             name,
@@ -1839,10 +2033,10 @@ def test_orphan_capsule_accepts_bounded_descendant_of_committed_candidate(
             label=label,
             operation=operation,
         )
-        if name == publication.PENDING_NAME:
-            raise SystemExit("crash after pending marker cleanup")
+        if name == publication.JOURNAL_NAME:
+            raise SystemExit("crash after publish journal cleanup")
 
-    monkeypatch.setattr(publication, "_remove_exact_at", crash_after_marker)
+    monkeypatch.setattr(publication, "_remove_exact_at", crash_after_journal_unlink)
     with pytest.raises(publication.ShareCountPublishIndeterminate):
         _publish(root, signer, guard, b'{"generation":2}\n', suffix="b")
     monkeypatch.setattr(publication, "_remove_exact_at", original_remove)
@@ -1866,10 +2060,10 @@ def test_orphan_capsule_accepts_bounded_descendant_of_committed_candidate(
     base = root / "data/capital_structure/share_counts/v2"
     assert recovered is not None and recovered.sequence == 3
     assert recovered.ledger_bytes == b'{"generation":3}\n'
-    assert not (base / publication.RECOVERY_NAME).exists()
+    assert not (base / publication.JOURNAL_NAME).exists()
 
 
-def test_orphan_capsule_rejects_divergent_descendant_proof_before_ledger_and_retains_bytes(
+def test_journal_rejects_divergent_descendant_before_ledger_and_retains_bytes(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1879,7 +2073,7 @@ def test_orphan_capsule_rejects_divergent_descendant_proof_before_ledger_and_ret
     _publish(root, signer, guard)
     original_remove = publication._remove_exact_at
 
-    def crash_after_marker(directory_fd, name, body, *, max_bytes, label, operation):
+    def crash_after_journal_unlink(directory_fd, name, body, *, max_bytes, label, operation):
         original_remove(
             directory_fd,
             name,
@@ -1888,10 +2082,10 @@ def test_orphan_capsule_rejects_divergent_descendant_proof_before_ledger_and_ret
             label=label,
             operation=operation,
         )
-        if name == publication.PENDING_NAME:
-            raise SystemExit("crash after pending marker cleanup")
+        if name == publication.JOURNAL_NAME:
+            raise SystemExit("crash after publish journal cleanup")
 
-    monkeypatch.setattr(publication, "_remove_exact_at", crash_after_marker)
+    monkeypatch.setattr(publication, "_remove_exact_at", crash_after_journal_unlink)
     with pytest.raises(publication.ShareCountPublishIndeterminate):
         _publish(root, signer, guard, b'{"generation":2}\n', suffix="b")
     monkeypatch.setattr(publication, "_remove_exact_at", original_remove)
@@ -1911,7 +2105,7 @@ def test_orphan_capsule_rejects_divergent_descendant_proof_before_ledger_and_ret
         hostile_ledger,
     )
     base = root / "data/capital_structure/share_counts/v2"
-    capsule_path = base / publication.RECOVERY_NAME
+    capsule_path = base / publication.JOURNAL_NAME
     pointer_path = base / publication.POINTER_NAME
     capsule_before = capsule_path.read_bytes()
     pointer_before = pointer_path.read_bytes()
@@ -1962,6 +2156,330 @@ def test_capsule_embedded_pointers_must_match_its_signed_witnesses(
     with pytest.raises(publication.ShareCountPublicationError, match="candidate pointer is detached"):
         publication._validate_capsule(capsule, signer=signer)
     assert first.receipt_id != second.receipt_id
+
+
+def _crash_with_journal(root: Path, signer, guard, ledger: bytes, *, suffix: str) -> dict:
+    def crash(stage: str) -> None:
+        if stage == "before_cas":
+            raise SystemExit("journal durable")
+
+    with pytest.raises(SystemExit, match="journal durable"):
+        _publish(root, signer, guard, ledger, suffix=suffix, fault=crash)
+    body = (
+        root
+        / "data/capital_structure/share_counts/v2"
+        / publication.JOURNAL_NAME
+    ).read_bytes()
+    return publication._validate_journal(
+        publication._parse_canonical_json(
+            body,
+            label="test journal",
+            max_bytes=publication.MAX_PUBLISH_JOURNAL_BYTES,
+        ),
+        signer=signer,
+    )
+
+
+def test_journal_is_minimal_canonical_and_cross_domain_authenticated(tmp_path: Path) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    _publish(root, signer, guard)
+    journal = _crash_with_journal(
+        root, signer, guard, b'{"candidate":true}\n', suffix="b",
+    )
+    assert set(journal) == {
+        "schema", "key_id", "expected_witness", "candidate_witness",
+        "expected_pointer_b64", "candidate_pointer_b64", "signature",
+    }
+    assert not ({"phase", "token", "timestamp", "transaction_id"} & set(journal))
+    assert signer.verify_journal(
+        publication._journal_payload(journal),
+        journal["signature"],
+        key_id=signer.key_id,
+    )
+    hostile = copy.deepcopy(journal)
+    hostile["signature"] = signer.sign(publication._journal_payload(hostile))
+    with pytest.raises(publication.ShareCountPublicationError, match="authentication"):
+        publication._validate_journal(hostile, signer=signer)
+
+
+def test_hostile_existing_journal_is_never_replaced(tmp_path: Path) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    _publish(root, signer, guard)
+    base = root / "data/capital_structure/share_counts/v2"
+    hostile = b'{"hostile":true}\n'
+    (base / publication.JOURNAL_NAME).write_bytes(hostile)
+    head_before = copy.deepcopy(guard.read())
+    with pytest.raises(publication.ShareCountPublicationError):
+        _publish(root, signer, guard, b'{"candidate":true}\n', suffix="b")
+    assert (base / publication.JOURNAL_NAME).read_bytes() == hostile
+    assert guard.read() == head_before
+
+
+@pytest.mark.parametrize("hostile_kind", ["malformed", "extra", "cross_domain"])
+def test_invalid_journal_fails_before_remote_head_read(
+    tmp_path: Path, hostile_kind: str,
+) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    _publish(root, signer, guard)
+    journal = _crash_with_journal(
+        root, signer, guard, b'{"candidate":true}\n', suffix="b",
+    )
+    path = root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME
+    if hostile_kind == "malformed":
+        path.write_bytes(b"not canonical journal\n")
+    else:
+        hostile = copy.deepcopy(journal)
+        if hostile_kind == "extra":
+            hostile["unexpected"] = True
+            hostile["signature"] = signer.sign_journal(
+                publication._journal_payload(hostile),
+            )
+        else:
+            hostile["signature"] = signer.sign(publication._journal_payload(hostile))
+        path.write_bytes(publication._canonical_bytes(hostile) + b"\n")
+
+    def forbid_read():
+        raise AssertionError("invalid journal reached remote head")
+
+    guard.read = forbid_read
+    with pytest.raises(publication.ShareCountPublicationError):
+        publication._recover_share_count_materialization_for_test(
+            root=root, signer=signer, head_guard=guard,
+        )
+
+
+@pytest.mark.parametrize("unsafe_kind", ["symlink", "oversized"])
+def test_unsafe_journal_entry_fails_before_remote_head_read(
+    tmp_path: Path, unsafe_kind: str,
+) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    _publish(root, signer, guard)
+    path = root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME
+    if unsafe_kind == "symlink":
+        outside = tmp_path / "outside-journal"
+        outside.write_bytes(b'{"outside":true}\n')
+        path.symlink_to(outside)
+    else:
+        path.write_bytes(b"x" * (publication.MAX_PUBLISH_JOURNAL_BYTES + 1))
+
+    def forbid_read():
+        raise AssertionError("unsafe journal reached remote head")
+
+    guard.read = forbid_read
+    with pytest.raises(publication.ShareCountPublicationError):
+        publication._recover_share_count_materialization_for_test(
+            root=root, signer=signer, head_guard=guard,
+        )
+
+
+@pytest.mark.parametrize("legacy_name", [publication.PENDING_NAME, publication.RECOVERY_NAME])
+def test_journal_plus_legacy_is_terminal_before_any_remote_io(
+    tmp_path: Path, legacy_name: str,
+) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    _publish(root, signer, guard)
+    _crash_with_journal(root, signer, guard, b'{"candidate":true}\n', suffix="b")
+    base = root / "data/capital_structure/share_counts/v2"
+    (base / legacy_name).write_bytes(b"hostile legacy bytes\n")
+
+    def forbid_read():
+        raise AssertionError("mixed recovery state reached remote head")
+
+    guard.read = forbid_read
+    with pytest.raises(publication.ShareCountPublishIndeterminate, match="cannot coexist"):
+        publication._recover_share_count_materialization_for_test(
+            root=root, signer=signer, head_guard=guard,
+        )
+
+
+def test_legacy_marker_capsule_pair_remains_drainable_but_is_never_rewritten(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(
+        b"s" * 32,
+        key_id="test-share-count",
+    )
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
+    _publish(root, signer, guard)
+    journal = _crash_with_journal(
+        root,
+        signer,
+        guard,
+        b'{"legacy-candidate":true}\n',
+        suffix="b",
+    )
+    base = root / "data/capital_structure/share_counts/v2"
+    (base / publication.JOURNAL_NAME).unlink()
+    expected_pointer = base64.b64decode(
+        journal["expected_pointer_b64"],
+        validate=True,
+    )
+    candidate_pointer = base64.b64decode(
+        journal["candidate_pointer_b64"],
+        validate=True,
+    )
+    capsule = publication._capsule(
+        expected=journal["expected_witness"],
+        candidate=journal["candidate_witness"],
+        expected_pointer=expected_pointer,
+        candidate_pointer=candidate_pointer,
+        signer=signer,
+    )
+    capsule_body = publication._canonical_bytes(capsule) + b"\n"
+    marker = publication._marker(
+        expected=journal["expected_witness"],
+        candidate=journal["candidate_witness"],
+        expected_pointer=expected_pointer,
+        candidate_pointer=candidate_pointer,
+        capsule={
+            "sha256": publication._sha(capsule_body),
+            "byte_length": len(capsule_body),
+        },
+        signer=signer,
+    )
+    marker["phase"] = "cas_started"
+    marker["signature"] = signer.sign(publication._pending_payload(marker))
+    (base / publication.RECOVERY_NAME).write_bytes(capsule_body)
+    (base / publication.PENDING_NAME).write_bytes(
+        publication._canonical_bytes(marker) + b"\n",
+    )
+    guard.reset_writes()
+
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+    )
+
+    assert recovered is not None and recovered.sequence == 2
+    assert recovered.ledger_bytes == b'{"legacy-candidate":true}\n'
+    assert guard.advances == 1
+    assert not (base / publication.PENDING_NAME).exists()
+    assert not (base / publication.RECOVERY_NAME).exists()
+    assert not (base / publication.JOURNAL_NAME).exists()
+
+
+@pytest.mark.parametrize("artifact", ["receipt", "ledger"])
+def test_journal_candidate_external_tamper_blocks_replay_cas(
+    tmp_path: Path, artifact: str,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
+    _publish(root, signer, guard)
+    journal = _crash_with_journal(
+        root, signer, guard, b'{"candidate":true}\n', suffix="b",
+    )
+    candidate = journal["candidate_witness"]
+    key = candidate[f"{artifact}_object_key"]
+    guard._artifacts[key] = b'{"tampered":true}\n'
+    guard.reset_writes()
+    with pytest.raises(publication.ShareCountPublicationError, match="bytes mismatch"):
+        publication._recover_share_count_materialization_for_test(
+            root=root, signer=signer, head_guard=guard,
+        )
+    assert guard.advances == 0
+    assert (
+        root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME
+    ).exists()
+
+
+def test_publish_invocation_with_entry_journal_is_recovery_only_before_bad_candidate(
+    tmp_path: Path,
+) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    _publish(root, signer, guard)
+    _crash_with_journal(root, signer, guard, b'{"candidate":true}\n', suffix="b")
+    recovered = _publish(
+        root,
+        signer,
+        guard,
+        b"",
+        suffix="c",
+    )
+    assert recovered.sequence == 2
+    assert recovered.ledger_bytes == b'{"candidate":true}\n'
+    assert guard.read()[0]["sequence"] == 2
+
+
+@pytest.mark.parametrize("selection", ["expected", "candidate"])
+def test_journal_accepts_exact_scope_valid_v3_migration_race(
+    tmp_path: Path, selection: str,
+) -> None:
+    signer, guard, root = _publisher(tmp_path)
+    _publish(root, signer, guard)
+    journal = _crash_with_journal(
+        root, signer, guard, b'{"candidate":true}\n', suffix="b",
+    )
+    expected = journal["expected_witness"]
+    candidate = journal["candidate_witness"]
+    assert expected is not None
+    if selection == "candidate":
+        current, token = guard.read()
+        guard.advance(expected=current, expected_token=token, candidate=candidate)
+    selected, token = guard.read()
+    assert selected is not None and token is not None
+    migrated = publication._migrated_head_witness_v3(
+        selected,
+        signer=signer,
+        guard_scope=guard.guard_scope,
+    )
+    guard.migrate_v2_to_v3(
+        expected=selected,
+        expected_token=token,
+        candidate=migrated,
+    )
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root, signer=signer, head_guard=guard,
+    )
+    assert recovered is not None
+    assert recovered.sequence == (1 if selection == "expected" else 2)
+    assert not (
+        root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME
+    ).exists()
+
+
+@pytest.mark.parametrize("hostile_kind", ["migration_digest", "scope"])
+def test_journal_rejects_hostile_v3_migration_before_artifacts(
+    tmp_path: Path, hostile_kind: str,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
+    _publish(root, signer, guard)
+    _crash_with_journal(root, signer, guard, b'{"candidate":true}\n', suffix="b")
+    selected, _ = guard.read()
+    assert selected is not None
+    hostile = publication._migrated_head_witness_v3(
+        selected, signer=signer, guard_scope=guard.guard_scope,
+    )
+    if hostile_kind == "migration_digest":
+        hostile["migration"]["from_witness_sha256"] = "f" * 64
+    else:
+        hostile["guard_scope"]["bucket"] = "wrong-bucket"
+    hostile["signature"] = signer.sign_head_v3(publication._head_v3_payload(hostile))
+    guard._witness = hostile
+    guard._version += 1
+    guard.reset_artifact_reads(reject_ledgers=True)
+    with pytest.raises(
+        publication.ShareCountPublicationError,
+        match="(?:virtual v2|configured R2 authority)",
+    ):
+        publication._recover_share_count_materialization_for_test(
+            root=root, signer=signer, head_guard=guard,
+        )
+    assert guard.artifact_reads == 0
+
+
+def test_normal_publisher_has_no_legacy_record_writes() -> None:
+    import inspect
+
+    source = inspect.getsource(publication._publish_share_count_materialization_for_test)
+    assert "_write_signed_record" not in source
+    assert "PENDING_NAME" not in source
+    assert "RECOVERY_NAME" not in source
+    assert source.count("_write_publish_journal") == 1
 
 
 class _FakeR2:

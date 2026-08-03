@@ -8,11 +8,12 @@ I/O until the deletion/fencing/capability release gates pass. No issuer or marke
 is claimed until that gate is deliberately enabled and the lane publishes its
 first externally witnessed receipt from retained Company Facts bytes.
 
-Wave 4 adds the external head fence only. The reader now accepts authenticated
-v2 and scope-bound v3 heads at the same key; a default-off, migration-only CAS can
-rewrite one exact v2 head to v3 without changing sequence or any of its eleven
-selection fields. It does not add v3 genesis, v3 successor publication, a
-single-record local journal, retention authority, coverage, UI, or Prophet use.
+Wave 5 adds the single signed write-ahead journal beneath the Wave 4 external
+head fence. New writers no longer emit the legacy marker/capsule pair; legacy
+readers remain only for drainage. The reader still accepts authenticated v2 and
+scope-bound v3 heads at the same key, and only a default-off same-selection v2
+to v3 migration exists. This wave does not add v3 genesis or successor
+publication, retention authority, coverage, UI, or Prophet use.
 
 ## 0. Acceptance boundary
 
@@ -58,6 +59,7 @@ The operational v2 implementation files are:
 - `contracts/capital_structure_share_count_head_witness.schema.json`
 - `contracts/capital_structure_share_count_head_guard_scope.schema.json`
 - `contracts/capital_structure_share_count_head_witness_v3.schema.json`
+- `contracts/capital_structure_share_count_publish_journal.schema.json`
 - `contracts/capital_structure_share_count_retention_receipt.schema.json`
 - `tests/test_capital_structure_companyfacts_authenticated_read.py`
 - `tests/test_capital_structure_share_count_materializer_model.py`
@@ -181,15 +183,31 @@ The v2 path closes the previously missing source seam without weakening it:
    complete before any ledger opens. Rejected rollback/fork/ancestry paths read
    no ledger; a valid convergence reads only logarithmic proof receipts followed
    by one selected external ledger fetch and an exact local install readback.
-   Bounded restart tests cover death after the recovery capsule, after durable
-   CAS intent but before the storage call, and between the two cleanup unlinks.
-   Capsule-only recovery now follows one strict matrix: `H==E` validates E and
+   New publications use one absent-only, signed
+   `.share_count_publish_journal.json`, durably linked from a fully fsynced
+   temporary file before CAS. It contains only exact v2 `E`/`C` witnesses and
+   their canonical pointer bytes under a dedicated journal HMAC domain; it has
+   no phase, token, timestamp, transaction ID, or redundant receipt digest.
+   Candidate external receipt and ledger bytes are exact-read before intent and
+   re-authenticated before recovery CAS. Restart uses a fresh token, bounds
+   conditional conflict replay at two, and accepts `C` or any proven descendant
+   of `E`, including a direct sibling winner; genesis accepts any authenticated
+   external winner. Rollback/fork evidence stays exact and no selected ledger is
+   opened before the proof. An entry journal makes the publisher recovery-only,
+   so a recovered result returns before migration or caller-candidate validation.
+   Scope-valid v3 same-selection migrations of virtual v2 `E`, `C`, or a proven
+   descendant are drainable, while wrong scope/digest fails before external
+   artifact or ledger I/O.
+   Native v3 publication remains blocked. Capsule-only legacy recovery follows
+   its historical strict matrix: `H==E` validates E and
    clears; `H==C` or an authenticated descendant of C proves C before converging
    and clearing; every sibling, equal-sequence fork, rollback, malformed proof,
    or missing proof rejects and retains the exact capsule/pointer before any
    ledger read. A v3 head plus any legacy marker/capsule bytes rejects unchanged,
-   even when those legacy bytes are malformed. Legacy bytes seen at lease entry
-   prevent migration later in that same invocation.
+   even when those legacy bytes are malformed. Legacy readers remain for
+   drainage only: normal publication never writes marker/capsule state. Journal
+   plus either legacy name is terminal ambiguity before remote I/O, and any
+   recovery bytes seen at entry defer migration to a second clean invocation.
 6. One inner ledger receipt covers the entire bounded source batch and carries
    only appended IDs plus four domain-separated rolling prefix commitments. The
    outer signed receipt repeats that constant-size tail binding; neither layer
@@ -309,14 +327,15 @@ the correction chain.
    selector/receipt-first high-water proof before any ledger load, default-off
    daily execution, DAG/Synapse declarations, CI coverage, and
    explicit zero-source unavailability. The dual-read v3 head fence, exact
-   same-selection migration, old-writer rejection, and strict capsule-only
-   reconciliation matrix are also implemented. The retention production shell is a
+   same-selection migration, old-writer rejection, one-write signed journal,
+   recovery-only entry fence, and legacy capsule-only drainage matrix are also
+   implemented. The retention production shell is a
    deliberate fail-closed release block, not an operational compactor.
-3. **Still required before activation:** replace the two-record local recovery
-   journal with one signed journal (or an equivalently unambiguous cleanup
-   protocol). The selector/receipt-versus-ledger split is now implemented and
-   adversarially pinned, and the v3 head fence prevents an old writer from
-   advancing while v3 remains selected; neither closure enables the lane. Keep
+3. **Still required before activation:** independently re-audit the one-journal
+   implementation, prove it against an isolated live R2 object, and make an
+   explicit operator activation decision. The selector/receipt-versus-ledger
+   split, journal crash protocol, and v3 old-writer fence are adversarially
+   pinned, but none enables the lane. Keep
    `CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED=false` until every
    intended publisher has dual-read support and the operator schedules the
    one-time migration with the exact account/bucket scope provisioned.
@@ -366,10 +385,12 @@ The v2 suites additionally pin authenticated selection and read deadlines,
 exact receipt/source/anchor binding, bounded append and replay, semantic
 re-derivation, all-false authority, strict store identity, separate HMAC/R2
 publication, concurrent CAS conflict, pre/post-CAS crash recovery, lagging
-runner convergence, replayable bounded CAS intent, capsule-only recovery,
+runner convergence, one-write absent-only signed journal recovery, exact
+candidate artifact reread, two-conflict replay bound, recovery-only entry,
+direct-sibling/genesis convergence, mixed-protocol refusal, capsule-only drainage,
 scope-bound v3 dual-read/migration, exact v2-byte migration binding, distinct
 v3 signature domain, both old-v2-writer race orders, concurrent identical
-migration, strict capsule sibling rejection, and legacy/v3 coexistence refusal,
+migration, strict legacy capsule sibling rejection, and legacy/v3 coexistence refusal,
 logarithmic high-water ancestry proof before ledger access, zero ledger reads on
 rollback/fork/divergent-proof rejection, exactly one selected external ledger
 fetch after a successful proof, bounded local install readback, clean-run
