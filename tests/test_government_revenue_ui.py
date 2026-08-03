@@ -41,6 +41,8 @@ def _run_runtime(
     candidate_rows: list[dict] | None = None,
     mapping_backlog_total: int = 0,
     mapping_backlog_tickers: list[str] | None = None,
+    mapping_backlog_states: dict[str, str] | None = None,
+    exact_candidate_availability: str = "available",
     ticker_routes: list[str] | None = None,
     location_search: str = "",
 ) -> dict:
@@ -54,6 +56,8 @@ def _run_runtime(
         var CANDIDATE_ROWS = %(candidate_rows)s;
         var CANDIDATE_BACKLOG = %(candidate_backlog)s;
         var CANDIDATE_BACKLOG_TICKERS = %(candidate_backlog_tickers)s;
+        var CANDIDATE_BACKLOG_STATES = %(candidate_backlog_states)s;
+        var EXACT_CANDIDATE_AVAILABILITY = %(exact_candidate_availability)s;
         var TICKER_ROUTES = %(ticker_routes)s;
         var LOCATION_SEARCH = %(location_search)s;
         var fetchCalls = 0;
@@ -87,7 +91,7 @@ def _run_runtime(
         var navigator = {clipboard:null};
         var window = {location:location, history:history, navigator:navigator, innerWidth:1440};
         if(CANDIDATE_ROWS!==null)window.createGovernmentRevenueCandidateRadar=function(api){return {
-          load:function(){api.onRows(CANDIDATE_ROWS,{status:'ok',total:CANDIDATE_ROWS.length,mapping_backlog_total:CANDIDATE_BACKLOG,mapping_backlog_tickers:CANDIDATE_BACKLOG_TICKERS});return Promise.resolve(CANDIDATE_ROWS)},
+          load:function(){api.onRows(CANDIDATE_ROWS,{status:'ok',total:CANDIDATE_ROWS.length,mapping_backlog_total:CANDIDATE_BACKLOG,mapping_backlog_tickers:CANDIDATE_BACKLOG_TICKERS,mapping_backlog_states:CANDIDATE_BACKLOG_STATES,freshness:{exact_candidate_availability:EXACT_CANDIDATE_AVAILABILITY}});return Promise.resolve(CANDIDATE_ROWS)},
           refresh:function(){return this.load()}, render:function(){}, invalidate:function(){}, state:function(){return 'ok'}, crosschecks:function(){return ''}
         }};
         var fetch = function(){fetchCalls += 1; return Promise.resolve({ok:true,json:function(){return Promise.resolve(FULL_WORKSPACE)}})};
@@ -107,7 +111,8 @@ def _run_runtime(
               fetchCalls:fetchCalls, freshness:freshness,
               bundlesMatch:runtime.workspaceBundleMatches(PAYLOAD.procurement_workspace, FULL_WORKSPACE),
               rows:runtime.workspaceRows(), tickerStates:tickerStates, tickerRoutes:tickerRoutes,
-              selection:runtime.currentSelection(), inspectorHtml:node('inspector').innerHTML}));
+              selection:runtime.currentSelection(), inspectorHtml:node('inspector').innerHTML,
+              queueHtml:node('queueList').innerHTML}));
           }, 8);
         }, 8);
         """
@@ -118,6 +123,8 @@ def _run_runtime(
         "candidate_rows": json.dumps(candidate_rows) if candidate_rows is not None else "null",
         "candidate_backlog": json.dumps(mapping_backlog_total),
         "candidate_backlog_tickers": json.dumps(mapping_backlog_tickers or []),
+        "candidate_backlog_states": json.dumps(mapping_backlog_states or {}),
+        "exact_candidate_availability": json.dumps(exact_candidate_availability),
         "ticker_routes": json.dumps(ticker_routes) if ticker_routes is not None else "null",
         "location_search": json.dumps(location_search),
         "page_runtime": page_runtime,
@@ -168,9 +175,12 @@ def test_candidate_radar_requires_exact_receipt_bound_candidates_and_keeps_compa
         'id="countCandidates"',
         "Candidate Radar",
         "No exact-linked changes yet",
-        "Company coverage is live; issuer mapping is still being verified.",
+        "Exact change detection unavailable",
+        "No candidate or signal was inferred.",
         "Discovery-scope history · mapping needed",
+        "Discovery-scope history · issuer path verified",
         "Issuer mapping needed",
+        "Issuer path verified",
         'government-revenue-candidate-radar.js',
         "createGovernmentRevenueCandidateRadar",
         "/api/government-revenue/candidates",
@@ -205,7 +215,7 @@ def test_candidate_radar_loads_every_candidate_and_mapping_page(tmp_path: Path) 
         var authority={tier:'display',context_only:true,can_rank:false,can_size:false,can_gate:false,can_originate_signal:false,can_add_candidates:false,can_escalate:false};
         function candidate(){return {contract:'government_revenue_candidate.v1',schema_version:'1.0.0',candidate_id:'grc1-'+('a'.repeat(24)),candidate_scope:'government_revenue_research',is_neuralweb_trade_candidate:false,candidate_family:'new_award',candidate_state:'awaiting_crosscheck',ticker:'NOC',issuer_company_id:'issuer:noc',issuer:{company_name:'Northrop Grumman',ticker:'NOC'},issuer_resolution_ref:{contract:'government_recipient_resolution.v1',graph_id:'graph:test',evidence_refs:['evidence:1']},known_at:'2026-08-02T00:00:00Z',effective_at:'2026-08-01T00:00:00Z',transmission_direction:'possible_positive',event_refs:['event:1'],source_receipt_refs:[{ref_id:'receipt:1'}],ownership_path_refs:['edge:1'],authority:authority};}
         function envelope(items,total,next){return {contract:'government_revenue_candidate_queue.v1',schema_version:'1.0.0',content_id:'grcq1-'+('b'.repeat(24)),authority:authority,items:items,total:total,next_cursor:next,mapping_backlog_total:2,known_at:'2026-08-02T00:00:00Z',as_of:'2026-08-03T00:00:00Z',freshness:{},limitations:[]};}
-        window.fetch=function(url){calls.push(url);var mapping=url.indexOf('/mapping-backlog')>-1,cursor=new URL('https://example.test'+url).searchParams.get('cursor');if(mapping)return Promise.resolve({ok:true,json:function(){return Promise.resolve(envelope([{backlog_id:'grmb1-'+('c'.repeat(24)),mapping_state:'mapping_needed',issuer_attribution:'not_asserted',ticker:'LMT'},{backlog_id:'grmb1-'+('d'.repeat(24)),mapping_state:'mapping_needed',issuer_attribution:'not_asserted',ticker:'RTX'}],2,null))}});var count=cursor?50:100;return Promise.resolve({ok:true,json:function(){return Promise.resolve(envelope(Array.from({length:count},candidate),150,cursor?null:'candidate-page-2'))}})};
+        window.fetch=function(url){calls.push(url);var mapping=url.indexOf('/mapping-backlog')>-1,cursor=new URL('https://example.test'+url).searchParams.get('cursor');if(mapping)return Promise.resolve({ok:true,json:function(){return Promise.resolve(envelope([{backlog_id:'grmb1-'+('c'.repeat(24)),mapping_state:'mapping_needed',issuer_attribution:'not_asserted',ticker:'LMT'},{backlog_id:'grmb1-'+('d'.repeat(24)),mapping_state:'partial_identifier_coverage',issuer_attribution:'not_asserted',ticker:'RTX'}],2,null))}});var count=cursor?50:100;return Promise.resolve({ok:true,json:function(){return Promise.resolve(envelope(Array.from({length:count},candidate),150,cursor?null:'candidate-page-2'))}})};
         %(candidate_source)s
         var published=null;
         var radar=window.createGovernmentRevenueCandidateRadar({obj:function(x){return !!x&&typeof x==='object'&&!Array.isArray(x)},arr:function(x){return Array.isArray(x)?x:[]},esc:String,text:function(x,f){return x==null?f:String(x)},n:function(x){var v=Number(x);return Number.isFinite(v)?v:null},money:String,date:String,tr:function(en){return en},safeUrl:function(){return''},host:function(){return null},onRows:function(rows,meta){published={rows:rows.length,meta:meta}}});
@@ -222,6 +232,10 @@ def test_candidate_radar_loads_every_candidate_and_mapping_page(tmp_path: Path) 
     assert payload["published"]["rows"] == 150
     assert payload["published"]["meta"]["total"] == 150
     assert payload["published"]["meta"]["mapping_backlog_tickers"] == ["LMT", "RTX"]
+    assert payload["published"]["meta"]["mapping_backlog_states"] == {
+        "LMT": "mapping_needed",
+        "RTX": "partial_identifier_coverage",
+    }
 
 
 def test_company_ticker_filmstrip_stays_honest_and_routes_to_the_right_dossier() -> None:
@@ -233,6 +247,7 @@ def test_company_ticker_filmstrip_stays_honest_and_routes_to_the_right_dossier()
         'type="button" class="company-ticker',
         'aria-label="',  # buttons receive a full ticker, state, and destination label at render.
         'Evidence linked',
+        'Issuer path verified',
         'Link pending',
         'Company file',
         'overflow-x:auto',
@@ -441,6 +456,7 @@ def test_runtime_company_filmstrip_only_promotes_receipt_linked_tickers(tmp_path
         candidate_rows=candidate_rows,
         mapping_backlog_total=2,
         mapping_backlog_tickers=["MAPPING", "QUIET"],
+        mapping_backlog_states={"MAPPING": "mapping_needed", "QUIET": "mapping_needed"},
         ticker_routes=["EXACT", "MAPPING"],
     )
     assert all_backlog["tickerStates"] == ["candidate", "mapping"]
@@ -457,13 +473,60 @@ def test_runtime_company_filmstrip_only_promotes_receipt_linked_tickers(tmp_path
         candidate_rows=candidate_rows,
         mapping_backlog_total=1,
         mapping_backlog_tickers=["MAPPING"],
-        ticker_routes=["MAPPING", "QUIET"],
+        mapping_backlog_states={"MAPPING": "partial_identifier_coverage"},
+        ticker_routes=["MAPPING"],
     )
-    assert partial_backlog["tickerStates"] == ["mapping", "coverage"]
+    assert partial_backlog["tickerStates"] == ["verified"]
     assert partial_backlog["tickerRoutes"] == [
         {"mode": "companies", "ticker": "MAPPING", "selected": "company:MAPPING"},
-        {"mode": "companies", "ticker": "QUIET", "selected": "company:QUIET"},
     ]
+    assert "Issuer path verified" in partial_backlog["inspectorHtml"]
+    assert "not a candidate or signal" in partial_backlog["inspectorHtml"]
+
+
+@needs_node
+def test_runtime_distinguishes_unavailable_change_detection_from_a_quiet_tape(tmp_path: Path) -> None:
+    workspace = {
+        "schema_version": "government_procurement_workspace.v1",
+        "bundle_id": "grw1-" + "a" * 24,
+        "total": 0,
+        "next_cursor": None,
+        "events": [],
+        "coverage": {},
+        "freshness": {"status": "ok"},
+        "limitations": [],
+    }
+    payload = {
+        "companies": [{"ticker": "PLTR", "name": "Palantir Technologies"}],
+        "market": {},
+        "freshness": {"status": "ok"},
+        "opportunity_intelligence": {"market": {}},
+        "procurement_workspace": workspace,
+    }
+
+    unavailable = _run_runtime(
+        tmp_path,
+        payload,
+        workspace,
+        1_785_548_460_000,
+        candidate_rows=[],
+        exact_candidate_availability="unavailable",
+        location_search="?mode=candidates",
+    )
+    assert "Exact change detection unavailable" in unavailable["queueHtml"]
+    assert "No candidate or signal was inferred" in unavailable["queueHtml"]
+
+    quiet = _run_runtime(
+        tmp_path,
+        payload,
+        workspace,
+        1_785_548_460_000,
+        candidate_rows=[],
+        exact_candidate_availability="available",
+        location_search="?mode=candidates",
+    )
+    assert "No exact-linked changes yet" in quiet["queueHtml"]
+    assert "Exact change detection unavailable" not in quiet["queueHtml"]
 
 
 @needs_node
