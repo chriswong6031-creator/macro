@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T12:20:46.841026+00:00",
-  "count": 663,
+  "generated_at": "2026-08-03T13:05:39.971195+00:00",
+  "count": 665,
   "institutions": [
     "Alger",
     "Amova",
@@ -40,12 +40,33 @@
     "The Market Ear",
     "The Punchline",
     "UBS",
+    "Week Ahead",
     "Weekly Preview",
     "William Blair",
     "ZKB",
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-z1i4guo3cne-b3896e",
+      "title": "EMR July 2026 Performance Review",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T12:09:06Z",
+      "summary_points": [
+        "**Geopolitical Oil Surge**: US-Iran escalation and Strait of Hormuz disruptions drove Brent (+23.6%) and WTI (+21.8%) to 50% YTD gains, with wheat (+10.1%) and corn (+6.8%) surging on supply fears.",
+        "**AI/Sec Semiconductor Reversal**: Chinese competition fears triggered KOSPI (-22.2%) and Philly Semiconductor index (-20.6%) drops, offsetting Mag-7 earnings amid AI trade volatility.",
+        "**KOSPI & Brent Outperformance**: KOSPI and Brent Oil recorded highest YTD returns in local currency and USD terms, signaling strong domestic sentiment and energy demand dynamics.",
+        "**EM Equity Surge**: MSCI Emerging Market equities surged 16.3% in Q1, driven by China’s policy tailwinds, Latin American growth, and reduced risk aversion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-zmun1pxghor-c0a3c8",
       "title": "MS Latin America's Unfinished Business",
@@ -121,6 +142,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4axyr6wffzv-83a7c8",
+      "title": "Weekly US Earnings Estimates 3rd 7th August 2026",
+      "institution": "Week Ahead",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:02:18Z",
+      "summary_points": [
+        "**GILD Earnings Deterioration**: GILD's negative Qtrly Exp.",
+        "EPS (-7.26) and Current FY Exp.",
+        "EPS (-0.75) signal severe earnings deterioration, creating critical fundamental risk for portfolio managers.",
+        "**Nasdaq 100 Sector Divergence**: AMGN shows robust EPS growth (5.62 → 5.78) and positive FY trends (22.36 → 23.42), while GILD faces quarterly pressure (-7.26) despite recovery signals (Next Qtr EPS 2.20), highlighting sector volatility.",
+        "**Aggregate Revenue-Earnings Mismatch**: Next FY Exp."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
