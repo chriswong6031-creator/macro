@@ -1000,6 +1000,19 @@ def emit_cn_track_ledger(
     lookup. Render budget: lib.store reads are UNCACHED, so we install a per-ticker
     memo over _cst._price_frame for the duration of the loop (try/finally restored),
     collapsing O(rows) parquet reads to O(unique tickers).
+
+    TWO COHORTS, ONE ARTIFACT (2026-08-02). A board definition changes the selection
+    instrument, so the pre-version history must never be pooled into the current
+    label's headline — but deleting it deleted the desk's published receipts (the
+    cn_prophet_v2 cut evicted 1,082 of 1,097 rows, including matured winners like
+    600547.SS +7.44% vs CSI300). The honest shape is label, not delete:
+      * every row carries `bd` (its cohort's definition);
+      * the top-level summary / state / survivorship score ONLY the current
+        definition ("never publish a pre-version ledger under a new board label");
+      * unstamped / "legacy" rows publish under meta.legacy with their OWN summary,
+        and the popup renders them as a separate Legacy cohort view.
+    Rows stamped with some OTHER versioned definition (a future v3's history) join
+    neither cohort; the drop is disclosed in meta.n_excluded_other_definitions.
     Returns True on a successful atomic write.
     """
     from engine import track_ledger as _tl
@@ -1052,20 +1065,33 @@ def emit_cn_track_ledger(
             look[str(tk)] = {"nm": r.get("name"), "sec": r.get("sector")}
 
     store_path = _cst._store_path()  # noqa: SLF001 — read-only path accessor
+    legacy_rows: list[dict] = []
+    legacy_scored: list[dict] = []
+    legacy_locked = legacy_inflight = legacy_skipped = 0
+    n_other_defs = 0
     if store_path.exists():
         try:
             bdf = pd.read_parquet(store_path)
         except Exception:  # noqa: BLE001
             bdf = pd.DataFrame()
-        if not bdf.empty:
-            if board_definition and "board_definition" in bdf.columns:
-                bdf = bdf[
-                    bdf["board_definition"].astype(str) == str(board_definition)
-                ].copy()
-            elif board_definition and str(board_definition) != "legacy":
-                # Never publish a pre-version ledger under a new board label.
+        bdf_legacy = pd.DataFrame()
+        if not bdf.empty and board_definition and str(board_definition) != "legacy":
+            if "board_definition" in bdf.columns:
+                _defs = bdf["board_definition"].astype(str)
+                _cur = _defs == str(board_definition)
+                # Unstamped spellings mirror _latest_definition_frame's missing set.
+                _leg = bdf["board_definition"].isna() | _defs.isin(
+                    ("", "legacy", "nan", "None", "NaT")
+                )
+                n_other_defs = int((~_cur & ~_leg).sum())
+                bdf_legacy = bdf[_leg].copy()
+                bdf = bdf[_cur].copy()
+            else:
+                # Whole store predates versioned definitions: ALL of it is the
+                # legacy cohort. Never publish it under the new board label.
+                bdf_legacy = bdf
                 bdf = pd.DataFrame()
-        if not bdf.empty:
+        if not bdf.empty or not bdf_legacy.empty:
             bench_ser = _cst._bench_close()  # noqa: SLF001 — single read, reused below
             _pf_orig = _cst._price_frame
             _pf_memo: dict[str, pd.DataFrame | None] = {}
@@ -1077,11 +1103,22 @@ def emit_cn_track_ledger(
 
             _cst._price_frame = _pf_cached  # type: ignore[assignment]  # noqa: SLF001
             try:
-                rows_out, n_locked, scored, n_inflight, n_skipped = \
-                    _cn_ledger_rows(bdf, bench_ser, look, _cst)
+                if not bdf.empty:
+                    rows_out, n_locked, scored, n_inflight, n_skipped = \
+                        _cn_ledger_rows(bdf, bench_ser, look, _cst)
+                if not bdf_legacy.empty:
+                    # One memo spans both cohorts — a ticker on both boards is
+                    # still a single store read.
+                    legacy_rows, legacy_locked, legacy_scored, legacy_inflight, \
+                        legacy_skipped = _cn_ledger_rows(
+                            bdf_legacy, bench_ser, look, _cst)
             finally:
                 _cst._price_frame = _pf_orig  # noqa: SLF001
                 _pf_memo.clear()
+    for _r in rows_out:
+        _r["bd"] = board_definition
+    for _r in legacy_rows:
+        _r["bd"] = "legacy"
 
     # Summary over MATURED, non-locked episodes only, scored on CSI300 excess. The CI
     # is date-blocked (engine.track_scoring) — episodes surfaced on the same board
@@ -1095,19 +1132,40 @@ def emit_cn_track_ledger(
     summary["n_locked_excluded"] = n_locked
     state = _ts.publish_state(summary)
 
+    extra_meta = {
+        "board_definition": board_definition,
+        "exit_rule": f"{_CN_HORIZON}-session forced verdict · T+1 open fill · "
+                     "no oscillator target (3D thresholds not yet refit for A-shares)",
+    }
+    if legacy_rows:
+        # The retired cohort's own record, scored by the same rules — published
+        # beside (never inside) the current definition's headline.
+        legacy_summary = _ts.summarize(
+            legacy_scored, metric="excess", n_inflight=legacy_inflight,
+            n_skipped=legacy_skipped, horizon=_CN_HORIZON)
+        legacy_summary["board_definition"] = "legacy"
+        legacy_summary["n_logged"] = len(legacy_rows)
+        legacy_summary["n_locked_excluded"] = legacy_locked
+        extra_meta["legacy"] = {
+            "board_definition": "legacy",
+            "state": _ts.publish_state(legacy_summary),
+            "retired_after": max(
+                (r["d"] for r in legacy_rows if r["d"]), default=None),
+            "summary": legacy_summary,
+        }
+    if n_other_defs:
+        extra_meta["n_excluded_other_definitions"] = n_other_defs
+
+    all_rows = rows_out + legacy_rows
     as_of = asof
-    if rows_out:
-        as_of = max((r["d"] for r in rows_out if r["d"]), default=None)
+    if all_rows:
+        as_of = max((r["d"] for r in all_rows if r["d"]), default=None)
 
     doc = _tl.build_shell(
-        "CN", as_of, state, bench_dict, summary, rows_out, grain="episode",
+        "CN", as_of, state, bench_dict, summary, all_rows, grain="episode",
         survivorship={"n_locked_excluded": n_locked, "n_skipped_no_price": n_skipped,
                       "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats"},
-        extra_meta={
-            "board_definition": board_definition,
-            "exit_rule": f"{_CN_HORIZON}-session forced verdict · T+1 open fill · "
-                         "no oscillator target (3D thresholds not yet refit for A-shares)",
-        },
+        extra_meta=extra_meta,
     )
     _CN_LAST_LEDGER["doc"] = doc
     return _tl.atomic_write(site / "factordata" / "cn_track_ledger.json", doc)

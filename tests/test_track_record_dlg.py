@@ -186,6 +186,27 @@ def test_accruing_drops_second_segment_when_n_calls_missing():
     assert "building" in html and "calls logged" not in html      # graceful drop
 
 
+def test_cohort_rail_ships_hidden_and_legacy_gated():
+    """The Current/Legacy cohort rail (2026-08-02 CN ledger restore).
+
+    A board-definition change retires the old record; the popup must be able to
+    show it as its OWN cohort, never pooled into the current headline. The rail
+    container ships hidden — the JS reveals it only when the fetched ledger
+    carries meta.legacy + bd-tagged rows, so every ledger without a legacy cohort
+    (US/HK/CA, older artifacts) renders exactly as before.
+    """
+    for trd in (_interim_trd(), _scored_trd(), _accruing_trd()):
+        html = _render_partial(trd)
+        assert ('<div class="trd-chips" id="trd-cohort-chips" '
+                'style="display:none"></div>') in html
+        # bilingual chip labels + the legacy row filter live in the shared JS
+        assert "cohortCur:'Current board'" in html
+        assert "cohortLegacy:'Legacy board'" in html
+        assert "cohortCur:'现行榜单'" in html and "cohortLegacy:'旧版榜单'" in html
+        assert "r.bd !== 'legacy'" in html
+        assert "DATA.meta.legacy" in html
+
+
 # --------------------------------------------------------------------------- #
 # House laws — every state
 # --------------------------------------------------------------------------- #

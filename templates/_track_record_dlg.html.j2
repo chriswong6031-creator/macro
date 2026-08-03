@@ -503,6 +503,10 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
       {#- ── Zone B — filter rail + ledger table (client-side, lazy) ────────── -#}
       <div class="trd-stg trd-stg-2">
       <div class="trd-rail" id="trd-rail" role="toolbar" aria-label="Filter ledger">
+        {#- Cohort chips (Current / Legacy board). Hidden unless the fetched ledger
+            carries a labeled legacy cohort (meta.legacy + rows tagged bd) — a board
+            definition change retires the old record, it must never erase it. -#}
+        <div class="trd-chips" id="trd-cohort-chips" style="display:none"></div>
         <div class="trd-chips" id="trd-status-chips" data-market="{{ _m }}"></div>
         <input type="search" class="trd-search" id="trd-search" data-ph-en="Find a stock" data-ph-zh="搜索股票" aria-label="Find a stock">
         <div class="trd-chips" id="trd-window-chips"></div>
@@ -624,7 +628,7 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
   // ── ledger table ──────────────────────────────────────────────────────────
   var mount = document.getElementById('trd-tbl-mount');
   var pgEl = document.getElementById('trd-pg');
-  var state = { status:'all', win:'all', q:'', sector:'all', sortKey:'d', sortDir:-1, page:1 };
+  var state = { cohort:'current', status:'all', win:'all', q:'', sector:'all', sortKey:'d', sortDir:-1, page:1 };
   var PAGE = 25;
   var market = dlg.dataset.market, benchEn = dlg.dataset.benchEn, benchZh = dlg.dataset.benchZh;
   var upC = dlg.dataset.upClass || 'az-up', dnC = dlg.dataset.dnClass || 'az-dn';
@@ -633,12 +637,14 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
          beat:'Beat index', lag:'Lagged', onboard:'On board', stock:'Stock', logged:'Logged', entry:'Entry', latest:'Latest',
          move:'Move %', vs:'vs '+(benchEn||'index')+' %', days:'Days', status:'Status', find:'Find a stock',
          prev:'Prev', next:'Next', err:'Ledger unavailable right now — the numbers above are still current.', retry:'Retry',
-         win90:'90d', win30:'30d', winall:'All', of:'of' },
+         win90:'90d', win30:'30d', winall:'All', of:'of',
+         cohortCur:'Current board', cohortLegacy:'Legacy board' },
     zh:{ all:'全部', up:'上涨', stopped:'低于入场价', flat:'持平', early:'初期', matured:'已成熟', suspended:'停牌',
          beat:'跑赢', lag:'跑输', onboard:'在榜', stock:'个股', logged:'上榜', entry:'入场', latest:'最新',
          move:'涨跌', vs:'超额', days:'天数', status:'状态', find:'搜索股票',
          prev:'上一页', next:'下一页', err:'台账暂时不可用——上方数据仍然有效。', retry:'重试',
-         win90:'90天', win30:'30天', winall:'全部', of:'共' }
+         win90:'90天', win30:'30天', winall:'全部', of:'共',
+         cohortCur:'现行榜单', cohortLegacy:'旧版榜单' }
   };
   function L(k){ return (isZh()? T.zh : T.en)[k]; }
 
@@ -651,7 +657,25 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
     if(market === 'us') return [['all','all'],['up','up'],['stopped','stopped'],['onboard','onboard']];
     return [['all','all'],['early','early']]; // hk/ca
   }
+  // A retired board definition's record ships beside the current one (rows tagged
+  // bd:'legacy' + meta.legacy). Older artifacts / other markets carry neither → the
+  // cohort rail stays hidden and every cohort branch below is a no-op.
+  function hasLegacy(){ return !!(DATA && DATA.meta && DATA.meta.legacy); }
   function buildRail(){
+    var coh = document.getElementById('trd-cohort-chips');
+    if(coh){
+      coh.innerHTML = '';
+      coh.style.display = hasLegacy() ? '' : 'none';
+      if(hasLegacy()){
+        [['current','cohortCur'],['legacy','cohortLegacy']].forEach(function(d){
+          var b=document.createElement('button'); b.type='button'; b.className='trd-chip'; b.dataset.cohort=d[0];
+          b.setAttribute('aria-pressed', d[0]===state.cohort ? 'true':'false');
+          b.textContent = L(d[1]); b.dataset.k=d[1];
+          b.addEventListener('click', function(){ state.cohort=d[0]; state.page=1; syncPressed(coh,'cohort'); render(); });
+          coh.appendChild(b);
+        });
+      }
+    }
     var host = document.getElementById('trd-status-chips'); host.innerHTML='';
     statusChipDefs().forEach(function(d){
       var b=document.createElement('button'); b.type='button'; b.className='trd-chip'; b.dataset.status=d[0];
@@ -704,6 +728,12 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
     if(!DATA) return [];
     var now = DATA.as_of ? new Date(DATA.as_of) : new Date();
     return DATA.rows.filter(function(r){
+      if(hasLegacy()){
+        // Cohorts never mix in one view: the summary cards above score only the
+        // current definition, so the default table must list exactly those rows.
+        if(state.cohort === 'legacy'){ if(r.bd !== 'legacy') return false; }
+        else if(r.bd === 'legacy'){ return false; }
+      }
       if(state.status !== 'all'){
         if(state.status === 'matured'){ if(!r.m) return false; }
         else if(state.status === 'early'){ if(r.st !== 'early' && r.m) return false; }
@@ -746,7 +776,30 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
     var pcol = primaryCol();
     var moveHdr = (market==='us') ? L('move') : L('vs');
     var zh = isZh();
-    var h = '<div class="trd-tbl-wrap"><table class="trd-tbl"><thead><tr>';
+    var h = '';
+    if(hasLegacy() && state.cohort === 'legacy'){
+      // The retired cohort explains itself in place: same grading rules, its own
+      // record, and an explicit "not in the cards above" so the split stays honest.
+      // Single-language string by design — this partial re-renders on language flip
+      // (the data-lang MutationObserver), same convention as L().
+      var lg = DATA.meta.legacy || {}, ls = lg.summary || {};
+      var lNote;
+      if(zh){
+        lNote = '旧版榜单定义' + (lg.retired_after ? '（截至 ' + esc(lg.retired_after) + '）' : '')
+              + '——评分规则相同，仅作存档展示；不计入上方统计。';
+        if(ls.win_pct != null && ls.n_matured){
+          lNote += '往绩：' + ls.n_matured + ' 笔已完成，胜率 ' + Math.round(ls.win_pct) + '%。';
+        }
+      }else{
+        lNote = 'Retired board definition' + (lg.retired_after ? ' (through ' + esc(lg.retired_after) + ')' : '')
+              + ' — same grading rules, kept for the record; not counted in the cards above.';
+        if(ls.win_pct != null && ls.n_matured){
+          lNote += ' Record: ' + Math.round(ls.win_pct) + '% win of ' + ls.n_matured + ' finished trades.';
+        }
+      }
+      h += '<div class="trd-ribbon" style="margin:0 0 8px">' + lNote + '</div>';
+    }
+    h += '<div class="trd-tbl-wrap"><table class="trd-tbl"><thead><tr>';
     h += '<th>'+L('stock')+'</th>';
     h += sortTh('d', L('logged'));
     h += '<th class="trd-num trd-mut">'+L('entry')+'</th>';

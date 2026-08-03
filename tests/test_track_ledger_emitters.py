@@ -395,9 +395,18 @@ class TestCNEmitLedger:
             assert r["st"] in tl.STATUS_VOCAB
             assert set(r["fl"]).issubset(set(tl.FLAG_VOCAB))
 
-    def test_explicit_current_definition_never_falls_back_to_legacy(
+    def test_explicit_current_definition_never_absorbs_legacy_rows(
         self, monkeypatch, tmp_path
     ):
+        """A definition change retires the old record — it must never erase it.
+
+        The 2026-07-29 cn_prophet_v2 cut DID erase it: 1,082 of 1,097 board rows
+        (all pre-version history, incl. matured winners like 600547.SS +7.44% vs
+        CSI300) vanished from the published ledger. The contract now: the current
+        label's summary/state score ONLY its own cohort ("never publish a
+        pre-version ledger under a new board label"), while unstamped/legacy rows
+        stay published under bd='legacy' with their own summary in meta.legacy.
+        """
         from engine import china_standout_track as cst
         from scripts import build_china_library as bcl
 
@@ -425,7 +434,51 @@ class TestCNEmitLedger:
         )
         assert doc["meta"]["board_definition"] == "cn_prophet_v2"
         assert doc["summary"]["board_definition"] == "cn_prophet_v2"
-        assert {row["t"] for row in doc["rows"]} == {"601318.SS", "000001.SZ"}
+        # cohorts are labeled, never pooled — and never dropped
+        cur = {r["t"] for r in doc["rows"] if r["bd"] == "cn_prophet_v2"}
+        leg = {r["t"] for r in doc["rows"] if r["bd"] == "legacy"}
+        assert cur == {"601318.SS", "000001.SZ"}
+        assert leg == {"600519.SS", "300750.SZ"}
+        # the headline scores ONLY the current cohort (early + locked → nothing
+        # matured); the legacy matured pair lives in meta.legacy's own summary
+        assert doc["summary"]["n_matured"] == 0
+        lm = doc["meta"]["legacy"]
+        assert lm["board_definition"] == "legacy"
+        assert lm["summary"]["n_matured"] == 2
+        assert lm["summary"]["board_definition"] == "legacy"
+        assert lm["retired_after"] == "2026-06-01"
+
+    def test_unstamped_store_publishes_as_legacy_under_a_versioned_label(
+        self, monkeypatch, tmp_path
+    ):
+        """A store with NO board_definition column at all predates versioning.
+
+        Under an explicit versioned label the old code published an EMPTY ledger
+        (rows silently gone). Now the whole store ships as the legacy cohort and
+        the versioned headline still claims none of it.
+        """
+        from engine import china_standout_track as cst
+        from scripts import build_china_library as bcl
+
+        path = _cn_board_parquet(tmp_path)  # fixture has no board_definition column
+        monkeypatch.setattr(cst, "_store_path", lambda: path)
+        monkeypatch.setattr(cst, "_price_frame", _cn_price_frame)
+        monkeypatch.setattr(cst, "_bench_close", _cn_bench_series)
+        site = tmp_path / "site"
+        (site / "factordata").mkdir(parents=True)
+
+        assert bcl.emit_cn_track_ledger(
+            site, None, [], board_definition="cn_prophet_v2", asof="2026-07-29",
+        )
+        doc = json.loads(
+            (site / "factordata" / "cn_track_ledger.json").read_text()
+        )
+        assert doc["summary"]["board_definition"] == "cn_prophet_v2"
+        assert doc["summary"]["n_matured"] == 0
+        assert all(r["bd"] == "legacy" for r in doc["rows"])
+        assert {r["t"] for r in doc["rows"]} == {
+            "600519.SS", "300750.SZ", "601318.SS", "000001.SZ"}
+        assert doc["meta"]["legacy"]["summary"]["n_matured"] == 2
 
     def test_state_comes_from_the_sample_not_from_bt(self, monkeypatch, tmp_path):
         """The publish state must follow THIS ledger's own matured sample.
