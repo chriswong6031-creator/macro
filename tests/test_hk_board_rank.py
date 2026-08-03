@@ -19,9 +19,11 @@ import pytest
 
 from engine import hk_board_rank as hbr
 from engine import us_board_rank as ubr
+from engine.setups import norm_company
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "hk_board_2026_07_31.json"
+ARTIFACT = Path(__file__).resolve().parents[1] / "site" / "factordata" / "hk_standouts.json"
 
 # The seven names the operator named as missing from the board (masterplan §1).
 # 9961.HK is the HK-listed exposure standing in for PDD, which has no HK line.
@@ -62,11 +64,63 @@ def board():
 
 
 @pytest.fixture(scope="module")
-def lanes(board):
-    """The three display lanes, built exactly as scripts/build_hk_library.py builds them."""
+def prod_board():
+    """The production HK board for the fixture's own as_of — the exclusion source.
+
+    `site/factordata/hk_standouts.json` is the artifact the nightly shipped for
+    2026-07-31, the same session the G1 panel was frozen from.  Its buy and watch
+    arrays ARE the sets the builder hands the lanes as `exclude`; this PR does not
+    touch either lane's membership, so reading them here replays production rather
+    than approximating it.
+    """
+    if not ARTIFACT.exists():                 # pragma: no cover — committed in-tree
+        pytest.skip(f"{ARTIFACT} not present")
+    art = json.loads(ARTIFACT.read_text())
+    if str(art.get("as_of")) != BOARD_ASOF:   # pragma: no cover — same-session pairing
+        pytest.skip(f"artifact as_of {art.get('as_of')} != panel {BOARD_ASOF}")
+    return art
+
+
+@pytest.fixture(scope="module")
+def lanes(board, prod_board):
+    """The three display lanes, built exactly as scripts/build_hk_library.py builds them.
+
+    HARNESS FIDELITY (adversarial review, 2026-08-03).  This fixture used to call the
+    lanes with NO `exclude`, NO `dedup_name` and momentum over the full close series —
+    none of which is how scripts/build_hk_library.py:1573-1609 calls them.  The
+    difference is not cosmetic: it manufactured a witness.  With an empty exclusion
+    1024.HK printed in `vetoed` and the measurement read 6 of 7; under production
+    arguments the WATCH strip claims 1024.HK first and the lanes place 5 of 7.  A
+    harness that flatters the engine is worse than no harness, so it now passes the
+    builder's own arguments, and the G1 pin stands against that number.
+
+    What is replayed, argument for argument:
+      * `exclude` — the buy ∪ watch ticker sets, from the same session's artifact.
+      * `dedup_name=norm_company` — the dual-class / H-share collapse.  It needs real
+        company NAMES, which the frozen panel's `meta` does not carry (it stores the
+        ticker), so they are backfilled from the artifact where it has them.
+      * momentum over the ENRICHED panel, sliced to LEADERS_MOMENTUM_SESSIONS + 1
+        exactly as the builder slices `_lane_closes`.
+      * the same lane ORDER, each lane excluding the ones above it.
+
+    Laggards are deliberately NOT in this exclusion set even though the builder now
+    puts them there: the committed artifact's laggards were selected by the PRE-G5
+    composite key, so feeding them here would exclude names (3690.HK, 9618.HK) that
+    the shipped key does not put in that lane.  The builder-side exclusion is pinned
+    directly in TestBuilderWiring instead.
+    """
     verdicts = board["verdicts"]
-    meta = board["meta"]
+    meta = {t: dict(m) for t, m in board["meta"].items()}
     closes = board["closes"]
+
+    # real company names for the dedup leg (the frozen panel stores tickers)
+    for lane in ("buy", "watch", "laggards"):
+        for row in prod_board.get(lane) or []:
+            if row.get("ticker") in meta and row.get("name"):
+                meta[row["ticker"]]["name"] = row["name"]
+
+    exclude = ({r["ticker"] for r in prod_board.get("buy") or []}
+               | {r["ticker"] for r in prod_board.get("watch") or []})
 
     def close_of(ticker):
         series = closes.get(ticker)
@@ -75,23 +129,27 @@ def lanes(board):
         return (series["dates"], series["closes"])
 
     momentum = hbr.total_return_z(
-        {t: s["closes"] for t, s in closes.items()},
+        {t: (s["closes"] or [])[-(hbr.LEADERS_MOMENTUM_SESSIONS + 1):]
+         for t, s in closes.items() if s.get("closes")},
         sessions=hbr.LEADERS_MOMENTUM_SESSIONS)
     leadership = {"state": "leaders_participating", "cohesion_now": 0.9,
                   "broad_breadth_pct": 71.2, "breadth_confirming": True}
 
     leaders = hbr.build_leaders_rows(
         momentum, verdict_by=verdicts, meta_by=meta,
-        leadership=leadership, board_asof=BOARD_ASOF)
+        exclude=exclude,
+        leadership=leadership, board_asof=BOARD_ASOF,
+        dedup_name=norm_company)
     ran = hbr.build_ran_rows(
         verdicts, meta_by=meta, close_of=close_of,
-        exclude=[r["ticker"] for r in leaders],
+        exclude=exclude | {r["ticker"] for r in leaders},
         leadership=leadership, board_asof=BOARD_ASOF)
     vetoed = hbr.build_vetoed_rows(
         verdicts, meta_by=meta, close_of=close_of,
-        exclude=[r["ticker"] for r in leaders] + [r["ticker"] for r in ran],
+        exclude=exclude | {r["ticker"] for r in leaders} | {r["ticker"] for r in ran},
         leadership=leadership, board_asof=BOARD_ASOF)
-    return {"leaders": leaders, "ran": ran, "vetoed": vetoed}
+    return {"leaders": leaders, "ran": ran, "vetoed": vetoed,
+            "_excluded": exclude}
 
 
 def _verdict(*, eligible=False, tier="T2", ticks=1, fresh_bars=5, above200=True,
@@ -331,6 +389,25 @@ class TestFeaturedTurnover:
     def test_row_level_adv_is_read_when_the_map_misses(self):
         extra = hbr.featured_shortfalls_extra({})
         assert extra({"ticker": "0001.HK", "adv63": 999_000_000.0}) == []
+
+    def test_the_row_key_the_builder_actually_stamps_is_read(self):
+        """The fallback was dead: the builder writes `_adv63`, not `adv63`.
+
+        Every map miss therefore fell straight through to `adv_unknown` while a good
+        number sat on the row.  Pinned against the BUILDER's own spelling so the two
+        halves cannot drift apart again.
+        """
+        import inspect
+
+        from scripts import build_hk_library as bhl
+        assert 'e["_adv63"] = adv63.get' in inspect.getsource(bhl.compute_hk_standouts)
+        extra = hbr.featured_shortfalls_extra({})
+        assert extra({"ticker": "0001.HK", "_adv63": 999_000_000.0}) == []
+
+    def test_the_map_still_outranks_the_row(self):
+        extra = hbr.featured_shortfalls_extra({"0001.HK": 1.0})
+        assert extra({"ticker": "0001.HK", "_adv63": 999_000_000.0}) == [
+            "adv_below_floor"]
 
     def test_zero_turnover_is_below_floor_not_unknown(self):
         """A measured zero and an absent reading are different facts."""
@@ -687,6 +764,22 @@ class TestVetoedLane:
     def test_refuses_an_eligible_name(self):
         assert hbr.veto_admits(_verdict(eligible=True, last=_marker()), {}) is False
 
+    @pytest.mark.parametrize("eligible", [None, "unknown"])
+    def test_an_unevaluated_cascade_is_out_not_in(self, eligible):
+        """Fail-closed, like every other leg.
+
+        The test began as `eligible is not True`, which admitted a name the cascade
+        never reached — and this lane's whole claim is that the GATE refused the
+        signal.  Printing that about a decision nobody made is the one error a
+        self-critical lane cannot afford.
+        """
+        verdict = _verdict(last=_marker())
+        verdict["eligible"] = eligible
+        assert hbr.veto_admits(verdict, {}) is False
+
+    def test_a_missing_eligibility_key_is_out(self):
+        assert hbr.veto_admits({"weekly_bull": True, "last": _marker()}, {}) is False
+
     def test_refuses_a_taken_marker(self):
         assert hbr.veto_admits(
             _verdict(last=_marker(quality="take")), {}) is False
@@ -906,12 +999,18 @@ class TestG1Witnesses:
             assert board["verdicts"][ticker]["eligible"] is not True, ticker
 
     def test_at_least_five_of_seven_witnesses_are_visible(self, lanes):
-        """G1's pin.  MEASURED on the committed 2026-07-31 panel: 6 of 7.
+        """G1's pin, against the PRODUCTION measurement: 5 of 7 through the lanes.
 
         9618.HK reaches `leaders` (it holds its 200-day average and sits 10.6% off
-        its high).  3690.HK reaches `ran`.  0700 / 9988 / 1810 / 1024 reach
-        `vetoed` — each blocked on the same 200-day reclaim test, one of them
-        (1024.HK) on a single marker that has stood for 59 sessions.
+        its high).  3690.HK reaches `ran`.  0700 / 9988 / 1810 reach `vetoed`, each
+        blocked on the same 200-day reclaim test.
+
+        1024.HK does NOT reach a lane, and that is the correction the harness fix
+        surfaced: it is on the board's WATCH strip, which claims its ticker before
+        the vetoed lane runs, so it is visible on the page but under the watch
+        strip's framing rather than with its own marker date.  Counting the watch
+        strip the page shows 6 of 7 — pinned separately below so the two numbers can
+        never be confused again.
 
         9961.HK is the one that stays dark, and honestly so: it is outside the
         mega-cap cohort, its trailing-quarter total return is −12%, and its move
@@ -919,13 +1018,35 @@ class TestG1Witnesses:
         showed it anyway would be showing everything.
         """
         seen = {ticker: [lane for lane, rows in lanes.items()
-                         if any(r["ticker"] == ticker for r in rows)]
+                         if lane != "_excluded"
+                         and any(r["ticker"] == ticker for r in rows)]
                 for ticker in WITNESSES}
         visible = [t for t, where in seen.items() if where]
         assert len(visible) >= 5, f"only {len(visible)} of 7 visible: {seen}"
 
+    def test_the_witness_the_lanes_miss_is_on_the_watch_strip(self, lanes, prod_board):
+        """The 6th witness is reachable, just not through a display lane.
+
+        Pins the exact fact the empty-exclusion harness hid: 1024.HK is excluded
+        from `vetoed` BECAUSE the watch strip already carries it.  If a future change
+        drops it from watch without adding it to a lane, the page loses a witness and
+        this fails — which is the only way "6 of 7 on the page" stays true.
+        """
+        lane_tickers = {r["ticker"] for lane, rows in lanes.items()
+                        if lane != "_excluded" for r in rows}
+        watch = {r["ticker"] for r in prod_board.get("watch") or []}
+        buy = {r["ticker"] for r in prod_board.get("buy") or []}
+        on_page = lane_tickers | watch | buy
+        visible = [t for t in WITNESSES if t in on_page]
+        assert "1024.HK" in watch, "1024.HK is the watch-strip witness"
+        assert "1024.HK" not in lane_tickers, (
+            "a name on watch must not also occupy a display lane")
+        assert len(visible) == 6, f"page-level visibility moved: {visible}"
+
     def test_each_visible_witness_carries_a_stance(self, lanes):
-        for rows in lanes.values():
+        for lane, rows in lanes.items():
+            if lane == "_excluded":
+                continue
             for row in rows:
                 if row["ticker"] in WITNESSES:
                     assert row.get("stance"), row["ticker"]
@@ -936,14 +1057,38 @@ class TestG1Witnesses:
         """The builder excludes upstream lanes, so no name is double-counted."""
         for ticker in WITNESSES:
             hits = [lane for lane, rows in lanes.items()
-                    if any(r["ticker"] == ticker for r in rows)]
+                    if lane != "_excluded"
+                    and any(r["ticker"] == ticker for r in rows)]
             assert len(hits) <= 1, f"{ticker} appears in {hits}"
 
+    def test_no_lane_row_belongs_to_the_buy_or_watch_lanes(self, lanes):
+        """The exclusion the harness used to skip, asserted directly.
+
+        Without this the fixture could quietly go back to an empty `exclude` and the
+        G1 count would go back up to 6 with nothing failing.
+        """
+        excluded = lanes["_excluded"]
+        assert excluded, "the production exclusion set must not be empty"
+        for lane, rows in lanes.items():
+            if lane == "_excluded":
+                continue
+            collisions = [r["ticker"] for r in rows if r["ticker"] in excluded]
+            assert not collisions, f"{lane} re-lists board names: {collisions}"
+
     def test_lane_caps_actually_bind_on_the_real_panel(self, lanes):
-        """Without this, a witness could be 'visible' only for lack of competition."""
+        """Without this, a witness could be 'visible' only for lack of competition.
+
+        leaders and vetoed still fill to their caps under the production exclusion.
+        `ran` comes back one short of RAN_CAP (11 of 12) and that is a real reading,
+        not slack: the buy/watch exclusion removes a name the lane would otherwise
+        have taken, which is exactly the effect the empty-exclusion harness hid.  It
+        is pinned as an exact number so a future drift in either direction shows up.
+        """
         assert len(lanes["leaders"]) == hbr.LEADERS_CAP
-        assert len(lanes["ran"]) == hbr.RAN_CAP
         assert len(lanes["vetoed"]) == hbr.VETOED_CAP
+        assert len(lanes["ran"]) == 11, (
+            "measured 2026-07-31 under exclude=buy∪watch; RAN_CAP is %d"
+            % hbr.RAN_CAP)
 
     def test_every_vetoed_row_names_its_block_reason(self, lanes):
         for row in lanes["vetoed"]:
@@ -1049,6 +1194,289 @@ class TestBuilderWiring:
         legs = {row.get("leg") for row in (built.get("health") or [])}
         assert "board_ledger" not in legs, (
             "an off-lane append skip is not a write failure")
+
+    def test_display_lanes_are_excluded_from_the_laggards_lane(self, built):
+        """No ticker may carry two stances on one page."""
+        lag = {r["ticker"] for r in built["laggards"]}
+        for lane in ("leaders", "ran", "vetoed"):
+            clash = lag & {r["ticker"] for r in built[lane]}
+            assert not clash, f"{lane} double-lists a laggard: {clash}"
+
+    def test_no_display_lane_shares_a_ticker_with_buy_or_watch(self, built):
+        """The display lanes claim last, so they never re-list a board name.
+
+        `laggards` is deliberately NOT in this loop: it is drawn from the same scored
+        universe by a different key and the builder has never excluded buy/watch from
+        it (2331.HK is both on 2026-07-31).  That is pre-existing board behaviour,
+        outside this change; what IS new is that laggards now claim their tickers
+        before the display lanes run — pinned in the test above.
+        """
+        board = ({r["ticker"] for r in built["buy"]}
+                 | {r["ticker"] for r in built["watch"]})
+        for lane in ("leaders", "ran", "vetoed"):
+            clash = board & {r["ticker"] for r in built[lane]}
+            assert not clash, f"{lane} re-lists a board name: {clash}"
+
+    def test_laggards_print_the_key_they_were_sorted_by(self, built):
+        """MAJOR-2: the figure on the strip is the sort key, not a neighbouring one."""
+        rows = built["laggards"]
+        for row in rows:
+            assert "laggard_z" in row, row["ticker"]
+            key = hbr.laggards_key(row)
+            if row["laggard_z"] is None:
+                assert key == float("inf"), "an unresolved key must sort LAST"
+            else:
+                assert row["laggard_z"] == key
+        keys = [r["laggard_z"] for r in rows if r["laggard_z"] is not None]
+        assert keys == sorted(keys), "printed values must rise with the row order"
+
+    def test_the_knife_class_is_stamped_across_the_universe(self, built):
+        """B2: the H4 population is a stamp, not a lane membership read."""
+        for lane in ("buy", "watch", "laggards"):
+            for row in built[lane]:
+                assert isinstance(row.get("knife_risk"), bool), row["ticker"]
+
+    def test_only_cohort_members_are_ever_chipped(self, built):
+        """M3, the half the real build can answer: no chip on a non-member."""
+        cohort = hbr.leadership_cohort()
+        for row in built["buy"]:
+            if row.get("leadership"):
+                assert row["ticker"].upper() in cohort, (
+                    "%s is chipped but not in the cohort" % row["ticker"])
+
+
+class TestCohortChipReachesTheBuyCards:
+    """M3: the chip the leaders strip prints must reach a buy CARD for the same name.
+
+    Pinned on the ENGINE helper the builder calls, with real cohort tickers — the
+    old suite stamped `theme`/`leadership` onto its own fixture rows, which is
+    exactly what hid the missing stamp: the fixture was doing the builder's job.
+    """
+
+    _LEAD = {"state": "leaders_participating", "cohesion_now": 0.9,
+             "broad_breadth_pct": 71.2, "breadth_confirming": True}
+
+    def _cohort_ticker(self):
+        members = sorted(hbr.leadership_cohort())
+        assert members, "the cohort organ shipped an empty roster"
+        return members[0]
+
+    def test_a_cohort_member_on_the_buy_lane_is_chipped(self):
+        tk = self._cohort_ticker()
+        rows = [{"ticker": tk}, {"ticker": "0001.HK"}]
+        assert hbr.stamp_leadership_chips(rows, self._LEAD) == 1
+        assert rows[0]["leadership"]["state_en"], "the chip must carry plain words"
+        assert rows[0]["leadership"]["display_only"] is True
+        assert rows[0]["in_leadership_cohort"] is True
+
+    def test_a_non_member_is_never_chipped(self):
+        rows = [{"ticker": "0001.HK"}]
+        assert hbr.stamp_leadership_chips(rows, self._LEAD) == 0
+        assert "leadership" not in rows[0]
+
+    def test_the_payload_is_the_one_the_leaders_strip_uses(self):
+        """One chip definition, not two that can drift."""
+        tk = self._cohort_ticker()
+        rows = [{"ticker": tk}]
+        hbr.stamp_leadership_chips(rows, self._LEAD)
+        assert rows[0]["leadership"] == hbr.leadership_chip(self._LEAD)
+
+    def test_a_dead_organ_chips_nothing_and_does_not_raise(self):
+        rows = [{"ticker": self._cohort_ticker()}]
+        assert hbr.stamp_leadership_chips(rows, None) == 0
+        assert hbr.stamp_leadership_chips(rows, {}) == 0
+        assert "leadership" not in rows[0]
+
+    def test_the_builder_stamps_the_buy_lane_with_it(self):
+        """Reachability: the render path must call this, or the fix is dead code."""
+        import inspect
+
+        from scripts import build_hk_library as bhl
+        src = inspect.getsource(bhl.compute_hk_standouts)
+        assert "stamp_leadership_chips(buys" in src, (
+            "the builder no longer chips the buy lane")
+
+
+class TestLedgerIsTheGradedBoardOnly:
+    """B1(a): the display lanes must never enter the graded board ledger.
+
+    `append_board` assigns `board_pos` by list position and the ledger's rank-IC is
+    Spearman(board_pos, forward excess) across a date's rows, so a lane row with no
+    entry claim silently takes a position in the buy lane's own rank sample.
+
+    Tested against `_board_ledger_calls` — the builder's own row constructor — rather
+    than through a full board build, because a build that happens to produce no buys
+    (the synthetic panel does) would pass every one of these vacuously.  The builder
+    calling it is pinned separately below, so the helper is not a parallel universe.
+    """
+
+    def _rows(self):
+        buys = [{"ticker": "0001.HK", "group": "entry_open", "edge_z": 1.2,
+                 "price": 10.0, "signal": {"tier": "T2"}, "align_tier": "aligned",
+                 "entry_window": {"kind": "open-now"}},
+                {"ticker": "0002.HK", "group": "setting_up", "edge_z": 0.4,
+                 "price": 20.0, "signal": {"tier": "T3"}}]
+        watch = [{"ticker": "0003.HK", "edge_z": -0.5, "price": 5.0,
+                  "knife_demoted": True, "knife_z": -1.8}]
+        return buys, watch
+
+    def _lanes(self):
+        return [{"ticker": "9988.HK", "group": "leaders", "close_asof": 1.0},
+                {"ticker": "0700.HK", "group": "ran", "close_asof": 1.0},
+                {"ticker": "1810.HK", "group": "vetoed", "close_asof": 1.0}]
+
+    def _calls(self):
+        from scripts.build_hk_library import _board_ledger_calls
+        buys, watch = self._rows()
+        return _board_ledger_calls(buys, watch)
+
+    def test_no_display_lane_row_is_appended(self):
+        groups = {c.get("group") for c in self._calls()}
+        for lane in hbr.DISPLAY_TIER_LANES:
+            assert lane not in groups, (
+                "%s reached the graded ledger: %r" % (lane, sorted(groups)))
+
+    def test_the_appended_population_is_exactly_buy_plus_watch(self):
+        buys, watch = self._rows()
+        calls = self._calls()
+        assert [c["ticker"] for c in calls] == (
+            [r["ticker"] for r in buys] + [r["ticker"] for r in watch])
+        assert {c["group"] for c in calls} == {"entry_open", "setting_up", "watch"}
+
+    def test_re_adding_the_lanes_breaks_the_pin(self):
+        """MUTATION: the guard above must be able to SEE the defect it forbids.
+
+        Reconstructs the pre-fix shape — the lane rows appended to the same list —
+        and asserts the assertion above would fail on it.  Without this the pin
+        could be passing because nothing ever produces a lane row, not because the
+        builder stopped producing them.
+        """
+        mutated = self._calls() + self._lanes()
+        groups = {c.get("group") for c in mutated}
+        leaked = [lane for lane in hbr.DISPLAY_TIER_LANES if lane in groups]
+        assert leaked == list(hbr.DISPLAY_TIER_LANES), (
+            "the mutation did not reproduce the defect — the pin above is vacuous")
+        assert len(mutated) != len(self._calls()), "the population pin is live too"
+
+    def test_every_appended_row_carries_the_era_stamp(self):
+        """B1(b): a graded row without a definition would pool with the old board."""
+        calls = self._calls()
+        assert calls, "nothing was appended"
+        for call in calls:
+            assert call.get("board_definition") == hbr.BOARD_DEFINITION, call
+
+    def test_watch_rows_keep_their_group_and_their_stamps(self):
+        """On-lane behaviour for the cohorts that DO get logged is unchanged."""
+        calls = self._calls()
+        watch_row = calls[-1]
+        assert watch_row["group"] == "watch"
+        assert watch_row["knife_demoted"] is True
+        assert watch_row["knife_z"] == -1.8
+        assert watch_row["primary_rejection_reason"] == "knife_demote"
+        assert watch_row["gate_ver"] == "cascade_v1"
+        buy_row = calls[0]
+        assert (buy_row["edge_z"], buy_row["gate_tier"], buy_row["align_tier"],
+                buy_row["entry_state"]) == (1.2, "T2", "aligned", "open-now")
+
+    def test_a_degraded_placement_store_stamps_none_not_false(self):
+        from scripts.build_hk_library import _board_ledger_calls
+        buys, watch = self._rows()
+        rows = _board_ledger_calls(buys, watch, placement_ok=False)
+        assert all(r["placement_flag"] is None for r in rows)
+
+    def test_the_builder_uses_this_constructor(self, tmp_path, monkeypatch):
+        """The helper is not a parallel universe: the render path hands its output
+        straight to append_board, unchanged and un-extended."""
+        import json as _json
+
+        import lib.config as cfg_module
+        from engine import board_ledger
+        from scripts import build_hk_library as bhl
+
+        seen: list[list[dict]] = []
+        marker = [{"ticker": "SENTINEL.HK", "group": "entry_open"}]
+        monkeypatch.setattr(bhl, "_board_ledger_calls",
+                            lambda *a, **k: [dict(m) for m in marker])
+        monkeypatch.setattr(board_ledger, "append_board",
+                            lambda calls, market, asof=None: (seen.append(list(calls))
+                                                              or 0))
+
+        tickers = ["9988.HK", "0700.HK", "9618.HK", "3690.HK", "1810.HK"]
+        hd = tmp_path / "site" / "hkstockdata"
+        hd.mkdir(parents=True, exist_ok=True)
+        chart = [round(10.0 + i * 0.01, 4) for i in range(80)]
+        for ticker in tickers:
+            (hd / f"{ticker}.json").write_text(_json.dumps({
+                "ticker": ticker, "name": f"Test {ticker}", "sector": "Technology",
+                "tech": {"price": chart[-1], "rsi14": 38.0, "ma200": 15.0,
+                         "off_52w_high_pct": -0.25},
+                "chart": {"c": chart}, "conviction": None}))
+        monkeypatch.setattr(cfg_module, "ROOT", tmp_path)
+        out = bhl.compute_hk_standouts({
+            "as_of": "2026-07-08", "risk_state": "risk_off",
+            "modes": {"all": [{"ticker": t, "name": f"Test {t}",
+                               "sector": "Technology", "sector_zh": "科技",
+                               "cycle": "DECLINE", "cycle_zh": "DECLINE",
+                               "cycle_dir": "down", "beta": 1.2, "role": "cyclical",
+                               "tilt": "growth", "price": 10.0} for t in tickers]},
+        })
+        if out is None:                        # pragma: no cover — env-dependent
+            pytest.skip("compute_hk_standouts returned None")
+        assert seen, "the render path never reached append_board"
+        assert seen[-1] == marker, (
+            "the builder appended rows the constructor did not produce: %r" % seen[-1])
+
+
+class TestOnLaneLedgerFailureStillAlarms:
+    """M6: the G7 caller fix must not have silenced a REAL write failure.
+
+    The off-lane skip stops raising a health row; an ON-lane append that returns 0
+    is still a genuine failure and must still raise it.  Without this test the two
+    cases are indistinguishable from the outside and the fix could quietly become a
+    blanket mute.
+    """
+
+    def _health(self, tmp_path, monkeypatch, *, on_lane: bool):
+        import json as _json
+
+        import lib.config as cfg_module
+        from engine import board_ledger, ledger_lane
+        from scripts.build_hk_library import compute_hk_standouts
+
+        monkeypatch.setattr(board_ledger, "append_board",
+                            lambda *a, **k: 0)          # a zero-row write
+        monkeypatch.setattr(ledger_lane, "asia_advance_enabled", lambda: on_lane)
+
+        tickers = ["9988.HK", "0700.HK", "9618.HK", "3690.HK", "1810.HK"]
+        hd = tmp_path / "site" / "hkstockdata"
+        hd.mkdir(parents=True, exist_ok=True)
+        chart = [round(10.0 + i * 0.01, 4) for i in range(80)]
+        for ticker in tickers:
+            (hd / f"{ticker}.json").write_text(_json.dumps({
+                "ticker": ticker, "name": f"Test {ticker}", "sector": "Technology",
+                "tech": {"price": chart[-1], "rsi14": 38.0, "ma200": 15.0,
+                         "off_52w_high_pct": -0.25},
+                "chart": {"c": chart}, "conviction": None}))
+        monkeypatch.setattr(cfg_module, "ROOT", tmp_path)
+        out = compute_hk_standouts({
+            "as_of": "2026-07-08", "risk_state": "risk_off",
+            "modes": {"all": [{"ticker": t, "name": f"Test {t}",
+                               "sector": "Technology", "sector_zh": "科技",
+                               "cycle": "DECLINE", "cycle_zh": "DECLINE",
+                               "cycle_dir": "down", "beta": 1.2, "role": "cyclical",
+                               "tilt": "growth", "price": 10.0} for t in tickers]},
+        })
+        if out is None:                        # pragma: no cover — env-dependent
+            pytest.skip("compute_hk_standouts returned None")
+        return {row.get("leg") for row in (out.get("health") or [])}
+
+    def test_on_lane_zero_rows_raises_the_health_row(self, tmp_path, monkeypatch):
+        assert "board_ledger" in self._health(tmp_path, monkeypatch, on_lane=True), (
+            "an on-lane append that wrote nothing IS a failure and must be surfaced")
+
+    def test_off_lane_zero_rows_stays_quiet(self, tmp_path, monkeypatch):
+        assert "board_ledger" not in self._health(tmp_path, monkeypatch,
+                                                  on_lane=False)
 
 
 class TestG1FixtureIsNotStale:

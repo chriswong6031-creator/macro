@@ -631,6 +631,46 @@ class TestRankingBlock:
         for stage, label in block["stage_labels"].items():
             assert label["en"] and label["zh"], stage
 
+    def test_the_us_edge_leg_prints_the_us_default_and_nothing_else(self):
+        """MUTATION-VISIBLE PIN on a US-DEFAULTED parameter.
+
+        `edge_reads` became a parameter when the HK board was ported off this module.
+        Its US default is the sentence the US board publishes on its own disclosure
+        block — and nothing asserted that the default was still what the US caller
+        wants, so a change made for HK's benefit could silently rewrite the US
+        board's published formula.  Both halves are pinned: the constant's text, and
+        that the block prints exactly it when nobody overrides.
+        """
+        assert ubr.EDGE_READS_US == "residual alpha percentile inside this buy pool"
+        block = ubr.ranking_block(ubr.score_rows([_row("A")],
+                                                 board_asof="2026-07-31"))
+        edge = [p for p in block["formula_points"] if p["component"] == "edge"][0]
+        assert edge["reads"] == ubr.EDGE_READS_US
+        # the override reaches the same slot — so the pin above is about the DEFAULT,
+        # not about the parameter being ignored
+        other = ubr.ranking_block([], edge_reads="something else")
+        other_edge = [p for p in other["formula_points"]
+                      if p["component"] == "edge"][0]
+        assert other_edge["reads"] == "something else"
+
+    def test_the_us_featured_requirements_carry_no_market_extras(self):
+        """MUTATION-VISIBLE PIN on the other US-DEFAULTED parameter.
+
+        `featured_requirements_extra` defaults to () for the US board — HK appends a
+        turnover floor through it.  Nothing asserted the US list stays free of a
+        market extra, so an extra added for one market could have quietly appeared on
+        the US board's published requirements.  The appended-item test is what makes
+        this non-vacuous: the parameter demonstrably reaches the list.
+        """
+        base = ubr.ranking_block([])["featured_requirements"]
+        assert not any("turnover" in req for req in base), base
+        assert base[-1].startswith("at most "), (
+            "the caps line is the last US requirement; an extra would follow it")
+        with_extra = ubr.ranking_block(
+            [], featured_requirements_extra=["a market-specific floor"]
+        )["featured_requirements"]
+        assert with_extra == base + ["a market-specific floor"]
+
 
 class TestComponentCoverage:
     """M1b: the score's own coverage receipt, recomputed every build.

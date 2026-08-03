@@ -431,7 +431,13 @@ ARTIFACT_MANIFEST = [
          "days_since_signal", "days_since_signal_basis", "dir", "display_only",
          "display_rank", "dist_200dma", "edge_basis", "edge_z", "entry_signal",
          "entry_window", "extended", "featured", "featured_blocked_by", "group",
-         "in_leadership_cohort", "knife_demoted", "knife_z", "label", "label_zh",
+         # knife_risk — the H4 deepest-3M-quintile CLASS, stamped on every row of
+         #   every cohort (knife_demoted is the narrower "this buy was pushed to the
+         #   watch strip"). scripts/build_hk_pick_lab reads this, not lane membership.
+         # laggard_z — the resolved laggards SORT KEY, stamped on laggards[] rows so
+         #   the strip prints the number it was ordered by.
+         "in_leadership_cohort", "knife_demoted", "knife_risk", "knife_z",
+         "label", "label_zh", "laggard_z",
          "lane", "lead", "leadership", "momentum_z", "name", "name_zh", "off_high",
          "pct_since", "placement_flag", "price", "prophet", "rank_key",
          "reason_raw", "risk_sizing", "role", "rsi", "score_rank", "sector",

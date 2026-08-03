@@ -59,7 +59,7 @@ FENCES.
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, MutableMapping, Sequence
 
 from engine import us_board_rank as _ubr
 from engine.us_board_rank import (  # noqa: F401 — shared vocabulary, re-exported by design
@@ -229,14 +229,23 @@ def featured_shortfalls_extra(
     """Build the HK-specific featured veto: a 63-day dollar-turnover floor.
 
     Reads ``adv_by[ticker]`` first (the builder's ``_adv63_map``), then the row's own
-    ``adv63``.  An absent or unreadable turnover yields ``adv_unknown`` — featured is
+    turnover.  An absent or unreadable turnover yields ``adv_unknown`` — featured is
     a PROMOTION, and unknown evidence never earns the best case.
+
+    THE ROW-LEVEL KEY IS ``_adv63``, not ``adv63``.  The builder stamps
+    ``e["_adv63"] = adv63.get(...)`` (scripts/build_hk_library.py, the ripe-list
+    tiebreak), so the old ``row.get("adv63")`` fallback could never fire on a
+    production row — it read a key nothing writes, and every map miss went straight
+    to ``adv_unknown`` while a perfectly good number sat on the row.  Both spellings
+    are accepted now; the map stays primary.
     """
     lookup = adv_by or {}
 
     def _extra(row: Mapping[str, Any]) -> list[str]:
         ticker = str(row.get("ticker") or "").strip()
         adv = _finite_float(lookup.get(ticker))
+        if adv is None:
+            adv = _finite_float(row.get("_adv63"))
         if adv is None:
             adv = _finite_float(row.get("adv63"))
         if adv is None:
@@ -355,6 +364,46 @@ def leadership_chip(leadership: Mapping[str, Any] | None) -> dict[str, Any] | No
         "breadth_confirming": bool(leadership.get("breadth_confirming")),
         "display_only": True,
     }
+
+
+def stamp_leadership_chips(
+    rows: Iterable[MutableMapping[str, Any]],
+    leadership: Mapping[str, Any] | None,
+    *,
+    cohort: Iterable[str] | None = None,
+) -> int:
+    """Attach the cohort chip to every row whose ticker is in the cohort.
+
+    THE BUY CARDS WERE THE ONLY SURFACE MISSING IT.  ``build_leaders_rows`` chips a
+    cohort member on the strip, and the card template already reads ``leadership``
+    first — but nothing stamped it on the buy rows, so a mega-cap that made the buy
+    lane lost the very context the strip prints two sections lower for the same name.
+
+    Display-only, by charter: the chip carries no rank, size or gate authority on the
+    graded lane (masterplan §3's hk_leadership fence).  Returns the number of rows
+    chipped; zero when the organ did not run, which must never fail a render.
+    """
+    chip = leadership_chip(leadership)
+    if not chip:
+        return 0
+    members = _cohort_set(cohort)
+    n = 0
+    for row in rows:
+        if str(row.get("ticker") or "").strip().upper() in members:
+            row["leadership"] = dict(chip)
+            row["in_leadership_cohort"] = True
+            n += 1
+    return n
+
+
+def leadership_cohort(cohort: Iterable[str] | None = None) -> set[str]:
+    """The mega-cap cohort as an upper-cased ticker set (default = the organ's own).
+
+    Public because the builder needs the same membership test the lanes use in order
+    to chip a cohort member that reached the BUY cards — one definition of the
+    cohort, read from one place.
+    """
+    return _cohort_set(cohort)
 
 
 def _cohort_set(cohort: Iterable[str] | None) -> set[str]:
@@ -545,9 +594,16 @@ def veto_admits(
 ) -> bool:
     """True when a buy signal FIRED on this name and the entry gate refused it.
 
-    ``eligible is not True`` (it is not on the buy lane) ∧ the last marker is a
+    ``eligible is False`` (the cascade RAN and said no) ∧ the last marker is a
     ``buy``/``rebuy`` ∧ that marker's quality is ``block`` ∧ the weekly trend is
     still bull ∧ the row is not marked down.
+
+    EVERY TEST IS FAIL-CLOSED, INCLUDING THIS ONE.  It began as ``eligible is not
+    True``, which admitted an unevaluated ``None`` — a name the cascade never
+    reached would then have been printed as "the gate refused it", which is a claim
+    about a decision that was never made.  A lane whose whole purpose is to hold the
+    gate to account cannot itself invent gate decisions, so ``None`` is OUT and the
+    asymmetry with the other tests is gone: no leg here reads an unknown as a fact.
 
     The weekly-bull test is what keeps this lane from becoming a list of everything
     the gate ever rejected: a blocked signal on a name whose weekly trend has since
@@ -555,7 +611,7 @@ def veto_admits(
     an unanalysed weekly must not read as bull.
     """
     verdict = verdict or {}
-    if verdict.get("eligible") is True:
+    if verdict.get("eligible") is not False:
         return False
     if verdict.get("weekly_bull") is not True:
         return False

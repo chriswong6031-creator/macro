@@ -466,3 +466,30 @@ def test_us_deep_link_to_track_record_page_preserved():
     html = _render_dashboard("stocks", us_board_outcomes=_US_OUTCOMES)
     assert "us_track_record.html" in html
     assert "Methodology" in html
+
+
+# --------------------------------------------------------------------------- #
+# Lane labels in the ledger table (HK board resurrection review, 2026-08-03)
+# --------------------------------------------------------------------------- #
+
+def test_the_ledger_table_never_prints_a_raw_group_slug():
+    """The sub-cell under a ticker falls back to the row's GROUP when the ledger has
+    no company name for it — and the group is a raw engine slug, so `setting_up` and
+    `entry_open` were reaching the glance tier verbatim.  Mapped to plain words in
+    both languages, extended to the hk_prophet_v1 display lanes so a future non-buy
+    cohort cannot leak either."""
+    html = _render_partial(_scored_trd())
+    start = html.find("var GRP =")
+    assert start != -1, "the lane-label map is gone"
+    src = " ".join(html[start:html.find("function grpWord", start)].split())
+    for slug, en, zh in (("entry_open", "Entry open", "入场开启"),
+                         ("setting_up", "Setting up", "蓄势中"),
+                         ("watch", "Watch", "观察"),
+                         ("leaders", "Market leaders", "市场领跑股"),
+                         ("ran", "Recently fired", "近期已触发"),
+                         ("vetoed", "Entry gate refused", "入场闸门未放行")):
+        assert "%s:{en:'%s', zh:'%s'}" % (slug, en, zh) in src, (
+            "%s is unmapped in %r" % (slug, src))
+    # the fallback path reads the map, never the raw value
+    assert "var subInfo = nmTxt || r.sec || grpWord(r.grp);" in html
+    assert "r.sec || r.grp" not in html, "the raw-slug fallback is gone"

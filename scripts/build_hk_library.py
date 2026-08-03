@@ -745,12 +745,23 @@ def _falling_knife_demote(buys: list[dict], enriched: list[dict]) -> tuple[list[
     over the WHOLE board universe (``enriched``) — the honest cross-section, not just the
     entry survivors. Returns (kept_buys, demoted, quintile_cut); demoted entries are tagged
     ``knife_demoted``/``knife_z`` in place. No-op (nothing demoted) when the cross-section
-    is too thin (<5) for a stable quintile."""
+    is too thin (<5) for a stable quintile.
+
+    ``knife_risk`` IS STAMPED ON EVERY ENRICHED ROW (added 2026-08-03), not only on the
+    entry candidates this function demotes.  ``knife_demoted`` answers "was this buy
+    pushed off the entry groups"; ``knife_risk`` answers "is this name in the deepest
+    trailing-3M quintile of the board universe" — the H4 population itself, which is
+    what a downstream book means by a falling knife.  Both are the same criterion
+    against the same cut; only the population differs, and conflating them is what
+    made scripts/build_hk_pick_lab read a lane it had no business reading."""
     import statistics as _stats
     alphas = [e.get("alpha") for e in enriched if e.get("alpha") is not None]
     if len(alphas) < 5:                        # need a meaningful cross-section for a quintile
         return buys, [], None
     cut = _stats.quantiles(alphas, n=5, method="inclusive")[0]   # 20th percentile (deepest Q)
+    for e in enriched:                         # the H4 CLASS, over the whole cross-section
+        a = e.get("alpha")
+        e["knife_risk"] = bool(a is not None and a <= cut)
     keep: list[dict] = []
     demoted: list[dict] = []
     for e in buys:
@@ -762,6 +773,75 @@ def _falling_knife_demote(buys: list[dict], enriched: list[dict]) -> tuple[list[
         else:
             keep.append(e)
     return keep, demoted, cut
+
+
+def _board_ledger_calls(buys: list[dict], watch: list[dict], *,
+                        liquidity_regime: dict | None = None,
+                        placement_ok: bool = True) -> list[dict]:
+    """The rows appended to the GRADED board ledger — buy + watch, and nothing else.
+
+    THE DISPLAY LANES ARE NOT HERE, AND THAT IS THE POINT (adversarial review,
+    2026-08-03).  leaders / ran / vetoed were briefly appended to this same list.
+    ``board_ledger.append_board`` assigns ``board_pos`` by list POSITION, and the
+    ledger's rank-IC is Spearman(board_pos, forward excess) across a date's rows —
+    so ~30 rows carrying no entry claim, no ``edge_z``, no priority score and no rank
+    were silently becoming positions 14…45 of the graded board and diluting the only
+    statistic that says whether the board's ORDER works.  The lanes are display-tier
+    by charter (``hk_board_rank.DISPLAY_TIER_LANES``, masterplan §3), and a display
+    lane earns no ledger write.  Forward-grading them needs its own book — a separate
+    store whose rows never take a board_pos in the buy lane's rank sample — chartered
+    as a §8-class follow-up.  Nothing accrues for them meanwhile, which is the honest
+    state rather than a contaminated one.
+
+    Extracted from ``compute_hk_standouts`` so that contract is testable directly:
+    inside the render function it could only be checked through a full board build,
+    and a build that happens to produce no buys would have passed vacuously.
+
+    ``placement_ok`` False means the H-PLC store was degraded this render, so the
+    flag is stamped None — 'not stamped' must stay distinct from 'checked, clean'.
+    """
+    calls: list[dict] = []
+    watch_ids = {id(w) for w in watch}
+    for e in (buys + watch):
+        sig = e.get("signal") or {}
+        ew = e.get("entry_window") or {}
+        calls.append({
+            "ticker": e.get("ticker"),
+            "group": e.get("group") or ("watch" if id(e) in watch_ids else "setting_up"),
+            "edge_z": e.get("edge_z"),                       # fused hk_edge z
+            "gate_tier": sig.get("tier"),                    # signal_gate compact tier
+            "align_tier": e.get("align_tier"),
+            "entry_state": ew.get("kind"),                   # open-now|pullback|wait-for-weekly
+            "close_asof": e.get("price"),
+            # CN ports stamped for maturation study (never rank inputs yet, §5.3):
+            "washout_2w": bool(e.get("washout_2w")),
+            "extended": bool(e.get("extended")),
+            # W4 phase-0 context fields (forward-compatible; harmless if the frozen
+            # ledger schema drops them — matches the 1b precedent):
+            #   knife_demoted: deepest-3M-loser demote fired (H4 KILL, reports/h4-phase0.md)
+            #   sfc_short_pctile: SFC days-to-cover own-history pctile (H2a ACCRUE context)
+            #   liq_regime: HK peg-liquidity regime at render (H5 ACCRUE conditioner)
+            "knife_demoted": bool(e.get("knife_demoted")),
+            # W0.2 Stage C: the knife magnitude + the CLOSED-taxonomy near-miss
+            # reason. Before Stage C these were passed but silently DROPPED by
+            # the ledger's _SCHEMA reindex; the schema now persists them.
+            "knife_z": e.get("knife_z"),
+            "primary_rejection_reason": ("knife_demote"
+                                         if e.get("knife_demoted") else None),
+            "sfc_short_pctile": (e.get("sfc_short") or {}).get("pctile"),
+            "liq_regime": (liquidity_regime or {}).get("regime"),
+            # W1c H-PLC risk-gate stamp (persisted — board_ledger schema column).
+            "placement_flag": (bool(e.get("placement_flag")) if placement_ok else None),
+            # Inclusion-gate version — enables Q4/W7 grading to split pre/post cascade-swap.
+            "gate_ver": "cascade_v1",
+            # ERA FENCE (masterplan §3 / CN G5). hk_prophet_v1 re-sorted the buy
+            # lane, so `board_pos` stopped meaning what it meant on 2026-08-01.
+            # The stamp lets board_ledger.scorecard scope its rank statistics to
+            # ONE selection instrument instead of pooling two boards; rows
+            # written before this stamp read as legacy and keep their own pool.
+            "board_definition": hk_board_rank.BOARD_DEFINITION,
+        })
+    return calls
 
 
 # Render-lane freshness gate on the H-PLC store: placings print near-daily across
@@ -1491,6 +1571,15 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     # penalty at any weight. An unresolvable axis sorts LAST, not first — an unknown
     # edge is not evidence of a weak one.
     laggards = sorted(enriched, key=hk_board_rank.laggards_key)[:n_lag]
+    # PRINT THE KEY YOU SORTED BY. The strip used to print `alpha` (the trailing-3M
+    # return z) beside a list ordered by the selection axis, so the column read
+    # non-monotone — 0992.HK at alpha +6.60 sat between two negatives — and the
+    # number argued against the lane it was on. `laggard_z` is the resolved sort key
+    # itself (selection_value: edge_z, then the published axis, then alpha), so the
+    # figure and the order can never disagree again. None where nothing resolved:
+    # those rows sort LAST and print an em-dash rather than a borrowed number.
+    for _e_lag in laggards:
+        _e_lag["laggard_z"] = hk_board_rank.selection_value(_e_lag)
 
     for e in buys + watch:
         col = ("var(--up)" if e["dir"] == "up" else
@@ -1574,6 +1663,8 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     }
     _lane_closes = {e["ticker"]: e.get("_chart") for e in enriched}
 
+    _lane_close_cache: dict[str, tuple[list[str], list] | None] = {}
+
     def _lane_close_of(ticker: str):
         """(dates, closes) for the move-since-the-marker read.
 
@@ -1583,12 +1674,21 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         a positional guess: build_ran_rows / build_vetoed_rows fall back to the
         verdict's own session count and print `pct_since: null`, which is a
         disclosed null instead of a move measured off the wrong bar.
+
+        MEMOISED per render: the ran and vetoed passes walk the same verdict map, so
+        an unhoisted body re-did `dropna()` + a full `str(idx.date())` list build for
+        every candidate on both passes.  One build per ticker, at most; the cache
+        lives only as long as this call, so freshness is unchanged.
         """
+        if ticker in _lane_close_cache:
+            return _lane_close_cache[ticker]
+        out_s = None
         if closes is not None and ticker in closes.columns:
             s = closes[ticker].dropna()
             if len(s) >= 2:
-                return ([str(idx.date()) for idx in s.index], s.tolist())
-        return None
+                out_s = ([str(idx.date()) for idx in s.index], s.tolist())
+        _lane_close_cache[ticker] = out_s
+        return out_s
 
     # Leaders lane (G2): trailing 3-month TOTAL-return z, intact-trend gates,
     # mega-cap cohort boost. Deliberately NOT the selection axis — a beta-neutral
@@ -1599,11 +1699,18 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         sessions=hk_board_rank.LEADERS_MOMENTUM_SESSIONS)
     _buy_tickers = {e.get("ticker") for e in buys}
     _watch_tickers = {e.get("ticker") for e in watch}
+    # LAGGARDS JOIN THE EXCLUSION SET. Every other lane on this page claims its
+    # tickers before the next one runs, but the laggards strip was left outside the
+    # set — so a name could print as "weakest — avoid" at the bottom of the board and
+    # as a market leader (or a missed veto) higher up the same page, two stances on
+    # one ticker. The strip is computed above, so it takes its names first.
+    _lag_tickers = {e.get("ticker") for e in laggards}
+    _claimed = _buy_tickers | _watch_tickers | _lag_tickers
     leaders = hk_board_rank.build_leaders_rows(
         _mom_by,
         verdict_by=sig_verdict,
         meta_by=_lane_meta,
-        exclude=_buy_tickers | _watch_tickers,
+        exclude=_claimed,
         leadership=_leadership,
         board_asof=as_of,
         dedup_name=norm_company,
@@ -1613,7 +1720,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         sig_verdict,
         meta_by=_lane_meta,
         close_of=_lane_close_of,
-        exclude=_buy_tickers | _watch_tickers | {r["ticker"] for r in leaders},
+        exclude=_claimed | {r["ticker"] for r in leaders},
         leadership=_leadership,
         board_asof=as_of,
     )
@@ -1625,11 +1732,22 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         sig_verdict,
         meta_by=_lane_meta,
         close_of=_lane_close_of,
-        exclude=(_buy_tickers | _watch_tickers
+        exclude=(_claimed
                  | {r["ticker"] for r in leaders} | {r["ticker"] for r in ran}),
         leadership=_leadership,
         board_asof=as_of,
     )
+    # ---- COHORT CHIP ON THE BUY CARDS (M3) --------------------------------------
+    # The leaders strip chips a cohort member; the BUY cards did not, so a mega-cap
+    # that made the buy lane lost the very context the strip prints two sections
+    # lower for the same name. Same payload build_leaders_rows attaches —
+    # display-only, no rank, size or gate authority on the graded lane (masterplan §3
+    # hk_leadership fence). The card template already reads `leadership` first, so
+    # the stamp is the whole fix.
+    _n_chipped = hk_board_rank.stamp_leadership_chips(buys, _leadership)
+    if _n_chipped:
+        log.info("hk leadership chips: stamped %d buy row(s) in the mega-cap cohort",
+                 _n_chipped)
     log.info("hk display lanes: leaders %d (cap %d, %d cohort) · ran %d (cap %d, "
              "ticks %d-%d) · vetoed %d (cap %d, %d cohort)",
              len(leaders), hk_board_rank.LEADERS_CAP,
@@ -1691,66 +1809,9 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     board_track = None
     try:
         from engine import board_ledger
-        calls = []
-        for e in (buys + watch):
-            sig = e.get("signal") or {}
-            ew = e.get("entry_window") or {}
-            calls.append({
-                "ticker": e.get("ticker"),
-                "group": e.get("group") or ("watch" if e in watch else "setting_up"),
-                "edge_z": e.get("edge_z"),                       # fused hk_edge z
-                "gate_tier": sig.get("tier"),                    # signal_gate compact tier
-                "align_tier": e.get("align_tier"),
-                "entry_state": ew.get("kind"),                   # open-now|pullback|wait-for-weekly
-                "close_asof": e.get("price"),
-                # CN ports stamped for maturation study (never rank inputs yet, §5.3):
-                "washout_2w": bool(e.get("washout_2w")),
-                "extended": bool(e.get("extended")),
-                # W4 phase-0 context fields (forward-compatible; harmless if the frozen
-                # ledger schema drops them — matches the 1b precedent):
-                #   knife_demoted: deepest-3M-loser demote fired (H4 KILL, reports/h4-phase0.md)
-                #   sfc_short_pctile: SFC days-to-cover own-history pctile (H2a ACCRUE context)
-                #   liq_regime: HK peg-liquidity regime at render (H5 ACCRUE conditioner)
-                "knife_demoted": bool(e.get("knife_demoted")),
-                # W0.2 Stage C: the knife magnitude + the CLOSED-taxonomy near-miss
-                # reason. Before Stage C these were passed but silently DROPPED by
-                # the ledger's _SCHEMA reindex; the schema now persists them.
-                "knife_z": e.get("knife_z"),
-                "primary_rejection_reason": ("knife_demote"
-                                             if e.get("knife_demoted") else None),
-                "sfc_short_pctile": (e.get("sfc_short") or {}).get("pctile"),
-                "liq_regime": (liquidity_regime or {}).get("regime"),
-                # W1c H-PLC risk-gate stamp (persisted — board_ledger schema column).
-                # None when the placement store was degraded this render: 'not
-                # stamped' must stay distinct from 'checked, clean'.
-                "placement_flag": (bool(e.get("placement_flag")) if _plc_ok else None),
-                # Inclusion-gate version — enables Q4/W7 grading to split pre/post cascade-swap.
-                "gate_ver": "cascade_v1",
-            })
-        # ---- FORWARD COHORTS for the new display lanes (masterplan §0 G9) -----
-        # The ledger's `group` column is the HK analogue of the US grader's LANES
-        # list: board_ledger.grade() is group-agnostic and scorecard() breaks out
-        # `by_group` from whatever values it finds, so a new lane needs NO schema
-        # change — it accrues from the first render that tags it. Ship date is
-        # therefore this render, by construction: board_ledger is forward-accrual
-        # only (no git-archaeology retro path), so nothing historical is
-        # back-graded into these cohorts.
-        #
-        # They are deliberately NOT added to the `hit_rate_21d` headline stat
-        # (engine/board_ledger.scorecard restricts that to entry_open/setting_up).
-        # These lanes carry no entry claim, so folding them into the number that
-        # describes the GRADED buy lane would misreport what the board called.
-        for _lane_rows, _lane_group in ((leaders, "leaders"), (ran, "ran"),
-                                        (vetoed, "vetoed")):
-            for _lr in _lane_rows:
-                calls.append({
-                    "ticker": _lr.get("ticker"),
-                    "group": _lane_group,
-                    "close_asof": _lr.get("price"),
-                    "gate_tier": ((_lr.get("signal") or {}).get("tier")
-                                  if isinstance(_lr.get("signal"), dict) else None),
-                    "gate_ver": "cascade_v1",
-                })
+        calls = _board_ledger_calls(buys, watch,
+                                    liquidity_regime=liquidity_regime,
+                                    placement_ok=_plc_ok)
         _n = board_ledger.append_board(calls, market="HK", asof=str(as_of) if as_of else None)
         if _n:
             _bt = board_ledger.grade("HK")            # cheap incremental — maturation accrues
@@ -1764,11 +1825,19 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             # 'accruing' now (grade() carries no scorecard so we pass status explicitly).
             try:
                 from engine import track_ledger as _tl
+                # NAME LOOKUP SPANS EVERY LANE THE PAGE CAN SHOW, not just today's
+                # graded rows. The dialog renders the WHOLE ledger history, while
+                # this map was built from today's buy+watch only — so a ticker that
+                # was on the board weeks ago and sits in a display lane tonight came
+                # back nameless and fell through to the raw `grp` slug in the table's
+                # sub-cell. Display lanes carry no ledger rows of their own (see the
+                # append above); they contribute NAMES here and nothing else.
                 _hk_look = {
                     str(e.get("ticker")): {"nm": e.get("name") or e.get("name_zh"),
                                            "sec": e.get("sector"),
                                            "grp": e.get("group")}
-                    for e in (buys + watch) if e.get("ticker")
+                    for e in (buys + watch + laggards + leaders + ran + vetoed)
+                    if e.get("ticker")
                 }
                 _hk_sc = {"status": "accruing", "first_read_est": board_ledger._est_first_read()}
                 _hk_doc = _tl.from_board_ledger_grade(

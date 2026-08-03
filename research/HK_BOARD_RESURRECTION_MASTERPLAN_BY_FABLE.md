@@ -104,13 +104,22 @@ sessions since, **the move since the marker**, and the block reason in plain wor
 200-reclaim/hold` string. Cohort members are emitted unconditionally, the rest fill
 to a cap of 12 by move desc, capped at a 63-session staleness window.
 
-**Measured witness visibility: 6 of 7** — 9618 (leaders), 3690 (ran), 0700 / 9988 /
-1810 / 1024 (vetoed). 9961.HK stays dark and honestly so: outside the mega-cap
-cohort, −12% on the quarter, and its post-marker move does not beat the non-cohort
-field. G1's ≥5 pin is met with no gate loosened. The lane is deliberately
-self-critical — it exists to print what the board missed, so it is working when it
-reads badly. It is also the G6 study's product-side receipt: 1024.HK has been
-blocked on a single 2026-05-06 marker for 59 sessions, and the lane says so.
+**Measured witness visibility: 5 of 7 through the display lanes, 6 of 7 on the
+page** (corrected 2026-08-03 — the first measurement replayed the lanes with an
+EMPTY exclusion set, which is not how the builder calls them). Under production
+arguments — `exclude = buy ∪ watch`, `dedup_name=norm_company`, momentum over the
+enriched panel — the lanes place 9618 (leaders), 3690 (ran), 0700 / 9988 / 1810
+(vetoed). **1024.HK is on the WATCH STRIP**, which claims its ticker before the
+vetoed lane runs; it is visible there, under a strip header that reads "strong edge,
+blocked entry (wait for a base)" — so the *fact* of a blocked entry is carried, but
+the marker date and the specific block reason are NOT (those print only in the
+vetoed lane). No new surface was built for it; the gap is recorded here.
+9961.HK stays dark and honestly so: outside the mega-cap cohort, −12% on the
+quarter, and its post-marker move does not beat the non-cohort field. G1's ≥5 pin is
+met against the PRODUCTION measurement with no gate loosened. The lane is
+deliberately self-critical — it exists to print what the board missed, so it is
+working when it reads badly. It is also the G6 study's product-side receipt: 1024.HK
+has been blocked on a single 2026-05-06 marker for 59 sessions.
 
 ## §1c G7 / G8 — answered
 
@@ -157,6 +166,24 @@ has a lane that can show it.
    idiom) + G6 measurement prereg (doc). Est. one session with the US/CN patterns as
    reference.
 3. G6 study runs offline; veto recalibration promotes only through the prereg.
+
+## §2b Follow-ups opened by the adversarial review (2026-08-03)
+
+- **Display-lane forward grading needs its OWN book (§8-class).** leaders / ran /
+  vetoed were briefly appended to `data/board_ledger/hk_board.parquet` alongside the
+  buy lane. They must not be: `append_board` assigns `board_pos` by list position and
+  the ledger's rank-IC is Spearman(board_pos, forward excess) over a date's rows, so
+  ~30 rows carrying no entry claim, no `edge_z` and no rank were taking positions in
+  the graded board's own rank sample. They are display-tier by charter (§3 below,
+  `hk_board_rank.DISPLAY_TIER_LANES`) and now get **no ledger writes at all**. Grading
+  them remains a real question — it needs a separate store (or an explicitly
+  non-graded column) whose rows never enter the buy lane's rank sample, plus its own
+  pre-registered read date. Nothing accrues for them until that book exists.
+- **Era fence shipped with the re-sort.** `board_ledger` gained a nullable
+  `board_definition` column; HK stamps `hk_prophet_v1`, and `scorecard()` scopes
+  rank-IC and IC-eligible dates to the newest definition (CN
+  `china_standout_track._latest_definition_frame` pattern). Pre-stamp rows and CA
+  keep their legacy pooled behaviour unchanged.
 
 ## §3 Fences
 
