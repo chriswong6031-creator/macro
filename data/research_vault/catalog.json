@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T23:21:51.603468+00:00",
-  "count": 695,
+  "generated_at": "2026-08-03T23:36:54.465804+00:00",
+  "count": 696,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -85,6 +85,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 23,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-iu9sntokcuf-3d191a",
+      "title": "Global FX Trader Policy Pushback",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:39Z",
+      "summary_points": [
+        "**JPY Intervention Effectiveness**: Japan's maximal BoJ intervention shows diminishing returns (market response at lower historical average), signaling potential need for further action if Yen unwinds, with repatriation as key long-term policy lever.",
+        "**BRL Critical Risks**: Brazil's BRL strength driven by trade terms faces election deadline (Aug 15), deteriorating fiscal deficits, and BCB rate cuts (25bp to 14%), amplifying volatility and sensitivity to election outcomes.",
+        "**EUR/USD Bearish Divergence**: 12-month forecast at 1.12 (vs current 1.15) reflects sustained weakening due to ECB vs Fed policy divergence, a fundamental driver for FX positioning.",
+        "**GBP/USD Misalignment**: 26% Trade-Weighted Misalignment (G10) signals overvaluation, threatening carry trade flows and short-term directional bets amid fiscal volatility and BoE no-hike stance.",
+        "**EM Carry Resilience**: BRL and COP strongest EM carry propositions due to energy price support, though vulnerable to higher long-end yields; MXN preferred over INR/ZAR for rising carry-to-vol and oil exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
