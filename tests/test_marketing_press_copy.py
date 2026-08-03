@@ -1319,3 +1319,401 @@ class TestTransientRefusalsRetry:
                                 state=state, seen=set(result["_seen"]))
         assert "truth:strong" not in state["transient_refusals"]
         assert press_lane._TRANSIENT_RETRY_ALARM_AT >= 2
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 14. D2 — NO LINE MAY RESTATE ANOTHER
+#
+# THE INCIDENT (2026-08-02, PUBLISHED, four posts in one hour). A wire post ships
+# as `headline + blank line + body`, and the body was a summary OF THAT HEADLINE
+# by construction: an opener from wire_voice._OPENERS_* plus a restatement. On the
+# keyless path breaking_summary._deterministic_summary falls back to
+# `{headline} -- {source_name}`, so line 2 WAS line 1:
+#
+#     Fed's Williams: central bank very committed to returning inflation to 2%
+#     / On the tape: Fed's Williams: central bank very committed to ... to 2%
+#
+# Two lines, one fact. Operator: "WTF IS THIS BULLSHIT".
+#
+# Every test in this section fails on the pre-fix module: `wire_post_shape` and
+# `restatement_verdict` did not exist, and the tick emitted the duplicate.
+#
+# WHY THE EXISTING GATE DID NOT CATCH IT: breaking_summary._is_near_verbatim ANDs
+# a token Jaccard with a BIGRAM-ADJACENCY Jaccard specifically so "a genuine
+# restatement ... passes" (its own docstring), and validate_summary skips it
+# outright on the deterministic fallback — the exact path the verbatim post came
+# down. That gate asks whether the MODEL copied; this one asks whether the POST
+# says one thing twice.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The live 2026-08-02 flagship post, verbatim. This is the fixture the gate
+#: exists for; if it ever passes again, the incident has shipped again.
+_WILLIAMS_HEADLINE = (
+    "Fed's Williams: central bank very committed to returning inflation to 2%"
+)
+_WILLIAMS_BODY_VERBATIM = (
+    "On the tape: Fed's Williams: central bank very committed to returning "
+    "inflation to 2%"
+)
+
+
+class TestRestatementGate:
+    def test_the_verbatim_williams_post_is_rejected(self):
+        """THE fixture. Line 2 is line 1 with a hook in front of it."""
+        v = wf.restatement_verdict(_WILLIAMS_HEADLINE, _WILLIAMS_BODY_VERBATIM)
+        assert v["restates"] is True, v
+        # Rejected for saying the whole of line 1 again, not for some side reason.
+        assert v["coverage"] == 1.0
+        assert v["new_data"] == ()
+
+    def test_a_rephrase_of_the_headline_is_rejected(self):
+        """Post 2 of the same hour. The words differ; the fact does not — and the
+        near-verbatim gate upstream is built to let exactly this through."""
+        headline = "Fed's Williams: rate policy still well positioned to reach 2% inflation"
+        body = ("Federal Reserve official Williams stated that current rate policy "
+                "remains well positioned to achieve the 2% inflation target.")
+        assert wf.restatement_verdict(headline, body)["restates"] is True
+        # ...and the instrument it replaces would have PASSED it, which is the
+        # whole reason this gate is a separate check rather than a threshold tweak.
+        from engine.marketing.breaking_summary import _is_near_verbatim
+        assert _is_near_verbatim(body, headline) is False
+
+    def test_a_case_only_twin_is_rejected(self):
+        """One feed sent CAPS, another title case, and both posted. The gate is
+        case-blind, so the pair collapses on wording alone."""
+        body = ("ON THE TAPE: FED'S WILLIAMS: CENTRAL BANK VERY COMMITTED TO "
+                "RETURNING INFLATION TO 2%")
+        assert wf.restatement_verdict(_WILLIAMS_HEADLINE, body)["restates"] is True
+
+    def test_a_fragment_of_the_headline_is_rejected(self):
+        """The mirror-image shape: line 2 says LESS than line 1 and nothing new."""
+        headline = "Fed's Williams: rate policy still well positioned to reach 2% inflation"
+        v = wf.restatement_verdict(headline, "Rate policy well positioned. -- Reuters reporting",
+                                   attribution="Reuters reporting")
+        assert v["restates"] is True, v
+
+    def test_the_new_content_leg_fires_where_coverage_cannot(self):
+        """Isolates the second rejection leg. Coverage here is well UNDER the bar
+        (line 2 repeats two words of nine), so only the new-content count can
+        catch it — and it must, because line 2 says nothing line 1 did not."""
+        headline = "Germany retail sales fall 1.6% in June, missing forecasts"
+        v = wf.restatement_verdict(headline, "Retail sales fell. -- Reuters reporting",
+                                   attribution="Reuters reporting")
+        assert v["coverage"] < wf._RESTATE_COVERAGE_MAX, "fixture must not trip ECHO"
+        assert v["restates"] is True, v
+        assert "content word" in v["reason"], v["reason"]
+
+    def test_a_body_that_is_nothing_but_furniture_is_rejected(self):
+        """The degenerate end of the same leg: strip our opener and our citation
+        and there is no line 2 left at all."""
+        v = wf.restatement_verdict(_WILLIAMS_HEADLINE, "On the tape: -- Reuters reporting",
+                                   opener="On the tape:", attribution="Reuters reporting")
+        assert v["restates"] is True
+        assert v["residue"] == "", v["residue"]
+
+    def test_an_additive_prior_print_line_survives(self):
+        """A packet that CARRIES a prior print renders the additive second line —
+        the lawful form of option (b). The datum is in the source, not invented."""
+        v = wf.restatement_verdict(
+            "Switzerland core CPI 0.8% YoY in July",
+            "Prior print was 0.7% and the SNB target band tops out at 2%. -- Reuters reporting",
+            attribution="Reuters reporting")
+        assert v["restates"] is False, v
+        assert "7" in v["new_data"], v["new_data"]
+
+    def test_a_prior_print_survives_even_when_it_echoes_a_short_headline(self):
+        """The coverage leg's real false-positive, and why the datum escape is not
+        optional: a short entity-heavy headline is mostly its own subject, so an
+        additive line naming that subject covers most of it (0.43 here) while
+        still carrying the number the headline never said."""
+        v = wf.restatement_verdict(
+            "Switzerland core CPI 0.8% YoY in July",
+            "Swiss core CPI prior print 0.7% in June. -- Reuters reporting",
+            attribution="Reuters reporting")
+        assert v["coverage"] >= wf._RESTATE_COVERAGE_MAX, "fixture is degenerate"
+        assert v["restates"] is False, v
+
+    def test_a_narrative_addition_with_no_number_survives(self):
+        """...and the escape is an ESCAPE, not a requirement. A rich geopolitical
+        body adds plenty and counts nothing; requiring a number would throw the
+        wire_deep format away."""
+        v = wf.restatement_verdict(
+            "Missile strike and blockade near Strait of Hormuz halt oil shipping",
+            "Tankers are already rerouting around the cape and war-risk insurance "
+            "premiums have doubled since Tuesday, shippers said. -- Reuters reporting",
+            attribution="Reuters reporting")
+        assert v["new_data"] == (), "fixture must carry no new number"
+        assert v["restates"] is False, v
+
+    def test_a_rich_two_paragraph_body_is_not_a_restatement(self):
+        """THE FALSE POSITIVE THIS GATE ALMOST SHIPPED. A wire_deep body opens on
+        a lead that necessarily re-states the event, so it covers 64% of its own
+        headline — between the 70% and 60% of the two Williams rephrases. Coverage
+        cannot separate them; the amount of NEW material can, and must, or the gate
+        degrades the richest format on the lane to a bare headline.
+
+        This is the exact fixture the deep-format tests above compose."""
+        headline = ("Missile strike and blockade near Strait of Hormuz halt "
+                    "$XOM $CVX oil shipping")
+        v = wf.restatement_verdict(headline, _DEEP_BODY)
+        assert v["coverage"] >= wf._RESTATE_COVERAGE_MAX, "fixture must trip ECHO"
+        assert v["new_data"] == (), "fixture must carry no new number either"
+        assert v["restates"] is False, v
+        # It is the SUBSTANCE escape that saves it, and by a wide margin.
+        assert v["new_tokens"] >= 2 * wf._RESTATE_SUBSTANCE_RATIO
+
+    def test_the_substance_escape_does_not_swallow_a_rephrase(self):
+        """...and the escape must not be a hole. Every one of the four live
+        restatements brings at most 1.0x its headline's content — the escape needs
+        2.0x — so none of them reaches it."""
+        for headline, body in (
+            (_WILLIAMS_HEADLINE, _WILLIAMS_BODY_VERBATIM),
+            ("Fed's Williams: rate policy still well positioned to reach 2% inflation",
+             "Federal Reserve official Williams stated that current rate policy "
+             "remains well positioned to achieve the 2% inflation target."),
+            ("Fed's Williams sees inflation coming down in H2 and more next year",
+             "Fed President Williams projects inflation will come down in the "
+             "second half of this year and further next year."),
+        ):
+            v = wf.restatement_verdict(headline, body)
+            head_len = len(set(wf._restate_tokens(headline)))
+            assert v["new_tokens"] < wf._RESTATE_SUBSTANCE_RATIO * head_len, v
+            assert v["restates"] is True, v
+
+    def test_our_own_furniture_cannot_launder_a_restatement(self):
+        """The opener, the citation clause and the tape clause are things the LANE
+        adds. If any of them counted as line 2's content, the verbatim post would
+        pass by wearing them — the tape stamp especially, since it carries a
+        number and the datum escape keys on numbers."""
+        body = wf._line_two_residue(
+            f"On the tape: {_WILLIAMS_HEADLINE} -- Reuters reporting · WTI -2.3%",
+            opener="On the tape:", attribution="Reuters reporting",
+            tape_stamp="WTI -2.3%")
+        assert body == _WILLIAMS_HEADLINE, body
+        v = wf.restatement_verdict(
+            _WILLIAMS_HEADLINE,
+            f"On the tape: {_WILLIAMS_HEADLINE} -- Reuters reporting · WTI -2.3%",
+            opener="On the tape:", attribution="Reuters reporting",
+            tape_stamp="WTI -2.3%")
+        assert v["restates"] is True, v
+
+    def test_the_furniture_strip_does_not_need_the_caller_to_name_the_opener(self):
+        """A reject gate that only works when its caller remembers an argument is
+        a gate that goes dark at the next call site."""
+        v = wf.restatement_verdict(
+            _WILLIAMS_HEADLINE, f"New this hour: {_WILLIAMS_HEADLINE}")
+        assert v["restates"] is True
+        assert v["residue"] == _WILLIAMS_HEADLINE, v["residue"]
+
+
+class TestWirePostShape:
+    def test_the_short_form_never_hands_back_the_headline(self):
+        """clamp_for_x joins the non-empty parts with a blank line, so returning
+        the headline alongside a body containing it IS the duplicate. The two
+        halves are never both present."""
+        shape = wf.wire_post_shape(_WILLIAMS_HEADLINE, _WILLIAMS_BODY_VERBATIM,
+                                   opener="On the tape:")
+        assert shape["shape"] == "short_form"
+        assert shape["headline"] == ""
+        assert shape["body"].count(_WILLIAMS_HEADLINE) == 1
+
+    def test_the_short_form_keeps_the_citation_and_the_tape(self):
+        """A relay owes its source a credit, and the tape number is the one datum
+        this lane owns. Degrading the shape must not drop either."""
+        shape = wf.wire_post_shape(
+            _WILLIAMS_HEADLINE, f"On the tape: {_WILLIAMS_HEADLINE}",
+            opener="On the tape:", attribution="Reuters reporting",
+            tape_stamp="WTI -2.3%")
+        assert shape["shape"] == "short_form"
+        assert shape["body"].endswith(" -- Reuters reporting · WTI -2.3%"), shape["body"]
+
+    def test_the_short_form_is_one_line_through_the_clamp(self):
+        """End of the composition path: what X actually receives."""
+        shape = wf.wire_post_shape(_WILLIAMS_HEADLINE, _WILLIAMS_BODY_VERBATIM)
+        text = wf.clamp_for_x(shape["headline"], shape["body"])["text"]
+        assert "\n" not in text, text
+        assert text.count("returning inflation to 2%") == 1, text
+
+    def test_an_additive_item_keeps_both_lines(self):
+        shape = wf.wire_post_shape(
+            "Switzerland core CPI 0.8% YoY in July",
+            "Prior print was 0.7% and the SNB target band tops out at 2%.")
+        assert shape["shape"] == "additive"
+        assert shape["headline"] == "Switzerland core CPI 0.8% YoY in July"
+        text = wf.clamp_for_x(shape["headline"], shape["body"])["text"]
+        assert text.count("\n\n") == 1, text
+
+    def test_the_short_form_body_survives_its_own_restatement_gate(self):
+        """The degradation is a FIXED POINT: re-running the gate on what the short
+        form produces must not find a restatement, or the fix would oscillate."""
+        shape = wf.wire_post_shape(_WILLIAMS_HEADLINE, _WILLIAMS_BODY_VERBATIM,
+                                   attribution="Reuters reporting")
+        again = wf.wire_post_shape("", shape["body"], attribution="Reuters reporting")
+        assert again["shape"] == "additive", again
+
+
+def _isolated_root(tmp_path: Path) -> str:
+    """A repo root with the real config and an EMPTY outbox.
+
+    The wire lane's story lock, its rolling volume census and its seen-ledger all
+    read `root`, and this repo's real outbox still holds the 2026-08-02 Williams
+    posts — so a tick run against the live root is judged by the incident itself.
+    Config is copied whole rather than stubbed so the AI-tell screen and the
+    language law stay ARMED: a test that disarms the screens it is not testing
+    proves less than it looks like it proves.
+    """
+    import shutil
+    shutil.copytree(ROOT / "config", tmp_path / "config")
+    return str(tmp_path)
+
+
+def _williams_tick(tmp_path: Path, *, body_snippet: str = "") -> dict:
+    now = datetime(2026, 8, 2, 14, 0, tzinfo=timezone.utc)
+    press_cfg = yaml.safe_load((ROOT / "config" / "press_sources.yml").read_text())
+    marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+    press_cfg["wire"]["flagship_top_k_per_day"] = 10
+    press_cfg["wire"]["flagship_salience_floor"] = 5.0
+    marketing_cfg.setdefault("breaking", {})["salience_threshold"] = 5.0
+    items = [{
+        "id": "x:firstsquawk:williams", "source": "x_FirstSquawk",
+        "source_name": "@FirstSquawk", "source_tier": "x_relay", "url": "u1",
+        "published_at": "2026-08-02T13:59:00Z", "headline": _WILLIAMS_HEADLINE,
+        "body_snippet": body_snippet, "x_handle": "FirstSquawk",
+        "corroboration_class": "hearsay",
+    }]
+    return run_press_tick(items, root=_isolated_root(tmp_path), now=now,
+                          cfg=marketing_cfg, press_cfg=press_cfg, state={},
+                          seen_ids=set(), dry_run=True)
+
+
+class TestRestatementEndToEnd:
+    def test_the_live_williams_post_no_longer_ships_the_headline_twice(self, tmp_path):
+        """The regression that would have caught the incident on the day it shipped.
+
+        Pre-fix this emitted:
+            "Fed's Williams: ... to 2%\\n\\nNew this hour: Fed's Williams: ... to 2%
+             -- wire reports"
+        """
+        result = _williams_tick(tmp_path)
+        assert result["emitted"], result["skipped"]
+        emit = result["emitted"][0]
+        text = emit["text"]
+        assert text.count("returning inflation to 2%") == 1, text
+        assert "\n" not in text, text
+        assert emit["source"]["post_shape"] == "short_form"
+        # The citation survives the degradation — a relay never drops its source.
+        assert "wire reports" in text, text
+
+    def test_a_packet_that_carries_a_datum_still_ships_two_lines(self, tmp_path):
+        """The other half: the short form is a DEGRADATION, not the only shape. A
+        body_snippet that adds a number the headline never said renders the
+        additive second line, exactly as option (b) requires."""
+        result = _williams_tick(
+            tmp_path,
+            body_snippet=("Williams put the return to target at 2027 and said the "
+                          "committee had held rates for a fourth straight meeting."))
+        assert result["emitted"], result["skipped"]
+        emit = result["emitted"][0]
+        assert emit["source"]["post_shape"] == "additive", emit["text"]
+        assert "\n\n" in emit["text"], emit["text"]
+        assert "2027" in emit["text"], emit["text"]
+
+    def test_the_short_form_introduces_no_stance(self, tmp_path):
+        """CHARTER: a wire desk relays and never takes a stance (§4 safety rails).
+
+        The degradation is the strongest possible form of that — it ADDS no words
+        at all, it removes them: what ships is the source's own headline plus the
+        citation clause. Asserted against the lane's own stance lexicon rather
+        than by inspection, and against the publisher's language gate, so a future
+        vintage that composes the short form some other way still answers here."""
+        from engine.marketing.breaking_summary import _STANCE_BANNED
+
+        result = _williams_tick(tmp_path)
+        emit = result["emitted"][0]
+        assert emit["source"]["post_shape"] == "short_form"
+        text = emit["text"].lower()
+        hits = [w for w in _STANCE_BANNED if w.lower() in text]
+        assert hits == [], hits
+        assert _banned()(emit["text"]) == []
+        # Nothing but the source's own headline and its credit — no word of ours.
+        assert text.startswith(_WILLIAMS_HEADLINE.lower())
+
+    def test_no_emitted_press_post_ever_restates_its_own_headline(self, tmp_path):
+        """The GENERAL form. Any tick, any fixture: no emitted item may carry a
+        body that restates its headline. This is the invariant; the fixtures above
+        are the cases that motivated it."""
+        now = datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc)
+        press_cfg = yaml.safe_load((ROOT / "config" / "press_sources.yml").read_text())
+        marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+        result = run_press_tick(_emitting_items(), root=_isolated_root(tmp_path),
+                                now=now, cfg=marketing_cfg, press_cfg=press_cfg,
+                                state={}, seen_ids=set(), dry_run=True)
+        assert result["emitted"]
+        for emit in result["emitted"]:
+            head, _, body = emit["text"].partition("\n\n")
+            if not body:
+                continue          # short form: one line cannot restate another
+            verdict = wf.restatement_verdict(head, body)
+            assert verdict["restates"] is False, (verdict["reason"], emit["text"])
+
+
+class TestOpenerBatchVariety:
+    """The opener pools swept (2026-08-02): the window was recorded three deep and
+    read ONE deep, so a batch could alternate two hooks and read as two templates
+    taking turns."""
+
+    def _item(self, iid: str) -> dict:
+        return {"id": iid, "headline": "h", "body_snippet": "b",
+                "event_class": "none", "corroboration_class": "hearsay",
+                "matched": {"tickers": []}}
+
+    def test_the_whole_window_gates_not_just_the_last_opener(self):
+        """Fails pre-fix: the old walk compared against `recent[-1]` alone, so a
+        hook used two posts ago was free to come straight back while unused hooks
+        sat in the pool."""
+        pool = wv._OPENERS_DEFAULT
+        offenders = []
+        for i in range(40):
+            item = self._item(f"probe:{i}")
+            # A two-deep window: the OLD rule only ever avoided window[-1].
+            window = [pool[0], pool[3]]
+            chosen, _ = wv.select_opener(item, account="flagship",
+                                         recent_openers=window)
+            if chosen in window:
+                offenders.append((item["id"], chosen))
+        assert not offenders, (
+            f"{len(offenders)}/40 items re-used a hook already inside the "
+            f"account's window while unused hooks remained: {offenders[:3]}")
+
+    def test_a_four_post_batch_uses_four_distinct_hooks(self):
+        """The operator's actual complaint shape: four posts inside one hour."""
+        recent: list[str] = []
+        chosen = []
+        for i in range(4):
+            o, _ = wv.select_opener(self._item(f"w{i}"), account="flagship",
+                                    recent_openers=recent)
+            recent.append(o)
+            del recent[:-3]       # press_lane._RECENT_OPENERS_KEEP
+            chosen.append(o)
+        assert len(set(chosen)) == 4, chosen
+
+    def test_consecutive_posts_never_share_a_hook(self):
+        recent: list[str] = []
+        chosen = []
+        for i in range(12):
+            o, _ = wv.select_opener(self._item(f"x:{i}"), account="flagship",
+                                    recent_openers=recent)
+            recent.append(o)
+            del recent[:-3]
+            chosen.append(o)
+        for a, b in zip(chosen, chosen[1:]):
+            assert a != b, f"adjacent repeat: {a!r} in {chosen}"
+
+    def test_selection_is_still_deterministic_on_a_cold_window(self):
+        """The sweep must not cost the property the pool was built on: same id,
+        same empty window, same hook, every run."""
+        item = self._item("trumpstruth:42")
+        first, _ = wv.select_opener(item, account="flagship", recent_openers=[])
+        for _ in range(5):
+            again, _ = wv.select_opener(item, account="flagship", recent_openers=[])
+            assert again == first

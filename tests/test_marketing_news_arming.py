@@ -33,12 +33,28 @@ a window, not as a moment.
 from __future__ import annotations
 
 from datetime import date, timedelta
+import tempfile
 from pathlib import Path
 
 import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OWNERSHIP vs DISPATCH (W5, 2026-08-03). `routing_table` answers "which desk
+# OWNS this class" — config plus liveness, and nothing else. `route` answers
+# "where does THIS item go right now", which since W5 also weighs the account's
+# rolling kind=breaking ceiling (`wire_volume.breaking`) and may hand a busy
+# desk's surplus to another declared wire desk. The ownership assertions below
+# therefore ask `routing_table`: asking `route` against the live repo root made
+# them statements about how much the wire posted today, which is a volume fact
+# masquerading as a routing fact. Tests that genuinely want `route` pass a root
+# with no outbox in it, so the ceiling has nothing to count.
+# ─────────────────────────────────────────────────────────────────────────────
+EMPTY_ROOT = Path(tempfile.mkdtemp(prefix="news-arming-empty-"))
+
+
 
 ACCOUNT = "mastermind_news"
 
@@ -279,10 +295,11 @@ def test_the_relay_classes_resolve_to_the_wire_desk(cfg):
     also re-proves the arming end-to-end."""
     from engine.marketing import wire_routing as wr
 
+    table = wr.routing_table(cfg, root=ROOT)
     for klass in sorted(WIRE_CLASSES):
-        assert wr.route(klass, cfg=cfg, root=ROOT) == ACCOUNT, (
-            f"event_class {klass!r} did not route to {ACCOUNT}. If it fell back "
-            f"to flagship, the desk is not enabled (liveness is not routing)."
+        assert table.get(klass) == ACCOUNT, (
+            f"event_class {klass!r} is not OWNED by {ACCOUNT}. If it reads as "
+            f"flagship, the desk is not enabled (liveness is not routing)."
         )
 
 
@@ -291,11 +308,11 @@ def test_the_house_view_classes_stay_on_the_flagship(cfg):
     half open. macro_print and policy must NOT have moved."""
     from engine.marketing import wire_routing as wr
 
+    table = wr.routing_table(cfg, root=ROOT)
     for klass in sorted(HOUSE_CLASSES):
-        assert wr.route(klass, cfg=cfg, root=ROOT) == "flagship", (
-            f"event_class {klass!r} routes to "
-            f"{wr.route(klass, cfg=cfg, root=ROOT)!r}; the house-read classes "
-            f"belong to the desk that owns a view"
+        assert table.get(klass) == "flagship", (
+            f"event_class {klass!r} is owned by {table.get(klass)!r}; the "
+            f"house-read classes belong to the desk that owns a view"
         )
 
 
@@ -320,7 +337,8 @@ def test_the_flagship_remains_the_default_owner(cfg):
     from engine.marketing import wire_routing as wr
 
     assert wr.default_account(cfg) == "flagship"
-    assert wr.route("a_class_that_does_not_exist", cfg=cfg, root=ROOT) == "flagship"
+    assert wr.route("a_class_that_does_not_exist", cfg=cfg,
+                    root=EMPTY_ROOT) == "flagship"
 
 
 def test_the_spill_pool_is_the_two_wire_desks_and_no_persona(cfg):
@@ -329,7 +347,10 @@ def test_the_spill_pool_is_the_two_wire_desks_and_no_persona(cfg):
     charter violation dressed up as a volume fix."""
     from engine.marketing import wire_routing as wr
 
-    pool = wr.spill_pool(cfg, root=ROOT)
+    # EMPTY_ROOT, not ROOT: since W5 `spill_pool` also drops a desk that has
+    # spent its rolling kind=breaking ceiling, and this test is about the
+    # ROSTER (who may ever carry a relay), not about today's headroom.
+    pool = wr.spill_pool(cfg, root=EMPTY_ROOT)
     assert pool == ["flagship", ACCOUNT], f"spill pool is {pool!r}"
 
 

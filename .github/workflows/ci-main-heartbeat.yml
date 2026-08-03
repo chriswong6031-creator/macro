@@ -252,7 +252,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pyyaml jinja2 fastapi httpx
       - name: tier-preview split contract (no paid row in the free shell)
-        run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py -q
+        run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py tests/test_etfs_gate.py -q
       - name: paywall fail-closed contract (incl. enforced-early payload lane)
         run: python -m pytest tests/test_paywall.py tests/test_api_paywall.py -q
       - name: static serving boundary (Caddy <-> site_access.yml, no leaked artifacts)
@@ -273,6 +273,11 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4
+      # The import-light tier-gate runs the shell/boundary cases, while the two
+      # builder assertions intentionally require pandas + plotly. Pair the suite
+      # with this fat lane so those assertions execute instead of skip everywhere.
+      - name: ETF tier-preview builder assertions (full page stack)
+        run: python -m pytest tests/test_etfs_gate.py -q
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest

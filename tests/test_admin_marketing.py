@@ -2942,12 +2942,33 @@ class TestIntelligenceApproveRefusals:
         assert "delivered" not in second  # root-pinned: no delivery attempted
         assert len(_intel_items(intel_root)) == 1
 
-    def test_story_owned_by_another_desk_is_refused(self, intel_root):
+    def test_story_owned_by_another_desk_is_refused(self, intel_root, monkeypatch):
         """One conversation, one owner. The refusal names the holder so the
-        operator knows which desk to look at rather than just being blocked."""
+        operator knows which desk to look at rather than just being blocked.
+
+        THE PRIOR OWNER IS THE DESK ROUTING WILL *NOT* PICK (W5, 2026-08-03).
+        This story carries `event_class: policy`, which `_INTEL_CFG` maps to
+        `mastermind_news` — so making that desk the prior owner tested nothing:
+        the approve path routed to the very desk that already held the story, and
+        "a DIFFERENT desk draws an owned story" stopped being the scenario. It
+        passed before W5 only because `route` treated a config with no
+        `desk_network` roster as evidence that every desk was dark and fell back
+        to `default` — a rule W5 removed, because "when in doubt, give it to the
+        default" hands a wire firehose to the brand account (11 kind=breaking
+        items on flagship in one day). The owner is now `flagship`, which routing
+        cannot resolve to for this class, so the refusal is real.
+
+        Volume is pinned out for the same reason: `route` also weighs each desk's
+        rolling kind=breaking ceiling and `intelligence_approve` calls it with
+        `root=repo`, the REAL repo — so on a busy day the overflow could hand
+        `policy` back to flagship and make the test vacuous the other way round.
+        """
         from datetime import datetime, timedelta, timezone
 
         from engine.marketing import story_lock as sl
+        from engine.marketing import wire_routing as wr
+
+        monkeypatch.setattr(wr, "breaking_counts", lambda *a, **k: {})
 
         now = datetime(2026, 7, 29, 14, 30, tzinfo=timezone.utc)
         key = sl.story_key(cluster_key="story-alpha", event_id="draft-wire-1",
@@ -2956,7 +2977,7 @@ class TestIntelligenceApproveRefusals:
             "schema": "marketing.outbox/v1",
             "id": "ob-2026-07-29-priorabc1",
             "as_of": "2026-07-29",
-            "account": "mastermind_news",
+            "account": "flagship",
             "kind": "breaking",
             "text": "Rotterdam mediators return to the table on Tuesday.",
             "media": [], "scheduled_at": "immediate", "slot": None,
@@ -2973,7 +2994,7 @@ class TestIntelligenceApproveRefusals:
                                            root=intel_root, now=now)
         assert r["ok"] is False
         assert r["reason"] == "story_locked"
-        assert r["owner"] == "mastermind_news"
+        assert r["owner"] == "flagship"
         assert len(_intel_items(intel_root)) == 1  # nothing appended
 
     def test_armed_value_gate_refuses_a_thin_draft(self, tmp_path):

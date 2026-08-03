@@ -42,6 +42,8 @@ Public API:
     detect_events(...) -> list[FactPacket]
     brief_key(alert_key) / build_brief_packet(alert_row, ...) -> FactPacket | None
     severity_account(packet, cfg) -> str
+    live_account(candidate, ...) -> str          — liveness + volume, one address
+    live_desk_verdict(candidate, ...) -> DeskVerdict  — ditto, with .parked
     packet_to_source(packet, media) -> dict
 
 Never-raise contract: every public function returns None / [] / {} plus one log
@@ -2311,17 +2313,30 @@ def severity_account(packet: FactPacket, cfg: dict | None = None) -> str:
         return str(_c(cfg, "emit.account", "mastermind_news"))
 
 
-#: Accounts this process has already announced as dark. The radar ticks every
-#: five minutes and books up to three items a pass, so an unarmed target would
+#: Accounts this process has already announced as capped. The radar ticks every
+#: five minutes and books up to three items a pass, so a bound ceiling would
 #: otherwise print the same annotation hundreds of times a day and bury the
-#: Actions summary it exists to fill. Keyed by account, not by (event, account):
-#: the operator's action is the same one desk_network flip either way.
-_WARNED_DARK_ACCOUNTS: set[str] = set()
+#: Actions summary it exists to fill. (Dark-desk announcements are counted and
+#: de-duplicated by ``wire_routing`` itself now — one owner per annotation.)
+_WARNED_CAPPED_ACCOUNTS: set[str] = set()
 
 
 def reset_dark_account_warnings() -> None:
-    """Clear the once-per-process dark-account warning set (tests)."""
-    _WARNED_DARK_ACCOUNTS.clear()
+    """Clear the once-per-process warning state (tests).
+
+    Delegates the dark-desk half to ``wire_routing``, which owns those
+    annotations and the park census since W5. Two independent "have I said this
+    yet" sets for one announcement is how a de-duplicated warning starts firing
+    twice.
+    """
+    _WARNED_CAPPED_ACCOUNTS.clear()
+    try:
+        from engine.marketing import wire_routing as _wr  # noqa: PLC0415
+
+        _wr.reset_dark_route_warnings()
+        _wr.reset_volume_cache()
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def live_account(
@@ -2330,88 +2345,126 @@ def live_account(
     marketing_cfg: dict | None,
     root: Any = None,
     fallbacks: tuple[str, ...] = (),
+    severity: float | None = None,
 ) -> str:
-    """``candidate`` if desk_network has it armed, else the first armed fallback.
+    """The desk this tape item is addressed to, after liveness AND volume.
 
-    THE GRAVE THIS CLOSES. ``emit.account`` defaults to ``mastermind_news``,
-    and :func:`severity_account` routes every sub-85 event there — i.e. most of
-    the lane's volume. While that desk was dark, each of those items was
-    rendered (a Chrome raster), phrased (an LLM call), uploaded to R2, and
-    enqueued — and then quarantined at dispatch with reason ``account_disabled``.
-    The whole pipeline ran, paid, and posted nothing. Measured from
-    ``outbox.fold_state`` on 2026-08-02: **29** such quarantines, every one of
-    them ``mastermind_news`` on the ``hot_tape`` lane, 11 on 07-30 and 18 on
-    07-31 — against 5 hot-tape items that posted in the same window, all 5 to
-    ``flagship``. ``wire_routing`` was built precisely to stop this, and the
-    hot-tape lane never called it.
+    IT NO LONGER RESCUES A DARK DESK'S VOLUME ONTO A LIVE ONE (W5, 2026-08-03).
+    The original contract was "``candidate`` if desk_network has it armed, else
+    the first armed fallback", and it was written against a real grave: 29 items
+    on 2026-07-30/31 were rendered (a Chrome raster), phrased (an LLM call),
+    uploaded to R2 and enqueued, then quarantined at dispatch with reason
+    ``account_disabled`` — every one of them addressed to ``mastermind_news``
+    while that desk was dark.
 
-    ``mastermind_news`` ARMED 2026-08-02 (masterplan §8.2 W4f), so on today's
-    config this function is a no-op for that desk. That is not a reason to
-    remove it and it is not a reason to weaken its test: the rescue is a
-    property of the LANE (any target, any day), not a patch for one account's
-    switch position, and the switch can go back. Its guard therefore pins the
-    BEHAVIOUR against a config whose target is dark rather than pinning the
-    account by name — see tests/test_marketing_wire_headroom.py.
+    THE RESCUE WAS THE RIGHT ANSWER TO THE WRONG QUESTION. It treated a dark
+    desk's traffic as something to be SAVED, and the only desk with room to save
+    it was the brand account — so one switch position silently made
+    @mastermindx001 the destination for the whole tape firehose. What the
+    operator then saw is the measured consequence: 11 ``kind="breaking"`` items
+    on ``flagship`` in a single day, four of them from one Fed appearance inside
+    an hour. A grave is a cost; a firehose on the brand account is a product
+    failure, and between the two the grave is cheaper. So the DEFAULT is now to
+    PARK: the item keeps its rightful owner's address, ``wire_routing`` counts
+    it (:func:`wire_routing.park_census`) and announces it once, and the
+    publisher's dispatch-time park records it where the admin can see it.
 
-    Resolution uses ``wire_routing._enabled_accounts`` — the SAME liveness read
-    the press wire uses, deliberately not a second implementation, because two
-    answers to "is this desk armed" is how a routing table starts lying. It is
-    private by name only; the alternative is a duplicate accounts-model read in
-    this file, and the brief that ordered this fix named it as the seam.
+    TWO WAYS BACK, BOTH EXPLICIT AND BOTH OFF BY DEFAULT:
+      * ``wire_routing.dark_desk.policy: redirect`` restores the old behaviour
+        wholesale, for an operator who genuinely wants it;
+      * ``wire_routing.dark_desk.severity_exception`` lets ONE genuinely huge
+        single event through on a live desk. ``severity`` is what opens it, and
+        a caller that passes none can never reach it by accident.
 
-    THREE ANSWERS, NOT TWO. ``_enabled_accounts`` returns None when the accounts
-    model could not be consulted, and an empty set when the config carries no
-    ``desk_network`` roster at all. NEITHER is evidence that ``candidate`` is
-    dark, so both keep the candidate untouched and print nothing. Rerouting a
-    correctly-configured desk's volume on the strength of an import failure or a
-    config-less checkout (every unit-test fixture is one) would be a silent,
-    invisible redirection — a worse fault than the one being fixed.
+    VOLUME IS CHECKED EVEN WHEN THE DESK IS LIVE. Liveness says a desk may take
+    items; the rolling ``kind="breaking"`` ceiling says how many. A candidate at
+    its ceiling hands the item to another DECLARED wire desk with headroom, and
+    when none has headroom the candidate keeps it — this function returns an
+    address, so it cannot refuse; :func:`live_desk_verdict` is the caller-facing
+    form that can say ``parked``.
 
-    THE CONFIG OVERRIDE KEEPS WORKING: an operator who points ``emit.account`` at
-    an ENABLED desk gets that desk, unconditionally and silently. This function
-    only ever moves an item off a target the accounts model says is off.
+    Resolution goes through ``wire_routing`` — the SAME liveness read, policy and
+    ceiling the press wire uses, deliberately not a second implementation,
+    because two answers to "may this desk take this" is how a routing table
+    starts lying.
+
+    THREE ANSWERS, NOT TWO, on liveness: unknown (the accounts model could not be
+    consulted) and empty (no ``desk_network`` roster at all) are NOT evidence
+    that ``candidate`` is dark, so both leave it untouched and print nothing.
+
+    Never raises.
+    """
+    return live_desk_verdict(candidate, marketing_cfg=marketing_cfg, root=root,
+                             fallbacks=fallbacks, severity=severity).account
+
+
+def live_desk_verdict(
+    candidate: str,
+    *,
+    marketing_cfg: dict | None,
+    root: Any = None,
+    fallbacks: tuple[str, ...] = (),
+    severity: float | None = None,
+):
+    """:func:`live_account` with its reasoning attached (a ``DeskVerdict``).
+
+    ``.account`` is the address to use; ``.parked`` is True when nothing should
+    actually be published to it — a dark desk under the park default, or a
+    ceiling with no desk left to take the surplus. A caller that can refuse
+    BEFORE the raster and the LLM call should test ``.parked`` and skip; a
+    caller that cannot still gets a correct address.
+
+    Returns a permissive verdict rather than raising on any internal failure:
+    a volume brake that jams shut on a read error is a worse outage than the
+    volume it was fitted to bound.
     """
     acct = str(candidate or "").strip()
-    if not acct:
-        return acct
     try:
         from engine.marketing import wire_routing as _wr  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape.live_desk_verdict: wire_routing unavailable (%s)", exc)
 
-        live = _wr._enabled_accounts(marketing_cfg, root)
-        if not live:
-            # None (unknown) or empty (no roster) — see the docstring. Not proof.
-            return acct
-        if acct in live:
-            return acct
-        # Ladder: the caller's own preferences first (flagship mirror desk, wire
-        # desk), then wire_routing's configured default, then any armed desk —
-        # sorted so the choice is deterministic across runs rather than
-        # dict-order roulette.
-        ladder = [str(f or "").strip() for f in fallbacks]
-        ladder.append(_wr.default_account(marketing_cfg))
-        ladder.extend(sorted(live))
-        target = next((f for f in ladder if f and f in live), "")
-        if not target:
-            return acct
-        if acct not in _WARNED_DARK_ACCOUNTS:
-            _WARNED_DARK_ACCOUNTS.add(acct)
-            # Start-of-line bare print (house law): routed through a logger this
-            # annotation is prefixed and GitHub drops it silently — and a lane
-            # quietly posting as a different desk than its config names is
-            # exactly what must not be silent.
-            print(
-                f"::warning title=hot-tape-dark-account::hot-tape routes to "
-                f"{acct!r}, which is not enabled in desk_network — posting as "
-                f"{target!r} instead so the item is not enqueued to a grave "
-                f"(items addressed to a dark desk quarantine at dispatch with "
-                f"reason account_disabled). Arm the desk in desk_network, or "
-                f"point hot_tape emit.account at a live one.",
-                flush=True,
-            )
-        return target
+        @dataclass(frozen=True)
+        class _Fallback:  # pragma: no cover - import-failure shim
+            account: str
+            parked: bool = False
+            reason: str = ""
+        return _Fallback(account=acct)
+
+    if not acct:
+        return _wr.DeskVerdict(account=acct)
+    try:
+        verdict = _wr.resolve_desk(acct, cfg=marketing_cfg, root=root,
+                                   severity=severity, fallbacks=fallbacks)
+        if verdict.parked:
+            return verdict
+        acct = verdict.account
+
+        cap = _wr.breaking_cap_verdict(acct, cfg=marketing_cfg, root=root)
+        if cap.allowed:
+            return verdict
+        for target in _wr.spill_pool(marketing_cfg, root=root):
+            if target != acct:
+                if acct not in _WARNED_CAPPED_ACCOUNTS:
+                    _WARNED_CAPPED_ACCOUNTS.add(acct)
+                    # BARE, line-start, flushed (house law): every builder here
+                    # logs with a prefixing format, so log.warning("::notice …")
+                    # emits "WARNING ::notice …" and GitHub drops it silently.
+                    print(
+                        f"::notice title=hot-tape-volume-overflow::{cap.detail} "
+                        f"— this tape item goes to {target!r} instead. The desk "
+                        f"that OWNS it is unchanged; this is the ceiling in "
+                        f"wire_volume.breaking doing its job.",
+                        flush=True,
+                    )
+                return _wr.DeskVerdict(account=target, redirected=True,
+                                       reason="breaking_cap_overflow",
+                                       detail=cap.detail)
+        return _wr.DeskVerdict(account=acct, parked=True,
+                               reason="breaking_cap_exhausted", detail=cap.detail)
     except Exception as exc:  # noqa: BLE001 — routing must never break a pass
-        log.warning("hot_tape.live_account failed (%s) — keeping %r", exc, acct)
-        return acct
+        log.warning("hot_tape.live_desk_verdict failed (%s) — keeping %r", exc, acct)
+        return _wr.DeskVerdict(account=acct)
 
 
 def packet_to_source(packet: FactPacket, media: dict | None = None) -> dict:

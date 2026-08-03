@@ -64,6 +64,30 @@ def _data_root(root_arg: str | None) -> Path:
     return Path(root_arg) if root_arg is not None else _code_root()
 
 
+#: A Buffer refusal that is about the TOKEN, not about the post. Matched on the
+#: error text because `fetch_post_metrics` collapses transport, HTTP and GraphQL
+#: failures into one `error` string — there is no status code to branch on by
+#: the time it reaches here. Deliberately broad: a false positive costs one
+#: deferred poll, a false negative costs the day's posting allowance.
+_RATE_LIMIT_MARKERS: tuple[str, ...] = (
+    "429", "rate limit", "rate-limit", "ratelimit",
+    "too many requests", "retry-after", "quota",
+)
+
+
+def _is_rate_limited(error: object) -> bool:
+    """True when this failure means the shared token is throttled."""
+    text = str(error or "").lower()
+    return any(m in text for m in _RATE_LIMIT_MARKERS)
+
+
+#: Per-run ceiling on Buffer metric calls. Metrics refresh roughly daily, so
+#: polling one post on all 30 sweeps buys nothing and spends the posting budget
+#: 30x over. Sized so a full day of polling stays a small fraction of the token's
+#: allowance even if the once-a-day workflow gate is ever removed.
+_MAX_CALLS_PER_RUN = 25
+
+
 def _metrics_ledger_path(root: Path) -> Path:
     return root / "data" / "marketing" / "post_metrics.jsonl"
 
@@ -195,6 +219,7 @@ def poll(
     max_age_days: int = 7,
     dry_run: bool = False,
     publisher=None,
+    max_calls: int = _MAX_CALLS_PER_RUN,
 ) -> dict:
     """Poll metrics for recently-posted items; append rows to post_metrics.jsonl.
 
@@ -216,6 +241,10 @@ def poll(
         "failed": 0,
         "dry_run": bool(dry_run),
         "dark": False,
+        # None = ran to the end of the target list. "rate_limited" / "max_calls"
+        # say the run left targets deliberately un-polled, so a short `polled`
+        # count is never mistaken for "there was nothing to poll".
+        "stopped": None,
     }
 
     if dry_run:
@@ -238,9 +267,51 @@ def poll(
     pub = publisher if publisher is not None else BufferPublisher(token=token)
     ledger_path = _metrics_ledger_path(root)
 
+    # ── THE POSTING ALLOWANCE IS NOT OURS TO SPEND (2026-08-03) ──────────────
+    # The publisher and this poller share ONE Buffer token and ONE 24h quota.
+    # This loop had no rate-limit awareness: on 2026-08-03 it polled 54 posts,
+    # took a 429 on the second, and then made 52 MORE doomed calls — each one
+    # still counted. Buffer answered Retry-After: 20696 (5.7 hours), and the
+    # publisher's very next sweep had an approved, due, audited post refused
+    # with `rate_limited=1`. Telemetry had eaten the product's allowance.
+    #
+    # At 30 sweeps/day x ~54 targets this lane alone asks for ~1,600 calls a
+    # day, so the quota could never survive it. Two bounds now:
+    #   * STOP on the first rate-limit. A 429 is a statement about the whole
+    #     token, not about one post, so every later call in the run is known
+    #     doomed before it is made.
+    #   * CAP the run regardless. Metrics refresh ~daily; polling the same post
+    #     30 times a day buys nothing and costs the posting budget.
+    # Metrics are diagnostics. Posting is the product. When they compete, the
+    # product wins — that is the whole ruling.
     for t in targets:
+        if summary["polled"] >= max_calls:
+            summary["stopped"] = "max_calls"
+            log.info("marketing_metrics_poll: stopping at the %d-call cap — the "
+                     "rest keep until the next run", max_calls)
+            break
         res = pub.fetch_post_metrics(t["remote_id"], now=ts_now)
         summary["polled"] += 1
+
+        if not res.ok and _is_rate_limited(res.error):
+            summary["failed"] += 1
+            summary["stopped"] = "rate_limited"
+            append_jsonl(ledger_path, {
+                "remote_id": t["remote_id"], "account": t["account"] or "",
+                "external_url": t.get("external_url") or None, "metrics": {},
+                "metrics_raw": None, "metrics_updated_at": None,
+                "polled_at": polled_at, "ok": False,
+                "note": f"poll_failed: {res.error}",
+            })
+            print(
+                "::warning title=marketing-metrics-poll-rate-limited::Buffer "
+                f"rate-limited the metrics poll after {summary['polled']} call(s); "
+                f"{len(targets) - summary['polled']} target(s) left un-polled ON "
+                "PURPOSE. The publisher shares this token — every further poll "
+                "would spend the POSTING allowance.",
+                flush=True,
+            )
+            break
 
         row: dict = {
             "remote_id": t["remote_id"],
@@ -265,9 +336,9 @@ def poll(
 
         append_jsonl(ledger_path, row)
 
-    log.info("marketing_metrics_poll: polled=%d ok=%d empty=%d failed=%d → %s",
+    log.info("marketing_metrics_poll: polled=%d ok=%d empty=%d failed=%d stopped=%s → %s",
              summary["polled"], summary["ok"], summary["empty"], summary["failed"],
-             ledger_path)
+             summary["stopped"] or "-", ledger_path)
     return summary
 
 

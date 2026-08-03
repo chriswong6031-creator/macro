@@ -1439,6 +1439,12 @@ def book_packet(
         _pre = OB.preflight_enqueue(
             account=account, kind="breaking", text=text, as_of=as_of,
             root=root, cfg=marketing_cfg,
+            # The fact-anchor guard exempts the two-step brief, whose whole
+            # design is a second post about its alert's fact. Without the
+            # trigger the preflight cannot tell a brief from a fan-out and
+            # refuses it here, before any render — so this must be passed or
+            # the exemption in enqueue is never reached.
+            trigger=packet.trigger,
         )
         if _pre != "ok":
             print(f"hot-tape REFUSE {packet.key} {_pre} (preflight, no render)",

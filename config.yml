@@ -1733,6 +1733,17 @@ etf_holdings:
   consensus_top_n: 40             # favored-stocks (cross-fund consensus) rows shown
   consensus_min_funds: 2          # min # funds touching a name to appear (page copy promises 2+)
   sparkline_cap: 60               # rows that get a weight-trajectory sparkline (bounds parquet reads)
+  # Tier-preview split for etfs.html (SEO Supercharge W2, docs/TIER_PREVIEW_PATTERN.md).
+  # ON: the page ships the FREE half only — header, honest totals, the non-graded
+  # stance line, the whole rotation backdrop, the full fund coverage directory and
+  # the disclosure footer — while every graded row (consensus board, fresh
+  # conviction, per-fund adds, trims) is written to site/premiumdata/etfs.json,
+  # which config/site_access.yml enforces as Essential+ ahead of PAYWALL_ENABLED.
+  # There is NO preview slice: both boards are best-first, and previewing a
+  # best-first board hands over its head, which is the part people pay for.
+  # OFF: the page renders exactly as it did before, and the payload is written
+  # empty so an un-gating can never strand a readable board at a live URL.
+  gated: true
   universe:
     # --- SPDR / State Street (VERIFIED: daily XLSX incl. Shares Held) ----------
     XBI:  {sponsor: ssga, name: "SPDR S&P Biotech", category: "Biotech"}

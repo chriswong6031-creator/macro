@@ -155,6 +155,40 @@ _RISK_READ = {
 }
 
 
+# T5 stance line — the free build's Law-1 "so what do I do?" read.
+#
+# The hero's verdict line summarises the graded consensus board, so it cannot
+# ship free (W2 spec B§2.2). This is its non-graded replacement: it is derived
+# ONLY from the rotation backdrop's risk label — trailing ratio momentum over
+# public ETF prices — which the free page renders in full a few hundred pixels
+# further down, so a reader can check it against the same data we used.
+#
+# "Watch, don't chase" is sanctioned stance vocabulary and it is the HONEST read
+# for a rotation backdrop with no name-level input: a supportive tape is a reason
+# to look, not a reason to buy. Three deterministic outcomes, one per risk label
+# — no ranking, no score, no name.
+_T5_STANCE = {
+    "RISK-ON": {
+        "tone": "u",
+        "head": {"en": "Risk-on tape", "zh": "风险偏好行情"},
+        "rest": {"en": "credit and cyclicals lead. Watch, don’t chase.",
+                 "zh": "信用与周期领先。观望，勿追。"},
+    },
+    "NEUTRAL": {
+        "tone": "n",
+        "head": {"en": "Mixed tape", "zh": "涨跌互现的行情"},
+        "rest": {"en": "no clear risk lean. Watch, don’t chase.",
+                 "zh": "风险偏好不明。观望，勿追。"},
+    },
+    "RISK-OFF": {
+        "tone": "d",
+        "head": {"en": "Risk-off tape", "zh": "避险行情"},
+        "rest": {"en": "defensives lead. Watch, don’t chase.",
+                 "zh": "防御板块领先。观望，勿追。"},
+    },
+}
+
+
 def _theme_tally(favored: list[dict]) -> tuple[list[dict], list[dict]]:
     """Net cross-fund consensus per theme, THEN split into building vs leaving by
     each theme's TOTAL — so a theme never appears on both sides at once."""
@@ -255,8 +289,15 @@ def _rotation(pulse: dict) -> dict:
                   "tilt": s.get("tilt"), "chg20": s.get("chg_20d"),
                   "chg60": s.get("chg_60d")}
                  for s in (pulse.get("style") or [])]
+    # Render the disclaimer from the CURRENT code, not from whatever wording the
+    # shipped etf_pulse.json happens to carry: the pulse file is rebuilt under
+    # render scope `baskets` and etfs.html under `macro`, so a macro-only render
+    # would otherwise reprint a stale string — and this one is on a page Google
+    # now indexes. See engine/etf_pulse.ROTATION_DISCLAIMER_EN.
+    from engine.etf_pulse import ROTATION_DISCLAIMER_EN, ROTATION_DISCLAIMER_ZH
     return {"risk": risk_out, "sector": sector_out, "style": style_out,
-            "as_of": pulse.get("as_of")}
+            "as_of": pulse.get("as_of"),
+            "disclaimer": {"en": ROTATION_DISCLAIMER_EN, "zh": ROTATION_DISCLAIMER_ZH}}
 
 
 def _fresh_conviction(accumulation: list[dict], cap: int = 8) -> list[dict]:
@@ -354,6 +395,11 @@ def board_context(rows: list[dict], accumulation: list[dict], trims: list[dict],
 
     return {
         "verdict": _verdict(build, leave, risk_label, fresh_names),
+        # Non-graded stance, computed on EVERY build. The gated shell renders it
+        # in place of the verdict line above; the entitled build renders the
+        # verdict. Cheap, and keeping it out of the gate branch means the free
+        # page can never end up stance-less by accident.
+        "stance": _T5_STANCE.get(risk_label, _T5_STANCE["NEUTRAL"]),
         "coverage": {"funds": n_funds, "active": n_active},
         "tiles": tiles,
         "themes_building": build[:4],

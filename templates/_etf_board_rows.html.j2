@@ -1,0 +1,49 @@
+{# ── M2 "The consensus board" — the ranked cross-fund board ──────────────────
+   Renders the whole replaceable BLOCK (card + column head + one .cb-row per
+   name) so the entitled DOM is byte-identical whichever side of the wall it
+   arrives from: the ungated shell {% include %}s this file, and the gated
+   build's /premiumdata/etfs.json renders the SAME file into `board_html`.
+   The card wrapper has to travel with the rows because `.cb-row:nth-child(-n+4)
+   .cb-rank` colours the leaders by POSITION inside .card — rows injected into a
+   different wrapper would silently lose that accent.
+
+   Params: `rows` (favored), `scale` (board.scale.consensus_pp).
+   Carries NO tier logic — docs/TIER_PREVIEW_PATTERN.md §checklist-1. #}
+{% from "_etf_macros.html.j2" import t, b, logo, stance, breadth, presbar %}
+<div class="card" style="padding:16px 20px">
+  <div class="cb-head">
+    <span>#</span>
+    <span>{{ t('stock', '个股') }}</span>
+    <span>{{ t('funds in', '参与基金') }}</span>
+    <span>{{ t('net conviction', '净信念') }}</span>
+    <span>{{ t('what to do', '如何应对') }}</span>
+  </div>
+  {% for c in rows %}
+  {% set net = c.net_conviction_pp or 0 %}
+  <div class="cb-row">
+    <div class="cb-rank">{{ loop.index }}</div>
+    <div class="stock-cell">{{ logo(c.ticker) }}
+      <span class="st-txt"><a href="stock.html#{{ c.ticker }}"><b>{{ c.ticker }}</b></a>
+        <span class="nm">{{ clean_name(c.name) }}</span>
+        {% if c.sector %}<span class="themetag">{{ td(c.sector) }}</span>{% endif %}
+      </span>
+    </div>
+    <div class="cb-breadth">{{ breadth(c.n_accum or 0, c.n_trim or 0) }}
+      {% if c.funds %}<div class="cb-who"><span class="who-src">{{ t('who', '谁') }}</span>
+        <div class="who-pop">{% for f in c.funds[:6] %}<div class="wl"><b>{{ f.fund }}</b><span class="wv {{ 'u' if (f.conviction_pp or 0) >= 0 else 'd' }}">{% if f.conviction_pp is not none %}{{ "%+.1f" | format(f.conviction_pp) }}pp{% else %}—{% endif %}</span></div>{% endfor %}</div>
+      </div>{% endif %}
+    </div>
+    <div class="cb-pres">
+      <div class="cb-net"><span class="v {{ 'u' if net >= 0 else 'd' }}">{{ "%+.1f" | format(net) }}<span class="faint" style="font-weight:600">pp</span></span></div>
+      {{ presbar(net, scale or 1) }}
+      <div class="cb-flags">
+        {% if c.n_new %}<span class="mini new">{{ c.n_new }} {{ t('NEW', '新建') }}</span>{% endif %}
+        {% if c.n_exit %}<span class="mini exit">{{ c.n_exit }} {{ t('EXIT', '清仓') }}</span>{% endif %}
+        {% if c.contested %}<span class="mini contested">{{ t('SPLIT', '分歧') }}</span>{% endif %}
+        {% if c.is_active_any %}<span class="mini active">{{ t('ACTIVE MGR', '主动') }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="cb-stance-cell">{{ stance(c.stance) }}</div>
+  </div>
+  {% endfor %}
+</div>
