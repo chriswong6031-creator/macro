@@ -427,6 +427,7 @@ def test_render_metadata_replay_blocks_newer_procurement_truth_or_builder() -> N
         "data/government_revenue/",
         "lib/pages.py",
         "scripts/build_government_revenue.py",
+        "scripts/build_government_revenue_candidates.py",
         "scripts/check_government_revenue_projection.py",
         "scripts/inject_data_base.py",
         "scripts/externalize_css.py",
