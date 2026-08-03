@@ -663,6 +663,14 @@ lanes:
             # lane, so its as_of could never refresh. It is a sub-second stdlib
             # write; it runs here beside the artifact set it describes.
             - scripts.build_biopharma_seasonality
+            # Lane 6 Neural Web shadow lobe. DAILY-ONLY, same rationale as the
+            # stage_analysis engine entry: it is the single writer of the
+            # data/seasonality/nw_forward_ledger.jsonl forward ledger, and the
+            # nightly is the sole advancer of forward ledgers. It must also follow
+            # build_stock_seasonality in this sequential cluster — the entity JSONs
+            # it reads are gitignored except SPY, so only that builder puts them in
+            # the working tree.
+            - scripts.build_seasonality_shadow_state
       # serial post-band
       - id: check_builder_failstreaks
         module: scripts.check_builder_failstreaks
