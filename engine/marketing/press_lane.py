@@ -377,8 +377,8 @@ def _emission_key(item: dict) -> str:
     return str(item.get("id", ""))
 
 
-def _strip_trailing_source_clause(summary: str, source_name: str) -> str:
-    """Remove a trailing '-- {source_name}' clause from a summary (m3).
+def _strip_trailing_source_clause(summary: str, source_name: str, *aliases: str) -> str:
+    """Remove a trailing '-- {name}' clause from a summary (m3).
 
     The deterministic fallback builds '{headline} -- {source_name}'; when the body
     attribution is supplied by the corroboration decision we must not leave the
@@ -386,15 +386,36 @@ def _strip_trailing_source_clause(summary: str, source_name: str) -> str:
     dash variant, longest first) so a dash inside the headline itself is kept.
     The em/en-dash variants stay in the list because a summary of an OLDER vintage
     (or an LLM that ignored its prompt) can still arrive carrying one.
+
+    ALIASES (operator law 2026-08-02). The X relay's display name is now the
+    generic "Newswire" (press_providers.display_source_name), so an exact-match
+    strip on `source_name` alone no longer catches the clause an OLDER-vintage
+    body — or a deterministic fallback built before the de-handling — already
+    carries: "... -- @FirstSquawk". The caller passes the item's handle forms as
+    extra candidates; every candidate is tried, LONGEST FIRST so "@FirstSquawk"
+    wins over "FirstSquawk" and the leading "@" is taken with the clause.
+    Blank candidates are skipped, and with a single candidate the behaviour is
+    identical to the one-argument version this replaced.
     """
     text = str(summary).rstrip()
-    src = str(source_name).strip()
-    if not src:
+
+    # source_name first, then the aliases in the order given; de-duplicated so a
+    # repeated candidate cannot change the ordering, then stably sorted longest
+    # first (a longer candidate is the more specific match).
+    candidates: list[str] = []
+    for raw in (source_name, *aliases):
+        cand = str(raw).strip()
+        if cand and cand not in candidates:
+            candidates.append(cand)
+    if not candidates:
         return text
-    for dash in (" -- ", " — ", " – ", " - ", "--", "—", "–", "-"):
-        suffix = f"{dash}{src}"
-        if text.endswith(suffix):
-            return text[: -len(suffix)].rstrip()
+    candidates.sort(key=len, reverse=True)
+
+    for src in candidates:
+        for dash in (" -- ", " — ", " – ", " - ", "--", "—", "–", "-"):
+            suffix = f"{dash}{src}"
+            if text.endswith(suffix):
+                return text[: -len(suffix)].rstrip()
     return text
 
 
@@ -1483,7 +1504,10 @@ def run_press_tick(
     on this path.
     """
     from engine.marketing.breaking_relevance import score_item
-    from engine.marketing.breaking_summary import build_breaking_payload
+    from engine.marketing.breaking_summary import (
+        build_breaking_payload,
+        card_earns_attachment,
+    )
     from engine.marketing.press_corroboration import corroboration_decision
 
     root = Path(root)
@@ -2003,8 +2027,13 @@ def run_press_tick(
         source_name = str(s.get("source_name", s.get("source", "")))
         # The summary WITHOUT the trailing "— {source_name}" fallback clause — the
         # attribution is (re)applied by the corroboration decision, and the wire
-        # voice pass composes opener + attribution + tape from these parts.
-        base_summary = _strip_trailing_source_clause(summary, source_name)
+        # voice pass composes opener + attribution + tape from these parts. The
+        # handle forms ride along as aliases: the display name is generic now, so
+        # a body of an older vintage ending "-- @FirstSquawk" is only reachable
+        # through them (operator de-handling law 2026-08-02).
+        _xh = str(s.get("x_handle", "") or "").strip()
+        base_summary = _strip_trailing_source_clause(
+            summary, source_name, *((f"@{_xh}", _xh) if _xh else ()))
 
         # ── B2-COPY wire voice pass ────────────────────────────────────────────
         # Opener rotation (deterministic + per-account no-repeat), deterministic
@@ -2094,9 +2123,32 @@ def run_press_tick(
                   f"{iid}: {_clamp['reason']}", flush=True)
             provenance["x_clamp"] = _clamp["reason"]
 
+        # ── DOES THE CARD EARN ITS PIXELS? ────────────────────────────────────
+        # Operator, 2026-08-02: "only use illustrations when you have valuable
+        # details to share." The gold flash shipped as post text plus a card
+        # whose entire content was that same sentence. The decision lives HERE
+        # because this is the first point that knows BOTH sides — the composed
+        # post text and what the card was actually given — and it is cheap: the
+        # SVG exists but its raster and R2 upload happen inside
+        # _emit_outbox_item, so a dropped card costs nothing downstream. Expect
+        # most short wire flashes to go card-less; that is the intent.
+        _card_svg = payload.get("card_svg", "")
+        if _card_svg:
+            _attach, _card_why = card_earns_attachment(
+                _clamp["text"],
+                headline,
+                payload.get("card_summary") or "",
+                payload.get("card_tickers") or [],
+            )
+            if not _attach:
+                _card_svg = ""
+                provenance["card_dropped"] = _card_why
+                print("::notice title=press-lane-card-dropped::"
+                      f"{iid}: {_card_why}; posting text-only", flush=True)
+
         _refusal: dict = {}
         out_item = _emit_outbox_item(
-            root, iid, account, headline, body, payload.get("card_svg", ""),
+            root, iid, account, headline, body, _card_svg,
             provenance, now,
             story_key=skey,
             cta_suppress=bool(s.get("cta_suppress", False)),

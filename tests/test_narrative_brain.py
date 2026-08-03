@@ -124,3 +124,42 @@ def test_ledger_idempotent_and_shape(tmp_path):
 def test_run_disabled_returns_none(monkeypatch):
     monkeypatch.setattr(nb, "_cfg", lambda: {**nb._DEFAULTS, "enabled": False})
     assert nb.run(persist=False) is None
+
+
+def test_make_call_preserves_non_claude_provider_models(monkeypatch):
+    """The per-call model override may touch ONLY Claude-endpoint providers.
+
+    2026-08-03 outage: with the OAuth pool rate-limited, the deepseek rung was
+    the last resort — but the old code clobbered every provider's model with
+    the requested Claude id, so DeepSeek would have been asked for
+    claude-sonnet-4-6 (a 404 on that endpoint). Pin: oauth/anthropic get the
+    requested id; deepseek/codex keep the ids build_providers chose for them.
+    """
+    from engine import llm_auth
+
+    built = [
+        {"name": "oauth", "env_var": "T", "cred": "x", "client": object(),
+         "model": "claude-opus-4-8"},
+        {"name": "codex", "env_var": "codex_account", "cred": "attached",
+         "client": object(), "model": "gpt-5.6-sol"},
+        {"name": "anthropic", "env_var": "A", "cred": "x", "client": object(),
+         "model": "claude-opus-4-8"},
+        {"name": "deepseek", "env_var": "D", "cred": "x", "client": object(),
+         "model": "deepseek-v4-pro"},
+    ]
+    seen = {}
+
+    def fake_make_call(providers, call_fn, *, context=""):
+        seen["models"] = {p["name"]: p["model"] for p in providers}
+        return "ok", None, "deepseek"
+
+    monkeypatch.setattr(llm_auth, "build_providers", lambda cfg, **kw: built)
+    monkeypatch.setattr(llm_auth, "make_call", fake_make_call)
+
+    call = nb._make_call(dict(nb._DEFAULTS))
+    text, reason = call("claude-sonnet-4-6", "sys", "user")
+    assert text == "ok" and reason is None
+    assert seen["models"]["oauth"] == "claude-sonnet-4-6"
+    assert seen["models"]["anthropic"] == "claude-sonnet-4-6"
+    assert seen["models"]["deepseek"] == "deepseek-v4-pro"
+    assert seen["models"]["codex"] == "gpt-5.6-sol"

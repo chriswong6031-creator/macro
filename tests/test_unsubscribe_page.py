@@ -654,7 +654,14 @@ PUBLIC_EXACT = frozenset({
     "/about.html",
     "/", "/index.html", "/plans.html", "/macro.html", "/start.html",
     "/us_stocks.html", "/confluence_screener.html", "/research_vault.html",
-    "/research_vault_app.js", "/support.html", "/unsubscribe.html",
+    "/research_vault_app.js",
+    # The two Special Situations tier-preview SHELLS (docs/TIER_PREVIEW_PATTERN.md),
+    # promoted from free_registered to anonymous-public by SEO_SUPERCHARGE_MASTERPLAN
+    # W1a. Reviewed public: the shell holds only the preview slice, the honest totals
+    # and the upgrade wall — every paid row stays in /premiumdata/* (plus the two raw
+    # snapshots in premium.enforced_early), which 403 anonymous and Free alike.
+    "/special_situations.html", "/china_special_situations.html",
+    "/support.html", "/unsubscribe.html",
     "/privacy.html", "/terms.html", "/disclaimer.html",
     "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png",
     "/robots.txt",
@@ -663,6 +670,14 @@ PUBLIC_EXACT = frozenset({
     # fetchable — that fetch IS the ownership check. No signals, no user data.
     "/88bb90b05303e3cf469878ebc4dc7543.txt",
     "/sitemap.xml", "/llms.txt", "/brand-facts.json",
+    # Stock Seasonality calendar clock (2026-08). Reviewed public deliberately:
+    # it is a marketing/SEO surface whose page, stylesheet and script carry only
+    # the seasonality sample view — no account state, no gated signal payload
+    # (the data itself is served from /seasonalitydata/, gated separately).
+    # Ratified here rather than only in config/site_access.yml, which is the
+    # whole point of this frozen set: widening the public boundary is an
+    # explicit, reviewed act, never a side effect of shipping a page.
+    "/stock_seasonality.html", "/stock_seasonality.css", "/stock_seasonality.js",
     "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js",
     "/landing.css", "/scene-motion.css", "/scene-motion.js",
     "/chat.css",

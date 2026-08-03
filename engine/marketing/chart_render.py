@@ -7,6 +7,8 @@ Public API (v1 — backward-compat, kept unchanged):
 
 Public API (v2 — TrendSpider-grade terminal chart):
     load_ohlcv(ticker, root, n=90) -> tuple[dates, open, high, low, close, volume] | None
+    load_ohlcv_timeframe(...)      -> ((bars), warmup) | None   (DAILY/WEEKLY/MONTHLY)
+    resample_bars(...)             -> bars         (W-FRI / month-end aggregation)
     render_chart_v2(...)           -> str          (self-contained SVG, < 60 KB)
     render_earnings_card(...)      -> str          (branded earnings card SVG)
     resolve_logo(ticker, root)     -> str | None   (whitened data URI, cached)
@@ -53,7 +55,7 @@ log = logging.getLogger(__name__)
 # the v1 line chart (render_signal_chart_png) while the admin preview and the
 # outbox artifact showed the v2 candlestick SVG. The two drifted: v2 grew
 # candles, volume/MACD subpanels, the logo overlay and the footer marketing bar
-# (mastermind-x.com + "Start free 14-day trial"); the PNG never followed. The
+# (mastermind-x.com + "Try Pro free for 7 days"); the PNG never followed. The
 # account therefore posted a plain line chart with no URL and no CTA while the
 # mockup promised the full card. Rasterizing the EXACT SVG we already rendered
 # removes the second renderer, so preview and post cannot diverge again.
@@ -1027,6 +1029,63 @@ _CALLOUT_MIN_PCT = 3.0
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Annotation grammar constants (TrendSpider-hardening PR-A, masterplan §1.1)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# PURE WHITE IS ANNOTATION INK AND NOTHING ELSE. Candles are lime/coral,
+# indicators gold/cyan/salmon, volume muted slate — so the only thing on the
+# canvas painted #ffffff is the layer a human "drew": trendlines, arcs, the
+# measure arrow. That single rule is why these charts still read at 500px in a
+# timeline. Never colour a DATA layer white.
+_ANNOT_INK = "#ffffff"
+
+# Spotlight discs are colour-coded by TENSE, not by direction: the reader has to
+# know instantly whether a circle is history, now, or damage.
+_SPOTLIGHT_COLORS: dict[str, str] = {
+    "past": "#8FA6C8",    # blue-grey — a historical instance of the same setup
+    "now": "#F5B301",     # gold — "YOU ARE HERE", never more than one per chart
+    "damage": "#E23B3B",  # red — where it hurt
+}
+_SPOTLIGHT_DEFAULT_TENSE = "past"
+
+# Zone bands: blue-grey structure, floored at 10px so a zone never degenerates
+# into the hairline it exists to replace.
+_ZONE_INK = "#8FA6C8"
+_ZONE_MIN_PX = 10.0
+
+# Moving-average palette when a caller names its own MAs (legacy 50/200 keep
+# their historical amber pair).
+_MA_COLORS: tuple[str, ...] = ("#F59E0B", "#FBBF24", "#5b9dff", "#7c5cff")
+
+# Sub-pane vocabulary + the corpus's hard cap of two.
+_SUBPANE_KINDS: tuple[str, ...] = ("volume", "macd", "rsi", "streak", "squeeze")
+_MAX_SUBPANES = 2
+
+
+def _clamp_box(
+    x: float, y: float, w: float, h: float,
+    canvas_w: float, canvas_h: float,
+    pane_top: float | None = None, pane_h: float | None = None,
+    pad: int = 4,
+) -> tuple[float, float]:
+    """Nudge a (x, y, w, h) plate until it lies fully inside the canvas.
+
+    Preserves the numeric TYPE of its inputs (int in, int out) so the legacy
+    callout's coordinates format byte-identically when no clamping is needed.
+    When *pane_top*/*pane_h* are given the box is also kept inside that pane,
+    which is what stops a receipt box from floating into the header band.
+    """
+    lo_x, hi_x = pad, canvas_w - w - pad
+    x = max(lo_x, min(hi_x, x)) if hi_x >= lo_x else lo_x
+    lo_y = pane_top + 2 if pane_top is not None else pad
+    hi_y = canvas_h - h - pad
+    if pane_top is not None and pane_h is not None:
+        hi_y = min(hi_y, pane_top + pane_h - h - 2)
+    y = max(lo_y, min(hi_y, y)) if hi_y >= lo_y else lo_y
+    return x, y
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # v2: Internal indicator computation helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1101,9 +1160,285 @@ def _macd_lines(closes: list[float]) -> tuple[
     return macd_line, signal_line, hist
 
 
+def _streak_series(o: list[float], c: list[float]) -> list[int]:
+    """Signed consecutive same-colour candle count, aligned to input length.
+
+    +3 = the third consecutive up candle; -2 = the second consecutive down
+    candle. The y-unit IS the claim's unit: a "four straight red weeks" post
+    gets a pane whose bars are literally the number four (masterplan §1.1,
+    "the indicator whose y-axis unit IS the claim's unit").
+    """
+    out: list[int] = []
+    run = 0
+    prev_up: bool | None = None
+    for i in range(len(c)):
+        is_up = c[i] >= o[i]
+        if prev_up is None or is_up != prev_up:
+            run = 1
+        else:
+            run += 1
+        prev_up = is_up
+        out.append(run if is_up else -run)
+    return out
+
+
+def _stdev(values: list[float]) -> float:
+    """Population standard deviation (the Bollinger convention)."""
+    n = len(values)
+    if n < 2:
+        return 0.0
+    mean = sum(values) / n
+    return math.sqrt(sum((v - mean) ** 2 for v in values) / n)
+
+
+def _linreg_endpoint(values: list[float]) -> float:
+    """Value of the least-squares fit at the LAST point of *values*.
+
+    The squeeze-momentum convention: fit y = a + b·x over the window and report
+    the fitted value at the newest bar, so the histogram reads as "where the
+    trend of the deviation currently sits", not as raw noise.
+    """
+    n = len(values)
+    if n == 0:
+        return 0.0
+    if n == 1:
+        return values[0]
+    mean_x = (n - 1) / 2.0
+    mean_y = sum(values) / n
+    num = sum((i - mean_x) * (values[i] - mean_y) for i in range(n))
+    den = sum((i - mean_x) ** 2 for i in range(n))
+    slope = num / den if den else 0.0
+    return mean_y + slope * ((n - 1) - mean_x)
+
+
+def _squeeze_series(
+    h: list[float],
+    l: list[float],
+    c: list[float],
+    *,
+    length: int = 20,
+    bb_mult: float = 2.0,
+    kc_mult: float = 1.5,
+) -> tuple[list[bool | None], list[float | None]]:
+    """(squeeze_on, momentum) — BB(20,2) inside Keltner(20,1.5), from OHLCV alone.
+
+    squeeze_on[i] is True when the Bollinger band is fully inside the Keltner
+    channel (volatility compression), False when it has expanded back out, and
+    None during the warm-up window where neither exists yet.
+
+    Keltner uses SMA(close) ± mult · SMA(true range) — the range-MA form, which
+    needs nothing beyond OHLC. Momentum is the linear-regression endpoint of
+    close minus the midpoint of (Donchian mid, SMA close) over the same window.
+    """
+    n = len(c)
+    on: list[bool | None] = [None] * n
+    mom: list[float | None] = [None] * n
+    if n < length + 1:
+        return on, mom
+    # True range needs a previous close, so bar 0 has none.
+    tr: list[float | None] = [None]
+    for i in range(1, n):
+        tr.append(max(h[i] - l[i], abs(h[i] - c[i - 1]), abs(l[i] - c[i - 1])))
+    for i in range(length, n):
+        win_c = c[i - length + 1: i + 1]
+        basis = sum(win_c) / length
+        dev = _stdev(win_c)
+        win_tr = [t for t in tr[i - length + 1: i + 1] if t is not None]
+        if len(win_tr) < length:
+            continue
+        range_ma = sum(win_tr) / length
+        bb_up, bb_lo = basis + bb_mult * dev, basis - bb_mult * dev
+        kc_up, kc_lo = basis + kc_mult * range_ma, basis - kc_mult * range_ma
+        on[i] = bool(bb_up < kc_up and bb_lo > kc_lo)
+        hh = max(h[i - length + 1: i + 1])
+        ll = min(l[i - length + 1: i + 1])
+        mid = ((hh + ll) / 2.0 + basis) / 2.0
+        mom[i] = _linreg_endpoint([win_c[k] - mid for k in range(length)])
+    return on, mom
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# v2: timeframe resampling (DAILY source → WEEKLY / MONTHLY bars)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# House visible-window defaults per timeframe. 90 daily ≈ a quarter and change;
+# 156 weekly = 3 years; 120 monthly = 10 years — the horizons the corpus study
+# found the weekly/monthly editorial charts actually use (masterplan §3 PR-A 1).
+TIMEFRAME_VIS: dict[str, int] = {"DAILY": MKT_VIS, "WEEKLY": 156, "MONTHLY": 120}
+# Warm-up bars (of the RESAMPLED series) so SMA50/MACD are already warm at the
+# first drawn bar. MONTHLY is shorter because 120+60 months of daily history
+# exceeds what the curated parquet trees hold; the loader degrades gracefully.
+TIMEFRAME_WARM: dict[str, int] = {"DAILY": MKT_WARM, "WEEKLY": 60, "MONTHLY": 40}
+# Daily bars consumed per resampled bar, used to size the parquet read.
+_TIMEFRAME_DAILY_PER_BAR: dict[str, int] = {"DAILY": 1, "WEEKLY": 5, "MONTHLY": 21}
+
+
+def normalize_timeframe(timeframe: str | None) -> str:
+    """'weekly'/'W'/None → a key of TIMEFRAME_VIS. Unknown values stay DAILY."""
+    tf = (timeframe or "DAILY").strip().upper()
+    if tf in ("W", "1W", "WEEK"):
+        tf = "WEEKLY"
+    elif tf in ("M", "1M", "MONTH"):
+        tf = "MONTHLY"
+    return tf if tf in TIMEFRAME_VIS else "DAILY"
+
+
+def _bucket_label(iso_date: str, timeframe: str) -> str | None:
+    """Bucket label for a daily date: the week's FRIDAY, or the month's LAST day.
+
+    Matches the pandas labels the rest of the repo resamples on —
+    ``resample("W-FRI")`` (engine/weinstein_stage.py) labels a week by its
+    Friday, ``resample("ME")`` labels a month by its last calendar day — so a
+    weekly chart bar and a weekly stage read refer to the same bucket.
+    """
+    from datetime import date as _date, timedelta as _timedelta  # noqa: PLC0415
+
+    try:
+        d = _date.fromisoformat(iso_date[:10])
+    except (TypeError, ValueError):
+        return None
+    if timeframe == "WEEKLY":
+        return (d + _timedelta(days=(4 - d.weekday()) % 7)).isoformat()
+    if timeframe == "MONTHLY":
+        nxt = _date(d.year + (d.month == 12), (d.month % 12) + 1, 1)
+        return (nxt - _timedelta(days=1)).isoformat()
+    return iso_date[:10]
+
+
+def resample_bars(
+    dates: list[str],
+    o: list[float],
+    h: list[float],
+    l: list[float],
+    c: list[float],
+    v: list[float],
+    timeframe: str,
+) -> tuple[list[str], list[float], list[float], list[float], list[float], list[float]]:
+    """Daily OHLCV → WEEKLY (W-FRI) or MONTHLY (month-end) bars. OHLC-correct.
+
+    open = first, high = max, low = min, close = last, volume = sum — the same
+    aggregation ``engine/weinstein_stage.py`` and
+    ``engine/neuralweb/chart_perception.py`` use, so a resampled chart bar and a
+    resampled signal bar are the same object.
+
+    DELIBERATE divergence from weinstein_stage: the FORMING bucket is KEPT. That
+    module drops an incomplete W-FRI week because a signal must never be
+    computed from a partial bar; a chart that hid the current week would hide
+    "you are here", which is the whole point of the annotation grammar. A chart
+    shows the live bar; a signal does not consume it.
+
+    Unrecognised timeframes (and DAILY) return the input unchanged.
+    """
+    tf = normalize_timeframe(timeframe)
+    if tf == "DAILY" or not dates:
+        return dates, o, h, l, c, v
+    out_d: list[str] = []
+    out_o: list[float] = []
+    out_h: list[float] = []
+    out_l: list[float] = []
+    out_c: list[float] = []
+    out_v: list[float] = []
+    cur: str | None = None
+    for i in range(len(dates)):
+        key = _bucket_label(dates[i], tf)
+        if key is None:
+            continue
+        if key != cur:
+            cur = key
+            out_d.append(key)
+            out_o.append(o[i])
+            out_h.append(h[i])
+            out_l.append(l[i])
+            out_c.append(c[i])
+            out_v.append(v[i])
+        else:
+            out_h[-1] = max(out_h[-1], h[i])
+            out_l[-1] = min(out_l[-1], l[i])
+            out_c[-1] = c[i]
+            out_v[-1] += v[i]
+    return out_d, out_o, out_h, out_l, out_c, out_v
+
+
+def load_ohlcv_timeframe(
+    ticker: str,
+    root: Path | str,
+    *,
+    timeframe: str = "DAILY",
+    lookback_bars: int | None = None,
+    warm: int | None = None,
+    subdirs: "tuple[str, ...] | None" = None,
+) -> tuple[tuple[list[str], list[float], list[float], list[float], list[float], list[float]], int] | None:
+    """``load_ohlcv_windowed`` with a real timeframe. Returns ``(bars, warmup)``.
+
+    Reads the SAME split-adjusted daily parquets (`_PRICE_SUBDIRS`) every other
+    caller reads, pulls enough daily depth for the requested window, then
+    resamples. *lookback_bars* overrides the per-timeframe visible default
+    (DAILY 90 / WEEKLY 156 / MONTHLY 120); *warm* overrides the warm-up lead-in
+    that keeps SMA/MACD warm at the first DRAWN bar — the warm-up is honoured
+    AFTER the resample, so a weekly MACD is warm in weekly bars, not daily ones.
+
+    Returns None when no bars are available (fail-soft, exactly like its
+    daily-only sibling).
+    """
+    tf = normalize_timeframe(timeframe)
+    vis = int(lookback_bars) if lookback_bars else TIMEFRAME_VIS[tf]
+    vis = max(5, vis)
+    warm_bars = TIMEFRAME_WARM[tf] if warm is None else max(0, int(warm))
+    if tf == "DAILY":
+        return load_ohlcv_windowed(ticker, root, vis=vis, warm=warm_bars, subdirs=subdirs)
+    # +8 daily bars of slack so the oldest resampled bucket is complete rather
+    # than a stub built from the two days that happened to survive the slice.
+    need_daily = (vis + warm_bars) * _TIMEFRAME_DAILY_PER_BAR[tf] + 8
+    bars = (load_ohlcv(ticker, root, n=need_daily, subdirs=subdirs) if subdirs
+            else load_ohlcv(ticker, root, n=need_daily))
+    if not bars or not bars[0]:
+        return None
+    res = resample_bars(*bars, tf)
+    if not res[0]:
+        return None
+    keep = vis + warm_bars
+    res = tuple(col[-keep:] for col in res)  # type: ignore[assignment]
+    warmup = max(0, len(res[0]) - vis)
+    return res, warmup  # type: ignore[return-value]
+
+
 def _fmt_thousands(v: float) -> str:
     """Format a price with commas and 2 decimal places."""
     return f"{v:,.2f}"
+
+
+def _fmt_signed(v: float) -> str:
+    """Signed price delta with commas — the measure box's first number."""
+    return f"{v:+,.2f}"
+
+
+def _elapsed_phrase(d0: str, d1: str) -> str:
+    """Plain-word calendar span between two ISO dates ('' when unusable).
+
+    The measure box's second line is an arithmetic RECEIPT, so the elapsed time
+    is real calendar time between the two anchored bars — not a bar count
+    restated in another unit.
+    """
+    from datetime import date as _date  # noqa: PLC0415
+
+    try:
+        a = _date.fromisoformat(str(d0)[:10])
+        b = _date.fromisoformat(str(d1)[:10])
+    except (TypeError, ValueError):
+        return ""
+    days = abs((b - a).days)
+    if days <= 0:
+        return ""
+    if days < 14:
+        return f"{days} day" + ("" if days == 1 else "s")
+    if days < 70:
+        w = round(days / 7)
+        return f"{w} week" + ("" if w == 1 else "s")
+    if days < 730:
+        m = round(days / 30.44)
+        return f"{m} month" + ("" if m == 1 else "s")
+    y = days / 365.25
+    return f"{y:.1f} years"
 
 
 def _favicon_logomark(cx: float, cy: float, size: float = 34.0, uid: str = "0") -> str:
@@ -1259,7 +1594,7 @@ def _brand_bar(
     show_url: bool = True,
     show_button: bool = True,
     tagline: str | None = "AI stock signals",
-    button_label: str = "Start free 14-day trial",
+    button_label: str = "Try Pro free for 7 days",
     copyright_text: str = "© 2026 Mastermind",
     band_h: int = 46,
 ) -> tuple[str, str]:
@@ -1424,6 +1759,15 @@ def render_chart_v2(
     avwap_overlay: dict | None = None,
     poc_overlay: dict | None = None,
     level_overlay: dict | None = None,
+    log_scale: bool = False,
+    runway_frac: float | None = None,
+    mas: list[dict] | None = None,
+    spotlights: list[dict] | None = None,
+    zones: list[dict] | None = None,
+    trendlines: list[dict] | None = None,
+    arcs: list[dict] | None = None,
+    measure_box: dict | None = None,
+    level_tags: list[dict] | None = None,
 ) -> str:
     """Render a TrendSpider-grade candlestick SVG chart.
 
@@ -1455,6 +1799,51 @@ def render_chart_v2(
         NOTE vs pre-M2 output: the SMA layer now paints UNDER the candles (it
         used to paint over them) so the M2 overlays could slot between —
         a deliberate, designer-approved z-order change for ALL charts.
+
+    Annotation grammar (TrendSpider-hardening PR-A; every kwarg below is
+    optional and OFF by default — an omitted set renders byte-identical output,
+    which tests/test_chart_render_grammar.py pins against a committed golden):
+
+        log_scale: draw the price pane on a log axis and print
+            ``TICKER WEEKLY (LOG)`` in the header. Silently ignored when the
+            visible low is <= 0. Every annotation primitive maps through the
+            same py_price(), so all of them follow the log axis for free.
+        runway_frac: fraction of the plot width left EMPTY to the right of the
+            last bar (the corpus's "future runway": last bar at 60-85% of
+            frame). Clamped to [0, 0.40]. None keeps the current full-width
+            behaviour exactly.
+        mas: [{"kind": "sma"|"ema", "length": int, "color"?: str}] — arbitrary
+            moving averages with an inline same-colour end label ("200 EMA").
+            When given it REPLACES the legacy 50/200 SMA pair; when omitted the
+            legacy pair is unchanged.
+        spotlights: [{"index": int, "price"?: float, "tense": "past"|"now"|
+            "damage", "label"?: str}] — translucent circle discs. Blue-grey =
+            a historical instance, gold = "you are here", red = damage. The
+            optional 2-6 word label prints in the disc's own colour.
+        zones: [{"lo": float, "hi": float, "start_index"?: int,
+            "end_index"?: int, "label"?: str}] — translucent supply/demand
+            BANDS (floored at 10px of visual weight; a S/R zone is never a
+            hairline). Painted under the candles as structure, not ink.
+        trendlines: [{"from_idx": int, "from_price": float, "to_idx": int,
+            "to_price": float, "style"?: "solid"|"dotted", "extend"?: bool}] —
+            white annotation ink; solid = structural, dotted = diagnostic.
+            extend projects the line to the right edge (through the runway).
+        arcs: [{"indices": [int, ...], "side": "under"|"over", "label"?: str}]
+            — a smooth curve through the given swing points, so a formation
+            reads as interpretation rather than as a polyline of clutter.
+        measure_box: {"from_index": int, "to_index": int, "from_price"?: float,
+            "to_price"?: float} — anchor-to-anchor arrow plus the arithmetic
+            receipt ``-95.09 (-23.32%) / 2 bars (2 weeks)``, coloured by sign
+            and clamped fully inside the canvas.
+        level_tags: [{"price": float, "color": str, "label"?: str}] —
+            additional right-axis tags in an indicator's own colour: the
+            in-frame restatement device that lets a screenshot survive
+            decontextualisation.
+
+    Sub-panes: ``indicators`` accepts "volume", "macd", "rsi", "streak"
+    (signed consecutive same-colour candle count — the y-unit IS a streak
+    claim's unit) and "squeeze" (BB(20,2) inside Keltner(20,1.5) state dots +
+    momentum histogram). Hard-capped at 2 panes, per the corpus grammar.
 
     Returns self-contained SVG (<60KB). No <script>. All text _xesc'd.
     """
@@ -1514,8 +1903,12 @@ def render_chart_v2(
             # that vertical space for a taller, legible MACD pane below.
             if ind == "volume" and volume_overlay:
                 continue
-            if ind in ("volume", "macd", "rsi"):
+            if ind in _SUBPANE_KINDS:
                 active_panels.append(ind)
+    # Hard cap at 2 sub-panes (masterplan §1.1: "≤2 sub-panes ever"). A third
+    # pane squeezes the price pane below the 55% the grammar requires, and the
+    # corpus has zero examples of it.
+    active_panels = active_panels[:_MAX_SUBPANES]
     SUBPANEL_H = max(60, int(subpanel_h)) if active_panels else 0
     n_sub = len(active_panels)
     total_sub_h = SUBPANEL_H * n_sub
@@ -1526,9 +1919,22 @@ def render_chart_v2(
 
     chart_w = width - PAD_L - PAD_R
 
+    # ── Future runway ────────────────────────────────────────────────────────
+    # The corpus grammar puts the last bar at 60-85% of frame width and keeps
+    # the dead space to its right for the volume profile, the last-price tag and
+    # level tags. runway_frac reserves that space; bar GEOMETRY (candles,
+    # volume, MAs, sub-pane bars, date ticks) is confined to plot_w, while
+    # full-width horizontal references (POC, level lines, zone bands) still run
+    # to the panel edge the way they do in the reference charts.
+    # runway_frac=None → runway_px 0.0 → plot_w == chart_w: byte-identical.
+    runway_px = 0.0
+    if runway_frac is not None:
+        runway_px = chart_w * max(0.0, min(0.40, float(runway_frac)))
+    plot_w = float(chart_w) if runway_px <= 0 else max(40.0, chart_w - runway_px)
+
     # Candle slot width — min 2px body, 1px gap between candles. Measured over the
     # VISIBLE bar count so warmup bars never squeeze the drawn candles.
-    slot_w = chart_w / n_vis
+    slot_w = plot_w / n_vis
     body_frac = 0.60        # body width = 60% of slot
     body_w = max(2.0, slot_w * body_frac - 1.0)  # -1 = 1px gap
 
@@ -1549,19 +1955,52 @@ def render_chart_v2(
             price_max_raw = max(price_max_raw, max(_avwap_nonnull))
             price_min_raw = min(price_min_raw, min(_avwap_nonnull))
 
+    # Zones widen the axis so a band the caller asked for is never half off-panel
+    # (an S/R zone clipped to a hairline at the edge is worse than no zone).
+    for _z in (zones or []):
+        try:
+            _zl, _zh = float(_z["lo"]), float(_z["hi"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        price_max_raw = max(price_max_raw, max(_zl, _zh))
+        price_min_raw = min(price_min_raw, min(_zl, _zh))
+
     price_range = price_max_raw - price_min_raw or 1.0
     margin = price_range * 0.07
     y_min = price_min_raw - margin
     y_max = price_max_raw + margin
     y_range = y_max - y_min
 
+    # ── Log price axis ───────────────────────────────────────────────────────
+    # Multi-year editorial charts (the corpus's MONTHLY/WEEKLY class) need a log
+    # axis or a 29-year candle field collapses into a hairline at the bottom.
+    # The margin is applied in log space so the padding is proportional at both
+    # ends. Silently declines on non-positive prices — never raises, never
+    # renders an empty pane.
+    log_ok = bool(log_scale) and price_min_raw > 0 and price_max_raw > price_min_raw
+    if log_ok:
+        _lg_lo_raw = math.log10(price_min_raw)
+        _lg_hi_raw = math.log10(price_max_raw)
+        _lg_margin = (_lg_hi_raw - _lg_lo_raw) * 0.07
+        lg_min = _lg_lo_raw - _lg_margin
+        lg_max = _lg_hi_raw + _lg_margin
+        lg_range = lg_max - lg_min or 1.0
+        y_min = 10.0 ** lg_min
+        y_max = 10.0 ** lg_max
+        y_range = y_max - y_min
+
     def cx_bar(i: int) -> float:
         # i is an ABSOLUTE index into the full series; the warmup lead-in is
         # subtracted so the first visible bar sits at the left edge.
         return PAD_L + (i - warmup + 0.5) * slot_w
 
-    def py_price(price: float) -> float:
-        return PAD_TOP + PRICE_H * (1.0 - (price - y_min) / y_range)
+    if log_ok:
+        def py_price(price: float) -> float:
+            p = price if price > 0 else y_min
+            return PAD_TOP + PRICE_H * (1.0 - (math.log10(p) - lg_min) / lg_range)
+    else:
+        def py_price(price: float) -> float:
+            return PAD_TOP + PRICE_H * (1.0 - (price - y_min) / y_range)
 
     # ── Candlesticks ────────────────────────────────────────────────────────
     candle_parts: list[str] = []
@@ -1642,6 +2081,24 @@ def render_chart_v2(
             v += chosen_step
         return levels or [lo, hi]
 
+    def _log_axis_levels(lo: float, hi: float, target: int = 6) -> list[float]:
+        """Geometrically spaced ticks for the log axis.
+
+        Round decades would give one or two labels on a 3x range and twenty on a
+        1000x one; a constant RATIO gives the same visual spacing at every
+        magnitude — which is what a log axis means, and what the reference
+        multi-decade charts print (they are not round numbers either).
+        """
+        if lo <= 0 or hi <= lo:
+            return [hi]
+        ratio = (hi / lo) ** (1.0 / (target + 1))
+        levels: list[float] = []
+        v = lo * ratio
+        while v < hi and len(levels) < target + 2:
+            levels.append(v)
+            v *= ratio
+        return levels or [hi]
+
     # Last-price pill geometry is needed BEFORE the tick loop: a round level that
     # falls under the pill must be suppressed, or the two numbers overprint each
     # other (e.g. a 381.70 pill sitting on the 380.00 label). The pill already
@@ -1653,7 +2110,9 @@ def render_chart_v2(
     pill_label = _fmt_thousands(last_close)
     _PILL_HALF_H = 11.0  # pill is 18px tall; +2px so glyphs never kiss
 
-    for tick_price in _round_axis_levels(y_min, y_max, target=6):
+    _tick_levels = (_log_axis_levels(y_min, y_max, target=6) if log_ok
+                    else _round_axis_levels(y_min, y_max, target=6))
+    for tick_price in _tick_levels:
         ty = py_price(tick_price)
         if abs(ty - pill_y) < _PILL_HALF_H + 4:
             continue
@@ -1673,6 +2132,46 @@ def render_chart_v2(
         f'fill="#ffffff" font-size="10" font-weight="bold" '
         f'font-family="monospace" text-anchor="middle">{_xesc(pill_label)}</text>'
     )
+
+    # ── Extra right-axis level tags (the in-frame restatement device) ────────
+    # A number the caption claims must be re-rendered INSIDE the image, in the
+    # colour of whatever drew it, so a screenshot survives decontextualisation
+    # (masterplan §1.1). Dark ink on the coloured plate keeps these visually
+    # subordinate to the white-on-colour LAST PRICE pill: one price is the tape,
+    # the others are references.
+    _tag_claimed: list[tuple[float, float]] = [(pill_y - 11.0, pill_y + 11.0)]
+    for _tag in (level_tags or [])[:4]:
+        try:
+            _tag_price = float(_tag["price"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if not (y_min <= _tag_price <= y_max):
+            continue  # off-panel: the tag would point at nothing
+        _tag_color = str(_tag.get("color") or "#5b9dff")
+        _tag_text = str(_tag.get("label") or _fmt_thousands(round(_tag_price, 2)))
+        _tag_y = py_price(_tag_price)
+        for _ in range(6):
+            _hit = next((sp for sp in _tag_claimed
+                         if _tag_y - 9 < sp[1] and sp[0] < _tag_y + 9), None)
+            if _hit is None:
+                break
+            _tag_y = _hit[1] + 9.0 + 2.0
+        _tag_y = max(PAD_TOP + 9.0, min(PAD_TOP + PRICE_H - 9.0, _tag_y))
+        _tag_claimed.append((_tag_y - 9.0, _tag_y + 9.0))
+        _tag_w = max(50, len(_tag_text) * 7 + 12)
+        # A worded tag ("range high") is wider than the 72px axis gutter, so it
+        # is pulled LEFT until it fits instead of running off the canvas — the
+        # same clipping class as the callout box, one plate over.
+        _tag_x = min(float(pill_x), width - _tag_w - 2.0)
+        axis_parts.append(
+            f'<rect x="{_tag_x:.1f}" y="{_tag_y - 8:.1f}" '
+            f'width="{_tag_w}" height="16" rx="2" fill="{_tag_color}" '
+            f'fill-opacity="0.92"/>'
+            f'<text x="{_tag_x + _tag_w / 2:.1f}" y="{_tag_y + 4:.1f}" '
+            f'fill="#0E1420" font-size="10" font-weight="bold" '
+            f'font-family="monospace" text-anchor="middle">{_xesc(_tag_text)}</text>'
+        )
+
     axis_svg = "\n  ".join(axis_parts)
 
     # ── M2 overlays: AVWAP + POC ──────────────────────────────────────────────
@@ -1761,6 +2260,55 @@ def render_chart_v2(
             f'font-family="sans-serif">{_xesc(text)}</text>'
         )
 
+    # ── Zone bands (supply / demand / value) ─────────────────────────────────
+    # A support level is a BAND, never a 1px hairline: price respected an area,
+    # and a hairline over-claims a precision the tape never had. Floored at
+    # _ZONE_MIN_PX of visual weight so a tight zone still reads as a zone.
+    # Painted with the M2 geometry layer — UNDER the candles — because a zone is
+    # background structure, not annotation ink.
+    for _z in (zones or [])[:4]:
+        try:
+            _z_lo, _z_hi = float(_z["lo"]), float(_z["hi"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if _z_hi < _z_lo:
+            _z_lo, _z_hi = _z_hi, _z_lo
+        _zy_top = py_price(_z_hi)
+        _zy_bot = py_price(_z_lo)
+        if _zy_bot - _zy_top < _ZONE_MIN_PX:
+            _zc = (_zy_top + _zy_bot) / 2.0
+            _zy_top, _zy_bot = _zc - _ZONE_MIN_PX / 2.0, _zc + _ZONE_MIN_PX / 2.0
+        _zy_top = max(PAD_TOP, _zy_top)
+        _zy_bot = min(PAD_TOP + PRICE_H, _zy_bot)
+        if _zy_bot <= _zy_top:
+            continue
+        _z_si = _z.get("start_index")
+        _z_ei = _z.get("end_index")
+        _zx0 = (cx_bar(max(warmup, min(int(_z_si), n - 1))) - slot_w / 2.0
+                if _z_si is not None else float(PAD_L))
+        _zx1 = (cx_bar(max(warmup, min(int(_z_ei), n - 1))) + slot_w / 2.0
+                if _z_ei is not None else float(PAD_L + chart_w))
+        if _zx1 <= _zx0:
+            continue
+        m2_overlay_svg += (
+            f'<rect x="{_zx0:.1f}" y="{_zy_top:.1f}" '
+            f'width="{_zx1 - _zx0:.1f}" height="{_zy_bot - _zy_top:.1f}" '
+            f'fill="{_ZONE_INK}" fill-opacity="0.16" stroke="none"/>'
+            f'<line x1="{_zx0:.1f}" y1="{_zy_top:.1f}" x2="{_zx1:.1f}" '
+            f'y2="{_zy_top:.1f}" stroke="{_ZONE_INK}" stroke-width="1" '
+            f'stroke-opacity="0.42"/>'
+            f'<line x1="{_zx0:.1f}" y1="{_zy_bot:.1f}" x2="{_zx1:.1f}" '
+            f'y2="{_zy_bot:.1f}" stroke="{_ZONE_INK}" stroke-width="1" '
+            f'stroke-opacity="0.42"/>'
+        )
+        _z_label = str(_z.get("label") or "")
+        if _z_label:
+            m2_label_svg += (
+                f'<text x="{_zx0 + 6:.1f}" y="{_zy_top - 5:.1f}" '
+                f'fill="{_ZONE_INK}" font-size="11" font-weight="600" '
+                f'font-family="sans-serif">{_xesc(_z_label)}</text>'
+            )
+
     # POC / Value-Area overlay ────────────────────────────────────────────────
     if poc_overlay is not None:
         _poc = poc_overlay.get("poc")
@@ -1816,6 +2364,41 @@ def render_chart_v2(
                     # reference; the chip labels it without covering the dashes).
                     m2_label_svg += _overlay_chip(
                         _poc_label, _poc_y + 12, "#5b9dff", anchor_up=False
+                    )
+
+        # ── Volume-by-price histogram, drawn INTO the runway ─────────────────
+        # Bars grow LEFTWARD from the right edge and live entirely inside the
+        # empty runway, so the profile can never occlude a candle — the corpus
+        # rule that lets ~58% of their charts carry a profile without losing the
+        # tape. No runway means no profile: without the reserved space the bars
+        # would paint straight over the price action, which is the failure this
+        # layout law exists to prevent.
+        _vbp_edges = poc_overlay.get("bin_edges") or []
+        _vbp_vols = poc_overlay.get("bin_volumes") or []
+        if runway_px > 6 and len(_vbp_edges) == len(_vbp_vols) + 1 and _vbp_vols:
+            _vbp_max = max(_vbp_vols)
+            if _vbp_max > 0:
+                _vbp_right = float(PAD_L + chart_w)
+                _vbp_span = runway_px * 0.92
+                for _bi, _bvol in enumerate(_vbp_vols):
+                    if _bvol <= 0:
+                        continue
+                    _b_lo, _b_hi = float(_vbp_edges[_bi]), float(_vbp_edges[_bi + 1])
+                    _by_top = max(PAD_TOP, py_price(_b_hi))
+                    _by_bot = min(PAD_TOP + PRICE_H, py_price(_b_lo))
+                    if _by_bot <= _by_top:
+                        continue
+                    _bw = (_bvol / _vbp_max) * _vbp_span
+                    _b_mid = (_b_lo + _b_hi) / 2.0
+                    _in_va = (_va_low is not None and _va_high is not None
+                              and _va_low <= _b_mid <= _va_high)
+                    _b_fill = "#5b9dff" if _in_va else "#54607d"
+                    _b_op = "0.50" if _in_va else "0.34"
+                    m2_overlay_svg += (
+                        f'<rect x="{_vbp_right - _bw:.1f}" y="{_by_top:.1f}" '
+                        f'width="{max(0.8, _bw):.1f}" '
+                        f'height="{max(1.0, _by_bot - _by_top - 1.0):.1f}" '
+                        f'fill="{_b_fill}" fill-opacity="{_b_op}" stroke="none"/>'
                     )
 
     # Cited-level overlay ─────────────────────────────────────────────────────
@@ -1881,21 +2464,51 @@ def render_chart_v2(
     # last-price pill and every other claimed span. Bare end-text used to clip at
     # the right edge and collide with the price pill ("50SMA"/"200SMA" mush) —
     # the chip lane fixes that on EVERY marketing chart, overlays or not.
+    # `mas` REPLACES this pair when given (the grammar allows ONE MA on a
+    # posted chart, and the director picks which one); omitting it leaves the
+    # legacy 50/200 default path exactly as it was. An explicit `mas` is honored
+    # even with show_indicators=False — asking for a specific MA by name is an
+    # explicit request, not the generic "decorate this chart" flag.
     sma_svg = ""
-    if show_indicators and n >= 50:
+    _ma_layers: list[tuple[list[float | None], str, str]] = []
+    if mas is not None:
+        for _mi, _ma in enumerate(mas[:4]):
+            try:
+                _ma_len = int(_ma.get("length") or 0)
+            except (AttributeError, TypeError, ValueError):
+                continue
+            if _ma_len < 2 or n < _ma_len:
+                continue
+            _ma_kind = str(_ma.get("kind") or "sma").strip().lower()
+            _ma_kind = "ema" if _ma_kind == "ema" else "sma"
+            _ma_vals = _ema(c, _ma_len) if _ma_kind == "ema" else _sma(c, _ma_len)
+            _ma_color = str(_ma.get("color") or _MA_COLORS[_mi % len(_MA_COLORS)])
+            _ma_layers.append((_ma_vals, _ma_color, f"{_ma_len} {_ma_kind.upper()}"))
+    elif show_indicators and n >= 50:
         sma50 = _sma(c, 50)
         sma200 = _sma(c, 200) if n >= 200 else [None] * n
-        for sma_vals, sma_color, sma_label in [
+        _ma_layers = [
             (sma50, "#F59E0B", "50 SMA"),
             (sma200, "#FBBF24", "200 SMA"),
-        ]:
+        ]
+    if _ma_layers:
+        for sma_vals, sma_color, sma_label in _ma_layers:
             pts_sma: list[str] = []
             for i, sv in enumerate(sma_vals):
                 if sv is None or i < warmup:
                     continue
                 pts_sma.append(f"{cx_bar(i):.1f},{py_price(sv):.1f}")
             if len(pts_sma) >= 2:
+                # A NAMED single MA is the subject of the chart (the corpus draws
+                # exactly one, solid, in its own colour), so it gets a solid
+                # slightly heavier stroke. The legacy 50/200 pair keeps its
+                # dashed hairline — it is quiet background reference, and its
+                # bytes are pinned by the backward-compat golden.
                 sma_svg += (
+                    f'<polyline points="{" ".join(pts_sma)}" '
+                    f'fill="none" stroke="{sma_color}" stroke-width="1.6" '
+                    f'opacity="0.92" stroke-linejoin="round"/>'
+                    if mas is not None else
                     f'<polyline points="{" ".join(pts_sma)}" '
                     f'fill="none" stroke="{sma_color}" stroke-width="1.2" '
                     f'opacity="0.8" stroke-dasharray="4,2"/>'
@@ -1937,9 +2550,18 @@ def render_chart_v2(
             else:
                 dur_str = f"since setup · ~{max(1, round(bars_elapsed / 21))}mo"
             box_w, box_h = 132, 40
-            # Anchor box near top-right of price panel
-            box_x = PAD_L + chart_w - box_w - 4
-            box_y = PAD_TOP + 10
+            # Anchor box near top-right of price panel, then CLAMP it fully
+            # inside the canvas. The un-clamped form was one narrow canvas (or
+            # one wider box string) away from painting half a receipt off the
+            # right/top edge: box_x is derived from chart_w, so a card whose
+            # plot area is narrower than the box pushed it past PAD_L, and
+            # nothing bounded box_y against the price pane at all. A number that
+            # is half off-frame is worse than no number — it reads as a render
+            # fault on a shared image.
+            box_x, box_y = _clamp_box(
+                PAD_L + chart_w - box_w - 4, PAD_TOP + 10, box_w, box_h,
+                width, height, PAD_TOP, PRICE_H,
+            )
             pct_callout_svg = (
                 f'<rect x="{box_x}" y="{box_y}" width="{box_w}" height="{box_h}" '
                 f'rx="4" fill="{box_color}" opacity="0.92"/>'
@@ -1983,6 +2605,213 @@ def render_chart_v2(
             f'fill="#ffffff" font-size="9" font-weight="bold" '
             f'text-anchor="middle">{pill_label_s}</text>'
         )
+
+    # ── Annotation grammar: spotlights, trendlines, arcs, measure box ────────
+    # One layer, painted OVER the candles because this is the ink a human drew —
+    # it must survive a busy tape at thumbnail size. Every primitive is opt-in;
+    # with all four kwargs omitted `annot_svg` stays "" and the SVG template
+    # below emits no bytes for it at all (the backward-compat contract).
+    annot_parts: list[str] = []
+    extra_defs = ""
+
+    def _annot_x(i: int) -> float:
+        return cx_bar(max(warmup, min(int(i), n - 1)))
+
+    # Spotlights ──────────────────────────────────────────────────────────────
+    for _sp in (spotlights or [])[:8]:
+        try:
+            _sp_i = int(_sp["index"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        _sp_i = max(0, min(_sp_i, n - 1))
+        if _sp_i < warmup:
+            continue  # a disc in the undrawn lead-in would point off-panel
+        _sp_price = _sp.get("price")
+        try:
+            _sp_price = float(_sp_price) if _sp_price is not None else c[_sp_i]
+        except (TypeError, ValueError):
+            _sp_price = c[_sp_i]
+        _sp_color = _SPOTLIGHT_COLORS.get(
+            str(_sp.get("tense") or _SPOTLIGHT_DEFAULT_TENSE).strip().lower(),
+            _SPOTLIGHT_COLORS[_SPOTLIGHT_DEFAULT_TENSE],
+        )
+        _sp_x = cx_bar(_sp_i)
+        _sp_y = py_price(_sp_price)
+        # Sized to survive the downscale: a disc that reads as a smudge at the
+        # ~50% zoom of a timeline has not marked anything.
+        _sp_r = max(slot_w * 2.6, 20.0)
+        annot_parts.append(
+            f'<circle cx="{_sp_x:.1f}" cy="{_sp_y:.1f}" r="{_sp_r:.1f}" '
+            f'fill="{_sp_color}" fill-opacity="0.24" stroke="{_sp_color}" '
+            f'stroke-width="1.3" stroke-opacity="0.70"/>'
+        )
+        _sp_label = str(_sp.get("label") or "")
+        if _sp_label:
+            # Below the disc by default; above it when the disc sits low enough
+            # that the caption would fall out of the price pane.
+            _below = _sp_y + _sp_r + 14 <= PAD_TOP + PRICE_H - 4
+            _sp_ly = _sp_y + _sp_r + 14 if _below else _sp_y - _sp_r - 7
+            _sp_lx = min(max(_sp_x, PAD_L + 30), PAD_L + chart_w - 30)
+            annot_parts.append(
+                f'<text x="{_sp_lx:.1f}" y="{_sp_ly:.1f}" '
+                f'fill="{_sp_color}" font-size="12" font-weight="700" '
+                f'text-anchor="middle" font-family="sans-serif">'
+                f'{_xesc(_sp_label)}</text>'
+            )
+
+    # Trendlines ──────────────────────────────────────────────────────────────
+    _pane_top, _pane_bot = float(PAD_TOP), float(PAD_TOP + PRICE_H)
+    for _tl in (trendlines or [])[:4]:
+        try:
+            _x1 = _annot_x(_tl["from_idx"] if "from_idx" in _tl else _tl["from"][0])
+            _y1 = py_price(float(
+                _tl["from_price"] if "from_price" in _tl else _tl["from"][1]))
+            _x2 = _annot_x(_tl["to_idx"] if "to_idx" in _tl else _tl["to"][0])
+            _y2 = py_price(float(
+                _tl["to_price"] if "to_price" in _tl else _tl["to"][1]))
+        except (KeyError, IndexError, TypeError, ValueError):
+            continue
+        if _x2 == _x1:
+            continue
+        if _tl.get("extend"):
+            # Project to the right panel edge (through the runway, the way the
+            # reference triangles do), then stop at the pane boundary rather
+            # than letting the line escape into the sub-panes.
+            _xe = float(PAD_L + chart_w)
+            _slope = (_y2 - _y1) / (_x2 - _x1)
+            _ye = _y2 + _slope * (_xe - _x2)
+            if _ye < _pane_top or _ye > _pane_bot:
+                _bound = _pane_top if _ye < _pane_top else _pane_bot
+                if _slope != 0:
+                    _xe = _x2 + (_bound - _y2) / _slope
+                    _ye = _bound
+            if _xe > _x2:
+                _x2, _y2 = _xe, _ye
+        _dash = (' stroke-dasharray="3 4"'
+                 if str(_tl.get("style") or "solid").lower() == "dotted" else "")
+        annot_parts.append(
+            f'<line x1="{_x1:.1f}" y1="{_y1:.1f}" x2="{_x2:.1f}" y2="{_y2:.1f}" '
+            f'stroke="{_ANNOT_INK}" stroke-width="1.4" stroke-opacity="0.88"'
+            f'{_dash} stroke-linecap="round"/>'
+        )
+
+    # Arcs ────────────────────────────────────────────────────────────────────
+    # A formation outline is a CURVE. A polyline through the same swing points
+    # reads as clutter; the curve reads as somebody's interpretation, which is
+    # what it is.
+    for _arc in (arcs or [])[:3]:
+        _idxs = [i for i in (_arc.get("indices") or [])
+                 if isinstance(i, (int, float)) and warmup <= int(i) <= n - 1]
+        if len(_idxs) < 2:
+            continue
+        _idxs = sorted({int(i) for i in _idxs})
+        _over = str(_arc.get("side") or "under").strip().lower() == "over"
+        _off = -12.0 if _over else 12.0   # push the curve clear of the wicks
+        _pts = [(cx_bar(i), py_price(h[i] if _over else l[i]) + _off) for i in _idxs]
+        if len(_pts) == 2:
+            # Two anchors: a real arc, bulging away from the price, not a chord.
+            (_ax, _ay), (_bx, _by) = _pts
+            _cxp = (_ax + _bx) / 2.0
+            _cyp = (_ay + _by) / 2.0 + (-26.0 if _over else 26.0)
+            _d = f'M {_ax:.1f} {_ay:.1f} Q {_cxp:.1f} {_cyp:.1f} {_bx:.1f} {_by:.1f}'
+        else:
+            # Catmull-Rom through every anchor, converted to cubic beziers, so
+            # the curve actually passes through the swings it claims to outline.
+            _d = f'M {_pts[0][0]:.1f} {_pts[0][1]:.1f}'
+            for _k in range(len(_pts) - 1):
+                _p0 = _pts[_k - 1] if _k > 0 else _pts[0]
+                _p1, _p2 = _pts[_k], _pts[_k + 1]
+                _p3 = _pts[_k + 2] if _k + 2 < len(_pts) else _p2
+                _c1x = _p1[0] + (_p2[0] - _p0[0]) / 6.0
+                _c1y = _p1[1] + (_p2[1] - _p0[1]) / 6.0
+                _c2x = _p2[0] - (_p3[0] - _p1[0]) / 6.0
+                _c2y = _p2[1] - (_p3[1] - _p1[1]) / 6.0
+                _d += (f' C {_c1x:.1f} {_c1y:.1f} {_c2x:.1f} {_c2y:.1f} '
+                       f'{_p2[0]:.1f} {_p2[1]:.1f}')
+        annot_parts.append(
+            f'<path d="{_d}" fill="none" stroke="{_ANNOT_INK}" '
+            f'stroke-width="1.5" stroke-opacity="0.85" stroke-linecap="round"/>'
+        )
+        _arc_label = str(_arc.get("label") or "")
+        if _arc_label:
+            _lx = sum(p[0] for p in _pts) / len(_pts)
+            _ly = (min(p[1] for p in _pts) - 8.0 if _over
+                   else max(p[1] for p in _pts) + 16.0)
+            _ly = max(PAD_TOP + 10.0, min(PAD_TOP + PRICE_H - 4.0, _ly))
+            annot_parts.append(
+                f'<text x="{_lx:.1f}" y="{_ly:.1f}" fill="{_ANNOT_INK}" '
+                f'font-size="12" font-weight="700" text-anchor="middle" '
+                f'font-family="sans-serif">{_xesc(_arc_label)}</text>'
+            )
+
+    # Measure box ─────────────────────────────────────────────────────────────
+    # Anchor-to-anchor arrow plus an arithmetic RECEIPT. The corpus's
+    # highest-viewed chart post carries one, and the reason is that it shows its
+    # work: the move, the percentage, the bar count AND the calendar time, so
+    # nobody has to take the caption's word for the size of the move.
+    if measure_box:
+        try:
+            _mi0 = max(0, min(int(measure_box["from_index"]), n - 1))
+            _mi1 = max(0, min(int(measure_box["to_index"]), n - 1))
+        except (KeyError, TypeError, ValueError):
+            _mi0 = _mi1 = -1
+        if _mi0 >= warmup and _mi1 >= warmup and _mi0 != _mi1:
+            if _mi1 < _mi0:
+                _mi0, _mi1 = _mi1, _mi0
+            try:
+                _mp0 = float(measure_box.get("from_price") or c[_mi0])
+                _mp1 = float(measure_box.get("to_price") or c[_mi1])
+            except (TypeError, ValueError):
+                _mp0, _mp1 = c[_mi0], c[_mi1]
+            _m_delta = _mp1 - _mp0
+            _m_pct = (_m_delta / _mp0 * 100.0) if _mp0 else 0.0
+            _m_color = "#4CAF50" if _m_delta >= 0 else "#E23B3B"
+            _mx0, _my0 = cx_bar(_mi0), py_price(_mp0)
+            _mx1, _my1 = cx_bar(_mi1), py_price(_mp1)
+            # White head on a white shaft: the ARROW is annotation ink (it is the
+            # gesture "from here to here"); only the receipt PLATE carries the
+            # sign colour, exactly as the reference measure tool does.
+            extra_defs += (
+                f'<marker id="measure_{uid}" markerWidth="9" markerHeight="7" '
+                f'refX="8" refY="3.5" orient="auto">'
+                f'<polygon points="0 0, 9 3.5, 0 7" fill="{_ANNOT_INK}"/></marker>'
+            )
+            annot_parts.append(
+                f'<line x1="{_mx0:.1f}" y1="{_my0:.1f}" '
+                f'x2="{_mx1:.1f}" y2="{_my1:.1f}" '
+                f'stroke="{_ANNOT_INK}" stroke-width="1.6" '
+                f'marker-end="url(#measure_{uid})"/>'
+            )
+            _m_bars = _mi1 - _mi0
+            _m_elapsed = _elapsed_phrase(dates[_mi0], dates[_mi1]) if dates else ""
+            _m_l1 = f"{_fmt_signed(_m_delta)} ({_m_pct:+.2f}%)"
+            _m_l2 = f"{_m_bars} bars" + (f" ({_m_elapsed})" if _m_elapsed else "")
+            _m_bw = max(118, int(max(len(_m_l1), len(_m_l2)) * 7.6) + 18)
+            _m_bh = 40
+            # The plate sits BESIDE the arrow tip, never under it (both reference
+            # measure charts do this): to the left once the anchor is past
+            # mid-frame, which also keeps it out of the right-edge label lane
+            # where the MA/POC chips live — a receipt half-covered by a "50 SMA"
+            # chip is an unreadable receipt.
+            _m_pref_x = (_mx1 - _m_bw - 12.0 if _mx1 > PAD_L + plot_w / 2.0
+                         else _mx1 + 12.0)
+            _m_bx, _m_by = _clamp_box(
+                _m_pref_x, _my1 + 14.0, _m_bw, _m_bh,
+                width, height, PAD_TOP, PRICE_H,
+            )
+            annot_parts.append(
+                f'<rect x="{_m_bx:.1f}" y="{_m_by:.1f}" width="{_m_bw}" '
+                f'height="{_m_bh}" rx="4" fill="{_m_color}" opacity="0.94"/>'
+                f'<text x="{_m_bx + _m_bw / 2:.1f}" y="{_m_by + 17:.1f}" '
+                f'fill="#ffffff" font-size="14" font-weight="bold" '
+                f'text-anchor="middle" font-family="sans-serif">'
+                f'{_xesc(_m_l1)}</text>'
+                f'<text x="{_m_bx + _m_bw / 2:.1f}" y="{_m_by + 32:.1f}" '
+                f'fill="#ffffffdd" font-size="11" text-anchor="middle" '
+                f'font-family="sans-serif">{_xesc(_m_l2)}</text>'
+            )
+
+    annot_svg = "\n  ".join(annot_parts)
 
     # ── Company logo overlay (TrendSpider signature: giant white logo) ──────
     logo_svg = ""
@@ -2168,6 +2997,88 @@ def render_chart_v2(
                     f'fill="{rcolor}" font-size="9">{last_rv:.1f}</text>'
                 )
 
+        elif panel_name == "streak":
+            # The y-unit IS the claim's unit: a "four straight red weeks" post
+            # gets a pane whose bars ARE the number four, so the superlative is
+            # scannable instead of asserted. Signed so the direction of the run
+            # needs no legend.
+            _stk = _streak_series(o, c)
+            _stk_vis = [(i, _stk[i]) for i in range(warmup, n)]
+            _stk_max = max((abs(s) for _, s in _stk_vis), default=1) or 1
+
+            def streak_y(v: float) -> float:
+                center = inner_y + inner_h / 2
+                return center - (v / _stk_max) * (inner_h / 2) * 0.88
+
+            _stk_zero = streak_y(0.0)
+            subpanel_svg_parts.append(
+                f'<line x1="{PAD_L}" y1="{_stk_zero:.1f}" '
+                f'x2="{PAD_L + chart_w}" y2="{_stk_zero:.1f}" '
+                f'stroke="#2f3750" stroke-width="1"/>'
+            )
+            for _si, _sv in _stk_vis:
+                if _sv == 0:
+                    continue
+                _sy = streak_y(_sv)
+                _s_top, _s_bot = min(_sy, _stk_zero), max(_sy, _stk_zero)
+                subpanel_svg_parts.append(
+                    f'<rect x="{cx_bar(_si) - body_w / 2:.1f}" y="{_s_top:.1f}" '
+                    f'width="{body_w:.1f}" height="{max(1.0, _s_bot - _s_top):.1f}" '
+                    f'fill="{"#4CAF50" if _sv > 0 else "#E23B3B"}" '
+                    f'opacity="0.62" stroke="none"/>'
+                )
+            if _stk_vis:
+                _stk_last = _stk_vis[-1][1]
+                subpanel_svg_parts.append(
+                    f'<text x="{PAD_L + chart_w + 8}" '
+                    f'y="{streak_y(_stk_last) + 4:.1f}" '
+                    f'fill="{"#4CAF50" if _stk_last > 0 else "#E23B3B"}" '
+                    f'font-size="9" font-family="monospace">{_stk_last:+d}</text>'
+                )
+
+        elif panel_name == "squeeze":
+            # Compression is a CLAIM about volatility, so the pane states it as
+            # a state (dots on the zero line: gold = bands inside the channel,
+            # slate = released) plus the momentum that will carry the release.
+            # Both are computable from OHLCV alone — no extra data path.
+            _sq_on, _sq_mom = _squeeze_series(h, l, c)
+            _sq_vis = [(i, _sq_on[i], _sq_mom[i]) for i in range(warmup, n)
+                       if _sq_mom[i] is not None]
+            _sq_max = max((abs(m) for _, _, m in _sq_vis), default=1.0) or 1.0
+
+            def squeeze_y(v: float) -> float:
+                center = inner_y + inner_h / 2
+                return center - (v / _sq_max) * (inner_h / 2) * 0.84
+
+            _sq_zero = squeeze_y(0.0)
+            subpanel_svg_parts.append(
+                f'<line x1="{PAD_L}" y1="{_sq_zero:.1f}" '
+                f'x2="{PAD_L + chart_w}" y2="{_sq_zero:.1f}" '
+                f'stroke="#2f3750" stroke-width="1"/>'
+            )
+            for _qi, _qon, _qm in _sq_vis:
+                _qy = squeeze_y(_qm)
+                _q_top, _q_bot = min(_qy, _sq_zero), max(_qy, _sq_zero)
+                subpanel_svg_parts.append(
+                    f'<rect x="{cx_bar(_qi) - body_w / 2:.1f}" y="{_q_top:.1f}" '
+                    f'width="{body_w:.1f}" height="{max(1.0, _q_bot - _q_top):.1f}" '
+                    f'fill="{"#4CAF50" if _qm >= 0 else "#E23B3B"}" '
+                    f'opacity="0.5" stroke="none"/>'
+                )
+                subpanel_svg_parts.append(
+                    f'<circle cx="{cx_bar(_qi):.1f}" cy="{_sq_zero:.1f}" '
+                    f'r="{max(1.0, min(2.2, body_w / 3.0)):.1f}" '
+                    f'fill="{"#F5B301" if _qon else "#54607d"}"/>'
+                )
+            if _sq_vis:
+                _sq_last_on = _sq_vis[-1][1]
+                subpanel_svg_parts.append(
+                    f'<text x="{PAD_L + chart_w + 8}" y="{_sq_zero + 4:.1f}" '
+                    f'fill="{"#F5B301" if _sq_last_on else "#6b7a99"}" '
+                    f'font-size="8" letter-spacing="0.08em">'
+                    f'{"ON" if _sq_last_on else "OFF"}</text>'
+                )
+
     subpanel_svg = "\n  ".join(subpanel_svg_parts)
 
     # ── Header: real favicon lockup + ticker/timeframe ──────────────────────
@@ -2199,7 +3110,7 @@ def render_chart_v2(
         f'<text x="{tf_right_x:.1f}" y="{HEADER_H / 2 + 16:.1f}" '
         f'fill="#8899bb" font-size="13" text-anchor="end" '
         f'letter-spacing="1" font-family="sans-serif">'
-        f'{_xesc(timeframe.upper())}</text>'
+        f'{_xesc(timeframe.upper() + (" (LOG)" if log_ok else ""))}</text>'
     )
 
     # ── Footer: brand bar (band + laser hairline + lockup + CTA button) ─────
@@ -2261,10 +3172,18 @@ def render_chart_v2(
         'url(#arrowhead)', f'url(#arrowhead_{uid})'
     )
 
-    defs_svg = f'<defs>{arrowhead_def}{logo_defs}{bar_defs}</defs>'
+    # extra_defs is "" unless an annotation primitive needed its own marker, so
+    # a legacy render's <defs> is byte-identical to what it always was.
+    defs_svg = f'<defs>{arrowhead_def}{logo_defs}{bar_defs}{extra_defs}</defs>'
 
     # ── Background rect ──────────────────────────────────────────────────────
     bg_rect = f'<rect width="{width}" height="{height}" fill="#0E1420"/>'
+
+    # The annotation layer emits NOTHING — not even its comment — when no
+    # annotation kwarg was passed. That is what makes "omitted == byte-identical
+    # to the pre-grammar renderer" a testable claim rather than a hope.
+    annot_block = (f'  <!-- annotation grammar (over candles) -->\n  {annot_svg}\n'
+                   if annot_svg else "")
 
     svg = (
         f'<svg viewBox="0 0 {width} {height}" '
@@ -2287,6 +3206,7 @@ def render_chart_v2(
         f'  {candles_svg}\n'
         f'  <!-- highlight zone -->\n'
         f'  {highlight_svg_final}\n'
+        f'{annot_block}'
         f'  <!-- price axis -->\n'
         f'  {axis_svg}\n'
         f'  <!-- % change callout -->\n'
@@ -2389,6 +3309,19 @@ def build_m2_overlays(
                     "va_high": float(profile["va_high"]),
                     "label": f"POC {_poc_price:.2f}",
                 }
+                # The histogram itself, for the runway-drawn volume profile.
+                # Carried unconditionally: render_chart_v2 only draws it when a
+                # runway_frac reserved the space for it, so an existing caller
+                # that passes this dict through gets the same picture it always
+                # got and the director opts in by asking for a runway.
+                try:
+                    _edges = [float(e) for e in profile["bin_edges"]]
+                    _vols = [float(v_) for v_ in profile["bin_volumes"]]
+                    if len(_edges) == len(_vols) + 1 and any(v_ > 0 for v_ in _vols):
+                        poc_overlay["bin_edges"] = _edges
+                        poc_overlay["bin_volumes"] = _vols
+                except (KeyError, TypeError, ValueError):
+                    pass
         except Exception as _e:
             _log.debug("build_m2_overlays: poc failed: %s", _e)
 
@@ -3472,6 +4405,55 @@ def derive_card_headline(text: str, max_chars: int = _BREAK_HEADLINE_MAX_CHARS) 
     Deterministic and side-effect free; safe on None/empty/degenerate input.
     """
     return _break_compress(text, max_chars)
+_BREAK_RULE = "#232A3D"        # hairline
+
+#: Square is the default canvas (X + Meta feeds, mobile-native); 4:5 is the
+#: allowed tall variant when the content warrants it. Operator order 2026-08-02;
+#: governing law research/AD_MASTER_PAPER.md §4.1.
+_BREAK_W = 1080
+_BREAK_H = 1080
+
+#: Headline leading as a multiple of the type size. Tight, because at 90-130px
+#: display scale generous leading reads as drift, not air.
+_BC_HL_LEADING = 1.14
+
+#: Headline type ladder in 1080-space, largest first (AD_MASTER_PAPER §0 AG-3:
+#: >=84px on a 1080 canvas, 76px the absolute floor for a phrase that cannot
+#: break). The fitter walks it down only as far as the copy forces.
+_BC_HL_LADDER = (132.0, 118.0, 106.0, 96.0, 88.0, 84.0, 78.0)
+
+#: Sub-floor continuation rungs, used ONLY when a sentence-bounded hero
+#: overflows the box at the AG-3 floor. The two same-day 2026-08-02 operator
+#: laws meet here: the AG-3 floor ("text too small") and the W4g no-ellipsis
+#: law ("title header is too long and gets cut off"). When they conflict — a
+#: single long sentence that cannot fit whole at 78px — completeness wins:
+#: derive_card_headline has already bounded the text to whole sentences within
+#: _BREAK_HEADLINE_MAX_CHARS, so the worst case is finite and 46px (still ~1.8×
+#: the pre-W4g 26px body) always places it without an ellipsis. Ordinary wire
+#: flashes never reach these rungs.
+_BC_HL_EXTENDED = (68.0, 60.0, 52.0, 46.0)
+
+#: Display names that describe a source CLASS rather than a publication. When
+#: the name is one of these the chip shows the tier label alone — "Newswire ·
+#: AGGREGATOR" says one thing twice. Lower-cased for comparison.
+_BC_GENERIC_SOURCE_NAMES = frozenset({
+    "newswire", "wire", "news wire", "newswires", "unknown", "unknown source",
+})
+
+
+def _break_chip_label(source_name: str, tier_label: str) -> str:
+    """The slug-chip text: '<publication> · <TIER>', or the tier alone.
+
+    De-handling (operator law 2026-08-02) turned every X-relay display name into
+    the generic "Newswire", and a chip reading "Newswire · AGGREGATOR" spends two
+    words on one fact. A real publication name still earns its place beside the
+    tier, because "Federal Reserve · OFFICIAL SOURCE" is two facts.
+    """
+    name = str(source_name or "").strip()
+    if not name or name.lower() in _BC_GENERIC_SOURCE_NAMES:
+        return tier_label
+    label = f"{name} · {tier_label}"
+    return label if len(label) <= 44 else (label[:43] + "…")
 
 
 def _break_tier_style(tier: str) -> dict[str, str]:
@@ -3535,6 +4517,127 @@ def _break_fmt_ts(published_at: str) -> str:
         return raw[:24] if raw else "TIME UNKNOWN"
 
 
+#: Per-character advance widths as a fraction of the font size, for the bold
+#: sans-serif the card family renders in. A flat per-char guess is what let the
+#: old char-count wrapper undersize ALL-CAPS wire headlines (caps run ~20% wider
+#: than lowercase), so the estimate is class-aware. Deterministic — no font
+#: metrics, no measurement pass, identical on every host.
+#: CALIBRATED 2026-08-02 against real headless-Chrome renders (17 probe strings
+#: across the card's actual sizes/weights, measured by pixel scan). The first
+#: pass guessed 0.63em for bold caps and under-predicted ALL-CAPS wire headlines
+#: by up to 14% — which is how the tier chip's text came to spill out of its own
+#: pill. Caps are 0.72em, lowercase 0.575em, and a 3% margin rides on top,
+#: because every consumer of this function fails UNSAFE when it under-predicts.
+_BC_W_NARROW = frozenset("iltfjrI1.,:;!|'’()[]/\\")
+_BC_W_WIDE = frozenset("mwMW@")
+_BC_W_SAFETY = 1.03
+
+
+def _bc_text_w(text: str, size: float, *, bold: bool = True) -> float:
+    """Estimate the rendered width of *text* at *size* px. Deterministic.
+
+    Overestimates on purpose: the failure this guards is text spilling past the
+    content column or out of a pill, so erring wide keeps copy inside the card
+    and costs only an occasional early line break.
+    """
+    em = 0.0
+    for ch in str(text or ""):
+        o = ord(ch)
+        if ch == " ":
+            em += 0.28
+        elif ch in _BC_W_NARROW:
+            em += 0.31
+        elif ch in _BC_W_WIDE:
+            em += 0.90
+        elif ch == "%":
+            em += 0.80
+        elif ch.isupper() or ch.isdigit() or ch == "$":
+            em += 0.72
+        elif ch.islower():
+            em += 0.575
+        elif 0x1F1E6 <= o <= 0x1F1FF:
+            # Regional-indicator pair renders as ONE flag glyph (~1.1em total).
+            em += 0.55
+        elif o > 0x2FFF:
+            # CJK / emoji / symbols: full-width box.
+            em += 1.0
+        else:
+            em += 0.575
+    if not bold:
+        em *= 0.97
+    return em * float(size) * _BC_W_SAFETY
+
+
+def _bc_wrap_w(
+    text: str, size: float, max_w: float, max_lines: int, *, bold: bool = True
+) -> tuple[list[str], bool]:
+    """Greedy word-wrap by MEASURED width. Returns (lines, overflowed).
+
+    `overflowed` is True when words remained unplaced after *max_lines*; the
+    caller either steps the type down a rung or accepts the ellipsis clip. A
+    single word wider than the column is never dropped — it takes its own line
+    and is clipped there, so a runaway token cannot blow the layout.
+    """
+    words = str(text or "").split()
+    if not words:
+        return [""], False
+    lines: list[str] = []
+    cur = ""
+    i = 0
+    while i < len(words) and len(lines) < max_lines:
+        w = words[i]
+        cand = w if not cur else f"{cur} {w}"
+        if not cur or _bc_text_w(cand, size, bold=bold) <= max_w:
+            cur = cand
+            i += 1
+        else:
+            # Break the line and RETRY this word on the next one.
+            lines.append(cur)
+            cur = ""
+    if cur and len(lines) < max_lines:
+        lines.append(cur)
+        cur = ""
+    # Unplaced words mean overflow. The `bool(cur)` arm is unreachable under the
+    # loop invariant above (the guard stops before a line can be held with
+    # nowhere to go) and is kept as insurance on that invariant, not as live
+    # logic — an earlier for/else form DID drop a held tail silently while
+    # reporting a clean fit, and re-introducing that guard condition must not
+    # re-introduce the silent drop. The CONTRACT is pinned as a property:
+    # tests/test_marketing_card_earns_pixels.py::test_wrap_never_silently_loses_a_word.
+    overflowed = i < len(words) or bool(cur)
+    if overflowed and lines:
+        # Hard-clip the final line, trimming characters until the ellipsis fits.
+        last = lines[-1]
+        while last and _bc_text_w(last + "…", size, bold=bold) > max_w:
+            last = last[:-1].rstrip()
+        lines[-1] = (last + "…") if last else "…"
+    return lines[:max_lines], overflowed
+
+
+def _bc_fit_headline(
+    text: str, max_w: float, max_h: float, ladder: tuple[float, ...], hard_lines: int
+) -> tuple[float, list[str]]:
+    """Pick the LARGEST size on *ladder* whose wrap fits the column and the box.
+
+    This is the mobile-legibility engine (AD_MASTER_PAPER §0 AG-3): the headline
+    is sized by what actually fits, not by a character-count bucket, so a short
+    flash gets poster-scale type and a long one steps down only as far as it
+    must. The last rung is the floor — below it the copy is clipped instead,
+    because unreadable-but-complete is not a trade this card makes.
+    """
+    for size in ladder:
+        lh = size * _BC_HL_LEADING
+        cap = min(hard_lines, max(1, int(max_h // lh)))
+        lines, overflowed = _bc_wrap_w(text, size, max_w, cap)
+        if not overflowed:
+            return size, lines
+    size = ladder[-1]
+    lh = size * _BC_HL_LEADING
+    cap = min(hard_lines, max(1, int(max_h // lh)))
+    lines, _ = _bc_wrap_w(text, size, max_w, cap)
+    return size, lines
+
+
 def _break_fallback_svg(width: int, height: int) -> str:
     """Minimal valid fallback card — used when rendering raises internally."""
     return (
@@ -3560,8 +4663,8 @@ def render_breaking_card(
     event_class: "str | None" = None,
     eyebrow: str = "BREAKING",
     logo_root: "Path | str | None" = None,  # noqa: ARG001 — reserved; text cashtags used
-    width: int = 1000,
-    height: int = 560,
+    width: int = _BREAK_W,
+    height: int = _BREAK_H,
     cta: bool = True,
 ) -> str:
     """Render a branded breaking-news card SVG in the Mastermind card family.
@@ -3573,6 +4676,18 @@ def render_breaking_card(
     muted grey outline), so an aggregator can never be laundered as an official
     print (docket D05 trap — this is law). The model behind this card only
     summarizes-with-citation; the card adds no interpretation.
+
+    LAYOUT (rebuilt 2026-08-02 — the 1000×560 landscape card was illegible in a
+    phone feed and carried a void where the copy ran out). The canvas is square
+    by default and the composition is a wire slip read top to bottom: masthead,
+    amber dateline rule, desk eyebrow, THE NEWS at poster scale, the summary as
+    an indented second voice, then the provenance slug (tier chip + timestamp)
+    sitting where a wire service puts its source line — under the copy, not in
+    front of it. The headline is width-FITTED against a type ladder rather than
+    bucketed by character count, so it is as large as the words allow and never
+    below the AG-3 legibility floor unless it is clipped instead. Vertical slack
+    is distributed around the copy block (optically centred, biased high), which
+    is what removes the dead space rather than hiding it.
 
     Args:
         headline: The breaking headline (hero). ANY length is safe: it is first
@@ -3600,7 +4715,11 @@ def render_breaking_card(
             backward compatibility; deterministic derivative lanes may supply
             a truthful sibling label such as ``EARNINGS CALL``.
         logo_root: Reserved for future logomark use; text cashtags are used now.
-        width, height: Card dimensions (family default 1000×560).
+        width, height: Card dimensions. Default 1080×1080 (square — the
+            universal feed canvas); pass 1080×1350 for the tall 4:5 variant when
+            the content warrants the extra room. Both are AD_MASTER_PAPER §4.1
+            canvases; every dimension below is expressed in 1080-space and
+            scaled, so an off-size caller degrades in proportion.
 
     Returns:
         Self-contained SVG string. No <script>. All source/user text _xesc'd.
@@ -3608,60 +4727,97 @@ def render_breaking_card(
         SVG (fail-soft, stderr note) — never raises.
     """
     try:
-        center_x = width / 2  # noqa: F841 — kept for layout symmetry with siblings
         # Deterministic id suffix (zlib.crc32: PYTHONHASHSEED-stable).
         bc_uid = str(zlib.crc32(((headline or "") + "bc").encode("utf-8")) & 0xFFFFFFFF)
 
-        # ── Brand lockup (top-left) — identical family treatment ──────────────
-        bc_logo_tile = 30.0
-        logo_cx = 14 + bc_logo_tile / 2
-        logo_cy = 14 + bc_logo_tile / 2
+        # Everything below is authored in 1080-space and scaled, so the square
+        # master, the 4:5 tall variant and any off-size caller stay in proportion.
+        k = width / float(_BREAK_W)
+
+        def u(v: float) -> float:
+            """A 1080-space measurement in this card's units."""
+            return v * k
+
+        pad_l = u(72)                      # the content column's left margin
+        col_w = width - pad_l * 2
+
+        # ── Masthead band ─────────────────────────────────────────────────────
+        # Bookends the footer. Clamped against short canvases so a caller passing
+        # an odd height can never end up with more chrome than content.
+        mast_h = min(u(112), height * 0.14)
+        rule_h = max(3.0, u(7))
+        logo_tile = mast_h * 0.535
+        logo_cx = pad_l + logo_tile / 2
+        logo_cy = mast_h / 2
         bc_logo_defs, bc_logo_group = _favicon_logomark(
-            logo_cx, logo_cy, size=bc_logo_tile, uid=bc_uid
+            logo_cx, logo_cy, size=logo_tile, uid=bc_uid
         )
-        wordmark_x = logo_cx + bc_logo_tile / 2 + 8
-        wordmark_y = logo_cy + 7
+        wordmark_size = mast_h * 0.30
         wordmark_svg = (
-            f'<text x="{wordmark_x:.1f}" y="{wordmark_y:.1f}" '
-            f'fill="#ffffff" font-size="17" font-weight="900" '
+            f'<text x="{logo_cx + logo_tile / 2 + u(16):.1f}" '
+            f'y="{logo_cy + wordmark_size * 0.36:.1f}" '
+            f'fill="#ffffff" font-size="{wordmark_size:.1f}" font-weight="900" '
             f'font-family="sans-serif" letter-spacing="0.07em">MASTERMIND</text>'
         )
-        # "RADAR" desk tag, right of the header — signals the intelligence lane.
+        # "RADAR" desk tag, right of the masthead — names the intelligence lane.
+        desk_size = mast_h * 0.19
         desk_svg = (
-            f'<text x="{width - 14}" y="{logo_cy + 5:.1f}" fill="{_BREAK_GREY}" '
-            f'font-size="12.5" text-anchor="end" font-family="sans-serif" '
-            f'letter-spacing="2">RADAR</text>'
+            f'<text x="{width - pad_l:.1f}" y="{logo_cy + desk_size * 0.36:.1f}" '
+            f'fill="{_BREAK_GREY}" font-size="{desk_size:.1f}" text-anchor="end" '
+            f'font-family="sans-serif" letter-spacing="{u(4):.1f}">RADAR</text>'
         )
-        header_h = 60
         header_bg = (
-            f'<rect x="0" y="0" width="{width}" height="{header_h}" '
+            f'<rect x="0" y="0" width="{width}" height="{mast_h:.1f}" '
             f'fill="#0A1020" opacity="0.92"/>'
         )
-        # Thin amber urgency rule directly under the header band (the "dateline").
+        # The amber dateline rule — the card's one structural accent.
         break_rule = (
-            f'<rect x="0" y="{header_h}" width="{width}" height="3" '
+            f'<rect x="0" y="{mast_h:.1f}" width="{width}" height="{rule_h:.1f}" '
             f'fill="{_BREAK_AMBER}"/>'
         )
 
-        pad_l = 46
-        content_top = header_h + 40
+        # ── Footer band ───────────────────────────────────────────────────────
+        # _brand_bar is SHARED family chrome (price charts, earnings, watchlist)
+        # and is deliberately not touched here: it lays its contents out on fixed
+        # horizontal advances scaled off band_h, which stops fitting a 1080-wide
+        # bar somewhere above band_h≈86. So the fit is bought with its EXISTING
+        # parameters instead — the tagline is dropped (identity is already stated
+        # twice in the masthead, and the footer's job on a news card is
+        # destination + one action) and the copyright is reworded, because the
+        # old "cited source above" stopped being true when the provenance slug
+        # moved below the copy.
+        band_h = int(min(u(84), height * 0.11))
+        if suppress_cta:
+            # Sentinel tone rule: no trial pitch on human-tragedy items. The
+            # brand bar keeps only the sober attribution — no URL, no button.
+            bc_bar_defs, footer_svg = _brand_bar(
+                width, height, bc_uid,
+                descriptor="MASTERMIND · Market Intelligence",
+                show_url=False, show_button=False, band_h=band_h,
+            )
+        else:
+            bc_bar_defs, footer_svg = _brand_bar(
+                width, height, bc_uid,
+                tagline=None,
+                copyright_text="© 2026 Mastermind · source cited",
+                show_button=cta, band_h=band_h,
+            )
 
-        # ── Desk eyebrow (left) + tier chip + timestamp (dateline row) ────────
-        eyebrow_y = content_top
-        # A small amber square + plain-word desk label — restrained, not a siren.
+        # ── Desk eyebrow — one clean line, then the news ──────────────────────
+        eb_size = u(33)
+        eyebrow_base = mast_h + rule_h + u(78)
         eyebrow_text = _xesc(str(eyebrow or "BREAKING").strip().upper()[:24])
-        eyebrow_size = 16.0
-        eyebrow_track = 3.5
-        eyebrow_x = pad_l + 20
+        mark = u(26)
         eyebrow_svg = (
-            f'<rect x="{pad_l}" y="{eyebrow_y - 13:.1f}" width="12" height="12" '
-            f'rx="2" fill="{_BREAK_AMBER}"/>'
-            f'<text x="{eyebrow_x}" y="{eyebrow_y - 1:.1f}" fill="{_BREAK_AMBER}" '
-            f'font-size="{eyebrow_size:g}" font-weight="900" font-family="sans-serif" '
-            f'letter-spacing="{eyebrow_track:g}">{eyebrow_text}</text>'
+            f'<rect x="{pad_l:.1f}" y="{eyebrow_base - mark * 0.86:.1f}" '
+            f'width="{mark:.1f}" height="{mark:.1f}" rx="{u(4):.1f}" '
+            f'fill="{_BREAK_AMBER}"/>'
+            f'<text x="{pad_l + mark + u(18):.1f}" y="{eyebrow_base:.1f}" '
+            f'fill="{_BREAK_AMBER}" font-size="{eb_size:.1f}" font-weight="900" '
+            f'font-family="sans-serif" letter-spacing="{u(7):.1f}">{eyebrow_text}</text>'
         )
-        # Plain-word event-class kicker — quiet grey, subordinate to the tier
-        # chip (the signature). Unknown/none keys are omitted, never echoed raw.
+        # Plain-word event-class kicker — quiet grey, subordinate to the eyebrow.
+        # Unknown/none keys are omitted, never echoed raw.
         _KICKER_WORDS = {
             "macro_print": "MACRO PRINT",
             "policy": "POLICY",
@@ -3670,227 +4826,197 @@ def render_breaking_card(
         }
         kicker = _KICKER_WORDS.get(str(event_class or "").strip().lower(), "")
         if kicker:
-            # Measured, not a fixed 152px guess: a longer eyebrow (EARNINGS CALL)
-            # used to run straight under the kicker dot.
-            eyebrow_w = _break_text_w(
-                eyebrow_text, eyebrow_size, bold=True,
-            ) + eyebrow_track * len(eyebrow_text)
-            dot_cx = eyebrow_x + eyebrow_w + 12
+            # Placed off the MEASURED eyebrow width — a fixed offset collided
+            # with a longer desk label ("EARNINGS CALL"). Tracking is counted on
+            # every glyph (SVG letter-spacing trails the last one too) with a
+            # margin for the 900-weight caps the estimator runs light on.
+            eb_w = (
+                _bc_text_w(eyebrow_text, eb_size) * 1.07
+                + u(7) * len(eyebrow_text)
+            )
+            kx = pad_l + mark + u(18) + eb_w + u(30)
+            k_size = u(25)
             eyebrow_svg += (
-                f'<circle cx="{dot_cx:.0f}" cy="{eyebrow_y - 6:.1f}" r="2" '
-                f'fill="{_BREAK_GREY}"/>'
-                f'<text x="{dot_cx + 12:.0f}" y="{eyebrow_y - 1:.1f}" '
-                f'fill="{_BREAK_GREY}" font-size="13.5" font-weight="700" '
-                f'font-family="sans-serif" letter-spacing="2.5" '
+                f'<circle cx="{kx:.1f}" cy="{eyebrow_base - eb_size * 0.32:.1f}" '
+                f'r="{u(4):.1f}" fill="{_BREAK_GREY}"/>'
+                f'<text x="{kx + u(20):.1f}" y="{eyebrow_base:.1f}" '
+                f'fill="{_BREAK_GREY}" font-size="{k_size:.1f}" font-weight="700" '
+                f'font-family="sans-serif" letter-spacing="{u(5):.1f}" '
                 f'class="bc-kicker">{_xesc(kicker)}</text>'
             )
 
-        # Tier chip — the signature. Weight encodes trust; anti-laundering law.
+        # ── Provenance slug (tier chip + dateline) — the closing seal ─────────
+        # The tier chip is the card's signature and the anti-laundering law: the
+        # tier actually used is encoded in the chip's WEIGHT, so an aggregator can
+        # never look like an official print. It sits under the copy because that
+        # is where a wire slip puts its source line — the reader gets the news
+        # first and the provenance as the sign-off, and on a square canvas it
+        # keeps three lines of chrome from pushing the headline off the top.
         ts_str = _break_fmt_ts(published_at)
         tier = _break_tier_style(source_tier)
-        chip_label = f"{source_name} · {tier['label']}"
-        if len(chip_label) > 48:
-            chip_label = chip_label[:47] + "…"
+        chip_label = _break_chip_label(source_name, tier["label"])
         chip_text = _xesc(chip_label)
-        # Measured width (Helvetica advances + tracking) — the old estimate was a
-        # per-character caps/lowercase guess that under- or over-shot by up to a
-        # dozen px depending on the label.
-        chip_fs = 15.0
-        chip_tw = _break_text_w(chip_label, chip_fs, bold=True) + 0.4 * len(chip_label)
-        chip_w = 30 + int(chip_tw) + 18
-        chip_h = 34
-        chip_x = pad_l
-        chip_y = eyebrow_y + 14
-        # A leading dot in the chip echoes the tier ink — a tiny "seal".
-        chip_svg = (
-            f'<rect x="{chip_x}" y="{chip_y}" width="{chip_w}" height="{chip_h}" '
-            f'rx="7" fill="{tier["fill"]}" fill-opacity="{tier["fill_opacity"]}" '
-            f'stroke="{tier["stroke"]}" stroke-width="1.5" '
-            f'class="bc-tier bc-tier-{tier["key"]}"/>'
-            f'<circle cx="{chip_x + 17:.0f}" cy="{chip_y + chip_h / 2:.0f}" r="4.5" '
-            f'fill="{tier["ink"]}"/>'
-            f'<text x="{chip_x + 30:.0f}" y="{chip_y + chip_h / 2 + 5:.0f}" '
-            f'fill="{tier["ink"]}" font-size="{chip_fs:g}" font-weight="bold" '
-            f'font-family="sans-serif" letter-spacing="0.4">{chip_text}</text>'
+        chip_size = u(28)
+        chip_h = u(62)
+        chip_pad = u(30)
+        dot_r = u(8)
+        chip_track = u(0.4)
+        chip_w = (
+            chip_pad + dot_r * 2 + u(14)
+            + _bc_text_w(chip_label, chip_size) + chip_track * len(chip_label)
+            + chip_pad
         )
-        # Timestamp dateline, to the right of the chip.
-        ts_svg = (
-            f'<text x="{chip_x + chip_w + 16:.0f}" '
-            f'y="{chip_y + chip_h / 2 + 5:.0f}" fill="{_BREAK_GREY}" '
-            f'font-size="14" font-family="sans-serif" letter-spacing="0.5">'
-            f'{_xesc(ts_str)}</text>'
+        ts_size = u(27)
+
+        # ── Related-ticker strip (cap 4) — omitted entirely when empty ────────
+        rows = tickers if isinstance(tickers, list) else []
+        rows = rows[:4]
+        # One row for a pair, a 2x2 grid beyond it: four cashtags across a 1080
+        # canvas leaves ~230px a cell, which is where the price line starts
+        # colliding with its neighbour.
+        tick_rows = 0 if not rows else (1 if len(rows) <= 2 else 2)
+        tick_row_h = u(84)
+        tick_block_h = 0.0 if not rows else (u(34) + tick_rows * tick_row_h)
+
+        # ── Vertical composition ──────────────────────────────────────────────
+        # The slug and the ticker strip are bottom-anchored above the footer; the
+        # copy block floats in what remains, optically centred (biased high — a
+        # geometrically centred block reads low). This is the structural fix for
+        # the void: slack is DISTRIBUTED, never dumped under the last line.
+        foot_top = height - band_h
+        slug_bottom = foot_top - u(52) - tick_block_h
+        slug_top = slug_bottom - chip_h
+        copy_top_limit = eyebrow_base + u(56)
+        copy_bottom_limit = slug_top - u(56)
+        copy_box_h = max(u(120), copy_bottom_limit - copy_top_limit)
+
+        # W4g: the hero is sentence-BOUNDED before fitting — the wire's
+        # headline field can be an entire 814-char post, and an ellipsized
+        # hero is the exact operator complaint this closes. The derived form
+        # is the source's own leading whole sentences, never rewritten.
+        hl = derive_card_headline(str(headline or "").strip())
+        sm = (summary or "").strip() if summary is not None else ""
+        # The BOX decides how many lines the headline gets; this is only a sanity
+        # ceiling. Capping at 5 made the fitter clip a wire flash ("...on the
+        # Strait…") while leaving room below it — and a truncated sentence is a
+        # worse failure than a sixth line, since the reader loses the fact. The
+        # ladder floor still guards legibility: below it we clip rather than
+        # shrink.
+        hard_lines = 8 if height > width * 1.15 else 7
+        sm_size = u(41)
+        sm_lh = sm_size * 1.42
+        sm_gap = u(48)
+        sm_indent = u(30)
+        # THE NEWS WINS THE BOX. The headline is fitted first, against the box
+        # minus a two-line reservation for the summary — so a note can shave the
+        # hero by at most one rung, never clip it while restating it underneath
+        # (the exact shape of the shipped gold card). The summary then wraps into
+        # whatever actually remains, and is dropped outright if nothing does.
+        sm_reserve = (sm_gap + 2 * sm_lh) if sm else 0.0
+        hl_size, hl_lines = _bc_fit_headline(
+            hl, col_w, max(u(120), copy_box_h - sm_reserve),
+            _BC_HL_LADDER + _BC_HL_EXTENDED, hard_lines,
         )
+        hl_lh = hl_size * _BC_HL_LEADING
+        hl_block_h = len(hl_lines) * hl_lh
 
-        # ── Hero typesetting — MEASURED fit, top-anchored, never clipped ──────
-        # Two rules replaced the old char-count size table:
-        #   1. the headline is bounded to whole sentences BEFORE it is wrapped,
-        #      so the wrap never has to ellipsize (belt-and-braces: the same
-        #      bound is applied upstream in breaking_summary.build_breaking_payload,
-        #      and again here so a direct caller — earnings_call_lane — is safe);
-        #   2. sizes come from a ladder searched BODY-FIRST: the largest summary
-        #      size that leaves room for a headline wins, because the body is the
-        #      type the reader actually has to read on a phone.
-        # Top-anchored, not centred: the old `v_offset` centring is what produced
-        # the dead field the operator saw.
-        rows_present = bool(tickers if isinstance(tickers, list) else [])
-        text_w = width - pad_l * 2                      # 908 on the family default
-        sm_rail_inset = 20.0
-        sm_w = text_w - sm_rail_inset
-        box_top = chip_y + chip_h + 30
-        # Bottom of the text column: above the ticker divider, else above the
-        # brand bar. Both keep a visible breathing gap — tight, not touching.
-        box_bottom = (height - 122 - 20) if rows_present else (height - 46 - 16)
-        avail = max(80.0, box_bottom - box_top)
+        sm_lines: list[str] = []
+        if sm:
+            sm_room = copy_box_h - hl_block_h - sm_gap
+            sm_cap = min(3, int(sm_room // sm_lh))
+            if sm_cap >= 1:
+                sm_lines, _ = _bc_wrap_w(
+                    sm, sm_size, col_w - sm_indent, sm_cap, bold=False
+                )
+        sm_block_h = (sm_gap + len(sm_lines) * sm_lh) if sm_lines else 0.0
+        block_h = hl_block_h + sm_block_h
 
-        hl = derive_card_headline(headline)
-        sm_full = " ".join(str(summary or "").split())
-
-        # (size, max_lines). Headline descends far enough that a 180-char bound
-        # always fits horizontally; the summary floor is the legibility floor.
-        # The ladders reach UP as well as down: a sparse card (a six-word
-        # headline and one sentence) is the other half of the whitespace
-        # complaint — the answer there is bigger type, not more air.
-        _HL_LADDER = ((68.0, 2), (60.0, 2), (52.0, 2), (46.0, 3),
-                      (40.0, 4), (36.0, 4), (32.0, 5), (28.0, 6))
-        _SM_LADDER = ((38.0, 2), (34.0, 2), (32.0, 3), (30.0, 3), (28.0, 4),
-                      (_BREAK_BODY_MIN, 4), (_BREAK_BODY_MIN, 5))
-
-        def _hl_lh(s: float) -> float:
-            return round(s * 1.14, 1)
-
-        def _sm_lh(s: float) -> float:
-            return round(s * 1.32, 1)
-
-        def _block_h(hs: float, hn: int, ss: float, sn: int) -> float:
-            h = (hn - 1) * _hl_lh(hs) + hs
-            if sn:
-                h += round(ss * 1.05, 1) + (sn - 1) * _sm_lh(ss) + ss
-            return h
-
-        def _search(sm_text: str, min_ratio: float):
-            """First (summary-size, headline-size) pair that fits. Body-first.
-
-            *min_ratio* keeps the hero visibly senior to the body; the caller
-            relaxes it before it ever compresses the source text, because losing
-            a sentence costs more than a muddier size step.
-            """
-            cands = _SM_LADDER if sm_text else ((_BREAK_BODY_MIN, 0),)
-            for ss, s_cap in cands:
-                if sm_text:
-                    s_lines, s_over = _break_fit(sm_text, sm_w, ss, s_cap)
-                    if s_over:
-                        continue
-                else:
-                    s_lines = []
-                for hs, h_cap in _HL_LADDER:
-                    if s_lines and hs < ss * min_ratio:
-                        continue
-                    h_lines, h_over = _break_fit(
-                        hl, text_w, hs, h_cap, bold=True, tracking_em=-0.01
-                    )
-                    if h_over:
-                        continue
-                    if _block_h(hs, len(h_lines), ss, len(s_lines)) <= avail:
-                        return hs, h_lines, ss, s_lines
-            return None
-
-        # Pass A: full source text, hero visibly senior to the body.
-        # Pass B: full source text, hierarchy relaxed — keep every sentence.
-        # Pass C: only now is the summary compressed to whole sentences that fit.
-        sm_budget = (_BREAK_SUMMARY_MAX_CHARS_STRIP if rows_present
-                     else _BREAK_SUMMARY_MAX_CHARS)
-        sm = sm_full
-        found = _search(sm_full, 1.30) or _search(sm_full, 0.0)
-        if found is None:
-            sm = _break_compress(sm_full, sm_budget)
-            found = _search(sm, 0.0)
-        if found is not None:
-            hl_size, hl_lines, sm_size, sm_lines = found
-        else:
-            # Terminal rung (unreachable for bounded input; kept so a hostile
-            # direct caller still gets a card). The HEADLINE keeps every line it
-            # needs — the elaboration yields, never the fact.
-            hl_size = _HL_LADDER[-1][0]
-            hl_lines, _ = _break_fit(hl, text_w, hl_size, 8, bold=True, tracking_em=-0.01)
-            sm_size = _BREAK_BODY_MIN
-            used = (len(hl_lines) - 1) * _hl_lh(hl_size) + hl_size + round(sm_size * 1.05, 1)
-            room = int((avail - used - sm_size) // _sm_lh(sm_size)) + 1
-            sm_lines = (_break_fit(sm, sm_w, sm_size, max(0, room))[0]
-                        if (sm and room > 0) else [])
-            sm_lines = [ln for ln in sm_lines if ln]
-
-        hl_lh = _hl_lh(hl_size)
-        sm_lh = _sm_lh(sm_size)
-        # Leftover height is spent on RHYTHM, not on a dead field: most of it
-        # opens the headline→summary gap, a little of it drops the whole block
-        # off the dateline. Both are bounded, so this can never drift back into
-        # the old free-centring that left a void mid-card.
-        slack = max(0.0, avail - _block_h(hl_size, len(hl_lines), sm_size, len(sm_lines)))
-        gap_extra = min(slack * 0.45, sm_size * 1.6) if sm_lines else 0.0
-        # A headline-only card has nothing to open a gap WITH, so its slack goes
-        # into optical centring instead — the one case where centring is right.
-        top_nudge = (min((slack - gap_extra) * 0.40, 40.0) if sm_lines
-                     else min(slack * 0.45, 120.0))
-        hl_top = box_top + top_nudge + hl_size * 0.78          # first baseline
+        # Optical centring: 42% of the slack above, 58% below.
+        slack = max(0.0, copy_box_h - block_h)
+        hl_top = copy_top_limit + slack * 0.42
         hl_tspans = "".join(
-            f'<text x="{pad_l}" y="{hl_top + i * hl_lh:.1f}" fill="#ffffff" '
-            f'font-size="{hl_size:g}" font-weight="800" font-family="sans-serif" '
-            f'letter-spacing="-0.01em">{_xesc(ln)}</text>'
+            f'<text x="{pad_l:.1f}" y="{hl_top + hl_size * 0.82 + i * hl_lh:.1f}" '
+            f'fill="#ffffff" font-size="{hl_size:.1f}" font-weight="800" '
+            f'font-family="sans-serif" letter-spacing="-0.015em">{_xesc(ln)}</text>'
             for i, ln in enumerate(hl_lines)
         )
-        hl_bottom = hl_top + (len(hl_lines) - 1) * hl_lh
+        hl_bottom = hl_top + len(hl_lines) * hl_lh
 
-        # ── Summary block (the source's account) — omit cleanly when None ─────
-        # The 3px rail at its left edge is tier-inked: the same trust grade the
-        # chip encodes, repeated exactly where the eye lands on the content, so
-        # an aggregator's account can never be read as an official one (the same
-        # anti-laundering law the chip serves — D05).
+        # ── Summary block — indented behind a quiet rule so it reads as the
+        #    card's second voice rather than a restatement of the headline.
         summary_svg = ""
-        summary_bottom = hl_bottom
         if sm_lines:
-            sm_top = hl_bottom + round(sm_size * 1.05, 1) + gap_extra + sm_size * 0.78
-            rail_top = sm_top - sm_size * 0.86
-            rail_h = (len(sm_lines) - 1) * sm_lh + sm_size * 1.12
+            sm_top = hl_bottom + sm_gap
+            sm_h = len(sm_lines) * sm_lh
             summary_svg = (
-                f'<rect x="{pad_l}" y="{rail_top:.1f}" width="3" '
-                f'height="{rail_h:.1f}" rx="1.5" fill="{tier["rail"]}" '
+                f'<rect x="{pad_l:.1f}" y="{sm_top:.1f}" width="{u(5):.1f}" '
+                f'height="{sm_h:.1f}" rx="{u(2.5):.1f}" fill="{tier["rail"]}" '
                 f'fill-opacity="{tier["rail_opacity"]}" '
                 f'class="bc-rail bc-rail-{tier["key"]}"/>'
             )
             summary_svg += "".join(
-                f'<text x="{pad_l + sm_rail_inset:.0f}" y="{sm_top + i * sm_lh:.1f}" '
-                f'fill="{_BREAK_BODY}" font-size="{sm_size:g}" '
+                f'<text x="{pad_l + sm_indent:.1f}" '
+                f'y="{sm_top + sm_size * 0.86 + i * sm_lh:.1f}" '
+                f'fill="{_BREAK_BODY}" font-size="{sm_size:.1f}" '
                 f'font-family="sans-serif">{_xesc(ln)}</text>'
                 for i, ln in enumerate(sm_lines)
             )
-            summary_bottom = sm_top + (len(sm_lines) - 1) * sm_lh
 
-        # ── Related-ticker mini strip (cap 4) — omit entirely when empty ──────
+        # A leading dot in the chip echoes the tier ink — a tiny "seal".
+        chip_svg = (
+            f'<rect x="{pad_l:.1f}" y="{slug_top:.1f}" width="{chip_w:.1f}" '
+            f'height="{chip_h:.1f}" rx="{u(12):.1f}" fill="{tier["fill"]}" '
+            f'fill-opacity="{tier["fill_opacity"]}" stroke="{tier["stroke"]}" '
+            f'stroke-width="{u(3):.1f}" class="bc-tier bc-tier-{tier["key"]}"/>'
+            f'<circle cx="{pad_l + chip_pad + dot_r:.1f}" '
+            f'cy="{slug_top + chip_h / 2:.1f}" r="{dot_r:.1f}" fill="{tier["ink"]}"/>'
+            f'<text x="{pad_l + chip_pad + dot_r * 2 + u(14):.1f}" '
+            f'y="{slug_top + chip_h / 2 + chip_size * 0.35:.1f}" fill="{tier["ink"]}" '
+            f'font-size="{chip_size:.1f}" font-weight="bold" '
+            f'font-family="sans-serif" letter-spacing="{u(0.4):.2f}">{chip_text}</text>'
+        )
+        # Timestamp dateline, riding the chip's baseline.
+        ts_svg = (
+            f'<text x="{pad_l + chip_w + u(26):.1f}" '
+            f'y="{slug_top + chip_h / 2 + ts_size * 0.35:.1f}" fill="{_BREAK_GREY}" '
+            f'font-size="{ts_size:.1f}" font-family="sans-serif" '
+            f'letter-spacing="{u(0.5):.2f}">{_xesc(ts_str)}</text>'
+        )
+
         strip_svg = ""
-        rows = tickers if isinstance(tickers, list) else []
-        rows = rows[:4]
         if rows:
-            strip_y = height - 90
-            # Faint divider above the strip (box_bottom is derived from this).
+            strip_top = slug_bottom + u(34)
             strip_svg += (
-                f'<line x1="{pad_l}" y1="{height - 122:.0f}" '
-                f'x2="{width - pad_l}" y2="{height - 122:.0f}" '
-                f'stroke="#232A3D" stroke-width="1"/>'
+                f'<line x1="{pad_l:.1f}" y1="{strip_top:.1f}" '
+                f'x2="{width - pad_l:.1f}" y2="{strip_top:.1f}" '
+                f'stroke="{_BREAK_RULE}" stroke-width="{max(1.0, u(2)):.1f}"/>'
             )
-            cell_w = (width - pad_l * 2) / len(rows)
+            per_row = 2 if tick_rows == 2 else len(rows)
+            cell_w = col_w / per_row
+            cash_size = u(37)
+            pct_size = u(32)
+            price_size = u(27)
             for i, row in enumerate(rows):
-                cx0 = pad_l + i * cell_w
+                cx0 = pad_l + (i % per_row) * cell_w
+                cy0 = strip_top + u(58) + (i // per_row) * tick_row_h
                 cashtag = ("$" + str(row.get("ticker", "") or "").upper())[:8]
                 # Missing numbers render as a clean cashtag-only chip — never
-                # placeholder dashes (a "—" row reads as broken, not honest).
+                # placeholder dashes (a "—" row reads as broken, not honest) and
+                # never a stringified NaN. float('nan') passes the cast that None
+                # and '' fail, so it shipped "$nan" / "▼ nan%" onto the card until
+                # a mutation test went looking for it (2026-08-02); a non-finite
+                # quote is missing data and renders as the cashtag-only chip.
                 try:
-                    price_s = f"${float(row.get('price')):,.2f}"
+                    _p = float(row.get("price"))
+                    price_s = f"${_p:,.2f}" if math.isfinite(_p) else ""
                 except (TypeError, ValueError):
                     price_s = ""
                 pct_s = ""
                 pcol = _BREAK_GREY
                 try:
                     pct = float(row.get("pct"))
+                    if not math.isfinite(pct):
+                        raise ValueError("non-finite pct")
                     up = pct >= 0
                     pcol = _BREAK_UP if up else _BREAK_DOWN
                     arrow = "▲" if up else "▼"
@@ -3898,46 +5024,26 @@ def render_breaking_card(
                     pct_s = f"{arrow} {sign}{pct:.1f}%"
                 except (TypeError, ValueError):
                     pass
-                # Cashtag (white) and pct (colored) share line 1; the pct x is
-                # MEASURED off the cashtag so it can never reach the card's right
-                # edge (the old `len(cashtag) * 11` guess drifted with the size).
-                pct_x = cx0 + _break_text_w(cashtag, 22.0, bold=True) + 14
+                # The pct x is MEASURED off the cashtag so it can never reach the
+                # next cell (fixed offsets overflow on a wide cell).
+                pct_x = cx0 + _bc_text_w(cashtag, cash_size) + u(18)
                 strip_svg += (
-                    f'<text x="{cx0:.0f}" y="{strip_y:.0f}" fill="#e2e8f0" '
-                    f'font-size="22" font-weight="bold" font-family="sans-serif">'
-                    f'{_xesc(cashtag)}</text>'
+                    f'<text x="{cx0:.1f}" y="{cy0:.1f}" fill="#e2e8f0" '
+                    f'font-size="{cash_size:.1f}" font-weight="bold" '
+                    f'font-family="sans-serif">{_xesc(cashtag)}</text>'
                 )
                 if pct_s:
                     strip_svg += (
-                        f'<text x="{pct_x:.0f}" y="{strip_y:.0f}" fill="{pcol}" '
-                        f'font-size="19" font-weight="bold" font-family="sans-serif">'
-                        f'{_xesc(pct_s)}</text>'
+                        f'<text x="{pct_x:.1f}" y="{cy0:.1f}" fill="{pcol}" '
+                        f'font-size="{pct_size:.1f}" font-weight="bold" '
+                        f'font-family="sans-serif">{_xesc(pct_s)}</text>'
                     )
                 if price_s:
                     strip_svg += (
-                        f'<text x="{cx0:.0f}" y="{strip_y + 26:.0f}" fill="{_BREAK_GREY}" '
-                        f'font-size="16" font-family="sans-serif">{_xesc(price_s)}</text>'
+                        f'<text x="{cx0:.1f}" y="{cy0 + u(36):.1f}" '
+                        f'fill="{_BREAK_GREY}" font-size="{price_size:.1f}" '
+                        f'font-family="sans-serif">{_xesc(price_s)}</text>'
                     )
-
-        # ── Footer — CTA collapses to brand mark when suppress_cta (tragedy) ──
-        if suppress_cta:
-            # Sentinel tone rule: no trial pitch on human-tragedy items. The
-            # brand bar keeps only the sober attribution — no URL, no button.
-            bc_bar_defs, footer_svg = _brand_bar(
-                width, height, bc_uid,
-                descriptor="MASTERMIND · Market Intelligence",
-                show_url=False, show_button=False,
-            )
-        else:
-            bc_bar_defs, footer_svg = _brand_bar(
-                width, height, bc_uid,
-                copyright_text="© 2026 Mastermind · cited source above",
-                show_button=cta,
-            )
-
-        # summary_bottom documents where the summary block ends; the ticker strip
-        # is pinned to the card bottom so there is no overlap by construction.
-        _ = summary_bottom
 
         svg = (
             f'<svg viewBox="0 0 {width} {height}" '
@@ -3946,17 +5052,18 @@ def render_breaking_card(
             f'  <defs>{bc_logo_defs}{bc_bar_defs}</defs>\n'
             f'  <!-- background -->\n'
             f'  <rect width="{width}" height="{height}" fill="#0E1420"/>\n'
-            f'  <!-- breaking eyebrow + tier chip + timestamp -->\n'
+            f'  <!-- desk eyebrow -->\n'
             f'  {eyebrow_svg}\n'
-            f'  {chip_svg}\n'
-            f'  {ts_svg}\n'
             f'  <!-- headline hero -->\n'
             f'  {hl_tspans}\n'
             f'  <!-- summary -->\n'
             f'  {summary_svg}\n'
+            f'  <!-- source slug: tier chip + dateline -->\n'
+            f'  {chip_svg}\n'
+            f'  {ts_svg}\n'
             f'  <!-- related-ticker strip -->\n'
             f'  {strip_svg}\n'
-            f'  <!-- header band (on top) -->\n'
+            f'  <!-- masthead band (on top) -->\n'
             f'  {header_bg}\n'
             f'  {break_rule}\n'
             f'  {bc_logo_group}\n'

@@ -12,12 +12,13 @@ Edge 1: CN drawdown radar sleeve-size chip in china.html.j2 stocks board header.
   T9 — help tooltip text is not empty / accessible
   T10 — chip does not appear in macro mode render (Jinja parse + render)
 
-Edge 2: AI-semis confirmer chip already wired in baskets_china.html.j2 + build script.
+Edge 2: AI-semis confirmer chip wired in sector_central_china.html.j2 + build script
+(was baskets_china.html.j2 until the 2026-08 China Sector Intelligence consolidation).
   T11 — is_target_basket recognises AI-supply basket IDs
   T12 — compute() returns dict with 'on', 'state', 'targets' keys on degraded (null) path
   T13 — build_baskets_china_ths.py imports and calls cn_ai_semis_confirmer without error
-  T14 — baskets_china.html.j2 has #semis-chip host element and renderSemisChip() call
-  T15 — baskets_china.html.j2 semis chip JS: label_en / label_zh dual-lang path
+  T14 — sector_central_china.html.j2 has #semis-chip host element and renderSemisChip() call
+  T15 — sector_central_china.html.j2 semis chip JS: label_en / label_zh dual-lang path
 """
 from __future__ import annotations
 
@@ -29,7 +30,13 @@ from jinja2 import ChoiceLoader, DictLoader, Environment, FileSystemLoader
 
 ROOT = Path(__file__).resolve().parent.parent
 CHINA_TMPL_SRC = (ROOT / "templates" / "china.html.j2").read_text()
-BASKETS_CHINA_SRC = (ROOT / "templates" / "baskets_china.html.j2").read_text()
+# The AI-semis confirmer chip moved with the 2026-08 China Sector Intelligence
+# consolidation: baskets_china.html.j2 is a redirect stub and the chip host, its
+# renderer and the dual-lang labels now ship on the merged page. Same assertions,
+# new home. (The THS fork templates/baskets_china_factorwatch.html.j2 carries its
+# own copy of the chip — that one is covered by the T13 build-script pin below,
+# which is what actually feeds it.)
+BASKETS_CHINA_SRC = (ROOT / "templates" / "sector_central_china.html.j2").read_text()
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -286,7 +293,7 @@ def test_t13_build_baskets_china_ths_imports_ai_semis_confirmer():
 
 
 def test_t14_baskets_china_template_has_semis_chip_host():
-    """T14: baskets_china.html.j2 has #semis-chip host and renderSemisChip() call."""
+    """T14: sector_central_china.html.j2 has #semis-chip host and renderSemisChip() call."""
     assert 'id="semis-chip"' in BASKETS_CHINA_SRC, "#semis-chip host element missing"
     assert "renderSemisChip" in BASKETS_CHINA_SRC, "renderSemisChip() call missing"
 

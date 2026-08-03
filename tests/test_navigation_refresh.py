@@ -28,6 +28,7 @@ def test_public_research_menu_is_product_focused() -> None:
         "intelligence_hub.html",
         "reports.html",
         "research_vault.html",
+        "stocks/earnings/index.html",
         "neural_web.html",
         "foresight.html",
         "state_of_themes.html",
@@ -41,6 +42,7 @@ def test_approved_mockup_is_the_navigation_source_of_truth() -> None:
     for copy in (
         "Your complete market command center",
         "Search every published research note",
+        "Verified calls, weekly intelligence and company context",
         "What’s strengthening and fading now",
         "Today’s strongest confirmed setups",
         "Growth, inflation and liquidity now",

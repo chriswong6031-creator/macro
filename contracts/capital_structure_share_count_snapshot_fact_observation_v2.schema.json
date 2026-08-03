@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_share_count_snapshot_fact_observation_v2.schema.json",
+  "title": "Receipt-bound share-count snapshot fact observation v2",
+  "description": "One immutable source-snapshot view of a v2 canonical direct Company Facts fact. Availability is the materializer clock, never a fabricated filing acceptance time.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "snapshot_fact_observation_id", "bridge_receipt_id", "source_manifest_id", "logical_observation_id", "fact_revision_id", "observation_id", "state", "reported", "normalized", "point_in_time", "fact_entry_sha256s", "authority"],
+  "properties": {
+    "schema": {"const": "capital_structure.share_count_snapshot_fact_observation.v2"},
+    "snapshot_fact_observation_id": {"type": "string", "pattern": "^share-count-snapshot-fact-v2:cs:[a-f0-9]{24}$"},
+    "bridge_receipt_id": {"type": "string", "pattern": "^companyfacts-bridge:cs:[a-f0-9]{24}$"},
+    "source_manifest_id": {"type": "string", "pattern": "^manifest:cs-companyfacts:[a-f0-9]{64}$"},
+    "logical_observation_id": {"type": "string", "pattern": "^share-count-slot-v2:cs:[a-f0-9]{24}$"},
+    "fact_revision_id": {"type": "string", "pattern": "^share-count-revision-v2:cs:[a-f0-9]{24}$"},
+    "observation_id": {"type": "string", "pattern": "^share-count-v2:cs:[a-f0-9]{24}$"},
+    "state": {"$ref": "#/$defs/state"}, "reported": {"$ref": "#/$defs/reported"}, "normalized": {"$ref": "#/$defs/normalized"},
+    "point_in_time": {"$ref": "#/$defs/point_in_time"},
+    "fact_entry_sha256s": {"type": "array", "minItems": 1, "maxItems": 250000, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "state": {"type": "object", "additionalProperties": false, "required": ["disposition", "reason"], "properties": {"disposition": {"enum": ["observed", "deferred", "ambiguous"]}, "reason": {"enum": ["direct_sec_companyfacts_fact", "unexpected_unit", "missing_value", "negative_value", "missing_period_end", "missing_filing_provenance", "materialization_precedes_filed_date", "multiple_distinct_values_for_fact_slot", "multiple_distinct_contexts_for_fact_slot", "malformed_fact_entry"]}}},
+    "reported": {"type": "object", "additionalProperties": false, "required": ["value", "unit", "scale"], "properties": {"value": {"type": ["string", "null"], "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"}, "unit": {"type": ["string", "null"], "minLength": 1}, "scale": {"type": ["string", "null"], "pattern": "^[0-9]+$"}}},
+    "normalized": {"type": "object", "additionalProperties": false, "required": ["value", "unit", "scale", "state"], "properties": {"value": {"type": ["string", "null"], "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"}, "unit": {"type": ["string", "null"], "enum": ["shares", "USD", null]}, "scale": {"type": ["string", "null"], "pattern": "^[0-9]+$"}, "state": {"enum": ["observed", "deferred", "ambiguous"]}}},
+    "point_in_time": {"type": "object", "additionalProperties": false, "required": ["source_retrieved_at", "materialized_at", "available_at", "public_available_at"], "properties": {"source_retrieved_at": {"type": "string", "format": "date-time"}, "materialized_at": {"type": "string", "format": "date-time"}, "available_at": {"type": "string", "format": "date-time"}, "public_available_at": {"type": "null"}}},
+    "authority": {"type": "object", "additionalProperties": false, "required": ["is_context_only", "share_count_ledger_authority", "instrument_authority", "capacity_authority", "runway_authority", "risk_authority", "rank_authority", "sizing_authority", "entry_authority", "trade_authority", "prophet_authority"], "properties": {"is_context_only": {"const": true}, "share_count_ledger_authority": {"const": false}, "instrument_authority": {"const": false}, "capacity_authority": {"const": false}, "runway_authority": {"const": false}, "risk_authority": {"const": false}, "rank_authority": {"const": false}, "sizing_authority": {"const": false}, "entry_authority": {"const": false}, "trade_authority": {"const": false}, "prophet_authority": {"const": false}}}
+  }
+}

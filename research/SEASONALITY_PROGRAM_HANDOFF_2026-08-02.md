@@ -5,6 +5,49 @@ Intelligence program. Everything durable is in the repo; account-local memory is
 NOT assumed. Read this top to bottom before acting — the baton in §3 is
 time-sensitive.
 
+## §0 STATUS ADDENDUM — 2026-08-03 ~04:45Z (§3 COMPLETE; program handed to Codex)
+
+**Do not re-execute §3 — it is done and verified live.** Evidence lives in the
+PR comment threads on #4236 and #4335.
+
+- **#4236 is MERGED** as `23cef646df8` (sweeper, concluded green). The rebase
+  was done as a squash onto post-#4235 main; conflicts resolved keep-both
+  (daily.yml ORDER carries BOTH `stock_seasonality` and
+  `stock_seasonality_page`; seven Caddyfile matcher lines, not three — all
+  token-audited as pure additions). Post-rebase steps completed: fixtures
+  re-copied byte-identical from merged `site/seasonalitydata/`, page
+  re-rendered (SSR `sx-data` equals the merged SPY entity, which now ships
+  `null_by_lookback` 10/15 — the test's honest-negative case moved to 20y),
+  and one genuine CI red healed (`_navlinks` gained the Calendar Clock entry,
+  so `chat.html`'s GENERATED header needed `python -m scripts.sync_chat_nav
+  --fix`, both copies).
+- **Live verification 10/10 PASS** (`scripts/verify_stock_seasonality_live.sh`,
+  run 2026-08-03 ~04:30Z): boundary 200s, index honesty numbers (220 entities,
+  34/220 raw / 24/219 neutral vs 5% chance), SPY contract-exact, **R2 leg
+  PROVEN** (XBI/IBB/XLV/MU → 200, nested `seasonalitydata/entities/<SYM>.json`
+  keys correct), methodology `as_of=2026-08-02`. End-to-end on production: the
+  live page adopts XBI from R2 (deep link, honest verdict, no console errors).
+- **§2 defect 1 CLOSED**: `as_of` was never a wrong date source — the
+  `biopharma_seasonality` brun only entered daily.yml with #4235, so the
+  builder had simply never run in production; the first nightly stamped and
+  committed it. Defect 2 (QUBT dead-year filter) and the §6 public-gating
+  window remain OPEN operator decisions.
+- **In flight at handoff, unowned**: daily run 30772339666 (later phases; the
+  seasonality legs are already proven) and covering render 30783763130 (the
+  `?v=` re-stamp only — VPS pull already serves everything). If either
+  concludes FAILED, ordinary shared-lane recovery applies; the tranche's proof
+  does not depend on them.
+- **COLLISION WARNING**: a local Claude session was started 2026-08-03 from a
+  chip to build the §4.1 Lane 6 shadow-lobe emitter. If Codex owns Tranche 2,
+  STOP that session before starting Lane 6 — one owner per lane.
+- **Shared-.git trap (bit twice on #4236)**: `--force-with-lease` leases
+  against the remote-tracking ref, which a SIBLING session's push silently
+  updates — on this multi-fleet checkout it degrades to plain `--force`. Read
+  the push output's `old...new` SHAs; if `old` isn't the head you based on,
+  diff what you displaced before doing anything else (heads went
+  `9fbe54eeaaa → 0641a6939e5 → 98f681d41a7`; the middle head was audited
+  token-identical + subset before being superseded).
+
 ## §1 Orientation — what this program is
 
 Clean-room competitor to Seasonax (calendar-seasonality workstation), rebuilt on

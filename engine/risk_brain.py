@@ -135,8 +135,13 @@ def _make_call(cfg: dict):
             text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
             return (text, None, resp) if text else (None, "empty_reply", resp)
 
-        # Override model on providers to use the requested model
-        model_providers = [{**p, "model": model} for p in providers]
+        # Override the model ONLY on Claude-endpoint providers (oauth /
+        # anthropic) — deepseek/codex keep the ids build_providers chose for
+        # their endpoints; a Claude id sent to those 404s the fallback rung.
+        model_providers = [
+            {**p, "model": model} if p.get("name") in ("oauth", "anthropic") else p
+            for p in providers
+        ]
         try:
             text, reason, _ = llm_auth.make_call(
                 model_providers, _call_fn, context="risk_brain")

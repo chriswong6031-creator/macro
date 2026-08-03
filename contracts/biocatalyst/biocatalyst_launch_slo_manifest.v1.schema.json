@@ -1,0 +1,596 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_launch_slo_manifest.v1.schema.json",
+  "title": "BioCatalyst launch SLO manifest v1",
+  "description": "Immutable, non-authorizing release criteria for BioCatalyst launch-critical sources. A pre-soak manifest cannot claim beta readiness. Completed-pass candidates must bind the scheduled predecessor, fixed window, raw telemetry, recovery evidence, CI receipt, and per-source results, but deliberately fail generic BC-F0 validation until BC-O2 resolves and recomputes their evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "manifest_id",
+    "state",
+    "effective_at",
+    "supersedes_manifest_id",
+    "supersedes_manifest_content_sha256",
+    "owner",
+    "source_registry_ref",
+    "source_registry_sha256",
+    "sources",
+    "aggregate_pass_policy",
+    "unconditional_beta_failures",
+    "soak",
+    "authority",
+    "hash_scope",
+    "content_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_launch_slo_manifest.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^biocatalyst_launch_slo_[a-f0-9]{24}$"
+    },
+    "state": {
+      "enum": [
+        "pre_soak_unarmed",
+        "soak_scheduled",
+        "soak_complete_passed",
+        "soak_complete_failed",
+        "superseded"
+      ]
+    },
+    "effective_at": {"$ref": "#/$defs/utcTimestamp"},
+    "supersedes_manifest_id": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^biocatalyst_launch_slo_[a-f0-9]{24}$"}
+      ]
+    },
+    "supersedes_manifest_content_sha256": {
+      "anyOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/sha256"}
+      ]
+    },
+    "owner": {"const": "biocatalyst"},
+    "source_registry_ref": {"const": "config/biocatalyst_sources.yml"},
+    "source_registry_sha256": {"$ref": "#/$defs/sha256"},
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sourcePolicy"}
+    },
+    "aggregate_pass_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule",
+        "all_launch_critical_sources_must_pass",
+        "weighted_aggregate_allowed",
+        "omitted_source_allowed",
+        "unknown_source_allowed"
+      ],
+      "properties": {
+        "rule": {"const": "all_rows_must_pass"},
+        "all_launch_critical_sources_must_pass": {"const": true},
+        "weighted_aggregate_allowed": {"const": false},
+        "omitted_source_allowed": {"const": false},
+        "unknown_source_allowed": {"const": false}
+      }
+    },
+    "unconditional_beta_failures": {
+      "type": "array",
+      "minItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "integrity_failure",
+          "rights_failure",
+          "privacy_failure",
+          "cross_tenant_failure"
+        ]
+      },
+      "allOf": [
+        {"contains": {"const": "integrity_failure"}},
+        {"contains": {"const": "rights_failure"}},
+        {"contains": {"const": "privacy_failure"}},
+        {"contains": {"const": "cross_tenant_failure"}}
+      ]
+    },
+    "soak": {"$ref": "#/$defs/soak"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authorizes_source_activation",
+        "authorizes_rights_change",
+        "authorizes_entitlement_change",
+        "authorizes_model_promotion",
+        "authorizes_neural_web_authority",
+        "authorizes_prophet_behavior"
+      ],
+      "properties": {
+        "authorizes_source_activation": {"const": false},
+        "authorizes_rights_change": {"const": false},
+        "authorizes_entitlement_change": {"const": false},
+        "authorizes_model_promotion": {"const": false},
+        "authorizes_neural_web_authority": {"const": false},
+        "authorizes_prophet_behavior": {"const": false}
+      }
+    },
+    "hash_scope": {
+      "const": "canonical_payload_excluding_manifest_id_and_content_sha256"
+    },
+    "content_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"state": {"const": "pre_soak_unarmed"}}, "required": ["state"]},
+      "then": {
+        "properties": {
+          "soak": {
+            "properties": {
+              "window_start": {"type": "null"},
+              "window_end": {"type": "null"},
+              "telemetry_generation_ref": {"type": "null"},
+              "raw_telemetry_refs": {"maxItems": 0},
+              "correction_replay_evidence_refs": {"maxItems": 0},
+              "rollback_restore_evidence_refs": {"maxItems": 0},
+              "ci_validation_receipt_ref": {"type": "null"},
+              "source_results": {"maxItems": 0},
+              "aggregate_passed": {"const": false}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"state": {"const": "soak_scheduled"}}, "required": ["state"]},
+      "then": {
+        "properties": {
+          "supersedes_manifest_id": {"type": "string", "pattern": "^biocatalyst_launch_slo_[a-f0-9]{24}$"},
+          "supersedes_manifest_content_sha256": {"$ref": "#/$defs/sha256"},
+          "soak": {
+            "properties": {
+              "window_start": {"$ref": "#/$defs/utcTimestamp"},
+              "window_end": {"$ref": "#/$defs/utcTimestamp"},
+              "telemetry_generation_ref": {"type": "null"},
+              "raw_telemetry_refs": {"maxItems": 0},
+              "correction_replay_evidence_refs": {"maxItems": 0},
+              "rollback_restore_evidence_refs": {"maxItems": 0},
+              "ci_validation_receipt_ref": {"type": "null"},
+              "source_results": {"maxItems": 0},
+              "aggregate_passed": {"const": false},
+              "scheduling_blockers": {"maxItems": 0}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"state": {"const": "soak_complete_passed"}}, "required": ["state"]},
+      "then": {
+        "properties": {
+          "supersedes_manifest_id": {"type": "string", "pattern": "^biocatalyst_launch_slo_[a-f0-9]{24}$"},
+          "supersedes_manifest_content_sha256": {"$ref": "#/$defs/sha256"},
+          "soak": {
+            "properties": {
+              "window_start": {"$ref": "#/$defs/utcTimestamp"},
+              "window_end": {"$ref": "#/$defs/utcTimestamp"},
+              "telemetry_generation_ref": {"$ref": "#/$defs/artifactRef"},
+              "raw_telemetry_refs": {"minItems": 1},
+              "correction_replay_evidence_refs": {"minItems": 1},
+              "rollback_restore_evidence_refs": {"minItems": 1},
+              "ci_validation_receipt_ref": {"$ref": "#/$defs/artifactRef"},
+              "source_results": {"minItems": 1},
+              "aggregate_passed": {"const": true},
+              "scheduling_blockers": {"maxItems": 0}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"state": {"const": "soak_complete_failed"}}, "required": ["state"]},
+      "then": {
+        "properties": {
+          "supersedes_manifest_id": {"type": "string", "pattern": "^biocatalyst_launch_slo_[a-f0-9]{24}$"},
+          "supersedes_manifest_content_sha256": {"$ref": "#/$defs/sha256"},
+          "soak": {
+            "properties": {
+              "window_start": {"$ref": "#/$defs/utcTimestamp"},
+              "window_end": {"$ref": "#/$defs/utcTimestamp"},
+              "telemetry_generation_ref": {"$ref": "#/$defs/artifactRef"},
+              "raw_telemetry_refs": {"minItems": 1},
+              "source_results": {"minItems": 1},
+              "aggregate_passed": {"const": false},
+              "scheduling_blockers": {"maxItems": 0}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"state": {"const": "superseded"}}, "required": ["state"]},
+      "then": {
+        "properties": {
+          "soak": {
+            "properties": {
+              "telemetry_generation_ref": {"type": "null"},
+              "raw_telemetry_refs": {"maxItems": 0},
+              "correction_replay_evidence_refs": {"maxItems": 0},
+              "rollback_restore_evidence_refs": {"maxItems": 0},
+              "ci_validation_receipt_ref": {"type": "null"},
+              "source_results": {"maxItems": 0},
+              "aggregate_passed": {"const": false}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "utcTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?Z$"
+    },
+    "nullableTimestamp": {
+      "anyOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/utcTimestamp"}
+      ]
+    },
+    "boundedRef": {"type": "string", "minLength": 1, "maxLength": 512},
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "kind",
+        "object_ref",
+        "content_sha256",
+        "byte_count",
+        "captured_at",
+        "scheduled_manifest_id",
+        "scheduled_manifest_content_sha256",
+        "source_id",
+        "window_start",
+        "window_end"
+      ],
+      "properties": {
+        "artifact_id": {"type": "string", "pattern": "^biocatalyst_artifact_[a-f0-9]{24}$"},
+        "kind": {
+          "enum": [
+            "telemetry_generation",
+            "raw_telemetry",
+            "correction_replay",
+            "rollback_restore",
+            "ci_validation"
+          ]
+        },
+        "object_ref": {
+          "type": "string",
+          "pattern": "^r2://biocatalyst-soak/[A-Za-z0-9_./-]{1,480}$"
+        },
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "byte_count": {"type": "integer", "minimum": 1, "maximum": 10737418240},
+        "captured_at": {"$ref": "#/$defs/utcTimestamp"},
+        "scheduled_manifest_id": {
+          "type": "string",
+          "pattern": "^biocatalyst_launch_slo_[a-f0-9]{24}$"
+        },
+        "scheduled_manifest_content_sha256": {"$ref": "#/$defs/sha256"},
+        "source_id": {
+          "anyOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"}
+          ]
+        },
+        "window_start": {"$ref": "#/$defs/utcTimestamp"},
+        "window_end": {"$ref": "#/$defs/utcTimestamp"}
+      }
+    },
+    "registryBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "launch_critical",
+        "production_ingest_allowed",
+        "collection_target",
+        "opportunity_semantics",
+        "completeness_semantics",
+        "freshness_slo_seconds",
+        "maximum_consecutive_misses"
+      ],
+      "properties": {
+        "launch_critical": {"const": true},
+        "production_ingest_allowed": {"type": "boolean"},
+        "collection_target": {"type": "string", "minLength": 1, "maxLength": 160},
+        "opportunity_semantics": {"type": "string", "minLength": 1, "maxLength": 240},
+        "completeness_semantics": {"type": "string", "minLength": 1, "maxLength": 240},
+        "freshness_slo_seconds": {"type": "integer", "minimum": 1},
+        "maximum_consecutive_misses": {"type": "integer", "minimum": 0}
+      }
+    },
+    "denominatorPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expected_opportunity_source",
+        "include_all_scheduled_opportunities",
+        "planned_maintenance_must_be_declared_before_soak",
+        "planned_maintenance_refs",
+        "source_nonpublication_treatment",
+        "upstream_outage_treatment",
+        "undeclared_exclusions_allowed",
+        "post_hoc_exclusions_allowed"
+      ],
+      "properties": {
+        "expected_opportunity_source": {"const": "frozen_utc_schedule"},
+        "include_all_scheduled_opportunities": {"const": true},
+        "planned_maintenance_must_be_declared_before_soak": {"const": true},
+        "planned_maintenance_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/boundedRef"}
+        },
+        "source_nonpublication_treatment": {
+          "enum": [
+            "retain_in_denominator_fetch_and_validate_unchanged_state",
+            "exclude_only_source_native_declared_nonpublication_window"
+          ]
+        },
+        "upstream_outage_treatment": {
+          "const": "record_denominator_miss_and_upstream_unavailable_observation"
+        },
+        "undeclared_exclusions_allowed": {"const": false},
+        "post_hoc_exclusions_allowed": {"const": false}
+      }
+    },
+    "sourcePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "owner",
+        "severity",
+        "activation_state",
+        "registry_binding",
+        "opportunity_rule",
+        "denominator_policy",
+        "success_gates",
+        "freshness",
+        "completeness",
+        "error_budget",
+        "required_telemetry_streams",
+        "pass_policy"
+      ],
+      "properties": {
+        "source_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"},
+        "owner": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"},
+        "severity": {"enum": ["critical", "high"]},
+        "activation_state": {"enum": ["dark_unarmed", "armed", "paused", "quarantined"]},
+        "registry_binding": {"$ref": "#/$defs/registryBinding"},
+        "opportunity_rule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "rule_id",
+            "timezone",
+            "cadence_seconds",
+            "window_open_offset_seconds",
+            "window_close_offset_seconds",
+            "definition"
+          ],
+          "properties": {
+            "rule_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,127}$"},
+            "timezone": {"const": "UTC"},
+            "cadence_seconds": {"type": "integer", "minimum": 60},
+            "window_open_offset_seconds": {"type": "integer", "minimum": 0},
+            "window_close_offset_seconds": {"type": "integer", "minimum": 1},
+            "definition": {"type": "string", "minLength": 16, "maxLength": 500}
+          }
+        },
+        "denominator_policy": {"$ref": "#/$defs/denominatorPolicy"},
+        "success_gates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fetch",
+            "parse",
+            "contract_validation",
+            "completeness_reconciliation",
+            "publication",
+            "watermark_or_pointer"
+          ],
+          "properties": {
+            "fetch": {"type": "string", "minLength": 8, "maxLength": 300},
+            "parse": {"type": "string", "minLength": 8, "maxLength": 300},
+            "contract_validation": {"type": "string", "minLength": 8, "maxLength": 300},
+            "completeness_reconciliation": {"type": "string", "minLength": 8, "maxLength": 300},
+            "publication": {"type": "string", "minLength": 8, "maxLength": 300},
+            "watermark_or_pointer": {"type": "string", "minLength": 8, "maxLength": 300}
+          }
+        },
+        "freshness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["clock_origin", "target_percentile", "maximum_seconds"],
+          "properties": {
+            "clock_origin": {"type": "string", "minLength": 8, "maxLength": 240},
+            "target_percentile": {"const": 0.95},
+            "maximum_seconds": {"type": "integer", "minimum": 1}
+          }
+        },
+        "completeness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reference", "minimum_ratio", "minimum_vs_prior_scope_ratio", "missing_is_zero"],
+          "properties": {
+            "reference": {"type": "string", "minLength": 8, "maxLength": 240},
+            "minimum_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+            "minimum_vs_prior_scope_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+            "missing_is_zero": {"const": false}
+          }
+        },
+        "error_budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimum_opportunity_success_ratio", "maximum_error_budget_fraction"],
+          "properties": {
+            "minimum_opportunity_success_ratio": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+            "maximum_error_budget_fraction": {"type": "number", "minimum": 0, "exclusiveMaximum": 1}
+          }
+        },
+        "required_telemetry_streams": {
+          "type": "array",
+          "minItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "opportunity",
+              "attempt",
+              "fetch",
+              "parse",
+              "contract_validation",
+              "completeness",
+              "publication",
+              "watermark_or_pointer",
+              "freshness",
+              "upstream_unavailable"
+            ]
+          }
+        },
+        "pass_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["all_stage_gates_required", "weighted_substitution_allowed", "critical_failures_allowed"],
+          "properties": {
+            "all_stage_gates_required": {"const": true},
+            "weighted_substitution_allowed": {"const": false},
+            "critical_failures_allowed": {"const": 0}
+          }
+        }
+      }
+    },
+    "sourceResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "expected_opportunities",
+        "excluded_predeclared_maintenance",
+        "excluded_source_native_nonpublication",
+        "denominator",
+        "stage_successes",
+        "successful_opportunities",
+        "misses",
+        "upstream_unavailable_observations",
+        "maximum_consecutive_misses_observed",
+        "freshness_p95_seconds",
+        "minimum_completeness_ratio_observed",
+        "minimum_vs_prior_scope_ratio_observed",
+        "critical_failure_types",
+        "passed"
+      ],
+      "properties": {
+        "source_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"},
+        "expected_opportunities": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "excluded_predeclared_maintenance": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "excluded_source_native_nonpublication": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "denominator": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "stage_successes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fetch",
+            "parse",
+            "contract_validation",
+            "completeness_reconciliation",
+            "publication",
+            "watermark_or_pointer"
+          ],
+          "properties": {
+            "fetch": {"type": "integer", "minimum": 0, "maximum": 1000000},
+            "parse": {"type": "integer", "minimum": 0, "maximum": 1000000},
+            "contract_validation": {"type": "integer", "minimum": 0, "maximum": 1000000},
+            "completeness_reconciliation": {"type": "integer", "minimum": 0, "maximum": 1000000},
+            "publication": {"type": "integer", "minimum": 0, "maximum": 1000000},
+            "watermark_or_pointer": {"type": "integer", "minimum": 0, "maximum": 1000000}
+          }
+        },
+        "successful_opportunities": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "misses": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "upstream_unavailable_observations": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "maximum_consecutive_misses_observed": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "freshness_p95_seconds": {"type": ["number", "null"], "minimum": 0, "maximum": 31536000},
+        "minimum_completeness_ratio_observed": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "minimum_vs_prior_scope_ratio_observed": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "critical_failure_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["integrity_failure", "rights_failure", "privacy_failure", "cross_tenant_failure"]}
+        },
+        "passed": {"type": "boolean"}
+      }
+    },
+    "soak": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_duration_seconds",
+        "window_start",
+        "window_end",
+        "telemetry_generation_ref",
+        "raw_telemetry_refs",
+        "correction_replay_evidence_refs",
+        "rollback_restore_evidence_refs",
+        "ci_validation_receipt_ref",
+        "source_results",
+        "aggregate_passed",
+        "scheduling_blockers"
+      ],
+      "properties": {
+        "required_duration_seconds": {"const": 1209600},
+        "window_start": {"$ref": "#/$defs/nullableTimestamp"},
+        "window_end": {"$ref": "#/$defs/nullableTimestamp"},
+        "telemetry_generation_ref": {
+          "anyOf": [{"type": "null"}, {"$ref": "#/$defs/artifactRef"}]
+        },
+        "raw_telemetry_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/artifactRef"}
+        },
+        "correction_replay_evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/artifactRef"}
+        },
+        "rollback_restore_evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/artifactRef"}
+        },
+        "ci_validation_receipt_ref": {
+          "anyOf": [{"type": "null"}, {"$ref": "#/$defs/artifactRef"}]
+        },
+        "source_results": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sourceResult"}
+        },
+        "aggregate_passed": {"type": "boolean"},
+        "scheduling_blockers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,127}$"}
+        }
+      }
+    }
+  }
+}
