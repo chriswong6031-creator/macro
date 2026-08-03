@@ -165,12 +165,33 @@ def test_biocatalyst_owns_only_declared_source_canonical_and_dark_regulatory_lan
     }
 
     assert owned == {
+        "clinicaltrials_discovery_control",
         "clinicaltrials_source_record",
         "trial_snapshot_and_exact_diff",
         "biocatalyst_read_projection",
         "drugs_at_fda_release_archive",
         "drugs_at_fda_private_query_index",
     }
+    discovery = registrations["clinicaltrials_discovery_control"]
+    assert discovery["implementation_state"] == (
+        "dark_contract_and_hermetic_harness_only"
+    )
+    assert discovery["writer"] is None
+    assert discovery["cadence"] == "none_dark_no_scheduler"
+    assert discovery["consumers"] == []
+    assert set(discovery["contracts"]) == {
+        "ctgov_discovery_scope.v1",
+        "ctgov_discovery_run.v1",
+        "ctgov_discovery_coverage_epoch.v1",
+    }
+    assert {
+        "live_network_collection",
+        "worker_or_timer_activation",
+        "storage_or_publication",
+        "product_api_or_read_adapter",
+        "issuer_company_security_or_sponsor_identity",
+        "model_rank_signal_prophet_or_neural_web_authority",
+    } == set(discovery["prohibited_uses"])
     for name, expected_state in {
         "clinicaltrials_source_record": "frozen_for_b0a",
         "trial_snapshot_and_exact_diff": "implemented_b4d_retention_gated",

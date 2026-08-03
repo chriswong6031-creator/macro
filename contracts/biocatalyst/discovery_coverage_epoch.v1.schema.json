@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/discovery_coverage_epoch.v1.schema.json",
+  "title": "BioCatalyst ClinicalTrials.gov Discovery Coverage Epoch v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "coverage_epoch_id", "source_id",
+    "source_native_identifier_kind", "declared_window", "coverage_state",
+    "coverage_claim", "included_runs", "gap_windows", "overlap_windows",
+    "quarantine_codes", "transaction_from", "transaction_to", "hash_scope",
+    "coverage_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "ctgov_discovery_coverage_epoch.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "coverage_epoch_id": {"type": "string", "pattern": "^ctgov_discovery_coverage_[A-Za-z0-9_-]{1,96}$"},
+    "source_id": {"const": "clinicaltrials_gov_v2"},
+    "source_native_identifier_kind": {"const": "nct_id"},
+    "declared_window": {"$ref": "#/$defs/dateWindow"},
+    "coverage_state": {"type": "string", "enum": ["complete", "quarantined"]},
+    "coverage_claim": {"const": "complete_only_for_evidenced_declared_source_query_scopes"},
+    "included_runs": {
+      "type": "array", "minItems": 1, "maxItems": 2048,
+      "items": {"$ref": "#/$defs/includedRun"}
+    },
+    "gap_windows": {"type": "array", "maxItems": 2048, "items": {"$ref": "#/$defs/dateWindow"}},
+    "overlap_windows": {"type": "array", "maxItems": 2048, "items": {"$ref": "#/$defs/dateWindow"}},
+    "quarantine_codes": {
+      "type": "array", "uniqueItems": true,
+      "items": {"type": "string", "enum": ["DISCOVERY_COVERAGE_GAP", "DISCOVERY_COVERAGE_OVERLAP_REQUIRED"]}
+    },
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"},
+    "hash_scope": {"const": "canonical_payload_excluding_coverage_payload_sha256"},
+    "coverage_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sourceDataTimestamp": {"type": "string", "format": "ctgov-data-timestamp", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2})?$"},
+    "dateWindow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["start_date", "end_date"],
+      "properties": {
+        "start_date": {"type": "string", "format": "date"},
+        "end_date": {"type": "string", "format": "date"}
+      }
+    },
+    "selectionWindow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["field", "start_date", "end_date", "query_expression"],
+      "properties": {
+        "field": {"const": "LastUpdatePostDate"},
+        "start_date": {"type": "string", "format": "date"},
+        "end_date": {"type": "string", "format": "date"},
+        "query_expression": {"type": "string", "pattern": "^AREA\\[LastUpdatePostDate\\]RANGE\\[[0-9]{4}-[0-9]{2}-[0-9]{2},[0-9]{4}-[0-9]{2}-[0-9]{2}\\]$"}
+      }
+    },
+    "sourceCut": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "dataset_timestamp_before_raw", "dataset_timestamp_after_raw",
+        "api_version_before", "api_version_after", "version_before_retrieved_at",
+        "version_after_retrieved_at", "first_page_receipt_retrieved_at",
+        "terminal_page_receipt_retrieved_at"
+      ],
+      "properties": {
+        "dataset_timestamp_before_raw": {"type": ["string", "null"], "format": "ctgov-data-timestamp", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2})?$"},
+        "dataset_timestamp_after_raw": {"type": ["string", "null"], "format": "ctgov-data-timestamp", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2})?$"},
+        "api_version_before": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+        "api_version_after": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+        "version_before_retrieved_at": {"type": ["string", "null"], "format": "date-time"},
+        "version_after_retrieved_at": {"type": ["string", "null"], "format": "date-time"},
+        "first_page_receipt_retrieved_at": {"type": ["string", "null"], "format": "date-time"},
+        "terminal_page_receipt_retrieved_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "includedRun": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "run_ref", "run_payload_sha256", "run_state", "reconciliation_state", "run_transaction_from", "scope_ref",
+        "scope_payload_sha256", "selection_window", "source_cut"
+      ],
+      "properties": {
+        "run_ref": {"type": "string", "pattern": "^ctgov_discovery_run_[A-Za-z0-9_-]{1,96}$"},
+        "run_payload_sha256": {"$ref": "#/$defs/sha256"},
+        "run_state": {"const": "complete"},
+        "reconciliation_state": {"const": "reconciled"},
+        "run_transaction_from": {"type": "string", "format": "date-time"},
+        "scope_ref": {"type": "string", "pattern": "^ctgov_discovery_scope_[a-f0-9]{24}$"},
+        "scope_payload_sha256": {"$ref": "#/$defs/sha256"},
+        "selection_window": {"$ref": "#/$defs/selectionWindow"},
+        "source_cut": {"$ref": "#/$defs/sourceCut"}
+      }
+    }
+  }
+}

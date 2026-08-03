@@ -342,6 +342,37 @@ b0a_canary:
     - ctgov_watermark.v1
   allowed_product_language: "ClinicalTrials.gov's registry record changed; first observed within this interval."
 
+# BC-B1S0 is a contract-and-capacity prerequisite, not a second collector
+# mode.  It may prove bounded discovery semantics against hermetic fixtures;
+# it cannot open the network, publish a trial generation, or arm production.
+b1s0_discovery_control:
+  source_id: clinicaltrials_gov_v2
+  implementation_state: dark_contract_and_hermetic_harness_only
+  universe_mode: declared_last_update_post_date_window
+  source_selection_field: LastUpdatePostDate
+  source_query_form: "AREA[LastUpdatePostDate]RANGE[YYYY-MM-DD,YYYY-MM-DD]"
+  source_dataset_clock: /version.dataTimestamp
+  knowledge_clock: response_received_at
+  source_selection_precision: day
+  default_enabled: false
+  live_network_allowed: false
+  worker_mode_available: false
+  public_projection_allowed: false
+  api_exposure_allowed: false
+  storage_publication_allowed: false
+  allowed_contracts:
+    - ctgov_discovery_scope.v1
+    - ctgov_discovery_run.v1
+    - ctgov_discovery_coverage_epoch.v1
+  allowed_scope_language: "Records returned for this declared ClinicalTrials.gov source query."
+  prohibited_claims:
+    - complete_clinicaltrials_gov_universe
+    - missing_record_means_deleted
+    - last_update_post_date_is_event_time
+    - last_update_post_date_is_knowledge_time
+    - discovery_membership_is_issuer_or_security_identity
+    - partial_or_quarantined_run_is_publishable
+
 b2_history_canary:
   source_id: clinicaltrials_gov_record_history
   universe_mode: explicit_nct_allowlist

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/discovery_scope.v1.schema.json",
+  "title": "BioCatalyst ClinicalTrials.gov Discovery Scope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "scope_id", "source_id",
+    "source_native_identifier_kind", "selection_window", "source_query",
+    "scope_semantics", "hash_scope", "scope_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "ctgov_discovery_scope.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "scope_id": {"type": "string", "pattern": "^ctgov_discovery_scope_[a-f0-9]{24}$"},
+    "source_id": {"const": "clinicaltrials_gov_v2"},
+    "source_native_identifier_kind": {"const": "nct_id"},
+    "selection_window": {"$ref": "#/$defs/selectionWindow"},
+    "source_query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "api_root", "request_path", "response_format", "count_total",
+        "page_size", "page_record_cap", "page_cap", "per_page_byte_cap", "total_byte_cap",
+        "record_cap", "record_byte_cap", "token_byte_cap", "string_byte_cap",
+        "json_depth_cap", "json_node_cap", "json_container_item_cap", "minimal_fields"
+      ],
+      "properties": {
+        "api_root": {"const": "https://clinicaltrials.gov/api/v2"},
+        "request_path": {"const": "/studies"},
+        "response_format": {"const": "json"},
+        "count_total": {"const": true},
+        "page_size": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "page_record_cap": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "page_cap": {"type": "integer", "minimum": 1, "maximum": 2048},
+        "per_page_byte_cap": {"type": "integer", "minimum": 1, "maximum": 8388608},
+        "total_byte_cap": {"type": "integer", "minimum": 1, "maximum": 67108864},
+        "record_cap": {"type": "integer", "minimum": 1, "maximum": 200000},
+        "record_byte_cap": {"type": "integer", "minimum": 1, "maximum": 262144},
+        "token_byte_cap": {"type": "integer", "minimum": 1, "maximum": 512},
+        "string_byte_cap": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "json_depth_cap": {"type": "integer", "minimum": 1, "maximum": 64},
+        "json_node_cap": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "json_container_item_cap": {"type": "integer", "minimum": 1, "maximum": 10000},
+        "minimal_fields": {"const": ["protocolSection.identificationModule.nctId", "protocolSection.statusModule.lastUpdatePostDateStruct.date"]}
+      }
+    },
+    "scope_semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_set", "dataset_freshness", "selection_date", "knowledge_time",
+        "absence", "global_coverage", "record_identity"
+      ],
+      "properties": {
+        "record_set": {"const": "records_returned_for_declared_source_query_only"},
+        "dataset_freshness": {"const": "version_dataTimestamp_is_source_dataset_freshness_not_selection_date"},
+        "selection_date": {"const": "LastUpdatePostDate_is_source_selection_date_not_knowledge_time"},
+        "knowledge_time": {"const": "receipt_retrieved_at_is_biocatalyst_knowledge_time"},
+        "absence": {"const": "absence_from_declared_query_is_not_deletion"},
+        "global_coverage": {"const": "not_all_clinicaltrials_gov"},
+        "record_identity": {"const": "source_native_nct_id_only"}
+      }
+    },
+    "hash_scope": {"const": "canonical_payload_excluding_scope_payload_sha256"},
+    "scope_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "selectionWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "start_date", "end_date", "query_expression"],
+      "properties": {
+        "field": {"const": "LastUpdatePostDate"},
+        "start_date": {"type": "string", "format": "date"},
+        "end_date": {"type": "string", "format": "date"},
+        "query_expression": {
+          "type": "string",
+          "pattern": "^AREA\\[LastUpdatePostDate\\]RANGE\\[[0-9]{4}-[0-9]{2}-[0-9]{2},[0-9]{4}-[0-9]{2}-[0-9]{2}\\]$"
+        }
+      }
+    }
+  }
+}
