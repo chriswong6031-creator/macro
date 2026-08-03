@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T17:06:18.343789+00:00",
-  "count": 677,
+  "generated_at": "2026-08-03T17:36:19.288466+00:00",
+  "count": 678,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -66,6 +66,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-29mubbh7xgk-c004f9",
+      "title": "US Daily Less Information, More Noise",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:06:39Z",
+      "summary_points": [
+        "**Market Volatility Risk**: Reduced Fed communication increases error-proneness in short-term rate markets, lengthening policy lags and introducing unnecessary volatility.",
+        "**Policy Destabilization Risk**: FOMC meeting/press conference cuts risk market underreaction (delayed impact) or overreaction (volatility), undermining monetary policy's stabilizing role.",
+        "**Messaging Failure Risk**: Inadequate distillation of committee views amplifies noise in interest rates and financial conditions via dominant market voices.",
+        "**US Economics Team Advantage**: Goldman Sachs' dedicated US economic team (Hatzius, Mericle) provides primary source for fundamentals/data/policy insights, enabling timely portfolio adjustments."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
