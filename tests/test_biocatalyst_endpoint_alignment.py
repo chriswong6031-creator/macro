@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 import engine.biocatalyst.endpoint_alignment as endpoint_alignment
+import engine.sector_intelligence.contracts as sector_contracts
 from engine.biocatalyst.endpoint_alignment import (
     EndpointAlignmentError,
     build_trial_endpoint_alignment_review_projection,
@@ -494,6 +495,131 @@ def test_replay_validators_preflight_and_freeze_complete_inputs_before_exact_rep
         validator(artifact, before, snapshots[1], diff)
 
     assert replay_calls == 0
+
+
+@pytest.mark.parametrize(
+    ("validator_kind", "artifact_label"),
+    [("candidate", "candidate"), ("projection", "projection")],
+)
+def test_replay_validator_artifact_depth_preflight_is_iterative_and_deterministic(
+    validator_kind: str, artifact_label: str
+) -> None:
+    snapshots, diff, projection = _candidate_projection()
+    artifact = (
+        projection["candidates"][0] if validator_kind == "candidate" else projection
+    )
+    embedded_candidate = (
+        artifact if validator_kind == "candidate" else artifact["candidates"][0]
+    )
+    nested: object = "leaf"
+    for _ in range(1_200):
+        nested = [nested]
+    embedded_candidate["before"]["endpoint"]["hostile_nested_value"] = nested
+    validator = (
+        validate_trial_endpoint_alignment_candidate_against_history
+        if validator_kind == "candidate"
+        else validate_trial_endpoint_alignment_review_projection_against_history
+    )
+
+    with pytest.raises(
+        EndpointAlignmentError,
+        match=rf"^endpoint_alignment_{artifact_label}_nesting_limit_exceeded$",
+    ):
+        validator(artifact, snapshots[0], snapshots[1], diff)
+
+
+@pytest.mark.parametrize(
+    ("validator_kind", "artifact_label"),
+    [("candidate", "candidate"), ("projection", "projection")],
+)
+def test_replay_validator_oversized_artifact_refuses_before_any_canonicalization(
+    monkeypatch: pytest.MonkeyPatch, validator_kind: str, artifact_label: str
+) -> None:
+    snapshots, diff, projection = _candidate_projection()
+    artifact = (
+        projection["candidates"][0] if validator_kind == "candidate" else projection
+    )
+    embedded_candidate = (
+        artifact if validator_kind == "candidate" else artifact["candidates"][0]
+    )
+    embedded_candidate["before"]["endpoint"]["hostile_padding"] = "x" * (1024 * 1024)
+    canonicalization_calls = 0
+
+    def forbidden_canonicalization(_value: object) -> bytes:
+        nonlocal canonicalization_calls
+        canonicalization_calls += 1
+        raise AssertionError("artifact preflight must run before canonicalization")
+
+    monkeypatch.setattr(
+        endpoint_alignment, "canonical_json_bytes", forbidden_canonicalization
+    )
+    monkeypatch.setattr(
+        sector_contracts, "canonical_json_bytes", forbidden_canonicalization
+    )
+    validator = (
+        validate_trial_endpoint_alignment_candidate_against_history
+        if validator_kind == "candidate"
+        else validate_trial_endpoint_alignment_review_projection_against_history
+    )
+
+    with pytest.raises(
+        EndpointAlignmentError,
+        match=rf"^endpoint_alignment_{artifact_label}_canonical_byte_limit_exceeded$",
+    ):
+        validator(artifact, snapshots[0], snapshots[1], diff)
+
+    assert canonicalization_calls == 0
+
+
+@pytest.mark.parametrize("validator_kind", ["candidate", "projection"])
+def test_replay_validator_uses_one_frozen_artifact_when_caller_mutates(
+    monkeypatch: pytest.MonkeyPatch, validator_kind: str
+) -> None:
+    snapshots, diff, projection = _candidate_projection()
+    artifact = (
+        projection["candidates"][0] if validator_kind == "candidate" else projection
+    )
+    target_contract = (
+        "trial_endpoint_alignment_candidate.v1"
+        if validator_kind == "candidate"
+        else "trial_endpoint_alignment_review_projection.v1"
+    )
+    original_validate = endpoint_alignment.ContractRegistry.validate
+    frozen_documents: list[dict] = []
+
+    def validate_after_caller_mutation(
+        registry: endpoint_alignment.ContractRegistry,
+        contract_id: str,
+        document: object,
+    ) -> None:
+        if contract_id == target_contract:
+            assert isinstance(document, dict)
+            assert document is not artifact
+            frozen_documents.append(document)
+            if validator_kind == "candidate":
+                artifact["canonical_queue"] = True
+            else:
+                artifact["candidate_count"] = 0
+        original_validate(registry, contract_id, document)
+
+    monkeypatch.setattr(
+        endpoint_alignment.ContractRegistry, "validate", validate_after_caller_mutation
+    )
+    validator = (
+        validate_trial_endpoint_alignment_candidate_against_history
+        if validator_kind == "candidate"
+        else validate_trial_endpoint_alignment_review_projection_against_history
+    )
+
+    validator(artifact, snapshots[0], snapshots[1], diff)
+
+    assert len(frozen_documents) == 1
+    if validator_kind == "candidate":
+        assert artifact["canonical_queue"] is True
+        assert frozen_documents[0]["canonical_queue"] is False
+    else:
+        assert artifact["candidate_count"] == 0
+        assert frozen_documents[0]["candidate_count"] == 1
 
 
 def test_input_text_and_residual_capacity_breaches_are_explicit_and_fail_empty() -> None:

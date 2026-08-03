@@ -58,6 +58,14 @@ _MAX_HISTORY_INPUT_CANONICAL_BYTES = 2 * 1024 * 1024
 _MAX_HISTORY_INPUT_NODES = 65_536
 _MAX_HISTORY_INPUT_NESTING_DEPTH = 128
 _MAX_HISTORY_INPUT_CONTAINER_ITEMS = 16_384
+_MAX_CANDIDATE_INPUT_NODES = 4_096
+_MAX_CANDIDATE_INPUT_NESTING_DEPTH = 96
+_MAX_CANDIDATE_INPUT_CONTAINER_ITEMS = 2_048
+_MAX_PROJECTION_INPUT_NODES = (
+    _MAX_CANDIDATES * _MAX_CANDIDATE_INPUT_NODES
+) + 4_096
+_MAX_PROJECTION_INPUT_NESTING_DEPTH = 128
+_MAX_PROJECTION_INPUT_CONTAINER_ITEMS = 16_384
 _AUTHORITY = {
     "classification": "semantic_candidate",
     "decision_authority": False,
@@ -103,8 +111,15 @@ def _canonical_string_byte_length(value: str, limit: int) -> int | None:
     return total
 
 
-def _freeze_history_input(value: Any) -> tuple[Any | None, str | None]:
-    """Iteratively preflight and freeze one complete B2 JSON document.
+def _freeze_json_input(
+    value: Any,
+    *,
+    max_canonical_bytes: int,
+    max_nodes: int,
+    max_nesting_depth: int,
+    max_container_items: int,
+) -> tuple[Any | None, str | None]:
+    """Iteratively preflight and freeze one bounded JSON document.
 
     Keys are visited in canonical order so the refusal reason cannot depend on
     caller insertion order. The node budget counts both object keys and JSON
@@ -121,15 +136,15 @@ def _freeze_history_input(value: Any) -> tuple[Any | None, str | None]:
     while stack:
         current, depth, parent, slot = stack.pop()
         nodes += 1
-        if nodes > _MAX_HISTORY_INPUT_NODES:
+        if nodes > max_nodes:
             return None, "node_limit_exceeded"
-        if depth > _MAX_HISTORY_INPUT_NESTING_DEPTH:
+        if depth > max_nesting_depth:
             return None, "nesting_limit_exceeded"
 
         current_type = type(current)
         if current_type is str:
             rendered_size = _canonical_string_byte_length(
-                current, _MAX_HISTORY_INPUT_CANONICAL_BYTES - total
+                current, max_canonical_bytes - total
             )
             if rendered_size is None:
                 return None, "must_be_canonical_json"
@@ -139,7 +154,7 @@ def _freeze_history_input(value: Any) -> tuple[Any | None, str | None]:
             items: list[tuple[Any, Any]] = []
             try:
                 for key, child in current.items():
-                    if len(items) >= _MAX_HISTORY_INPUT_CONTAINER_ITEMS:
+                    if len(items) >= max_container_items:
                         return None, "container_limit_exceeded"
                     items.append((key, child))
             except RuntimeError:
@@ -150,36 +165,36 @@ def _freeze_history_input(value: Any) -> tuple[Any | None, str | None]:
                 return None, "must_be_canonical_json"
             item_count = len(items)
             pending_nodes = 2 * item_count
-            if nodes + len(stack) + pending_nodes > _MAX_HISTORY_INPUT_NODES:
+            if nodes + len(stack) + pending_nodes > max_nodes:
                 return None, "node_limit_exceeded"
-            if item_count and depth + 1 > _MAX_HISTORY_INPUT_NESTING_DEPTH:
+            if item_count and depth + 1 > max_nesting_depth:
                 return None, "nesting_limit_exceeded"
             total += 2 + max(0, item_count - 1) + item_count
             nodes += item_count
-            if total > _MAX_HISTORY_INPUT_CANONICAL_BYTES:
+            if total > max_canonical_bytes:
                 return None, "canonical_byte_limit_exceeded"
             invalid_key = False
             for key, _child in items:
                 rendered_size = _canonical_string_byte_length(
-                    key, _MAX_HISTORY_INPUT_CANONICAL_BYTES - total
+                    key, max_canonical_bytes - total
                 )
                 if rendered_size is None:
                     invalid_key = True
                     continue
                 total += rendered_size
-                if total > _MAX_HISTORY_INPUT_CANONICAL_BYTES:
+                if total > max_canonical_bytes:
                     return None, "canonical_byte_limit_exceeded"
             if invalid_key:
                 return None, "must_be_canonical_json"
-            # Sorting is safe only after the aggregate key encoding is inside
-            # the same 2MiB budget as the complete canonical document.
+            # Sorting is safe only after aggregate key encoding is inside the
+            # configured byte budget for the complete canonical document.
             items.sort(key=lambda item: item[0])
             frozen = {}
             for key, child in reversed(items):
                 stack.append((child, depth + 1, frozen, key))
         elif current_type is list:
             item_count = len(current)
-            if item_count > _MAX_HISTORY_INPUT_CONTAINER_ITEMS:
+            if item_count > max_container_items:
                 return None, "container_limit_exceeded"
             items_list: list[Any] = []
             try:
@@ -189,7 +204,7 @@ def _freeze_history_input(value: Any) -> tuple[Any | None, str | None]:
                 return None, "must_be_canonical_json"
             if len(current) != item_count:
                 return None, "must_be_canonical_json"
-            if nodes + len(stack) + item_count > _MAX_HISTORY_INPUT_NODES:
+            if nodes + len(stack) + item_count > max_nodes:
                 return None, "node_limit_exceeded"
             total += 2 + max(0, item_count - 1)
             frozen = [None] * item_count
@@ -204,7 +219,7 @@ def _freeze_history_input(value: Any) -> tuple[Any | None, str | None]:
         elif current_type is int:
             # Avoid asking Python to render a hostile arbitrary-precision
             # integer that cannot fit inside the remaining byte budget.
-            remaining = _MAX_HISTORY_INPUT_CANONICAL_BYTES - total
+            remaining = max_canonical_bytes - total
             if current.bit_length() > max(1, remaining) * 4:
                 return None, "canonical_byte_limit_exceeded"
             try:
@@ -222,10 +237,71 @@ def _freeze_history_input(value: Any) -> tuple[Any | None, str | None]:
         else:
             return None, "must_be_canonical_json"
 
-        if total > _MAX_HISTORY_INPUT_CANONICAL_BYTES:
+        if total > max_canonical_bytes:
             return None, "canonical_byte_limit_exceeded"
         parent[slot] = frozen
     return root[0], None
+
+
+def _freeze_history_input(value: Any) -> tuple[Any | None, str | None]:
+    """Freeze one complete B2 document inside the history evidence envelope."""
+
+    return _freeze_json_input(
+        value,
+        max_canonical_bytes=_MAX_HISTORY_INPUT_CANONICAL_BYTES,
+        max_nodes=_MAX_HISTORY_INPUT_NODES,
+        max_nesting_depth=_MAX_HISTORY_INPUT_NESTING_DEPTH,
+        max_container_items=_MAX_HISTORY_INPUT_CONTAINER_ITEMS,
+    )
+
+
+def _preflight_validation_artifact(
+    artifact: Any,
+    *,
+    label: str,
+    max_canonical_bytes: int,
+    max_nodes: int,
+    max_nesting_depth: int,
+    max_container_items: int,
+) -> dict[str, Any]:
+    """Freeze one caller artifact before schema traversal or canonicalization."""
+
+    if type(artifact) is not dict:
+        raise EndpointAlignmentError(f"endpoint_alignment_{label}_must_be_object")
+    frozen, reason = _freeze_json_input(
+        artifact,
+        max_canonical_bytes=max_canonical_bytes,
+        max_nodes=max_nodes,
+        max_nesting_depth=max_nesting_depth,
+        max_container_items=max_container_items,
+    )
+    if reason is not None:
+        raise EndpointAlignmentError(f"endpoint_alignment_{label}_{reason}")
+    if type(frozen) is not dict:
+        raise EndpointAlignmentError(f"endpoint_alignment_{label}_must_be_object")
+    return frozen
+
+
+def _preflight_candidate(candidate: Any) -> dict[str, Any]:
+    return _preflight_validation_artifact(
+        candidate,
+        label="candidate",
+        max_canonical_bytes=_MAX_CANDIDATE_BYTES,
+        max_nodes=_MAX_CANDIDATE_INPUT_NODES,
+        max_nesting_depth=_MAX_CANDIDATE_INPUT_NESTING_DEPTH,
+        max_container_items=_MAX_CANDIDATE_INPUT_CONTAINER_ITEMS,
+    )
+
+
+def _preflight_projection(projection: Any) -> dict[str, Any]:
+    return _preflight_validation_artifact(
+        projection,
+        label="projection",
+        max_canonical_bytes=_MAX_PROJECTION_BYTES,
+        max_nodes=_MAX_PROJECTION_INPUT_NODES,
+        max_nesting_depth=_MAX_PROJECTION_INPUT_NESTING_DEPTH,
+        max_container_items=_MAX_PROJECTION_INPUT_CONTAINER_ITEMS,
+    )
 
 
 def _preflight_history_inputs(
@@ -810,6 +886,7 @@ def validate_trial_endpoint_alignment_candidate_against_history(
 ) -> None:
     """Replay one candidate against immutable snapshots and the exact diff."""
 
+    frozen_candidate = _preflight_candidate(candidate)
     before, after, exact_diff = _preflight_history_inputs(
         before_snapshot, after_snapshot, diff
     )
@@ -817,13 +894,13 @@ def validate_trial_endpoint_alignment_candidate_against_history(
         exact_diff, before, after, repo_root=repo_root
     )
     registry = ContractRegistry(repo_root)
-    registry.validate(_CANDIDATE_CONTRACT_ID, candidate)
+    registry.validate(_CANDIDATE_CONTRACT_ID, frozen_candidate)
     expected, _capacity_state, unavailable_reason = _derive_candidates(
         before, after, exact_diff
     )
     expected_by_id = {item["candidate_id"]: item for item in expected}
-    actual_id = candidate.get("candidate_id")
-    if unavailable_reason is not None or expected_by_id.get(actual_id) != candidate:
+    actual_id = frozen_candidate.get("candidate_id")
+    if unavailable_reason is not None or expected_by_id.get(actual_id) != frozen_candidate:
         raise ContractValidationError(
             _CANDIDATE_CONTRACT_ID,
             (
@@ -846,6 +923,7 @@ def validate_trial_endpoint_alignment_review_projection_against_history(
 ) -> None:
     """Replay a projection completely; omitted or fabricated rows fail closed."""
 
+    frozen_projection = _preflight_projection(projection)
     before, after, exact_diff = _preflight_history_inputs(
         before_snapshot, after_snapshot, diff
     )
@@ -853,9 +931,9 @@ def validate_trial_endpoint_alignment_review_projection_against_history(
         exact_diff, before, after, repo_root=repo_root
     )
     registry = ContractRegistry(repo_root)
-    registry.validate(_PROJECTION_CONTRACT_ID, projection)
+    registry.validate(_PROJECTION_CONTRACT_ID, frozen_projection)
     expected = _projection_payload(before, after, exact_diff)
-    if expected != projection:
+    if expected != frozen_projection:
         raise ContractValidationError(
             _PROJECTION_CONTRACT_ID,
             (
