@@ -2358,7 +2358,8 @@ READ ({len(_READ_TOOLS)}): read_world_state, query_spine, read_kernel, read_grap
            read_theme_asymmetry, read_theme_options_witness,
            read_theme_clinical, read_theme_trade_flows,
            read_master_brain_theses, read_master_brain_brief,
-           read_special_situations, read_stage_analysis, read_company_intelligence
+           read_special_situations, read_stage_analysis, read_company_intelligence,
+           read_earnings_evidence
 WRITE ({len(_WRITE_TOOLS)}, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 
 CAUSAL CANDIDATES (CHF W5): read_causal_candidates returns inert CHF mechanism cards
