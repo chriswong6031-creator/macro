@@ -388,8 +388,10 @@ def board_context(rows: list[dict], accumulation: list[dict], trims: list[dict],
                   "v": str(fresh_names),
                   "m": {"en": "brand-new positions this cycle",
                         "zh": "本轮全新建立的仓位"}, "tone": "accent"})
+    # value is the bilingual pair, never label_en alone — a bare string here
+    # printed "RISK-ON" untranslated on the zh view of an indexed public page
     tiles.append({"k": {"en": "Market backdrop", "zh": "市场环境"},
-                  "v": risk_label,
+                  "v": rotation["risk"]["label"],
                   "m": rotation["risk"]["read"],
                   "tone": rotation["risk"]["tone"]})
 

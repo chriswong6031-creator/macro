@@ -223,6 +223,55 @@ def test_board_context_survives_empty_pulse() -> None:
     assert board["tiles"]          # tiles still built
 
 
+def test_backdrop_tile_carries_the_bilingual_risk_label() -> None:
+    """The hero's "Market backdrop" tile once shipped `v = label_en` — a bare
+    "RISK-ON" string that rendered untranslated on the zh view of a page Google
+    now indexes, while the Market Backdrop card below correctly showed 风险偏好.
+    The tile must carry the SAME {en, zh} pair as that card; a revert to the
+    bare string makes the equality below fail on type alone."""
+    board = eb.board_context([], [], [], [], [], _PULSE)
+    tile = board["tiles"][-1]
+    assert tile["k"] == {"en": "Market backdrop", "zh": "市场环境"}
+    assert tile["v"] == {"en": "RISK-ON", "zh": "风险偏好"}
+    assert tile["v"] == board["rotation"]["risk"]["label"]
+    # zh degrades to the en word only when the pulse carries no translation
+    bare = eb.board_context([], [], [], [], [], {})
+    assert bare["tiles"][-1]["v"] == {"en": "NEUTRAL", "zh": "NEUTRAL"}
+
+
+def test_rotation_carries_the_pulse_as_of() -> None:
+    """The rotation module's shown date is the pulse's own as_of (W2 spec
+    §B9.6): etf_pulse.json refreshes under render scope `baskets` while the
+    page bakes under `macro`, so the module must date itself from its data
+    source, and carry no date at all when the pulse has none."""
+    board = eb.board_context([], [], [], [], [], _PULSE)
+    assert board["rotation"]["as_of"] == "2026-07-21"
+    assert eb.board_context([], [], [], [], [], {})["rotation"]["as_of"] is None
+
+
+def test_zh_view_renders_the_translated_backdrop_label() -> None:
+    """End-to-end mutation pin for the zh leak: the REAL board_context output
+    through the REAL template must put 风险偏好 inside the backdrop tile's value
+    div. An emitter revert to label_en leaves the tv div with no l-zh span; a
+    template revert renders the dict's escaped repr — both go red here."""
+    import jinja2
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(os.path.join(root, "templates")),
+        autoescape=True)
+    env.globals.update(td=lambda en: en, tr=lambda en: en,
+                       clean_name=lambda n: n or "")
+    board = eb.board_context([], [], [], [], [], _PULSE)
+    html = env.get_template("etfs.html.j2").render(
+        favored=[], accumulation=[], trims=[], coverage=[], pulse={},
+        board=board, gate=None, generated_utc="2026-08-03 12:00")
+    assert ('<div class="tv"><span class="l-en">RISK-ON</span>'
+            '<span class="l-zh">风险偏好</span></div>') in html
+    # and the rotation footer is dated by the pulse, not by the bake stamp
+    assert "数据截至" in html and "2026-07-21" in html
+
+
 if __name__ == "__main__":
     tests = [
         test_is_cash_detects_money_market_by_name,
@@ -242,6 +291,9 @@ if __name__ == "__main__":
         test_board_context_theme_never_in_both_build_and_leave,
         test_board_context_fresh_groups_new_positions_by_ticker,
         test_board_context_survives_empty_pulse,
+        test_backdrop_tile_carries_the_bilingual_risk_label,
+        test_rotation_carries_the_pulse_as_of,
+        test_zh_view_renders_the_translated_backdrop_label,
     ]
     failed = 0
     for fn in tests:

@@ -138,7 +138,10 @@ _OTHER_TILES = [
     {"k": {"en": "Fresh conviction", "zh": "全新建仓"}, "v": "17",
      "m": {"en": "brand-new positions this cycle", "zh": "本轮全新建立的仓位"},
      "tone": "accent"},
-    {"k": {"en": "Market backdrop", "zh": "市场环境"}, "v": "RISK-ON",
+    # `v` is the bilingual pair, exactly as board_context now emits it — a bare
+    # "RISK-ON" string here once mirrored (and so protected) the zh leak.
+    {"k": {"en": "Market backdrop", "zh": "市场环境"},
+     "v": {"en": "RISK-ON", "zh": "风险偏好"},
      "m": _ROTATION["risk"]["read"], "tone": "lift"},
 ]
 
@@ -432,6 +435,41 @@ def test_rotation_disclaimer_is_rendered_from_code_not_from_the_stale_pulse_file
         board=_board(gated=True), gate=_gate(), generated_utc="2026-08-03 12:00")
     assert "Display-only" not in shell and "仅供展示" not in shell
     assert "Rotation context — how style, risk and sector ETFs" in shell
+
+
+def test_backdrop_tile_speaks_chinese_on_both_builds():
+    """The hero's "Market backdrop" tile printed RISK-ON untranslated on the zh
+    view — board_context handed the template label_en alone while the Market
+    Backdrop card below carried the {en, zh} pair. The tile value is now that
+    same pair and the macro renders a mapping bilingually; a plain string (the
+    regression) leaves the tv div with no l-zh span, and a macro that stops
+    b()-ing a mapping renders its escaped repr — both go red here."""
+    for gated in (True, False):
+        shell = _render(gated=gated)
+        assert ('<div class="tv"><span class="l-en">RISK-ON</span>'
+                '<span class="l-zh">风险偏好</span></div>') in shell, f"gated={gated}"
+        # …while scalar tile values (counts, tickers) still render bare
+        assert ('<div class="tv">3</div>' in shell          # the free honest total
+                or '<div class="tv">AAA</div>' in shell), f"gated={gated}"
+
+
+def test_rotation_backdrop_is_dated_by_the_pulse_as_of_not_the_bake_stamp():
+    """§B9.6: etf_pulse.json refreshes under render scope `baskets` while this
+    page bakes under `macro`, so a macro-only render can rebake the page around
+    a stale rotation module. The module therefore dates itself from its own
+    data source — the pulse's as_of — and never inherits the hero's bake stamp:
+    the fixture's as_of (2026-07-31) must appear, on a page whose generated_utc
+    is a different day, and dropping as_of must drop the date line rather than
+    fall back to the render clock."""
+    shell = _render(gated=True)
+    assert re.search(r'数据截至</span>\s*2026-07-31', shell), (
+        "the rotation footer must print the pulse's own as_of")
+    assert re.search(r'prices through</span><span class="l-zh">数据截至', shell)
+    # no as_of → no date line (never the bake stamp in its place)
+    bare = dict(_board(gated=True), rotation={k: v for k, v in _ROTATION.items()
+                                              if k != "as_of"})
+    shell = _render(gated=True, board=bare)
+    assert "数据截至" not in shell and "prices through" not in shell
 
 
 def test_freshness_dots_do_not_ride_the_direction_inks():

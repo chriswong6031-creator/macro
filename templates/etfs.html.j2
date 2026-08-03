@@ -499,8 +499,14 @@ a{color:var(--link);text-decoration:none}
     </div>
     {# From ro.disclaimer (engine constants), NOT from the shipped pulse JSON —
        that file is a render lane behind this page and used to carry internal
-       "Display-only" vocabulary this public page must never print. #}
-    <p class="faint" style="font-size:11.5px;margin:11px 2px 0">{{ b(ro.disclaimer) }}</p>
+       "Display-only" vocabulary this public page must never print.
+       The date is the OPPOSITE way round on purpose: etf_pulse.json refreshes
+       under render scope `baskets` while this page bakes under `macro` (W2 spec
+       §B9.6), so this module's freshness must come from its own data source —
+       the pulse's as_of — never be implied by the hero's bake stamp. A stale
+       backdrop then shows its real date instead of masquerading as current;
+       no as_of, no date line. #}
+    <p class="faint" style="font-size:11.5px;margin:11px 2px 0">{{ b(ro.disclaimer) }}{% if ro.as_of %} · {{ t('prices through', '数据截至') }} {{ ro.as_of }}{% endif %}</p>
   </section>
   {% endif %}
 
