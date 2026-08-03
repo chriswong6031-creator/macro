@@ -58,19 +58,10 @@ _EVENT_SCALAR_KEYS = (
     "claim_citations_pending",
 )
 _PUBLIC_METRIC_KEYS = (
-    "analyst_criticism",
-    "analysts_count",
-    "call_positivity",
-    "combined",
-    "confidence",
-    "eps_growth_pct",
-    "future_outlook",
-    "gross_margin_pct",
-    "management_confidence",
-    "performance",
-    "questions_count",
     "revenue_growth_pct",
-    "sentiment",
+    "eps_growth_pct",
+    "gross_margin_pct",
+    "questions_count",
 )
 _SOURCE_KEYS = ("kind", "status", "citation_precision")
 _FIELD_LINEAGE_SCALAR_KEYS = ("summary", "key_quote")

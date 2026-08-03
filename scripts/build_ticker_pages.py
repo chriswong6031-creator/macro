@@ -1738,6 +1738,25 @@ def _build_hero(
     }
 
 
+def _next_earnings_date(earnings: dict) -> tuple[str, int | None]:
+    """Return only a valid future earnings date and a live day count.
+
+    ``days_to_next`` inside committed stockdata is a snapshot and can outlive
+    the calendar date it described.  Recompute from the date on every render so
+    a stale positive countdown can never label a past event as "Next earnings".
+    """
+    next_date = _clean_str(earnings.get("next_date"))
+    if not next_date:
+        return "", None
+    try:
+        days_to_next = (date.fromisoformat(next_date) - date.today()).days
+    except (ValueError, TypeError):
+        return "", None
+    if days_to_next < 0:
+        return "", None
+    return next_date, days_to_next
+
+
 def _build_stats(ticker: str, blob: dict | None, factor_betas: dict) -> dict | None:
     if not blob:
         return None
@@ -1810,14 +1829,7 @@ def _build_stats(ticker: str, blob: dict | None, factor_betas: dict) -> dict | N
     beta_zh = f"波动幅度约为市场的 {mkt_beta:.1f} 倍" if mkt_beta is not None else ""
 
     # Next earnings
-    next_date = _clean_str(earnings.get("next_date"))
-    days_to_next = earnings.get("days_to_next")
-    if days_to_next is None and next_date:
-        try:
-            nd = date.fromisoformat(next_date)
-            days_to_next = (nd - date.today()).days
-        except (ValueError, TypeError):
-            pass
+    next_date, days_to_next = _next_earnings_date(earnings)
     earnings_str = f"{next_date} ({days_to_next}d)" if next_date and days_to_next is not None else next_date
 
     # Short interest
@@ -2150,14 +2162,7 @@ def _build_earnings(blob: dict | None) -> dict | None:
     revs = blob.get("revisions") or {}
     es = blob.get("expectation_state") or {}
 
-    next_date = _clean_str(earns.get("next_date"))
-    days_to = earns.get("days_to_next")
-    if days_to is None and next_date:
-        try:
-            nd = date.fromisoformat(next_date)
-            days_to = (nd - date.today()).days
-        except (ValueError, TypeError):
-            pass
+    next_date, days_to = _next_earnings_date(earns)
 
     summary = earns.get("summary") or {}
     beats = summary.get("beats")
