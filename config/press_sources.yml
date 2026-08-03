@@ -612,6 +612,14 @@ wire:
     active_h: 48
     max_stories: 1500
     snapshot_max_items: 80
+    # Bounded confirmed group (2026-08-03, same recalibration as the 4.5
+    # floors): at the new admission volume the 48 h window carries 80+
+    # confirmed stories — Truth-mirror direct-quotes alone can fill the whole
+    # snapshot — and unbounded stage priority evicted every developing story
+    # from the served payload. 44 leaves at least 36 of the 80 slots for the
+    # live developing tail (more when confirmed runs thinner); high_impact is
+    # never capped. 0 disables the bound (the historical shape).
+    snapshot_confirmed_max: 44
     db_paths:
       - "/var/lib/macro-live/state/intelligence/intelligence.db"
       - "data/marketing/press/intelligence.db"
