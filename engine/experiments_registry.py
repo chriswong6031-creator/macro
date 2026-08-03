@@ -47,7 +47,12 @@ _SEED_AUDITED_FALLBACK = "2026-06-30"
 # Row-level date keys, in preference order. Snapshot ledgers key on date/snapshot_date;
 # DESK ledgers (ai_desk/thematic_desk/demand_chain scored.jsonl) carry neither — a call is
 # stamped scored_at when it grades and check_by when it is filed.
-_ROW_DATE_KEYS = ("date", "snapshot_date", "scored_at", "check_by", "as_of")
+# `asof` (no underscore) is the FORWARD-LOG convention — engine/risk_radar_audit.py and its
+# siblings write it — and its absence here blinded ~10 seed ledgers, which published
+# "0 days logged" on the Experiments surface while data/governance/grading_closure.json held
+# their true counts (risk_radar forward_log: 25 logged / 7 graded, reported as 0). Reading a
+# key no writer emits is indistinguishable from an empty ledger (2026-08-03 audit).
+_ROW_DATE_KEYS = ("date", "snapshot_date", "scored_at", "check_by", "as_of", "asof")
 
 
 def _root():
@@ -293,7 +298,8 @@ def _refresh_qledger_promotion(e: dict) -> dict:
     Fields updated:
       status  — "accruing" | "gate_open" (ready=True at any horizon)
       state   — live summary line: n_dates/needed, CI-low, excess_mean, duel context
-      ready   — True when §3 gate passes (n_dates>=25 AND wilson_ci_low>0)
+      ready   — True when §3 gate passes (n_dates>=25 AND wilson_ci_low>0.5 — the bound is
+                a hit-rate proportion, so the bar is the coin-flip null, not zero)
       duel_context_line — challenger vs placebo |excess| at 5d (injected into next_step)
     """
     family = e.get("claim_family") or ""
