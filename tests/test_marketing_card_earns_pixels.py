@@ -619,12 +619,28 @@ def test_long_headline_fills_the_box_rather_than_clipping():
     assert "…" not in body, "headline was clipped despite room on the card"
 
 
-def test_generic_source_name_shows_the_tier_alone():
-    """De-handling makes every relay "Newswire"; the chip must not say it twice."""
+def test_generic_source_name_shows_one_fact_not_two():
+    """De-handling makes every relay "Newswire"; the chip must not say it twice.
+
+    The original form of this test asserted the chip fell back to the word
+    "AGGREGATOR". Operator order 2026-08-03 ("get rid of the 'aggregator' string
+    from illustrations") took that badge away one day later, so the chip now
+    carries the relay's own name instead — still exactly one fact, and never an
+    empty signature. The no-duplication rule this test exists for is unchanged;
+    only which of the two words survives moved.
+    """
     svg = render_breaking_card(
         GOLD_HEAD, "Newswire", "aggregator", "2026-08-03T00:12:02Z")
-    assert "AGGREGATOR" in svg
+    assert "AGGREGATOR" not in svg.replace("bc-tier-aggregator", "")
     assert "Newswire · AGGREGATOR" not in svg
+    assert "Newswire" in svg, "a label-less tier must not blank the signature chip"
+    # ...and the tier itself still rides on the chip's class, not on a caption.
+    assert "bc-tier-aggregator" in svg
+    # A generic relay on a tier that DOES have a badge still drops to the badge.
+    wired = render_breaking_card(
+        GOLD_HEAD, "Newswire", "wire", "2026-08-03T00:12:02Z")
+    assert "Newswire · WIRE SERVICE" not in wired
+    assert "WIRE SERVICE" in wired
     # A real publication still earns its name beside the tier.
     named = render_breaking_card(
         GOLD_HEAD, "Federal Reserve", "official", "2026-08-03T00:12:02Z")
