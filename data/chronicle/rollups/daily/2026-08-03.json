@@ -1,0 +1,258 @@
+{
+  "as_of": "2026-08-03",
+  "coverage": {
+    "end": "2026-08-02",
+    "note": "daily rollup covers 10 session-date(s) from 2026-07-24 to 2026-08-02; chronicle event store begins 2025-04-29; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-07-24"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-08-02",
+      "events": []
+    },
+    {
+      "date": "2026-08-01",
+      "events": []
+    },
+    {
+      "date": "2026-07-31",
+      "events": [
+        {
+          "date": "2026-07-31",
+          "id": "cev-research_vault-32f68ca29d0d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-0natz1tlzak-bf2676",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Europe Equity Research Today’s Morning Meeting",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-30",
+      "events": [
+        {
+          "date": "2026-07-30",
+          "id": "cev-regime_flip-195d6fe8d1a1",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-07-30#regime_us",
+          "tickers": [],
+          "title": "US regime: Q1 Goldilocks → Q2 Reflation",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-440862b5bab5",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-4aoajzqskpx-37ff8b",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell Afternoon Briefing 29.07",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-b7ed87c42ab2",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ehqbfjwfxxq-ad763b",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell Afternoon Briefing 29.07",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-29",
+      "events": [
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-55a143f60c32",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-kjiaumouiiu-af6784",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Europe Equity Research Today’s Morning Meeting",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-656c33b3e214",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-llcnf4qdjf0-618421",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM JPM Chips for Break",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-837a11f89077",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-tsseepkd2yv-59aabc",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM JPM US Market Intell",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-28",
+      "events": [
+        {
+          "date": "2026-07-28",
+          "id": "cev-regime_flip-2c5d90609138",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-07-28#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q3 Stagflation → Q1 Goldilocks",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-28",
+          "id": "cev-research_vault-f1ecc4f598a6",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-cwta10ecnvl-186d33",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell | Morning Briefing",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-27",
+      "events": [
+        {
+          "date": "2026-07-27",
+          "id": "cev-research_vault-1ba0b6a9e9c3",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bms7cauktyp-277d6e",
+          "tickers": [],
+          "title": "Goldman Sachs: Japan Portfolio Strategy Trigger warnings Lessons from the July August 2024 sell off",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-26",
+      "events": [
+        {
+          "date": "2026-07-26",
+          "id": "cev-research_vault-1b1a30ca03e5",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-5jjtogk3lv8-5fdba8",
+          "tickers": [],
+          "title": "S&T: GS Brian Garrett Weekend Prep July 26",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-25",
+      "events": []
+    },
+    {
+      "date": "2026-07-24",
+      "events": [
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-16f61baeb104",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-srwcvprptla-0a320e",
+          "tickers": [],
+          "title": "Goldman Sachs: Global Rates Trader Priced For Surprise",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-8d6e3ee6806a",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-jtzjieuwmz6-7f06bb",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM International Market Intell | Morning Briefing",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-fa139682dcec",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-8urlymoohrf-9573c7",
+          "tickers": [],
+          "title": "Goldman Sachs: Global Credit Trader Defaults Tracking the Persistent 'Left Tail'",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-fa22c54ff15f",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-c562oqlikm4-1962d3",
+          "tickers": [],
+          "title": "Goldman Sachs: LATAM Views Steady Winds, Uneven Sails (Ramos)",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-fb0673a153fc",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-cysuddzsste-ffba19",
+          "tickers": [],
+          "title": "Goldman Sachs: Euro Area Q2 GDP Preview Better Than Feared",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-fb3773745860",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-cjtotup7k0s-a5c58f",
+          "tickers": [],
+          "title": "UBS: Daily US",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-fe570941fc58",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-jbflvfifadb-b291ab",
+          "tickers": [],
+          "title": "Goldman Sachs: Global Economics Wrap Up July 24, 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-ff9c5d25ad31",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-s3w35dzupmy-299de6",
+          "tickers": [],
+          "title": "Goldman Sachs: SBI Life (SBIL)",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-risk_band-40f76052712a",
+          "kind": "state_flip",
+          "source": "risk_band",
+          "source_ref": "risk_radar_forward_log#2026-07-24",
+          "tickers": [],
+          "title": "Risk radar: watch → caution",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 schema: sector_intelligence_ownership.v1
-effective_at: "2026-08-02T00:00:00Z"
-status: partial_freeze
+effective_at: "2026-08-03T02:44:38Z"
+status: f0_reconciled_partial_freeze
+reconciled_against_commit: c2d466f2f568cc4c730d68ced758fafde0c6257a
 
 policy:
   one_writer_required: true
@@ -32,6 +33,96 @@ runtime_controls:
       - fresh_root_written_heartbeat
     deprecated_non_authority:
       BIOCATALYST_R2_RETENTION_CONFIRMED: "cannot authorize prospective collection"
+
+# These names freeze cross-plane compatibility slots; they do not create a
+# second writer or make a blocked dependency available. Only the current trial
+# read API is usable by BioCatalyst today. The shared-plane fixture proves the
+# modules/contracts/statuses remain what this registry claims.
+read_adapters:
+  biocatalyst_trial_read_api.v1:
+    canonical_owner: biocatalyst
+    implementation_state: implemented_current_record_facts_only
+    module: app.biocatalyst
+    callable: router
+    route_prefix: /api/biocatalyst/v1
+    routes:
+      - /api/biocatalyst/v1/health
+      - /api/biocatalyst/v1/trials
+      - /api/biocatalyst/v1/trials/changes
+      - /api/biocatalyst/v1/trials/milestones
+      - /api/biocatalyst/v1/trials/prospective-changes
+      - /api/biocatalyst/v1/trials/{nct_id}
+    input_identity: source_native_nct_id
+    output_contracts:
+      - trial_snapshot.v1
+      - trial_history_read_model.v1
+      - trial_prospective_change_read_model.v1
+    transport: authenticated_site_full_private_no_store
+    point_in_time_scope: committed_current_public_generation
+    compatibility_fixture: data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json
+    biocatalyst_eligible: true
+    limitations:
+      - current_record_facts_only
+      - no_issuer_or_security_identity
+      - no_model_or_signal_authority
+
+  biocatalyst_company_identity_pit_adapter.v1:
+    canonical_owner: corporate_intelligence
+    implementation_state: blocked_no_pit_identity_adapter
+    module: null
+    callable: null
+    available_dependency:
+      module: engine.neuralweb.company_intelligence_reader
+      callable: read_company_intelligence
+      output_contract: company_intelligence_context.v1
+      scope: ticker_keyed_context_only_not_identity_or_asset_ownership
+    compatibility_fixture: data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json
+    biocatalyst_eligible: false
+    blocker: reviewed_point_in_time_company_identity_contract
+
+  biocatalyst_security_identity_pit_adapter.v1:
+    canonical_owner: market_data_security_master
+    implementation_state: unavailable_bootstrap_roster_only
+    module: null
+    callable: null
+    available_dependency:
+      module: collectors.symbol_directory
+      scope: us_exchange_roster_not_complete_security_master
+    compatibility_fixture: data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json
+    biocatalyst_eligible: false
+    blocker: complete_point_in_time_security_and_corporate_actions_contract
+
+  biocatalyst_corporate_document_span_adapter.v1:
+    canonical_owner: corporate_intelligence
+    implementation_state: blocked_no_cross_domain_read_adapter
+    module: null
+    callable: null
+    available_dependency:
+      module: engine.fundamental_forensics.sec_document_spine
+      scope: owner_internal_sec_document_substrate_not_biocatalyst_contract
+    compatibility_fixture: data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json
+    biocatalyst_eligible: false
+    blocker: versioned_document_and_exact_span_read_contract
+
+  biocatalyst_capital_structure_pit_adapter.v1:
+    canonical_owner: capital_structure
+    implementation_state: blocked_current_projection_has_no_biocatalyst_pit_adapter
+    module: null
+    callable: null
+    available_dependency:
+      module: app.capital_structure
+      routes:
+        - /api/capital-structure/v1/coverage
+        - /api/capital-structure/v1/overview
+        - /api/capital-structure/v1/issuers/resolve
+        - /api/capital-structure/v1/issuers/{issuer_id}
+        - /api/capital-structure/v1/issuers/{issuer_id}/events
+      output_contract: capital_structure.projection_bundle.v1
+      transport: authenticated_site_full_private_no_store
+      scope: current_observed_filing_state_without_cash_runway_or_dilution
+    compatibility_fixture: data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json
+    biocatalyst_eligible: false
+    blocker: versioned_internal_pit_adapter_with_unavailable_state_semantics
 
 # B0a froze the source-fact lanes needed by the NCT Trial Capsule; B4D advances
 # only their official-API prospective observation and public read-model seams.
@@ -154,7 +245,7 @@ registrations:
 
   generic_company_identity:
     canonical_owner: corporate_intelligence
-    implementation_state: blocked_pending_executable_contract
+    implementation_state: partial_ticker_context_reader_not_pit_identity
     writer: null
     bootstrap_read_only_sources:
       - module: collectors.symbol_directory
@@ -189,7 +280,7 @@ registrations:
 
   corporate_documents_and_spans:
     canonical_owner: corporate_intelligence
-    implementation_state: blocked_pending_executable_contract
+    implementation_state: owner_substrates_exist_no_biocatalyst_read_contract
     writer: null
     prohibited_biocatalyst_fallbacks:
       - duplicate_sec_collector
@@ -203,8 +294,13 @@ registrations:
 
   capital_structure_projection:
     canonical_owner: capital_structure
-    implementation_state: planning_only
-    writer: null
+    implementation_state: current_authenticated_projection_available
+    writer:
+      service: capital_structure_projection_builder
+      module: scripts.build_capital_structure_projection
+      storage_class: atomic_current_projection_twin
+      artifact: data/capital_structure/projection.json
+      schema: capital_structure.projection_bundle.v1
     prohibited_biocatalyst_fallbacks:
       - duplicate_cash_calculation
       - duplicate_burn_calculation
@@ -278,7 +374,7 @@ b0_closure:
     - generic_company_identity_executable_contract
     - complete_market_data_security_master_registration
     - corporate_documents_and_spans_executable_contract
-    - capital_structure_projection_executable_contract
+    - capital_structure_biocatalyst_pit_read_adapter
   unblocked_scope:
     - source_canonical_nct_identity
     - clinicaltrials_raw_receipts

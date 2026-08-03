@@ -14,6 +14,38 @@ Public API:
 All functions are deterministic and fail-soft (return None / empty on errors).
 No invented numbers — every number in the whitelist comes from real heatmap data.
 
+UNIVERSE (widened 2026-08-02, masterplan §3 PR-B.3). The S&P heatmap is 503
+names, which meant every "biggest mover" this desk has ever posted was the
+biggest mover *of the S&P 500* — a Russell name down 22% on the day did not
+exist. ``load_movers`` now also returns ``pack_tiles``: heatmap-shaped rows
+built from ``data/marketing/hot_tape_pack.json`` for the ~800 liquid names the
+heatmap does not carry, and ``top_movers`` considers them alongside the index
+tiles. ``min_abs`` and the ``tier_map`` T3 exclusion are unchanged and apply to
+the union, so the widening adds candidates and removes no gate.
+
+Three things bound the extension, and all three are the pack's own honesty
+guards rather than new inventions:
+
+* **1D only.** The pack carries last/prev close, which is exactly one session.
+  It has no 1W/1M change, so a ``tf`` other than ``"1D"`` sees the index tiles
+  alone — the same board it has always seen — instead of a silently narrower
+  version of a wider claim.
+* **Split suspicion.** ``data/massive_stock_day`` is not split-adjusted, so a
+  name the pack flags ``suspect`` (any adjacent close-to-close move beyond
+  ±60% in its dense window) contributes no percentage. This is the same refusal
+  ``hot_tape_pack`` documents for its own card rendering — a split-cliff candle
+  is a lie-shaped picture, and a split-cliff percentage is a lie-shaped number.
+  Residual exposure, stated: a clean 2-for-1 split reads as −50% and clears the
+  ±60% guard. Every one of the 813 pack-only names measured on 2026-08-02 is
+  also carried by a split-adjusted store (``data/baskets/ohlcv`` or
+  ``data/stocks``), so the exposure is presently zero rather than merely small.
+* **Tip-current records only.** A record whose own ``last_date`` lags the pack's
+  ``trade_date`` has a "1-day" move from some other week.
+
+Rows carry ``source`` (``"sp500_heatmap"`` | ``"hot_tape_pack"``) because the
+claim a fact may make depends on it: only an index tile can be called one of
+the biggest moves *in the index*.
+
 SESSION PROVENANCE (2026-07-31). The two heatmaps date themselves DIFFERENTLY,
 and they are systematically one calendar day apart:
 
@@ -225,19 +257,89 @@ def load_movers(root: PathLike) -> dict | None:
                 if isinstance(_m, dict):
                     _m.setdefault("asof", themes_asof)
 
+    for _t in sp500_tiles:
+        if isinstance(_t, dict):
+            _t.setdefault("source", "sp500_heatmap")
+
+    # Liquid names the index board does not carry. Additive key: every existing
+    # consumer reads sp500_tiles/theme_tiles and sees byte-identical data.
+    pack_tiles = _pack_tiles(root, exclude={str(t.get("t", "")).upper()
+                                            for t in sp500_tiles if isinstance(t, dict)})
+
     return {
         "sp500_tiles": sp500_tiles,
         "theme_tiles": theme_tiles,
+        "pack_tiles": pack_tiles,
         # LEGACY key, deliberately unchanged in meaning: build_movers_page and
         # press.desk_planner both date their S&P claims with it.
         "asof": sp500_asof,
         "sp500_asof": sp500_asof,
         "themes_asof": themes_asof,
+        "pack_asof": (pack_tiles[0].get("asof") if pack_tiles else None),
         "sp500_generated_utc": _meta(sp500_data, "generated_utc"),
         "themes_generated_utc": _meta(themes_data, "generated_utc"),
         "sp500_source": _meta(sp500_data, "source") or "",
         "themes_source": _meta(themes_data, "source") or "",
     }
+
+
+def _pack_tiles(root: PathLike, exclude: set[str] | None = None) -> list[dict]:
+    """Heatmap-shaped 1D rows for hot-tape-pack names outside *exclude*.
+
+    Shaped exactly like an ``sp500_heatmap`` tile (``t``/``name``/``sector``/
+    ``perf``/``asof``) so ``top_movers`` needs no second code path, plus
+    ``source: "hot_tape_pack"`` so a downstream fact knows it may not claim the
+    index. The pack has no company names and only carries ``sector`` for its
+    S&P members, so both fall back the way the heatmap path already does.
+
+    Fail-soft: an absent, malformed or unusable pack returns ``[]`` and the
+    board is the 503-name index it has always been. No annotation here — the
+    tier builder already prints exactly one for a missing/stale pack, and this
+    module is called on the intraday path where a second copy of that warning
+    would be noise, not news.
+    """
+    exclude = exclude or set()
+    try:
+        pack = _load_json(Path(root) / "data" / "marketing" / "hot_tape_pack.json")
+    except Exception:  # noqa: BLE001
+        return []
+    if not isinstance(pack, dict):
+        return []
+    records = pack.get("tickers")
+    if not isinstance(records, dict):
+        return []
+    trade_date = str(pack.get("trade_date") or "")[:10]
+    if not trade_date:
+        return []
+
+    tiles: list[dict] = []
+    for ticker, rec in records.items():
+        if not isinstance(rec, dict):
+            continue
+        t = str(ticker).upper()
+        if not t or t in exclude:
+            continue
+        if rec.get("suspect"):
+            continue
+        if str(rec.get("last_date") or "")[:10] != trade_date:
+            continue
+        try:
+            last_c = float(rec.get("last_close"))
+            prev_c = float(rec.get("prev_close"))
+        except (TypeError, ValueError):
+            continue
+        if not (prev_c > 0) or last_c != last_c or prev_c != prev_c:
+            continue
+        tiles.append({
+            "t": t,
+            "name": rec.get("ticker") or t,
+            "sector": rec.get("sector") or "",
+            "perf": {"1D": (last_c / prev_c - 1.0) * 100.0},
+            "asof": trade_date,
+            "source": "hot_tape_pack",
+        })
+    tiles.sort(key=lambda x: x["t"])
+    return tiles
 
 
 def prefer_fresher_session(data: dict | None) -> dict:
@@ -327,12 +429,20 @@ def top_movers(
 
     Returns:
         {
-          "gainers": [{ticker, name, pct, sector}, ...],  # sorted pct DESC
-          "losers":  [{ticker, name, pct, sector}, ...],  # sorted pct ASC (most negative first)
+          "gainers": [{ticker, name, pct, sector, asof, source}, ...],  # sorted pct DESC
+          "losers":  [{ticker, name, pct, sector, asof, source}, ...],  # sorted pct ASC
         }
+
+    The candidate board is the S&P heatmap tiles PLUS, for ``tf == "1D"`` only,
+    the hot-tape-pack rows ``load_movers`` attached (see the module docstring).
+    ``min_abs`` and the ``tier_map`` T3 exclusion are applied to the union
+    unchanged: this widens what may be considered, never what may pass.
     """
-    tiles = (data or {}).get("sp500_tiles") or []
+    tiles = list((data or {}).get("sp500_tiles") or [])
+    if str(tf) == "1D":
+        tiles += list((data or {}).get("pack_tiles") or [])
     eligible = []
+    seen: set[str] = set()
     for tile in tiles:
         if not isinstance(tile, dict):
             continue
@@ -347,14 +457,23 @@ def top_movers(
         if abs(pct) < min_abs:
             continue
         ticker = tile.get("t", "")
+        # The index tile wins any collision: it is the split-adjusted, named,
+        # sector-tagged read, and load_movers already excludes its names from
+        # the pack rows — this is belt-and-braces for a hand-built payload.
+        key = str(ticker).upper()
+        if key in seen:
+            continue
+        seen.add(key)
         name = tile.get("name", ticker)
         sector = tile.get("sector", "")
         # `asof` rides the ROW, not the payload: after prefer_fresher_session a
         # tile refreshed from the themes read carries the themes session while
         # its index-only neighbours still carry the close-cache one, and a
         # publish-time post has to know which session ITS name belongs to.
+        # `source` rides the row for the same reason — see mover_facts.
         eligible.append({"ticker": ticker, "name": name, "pct": pct,
-                         "sector": sector, "asof": tile.get("asof")})
+                         "sector": sector, "asof": tile.get("asof"),
+                         "source": tile.get("source") or "sp500_heatmap"})
 
     if tier_map:
         eligible = [m for m in eligible if tier_map.get(m.get("ticker"), "") != "T3"]
@@ -608,9 +727,19 @@ def mover_facts(mover: dict, data: dict | None = None) -> dict:
         abs_pct_str = f"{abs(pct):.1f}%"
         if abs_pct_str not in whitelist:
             whitelist.append(abs_pct_str)
+        # SCOPE THE CLAIM TO THE BOARD THE ROW CAME FROM. This sentence used to
+        # say "in the index" unconditionally, which was true while the only
+        # board was the 503-name S&P heatmap. Once top_movers also draws from
+        # the ~800-name hot-tape pack, that clause is a false statement about
+        # membership for every non-index name — the same defect as a superlative
+        # whose evidence window overruns its chart (masterplan §0.2). The wider
+        # board gets the wider, still-true phrasing.
+        scope = ("one of the biggest moves in the index"
+                 if str(mover.get("source") or "sp500_heatmap") == "sp500_heatmap"
+                 else "one of the biggest moves on the tape")
         facts.append({
             "id": "mover_magnitude",
-            "text": f"{ticker} is {abs_pct_str} lower on the day, one of the biggest moves in the index.",
+            "text": f"{ticker} is {abs_pct_str} lower on the day, {scope}.",
             "salience": 8,
             "numbers": [abs_pct_str],
         })

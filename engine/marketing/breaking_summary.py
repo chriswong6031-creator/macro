@@ -663,7 +663,8 @@ def build_breaking_payload(
     Schema (contract with parallel card-renderer agent):
         kind: "breaking"
         id: str
-        headline: str
+        headline: str        # verbatim from the wire (may be a whole post)
+        card_headline: str   # sentence-bounded hero the card renders (W4g)
         summary: str
         mode: "llm" | "deterministic" | "llm_fallback"
         source_name: str
@@ -684,15 +685,43 @@ def build_breaking_payload(
     if isinstance(matched, dict):
         tickers = matched.get("tickers", [])
 
+    # ── Upstream card-headline gate (W4g) ────────────────────────────────────
+    # The wire's `headline` field is whatever the source carried. For a relay of
+    # a Truth Social post that is the ENTIRE post: the 2026-08-02 Iran item
+    # arrived 814 characters long, and the card rendered ~156 of them before an
+    # ellipsis — cutting mid-sentence, before any actual news. The card gets a
+    # DERIVED headline (leading whole sentences, the source's own words, no
+    # rewrite, no case change, no ellipsis — relay, never editorialize; F6
+    # sentence-case compression, never ALL-CAPS synthesis). `headline` itself is
+    # left untouched so the post-text lane's composition is byte-unchanged.
+    raw_headline = str(item.get("headline", "") or "")
+    card_headline = raw_headline
+    headline_chars_dropped = 0
+
     # Lazy import of card renderer (degrades gracefully)
     card_svg = ""
     try:
         from engine.marketing.chart_render import (  # noqa: PLC0415
             chart_cta_enabled,
+            derive_card_headline,
             render_breaking_card,
         )
+        card_headline = derive_card_headline(raw_headline)
+        headline_chars_dropped = max(0, len(raw_headline.strip()) - len(card_headline))
+        if headline_chars_dropped:
+            # COUNTED, never silent: this is text the card does not show. The
+            # count is persisted in provenance.card_fit (→ outbox source.card_fit)
+            # and announced once per item. Bare line-start print, never a logger.
+            print(
+                "::warning title=breaking-card-headline-compressed::"
+                f"{item.get('id', '?')}: source headline {len(raw_headline.strip())} "
+                f"chars -> {len(card_headline)} on the card "
+                f"({headline_chars_dropped} dropped, whole-sentence bound); "
+                "the post body still carries the full summary",
+                flush=True,
+            )
         card_kwargs = dict(
-            headline=item.get("headline", ""),
+            headline=card_headline,
             source_name=item.get("source_name", item.get("source", "")),
             source_tier=item.get("source_tier", "aggregator"),
             published_at=item.get("published_at", ""),
@@ -720,6 +749,11 @@ def build_breaking_payload(
         "kind": "breaking",
         "id": item.get("id", ""),
         "headline": item.get("headline", ""),
+        # The bounded hero the CARD shows. Separate from `headline` on purpose:
+        # the post-text lane composes from `headline` and its behaviour is
+        # unchanged by this gate. A follow-up may promote this to `headline`
+        # once the copy lane's near-dup/payload gates are re-measured against it.
+        "card_headline": card_headline,
         "summary": summary_result["summary"],
         "mode": summary_result["mode"],
         "source_name": summary_result["source_name"],
@@ -735,5 +769,13 @@ def build_breaking_payload(
             "source_url": item.get("url", ""),
             "source": item.get("source", ""),
             "ingested_at": ingested_at,
+            # Counted drop, persisted: press_lane merges this dict into the
+            # outbox item's `source`, so `source.card_fit` is the durable record
+            # of how much source text the card could not show.
+            "card_fit": {
+                "headline_source_chars": len(raw_headline.strip()),
+                "headline_card_chars": len(card_headline),
+                "headline_chars_dropped": headline_chars_dropped,
+            },
         },
     }

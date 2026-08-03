@@ -23,8 +23,6 @@
   {% set h = [(s.mean|abs)/vmax*34, 1.5]|max %}
   {% set up = s.mean >= 0 %}
   <rect x="{{ (cx-7)|round(1) }}" y="{{ (44-h)|round(1) if up else 44 }}" width="14" height="{{ h|round(1) }}" rx="1.5" fill="{{ 'var(--up)' if up else 'var(--down)' }}"><title>{{ ML[m-1] }} · mean {{ '%+.2f'|format(s.mean) }}% · median {{ '%+.2f'|format(s.median) }}% · up {{ s.hit }}% of years (n={{ s.n }})</title></rect>
-{% set seo_title = "Factor Seasonality — Mastermind" %}{% set seo_desc = "Which equity factors work in which months — Ken French monthly factor data turned into a practical seasonal map." %}{% set seo_path = "seasonality.html" %}
-{% include "_seo_head.html.j2" %}
   {% endif %}
   <text x="{{ cx|round(1) }}" y="94" text-anchor="middle" font-size="8" fill="var(--muted)">{{ ML[m-1] }}</text>
   {% endfor %}
@@ -36,6 +34,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Factor seasonality — Ken French monthly factors</title>
+{% set seo_title = "Factor Seasonality — Mastermind" %}{% set seo_desc = "Which equity factors work in which months — Ken French monthly factor data turned into a practical seasonal map." %}{% set seo_path = "seasonality.html" %}
+{% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>

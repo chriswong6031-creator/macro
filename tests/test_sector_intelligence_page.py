@@ -76,6 +76,35 @@ def test_merged_template_sections() -> None:
     assert "basket_member_syms" in s
 
 
+def test_forming_narratives_mounted_at_end_of_movement() -> None:
+    """The Forming Narratives panel ships on the US page (PR-A1).
+
+    engine.narrative_emergence has emitted site/basketdata/narrative_emergence.json for
+    US nightly all along, but the shared panel was mounted only on the non-US baskets
+    pages — the US read was computed and never shown. It belongs at the END of
+    MOVEMENT: the funnel descends gated lanes → map → whole-market motion → what is
+    forming next.
+    """
+    s = _read(TPL / "sector_central.html.j2")
+    assert '{% include "_forming_narratives.html.j2" %}' in s, "panel not mounted"
+    # placement: inside #si-movement, after the time-machine mount, before the close
+    movement = s.split('id="si-movement"', 1)[1].split("</section>", 1)[0]
+    assert '{% include "_forming_narratives.html.j2" %}' in movement, \
+        "panel escaped the MOVEMENT section"
+    assert movement.index('id="tm-mount"') < movement.index("_forming_narratives"), \
+        "panel must come after the time machine — it is the last read in MOVEMENT"
+
+
+def test_forming_narratives_asset_copied_by_builder() -> None:
+    """The panel loads forming_narratives.js relative to the page, so the US builder
+    must copy it into site/ like its sibling MOVEMENT donors."""
+    s = _read(ROOT / "scripts" / "build_sector_central.py")
+    assert '"forming_narratives.js"' in s, "asset missing from the copy tuple"
+    # it must sit in the SAME tuple as the other MOVEMENT donors (one copy loop)
+    tup = s.split('for asset in (', 1)[1].split("):", 1)[0]
+    assert "forming_narratives.js" in tup, "asset added outside the asset-copy tuple"
+
+
 def test_payload_externalized_not_embedded() -> None:
     s = _read(TPL / "sector_central.html.j2")
     assert "baskets_json|safe" not in s, "inline BASKETS embed came back"

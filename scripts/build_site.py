@@ -2480,7 +2480,7 @@ def _flip_confirmation_view() -> dict | None:
 
 def _sector_heat_view() -> dict | None:
     """Compact sector-heat strip for the macro.html dashboard: up to 4 heating themes
-    and up to 4 cooling/broken themes, each with a link to baskets.html#theme-<id>.
+    and up to 4 cooling/broken themes, each linking straight to basket/<id>.html.
     DISPLAY-ONLY — data comes from engine.sector_pulse.build_pulse('us') at build time.
     Returns None (never raises) so the strip is simply hidden when pulse is unavailable."""
     try:

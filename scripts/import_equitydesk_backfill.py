@@ -375,6 +375,11 @@ def run(
         # Parse JSON-string tag fields into Python lists, re-serialise as JSON str
         row["level1_tags"] = _to_json_str(_parse_level_tags(r.get("level1_tags")))
         row["level2_tags"] = _to_json_str(_parse_level_tags(r.get("level2_tags")))
+        # Provenance stamp: seed rows are the immutable vendor yardstick; the
+        # nightly engine appends its own snapshots as source="stage_engine"
+        # (engine.stage_analysis.append_stage_snapshot). NOTE a re-import
+        # overwrites the file, dropping engine rows — the next nightly re-appends.
+        row["source"] = "equitydesk_backfill"
         ov_rows.append(row)
     ov_df = pd.DataFrame(ov_rows)
     # Region counts

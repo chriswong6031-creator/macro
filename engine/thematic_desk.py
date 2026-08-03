@@ -258,8 +258,10 @@ _SCHEMA_TAIL = (
     "date'). This text is shown to users under a 'Changes this read' label: never write "
     "the words 'falsified', 'falsify' or 'refuted' in it.\n"
     "  emerging_watch: string|null — at most ONE early-hypothesis to watch (a theme whose "
-    "leadership may be forming OR fading) WITH a kill-criterion; or null. This is a watch, "
-    "not a call.\n"
+    "leadership may be forming OR fading) WITH the observable condition you are watching "
+    "for (the one that would retire the watch); or null. This is a watch, not a call. This "
+    "text is shown to users VERBATIM under an 'AI scout watch' label: state the condition "
+    "plainly and never write 'kill criterion', 'falsified', 'falsify' or 'refuted' in it.\n"
     "  confidence: one of \"low\",\"medium\",\"high\"."
 )
 
@@ -343,7 +345,8 @@ _PANEL_SYSTEMS = {
         "Put the sharpest bear case on each long." + _PANEL_CAVEAT),
     "narrative_scout": (
         "ROLE: NARRATIVE-EMERGENCE SCOUT. Look for ONE early-hypothesis worth watching — a theme "
-        "whose leadership may be FORMING or FADING — and give it a kill-criterion. You may draw "
+        "whose leadership may be FORMING or FADING — and name the observable condition you are "
+        "watching for, the one that would retire the watch. You may draw "
         "on state.theme_candidates (a DISPLAY-ONLY radar of coherent NEW name-groups not yet in a "
         "basket) — but it is NOISY (only ~10% persist) and has NO forward edge, so treat any "
         "candidate as a watch-hypothesis to grade, never a buy, and let IPO-wave/hype RAISE the "

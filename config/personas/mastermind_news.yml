@@ -1,6 +1,8 @@
 ## Persona spec v1 — Fable-authored. Persona Network W1 (docket D13).
-## SPEC ONLY: no desk_network entry, no account, no X handle, nothing generates
-## from this file. The roster shows it PLANNED.
+## LIVE since 2026-08-02 (masterplan §8.2 W4f): the desk_network entry is armed,
+## the X handle is @mastermindnews1 and its Buffer channel is bound. The `cadence`
+## block below was reconciled with the D08 ramp in the same change — see the note
+## on it. Everything else here is unchanged W1 spec.
 ##
 ## voice: the intended register is branded wire, which the live template pool does
 ## not have. Mapped to the nearest LIVE key "fast, reactive" (wire terseness).
@@ -39,10 +41,26 @@ tilt:
 pipeline: engine
 model_tier: default
 cadence:
-  posts_per_day: 8
+  # RECONCILED WITH THE RAMP 2026-08-02, when the desk armed. These are the same
+  # four numbers every other LIVE desk carries (flagship/founder/meagan/sophia/
+  # kelly/cici), and they are not a cadence decision — they are the "the spec must
+  # never be the throttle" contract that tests/test_marketing_cadence_ramp_coherence.py
+  # enforces for every ENABLED desk. The governor is the D08 ramp
+  # (config/marketing.yml sentinel.ramp), which holds this desk at weeks_1_2 =
+  # 10 posts/day from its `created: 2026-08-02`; the resolver ANDs with the ramp,
+  # so 20 here means "impose no extra volume bound", not "post 20 today".
+  #
+  # The W1 declarations (posts_per_day 8, jitter_min 10, weekend_shape light) were
+  # written when this file was spec-only and failed four coherence assertions the
+  # moment the desk went live: 8 < the 10/14/20 tier caps (the spec would have been
+  # the silent throttle); min_spacing 20 + jitter 10 = 30 > the 23-minute budget a
+  # 30-min ladder step leaves after publish.post_jitter_max_min = 7, so every post
+  # would have missed its next rung and run at half cadence; and `light` (0.34)
+  # resolves to 2 posts on a weekend, far under the operator's 10/day floor.
+  posts_per_day: 20
   min_spacing_min: 20
-  jitter_min: 10
-  weekend_shape: light
+  jitter_min: 3
+  weekend_shape: medium
 isolation:
   profile_id: null
   egress: null

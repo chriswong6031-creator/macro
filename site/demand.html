@@ -55,8 +55,10 @@
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 </head>
 <body>
+
+
 <nav class="site-nav">
-  
+
 
 
     <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
@@ -95,15 +97,9 @@
         
         <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
-        <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
-          <div class="nav-dd-menu" role="menu">
-            <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
-            <a href="baskets.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
-            <a href="subsector_rotation.html"><span class="submenu-icon submenu-icon-rotation" aria-hidden="true"></span><span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
-            <a href="subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
-          </div>
-        </div>
+        
+        <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
+        <a href="subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
         <a href="strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
@@ -280,21 +276,30 @@
   <script src="stock-logos.js?v=cc29be53" defer></script>
   <script src="live_config.js?v=52943e92" defer></script>
   <script src="live.js?v=e19f6af3" defer></script>
+  <div class="nav-search">
+    <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-mastermind" aria-hidden="true"></span><span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-terminal" aria-hidden="true"></span><span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
     <div class="lang-toggle" role="group" aria-label="Language">
-      <span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span>
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
     </div>
   </div>
 </nav>
 
 <h1>🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></h1>
 <p class="lead"><span class="l-en">Shows where real demand signals look stronger or weaker than market expectations. Context only; not a buy or sell signal.</span><span class="l-zh">显示真实需求信号相对市场预期更强或更弱的位置。仅供参考，非买入或卖出信号。</span>
-  <span class="faint">· <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-08-01</span></p>
+  <span class="faint">· <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-08-02</span></p>
 
 <div class="panel">
   <div class="sec"><span class="l-en">The demand pools (independent signals)</span><span class="l-zh">需求来源（独立信号）</span></div>
@@ -634,28 +639,14 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#ACLS">ACLS</a></td>
-    <td><span class="chip ">ai_datacenter · wfe</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">flat</span><span class="l-zh">flat</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#GEV">GEV</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">flat</span><span class="l-zh">flat</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#LEU">LEU</a></td>
+    <td class="tk"><a href="stock.html#CEG">CEG</a></td>
     <td><span class="chip ">ai_datacenter · power</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">falling</span><span class="l-zh">falling</span></td>
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#PCG">PCG</a></td>
+    <td class="tk"><a href="stock.html#DUK">DUK</a></td>
     <td><span class="chip ">ai_datacenter · power</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">flat</span><span class="l-zh">flat</span></td>
@@ -669,20 +660,6 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#VST">VST</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">flat</span><span class="l-zh">flat</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#DUK">DUK</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">flat</span><span class="l-zh">flat</span></td>
-  </tr>
-  
-  <tr>
     <td class="tk"><a href="stock.html#NRG">NRG</a></td>
     <td><span class="chip ">ai_datacenter · power</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
@@ -690,17 +667,45 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#SO">SO</a></td>
+    <td class="tk"><a href="stock.html#GEV">GEV</a></td>
     <td><span class="chip ">ai_datacenter · power</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">flat</span><span class="l-zh">flat</span></td>
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#CEG">CEG</a></td>
+    <td class="tk"><a href="stock.html#VST">VST</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">flat</span><span class="l-zh">flat</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#LEU">LEU</a></td>
     <td><span class="chip ">ai_datacenter · power</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">falling</span><span class="l-zh">falling</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#ACLS">ACLS</a></td>
+    <td><span class="chip ">ai_datacenter · wfe</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">flat</span><span class="l-zh">flat</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#PCG">PCG</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">flat</span><span class="l-zh">flat</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#SO">SO</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">flat</span><span class="l-zh">flat</span></td>
   </tr>
   
   <tr>
@@ -787,6 +792,13 @@
   </tr>
   
   <tr>
+    <td class="tk"><a href="stock.html#SHW">SHW</a></td>
+    <td><span class="chip coin">housing · products</span></td>
+    <td><span class="num neg">-4%</span> <span class="faint"><span class="l-en">contracting</span><span class="l-zh">收缩</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
     <td class="tk"><a href="stock.html#CARR">CARR</a></td>
     <td><span class="chip coin">housing · products</span></td>
     <td><span class="num neg">-4%</span> <span class="faint"><span class="l-en">contracting</span><span class="l-zh">收缩</span></span></td>
@@ -795,13 +807,6 @@
   
   <tr>
     <td class="tk"><a href="stock.html#MAS">MAS</a></td>
-    <td><span class="chip coin">housing · products</span></td>
-    <td><span class="num neg">-4%</span> <span class="faint"><span class="l-en">contracting</span><span class="l-zh">收缩</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#SHW">SHW</a></td>
     <td><span class="chip coin">housing · products</span></td>
     <td><span class="num neg">-4%</span> <span class="faint"><span class="l-en">contracting</span><span class="l-zh">收缩</span></span></td>
     <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
@@ -868,7 +873,7 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#AMD">AMD</a></td>
+    <td class="tk"><a href="stock.html#NVDA">NVDA</a></td>
     <td><span class="chip ">ai_datacenter · compute</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
@@ -882,78 +887,8 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#NVDA">NVDA</a></td>
-    <td><span class="chip ">ai_datacenter · compute</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#QCOM">QCOM</a></td>
-    <td><span class="chip ">ai_datacenter · compute</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#ETN">ETN</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#MPWR">MPWR</a></td>
-    <td><span class="chip ">ai_datacenter · compute</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#APH">APH</a></td>
-    <td><span class="chip ">ai_datacenter · compute</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#COHU">COHU</a></td>
+    <td class="tk"><a href="stock.html#KLIC">KLIC</a></td>
     <td><span class="chip ">ai_datacenter · wfe</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#FORM">FORM</a></td>
-    <td><span class="chip ">ai_datacenter · wfe</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#TER">TER</a></td>
-    <td><span class="chip ">ai_datacenter · compute</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#ONTO">ONTO</a></td>
-    <td><span class="chip ">ai_datacenter · wfe</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#AEIS">AEIS</a></td>
-    <td><span class="chip ">ai_datacenter · wfe</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#HUBB">HUBB</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
   </tr>
@@ -966,42 +901,14 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#AMAT">AMAT</a></td>
-    <td><span class="chip ">ai_datacenter · wfe</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#KLAC">KLAC</a></td>
-    <td><span class="chip ">ai_datacenter · wfe</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#BWXT">BWXT</a></td>
+    <td class="tk"><a href="stock.html#PWR">PWR</a></td>
     <td><span class="chip ">ai_datacenter · power</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#LITE">LITE</a></td>
-    <td><span class="chip ">ai_datacenter · compute</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#MRVL">MRVL</a></td>
-    <td><span class="chip ">ai_datacenter · compute</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#ANET">ANET</a></td>
+    <td class="tk"><a href="stock.html#QCOM">QCOM</a></td>
     <td><span class="chip ">ai_datacenter · compute</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
@@ -1015,8 +922,15 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#COHR">COHR</a></td>
-    <td><span class="chip ">ai_datacenter · compute</span></td>
+    <td class="tk"><a href="stock.html#VECO">VECO</a></td>
+    <td><span class="chip ">ai_datacenter · wfe</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#NXT">NXT</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
   </tr>
@@ -1029,49 +943,7 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#POWL">POWL</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
     <td class="tk"><a href="stock.html#MKSI">MKSI</a></td>
-    <td><span class="chip ">ai_datacenter · wfe</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#PWR">PWR</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#AEP">AEP</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#ICHR">ICHR</a></td>
-    <td><span class="chip ">ai_datacenter · wfe</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#KLIC">KLIC</a></td>
-    <td><span class="chip ">ai_datacenter · wfe</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#UCTT">UCTT</a></td>
     <td><span class="chip ">ai_datacenter · wfe</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
@@ -1085,8 +957,92 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#VECO">VECO</a></td>
+    <td class="tk"><a href="stock.html#ANET">ANET</a></td>
+    <td><span class="chip ">ai_datacenter · compute</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#POWL">POWL</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#HUBB">HUBB</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#AVGO">AVGO</a></td>
+    <td><span class="chip ">ai_datacenter · compute</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#AEP">AEP</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#LITE">LITE</a></td>
+    <td><span class="chip ">ai_datacenter · compute</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#FORM">FORM</a></td>
     <td><span class="chip ">ai_datacenter · wfe</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#ENTG">ENTG</a></td>
+    <td><span class="chip ">ai_datacenter · wfe</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#LRCX">LRCX</a></td>
+    <td><span class="chip ">ai_datacenter · wfe</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#AMD">AMD</a></td>
+    <td><span class="chip ">ai_datacenter · compute</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#ETN">ETN</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#ICHR">ICHR</a></td>
+    <td><span class="chip ">ai_datacenter · wfe</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#MRVL">MRVL</a></td>
+    <td><span class="chip ">ai_datacenter · compute</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
   </tr>
@@ -1099,8 +1055,43 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#GNRC">GNRC</a></td>
+    <td class="tk"><a href="stock.html#KLAC">KLAC</a></td>
+    <td><span class="chip ">ai_datacenter · wfe</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#AMAT">AMAT</a></td>
+    <td><span class="chip ">ai_datacenter · wfe</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#NEE">NEE</a></td>
     <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#UCTT">UCTT</a></td>
+    <td><span class="chip ">ai_datacenter · wfe</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#EME">EME</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#TER">TER</a></td>
+    <td><span class="chip ">ai_datacenter · compute</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
   </tr>
@@ -1120,15 +1111,57 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#NXT">NXT</a></td>
+    <td class="tk"><a href="stock.html#D">D</a></td>
     <td><span class="chip ">ai_datacenter · power</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#D">D</a></td>
+    <td class="tk"><a href="stock.html#MPWR">MPWR</a></td>
+    <td><span class="chip ">ai_datacenter · compute</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#BWXT">BWXT</a></td>
     <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#COHU">COHU</a></td>
+    <td><span class="chip ">ai_datacenter · wfe</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#GNRC">GNRC</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#AEIS">AEIS</a></td>
+    <td><span class="chip ">ai_datacenter · wfe</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#ONTO">ONTO</a></td>
+    <td><span class="chip ">ai_datacenter · wfe</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#COHR">COHR</a></td>
+    <td><span class="chip ">ai_datacenter · compute</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
   </tr>
@@ -1141,35 +1174,7 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#EME">EME</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#NEE">NEE</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#LRCX">LRCX</a></td>
-    <td><span class="chip ">ai_datacenter · wfe</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#ENTG">ENTG</a></td>
-    <td><span class="chip ">ai_datacenter · wfe</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#AVGO">AVGO</a></td>
+    <td class="tk"><a href="stock.html#APH">APH</a></td>
     <td><span class="chip ">ai_datacenter · compute</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">rising</span><span class="l-zh">rising</span></td>
@@ -1393,20 +1398,6 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#FBIN">FBIN</a></td>
-    <td><span class="chip coin">housing · products</span></td>
-    <td><span class="num neg">-4%</span> <span class="faint"><span class="l-en">contracting</span><span class="l-zh">收缩</span></span></td>
-    <td class="faint"><span class="l-en">falling</span><span class="l-zh">falling</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#LII">LII</a></td>
-    <td><span class="chip coin">housing · products</span></td>
-    <td><span class="num neg">-4%</span> <span class="faint"><span class="l-en">contracting</span><span class="l-zh">收缩</span></span></td>
-    <td class="faint"><span class="l-en">flat</span><span class="l-zh">flat</span></td>
-  </tr>
-  
-  <tr>
     <td class="tk"><a href="stock.html#BLDR">BLDR</a></td>
     <td><span class="chip coin">housing · products</span></td>
     <td><span class="num neg">-4%</span> <span class="faint"><span class="l-en">contracting</span><span class="l-zh">收缩</span></span></td>
@@ -1418,6 +1409,20 @@
     <td><span class="chip coin">housing · products</span></td>
     <td><span class="num neg">-4%</span> <span class="faint"><span class="l-en">contracting</span><span class="l-zh">收缩</span></span></td>
     <td class="faint"><span class="l-en">falling</span><span class="l-zh">falling</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#FBIN">FBIN</a></td>
+    <td><span class="chip coin">housing · products</span></td>
+    <td><span class="num neg">-4%</span> <span class="faint"><span class="l-en">contracting</span><span class="l-zh">收缩</span></span></td>
+    <td class="faint"><span class="l-en">falling</span><span class="l-zh">falling</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#LII">LII</a></td>
+    <td><span class="chip coin">housing · products</span></td>
+    <td><span class="num neg">-4%</span> <span class="faint"><span class="l-en">contracting</span><span class="l-zh">收缩</span></span></td>
+    <td class="faint"><span class="l-en">flat</span><span class="l-zh">flat</span></td>
   </tr>
   
   <tr>
@@ -1488,6 +1493,20 @@
   <tr><th><span class="l-en">Name</span><span class="l-zh">标的</span></th><th><span class="l-en">Chain</span><span class="l-zh">链条</span></th><th><span class="l-en">Independent signal</span><span class="l-zh">独立信号</span></th><th><span class="l-en">Consensus</span><span class="l-zh">共识</span></th></tr>
   
   <tr>
+    <td class="tk"><a href="stock.html#NBIS">NBIS</a></td>
+    <td><span class="chip ">ai_datacenter · neocloud</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#HUT">HUT</a></td>
+    <td><span class="chip ">ai_datacenter · neocloud</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
+  </tr>
+  
+  <tr>
     <td class="tk"><a href="stock.html#APLD">APLD</a></td>
     <td><span class="chip ">ai_datacenter · neocloud</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
@@ -1495,22 +1514,29 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#BTDR">BTDR</a></td>
+    <td class="tk"><a href="stock.html#CORZ">CORZ</a></td>
     <td><span class="chip ">ai_datacenter · neocloud</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#CRDO">CRDO</a></td>
+    <td class="tk"><a href="stock.html#ARM">ARM</a></td>
     <td><span class="chip ">ai_datacenter · compute</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#RIOT">RIOT</a></td>
-    <td><span class="chip ">ai_datacenter · neocloud</span></td>
+    <td class="tk"><a href="stock.html#CBRS">CBRS</a></td>
+    <td><span class="chip ">ai_datacenter · compute</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#SMR">SMR</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
   </tr>
@@ -1530,41 +1556,6 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#SMR">SMR</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#NBIS">NBIS</a></td>
-    <td><span class="chip ">ai_datacenter · neocloud</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#CIFR">CIFR</a></td>
-    <td><span class="chip ">ai_datacenter · neocloud</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#NNE">NNE</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#ALAB">ALAB</a></td>
-    <td><span class="chip ">ai_datacenter · compute</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
-  </tr>
-  
-  <tr>
     <td class="tk"><a href="stock.html#IREN">IREN</a></td>
     <td><span class="chip ">ai_datacenter · neocloud</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
@@ -1579,8 +1570,36 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#ARM">ARM</a></td>
+    <td class="tk"><a href="stock.html#OKLO">OKLO</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#ALAB">ALAB</a></td>
     <td><span class="chip ">ai_datacenter · compute</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#NNE">NNE</a></td>
+    <td><span class="chip ">ai_datacenter · power</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#BTDR">BTDR</a></td>
+    <td><span class="chip ">ai_datacenter · neocloud</span></td>
+    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
+    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
+  </tr>
+  
+  <tr>
+    <td class="tk"><a href="stock.html#CIFR">CIFR</a></td>
+    <td><span class="chip ">ai_datacenter · neocloud</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
   </tr>
@@ -1593,29 +1612,15 @@
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#CORZ">CORZ</a></td>
+    <td class="tk"><a href="stock.html#RIOT">RIOT</a></td>
     <td><span class="chip ">ai_datacenter · neocloud</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
   </tr>
   
   <tr>
-    <td class="tk"><a href="stock.html#OKLO">OKLO</a></td>
-    <td><span class="chip ">ai_datacenter · power</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#CBRS">CBRS</a></td>
+    <td class="tk"><a href="stock.html#CRDO">CRDO</a></td>
     <td><span class="chip ">ai_datacenter · compute</span></td>
-    <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
-    <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
-  </tr>
-  
-  <tr>
-    <td class="tk"><a href="stock.html#HUT">HUT</a></td>
-    <td><span class="chip ">ai_datacenter · neocloud</span></td>
     <td><span class="num pos">+69%</span> <span class="faint"><span class="l-en">accelerating</span><span class="l-zh">加速</span></span></td>
     <td class="faint"><span class="l-en">none</span><span class="l-zh">none</span></td>
   </tr>
@@ -1652,5 +1657,6 @@
 <footer class="site-footer" style="margin-top:18px;color:var(--muted);font-size:12px">
   © 2026 Mastermind Inc
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

@@ -1,0 +1,126 @@
+{
+  "contract_id": "biocatalyst_launch_slo_manifest.v1",
+  "schema_version": "1.0.0",
+  "manifest_id": "biocatalyst_launch_slo_34e8a73de5007847681d98c2",
+  "state": "pre_soak_unarmed",
+  "effective_at": "2026-08-03T02:44:38Z",
+  "supersedes_manifest_id": null,
+  "supersedes_manifest_content_sha256": null,
+  "owner": "biocatalyst",
+  "source_registry_ref": "config/biocatalyst_sources.yml",
+  "source_registry_sha256": "2b05877abc1c422a0183e70e4a4952bbb53ea543181e8e3ebe3208afc42b5b2c",
+  "sources": [
+    {
+      "source_id": "clinicaltrials_gov_v2",
+      "owner": "biocatalyst",
+      "severity": "critical",
+      "activation_state": "dark_unarmed",
+      "registry_binding": {
+        "launch_critical": true,
+        "production_ingest_allowed": true,
+        "collection_target": "hourly_canary",
+        "opportunity_semantics": "one_configured_poll_window",
+        "completeness_semantics": "terminal_page_reached_and_counts_reconciled",
+        "freshness_slo_seconds": 7200,
+        "maximum_consecutive_misses": 2
+      },
+      "opportunity_rule": {
+        "rule_id": "clinicaltrials_gov_v2.hourly_canary.v1",
+        "timezone": "UTC",
+        "cadence_seconds": 3600,
+        "window_open_offset_seconds": 0,
+        "window_close_offset_seconds": 900,
+        "definition": "One configured canary poll opportunity opens at the start of every UTC hour and closes fifteen minutes later."
+      },
+      "denominator_policy": {
+        "expected_opportunity_source": "frozen_utc_schedule",
+        "include_all_scheduled_opportunities": true,
+        "planned_maintenance_must_be_declared_before_soak": true,
+        "planned_maintenance_refs": [],
+        "source_nonpublication_treatment": "retain_in_denominator_fetch_and_validate_unchanged_state",
+        "upstream_outage_treatment": "record_denominator_miss_and_upstream_unavailable_observation",
+        "undeclared_exclusions_allowed": false,
+        "post_hoc_exclusions_allowed": false
+      },
+      "success_gates": {
+        "fetch": "Every opportunity commits an immutable HTTP receipt and exact response bytes, including a verified unchanged-source observation.",
+        "parse": "Every fetched page parses with the pinned ClinicalTrials.gov API v2 parser and no swallowed record error.",
+        "contract_validation": "Every run, receipt, source snapshot, observation, projection, and coverage document validates before publication.",
+        "completeness_reconciliation": "The terminal page is reached and configured allowlist, page, record, and publication counts reconcile exactly.",
+        "publication": "A complete generation is written, read back, hash-verified, and promoted atomically; partial generations never become readable.",
+        "watermark_or_pointer": "A complete changed generation advances atomically; an unchanged source records success without fabricating pointer movement."
+      },
+      "freshness": {
+        "clock_origin": "ClinicalTrials.gov API v2 /version dataTimestamp observed by the committed source receipt",
+        "target_percentile": 0.95,
+        "maximum_seconds": 7200
+      },
+      "completeness": {
+        "reference": "Configured explicit NCT canary allowlist and reconciled terminal-page source run",
+        "minimum_ratio": 1.0,
+        "minimum_vs_prior_scope_ratio": 1.0,
+        "missing_is_zero": false
+      },
+      "error_budget": {
+        "minimum_opportunity_success_ratio": 0.995,
+        "maximum_error_budget_fraction": 0.005
+      },
+      "required_telemetry_streams": [
+        "opportunity",
+        "attempt",
+        "fetch",
+        "parse",
+        "contract_validation",
+        "completeness",
+        "publication",
+        "watermark_or_pointer",
+        "freshness",
+        "upstream_unavailable"
+      ],
+      "pass_policy": {
+        "all_stage_gates_required": true,
+        "weighted_substitution_allowed": false,
+        "critical_failures_allowed": 0
+      }
+    }
+  ],
+  "aggregate_pass_policy": {
+    "rule": "all_rows_must_pass",
+    "all_launch_critical_sources_must_pass": true,
+    "weighted_aggregate_allowed": false,
+    "omitted_source_allowed": false,
+    "unknown_source_allowed": false
+  },
+  "unconditional_beta_failures": [
+    "integrity_failure",
+    "rights_failure",
+    "privacy_failure",
+    "cross_tenant_failure"
+  ],
+  "soak": {
+    "required_duration_seconds": 1209600,
+    "window_start": null,
+    "window_end": null,
+    "telemetry_generation_ref": null,
+    "raw_telemetry_refs": [],
+    "correction_replay_evidence_refs": [],
+    "rollback_restore_evidence_refs": [],
+    "ci_validation_receipt_ref": null,
+    "source_results": [],
+    "aggregate_passed": false,
+    "scheduling_blockers": [
+      "root_sealed_retention_activation",
+      "operator_arming"
+    ]
+  },
+  "authority": {
+    "authorizes_source_activation": false,
+    "authorizes_rights_change": false,
+    "authorizes_entitlement_change": false,
+    "authorizes_model_promotion": false,
+    "authorizes_neural_web_authority": false,
+    "authorizes_prophet_behavior": false
+  },
+  "hash_scope": "canonical_payload_excluding_manifest_id_and_content_sha256",
+  "content_sha256": "34e8a73de5007847681d98c25026220458661ef2ac0eefc4d6dc1e9847fbce17"
+}

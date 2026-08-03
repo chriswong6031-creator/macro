@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_shared_plane_read_adapters.v1.schema.json",
+  "title": "BioCatalyst shared-plane read-adapter compatibility fixture v1",
+  "description": "A versioned, exact snapshot of every BioCatalyst cross-plane read-adapter slot. It freezes the ownership registry projection; it does not grant a blocked slot availability or authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "baseline_commit", "adapters"],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_shared_plane_read_adapters.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "baseline_commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "adapters": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/adapter"},
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,95}\\.v1$"}
+    }
+  },
+  "$defs": {
+    "moduleName": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$"
+    },
+    "route": {
+      "type": "string",
+      "pattern": "^/[A-Za-z0-9_{}./-]{1,255}$"
+    },
+    "availableDependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["module", "scope"],
+      "properties": {
+        "module": {"$ref": "#/$defs/moduleName"},
+        "callable": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,127}$"},
+        "output_contract": {
+          "anyOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,191}\\.v1$"}
+          ]
+        },
+        "routes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/route"}
+        },
+        "transport": {"type": "string", "minLength": 1, "maxLength": 160},
+        "scope": {"type": "string", "minLength": 1, "maxLength": 320}
+      }
+    },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_owner",
+        "implementation_state",
+        "module",
+        "callable",
+        "route_prefix",
+        "routes",
+        "input_identity",
+        "output_contracts",
+        "transport",
+        "point_in_time_scope",
+        "available_dependency",
+        "compatibility_fixture",
+        "biocatalyst_eligible",
+        "limitations",
+        "blocker"
+      ],
+      "properties": {
+        "canonical_owner": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,95}$"},
+        "implementation_state": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,127}$"},
+        "module": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/moduleName"}]},
+        "callable": {"anyOf": [{"type": "null"}, {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,127}$"}]},
+        "route_prefix": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/route"}]},
+        "routes": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/route"}},
+        "input_identity": {"type": ["string", "null"]},
+        "output_contracts": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,191}\\.v1$"}
+        },
+        "transport": {"type": ["string", "null"]},
+        "point_in_time_scope": {"type": ["string", "null"]},
+        "available_dependency": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/availableDependency"}]},
+        "compatibility_fixture": {"const": "data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json"},
+        "biocatalyst_eligible": {"type": "boolean"},
+        "limitations": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 160}},
+        "blocker": {"type": ["string", "null"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"biocatalyst_eligible": {"const": true}}, "required": ["biocatalyst_eligible"]},
+          "then": {
+            "properties": {
+              "module": {"$ref": "#/$defs/moduleName"},
+              "callable": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,127}$"},
+              "route_prefix": {"$ref": "#/$defs/route"},
+              "routes": {"type": "array", "minItems": 1},
+              "output_contracts": {"type": "array", "minItems": 1},
+              "available_dependency": {"type": "null"},
+              "blocker": {"type": "null"}
+            }
+          },
+          "else": {
+            "properties": {
+              "module": {"type": "null"},
+              "callable": {"type": "null"},
+              "route_prefix": {"type": "null"},
+              "routes": {"type": "array", "maxItems": 0},
+              "input_identity": {"type": "null"},
+              "output_contracts": {"type": "array", "maxItems": 0},
+              "transport": {"type": "null"},
+              "point_in_time_scope": {"type": "null"},
+              "available_dependency": {"$ref": "#/$defs/availableDependency"},
+              "blocker": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      ]
+    }
+  }
+}
