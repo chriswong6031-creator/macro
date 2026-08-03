@@ -50,6 +50,10 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     "edgar_8k": "sec", "edgar_13f": "sec", "edgar_trumpflow": "sec",
     "beneficial_ownership": "sec", "edgar_dilution": "sec",
     "sec_capital_structure": "sec",
+    # Must remain immediately after the filing spine inside the serial SEC host
+    # group: its bounded Company Facts queue is anchored only by verified
+    # complete-submission manifests the preceding adapter has published.
+    "sec_capital_structure_companyfacts": "sec",
     "geo_revenue": "sec",  # TXI W2: per-ticker 10-K XBRL instance fetch (data.sec.gov + www.sec.gov/Archives)
     # LHB-R8: Nasdaq Trader symbol-dir (nasdaqtrader.com) + SEC company_tickers.json;
     # both GETs are small/fast; grouped under 'sec' to keep out of the serial loop.
@@ -172,12 +176,14 @@ def all_adapters() -> dict:
         ("usaspending", "collectors.usaspending", "UsaspendingAdapter"),  # federal contract obligations + ASSISTANCE grants/loans per curated ticker -> Divergence Radar + gov_grant convergence channel
         ("usaspending_awards", "collectors.usaspending_awards", "UsaspendingAwardsAdapter"),  # keyless award/action detail + PIT snapshots -> Government Revenue Foresight
         ("usaspending_subawards", "collectors.usaspending_subawards", "UsaspendingSubawardsAdapter"),  # bounded official count + identity pages; source-only, non-additive subaward context
+        ("usaspending_idv_graph", "collectors.usaspending_idv_graph", "UsaspendingIdvGraphAdapter"),  # bounded IDV discovery + exact parent/child activity receipts; identity context only
         # Beyond-Quiver alt-data/divergence sources (keyless except grants_gov; all degrade gracefully)
         ("edgar_8k", "collectors.edgar_8k", "Edgar8KAdapter"),     # SEC 8-K material-event velocity (theme_event radar leg) + per-ticker material_8k convergence channel
         ("symbol_directory", "collectors.symbol_directory", "SymbolDirectoryAdapter"),  # LHB-R8: daily exchange symbol-directory archival (nasdaqlisted+otherlisted) + weekly CIK map -> data/symbol_directory/
         ("beneficial_ownership", "collectors.beneficial_ownership", "BeneficialOwnershipAdapter"),  # keyless SC 13D/13G sweep + filer enrichment -> per-ticker ownership-regime (engine/beneficial_ownership.py)
         ("edgar_dilution", "collectors.edgar_dilution", "EdgarDilutionAdapter"),  # S-3/S-3ASR/424B* daily-index sweep -> data/edgar/dilution_events.parquet (nwqs-c dilution context; display-only)
         ("sec_capital_structure", "collectors.sec_capital_structure", "SecCapitalStructureAdapter"),  # immutable SEC filing evidence spine; canonical capital-structure source manifests (context-only)
+        ("sec_capital_structure_companyfacts", "collectors.sec_capital_structure_companyfacts", "SecCapitalStructureCompanyFactsAdapter"),  # bounded Company Facts source evidence only, anchored by verified CS complete submissions; no share-count consumption
         ("geo_revenue", "collectors.edgar_geo_revenue", "GeoRevenueAdapter"),  # TXI W2 (PR #3431 blast channels): per-ticker revenue-by-geography from 10-K XBRL instances -> data/edgar/geo_revenue.json (display-only, bounded SEC drip)
         ("openfda", "collectors.openfda", "OpenFdaAdapter"),       # Drugs@FDA approvals/label-expansions -> fda_approval/fda_label_expansion channels (healthcare blind spot)
         ("huggingface", "collectors.huggingface", "HuggingFaceAdapter"),  # HF model-download velocity -> hf_model_momentum channel (AI adoption blind spot)
@@ -356,13 +362,14 @@ _SLOW = set(_QUIVER_KEYS) | {
     "edgar_8k", "edgar_13f", "edgar_trumpflow", "beneficial_ownership",
     "edgar_dilution",  # nwqs-c: S-3/424B daily-index sweep; nightly-only
     "sec_capital_structure",  # immutable SEC evidence + PIT discovery; nightly-only
+    "sec_capital_structure_companyfacts",  # bounded anchored SEC Company Facts source evidence; nightly-only
     "geo_revenue",  # TXI W2: per-ticker 10-K XBRL geo-revenue drip; bounded network, nightly-only
     "cot",
     "openfda", "huggingface", "grants_gov", "clinicaltrials", "finnhub_altdata",
     "finnhub_transcripts",   # altdata-W1: transcript metadata catalog (same-day; plan-gated no-op on free tier)
     "stocktwits",            # altdata-W1: public bullish/bearish ratios + watchlist_count (keyless)
     "google_trends",         # SGA-W4: pytrends weekly relative search-interest (rotating ~20/night; 'blocked' when pytrends absent)
-    "polygon_news", "github_repos", "sam_gov", "sam_gov_opportunities", "usaspending", "usaspending_awards", "usaspending_subawards", "prediction_markets",
+    "polygon_news", "github_repos", "sam_gov", "sam_gov_opportunities", "usaspending", "usaspending_awards", "usaspending_subawards", "usaspending_idv_graph", "prediction_markets",
     "lbnl_queue", "federal_register",
     "symbol_directory",  # LHB-R8: US-lane only; nightly exchange-roster archival
 }

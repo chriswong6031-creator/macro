@@ -77,6 +77,15 @@ class Adapter:
             return []
         return [p.stem for p in d.glob("*.parquet")]
 
+    def fetch_result_status(self, frames: dict[str, pd.DataFrame]) -> str | None:
+        """Optionally expose a deliberate non-failure operational outcome.
+
+        Most adapters let the runner derive ``ok``/``stale`` from their series.
+        A bounded evidence lane can instead return ``blocked`` for an explicit
+        operator dependency without throwing and poisoning its circuit breaker.
+        """
+        return None
+
     # -- shared HTTP helpers ---------------------------------------------------
     def http_get(self, url: str, retries: int = 3, backoff_base: float = 3.0,
                  timeout: int = 60, **kwargs) -> requests.Response:
@@ -235,6 +244,11 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
             age = (datetime.now(timezone.utc).date() - last.date()).days
             if age > stale_after_days:
                 status = "stale"
+        declared_status = adapter.fetch_result_status(frames)
+        if declared_status is not None:
+            if declared_status not in {"ok", "stale", "blocked"}:
+                raise ValueError(f"{adapter.name}: unsupported declared fetch status {declared_status!r}")
+            status = declared_status
         # Frozen-tail detector: a 200-OK fetch whose last observation never advances
         # (series discontinued upstream) is invisible to is_connection_error. Compare
         # each fetched series' last observation against cadence. Non-fatal; writes

@@ -347,6 +347,34 @@ _COPY_TEMPLATES: dict[tuple[str, str], tuple[str, str]] = {
 }
 
 
+def _drafts_nightly_copy(cfg: dict | None, account_id: str) -> bool:
+    """Does this desk draft nightly PERSONA copy, or is it a wire relay?
+
+    A desk earns a nightly queue by having a `copywriter.personas.<id>` block —
+    an authored voice. A desk without one is a WIRE desk: it relays in the house
+    wire voice (engine/marketing/wire_voice.py) and never editorializes (charter,
+    masterplan §4), and its volume arrives through the wire lanes, which never
+    touch content_plan.
+
+    THE PERSONA BLOCK IS THE RIGHT KEY, not `kind`. `kind: branded` covers the
+    flagship and the founder, both of which absolutely do draft. The presence of
+    an authored voice is the thing that actually differs, and it is the same fact
+    `_get_copy` needs: a persona-less desk has no template bank of its own, so
+    drafting for it can only borrow another desk's and collide with it under the
+    cross-account near-dup guard.
+
+    Fails OPEN (returns True) when the personas block is missing or unreadable —
+    a config we cannot parse must not silently mute every desk in the network.
+    """
+    try:
+        personas = ((cfg or {}).get("copywriter") or {}).get("personas") or {}
+        if not isinstance(personas, dict) or not personas:
+            return True
+        return str(account_id) in personas
+    except Exception:  # noqa: BLE001
+        return True
+
+
 def _get_copy(type_id: str, voice: str) -> tuple[str, str]:
     """Get headline/body templates for (type_id, voice), with fallback."""
     key = (type_id, voice)
@@ -503,14 +531,25 @@ SHAPES: tuple[str, ...] = ("one_liner", "two_part", "stack", "list", "caption")
 ANGLES: tuple[str, ...] = (
     "level_watch", "risk_frame", "group_read", "precedent", "process",
     "receipt_frame", "macro_read", "event_read",
+    # TrendSpider hardening PR-C. The closed eight-angle set was ENTIRELY
+    # short-horizon — every one of them framed off daily bars — while ~48% of
+    # the corpus we are matching is weekly or monthly, and their weekend share
+    # is their highest (a weekly chart needs no live tape). A desk with no
+    # long-horizon angle cannot write the post even when the fact layer hands
+    # it a 12-year record, so the two horizons the chart_director can now draw
+    # get names here: the structural read and the stage read.
+    "long_term_structure", "stage_read",
 )
 
 #: Angle preference per kind, in assignment order. The Nth account to keep a
 #: ticker on a day takes the Nth angle, so two desks on one fact never share one.
 _ANGLE_BY_KIND: dict[str, tuple[str, ...]] = {
     "signal":     ("level_watch", "risk_frame"),
-    "watchlist":  ("level_watch", "risk_frame"),
-    "chart":      ("level_watch", "precedent"),
+    # watchlist ("On Our Radar") is the long-horizon lane in the masterplan's
+    # angle map: a name is ON the radar because of where it sits structurally,
+    # not because of what it did in the last four sessions.
+    "watchlist":  ("level_watch", "stage_read", "long_term_structure"),
+    "chart":      ("level_watch", "precedent", "long_term_structure"),
     "receipt":    ("receipt_frame", "process"),
     "macro":      ("macro_read", "group_read"),
     "event":      ("event_read", "macro_read"),
@@ -898,15 +937,323 @@ def drop_degenerate_facts(
     return out, len(removed)
 
 
-def angle_for(kind: str, rank: int) -> str:
+#: Angles the WEEKEND prefers, most-preferred first. The corpus posts chart
+#: observations through the weekend — its highest chart share of the week —
+#: because a weekly or monthly chart makes no claim about a live tape. Ours had
+#: no way to express that: every angle in the closed set framed off the last few
+#: sessions, so a Saturday post either lied about a stale tape or said nothing.
+_WEEKEND_ANGLES: tuple[str, ...] = ("long_term_structure", "stage_read")
+
+#: Kinds whose weekend slots take the long-horizon angles.
+_WEEKEND_ANGLE_KINDS: frozenset[str] = frozenset({"watchlist", "chart"})
+
+
+def is_weekend(day: object) -> bool:
+    """True when *day* (YYYY-MM-DD) is a Saturday or Sunday. False if unparseable."""
+    d = _iso_date(day)
+    return bool(d and d.weekday() >= 5)
+
+
+def angle_for(kind: str, rank: int, *, today: object = None) -> str:
     """The angle for the ``rank``-th account carrying a fact (0-based).
 
     Disjoint by construction while rank < len(preferences) — and the reuse
-    budget caps the accounts per (ticker, day) at 2, which is exactly the length
+    budget caps the accounts per (ticker, day) at 2, which is at most the length
     of every row in _ANGLE_BY_KIND.
+
+    On a WEEKEND the chart-family kinds take the long-horizon angles first
+    (:data:`_WEEKEND_ANGLES`). *today* is optional so every existing caller
+    keeps its exact behaviour; only the callers that know the plan date opt in.
     """
     prefs = _ANGLE_BY_KIND.get(kind) or ("level_watch", "risk_frame")
+    if today is not None and kind in _WEEKEND_ANGLE_KINDS and is_weekend(today):
+        # Weekend order, then whatever the weekday order had that these two do
+        # not already cover — the angle set never SHRINKS on a Saturday, it is
+        # only re-ordered, so a third desk on one name still gets a distinct job.
+        prefs = _WEEKEND_ANGLES + tuple(a for a in prefs if a not in _WEEKEND_ANGLES)
     return prefs[rank % len(prefs)]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ATTENTION SUPPLY (TrendSpider hardening PR-C §3)
+# ─────────────────────────────────────────────────────────────────────────────
+# WHAT THIS FIXES. A directly-tilted `watchlist` slot used to start with
+# `ticker=""` and stay that way: `plan_account` pulls a ticker only for
+# ("signal", "chart", "receipt"), so the organic 6% watchlist allocation
+# produced market-commentary posts and the only ticker-bearing "On Our Radar"
+# posts were DEMOTED SIGNALS — 168 of 335 on one measured plan. The lane that
+# is supposed to say "here is a name we are watching" had no way to name one.
+#
+# The pools that answer that question have existed since PR-B and had no
+# consumer. The priority order below is the masterplan's, and it is an order of
+# EDITORIAL CLAIM, not of data quality: a name with a live story earns the slot
+# over a name that is merely liquid, and the long-tail quota sits last because
+# it is a floor on variety, not a source of relevance.
+_SUPPLY_ORDER: tuple[str, ...] = (
+    "hot_story", "retail_attention", "options_volume", "dollar_volume",
+    "stage2_leaders",
+)
+
+
+def _hot_story_rows(root: object, cfg: dict | None) -> list[dict]:
+    """Today's movers as supply rows. [] on any failure (fail-soft)."""
+    try:
+        from engine.marketing import movers_source as _ms
+        data = _ms.load_movers(root)
+        board = _ms.top_movers(data, tf="1D", n=8)
+    except Exception:  # noqa: BLE001
+        return []
+    rows: list[dict] = []
+    for side in ("gainers", "losers"):
+        for r in (board.get(side) or []):
+            t = str(r.get("ticker") or "").upper()
+            if not t:
+                continue
+            rows.append({
+                "ticker": t,
+                "why": f"{r.get('pct')}% on the day",
+                "asof": str(r.get("asof") or "")[:10],
+                "source": "movers",
+                "pool": "hot_story",
+            })
+    return rows
+
+
+def attention_supply(
+    root: object,
+    *,
+    cfg: dict | None = None,
+    today: str | None = None,
+    exclude: frozenset[str] | set[str] | None = None,
+    cooled: frozenset[str] | set[str] | None = None,
+    posted_recent: frozenset[str] | set[str] | None = None,
+    report: dict | None = None,
+) -> list[dict]:
+    """Ordered ticker supply for chart-family slots that have no ticker.
+
+    Reads the PR-B pools ONLY (``attention_source``), in the masterplan's
+    priority order, and returns ``{ticker, why, asof, source, pool, fresh}``
+    rows with the already-claimed, cooled and duplicate names removed.
+
+    ``fresh`` marks a name that has NOT been posted inside the long-tail window
+    — the ≥3-fresh-names-a-day quota (§0 gate 6) is measured on that flag, and
+    the fresh names are lifted to the FRONT of their own pool tier so the quota
+    is met by ordering rather than by a second pass that could starve it.
+
+    Fail-soft everywhere: an empty pool is a legitimate answer (the stage
+    backfill is a weekly artifact and genuinely fails its own freshness gate
+    most days) and yields fewer candidates, never an exception and never a
+    fabricated row.
+    """
+    try:
+        from engine.marketing import attention_source as _asrc
+    except Exception:  # noqa: BLE001
+        return []
+
+    ex = {str(t).upper() for t in (exclude or ())}
+    cool = {str(t).upper() for t in (cooled or ())}
+    recent = {str(t).upper() for t in (posted_recent or ())}
+
+    pools: dict[str, list[dict]] = {"hot_story": _hot_story_rows(root, cfg)}
+    for name, fn in (
+        ("retail_attention", _asrc.retail_attention),
+        ("options_volume", _asrc.top_by_options_volume),
+        ("dollar_volume", _asrc.top_by_dollar_volume),
+        ("stage2_leaders", _asrc.stage2_leaders),
+    ):
+        try:
+            pools[name] = [dict(r, pool=name) for r in (fn(root, as_of=today) or [])]
+        except Exception:  # noqa: BLE001
+            pools[name] = []
+
+    seen: set[str] = set()
+    out: list[dict] = []
+    for pool_name in _SUPPLY_ORDER:
+        tier: list[dict] = []
+        for row in pools.get(pool_name) or []:
+            t = str(row.get("ticker") or "").upper()
+            if not t or t in seen or t in ex or t in cool:
+                continue
+            seen.add(t)
+            tier.append({
+                "ticker": t,
+                "why": str(row.get("why") or ""),
+                "asof": str(row.get("asof") or "")[:10],
+                "source": str(row.get("source") or ""),
+                "pool": pool_name,
+                "fresh": t not in recent,
+            })
+        # Fresh names first WITHIN the tier: variety is bought by ordering, not
+        # by displacing a more relevant pool with a less relevant one.
+        tier.sort(key=lambda r: (not r["fresh"],))
+        out.extend(tier)
+
+    if report is not None:
+        report["attention_supply"] = {
+            "total": len(out),
+            "fresh": sum(1 for r in out if r["fresh"]),
+            "by_pool": {p: sum(1 for r in out if r["pool"] == p)
+                        for p in _SUPPLY_ORDER},
+        }
+    return out
+
+
+def long_tail_shortfall(
+    root: object,
+    supplied: list[dict],
+    used_tickers: set[str] | frozenset[str],
+) -> tuple[int, int, int]:
+    """(fresh_used, quota, fresh_available) for the long-tail quota.
+
+    §0 gate 6: the nightly plan must introduce at least ``min_fresh_per_day``
+    tickers that have not been posted inside the window. This computes the three
+    numbers a warning needs to be READABLE — how many fresh names reached the
+    plan, how many were required, and how many the pools even offered. Without
+    the third, "shortfall" cannot distinguish a selector that narrowed from a
+    supply side that had nothing to give.
+    """
+    try:
+        from engine.marketing import attention_source as _asrc
+        quota = int((_asrc.long_tail_quota(root) or {}).get("min_fresh_per_day", 3))
+    except Exception:  # noqa: BLE001
+        quota = 3
+    used = {str(t).upper() for t in used_tickers}
+    fresh_rows = [r for r in (supplied or []) if r.get("fresh")]
+    fresh_used = len({r["ticker"] for r in fresh_rows if r["ticker"] in used})
+    return fresh_used, quota, len(fresh_rows)
+
+
+def warn_long_tail(fresh_used: int, quota: int, fresh_available: int) -> bool:
+    """Print ONE ``::warning`` when the long-tail quota is missed. True if fired.
+
+    BARE PRINT, LINE START, FLUSHED. Never a logger: every builder in this repo
+    logs through a prefixing formatter, so ``log.warning("::warning ...")``
+    emits ``WARNING ::warning`` and Actions silently drops the annotation
+    (CLAUDE.md five-strike law, tests/test_gh_annotation_line_start.py). The
+    flush matters because stdout is block-buffered when piped in CI.
+    """
+    if fresh_used >= quota:
+        return False
+    if fresh_available <= 0:
+        msg = (f"long-tail quota missed: {fresh_used}/{quota} fresh tickers in "
+               f"tonight's plan and the candidate pools offered NONE — the "
+               f"supply side is the fault, not the selector")
+    else:
+        msg = (f"long-tail quota missed: {fresh_used}/{quota} fresh tickers in "
+               f"tonight's plan while the pools offered {fresh_available} — the "
+               f"selector narrowed, cooldowns or per-ticker caps ate them")
+    print(f"::warning title=marketing-long-tail-quota::{msg}", flush=True)
+    return True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHART DIRECTOR SEAM (TrendSpider hardening PR-C §1)
+# ─────────────────────────────────────────────────────────────────────────────
+# ONE spec builder for every chart-family lane. Before this, four lanes in this
+# file each carried their own literal `render_chart_v2(...)` block — daily, 90
+# bars, ("volume","macd"), no annotations — and the drift between them was
+# invisible because no two were ever read side by side. The renderer grew a
+# whole annotation grammar in PR-A that none of them could reach.
+#
+# The seam is ADDITIVE and fail-soft on purpose: `_director_chart` returns None
+# whenever the director cannot build a spec (no bars, no fact that survives the
+# claim-window law, an exception anywhere), and each lane then runs exactly the
+# code it ran before. A chart-family post never loses its picture to this
+# change — the ticker-post-carries-a-chart law is not negotiable — it only
+# gains a better one when the director has something honest to draw.
+
+#: Angles whose horizon is structural rather than tape-level. These pin the
+#: director to WEEKLY regardless of what the daily fact layer found.
+_LONG_HORIZON_ANGLES: frozenset[str] = frozenset({
+    "long_term_structure", "stage_read", "precedent",
+})
+
+
+def director_timeframe_hint(angle: str, today: object = None) -> str | None:
+    """WEEKLY / MONTHLY / None for the director, from the angle and the day.
+
+    None means "let the fact decide", which is the right default: a level-touch
+    fact computed on daily bars wants a daily chart, and forcing a horizon on it
+    would put a claim measured in sessions on an axis measured in years.
+    """
+    a = str(angle or "").strip().lower()
+    if a in _LONG_HORIZON_ANGLES:
+        return "WEEKLY"
+    if is_weekend(today):
+        # A weekend post makes no claim about a live tape (§1.2: their weekend
+        # chart share is their highest, and a weekly chart is why).
+        return "WEEKLY"
+    return None
+
+
+def _director_chart(
+    ticker: str,
+    *,
+    root: object,
+    angle: str,
+    variant: str = "tape",
+    marker_date: str | None = None,
+    today: object = None,
+    cta: bool = True,
+    facts_cache: dict | None = None,
+) -> tuple[str, object] | None:
+    """``(svg, spec)`` from the chart director, or None. Never raises.
+
+    *facts_cache* is a caller-owned ``{TICKER: packet}`` dict so a name charted
+    for three desks computes its facts once. The PR-B pools underneath are
+    memoised per process as well (`chart_facts._POOL_CACHE`); this second layer
+    saves the parquet reads and the resampling, which is the expensive half.
+    """
+    tkr = str(ticker or "").upper()
+    if not tkr:
+        return None
+    try:
+        from engine.marketing import chart_director as _cd  # noqa: PLC0415
+        hint = director_timeframe_hint(angle, today)
+        packet = None
+        if facts_cache is not None:
+            packet = facts_cache.get((tkr, hint))
+        if packet is None:
+            packet = _cd.build_facts(tkr, root=root, timeframe_hint=hint, as_of=today)
+            if facts_cache is not None:
+                facts_cache[(tkr, hint)] = packet
+        spec = _cd.build_spec(
+            tkr, root=root, facts=packet.get("facts") or [], angle=angle,
+            timeframe_hint=hint, variant=variant, marker_date=marker_date,
+            cta=cta,
+        )
+        if spec is None:
+            return None
+        svg = _cd.render(spec)
+        return (svg, spec) if svg else None
+    except Exception:  # noqa: BLE001 — a director failure costs the annotation,
+        return None                                          # never the chart.
+
+
+def _followup_origination(asset_id: str, ticker: str, spec: object,
+                          today: str) -> dict:
+    """An origination row for the follow-up ledger (PR-C §5). Never raises.
+
+    Written for EVERY chart post that drew a level, before anyone knows whether
+    the level will be reached — that is the honest denominator the mechanic
+    depends on. A pool built the other way round (only the calls that moved)
+    manufactures a track record by deleting its own losers.
+    """
+    from engine.marketing.chart_followups import origination_row  # noqa: PLC0415
+
+    kw = getattr(spec, "kwargs", {}) or {}
+    closes = kw.get("c") or []
+    last = float(closes[-1]) if closes else None
+    return origination_row(
+        asset_id=str(asset_id),
+        ticker=str(ticker).upper(),
+        drawn_level=float(getattr(spec, "drawn_level", 0.0) or 0.0),
+        origin_date=str(today)[:10],
+        timeframe=str(getattr(spec, "timeframe", "DAILY")),
+        claim_kind=str(getattr(spec, "claim_kind", "")),
+        fact_id=str(getattr(spec, "fact_id", "")),
+        last_price=last,
+    )
 
 
 def _slot_day(slot: object) -> str:
@@ -1307,6 +1654,48 @@ def _alarm_on_a_planless_night(
               f"the writer lost {n_dropped} of {considered} posts "
               f"({share * 100:.0f}%; {detail}). {total_posts} survived. "
               f"Most likely: {remedy}.", flush=True)
+
+
+#: Share of ALLOCATED rungs the cross-day cooldown may swallow before the night
+#: is reported as starved rather than picky. A quarter of the ladder going
+#: unfilled means the postable-signal pool is smaller than the plan it is being
+#: asked to fill — that is a SUPPLY fact the operator needs, not a bug in the
+#: cooldown, and the remedy is more event-driven supply (press wire, hot tape),
+#: never a shorter cooldown.
+_COOLDOWN_DROP_ALARM_SHARE = 0.25
+
+
+def _alarm_on_cooldown_starvation(sel_report: dict) -> None:
+    """Say out loud when the cooldown emptied a material share of the ladder.
+
+    W4c. `dropped_cooldown` is the largest volume sink in the allocator and it
+    lived only in a caller-supplied dict — countable in principle, invisible in
+    practice, which is precisely how the movers desk shipped nothing for twelve
+    nights while every counter it owned read zero. The count is now persisted
+    (plan `summary` + `content.selection`, by account), and a material share
+    also gets an annotation, because a number nobody reads is a number nobody
+    reads.
+
+    BARE `print`, LINE-START, `flush=True` — never through `log`: this module's
+    logger prefixes the level, GitHub drops any annotation that does not start
+    the line, and stdout is block-buffered when piped in Actions.
+    """
+    offered = int(sel_report.get("slots_offered") or 0)
+    dropped = int(sel_report.get("dropped_cooldown") or 0)
+    if offered <= 0 or dropped <= 0:
+        return
+    share = dropped / offered
+    if share < _COOLDOWN_DROP_ALARM_SHARE:
+        return
+    by_acct = sel_report.get("dropped_cooldown_by_account") or {}
+    worst = sorted(by_acct.items(), key=lambda kv: (-int(kv[1]), str(kv[0])))[:3]
+    detail = ", ".join(f"{a}:{n}" for a, n in worst) or "no per-account detail"
+    print(f"::warning title=marketing-plan-cooldown-starved::"
+          f"the cross-day cooldown emptied {dropped} of {offered} planned rungs "
+          f"({share * 100:.0f}%) — every eligible name for those kinds is inside "
+          f"its cooldown. Worst desks: {detail}. Supply-honest volume means the "
+          f"rung stays empty, so the remedy is MORE event-driven supply (press "
+          f"wire top-K, hot tape), never a shorter cooldown.", flush=True)
 
 
 def _chart_quality_census(featured_charts: list[dict]) -> dict:
@@ -1972,14 +2361,33 @@ def _largest_remainder(weights: dict[str, float], total_slots: int) -> dict[str,
     for i in range(remainder):
         floors[fracs[i % len(fracs)]] += 1
 
-    # Ensure every type gets at least 1 if we have enough slots
-    for t in type_ids:
-        if floors[t] == 0 and sum(floors.values()) < total_slots:
-            # Give 1 slot, take from the type with the most
-            max_t = max((tt for tt in type_ids if floors[tt] > 1), default=None, key=lambda tt: floors[tt])
-            if max_t is not None:
-                floors[max_t] -= 1
-                floors[t] = 1
+    # Every type with weight > 0 gets at least one slot when the ladder is long
+    # enough to hold one of each.
+    #
+    # THIS USED TO BE DEAD CODE. The remainder pass above always lands
+    # `sum(floors) == total_slots`, so the `< total_slots` condition it was
+    # guarded by could never be true: the guarantee this docstring makes was
+    # carried entirely by the allocation being 196 slots wide, where every
+    # weight ≥ 0.03 floors to 1 on its own. Collapsing the ladder to ONE day
+    # (W4a) made a 20-rung allocation the normal case, and a 0.05-weight kind
+    # rounds to zero there — a whole content family silently leaving the plan.
+    #
+    # ZERO-WEIGHT TYPES ARE NOT RESURRECTED. 0.00 means OFF, not "rare":
+    # education sits at 0.00 by operator ruling (2026-07-30, see _DEFAULT_TILT),
+    # and handing it a slot here would reopen a family the operator closed.
+    positive = [t for t in type_ids if weights.get(t, 0) > 0]
+    if len(positive) <= total_slots:
+        for t in positive:
+            if floors[t] > 0:
+                continue
+            # Take from the fattest donor, ties broken by name so the allocation
+            # stays deterministic (re-planning a night must reproduce it).
+            donor = max((tt for tt in positive if floors[tt] > 1),
+                        default=None, key=lambda tt: (floors[tt], tt))
+            if donor is None:
+                break
+            floors[donor] -= 1
+            floors[t] = 1
 
     return floors
 
@@ -2011,6 +2419,191 @@ def _slot_labels(n_days: int, per_day: int) -> list[str]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Ladder SHAPE — how many forward days, and how many rungs on each (W4a)
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Forward ladder days the planner books. ONE, because nothing reads a previous
+#: plan: `content_plan` rebuilds the whole ladder every night from
+#: `plan_account`, and `outbox.emit_from_content_plan` takes only `D1-` slots
+#: (outbox.py:2199 — its own comment says D2..D7 "are supposed to be skipped").
+#: The 7-day ladder therefore threw away 6/7 of everything it produced BY
+#: CONSTRUCTION, and it did not throw it away evenly: the cross-day cooldown
+#: pool below is applied to the EMITTED day only, so an empty cooled pool
+#: dropped a D1 rung while the never-published days kept filling from the
+#: uncooled pool. Measured 2026-08-02: 1,176 items planned, 168 on D1.
+#: (masterplan §8.1 V1 / §8.2 W4a)
+_DEFAULT_FORWARD_DAYS = 1
+
+#: `per_day` is sized to the account's own ramp cap times this factor, not to a
+#: flat 28. The headroom exists because the gates BELOW the allocator (fact-reuse
+#: budget, filler budget, the writer) reject some of what is planned — measured
+#: 2026-08-02, ~65% of planned D1 rungs survive the reuse budget — so a desk
+#: capped at 10 posts/day needs ~20 rungs offered to fill its day. Above 2.0 the
+#: extra rungs are mostly eaten by the reuse budget rather than reaching a post
+#: (measured: headroom 2.0 → 128 items planned / 81 D1 survivors; 2.8 → 168 /
+#: 89), which is the "generating 28 to publish 10" waste in miniature.
+_DEFAULT_PER_DAY_HEADROOM = 2.0
+
+#: STRUCTURAL floor on the rung count, independent of any cap: the allocator
+#: cannot express a nine-kind tilt in fewer than nine rungs, and below it whole
+#: content families leave the plan silently (`_largest_remainder`'s ≥1
+#: guarantee needs one rung per positive-weight kind).
+#:
+#: It exists because the in-code sentinel default is 2/day — a LAUNCH FLOOR, not
+#: a working cadence — so any caller without a `sentinel:` block (a test, an
+#: admin preview, a fixture config) would otherwise be handed a 4-rung plan
+#: carrying four of the nine kinds. Against the shipped config this floor never
+#: binds: the tiers are 10/14/20, so `cap × headroom` is 20 or 28 everywhere.
+_MIN_LADDER_RUNGS = len(_TYPE_IDS)
+
+
+def forward_days(cfg: dict | None) -> int:
+    """``content_plan.forward_days`` — ladder days to book. Floor 1, default 1.
+
+    Read defensively so this works with OR without the config key present: a
+    missing/unparseable/absurd value takes the code default rather than
+    reintroducing the 7-day ladder by accident.
+    """
+    raw = ((cfg or {}).get("content_plan") or {}).get(
+        "forward_days", _DEFAULT_FORWARD_DAYS)
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        return _DEFAULT_FORWARD_DAYS
+    return n if n >= 1 else _DEFAULT_FORWARD_DAYS
+
+
+def per_day_headroom(cfg: dict | None) -> float:
+    """``content_plan.per_day_headroom`` — ramp-cap multiplier. Floor 1.0."""
+    raw = ((cfg or {}).get("content_plan") or {}).get(
+        "per_day_headroom", _DEFAULT_PER_DAY_HEADROOM)
+    try:
+        h = float(raw)
+    except (TypeError, ValueError):
+        return _DEFAULT_PER_DAY_HEADROOM
+    return h if h >= 1.0 else _DEFAULT_PER_DAY_HEADROOM
+
+
+def ladder_shape_for(
+    cfg: dict | None,
+    account_id: str,
+    as_of: str,
+    *,
+    root: Path | str | None = None,
+    ramp: dict | None = None,
+) -> dict[str, int]:
+    """``{"n_days", "per_day"}`` for ONE account's slice of the ladder.
+
+    ``per_day`` = ceil(that account's D08 ramp cap × ``per_day_headroom``),
+    floored at `_MIN_LADDER_RUNGS` and clamped to the 28-rung ladder. An
+    UNLIMITED cap (-1, which is what the base sentinel block carries) means the
+    ladder length itself — there is no cap to size against, so nothing is
+    trimmed.
+
+    Pass ``ramp`` (a ``sentinel.resolve_ramp`` result) when calling this in a
+    loop; otherwise every account re-resolves the tier table. Fail-soft: any
+    resolution error falls back to the full ladder, which is the pre-W4a
+    behaviour and never silently shrinks a desk's day.
+
+    NOTE ON SPACING. Trimming ``per_day`` packs the EARLIEST rungs (see
+    `_slot_labels`), and that costs no coverage: the Sentinel's
+    `cadence_cap_daily` scan is first-come-first-kept in queue order, so the
+    rungs that survive to post were already rungs 1..cap. A per_day at or above
+    the cap therefore leaves the posting window byte-identical.
+    """
+    n_days = forward_days(cfg)
+    ladder = len(_LADDER_SLOTS)
+    try:
+        from engine.marketing.outbox import effective_cap_for  # noqa: PLC0415
+        cap = effective_cap_for(cfg or {}, str(account_id), str(as_of),
+                                root=root, ramp=ramp)
+    except Exception as exc:  # noqa: BLE001 — sizing must never break a plan
+        import logging  # noqa: PLC0415
+        logging.getLogger(__name__).warning(
+            "content_studio.ladder_shape_for(%r): %s — full ladder", account_id, exc)
+        return {"n_days": n_days, "per_day": ladder}
+    if cap is None or cap < 0:
+        return {"n_days": n_days, "per_day": ladder}
+    per_day = min(ladder, max(_MIN_LADDER_RUNGS,
+                              math.ceil(cap * per_day_headroom(cfg))))
+    return {"n_days": n_days, "per_day": per_day}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ramp FORMAT permissions — which kinds this account's tier may ship (W4b)
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: content kind -> the ramp-tier boolean that decides whether the account may
+#: ship that FORMAT AT ALL. A kind listed here gets ZERO allocation on a tier
+#: that forbids it, instead of an allocation that dies at the gate.
+#:
+#: WHY THIS IS THE WHOLE LIST (audited 2026-08-02 against sentinel.gate_plan and
+#: sentinel._base_caps; do not add a knob here without a gate that kills the
+#: format):
+#:   * `theme_list_allowed` → `ramp_theme_list` (sentinel.py:1383) quarantines
+#:     the format outright on a cold tier. Kelly's ONE D1 at-bat on 2026-08-02
+#:     was a theme_list on a `weeks_1_2` tier — spent on a banned format.
+#:   * `links_allowed` → gates a LINK, not a kind. `links.attach_links` writes
+#:     `item["link"]` as a FIELD, sentinel's link rule (sentinel.py:1347) reads
+#:     headline+body only, and `emit_from_content_plan` never copies the field
+#:     onto the outbox item (verified: 0 of the ledger's items carry `link`).
+#:     No planned kind is unshippable because links are off.
+#:   * `max_cashtags_per_post` → theme_list is EXEMPT from the breadth count by
+#:     construction (sentinel.py:1365: the format requires ≥4 member cashtags,
+#:     so counting them would quarantine the format itself), and no other kind
+#:     emits more than one cashtag. Breadth bans no kind.
+#:   * `max_posts_/max_media_posts_/max_same_cashtag_per_account_per_day`,
+#:     `min_minutes_between_posts`, `max_replies_/max_new_follows_` → VOLUME
+#:     caps, not format permissions. `ladder_shape_for` above sizes against the
+#:     first one; the rest bound cadence, never a kind.
+_RAMP_KIND_PERMISSION: dict[str, str] = {"theme_list": "theme_list_allowed"}
+
+
+def ramp_banned_kinds(caps: dict | None) -> frozenset[str]:
+    """Content kinds this resolved cap set forbids OUTRIGHT.
+
+    Strict read: only an explicit ``False`` bans. A missing key is "no opinion"
+    (a pre-ramp config), never a ban — inventing a ban from an absent key would
+    silently delete a format network-wide.
+    """
+    if not isinstance(caps, dict) or not caps:
+        return frozenset()
+    return frozenset(
+        kind for kind, flag in _RAMP_KIND_PERMISSION.items()
+        if caps.get(flag) is False
+    )
+
+
+def ramp_banned_kinds_for(
+    cfg: dict | None,
+    account_id: str,
+    as_of: str,
+    *,
+    root: Path | str | None = None,
+    ramp: dict | None = None,
+) -> frozenset[str]:
+    """`ramp_banned_kinds` for ONE account, resolving its tier if needed.
+
+    Fail-soft to "nothing banned" — the pre-W4b behaviour. Failing CLOSED here
+    would delete a whole format from every desk on any resolution hiccup, which
+    is a bigger, quieter change than the one this guard exists to make.
+    """
+    try:
+        if ramp is None:
+            from engine.marketing.sentinel import resolve_ramp  # noqa: PLC0415
+            ramp = resolve_ramp(cfg or {}, as_of, root=root, announce=False)
+        entry = (ramp.get("accounts") or {}).get(str(account_id))
+        caps = entry.get("caps") if entry else (ramp.get("fallback") or {})
+    except Exception as exc:  # noqa: BLE001 — never break a plan on a tier read
+        import logging  # noqa: PLC0415
+        logging.getLogger(__name__).warning(
+            "content_studio.ramp_banned_kinds_for(%r): %s — nothing banned",
+            account_id, exc)
+        return frozenset()
+    return ramp_banned_kinds(caps)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ContentItem
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -2037,6 +2630,13 @@ class ContentItem:
     # engagement table) joins on them.
     shape: str | None = None
     angle: str | None = None
+    # TrendSpider PR-C: which attention pool put this ticker on the desk, and
+    # the pool row's own `why` sentence. Provenance, not copy — the writer is
+    # handed facts, and this is the receipt an operator reads when asking "why
+    # is this name in tonight's plan at all". Survives strip_scaffolding for the
+    # same reason `angle` does: the selection audit joins on it.
+    supply_pool: str | None = None
+    supply_why: str | None = None
 
     def as_dict(self) -> dict:
         d: dict = {
@@ -2060,6 +2660,10 @@ class ContentItem:
             d["shape"] = self.shape
         if self.angle is not None:
             d["angle"] = self.angle
+        if self.supply_pool is not None:
+            d["supply_pool"] = self.supply_pool
+        if self.supply_why is not None:
+            d["supply_why"] = self.supply_why
         return d
 
 
@@ -2071,20 +2675,31 @@ def plan_account(
     account: dict,
     plans: list[dict],
     *,
-    n_days: int = 7,
+    n_days: int = _DEFAULT_FORWARD_DAYS,
     per_day: int = 28,   # 28-slot 30-min Pacific ladder (was 19 = 45-min)
     seed: int = 0,
     tilt: dict[str, float] | None = None,
     drop_types: set[str] | None = None,
+    banned_kinds: frozenset[str] | set[str] | None = None,
     cooled_watch: frozenset[str] | set[str] | None = None,
     cooled_signal: frozenset[str] | set[str] | None = None,
     emit_day_prefix: str = "D1",
     report: dict | None = None,
+    ticker_supply: list[dict] | None = None,
+    chart_post_counts: dict[str, int] | None = None,
+    max_chart_posts_per_ticker: int = 3,
 ) -> list[ContentItem]:
     """Generate a deterministic content queue for one account.
 
     account: {id, voice, kind, ...}
     plans:   list of Prophet plan dicts
+    n_days:  forward ladder days. ONE by default (W4a) — see `forward_days` and
+                `_DEFAULT_FORWARD_DAYS`: nothing reads a previous plan, and the
+                outbox takes only `D1-` slots, so every extra day is generated
+                and discarded. The caller threads `content_plan.forward_days`.
+    per_day: rungs booked on each day. `ladder_shape_for` sizes this to the
+                account's own ramp cap × headroom; a caller that passes a flat
+                number gets exactly that.
     tilt:    per-type weights (all types, sum ~1.0); falls back to _DEFAULT_TILT
     seed:    additional integer offset (account-hash provides per-account variation)
     drop_types: type ids to remove from the tilt BEFORE allocation (weight → 0, no
@@ -2093,20 +2708,51 @@ def plan_account(
                 (publish_time_content.generate_read_item) owns that post instead,
                 so leaving it nightly too would double-post. Applied AFTER the
                 _DEFAULT_TILT merge so it wins even for the default (no-tilt) path.
+    banned_kinds: type ids this account's D08 ramp tier forbids OUTRIGHT
+                (`ramp_banned_kinds_for`). Removed from the tilt exactly like
+                `drop_types`, and for the same reason stated the other way round:
+                an allocation to a banned format is not a post, it is a slot the
+                Sentinel will quarantine (`ramp_theme_list`) after the writer has
+                been paid for it. Kelly's ONE D1 at-bat on 2026-08-02 was a
+                `theme_list` on a `weeks_1_2` tier — the account has never posted
+                once, ever, and the planner spent her only rung on a format she
+                is banned from using (masterplan §8.1 V2). The weight is
+                RENORMALISED into the kinds she may ship, so the ban costs the
+                desk no volume — it moves the at-bat, it does not delete it.
     cooled_watch / cooled_signal: tickers inside the cross-day cooldown (see
                 `cooled_tickers`) for coverage kinds and for signal kinds
                 respectively — the LKFN/GPI/CBOE fix (masterplan §5.1). A slot
                 whose type needs a ticker and finds NO eligible plan is DROPPED,
                 not filled: supply-honest volume means an empty rung stays empty
                 (§5.5), and a ticker-less "signal" post renders empty tokens.
+                THE EMPTY POOL NEVER FALLS BACK to the uncooled pool: doing so
+                would publish exactly the repetition the cooldown exists to stop.
     emit_day_prefix: the ONLY day the cooldown is applied to. Only `D1` slots are
                 ever emitted (outbox.emit_from_content_plan defaults to D1 and the
-                governor takes the default), so cooling D2-D7 would delete posts
-                nothing was going to send and would hollow out the 7-day plan the
-                admin reviews for no gain.
-    report:     optional mutable counter sink (`dropped_cooldown`) so the plan
-                report can print the funnel without this function changing its
-                return type.
+                governor takes the default), so cooling a forward day would delete
+                posts nothing was going to send. At the default `n_days=1` EVERY
+                slot is an emit slot, so the cooldown applies uniformly and the
+                asymmetry that used to decimate D1 alone cannot arise.
+    report:     optional mutable counter sink so the plan report can print the
+                funnel without this function changing its return type. Keys:
+                `dropped_cooldown` (+ `dropped_cooldown_by_account`),
+                `slots_offered`, `ramp_banned_kinds`. content_plan persists all
+                of them into the artifact — a drop counter that dies in a local
+                dict is the defect class that hid 12 nights of lost posts.
+    ticker_supply: ordered attention-pool rows (`attention_supply`) used to fill
+                `watchlist`/`chart` slots that the Prophet pool cannot. This is
+                the TrendSpider PR-C selection fix: a directly-tilted watchlist
+                slot used to start with `ticker=""` and stay that way, so the
+                "On Our Radar" lane could only ever carry demoted signals.
+                Absent/empty → the historic behaviour, exactly.
+    chart_post_counts: mutable {TICKER: count} SHARED ACROSS ACCOUNTS by the
+                caller, so `max_chart_posts_per_ticker` (§0 gate 6, default 3)
+                is a per-DAY cap on the network rather than a per-desk one. A
+                per-desk cap would let six desks post the same name nine times
+                between them and each of them be "within budget", which is the
+                hobby-horse failure the cap exists to stop.
+    max_chart_posts_per_ticker: that cap. Config surface is
+                `supply.per_ticker_day.max_chart_posts`.
     """
     account_id = account.get("id", "unknown")
     voice = account.get("voice", "authoritative desk")
@@ -2120,6 +2766,36 @@ def plan_account(
     if drop_types:
         for k in drop_types:
             effective_tilt.pop(k, None)
+
+    # ── W4b: a format this tier forbids gets ZERO allocation ─────────────────
+    # Applied AFTER drop_types and BEFORE the normalisation below, so the banned
+    # kind's weight is redistributed across the kinds this desk may actually
+    # ship rather than being burned.
+    _banned = {str(k) for k in (banned_kinds or ())}
+    _banned_hit = sorted(k for k in _banned if k in effective_tilt)
+    if _banned_hit:
+        _kept = {k: v for k, v in effective_tilt.items() if k not in _banned}
+        if _kept:
+            _weight = round(sum(effective_tilt[k] for k in _banned_hit), 4)
+            effective_tilt = _kept
+            if report is not None:
+                report.setdefault("ramp_banned_kinds", {})[account_id] = {
+                    "kinds": _banned_hit,
+                    "weight_reallocated": _weight,
+                }
+        else:
+            # A tier that permits NOTHING is a config defect, not a plan of zero
+            # posts. Refuse the ban, keep the tilt, and say so out loud — a
+            # silently empty desk is the failure mode this whole lane exists to
+            # end.
+            print(f"::warning title=marketing-ramp-bans-every-kind::"
+                  f"{account_id}: the resolved ramp tier forbids EVERY content "
+                  f"kind in this desk's tilt ({', '.join(_banned_hit)}). The ban "
+                  f"is IGNORED for this plan — fix sentinel.ramp in "
+                  f"config/marketing.yml.", flush=True)
+            if report is not None:
+                report["ramp_ban_refused"] = report.get("ramp_ban_refused", 0) + 1
+
     # Normalize
     total_w = sum(effective_tilt.values()) or 1.0
     effective_tilt = {k: v / total_w for k, v in effective_tilt.items()}
@@ -2159,28 +2835,87 @@ def plan_account(
     signal_pool = [p for p in plan_pool
                    if str(p.get("asset", "")).upper() not in _cooled_s]
 
+    # Attention supply — the pool a ticker-less chart-family slot draws from.
+    # Walked as a CURSOR, never re-sorted: `attention_supply` already ordered it
+    # by editorial claim (hot story first, long-tail-fresh first within each
+    # tier), and re-ranking here would quietly undo the quota.
+    _supply = [dict(r) for r in (ticker_supply or []) if r.get("ticker")]
+    _supply_used: set[str] = set()
+    _chart_counts = chart_post_counts if chart_post_counts is not None else {}
+    _max_chart = max(1, int(max_chart_posts_per_ticker or 3))
+
+    def _draw_supply() -> dict | None:
+        """The next eligible supply row, or None. Applies the per-ticker cap."""
+        for row in _supply:
+            t = str(row.get("ticker") or "").upper()
+            if not t or t in _supply_used or t in _cooled_w:
+                continue
+            if _chart_counts.get(t, 0) >= _max_chart:
+                if report is not None:
+                    report["dropped_chart_cap"] = report.get("dropped_chart_cap", 0) + 1
+                continue
+            _supply_used.add(t)
+            _chart_counts[t] = _chart_counts.get(t, 0) + 1
+            if report is not None:
+                report["supply_used"] = report.get("supply_used", 0) + 1
+                _by_pool = report.setdefault("supply_used_by_pool", {})
+                _pool = str(row.get("pool") or "unknown")
+                _by_pool[_pool] = _by_pool.get(_pool, 0) + 1
+            return row
+        return None
+
     items: list[ContentItem] = []
     plan_cursor = ah % max(len(plan_pool), 1)
     counter = 0
+
+    # The denominator the drop counters are a share OF. Without it a
+    # `dropped_cooldown` of 40 is unreadable — 40 out of 60 is an outage, 40 out
+    # of 1,176 is a quiet night.
+    if report is not None:
+        report["slots_offered"] = report.get("slots_offered", 0) + min(
+            len(seq), len(slots))
 
     for slot_idx, (type_id, slot) in enumerate(zip(seq, slots)):
         # Pick a plan for signal/chart posts
         plan = None
         ticker = ""
         cashtag = ""
+        supply_row: dict | None = None
         if type_id in ("signal", "chart", "receipt") and plan_pool:
             pool = plan_pool
             if slot.startswith(f"{emit_day_prefix}-"):
                 pool = signal_pool if type_id == "signal" else watch_pool
             if not pool:
                 # Nothing fresh to say about any name tonight for this kind.
+                # NO FALLBACK TO `plan_pool`: an empty cooled pool means every
+                # eligible name is inside its cross-day cooldown, and reaching
+                # past it would publish the repetition the cooldown exists to
+                # stop. The rung stays empty (supply-honest volume, §5.5) and
+                # the drop is COUNTED — by account, because "the network lost
+                # 40 rungs" and "kelly lost all 20 of hers" are different
+                # nights and the second one is invisible in a network total.
                 if report is not None:
                     report["dropped_cooldown"] = report.get("dropped_cooldown", 0) + 1
+                    _by_acct = report.setdefault("dropped_cooldown_by_account", {})
+                    _by_acct[account_id] = _by_acct.get(account_id, 0) + 1
                 continue
             plan_idx = (plan_cursor + slot_idx * (ah % 7 + 1)) % len(pool)
             plan = pool[plan_idx]
             ticker = plan.get("asset", "")
             cashtag = f"${ticker}" if ticker else ""
+
+        # ── attention supply for the ticker-less chart-family slots ──────────
+        # `watchlist` never had a ticker source of its own; `chart` has one only
+        # while the Prophet pool is non-empty. Both draw here when they came out
+        # of the allocator empty. Only on the EMITTED day: a forward-day slot is
+        # generated and discarded, and spending supply (and a per-ticker-day
+        # slot) on it would starve the day that actually posts.
+        if (not ticker and _supply and type_id in ("watchlist", "chart")
+                and slot.startswith(f"{emit_day_prefix}-")):
+            supply_row = _draw_supply()
+            if supply_row is not None:
+                ticker = str(supply_row["ticker"])
+                cashtag = f"${ticker}"
 
         headline_tpl, body_tpl = _get_copy(type_id, voice)
         headline = _render_copy(headline_tpl, plan, account_id)
@@ -2199,6 +2934,9 @@ def plan_account(
             chart_id=None,  # assigned later by content_plan()
             slot=slot,
             status="drafted",
+            supply_pool=(str(supply_row["pool"]) if supply_row else None),
+            supply_why=(str(supply_row.get("why") or "") or None
+                        if supply_row else None),
         ))
         counter += 1
 
@@ -2305,7 +3043,7 @@ def _attach_chart_media(
     THE POSTED IMAGE IS THE PREVIEWED IMAGE (2026-07-26 incident fix). The PNG is
     a raster of `fc["svg"]` — the exact artwork the Content Studio preview and
     the outbox artifact show, footer marketing bar (mastermind-x.com + "Start
-    free 14-day trial") included. Before this, the publish path rendered a
+    try Pro free for 7 days") included. Before this, the publish path rendered a
     SEPARATE hand-drawn PIL lookalike of the older v1 line chart, so the account
     posted a bare line chart with no URL and no CTA while the mockup promised the
     full candlestick card. Two renderers = guaranteed drift; there is now one.
@@ -2701,6 +3439,67 @@ def content_plan(
         [p for p in _supply_pool
          if str(p.get("asset", "")).upper() not in _cooled_watch])
 
+    # ── ATTENTION SUPPLY (TrendSpider PR-C §3) ───────────────────────────────
+    # The candidate pool a ticker-less `watchlist`/`chart` slot draws from. Built
+    # ONCE for the whole plan (six desks re-reading six parquet trees is six
+    # times the I/O for one answer) and walked per account, with the per-ticker
+    # chart cap shared across every desk — see `plan_account`'s docstring for
+    # why a per-desk cap is not a cap at all.
+    #
+    # `posted_recent` is the long-tail window: a name the network showed a
+    # reader inside `not_posted_within_days` is not a fresh name, whatever the
+    # cooldown says (the cooldown is 3 sessions, the quota window is 30 days,
+    # and they are answering different questions).
+    try:
+        from engine.marketing.attention_source import (  # noqa: PLC0415
+            long_tail_quota as _lt_quota,
+            max_chart_posts_per_ticker_day as _max_chart_day,
+        )
+        _lt_cfg = _lt_quota(root) or {}
+        _lt_window = int(_lt_cfg.get("not_posted_within_days", 30))
+        _max_chart_per_ticker = int(_max_chart_day(root))
+    except Exception:  # noqa: BLE001
+        _lt_window, _max_chart_per_ticker = 30, 3
+    _today_d = _iso_date(today)
+    _posted_recent = {
+        str(t).upper() for t, day in (_exposure or {}).items()
+        if _today_d and (_d := _iso_date(day)) and (_today_d - _d).days <= _lt_window
+    }
+    _claimed_plan_tickers = frozenset(
+        str(p.get("asset") or "").upper() for p in _supply_pool if p.get("asset"))
+    try:
+        _attention_supply = attention_supply(
+            root, cfg=cfg, today=today,
+            exclude=_claimed_plan_tickers,
+            cooled=_cooled_watch,
+            posted_recent=_posted_recent,
+            report=_sel_report,
+        )
+    except Exception:  # noqa: BLE001 — supply is additive; never break a plan
+        _attention_supply = []
+    # Shared across accounts so §0 gate 6's per-ticker/day cap is a NETWORK cap.
+    _chart_post_counts: dict[str, int] = {}
+
+    # ── LADDER SHAPE + RAMP FORMAT PERMISSIONS (W4a/W4b) ─────────────────────
+    # Resolve the D08 ramp table ONCE for the whole plan: both the per-account
+    # rung count (`ladder_shape_for`) and the per-account banned formats
+    # (`ramp_banned_kinds_for`) read it, and re-resolving per account would
+    # re-read the override file 13 times and re-emit its annotations.
+    # Fail-soft: an unresolvable ramp leaves _ramp None, which sizes every desk
+    # to the full ladder and bans nothing — the pre-W4 behaviour.
+    _ramp: dict | None = None
+    try:
+        from engine.marketing.sentinel import resolve_ramp as _resolve_ramp
+        _ramp = _resolve_ramp(cfg or {}, today, root=root, announce=False)
+    except Exception as exc:  # noqa: BLE001 — a tier read must never break a plan
+        import logging  # noqa: PLC0415
+        logging.getLogger(__name__).warning(
+            "content_studio: ramp resolve failed (%s) — full ladder, no format bans",
+            exc)
+    _sel_report["forward_days"] = forward_days(cfg)
+    _sel_report["per_day_headroom"] = per_day_headroom(cfg)
+    _sel_report["ladder_shape"] = {}
+
     # Collect per-account items
     all_items: list[ContentItem] = []
     account_rows: list[dict] = []
@@ -2737,17 +3536,64 @@ def content_plan(
             })
             continue
 
+        # A WIRE DESK DRAFTS NOTHING HERE (W4f, 2026-08-02). A desk with no
+        # `copywriter.personas` block has no authored voice by design — it relays
+        # in the house wire voice (engine/marketing/wire_voice.py), and the
+        # charter is explicit that a wire account RELAYS AND NEVER EDITORIALIZES
+        # (masterplan §1, §4 safety rails). Its volume comes from the wire lanes,
+        # which bypass content_plan entirely: hot tape (~18 items/day on the
+        # 07-30/07-31 tape) and the `wire_routing.classes` it owns.
+        #
+        # WHY THIS IS A REAL GATE AND NOT TIDINESS. `_get_copy` is keyed by
+        # (type, voice) and FALLS BACK to the "authoritative desk" bank on an
+        # unknown voice, so a persona-less desk cannot draft nightly copy in any
+        # voice of its own — it can only wear another desk's. Arming
+        # mastermind_news (voice "fast, reactive", founder's key) would have had
+        # it drafting FOUNDER's deterministic templates: near-identical bodies
+        # that the cross-account near-dup guard quarantines on whichever desk it
+        # reaches second. That is precisely how meagan shipped 0 posts and sophia
+        # 1 on 2026-07-28 (tests/test_marketing_chart_coverage.py
+        # ::test_every_enabled_desk_has_its_own_template_bank), and it would have
+        # armed the news desk straight into the silence this wave exists to end.
+        #
+        # Renaming its `voice` would NOT fix it: an unrecognised string falls back
+        # to flagship's bank, so the collision merely becomes invisible to a guard
+        # that only compares voice strings. The desk is listed with its tilt (the
+        # admin still shows the intended mix) and an empty nightly queue.
+        if not _drafts_nightly_copy(cfg, acct_id):
+            account_rows.append({
+                "id": acct_id,
+                "name": acct_cfg.get("beat", acct_id),
+                "kind": kind,
+                "voice": voice,
+                "tilt": eff_tilt,
+                "mix_observed": {},
+                "queue": [],
+                "status": "wire",
+            })
+            continue
+
+        # ONE day of rungs, sized to THIS desk's ramp cap (W4a), drawn only from
+        # the formats THIS desk's tier permits (W4b).
+        _shape = ladder_shape_for(cfg, acct_id, today, root=root, ramp=_ramp)
+        _banned = ramp_banned_kinds_for(cfg, acct_id, today, root=root, ramp=_ramp)
+        _sel_report["ladder_shape"][acct_id] = dict(_shape)
+
         items = plan_account(
             account=acct_cfg,
             plans=plans,
-            n_days=7,
-            per_day=len(_LADDER_SLOTS),
+            n_days=_shape["n_days"],
+            per_day=_shape["per_day"],
             seed=0,
             tilt=tilt_cfg if tilt_cfg else None,
             drop_types=drop_types,
+            banned_kinds=_banned,
             cooled_watch=_cooled_watch,
             cooled_signal=_cooled_signal,
             report=_sel_report,
+            ticker_supply=_attention_supply,
+            chart_post_counts=_chart_post_counts,
+            max_chart_posts_per_ticker=_max_chart_per_ticker,
         )
         all_items.extend(items)
 
@@ -2823,6 +3669,14 @@ def content_plan(
     featured_charts: list[dict] = []
     chart_id_counter = 1
 
+    # Director fact packets, keyed (TICKER, timeframe_hint) — one name charted
+    # for three desks computes its facts once. See `_director_chart`.
+    _director_facts: dict[tuple[str, object], dict] = {}
+    # Origination rows for the follow-up ledger (PR-C §5). Collected here and
+    # written ONCE at the end, nightly-only, so a plan preview never advances a
+    # forward ledger (CLAUDE.md: nightly is the sole advancer).
+    _origination_rows: list[dict] = []
+
     if closes_loader is not None and plans:
         # Render cache keyed by (account, ticker, variant). PER-ACCOUNT is not an
         # optimisation detail — sentinel.gate_plan quarantines any second account
@@ -2860,7 +3714,23 @@ def content_plan(
                     None,
                 )
                 if plan_match is None:
-                    continue
+                    # A SUPPLY-SOURCED ITEM HAS NO PROPHET PLAN BY CONSTRUCTION
+                    # (TrendSpider PR-C §3). This gate is defence-in-depth
+                    # against charting a stale or invalidated SIGNAL, and that
+                    # reasoning is entirely about items whose ticker came out of
+                    # the plan pool. A `watchlist` name drawn from the attention
+                    # pools makes no entry claim, has no signal to invalidate,
+                    # and renders TAPE.
+                    #
+                    # Skipping it here is not a missing decoration: a
+                    # ticker-bearing post with no chart_id DEFERS FOREVER at
+                    # publish under the ticker-post-carries-a-chart law, so the
+                    # first cut of the selection fix produced watchlist posts
+                    # that could never ship (caught by
+                    # tests/test_marketing_chart_coverage.py
+                    # ::test_every_ticker_bearing_type_can_carry_a_chart).
+                    if item_type == "signal" or not item_dict.get("supply_pool"):
+                        continue
 
                 closes_result = closes_loader(ticker)
                 if closes_result is None:
@@ -2893,7 +3763,7 @@ def content_plan(
                 # from an item that was still typed `signal`, and the post that
                 # eventually shipped was an uncharted watchlist. Downgrade the
                 # variant here; never `continue`.
-                if variant == "signal":
+                if variant == "signal" and plan_match is not None:
                     try:
                         from engine.marketing.copywriter import verify_signal_live as _vsl
                         _ok_live, _ = _vsl(plan_match, closes_result, today=today)
@@ -2901,6 +3771,11 @@ def content_plan(
                         _ok_live = True  # fail-open only if the gate itself is broken
                     if not _ok_live:
                         variant = "tape"
+                elif plan_match is None:
+                    # No plan, no entry claim, no marker. A supply-sourced item
+                    # is TAPE by construction and can never reach the signal
+                    # variant — `item_type == "signal"` was refused above.
+                    variant = "tape"
 
                 # Reuse before the cap: a second post on an already-rendered
                 # ticker costs nothing and must never be starved by the budget.
@@ -2916,7 +3791,8 @@ def content_plan(
                 # Neutral marker_source tokens only (no indicator vocabulary).
                 marker_source = "latest"
                 marker_index = len(closes) - 1
-                signal_date = str(plan_match.get("_signal_date", ""))[:10]
+                signal_date = str(
+                    (plan_match or {}).get("_signal_date", ""))[:10]
                 if signal_date and signal_date in dates:
                     marker_index = dates.index(signal_date)
                     marker_source = "signal_date"
@@ -2937,9 +3813,29 @@ def content_plan(
                 cashtag = f"${ticker}"
                 chart_id = f"chart-{chart_id_counter:03d}"
 
-                # ── v2 chart: attempt OHLCV load for candlestick render ──────
+                # ── the CHART DIRECTOR, first (TrendSpider PR-C §1) ──────────
+                # One spec builder, the annotation grammar, and the claim-window
+                # law. Falls through to the legacy block below on None, so this
+                # lane can only ever gain a picture, never lose one.
                 svg: str | None = None
+                _dspec = None
                 if _ohlcv_root:
+                    _dres = _director_chart(
+                        ticker, root=_ohlcv_root,
+                        angle=str(item_dict.get("angle") or angle_for(
+                            item_type, 0, today=today)),
+                        variant=variant,
+                        marker_date=(signal_date or None),
+                        today=today, cta=_card_cta,
+                        facts_cache=_director_facts,
+                    )
+                    if _dres is not None:
+                        svg, _dspec = _dres
+                        item_dict["_chart_inframe"] = list(_dspec.in_frame_numbers)
+                        item_dict["_chart_spec"] = _dspec.as_meta()
+
+                # ── v2 chart: attempt OHLCV load for candlestick render ──────
+                if svg is None and _ohlcv_root:
                     # Windowed load: a warm-up lead-in so SMA50/MACD span the whole
                     # visible window (paneless volume + tall MACD; see load_ohlcv_windowed).
                     _windowed = load_ohlcv_windowed(ticker, _ohlcv_root)
@@ -3089,6 +3985,15 @@ def content_plan(
                     "headline": headline,
                     "body": body,
                 }
+                if _dspec is not None:
+                    # The director's receipt travels WITH the card: which claim
+                    # it drew, over which axis, restating which numbers. A
+                    # postmortem that has to re-derive "what window was this
+                    # asserted over" from the SVG has already lost.
+                    _fc["director"] = _dspec.as_meta()
+                    if _dspec.drawn_level:
+                        _origination_rows.append(_followup_origination(
+                            _fc["id"], ticker, _dspec, today))
                 # PNG variant for X (gated by publish.media_enabled; SVG can't post).
                 # With defer_media the raster is postponed until after the Sentinel
                 # gate so only cards on posts that SURVIVE cost a Chrome launch —
@@ -3763,9 +4668,23 @@ def content_plan(
                         continue
                     chart_id = f"chart-{chart_id_counter:03d}"
                     svg: str | None = None
+                    _mv_spec = None
+                    # The director first, exactly as on the Prophet lane. A
+                    # mover card keeps its "latest" marker semantics: the item's
+                    # claim is "this moved today", so the marked bar is today's.
+                    _mv_dres = _director_chart(
+                        _mv_ticker, root=_ohlcv_root_mv,
+                        angle=str(_mv_item.get("angle") or angle_for(
+                            "mover", 0, today=today)),
+                        variant="signal",
+                        marker_date=(_mv_dates[-1] if _mv_dates else None),
+                        today=today, cta=_card_cta, facts_cache=_director_facts,
+                    )
+                    if _mv_dres is not None:
+                        svg, _mv_spec = _mv_dres
                     _windowed = load_ohlcv_windowed(_mv_ticker, _ohlcv_root_mv)
                     ohlcv, _warmup = _windowed if _windowed else (None, 0)
-                    if ohlcv is not None:
+                    if svg is None and ohlcv is not None:
                         od, oo, oh, ol, oc, ov = ohlcv
                         svg = render_chart_v2(
                             ticker=_mv_ticker,
@@ -3810,6 +4729,12 @@ def content_plan(
                         "body": _mv_item["body"],
                         "source": "mover",
                     }
+                    if _mv_spec is not None:
+                        _mv_fc["director"] = _mv_spec.as_meta()
+                        _mv_item["_chart_inframe"] = list(_mv_spec.in_frame_numbers)
+                        if _mv_spec.drawn_level:
+                            _origination_rows.append(_followup_origination(
+                                chart_id, _mv_ticker, _mv_spec, today))
                     _attach_chart_media(
                         _mv_fc, closes=_mv_cls, dates=_mv_dates,
                         marker_index=len(_mv_cls) - 1, as_of=today, root=root, cfg=cfg,
@@ -4074,6 +4999,23 @@ def content_plan(
                 _d, _c = _cl
                 if len(_c) < 10:
                     return None
+                # THE DIRECTOR, still TAPE-ONLY. `variant="tape"` is what keeps
+                # every one of the guarantees above intact: build_spec passes
+                # marker_index/highlight_index/pct_from_index as None for any
+                # variant but "signal", so a disclosure post gains the
+                # annotation grammar and gains NO entry claim. The v1 BUY-label
+                # fallback stays banned here — a None from the director means
+                # this lane still tries its own v2 render, then gives up.
+                _dres = _director_chart(
+                    _tkr, root=str(_filing_root), angle="process",
+                    variant="tape", today=today, cta=_card_cta,
+                    facts_cache=_director_facts,
+                )
+                if _dres is not None:
+                    _dsvg, _dsp = _dres
+                    _kw = _dsp.kwargs
+                    return (_dsvg, list(_kw.get("dates") or []),
+                            list(_kw.get("c") or []))
                 from engine.marketing.chart_render import (  # noqa: PLC0415
                     load_ohlcv_windowed, render_chart_v2,
                 )
@@ -4615,6 +5557,34 @@ def content_plan(
                             facts_data = compute_facts(ticker, _od, _oo, _oh, _ol, _oc, _ov)
                     except Exception:  # noqa: BLE001
                         pass
+                    # ── the DIRECTOR's facts, merged in (TrendSpider PR-C §2) ─
+                    # The weekly/monthly superlatives, the window-scoped touch
+                    # counts and the attention/stage context the chart is
+                    # actually DRAWN from. Merging them here is what makes the
+                    # caption and the picture the same object: the fact the
+                    # director chose is in the writer's packet, and its numbers
+                    # are in the whitelist that licenses the sentence.
+                    #
+                    # The packets are already computed for the chart lane above
+                    # and cached, so this costs a dict lookup on the common path.
+                    try:
+                        from engine.marketing.chart_facts import (  # noqa: PLC0415
+                            merge_packets as _merge_tf,
+                        )
+                        _dhint = director_timeframe_hint(
+                            str(item_dict.get("angle") or ""), today)
+                        _dpacket = _director_facts.get((str(ticker).upper(), _dhint))
+                        if _dpacket is None:
+                            from engine.marketing.chart_director import (  # noqa: PLC0415
+                                build_facts as _dbuild,
+                            )
+                            _dpacket = _dbuild(ticker, root=_ohlcv_root_cw,
+                                               timeframe_hint=_dhint, as_of=today)
+                            _director_facts[(str(ticker).upper(), _dhint)] = _dpacket
+                        if _dpacket and _dpacket.get("facts"):
+                            facts_data = _merge_tf(facts_data or {}, _dpacket)
+                    except Exception:  # noqa: BLE001
+                        pass
                 elif not ticker:
                     # Non-ticker post: attach market/regime/breadth facts by type
                     try:
@@ -4830,6 +5800,39 @@ def content_plan(
                     _accept = bool(new_body)
                 else:
                     _accept = bool(new_headline and new_body)
+                # ── IN-FRAME RESTATEMENT GATE (§0 gate 5) ────────────────────
+                # "A number may appear in the caption only if the chart restates
+                # it in-frame." A screenshot outlives its thread, and a caption
+                # whose number exists nowhere on the picture becomes an unsourced
+                # claim the moment it is re-shared — the exact corpus failure the
+                # reference pack documents.
+                #
+                # VALIDATION-SIDE, not prompt hope, and scoped tightly: it fires
+                # only on items the DIRECTOR charted (`_chart_inframe` present),
+                # so a lane with no spec is untouched. The director puts every
+                # level it draws into that list, so a compliant post passes by
+                # construction; a post reaching for a number the chart never drew
+                # is DROPPED and counted, the same way a validate-stage failure is.
+                _inframe = item_dict.get("_chart_inframe")
+                if _accept and _inframe is not None:
+                    try:
+                        from engine.marketing.chart_director import (  # noqa: PLC0415
+                            caption_number_violations as _cnv,
+                        )
+                        _nf = _cnv(f"{new_headline}\n{new_body}", _inframe)
+                    except Exception:  # noqa: BLE001
+                        _nf = []
+                    if _nf:
+                        _accept = False
+                        _copy_dropped["validate"] = _copy_dropped.get("validate", 0) + 1
+                        for _r in _nf:
+                            _copy_drop_reasons["chart_number_not_in_frame"] = (
+                                _copy_drop_reasons.get("chart_number_not_in_frame", 0) + 1)
+                        item_dict["_copy_violations"] = list(_nf)
+                        if _llm_required and str(item_dict.get("type") or "") in PLANNED_KINDS:
+                            _drop_ids.add(str(item_dict.get("id")))
+                            item_dict["_copy_mode"] = "dropped"
+                            item_dict["_copy_drop_stage"] = "validate"
                 if _accept:
                     item_dict["headline"] = new_headline
                     item_dict["body"] = new_body
@@ -5005,6 +6008,43 @@ def content_plan(
     except Exception:  # noqa: BLE001
         pass
 
+    # ── LONG-TAIL QUOTA + FOLLOW-UP LEDGER (TrendSpider PR-C §3, §5) ─────────
+    # Measured on the SURVIVING queues, not on what the allocator offered: a
+    # quota checked before the near-dup guard, the cadence cap and the writer's
+    # drops is a quota checked against posts that may never exist. `used` is
+    # every chart-family ticker still standing in a D1 slot.
+    _chart_family_used = {
+        str(_it.get("ticker") or "").upper()
+        for _row in account_rows for _it in (_row.get("queue") or [])
+        if _it.get("ticker") and str(_it.get("type") or "") in _CHARTABLE_TYPES
+        and str(_it.get("slot") or "").startswith("D1-")
+    }
+    _lt_used, _lt_quota_n, _lt_avail = long_tail_shortfall(
+        root, _attention_supply, _chart_family_used)
+    _lt_warned = warn_long_tail(_lt_used, _lt_quota_n, _lt_avail)
+    _sel_report["long_tail"] = {
+        "fresh_used": _lt_used,
+        "quota": _lt_quota_n,
+        "fresh_available": _lt_avail,
+        "warned": _lt_warned,
+    }
+
+    # The follow-up mechanic's DATA half — origination rows plus tonight's
+    # candidate queue. SPEC AND DATA ONLY: no publisher change, no scheduler
+    # change (the cadence session owns that lane, masterplan §5 backlog).
+    # Nightly-only, gated on the same switch the shape ledger uses, because
+    # nightly is the sole advancer of forward ledgers.
+    _followups: dict = {}
+    if write_shape_ledger:
+        try:
+            from engine.marketing.chart_followups import run_nightly as _fu_nightly
+            _followups = _fu_nightly(root or ".", today=today,
+                                     originations=_origination_rows)
+        except Exception:  # noqa: BLE001
+            _followups = {}
+    else:
+        _followups = {"originations_pending": len(_origination_rows)}
+
     # Distinctness check
     dist = distinctness(all_items)
 
@@ -5013,6 +6053,7 @@ def content_plan(
     n_charts = len(featured_charts)
     _alarm_on_a_planless_night(total_posts, _copy_dropped, n_charts, _sel_report,
                                _copy_drop_reasons)
+    _alarm_on_cooldown_starvation(_sel_report)
     n_plans = len(plans)
     n_with_charts = len(set(fc["ticker"] for fc in featured_charts))
 
@@ -5041,6 +6082,20 @@ def content_plan(
             "signal_posts": signal_posts,
             "charts": n_charts,
             "accounts": len(account_rows),
+            # THE PLANNER'S OWN FUNNEL, at the top of the artifact (W4c).
+            # `dropped_cooldown` is the largest volume sink in the allocator and
+            # it used to exist only inside a caller-supplied dict — the same
+            # defect class as the mover bug that hid 12 nights of lost posts.
+            # `slots_offered` is its denominator; without it the count cannot be
+            # read as healthy or broken. `forward_days` records the ladder shape
+            # this plan was built at, so a future postmortem can tell a 1-day
+            # plan from a 7-day one without re-deriving it from slot labels.
+            "forward_days": _sel_report.get("forward_days", forward_days(cfg)),
+            "slots_offered": _sel_report.get("slots_offered", 0),
+            "dropped_cooldown": _sel_report.get("dropped_cooldown", 0),
+            "dropped_cooldown_by_account": dict(
+                _sel_report.get("dropped_cooldown_by_account", {})),
+            "ramp_banned_kinds": dict(_sel_report.get("ramp_banned_kinds", {})),
         },
         "content": {
             "movers": _movers_summary,
@@ -5113,6 +6168,17 @@ def content_plan(
                 "cooled_signal_tickers": _sel_report.get("cooled_signal_tickers", 0),
                 "cooldown_overrides": _sel_report.get("cooldown_overrides", 0),
                 "dropped_cooldown": _sel_report.get("dropped_cooldown", 0),
+                # BY ACCOUNT (W4c): a network total of 40 hides "kelly lost
+                # every rung she had", which is exactly the shape of the night
+                # this lane was opened to explain.
+                "dropped_cooldown_by_account": dict(
+                    _sel_report.get("dropped_cooldown_by_account", {})),
+                "slots_offered": _sel_report.get("slots_offered", 0),
+                "forward_days": _sel_report.get("forward_days", 0),
+                "per_day_headroom": _sel_report.get("per_day_headroom", 0),
+                "ladder_shape": dict(_sel_report.get("ladder_shape", {})),
+                "ramp_banned_kinds": dict(_sel_report.get("ramp_banned_kinds", {})),
+                "ramp_ban_refused": _sel_report.get("ramp_ban_refused", 0),
                 "dropped_ticker_budget": _sel_report.get("dropped_ticker_budget", 0),
                 "dropped_signal_budget": _sel_report.get("dropped_signal_budget", 0),
                 "degenerate_stats_dropped": _degenerate_dropped,
@@ -5122,6 +6188,17 @@ def content_plan(
                 # from "the lane died", and two live lanes can then stay dark for
                 # weeks behind a green nightly.
                 "filing_lanes": _sel_report.get("filing_lanes", {}),
+                # TrendSpider PR-C: where tonight's chart-family tickers came
+                # from, and whether the long-tail quota was met. A census that
+                # only ever prints post counts cannot tell "the pools were
+                # empty" from "the selector narrowed" — and those are different
+                # nights with different fixes.
+                "attention_supply": _sel_report.get("attention_supply", {}),
+                "supply_used": _sel_report.get("supply_used", 0),
+                "supply_used_by_pool": dict(
+                    _sel_report.get("supply_used_by_pool", {})),
+                "dropped_chart_cap": _sel_report.get("dropped_chart_cap", 0),
+                "long_tail": _sel_report.get("long_tail", {}),
                 "note": (
                     f"{_sel_report.get('cooled_tickers', 0)} ticker(s) inside the "
                     f"cross-day cooldown, {_sel_report.get('cooldown_overrides', 0)} "
@@ -5133,6 +6210,10 @@ def content_plan(
                 ),
             },
             "links": _links_summary,
+            # PR-C §5 — the follow-up mechanic's census. Data only: this records
+            # what was written to the ledger and the candidate queue; nothing
+            # here posts, schedules or changes cadence.
+            "followups": _followups,
         },
     }
     return artifact

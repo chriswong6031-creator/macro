@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_companyfacts_current_pointer.schema.json",
+  "title": "Capital Structure Company Facts current pointer",
+  "description": "Tiny atomically replaced selector for one authenticated immutable Company Facts receipt and generation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "pointer_id", "receipt_id", "receipt_path", "receipt_sha256", "receipt_byte_length", "generation_id", "published_at"],
+  "properties": {
+    "schema": {"const": "capital_structure.companyfacts_current_pointer/v1"},
+    "pointer_id": {"type": "string", "pattern": "^pointer:cs-companyfacts:[a-f0-9]{64}$"},
+    "receipt_id": {"type": "string", "pattern": "^receipt:cs-companyfacts:[a-f0-9]{64}$"},
+    "receipt_path": {"type": "string", "pattern": "^receipts/[a-f0-9]{64}\\.json$"},
+    "receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "receipt_byte_length": {"type": "integer", "minimum": 1},
+    "generation_id": {"type": "string", "pattern": "^generation:cs-companyfacts:[a-f0-9]{64}$"},
+    "published_at": {"type": "string", "format": "date-time"}
+  }
+}

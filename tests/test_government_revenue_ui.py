@@ -13,6 +13,8 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = (ROOT / "templates" / "government_revenue.html.j2").read_text(encoding="utf-8")
+BRIEFCASE = (ROOT / "templates" / "government-revenue-briefcase.js").read_text(encoding="utf-8")
+BRIEFCASE_UI = (ROOT / "templates" / "government-revenue-briefcase-ui.js").read_text(encoding="utf-8")
 SITE_PATH = ROOT / "site" / "government_revenue.html"
 SITE = SITE_PATH.read_text(encoding="utf-8")
 WORKSPACE_PATH = ROOT / "site" / "government-revenue-data" / "workspace.json"
@@ -110,6 +112,8 @@ def test_delta_first_three_pane_contract_and_modes_are_explicit() -> None:
     assert 'data-mode="awards"' in TEMPLATE
     assert 'data-mode="opportunities"' in TEMPLATE
     assert 'data-mode="recompetes"' in TEMPLATE
+    assert 'data-mode="budget"' in TEMPLATE
+    assert 'id="countBudget"' in TEMPLATE
     assert "state.mode='companies'" in TEMPLATE
     assert "payload.opportunity_intelligence" not in TEMPLATE  # JSON is accessed as DATA.
     assert "DATA.opportunity_intelligence" in TEMPLATE
@@ -119,6 +123,11 @@ def test_delta_first_three_pane_contract_and_modes_are_explicit() -> None:
     assert "WORKSPACE_EVENTS.map" in TEMPLATE
     assert "workspaceEvent:e" in TEMPLATE
     assert "governed display order" in TEMPLATE
+    assert "Budget & programs" in TEMPLATE
+    assert "createGovernmentRevenueBudget" in (ROOT / "templates" / "government-revenue-dossiers.js").read_text(encoding="utf-8")
+    assert "Funding-stage firewall" in (ROOT / "templates" / "government-revenue-dossiers.js").read_text(encoding="utf-8")
+    assert "Request evidence is upstream—not funded revenue" in (ROOT / "templates" / "government-revenue-dossiers.js").read_text(encoding="utf-8")
+    assert "No budget source observation timestamp is available." in TEMPLATE
 
 
 def test_truth_layers_and_investor_inspector_do_not_overclaim() -> None:
@@ -208,6 +217,38 @@ def test_keyboard_url_mobile_and_zero_data_paths_are_first_class() -> None:
         "No rows were invented",
     ):
         assert marker in TEMPLATE
+
+
+def test_research_briefcase_is_local_auditable_and_workspace_gated() -> None:
+    implementation = TEMPLATE + BRIEFCASE + BRIEFCASE_UI
+    for marker in (
+        'data-sync src="government-revenue-briefcase.js"',
+        'data-sync src="government-revenue-briefcase-ui.js"',
+        'id="researchBriefcase"',
+        'id="savedViewSelect"',
+        'id="toggleLocalAlert"',
+        'id="localInbox"',
+        'id="exportViewJson"',
+        'id="exportViewCsv"',
+        "currentFilterState",
+        "briefcaseWorkspaceReady",
+        "briefcaseController.reconcile",
+        "complete:true,bundle_matched:true",
+        "Alerts are checked only when you open or refresh this page",
+        "first complete-workspace check establishes a baseline",
+        "Award-change alert baseline withheld",
+        "Auditable JSON view exported",
+        "Auditable CSV view exported",
+    ):
+        assert marker in implementation
+
+    for forbidden in (
+        "background delivery",
+        "email alert",
+        "push notification",
+        "cross-device sync",
+    ):
+        assert forbidden not in implementation.lower()
 
 
 def test_generated_page_contains_the_flagship_markers() -> None:

@@ -585,22 +585,16 @@ class TestBuild:
         if len(non_null) >= 2:
             assert non_null == sorted(non_null, reverse=True)
 
-    def test_board_a_capped_at_25(self, tmp_path):
-        """Board A must have at most 25 rows regardless of universe size."""
-        # Build 30 tickers
-        tickers = [f"T{i:02d}" for i in range(30)]
-        for t in tickers:
-            _make_summary_parquet(tmp_path, t, n_sessions=3)
-        site_root = _make_site_dir(tmp_path)
-        data_root = tmp_path / "data"
-        tpl_root = _make_tpl_dir(self._repo)
-        result = build(data_root=data_root, site_root=site_root, tpl_root=tpl_root)
-        assert len(result.get("board_a", [])) <= 25
-        # board_a_total must reflect universe count (30 in this case)
-        assert result.get("board_a_total", 0) == 30
+    def test_board_a_emits_every_qualifying_row(self, tmp_path):
+        """OIP W1.6-A (ONE_DOOR_RULING_AND_SPEC §2.4) removed `_BOARD_CAP = 25`.
 
-    def test_board_b_capped_at_25(self, tmp_path):
-        """Board B must have at most 25 rows regardless of universe size."""
+        The former pin asserted board A held AT MOST 25 rows while its own
+        `board_a_total` said 30 — i.e. it pinned a five-row silent truncation.
+        The Options workspace's Leaders mode now renders the top 12 with a
+        "Show all N" expander over this SAME array, so a cap here would hide
+        rows the reader was told they could open.  The totals field is retained
+        and must now EQUAL the array's own length: one number, no drift.
+        """
         tickers = [f"T{i:02d}" for i in range(30)]
         for t in tickers:
             _make_summary_parquet(tmp_path, t, n_sessions=3)
@@ -608,7 +602,44 @@ class TestBuild:
         data_root = tmp_path / "data"
         tpl_root = _make_tpl_dir(self._repo)
         result = build(data_root=data_root, site_root=site_root, tpl_root=tpl_root)
-        assert len(result.get("board_b", [])) <= 25
+        assert len(result.get("board_a", [])) == 30, "every qualifying board-A row must ship"
+        assert result.get("board_a_total", 0) == 30
+        assert len(result["board_a"]) == result["board_a_total"], \
+            "the declared total and the emitted array must be the same number"
+
+    def test_board_totals_always_equal_their_own_arrays(self, tmp_path):
+        """The invariant the uncapped builder now guarantees, on BOTH boards.
+
+        Board B is empty under this fixture (the synthetic summaries produce no
+        washout-flip admissions), so this half of the pin is vacuous for it on
+        purpose — board A's 30-of-30 above and the source guard below carry the
+        no-truncation proof.  What this adds is the consistency law: whatever
+        each board holds, its declared total says the same number, so no reader
+        of the payload can be told about rows that were never shipped.
+
+        board_b_total counts every board-B row, including those that fail
+        B5_flow_inflect: the surfaces that render this board apply that
+        admission filter themselves (#3496), so the total may legitimately
+        exceed the RENDERED row count — but never len(board_b).
+        """
+        tickers = [f"T{i:02d}" for i in range(30)]
+        for t in tickers:
+            _make_summary_parquet(tmp_path, t, n_sessions=3)
+        site_root = _make_site_dir(tmp_path)
+        data_root = tmp_path / "data"
+        tpl_root = _make_tpl_dir(self._repo)
+        result = build(data_root=data_root, site_root=site_root, tpl_root=tpl_root)
+        assert len(result["board_a"]) == result["board_a_total"]
+        assert len(result["board_b"]) == result["board_b_total"]
+
+    def test_no_board_cap_constant_survives(self):
+        """A cap is the kind of thing that comes back as a one-line 'perf fix'.
+        Grep the builder itself, so a reintroduced slice reds here rather than
+        silently truncating a board the workspace promises to show in full."""
+        src = (self._repo / "scripts" / "build_flow_leaders.py").read_text(encoding="utf-8")
+        assert "_BOARD_CAP" not in src
+        assert "board_a_rows[:" not in src
+        assert "board_b_rows[:" not in src
 
     def test_json_serializeable(self, tmp_path):
         """leaders.json must be valid JSON with no NaN/inf values."""

@@ -11,7 +11,7 @@ tabulate>=0.9
 openpyxl>=3.1
 xlrd>=2.0.1       # collectors/eia.py — legacy .xls from EIA dnav (Weekly Petroleum Status)
 markdown>=3.5
-jsonschema>=4.20       # scripts/validate_signals.py — signal→chart §7 contract gate (research/signal_engine/SCHEMA.json). Was only pulled in transitively by `mcp`; pinned here so the daily build's validate step has it in CI.
+jsonschema==4.26.0     # Closed authority validators seal this exact executable release; do not admit ambient format/plugin drift.
 Pillow>=10.0      # scripts/digitize_swissblock.py — panel color-state extraction
 anthropic>=0.40        # LLM layer (catalyst_tone/master_brain) — DeepSeek via Anthropic-compat endpoint; layer is default-off, so this is only exercised when enabled
 scikit-learn>=1.4      # engine/meta_label.py ONLY — GBT (HistGradientBoostingClassifier) meta-label leaf; default-off, exercised by scripts/meta_label_btc.py

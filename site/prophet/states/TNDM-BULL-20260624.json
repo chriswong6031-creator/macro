@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "TNDM-BULL-20260624",
-  "asof": "2026-08-01",
+  "asof": "2026-08-02",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 78.6,
+  "management_confidence": 79.8,
   "raw_confidence": 81.4,
-  "delta_vs_base": 18.6,
+  "delta_vs_base": 19.8,
   "recommended_action": "hold",
   "human_state": "Advancing Cleanly",
   "components": {
     "validity": 100.0,
     "progress": 67.5,
-    "pace": 89.4,
+    "pace": 89.2,
     "retention": 50.0,
     "overlay": 67.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 2.486,
     "dist_to_t1_r": 0.014,
     "dist_to_t2_r": 1.514,
-    "horizon_pct_used": 84.4,
+    "horizon_pct_used": 86.7,
     "p1": 0.9906,
     "p2": 0.4953,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 38,
-  "tau": 0.8444
+  "days_elapsed": 39,
+  "tau": 0.8667
 }

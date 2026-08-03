@@ -6,7 +6,9 @@ Covers the three new pieces of the THS-mirrored China baskets:
     `missing`, name_zh display, rel == ret − bench);
   • collectors.china_ths_concepts.to_suffixed — bare A-share code → exchange-suffixed store ticker;
   • scripts.seed_china_ths_baskets._pit_members — snapshot diff → point-in-time added/removed +
-    universe filter (first run seeds at SEED; later snapshots date entries/exits genuinely).
+    universe filter (first run seeds at SEED; later snapshots date entries/exits genuinely);
+  • scripts.build_baskets_china_ths.split_for_page — the page-weight split that moves member rows
+    and per-basket level history out of the document into the fetched hydrate payload.
 """
 from __future__ import annotations
 
@@ -15,6 +17,7 @@ import pandas as pd
 
 from collectors.china_ths_concepts import to_suffixed
 from engine import baskets_china as bkc
+from scripts import build_baskets_china_ths as bts
 from scripts import seed_china_ths_baskets as seed
 
 BENCH_SYM = "510300.SS"
@@ -135,6 +138,66 @@ def test_pit_genuine_exit_survives_when_board_holds_size():
     by = {m["ticker"]: m for m in members}
     assert by["600000.SS"]["removed"] == "2026-06-30"           # the genuine drop is dated
     assert by["600099.SS"]["added"] == "2026-06-30" and by["600099.SS"]["removed"] is None
+
+
+# ── builder: page-weight split (heavy planes → fetched hydrate payload) ───────
+def _split_fixture():
+    """Two baskets with member lists of different lengths + a level series each."""
+    data = {
+        "as_of": "2026-08-02",
+        "categories": ["Consumer", "Tech"],
+        "baskets": [
+            {"id": "ths_a", "name": "A", "category": "Consumer", "n_members": 3,
+             "perf": {"20d": {"ret": 0.05, "rel": 0.01}},
+             "members": [{"ticker": "600000.SS", "name": "甲"},
+                         {"ticker": "000001.SZ", "name": "乙"},
+                         {"ticker": "600519.SS", "name": "丙"}]},
+            {"id": "ths_b", "name": "B", "category": "Tech", "n_members": 2,
+             "perf": {"20d": {"ret": -0.02, "rel": -0.03}},
+             "members": [{"ticker": "300750.SZ", "name": "丁"},
+                         {"ticker": "688981.SS", "name": "戊"}]},
+        ],
+    }
+    chart = {"dates": ["2026-07-31", "2026-08-01"], "bench": [100.0, 101.0],
+             "baskets": {"ths_a": [100.0, 103.0], "ths_b": [100.0, 98.0]}}
+    return data, chart
+
+
+def test_split_for_page_moves_heavy_planes_out_of_the_document():
+    data, chart = _split_fixture()
+    slim_data, slim_chart, _ = bts.split_for_page(data, chart)
+
+    # the two heavy planes are gone from what the page inlines …
+    assert all("members" not in b for b in slim_data["baskets"])
+    assert slim_chart["baskets"] == {}
+    assert slim_data["hydrate"] == "chinabasketdata/baskets_ths_hydrate.json"
+    # … while the summary planes still ship inline for first paint
+    assert slim_chart["dates"] == chart["dates"] and slim_chart["bench"] == chart["bench"]
+    assert slim_data["as_of"] == "2026-08-02" and slim_data["categories"] == ["Consumer", "Tech"]
+    assert set(slim_data) == set(data) | {"hydrate"}
+    assert [b["n_members"] for b in slim_data["baskets"]] == [3, 2]
+    assert [b["perf"] for b in slim_data["baskets"]] == [b["perf"] for b in data["baskets"]]
+
+
+def test_split_for_page_conserves_every_row_and_series():
+    data, chart = _split_fixture()
+    _, _, hydrate = bts.split_for_page(data, chart)
+
+    assert hydrate["schema"] == "ths_hydrate.v1" and hydrate["as_of"] == "2026-08-02"
+    assert hydrate["members"] == {b["id"]: b["members"] for b in data["baskets"]}
+    assert (sum(len(v) for v in hydrate["members"].values())
+            == sum(len(b["members"]) for b in data["baskets"]) == 5)   # no thinning
+    assert hydrate["chart_baskets"] == chart["baskets"]
+
+
+def test_split_for_page_does_not_mutate_its_inputs():
+    """The freeze / latest.json / turn-annotation blocks downstream read the FULL objects."""
+    data, chart = _split_fixture()
+    bts.split_for_page(data, chart)
+
+    assert [len(b["members"]) for b in data["baskets"]] == [3, 2]
+    assert "hydrate" not in data
+    assert chart["baskets"] == {"ths_a": [100.0, 103.0], "ths_b": [100.0, 98.0]}
 
 
 # ── collector: complete-or-fail member paging ─────────────────────────────────

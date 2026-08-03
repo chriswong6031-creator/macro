@@ -30,6 +30,21 @@ out"). Every build wave ships through its own spawn with §0 inlined.
    2026-07-29). The real W0 ops work was the flow-ops-wt vintage-skew heal (r2sync
    ImportError dead since the 07-25 migration; pre-#3521 matrix gate) — recorded in
    `ops/THETADATA_R2_SYNC_RUNBOOK.md`.
+4. **THE ONE-DOOR RULING (operator authorization 2026-08-01).** The operator, reviewing the
+   estate ("SUPER CONFUSING. i don't know why we need five pages for options… you are
+   authorized to consolidate, merge, group, create, remove, upgrade any features"),
+   granted the page-retirement authority that OEU lacked. This supersedes, for the four
+   ABSORBED pages only, the OEU satellite ruling "no page kills, no redirects, banners
+   forever" and this plan's §1 "no page is killed": `gex.html`, `options_screener.html`,
+   `flow_desk.html`, `flow_leaders.html` fold their remaining unique value into the
+   workspace and become **redirect stubs** at their old URLs (the house pattern the Crypto
+   Cockpit consolidation established — `templates/vector_allocation.html.j2`, #4037:
+   `noindex,follow` + meta-refresh 0 + styled fallback link + `location.replace`, hash/param
+   mapped). URLs never 404; bookmarks land on the right mode. The banner partial
+   (`_options_workspace_banner.html.j2`) retires with them. `darkpool.html`,
+   `market_structure.html`, `intraday_flow.html`, `movers.html` remain real pages — they
+   were never absorbed and are not options surfaces. Full ruling + build spec:
+   `research/options_estate/ONE_DOOR_RULING_AND_SPEC.md`. Wave table gains W1.6 (§11).
 
 **Standing law honored.** This plan composes with, and does not re-adjudicate: OEU
 (`research/options_estate/OEU_MASTERPLAN.md` — workspace IA, legacy-pages-live-forever,
@@ -563,6 +578,7 @@ merges. Every wave: PR(s) → `merge-on-green` label → live verify.
 |---|---|---|---|
 | **W0 — truth & spine** | E8 integrity sweep; M1 triage + greek-tap re-arm; T-lane archive writers (events → E1, Amendment 2); E1 digest engine (data only); E5 calendar heal check; E2a struck (Amendment 1) | builder ×2 (macro, cross-repo T-lane) + reviewer | data artifacts + guards; zero UI |
 | **W1 — front door & workbench** | Nav regroup (OEU mechanical list); ticker search; S1 Ticker depth reads; LEX stances; declared caps | designer (pins S1 spec + filmstrip) → builder; reviewer | the workbench answer to Q2/Q3 |
+| **W1.6 — one door (Amendment 4)** | W1.6-A capability: Flow mode (flow_desk fold); Ticker raw-structure shelf + primer (gex fold); Scanner uncap + filters + CSV + 7th preset (screener fold); Leaders full boards (leaders fold); Terminal `sym` param fix. W1.6-B flip: 4 redirect stubs; banner retires; nav regroup to 3 entries; intraday_flow relocates to the US/markets group | Fable main loop pins the spec → builder ×2 sequential; reviewer | one options destination |
 | **W2 — the evening read** | S2 Brief 2.0 (session character + tomorrow rail); S5 extremes shelf; cross-link rail + dossier chips; movers ZH; market_structure enum/theme.js fixes | designer → builder ×2 | the Q1/Q4/Q5 surfaces |
 | **W3 — scanner & structure** | S3 Scanner v2 (columns/presets/saved views); S4 Structure & Vol desk (term structure, calendar shelf, E7 read) | designer → builder ×2 | the Q3 breadth + index home |
 | **W4 — calibration & education** | E4 EM ledger + Calibration Lab wing; S6 strategy-fit layer + Learn tie-ins; E6 tape_flow breadth surfacing | builder + reviewer (stats) | the trust story |
@@ -577,8 +593,10 @@ W0 artifacts existing but degrade honestly if a store is late (empty-state law).
 access flip (R4) is **not scheduled** — it executes only on the operator's site_access
 ruling.
 
-**Not scheduled — needs its own adjudication:** legacy-URL sunset/redirects;
-intraday_flow's long-term home (macro vs Terminal — OEU deferred, still deferred);
+**Not scheduled — needs its own adjudication:** ~~legacy-URL sunset/redirects~~
+(scheduled 2026-08-01 as W1.6 per Amendment 4 — operator authorization received);
+intraday_flow's long-term home (macro vs Terminal — OEU deferred, still deferred;
+W1.6 only relocates its NAV entry out of the options group, the page is untouched);
 research/watchlist API and authenticated user-state service; Terminal workspace-system and
 contract-tape items (Terminal charter, not OIP); any gate flip.
 

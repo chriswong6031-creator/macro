@@ -1026,19 +1026,16 @@ def build(
 
     board_b_rows.sort(key=_board_b_sort_key)
 
-    # ── Top-25 cap (FL-R2) ────────────────────────────────────────────────────
-    # Board A cold-start fallback: when all recurrence_count are null (cold-start),
-    # the primary sort key is already net_prem_norm_abs desc (because null recurrence
-    # maps to 1.0 sentinel, so sort is effectively by -np_float). The existing sort
-    # already achieves this ordering, so the cap is a simple slice.
-    # Board B cold-start fallback: days_since_inflection=None maps to 9999 → rows
-    # with a computed inflection appear first; if all null, the existing order is
-    # deterministic by ticker name (sorted board_names above). Slice suffices.
-    _BOARD_CAP = 25
+    # ── Board totals — EVERY qualifying row ships (OIP W1.6-A, spec §2.4) ─────
+    # The former top-25 board slice is gone.  Both boards are already sorted
+    # (A: recurrence then net_prem_norm_abs desc; B: days_since_inflection asc,
+    # nulls last) and the workspace's Leaders mode now renders top-12 with a
+    # "Show all N" expander over the SAME client-side array — so a cap here would
+    # be an undeclared truncation the reader has no way to see.  The totals below
+    # are unchanged in meaning and now equal each board's own length by
+    # construction, which is what every consumer already assumed they were.
     board_a_total = len(board_a_rows)
     board_b_total = len(board_b_rows)
-    board_a_rows = board_a_rows[:_BOARD_CAP]
-    board_b_rows = board_b_rows[:_BOARD_CAP]
 
     # Cold-start state
     from engine.flow_leaders import RECUR_MIN_HISTORY

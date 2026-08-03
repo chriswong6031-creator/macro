@@ -225,6 +225,25 @@ _RETRY_SUFFIX = (
 # --------------------------------------------------------------------------- #
 # Provider dispatch
 # --------------------------------------------------------------------------- #
+def _is_qwen3_model(model: str) -> bool:
+    normalized = str(model or "").strip().lower()
+    return re.search(r"(?:^|[/_.-])qwen3(?=[:_.-]|$)", normalized) is not None
+
+
+def _qwen3_no_think_user_prompt(model: str, user: str) -> str:
+    """Disable Qwen3's hidden reasoning on OpenAI-compatible local servers.
+
+    Ollama's OpenAI-compatible endpoint does not honor its native ``think``
+    switch.  Without Qwen3's documented prompt toggle, hidden reasoning can
+    consume the entire bounded completion budget and leave ``content`` empty,
+    causing an unnecessary cloud fallback.  Keep this behavior model-gated so
+    other OpenAI-compatible providers receive the prompt unchanged.
+    """
+    if not _is_qwen3_model(model) or "/no_think" in user:
+        return user
+    return f"{user.rstrip()}\n\n/no_think"
+
+
 def _call_openai_compat(
     system: str, user: str, oc_cfg: dict, *, max_tokens: int
 ) -> tuple[str | None, str | None]:
@@ -249,16 +268,28 @@ def _call_openai_compat(
         "model": model,
         "messages": [
             {"role": "system", "content": system},
-            {"role": "user", "content": user},
+            {"role": "user", "content": _qwen3_no_think_user_prompt(model, user)},
         ],
         "max_tokens": int(max_tokens),
         "temperature": 0,
         "stream": False,
     }
+    if _is_qwen3_model(model):
+        # Ollama's OpenAI-compatible endpoint ignores the native ``think``
+        # request flag.  Its OpenAI reasoning control is ``reasoning_effort``;
+        # pairing it with /no_think prevents hidden tokens from exhausting the
+        # bounded completion before any JSON reaches message.content.
+        payload["reasoning_effort"] = "none"
     timeout = float(oc_cfg.get("timeout_s", 120))
+    connect_timeout = float(oc_cfg.get("connect_timeout_s", min(timeout, 5)))
     try:
         import requests  # noqa: PLC0415
-        r = requests.post(url, headers=headers, json=payload, timeout=timeout)
+        r = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=(connect_timeout, timeout),
+        )
         if r.status_code != 200:
             return None, f"openai_compat_http_{r.status_code}"
         data = r.json()
@@ -1739,6 +1770,13 @@ def _normalise_earnings_source(df, source_tier: str, root: Path | None = None):
                 log.warning("earnings_qual: score-seed metadata join failed (%s)", exc)
 
     elif source_tier == "committed_overview_fallback":
+        # The overview parquet now also accrues nightly ENGINE stage snapshots
+        # (source="stage_engine", no earnings fields) — only the vendor seed
+        # rows are earnings evidence here.
+        if "source" in out.columns:
+            out = out[
+                out["source"].fillna("equitydesk_backfill") != "stage_engine"
+            ].copy()
         ticker = out.get("ticker", pd.Series("", index=out.index)).astype(str).str.upper()
         out["document_ticker"] = ticker
         out["company_ticker"] = ticker

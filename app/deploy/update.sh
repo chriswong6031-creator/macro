@@ -191,6 +191,10 @@ fi
 #   neuralweb/*            /api/ask + /api/brain: ask_brain → cortex, llm_auth,
 #                          envelope → synapse, tushare_freshness; brain_gateway →
 #                          chart_perception, doctrine, key_pool (CMX W2/W4)
+#   earnings evidence      brain_gateway lazily reaches earnings_context_reader,
+#                          whose exact-evidence validator imports the named
+#                          earnings_narrative contract closure and PRESS adapter.
+#                          All become request-time cached after the first read.
 #   codex_provider/runner  llm_auth's request-time Codex fallback imports both;
 #                          either module stays cached after the first Codex turn
 #   research_vault/        app/research.py imports catalog, corpus, download_quota,
@@ -212,9 +216,16 @@ fi
 #   government_revenue/*   app/government_revenue.py imports workspace through
 #                          the non-inert package __init__, which loads the award,
 #                          dossier, exact entity-resolution, federation,
-#                          freshness, metric, opportunity, and PIT helpers.
+#                          freshness, metric, opportunity, PIT, budget-program,
+#                          IDV-dossier, and subaward-dossier helpers.
 #                          These serving-plane modules remain cached for the
 #                          life of macro-api and must advance with a deploy.
+#   company_intelligence/* app/company_intelligence.py imports the verified
+#                          reader's public artifact contract.  Importing this
+#                          package executes its non-inert __init__, which loads
+#                          contracts, health, and views; all are pinned in the
+#                          API process for the lifetime of the public ticker
+#                          context route.
 #   context_index/         brain_gateway → packet.build_packet, which top-level
 #                          imports fusion/gitinfo/lexical/structured. Named, not
 #                          globbed: ingest/chunking/health/schema/sources are
@@ -244,7 +255,7 @@ fi
 #     schemas/implementations only and never calls run(), so those ~90 modules are
 #     NOT in the API's sys.modules. Adding them would restart /api on nearly every
 #     engine commit — exactly what this narrow list exists to prevent.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|doctrine|analyst_doctrine|market_packet|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|award_events|dossiers|entity_resolution|federation|freshness|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
+if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|award_events|budget_program|dossiers|entity_resolution|federation|freshness|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
 	# Verified restart, not fire-and-forget: on 2026-07-30 the old one-liner
 	# (`... && systemctl restart macro-api || true`) left the API on its 5-hour-old
 	# PID after a matching deploy, and the `|| true` destroyed every trace of why.
@@ -366,7 +377,8 @@ fi
 # BioCatalyst B1 is a separate source-canonical lane.  A routine production
 # pull must never install, enable, or start it: doing so could turn a partially
 # configured evidence collector live.  Reconcile only a fully operator-installed
-# pair of units and a dedicated runtime. Dependencies are built in a versioned
+# worker pair and dedicated runtime. The root-only retention heartbeat units are
+# copied beside that pair but remain dormant unless separately armed. Dependencies are built in a versioned
 # staging virtualenv and verified before one atomic current-symlink swap. No
 # live runtime is ever pip-mutated, and a failed candidate leaves the previous
 # runtime and timer arming state untouched.
@@ -406,27 +418,53 @@ if [ "$BIOCATALYST_UNITS_INSTALLED" -eq 1 ] && \
 fi
 
 # Reconcile unit files only after the runtime referenced by the reviewed service
-# has passed verification. Preserve the timer's operator-controlled arming state.
+# has passed verification. Preserve both timers' operator-controlled arming state.
 BIOCATALYST_UNIT_UPDATED=0
 if [ "$BIOCATALYST_UNITS_INSTALLED" -eq 1 ] && \
    { ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.service" /etc/systemd/system/macro-biocatalyst.service || \
-     ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.timer" /etc/systemd/system/macro-biocatalyst.timer; }; then
+     ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.timer" /etc/systemd/system/macro-biocatalyst.timer || \
+     ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.service" /etc/systemd/system/macro-biocatalyst-activation-heartbeat.service || \
+     ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.timer" /etc/systemd/system/macro-biocatalyst-activation-heartbeat.timer; }; then
+	# Capture arming before copying a new unit. In particular, a newly introduced
+	# heartbeat timer must remain absent/disabled after reconciliation rather than
+	# becoming an accidental activation path merely because its source now exists.
+	BIOCATALYST_TIMER_WAS_ENABLED=0
+	BIOCATALYST_HEARTBEAT_TIMER_WAS_ENABLED=0
+	if [ -f /etc/systemd/system/macro-biocatalyst.timer ] && \
+		systemctl is-enabled --quiet macro-biocatalyst.timer; then
+		BIOCATALYST_TIMER_WAS_ENABLED=1
+	fi
+	if [ -f /etc/systemd/system/macro-biocatalyst-activation-heartbeat.timer ] && \
+		systemctl is-enabled --quiet macro-biocatalyst-activation-heartbeat.timer; then
+		BIOCATALYST_HEARTBEAT_TIMER_WAS_ENABLED=1
+	fi
 	if [ "$BIOCATALYST_RUNTIME_READY" -ne 1 ]; then
 		echo "macro-update: refusing BioCatalyst unit update — verified dedicated runtime unavailable" >&2
 	elif systemd-analyze verify "$APP_DIR/app/deploy/macro-biocatalyst.service" \
-		"$APP_DIR/app/deploy/macro-biocatalyst.timer"; then
+		"$APP_DIR/app/deploy/macro-biocatalyst.timer" \
+		"$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.service" \
+		"$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.timer"; then
 		if ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.service" /etc/systemd/system/macro-biocatalyst.service; then
 			install -m 0644 "$APP_DIR/app/deploy/macro-biocatalyst.service" /etc/systemd/system/macro-biocatalyst.service
 		fi
 		if ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst.timer" /etc/systemd/system/macro-biocatalyst.timer; then
 			install -m 0644 "$APP_DIR/app/deploy/macro-biocatalyst.timer" /etc/systemd/system/macro-biocatalyst.timer
 		fi
+		if ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.service" /etc/systemd/system/macro-biocatalyst-activation-heartbeat.service; then
+			install -m 0644 "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.service" /etc/systemd/system/macro-biocatalyst-activation-heartbeat.service
+		fi
+		if ! cmp -s "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.timer" /etc/systemd/system/macro-biocatalyst-activation-heartbeat.timer; then
+			install -m 0644 "$APP_DIR/app/deploy/macro-biocatalyst-activation-heartbeat.timer" /etc/systemd/system/macro-biocatalyst-activation-heartbeat.timer
+		fi
 		systemctl daemon-reload
 		BIOCATALYST_UNIT_UPDATED=1
 		RECONCILED=1
 		echo "macro-update: BioCatalyst systemd lane updated without changing its arming state"
-		if systemctl is-enabled --quiet macro-biocatalyst.timer; then
+		if [ "$BIOCATALYST_TIMER_WAS_ENABLED" -eq 1 ]; then
 			systemctl restart macro-biocatalyst.timer
+		fi
+		if [ "$BIOCATALYST_HEARTBEAT_TIMER_WAS_ENABLED" -eq 1 ]; then
+			systemctl restart macro-biocatalyst-activation-heartbeat.timer
 		fi
 	else
 		echo "macro-update: refusing BioCatalyst unit update — systemd-analyze verify failed" >&2

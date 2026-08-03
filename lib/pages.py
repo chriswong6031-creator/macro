@@ -131,6 +131,9 @@ def rendered_ticker_pages(site_dir: Path) -> frozenset[str]:
 # reference to carry a ?v=<content-hash> query and marks non-critical <script>s
 # `defer`, so the edge can cache them `immutable` (see app/deploy/Caddyfile) and
 # the browser stops blocking the main thread on synchronous script execution.
+# A small number of dependency bundles must execute before a following inline
+# bootstrap; those opt out of defer explicitly with ``data-sync`` while still
+# receiving the normal content-hash stamp.
 # Kept here beside inject_text() because both are page-string post-processors.
 _OPEN_TAG_RE = re.compile(r"<(script|link)\b([^>]*)>", re.IGNORECASE)
 _SRC_ATTR_RE = re.compile(r'\b(src|href)\s*=\s*"([^"]*)"', re.IGNORECASE)
@@ -162,8 +165,9 @@ def optimize_assets_text(text: str, hash_for: Callable[[str], Optional[str]]) ->
       * append ``?v=<hash>`` (from ``hash_for(url)``) so the edge can cache it
         ``immutable`` — a content change yields a new URL, never a stale hit;
       * add ``defer`` to scripts (keeps them off the critical path) unless they
-        are ``async``/``type=module`` or the data-base shim (``data-dbase``),
-        which must stay blocking at the top of <head> before any fetch.
+        are ``async``/``type=module``, explicitly ``data-sync``, or the data-base
+        shim (``data-dbase``), which must stay blocking at the top of <head>
+        before any fetch. ``data-sync`` scripts remain versioned.
 
     Stable, not frozen: a ref already wearing OUR stamp (``?v=<8 hex>`` and
     nothing else) is RE-hashed, so a re-run after the file changed yields the new
@@ -209,7 +213,9 @@ def optimize_assets_text(text: str, hash_for: Callable[[str], Optional[str]]) ->
         if h:
             new_url = f'{am.group(1)}="{bare}?v={h}"'
             new_attrs = new_attrs[: am.start()] + new_url + new_attrs[am.end():]
-        if kind == "script" and not _HAS_DEFER_ASYNC_RE.search(new_attrs) and not _MODULE_RE.search(new_attrs):
+        if (kind == "script" and "data-sync" not in new_attrs.lower()
+                and not _HAS_DEFER_ASYNC_RE.search(new_attrs)
+                and not _MODULE_RE.search(new_attrs)):
             new_attrs = new_attrs.rstrip() + " defer"
         return f"<{m.group(1)}{new_attrs}>"
 

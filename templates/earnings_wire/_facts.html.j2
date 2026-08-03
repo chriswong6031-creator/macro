@@ -1,0 +1,10 @@
+{% for fact in facts %}
+<article class="ewa-fact">
+  <div class="ewa-fact-meta"><div class="ew-tags">{% for category in fact.categories %}<span>{{ category }}</span>{% endfor %}</div><span class="mono">{{ fact.quote.receipt.segment_index }}</span></div>
+  <blockquote lang="en">“{{ fact.quote.text }}”</blockquote>
+  <div class="ewa-attribution"><span>{{ fact.speaker or t('Management', '管理层') }}{% if fact.role %} · {{ fact.role }}{% endif %}</span><code>{{ fact.claim_id }}</code></div>
+  {% if fact.numeric %}
+  <div class="ewa-numerics"><span>{{ t('Exact numeric spans', '精确数值片段') }}</span>{% for numeric in fact.numeric %}<code title="{{ numeric.claim_id }}">{{ numeric.text }}</code>{% endfor %}</div>
+  {% endif %}
+</article>
+{% endfor %}

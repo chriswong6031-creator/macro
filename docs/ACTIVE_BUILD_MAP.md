@@ -2,17 +2,32 @@
 
 # Active Build Map
 
-Generated: 2026-08-02T01:14:21.966790+00:00  |  Open PRs: 5  |  Merged (window): 500  |  base: `8300a2b990f8dc70ebc3cb7e109f985175cdd94a`
+Generated: 2026-08-03T00:48:26.519739+00:00  |  Open PRs: 20  |  Merged (window): 500  |  base: `a3e6bd38a6d1de38f1a684d56a69e8482c57fadd`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #4219 | Options: publish the exposure profile block + retire the last cumulative-flip copy | `claude/msc-profile-wave` | 2026-08-02 | — |
-| #4212 | Capital Structure Wave 2A: observed filing-state projection | `codex/capital-structure-wave2a-projection` | 2026-08-02 | ⚠ CONFLICTING / ⚠ protected:5 |
-| #4209 | fix(register): strip front-facing falsifier register beyond the Policy Watch estate (incl. the four dated reports) | `claude/silly-mahavira-49e33e` | 2026-08-02 | ⚠ CONFLICTING / ⚠ protected:2 |
-| #4185 | feat(tiers): Phase 2 — the catalog speaks essential; Stripe product migrates in place | `claude/tier-essential-m2` | 2026-08-01 | ⚠ protected:2 |
-| #4056 | fix(site): repair 605 dead basket links + guard dead site references | `claude/funny-tharp-1d755d` | 2026-08-02 | ⚠ CONFLICTING / ⚠ protected:7 / files-truncated |
+| #4332 | perf(seo): split baskets_china_ths heavy planes into a fetched hydrate payload | `claude/gracious-borg-aa5283` | 2026-08-03 | ⚠ protected:1 |
+| #4331 | feat(prophet-board): us_prophet_v1 priority engine + unified pick surface (US+CN) | `claude/stock-picks-sorting-dashboard-d6c0d7` | 2026-08-03 | DRAFT |
+| #4330 | feat(seo): MastermindX entity package — homepage identity + About page | `claude/seo-entity-package` | 2026-08-03 | — |
+| #4329 | fix(nav): keep the wide mega/market panels anchored to the header | `claude/mega-menu-special-situations-499151` | 2026-08-03 | — |
+| #4328 | fix(seo): missing_from_sitemap consults the access boundary — kill the 243-page false-positive factory | `claude/nervous-pasteur-337004` | 2026-08-03 | — |
+| #4327 | Harden Company Intelligence launch surfaces | `codex/company-intelligence-launch-hardening-20260802` | 2026-08-03 | — |
+| #4326 | fix(nav): drop retired filename from consolidation comment — heals crypto nav guard | `claude/suspicious-knuth-4c3b4e` | 2026-08-03 | — |
+| #4324 | fix(seo): resolve on-page hygiene work orders across the public estate | `claude/seo-workorder-sweep` | 2026-08-03 | — |
+| #4323 | fix(nav): market mega menu catches up with the Sector Intelligence consolidation | `claude/us-nav-menu-collapse` | 2026-08-03 | — |
+| #4319 | feat(capital-structure): add authenticated candidate instrument terms | `codex/capital-structure-instrument-candidate-terms` | 2026-08-03 | — |
+| #4315 | fix(marketing): market clock + publish-time gate — no weekend "today", dead-date tenses, or fanned duplicates | `claude/marketing-time-awareness` | 2026-08-02 | — |
+| #4314 | fix(x-growth): W4 — the nightly ladder stops discarding the day it publishes; the news wire arms; the breaking card becomes legible | `claude/frosty-knuth-140e19` | 2026-08-02 | ⚠ protected:1 |
+| #4313 | pages: keep <meta charset> inside the 1024-byte pre-scan window | `claude/mystifying-bohr-6d855b` | 2026-08-02 | — |
+| #4312 | fix(sector-intelligence): restore the US #theme-<id> deep-link contract eaten by the consolidation stub | `claude/ecstatic-jang-ba1366` | 2026-08-02 | ⚠ protected:1 |
+| #4304 | fix(copy): de-register the AI scout watch line on Forming Narratives; Theme Tracker naming in plans | `claude/forming-copy-fix` | 2026-08-02 | — |
+| #4301 | feat(tiers): Phase 4 — machine ids speak essential; insider stays a permanent inbound alias | `claude/tier-essential-m4` | 2026-08-02 | ⚠ CONFLICTING / ⚠ protected:1 |
+| #4300 | feat(sector-intelligence): forming narratives on US, Theme Tracker naming, theme↔basket crosswalk (#4237 follow-ups) | `claude/si-followups-a1` | 2026-08-02 | ⚠ CONFLICTING |
+| #4299 | China Sector Intelligence: one platform — baskets + subsector rotation merged into sector_central_china | `claude/china-sector-intelligence-consolidation` | 2026-08-02 | ⚠ CONFLICTING |
+| #4260 | Add deterministic verified earnings evidence graph | `codex/earnings-evidence-graph-final-20260802` | 2026-08-02 | ⚠ CONFLICTING / ⚠ protected:1 |
+| #4236 | feat(seasonality): Calendar Clock — the sample is the picture, not a footnote | `claude/seasonality-frontend-page` | 2026-08-02 | ⚠ CONFLICTING / ⚠ protected:4 |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
 
@@ -20,21 +35,131 @@ Generated: 2026-08-02T01:14:21.966790+00:00  |  Open PRs: 5  |  Merged (window):
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
-| #4212 | #4185 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4212 | #4056 | 1 ⚠ | `.github/workflows/ci.yml` |
-| #4185 | #4056 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #4330 | #4301 | 63 | `site/about-research.html`, `site/blog/compound-growth-for-traders.html`, `site/blog/congress-trades-are-not-realtime-signals.html`, `site/blog/how-to-keep-a-trading-journal.html`, `site/blog/index.html`, `site/blog/the-math-of-losing-streaks.html`, `site/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html`, `site/blog/win-rate-is-overrated.html` +55 more |
+| #4330 | #4313 | 5 | `site/index.html`, `site/products/market-dashboards.html`, `site/products/market-terminal.html`, `site/products/mastermind-ai.html`, `templates/index.html` |
+| #4313 | #4301 | 5 | `site/index.html`, `site/products/market-dashboards.html`, `site/products/market-terminal.html`, `site/products/mastermind-ai.html`, `templates/index.html` |
+| #4312 | #4300 | 5 | `.github/ci/legacy-jobs.yml`, `scripts/build_site.py`, `templates/baskets.html.j2`, `templates/dashboard.html.j2`, `templates/sector_central.html.j2` |
+| #4300 | #4299 | 4 | `site/chat.html`, `templates/chat.html`, `tests/test_macro_desk_surface.py`, `tests/test_sector_intelligence_page.py` |
+| #4330 | #4236 | 3 | `app/deploy/Caddyfile`, `config/site_access.yml`, `tests/test_unsubscribe_page.py` |
+| #4332 | #4314 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #4332 | #4312 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #4332 | #4299 | 2 | `scripts/build_baskets_china_ths.py`, `templates/baskets_china.html.j2` |
+| #4328 | #4324 | 2 | `engine/marketing/seo_director.py`, `tests/test_seo_director.py` |
+| #4323 | #4299 | 2 | `site/nav_market.js`, `templates/nav_market.js` |
+| #4315 | #4314 | 2 | `engine/marketing/content_studio.py`, `engine/marketing/copywriter.py` |
+| #4314 | #4312 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #4299 | #4236 | 2 | `templates/_navlinks.html.j2`, `tests/test_nav_submenu_icons.py` |
+| #4332 | #4319 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4332 | #4300 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4326 | #4299 | 1 | `templates/_navlinks.html.j2` |
+| #4326 | #4236 | 1 | `templates/_navlinks.html.j2` |
+| #4324 | #4300 | 1 | `templates/state_of_themes.html.j2` |
+| #4324 | #4299 | 1 | `templates/china.html.j2` |
+| #4319 | #4314 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4319 | #4312 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4319 | #4300 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4314 | #4300 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4312 | #4299 | 1 | `tests/test_theme_hash_deeplink.py` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #4325 | docs(biocatalyst): hand off full parity build | 2026-08-03 |
+| #4322 | Fix ticker dossier render DAG declarations | 2026-08-03 |
+| #4320 | docs(seo): charter the SEO Supercharge program (public tier-preview estate + entity package) | 2026-08-02 |
+| #4318 | Ship Company Intelligence dossiers in render lanes | 2026-08-02 |
+| #4316 | fix(ci): refresh signal bus registry doc | 2026-08-02 |
+| #4311 | feat(capital-structure): add authenticated Company Facts intake | 2026-08-02 |
+| #4310 | fix(tests): re-scope macro-desk surface pins post-#4237; restore the raced-away baskets stub | 2026-08-02 |
+| #4309 | BioCatalyst B4E: gate prospective accrual on retention proof | 2026-08-02 |
+| #4308 | Fix Earnings Wire header CTA contrast | 2026-08-02 |
+| #4307 | fix(regional-baskets): write baskets.json after the sector_pulse merge (intl/hk/canada) | 2026-08-02 |
+| #4306 | fix(sector-central): restore regime-sizing pill dropped by the baskets merge; re-aim parity guard | 2026-08-02 |
+| #4305 | Load balance a second Codex OAuth account | 2026-08-02 |
+| #4303 | tier-rename: flip write-only required_tier payload field insider -> essential | 2026-08-02 |
+| #4302 | fix(allies): derive pricing + tier names from config/plans.yml | 2026-08-02 |
+| #4298 | Launch the Earnings Wire and Company Intelligence teaser | 2026-08-02 |
+| #4297 | fix(ui): unclip the ⚠ caution popover, de-jargon its copy, unsqueeze the basket ring | 2026-08-02 |
+| #4296 | ads(round3.7): 7-headline A/B set on the 3-card fan + trial CTA | 2026-08-02 |
+| #4295 | Government Revenue: subaward ledger and research briefcase | 2026-08-02 |
+| #4294 | fix(merge-on-green): clear a stale base instead of parking it as merge-blocked | 2026-08-02 |
+| #4293 | BioCatalyst B4D: prospective first-seen ledger | 2026-08-02 |
+| #4292 | feat(msc): cross-root gex_state _index.json — the R3.2/R3.3 glance-tier aggregate | 2026-08-02 |
+| #4291 | ads(round3.5): landing-style fan pyramid (3+5 card A/B), new campaign line, normal tapes | 2026-08-02 |
+| #4290 | Fundamental Forensics: add attested query history overlay | 2026-08-02 |
+| #4289 | Fundamental Forensics: inject attestation clock | 2026-08-02 |
+| #4288 | Fundamental Forensics: seal filing source attestations | 2026-08-02 |
+| #4287 | Earnings: add governed story-to-Press staging ingress | 2026-08-02 |
+| #4286 | Fundamental Forensics: seal receipt-bound XBRL extraction | 2026-08-02 |
+| #4285 | feat(biocatalyst): add registry change tape | 2026-08-02 |
+| #4284 | Earnings: ship governed story packets and resilient Stage history | 2026-08-02 |
+| #4283 | fix(seo): name the SHAPE of a rejected GSC credential + keep SA identity out of public git history | 2026-08-02 |
+| #4282 | Government Revenue: receipt-bound subaward evidence rail | 2026-08-02 |
+| #4281 | docs(masterplan): Analyst OS W5/W5.1 live-verified record | 2026-08-02 |
+| #4280 | Compile receipt-bound canonical earnings story packets | 2026-08-02 |
+| #4279 | BioCatalyst: add registry milestone monitor | 2026-08-02 |
+| #4278 | feat(capital-structure): add observed share-count truth plane | 2026-08-02 |
+| #4277 | ads(round3.2-3): motto flagship + coherent rotation story — operator critique applied | 2026-08-02 |
+| #4276 | feat(forensics): seal filing package foundation | 2026-08-02 |
+| #4275 | Throttle earnings evidence backfill to 500 bodies per hour | 2026-08-02 |
+| #4274 | feat(capital-structure): add registration lifecycle truth plane | 2026-08-02 |
+| #4273 | fix(tests): repair test_analytics_exclusions mock shape drift | 2026-08-02 |
+| #4272 | feat(analytics): match Google's crawler/GCP ASNs in bot detection | 2026-08-02 |
+| #4271 | ci: refuse to publish a dispatch ref to main (19 workflows) | 2026-08-02 |
+| #4270 | feat(biocatalyst): add dark Drugs@FDA evidence substrate | 2026-08-02 |
+| #4269 | fix(seo): GSC adapter accepts double-encoded key + adds index-status diagnostics | 2026-08-02 |
+| #4268 | ads(round3): first-draft mockups — 2 flagship X creatives × 2 sizes, retail-simple copy | 2026-08-02 |
+| #4267 | Forensics: add immutable query snapshots | 2026-08-02 |
+| #4266 | retire(baskets): delete the US page's dead FTR per-card chip injector | 2026-08-02 |
+| #4265 | perf(contracts): memoize schema self-checks — BioCatalyst pack group 476s -> 38s, back inside its 8-min budget | 2026-08-02 |
+| #4264 | ads(round3): flagship X flight brief — 2 concepts, locked copy, post variants (pre-mockup) | 2026-08-02 |
+| #4262 | Add append-only verified earnings evidence catalog | 2026-08-02 |
+| #4261 | Forensics: complete Wave 3A trustworthy receipt kernel | 2026-08-02 |
+| #4259 | CI: give BioCatalyst measured runtime headroom | 2026-08-02 |
+| #4256 | baskets: disclose the withheld regime caution on all five market pages | 2026-08-02 |
+| #4255 | feat: ship procurement dossiers and exact recipient resolution | 2026-08-02 |
+| #4254 | fix(baskets): route US #theme-<id> deep links to the theme's own page | 2026-08-02 |
+| #4253 | fix(brain): W5.1 — stream the final tool round (shared _StreamGate), heal the dateless site_quotes reader | 2026-08-02 |
+| #4252 | docs(biocatalyst): record B2 merge handoff | 2026-08-02 |
+| #4251 | BioCatalyst B2: exact evidence-bound trial history | 2026-08-02 |
+| #4250 | fix(brain): serve single-stock quotes on the VPS — read the quotes_full state snapshot in the get_quote ladder | 2026-08-02 |
+| #4249 | fix(ci): rebase autoresolver also covers the hashed site/assets/js tree | 2026-08-02 |
+| #4247 | feat(options): externalize the workspace IIFE to a hashed immutable asset (−51% page gzip) | 2026-08-02 |
+| #4246 | fix(baskets): retire the US page's dead copy of the shared desk renderer | 2026-08-02 |
+| #4245 | fix: quarantine render push collisions | 2026-08-02 |
+| #4244 | feat: publish point-in-time institutional company context | 2026-08-02 |
+| #4243 | feat(capital-structure): harden SEC intake provenance | 2026-08-02 |
+| #4242 | fix(nav): chat.html takes the canonical header (the 114th product page) | 2026-08-02 |
+| #4241 | feat(baskets): reconnect MLC-W2b conflicted-view surface to the live rvx act board | 2026-08-02 |
+| #4240 | feat(capital-structure): add evidence-bound document terms | 2026-08-02 |
+| #4239 | feat(oip-w1.6a): One Door — the workspace absorbs the estate (capability half) | 2026-08-02 |
+| #4238 | Government Revenue Wave 4: receipt-bound award tape | 2026-08-02 |
+| #4237 | feat(sector-intelligence): consolidate 3 pages into one Sector Intelligence platform | 2026-08-02 |
+| #4235 | feat(seasonality): stock seasonality calendar clock — panel, curve, 2645-window family, selection correction | 2026-08-02 |
+| #4233 | feat(themes): publish immutable company theme context | 2026-08-02 |
+| #4232 | remove(baskets): delete the theme-rotation bell — markup, JS, CSS, and its dead payload | 2026-08-02 |
+| #4231 | fix(market-state): stop the board and its score-path disagreeing about one session | 2026-08-02 |
+| #4230 | docs(seasonality): pin Lane 2 design spec + BioCatalyst integration seam | 2026-08-02 |
+| #4229 | Levels: the live Level Report Card (MSC R2.4 v1) | 2026-08-02 |
+| #4228 | fix(nav): one shared header for every product page (12 variants → 1) | 2026-08-02 |
+| #4227 | BioCatalyst B1b: normalized trial intelligence API and workbench | 2026-08-02 |
+| #4226 | Government Revenue Foresight: truth foundations and render fence | 2026-08-02 |
+| #4225 | reply desk: warmth register, target seeding, deck, arming contract — drafts appear, nothing sends | 2026-08-02 |
+| #4224 | feat(capital-structure): add premium observed filing desk | 2026-08-02 |
+| #4222 | ops(optionshub): weekend nightly runs — Friday's session could never publish before Monday | 2026-08-02 |
+| #4221 | feat(neuralweb): consume verified company intelligence | 2026-08-02 |
+| #4220 | feat(brain): Analyst OS W5 — true token streaming, tool-loop economics, instant-fact lane, latency instrumentation | 2026-08-02 |
+| #4219 | Options: publish the exposure profile block + retire the last cumulative-flip copy | 2026-08-02 |
 | #4218 | BioCatalyst B1: hardened ClinicalTrials.gov ingestion lane | 2026-08-02 |
 | #4217 | privacy: strip fill economics from public mastermind snapshot (RUL-CL-6b) | 2026-08-02 |
 | #4216 | Government Revenue Foresight: Wave 2 live procurement parity | 2026-08-02 |
 | #4215 | Company Intelligence: immutable producer plane | 2026-08-02 |
 | #4214 | tests: pin capital-structure compile step structurally, not by text slice | 2026-08-02 |
 | #4213 | Fix Filing Forensics bootstrap on macOS Bash 3.2 | 2026-08-02 |
+| #4212 | Capital Structure Wave 2A: observed filing-state projection | 2026-08-02 |
 | #4210 | Filing Forensics: add SEC disclosure source spine | 2026-08-01 |
+| #4209 | fix(register): strip front-facing falsifier register beyond the Policy Watch estate (incl. the four dated reports) | 2026-08-02 |
 | #4208 | fix(policy): strip front-facing falsifier register from the Policy Watch estate | 2026-08-02 |
 | #4207 | fix(options): repair the dated GEX archive — 450 snapshots carried the flip defect | 2026-08-01 |
 | #4206 | fix(options): six publisher defects an adversarial audit found in code I shipped today | 2026-08-01 |
@@ -57,6 +182,7 @@ Generated: 2026-08-02T01:14:21.966790+00:00  |  Open PRs: 5  |  Merged (window):
 | #4188 | feat(biocatalyst): freeze evidence contract foundation | 2026-08-01 |
 | #4187 | fix: contain Stage earnings filters on mobile | 2026-08-01 |
 | #4186 | hk_cbbc: light up the dark W1 freshness banner on the leverage card | 2026-08-01 |
+| #4185 | feat(tiers): Phase 2 — the catalog speaks essential; Stripe product migrates in place | 2026-08-02 |
 | #4184 | Ship Filing Forensics workbench | 2026-08-01 |
 | #4183 | engine(hk_cbbc): data-keyed staleness gate for the SLD call-levels store | 2026-08-01 |
 | #4182 | Government Revenue Foresight vertical workbench | 2026-08-01 |
@@ -439,95 +565,6 @@ Generated: 2026-08-02T01:14:21.966790+00:00  |  Open PRs: 5  |  Merged (window):
 | #3783 | fix(flow-leaders): stop tape_names reordering the committed artifact every run | 2026-07-27 |
 | #3782 | fix(landing): speed Prophet belt on mobile | 2026-07-27 |
 | #3781 | feat(brain): capture AI thinking traces + contradiction assessment lane | 2026-07-27 |
-| #3780 | research(agentic-media): rev 4 — named publications + breaking-news spearhead | 2026-07-27 |
-| #3779 | fix(freshness): arm the two stale SLAs that never once fired | 2026-07-27 |
-| #3778 | test(ci): run the BC-2 third-party guard — #3770's suite executed in zero jobs | 2026-07-27 |
-| #3777 | fix(tape-flow): stop the etf-history lane shredding its own accrued history | 2026-07-27 |
-| #3776 | Validate email format during signup | 2026-07-27 |
-| #3775 | fix(tests): pin BH-FDR family drift expectations to the adjudicated 36 | 2026-07-27 |
-| #3774 | fix(hub): stop the desk's opening read from vanishing mid-sentence when you scroll | 2026-07-27 |
-| #3771 | design(landing): drop the display webfont — San Francisco / Inter, the operator's own pick | 2026-07-27 |
-| #3770 | fix(bc-2): treat quoted third-party research as a structural non-claim | 2026-07-27 |
-| #3768 | test(ci): guard SKIP-ONLY suites — a test that skips in every job naming it runs NOWHERE | 2026-07-27 |
-| #3767 | fix(ci): allowlist the quoted 'validated' in the oil/inflation research note | 2026-07-27 |
-| #3766 | Wire frozen terminality shadow locator | 2026-07-27 |
-| #3765 | fix(intl): distinguish fragile rebounds from recovery | 2026-07-27 |
-| #3763 | mri(cpi-bridge): disclose partially-composed blocks on the shipped artifact | 2026-07-27 |
-| #3764 | feat(ad-central): Plane O — browser-side split tests on our own pages, at zero spend | 2026-07-27 |
-| #3762 | feat(bonds): add the "Safest borrowers" gauge — the tier where the stress actually is | 2026-07-27 |
-| #3761 | fix(tests): unsubscribe parity — strip the lane-dependent wh_banner tag (follow-up to #3758) | 2026-07-27 |
-| #3760 | fix(ci): the two load_ohlcv tests executed in ZERO jobs — pair chart-render with a fat lane | 2026-07-27 |
-| #3759 | test(marketing): gate the two copy lanes that bypass validate_copy | 2026-07-27 |
-| #3758 | fix(tests): unsubscribe page parity skipped externalize_css — red on main, reds ci-pack-1 on every PR | 2026-07-27 |
-| #3757 | docs(house-law): record the GitHub-annotation rule in CLAUDE.md + AGENTS.md | 2026-07-26 |
-| #3756 | fix(support-email): W4 marketing lane — suppression downgrades, burnt idem_keys, the 500-person campaign ceiling, fail-open segments | 2026-07-26 |
-| #3755 | design(vector): macro-grade flat-card revamp + fix invisible Macro-Backdrop scorecard | 2026-07-26 |
-| #3754 | fix(actions): collapse CI check traffic and cancel orphan runs | 2026-07-26 |
-| #3753 | fix(tests): heal main — the unsubscribe boundary guard invalidated itself on merge | 2026-07-26 |
-| #3752 | fix(llm_auth): an httpx import failure must not delete an OAuth key (kills the key-pool-economy flake) | 2026-07-26 |
-| #3751 | research: close stale F4 confluence path | 2026-07-26 |
-| #3748 | fix(content studio): clarity gate rejected its own headline template ("walk you through this") | 2026-07-26 |
-| #3747 | feat(ad-central): creative fan-out, split tests with honest nulls, small-budget bandit — armed off | 2026-07-26 |
-| #3746 | fix(actions): throttle API polling and pack fences | 2026-07-26 |
-| #3745 | research: build causal F4 repair and hazard labs | 2026-07-26 |
-| #3744 | fix(content studio): posts shipped unreadable — clarity gate for counts, study jargon, and unnamed levels | 2026-07-26 |
-| #3743 | feat(support-email): marketing foundation — Email Center, unsubscribe spine, welcome + campaigns (SEE W4) | 2026-07-26 |
-| #3742 | fix(ci): the intl-scope guard was wired twice — two sessions, one census, a clean merge | 2026-07-26 |
-| #3741 | test(cortex): guard the spelled-out write-tool tallies + fix the ci.yml gap that hid them | 2026-07-26 |
-| #3740 | test(a11y): fence the Brain launcher's keyboard semantics so they cannot silently revert | 2026-07-26 |
-| #3739 | test(css): a paired stylesheet linked by ZERO pages must go red | 2026-07-26 |
-| #3738 | fix(ci): chart-render tests must SKIP without pandas, not error the lane red | 2026-07-26 |
-| #3737 | fix(deploy): admin panel served stale engine code — 17 import-cached modules missing from its restart regex (#3684 follow-up) | 2026-07-26 |
-| #3736 | fix(marketing charts): paneless volume, tall legible MACD, warm-from-left indicators, honest return chip | 2026-07-26 |
-| #3735 | fix(pit): restore PPIFES/ECIALLCIV/ECIWAG to the ALFRED vintage store | 2026-07-26 |
-| #3733 | fix(chronicle): state_appended=False meant two opposite things — name the reason | 2026-07-26 |
-| #3732 | test(ci): cover the self-mod-fence live-check shell — the E1 dispatch lever was untested | 2026-07-26 |
-| #3731 | test(ci): wire the render-lane scope guard that shipped dark with its own fix | 2026-07-26 |
-| #3730 | test(admin): wire the zero-workflow admin smoke suite and arm its requests tripwire | 2026-07-26 |
-| #3729 | test(ci): wire the render.yml intl-scope guard — the census's only strictly-dark suite | 2026-07-26 |
-| #3728 | fix(shim): the guard missed the module-constant idiom — and the 2nd blind write | 2026-07-26 |
-| #3727 | fix(hooks): the stand-down exemption must check ownership, not just position — an open PR is not a no-op | 2026-07-26 |
-| #3726 | fix(ci): declare scripts.build_intl in the render lane — dag-conformance is red on main | 2026-07-26 |
-| #3725 | fix(hooks): a stand-down session that synced to main could never stop | 2026-07-26 |
-| #3724 | fix(chat): restore the chat.css link a stale-checkout render clobbered | 2026-07-26 |
-| #3723 | fix(signal-lab): the frozen BTC-Vector quote must announce its own staleness | 2026-07-26 |
-| #3722 | fix(brain): render crypto (ETH/BTC/SOL) charts instead of "no data" | 2026-07-26 |
-| #3721 | fix(oeu-bugwave): options/market-structure/flow honesty + staleness fixes (m) | 2026-07-26 |
-| #3720 | test(ci): wire the brain gateway — redirect its ai_costs ledger write, declare fastapi/httpx | 2026-07-26 |
-| #3719 | feat(research-vault): real find-in-PDF, wider zoom range, instant page turns | 2026-07-26 |
-| #3718 | Fix international dashboard render coverage | 2026-07-26 |
-| #3717 | test(brain): close the urllib/httpx hole #3715 named in the no-network contract | 2026-07-26 |
-| #3716 | feat(sentinel): make signal-post disclosure law a config knob; operator disables it | 2026-07-26 |
-| #3715 | fix(test): un-skip the china-flows network tripwire — #3703 made it unfailable | 2026-07-26 |
-| #3714 | hub welcome: weekends & holidays awareness, richer market reads, native Chinese voice | 2026-07-26 |
-| #3713 | fix(ci): regen signal_foundry_blocklist — resync compiled ids to DO_NOT_REBUILD.md (blocklist drift heal) | 2026-07-26 |
-| #3712 | Fix Hong Kong crash-rebound state robustness | 2026-07-26 |
-| #3711 | fix(hooks): a paired plain-copy asset PR needs no render — stop gating it | 2026-07-26 |
-| #3710 | fix(release): claims cards ship real benchmarks; wire the producer suite into CI | 2026-07-26 |
-| #3709 | fix(hygiene): migrate the 37 files that drifted past the import-time warnings ratchet, then wire it into CI | 2026-07-26 |
-| #3708 | test(cortex): derive the prompt's READ/WRITE counts so the tally cannot drift | 2026-07-26 |
-| #3707 | fix(sync): --fix refuses the wrong-direction copy that would clobber a fresher site page | 2026-07-26 |
-| #3706 | docs(mockups): mark the Archivo + Newsreader references superseded | 2026-07-26 |
-| #3705 | feat(brain): let Mastermind give direct buy/sell recommendations | 2026-07-26 |
-| #3704 | fix(ci): let the deploy guard's SUBJECT trigger it — app/deploy/update.sh runs nothing | 2026-07-26 |
-| #3703 | fix(test): importorskip requests — no-network-call contract died on import in ci-pack envs | 2026-07-26 |
-| #3702 | test(flow_leaders): behavioural proof for the loud fail-soft annotation | 2026-07-26 |
-| #3701 | fix(chronicle): the W0 nightly steps were skippable — add if: always() | 2026-07-26 |
-| #3700 | design(landing): one modern display face — Outfit replaces Archivo Expanded + the Newsreader serif | 2026-07-26 |
-| #3699 | fix(support): close the review findings that landed unfixed when #3640 auto-merged | 2026-07-26 |
-| #3697 | fix(ci): make the ship-loop E1 lever satisfiable — fence passes verified-empty dispatch-at-tip; regen blocklist | 2026-07-26 |
-| #3696 | Soften international macro compass shadow | 2026-07-26 |
-| #3695 | fix(nav): keep every followed market on the rail, not just the home one | 2026-07-26 |
-| #3694 | fix(ci): ci-pack neural-web-core venv missing requests — test_ask_brain patches it (#3660 class) | 2026-07-26 |
-| #3693 | feat(marketing): reject loop, batch quality review, no-duplicate re-runs | 2026-07-26 |
-| #3691 | fix(ci): dedupe the externalize-css wiring #3635 and #3650 both added | 2026-07-26 |
-| #3689 | fix(assets): stamp the plain-copy pair BEFORE the site walk — a cancelled render shipped it diverged | 2026-07-26 |
-| #3688 | fix(brain): the cortex could not call read_china_flows — the prompt never named it | 2026-07-26 |
-| #3687 | fix(chronicle): finish #3660's vintage pin, restore the third gate-1 tooth, drop the needless jinja2 dep | 2026-07-26 |
-| #3684 | fix(deploy): restart macro-api for engine/research_vault + every import-cached module | 2026-07-26 |
-| #3683 | fix(ci): restore 10 jobs a stale-base squash-merge silently deleted | 2026-07-26 |
-| #3682 | fix(brain-a11y): the Mastermind launcher is a real button — Tab, Enter, Space | 2026-07-26 |
-| #3681 | test(chronicle): restore the two gate-1 teeth a stale-tree merge silently dropped | 2026-07-26 |
 
 ---
 

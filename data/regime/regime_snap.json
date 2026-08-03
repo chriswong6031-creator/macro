@@ -45,17 +45,17 @@
   "veto": {
     "schema": "regime_snap_veto.v1",
     "is_context_only": true,
-    "lean": "fragile",
-    "confidence": "medium",
+    "lean": "unclear",
+    "confidence": "low",
     "checks": {
-      "catalyst": "No structural catalyst; dovish repricing is driven by rate-path adjustment without a signed deal, policy shift, or hard data surprise. The Fed merely held steady, making this a verbal/technical move.",
-      "premium": "Fear built to 0.368 with VIX term inverted at 0.841. The snap is fast but relief magnitude is still null, so only a small portion of the fear premium appears unwound.",
-      "washout": "cap_recent true and 35 days since last snap suggest a genuine capitulation, not a shallow dip.",
-      "follow_through": "Cross-asset flips are fragile without a catalyst; the dovish repricing relies on no new hawkish cues and could reverse quickly, making a next-session fade likely."
+      "catalyst": "No signed deal, policy shift, or hard data surprise; dovish repricing is a rate-path adjustment, not a structural catalyst.",
+      "premium": "Fear built is moderate (0.368), suggesting some premium remains but a large part may have unwound with the rapid snap.",
+      "washout": "cap_recent is true, indicating recent capitulation, so the snap emerged from a genuine washout.",
+      "follow_through": "Without a structural anchor, the cross-asset confirmation (VIX, VIX term, copper_gold flipped) is likely to fade as repricing alone rarely sustains beyond a session."
     },
-    "read": "The bounce lacks a structural anchor\u2014just a mechanical snap from a washed-out market repricing Fed expectations without fresh news. With no deal or data-driven catalyst, this relief feels more like a dead-cat bounce vulnerable to a sharp fade.",
+    "read": "The snap rides on a dovish repricing, not a concrete catalyst, making it fragile. Capitulation was present, but the lack of a signed deal or policy shift means follow-through is doubtful \u2014 this is more likely a dead-cat bounce.",
     "model": "deepseek-v4-pro",
-    "generated_at": "2026-08-02T01:33:59.756900+00:00",
+    "generated_at": "2026-08-03T01:17:49.964485+00:00",
     "degraded_reason": null,
     "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
   }

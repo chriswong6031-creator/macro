@@ -248,6 +248,78 @@ verifies visually and ships.
    scripts; narrow extraction (rotation_events/desk_watch/time_machine JS) went to a
    bounded builder instead.
 
+### Follow-ups (PR-A1, 2026-08-02)
+
+7. **Forming Narratives panel mounted at the end of MOVEMENT.**
+   `engine.narrative_emergence` has emitted `site/basketdata/narrative_emergence.json`
+   for US nightly all along, and `templates/_forming_narratives.html.j2` was already
+   mounted on baskets_china/hk/canada/intl — never on any US page. The US read was
+   computed and never shown. It ends MOVEMENT deliberately: the funnel descends gated
+   lanes → map → whole-market motion → what is forming next. No new rail entry; the
+   panel is display-only and self-hides when the JSON is absent.
+
+8. **`state_of_themes` naming aligned to the nav promise "Theme Tracker / 主题追踪".**
+   One artifact carried three names — slug `state_of_themes.html`, page title "State
+   of Themes"/主题态势, nav label "Theme Tracker"/主题追踪. The nav promise wins: a
+   user who clicks "Theme Tracker" must land on a page that says Theme Tracker. The
+   **slug is kept** — URL churn is not worth it on a page linked only from the nav,
+   and the SEO canonical stays stable. Display copy moved (title, seo_title, brand,
+   plus the hand-authored nav copy in `templates/chat.html`, which had drifted to the
+   old name); the slug, module name, artifact keys and ledger ids did not.
+
+   8b. **Story-id ↔ basket-id crosswalk closed additively.** Only 7 of the 18 story
+   ids are spelled like their basket, so `build_portfolio_ctx._themes_block`'s
+   same-id join into `theme_lanes.json` silently read null for the other 11
+   (power_grid, obesity_glp1, payments_fintech, defense, space_economy,
+   critical_minerals, uranium_miners, ai_infra, ai_neoclouds, reshoring,
+   managed_care). Story ids key ledgers and were NOT renamed. Instead
+   `config/theme_crosswalk.yml` (v2) gained `primary_basket_id` — the one basket that
+   IS the theme, transcribed from each row's own note, null where the note itself
+   disclaims a dedicated basket. It is deliberately narrower than `basket_ids`: that
+   list answers "which baskets give this theme a price surface" and includes
+   supply-chain proxies, which do not survive being read backwards (managed_care is
+   the medical_devices theme's closest healthcare proxy; a managed_care holder does
+   not own that theme). 13 stories resolve a basket, 5 stay honestly null.
+   `theme_lanes.json` now ships `basket_lanes` + `theme_baskets` beside the unchanged
+   `lanes`; the consumer prefers the explicit map and falls back to the same-id
+   lookup, so the join is a strict superset.
+
+8c. **`baskets.html#theme-<id>` deep-link contract restored in the stub.** The merge
+   turned `baskets.html` into a redirect stub that discarded the hash, so alerts rows
+   (`engine/alert_triage.py` assembles page + `#theme-<id>` anchor), bookmarks and
+   outbound links all dumped the visitor at the lanes anchor. The stub is the correct
+   RECEIVER: it now runs a head-script resolver — validate the id against the nightly
+   basket id list (passed as `theme_ids` by `build_baskets.py`, the same list
+   `build_detail_pages` writes `basket/<id>.html` from), then `location.replace()` to
+   that detail page; an unknown/stale id falls through to the merged page rather than a
+   404, and the meta refresh stays as the no-JS fallback. Live in-page emitters
+   (dashboard sector-heat/cool chips) were already re-pointed at `basket/<id>.html`
+   during the merge — only their comments still described the retired hop.
+
+8d. **macro-desk family membership changed** (roster recorded in
+   `tests/test_macro_desk_surface.py`): `baskets` and `subsector_rotation` LEFT — both
+   are stubs with their own inline style block, linking no `macro-desk.css`.
+   `sector_central` STAYED but changed VARIANT to `page-baskets` (the merged page is
+   descended from the baskets rvx layer). **Known gap, not yet reconciled:** the merged
+   page still carries `scc-wrap` / `scc-cycle` / `cyc-stage` / `scc-section-h` /
+   `scc-boardhead` markup, and `macro-desk.css` scopes ~15 rules for exactly those
+   classes under `body.macro-desk.page-sector-central` — dead on the merged page since
+   the merge (its China sibling keeps the class, so they stay live there). Reconciling
+   is a styling call with cascade-collision risk against the rvx layer, so it is left
+   for a design pass; the roster pin records the shipped truth meanwhile.
+
+9. **ADJUDICATED KILL — the SRR "Themes-47" unit (the §4b-1 deferral) is closed
+   WON'T-BUILD.** Reasons: (a) the merged page already serves 47-basket rotation in
+   THE MAP (rvx instrument, sectors/baskets scopes) — a second 47-row rotation table
+   in MOVEMENT recreates the same-universe duplication this program cured; (b)
+   MOVEMENT's IA promise is "the whole market" (§4b-1), deliberately excluding
+   curated universes; (c) the `themes` array in `subsector_rotation.json` is
+   contract-bound to `engine/neuralweb/thematic_state.py` (keys by finviz `theme`
+   name) and cannot be repurposed — an additive dark unit would ship an unreviewed
+   dark lane serving no surface. If a future program wants SRR as the SOLE rotation
+   instrument (11/47/269 in one), that is a design program with its own adjudication,
+   not a follow-up chore.
+
 ## §5 Vocabulary bridge (Tier-2 `?` receipt, one place)
 
 "**Leading/Improving/Weakening/Lagging** describe where a group sits vs the market

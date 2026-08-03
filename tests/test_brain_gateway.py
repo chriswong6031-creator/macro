@@ -3321,6 +3321,128 @@ def test_dispatch_fundamentals_requires_active_site_full_for_forensics(tmp_path)
     assert result["filing_forensics"]["authority"] == "context_only"
 
 
+# --- exact earnings evidence member boundary ---------------------------------
+
+def test_earnings_evidence_schema_is_guest_safe_by_default(tmp_path):
+    """Brain has guest access, so the no-identity schema must be the safe subset."""
+    names = {item["name"] for item in gw._all_brain_tool_schemas(tmp_path)}
+    assert "read_earnings_evidence" not in names
+
+
+def test_earnings_evidence_schema_never_resolves_synthetic_guest(tmp_path):
+    with patch.object(gw, "_resolve_tier", return_value={
+        "tier": "unlimited", "status": "active",
+    }) as resolve:
+        names = {
+            item["name"]
+            for item in gw._all_brain_tool_schemas(tmp_path, user_id="guest:review")
+        }
+    assert "read_earnings_evidence" not in names
+    resolve.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("entitlement", "expected"),
+    [
+        ({"tier": "free", "status": "active"}, False),
+        ({"tier": "essential", "status": "canceled"}, False),
+        ({"tier": "pro", "status": "past_due"}, False),
+        ({"tier": "essential", "status": "active"}, True),
+        ({"tier": "insider", "status": "trialing"}, True),
+        ({"tier": "pro", "status": "active"}, True),
+        ({"tier": "unlimited", "status": "trialing"}, True),
+    ],
+)
+def test_earnings_evidence_schema_tracks_server_entitlement(tmp_path, entitlement, expected):
+    with patch.object(gw, "_resolve_tier", return_value=entitlement):
+        names = {
+            item["name"]
+            for item in gw._all_brain_tool_schemas(tmp_path, user_id="user-1")
+        }
+    assert ("read_earnings_evidence" in names) is expected
+
+
+@pytest.mark.parametrize(
+    ("user_id", "entitlement", "expected_tier", "expected_status"),
+    [
+        ("", None, "free", "none"),
+        ("guest:review", None, "free", "none"),
+        ("unknown", None, "free", "none"),
+        ("user-free", {"tier": "free", "status": "active"}, "free", "active"),
+        (
+            "user-canceled",
+            {"tier": "essential", "status": "canceled"},
+            "essential",
+            "canceled",
+        ),
+        ("user-past-due", {"tier": "pro", "status": "past_due"}, "pro", "past_due"),
+    ],
+)
+def test_earnings_evidence_execution_fails_closed(
+    tmp_path, user_id, entitlement, expected_tier, expected_status,
+):
+    args = (
+        "read_earnings_evidence",
+        {"ticker": "AAL"},
+        tmp_path,
+        tmp_path,
+        "http://x",
+    )
+    tier_patch = (
+        patch.object(gw, "_resolve_tier", return_value=entitlement)
+        if entitlement is not None
+        else patch.object(gw, "_resolve_tier")
+    )
+    with tier_patch as resolve, patch(
+        "engine.neuralweb.ask_brain._dispatch_read_tool"
+    ) as inherited_dispatch:
+        result = gw._dispatch_brain_tool(*args, user_id=user_id)
+    assert result["error"] == "insider_required"
+    assert result["tier"] == expected_tier
+    assert result["status"] == expected_status
+    inherited_dispatch.assert_not_called()
+    if entitlement is None:
+        resolve.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "entitlement",
+    [
+        {"tier": "essential", "status": "active"},
+        {"tier": "insider", "status": "trialing"},
+        {"tier": "pro", "status": "active"},
+        {"tier": "unlimited", "status": "trialing"},
+    ],
+)
+def test_earnings_evidence_execution_reaches_reader_for_active_members(
+    tmp_path, entitlement,
+):
+    expected = {"available": True, "ticker": "AAL", "fact_count": 2}
+    with patch.object(gw, "_resolve_tier", return_value=entitlement), patch(
+        "engine.neuralweb.ask_brain._dispatch_read_tool",
+        return_value=expected,
+    ) as inherited_dispatch:
+        result = gw._dispatch_brain_tool(
+            "read_earnings_evidence",
+            {"ticker": "AAL"},
+            tmp_path,
+            tmp_path,
+            "http://x",
+            user_id="user-paid",
+        )
+    assert result == expected
+    inherited_dispatch.assert_called_once_with(
+        "read_earnings_evidence", {"ticker": "AAL"}, tmp_path,
+    )
+
+
+def test_unknown_tool_disclosure_does_not_leak_member_reader_to_guest(tmp_path):
+    result = gw._dispatch_brain_tool(
+        "launch_missiles", {}, tmp_path, tmp_path, "http://x", user_id="",
+    )
+    assert "read_earnings_evidence" not in result["available_tools"]
+
+
 # --- _split_suggestions -------------------------------------------------------
 
 def test_split_suggestions_marker_present():
@@ -4741,8 +4863,17 @@ def test_tool_label_whitelist_covers_every_tool():
     """Every tool the model can call has a whitelist row — the fallback is a safety net,
     not a licence to ship a tool label-less (the raw names are an internals leak)."""
     root = pathlib.Path(__file__).resolve().parent.parent
-    names = [t["name"] for t in gw._all_brain_tool_schemas(root, page="terminal",
-                                                           internals_allowed=True)]
+    # Enumerate the true superset: internals allowlisting plus an active member
+    # entitlement. The guest-safe schema intentionally omits exact earnings evidence.
+    with patch.object(gw, "_resolve_tier", return_value={
+        "tier": "essential", "status": "active",
+    }):
+        names = [t["name"] for t in gw._all_brain_tool_schemas(
+            root,
+            page="terminal",
+            internals_allowed=True,
+            user_id="label-audit-member",
+        )]
     assert names, "tool schema enumeration must not be empty"
     assert [n for n in names if n not in gw._TOOL_LABELS] == []
     assert [k for k in gw._TOOL_LABELS if k not in names] == [], "stale label rows"

@@ -53,15 +53,34 @@ router = APIRouter()
 # registration wall would never receive the account/billing tickets it exists for.
 # It ships no signals and no customer data, and its one write surface
 # (POST /api/support/ticket) carries its own abuse posture in app/support.py.
+#
+# /about.html is the ENTITY page (research/SEO_SUPERCHARGE_MASTERPLAN_BY_FABLE.md
+# §0.10). It is public for the same structural reason the legal pages are: a page
+# whose whole job is to tell a stranger — and a crawler that has never had a
+# session — who we are cannot sit behind a wall that asks them to prove who THEY
+# are first. It ships no signals, no data and no write surface.
+#
+# /special_situations.html and /china_special_situations.html are TIER-PREVIEW
+# SHELLS (docs/TIER_PREVIEW_PATTERN.md), promoted from free_registered to
+# anonymous-public by SEO_SUPERCHARGE_MASTERPLAN W1a. The shell carries only the
+# preview slice, the honest totals and the upgrade wall; every paid row ships in
+# a separate payload (/premiumdata/*, plus /allocationdata/special_situations.json
+# and /chinaspecialdata/special.json) that app/paywall.py enforces as Essential+
+# regardless of PAYWALL_ENABLED. So opening the page opens no rows: the split is
+# still the gate, and this wall was only ever costing us the crawl — Googlebot
+# has no session, so it was being 302'd off the one desk with proven demand.
 PUBLIC_PATHS = {
     "/",
     "/index.html",
+    "/about.html",
     "/plans.html",
     "/confluence_screener.html",
     "/macro.html",
     "/start.html",
     "/us_stocks.html",
     "/research_vault.html",
+    "/special_situations.html",
+    "/china_special_situations.html",
     "/support.html",
     "/unsubscribe.html",
 }

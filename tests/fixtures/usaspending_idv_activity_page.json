@@ -1,0 +1,47 @@
+{
+  "results": [
+    {
+      "award_id": 12345,
+      "awarding_agency": "Department of Test",
+      "awarding_agency_id": 101,
+      "generated_unique_award_id": "CONT_AWD_CHILD_A_1010_PARENT_1010",
+      "parent_award_id": 9876,
+      "parent_generated_unique_award_id": "CONT_IDV_PARENT_1010",
+      "parent_award_piid": "PARENT",
+      "obligated_amount": 125000.0,
+      "awarded_amount": 150000.0,
+      "period_of_performance_potential_end_date": "2027-09-30",
+      "period_of_performance_start_date": "2026-01-15",
+      "piid": "CHILD-A",
+      "recipient_name": "TEST RECIPIENT, INC.",
+      "recipient_id": "recipient-source-id",
+      "grandchild": false
+    },
+    {
+      "award_id": 12346,
+      "awarding_agency": "Department of Test",
+      "awarding_agency_id": 101,
+      "generated_unique_award_id": "CONT_AWD_GRANDCHILD_B_1010_PARENT_1010",
+      "parent_award_id": 9876,
+      "parent_generated_unique_award_id": "CONT_IDV_PARENT_1010",
+      "parent_award_piid": "PARENT",
+      "obligated_amount": 35000.0,
+      "awarded_amount": 50000.0,
+      "period_of_performance_potential_end_date": "2027-10-31",
+      "period_of_performance_start_date": "2026-02-01",
+      "piid": "CHILD-B",
+      "recipient_name": "TEST RECIPIENT, INC.",
+      "recipient_id": "recipient-source-id",
+      "grandchild": true
+    }
+  ],
+  "page_metadata": {
+    "page": 1,
+    "hasNext": false,
+    "hasPrevious": false,
+    "next": null,
+    "previous": null,
+    "limit": 100,
+    "total": 2
+  }
+}

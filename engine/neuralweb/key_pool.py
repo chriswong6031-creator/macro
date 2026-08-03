@@ -118,6 +118,7 @@ POOL_CAPABILITY_IDS = [
 # POOL_CAPABILITY_IDS so the seven-slot Claude rotation contract stays exact.
 PROVIDER_CAPABILITY_IDS = [
     "codex_account",
+    "codex_account_2",
     "deepseek_api_key",
 ]
 
@@ -693,10 +694,12 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
             deepseek_present = bool(os.environ.get("DEEPSEEK_API_KEY", ""))
         try:
             from engine import codex_provider as _codex  # noqa: PLC0415
-            codex_present = _codex.is_available()
+            codex_accounts = {
+                cap_id for cap_id, _home in _codex.available_accounts()
+            }
             codex_enabled = _codex.provider_enabled()
         except Exception:  # noqa: BLE001
-            codex_present = False
+            codex_accounts = set()
             codex_enabled = False
 
         all_ids = list(POOL_CAPABILITY_IDS) + list(PROVIDER_CAPABILITY_IDS) + ["legacy"]
@@ -709,8 +712,8 @@ def usage_snapshot(root: Path | None = None) -> list[dict[str, Any]]:
                 enabled = enabled_ids is None or kid in enabled_ids
                 provider = "Claude OAuth"
                 model_translation = None
-            elif kid == "codex_account":
-                present = codex_present
+            elif kid.startswith("codex_account"):
+                present = kid in codex_accounts
                 enabled = codex_enabled
                 provider = "Codex subscription"
                 model_translation = (

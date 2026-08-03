@@ -262,6 +262,7 @@ _BRAIN_TOOLS = frozenset({
     "read_theme_trade_flows",
     "read_special_situations",
     "read_company_intelligence",
+    "read_earnings_evidence",
     # Brain-gateway-specific tools (W6a)
     "get_quote",
     "get_symbol_context",
@@ -1423,6 +1424,9 @@ def _compact_stage_context(symbol: str, root: Path) -> dict:
         rows = frame[frame["ticker"].astype(str).str.upper() == symbol]
         if rows.empty:
             return {}
+        # The parquet retains multiple as_of_date snapshots (nightly engine
+        # appends over the vendor seed) — take the newest, not the first.
+        rows = rows.sort_values("as_of_date", ascending=False, kind="stable")
         row = rows.iloc[0]
         flag = int(row["stage_flag"]) if not pd.isna(row["stage_flag"]) else None
         return {
@@ -2462,6 +2466,10 @@ def _tool_get_stage_peers(params: dict, root: Path) -> dict:
             edf = pd.read_parquet(stage_path)
             sub = edf[edf["ticker"] == symbol] if "ticker" in edf.columns else edf.iloc[0:0]
             if len(sub):
+                # Multiple as_of_date snapshots may coexist (nightly engine
+                # appends over the vendor seed) — take the newest, not the first.
+                if "as_of_date" in sub.columns:
+                    sub = sub.sort_values("as_of_date", ascending=False, kind="stable")
                 r = sub.iloc[0]
                 sflag = r.get("stage_flag")
                 try:
@@ -3510,6 +3518,43 @@ def _tool_context_open(params: dict, root: Path) -> dict:
     }
 
 
+_EARNINGS_EVIDENCE_TIERS = frozenset({"essential", "pro", "unlimited"})
+_EARNINGS_EVIDENCE_STATUSES = frozenset({"active", "trialing"})
+
+
+def _earnings_evidence_entitlement(
+    user_id: str,
+    root: Path | None = None,
+) -> tuple[bool, dict]:
+    """Return the server-authoritative member gate for exact earnings evidence.
+
+    ``read_earnings_evidence`` exposes receipt-bound facts from the protected member
+    plane while Brain itself has guest/free access.  Keep this small predicate shared
+    by schema construction and execution so those two security boundaries cannot drift.
+    Missing identity, resolver errors, unknown tiers, and inactive subscriptions all
+    fail closed.  Legacy ``insider`` rows are normalized to ``essential``.
+    """
+    uid = str(user_id or "").strip()
+    if not uid or uid.startswith("guest:") or uid == "unknown":
+        return False, {"tier": "free", "status": "none"}
+    try:
+        raw = _resolve_tier(uid, root=root) or {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("brain_gateway: earnings evidence tier resolve failed (%s)", exc)
+        return False, {"tier": "free", "status": "none"}
+    tier = normalize_tier(raw.get("tier")) or "free"
+    status = str(raw.get("status") or "").strip().lower()
+    entitlement = {**raw, "tier": tier, "status": status or "none"}
+    allowed = tier in _EARNINGS_EVIDENCE_TIERS and status in _EARNINGS_EVIDENCE_STATUSES
+    return allowed, entitlement
+
+
+def _earnings_evidence_allowed(user_id: str, root: Path | None = None) -> bool:
+    """Boolean form used by model-schema and capability-disclosure filters."""
+    allowed, _ = _earnings_evidence_entitlement(user_id, root)
+    return allowed
+
+
 def _dispatch_brain_tool(
     tool_name: str,
     tool_params: dict,
@@ -3538,15 +3583,39 @@ def _dispatch_brain_tool(
         # 'read_stage_analysis' 3× when the right name was get_stage_peers).
         # CXI-R23a: exclude internals tool names for non-allowlisted sessions so the
         # model never learns of context_search / context_open from this error path.
-        _disclosed = (
-            sorted(_BRAIN_TOOLS)
-            if internals_ok
-            else sorted(_BRAIN_TOOLS - _BRAIN_INTERNALS_TOOLS)
-        )
+        _disclosed_tools = set(_BRAIN_TOOLS)
+        if not internals_ok:
+            _disclosed_tools.difference_update(_BRAIN_INTERNALS_TOOLS)
+        # Match the model-facing schema boundary: a guest/free/inactive session must
+        # not learn the name of the member evidence reader through this recovery path.
+        if not _earnings_evidence_allowed(user_id, root):
+            _disclosed_tools.discard("read_earnings_evidence")
+        _disclosed = sorted(_disclosed_tools)
         return {
             "error": f"tool not allowed: {tool_name!r}",
             "available_tools": _disclosed,
         }
+
+    # Exact receipt-bound transcript facts live in the protected member plane.  Brain
+    # is also available to guests, so inherited ask_brain dispatch cannot be the
+    # authorization boundary for this one tool.  Resolve the entitlement server-side
+    # again at execution (the resolver is cached) even though the schema was omitted:
+    # model/provider bugs and forged tool names must fail closed too.
+    if tool_name == "read_earnings_evidence":
+        allowed, entitlement = _earnings_evidence_entitlement(user_id, root)
+        if not allowed:
+            tier = str(entitlement.get("tier") or "free")
+            status = str(entitlement.get("status") or "none")
+            return {
+                "error": "insider_required",
+                "tier": tier,
+                "status": status,
+                "note": (
+                    "Exact earnings-call evidence requires a signed-in Essential, Pro, "
+                    "or Unlimited account in active or trialing status. Explain the "
+                    "member gate and continue from public earnings context only."
+                ),
+            }
 
     if tool_name in _BRAIN_ONLY_TOOLS:
         if tool_name == "get_quote":
@@ -3737,15 +3806,25 @@ def _dispatch_brain_tool(
 # Combined tool schema list for the model
 # ---------------------------------------------------------------------------
 
-def _all_brain_tool_schemas(root: Path, page: str = "", internals_allowed: bool = False) -> list[dict]:
+def _all_brain_tool_schemas(
+    root: Path,
+    page: str = "",
+    internals_allowed: bool = False,
+    user_id: str = "",
+) -> list[dict]:
     """Return the full tool schema list (ask_brain read tools + brain-only tools).
 
     Chart-command tools (W6b) are included ONLY when page == 'terminal'.
     Internals tools (CXI-R23a) are included ONLY when internals_allowed=True.
+    Exact earnings evidence is included ONLY for a server-resolved Essential, Pro, or
+    Unlimited account whose status is active/trialing.  The default is therefore the
+    guest-safe schema, not the internal superset.
     Non-allowlisted sessions never see context_search / context_open in the schema list.
     """
     from engine.neuralweb.ask_brain import _read_tool_schemas  # noqa: PLC0415
     schemas = _read_tool_schemas() + _brain_tool_schemas()
+    if not _earnings_evidence_allowed(user_id, root):
+        schemas = [s for s in schemas if s.get("name") != "read_earnings_evidence"]
     # Analyst OS P0: market-intel retrieval (live events wire + research-vault search).
     # Offered everywhere; search_research is tier-gated at EXECUTION (the portfolio-brief
     # idiom) so the model can explain the gate instead of hallucinating research.
@@ -5661,7 +5740,12 @@ def _run_brain_loop(
     safe_panel = re.sub(r"[^a-z0-9\-]", "", str((context or {}).get("panel") or "").lower())[:40]
 
     # Chart-command tools gated to terminal page; internals tools gated to allowlisted sessions
-    tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
+    tool_schemas = _all_brain_tool_schemas(
+        root,
+        page=safe_page,
+        internals_allowed=internals_ok,
+        user_id=user_id,
+    )
     system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok, lane=lane)
     system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
     # W3: the account's stored answer LENGTH, ahead of the analyst block so the protocol's
@@ -5999,6 +6083,7 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
     "read_special_situations":    ("Scanning special situations",   "扫描特殊机会"),
     "read_stage_analysis":        ("Checking the stage analysis",   "查看阶段分析"),
     "read_company_intelligence":  ("Reading the latest company events", "查看公司最新事件"),
+    "read_earnings_evidence":     ("Verifying the latest earnings evidence", "核验最新财报证据"),
 }
 
 # Unknown tool name (a new tool shipped before this table) → a truthful generic line.
@@ -6491,7 +6576,12 @@ def _run_brain_loop_stream(
     safe_panel = re.sub(r"[^a-z0-9\-]", "", str((context or {}).get("panel") or "").lower())[:40]
 
     # Chart-command tools gated to terminal page; internals tools gated to allowlisted sessions
-    tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
+    tool_schemas = _all_brain_tool_schemas(
+        root,
+        page=safe_page,
+        internals_allowed=internals_ok,
+        user_id=user_id,
+    )
     system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok, lane=lane)
     system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
     # W3: the account's stored answer LENGTH, ahead of the analyst block so the protocol's

@@ -7,10 +7,13 @@ Public API
 ----------
 seed_targets(root=None)    -> list[dict]
 score_target(t)            -> float
-draft_referral(target_id, tier, billing) -> dict   (PAPER ONLY — persists nothing)
+draft_referral(target_id, tier, billing, root=None) -> dict   (PAPER ONLY — persists nothing)
 track_record_stats(root=None, cfg=None) -> dict
-render_kit(target, stats)  -> str (markdown)
+render_kit(target, stats, pricing=None) -> str (markdown)
 build_allies(root=None)    -> dict
+
+Pricing comes from config/plans.yml (MNZ-R12: the catalog is the single
+source of prices and tier display names — never literals in this module).
 """
 from __future__ import annotations
 
@@ -24,24 +27,6 @@ from pathlib import Path
 from typing import Any
 
 log = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Pricing constants — SOLE authorised source:
-#   research/MONETIZATION_ACCESS_MASTERPLAN_BY_FABLE.md Amendment 1
-#   (operator-ratified 2026-07-18, PRs #2923/#2943)
-# ---------------------------------------------------------------------------
-_PRICING: dict[str, dict[str, float]] = {
-    "insider": {
-        "monthly": 59.0,          # $59/mo billed monthly
-        "annual_monthly": 49.0,   # $49/mo billed annually
-        "annual_total": 588.0,    # $49 × 12 = $588/yr  (save 17%)
-    },
-    "pro": {
-        "monthly": 89.0,          # $89/mo billed monthly
-        "annual_monthly": 69.0,   # $69/mo billed annually
-        "annual_total": 828.0,    # $69 × 12 = $828/yr  (save 22%)
-    },
-}
 
 REFERRAL_SCHEMA = "marketing.allies_referral/v1"
 
@@ -138,6 +123,60 @@ def _load_allies_communities(root: Path) -> list[dict]:
     except Exception as exc:  # noqa: BLE001
         log.warning("allies: failed to load allies_communities.yml: %s", exc)
         return []
+
+
+def _load_pricing(root: Path) -> dict:
+    """Pricing derived from config/plans.yml — the monetization catalog.
+
+    MNZ-R12: prices/tiers ship as config, never literals. This loader is
+    deliberately NOT fail-soft: printing a stale or guessed price is worse
+    than printing nothing, and an in-module fallback copy is exactly how the
+    previous hardcoded table went a full price revision stale.
+
+    Returns::
+
+        {
+          "products": {key: {"name", "monthly", "annual_monthly",
+                             "annual_total", "savings_pct"}},
+          "aliases":  {legacy_key: current_key},   # from legacy_product_keys
+          "order":    [key, ...],                  # tier_rank display order
+        }
+
+    Amounts are USD (catalog stores cents); annual_monthly is DERIVED
+    (annual/12) per the catalog contract, never stored.
+    """
+    import yaml  # type: ignore[import]
+    path = root / "config" / "plans.yml"
+    with path.open(encoding="utf-8") as f:
+        catalog = yaml.safe_load(f) or {}
+
+    products: dict[str, dict[str, Any]] = {}
+    for key, meta in (catalog.get("products") or {}).items():
+        prices = (meta or {}).get("prices") or {}
+        monthly = int(prices["monthly"]["unit_amount"]) / 100.0
+        annual_total = int(prices["annual"]["unit_amount"]) / 100.0
+        annual_monthly = annual_total / 12.0
+        savings_pct = (
+            int(round((1.0 - annual_total / (12.0 * monthly)) * 100))
+            if monthly > 0 else 0
+        )
+        products[str(key)] = {
+            "name": str((meta or {}).get("name") or key),
+            "monthly": monthly,
+            "annual_monthly": annual_monthly,
+            "annual_total": annual_total,
+            "savings_pct": savings_pct,
+        }
+    if not products:
+        raise ValueError(f"allies: no products found in {path}")
+
+    aliases: dict[str, str] = {}
+    for current, legacy_list in (catalog.get("legacy_product_keys") or {}).items():
+        for legacy in (legacy_list or []):
+            aliases[str(legacy)] = str(current)
+
+    rank = [t for t in (catalog.get("tier_rank") or []) if t in products]
+    return {"products": products, "aliases": aliases, "order": rank or sorted(products)}
 
 
 def _load_narrative_sources(root: Path) -> list[dict]:
@@ -393,25 +432,34 @@ def seed_targets(root: Path | str | None = None) -> list[dict]:
 # draft_referral
 # ---------------------------------------------------------------------------
 
-def draft_referral(target_id: str, tier: str, billing: str) -> dict:
+def draft_referral(target_id: str, tier: str, billing: str,
+                   root: Path | str | None = None) -> dict:
     """Return a PAPER-ONLY referral scaffold.  Persists NOTHING.
 
     Parameters
     ----------
     target_id : str    e.g. "fund-berkshire"
-    tier      : str    "insider" | "pro"
+    tier      : str    catalog product key ("essential" | "pro"); legacy keys
+                       from legacy_product_keys (e.g. "insider") resolve to
+                       their current product and the returned tier is the
+                       CURRENT key
     billing   : str    "monthly" | "annual"
+    root      : path   repo root for the catalog read (default: this repo)
 
     Returns a dict with schema marketing.allies_referral/v1.
     cut_pct and code stay None — the operator sets them when (if) the program
     is approved.  The D07 attribution join consumes utm_source and utm_campaign.
 
-    Pricing source: research/MONETIZATION_ACCESS_MASTERPLAN_BY_FABLE.md
-    Amendment 1 (operator-ratified 2026-07-18, PRs #2923/#2943).
+    Pricing source: config/plans.yml (MNZ-R12 — the catalog is the single
+    source; this module holds no price literals).
     """
+    pricing = _load_pricing(_repo_root(root))
     tier_key = tier.lower()
+    tier_key = pricing["aliases"].get(tier_key, tier_key)
+    if tier_key not in pricing["products"]:
+        tier_key = pricing["order"][0]  # lowest paid tier per tier_rank
     billing_key = billing.lower()
-    prices = _PRICING.get(tier_key, _PRICING["insider"])
+    prices = pricing["products"][tier_key]
     list_price = prices["monthly"] if billing_key == "monthly" else prices["annual_monthly"]
 
     return {
@@ -420,7 +468,7 @@ def draft_referral(target_id: str, tier: str, billing: str) -> dict:
         "target_id": target_id,
         "tier": tier_key,
         "billing": billing_key,
-        "list_price_usd": list_price,
+        "list_price_usd": round(list_price, 2),
         "cut_pct": None,  # operator decision — not set in W1
         "utm_source": "ally",
         "utm_campaign": target_id,
@@ -542,7 +590,7 @@ def track_record_stats(root: Path | str | None = None,
 # render_kit
 # ---------------------------------------------------------------------------
 
-def render_kit(target: dict, stats: dict) -> str:
+def render_kit(target: dict, stats: dict, pricing: dict | None = None) -> str:
     """Render a one-page markdown kit for a single target.
 
     Sections:
@@ -553,7 +601,12 @@ def render_kit(target: dict, stats: dict) -> str:
     5. Footer (on every kit)
 
     Never uses the word "validated".
+
+    `pricing` is a :func:`_load_pricing` result; None reads the catalog off
+    this repo's root.  Callers rendering many kits load once and pass it in.
     """
+    if pricing is None:
+        pricing = _load_pricing(_repo_root(None))
     kind = str(target.get("kind") or "")
     name = str(target.get("name") or target.get("target_id", ""))
     target_id = str(target.get("target_id") or "")
@@ -628,14 +681,14 @@ def render_kit(target: dict, stats: dict) -> str:
         "",
         "  | Tier | Monthly | Annual (per month) | Annual total |",
         "  |------|---------|-------------------|--------------|",
-        f"  | Insider | ${_PRICING['insider']['monthly']:.0f}/mo | "
-        f"${_PRICING['insider']['annual_monthly']:.0f}/mo | "
-        f"${_PRICING['insider']['annual_total']:.0f}/yr (save 17%) |",
-        f"  | Pro | ${_PRICING['pro']['monthly']:.0f}/mo | "
-        f"${_PRICING['pro']['annual_monthly']:.0f}/mo | "
-        f"${_PRICING['pro']['annual_total']:.0f}/yr (save 22%) |",
+        *(
+            f"  | {p['name']} | ${p['monthly']:.0f}/mo | "
+            f"${p['annual_monthly']:.0f}/mo | "
+            f"${p['annual_total']:.0f}/yr (save {p['savings_pct']}%) |"
+            for p in (pricing["products"][k] for k in pricing["order"])
+        ),
         "",
-        "  *Pricing per MONETIZATION_ACCESS_MASTERPLAN Amendment 1 (#2923/#2943)*",
+        "  *Pricing from config/plans.yml (the monetization catalog — MNZ-R12)*",
         "",
         "  **Affiliate cut: unset — operator decision; no referral codes exist yet.**",
         "",
@@ -706,6 +759,10 @@ def build_allies(root: Path | str | None = None) -> dict:
         r = _repo_root(root)
         today = _today_utc()
 
+        # Load pricing BEFORE any writes — an unreadable catalog aborts the
+        # whole build (top-level except) rather than writing priceless kits.
+        pricing = _load_pricing(r)
+
         targets = seed_targets(r)
         stats = track_record_stats(r)
 
@@ -725,7 +782,7 @@ def build_allies(root: Path | str | None = None) -> dict:
                 continue
             kit_path = r / kit_rel
             try:
-                md = render_kit(t, stats)
+                md = render_kit(t, stats, pricing)
                 _write_atomic(kit_path, md)
                 kits_written += 1
             except Exception as exc:  # noqa: BLE001

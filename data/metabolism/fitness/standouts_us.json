@@ -1,6 +1,6 @@
 {
   "schema": "metabolism.standout_fitness.v1",
-  "as_of": "2026-08-02",
+  "as_of": "2026-08-03",
   "lobe": "site-us-standouts",
   "maturity": "partial",
   "sensors": {

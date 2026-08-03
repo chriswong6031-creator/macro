@@ -1,14 +1,16 @@
 {
   "schema": "gsc_state.v1",
   "as_of": "2026-08-02",
-  "available": false,
-  "reason": "GSC_SA_JSON is multiply-encoded and the inner layer is not valid JSON: Expecting value: line 1 column 1 (char 0) [inner payload: looks like a bare PEM private key — the secret must be the whole .json key file, not just the private_key field (1703 chars)]",
+  "available": true,
+  "reason": null,
   "property": "sc-domain:mastermind-x.com",
-  "service_account": {},
+  "service_account": {
+    "client_email": "mas***@***.gserviceaccount.com"
+  },
   "window": {
     "start": "2026-07-06",
     "end": "2026-08-02"
   },
-  "rows_fetched": 0,
+  "rows_fetched": 74,
   "rows_may_be_incomplete": true
 }

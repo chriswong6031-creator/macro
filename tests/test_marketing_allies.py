@@ -163,33 +163,62 @@ def test_no_network_imports_in_source():
 
 
 # ---------------------------------------------------------------------------
-# (g) draft_referral — correct schema, cut_pct/code None, correct prices,
+# (g) draft_referral — correct schema, cut_pct/code None, prices == catalog,
 #     never writes a file
 # ---------------------------------------------------------------------------
 
-def test_draft_referral_insider_monthly():
+def _catalog() -> dict:
+    """Read config/plans.yml independently of the module under test."""
+    import yaml
+    with (ROOT / "config" / "plans.yml").open(encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def _catalog_monthly(cat: dict, key: str) -> float:
+    return cat["products"][key]["prices"]["monthly"]["unit_amount"] / 100.0
+
+
+def _catalog_annual_total(cat: dict, key: str) -> float:
+    return cat["products"][key]["prices"]["annual"]["unit_amount"] / 100.0
+
+
+def test_draft_referral_essential_monthly():
     from engine.marketing.allies import draft_referral
-    ref = draft_referral("fund-berkshire", "insider", "monthly")
+    cat = _catalog()
+    ref = draft_referral("fund-berkshire", "essential", "monthly")
     assert ref["cut_pct"] is None
     assert ref["code"] is None
-    assert ref["list_price_usd"] == 59.0
-    assert ref["tier"] == "insider"
+    assert ref["list_price_usd"] == pytest.approx(_catalog_monthly(cat, "essential"))
+    assert ref["tier"] == "essential"
     assert ref["billing"] == "monthly"
     assert ref["operator_approved"] is False
     assert ref["issued_utc"] is None
     assert ref["status"] == "draft"
 
 
-def test_draft_referral_insider_annual():
+def test_draft_referral_essential_annual():
     from engine.marketing.allies import draft_referral
-    ref = draft_referral("fund-berkshire", "insider", "annual")
-    assert ref["list_price_usd"] == 49.0
+    cat = _catalog()
+    ref = draft_referral("fund-berkshire", "essential", "annual")
+    # Per-month-equivalent is DERIVED (annual/12) per the catalog contract.
+    assert ref["list_price_usd"] == pytest.approx(
+        round(_catalog_annual_total(cat, "essential") / 12.0, 2))
+
+
+def test_draft_referral_legacy_insider_resolves_to_essential():
+    """legacy_product_keys drives the alias — 'insider' is the pre-rename key."""
+    from engine.marketing.allies import draft_referral
+    cat = _catalog()
+    ref = draft_referral("fund-berkshire", "insider", "monthly")
+    assert ref["tier"] == "essential"
+    assert ref["list_price_usd"] == pytest.approx(_catalog_monthly(cat, "essential"))
 
 
 def test_draft_referral_pro_monthly():
     from engine.marketing.allies import draft_referral
+    cat = _catalog()
     ref = draft_referral("creator-dannytrades", "pro", "monthly")
-    assert ref["list_price_usd"] == 89.0
+    assert ref["list_price_usd"] == pytest.approx(_catalog_monthly(cat, "pro"))
     assert ref["tier"] == "pro"
     assert ref["utm_source"] == "ally"
     assert ref["utm_campaign"] == "creator-dannytrades"
@@ -197,8 +226,10 @@ def test_draft_referral_pro_monthly():
 
 def test_draft_referral_pro_annual():
     from engine.marketing.allies import draft_referral
+    cat = _catalog()
     ref = draft_referral("com-tradingview", "pro", "annual")
-    assert ref["list_price_usd"] == 69.0
+    assert ref["list_price_usd"] == pytest.approx(
+        round(_catalog_annual_total(cat, "pro") / 12.0, 2))
 
 
 def test_draft_referral_writes_nothing(tmp_path):
@@ -211,6 +242,90 @@ def test_draft_referral_writes_nothing(tmp_path):
     after = list(tmp_path.rglob("*"))
     # tmp_path should be unchanged
     assert before == after
+
+
+# ---------------------------------------------------------------------------
+# (g2) pricing == catalog pinning (hardcoded-copy drift is how the previous
+#      table went a full price revision stale)
+# ---------------------------------------------------------------------------
+
+def test_pricing_matches_catalog():
+    """Every derived price/name must equal config/plans.yml, read independently."""
+    from engine.marketing.allies import _load_pricing
+    cat = _catalog()
+    pricing = _load_pricing(ROOT)
+    assert set(pricing["products"]) == set(cat["products"])
+    for key, meta in cat["products"].items():
+        p = pricing["products"][key]
+        annual_total = _catalog_annual_total(cat, key)
+        assert p["name"] == meta["name"]
+        assert p["monthly"] == pytest.approx(_catalog_monthly(cat, key))
+        assert p["annual_total"] == pytest.approx(annual_total)
+        assert p["annual_monthly"] == pytest.approx(annual_total / 12.0)
+
+
+def test_kit_pricing_table_uses_catalog_names_and_prices():
+    """The kit's tier rows carry the catalog display names and prices —
+    the pre-rename 'Insider' label must be gone."""
+    from engine.marketing.allies import render_kit
+    cat = _catalog()
+    target = {
+        "target_id": "fund-example", "kind": "fund_manager", "name": "Example Fund",
+        "style": "quality_growth", "topical_overlap": 0.8, "score": 0.9,
+    }
+    kit = render_kit(target, {})
+    assert "| Insider |" not in kit
+    assert "MONETIZATION_ACCESS_MASTERPLAN" not in kit
+    assert "config/plans.yml" in kit
+    for key, meta in cat["products"].items():
+        monthly = _catalog_monthly(cat, key)
+        annual_total = _catalog_annual_total(cat, key)
+        row_prefix = (
+            f"| {meta['name']} | ${monthly:.0f}/mo | "
+            f"${annual_total / 12.0:.0f}/mo | ${annual_total:.0f}/yr"
+        )
+        assert row_prefix in kit, f"kit missing catalog row for {key}: {row_prefix!r}"
+
+
+def test_pricing_derives_from_catalog_file_not_module_literals(tmp_path):
+    """Mutation-killer: a synthetic catalog whose numbers and display name
+    exist nowhere in the repo must flow through draft_referral and render_kit.
+    A reintroduced hardcoded price copy in allies.py cannot pass this."""
+    import textwrap
+    from engine.marketing.allies import _load_pricing, draft_referral, render_kit
+
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "plans.yml").write_text(textwrap.dedent("""\
+        schema: plans_catalog.v1
+        currency: usd
+        products:
+          zenith:
+            tier: zenith
+            name: Zenith
+            prices:
+              monthly: { lookup_key: zenith_m, unit_amount: 12300, interval: month }
+              annual:  { lookup_key: zenith_a, unit_amount: 120000, interval: year }
+        legacy_product_keys:
+          zenith:
+            - oldzen
+        tier_rank: [free, zenith]
+    """), encoding="utf-8")
+
+    ref = draft_referral("fund-x", "oldzen", "monthly", root=tmp_path)
+    assert ref["tier"] == "zenith"
+    assert ref["list_price_usd"] == 123.0
+
+    ref_annual = draft_referral("fund-x", "zenith", "annual", root=tmp_path)
+    assert ref_annual["list_price_usd"] == 100.0  # 1200 / 12
+
+    target = {
+        "target_id": "fund-x", "kind": "fund_manager", "name": "X",
+        "style": "quality_growth", "topical_overlap": 0.8, "score": 0.9,
+    }
+    kit = render_kit(target, {}, _load_pricing(tmp_path))
+    # 1 - 1200/(123*12) = 18.7% -> save 19%
+    assert "| Zenith | $123/mo | $100/mo | $1200/yr (save 19%) |" in kit
+    assert "| Essential |" not in kit and "| Pro |" not in kit
 
 
 # ---------------------------------------------------------------------------
@@ -232,6 +347,8 @@ def test_build_allies_creates_ledger_and_kits(tmp_path):
                 tmp_path / "config" / "allies_communities.yml")
     shutil.copy(ROOT / "config" / "narrative_sources.yml",
                 tmp_path / "config" / "narrative_sources.yml")
+    shutil.copy(ROOT / "config" / "plans.yml",
+                tmp_path / "config" / "plans.yml")
 
     from engine.marketing.allies import build_allies
     result = build_allies(tmp_path)
@@ -282,6 +399,8 @@ def test_build_allies_ledger_sorted(tmp_path):
                 tmp_path / "config" / "allies_communities.yml")
     shutil.copy(ROOT / "config" / "narrative_sources.yml",
                 tmp_path / "config" / "narrative_sources.yml")
+    shutil.copy(ROOT / "config" / "plans.yml",
+                tmp_path / "config" / "plans.yml")
 
     from engine.marketing.allies import build_allies
     result = build_allies(tmp_path)

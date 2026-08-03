@@ -568,7 +568,7 @@ def render_html(s: dict) -> str:
         f"<span style='color:#8B8D98;font-size:12px'>{t['health_note']}</span></td></tr>"
         for t in s.get("standout_tracks", [])
     ) or "<tr><td colspan=6 style='color:#8B8D98'>no board tracks yet</td></tr>"
-    return f"""<!doctype html><html><head><meta charset="utf-8">
+    return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <title>Calibration Hub</title><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 body{{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:920px;margin:2rem auto;

@@ -940,7 +940,7 @@
     <div class="fx-find">
       <span class="box"><span class="mag">🔎</span>
         <input id="fx-tq" autocomplete="off" aria-label="Find a ticker across every factor"
-               placeholder="{{ t('Find a ticker across every ranking…','在所有排名中查找个股…') }}"></span>
+               placeholder="Find a ticker across every ranking…"></span>
       <span class="note" id="fx-tnote"></span>
     </div>
     <div class="cardgrid">
@@ -1311,7 +1311,7 @@
   </div>
   <div class="panel">
     <p class="muted" style="font-size:12px;margin:0">{{ t(
-      "Source: SEC EDGAR XBRL 'frames' API (free, keyless) for FY" ~ (fac.fy or '') ~ " fundamentals, joined to the S&P 1500 price universe; " ~ fac.n ~ " names with a full composite as of " ~ fac.as_of ~ ". Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/QUANT_FACTOR_EXPANSION.md and LIMITATIONS.md.",
+      "Source: SEC EDGAR XBRL 'frames' API (free, keyless) for FY" ~ (fac.fy or '') ~ " fundamentals, joined to the S&P 1500 price universe; " ~ fac.n ~ " names with a full composite as of " ~ fac.as_of ~ ". Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/the methodology page.",
       "来源：SEC EDGAR XBRL 'frames' API（免费、无需密钥）的 FY" ~ (fac.fy or '') ~ " 基本面，与标普 1500 价格域连接；截至 " ~ fac.as_of ~ " 有 " ~ fac.n ~ " 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。") }}
       {{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
   </div>
@@ -1423,8 +1423,8 @@
      just drops that row from the drawer. #}
   <div class="fx-scrim" id="fx-scrim"></div>
   <aside class="fx-drawer" id="fx-drawer" role="dialog" aria-modal="true"
-         aria-label="{{ t('Factor detail','因子详情') }}">
-    <button class="dw-x" id="fx-dwx" aria-label="{{ t('Close','关闭') }}">&#10005;</button>
+         aria-label="Factor detail">
+    <button class="dw-x" id="fx-dwx" aria-label="Close">&#10005;</button>
     <div id="fx-dwbody"></div>
   </aside>
   <script>

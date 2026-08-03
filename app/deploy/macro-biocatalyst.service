@@ -19,6 +19,9 @@ WorkingDirectory=/opt/macro
 EnvironmentFile=/etc/macro-biocatalyst.env
 Environment=BIOCATALYST_STATE_ROOT=/var/lib/macro-biocatalyst/state
 Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public
+Environment=BIOCATALYST_ACTIVATION_ROOT=/var/lib/macro-biocatalyst/activation
+Environment=BIOCATALYST_R2_ACTIVATION_GATE_PATH=/var/lib/macro-biocatalyst/activation/gate.json
+Environment=BIOCATALYST_R2_ACTIVATION_HEARTBEAT_PATH=/var/lib/macro-biocatalyst/activation/heartbeat.json
 ExecStart=/opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_worker --mode canary_poll
 # Keep a failed source poll bounded well inside the hourly cadence.  The worker
 # itself owns a non-blocking lock; systemd is not the concurrency control plane.
@@ -39,7 +42,9 @@ ProtectSystem=strict
 ProtectHome=true
 ReadWritePaths=/var/lib/macro-biocatalyst/state
 ReadWritePaths=/var/lib/macro-biocatalyst/public
+ReadOnlyPaths=/var/lib/macro-biocatalyst/activation
 InaccessiblePaths=/etc/macro-biocatalyst.env
+InaccessiblePaths=/etc/macro-biocatalyst-control.env
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true

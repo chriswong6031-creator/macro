@@ -12,9 +12,10 @@ EnvironmentFile=-/etc/macro-api.env
 # environment file; Codex keeps its independent refreshable login in this
 # root-only state directory so ProtectHome never blocks it.
 Environment=CODEX_HOME=/var/lib/macro-codex
+Environment=CODEX_ACCOUNT_HOMES=/var/lib/macro-codex:/var/lib/macro-codex-2
 Environment=CODEX_PROVIDER_ENABLED=1
 Environment=BIOCATALYST_PUBLIC_ROOT=/var/lib/macro-biocatalyst/public
-StateDirectory=macro-codex
+StateDirectory=macro-codex macro-codex-2
 StateDirectoryMode=0700
 # ── Site Access Gate env (all optional; safe defaults apply when absent) ─────
 # SITE_GATE_STATE=/var/lib/macro-api/site_gate.json  # blocklist store (NOT in git)
@@ -74,7 +75,9 @@ UMask=0077
 # provisioned. Once these paths exist, the same mounts are enforced at restart.
 ReadOnlyPaths=-/var/lib/macro-biocatalyst/public
 InaccessiblePaths=-/var/lib/macro-biocatalyst/state
+InaccessiblePaths=-/var/lib/macro-biocatalyst/activation
 InaccessiblePaths=-/etc/macro-biocatalyst.env
+InaccessiblePaths=-/etc/macro-biocatalyst-control.env
 
 [Install]
 WantedBy=multi-user.target

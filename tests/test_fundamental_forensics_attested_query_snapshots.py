@@ -29,6 +29,7 @@ from engine.fundamental_forensics.metric_registry import load_core_metric_regist
 from engine.fundamental_forensics.query import BitemporalMetricQueryEngine, FilingMetadata, PeriodRequest, QueryPolicy
 from engine.fundamental_forensics.query_snapshots import prepare_query_snapshot, publish_query_snapshot
 from engine.fundamental_forensics.raw_ledger import RawFactLedger
+from engine.research_vault.r2_store import LocalStore
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -555,11 +556,13 @@ class _BoundedProxy:
         reject_manifest: bool = False,
         reject_pointer: bool = False,
         corrupt_pointer_readback: bool = False,
+        reject_conditional_capability: bool = False,
     ):
         self.inner = inner
         self.reject_manifest = reject_manifest
         self.reject_pointer = reject_pointer
         self.corrupt_pointer_readback = corrupt_pointer_readback
+        self.reject_conditional_capability = reject_conditional_capability
         self.strict_calls = 0
 
     def get_bytes(self, key):
@@ -572,15 +575,44 @@ class _BoundedProxy:
     def get_bytes_strict_bounded(self, key, maximum_bytes):
         return self.inner.get_bytes_strict_bounded(key, maximum_bytes)
 
+    def get_bytes_strict_bounded_versioned(self, key, maximum_bytes):
+        return self.inner.get_bytes_strict_bounded_versioned(key, maximum_bytes)
+
+    def validate_strict_conditional_write_capability(self):
+        if self.reject_conditional_capability:
+            raise RuntimeError("conditional writes unavailable")
+        return self.inner.validate_strict_conditional_write_capability()
+
+    def put_bytes_strict_conditional(
+        self,
+        key,
+        data,
+        *,
+        expected_version,
+        content_type="application/octet-stream",
+    ):
+        if self.reject_pointer and key == attested_snapshots._latest_key():
+            return False
+        result = self.inner.put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=expected_version,
+            content_type=content_type,
+        )
+        if (
+            result is True
+            and self.corrupt_pointer_readback
+            and key == attested_snapshots._latest_key()
+        ):
+            # Simulate a rogue, non-CAS writer after our acknowledged CAS.  The
+            # publisher must fail closed without restoring its predecessor.
+            assert self.inner.put_bytes(key, b"{}", content_type="application/json") is True
+        return result
+
     def put_bytes(self, key, data, content_type="application/octet-stream"):
         if self.reject_manifest and "/manifests/ffqsv2_" in key:
             return False
-        if self.reject_pointer and key == attested_snapshots._latest_key():
-            return False
-        result = self.inner.put_bytes(key, data, content_type)
-        if self.corrupt_pointer_readback and key == attested_snapshots._latest_key():
-            assert self.inner.put_bytes(key, b"{}", content_type="application/json") is True
-        return result
+        return self.inner.put_bytes(key, data, content_type)
 
     def list_prefix(self, prefix):
         return self.inner.list_prefix(prefix)
@@ -590,6 +622,240 @@ class _BoundedProxy:
 
     def upload_time(self, key):
         return self.inner.upload_time(key)
+
+
+class _ReadOnlyBoundedProxy:
+    """Strict bounded reads plus legacy writes, but deliberately no CAS API."""
+
+    def __init__(self, inner):
+        self.inner = inner
+        self.put_calls = 0
+
+    def get_bytes(self, key):
+        return self.inner.get_bytes(key)
+
+    def get_bytes_strict(self, key):
+        return self.inner.get_bytes_strict(key)
+
+    def get_bytes_strict_bounded(self, key, maximum_bytes):
+        return self.inner.get_bytes_strict_bounded(key, maximum_bytes)
+
+    def put_bytes(self, key, data, content_type="application/octet-stream"):
+        del key, data, content_type
+        self.put_calls += 1
+        return False
+
+    def list_prefix(self, prefix):
+        return self.inner.list_prefix(prefix)
+
+    def exists(self, key):
+        return self.inner.exists(key)
+
+    def upload_time(self, key):
+        return self.inner.upload_time(key)
+
+
+def _pointer_only_snapshot(digit: str, published_at: str):
+    snapshot_id = "ffqsv2_" + digit * 64
+    return attested_snapshots.AttestedQuerySnapshotPointer(
+        snapshot_id=snapshot_id,
+        manifest_key=attested_snapshots._manifest_key(snapshot_id),
+        base_snapshot_id="ffqs_" + "a" * 64,
+        published_at=published_at,
+    )
+
+
+class _SuccessorAfterAppliedCas(_BoundedProxy):
+    """Install a newer writer after candidate CAS but before its read-back."""
+
+    def __init__(self, inner, successor):
+        super().__init__(inner)
+        self.successor = successor
+        self.injected = False
+
+    def put_bytes_strict_conditional(
+        self,
+        key,
+        data,
+        *,
+        expected_version,
+        content_type="application/octet-stream",
+    ):
+        applied = self.inner.put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=expected_version,
+            content_type=content_type,
+        )
+        assert applied is True
+        observed = self.inner.get_bytes_strict_bounded_versioned(key, 16 * 1024)
+        assert self.inner.put_bytes_strict_conditional(
+            key,
+            self.successor.to_json_bytes(),
+            expected_version=observed.version,
+            content_type="application/json",
+        ) is True
+        self.injected = True
+        return True
+
+
+class _WinnerBeforeCandidateCas(_BoundedProxy):
+    """Let a newer writer consume the exact predecessor token first."""
+
+    def __init__(self, inner, winner):
+        super().__init__(inner)
+        self.winner = winner
+
+    def put_bytes_strict_conditional(
+        self,
+        key,
+        data,
+        *,
+        expected_version,
+        content_type="application/octet-stream",
+    ):
+        del data, content_type
+        assert self.inner.put_bytes_strict_conditional(
+            key,
+            self.winner.to_json_bytes(),
+            expected_version=expected_version,
+            content_type="application/json",
+        ) is True
+        return False
+
+
+class _AmbiguousCommitProxy(_BoundedProxy):
+    """Commit the CAS, then expose a transport-style ambiguous exception."""
+
+    def put_bytes_strict_conditional(
+        self,
+        key,
+        data,
+        *,
+        expected_version,
+        content_type="application/octet-stream",
+    ):
+        assert self.inner.put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=expected_version,
+            content_type=content_type,
+        ) is True
+        raise TimeoutError("conditional PUT response lost")
+
+
+def test_pointer_cas_two_writer_interleavings_never_rollback_a_newer_winner(
+    monkeypatch, tmp_path,
+):
+    store = LocalStore(tmp_path / "pointer-cas")
+    key = attested_snapshots._latest_key()
+    prior = _pointer_only_snapshot("1", "2026-08-02T19:00:00.000000Z")
+    candidate = _pointer_only_snapshot("2", "2026-08-02T19:01:00.000000Z")
+    successor = _pointer_only_snapshot("3", "2026-08-02T19:03:00.000000Z")
+    assert store.put_bytes_strict_conditional(
+        key,
+        prior.to_json_bytes(),
+        expected_version=None,
+        content_type="application/json",
+    ) is True
+
+    # The interleaving helper exercises only the pointer primitive.  Model the
+    # successor's already-verified immutable overlay so the production path's
+    # full successor-resolution gate can accept it.
+    def resolve_successor(_store, *, snapshot_id):
+        assert snapshot_id == successor.snapshot_id
+        return successor
+
+    monkeypatch.setattr(attested_snapshots, "_snapshot_from_manifest", resolve_successor)
+    overtaken = _SuccessorAfterAppliedCas(store, successor)
+    attested_snapshots._publish_pointer(overtaken, candidate)
+    assert overtaken.injected
+    assert store.get_bytes_strict_bounded_versioned(key, 16 * 1024).data == successor.to_json_bytes()
+
+    # A second schedule models both writers observing the same predecessor.
+    # The winner consumes its token; the stale candidate receives False and may
+    # only reconcile, never issue an unconditional rollback or retry overwrite.
+    conflict_store = LocalStore(tmp_path / "pointer-conflict")
+    assert conflict_store.put_bytes_strict_conditional(
+        key,
+        prior.to_json_bytes(),
+        expected_version=None,
+        content_type="application/json",
+    ) is True
+    lost = _WinnerBeforeCandidateCas(conflict_store, successor)
+    with pytest.raises(AttestedQuerySnapshotError, match="cannot rewind"):
+        attested_snapshots._publish_pointer(lost, candidate)
+    assert conflict_store.get_bytes_strict_bounded_versioned(key, 16 * 1024).data == successor.to_json_bytes()
+
+
+def test_pointer_cas_never_accepts_or_rolls_back_an_unresolved_successor(tmp_path):
+    store = LocalStore(tmp_path / "unresolved-successor")
+    key = attested_snapshots._latest_key()
+    prior = _pointer_only_snapshot("5", "2026-08-02T19:05:00.000000Z")
+    candidate = _pointer_only_snapshot("6", "2026-08-02T19:06:00.000000Z")
+    successor = _pointer_only_snapshot("7", "2026-08-02T19:07:00.000000Z")
+    assert store.put_bytes_strict_conditional(
+        key,
+        prior.to_json_bytes(),
+        expected_version=None,
+        content_type="application/json",
+    ) is True
+
+    overtaken = _SuccessorAfterAppliedCas(store, successor)
+    with pytest.raises(AttestedQuerySnapshotError, match="successor is unresolved"):
+        attested_snapshots._publish_pointer(overtaken, candidate)
+    # Failure is read-only: the newer pointer is preserved and P0 is never
+    # restored as a compensating write.
+    assert store.get_bytes_strict_bounded_versioned(
+        key, 16 * 1024,
+    ).data == successor.to_json_bytes()
+
+
+def test_pointer_cas_reconciles_ambiguous_commit_and_exact_candidate_is_idempotent(tmp_path):
+    store = LocalStore(tmp_path / "ambiguous-cas")
+    candidate = _pointer_only_snapshot("4", "2026-08-02T19:04:00.000000Z")
+    attested_snapshots._publish_pointer(_AmbiguousCommitProxy(store), candidate)
+    # No second conditional write is needed: exact bytes are completion proof.
+    attested_snapshots._publish_pointer(store, candidate)
+    assert store.get_bytes_strict_bounded_versioned(
+        attested_snapshots._latest_key(), 16 * 1024,
+    ).data == candidate.to_json_bytes()
+
+
+def test_pointer_cas_foundation_does_not_claim_aba_or_credential_fencing():
+    # Conditional ETag replacement closes compliant lost updates, but an
+    # unrestricted writer can still recreate old bytes and therefore an old
+    # content-derived token. Keep the public contract narrow until the operator
+    # has an exclusive mutation policy or a non-repeating generation fence.
+    assert (
+        attested_snapshots.ATTESTED_QUERY_SNAPSHOT_PUBLICATION_CONTRACT
+        == "single_writer_operator_only"
+    )
+
+
+def test_publish_rejects_read_only_store_before_replay_or_immutable_writes(
+    monkeypatch, tmp_path,
+):
+    store, _base, material, conversion, _binding, prepared = _prepared(monkeypatch, tmp_path)
+    read_only = _ReadOnlyBoundedProxy(store)
+
+    def replay_must_not_run(**_kwargs):
+        raise AssertionError("conditional capability gate must precede source replay")
+
+    monkeypatch.setattr(
+        attested_snapshots,
+        "_preflight_prepared_publication",
+        replay_must_not_run,
+    )
+    with pytest.raises(AttestedQuerySnapshotError, match="conditional-write store"):
+        publish_attested_query_snapshot(
+            read_only,
+            prepared,
+            attestation_materials=(material,),
+            companyfacts_conversion=conversion,
+        )
+    assert read_only.put_calls == 0
+    assert store.list_prefix(attested_snapshots.ATTESTED_QUERY_SNAPSHOT_PREFIX) == []
 
 
 def test_bounded_preflight_proxy_pointer_last_and_monotonicity(monkeypatch, tmp_path):
@@ -691,7 +957,7 @@ def test_bounded_load_and_pointer_failures_never_cross_into_v1(monkeypatch, tmp_
         operator_verification_observed_at="2026-08-02T19:02:00.000000Z",
         published_at="2026-08-02T19:03:00.000000Z",
     )
-    with pytest.raises(AttestedQuerySnapshotError, match="latest pointer write failed"):
+    with pytest.raises(AttestedQuerySnapshotError, match="compare-and-swap conflict"):
         publish_attested_query_snapshot(
             rejected, later, attestation_materials=(material,), companyfacts_conversion=conversion,
         )

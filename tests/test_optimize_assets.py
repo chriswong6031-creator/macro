@@ -46,6 +46,13 @@ def test_data_base_shim_untouched():
     assert optimize_assets_text(tag, _hash_for) == tag  # must stay blocking, unversioned
 
 
+def test_data_sync_script_is_versioned_but_remains_blocking():
+    tag = '<script data-sync src="theme.js"></script>'
+    out = optimize_assets_text(tag, _hash_for)
+    assert out == '<script data-sync src="theme.js?v=aaaa1111"></script>'
+    assert optimize_assets_text(out, _hash_for) == out
+
+
 def test_external_and_protocol_relative_untouched():
     for tag in (
         '<script src="https://cdn.example.com/x.js"></script>',

@@ -1,11 +1,11 @@
 {
   "schema": "seo_scorecard.v1",
-  "as_of": "2026-08-02T16:00:02Z",
+  "as_of": "2026-08-02T23:27:14Z",
   "health_score": 86,
   "issue_counts_by_severity": {
     "critical": 0,
     "high": 47,
-    "medium": 304,
+    "medium": 303,
     "low": 1
   },
   "deltas_vs_prior": {
@@ -18,9 +18,9 @@
   "families_summary": {
     "core": {
       "pages": 147,
-      "with_canonical": 132,
-      "with_desc": 131,
-      "with_og": 131,
+      "with_canonical": 133,
+      "with_desc": 132,
+      "with_og": 132,
       "with_jsonld": 6,
       "in_sitemap": 10
     },

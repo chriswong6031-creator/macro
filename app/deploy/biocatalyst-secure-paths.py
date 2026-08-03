@@ -167,9 +167,22 @@ def _secure_regular_file(path: str, *, uid: int, gid: int, mode: int) -> None:
 
 def provision_state(args: argparse.Namespace) -> None:
     # The top-level anchor is root-owned and not service-writable. Only its
-    # state/public children are owned by the worker identity.
+    # state/public children are owned by the worker identity. The activation
+    # control plane remains root-owned: the worker gets group read/traverse
+    # access only and cannot replace either the directory or its gate.
+    state_root = os.path.normpath(args.state_root)
+    activation_root = os.path.normpath(args.activation_root)
+    activation_gate = os.path.normpath(args.activation_gate)
+    activation_heartbeat = os.path.normpath(args.activation_heartbeat)
+    if os.path.dirname(activation_root) != state_root:
+        raise SafetyError("activation root must be a direct child of the state root")
+    if os.path.dirname(activation_gate) != activation_root:
+        raise SafetyError("activation gate must be a direct child of the activation root")
+    if os.path.dirname(activation_heartbeat) != activation_root:
+        raise SafetyError("activation heartbeat must be a direct child of the activation root")
+
     root_fd = _secure_absolute_directory(
-        args.state_root,
+        state_root,
         uid=args.root_uid,
         gid=args.service_gid,
         mode=0o750,
@@ -203,6 +216,16 @@ def provision_state(args: argparse.Namespace) -> None:
                 mode=0o700,
             )
             os.close(child_fd)
+
+        activation_fd = _secure_directory_at(
+            root_fd,
+            os.path.basename(activation_root),
+            label=activation_root,
+            uid=args.root_uid,
+            gid=args.service_gid,
+            mode=0o750,
+        )
+        os.close(activation_fd)
     finally:
         if public_fd is not None:
             os.close(public_fd)
@@ -215,6 +238,24 @@ def provision_state(args: argparse.Namespace) -> None:
         uid=args.env_uid,
         gid=args.env_gid,
         mode=0o600,
+    )
+    _secure_regular_file(
+        args.control_env_file,
+        uid=args.root_uid,
+        gid=args.root_gid,
+        mode=0o600,
+    )
+    _secure_regular_file(
+        activation_gate,
+        uid=args.root_uid,
+        gid=args.service_gid,
+        mode=0o440,
+    )
+    _secure_regular_file(
+        activation_heartbeat,
+        uid=args.root_uid,
+        gid=args.service_gid,
+        mode=0o440,
     )
 
 
@@ -237,6 +278,104 @@ def provision_runtime_root(args: argparse.Namespace) -> None:
         os.close(runtimes_fd)
     finally:
         os.close(root_fd)
+
+
+def _verify_regular_file(
+    path: str,
+    *,
+    uid: int,
+    gid: int,
+    allowed_modes: set[int],
+) -> None:
+    parent_fd, name = _open_absolute_parent(path, trusted_uids={0, uid})
+    file_fd: int | None = None
+    try:
+        try:
+            file_fd = os.open(
+                name,
+                os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW | os.O_NONBLOCK,
+                dir_fd=parent_fd,
+            )
+        except OSError as exc:
+            raise SafetyError(f"{path} is missing, a symlink, or not a regular file") from exc
+        metadata = os.fstat(file_fd)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise SafetyError(f"{path} is not a regular file")
+        if metadata.st_uid != uid or metadata.st_gid != gid:
+            raise SafetyError(f"{path} has unsafe ownership")
+        if metadata.st_nlink != 1:
+            raise SafetyError(f"{path} must not be hard-linked")
+        mode = stat.S_IMODE(metadata.st_mode)
+        if mode not in allowed_modes:
+            expected = ", ".join(f"{value:04o}" for value in sorted(allowed_modes))
+            raise SafetyError(f"{path} has unsafe mode {mode:04o}; expected {expected}")
+    finally:
+        if file_fd is not None:
+            os.close(file_fd)
+        os.close(parent_fd)
+
+
+def verify_activation(args: argparse.Namespace) -> None:
+    state_root = os.path.normpath(args.state_root)
+    activation_root = os.path.normpath(args.activation_root)
+    activation_gate = os.path.normpath(args.activation_gate)
+    if os.path.dirname(activation_root) != state_root:
+        raise SafetyError("activation root must be a direct child of the state root")
+    if os.path.dirname(activation_gate) != activation_root:
+        raise SafetyError("activation gate must be a direct child of the activation root")
+    if args.activation_heartbeat:
+        activation_heartbeat = os.path.normpath(args.activation_heartbeat)
+        if os.path.dirname(activation_heartbeat) != activation_root:
+            raise SafetyError("activation heartbeat must be a direct child of the activation root")
+    else:
+        activation_heartbeat = None
+
+    root_fd = _open_existing_absolute_directory(state_root, trusted_uid=args.root_uid)
+    activation_fd: int | None = None
+    try:
+        _require_safe_owned(
+            os.fstat(root_fd),
+            label=state_root,
+            uid=args.root_uid,
+            gid=args.service_gid,
+            directory=True,
+        )
+        activation_fd = _open_dir_at(
+            root_fd,
+            os.path.basename(activation_root),
+            activation_root,
+        )
+        _require_safe_owned(
+            os.fstat(activation_fd),
+            label=activation_root,
+            uid=args.root_uid,
+            gid=args.service_gid,
+            directory=True,
+        )
+    finally:
+        if activation_fd is not None:
+            os.close(activation_fd)
+        os.close(root_fd)
+
+    _verify_regular_file(
+        activation_gate,
+        uid=args.root_uid,
+        gid=args.service_gid,
+        allowed_modes={0o440},
+    )
+    _verify_regular_file(
+        args.control_env_file,
+        uid=args.root_uid,
+        gid=args.root_gid,
+        allowed_modes={0o600},
+    )
+    if activation_heartbeat is not None:
+        _verify_regular_file(
+            activation_heartbeat,
+            uid=args.root_uid,
+            gid=args.service_gid,
+            allowed_modes={0o440},
+        )
 
 
 def _require_safe_owned(
@@ -403,12 +542,28 @@ def _parser() -> argparse.ArgumentParser:
     state_parser = subparsers.add_parser("provision-state")
     state_parser.add_argument("--state-root", required=True)
     state_parser.add_argument("--env-file", required=True)
+    state_parser.add_argument("--control-env-file", required=True)
+    state_parser.add_argument("--activation-root", required=True)
+    state_parser.add_argument("--activation-gate", required=True)
+    state_parser.add_argument("--activation-heartbeat", required=True)
     state_parser.add_argument("--service-uid", type=int, required=True)
     state_parser.add_argument("--service-gid", type=int, required=True)
     state_parser.add_argument("--root-uid", type=int, required=True)
+    state_parser.add_argument("--root-gid", type=int, required=True)
     state_parser.add_argument("--env-uid", type=int, required=True)
     state_parser.add_argument("--env-gid", type=int, required=True)
     state_parser.set_defaults(handler=provision_state)
+
+    activation_parser = subparsers.add_parser("verify-activation")
+    activation_parser.add_argument("--state-root", required=True)
+    activation_parser.add_argument("--activation-root", required=True)
+    activation_parser.add_argument("--activation-gate", required=True)
+    activation_parser.add_argument("--activation-heartbeat")
+    activation_parser.add_argument("--control-env-file", required=True)
+    activation_parser.add_argument("--root-uid", type=int, required=True)
+    activation_parser.add_argument("--root-gid", type=int, required=True)
+    activation_parser.add_argument("--service-gid", type=int, required=True)
+    activation_parser.set_defaults(handler=verify_activation)
 
     runtime_parser = subparsers.add_parser("provision-runtime")
     runtime_parser.add_argument("--runtime-root", required=True)

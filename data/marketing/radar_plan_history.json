@@ -2,6 +2,15 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-08-03",
+      "tickers": [
+        "AMZN",
+        "AVNT",
+        "GDDY",
+        "PEG"
+      ]
+    },
+    {
       "as_of": "2026-08-02",
       "tickers": [
         "ARES",
@@ -128,20 +137,6 @@
         "TEAM",
         "TEL",
         "WDAY"
-      ]
-    },
-    {
-      "as_of": "2026-07-27",
-      "tickers": [
-        "CBOE",
-        "GPI",
-        "IBM",
-        "INTU",
-        "IP",
-        "ROST",
-        "SW",
-        "VST",
-        "WMT"
       ]
     }
   ]

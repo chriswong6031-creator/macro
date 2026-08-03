@@ -148,9 +148,21 @@ def test_raw_snapshot_is_gated_too():
         SNAPSHOT.startswith(p) for p in early["prefixes"])
 
 
-def test_preview_shell_is_free_registered_not_premium():
-    """The page URL must stay reachable for Free, or there is no preview at all."""
-    assert PAGE in _policy()["free_registered"]["exact"]
+def test_preview_shell_is_anonymously_public_not_premium():
+    """The page URL must stay reachable WITHOUT a session, or there is no preview
+    at all — and since W1a (research/SEO_SUPERCHARGE_MASTERPLAN_BY_FABLE.md) no
+    crawl either: the registration wall 302s Googlebot, which never has a session,
+    into /?signin=1. Promoted free_registered → public on 2026-08-02. Every named
+    row still lives in the payload and the raw snapshot the tests above keep gated
+    — this page carries state, totals and the wall, and no names.
+    """
+    pol = _policy()
+    assert PAGE in pol["public"]["exact"]
+    assert PAGE not in pol["free_registered"]["exact"], (
+        "one class only — a path left in both lists serves as public while the "
+        "policy file documents it as gated"
+    )
+    assert PAGE not in pol["deny"]["exact"]
 
 
 def test_neither_payload_nor_snapshot_is_public():
@@ -186,7 +198,7 @@ def test_builder_split_withholds_every_named_row_beyond_the_preview():
     snap = _snapshot()
     shell, locked, gate = _split(snap, 3)
 
-    assert gate["tier"] == "insider"
+    assert gate["tier"] == "essential"
     assert gate["payload"] == "/premiumdata/china_special_situations.json"
     assert gate["preview"] == 3
     # 3 unlocks + 3 letters stay; all seven populated ranked boards are withheld
@@ -274,7 +286,7 @@ def test_payload_renders_the_locked_rows_from_the_same_partial(tmp_path):
     doc = json.loads((tmp_path / "premiumdata" / b.PAYLOAD_NAME).read_text())
 
     assert doc["schema"] == "tier_payload.v1"
-    assert doc["gated"] is True and doc["required_tier"] == "insider"
+    assert doc["gated"] is True and doc["required_tier"] == "essential"
     paid = set()
     for k, v in doc.items():
         if k.endswith("_html"):
@@ -355,5 +367,5 @@ def test_shipped_payload_declares_the_required_tier():
     payload = json.loads(PAYLOAD.read_text(encoding="utf-8"))
     assert payload["schema"] == "tier_payload.v1"
     if payload.get("gated"):
-        assert payload["required_tier"] == "insider"
+        assert payload["required_tier"] == "essential"
         assert payload["locked"] > 0

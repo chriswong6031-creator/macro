@@ -1,11 +1,17 @@
 """tests/test_regime_sizing_disclosure_parity.py — the sizing pill's null disclosure must be
-identical on all five basket pages.
+identical on all five basket surfaces.
 
 `renderRegimeSizing()` exists TWICE and cannot be collapsed into one function: the US flagship
-(`templates/baskets.html.j2`) is hand-authored and loads no `baskets_desk.js`, while the four
-regional pages (china / hk / canada / intl) load the shared `templates/baskets_desk.js` and carry
-no inline copy. That is a real structural fork, so it needs a guard instead of a refactor — the
-fork previously drifted, shipping the regime-caution null disclosure on the US page only.
+(`templates/sector_central.html.j2` — home of the baskets surface since the 2026-08 Sector
+Intelligence merge, PR #4237) is hand-authored and cannot load `baskets_desk.js`, because that
+file's top-level `const L` / `isZh()` redeclare the page's own helpers (classic scripts share
+one global scope, so a second `const L` is a parse-time SyntaxError), while the four regional
+pages (china / hk / canada / intl) load the shared `templates/baskets_desk.js` and carry no
+inline copy. That is a real structural fork, so it needs a guard instead of a refactor — and it
+has drifted twice: the original fork shipped the regime-caution null disclosure on the US page
+only, and the #4237 merge kept the US `renderRegimeSizing()` call + `#hero-sizing` mount but
+dropped the definition, so `renderVerdictHero()` threw ReferenceError and the disclosure
+vanished from the US page entirely (this guard's extraction failure is what surfaced it).
 
 What is pinned:
 
@@ -18,7 +24,11 @@ What is pinned:
   - the copy names WHOSE volatility is being read. `regime_sizing` is a single global snapshot
     (CBOE VIX complex) stamped onto every market page — `engine/theme_scoring.py` calls
     `vol_regime.published_snapshot()` with no region argument — so an unattributed "volatility
-    target 75%" on an A-share page asserts a reading of A-share volatility that was never taken.
+    target 75%" on an A-share page asserts a reading of A-share volatility that was never taken;
+  - both surfaces actually MOUNT the pill: the US page assigns `renderRegimeSizing()` into
+    `#hero-sizing`, the desk builds it into `actNowPulseBar()`. A call with no definition is
+    the #4237 failure shape; a definition with no call is its quiet inverse — either way the
+    disclosure silently disappears while every parity check above stays green.
 
 Both functions are extracted from source and executed under `node`, so the test sees what the
 browser sees; a mis-extraction fails loudly on a syntax error rather than passing vacuously.
@@ -28,6 +38,7 @@ Node is available on the CI runners and dev Macs; the suite skips loudly when it
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import textwrap
@@ -39,7 +50,7 @@ HAS_NODE = shutil.which("node") is not None
 needs_node = pytest.mark.skipif(not HAS_NODE, reason="node not on PATH")
 
 ROOT = Path(__file__).resolve().parents[1]
-US_SRC = ROOT / "templates" / "baskets.html.j2"
+US_SRC = ROOT / "templates" / "sector_central.html.j2"
 DESK_SRC = ROOT / "templates" / "baskets_desk.js"
 
 FN = "function renderRegimeSizing(){"
@@ -188,6 +199,19 @@ def test_sizing_read_is_attributed_to_its_source_market(fns, case):
         html = _render(fn, CASES[case])
         assert "Read from US volatility" in html, "EN source attribution missing"
         assert "依据美国波动率读数" in html, "ZH source attribution missing"
+
+
+def test_both_surfaces_actually_mount_the_pill():
+    """The renderer must be WIRED, not merely defined. #4237 kept the US call + mount but
+    dropped the definition (ReferenceError, disclosure gone); the inverse — a definition
+    nobody calls — would be invisible to every parity check above. Pure text, no node."""
+    us = US_SRC.read_text(encoding="utf-8")
+    assert re.search(r"innerHTML\s*=\s*renderRegimeSizing\(\)", us), \
+        "US page no longer assigns renderRegimeSizing() into its hero"
+    assert 'id="hero-sizing"' in us, "US page lost the #hero-sizing mount element"
+    desk = DESK_SRC.read_text(encoding="utf-8")
+    assert re.search(r"=\s*renderRegimeSizing\(\)", desk), \
+        "desk no longer builds the sizing pill (actNowPulseBar's sizePill call is gone)"
 
 
 @needs_node

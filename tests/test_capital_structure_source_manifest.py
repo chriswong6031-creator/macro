@@ -3,6 +3,8 @@ from __future__ import annotations
 from hashlib import sha256
 from pathlib import Path
 
+import pytest
+
 import engine.capital_structure.source_store as source_store_module
 from engine.capital_structure.source_store import (
     ContentAddressedSourceStore,
@@ -93,6 +95,64 @@ def test_verified_wrapper_returns_receipt_and_rejects_wrong_read_key(tmp_path):
     assert receipt.byte_length == len(b"exact evidence")
     assert wrapper.get_verified(receipt.object_key, receipt.sha256) == b"exact evidence"
     assert wrapper.get_verified(receipt.object_key, "0" * 64) is None
+
+
+def test_bounded_verified_wrapper_rejects_identity_bounds_and_wrong_digest_before_trust():
+    raw = b"exact"
+    digest = sha256(raw).hexdigest()
+    key = object_key_for_sha256(digest)
+
+    class Backend:
+        def __init__(self, result):
+            self.result = result
+            self.calls = []
+
+        def get_bytes_strict_bounded(self, object_key, *, expected_byte_length, max_byte_length):
+            self.calls.append((object_key, expected_byte_length, max_byte_length))
+            return self.result
+
+    backend = Backend(raw)
+    wrapper = ContentAddressedSourceStore(
+        backend, backend="r2", store_id=STORE_ID_SHARED_R2,
+    )
+    assert wrapper.get_verified_strict_bounded(
+        key, digest, expected_byte_length=len(raw), max_byte_length=len(raw),
+    ) == raw
+    before = list(backend.calls)
+    with pytest.raises(source_store_module.SourceStoreIdentityError):
+        wrapper.get_verified_strict_bounded(
+            object_key_for_sha256("0" * 64), digest,
+            expected_byte_length=len(raw), max_byte_length=len(raw),
+        )
+    with pytest.raises(source_store_module.SourceStoreBoundsError):
+        wrapper.get_verified_strict_bounded(
+            key, digest, expected_byte_length=6, max_byte_length=5,
+        )
+    assert backend.calls == before
+
+    wrong = Backend(b"xxxxx")
+    wrong_wrapper = ContentAddressedSourceStore(
+        wrong, backend="r2", store_id=STORE_ID_SHARED_R2,
+    )
+    with pytest.raises(source_store_module.SourceStoreDigestError):
+        wrong_wrapper.get_verified_strict_bounded(
+            key, digest, expected_byte_length=len(raw), max_byte_length=len(raw),
+        )
+
+
+def test_put_verified_uses_bounded_readback_and_rejects_oversized_result():
+    class OversizedBackend:
+        def put_bytes(self, key, data, content_type="application/octet-stream"):
+            return True
+
+        def get_bytes_strict_bounded(self, key, *, expected_byte_length, max_byte_length):
+            assert expected_byte_length == max_byte_length
+            return b"too long"
+
+    wrapper = ContentAddressedSourceStore(
+        OversizedBackend(), backend="r2", store_id=STORE_ID_SHARED_R2,
+    )
+    assert wrapper.put_verified(b"short") is None
 
 
 def test_source_store_factory_is_explicit_local_or_none(tmp_path, monkeypatch):

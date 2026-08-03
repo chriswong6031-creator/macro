@@ -8,7 +8,7 @@
   "scope_en": "Japan national economy; Nikkei 225 is market context, not the macro universe.",
   "scope_zh": "日本全国经济；日经225仅作市场背景，并非宏观统计范围。",
   "asof": "2026-07-31",
-  "built": "2026-08-02 02:57 UTC",
+  "built": "2026-08-03 02:46 UTC",
   "regime": {
     "quad": "Q3",
     "name": "Stagflation",
@@ -559,7 +559,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2021-06",
-      "age_days": 1888,
+      "age_days": 1889,
       "state": "stale",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -567,7 +567,7 @@
     {
       "metric": "gdp",
       "asof": "2026-01",
-      "age_days": 213,
+      "age_days": 214,
       "state": "stale",
       "label_en": "Growth",
       "label_zh": "增长"
@@ -575,7 +575,7 @@
     {
       "metric": "unemployment",
       "asof": "2026-05",
-      "age_days": 93,
+      "age_days": 94,
       "state": "stale",
       "label_en": "Labour",
       "label_zh": "就业"
@@ -583,7 +583,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-06",
-      "age_days": 62,
+      "age_days": 63,
       "state": "fresh",
       "label_en": "Rates",
       "label_zh": "利率"

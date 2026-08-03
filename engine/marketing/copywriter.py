@@ -1157,9 +1157,166 @@ def _extract_number_tokens(text: str) -> list[str]:
     return _NUMBER_RE.findall(text)
 
 
-def banned_language(text: str) -> list[str]:
-    """Language-only screen: dash tells, banned vocabulary/substrings, and the
-    v3 cheese list. [] = clean.
+# ─────────────────────────────────────────────────────────────────────────────
+# SOURCE-HANDLE SCREEN (operator law 2026-08-02)
+#
+# We reword and republish news; we NEVER tag or brand the original account. On
+# 2026-08-02/03 the flagship shipped "-- @FirstSquawk reporting",
+# "-- @financialjuice reporting" and a "@BRICSinfo · AGGREGATOR" card chip. The
+# generating lanes are fixed at the source (press_providers de-handles at
+# ingestion, press_corroboration credits "wire reports"), but THE QUEUE IS A
+# BYPASS AROUND EVERY GENERATION LAW — copy enqueued under an older vintage
+# fires days later where no generation-time validator can reach it. This screen
+# lives in `banned_language`, which the publisher runs as its last gate on every
+# due item, so a de-handling fix cannot be outrun by an already-queued post.
+#
+# OUR OWN handles are allowlisted: a post naming our own desk is branding, not a
+# source tag.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: An @mention. The negative lookbehind is what keeps an EMAIL ADDRESS out of it
+#: — in "foo@bar.com" the character before the "@" is a word character, so the
+#: match never starts. Cashtags ("$AAPL") carry no "@" at all. The {2,} floor
+#: skips a bare "@" and single-letter noise.
+_HANDLE_MENTION_RE = re.compile(r"(?<![A-Za-z0-9_])@([A-Za-z0-9_]{2,})")
+
+#: Memo for the roster read. The publisher calls `banned_language` once per due
+#: item; re-parsing config/marketing.yml per call would be a config read per
+#: post. None means "not resolved yet" (an empty frozenset is a real answer:
+#: "asked, no handles on the roster").
+_OWN_HANDLES_CACHE: "frozenset[str] | None" = None
+
+
+def _reset_own_handles_cache() -> None:
+    """Drop the memoized own-handle roster (tests; a config reload)."""
+    global _OWN_HANDLES_CACHE
+    _OWN_HANDLES_CACHE = None
+
+
+def _own_handles_cached() -> "frozenset[str]":
+    """`own_account_handles()` behind the module memo."""
+    global _OWN_HANDLES_CACHE
+    if _OWN_HANDLES_CACHE is None:
+        _OWN_HANDLES_CACHE = own_account_handles()
+    return _OWN_HANDLES_CACHE
+
+
+def own_account_handles(cfg: dict | None = None, root=None) -> "frozenset[str]":
+    """Lower-cased handles of OUR OWN accounts (no leading @). Fail-soft: {} on any error.
+
+    Reads the desk-network roster through `accounts.effective_accounts`, which is
+    the single reader of "which desks exist" (config intent + the operator
+    override file). `cfg` is the already-parsed config/marketing.yml when the
+    caller has one; None reads it off `root`.
+
+    NEVER RAISES. This resolves inside the publisher's last language gate, and a
+    yaml/IO error there must not be able to stop a dispatch. The failure
+    direction is a WIDER screen, not a stopped one: an unreadable roster yields
+    an empty allowlist, so our own handle would be flagged as foreign — loud and
+    fixable, rather than a silent hole that lets a source tag through.
+    """
+    try:
+        from engine.marketing.accounts import effective_accounts  # noqa: PLC0415
+
+        if cfg is None:
+            import yaml  # noqa: PLC0415
+            from pathlib import Path  # noqa: PLC0415
+
+            base = Path(root) if root is not None else Path(__file__).resolve().parents[2]
+            with (base / "config" / "marketing.yml").open(encoding="utf-8") as fh:
+                cfg = yaml.safe_load(fh) or {}
+
+        out: set[str] = set()
+        for acct in effective_accounts(cfg, root):
+            handle = str(acct.get("handle") or "").strip().lstrip("@").lower()
+            if handle:
+                out.add(handle)
+        return frozenset(out)
+    except Exception:  # noqa: BLE001 — a screen must never break the publisher
+        return frozenset()
+
+
+def foreign_handle_mentions(text: str, own_handles=None) -> list[str]:
+    """@mentions in *text* that are not ours. Returns the offending handles,
+    lower-cased, de-duplicated, order-stable.
+
+    `own_handles` is any iterable of handles (with or without the leading "@");
+    None resolves the memoized desk roster.
+    """
+    own = {
+        str(h).strip().lstrip("@").lower()
+        for h in (_own_handles_cached() if own_handles is None else own_handles)
+        if str(h).strip()
+    }
+    out: list[str] = []
+    seen: set[str] = set()
+    for match in _HANDLE_MENTION_RE.finditer(str(text or "")):
+        handle = match.group(1).lower()
+        if handle in own or handle in seen:
+            continue
+        seen.add(handle)
+        out.append(handle)
+    return out
+
+
+#: Recursion ceiling for `card_input_violations`' flatten. Card inputs are
+#: shallow (strings, ticker rows, a fact dict); a bound keeps a cyclic or
+#: pathological structure from turning a screen into a hang.
+_CARD_FLATTEN_MAX_DEPTH = 6
+
+
+def _flatten_card_strings(value, depth: int = 0) -> list[str]:
+    """Every string inside a card-input value (strings, lists, dict VALUES)."""
+    if isinstance(value, str):
+        return [value]
+    if depth >= _CARD_FLATTEN_MAX_DEPTH:
+        return []
+    if isinstance(value, dict):
+        # Values only. Keys are our own field names, set by the renderer, never
+        # copy — screening them would report the schema, not the content.
+        out: list[str] = []
+        for item in value.values():
+            out.extend(_flatten_card_strings(item, depth + 1))
+        return out
+    if isinstance(value, (list, tuple, set, frozenset)):
+        out = []
+        for item in value:
+            out.extend(_flatten_card_strings(item, depth + 1))
+        return out
+    return []
+
+
+def card_input_violations(**params) -> list[str]:
+    """Screen every string card-input param for foreign @mentions. [] = clean.
+
+    The operator law covers post text AND card-input params: the 2026-08-02
+    defect also rendered a "@BRICSinfo · AGGREGATOR" chip onto a card, which is
+    the same source tag on a surface `banned_language` never sees (the card is
+    built from params, not from the post body). Violations name the param so a
+    caller can say WHICH input carried it::
+
+        "card param 'summary': source handle mention: '@FirstSquawk'"
+
+    Strings nested in list/dict values (ticker rows, fact dicts) are screened
+    too. De-duplicated and order-stable.
+    """
+    own = _own_handles_cached()
+    out: list[str] = []
+    seen: set[str] = set()
+    for name, value in params.items():
+        for text in _flatten_card_strings(value):
+            for handle in foreign_handle_mentions(text, own):
+                violation = f"card param '{name}': source handle mention: '@{handle}'"
+                if violation in seen:
+                    continue
+                seen.add(violation)
+                out.append(violation)
+    return out
+
+
+def banned_language(text: str, *, own_handles=None) -> list[str]:
+    """Language-only screen: dash tells, banned vocabulary/substrings, the
+    v3 cheese list, and foreign source @mentions. [] = clean.
 
     Two callers, one bar: validate_copy (generation time) and the publisher's
     post-time gate. The 2026-07-27 $AVGO "POC held" post proved the queue is a
@@ -1167,6 +1324,10 @@ def banned_language(text: str) -> list[str]:
     study-name bans existed, then fired days later where no generation-time
     validator could reach it. The publisher screens every due item with this
     exact function, so copy from any lane or vintage meets the same bar.
+
+    `own_handles` (keyword-only, optional) overrides the desk roster the
+    @mention screen allowlists; None resolves it from config. Every existing
+    POSITIONAL caller is unchanged.
     """
     violations: list[str] = []
 
@@ -1205,6 +1366,10 @@ def banned_language(text: str) -> list[str]:
         pattern = r"\b" + re.escape(word) + r"\b"
         if re.search(pattern, text, re.IGNORECASE):
             violations.append(f"cheese: '{word}'")
+
+    # Source-account tags (operator law 2026-08-02). Our OWN handles are fine.
+    for handle in foreign_handle_mentions(text, own_handles):
+        violations.append(f"source handle mention: '@{handle}'")
 
     return violations
 
@@ -1539,6 +1704,154 @@ SHAPE_CONTRACT: dict[str, str] = {
         f"{_SHAPE_NUMBER_BUDGET['caption']} numbers, and usually one."
     ),
 }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHART-FAMILY COPY SHAPES (TrendSpider hardening PR-C §4)
+# ─────────────────────────────────────────────────────────────────────────────
+# These are SHAPES UNDER the existing voice law, not a new voice. "Every post is
+# a fact plus a reaction that costs you something" is unchanged; what changes is
+# the FORM a chart post's fact-plus-reaction takes, and the budget it takes it in.
+#
+# The numbers are the corpus's, measured over 396 posts: the chart family is
+# 40.7% of output, its median caption is 11 words / 61 chars, only 25% carry a
+# hard number at all, and %-bearing captions UNDERPERFORM (5.3% top-decile).
+# Interjection openers are the strongest hook in the family (41.7% top-decile).
+# The picture is doing the talking; the caption says the one thing it cannot.
+
+#: Kinds whose posts ship with a chart and therefore take these shapes.
+CHART_FAMILY_KINDS: frozenset[str] = frozenset({
+    "signal", "chart", "watchlist", "receipt", "mover",
+})
+
+#: Target word band and the hard character cap for a chart-family CAPTION —
+#: the single-line forms, which are the ones that function as captions. The
+#: multi-line shapes (stack/list/two_part) are arguments, not captions, and keep
+#: their own budgets: capping a three-line stack at 100 characters would delete
+#: the shape rather than tighten it.
+CHART_CAPTION_WORDS = (7, 12)
+CHART_CAPTION_MAX_CHARS = 100
+
+#: Shapes that ARE captions for the purpose of the cap above.
+_CAPTION_SHAPES: frozenset[str] = frozenset({"caption", "one_liner"})
+
+#: Terminal stance glyphs the chart family may end on. Emoji is TERMINAL
+#: PUNCTUATION in the corpus (53% inside the last 14 characters) and the tension
+#: register out-reaches the celebration register — 😬🌶️🩸 beat 🔥. The set is
+#: allow-list, not suggestion: a glyph outside it is either the alarm register
+#: (🚨, which belongs to the wire lanes) or the ledger register (🟢🔴, which
+#: belongs to receipts), and the three registers never mix.
+CHART_STANCE_GLYPHS: tuple[str, ...] = ("👀", "🔥", "🩸", "🌶️", "😬", "✅", "❔", "📌")
+
+#: The four chart-family copy shapes, kept as data so the prompt and any
+#: validator read the same text.
+CHART_COPY_SHAPES: dict[str, str] = {
+    "interjection": (
+        "INTERJECTION OPENER: start on the reaction, then the fact. One word or "
+        "two, then what the chart shows. Strongest hook in this family (41.7% "
+        "of its top decile). The interjection has to be earned by the picture: "
+        "an opener over a boring chart reads as noise."
+    ),
+    "enumerate_and_circle": (
+        "ENUMERATE AND CIRCLE: the caption lines map one to one onto the "
+        "circles on the chart, in the same order, each line two or three words "
+        "with a check or a question mark on it. The last one is the question "
+        "mark, because it is the one happening now. Never enumerate more "
+        "instances than the chart actually draws."
+    ),
+    "superlative": (
+        "SUPERLATIVE: say the record, scoped to the window the chart shows. The "
+        "scope is not optional and it is not yours to choose. It comes from the "
+        "fact, and the chart draws exactly that window. Never say ever, never "
+        "say in history."
+    ),
+    "question_delegation": (
+        "QUESTION DELEGATION: end on a real question a trader would ask, or "
+        "hand the read to somebody else. This is how a directional lean gets "
+        "said without you making the call. A rhetorical question that sets up "
+        "your own answer is NOT this shape."
+    ),
+}
+
+
+def chart_copy_block() -> str:
+    """The chart-family shape guidance, for the system prompt.
+
+    NO DASH TELLS IN HERE. The prompt is checked against its own validators
+    (tests/test_marketing_copy_v2.py::test_no_prompt_the_model_reads_contains_a
+    _dash_tell): a paragraph that uses an em dash while banning em dashes is an
+    instruction whose compliance is a rejection, which is the self-cancelling
+    failure that whole test class exists to catch.
+    """
+    lines = [
+        "CHART-FAMILY COPY (kinds: " + ", ".join(sorted(CHART_FAMILY_KINDS)) + ").",
+        "A picture is attached and it is doing the talking. Say the one thing "
+        "it cannot.",
+        f"- Budget: aim for {CHART_CAPTION_WORDS[0]} to "
+        f"{CHART_CAPTION_WORDS[1]} words. Hard cap {CHART_CAPTION_MAX_CHARS} "
+        "characters on the single-line shapes. The real corpus median for this "
+        "family is 11 words, 61 characters.",
+        "- The horizon is printed in the chart header (TICKER WEEKLY). Never "
+        "spend caption words restating it.",
+        "- Numbers live in the IMAGE. Only a quarter of these captions carry a "
+        "hard number at all, and the percent-bearing ones underperform. If you "
+        "do print a number, the chart has to restate it in frame already. A "
+        "validator checks that and drops the post when it does not.",
+        "- One terminal stance glyph is allowed, at the END, from this set: "
+        + " ".join(CHART_STANCE_GLYPHS)
+        + ". Tension reads better than celebration here. No alarm glyph and no "
+          "ledger glyph in this family; those belong to other lanes.",
+        "- Chart labels may name indicators. YOUR TEXT MAY NOT. The picture "
+        "showing the average is exactly why you never have to write its name.",
+        "- Stage language in plain words: base building, marking up, stalling "
+        "out, under distribution. The numbered form is a chart label, never a "
+        "caption.",
+        "Four shapes, and your item's angle usually implies one:",
+    ]
+    lines.extend(f"- {v}" for v in CHART_COPY_SHAPES.values())
+    return "\n".join(lines)
+
+
+def chart_caption_violations(text: str, ctx: dict | None) -> list[str]:
+    """Chart-family caption budget + glyph-register conformance. [] = clean.
+
+    Scoped to the single-line shapes on chart-family kinds — see
+    :data:`_CAPTION_SHAPES` for why a stack is not a caption. Returns
+    VIOLATIONS, which the v2 writer answers with its repair turn; this is not a
+    drop path. The one hard drop in this program is the in-frame restatement
+    gate, which lives in ``chart_director`` because only the director knows what
+    the picture actually restates.
+    """
+    if not isinstance(ctx, dict):
+        return []
+    kind = str(ctx.get("type") or "")
+    shape = str(ctx.get("shape") or DEFAULT_SHAPE)
+    if kind not in CHART_FAMILY_KINDS or shape not in _CAPTION_SHAPES:
+        return []
+    raw = str(text or "").strip()
+    if not raw:
+        return []
+    out: list[str] = []
+    if len(raw) > CHART_CAPTION_MAX_CHARS:
+        out.append(
+            f"chart caption: {len(raw)} chars (max {CHART_CAPTION_MAX_CHARS}); "
+            f"the corpus median for this family is 61")
+    # Glyph register. A celebration/alarm/ledger glyph in a chart caption is a
+    # register collision, not a taste call — the three never mix (§1.2).
+    for ch in raw:
+        if not _is_emoji(ch):
+            continue
+        if ch not in "".join(CHART_STANCE_GLYPHS):
+            out.append(f"chart caption: glyph {ch!r} is outside the stance set "
+                       f"({' '.join(CHART_STANCE_GLYPHS)})")
+            break
+    return out
+
+
+def _is_emoji(ch: str) -> bool:
+    """Rough emoji test — the pictographic and symbol blocks. No dependency."""
+    cp = ord(ch)
+    return (0x1F300 <= cp <= 0x1FAFF) or (0x2600 <= cp <= 0x27BF)
 
 
 def split_shaped_text(text: str, shape: str) -> tuple[str, str]:
@@ -3089,6 +3402,10 @@ def validate_copy_v2(
         )
 
     violations.extend(shape_violations(text, shape))
+    # TrendSpider PR-C §4: the chart family's own caption budget and glyph
+    # register. Additive — it can only ADD violations, never license a post the
+    # existing gates would have refused.
+    violations.extend(chart_caption_violations(text, ctx))
     violations.extend(validate_copy(headline, body, ctx, recent=recent))
     violations.extend(fake_precision_violations(text))
     violations.extend(orphan_hedge_violations(text))
@@ -5707,7 +6024,8 @@ def _anti_exemplar_block() -> str:
 # their parent's name because that is how they appear in the JSON the model
 # reads.
 V2_PAYLOAD_CONTRACT_KEYS: tuple[str, ...] = (
-    "account", "persona", "kind", "shape", "shape_contract", "angle",
+    "account", "persona", "kind", "shape", "shape_contract", "number_budget",
+    "angle",
     "cashtag", "cashtags", "facts", "entry", "t1", "t2", "invalidation",
     "win_rate", "numbers_whitelist", "pack", "lead_with", "sibling_texts",
     "franchise", "codex",
@@ -5728,6 +6046,14 @@ _V2_PAYLOAD_CONTRACT_BLOCK = (
     "earnings, wire...). It sets what the post is FOR.\n"
     "- shape / shape_contract: the form, assigned. Write exactly that form; the "
     "contract text is repeated in the item so you cannot miss it.\n"
+    "- number_budget: the most DISTINCT numbers this post may carry, computed "
+    "for THIS item's kind and shape, and the exact count a validator will "
+    "apply to what you write. It is a ceiling, never a target: most posts want "
+    "fewer, and one number with a reaction that costs you beats four numbers "
+    "and no stance. Every number after the first has to be what the one before "
+    "it is measured against, not a new claim. shape_contract quotes the SHAPE "
+    "half of this figure and is never higher than it, so where the two differ, "
+    "this is the one that counts.\n"
     "- angle: the job this post does. Write that job.\n"
     "- cashtag / cashtags: the tickers this post is about. If a cashtag is "
     "present it must appear in the post, spelled exactly as given.\n"
@@ -5805,8 +6131,13 @@ _V2_SYSTEM_PROMPT_BASE = (
     "where), group_read (the name as a read on its group), precedent (what "
     "this shape did before), process (the rule you are following), "
     "receipt_frame (the outcome, posted flat), macro_read (what the data "
-    "plainly shows), event_read (what just happened and what it changes). "
+    "plainly shows), event_read (what just happened and what it changes), "
+    "long_term_structure (where the name sits on a multi-year picture, not "
+    "this week's tape), stage_read (what phase the name is in, in plain words: "
+    "base building, marking up, stalling out, under distribution). "
     "Write that job. Do not write a general post that happens to mention it.\n\n"
+
+    + chart_copy_block() + "\n\n"
 
     "DIVERGENCE. If your item lists `sibling_texts`, another desk already "
     "posted about this same fact today. Yours must share NO six-word run with "
@@ -5926,8 +6257,17 @@ _V2_SYSTEM_PROMPT_BASE = (
     "- Risk never attaches to your ego: 'I'm wrong below 33.8', 'proves me "
     "wrong', 'my trigger' are banned. Compliance caveats are banned too: "
     "'historical, not a guarantee', 'past performance', 'size appropriately'.\n"
-    "- ONE number per post. Motto cadence (two short symmetrical clauses) and "
-    "numbered lists of your own process are banned.\n"
+    # THIS LINE USED TO SAY "ONE number per post" (W4e, 2026-08-02). It was a
+    # blanket house rule sitting in the same prompt as a per-shape contract that
+    # orders up to six, and above a validator (`number_budget_for`) that has
+    # never once returned 1 — so on all 154 items of the 08-02 plan the model
+    # was told a cap that no post could satisfy and that no gate enforced. Same
+    # self-cancelling shape as the HEDGES autopsy: an instruction whose
+    # compliance is a rejection teaches the model that the instructions are
+    # noise. The cap is unchanged; the model is now told the real one, per item.
+    "- Numbers are capped at your item's number_budget, and no post is obliged "
+    "to spend it. Motto cadence (two short symmetrical clauses) and numbered "
+    "lists of your own process are banned.\n"
     "- Avoid model tells: 'Here's what it means for X', 'Let's break it down', "
     "colon-as-drama openers, the repeated 'That's the [noun].' cadence, triads "
     "everywhere, kickers like 'without the noise'.\n\n"
@@ -6179,6 +6519,14 @@ _V2_STAT_KEYS = (
     # of both, and a night where `provider_failovers` tracks `items` is a rung
     # that is down and should be pulled from the order.
     "provider_retries", "provider_failovers",
+    # THE CLASS THAT HID INSIDE "provider returned no text" (W4e, 2026-08-02).
+    # `unreadable_replies` counts turns where a provider ANSWERED and the reply
+    # was not the contracted object; `unreadable_reasks` counts the one extra
+    # ask each of those buys; `provider_recovered` counts items that came back
+    # alive from either recovery path. A night where `unreadable_replies`
+    # tracks `items` is a PROMPT/model-shape problem and pulling a rung will not
+    # touch it, which is the opposite of what the legacy reason string implied.
+    "unreadable_replies", "unreadable_reasks", "provider_recovered",
 )
 _V2_STATS: dict[str, int] = {k: 0 for k in _V2_STAT_KEYS}
 #: The writer runs items in parallel and every worker bumps these. ``d[k] += 1``
@@ -6254,6 +6602,16 @@ def _v2_item_payload(
         "kind": ctx.get("type"),
         "shape": shape,
         "shape_contract": SHAPE_CONTRACT.get(shape, ""),
+        # THE NUMBER THE VALIDATOR WILL ACTUALLY COUNT (W4e, 2026-08-02).
+        # `shape_contract` quotes the SHAPE half of the budget and the system
+        # prompt used to state a flat "ONE number per post" on top of it, so on
+        # every one of the 154 items in the 08-02 plan the model was handed two
+        # different caps and neither was the enforced one (a receipt or an
+        # earnings post is allowed four whatever its shape says). The gate does
+        # not move — `number_budget_for` is unchanged and is the single source
+        # of truth for BOTH sides now. The writer is simply told what it is.
+        "number_budget": number_budget_for(kind=str(ctx.get("type") or ""),
+                                           shape=shape),
         "angle": ctx.get("angle") or None,
         "cashtag": ctx.get("cashtag") or None,
         "cashtags": ctx.get("cashtags") or None,
@@ -6353,6 +6711,22 @@ def _dashless(s: str) -> str:
     return out
 
 
+#: Appended to the ONE re-ask an `unreadable_reply` buys, and to nothing else.
+#:
+#: The first turn already carried the output law in the system prompt and the
+#: model wrapped its post in something else anyway, so restating the law IS the
+#: repair — the same move the editorial repair turn makes (name exactly what was
+#: wrong and nothing else). It relaxes nothing: every validator still runs on
+#: whatever comes back, and the sentence about the post being unchanged is there
+#: so a model does not read "try again" as "write something easier".
+_OUTPUT_SHAPE_REMINDER = (
+    "\n\nYOUR PREVIOUS REPLY COULD NOT BE READ. Answer with ONE JSON object and "
+    "nothing else: {\"text\": \"<the post>\"}. No code fence, no preamble, no "
+    "commentary before or after it, no other keys. This changes NOTHING about "
+    "the post: same laws, same shape, same numbers, same item."
+)
+
+
 def _v2_user_message(payload: dict, *, violations: list[str] | None = None,
                      critic_reasons: list[str] | None = None) -> str:
     """The user turn: the item, and on a repair, exactly what was wrong.
@@ -6376,6 +6750,77 @@ def _v2_user_message(payload: dict, *, violations: list[str] | None = None,
             + "\n".join(f"- {_dashless(r)}" for r in critic_reasons[:6])
         )
     return out
+
+
+#: THE FLOOR THE 08-02 OUTAGE WALKED UNDER.
+#:
+#: content_studio's outage breaker keys on the provider share of the WHOLE plan
+#: and trips above 50%. On 2026-08-02 the provider stage lost 32 of 79 attempted
+#: posts (41% of the lane, 28% of the reason census) and the breaker stayed
+#: silent, so a quarter of the day's supply vanished through a green run. A
+#: quarter of a day is not a rounding error on a network that publishes three
+#: posts per account: at ~3/day/account, a 10% provider loss is one account's
+#: whole day every third night.
+#:
+#: This is deliberately a SEPARATE alarm from the gate-5 drop-rate warning below
+#: and it is louder: gate 5 is "the writer is being picky tonight" (a copy
+#: problem, and the copy laws are supposed to bite), this is "the writer never
+#: got an answer" (nothing was judged at all, and the supply is simply gone).
+_PROVIDER_FAULT_ALARM_SHARE = 0.10
+#: ...and a floor in ITEMS, because this lane is called once per desk and a
+#: four-item desk losing one post is not an outage. Three provider-stage drops
+#: is the smallest count that cannot be one unlucky item.
+_PROVIDER_FAULT_ALARM_MIN = 3
+
+
+def _provider_fault_alarm(results: list[dict], dropped: list[dict]) -> None:
+    """One line-start ``::error`` when provider faults are eating this desk.
+
+    Bare print at line start with flush: a ``::error`` behind this module's
+    prefixing logger is not a line start and GitHub drops it silently, which is
+    the defect class ``tests/test_gh_annotation_line_start.py`` exists for.
+
+    NEVER RAISES and never changes an outcome — an alarm that can break the
+    writer is worse than the silence it replaces.
+    """
+    try:
+        total = len(results or [])
+        prov = [r for r in (dropped or []) if str(r.get("stage") or "") == "provider"]
+        n = len(prov)
+        if not total or n < _PROVIDER_FAULT_ALARM_MIN:
+            return
+        share = n / total
+        if share <= _PROVIDER_FAULT_ALARM_SHARE:
+            return
+        census: dict[str, int] = {}
+        for r in prov:
+            for reason in (r.get("reasons") or ["unrecorded"]):
+                # The family, not the whole string: `unreadable_reply:codex` and
+                # `unreadable_reply:codex+oauth` are one fault to an operator.
+                fam = str(reason).split(":", 1)[0] or "unrecorded"
+                census[fam] = census.get(fam, 0) + 1
+        top = ", ".join(f"{k}={v}" for k, v in
+                        sorted(census.items(), key=lambda kv: -kv[1])[:4])
+        unreadable = sum(v for k, v in census.items()
+                         if k in ("unreadable_reply", "repair_unanswered"))
+        steer = ("MOST OF THESE ARE UNREADABLE REPLIES: the providers ANSWERED "
+                 "and the writer could not parse what came back, so this is a "
+                 "model output-shape problem and pulling a rung from "
+                 "copywriter.llm.provider_order will not touch it."
+                 if unreadable * 2 >= n else
+                 "Check the named rungs in copywriter.llm.provider_order: each "
+                 "item already spent its same-provider retry and its one "
+                 "failover rung before it died.")
+        print(f"::error title=marketing_copy_provider_faults::The copy lane's "
+              f"PROVIDER stage lost {n} of {total} attempted posts "
+              f"({share:.0%}; alarm floor {_PROVIDER_FAULT_ALARM_SHARE:.0%} and "
+              f"{_PROVIDER_FAULT_ALARM_MIN} items). These posts were never "
+              f"judged by any validator, so this is LOST SUPPLY, not stricter "
+              f"copy, and dropped posts are never templated. Reasons: {top}. "
+              f"{steer}", flush=True)
+    except Exception as exc:  # noqa: BLE001 — an alarm never breaks the writer
+        log.warning("copywriter v2: provider-fault alarm failed (%s: %s)",
+                    type(exc).__name__, exc)
 
 
 def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> list[dict]:
@@ -6630,6 +7075,9 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
         recent_acc.setdefault(acct_i, []).append(
             {"text": text_i, "date": ctx_i.get("as_of")})
 
+    dropped = [r for r in results if r.get("mode") == "dropped"]
+    _provider_fault_alarm(results, dropped)
+
     # Masterplan §0 gate 5: "drop-rate >30% of a night's plan raises a
     # ::warning". Emitted HERE rather than from the plan report, because the
     # writer is the only place that cannot forget: any caller of this lane gets
@@ -6637,7 +7085,6 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
     # annotation above, and two alarms for one cause trains the reader to ignore
     # both. Bare print at line start with flush (a "::" behind a logger prefix
     # is not a line start and GitHub drops it silently).
-    dropped = [r for r in results if r.get("mode") == "dropped"]
     if dropped and len(dropped) / len(results) > 0.30:
         by_stage: dict[str, int] = {}
         for r in dropped:
@@ -6867,6 +7314,68 @@ def _v2_write_one(
 
         return _do_call
 
+    def _one_more_rung(user_msg: str, *, served: str | None, family: str) -> str:
+        """ONE more attempt for an item the waterfall left empty-handed. "" on failure.
+
+        Shared by both provider-fault classes because the recovery is the same
+        shape and the per-item ceiling is the same number; only the diagnosis
+        differs, and `family` carries it into the drop reason.
+
+        `provider_no_text` — the rung answered with no text block at all. The
+        rung is the suspect, so the retry goes DOWN the ladder and never back to
+        the rung that just served nothing.
+
+        `unreadable_reply` — the rung answered WITH a body that is not the
+        contracted object (see `_v2_extract_text`). The model's output shape is
+        the suspect, not the credential, so when there is no rung below the one
+        that answered the SAME rung is worth one more ask with the output
+        contract restated. A dead rung never earns that second ask; a model that
+        wrapped its post in prose does.
+        """
+        tried = [str(served or "unknown")]
+        candidate = llm_auth.first_usable(
+            llm_auth.providers_after(providers, served))
+        same_rung = False
+        if candidate is None and family == "unreadable_reply":
+            candidate = llm_auth.first_usable(
+                [p for p in providers if p.get("name") == served])
+            same_rung = candidate is not None
+        if candidate is not None:
+            if family == "unreadable_reply":
+                _bump("unreadable_reasks")
+                msg = user_msg + _OUTPUT_SHAPE_REMINDER
+            else:
+                _bump("provider_failovers")
+                msg = user_msg
+            log.warning("copywriter v2: provider '%s' returned nothing usable "
+                        "(%s) — %s '%s' for this item", served, family,
+                        "re-asking" if same_rung else "failing over to",
+                        candidate.get("name"))
+            try:
+                raw2, _reason2, served2 = llm_auth.make_call(
+                    [candidate],
+                    _do_call_factory(msg, same_provider_retry=False),
+                    context="marketing_copy_v2_failover")
+            except Exception as exc:  # noqa: BLE001 — the failover is best effort
+                log.warning("copywriter v2: failover provider '%s' failed "
+                            "(%s: %s)", candidate.get("name"),
+                            type(exc).__name__, exc)
+                raw2, served2 = None, str(candidate.get("name") or "")
+            # THE SECOND REPLY IS PARSED, NOT TRUSTED. The pre-fix code returned
+            # `_v2_extract_text(raw2)` straight out of here, so an unreadable
+            # SECOND reply produced "" with `fault` never set and the item died
+            # under the legacy string — the exact laundering this function
+            # exists to stop, reintroduced one line deeper.
+            if raw2:
+                text2 = _v2_extract_text(raw2)
+                if text2:
+                    _bump("provider_recovered")
+                    return text2
+            tried.append(str(served2 or candidate.get("name") or "unknown"))
+
+        fault["reason"] = f"{family}:" + "+".join(tried)
+        return ""
+
     def _call(user_msg: str) -> str:
         """One writer turn across the waterfall. "" on every provider fault.
 
@@ -6879,6 +7388,18 @@ def _v2_write_one(
         one-rung failover here, in the caller, where the per-item budget is
         known — make_call itself must keep treating a served response as served,
         because every other consumer depends on that.
+
+        AND THE OTHER HALF OF IT (2026-08-02, W4e). A reply that arrives and
+        cannot be PARSED used to leave through `return _v2_extract_text(raw)`
+        with `fault` still empty, so the item was dropped under the legacy
+        string "provider returned no text" — with no retry, no failover, and a
+        remedy table that sends the reader to check credentials. On the 08-02
+        plan every one of the 32 provider-stage drops carried that legacy
+        string, which is only reachable from this branch: the provider ANSWERED
+        32 times and the writer threw all 32 replies away in silence. It is
+        still a provider-stage fault (we have no post), it is emphatically NOT
+        an editorial one (no validator ever saw a draft), and it now buys the
+        same one bounded attempt the textless class buys.
         """
         fault.clear()
         try:
@@ -6896,7 +7417,17 @@ def _v2_write_one(
                         type(exc).__name__, exc)
             return ""
         if raw:
-            return _v2_extract_text(raw)
+            text = _v2_extract_text(raw)
+            if text:
+                return text
+            _bump("unreadable_replies")
+            log.warning(
+                "copywriter v2: %s answered with a body the writer could not "
+                "read (%d chars, no contracted {\"text\": ...} object) — this "
+                "is a model output-shape fault, NOT a credential fault",
+                served, len(str(raw)))
+            return _one_more_rung(user_msg, served=served,
+                                  family="unreadable_reply")
 
         if reason == "stop_refusal":
             # THE MODEL LOOKED AT THIS ITEM AND DECLINED. That is an editorial
@@ -6915,36 +7446,13 @@ def _v2_write_one(
         # LADDER FAILOVER, ONE RUNG. Reuse the order build_providers produced
         # rather than re-deriving it: that order carries key-pool balancing and
         # cross-process cooling, and a freshly guessed order throws both away.
-        candidate = llm_auth.first_usable(
-            llm_auth.providers_after(providers, served))
         # NAME EVERY RUNG THAT SERVED NOTHING, not just the last one. The
         # breaker downstream turns this into "provider: X", and an operator who
         # pulls X from provider_order when X AND the rung under it were both
         # silent gets a second dark night — two silent rungs is a prompt/budget
         # diagnosis, one silent rung is a provider diagnosis, and the census is
         # the only place that distinction survives.
-        tried = [str(served or "unknown")]
-        if candidate is not None:
-            _bump("provider_failovers")
-            log.warning("copywriter v2: provider '%s' served no text — failing "
-                        "over to '%s' for this item",
-                        served, candidate.get("name"))
-            try:
-                raw2, _reason2, served2 = llm_auth.make_call(
-                    [candidate],
-                    _do_call_factory(user_msg, same_provider_retry=False),
-                    context="marketing_copy_v2_failover")
-            except Exception as exc:  # noqa: BLE001 — the failover is best effort
-                log.warning("copywriter v2: failover provider '%s' failed "
-                            "(%s: %s)", candidate.get("name"),
-                            type(exc).__name__, exc)
-                raw2, served2 = None, str(candidate.get("name") or "")
-            if raw2:
-                return _v2_extract_text(raw2)
-            tried.append(str(served2 or candidate.get("name") or "unknown"))
-
-        fault["reason"] = "provider_no_text:" + "+".join(tried)
-        return ""
+        return _one_more_rung(user_msg, served=served, family="provider_no_text")
 
     def _shape_and_check(text: str) -> tuple[str, str, str, list[str]]:
         """Dial pass, then every deterministic gate. -> (text, hl, body, violations).
@@ -6992,6 +7500,19 @@ def _v2_write_one(
         retry = _call(_v2_user_message(payload, violations=violations))
         if retry:
             shaped, hl, bd, violations = _shape_and_check(retry)
+        elif fault.get("reason"):
+            # THE REPAIR TURN ITSELF FAULTED, AND THE CENSUS USED TO CALL THAT
+            # AN EDITORIAL DROP. Falling through here re-reported the FIRST
+            # round's violations at stage=validate, so an item whose second
+            # draft never arrived was counted as "the copy laws refused it" —
+            # a provider fault laundered into the voice census, on the one
+            # stage split the outage breaker reads. The reason names both
+            # halves: the fault that ended the item, then what the first draft
+            # was being repaired for.
+            _bump("dropped_provider")
+            return {"mode": "dropped", "stage": "provider",
+                    "reasons": [f"repair_unanswered:{fault['reason']}",
+                                *list(violations)[:3]]}
         if violations:
             _bump("dropped_validate")
             return {"mode": "dropped", "reasons": violations, "stage": "validate"}
@@ -7004,8 +7525,14 @@ def _v2_write_one(
             payload, critic_reasons=list(verdict.get("reasons") or [])))
         if not retry:
             _bump("dropped_critic")
+            # NAME THE FAULT, not just its shape. "repair_empty" said the second
+            # draft never arrived and nothing about WHY, so a critic-stage spike
+            # driven by a dead rung read as a copy problem. The stage stays
+            # `critic` on purpose: the critic is what condemned the first draft,
+            # and that judgement stands whatever happened to the repair turn.
             return {"mode": "dropped",
-                    "reasons": list(verdict.get("reasons") or []) + ["repair_empty"],
+                    "reasons": list(verdict.get("reasons") or [])
+                    + [f"repair_empty:{fault.get('reason') or 'unrecorded'}"],
                     "stage": "critic"}
         shaped, hl, bd, violations = _shape_and_check(retry)
         if violations:

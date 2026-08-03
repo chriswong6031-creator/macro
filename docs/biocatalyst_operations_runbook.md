@@ -1,10 +1,11 @@
 # BioCatalyst Operations Runbook
 
 Status: the B1 source-state lane, authenticated B1b read surface, bounded B2
-Record History adapter, and B4D prospective ledger are implemented but **dark
-by default**. API/UI presence does not imply that live evidence exists. No
-Prophet signal, ranking, trade authority, or Neural Web decision authority is
-asserted by this document.
+Record History adapter, B4D prospective ledger, B4E root-sealed R2 activation
+control, and the T1a explicit protocol peer matrix are implemented locally but
+**dark by default**. API/UI
+presence does not imply that live evidence exists. No Prophet signal, ranking,
+trade authority, or Neural Web decision authority is asserted by this document.
 
 ## 1. Scope and ownership
 
@@ -58,14 +59,17 @@ passes, and an exact canary run survives private replay. Arming B1 does not arm
 B2. The Record History adapter must stay disabled while its source-registry
 entry says `production_ingest_allowed: false`.
 
-`BIOCATALYST_PROSPECTIVE_ENABLED` is also separate and defaults to `0`.
-Setting it to `1` additionally requires
-`BIOCATALYST_R2_RETENTION_CONFIRMED=1`, which is an operator attestation that
-the BioCatalyst bucket has an independently administered retention rule and a
-worker principal that cannot delete, overwrite, shorten, or recreate prior
-objects or mirror receipts. Conditional-create support alone does not satisfy
-this gate. Removing the switch after a v1.3 generation exists fails closed
-rather than silently dropping or resetting its ledger.
+`BIOCATALYST_PROSPECTIVE_ENABLED` is also separate and defaults to `0`. B4D
+collection with that switch set to `1` requires the B4E root-sealed activation
+gate and a fresh root-written heartbeat described in section 14. The collector
+locally validates both artifacts against its exact R2 account, endpoint,
+bucket, jurisdiction, and worker credential identity before it creates an
+attempt directory, constructs a source collector, or constructs an R2 store.
+`BIOCATALYST_R2_RETENTION_CONFIRMED=1` is deprecated compatibility evidence
+only: it is parsed for a bounded configuration error, but it cannot authorize
+prospective collection. Removing the prospective switch after a v1.3 or later
+generation exists fails closed rather than silently dropping or resetting its
+ledger.
 
 Before the lane is provisioned, the macro API's BioCatalyst sandbox paths use
 systemd's optional-path prefix so their absence cannot prevent the serving API
@@ -200,6 +204,7 @@ snapshot, private object key, absolute filesystem path, or credential):
 /var/lib/macro-biocatalyst/public/generations/{run_id}/trials/{nct_id}.json
 /var/lib/macro-biocatalyst/public/generations/{run_id}/trial_snapshots/{nct_id}.json
 /var/lib/macro-biocatalyst/public/generations/{run_id}/history/{nct_id}.json
+/var/lib/macro-biocatalyst/public/generations/{run_id}/protocols/{nct_id}.json
 /var/lib/macro-biocatalyst/public/generations/{run_id}/health.json
 /var/lib/macro-biocatalyst/public/health.json
 ```
@@ -228,6 +233,17 @@ allowlisted ClinicalTrials.gov paths with explicit missingness, and remains
 an even narrower response DTO and strips opaque snapshot/content identifiers.
 Historical observations, semantic change interpretation, issuer identity,
 probability, valuation, and signal authority remain outside this projection.
+
+Generation `1.4.0` adds immutable, pointer-bound
+`protocols/{nct_id}.json` `trial_protocol_projection.v1` artifacts beside the
+same-generation trial snapshots and history. Each is built only from a
+validated private source snapshot plus validated public trial snapshot. Its
+arm groups use the closed `label`, `type`, `description`, and
+`interventionNames` shape with item/list/string caps; unknown upstream keys do
+not cross the boundary. Generation `1.5.0` is the current superset of `1.4.0`:
+it retains the protocol layout and also carries the B4D prospective artifacts.
+Both schema generations are source-fact only and have no peer relationship,
+identity, ranking, or decision authority.
 
 ## 4. Source and version semantics
 
@@ -338,7 +354,10 @@ reference, and prior/observed pointer without exposing paths or secrets.
 B2 exact registry diffs and neutral change facts are a separate evidence plane.
 They do not alter B1 source-state watermarks and cannot substitute for missing
 raw history evidence. The public projection excludes raw bodies, receipts,
-object keys, filesystem paths, JSON paths, private hashes, and credentials.
+object keys, filesystem paths, private source-snapshot JSON-pointer machinery,
+private hashes, and credentials. The T1a response separately exposes only
+registered official ClinicalTrials.gov API-v2 field locators under its closed
+response contract; those locators are not storage paths or private handles.
 
 ## 6. Health and SLO accounting
 
@@ -385,13 +404,30 @@ Runtime configuration is held outside git. The worker receives only:
   defaults to `0`;
 - optional `BIOCATALYST_PROSPECTIVE_ENABLED`, which accepts only `0` or `1` and
   defaults to `0`;
-- `BIOCATALYST_R2_RETENTION_CONFIRMED`, which must be exactly `1` whenever the
-  prospective lane is enabled and records the external no-delete/no-overwrite
-  policy review;
+- optional `BIOCATALYST_R2_RETENTION_CONFIRMED`, which accepts only `0` or
+  `1` as deprecated evidence of an earlier retention review. It never
+  authorizes a prospective run; only the root-sealed gate plus fresh heartbeat
+  can do that;
+- for prospective collection, `BIOCATALYST_R2_ACTIVATION_ID` and
+  `BIOCATALYST_R2_ACCOUNT_ID`, which must match the root-controlled gate and
+  control-plane account exactly; and
+- for prospective collection, `BIOCATALYST_R2_JURISDICTION`, explicitly one
+  of `default`, `eu`, or `fedramp`, so local target binding cannot silently
+  substitute an endpoint jurisdiction; and
 - `BIOCATALYST_R2_ENDPOINT`, `BIOCATALYST_R2_BUCKET`,
   `BIOCATALYST_R2_ACCESS_KEY_ID`, and `BIOCATALYST_R2_SECRET_ACCESS_KEY`; and
 - the service-injected fixed state/public roots
   `/var/lib/macro-biocatalyst/state` and `/var/lib/macro-biocatalyst/public`.
+
+The collector environment is exactly `/etc/macro-biocatalyst.env`, owned
+`root:root` mode `0600`. It contains only the worker's data-plane configuration
+and is loaded by the systemd manager before the service drops to
+`macro-biocatalyst`. The worker cannot reopen either environment file in its
+mount namespace. The root-only control environment is separately
+`/etc/macro-biocatalyst-control.env`, also `root:root` mode `0600`; it holds
+only the Cloudflare control/auditor token, control account ID, and fixed B4E
+TTLs. It is loaded only by the root heartbeat service and is never supplied to
+the collector.
 
 The API process gets read access to the public projection only. It must not receive object-store write credentials. Receipts allowlist safe request and response headers and hash pagination tokens; they reject authorization, cookie, API-key, proxy-authorization, and set-cookie fields.
 
@@ -407,8 +443,9 @@ request-time hash validation alone is not sufficient recovery evidence.
 
 The static worker identity has no login shell, no Linux capabilities, no write
 access to application code or its versioned runtime, and no direct file access
-to `/etc/macro-biocatalyst.env`. Root remains the only principal that can change
-credentials, runtime selection, or systemd policy.
+to either environment file. Root remains the only principal that can change
+credentials, runtime selection, systemd policy, the activation gate, or the
+activation heartbeat.
 
 Exact transitive dependency locking and bounded garbage collection for old,
 unselected version directories remain deployment follow-ups. Until then,
@@ -600,6 +637,46 @@ Issuer/security, asset, economic-rights, FDA-application, and ticker joins stay
 absent until the Corporate Intelligence-owned, point-in-time identity bridge
 has cleared its separate abstention and evidence gates.
 
+## 12A. T1a explicit protocol peer matrix
+
+`POST /api/biocatalyst/v1/trial-peer-sets:resolve` resolves a caller-supplied,
+exact-uppercase list of 2–100 NCT IDs. It is an entitled `private, no-store`
+facts-only comparison surface, not a peer-discovery system: cohort membership
+is supplied by the caller, and the response asserts no clinical, commercial,
+company, asset, security, or authority relationship among its rows. It cannot
+rank, score, select, gate, or originate a decision.
+
+The endpoint reads only `protocols/{nct_id}.json` and same-generation history
+models from a committed public generation `1.4.0` or `1.5.0`. Generation
+`1.0.0` through `1.3.0` lacks the protocol artifact contract and therefore
+returns the coarse private `503` unavailable response rather than misreporting
+all requested records as uncovered. A malformed, missing, tampered, or
+over-cap protocol artifact also fails the request closed with that response;
+the API never falls back to a private snapshot, raw source record, or a
+secondary database.
+
+Each rendered field evidence entry contains `source_field_locators`, not a
+source object key or private JSON-path key. Values are an exact closed
+allowlist of official ClinicalTrials.gov API-v2 `/protocolSection/...` fields
+used by the projection. They must never contain a filesystem path, object-store
+key, raw/archive/receipt identifier, snapshot reference, hash, arbitrary JSON
+pointer, or private-source locator. The protocol artifact and peer response
+both have aggregate byte ceilings; publication rejects oversized artifacts and
+serving rejects an oversized response rather than emitting a partial result.
+
+The route accepts at most 16 KB. Caddy applies an endpoint-scoped body cap,
+and the application rejects an oversized declared `Content-Length` or streams
+an undeclared/chunked body only until the same cap. Authentication is resolved
+before any JSON decoding. After successful authentication, empty or malformed
+JSON receives a private `400`; oversized input receives a private `413`.
+
+Its `t1` HMAC cursor binds the sorted explicit cohort, requested page limit,
+authenticated caller subject and tier, and committed generation. A changed
+cohort, limit, caller, or tier receives private `400`; a changed generation
+receives private `409` and requires restart. `BIOCATALYST_CURSOR_SECRET` may
+make cursor signatures restart-stable when it has at least 32 UTF-8 bytes;
+without it, process-random signing deliberately invalidates cursors on restart.
+
 ## 13. B4D official-v2 prospective change ledger
 
 B4D creates a prospective, first-observed change ledger from successful polls
@@ -609,8 +686,10 @@ epoch establishes a baseline observation and publishes zero change events. It
 does not mine older B1 archives, Record History submission dates, source update
 metadata, or any other retrospective record to manufacture an earlier clock.
 The code path and entitled read surface can be deployed while dark, but the
-worker must not create its first v1.3 baseline until both prospective and R2
-retention gates above are explicitly satisfied.
+worker must not create its first v1.3 baseline until
+`BIOCATALYST_PROSPECTIVE_ENABLED=1` and the B4E root-sealed gate plus fresh
+heartbeat are explicitly valid. The old retention boolean cannot substitute
+for either artifact.
 
 For every later successful observation, `observed_interval.after` is the prior
 successful observation's `retrieved_at` and
@@ -670,3 +749,215 @@ The current canary also rechecks the complete prior mirrored object inventory
 on each same-scope poll. Before enabling large B2 history collections, replace
 that bounded safety-first replay with a receipt-rooted verification plan that
 reads only the B4D evidence required for continuation.
+
+## 14. B4E R2 retention activation control (dark)
+
+B4E is the activation guard for the B4D prospective ledger, not a data
+collector. Its `check` operation is read-only against Cloudflare's control
+plane and a data-plane `HeadBucket`; `seal` may create only a bounded R2
+preflight receipt with conditional create and exact readback; `heartbeat`
+rechecks that sealed receipt and both planes before writing a local status
+artifact. None of these operations collects source records, accrues a ledger,
+or advances a public pointer.
+
+### Fixed local trust boundary
+
+`app/deploy/biocatalyst-setup.sh` provisions these exact paths through the
+no-follow secure-path helper. Setup installs both systemd unit pairs but
+enables or starts neither timer.
+
+```text
+/etc/macro-biocatalyst.env                              root:root                  0600
+/etc/macro-biocatalyst-control.env                      root:root                  0600
+/var/lib/macro-biocatalyst                              root:macro-biocatalyst     0750
+/var/lib/macro-biocatalyst/activation                   root:macro-biocatalyst     0750
+/var/lib/macro-biocatalyst/activation/gate.json         root:macro-biocatalyst     0440
+/var/lib/macro-biocatalyst/activation/heartbeat.json    root:macro-biocatalyst     0440
+```
+
+The collector runs as `macro-biocatalyst`. It can only read the two artifacts
+from the root-controlled `activation/` directory; it cannot replace that
+directory, the gate, or the heartbeat. Its service has read/write paths only
+for `state/` and `public/`, marks `activation/` read-only, and makes both
+environment files inaccessible. The root
+`macro-biocatalyst-activation-heartbeat.service` instead loads both environment
+files, has write access only to `activation/`, and makes worker `state/` and
+`public/` inaccessible. The root heartbeat timer is hourly with up to 120
+seconds randomized delay; it is installed disabled.
+
+### Cloudflare conditions to verify externally
+
+No Cloudflare token, bucket lock, lifecycle rule, or other external Cloudflare
+state is changed by this repository or by B4E setup. Before an operator can
+arm B4E, Cloudflare must independently provide all of the following for the
+dedicated BioCatalyst bucket:
+
+- The worker credential is an active token with exactly one `allow` policy:
+  `Workers R2 Storage Bucket Item Write` on the exact bucket resource and no
+  other permission group or resource.
+- At least one enabled R2 bucket lock has `Indefinite` duration and covers
+  every key under `biocatalyst/`. The verifier accepts that exact prefix or
+  any ancestor prefix, including an empty bucket-wide prefix; neither a
+  narrower prefix nor a finite lock is an authorization.
+- No enabled lifecycle rule with a delete-objects transition overlaps the
+  protected `biocatalyst/` namespace. A bucket-wide, ancestor, exact, or
+  nested deletion prefix is disqualifying because each could delete at least
+  one protected object.
+- A preflight receipt can be conditionally created at
+  `biocatalyst/activation-preflight/r2_preflight_<24-hex>.json` and read back
+  byte-for-byte. The conditional, immutable R2 receipt—not a local boolean—is
+  what the root-sealed gate binds.
+
+The old `BIOCATALYST_R2_RETENTION_CONFIRMED=1` value is deprecated evidence of
+an earlier operator review only. It cannot authorize collection, override a
+missing lock, lifecycle delete rule, wrong token scope, stale gate, or stale
+heartbeat.
+
+### Root operator sequence
+
+Keep both timers disabled until this full sequence has succeeded. Run commands
+as root from `/opt/macro`. Do **not** shell-source a systemd `EnvironmentFile`:
+values such as a descriptive user agent can contain spaces. Instead, define the
+following non-executing loader once, then use it only inside a disposable root
+subshell. It accepts only uppercase environment names, preserves the value as a
+single quoted export, and neither evaluates a value nor leaves credentials in
+the parent shell after the subshell exits.
+
+```bash
+load_biocatalyst_env() {
+  while IFS='=' read -r name value || [ -n "${name:-}" ]; do
+    case "$name" in
+      ''|'#'*) continue ;;
+    esac
+    [[ "$name" =~ ^[A-Z][A-Z0-9_]*$ ]] || {
+      printf 'invalid BioCatalyst environment name: %s\n' "$name" >&2
+      return 1
+    }
+    export "$name=$value"
+  done < "$1"
+}
+```
+
+1. Populate the separate environments. The worker file receives its data-plane
+   credentials and B4D controls, including
+   `BIOCATALYST_PROSPECTIVE_ENABLED=1`,
+   `BIOCATALYST_R2_ACTIVATION_ID` (after sealing), and
+   `BIOCATALYST_R2_ACCOUNT_ID`, and
+   `BIOCATALYST_R2_JURISDICTION` (`default`, `eu`, or `fedramp`). The control file receives
+   `BIOCATALYST_R2_CONTROL_ACCOUNT_ID`,
+   `BIOCATALYST_R2_CONTROL_API_TOKEN`,
+   `BIOCATALYST_R2_ACTIVATION_GATE_TTL_SECONDS=86400`, and
+   `BIOCATALYST_R2_HEARTBEAT_TTL_SECONDS=7200`.
+2. In a disposable root subshell, load both files with that loader and run a
+   read-only preflight. The subshell exit drops the exported worker and control
+   values; run `unset -f load_biocatalyst_env` after the full procedure if the
+   helper itself is no longer wanted in the parent shell.
+
+   ```bash
+   (
+     set -euo pipefail
+     load_biocatalyst_env /etc/macro-biocatalyst.env
+     load_biocatalyst_env /etc/macro-biocatalyst-control.env
+     cd /opt/macro
+     /opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_activation --mode check
+   )
+   ```
+
+3. Seal immediately after a successful check. `seal` repeats the remote
+   preflight, requires it to be no more than five minutes old, conditionally
+   creates and reads back the R2 receipt, and writes the canonical gate JSON to
+   standard output. Install that output atomically as the fixed root-controlled
+   gate, then copy its `activation_id` into the worker environment:
+
+   ```bash
+   (
+     set -euo pipefail
+     load_biocatalyst_env /etc/macro-biocatalyst.env
+     load_biocatalyst_env /etc/macro-biocatalyst-control.env
+     gate_tmp="$(mktemp /var/lib/macro-biocatalyst/activation/.gate.XXXXXX)"
+     trap 'rm -f -- "$gate_tmp"' EXIT
+     cd /opt/macro
+     /opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_activation --mode seal >"$gate_tmp"
+     chown root:macro-biocatalyst "$gate_tmp"
+     chmod 0440 "$gate_tmp"
+     mv -f -- "$gate_tmp" /var/lib/macro-biocatalyst/activation/gate.json
+     trap - EXIT
+   )
+   ```
+
+   Now extract the sealed identifier, edit the root-owned worker environment
+   without evaluating it, and make the exact value check pass **before**
+   starting the heartbeat service. This intentional pause prevents a heartbeat
+   for one sealed gate from being paired with a different worker activation ID.
+
+   ```bash
+   activation_id="$(/opt/macro-biocatalyst/current/bin/python - /var/lib/macro-biocatalyst/activation/gate.json <<'PY'
+import json
+import re
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    value = json.load(handle)
+identifier = value.get("activation_id") if isinstance(value, dict) else None
+if not isinstance(identifier, str) or not re.fullmatch(r"r2_activation_[a-f0-9]{24}", identifier):
+    raise SystemExit("sealed gate has no canonical activation_id")
+print(identifier)
+PY
+)"
+   printf 'Set this exact line in /etc/macro-biocatalyst.env with a root-safe editor:\nBIOCATALYST_R2_ACTIVATION_ID=%s\n' "$activation_id"
+   read -r -p 'After saving that exact line, press Enter to verify it: ' _
+   grep -Eq "^BIOCATALYST_R2_ACTIVATION_ID=${activation_id}([[:space:]]*)$" /etc/macro-biocatalyst.env
+   unset activation_id
+   ```
+
+4. Create a fresh root-written heartbeat before touching the worker timer:
+
+   ```bash
+   systemctl start macro-biocatalyst-activation-heartbeat.service
+   ```
+
+   The service repeats the remote verification but does not collect source
+   data. It atomically replaces only `heartbeat.json` after canonical contract
+   validation.
+5. Perform the no-I/O local target-binding check, then the setup preflight.
+   Both must pass before arming:
+
+   ```bash
+   (
+     set -euo pipefail
+     load_biocatalyst_env /etc/macro-biocatalyst.env
+     load_biocatalyst_env /etc/macro-biocatalyst-control.env
+     cd /opt/macro
+     /opt/macro-biocatalyst/current/bin/python -m scripts.biocatalyst_activation --mode validate \
+       --gate-file /var/lib/macro-biocatalyst/activation/gate.json \
+       --heartbeat-file /var/lib/macro-biocatalyst/activation/heartbeat.json
+   )
+   /opt/macro/app/deploy/biocatalyst-setup.sh --verify-prereqs
+   ```
+
+6. Arm the heartbeat first, then the ordinary worker timer; confirm both are
+   enabled and active. This is an explicit operator action, never a setup or
+   updater side effect.
+
+   ```bash
+   systemctl enable --now macro-biocatalyst-activation-heartbeat.timer
+   systemctl enable --now macro-biocatalyst.timer
+   systemctl is-enabled macro-biocatalyst-activation-heartbeat.timer macro-biocatalyst.timer
+   systemctl is-active macro-biocatalyst-activation-heartbeat.timer macro-biocatalyst.timer
+   ```
+
+The independently configured gate TTL is exactly 86,400 seconds (24 hours).
+The separate heartbeat TTL is exactly 7,200 seconds (two hours), bounded
+further by the gate expiry. The hourly timer cadence does not extend either
+artifact: reseal and install a new gate before 24 hours, then run the heartbeat
+service and local target-binding verification again.
+
+If B4D is enabled and the root-sealed gate, heartbeat, target binding, owner,
+mode, receipt, or freshness check fails, the worker quarantines the run before
+it creates an attempt directory, source collector, or R2 store. It leaves the
+last valid public pointer intact, writes only bounded failure health where that
+is safe, and cannot accrue a prospective observation or advance the ledger.
+These failures are integrity/trust-boundary quarantine, not transient partial
+collection. B4E does not relax source rights, entity ownership, Corporate
+Intelligence's point-in-time issuer/security identity bridge, or the facts-only
+Neural Web and Prophet authority fences.

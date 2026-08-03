@@ -121,6 +121,10 @@ def _gics_sector_name(name: str) -> str:
 # reads the theme_lanes.v1 side-artifact that build_state_of_themes now writes from the
 # SAME ctx it renders the page from (single source of truth) and joins lane by theme id
 # in _themes_block — no classifier import, no re-derivation, no pandas/jinja pull.
+# PR-A1 (2026-08): the same-id join only ever hit for the 7 of 18 stories that happen to
+# be spelled like their basket; the artifact now also ships `basket_lanes` (the explicit
+# theme_crosswalk primary_basket_id projection) which _themes_block prefers, with the
+# same-id lookup kept as the fallback so the join is a strict superset.
 
 
 # ── source loaders (every one fail-open: missing/corrupt → empty, never raises) ──
@@ -270,6 +274,22 @@ def load_theme_lanes(root: Path) -> dict:
     return lanes if isinstance(lanes, dict) else {}
 
 
+def load_basket_lanes(root: Path) -> dict:
+    """site/basketdata/theme_lanes.json → {basket_id: lane}. Fail-open to {}.
+
+    The BASKET-keyed half of the same side-artifact. `lanes` is keyed by STORY id
+    (a ledger key — never renamed); a portfolio ticker's membership yields BASKET
+    ids, and only 7 of the 18 stories happen to share their basket's spelling. This
+    map is the explicit crosswalk projection (theme_crosswalk.yml primary_basket_id),
+    so power_grid / obesity_glp1 / payments_fintech / defense / … resolve a lane
+    instead of silently reading null. Missing/corrupt → {} and the caller falls back
+    to the legacy same-id join, so the result is a strict superset of W1 behaviour.
+    """
+    d = _read_json(root / "site" / "basketdata" / "theme_lanes.json")
+    bl = d.get("basket_lanes") if isinstance(d, dict) else None
+    return bl if isinstance(bl, dict) else {}
+
+
 def load_congress(root: Path) -> "object | None":
     """data/quiver/congress.parquet → a DataFrame (or None if pandas/parquet unavailable).
 
@@ -316,6 +336,7 @@ def load_sources(root: Path) -> dict:
         "baskets": load_baskets(root),
         "membership": load_membership(root),
         "theme_lanes": load_theme_lanes(root),
+        "basket_lanes": load_basket_lanes(root),
         "congress": load_congress(root),
         "chain_state": load_chain_state(root),
     }
@@ -394,19 +415,26 @@ def _ticker_sector(ticker: str, standouts_index: dict, screener_row: dict | None
 
 
 def _themes_block(ticker: str, membership: dict, baskets: dict,
-                  theme_lanes: dict) -> list[dict] | None:
+                  theme_lanes: dict, basket_lanes: dict | None = None) -> list[dict] | None:
     """Ticker → its live basket ids, joined to theme meta (name/name_zh/rank/reco/lane).
 
-    Verbatim meta from baskets.json; lane joined by theme id from theme_lanes.json
-    (the theme_lanes.v1 side-artifact written by build_state_of_themes — the SAME
-    lane shown on the State-of-Themes page). Fail-open: a theme with no lane entry
-    gets lane=None (W0 behavior — honest "no lane read for this theme"). A theme with
-    no meta still lists its id (the ticker is a member; we just have no meta join).
+    Verbatim meta from baskets.json; lane joined from theme_lanes.json (the
+    theme_lanes.v1 side-artifact written by build_state_of_themes — the SAME lane
+    shown on the Theme Tracker page).
+
+    The lane join prefers `basket_lanes` (basket-id keyed, projected through
+    theme_crosswalk.yml's primary_basket_id) and falls back to the legacy same-id
+    lookup in `lanes` (story-id keyed). The fallback makes this a strict superset:
+    every basket that resolved a lane before still resolves the same one, and the
+    11 baskets whose story is spelled differently now resolve too. Fail-open: a
+    basket in neither map gets lane=None (W0 behavior — honest "no lane read"). A
+    basket with no meta still lists its id (the ticker is a member; no meta join).
     """
     ids = membership.get(ticker)
     if not ids:
         return None
     lanes = theme_lanes if isinstance(theme_lanes, dict) else {}
+    b_lanes = basket_lanes if isinstance(basket_lanes, dict) else {}
     themes: list[dict] = []
     for bid in ids:
         meta = baskets.get(bid)
@@ -416,9 +444,11 @@ def _themes_block(ticker: str, membership: dict, baskets: dict,
                              ("reco", "reco"), ("rank", "rank")):
                 if meta.get(src) is not None:
                     entry[dst] = meta[src]
-        # lane: joined by theme id from the theme_lanes.v1 side-artifact; missing →
-        # None (fail-open, no fabrication). Never re-derives the lane here.
-        lane = lanes.get(bid)
+        # lane: explicit basket-keyed map first, then the legacy same-id lookup;
+        # missing from both → None (fail-open, no fabrication). Never re-derives.
+        lane = b_lanes.get(bid)
+        if not isinstance(lane, str):
+            lane = lanes.get(bid)
         entry["lane"] = lane if isinstance(lane, str) else None
         themes.append(entry)
     return themes or None
@@ -728,6 +758,7 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
     baskets = sources.get("baskets") or {}
     membership = sources.get("membership") or {}
     theme_lanes = sources.get("theme_lanes") or {}
+    basket_lanes = sources.get("basket_lanes") or {}
     congress_rows = _congress_iter(sources.get("congress"))
     # TXI W4 — invert the transmission chains blast lists ONCE into a per-ticker index.
     chains_index = _chains_index(sources.get("chain_state") or {})
@@ -770,7 +801,7 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
         if sector is not None:
             block["sector"] = sector
 
-        themes = _themes_block(t, membership, baskets, theme_lanes)
+        themes = _themes_block(t, membership, baskets, theme_lanes, basket_lanes)
         if themes is not None:
             block["themes"] = themes
             cov["themes"] += 1

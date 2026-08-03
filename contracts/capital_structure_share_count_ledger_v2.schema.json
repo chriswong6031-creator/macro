@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_share_count_ledger_v2.schema.json",
+  "title": "Authenticated Company Facts share-count materialization ledger v2",
+  "description": "Pure append-only materializer output for an authenticated ordered Company Facts manifest prefix. It is a direct-fact ledger only: no current selector, dilution arithmetic, risk, rank, sizing, trade, or Prophet authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "status", "compiler_version", "materialized_at", "observations", "source_snapshots", "ledger_receipts", "ledger_head_receipt_id", "counts", "authority"],
+  "properties": {
+    "schema": {"const": "capital_structure.share_count_ledger.v2"},
+    "status": {"const": "ok"},
+    "compiler_version": {"type": "string", "minLength": 1},
+    "materialized_at": {"type": "string", "format": "date-time", "description": "The nondecreasing materializer clock at the ledger head; equal to the tail ledger receipt materialized_at."},
+    "observations": {"type": "array", "maxItems": 1000000, "items": {"type": "object"}},
+    "source_snapshots": {"type": "array", "minItems": 1, "maxItems": 16384, "items": {"type": "object"}},
+    "ledger_receipts": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"type": "object"}},
+    "ledger_head_receipt_id": {"type": "string", "pattern": "^share-count-ledger-receipt-v2:cs:[a-f0-9]{24}$"},
+    "counts": {"type": "object", "additionalProperties": false, "required": ["observations_total", "source_snapshots_total", "current_snapshot"], "properties": {"observations_total": {"type": "integer", "minimum": 0}, "source_snapshots_total": {"type": "integer", "minimum": 1}, "current_snapshot": {"type": "object", "additionalProperties": false, "required": ["snapshot_fact_observations", "observed", "deferred", "ambiguous"], "properties": {"snapshot_fact_observations": {"type": "integer", "minimum": 0}, "observed": {"type": "integer", "minimum": 0}, "deferred": {"type": "integer", "minimum": 0}, "ambiguous": {"type": "integer", "minimum": 0}}}}},
+    "authority": {"type": "object", "additionalProperties": false, "required": ["is_context_only", "share_count_ledger_authority", "instrument_authority", "capacity_authority", "runway_authority", "risk_authority", "rank_authority", "sizing_authority", "entry_authority", "trade_authority", "prophet_authority"], "properties": {"is_context_only": {"const": true}, "share_count_ledger_authority": {"const": false}, "instrument_authority": {"const": false}, "capacity_authority": {"const": false}, "runway_authority": {"const": false}, "risk_authority": {"const": false}, "rank_authority": {"const": false}, "sizing_authority": {"const": false}, "entry_authority": {"const": false}, "trade_authority": {"const": false}, "prophet_authority": {"const": false}}}
+  }
+}

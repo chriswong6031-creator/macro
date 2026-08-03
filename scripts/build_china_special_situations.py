@@ -117,7 +117,7 @@ def _split(snap: dict, preview_n: int) -> tuple[dict, dict, dict]:
     planes = sorted({k.split(".", 1)[0] for k in locked})
     n_preview = sum(len(_rows(shell.get(b), k)) for b, k in PREVIEW_PLANES)
     gate = {
-        "tier": "insider",
+        "tier": "essential",
         "payload": f"/{PAYLOAD_DIR}/{PAYLOAD_NAME}",
         "preview": preview_n,
         "n_preview": n_preview,

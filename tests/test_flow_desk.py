@@ -27,6 +27,7 @@ from scripts.build_flow_desk import (
     _soft_tone,
     _z_score,
     build_flow_read,
+    build_market_tide,
     build_sector_heatmap,
     build_top_movers,
 )
@@ -560,3 +561,55 @@ class TestProxyLaneGate:
         broad, sector = self._run(root, {"US_LANE": "nightly"})
         assert broad.call_count == 1, "rebuild_broad() must run once under the US_LANE alias"
         assert sector.call_count == 1, "rebuild() must run once under the US_LANE alias"
+
+
+# ── spark null-vs-zero (OIP W1.6-A item C) ────────────────────────────────────
+
+class TestSparkNullVsZero:
+    """A session where NO index ETF reported a field has no observation and must
+    emit None in market_tide.spark — never a fabricated 0.0. The defect this
+    pins: spark dates initialized to 0.0 painted the pre-history run of net
+    premium (~14 sessions before the store began) as a measured flat zero. A
+    REAL mid-series 0.0 observation is data and must survive untouched."""
+
+    def _data_dir(self, tmp_path: Path, net_vals: list, gross_vals: list) -> Path:
+        flow_dir = tmp_path / "data" / "options_flow"
+        flow_dir.mkdir(parents=True, exist_ok=True)
+        dates = pd.date_range("2026-06-01", periods=len(net_vals), freq="B")
+        df = pd.DataFrame({
+            "premium_mn": gross_vals,
+            "net_premium_mn": net_vals,
+            "zerodte_share": [0.5] * len(net_vals),
+        }, index=dates)
+        df.to_parquet(flow_dir / "summary_SPY.parquet")
+        return tmp_path / "data"
+
+    def test_prehistory_sessions_emit_null_not_zero(self, tmp_path):
+        nan = float("nan")
+        data_dir = self._data_dir(
+            tmp_path,
+            net_vals=[nan, nan, nan, 5.0, 0.0, -3.0],
+            gross_vals=[nan, nan, 10.0, 20.0, 30.0, 40.0],
+        )
+        spark = build_market_tide([], data_dir)["spark"]
+        assert len(spark) == 6
+        # leading no-observation sessions: null, not 0.0
+        assert spark[0]["net_premium_mn"] is None
+        assert spark[1]["net_premium_mn"] is None
+        assert spark[2]["net_premium_mn"] is None
+        # gross began one session earlier — fields degrade independently
+        assert spark[1]["premium_mn"] is None
+        assert spark[2]["premium_mn"] == pytest.approx(10.0)
+
+    def test_real_mid_series_zero_is_preserved(self, tmp_path):
+        nan = float("nan")
+        data_dir = self._data_dir(
+            tmp_path,
+            net_vals=[nan, nan, nan, 5.0, 0.0, -3.0],
+            gross_vals=[1.0] * 6,
+        )
+        spark = build_market_tide([], data_dir)["spark"]
+        zero_row = spark[4]
+        assert zero_row["net_premium_mn"] == pytest.approx(0.0)
+        assert zero_row["net_premium_mn"] is not None
+        assert spark[5]["net_premium_mn"] == pytest.approx(-3.0)

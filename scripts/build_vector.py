@@ -1612,7 +1612,11 @@ def _standout_tickers(market: str = "us") -> list[str]:
                     return base
             return tkr
 
-        # US standouts: prefer label=='BUY ZONE' entries first, then fallback
+        # US standouts: prefer label=='BUY ZONE' entries first, then fallback.
+        # PRIORITY-ORDER DEPENDENCY (intentional): both [:3] slices take the artifact
+        # in its emitted order (us_prophet_v1 = stage bucket, priority score desc,
+        # ticker), so re-ordering the buy lane changes WHICH tickers this card names —
+        # pinned by tests/test_us_board_rank.py::TestArtifactOrderConsumers.
         if market == "us":
             zone = [r["ticker"] for r in buy if r.get("label") == "BUY ZONE"][:3]
             if zone:
@@ -3283,7 +3287,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     _seo_title = "MastermindX — Global Macro Regime & Market Cycle Intelligence"
     _seo_desc = ("MastermindX is a live macro dashboard tracking market regimes, sector "
                  "rotation and boom-bust cycles across the US, China, Hong Kong, Canada and "
-                 "global markets — risk radar, signals and cycle clocks in one place.")
+                 "global markets.")
     _seo = (
         '<meta name="description" content="%s">\n'
         '<link rel="canonical" href="https://www.mastermind-x.com/start.html">\n'

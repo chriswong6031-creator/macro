@@ -86,9 +86,21 @@ def test_payload_prefix_is_enforced_ahead_of_the_launch_switch():
     )
 
 
-def test_preview_shell_is_free_registered_not_premium():
-    """The page URL must stay reachable for Free, or there is no preview at all."""
-    assert "/special_situations.html" in _policy()["free_registered"]["exact"]
+def test_preview_shell_is_anonymously_public_not_premium():
+    """The page URL must stay reachable WITHOUT a session, or there is no preview
+    at all — and since W1a (research/SEO_SUPERCHARGE_MASTERPLAN_BY_FABLE.md) no
+    crawl either: the registration wall 302s Googlebot, which never has a session,
+    into /?signin=1. Promoted free_registered → public on 2026-08-02. The paid rows
+    never lived on this URL; they live in the payload the tests above keep gated.
+    """
+    pol = _policy()
+    page = "/special_situations.html"
+    assert page in pol["public"]["exact"]
+    assert page not in pol["free_registered"]["exact"], (
+        "one class only — a path left in both lists serves as public while the "
+        "policy file documents it as gated"
+    )
+    assert page not in pol["deny"]["exact"]
 
 
 def test_payload_prefix_is_not_public():
@@ -120,7 +132,7 @@ def test_gated_shell_omits_locked_rows_and_the_setup_strip():
         rows=preview, groups=[], cat_chips=[], cat_chips_more=[], sector_opts=[],
         theme_opts=[], total=3, n_cats=1, counts={}, coverage={}, built="2026-07-25 00:00 UTC",
         top_setups=[], grade_a=1, new_today=0, intel_cov={},
-        gate={"tier": "insider", "payload": "/premiumdata/special_situations.json",
+        gate={"tier": "essential", "payload": "/premiumdata/special_situations.json",
               "preview": 1, "locked": 2},
         C=C_STUB)
     assert set(TICKER_RE.findall(shell)) == {"aaa"}
@@ -252,5 +264,5 @@ def test_shipped_payload_declares_the_required_tier():
     payload = json.loads(PAYLOAD.read_text())
     assert payload["schema"] == "tier_payload.v1"
     if payload.get("gated"):
-        assert payload["required_tier"] == "insider"
+        assert payload["required_tier"] == "essential"
         assert payload["locked"] > 0

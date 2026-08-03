@@ -207,7 +207,7 @@ def build_premium_payload(raw: dict | None, name_map: dict) -> dict:
         "schema": "tier_payload.v1",
         "page": "confluence_screener",
         "gated": True,
-        "required_tier": "insider",
+        "required_tier": "essential",
         "built": artifact_utc or "",
         "combos": combos,
     }

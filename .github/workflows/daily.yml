@@ -218,6 +218,12 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          # Activation gate for the authenticated Company Facts head. This has no
+          # fallback: provision the repository secret before merging this lane.
+          CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY: ${{ secrets.CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY }}
+          # Optional dedicated guard bucket; absent uses R2_CAPITAL_STRUCTURE_BUCKET,
+          # then the existing shared R2_BUCKET with the same R2 credentials.
+          COMPANYFACTS_HEAD_GUARD_BUCKET: ${{ secrets.COMPANYFACTS_HEAD_GUARD_BUCKET }}
           # Optional dedicated account/bucket. Each credential falls back to the
           # shared R2_* value in source_store.py, so same-account deployments need
           # only the dedicated bucket secret while isolated accounts can set all four.
@@ -238,10 +244,80 @@ jobs:
           # (after the Asia cash close), not here — keeps this US-evening run lean.
           # --skip-shadow-importance: the ~13-14m shadow passes run standalone in
           # collect_tail (2026-07-14 split) — off the engine job's critical path.
+          # sec_capital_structure_companyfacts is serially registered immediately
+          # after sec_capital_structure in scripts.collect's shared SEC host group.
+          # It can therefore consume only same-run verified complete-submission
+          # anchors, while retaining raw Company Facts JSON separately and without
+          # invoking any share-count consumer. Immutable Parquet generations and
+          # chained receipts are installed/read back before its tiny current pointer
+          # advances; any failure leaves the prior authenticated generation selected.
           # sam_gov_opportunities is excluded because government-revenue-live.yml
           # is its sole serialized ledger owner. Two workflows must never merge and
           # overwrite the same revision/document Parquets concurrently.
           python -m scripts.collect --exclude-group asia --exclude sam_gov_opportunities --skip-shadow-importance
+      - name: materialize authenticated capital-structure share counts (context-only)
+        # PRE-PRODUCTION GATE: leave false until publication protocol v2 and the
+        # bounded full-generation retention lane pass their release audits. A
+        # skipped step receives no R2/HMAC secrets and performs no write.
+        if: ${{ vars.CAPITAL_STRUCTURE_SHARE_COUNT_PUBLICATION_ENABLED == 'true' }}
+        # Re-authenticates the selected Company Facts receipt/head and reads exact
+        # retained bytes through their manifest-bound R2 namespace. A separate
+        # signed share-count head makes this an all-or-nothing publication lane;
+        # missing trust, source mismatch, or partial progress blocks the checkpoint.
+        # This step observes direct SEC facts only. It cannot select a current share
+        # basis, calculate fully diluted supply, score risk, or influence Prophet.
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_CAPITAL_STRUCTURE_ENDPOINT: ${{ secrets.R2_CAPITAL_STRUCTURE_ENDPOINT }}
+          R2_CAPITAL_STRUCTURE_ACCESS_KEY_ID: ${{ secrets.R2_CAPITAL_STRUCTURE_ACCESS_KEY_ID }}
+          R2_CAPITAL_STRUCTURE_SECRET_ACCESS_KEY: ${{ secrets.R2_CAPITAL_STRUCTURE_SECRET_ACCESS_KEY }}
+          R2_CAPITAL_STRUCTURE_BUCKET: ${{ secrets.R2_CAPITAL_STRUCTURE_BUCKET }}
+          R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+          CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY: ${{ secrets.CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY }}
+          COMPANYFACTS_HEAD_GUARD_BUCKET: ${{ secrets.COMPANYFACTS_HEAD_GUARD_BUCKET }}
+          CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY: ${{ secrets.CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY }}
+          SHARE_COUNT_HEAD_GUARD_BUCKET: ${{ secrets.SHARE_COUNT_HEAD_GUARD_BUCKET }}
+        run: |
+          # The in-process bridge has one 15-minute monotonic deadline.  R2
+          # strict reads cannot accept that remaining budget, so Linux runners
+          # add a process-level GNU timeout with 30 seconds for the bridge to
+          # return its fail-closed result before TERM, then a 30-second KILL
+          # backstop for a blocking SDK call.  The Mac Studio has no GNU
+          # timeout; Perl alarm replaces itself with Python and supplies the
+          # equivalent 15m30s hard process ceiling there.
+          if command -v timeout >/dev/null 2>&1; then
+            timeout --signal=TERM --kill-after=30s 15m30s python -m scripts.materialize_capital_structure_share_counts
+          else
+            perl -e 'alarm 930; exec @ARGV or die' -- python -m scripts.materialize_capital_structure_share_counts
+          fi
+      - name: retain unselected share-count v2 generations (pre-production)
+        # HARD-DISABLED PRE-PRODUCTION SHELL. This step receives no R2 or HMAC
+        # secrets. Even if both visibility gates are flipped accidentally, the
+        # command fails before credential lookup or a remote call. Release needs
+        # provider-proven conditional delete, a shared publisher/retention fence,
+        # and a verifier-only capability that cannot write the publication head.
+        # A third variable separately requests apply mode; one retention-variable
+        # flip can never request deletion.
+        if: ${{ vars.CAPITAL_STRUCTURE_SHARE_COUNT_PUBLICATION_ENABLED == 'true' && vars.CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_ENABLED == 'true' }}
+        env:
+          CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_ENABLED: 'true'
+          CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_APPLY_ENABLED: ${{ vars.CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_APPLY_ENABLED }}
+        run: |
+          retention_args=()
+          if [ "$CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_APPLY_ENABLED" = "true" ]; then
+            retention_args+=(--apply)
+          fi
+          if command -v timeout >/dev/null 2>&1; then
+            timeout --signal=TERM --kill-after=30s 15m30s python -m scripts.retain_capital_structure_share_counts "${retention_args[@]}"
+          else
+            perl -e 'alarm 930; exec @ARGV or die' -- python -m scripts.retain_capital_structure_share_counts "${retention_args[@]}"
+          fi
       - name: compile capital-structure event spine (offline, context-only)
         # AFTER collection so today's verified SEC manifests are visible, and BEFORE
         # the data commit so immutable event versions/edges ride the same checkpoint.
@@ -483,14 +559,21 @@ jobs:
     # as defense in depth — if the label set or the Terminal host ever drifts,
     # tape_flow still degrades to a warning + self-skip, never a second Terminal.
     runs-on: [self-hosted, theta-m1]
-    # Budget arithmetic: tape-flow budgets 25+30+20=75m (hard-stopped in-script)
-    # + census ≤8m (--max-requests 450) + W11 options witness ~5m (real-path on
-    # the store-bearing M1 — measured 4m35s on mac-builder-1, 2026-07-26; was a
-    # 0.5s no-op when the job landed store-less) + other TIL organs ~seconds
-    # + shadow-importance ~13-14m (the spike leg of the old collect job's 98.5m
-    # night) + qledger backfill + setup ≈ ~115m worst case. 150m keeps the
-    # silent-timeout class (#2193 / the 2026-07-11 collect cancel) away.
-    timeout-minutes: 150
+    # Budget arithmetic (re-cut 2026-08-02 after the 5-night starvation cancel,
+    # 07-29→08-02: shadow-importance outgrew its "~13-14m" estimate to 80-120m+
+    # and the job died at the old 150m cap with every later step — earnings
+    # sweep, qledger, CCW, "commit tail data" — SKIPPED): tape-flow budgets
+    # 25+30+20=75m (hard-stopped in-script) + census ≤8m (--max-requests 450)
+    # + W11 options witness ~5m (real-path on the store-bearing M1 — measured
+    # 4m35s on mac-builder-1, 2026-07-26) + other TIL organs ~seconds
+    # + earnings sweep ~4m + shadow-importance now STEP-BOUNDED at 60m+50m
+    # (see the band's own comment) + qledger backfill + CCW + commit ≈ ~160m
+    # realistic worst (observed pre-scorer band runs ~33m, not its 88m budget
+    # sum). 200m clears that with headroom (engine job precedent, same cap);
+    # the step bounds — not this cap — are what guarantee the commit runs, and
+    # `if: always()` on "commit tail data" is the last-resort grace-window
+    # backstop if a freak night stacks every budget at once.
+    timeout-minutes: 200
     steps:
       - uses: actions/checkout@v4
         with:
@@ -641,20 +724,75 @@ jobs:
         run: |
           python -m scripts.build_discovery_confluence \
             || echo "::warning::discovery confluence join failed (non-fatal)"
+      - name: MLC-W5 — US earnings calendar sweep (non-fatal)
+        # Root-cause fix (MLC postmortem 07-14): collectors/equity_earnings.py was never
+        # wired into the nightly pipeline — earnings.parquet was permanently empty/missing,
+        # making the W1.5 blackout gate and the W5 display chips always stale-fail-open.
+        # Sweeps Nasdaq's public calendar for the next 66 weekdays (~one quarter), writing
+        # data/earnings/earnings.parquet (ticker-indexed: next_date, next_time, eps_forecast,
+        # surprises_json, surprises_as_of, as_of). Bot-wall-aware: if the first calendar call
+        # is blocked (Akamai 403), the existing cache is kept untouched and the step exits 0.
+        # MUST run in collect_tail, NOT collect (house law: new accrual steps go in collect_tail).
+        # PLACEMENT (starvation incident 07-29→08-02): this step and its tripwire used to sit
+        # AFTER the shadow-importance band, whose two unbudgeted full-store scorers grew from
+        # the "~13-14m combined" estimate to 80-120m+ and blew the job's 150m cap five nights
+        # running — every step behind them (this sweep, qledger, CCW, "commit tail data") was
+        # SKIPPED, freezing the store at the pre-#3979 two-stamp shape. Cheap bounded accrual
+        # runs BEFORE unbudgeted scorers; keep it that way.
+        # KEEP THIS LINE BARE. No-args means "sweep the whole universe" (breadth union +
+        # Hot Tape liquid names); passing --tickers collapses the universe to that subset
+        # and every other row keeps a frozen as_of. That is exactly the 2026-06-19 freeze:
+        # the collector's __main__ used to fall through to a 3-name demo default, so for six
+        # weeks the nightly refreshed only AAPL/NVDA/JPM while 1361 of 1364 rows sat at
+        # as_of 2026-06-19 — and the tripwire below read the store-level max() as_of and
+        # reported sla_ok the whole time.
+        # Pinned by tests/test_earnings_w5.py::TestNightlyEntryPointSweepsWholeUniverse.
+        # Wall time (measured 2026-07-29): calendar sweep 66 calls ≈ 155s (round-trip
+        # dominates, not the 0.25s pacing sleep) + surprise drip capped at max_new=120
+        # names ≈ 60s → ~3.5m per night, well within the job budget.
+        # Writes data/earnings/earnings.parquet — covered by `git add data/` below.
+        run: |
+          python -m collectors.equity_earnings \
+            || echo "::warning::equity_earnings sweep failed (non-fatal)"
+      - name: MLC-W5 — earnings freshness tripwire (non-fatal)
+        # Reads the just-written data/earnings/earnings.parquet and checks that
+        # the store's as_of is within the expected SLA (2 trading days).
+        # Writes data/quality/earnings_freshness_audit.json for observability.
+        # Emits ::warning:: when stale so CI surfaces the gap without failing the build.
+        run: |
+          python -m scripts.audit_earnings_freshness \
+            || echo "::warning::audit_earnings_freshness crashed (non-fatal)"
       # ── importance_v0 SHADOW lanes (W3 + W4) ──────────────────────────────
       # Moved out of scripts.collect (2026-07-14 split; collect core passes
       # --skip-shadow-importance). Both passes score the FULL US+CN qbus store
-      # from tonight's collect-core commit (~13-14m combined, the spike leg of
-      # the old 98.5m collectors step). Claims register with stable idempotent
+      # from tonight's collect-core commit. Claims register with stable idempotent
       # ids; grade_qledger (inside collect core's scripts.collect) grades only
       # claims matured ≥5d, so registering one job later never changes grading
       # arithmetic — the old "register BEFORE the grader" ordering was never
       # load-bearing same-night. Non-fatal either way.
+      # STEP BUDGETS (starvation incident 07-29→08-02): the split-day "~13-14m
+      # combined" estimate rotted silently as the qbus store accrued — measured
+      # 40m+40m on the last green night (07-27) and 61m (W3) + 56m-and-killed
+      # (W4) on 08-01, blowing the job's 150m cap five nights running and
+      # SKIPPING every later step, including "commit tail data" (so even
+      # completed work evaporated on the next night's clean checkout). The
+      # timeout-minutes + continue-on-error pair bounds each scorer so the tail
+      # band and the commit ALWAYS get their turn: a scorer that outgrows its
+      # budget is truncated loudly (step timeout annotation) instead of silently
+      # cancelling the whole job. Claims are idempotent, so a truncated pass
+      # simply re-registers on a later night. Bounds sized to observed need
+      # (W3 61m worst → 60m; W4 40m green → 50m) inside the job's 200m cap; if
+      # a scorer starts hitting its bound nightly, fix ITS runtime — do not
+      # silently raise the bound (that is how 13-14m became 120m unnoticed).
       - name: importance_v0 shadow tape — W3 scorer (non-fatal)
+        timeout-minutes: 60
+        continue-on-error: true
         run: |
           python -m scripts.shadow_importance_v0 \
             || echo "::warning::shadow_importance_v0 failed (non-fatal)"
       - name: importance_v0 shadow tape — W4 PIT-correct scorer (non-fatal)
+        timeout-minutes: 50
+        continue-on-error: true
         run: |
           python -m scripts.shadow_importance_v0_pit \
             || echo "::warning::shadow_importance_v0_pit failed (non-fatal)"
@@ -701,38 +839,19 @@ jobs:
         run: |
           python -m engine.credit_momentum \
             || echo "::warning::credit_momentum engine failed (non-fatal)"
-      - name: MLC-W5 — US earnings calendar sweep (non-fatal)
-        # Root-cause fix (MLC postmortem 07-14): collectors/equity_earnings.py was never
-        # wired into the nightly pipeline — earnings.parquet was permanently empty/missing,
-        # making the W1.5 blackout gate and the W5 display chips always stale-fail-open.
-        # Sweeps Nasdaq's public calendar for the next 66 weekdays (~one quarter), writing
-        # data/earnings/earnings.parquet (ticker-indexed: next_date, next_time, eps_forecast,
-        # surprises_json, surprises_as_of, as_of). Bot-wall-aware: if the first calendar call
-        # is blocked (Akamai 403), the existing cache is kept untouched and the step exits 0.
-        # MUST run in collect_tail, NOT collect (house law: new accrual steps go in collect_tail).
-        # KEEP THIS LINE BARE. No-args means "sweep the whole breadth universe"; passing
-        # --tickers collapses the universe to that subset and every other row keeps a frozen
-        # as_of. That is exactly the 2026-06-19 freeze: the collector's __main__ used to fall
-        # through to a 3-name demo default, so for six weeks the nightly refreshed only
-        # AAPL/NVDA/JPM while 1361 of 1364 rows sat at as_of 2026-06-19 — and the tripwire
-        # below read the store-level max() as_of and reported sla_ok the whole time.
-        # Pinned by tests/test_earnings_w5.py::TestNightlyEntryPointSweepsWholeUniverse.
-        # Wall time (measured 2026-07-29): calendar sweep 66 calls ≈ 155s (round-trip
-        # dominates, not the 0.25s pacing sleep) + surprise drip capped at max_new=120
-        # names ≈ 60s → ~3.5m per night, well within the 150m budget.
-        # Writes data/earnings/earnings.parquet — covered by `git add data/` below.
-        run: |
-          python -m collectors.equity_earnings \
-            || echo "::warning::equity_earnings sweep failed (non-fatal)"
-      - name: MLC-W5 — earnings freshness tripwire (non-fatal)
-        # Reads the just-written data/earnings/earnings.parquet and checks that
-        # the store's as_of is within the expected SLA (2 trading days).
-        # Writes data/quality/earnings_freshness_audit.json for observability.
-        # Emits ::warning:: when stale so CI surfaces the gap without failing the build.
-        run: |
-          python -m scripts.audit_earnings_freshness \
-            || echo "::warning::audit_earnings_freshness crashed (non-fatal)"
       - name: commit tail data
+        # if: always() — last-resort backstop for the job-timeout cancel class
+        # (07-29→08-02: five nights of completed accrual evaporated because this
+        # step was SKIPPED on cancel and the next night's clean checkout discarded
+        # the uncommitted writes). GitHub gives cancelled jobs a grace window in
+        # which always() steps run — NOT guaranteed to finish (the engine job's
+        # 07-24 postmortem saw the commit land but a later upload die), which is
+        # why the scorer step bounds above are the primary defense; this is
+        # defense in depth. Every earlier step is non-fatal by design, so the
+        # only new path always() adds is the post-cancel one. A partial night's
+        # stores are safe to commit: every lane here is state-resumable and
+        # claims are idempotent.
+        if: always()
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
@@ -873,6 +992,26 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.fetch_r2 --dirs odds_ohlcv || echo "::warning::odds_ohlcv R2 restore failed (non-fatal — build_odds cold-backfills)"
+      - name: restore subsector OHLC sidecars from R2 (index_leadership reads them)
+        # build_index_leadership (engine step below) computes per-group closes from
+        # site/subsectorohlc{,_nasdaq,_russell}/*.json — gitignored + R2-hosted (published
+        # back at the end of this job), so a fresh checkout holds NONE of them, compute()
+        # found zero tabs, and the builder skipped silently EVERY nightly: index_leadership
+        # .json + the data/index_leadership/snapshots.jsonl forward ledger froze at their
+        # 2026-06-30 seed for 18 nightlies (experiments audit 2026-08-03). The sidecar
+        # producer (build_subsector_confluence main/main_index — only the heavy entrypoints
+        # emit them) runs in the parallel band AFTER the engine step, so restore LAST
+        # NIGHT's generation here — the same generation as the committed
+        # subsector_confluence*.json boards it is read against (the builder is a decoupled
+        # post-pass over committed artifacts by design, and stays ordered BEFORE its
+        # consumer build_stock_board_v2). Non-fatal: on restore failure the builder now
+        # skips LOUDLY (::warning from build(), ::error + rc!=0 from its nightly main).
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs subsectorohlc,subsectorohlc_nasdaq,subsectorohlc_russell || echo "::warning::subsectorohlc R2 restore failed (non-fatal — index_leadership skips loudly and keeps the last committed board)"
       - name: restore breadth close cache (stock search library needs constituent closes)
         uses: actions/cache@v4
         with:
@@ -1135,12 +1274,21 @@ jobs:
           # Index Leadership rotation board — DEAD-WIRE FIX 2026-07-16: this builder had NO
           # workflow caller since its 2026-07-01 hand-run, so site/marketdata/index_leadership.json
           # (subsectors.html client fetch + group_context's 0.10-weight rotation source + the
-          # tolerant readers in build_stock_board_v2 below) froze 15 days stale. Runs AFTER
-          # build_site (inputs: subsector_confluence*.json + subsectorohlc sidecars +
-          # regime_timeline.json are written by build_site's render pass) and BEFORE
-          # build_stock_board_v2 (consumer). Reads committed artifacts only — no APIs, no keys.
+          # tolerant readers in build_stock_board_v2 below) froze 15 days stale. SIDECAR FIX
+          # 2026-08-03: the 07-16 wiring was STILL dead — this comment used to claim the
+          # subsectorohlc sidecars "are written by build_site's render pass", which is false
+          # (only build_subsector_confluence's heavy main/main_index entrypoints in the
+          # parallel band BELOW emit them; the render-lane build/build_nasdaq/build_russell
+          # never do), so on this job's fresh checkout the gitignored sidecar dirs were empty,
+          # compute() found zero tabs, and the builder skipped silently for 18 more nightlies
+          # (snapshots.jsonl frozen at its 2026-06-30 seed). Its inputs are the PREVIOUS
+          # night's generation: subsector_confluence*.json + regime_timeline.json (committed)
+          # and the subsectorohlc* sidecars (restored from R2 by the "restore subsector OHLC
+          # sidecars" step above). Runs AFTER build_site and BEFORE build_stock_board_v2
+          # (consumer). Reads committed/restored artifacts only — no APIs, no keys.
           # COLLECT_LANE=nightly arms its snapshots.jsonl forward-ledger append (the writer
           # self-gates per house law; provisional lanes leave the env unset and no-op).
+          # A skip now exits rc=1 -> run_py raises ::error + a step-summary row.
           COLLECT_LANE=nightly run_py "index leadership rotation board (build_index_leadership)" scripts.build_index_leadership
           # Buy Board 2.0 — SHADOW (W6-US, us_standouts_v2). AFTER build_site: it REUSES the
           # freshly-written factordata/us_standouts.json + setups.json (no recompute, ~0.4s) and
@@ -1156,7 +1304,11 @@ jobs:
           run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders
           # L3 dispersion regime lens — NW Rails W2 PR-4 (§5). Emits data/dispersion/regime.json
           # from the breadth close caches (same panel as build_stock_library). Display-only;
-          # gross_mult_live clamped 1.0. Seconds; never fatal.
+          # gross_mult_live clamped 1.0. Seconds. build() never raises, but a DEGRADED emit
+          # (state=null — it overwrites the committed regime.json that leader radar reads
+          # same-night) now exits rc=1 -> run_py raises ::error + a step-summary row, plus
+          # bare-print ::warning at each quiet degrade site (the logger-only warnings here
+          # were invisible to Actions — same silent-skip shape as index_leadership, #4363).
           # ORDERING NOTE: moved BEFORE build_leader_radar (LR PR-A Item 8) so that
           # regime.json is same-night data when build_leader_radar reads it.
           # build_dispersion_regime reads only breadth close caches (no dependency on
@@ -1214,7 +1366,11 @@ jobs:
           run_py "impulse tracker (build_impulse)" scripts.build_impulse
           # DT-NW-1: aggregate per-ticker dt_contra chip state into data/neuralweb/dt_contra_state.json.
           # AFTER build_site (which calls build_stock_library to write site/stockdata/*.json).
-          # Display-only NW artifact; degrades gracefully if stockdata absent. Seconds; never fatal.
+          # Display-only NW artifact. Seconds. build() never raises, but an absent/empty
+          # stockdata dir HERE is a real fault (build_site just wrote it, and the degraded
+          # JSON empties the committed census) — that now exits rc=1 -> run_py raises
+          # ::error + a step-summary row, plus bare-print ::warning at each quiet degrade
+          # site (logger-only warnings are invisible to Actions — #4363 sibling sweep).
           run_py "DT-NW-1 dt_contra state aggregator (build_dt_contra_state)" scripts.build_dt_contra_state
           # Congressional / politician disclosed-trades desk — AFTER build_alt_data (refreshes
           # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
@@ -1542,6 +1698,7 @@ jobs:
           }
           cl_misc() {
             brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
+            brun stock_seasonality_page "stock seasonality page (build_stock_seasonality_page)" scripts.build_stock_seasonality_page
             brun reports       "research reports section (build_reports)"     scripts.build_reports
             brun research_vault "research vault page (build_research_vault)"   scripts.build_research_vault
             brun cycle         "cycle intelligence page (build_cycle)"        scripts.build_cycle
@@ -1590,7 +1747,7 @@ jobs:
           # check_builder_failstreaks, which globs *.rc and so catches a >=2-night
           # streak regardless of ORDER) — but a FIRST failure still passed silently,
           # with no log and no step-summary line for the TXI W1 chain tracker.
-          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality biopharma_seasonality stage_analysis stage_analysis_page"
+          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality stage_analysis stage_analysis_page"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
@@ -1934,6 +2091,11 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Metered last resort: the OAuth pool can be fully rate-limited at
+          # nightly time (all six keys 429'd 2026-08-03) and ANTHROPIC_API_KEY
+          # is not a configured repo secret — without DeepSeek this lane has no
+          # working rung and the ledger never accrues.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           python -m engine.narrative_brain > "$RUNNER_TEMP/nbrain.log" 2>&1; rc=$?
@@ -1958,6 +2120,8 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Metered last resort — same rationale as the Narrative Brain step.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           python -m engine.risk_brain > "$RUNNER_TEMP/rbrain.log" 2>&1; rc=$?
@@ -2189,6 +2353,10 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Metered last resort — same rationale as the Narrative Brain step.
+          # Without it this gated re-run OVERWRITES a DeepSeek-served brain.json
+          # from the build_alt_data step with a degraded one (2026-08-03).
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           python -m engine.altdata_brain > "$RUNNER_TEMP/altbrain.log" 2>&1; rc=$?

@@ -150,6 +150,23 @@ html[data-theme="light"] {
     border-color: var(--nr-line-strong);
     background: var(--nr-surface);
     box-shadow: var(--nr-shadow);
+    /* An open mega must outrank the header it drops out of. It inherited
+       z-index:90 from `.site-nav .nav-dd-menu` (theme.css), which loses to
+       `.nav-search`{z-index:110} — so the search box painted THROUGH the panel,
+       and on close, as the panel faded, it read as the menu dropping behind the
+       header. 150 clears the header chrome and still sits under the dialogs
+       (.mx5-dlg 200, and the modal layers above it), which must cover the nav. */
+    z-index: 150;
+    /* --nr-surface is 96-97% opaque, so the blur inherited from
+       `.site-nav .nav-dd-menu` was contributing ~3% of the visual while forcing
+       this panel to re-composite against its backdrop on every opacity frame.
+       That is the switch-between-menus flicker: two backdrop-filtered panels
+       cross-fading sample each other, which washes out the 1px --nr-line-strong
+       edge and greys the surface until the transition settles. Dropping it costs
+       ~3% of an effect and removes the artifact. Small (non-mega) dropdowns keep
+       their blur -- at 86-90% opacity it actually reads there. */
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   .nav-dd-menu.nav-mega::before {

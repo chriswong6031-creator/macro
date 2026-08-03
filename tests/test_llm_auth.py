@@ -6,6 +6,8 @@ degraded_reason without leaking token values.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 
@@ -920,11 +922,11 @@ def test_build_providers_inserts_codex_after_oauth_before_metered(monkeypatch):
     monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
     monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
     monkeypatch.setattr("engine.neuralweb.key_pool.discover_present_keys", lambda root=None: [])
-    monkeypatch.setattr(codex_provider, "is_available", lambda: True)
+    monkeypatch.setattr(codex_provider, "available_accounts", lambda: [("codex_account", None)])
     monkeypatch.setattr(
         codex_provider,
         "CodexClient",
-        lambda timeout_s=180: _make_fake_client("codex"),
+        lambda **kwargs: _make_fake_client("codex"),
     )
 
     cfg = {
@@ -948,11 +950,11 @@ def test_deepseek_flash_gets_terra_codex_fallback_and_shared_cap_id(monkeypatch)
     from engine import codex_provider, llm_auth
 
     monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
-    monkeypatch.setattr(codex_provider, "is_available", lambda: True)
+    monkeypatch.setattr(codex_provider, "available_accounts", lambda: [("codex_account", None)])
     monkeypatch.setattr(
         codex_provider,
         "CodexClient",
-        lambda timeout_s=180: _make_fake_client("codex"),
+        lambda **kwargs: _make_fake_client("codex"),
     )
 
     cfg = {
@@ -972,7 +974,7 @@ def test_build_providers_forwards_codex_reasoning_effort(monkeypatch):
     from engine import codex_provider, llm_auth
 
     captured = {}
-    monkeypatch.setattr(codex_provider, "is_available", lambda: True)
+    monkeypatch.setattr(codex_provider, "available_accounts", lambda: [("codex_account", None)])
 
     def _client(**kwargs):
         captured.update(kwargs)
@@ -1003,11 +1005,11 @@ def test_cross_process_cooling_moves_codex_behind_other_fallbacks(monkeypatch):
         "engine.neuralweb.key_pool.is_cooling",
         lambda cap_id, root=None: cap_id == "codex_account",
     )
-    monkeypatch.setattr(codex_provider, "is_available", lambda: True)
+    monkeypatch.setattr(codex_provider, "available_accounts", lambda: [("codex_account", None)])
     monkeypatch.setattr(
         codex_provider,
         "CodexClient",
-        lambda timeout_s=180: _make_fake_client("codex"),
+        lambda **kwargs: _make_fake_client("codex"),
     )
     with patch("lib.config.secret", return_value="credential-present"):
         providers = llm_auth.build_providers({
@@ -1016,6 +1018,51 @@ def test_cross_process_cooling_moves_codex_behind_other_fallbacks(monkeypatch):
         })
 
     assert [p["name"] for p in providers] == ["oauth", "anthropic", "codex"]
+
+
+def test_build_providers_expands_two_codex_accounts_before_metered(monkeypatch):
+    import sys
+    from unittest.mock import patch
+
+    from engine import codex_provider, llm_auth
+
+    monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
+    monkeypatch.setattr(
+        codex_provider,
+        "available_accounts",
+        lambda: [
+            ("codex_account", Path("/var/lib/macro-codex")),
+            ("codex_account_2", Path("/var/lib/macro-codex-2")),
+        ],
+    )
+    monkeypatch.setattr(
+        "engine.neuralweb.key_pool.is_cooling",
+        lambda cap_id, root=None: False,
+    )
+    monkeypatch.setattr(
+        "engine.neuralweb.key_pool.window_load",
+        lambda cap_id, root=None: 10 if cap_id == "codex_account" else 2,
+    )
+    built = []
+
+    def _client(**kwargs):
+        built.append(kwargs)
+        return _make_fake_client("codex")
+
+    monkeypatch.setattr(codex_provider, "CodexClient", _client)
+    with patch("lib.config.secret", return_value="credential-present"):
+        providers = llm_auth.build_providers({
+            "provider_order": ["codex", "anthropic"],
+            "opus_model": "claude-opus-5",
+        })
+
+    assert [p["name"] for p in providers] == ["codex", "codex", "anthropic"]
+    assert [p["cap_id"] for p in providers[:2]] == ["codex_account_2", "codex_account"]
+    assert [p["env_var"] for p in providers[:2]] == ["codex_account_2", "codex_account"]
+    assert [str(row["codex_home"]) for row in built] == [
+        "/var/lib/macro-codex-2",
+        "/var/lib/macro-codex",
+    ]
 
 
 def test_codex_usage_is_subscription_and_uses_shared_key_id(monkeypatch):

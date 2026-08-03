@@ -487,21 +487,21 @@ def _basket_risk(rec: dict) -> tuple[float, dict | None]:
         return 0.0, None
     label = (ba.get("label") or "").lower()
     below = (ba.get("above_trend") is False) or (ba.get("eligible") is False)
-    nm = ba.get("name") or "its narrative basket"
+    nm = ba.get("name") or "theme"
     if below:
         return _BASKET_RISK_MAX, {
-            "en": f"Narrative basket ({nm}) is below its long-term trend — validated drawdown "
-                  "gate: size down (the AI-buildout tape is rewarding leaders, not this one).",
-            "zh": f"所属叙事篮子（{ba.get('name_zh') or nm}）已跌破长期趋势 — 已验证的回撤门槛：减小仓位。"}
+            "en": f"Its {nm} basket is below its long-term trend. Size down: the tape is "
+                  "rewarding leaders, and this basket is not one.",
+            "zh": f"所属 {ba.get('name_zh') or nm} 篮子已跌破长期趋势。减小仓位：当前行情奖励领先板块，该篮子并不在其中。"}
     if label in ("fading", "deteriorating"):
         zh = "衰退" if label == "fading" else "恶化"
         return _BASKET_RISK_MAX * 0.7, {
-            "en": f"Narrative basket ({nm}) is {label} — validated risk gate: trim / size down.",
-            "zh": f"所属叙事篮子（{ba.get('name_zh') or nm}）正在{zh} — 已验证风险门槛：减仓。"}
+            "en": f"Its {nm} basket is {label}. Trim, or take a smaller position than usual.",
+            "zh": f"所属 {ba.get('name_zh') or nm} 篮子正在{zh}。减仓，或将仓位控制在平常水平以下。"}
     if ba.get("crowded"):
         return _BASKET_RISK_MAX * 0.4, {
-            "en": f"Narrative basket ({nm}) is crowded / extended — cap size, don't add aggressively.",
-            "zh": f"所属叙事篮子（{ba.get('name_zh') or nm}）拥挤／过度拉伸 — 控制仓位，勿激进加仓。"}
+            "en": f"Its {nm} basket is crowded and stretched. Cap your size and do not add aggressively.",
+            "zh": f"所属 {ba.get('name_zh') or nm} 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。"}
     return 0.0, None
 
 
@@ -549,6 +549,14 @@ def _aggressiveness(rec: dict) -> float:
     elif grade == "stretched":
         agg = max(agg, 0.5)
     return _clip01(agg)
+
+
+def _risk_vetoed(rec: dict, risk_stress: float) -> bool:
+    """Stressed macro tape vetoing an AGGRESSIVE (chase-shaped) entry. Single source
+    of truth for verdict()'s caution AND the profile's structural ``risk.veto`` flag —
+    stock_dossier maps that flag to the ``risk_veto`` no-buy code; it must never be
+    re-derived from caution prose, which is display copy and free to change (#4297)."""
+    return risk_stress >= _RISK_VETO_STRESS and _aggressiveness(rec) >= 0.5
 
 
 def _macro_stress(overlay: dict | None) -> float:
@@ -970,38 +978,46 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
     if _tier(axes.get("tailwind", {}).get("z")) in ("high", "mid"):
         drivers.append("tailwind")
     if acct == "warn":
-        _cau("accounting warn", "财务质量警示")
+        _cau("Accounting quality looks weak.", "财务质量偏弱。")
     elif acct == "watch":
-        _cau("accounting watch", "财务质量关注")
+        _cau("Accounting quality is worth a second look.", "财务质量值得再核查一次。")
     if grade == _PARABOLIC:
-        _cau("parabolic — extended", "抛物线急涨 — 过热")
+        _cau("Straight-up move. The easy part is behind it.", "急涨行情。轻松阶段已经过去。")
     _ovx = _overextended(rec)
     if _ovx:
         _pv = _f((rec.get("tech") or {}).get("pct_vs_200dma"))
-        _cau(f"extended +{_pv:.0f}% over 200dma — chasing" if _pv is not None
-             else "extended over 200dma — chasing",
-             f"高于200日均线 +{_pv:.0f}% — 追高" if _pv is not None
-             else "高于200日均线 — 追高")
+        _cau(f"Trades {_pv:.0f}% above its long-term trend line. Buying here is chasing."
+             if _pv is not None
+             else "Trades well above its long-term trend line. Buying here is chasing.",
+             f"股价高于长期趋势线 {_pv:.0f}%。此价位买入属于追高。" if _pv is not None
+             else "股价远高于长期趋势线。此价位买入属于追高。")
     # forward-aware valuation caveat — a non-veto chip, never a blocking verb. Only
     # the 'extreme' tail trips watch (and trailing-only names are light-touch), so a
     # growth leader cheap on forward earnings (NVDA) never reads 'expensive'.
     if valuation and valuation.get("watch"):
-        _cau(f"richly valued — {valuation.get('note')}",
-             f"估值偏高 — {valuation.get('note_zh') or valuation.get('note')}")
-    _risk_veto = (risk_stress >= _RISK_VETO_STRESS and _aggressiveness(rec) >= 0.5)
+        _cau(f"Richly valued: {valuation.get('note')}.",
+             f"估值偏高：{valuation.get('note_zh') or valuation.get('note')}。")
+    _risk_veto = _risk_vetoed(rec, risk_stress)
     if _risk_veto:
-        _cau("stressed tape — size down / confirm", "盘面承压 — 减仓／确认")
+        _cau("The broad tape is under stress. Size down, or wait for confirmation.",
+             "大盘承压。减小仓位，或等待信号确认。")
     _ed = _f(rec.get("earnings_days"))
     _earn_imminent = _ed is not None and 0 <= _ed <= 8
     if _earn_imminent:
-        _cau(f"earnings in {int(_ed)}d — binary event, size down"
-             if _ed >= 1 else "earnings imminent — binary event, size down",
-             f"{int(_ed)}天后财报 — 二元事件，减仓"
-             if _ed >= 1 else "财报临近 — 二元事件，减仓")
+        _edi = int(_ed)
+        _cau(f"Earnings in {_edi} {'day' if _edi == 1 else 'days'}. "
+             "The result can override the setup, so size down."
+             if _ed >= 1 else
+             "Earnings are due. The result can override the setup, so size down.",
+             f"{_edi} 天后公布财报。业绩结果可能压过技术形态，宜减小仓位。"
+             if _ed >= 1 else "财报即将公布。业绩结果可能压过技术形态，宜减小仓位。")
     if cycle_blocked:
         _lbl = lad.get("label") or state or "weak tape"
         _lbl_zh = "盘面疲弱" if _lbl == "weak tape" else _i18n.tr(_lbl)
-        _cau("cycle: " + _lbl, "周期：" + _lbl_zh)
+        # NEVER print the raw ladder slug here (it shipped as "cycle: BOTTOMING" —
+        # a raw machine slug on the glance tier, banned by DESIGN_DOCTRINE Law 2).
+        _cau(f"Its market cycle still argues for waiting ({_lbl.replace('_', ' ').lower()}).",
+             f"所处的市场周期仍建议等待（{_lbl_zh}）。")
 
     # ---- HK: never a buy verb. Screen / exposure language only, but NAME the driver. ----
     if m == "HK":
@@ -1340,6 +1356,11 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
                  "macro_stress": round(stress, 2) if stress > 0 else None,
                  "macro_tax": round(rtax, 3) if rtax > 0 else None,
                  "idio_tax": round(idio_tax, 3) if idio_tax > 0 else None,
+                 # structural veto flag — the ONLY thing stock_dossier's
+                 # 'risk_veto' no-buy code may key on (caution prose is
+                 # display copy; #4297 rewrote it and silently killed a
+                 # substring-matching consumer).
+                 "veto": True if _risk_vetoed(rec, stress) else None,
                  "drivers": overlay.get("drivers") if stress > 0 else None},
         "size": _suggested_size(
             risk_total, blocked=blocked, market=m,

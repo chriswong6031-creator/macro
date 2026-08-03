@@ -70,7 +70,13 @@ def test_below_trend_basket_sizes_down_and_warns():
         "US")
     comps = (prof.get("risk") or {}).get("components") or {}
     assert comps.get("basket_trend") == ss._BASKET_RISK_MAX
-    assert any("narrative basket" in c.lower() for c in prof.get("cautions") or [])
+    # Was pinned on the literal phrase "narrative basket" — internal vocabulary that
+    # DESIGN_DOCTRINE Law 2 bans from the glance tier, so the caution no longer says
+    # it (it shipped to users as "Narrative basket (Materials (Equal-Weight)) is
+    # deteriorating"). Assert the test's actual intent instead, which is stricter:
+    # the caution must NAME the basket and state the action.
+    assert any("non-ai software" in c.lower() and "size down" in c.lower()
+               for c in prof.get("cautions") or [])
     # surfaced for Mastermind / display
     assert (prof.get("basket_alloc") or {}).get("slug") == "non_ai_software"
 

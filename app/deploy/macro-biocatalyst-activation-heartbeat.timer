@@ -1,0 +1,15 @@
+# Deliberately dormant after installation. An operator may arm this only after
+# a root-only retention seal has created the fixed activation gate.
+[Unit]
+Description=Run the operator-armed BioCatalyst R2 activation heartbeat hourly
+
+[Timer]
+OnCalendar=hourly
+AccuracySec=1min
+RandomizedDelaySec=120s
+Persistent=false
+Unit=macro-biocatalyst-activation-heartbeat.service
+
+[Install]
+WantedBy=timers.target
+# operator-armed: setup and routine reconciliation never enable or start this timer.

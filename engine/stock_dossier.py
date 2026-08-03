@@ -150,9 +150,14 @@ def build_dossier(row: dict, *, ext_grade: str | None = None) -> dict | None:
         # earnings blackout
         if es.get("in_blackout"):
             no_buy.append("earnings_blackout")
-        # risk_veto: conviction cautions contain "stressed tape"
+        # risk_veto: the structural flag conviction_profile exports (risk.veto).
+        # Prose fallbacks cover STORED rows profiled by older engines only —
+        # "stressed tape" (pre-#4297) and "tape is under stress" (#4297..flag);
+        # never extend them for new copy, the flag is the contract.
         _cautions = conv.get("cautions") or []
-        if any("stressed tape" in (c or "") for c in _cautions):
+        if (_g(conv, "risk", "veto")
+                or any("stressed tape" in (c or "") or "tape is under stress" in (c or "")
+                       for c in _cautions)):
             no_buy.append("risk_veto")
         # extended / parabolic
         if _ext_par:

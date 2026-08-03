@@ -1,0 +1,127 @@
+name: earnings-public-wire
+
+# Public, token-free projection of the receipt-bound earnings story catalog.
+# The source-packet and Company Intelligence lanes move independently. Follow
+# either successful promotion, then keep the :47 backstop so a missed
+# workflow_run cannot leave the public archive waiting for a manual backfill.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build_earnings_public_wire.py"
+      - "scripts/publish_earnings_private_store.py"
+      - "engine/earnings_narrative/**"
+      - "app/earnings.py"
+      - "templates/earnings_wire/**"
+      - ".github/workflows/earnings-public-wire.yml"
+  workflow_run:
+    workflows: ["earnings-story-packets", "company-intelligence"]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "47 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: earnings-public-wire
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 20
+          filter: blob:none
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deterministic wire dependencies
+        run: python -m pip install --quiet boto3 jinja2 pyyaml requests
+
+      - name: regenerate current wire from latest main and publish
+        env:
+          # Member continuations and exact context use the existing private
+          # Research Vault bucket. These credentials never enter the public
+          # static tree; the workflow fails before staging HTML if publication
+          # or read-back verification cannot complete.
+          R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+        run: |
+          set -euo pipefail
+          umask 077
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          push_retry_init "earnings public wire"
+          if ! push_on_main_ok; then exit 0; fi
+          while push_attempt; do
+            # Generated pages cannot be safely replayed onto a newer render:
+            # even a one-byte asset-stamp change can conflict across every
+            # article, while a conflict-free template change can still make
+            # the old render stale. Fetch the named ref, discard only this
+            # ephemeral runner's prior attempt, and regenerate on the exact
+            # main tree that will be the new commit's parent.
+            if ! push_fetch_main_for_rebase; then
+              push_backoff
+              continue
+            fi
+            if ! git reset --hard origin/main; then
+              PUSH_FAIL_CLASS="sync"
+              push_backoff
+              continue
+            fi
+            # A failed push can leave newly generated routes untracked after
+            # the hard reset. This literal, lane-owned scope is the only clean
+            # target; unrelated main files are never removed or staged.
+            git clean -fd -- site/stocks/earnings
+            WIRE_BASE=$(git rev-parse HEAD)
+
+            PRIVATE_STAGE="$RUNNER_TEMP/earnings-wire-private-${PUSH_ATTEMPT}"
+            python -m scripts.build_earnings_public_wire --private-out-dir "$PRIVATE_STAGE"
+            python -m scripts.publish_earnings_private_store --source-dir "$PRIVATE_STAGE"
+
+            # Git owns only the redacted public shells. Member continuations,
+            # receipts, and context were promoted privately above and are never
+            # added from RUNNER_TEMP or emitted anywhere under site/.
+            git add site/stocks/earnings
+            if git diff --cached --quiet; then
+              echo "earnings-public-wire: latest main already carries the current publication"
+              exit 0
+            fi
+            if git diff --cached --name-only | grep -Ev '^site/stocks/earnings/' >/dev/null; then
+              echo "::error title=earnings-public-wire containment::refusing to commit outside the redacted earnings public estate"
+              exit 1
+            fi
+            if ! push_staged_clean site/stocks/earnings; then
+              echo "::error title=earnings-public-wire conflict markers::refusing to commit an unsafe publication"
+              exit 1
+            fi
+            git commit -m "earnings-wire: publish current verified records [skip ci]"
+            if [ "$(git rev-parse HEAD^)" != "$WIRE_BASE" ]; then
+              echo "::error title=earnings-public-wire parent drift::generated commit is not based on the fetched main snapshot"
+              exit 1
+            fi
+            if push_do origin HEAD:main; then
+              echo "earnings-public-wire: pushed regenerated publication on attempt ${PUSH_ATTEMPT}"
+              push_won
+              exit 0
+            fi
+            # A ref race is retried by resetting to the winner and running the
+            # builder again. Never rebase/replay the stale generated commit.
+            push_backoff
+          done
+          push_lost
+          echo "::error title=earnings-public-wire::could not publish after ${PUSH_ATTEMPT} attempts"
+          exit 1
