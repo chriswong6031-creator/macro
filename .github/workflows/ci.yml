@@ -597,10 +597,18 @@ on:
       - "config/biocatalyst_sources.yml"
       - "config/biocatalyst_outcomes.yml"
       - "config/biocatalyst_launch_slo_manifest.yml"
+      # BC-D0a: finite design-reference corpus and non-authorizing product
+      # acceptance contract. These paths must reach the same contracts pack even
+      # when an edit changes only a PNG/hash/spec/test, otherwise a reference can
+      # drift while its integrity verifier never runs.
+      - "config/biocatalyst_product_acceptance.yml"
       - "config/sector_intelligence_ownership.yml"
       - "config/site_access.yml"
       - "contracts/biocatalyst/**"
       - "data/biocatalyst/fixtures/**"
+      - "mockups/refs/biocatalyst/**"
+      - "scripts/verify_biocatalyst_d0a_references.py"
+      - "research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md"
       - "templates/biocatalyst.*"
       - "templates/_navlinks.html.j2"
       - "templates/_site_nav.html.j2"

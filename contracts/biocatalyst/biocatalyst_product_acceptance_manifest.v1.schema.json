@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_product_acceptance_manifest.v1.schema.json",
+  "title": "BioCatalyst product acceptance manifest v1",
+  "description": "An immutable, non-authorizing D0a draft contract. This v1 can never confer release acceptance; a separate trusted verifier and successor contract are required.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "manifest_id", "state", "effective_at",
+    "supersedes_manifest_id", "supersedes_manifest_content_sha256", "owner",
+    "design_spec_ref", "design_spec_sha256", "reference_fixture", "benchmark_corpus",
+    "performance", "visual", "approval", "authority", "hash_scope", "content_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_product_acceptance_manifest.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "manifest_id": {"type": "string", "pattern": "^biocatalyst_product_acceptance_[a-f0-9]{24}$"},
+    "state": {"const": "draft_human_approval_pending"},
+    "effective_at": {"$ref": "#/$defs/utcTimestamp"},
+    "supersedes_manifest_id": {"const": null},
+    "supersedes_manifest_content_sha256": {"const": null},
+    "owner": {"const": "biocatalyst"},
+    "design_spec_ref": {"const": "research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md"},
+    "design_spec_sha256": {"$ref": "#/$defs/sha256"},
+    "reference_fixture": {"$ref": "#/$defs/fileBinding"},
+    "benchmark_corpus": {"$ref": "#/$defs/fileBinding"},
+    "performance": {"$ref": "#/$defs/performance"},
+    "visual": {"$ref": "#/$defs/visual"},
+    "approval": {"$ref": "#/$defs/approval"},
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["authorizes_ui_release", "authorizes_source_activation", "authorizes_entitlement_change", "authorizes_model_promotion", "authorizes_neural_web_authority", "authorizes_prophet_behavior"],
+      "properties": {
+        "authorizes_ui_release": {"const": false},
+        "authorizes_source_activation": {"const": false},
+        "authorizes_entitlement_change": {"const": false},
+        "authorizes_model_promotion": {"const": false},
+        "authorizes_neural_web_authority": {"const": false},
+        "authorizes_prophet_behavior": {"const": false}
+      }
+    },
+    "hash_scope": {"const": "canonical_payload_excluding_manifest_id_and_content_sha256"},
+    "content_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "utcTimestamp": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "repoPath": {"type": "string", "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"},
+    "fileBinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "purpose"],
+      "properties": {
+        "path": {"$ref": "#/$defs/repoPath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "purpose": {"type": "string", "minLength": 12, "maxLength": 240}
+      }
+    },
+    "viewport": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["name", "width", "height"], "properties": {"name": {"const": "desktop"}, "width": {"const": 1440}, "height": {"const": 900}}},
+        {"type": "object", "additionalProperties": false, "required": ["name", "width", "height"], "properties": {"name": {"const": "tablet"}, "width": {"const": 820}, "height": {"const": 1180}}},
+        {"type": "object", "additionalProperties": false, "required": ["name", "width", "height"], "properties": {"name": {"const": "mobile"}, "width": {"const": 390}, "height": {"const": 844}}}
+      ]
+    },
+    "mask": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "x", "y", "width", "height", "reason"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,48}$"},
+        "x": {"type": "integer", "minimum": 0}, "y": {"type": "integer", "minimum": 0},
+        "width": {"type": "integer", "minimum": 1}, "height": {"type": "integer", "minimum": 1},
+        "reason": {"type": "string", "minLength": 8, "maxLength": 160}
+      }
+    },
+    "visualCell": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "reference_png_path", "reference_png_sha256", "fixture_path", "fixture_sha256", "viewport", "theme", "language", "motion", "ui_state", "setup_script", "masks", "maximum_changed_pixel_ratio", "maximum_perceptual_delta", "zero_structural_diff", "accessibility_assertions", "capture_artifact_path", "browser_verification_state", "reviewer_role", "reviewer_name", "approval_status", "approval_reason"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^d0a_(desktop|tablet|mobile)_(dark|light)_(en|zh)_(standard|reduced)$"},
+        "reference_png_path": {"type": "string", "pattern": "^mockups/refs/biocatalyst/d0a/[a-z0-9_]+\\.png$"},
+        "reference_png_sha256": {"$ref": "#/$defs/sha256"},
+        "fixture_path": {"const": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json"},
+        "fixture_sha256": {"$ref": "#/$defs/sha256"},
+        "viewport": {"$ref": "#/$defs/viewport"},
+        "theme": {"enum": ["dark", "light"]}, "language": {"enum": ["en", "zh"]}, "motion": {"enum": ["standard", "reduced"]},
+        "ui_state": {"enum": ["catalyst_radar", "explorer_dense", "trial_peer_matrix", "company_partial", "asset_ambiguous_identity", "regulatory_mixed_sources", "change_tape_correction", "evidence_thread_expanded", "historical_mode", "source_outage", "locked", "empty"]},
+        "setup_script": {"const": "mockups/refs/biocatalyst/d0a/render_reference.py"},
+        "masks": {"type": "array", "maxItems": 3, "uniqueItems": true, "items": {"$ref": "#/$defs/mask"}},
+        "maximum_changed_pixel_ratio": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.03},
+        "maximum_perceptual_delta": {"type": "number", "exclusiveMinimum": 0, "maximum": 1.0},
+        "zero_structural_diff": {"const": true},
+        "accessibility_assertions": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"enum": ["keyboard_order", "visible_focus", "contrast_aa", "semantic_landmarks", "reduced_motion", "language_metadata", "no_hover_only_meaning", "touch_target_44px"]}},
+        "capture_artifact_path": {"const": "mockups/refs/biocatalyst/d0a/artifacts/visual_capture_receipt.v1.json"},
+        "browser_verification_state": {"enum": ["not_run", "passed", "failed"]},
+        "reviewer_role": {"const": "fable_or_opus_design_owner"},
+        "reviewer_name": {"type": ["null", "string"], "minLength": 3, "maxLength": 120},
+        "approval_status": {"enum": ["pending", "approved", "rejected"]},
+        "approval_reason": {"type": "string", "minLength": 12, "maxLength": 500}
+      }
+    },
+    "visual": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reference_root", "renderer", "renderer_source", "cells", "required_state_codes", "artifact"],
+      "properties": {
+        "reference_root": {"const": "mockups/refs/biocatalyst/d0a"},
+        "renderer": {"const": "deterministic_svg_to_png_sips"},
+        "renderer_source": {"$ref": "#/$defs/fileBinding"},
+        "cells": {"type": "array", "minItems": 24, "maxItems": 24, "items": {"$ref": "#/$defs/visualCell"}},
+        "required_state_codes": {"type": "array", "minItems": 12, "maxItems": 12, "uniqueItems": true, "items": {"enum": ["catalyst_radar", "explorer_dense", "trial_peer_matrix", "company_partial", "asset_ambiguous_identity", "regulatory_mixed_sources", "change_tape_correction", "evidence_thread_expanded", "historical_mode", "source_outage", "locked", "empty"]}},
+        "artifact": {"$ref": "#/$defs/fileBinding"}
+      }
+    },
+    "performance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "primary_api_p95_less_than_ms", "search_p95_less_than_ms", "lcp_p75_less_than_ms", "api_samples_per_primary_scenario_min", "search_queries_per_scenario_min", "web_navigations_per_page_profile_min", "concurrency_levels", "closed_beta_peak_concurrency", "host_class", "runtime", "network_location", "no_discarded_failures", "large_list_virtualization_required", "no_full_corpus_in_client_bundle", "artifacts"],
+      "properties": {
+        "state": {"enum": ["frozen_not_run", "measured_passed", "measured_failed"]},
+        "primary_api_p95_less_than_ms": {"const": 500}, "search_p95_less_than_ms": {"const": 1200}, "lcp_p75_less_than_ms": {"const": 2500},
+        "api_samples_per_primary_scenario_min": {"const": 1000}, "search_queries_per_scenario_min": {"const": 200}, "web_navigations_per_page_profile_min": {"const": 20},
+        "concurrency_levels": {"const": [1, 10, 25]}, "closed_beta_peak_concurrency": {"const": 25},
+        "host_class": {"const": "closed_beta_vps_2vcpu_4gb"}, "runtime": {"const": "python-3.12"}, "network_location": {"const": "vancouver_ca"},
+        "no_discarded_failures": {"const": true}, "large_list_virtualization_required": {"const": true}, "no_full_corpus_in_client_bundle": {"const": true},
+        "artifacts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/fileBinding"}}
+      }
+    },
+    "approval": {
+      "type": "object", "additionalProperties": false,
+      "required": ["required_role", "named_reviewer", "status", "recorded_at", "reason", "browser_receipt_required"],
+      "properties": {
+        "required_role": {"const": "fable_or_opus_design_owner"},
+        "named_reviewer": {"type": ["null", "string"], "minLength": 3, "maxLength": 120},
+        "status": {"enum": ["pending", "approved", "rejected"]},
+        "recorded_at": {"type": ["null", "string"], "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+        "reason": {"type": "string", "minLength": 12, "maxLength": 500},
+        "browser_receipt_required": {"const": true}
+      }
+    }
+  }
+}
