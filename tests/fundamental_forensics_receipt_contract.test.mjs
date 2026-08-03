@@ -264,6 +264,7 @@ test('detail waterfall must exactly bind the cached root and B3 projection', () 
     (value) => { value.waterfall[0].stored_b3_projection.package_id = 'package-safe'; },
     (value) => { value.waterfall[0].stored_b3_projection.companyfacts_manifest_id = 'other'; },
     (value) => { value.waterfall[0].stored_b3_projection.attested_at = '2026-02-30T00:00:00.000000Z'; },
+    (value) => { value.waterfall[0].companyfacts.period.end = '0000-01-01'; },
     (value) => { value.waterfall[0].companyfacts.value = 124300000000; },
     (value) => { value.waterfall.reverse(); },
     (value) => { value.waterfall[1].unexpected = true; },
@@ -275,6 +276,10 @@ test('detail waterfall must exactly bind the cached root and B3 projection', () 
   const drifted = clone(cached);
   drifted.status = 'not_attested';
   assert.equal(contract.validatedReceiptDetailPayload(detail(receipt), receipt, rootId('3'), drifted), null);
+
+  const earlyCalendar = detail(receipt);
+  earlyCalendar.waterfall[0].companyfacts.period = { start: '0001-01-01', end: '0001-12-31' };
+  assert.ok(contract.validatedReceiptDetailPayload(earlyCalendar, receipt, rootId('3'), cached));
 
   const duplicatePair = detail(receipt);
   duplicatePair.root.attested_occurrence_ids.push(occurrenceId('4'));
