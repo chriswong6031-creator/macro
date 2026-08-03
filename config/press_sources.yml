@@ -68,6 +68,30 @@ truth_mirrors:
 # when unset). Per-handle poll tier + corroboration class. source_tier=x_relay.
 # ─────────────────────────────────────────────────────────────────────────────
 x_follow:
+  # OFF (operator order 2026-08-03): no more paying for X reads when the free
+  # register carries the coverage. The daemon's own spend ledger booked $23.14
+  # across ALL of July (Actions-lane cadence), then $56.66 in the FIRST TWO
+  # DAYS of August (~$28/day, ~$860/mo pace) once the VPS daemon's hot tiers
+  # went live — 18 handles at 75/105/300 s ≈ 14k requests/day, and
+  # `last_tweets` has no server-side since-id, so every poll re-bills the full
+  # ~20-tweet page whether or not anything is new: the bill scales with poll
+  # frequency, never with news. The $75 monthly cap "worked" and would still
+  # have burned $75 every month for corroboration breadth the desk mostly
+  # discarded.
+  #
+  # The coverage moved to FREE lanes: zerohedge / ForexLive / Investing.com /
+  # CoinDesk / Cointelegraph RSS joined breaking.sources (config/marketing.yml,
+  # all verified live from the VPS 2026-08-03) beside the existing CNBC /
+  # MarketWatch / official feeds, the free Truth mirrors, and the free
+  # Alpaca-Benzinga REST lane. What is genuinely lost: squawk-latency relays
+  # (DeItaone / FirstSquawk) and OSINT accounts with no published feed — a
+  # re-arm is one flag plus the env key, and MUST come with slow tiers and a
+  # single-digit cap, never the hot loop this note is the postmortem of.
+  #
+  # build_providers skips construction while this is false; the env key is
+  # also unset on the VPS (belt and braces). The register below is kept as
+  # documentation for that future decision.
+  enabled: false
   provider: twitterapiio
   base_url: "https://api.twitterapi.io"
   endpoint: "/twitter/user/last_tweets"
