@@ -219,25 +219,44 @@ ARTIFACT_MANIFEST = [
      "as_of_field": "asof",
      "consumers": ["terminal:chart_markers"],
      "note": "confluence signal state + markers (BUY/SELL/cut) per stock"},
+    # 1.3.0 -> 1.4.0 (2026-08-02, us_prophet_v1): the board gained a priority
+    # ranking. New top-level keys board_definition / ranking / ran /
+    # themes_in_favour; new per-row keys stage, featured, new, score_rank,
+    # display_rank, prophet, theme, signal_asof, days_since_signal. Additive —
+    # nothing was removed or renamed, and buy-lane MEMBERSHIP is unchanged.
     {"artifact": "site/factordata/us_standouts.json",
      "kind": "board",
-     "schema_version": "1.3.0",
+     "schema_version": "1.4.0",
      "schema_fields": [
          "as_of", "buy", "concentration", "delta", "dispersion_regime", "donor",
          "earnings_blackout_note", "eligible", "gate_go", "laggards", "lane_counts",
          "leaders", "pending_expired_count", "rank_by", "staleness", "universe",
          "watch",
      ],
+     "optional_fields": [
+         # The four us_prophet_v1 top-level keys. The BUILDER emits all four
+         # unconditionally, so they are required in steady state — but the contract
+         # lands one render BEFORE the artifact that carries them, and a required
+         # field the artifact has not been rebuilt with yet reads as `removed`
+         # (breaking) drift. They sit here for exactly that transition window and
+         # GRADUATE TO schema_fields (minor bump) once the first us_prophet_v1
+         # render is committed — the same order china_standouts reached 2.0.0 in.
+         # (List order is alphabetical — test_contract_drift asserts it sorted.)
+         "board_definition", "ran", "ranking", "themes_in_favour",
+     ],
      "schema_item_fields": [
          "above_trend", "adv_dollar_20d_median", "adv_dollar_21d", "align_tier", "alpha",
          "alpha_entry", "antichase_shadow_blocked", "composite", "conviction",
-         "days_to_build_100k", "days_to_build_1m", "days_to_exit_at_10pct_adv", "dd_pct",
-         "dir", "entry_signal", "eq_dir", "f1d_shadow_bonus", "f1d_shadow_c6",
-         "f1d_shadow_rank", "factor_z", "hold", "label", "label_zh", "lane",
-         "liquidity_tier", "name", "off_high", "price", "risk_sizing", "sector",
-         "sector_n", "sector_pulse", "sector_rank", "setup", "signal", "spark_svg",
-         "state", "stop_guidance", "sue_fresh_days", "ticker", "urgency",
-         "washout_active", "weekly_phase",
+         "cross_date", "days_since_signal", "days_to_build_100k", "days_to_build_1m",
+         "days_to_exit_at_10pct_adv", "dd_pct", "dir", "display_rank", "entry_signal",
+         "eq_dir", "f1d_shadow_bonus", "f1d_shadow_c6", "f1d_shadow_rank", "factor_z",
+         "featured", "featured_blocked_by", "hold", "label", "label_zh", "lane",
+         "liquidity_tier", "name", "new", "off_high", "pct_since", "price", "prophet",
+         "risk_sizing", "score_rank", "sector", "sector_n", "sector_pulse",
+         "sector_rank", "sessions_since", "setup", "signal", "signal_asof",
+         "spark_svg", "stage", "state", "stop_guidance", "sue_fresh_days", "theme",
+         "theme_confirmed", "theme_note", "theme_note_zh", "ticker", "ticks",
+         "urgency", "washout_active", "weekly_phase",
      ],
      "expected_max_age_td": 2,
      "as_of_field": "as_of",

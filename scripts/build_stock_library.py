@@ -54,6 +54,7 @@ from engine import coiled  # noqa: E402  — wave-2-validated COILED ranking bon
 from engine import donor  # noqa: E402  — G6a donor-sector context chip (display-only)
 from engine import hold as hold_engine  # noqa: E402  — W6-C HOLD tracker (basing state / invalidation)
 from engine import earnings_blackout as _eb  # noqa: E402  — W1.5 earnings-blackout hygiene veto
+from engine import us_board_rank  # noqa: E402  — us_prophet_v1 priority score / stages / ran lane
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -783,24 +784,53 @@ def _cascade_elig(scored: list[tuple], sig_verdict: dict) -> list[tuple]:
             if (sig_verdict.get(t) or {}).get("eligible")]
 
 
-LEADERS_CAP = 15           # max leaders-strip rows
-LEADERS_ALPHA_FLOOR = 0.5  # basis: prior — engine/setups.py BUY_MIN, the classic alpha buy floor
+LEADERS_CAP = 15            # max leaders-strip rows
+LEADERS_OFF_HIGH_FLOOR = -20.0  # leaders trade near their highs, not 30% off them
+LEADERS_THEME_BOOST = 0.5   # rank credit for membership of a top-8 in-favour basket
 
 
 def _select_leaders(scored, row_by_t, sig_verdict, exclude, *,
-                    cap=LEADERS_CAP, floor=LEADERS_ALPHA_FLOOR):
-    """Leaders strip (2026-07-28 gate-width order): the strongest runners by
-    residual alpha that the fresh-cross confluence gate structurally cannot
-    admit (measured 2026-07-28: of the top-100 3-month runners, 2 passed the
-    gate; 53 sat at flat-sell). DISPLAY-TIER coverage, never an entry claim:
-    admission requires an INTACT trend (above200 AND weekly_bull from the
-    signal_gate verdict), residual alpha >= floor (basis: prior BUY_MIN), not
-    already on the board (exclude), dir != 'down'. Ranked alpha-desc, ticker
-    tiebreak; dual-class deduped. Rows are tagged lane='leader'.
-    Alpha is the one leg the US board measurement ranked positively
-    (research/US_BOARD_MEASUREMENT.md §3) — order by edge, gate by structure.
+                    cap=LEADERS_CAP, off_high_floor=LEADERS_OFF_HIGH_FLOOR,
+                    theme_by=None, momentum_by=None, composite_by=None,
+                    disp_by=None):
+    """Leaders strip v2 (2026-08-02): market LEADERSHIP the fresh-cross gate
+    cannot admit — ranked by TOTAL momentum, not by residual alpha.
+
+    Why the rank key changed (measured 2026-08-02, the software-absence
+    root-cause): residual alpha is beta-stripped, so it structurally erases a
+    theme rally in which a whole cohort rises together. The v1 rule
+    (alpha >= 0.5, alpha-desc) held ZERO software names for the entire
+    ai_software / non_ai_software leadership run — MSFT / PLTR / APP / CRWD
+    class names were never selectable — and filled the strip with idiosyncratic
+    small caps (Callaway Golf, Tompkins Financial) whose residual was large only
+    because their beta was small. A leaders strip that cannot show the market's
+    leaders is not a leaders strip.
+
+    RANK SOURCE (read before changing it): ``momentum_by`` — the cross-sectional z
+    of trailing 3-month TOTAL return (engine.us_board_rank.total_return_z). It is
+    deliberately NOT the composite's ``momentum`` leg, despite the name: that leg is
+    fed by ``alpha_pt[t]["alpha"]`` in the composite assembly above, and measured
+    ``corr(alpha, composite.legs.momentum) = 0.984`` on the 2026-07-31 live board.
+    Ranking by it would be the v1 residual-alpha rule wearing a different label, and
+    the software cohort would stay just as invisible. Trailing total return over the
+    same universe correlates ``+0.37`` with residual alpha — a genuinely different
+    quantity. ``composite_by`` remains a LAST-RESORT fallback so a momentum-map
+    failure degrades to the old behaviour instead of an empty strip; it announces
+    itself with a ::warning rather than degrading silently.
+
+    DISPLAY-TIER coverage, never an entry claim. Admission requires an INTACT
+    trend (above200 AND weekly_bull from the signal_gate verdict — `is True` is
+    deliberate, a None/unanalysed name must never read as intact), a momentum
+    reading, price within ``off_high_floor``% of the 52w high (leaders trade near
+    highs), not already surfaced (exclude), dir != 'down'.
+
+    Rank key: momentum z + ``LEADERS_THEME_BOOST`` when the name belongs to a
+    top-8 in-favour basket (engine.us_board_rank theme map — context weight on a
+    DISPLAY lane, never a score or an admission gate), then residual alpha desc,
+    then ticker. Dual-class deduped, capped, tagged lane='leader'.
     """
-    picked: list[tuple[float, str, dict]] = []
+    _fallback_used = 0
+    picked: list[tuple[float, float, str, dict]] = []
     for t, _p in scored:
         if t in exclude:
             continue
@@ -812,25 +842,58 @@ def _select_leaders(scored, row_by_t, sig_verdict, exclude, *,
         r = row_by_t.get(t)
         if r is None:
             continue
-        alpha = r.get("alpha")
-        if alpha is None:
-            continue
-        try:
-            alpha_f = float(alpha)
-        except (TypeError, ValueError):
-            continue
-        # NaN fails this comparison, which is the wanted outcome (no alpha, no row).
-        if not alpha_f >= floor:
-            continue
         if r.get("dir") == "down":
             continue
-        picked.append((alpha_f, t, r))
-    picked.sort(key=lambda x: (-x[0], x[1]))
+        # Momentum reading. Total-return z first (the real key); the composite leg
+        # only if that map is missing this name — see the RANK SOURCE note above.
+        # Leaders are picked BEFORE the board-row enrichment pass attaches
+        # r["composite"], so the row read is the already-enriched-caller path.
+        _mom = (momentum_by or {}).get(t)
+        if _mom is None:
+            _comp = (composite_by or {}).get(t) or r.get("composite") or {}
+            _mom = (_comp.get("legs") or {}).get("momentum")
+            if _mom is not None:
+                _fallback_used += 1
+        try:
+            mom_f = float(_mom)
+        except (TypeError, ValueError):
+            continue
+        if mom_f != mom_f:                      # NaN — no momentum reading
+            continue
+        # Near-high preference. off_high lives on disp_map until the enrichment
+        # pass merges it onto the row; unknown distance-from-high fails closed.
+        _oh = ((disp_by or {}).get(t) or {}).get("off_high")
+        if _oh is None:
+            _oh = r.get("off_high")
+        try:
+            oh_f = float(_oh)
+        except (TypeError, ValueError):
+            continue
+        if not oh_f >= off_high_floor:
+            continue
+        _theme = (theme_by or {}).get(t)
+        rank_key = mom_f + (LEADERS_THEME_BOOST if _theme else 0.0)
+        try:
+            alpha_f = float(r.get("alpha"))
+        except (TypeError, ValueError):
+            alpha_f = float("-inf")
+        if alpha_f != alpha_f:                  # NaN alpha sorts last, never crashes
+            alpha_f = float("-inf")
+        picked.append((rank_key, alpha_f, t, r))
+    if _fallback_used:
+        # Bare print, NOT a logger call: GitHub only parses a workflow command when
+        # "::" STARTS the line, and this module's logging format prefixes every record.
+        print(f"::warning title=leaders_rank_source::{_fallback_used} leaders "
+              "candidate(s) fell back to the composite momentum leg (residual-alpha "
+              "equivalent, corr 0.98) — the total-return momentum map is incomplete; "
+              "the strip may under-represent theme leadership",
+              flush=True)
+    picked.sort(key=lambda x: (-x[0], -x[1], x[2]))
     # Dual-class dedup (GOOG+GOOGL) — keep the first-ranked variant, same
     # engine.setups.norm_company normalisation the wide board's per-sector cap uses.
     _seen_name: set[str] = set()
     out: list[dict] = []
-    for _a, _t, r in picked:
+    for _rk, _a, _t, r in picked:
         _nm = norm_company(r.get("name"))
         if _nm and _nm in _seen_name:
             continue
@@ -3197,6 +3260,17 @@ def main() -> int:
         # per-card trust tier + α chip + per-leg basis show exactly what is validated vs
         # context. `gate_go` (currently NEUTRAL) would flip the trust tier to 'validated'.
         row_by_t = {r.get("ticker"): r for _, r in cand}
+        # ── Theme linkage (us_prophet_v1 §3.6) ────────────────────────────────
+        # Top-8 in-favour baskets from the nightly theme engine, joined to their
+        # curated members. DISPLAY-TIER CONTEXT ONLY: a theme chip never scores,
+        # never gates, and never changes buy-lane membership; on the leaders lane
+        # it is a rank tiebreak weight on a display strip, nothing more.
+        # Fail-soft by contract — an absent/malformed snapshot ships no chips.
+        _theme_ctx = us_board_rank.load_theme_context()
+        _theme_by = _theme_ctx.get("by_ticker") or {}
+        log.info("theme linkage: %d in-favour themes, %d tickers chipped (as_of %s)",
+                 len(_theme_ctx.get("themes") or []), len(_theme_by),
+                 _theme_ctx.get("as_of"))
         scored = [(t, p) for t, p in profiles.items()
                   if p.get("composite_z") is not None and t in row_by_t]
         # ticker tiebreaker: identical composite_z must never leave board order to
@@ -3430,10 +3504,25 @@ def main() -> int:
         # the page, so a leaders/watch overlap duplicates nothing user-facing.
         _leader_exclude = ({t for t, _, _ in elig} | buy_ids
                            | {t for t, _ in scored[-12:]})
-        leaders = _select_leaders(scored, row_by_t, sig_verdict, _leader_exclude)
-        log.info("leaders strip: %d rows (cap %d, alpha floor %.2f, %d excluded as "
-                 "already-surfaced)", len(leaders), LEADERS_CAP, LEADERS_ALPHA_FLOOR,
-                 len(_leader_exclude))
+        # Leaders rank source: trailing 3-month TOTAL return, z-scored across the
+        # universe. Computed per-series from `uni` rather than from a concatenated
+        # panel — a concat unions the calendars, and the 24/7 crypto rows then own
+        # the last index row, which silently reduces the cross-section to 3 names.
+        # Only the tail each name needs is materialised.
+        _mom_tail = us_board_rank.LEADERS_MOMENTUM_SESSIONS + 1
+        _mom_by = us_board_rank.total_return_z(
+            {_t_m: _c_m.dropna().tail(_mom_tail).tolist() for (_t_m, _c_m, *_r_m) in uni},
+            sessions=us_board_rank.LEADERS_MOMENTUM_SESSIONS)
+        log.info("leaders momentum: %d names with a %d-session total-return z",
+                 len(_mom_by), us_board_rank.LEADERS_MOMENTUM_SESSIONS)
+        leaders = _select_leaders(scored, row_by_t, sig_verdict, _leader_exclude,
+                                  theme_by=_theme_by, momentum_by=_mom_by,
+                                  composite_by=composite_pt, disp_by=disp_map)
+        log.info("leaders strip v2: %d rows (cap %d, momentum-ranked, theme boost %.1f, "
+                 "off-high floor %.0f%%, %d excluded as already-surfaced, %d theme-chipped)",
+                 len(leaders), LEADERS_CAP, LEADERS_THEME_BOOST, LEADERS_OFF_HIGH_FLOOR,
+                 len(_leader_exclude),
+                 sum(1 for r in leaders if r.get("ticker") in _theme_by))
 
         # ── P2.4 Board Contract v2: lane taxonomy + weekly_phase capture ─────
         # Spec: research/entry_intel/P2_4_BOARD_CONTRACT_V2_DESIGN.md
@@ -3565,7 +3654,10 @@ def main() -> int:
                 r["lane"] = "watch"
             return r
 
-        wide = {"as_of": alpha_asof, "rank_by": "confluence", "gate_go": gate_go,
+        # rank_by is (re)stamped with the live board definition by the
+        # us_prophet_v1 block below, once the rows are actually scored.
+        wide = {"as_of": alpha_asof, "rank_by": us_board_rank.BOARD_DEFINITION,
+                "gate_go": gate_go,
                 "buy": _all_buy_rows,
                 # Slice raised 24 -> 48 (2026-07-28) so capped-overflow names are never
                 # silently dropped: under the 5-cap, 45 overflow rows were squeezed into
@@ -3870,12 +3962,106 @@ def main() -> int:
                      len(_fb_shallow), _FB_SHALLOW_THRESHOLD,
                      [(t, f"{d:.1f}%", f"off_high={o:.1f}%" if o else None)
                       for t, d, o in _fb_shallow])
-        # W8 ordering: entry_open_first removed as the terminal sort for the wide board
-        # (forward ledger P@1: board-order 28.6% vs alpha-order 71.4% — entry_open_first
-        # is harmful as the terminal sort). The entry status BADGE is kept for display;
-        # the ordering above (alpha desc within lane) is the final order. entry_open_first
-        # is still used by the narrow "Top setups" / other consumers; it is NOT removed
-        # from engine/setups.py — only no longer applied here.
+        # ── us_prophet_v1 priority ranking ───────────────────────────────────
+        # Masterplan: research/PROPHET_BOARD_PRIORITY_ENGINE_MASTERPLAN_BY_FABLE.md
+        # Evidence:   research/US_BOARD_MEASUREMENT.md §1 + §5.
+        #
+        # This runs AFTER the enrichment pass because every score leg reads a field
+        # that pass attaches (signal / entry_signal / alpha / coiled / ext_z).
+        #
+        # It changes ORDER and adds FIELDS. It does not change MEMBERSHIP: the
+        # confluence cascade gate above is still the only thing that decides who is
+        # on the buy lane, and `featured` is a flag inside that lane, never an
+        # admission (DNR §1 row 49 fence). The old terminal sort was alpha-desc
+        # within lane (W8, forward ledger #1062) — alpha survives as the `edge` leg,
+        # 25 of the 100 points and the only leg the measurement found positive-IC;
+        # what changes is that a name you cannot act on today can no longer sit at
+        # slot 1 above a live one (the 07-31 board opened on an "Extended — don't
+        # chase" row, with `avoid`/DOWNTREND names mid-board).
+        wide["buy"] = us_board_rank.score_rows(
+            wide["buy"],
+            verdict_by=sig_verdict,
+            blackout_by={t: bool((v or {}).get("in_blackout"))
+                         for t, v in (_eb_blackout_map or {}).items()},
+            board_asof=wide.get("as_of"),
+        )
+        wide["rank_by"] = us_board_rank.BOARD_DEFINITION
+        wide["board_definition"] = us_board_rank.BOARD_DEFINITION
+        wide["ranking"] = us_board_rank.ranking_block(
+            wide["buy"], theme_asof=_theme_ctx.get("as_of"))
+        wide["themes_in_favour"] = _theme_ctx.get("themes") or []
+        _stage_ct = us_board_rank.stage_counts(wide["buy"])
+        log.info("us_prophet_v1: %d buy rows scored — stages %s, featured %d "
+                 "(cap %d, sector cap %d)", len(wide["buy"]), _stage_ct,
+                 wide["ranking"]["featured_count"],
+                 us_board_rank.FEATURED_CAP, us_board_rank.SECTOR_CAP)
+
+        # Theme chips on every display lane (context, zero score authority).
+        for _lane_name in ("buy", "watch", "leaders", "laggards"):
+            us_board_rank.stamp_themes(
+                wide.get(_lane_name) or [], _theme_by,
+                confirmed_flag=(_lane_name == "leaders"))
+
+        # days_since_signal on the non-buy display lanes: stocktable.js keys its
+        # NEW dot on this field, and the US payload never carried it. Buy rows get
+        # it inside score_rows; leaders/laggards/watch get it here.
+        for _lane_name in ("watch", "leaders", "laggards"):
+            for _r_ds in wide.get(_lane_name) or []:
+                _sig_ds = us_board_rank.signal_asof(
+                    _r_ds, sig_verdict.get(_r_ds.get("ticker")))
+                _r_ds["signal_asof"] = _sig_ds
+                _r_ds["days_since_signal"] = us_board_rank.days_since_signal(
+                    _sig_ds, wide.get("as_of"))
+
+        # ── Ran lane (us_prophet_v1 §3.5) ────────────────────────────────────
+        # Names whose cross already fired (3-15 ticks back) with the trend still
+        # intact. Before this lane existed the board caught a name's FIRST cross
+        # and then deleted it while the move ran for weeks (archaeology 2026-08-02:
+        # APP visible 1 day, PLTR 1 day, MSFT 3 days, each never seen again).
+        # DISPLAY-TIER CONTEXT ROWS: no entry_signal, no conviction claim, no
+        # priority score — the honest read is "the move already started, wait for
+        # the next entry", which is why they never outrank a live row.
+        _ran_meta: dict[str, dict] = {}
+        for (_t_rn, _cl_rn, _hi_rn, _nm_rn, _sec_rn) in uni:
+            _d_rn = disp_map.get(_t_rn) or {}
+            _row_rn = row_by_t.get(_t_rn) or {}
+            _ran_meta[_t_rn] = {
+                "name": _nm_rn or _t_rn,
+                "sector": _sec_rn or None,
+                "price": _d_rn.get("price"),
+                "spark_svg": _d_rn.get("spark_svg"),
+                "dir": _row_rn.get("dir"),
+                "signal": _row_rn.get("signal"),
+            }
+        _ran_closes = {_t_rn: _cl_rn for (_t_rn, _cl_rn, *_rest_rn) in uni}
+
+        def _ran_close_of(ticker: str):
+            """(dates, closes) for the ran lane's move-since-the-cross read."""
+            series = _ran_closes.get(ticker)
+            if series is None:
+                return None
+            series = series.dropna()
+            if len(series) < 2:
+                return None
+            return ([str(idx.date()) for idx in series.index], series.tolist())
+
+        _ran_exclude = ({r.get("ticker") for r in wide["buy"]}
+                        | {r.get("ticker") for r in wide["watch"]}
+                        | {r.get("ticker") for r in wide["leaders"]}
+                        | {r.get("ticker") for r in wide["laggards"]})
+        wide["ran"] = us_board_rank.build_ran_rows(
+            sig_verdict,
+            meta_by=_ran_meta,
+            close_of=_ran_close_of,
+            exclude=_ran_exclude,
+            theme_by=_theme_by,
+            board_asof=wide.get("as_of"),
+        )
+        log.info("ran lane: %d rows (cap %d, ticks %d-%d, trend intact, %d "
+                 "theme-confirmed)", len(wide["ran"]), us_board_rank.RAN_CAP,
+                 us_board_rank.RAN_TICKS_MIN, us_board_rank.RAN_TICKS_MAX,
+                 sum(1 for r in wide["ran"] if r.get("theme_confirmed")))
+
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
         if disp_regime:                            # selection-regime gross dial (board + bot)
@@ -3887,6 +4073,17 @@ def main() -> int:
         from collections import Counter as _Counter
         _lane_ct = _Counter(r.get("lane") for r in wide["buy"] + wide["watch"])
         wide["lane_counts"] = dict(_lane_ct)
+        # us_prophet_v1: the stage buckets the board actually renders. Additive —
+        # the bottoming/continuation/watch keys above are untouched.
+        #   live / setting_up / ran / blocked  count BUY rows and sum to len(buy)
+        #   featured                           is the flagged subset of `live`
+        #   ran_lane                           is the separate ran ARRAY
+        # The rendered "Ran — don't chase" chip is `ran + ran_lane` (masterplan
+        # §3.1 defines that bucket as the union); the two are counted separately
+        # here so neither number is inferred.
+        wide["lane_counts"].update(_stage_ct)
+        wide["lane_counts"]["featured"] = wide["ranking"]["featured_count"]
+        wide["lane_counts"]["ran_lane"] = len(wide["ran"])
         log.info("P2.4 lane_counts: %s", wide["lane_counts"])
 
         # P2.1a Step H: anti-chase shadow ledger writer.

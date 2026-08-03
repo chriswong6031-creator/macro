@@ -412,52 +412,77 @@ class TestBuildTrackW3Strata:
 # ---------------------------------------------------------------------------
 
 class TestNoOrderingRegression:
-    """Board order must be identical whether or not W3 evidence fields are present.
+    """W3 evidence fields must carry ZERO ordering power.
 
-    This test mirrors the contract: W3 adds display fields ONLY. The ordering
-    key is alpha (desc) within lane. Adding/removing evidence fields must not
-    affect the resulting sequence of tickers."""
+    That contract is unchanged by us_prophet_v1 (2026-08-02) — insider, GEX, SUE,
+    smart money and Confluence+ are all named in
+    ``engine.us_board_rank.ZERO_SCORE_AUTHORITY``. What DID change is the sort these
+    tests must run: it is no longer alpha-desc-within-lane but (stage bucket,
+    priority score desc, ticker), with alpha surviving as the 25-point ``edge`` leg.
 
-    def _sort_rows(self, rows: list[dict]) -> list[str]:
-        """Sort rows as the builder does: trend first by alpha desc, then recovery."""
-        trend = sorted([r for r in rows if r.get("lane") == "trend"],
-                       key=lambda r: -(r.get("alpha") or 0.0))
-        recov = sorted([r for r in rows if r.get("lane") == "recovery"],
-                       key=lambda r: -(r.get("alpha") or 0.0))
-        return [r["ticker"] for r in trend + recov]
+    These tests now call the REAL ranker rather than re-implementing a sort inline.
+    The old inline mirror could not have caught a real ordering regression: it sorted
+    its own fixtures with its own code and asserted against itself.
+    """
+
+    @staticmethod
+    def _order(rows: list[dict]) -> list[str]:
+        """Sort rows through the REAL us_prophet_v1 ranker."""
+        from engine import us_board_rank as ubr
+        scored = ubr.score_rows([dict(r) for r in rows], board_asof="2026-07-31")
+        return [r["ticker"] for r in scored]
+
+    @staticmethod
+    def _row(ticker, alpha, **extra):
+        row = {"ticker": ticker, "alpha": alpha, "lane": "trend",
+               "sector": ticker, "entry_signal": {"status": "buy_now"},
+               "signal": {"eligible": True, "tier_cascade": "T2", "ticks": 1,
+                          "asof": "2026-07-31"}}
+        row.update(extra)
+        return row
 
     def test_adding_evidence_fields_does_not_change_order(self):
-        """Rows with W3 evidence fields produce the same sort order as rows without."""
-        rows_plain = [
-            {"ticker": "AAA", "alpha": 0.8, "lane": "trend"},
-            {"ticker": "BBB", "alpha": 0.5, "lane": "trend"},
-            {"ticker": "CCC", "alpha": 0.3, "lane": "recovery"},
+        """Rows with W3 evidence fields produce the same order as rows without."""
+        plain = [self._row("AAA", 0.8), self._row("BBB", 0.5),
+                 self._row("CCC", 0.3, lane="recovery")]
+        with_ev = [
+            self._row("AAA", 0.8, insider_buyers=3,
+                      gex_confirm={"verdict": "confirm"},
+                      confluence_plus={"k": 2, "groups": ["INSIDER", "GEX-OPTIONS"]}),
+            self._row("BBB", 0.5, sue_z=1.5, sue_fresh_days=30),
+            self._row("CCC", 0.3, lane="recovery",
+                      smartmoney_chip={"action": "new", "n_funds_adding": 1}),
         ]
-        rows_with_ev = [
-            {"ticker": "AAA", "alpha": 0.8, "lane": "trend",
-             "insider_buyers": 3, "gex_confirm": {"verdict": "confirm"},
-             "confluence_plus": {"k": 2, "groups": ["INSIDER", "GEX-OPTIONS"]}},
-            {"ticker": "BBB", "alpha": 0.5, "lane": "trend",
-             "sue_z": 1.5, "sue_fresh_days": 30},
-            {"ticker": "CCC", "alpha": 0.3, "lane": "recovery",
-             "smartmoney_chip": {"action": "new", "n_funds_adding": 1}},
-        ]
-        order_plain = self._sort_rows(rows_plain)
-        order_evidence = self._sort_rows(rows_with_ev)
-        assert order_plain == order_evidence, (
-            "Board sort order must not change when W3 evidence fields are present")
+        assert self._order(plain) == self._order(with_ev), (
+            "board order must not change when W3 evidence fields are present")
 
-    def test_evidence_fields_present_on_lower_alpha_do_not_promote(self):
-        """A lower-alpha name with Confluence+ badge must NOT appear above a
-        higher-alpha name without it — the badge is display-only."""
+    def test_evidence_fields_present_on_lower_edge_do_not_promote(self):
+        """A weaker name with a Confluence+ badge must NOT appear above a stronger
+        one without it — the badge is display-only."""
         rows = [
-            {"ticker": "HIGH_ALPHA", "alpha": 0.9, "lane": "trend"},
-            {"ticker": "LOW_ALPHA",  "alpha": 0.2, "lane": "trend",
-             "confluence_plus": {"k": 7, "groups": list("ABCDEFG")}},
+            self._row("HIGH_ALPHA", 0.9),
+            self._row("LOW_ALPHA", 0.2,
+                      confluence_plus={"k": 7, "groups": list("ABCDEFG")}),
         ]
-        order = self._sort_rows(rows)
-        assert order[0] == "HIGH_ALPHA", (
-            "Confluence+ badge must NOT promote a lower-alpha name above a higher-alpha one")
+        assert self._order(rows)[0] == "HIGH_ALPHA"
+
+    def test_evidence_cannot_lift_a_blocked_row_out_of_its_stage(self):
+        """The stage bucket outranks every display chip: a name you are told to avoid
+        stays at the bottom no matter how many evidence badges it collects."""
+        rows = [
+            self._row("BLOCKED", 3.0, entry_signal={"status": "avoid"},
+                      insider_buyers=9, sue_z=3.0,
+                      confluence_plus={"k": 7, "groups": list("ABCDEFG")}),
+            self._row("LIVE", 0.0),
+        ]
+        assert self._order(rows) == ["LIVE", "BLOCKED"]
+
+    def test_evidence_fields_are_named_as_scoreless_in_the_artifact(self):
+        """The disclosure and the behaviour must agree — a reader of the artifact can
+        check that these inputs have no score authority."""
+        from engine import us_board_rank as ubr
+        for leg in ("insider", "sue", "options_gex", "smartmoney"):
+            assert leg in ubr.ZERO_SCORE_AUTHORITY
 
 
 # ---------------------------------------------------------------------------

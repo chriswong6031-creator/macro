@@ -546,3 +546,120 @@ class TestInvariantEReflexivityNeff:
             f"Invariant (e) must use per-lane n_eff, not union n_eff. "
             f"Got violations: {e_violations}"
         )
+
+
+# ---------------------------------------------------------------------------
+# 8. Invariant (d): the two sort contracts (us_prophet_v1 + legacy)
+# ---------------------------------------------------------------------------
+
+class TestInvariantDSortContracts:
+    """Invariant (d) asks "is the board in ITS OWN declared order?", and which order
+    that is depends on the artifact.
+
+    us_prophet_v1 rows carry `stage`, and the order is (stage bucket, priority score
+    desc, ticker) — alpha is one of five legs there, so an alpha-desc assertion would
+    turn every correct render red. Legacy rows carry no `stage` and keep the
+    pre-2026-08 alpha-desc-within-lane check.
+
+    Both branches must still be able to FAIL: a guard that stopped seeing broken
+    sorts would be worse than no guard at all.
+    """
+
+    @staticmethod
+    def _row(ticker, stage, score, **extra):
+        row = {"ticker": ticker, "stage": stage, "prophet": {"score": score},
+               "lane": "continuation"}
+        row.update(extra)
+        return row
+
+    def _write(self, tmp_path, buy):
+        import json as _json
+        artifact = tmp_path / "us_standouts.json"
+        artifact.write_text(_json.dumps({"buy": buy}))
+        return str(artifact)
+
+    def _d(self, violations):
+        return [v for v in violations if v.startswith("(d)")]
+
+    # -- prophet branch -----------------------------------------------------
+
+    def _good_board(self):
+        return [
+            self._row("AAA", "live", 88.0, alpha=0.1),
+            self._row("BBB", "live", 71.5, alpha=1.9),      # alpha ASCENDS: legal now
+            self._row("CCC", "setting_up", 60.0, alpha=2.5),
+            self._row("DDD", "ran", 44.0, alpha=-0.2),
+            self._row("EEE", "blocked", 90.0, alpha=3.0),   # high score, still last
+        ]
+
+    def test_a_correctly_ordered_prophet_board_is_clean(self, tmp_path):
+        from scripts.check_board_contradictions import _check
+        assert self._d(_check(self._write(tmp_path, self._good_board()))) == []
+
+    def test_alpha_ascending_is_no_longer_a_violation(self, tmp_path):
+        """The legacy branch would flag a negative-alpha row above a positive one;
+        under us_prophet_v1 that is the score doing its job."""
+        from scripts.check_board_contradictions import _check
+        buy = [self._row("NEG", "live", 88.0, alpha=-1.5),
+               self._row("POS", "live", 40.0, alpha=2.0)]
+        assert self._d(_check(self._write(tmp_path, buy))) == []
+
+    def test_stage_running_backwards_trips(self, tmp_path):
+        from scripts.check_board_contradictions import _check
+        buy = [self._row("RAN", "ran", 44.0), self._row("LIVE", "live", 88.0)]
+        assert any("stage buckets must run" in v
+                   for v in self._d(_check(self._write(tmp_path, buy))))
+
+    def test_a_blocked_row_above_a_live_row_trips(self, tmp_path):
+        from scripts.check_board_contradictions import _check
+        buy = [self._row("BLK", "blocked", 99.0), self._row("LIVE", "live", 88.0)]
+        viols = self._d(_check(self._write(tmp_path, buy)))
+        assert any("blocked-stage row sits at slot 1" in v for v in viols)
+
+    def test_score_rising_inside_a_stage_trips(self, tmp_path):
+        from scripts.check_board_contradictions import _check
+        buy = [self._row("LOW", "live", 40.0), self._row("HIGH", "live", 88.0)]
+        assert any("outranks the row above it" in v
+                   for v in self._d(_check(self._write(tmp_path, buy))))
+
+    def test_an_unknown_stage_trips(self, tmp_path):
+        from scripts.check_board_contradictions import _check
+        buy = [self._row("WAT", "banana", 40.0), self._row("LIVE", "live", 88.0)]
+        assert any("unknown stage" in v
+                   for v in self._d(_check(self._write(tmp_path, buy))))
+
+    def test_a_scrambled_prophet_board_trips(self, tmp_path):
+        """Mutation check: reverse a valid board and the guard must see it."""
+        from scripts.check_board_contradictions import _check
+        buy = list(reversed(self._good_board()))
+        assert self._d(_check(self._write(tmp_path, buy)))
+
+    def test_missing_scores_do_not_crash_the_walk(self, tmp_path):
+        from scripts.check_board_contradictions import _check
+        buy = [{"ticker": "A", "stage": "live"}, {"ticker": "B", "stage": "ran"}]
+        assert self._d(_check(self._write(tmp_path, buy))) == []
+
+    # -- legacy branch ------------------------------------------------------
+
+    def test_legacy_board_still_gets_the_alpha_check(self, tmp_path):
+        """No `stage` field anywhere => the pre-2026-08 contract, unchanged."""
+        from scripts.check_board_contradictions import _check
+        buy = [{"ticker": "NEG", "lane": "trend", "alpha": -1.5},
+               {"ticker": "POS", "lane": "trend", "alpha": 2.0}]
+        viols = self._d(_check(self._write(tmp_path, buy)))
+        assert len(viols) == 1 and "sort broken" in viols[0]
+
+    def test_legacy_board_in_alpha_order_is_clean(self, tmp_path):
+        from scripts.check_board_contradictions import _check
+        buy = [{"ticker": "POS", "lane": "trend", "alpha": 2.0},
+               {"ticker": "NEG", "lane": "trend", "alpha": -1.5}]
+        assert self._d(_check(self._write(tmp_path, buy))) == []
+
+    def test_one_staged_row_switches_the_whole_board_to_the_new_contract(self, tmp_path):
+        """The branch is chosen by the artifact, not per row — a partially migrated
+        board must not be judged by two contradictory contracts at once."""
+        from scripts.check_board_contradictions import _check
+        buy = [self._row("NEG", "live", 88.0, alpha=-1.5),
+               {"ticker": "POS", "lane": "continuation", "alpha": 2.0,
+                "stage": "blocked", "prophet": {"score": 10.0}}]
+        assert self._d(_check(self._write(tmp_path, buy))) == []

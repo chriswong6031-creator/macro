@@ -830,8 +830,10 @@ checks:
     summary: >
       The standout board must not show loud labels that contradict its own quiet
       fields: FRESH on stale/extended cross, urgency=imminent on blocked label,
-      green band on Lagging verdict, negative-alpha slot-1 while positive-alpha
-      rows exist in the same lane.
+      green band on Lagging verdict, and a board that is not in its own declared
+      sort order — under us_prophet_v1 that means stage buckets in order, score
+      non-increasing within a bucket, and no blocked-stage row above a live one;
+      on legacy boards it stays the alpha-desc-within-lane check.
     source_ref:
       - scripts/check_board_contradictions.py
       - "engine/desk_scorer.py"
