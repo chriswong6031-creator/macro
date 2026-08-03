@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T04:34:36.406041+00:00",
-  "count": 640,
+  "generated_at": "2026-08-03T04:49:37.353716+00:00",
+  "count": 641,
   "institutions": [
     "Amova",
     "Apollo",
@@ -711,6 +711,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kfhixaxe4hz-62934b",
+      "title": "ING Think the commodities feed oil eases as more oil flows out the persian gulf",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T11:03:50Z",
+      "summary_points": [
+        "**Geopolitical Supply Recovery**: Persian Gulf crude flows rebound to 65% pre-war levels (13m b/d), strait transit resumed despite US-Iran tensions, easing oil prices below $90/bbl.",
+        "**SPR Policy Constraints**: US halted further strategic reserve releases (308m barrels SPR), operational minimum uncertainty (70m vs industry estimates) severely limits supply flexibility.",
+        "**Middle Distillate Tightening**: Russia diesel export ban extended to Sept 2025, Ukrainian refinery disruptions, ARA gasoil inventories at 2022 lows, ICE gasoil cracks >$70/bbl."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
