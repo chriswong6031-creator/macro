@@ -35,7 +35,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
 | fundamental-forensics | 2 |
-| government-revenue-foresight | 30 |
+| government-revenue-foresight | 35 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
@@ -106,8 +106,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 360 |
-| infrastructure | 137 |
+| display | 363 |
+| infrastructure | 139 |
 | scored | 4 |
 | shadow | 79 |
 
@@ -115,7 +115,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 548 |
+| git | 553 |
 | git+r2 | 2 |
 | gitignored-local | 15 |
 | r2 | 15 |
@@ -408,6 +408,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | government-revenue-subaward-projection-state | `data/government_revenue/subaward_projection_state.json` | json | collect | infrastructure | 3 | 0 |
 | government-revenue-subaward-snapshots | `data/government_revenue/subaward_snapshots.parquet` | parquet | collect | infrastructure | 3 | 0 |
 | government-revenue-award-event-projection-state | `data/government_revenue/award_event_projection_state.json` | json | collect | infrastructure | 2 | 0 |
+| government-revenue-candidate-ledger | `data/government_revenue/candidate_ledger.jsonl` | jsonl | intraday | display | 2 | 0 |
+| government-revenue-candidate-projection-state | `data/government_revenue/candidate_projection_state.json` | json | intraday | infrastructure | 2 | 0 |
+| government-revenue-candidate-projection-status | `data/government_revenue/candidate_projection_status.json` | json | intraday | infrastructure | 2 | 0 |
+| government-revenue-candidate-queue | `data/government_revenue/candidate_queue.json` | json | intraday | display | 2 | 0 |
 | government-revenue-dossiers | `data/government_revenue/dossiers.json` | json | intraday | display | 2 | 0 |
 | government-revenue-entities | `data/government_revenue/entities.json` | json | on-demand | infrastructure | 2 | 0 |
 | government-revenue-ingest-status | `data/government_revenue/ingest_status.json` | json | collect | infrastructure | 2 | 0 |
@@ -415,6 +419,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | government-revenue-sam-opportunity-ingest-status | `data/government_revenue/opportunity_ingest_status.json` | json | intraday | infrastructure | 2 | 0 |
 | government-revenue-subaward-dossiers | `data/government_revenue/subaward_dossiers.json` | json | intraday | display | 2 | 0 |
 | government-revenue-subaward-ingest-status | `data/government_revenue/subaward_ingest_status.json` | json | collect | infrastructure | 2 | 0 |
+| site-government-revenue-candidates | `site/government-revenue-data/candidates.json` | json | intraday | display | 2 | 0 |
 | site-government-revenue-latest | `site/government-revenue-data/latest.json` | json | intraday | display | 2 | 0 |
 | government-revenue-award-actions | `data/government_revenue/award_actions.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | government-revenue-award-snapshots | `data/government_revenue/award_snapshots.parquet` | parquet | collect | infrastructure | 1 | 0 |
@@ -1851,6 +1856,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/theme_adoption.py`
 - **extra writers:**
   - scripts/build_discovery_confluence.py
+
+### site-government-revenue-candidates
+
+- **path:** `site/government-revenue-data/candidates.json`
+- **declared producer:** `scripts/build_government_revenue_candidates.py`
+- **extra writers:**
+  - scripts/build_government_revenue.py --site-only — verifies the canonical generation and mirrors exact bytes without advancing the ledger
 
 ### site-neuralweb-market-plane
 

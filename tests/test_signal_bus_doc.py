@@ -73,9 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 580, (
-        f"Expected 580 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 585, (
+        f"Expected 585 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Government Revenue Wave9A candidate foundation added candidate ledger,"
+        " queue, projection state, projection status, and public queue artifacts = 580->585;"
         " (Capital Structure authenticated share-count materialization added ledger,"
         " current-pointer, signed-receipt, and external-head artifacts = 576->580;"
         " (Capital Structure Company Facts intake added coverage, receipt, source-manifest,"
