@@ -78,6 +78,13 @@ on:
       # Crypto Cockpit governor: W0 lands warn-until-marked shelf checks; W1/W2 arm
       # exact S1-S6 / H1-H8 sets and the one-verdict law.
       - "scripts/check_crypto_shelves.py"
+      # Crypto Cockpit suites (unrun backfill 2026-08-03): cockpit contract,
+      # wave-2/wave-3 organs, house-style partial. Subjects covered by
+      # engine/** + collectors/** + scripts/*.py entries; test halves added.
+      - "tests/test_crypto_cockpit_contract.py"
+      - "tests/test_crypto_wave2.py"
+      - "tests/test_crypto_wave3.py"
+      - "tests/test_crypto_house_style.py"
       # GH-annotation guard: a "::warning" behind logging's level prefix never parses as
       # an annotation. NOTE: this only fires when ci.yml is already triggered — making it
       # fire on EVERY python change needs "scripts/**"/"engine/**" here, which is a
@@ -2121,6 +2128,11 @@ on:
       - "tests/test_release_market_context.py"
       - "scripts/build_release_forecast.py"
       - "scripts/check_hazard_model_freshness.py"
+      # Unrun backfill 2026-08-03: CPI bridge, official-event live client,
+      # Release Radar date selection — the release estate's missing test halves.
+      - "tests/test_release_cpi_bridge.py"
+      - "tests/test_release_publications_live_client.py"
+      - "tests/test_release_radar_date_selection.py"
       # unrun-brain-desks
       - "tests/test_admin_brief_gate.py"
       - "tests/test_ai_desk_panel.py"
@@ -2346,6 +2358,13 @@ on:
       - "tests/test_positioning_persistence.py"
       - "tests/test_gex_state.py"
       - "tests/test_index_gex_history.py"
+      # Unrun backfill 2026-08-03, same two-halves law: the GEX board state
+      # merge, the gex.js IV-rank color guard, the session digest, and the
+      # flow desk. Subjects under scripts/*.py + site/** + engine/**.
+      - "tests/test_gex_board_state_merge.py"
+      - "tests/test_gex_js_iv_rank_color.py"
+      - "tests/test_session_digest.py"
+      - "tests/test_flow_desk.py"
       # MSC R2.4 level-grade scorecards (2026-08-01), wired into unrun-market-plumbing.
       # scripts/*.py is already path-covered; this entry is the OTHER half so a
       # suite-only edit still starts ci.yml (two-halves law). R2.4b (2026-08-02)
