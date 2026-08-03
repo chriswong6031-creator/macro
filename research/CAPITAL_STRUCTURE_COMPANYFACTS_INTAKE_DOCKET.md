@@ -139,7 +139,7 @@ locally.
 This lane is source acquisition only. It does **not**:
 
 - normalize or interpret any Company Facts value;
-- write, amend, or consume the capital-structure share-count truth ledger;
+- itself write, amend, or consume the capital-structure share-count truth ledger;
 - infer outstanding, float, fully diluted, capacity, cash runway, risk, or
   financing state;
 - create instruments or classifications; or
@@ -149,20 +149,35 @@ The current Company Facts endpoint is not historical availability evidence. Its
 receipt records Mastermind acquisition/retention clocks only; future PIT use must
 respect that limitation and preserve raw source references.
 
-## Next-wave boundary: share-count consumption
+## Downstream boundary: authenticated share-count materialization
 
-The next wave may add a separate offline consumer that reads **only** verified
-Company Facts manifests plus a valid coverage receipt, fetches no network bytes,
-and feeds the parked share-count truth plane through an explicit versioned input
-contract. That consumer must retain the Company Facts manifest ID, content hash,
-object-store namespace, anchor manifest ID, acquisition clock, concept/unit, and
-all ambiguity/defer outcomes. It must not use filing date as a public-availability
-substitute, must not coerce current-source data into historical values, and must
-not grant any authority beyond the existing share-count truth-plane boundary.
+The separate offline consumer is now implemented in
+`scripts/materialize_capital_structure_share_counts.py`. It is not part of this
+collector and cannot alter the source receipt or coverage state. Its
+metadata-only reader first re-authenticates the external Company Facts head,
+selected receipt, complete chain, generation files, and ordered prefixes. It
+then opens only the next bounded contiguous raw-object batch through each
+manifest's exact store/backend/key/hash/length binding and feeds the pure v2
+share-count model. It performs no SEC network request; its only network reads
+are the authenticated, bounded R2 reads described above, and it never reads the
+legacy EDGAR facts cache.
+
+Every v2 source snapshot retains the Company Facts manifest ID, content hash,
+object-store namespace, anchor manifest ID, acquisition clock, concept/unit,
+and ambiguity/defer outcome. Filing date is not used as a public-availability
+substitute. A separate HMAC-authenticated R2 head selects immutable share-count
+materialization receipts and ledger generations, so a mutable local pointer is
+not history authority. The consumer remains context-only and grants no current
+share-basis, fully diluted, capacity, runway, risk, ranking, sizing, entry,
+trade, or Prophet authority.
 
 ## Validation performed
 
 `python3 -m pytest -q tests/test_sec_capital_structure_companyfacts.py`
+
+Downstream materialization is covered separately by:
+
+`python3 -m pytest -q tests/test_capital_structure_companyfacts_authenticated_read.py tests/test_capital_structure_share_count_materializer_model.py tests/test_capital_structure_share_count_publication.py tests/test_capital_structure_share_count_materializer.py`
 
 The focused suite covers canonical request/CIK validation, declared and streamed
 byte caps, unique verified-anchor selection, deterministic starvation-free queue

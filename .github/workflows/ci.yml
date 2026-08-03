@@ -434,6 +434,8 @@ on:
       - "app/requirements.txt"
       - "scripts/compile_capital_structure_events.py"
       - "scripts/compile_capital_structure_document_terms.py"
+      - "scripts/materialize_capital_structure_share_counts.py"
+      - "scripts/retain_capital_structure_share_counts.py"
       - "scripts/build_capital_structure_projection.py"
       - "scripts/build_capital_structure_page.py"
       - "contracts/capital_structure_*.schema.json"
@@ -445,6 +447,7 @@ on:
       - "tests/test_capital_structure_*.py"
       - "tests/test_build_capital_structure_projection.py"
       - "tests/test_sec_capital_structure.py"
+      - "tests/test_sec_capital_structure_companyfacts.py"
       - "tests/test_nwqs_c_dilution.py"
       - "tests/fixtures/capital_structure/**"
       # LHB-W2b 8-K item expansion: test-only edits must still trigger the job
