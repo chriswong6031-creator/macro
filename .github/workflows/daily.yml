@@ -496,14 +496,21 @@ jobs:
     # as defense in depth — if the label set or the Terminal host ever drifts,
     # tape_flow still degrades to a warning + self-skip, never a second Terminal.
     runs-on: [self-hosted, theta-m1]
-    # Budget arithmetic: tape-flow budgets 25+30+20=75m (hard-stopped in-script)
-    # + census ≤8m (--max-requests 450) + W11 options witness ~5m (real-path on
-    # the store-bearing M1 — measured 4m35s on mac-builder-1, 2026-07-26; was a
-    # 0.5s no-op when the job landed store-less) + other TIL organs ~seconds
-    # + shadow-importance ~13-14m (the spike leg of the old collect job's 98.5m
-    # night) + qledger backfill + setup ≈ ~115m worst case. 150m keeps the
-    # silent-timeout class (#2193 / the 2026-07-11 collect cancel) away.
-    timeout-minutes: 150
+    # Budget arithmetic (re-cut 2026-08-02 after the 5-night starvation cancel,
+    # 07-29→08-02: shadow-importance outgrew its "~13-14m" estimate to 80-120m+
+    # and the job died at the old 150m cap with every later step — earnings
+    # sweep, qledger, CCW, "commit tail data" — SKIPPED): tape-flow budgets
+    # 25+30+20=75m (hard-stopped in-script) + census ≤8m (--max-requests 450)
+    # + W11 options witness ~5m (real-path on the store-bearing M1 — measured
+    # 4m35s on mac-builder-1, 2026-07-26) + other TIL organs ~seconds
+    # + earnings sweep ~4m + shadow-importance now STEP-BOUNDED at 60m+50m
+    # (see the band's own comment) + qledger backfill + CCW + commit ≈ ~160m
+    # realistic worst (observed pre-scorer band runs ~33m, not its 88m budget
+    # sum). 200m clears that with headroom (engine job precedent, same cap);
+    # the step bounds — not this cap — are what guarantee the commit runs, and
+    # `if: always()` on "commit tail data" is the last-resort grace-window
+    # backstop if a freak night stacks every budget at once.
+    timeout-minutes: 200
     steps:
       - uses: actions/checkout@v4
         with:
@@ -654,20 +661,75 @@ jobs:
         run: |
           python -m scripts.build_discovery_confluence \
             || echo "::warning::discovery confluence join failed (non-fatal)"
+      - name: MLC-W5 — US earnings calendar sweep (non-fatal)
+        # Root-cause fix (MLC postmortem 07-14): collectors/equity_earnings.py was never
+        # wired into the nightly pipeline — earnings.parquet was permanently empty/missing,
+        # making the W1.5 blackout gate and the W5 display chips always stale-fail-open.
+        # Sweeps Nasdaq's public calendar for the next 66 weekdays (~one quarter), writing
+        # data/earnings/earnings.parquet (ticker-indexed: next_date, next_time, eps_forecast,
+        # surprises_json, surprises_as_of, as_of). Bot-wall-aware: if the first calendar call
+        # is blocked (Akamai 403), the existing cache is kept untouched and the step exits 0.
+        # MUST run in collect_tail, NOT collect (house law: new accrual steps go in collect_tail).
+        # PLACEMENT (starvation incident 07-29→08-02): this step and its tripwire used to sit
+        # AFTER the shadow-importance band, whose two unbudgeted full-store scorers grew from
+        # the "~13-14m combined" estimate to 80-120m+ and blew the job's 150m cap five nights
+        # running — every step behind them (this sweep, qledger, CCW, "commit tail data") was
+        # SKIPPED, freezing the store at the pre-#3979 two-stamp shape. Cheap bounded accrual
+        # runs BEFORE unbudgeted scorers; keep it that way.
+        # KEEP THIS LINE BARE. No-args means "sweep the whole universe" (breadth union +
+        # Hot Tape liquid names); passing --tickers collapses the universe to that subset
+        # and every other row keeps a frozen as_of. That is exactly the 2026-06-19 freeze:
+        # the collector's __main__ used to fall through to a 3-name demo default, so for six
+        # weeks the nightly refreshed only AAPL/NVDA/JPM while 1361 of 1364 rows sat at
+        # as_of 2026-06-19 — and the tripwire below read the store-level max() as_of and
+        # reported sla_ok the whole time.
+        # Pinned by tests/test_earnings_w5.py::TestNightlyEntryPointSweepsWholeUniverse.
+        # Wall time (measured 2026-07-29): calendar sweep 66 calls ≈ 155s (round-trip
+        # dominates, not the 0.25s pacing sleep) + surprise drip capped at max_new=120
+        # names ≈ 60s → ~3.5m per night, well within the job budget.
+        # Writes data/earnings/earnings.parquet — covered by `git add data/` below.
+        run: |
+          python -m collectors.equity_earnings \
+            || echo "::warning::equity_earnings sweep failed (non-fatal)"
+      - name: MLC-W5 — earnings freshness tripwire (non-fatal)
+        # Reads the just-written data/earnings/earnings.parquet and checks that
+        # the store's as_of is within the expected SLA (2 trading days).
+        # Writes data/quality/earnings_freshness_audit.json for observability.
+        # Emits ::warning:: when stale so CI surfaces the gap without failing the build.
+        run: |
+          python -m scripts.audit_earnings_freshness \
+            || echo "::warning::audit_earnings_freshness crashed (non-fatal)"
       # ── importance_v0 SHADOW lanes (W3 + W4) ──────────────────────────────
       # Moved out of scripts.collect (2026-07-14 split; collect core passes
       # --skip-shadow-importance). Both passes score the FULL US+CN qbus store
-      # from tonight's collect-core commit (~13-14m combined, the spike leg of
-      # the old 98.5m collectors step). Claims register with stable idempotent
+      # from tonight's collect-core commit. Claims register with stable idempotent
       # ids; grade_qledger (inside collect core's scripts.collect) grades only
       # claims matured ≥5d, so registering one job later never changes grading
       # arithmetic — the old "register BEFORE the grader" ordering was never
       # load-bearing same-night. Non-fatal either way.
+      # STEP BUDGETS (starvation incident 07-29→08-02): the split-day "~13-14m
+      # combined" estimate rotted silently as the qbus store accrued — measured
+      # 40m+40m on the last green night (07-27) and 61m (W3) + 56m-and-killed
+      # (W4) on 08-01, blowing the job's 150m cap five nights running and
+      # SKIPPING every later step, including "commit tail data" (so even
+      # completed work evaporated on the next night's clean checkout). The
+      # timeout-minutes + continue-on-error pair bounds each scorer so the tail
+      # band and the commit ALWAYS get their turn: a scorer that outgrows its
+      # budget is truncated loudly (step timeout annotation) instead of silently
+      # cancelling the whole job. Claims are idempotent, so a truncated pass
+      # simply re-registers on a later night. Bounds sized to observed need
+      # (W3 61m worst → 60m; W4 40m green → 50m) inside the job's 200m cap; if
+      # a scorer starts hitting its bound nightly, fix ITS runtime — do not
+      # silently raise the bound (that is how 13-14m became 120m unnoticed).
       - name: importance_v0 shadow tape — W3 scorer (non-fatal)
+        timeout-minutes: 60
+        continue-on-error: true
         run: |
           python -m scripts.shadow_importance_v0 \
             || echo "::warning::shadow_importance_v0 failed (non-fatal)"
       - name: importance_v0 shadow tape — W4 PIT-correct scorer (non-fatal)
+        timeout-minutes: 50
+        continue-on-error: true
         run: |
           python -m scripts.shadow_importance_v0_pit \
             || echo "::warning::shadow_importance_v0_pit failed (non-fatal)"
@@ -714,38 +776,19 @@ jobs:
         run: |
           python -m engine.credit_momentum \
             || echo "::warning::credit_momentum engine failed (non-fatal)"
-      - name: MLC-W5 — US earnings calendar sweep (non-fatal)
-        # Root-cause fix (MLC postmortem 07-14): collectors/equity_earnings.py was never
-        # wired into the nightly pipeline — earnings.parquet was permanently empty/missing,
-        # making the W1.5 blackout gate and the W5 display chips always stale-fail-open.
-        # Sweeps Nasdaq's public calendar for the next 66 weekdays (~one quarter), writing
-        # data/earnings/earnings.parquet (ticker-indexed: next_date, next_time, eps_forecast,
-        # surprises_json, surprises_as_of, as_of). Bot-wall-aware: if the first calendar call
-        # is blocked (Akamai 403), the existing cache is kept untouched and the step exits 0.
-        # MUST run in collect_tail, NOT collect (house law: new accrual steps go in collect_tail).
-        # KEEP THIS LINE BARE. No-args means "sweep the whole breadth universe"; passing
-        # --tickers collapses the universe to that subset and every other row keeps a frozen
-        # as_of. That is exactly the 2026-06-19 freeze: the collector's __main__ used to fall
-        # through to a 3-name demo default, so for six weeks the nightly refreshed only
-        # AAPL/NVDA/JPM while 1361 of 1364 rows sat at as_of 2026-06-19 — and the tripwire
-        # below read the store-level max() as_of and reported sla_ok the whole time.
-        # Pinned by tests/test_earnings_w5.py::TestNightlyEntryPointSweepsWholeUniverse.
-        # Wall time (measured 2026-07-29): calendar sweep 66 calls ≈ 155s (round-trip
-        # dominates, not the 0.25s pacing sleep) + surprise drip capped at max_new=120
-        # names ≈ 60s → ~3.5m per night, well within the 150m budget.
-        # Writes data/earnings/earnings.parquet — covered by `git add data/` below.
-        run: |
-          python -m collectors.equity_earnings \
-            || echo "::warning::equity_earnings sweep failed (non-fatal)"
-      - name: MLC-W5 — earnings freshness tripwire (non-fatal)
-        # Reads the just-written data/earnings/earnings.parquet and checks that
-        # the store's as_of is within the expected SLA (2 trading days).
-        # Writes data/quality/earnings_freshness_audit.json for observability.
-        # Emits ::warning:: when stale so CI surfaces the gap without failing the build.
-        run: |
-          python -m scripts.audit_earnings_freshness \
-            || echo "::warning::audit_earnings_freshness crashed (non-fatal)"
       - name: commit tail data
+        # if: always() — last-resort backstop for the job-timeout cancel class
+        # (07-29→08-02: five nights of completed accrual evaporated because this
+        # step was SKIPPED on cancel and the next night's clean checkout discarded
+        # the uncommitted writes). GitHub gives cancelled jobs a grace window in
+        # which always() steps run — NOT guaranteed to finish (the engine job's
+        # 07-24 postmortem saw the commit land but a later upload die), which is
+        # why the scorer step bounds above are the primary defense; this is
+        # defense in depth. Every earlier step is non-fatal by design, so the
+        # only new path always() adds is the post-cancel one. A partial night's
+        # stores are safe to commit: every lane here is state-resumable and
+        # claims are idempotent.
+        if: always()
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
@@ -1555,6 +1598,7 @@ jobs:
           }
           cl_misc() {
             brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
+            brun stock_seasonality_page "stock seasonality page (build_stock_seasonality_page)" scripts.build_stock_seasonality_page
             brun reports       "research reports section (build_reports)"     scripts.build_reports
             brun research_vault "research vault page (build_research_vault)"   scripts.build_research_vault
             brun cycle         "cycle intelligence page (build_cycle)"        scripts.build_cycle
@@ -1603,7 +1647,7 @@ jobs:
           # check_builder_failstreaks, which globs *.rc and so catches a >=2-night
           # streak regardless of ORDER) — but a FIRST failure still passed silently,
           # with no log and no step-summary line for the TXI W1 chain tracker.
-          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality biopharma_seasonality stage_analysis stage_analysis_page"
+          ORDER="commodities spr forex bonds crossasset transmission transmission_chains discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stock_seasonality stock_seasonality_page biopharma_seasonality stage_analysis stage_analysis_page"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue

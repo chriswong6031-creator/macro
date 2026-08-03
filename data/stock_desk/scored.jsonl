@@ -171,3 +171,4 @@
 {"id": "2026-06-26-DINO-5", "ticker": "DINO", "subject": "DINO", "lean": "cautious", "conviction": "low", "kind": "rel_return", "check_by": "2026-07-31", "outcome": "miss", "realized": 0.3147, "directionally_correct": false, "scored_at": "2026-08-01T03:52:27.043247+00:00"}
 {"id": "2026-07-31-CASY-5", "ticker": "CASY", "subject": "CASY", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-09-11", "outcome": "unscored", "scored_at": "2026-08-01T03:54:18.597978+00:00"}
 {"id": "2026-07-31-NUE-3", "ticker": "NUE", "subject": "NUE", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-08-28", "outcome": "unscored", "scored_at": "2026-08-01T21:42:33.923090+00:00"}
+{"id": "2026-07-31-M-1", "ticker": "M", "subject": "M", "lean": "neutral", "conviction": "low", "kind": "soft", "check_by": "2026-08-28", "outcome": "unscored", "scored_at": "2026-08-03T03:35:48.679320+00:00"}

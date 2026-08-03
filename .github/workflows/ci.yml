@@ -1634,6 +1634,14 @@ on:
       # engine/** covers indicators_m2.py — so this list needs no new entry.
       - "tests/test_chart_render_inline.py"
       - "tests/test_chart_render_m2.py"
+      # TrendSpider-hardening PR-A: the annotation-grammar suite runs in the
+      # SAME paired lanes (thin proves the imports stay lazy, fat executes the
+      # three loader/profile tests). Its committed SVG samples are inputs to it,
+      # so a fixture-only edit must reach the lanes too — a stale golden that no
+      # job re-renders is the dead-suite trap one layer down.
+      - "tests/test_chart_render_grammar.py"
+      - "tests/fixtures/chart_render/**"
+      - "scripts/dev_render_chart_grammar_pngs.py"
       - "tests/test_marketing_card_parity.py"
       # Hot Tape P1 — the intraday attention radar (jobs: marketing-engine for the
       # two thin suites, marketing-data for the pandas-heavy nightly pack suite).
@@ -1647,6 +1655,16 @@ on:
       - "tests/test_marketing_hot_tape_radar.py"
       - "scripts/hot_tape_radar.py"
       - "config/hot_tape.yml"
+      # TrendSpider hardening PR-B — the supply widening (job: marketing-data).
+      # Same OTHER-half reason as the block above: engine/marketing/** and
+      # config/marketing.yml already reach the subjects, so these three entries
+      # exist so a PR editing ONLY a suite still reaches the lane that runs it.
+      # test_movers_source and test_marketing_radar were named by no path filter
+      # AND no job before this PR — they are the only regression guards the tier
+      # ladder and the mover board have, and they ran nowhere.
+      - "tests/test_marketing_supply_feeds.py"
+      - "tests/test_movers_source.py"
+      - "tests/test_marketing_radar.py"
       # tier-gate serving/revenue boundary (job: tier-gate). Found 2026-07-25
       # shipping #3488: NONE of the boundary's enforcement files were listed, so a
       # PR that changes ONLY the site-access boundary (regwall, Caddy public list,

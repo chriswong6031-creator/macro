@@ -3578,7 +3578,25 @@ jobs:
         # The gates stay; the suites get a lane that satisfies them. The thin lane
         # keeps test_chart_facts and test_marketing_bare_cashtag for their
         # dependency-free tests, which is the split the guard is asking for.
-        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py tests/test_chart_facts.py tests/test_marketing_bare_cashtag.py tests/test_confluence_honesty.py tests/test_tech_confluence.py tests/test_news_translate_en.py -q -rs
+        #
+        # THREE SUITES JOIN 2026-08-02 (TrendSpider hardening PR-B — the supply
+        # widening: cashtag tiers 520 → 1,317 names, mover board 503 → ~1,190,
+        # six new read-only candidate pools). Two of them were already DARK:
+        #   * test_movers_source.py and test_marketing_radar.py were named by NO
+        #     job in this manifest. `grep -rn` across .github/ returned nothing
+        #     for either. They are the only guards the two modules PR-B edits
+        #     have — the tier ladder, the T3 mover exclusion, the theme-list
+        #     whitelist — and they have been running nowhere, which is the
+        #     unrun-suite class this file has now repaired six times. Shipping a
+        #     universe widening while its own regression suite stays dark would
+        #     have been the seventh.
+        #   * test_marketing_supply_feeds.py is new and belongs here from birth:
+        #     every pool fixture is a parquet (options_flow, WSB, earnings,
+        #     stage backfill), so the thin marketing-engine lane could never run
+        #     it — the hot_tape_pack case above, not a repair.
+        # All three need pandas+pyarrow, which this lane already installs, so
+        # they provision no new environment.
+        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py tests/test_chart_facts.py tests/test_marketing_bare_cashtag.py tests/test_confluence_honesty.py tests/test_tech_confluence.py tests/test_news_translate_en.py tests/test_marketing_supply_feeds.py tests/test_movers_source.py tests/test_marketing_radar.py -q -rs
 
   publish-r2-client:
     if: ${{ false }}
@@ -3689,7 +3707,7 @@ jobs:
       - name: install deps
         run: pip install pytest pyyaml
       - name: chart_render SVG suites
-        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_marketing_card_parity.py -q
+        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_chart_render_grammar.py tests/test_marketing_card_parity.py -q
 
   chart-render-data:
     if: ${{ false }}
@@ -3736,7 +3754,7 @@ jobs:
       - name: prove the data-dependent modules are present
         run: python -c "import pandas, pyarrow, numpy"
       - name: chart_render SVG suites (data-dependent tests execute here)
-        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_marketing_card_parity.py -q -rs
+        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_chart_render_grammar.py tests/test_marketing_card_parity.py -q -rs
 
   portfolio-ctx:
     if: ${{ false }}
@@ -3757,7 +3775,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic
+        # pyyaml is load-bearing here, not incidental: the theme_lanes side-write reads
+        # config/theme_crosswalk.yml for the basket-keyed lane projection. Without it
+        # build_state_of_themes.load_primary_basket_ids fail-opens to {} and the
+        # projection silently collapses to empty (PR #4300 shipped red on exactly that).
+        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic pyyaml
       - name: portfolio-ctx bake unit tests
         run: python -m pytest tests/test_build_portfolio_ctx.py tests/test_portfolio_ctx_chains.py -q
       - name: portfolio-brief composer + endpoint tests
