@@ -1,0 +1,163 @@
+name: attested-history-aapl-seed
+
+# One explicit bootstrap only. There is intentionally no schedule: this job
+# writes a bounded source snapshot and a v1 base receipt, but never a v2
+# attested-history overlay or public/user-facing state.
+on:
+  workflow_dispatch:
+    inputs:
+      enable_aapl_seed:
+        description: "Explicitly acquire and seed the bounded AAPL B4 receipt"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: attested-history-aapl-seed
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    # No secret exposure to a manually selected branch. The first packet is an
+    # operator artifact, not a branch-preview feature.
+    if: ${{ inputs.enable_aapl_seed == true && github.ref == 'refs/heads/main' }}
+    runs-on: [self-hosted, macstudio-light]
+    timeout-minutes: 30
+    # This GitHub Environment must have required-reviewer protection before
+    # this workflow is dispatched. Store the two R2_ATTESTED_HISTORY_SEED_*
+    # parent writer secrets here—not at repository scope.
+    environment: attested-history-seed
+    steps:
+      # actions/checkout v4.4.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: python 3.12
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          VENV="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}-venv"
+          WORK="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}-work"
+          OUTPUT="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}-artifact"
+          LOCK_COPY="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}.lock"
+          SOURCE_ARCHIVE="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}-source.tar"
+          EXEC_ROOT="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}-source"
+          for candidate in "$VENV" "$WORK" "$OUTPUT" "$LOCK_COPY" "$SOURCE_ARCHIVE" "$EXEC_ROOT"; do
+            test ! -e "$candidate"
+          done
+          /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+      - name: install exact attested-history dependency lock
+        id: dependency-lock
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          VENV="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}-venv"
+          LOCK_COPY="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}.lock"
+          test ! -e "$LOCK_COPY"
+          git show "$GITHUB_SHA:requirements/attested-history-macos-arm64-py312.lock" > "$LOCK_COPY"
+          digest="$(shasum -a 256 "$LOCK_COPY" | awk '{print $1}')"
+          echo "sha256=$digest" >> "$GITHUB_OUTPUT"
+          "$VENV/bin/python" -m pip install \
+            --disable-pip-version-check \
+            --only-binary=:all: \
+            --require-hashes \
+            -r "$LOCK_COPY"
+      - name: verify exact reviewed execution tree
+        id: reviewed-source
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --quiet "$GITHUB_SHA" -- .
+          git diff --cached --quiet "$GITHUB_SHA" -- .
+          test -z "$(git ls-files --others --exclude-standard -- .)"
+          test -z "$(git ls-files --others --ignored --exclude-standard -- .)"
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          SOURCE_ARCHIVE="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}-source.tar"
+          test ! -e "$SOURCE_ARCHIVE"
+          execution_paths=(
+            collectors/__init__.py
+            collectors/edgar_forensics.py
+            collectors/fundamental_forensics_acquisition.py
+            collectors/fundamental_forensics_companyfacts.py
+            collectors/sec_document_spine.py
+            collectors/sec_filing_parser.py
+            config.yml
+            config/fundamental_forensics
+            engine/__init__.py
+            engine/fundamental_forensics
+            engine/research_vault/__init__.py
+            engine/research_vault/r2_store.py
+            lib/__init__.py
+            lib/config.py
+            scripts/run_fundamental_forensics_attested_history.py
+            scripts/seed_fundamental_forensics_attested_history.py
+          )
+          git archive --format=tar --output "$SOURCE_ARCHIVE" "$GITHUB_SHA" -- "${execution_paths[@]}"
+          digest="$(shasum -a 256 "$SOURCE_ARCHIVE" | awk '{print $1}')"
+          echo "archive_sha256=$digest" >> "$GITHUB_OUTPUT"
+      - name: acquire bounded AAPL seed and run zero-write preflight
+        # Parent dashboard tokens can include List. The script locally mints
+        # 30-minute children scoped to fundamental_forensics/: writer gets
+        # Get/Head/Put, reader gets Get/Head. Distinct parents do not by
+        # themselves prove Cloudflare IAM policy; the child claims and live
+        # storage-control probe are the runtime boundary.
+        env:
+          FF_ATTESTED_R2_SEED_ENDPOINT: ${{ secrets.R2_RESEARCH_READONLY_ENDPOINT }}
+          FF_ATTESTED_R2_SEED_ACCESS_KEY_ID: ${{ secrets.R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID }}
+          FF_ATTESTED_R2_SEED_SECRET_ACCESS_KEY: ${{ secrets.R2_ATTESTED_HISTORY_SEED_SECRET_ACCESS_KEY }}
+          FF_ATTESTED_R2_SEED_BUCKET: ${{ secrets.R2_RESEARCH_READONLY_BUCKET }}
+          FF_ATTESTED_R2_READONLY_ENDPOINT: ${{ secrets.R2_RESEARCH_READONLY_ENDPOINT }}
+          FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_READONLY_ACCESS_KEY_ID }}
+          FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_READONLY_SECRET_ACCESS_KEY }}
+          FF_ATTESTED_R2_READONLY_BUCKET: ${{ secrets.R2_RESEARCH_READONLY_BUCKET }}
+          FF_ATTESTED_GITHUB_REPOSITORY: ${{ github.repository }}
+          FF_ATTESTED_GITHUB_SHA: ${{ github.sha }}
+          FF_ATTESTED_GITHUB_REF: ${{ github.ref }}
+          FF_ATTESTED_GITHUB_RUN_ID: ${{ github.run_id }}
+          FF_ATTESTED_GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          FF_ATTESTED_GITHUB_ENVIRONMENT: attested-history-seed
+          FF_ATTESTED_GITHUB_WORKFLOW: attested-history-aapl-seed
+          FF_ATTESTED_DEPENDENCY_LOCK_SHA256: ${{ steps.dependency-lock.outputs.sha256 }}
+          SEC_USER_AGENT: MastermindX Fundamental Forensics data@mastermind-x.com
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          VENV="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}-venv"
+          WORK="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}-work"
+          OUTPUT="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}-artifact"
+          SOURCE_ARCHIVE="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}-source.tar"
+          EXEC_ROOT="$RUNNER_TEMP/attested-history-aapl-seed-${suffix}-source"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --quiet "$GITHUB_SHA" -- .
+          git diff --cached --quiet "$GITHUB_SHA" -- .
+          test -z "$(git ls-files --others --exclude-standard -- .)"
+          test -z "$(git ls-files --others --ignored --exclude-standard -- .)"
+          test "$(shasum -a 256 "$SOURCE_ARCHIVE" | awk '{print $1}')" = "${{ steps.reviewed-source.outputs.archive_sha256 }}"
+          test ! -e "$EXEC_ROOT"
+          mkdir "$EXEC_ROOT"
+          tar -xf "$SOURCE_ARCHIVE" -C "$EXEC_ROOT"
+          test ! -e "$WORK"
+          test ! -e "$OUTPUT"
+          cd "$EXEC_ROOT"
+          "$VENV/bin/python" -m scripts.seed_fundamental_forensics_attested_history \
+            --enable-aapl-seed \
+            --work-dir "$WORK" \
+            --output-dir "$OUTPUT" \
+            --sec-user-agent "$SEC_USER_AGENT"
+      # actions/upload-artifact v4.6.2
+      - name: upload review-only seed bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: attested-history-aapl-seed-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/attested-history-aapl-seed-${{ github.run_id }}-${{ github.run_attempt }}-artifact/attested_history_operator_packet.json
+            ${{ runner.temp }}/attested-history-aapl-seed-${{ github.run_id }}-${{ github.run_attempt }}-artifact/attested_history_preflight_receipt.json
+            ${{ runner.temp }}/attested-history-aapl-seed-${{ github.run_id }}-${{ github.run_attempt }}-artifact/attested_history_seed_receipt.json
+            ${{ runner.temp }}/attested-history-aapl-seed-${{ github.run_id }}-${{ github.run_attempt }}-artifact/attested_history_seed_bundle_receipt.json
+          if-no-files-found: error
+          retention-days: 7

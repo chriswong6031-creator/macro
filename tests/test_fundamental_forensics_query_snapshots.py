@@ -38,7 +38,7 @@ from engine.fundamental_forensics.raw_ledger import (
     SourceIdentity,
     make_raw_fact,
 )
-from engine.research_vault.r2_store import LocalStore
+from engine.research_vault.r2_store import LocalStore, VersionedBytes
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -146,6 +146,140 @@ def _prepared(*, published_at: str = "2026-08-06T01:00:00Z"):
     )
 
 
+class _ConditionalProxy:
+    """Conditional-write adapter that turns legacy overwrites into failures."""
+
+    def __init__(self, inner: LocalStore) -> None:
+        self.inner = inner
+        self.conditional_calls: list[tuple[str, bytes, str | None, str]] = []
+        self.unconditional_put_calls = 0
+
+    def get_bytes(self, key: str):
+        return self.inner.get_bytes(key)
+
+    def get_bytes_strict(self, key: str):
+        return self.inner.get_bytes_strict(key)
+
+    def get_bytes_strict_bounded(self, key: str, maximum_bytes: int):
+        return self.inner.get_bytes_strict_bounded(key, maximum_bytes)
+
+    def get_bytes_strict_bounded_versioned(self, key: str, maximum_bytes: int):
+        return self.inner.get_bytes_strict_bounded_versioned(key, maximum_bytes)
+
+    def validate_strict_conditional_write_capability(self):
+        return self.inner.validate_strict_conditional_write_capability()
+
+    def put_bytes_strict_conditional(
+        self,
+        key: str,
+        data: bytes,
+        *,
+        expected_version: str | None,
+        content_type: str = "application/octet-stream",
+    ):
+        self.conditional_calls.append((key, data, expected_version, content_type))
+        return self.inner.put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=expected_version,
+            content_type=content_type,
+        )
+
+    def put_bytes(self, key: str, data: bytes, content_type: str = "application/octet-stream"):
+        del key, data, content_type
+        self.unconditional_put_calls += 1
+        raise AssertionError("query snapshot publication must not invoke legacy put_bytes")
+
+    def list_prefix(self, prefix: str):
+        return self.inner.list_prefix(prefix)
+
+    def exists(self, key: str):
+        return self.inner.exists(key)
+
+    def upload_time(self, key: str):
+        return self.inner.upload_time(key)
+
+
+class _ReadOnlyStrictProxy:
+    """Legacy strict reader/writer shape that intentionally lacks CAS."""
+
+    def __init__(self, inner: LocalStore) -> None:
+        self.inner = inner
+        self.put_calls = 0
+
+    def get_bytes(self, key: str):
+        return self.inner.get_bytes(key)
+
+    def get_bytes_strict(self, key: str):
+        return self.inner.get_bytes_strict(key)
+
+    def get_bytes_strict_bounded(self, key: str, maximum_bytes: int):
+        return self.inner.get_bytes_strict_bounded(key, maximum_bytes)
+
+    def put_bytes(self, key: str, data: bytes, content_type: str = "application/octet-stream"):
+        del key, data, content_type
+        self.put_calls += 1
+        return False
+
+    def list_prefix(self, prefix: str):
+        return self.inner.list_prefix(prefix)
+
+    def exists(self, key: str):
+        return self.inner.exists(key)
+
+    def upload_time(self, key: str):
+        return self.inner.upload_time(key)
+
+
+class _AmbiguousImmutableCreateProxy(_ConditionalProxy):
+    """Commit one create and return an ambiguous response exactly once."""
+
+    def __init__(self, inner: LocalStore, *, target_key: str, result: bool | Exception) -> None:
+        super().__init__(inner)
+        self.target_key = target_key
+        self.result = result
+        self.triggered = False
+
+    def put_bytes_strict_conditional(self, key, data, *, expected_version, content_type="application/octet-stream"):
+        self.conditional_calls.append((key, data, expected_version, content_type))
+        if key == self.target_key and not self.triggered:
+            assert expected_version is None
+            assert self.inner.put_bytes_strict_conditional(
+                key,
+                data,
+                expected_version=expected_version,
+                content_type=content_type,
+            ) is True
+            self.triggered = True
+            if isinstance(self.result, Exception):
+                raise self.result
+            return self.result
+        return self.inner.put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=expected_version,
+            content_type=content_type,
+        )
+
+
+def _materialize_without_latest(store: LocalStore, prepared) -> object:
+    """Install a fully immutable valid snapshot for direct pointer-race tests."""
+    for artifact in prepared.artifacts:
+        snapshots._put_verified_immutable(store, artifact, prepared.payloads[artifact.role])
+    snapshots._create_immutable(
+        store,
+        key=prepared.manifest_key,
+        payload=snapshots._manifest_bytes(prepared.manifest),
+        maximum=snapshots.HARD_MAX_SNAPSHOT_MANIFEST_BYTES,
+        content_type="application/json",
+        expected_sha256=None,
+        write_error="private query snapshot manifest write failed",
+        collision_error="immutable query snapshot manifest collision",
+        readback_error="private query snapshot manifest read-back mismatch",
+    )
+    return verify_query_snapshot(store, snapshot_id=prepared.snapshot_id)
+
+
 def test_snapshot_round_trip_is_deterministic_and_replays_from_frozen_inputs(tmp_path: Path) -> None:
     prepared = _prepared()
     duplicate = _prepared()
@@ -186,6 +320,104 @@ def test_snapshot_round_trip_is_deterministic_and_replays_from_frozen_inputs(tmp
     # Retrying the exact immutable operation is idempotent; it must not be
     # mistaken for an attempted stale latest-pointer rewind.
     assert publish_query_snapshot(store, prepared).snapshot_id == prepared.snapshot_id
+
+
+def test_query_snapshot_uses_create_cas_for_immutables_and_never_legacy_put(tmp_path: Path) -> None:
+    prepared = _prepared()
+    inner = LocalStore(tmp_path / "private")
+    store = _ConditionalProxy(inner)
+
+    published = publish_query_snapshot(store, prepared)
+
+    expected_immutable = [item.object_key for item in prepared.artifacts] + [prepared.manifest_key]
+    assert [call[0] for call in store.conditional_calls] == expected_immutable + [
+        f"{QUERY_SNAPSHOT_PREFIX}/latest.json"
+    ]
+    assert all(call[2] is None for call in store.conditional_calls)
+    assert published.snapshot_id == prepared.snapshot_id
+    assert store.unconditional_put_calls == 0
+
+
+def test_query_snapshot_rejects_legacy_strict_store_before_any_write(tmp_path: Path) -> None:
+    inner = LocalStore(tmp_path / "private")
+    legacy = _ReadOnlyStrictProxy(inner)
+
+    with pytest.raises(QuerySnapshotError, match="StrictConditionalWriteStore"):
+        publish_query_snapshot(legacy, _prepared())
+
+    assert legacy.put_calls == 0
+    assert inner.list_prefix(QUERY_SNAPSHOT_PREFIX) == []
+
+
+def test_query_snapshot_immutable_only_mode_leaves_latest_absent_or_unchanged(tmp_path: Path) -> None:
+    store = LocalStore(tmp_path / "private")
+    sealed = _prepared(published_at="2026-08-06T01:00:00Z")
+    published = publish_query_snapshot(store, sealed, publish_latest=False)
+    assert published.snapshot_id == sealed.snapshot_id
+    assert store.get_bytes(f"{QUERY_SNAPSHOT_PREFIX}/latest.json") is None
+
+    current = publish_query_snapshot(
+        store,
+        _prepared(published_at="2026-08-06T02:00:00Z"),
+    )
+    later = publish_query_snapshot(
+        store,
+        _prepared(published_at="2026-08-06T03:00:00Z"),
+        publish_latest=False,
+    )
+    assert later.snapshot_id != current.snapshot_id
+    assert load_query_snapshot(store).snapshot_id == current.snapshot_id
+
+
+@pytest.mark.parametrize(
+    ("target", "outcome"),
+    (
+        ("artifact", False),
+        ("manifest", TimeoutError("conditional create acknowledgement lost")),
+    ),
+)
+def test_query_snapshot_reconciles_ambiguous_immutable_create_by_exact_readback(
+    tmp_path: Path,
+    target: str,
+    outcome: bool | Exception,
+) -> None:
+    prepared = _prepared()
+    inner = LocalStore(tmp_path / "private")
+    key = prepared.artifacts[0].object_key if target == "artifact" else prepared.manifest_key
+    store = _AmbiguousImmutableCreateProxy(inner, target_key=key, result=outcome)
+
+    published = publish_query_snapshot(store, prepared)
+
+    assert store.triggered
+    assert published.snapshot_id == prepared.snapshot_id
+    assert store.unconditional_put_calls == 0
+
+
+@pytest.mark.parametrize("target", ("artifact", "manifest"))
+def test_query_snapshot_rejects_immutable_collision_without_overwrite(
+    tmp_path: Path,
+    target: str,
+) -> None:
+    prepared = _prepared()
+    inner = LocalStore(tmp_path / "private")
+    key = prepared.artifacts[0].object_key if target == "artifact" else prepared.manifest_key
+    assert inner.put_bytes_strict_conditional(
+        key,
+        b"a concurrent winner with different bytes",
+        expected_version=None,
+        content_type="application/json",
+    ) is True
+    store = _ConditionalProxy(inner)
+
+    with pytest.raises(
+        QuerySnapshotError,
+        match="immutable snapshot object collision" if target == "artifact" else "immutable query snapshot manifest collision",
+    ):
+        publish_query_snapshot(store, prepared)
+
+    assert inner.get_bytes(key) == b"a concurrent winner with different bytes"
+    assert inner.get_bytes(f"{QUERY_SNAPSHOT_PREFIX}/latest.json") is None
+    assert store.unconditional_put_calls == 0
 
 
 def test_snapshot_rejects_semantically_unreplayable_ledger_before_any_write(tmp_path: Path) -> None:
@@ -231,14 +463,26 @@ class _CorruptObjectReadbackStore(LocalStore):
         super().__init__(root)
         self._corrupt_key: str | None = None
 
-    def put_bytes(self, key: str, data: bytes, content_type: str = "application/octet-stream") -> bool:
-        result = super().put_bytes(key, data, content_type)
+    def put_bytes_strict_conditional(
+        self,
+        key: str,
+        data: bytes,
+        *,
+        expected_version: str | None,
+        content_type: str = "application/octet-stream",
+    ) -> bool:
+        result = super().put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=expected_version,
+            content_type=content_type,
+        )
         if result and "/objects/" in key and self._corrupt_key is None:
             self._corrupt_key = key
         return result
 
-    def get_bytes_strict(self, key: str) -> bytes | None:
-        value = super().get_bytes_strict(key)
+    def get_bytes_strict_bounded(self, key: str, maximum_bytes: int) -> bytes | None:
+        value = super().get_bytes_strict_bounded(key, maximum_bytes)
         if key == self._corrupt_key and value is not None:
             return value + b"tampered"
         return value
@@ -416,29 +660,47 @@ def test_pointer_decoder_bounds_a_hostile_infinite_mapping() -> None:
 
 
 class _PointerReadbackFailureStore(LocalStore):
-    """Corrupt only the read after a newer pointer write; rollback still writes."""
+    """Corrupt only a pointer read after a CAS has committed.
+
+    The underlying object remains the newly committed pointer.  This models a
+    malformed/read-corrupted response and proves the publisher does not issue a
+    legacy compensating write back to the predecessor.
+    """
 
     def __init__(self, root: Path) -> None:
         super().__init__(root)
         self._pointer_writes = 0
         self.corrupt_pointer_readback = False
 
-    def put_bytes(self, key: str, data: bytes, content_type: str = "application/octet-stream") -> bool:
-        result = super().put_bytes(key, data, content_type)
+    def put_bytes_strict_conditional(
+        self,
+        key: str,
+        data: bytes,
+        *,
+        expected_version: str | None,
+        content_type: str = "application/octet-stream",
+    ) -> bool:
+        result = super().put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=expected_version,
+            content_type=content_type,
+        )
         if result and key == f"{QUERY_SNAPSHOT_PREFIX}/latest.json":
             self._pointer_writes += 1
             if self._pointer_writes >= 2:
                 self.corrupt_pointer_readback = True
         return result
 
-    def get_bytes_strict(self, key: str) -> bytes | None:
-        value = super().get_bytes_strict(key)
+    def get_bytes_strict_bounded_versioned(self, key: str, maximum_bytes: int) -> VersionedBytes:
+        value = super().get_bytes_strict_bounded_versioned(key, maximum_bytes)
         if key == f"{QUERY_SNAPSHOT_PREFIX}/latest.json" and self.corrupt_pointer_readback:
-            return b"corrupt-pointer-readback"
+            assert value.version is not None
+            return VersionedBytes(data=b"corrupt-pointer-readback", version=value.version)
         return value
 
 
-def test_pointer_readback_failure_restores_prior_latest(tmp_path: Path) -> None:
+def test_pointer_readback_failure_preserves_committed_latest_without_rollback(tmp_path: Path) -> None:
     store = _PointerReadbackFailureStore(tmp_path / "private")
     first = _prepared(published_at="2026-08-06T01:00:00Z")
     second = _prepared(published_at="2026-08-06T02:00:00Z")
@@ -446,7 +708,7 @@ def test_pointer_readback_failure_restores_prior_latest(tmp_path: Path) -> None:
     with pytest.raises(QuerySnapshotError, match="latest pointer read-back mismatch"):
         publish_query_snapshot(store, second)
     store.corrupt_pointer_readback = False
-    assert load_query_snapshot(store).snapshot_id == first.snapshot_id
+    assert load_query_snapshot(store).snapshot_id == second.snapshot_id
 
 
 class _TransientStrictReadStore(LocalStore):
@@ -509,6 +771,52 @@ def test_process_local_publish_lock_keeps_newest_concurrent_pointer(tmp_path: Pa
     assert outcomes["newer"] == newer.snapshot_id
     assert outcomes["older"] in {older.snapshot_id, "stale snapshot cannot rewind latest pointer"}
     assert load_query_snapshot(store).snapshot_id == newer.snapshot_id
+
+
+class _WinnerBeforeCandidateCas(_ConditionalProxy):
+    """Let a verified newer pointer consume the candidate's predecessor first."""
+
+    def __init__(self, inner: LocalStore, winner: QuerySnapshotPointer) -> None:
+        super().__init__(inner)
+        self.winner = winner
+        self.injected = False
+
+    def put_bytes_strict_conditional(self, key, data, *, expected_version, content_type="application/octet-stream"):
+        self.conditional_calls.append((key, data, expected_version, content_type))
+        if key == f"{QUERY_SNAPSHOT_PREFIX}/latest.json":
+            assert self.inner.put_bytes_strict_conditional(
+                key,
+                self.winner.to_json_bytes(),
+                expected_version=expected_version,
+                content_type="application/json",
+            ) is True
+            self.injected = True
+            return False
+        return self.inner.put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=expected_version,
+            content_type=content_type,
+        )
+
+
+def test_pointer_cas_race_preserves_verified_newer_winner_without_legacy_rollback(tmp_path: Path) -> None:
+    inner = LocalStore(tmp_path / "private")
+    first = _prepared(published_at="2026-08-06T01:00:00Z")
+    candidate_prepared = _prepared(published_at="2026-08-06T02:00:00Z")
+    winner_prepared = _prepared(published_at="2026-08-06T03:00:00Z")
+    assert publish_query_snapshot(inner, first).snapshot_id == first.snapshot_id
+    candidate = _materialize_without_latest(inner, candidate_prepared)
+    winner = _materialize_without_latest(inner, winner_prepared)
+    assert candidate.snapshot_id != winner.snapshot_id
+    racer = _WinnerBeforeCandidateCas(inner, QuerySnapshotPointer.from_snapshot(winner))
+
+    with pytest.raises(QuerySnapshotError, match="stale snapshot cannot rewind"):
+        snapshots._publish_pointer(racer, candidate)
+
+    assert racer.injected
+    assert load_query_snapshot(inner).snapshot_id == winner.snapshot_id
+    assert racer.unconditional_put_calls == 0
 
 
 def test_later_live_fact_cannot_rewrite_a_prior_snapshot(tmp_path: Path) -> None:

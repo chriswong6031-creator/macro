@@ -193,6 +193,21 @@ def test_period_validation_refuses_ambiguous_or_incoherent_semantics() -> None:
         )
 
 
+def test_date_only_same_day_duration_is_one_day_and_reversed_period_is_rejected() -> None:
+    one_day = TypedPeriod(
+        kind=PeriodKind.DURATION,
+        start="2016-08-30",
+        end="2016-08-30",
+    )
+    assert one_day.duration_days == 1
+    with pytest.raises(ValueError, match="must not follow"):
+        TypedPeriod(
+            kind=PeriodKind.DURATION,
+            start="2016-08-31",
+            end="2016-08-30",
+        )
+
+
 def test_valid_q4_derivation_has_exact_value_typed_period_clocks_and_lineage() -> None:
     annual, ytd = _derive_q4_inputs()
     result = _derive_q4(annual, ytd, rule_id="rules/q4/v1")

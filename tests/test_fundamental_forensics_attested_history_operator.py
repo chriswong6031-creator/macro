@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+import base64
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -11,6 +12,7 @@ from types import SimpleNamespace
 
 from jsonschema import Draft202012Validator, FormatChecker
 import pytest
+import yaml
 
 from engine.fundamental_forensics.attested_query_snapshots import AttestationMaterial
 from engine.fundamental_forensics.filing_attestation import build_filing_attestation
@@ -182,6 +184,11 @@ def test_read_only_store_blocks_writes_and_discovery():
         def put_bytes(self, key, data, content_type="application/octet-stream"):
             raise AssertionError("backing write must not be reached")
 
+        def put_bytes_strict_conditional(
+            self, key, data, *, expected_version, content_type="application/octet-stream"
+        ):
+            raise AssertionError("backing conditional write must not be reached")
+
         def list_prefix(self, prefix):
             return []
 
@@ -191,6 +198,9 @@ def test_read_only_store_blocks_writes_and_discovery():
         def upload_time(self, key):
             return None
 
+        def delete(self, key):
+            raise AssertionError("backing delete must not be reached")
+
     store = operator.ReadOnlyStrictStore(Backing())
     assert store.get_bytes_strict_bounded("immutable/key", 128) == b"bytes"
     with pytest.raises(operator.OperatorPreflightError, match="unbounded"):
@@ -199,14 +209,31 @@ def test_read_only_store_blocks_writes_and_discovery():
         store.get_bytes("immutable/key")
     with pytest.raises(operator.ReadOnlyWriteAttempt) as captured:
         store.put_bytes("immutable/key", b"never")
+    conditional_store = operator.ReadOnlyStrictStore(Backing())
+    with pytest.raises(operator.ReadOnlyWriteAttempt) as conditional:
+        conditional_store.put_bytes_strict_conditional(
+            "immutable/key",
+            b"never",
+            expected_version=None,
+        )
     with pytest.raises(operator.OperatorPreflightError):
         store.list_prefix("fundamental_forensics/")
+    with pytest.raises(operator.OperatorPreflightError):
+        store.exists("fundamental_forensics/object")
+    with pytest.raises(operator.OperatorPreflightError):
+        store.upload_time("fundamental_forensics/object")
+    delete_store = operator.ReadOnlyStrictStore(Backing())
+    with pytest.raises(operator.ReadOnlyWriteAttempt) as deletion:
+        delete_store.delete("fundamental_forensics/object")
+    assert captured.value.write_attempts == 1
+    assert conditional.value.write_attempts == 1
+    assert deletion.value.write_attempts == 1
     assert store.write_attempts == 1
     failure = operator.failed_receipt(
         observed_at="2026-08-03T00:00:00Z",
         phase="materialization",
-        error=captured.value,
-        write_attempts=captured.value.write_attempts,
+        error=conditional.value,
+        write_attempts=conditional.value.write_attempts,
     )
     assert failure["publication"]["storage_write_attempts"] == 1
     assert failure["failure"]["phase"] == "materialization"
@@ -611,13 +638,157 @@ def test_contracts_and_workflow_are_inert_and_no_production_packet_exists():
     assert "enable_readonly_preflight" in workflow
     assert "default: false" in workflow
     assert "github.ref == 'refs/heads/main'" in workflow
-    assert "environment:" not in workflow
+    parsed_workflow = yaml.load(workflow, Loader=yaml.BaseLoader)
+    job = parsed_workflow["jobs"]["preflight"]
+    assert "environment" not in job
+    assert "env" not in job
+    secret_steps = [
+        step
+        for step in job["steps"]
+        if "FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY" in step.get("env", {})
+    ]
+    assert len(secret_steps) == 1
+    assert secret_steps[0]["name"] == "sealed read-only preflight"
     assert "\n  schedule:" not in workflow
     assert "contents: read" in workflow
     assert "publish_attested_query_snapshot" not in workflow
     assert "git push" not in workflow
+    assert "requirements.txt" not in workflow
+    assert "--require-hashes" in workflow
+    assert "attested-history-macos-arm64-py312.lock" in workflow
+    assert 'git show "$GITHUB_SHA:requirements/attested-history-macos-arm64-py312.lock"' in workflow
+    assert "persist-credentials: false" in workflow
+    assert "verify exact reviewed execution tree" in workflow
+    assert 'git diff --quiet "$GITHUB_SHA" -- .' in workflow
+    assert "git ls-files --others --ignored --exclude-standard -- ." in workflow
+    assert "git archive --format=tar" in workflow
+    assert '"$GITHUB_SHA" -- "${execution_paths[@]}"' in workflow
+    assert "engine/fundamental_forensics" in workflow
+    assert "config/fundamental_forensics" in workflow
+    assert 'tar -xf "$SOURCE_ARCHIVE" -C "$EXEC_ROOT"' in workflow
+    assert 'cd "$EXEC_ROOT"' in workflow
+    assert "attested_history_preflight_bundle_receipt.json" in workflow
+    assert "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" in workflow
+    assert ".replace(microsecond=0)" not in workflow
+    success_upload = next(
+        step
+        for step in job["steps"]
+        if step.get("name") == "upload review-only successful preflight receipt"
+    )
+    assert "if" not in success_upload
+    assert "if-no-files-found: error" in workflow
+    assert "review-only" in workflow
+    assert workflow.count("attested_history_preflight_bundle_receipt.json") >= 3
     assert not (ROOT / "config" / "fundamental_forensics" / "attested_history_operator.v1.json").exists()
     source = SCRIPT_PATH.read_text(encoding="utf-8")
     assert "publish_attested_query_snapshot(" not in source
     assert "publish_query_snapshot(" not in source
     assert "print(json.dumps(receipt" not in source
+
+
+def test_r2_temporary_credentials_match_cloudflare_local_signing_contract():
+    operator = _operator_module()
+    credentials = operator.mint_r2_temporary_credentials(
+        endpoint="https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
+        parent_access_key_id="ABCDEF0123456789ABCDEF0123456789",
+        parent_secret_access_key="known-parent-secret",
+        bucket="attested-history",
+        scope="object-read-only",
+        actions=("GetObject", "HeadObject"),
+        ttl_seconds=900,
+        issued_at=1_800_000_000,
+    )
+    assert credentials.access_key_id == "ABCDEF0123456789ABCDEF0123456789"
+    assert credentials.expires_at == 1_800_000_900
+    decoded = base64.b64decode(credentials.session_token).decode("ascii")
+    assert decoded.startswith("jwt/")
+    signed_jwt = decoded.removeprefix("jwt/")
+    header_segment, payload_segment, _signature = signed_jwt.split(".")
+
+    def decode_segment(value: str) -> dict:
+        padding = "=" * (-len(value) % 4)
+        return json.loads(base64.urlsafe_b64decode(value + padding))
+
+    assert decode_segment(header_segment) == {"alg": "HS256", "typ": "JWT"}
+    assert decode_segment(payload_segment) == {
+        "actions": ["GetObject", "HeadObject"],
+        "aud": "0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
+        "bucket": "attested-history",
+        "exp": 1_800_000_900,
+        "iat": 1_800_000_000,
+        "iss": "ABCDEF0123456789ABCDEF0123456789",
+        "paths": {
+            "objectPaths": [],
+            "prefixPaths": ["fundamental_forensics/"],
+        },
+        "scope": "object-read-only",
+        "sub": "0123456789abcdef0123456789abcdef",
+    }
+    assert credentials.secret_access_key == operator.sha256(
+        signed_jwt.encode("ascii")
+    ).hexdigest()
+    assert credentials.secret_access_key == "f7cf79a084d44ca81dd54c9cf805f52def622dd5eb3525879ff700bf8c578890"
+    assert credentials.session_token == (
+        "and0L2V5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUpoWTNScGIyNXpJanBiSWtk"
+        "bGRFOWlhbVZqZENJc0lraGxZV1JQWW1wbFkzUWlYU3dpWVhWa0lqb2lNREV5TXpRMU5qYzRPV0ZpWTJS"
+        "bFpqQXhNak0wTlRZM09EbGhZbU5rWldZdWNqSXVZMnh2ZFdSbWJHRnlaWE4wYjNKaFoyVXVZMjl0SWl3"
+        "aVluVmphMlYwSWpvaVlYUjBaWE4wWldRdGFHbHpkRzl5ZVNJc0ltVjRjQ0k2TVRnd01EQXdNRGt3TUN3"
+        "aWFXRjBJam94T0RBd01EQXdNREF3TENKcGMzTWlPaUpCUWtORVJVWXdNVEl6TkRVMk56ZzVRVUpEUkVWR"
+        "01ERXlNelExTmpjNE9TSXNJbkJoZEdoeklqcDdJbTlpYW1WamRGQmhkR2h6SWpwYlhTd2ljSEpsWm1sNF"
+        "VHRjBhSE1pT2xzaVpuVnVaR0Z0Wlc1MFlXeGZabTl5Wlc1emFXTnpMeUpkZlN3aWMyTnZjR1VpT2lKdll"
+        "tcGxZM1F0Y21WaFpDMXZibXg1SWl3aWMzVmlJam9pTURFeU16UTFOamM0T1dGaVkyUmxaakF4TWpNME5U"
+        "WTNPRGxoWW1Oa1pXWWlmUS41RE1YU1NscTJNZG1LSmduX1k5T2lyQ3BlZVIyaTdST0J6T21SV2ZtWHVV"
+    )
+    writer = operator.mint_r2_temporary_credentials(
+        endpoint="https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
+        parent_access_key_id="ABCDEF0123456789ABCDEF0123456789",
+        parent_secret_access_key="known-parent-secret",
+        bucket="attested-history",
+        scope="object-read-write",
+        actions=("GetObject", "HeadObject", "PutObject"),
+        ttl_seconds=1_800,
+        issued_at=1_800_000_000,
+    )
+    writer_jwt = base64.b64decode(writer.session_token).decode("ascii").removeprefix("jwt/")
+    writer_payload = decode_segment(writer_jwt.split(".")[1])
+    assert writer_payload["actions"] == ["GetObject", "HeadObject", "PutObject"]
+    assert writer_payload["paths"] == {
+        "objectPaths": [],
+        "prefixPaths": ["fundamental_forensics/"],
+    }
+    assert writer_payload["exp"] - writer_payload["iat"] == 1_800
+
+
+@pytest.mark.parametrize(
+    ("override", "message"),
+    [
+        ({"ttl_seconds": 1801}, "TTL"),
+        ({"actions": ("GetObject", "HeadObject", "PutObject")}, "exact role"),
+        ({"prefix": "other/"}, "prefix"),
+        ({"endpoint": "https://example.com"}, "host"),
+        ({"endpoint": "http://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com"}, "endpoint"),
+    ],
+)
+def test_r2_temporary_credentials_fail_closed_on_scope_expansion(override, message):
+    operator = _operator_module()
+    values = {
+        "endpoint": "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com",
+        "parent_access_key_id": "ABCDEF0123456789ABCDEF0123456789",
+        "parent_secret_access_key": "known-parent-secret",
+        "bucket": "attested-history",
+        "scope": "object-read-only",
+        "actions": ("GetObject", "HeadObject"),
+        "ttl_seconds": 900,
+        "issued_at": 1_800_000_000,
+    }
+    values.update(override)
+    with pytest.raises(operator.R2TemporaryCredentialError, match=message):
+        operator.mint_r2_temporary_credentials(**values)
+
+
+def test_operator_packet_bytes_enforce_exact_two_mib_boundary():
+    operator = _operator_module()
+    with pytest.raises(operator.OperatorPreflightError, match="valid UTF-8 JSON"):
+        operator.operator_spec_from_bytes(b" " * operator.MAX_SPEC_BYTES)
+    with pytest.raises(operator.OperatorPreflightError, match="outside the bounded range"):
+        operator.operator_spec_from_bytes(b" " * (operator.MAX_SPEC_BYTES + 1))

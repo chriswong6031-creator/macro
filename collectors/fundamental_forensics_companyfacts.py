@@ -411,9 +411,20 @@ def _reject_declared_oversize(headers: Any, limit: int, *, url: str) -> None:
 
 
 def _default_fetcher(
-    url: str, *, headers: Mapping[str, str], timeout: float, stream: bool
+    url: str,
+    *,
+    headers: Mapping[str, str],
+    timeout: float,
+    stream: bool,
+    allow_redirects: bool,
 ) -> Any:
-    return requests.get(url, headers=dict(headers), timeout=timeout, stream=stream)
+    return requests.get(
+        url,
+        headers=dict(headers),
+        timeout=timeout,
+        stream=stream,
+        allow_redirects=allow_redirects,
+    )
 
 
 class SecCompanyFactsCollector:
@@ -529,17 +540,32 @@ class SecCompanyFactsCollector:
             self._pace()
             response: Any | None = None
             try:
-                response = self.fetcher(
-                    url,
-                    headers=headers,
-                    timeout=self.timeout_seconds,
-                    stream=True,
-                )
+                try:
+                    response = self.fetcher(
+                        url,
+                        headers=headers,
+                        timeout=self.timeout_seconds,
+                        stream=True,
+                        allow_redirects=False,
+                    )
+                except TypeError as exc:
+                    raise CompanyFactsAcquisitionError(
+                        "SEC fetcher must support streamed responses with redirects disabled"
+                    ) from exc
                 self._last_request_at = self._monotonic()
                 status = getattr(response, "status_code", None)
                 if isinstance(status, bool) or not isinstance(status, int):
                     raise CompanyFactsAcquisitionError(
                         "SEC fetcher returned no integer status_code"
+                    )
+                if 300 <= status < 400:
+                    raise CompanyFactsAcquisitionError(
+                        "SEC Company Facts redirects are refused"
+                    )
+                response_url = getattr(response, "url", None)
+                if not isinstance(response_url, str) or response_url != url:
+                    raise CompanyFactsAcquisitionError(
+                        "SEC Company Facts response URL does not match the requested source"
                     )
                 if status in {429, 500, 502, 503, 504}:
                     raise _TransientSecError(f"SEC transient HTTP {status}")

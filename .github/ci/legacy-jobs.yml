@@ -655,6 +655,18 @@ jobs:
         run: >-
           python -m pytest
           tests/test_fundamental_forensics_attested_history_operator.py -q
+      # B4F is deliberately run before the large render-contract sweep. The
+      # initial issuer seed is allowed to construct only a governed base and
+      # a redacted review-only receipt; these tests pin the no-network selection,
+      # one-shot credential boundary, storage-control probe, and isolated
+      # dimensions-unknown evidence bridge. An unrelated render guard must not
+      # be able to leave this immutable-publication boundary unexecuted.
+      - name: B4F controlled AAPL pilot and seed safety contracts
+        run: >-
+          python -m pytest
+          tests/test_fundamental_forensics_attested_history_pilot.py
+          tests/test_fundamental_forensics_attested_history_seed.py
+          tests/test_fundamental_forensics_attested_occurrence_governance.py -q
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest

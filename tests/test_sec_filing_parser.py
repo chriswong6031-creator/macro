@@ -180,6 +180,76 @@ def test_nested_inline_facts_are_each_preserved():
     assert facts[1]["raw_value"] == "inside"
 
 
+def test_numeric_fact_inside_text_block_is_preserved_with_independent_span():
+    content = _inline(
+        '<ix:nonNumeric id="text" name="ex:TextBlock" contextRef="c">'
+        'Revenue was <ix:nonFraction id="amount" name="ex:Amount" '
+        'contextRef="c" unitRef="u" decimals="0">100</ix:nonFraction>.'
+        '</ix:nonNumeric>'
+    )
+    facts = parse_sec_filing_document(
+        content, document_name="nested-numeric-text-block.xhtml"
+    )["facts"]
+    by_id = {fact["fact_id"]: fact for fact in facts}
+    assert by_id["text"]["raw_value"] == "Revenue was 100."
+    assert by_id["amount"]["raw_value"] == "100"
+    assert by_id["amount"]["normalized_value"] == "100"
+    assert by_id["amount"]["source_span"] != by_id["text"]["source_span"]
+
+
+def test_escaped_nonnumeric_retains_markup_strips_inline_tags_and_replays() -> None:
+    content = _inline(
+        '<ix:nonNumeric id="outer" name="ex:Outer" contextRef="c" escape="true">'
+        '<div class="note">A <ix:nonNumeric id="inner" name="ex:Inner" '
+        'contextRef="c" escape="true"><b>B</b></ix:nonNumeric>'
+        '<ix:exclude>drop</ix:exclude> C</div></ix:nonNumeric>'
+    )
+    parsed = parse_sec_filing_document(content, document_name="escaped-text-block.xhtml")
+    facts = {fact["fact_id"]: fact for fact in parsed["facts"]}
+
+    assert facts["outer"]["escape"] is True
+    assert facts["outer"]["raw_value"] == '<div class="note">A <b>B</b> C</div>'
+    assert facts["inner"]["raw_value"] == "<b>B</b>"
+    assert facts["outer"]["transformed_value"] == facts["outer"]["raw_value"]
+    validate_sec_filing_parse_result(parsed)
+    validate_sec_filing_parse_result(parsed, source_content=content)
+
+
+def test_escaped_nonnumeric_continuation_and_uri_boundary() -> None:
+    fact = (
+        '<ix:nonNumeric id="f" name="ex:F" contextRef="c" '
+        'continuedAt="a" escape="true"><p>A</p></ix:nonNumeric>'
+    )
+    continuation = '<ix:continuation id="a"><div>B</div></ix:continuation>'
+    content = _inline(fact, continuations=continuation)
+    parsed = parse_sec_filing_document(content, document_name="escaped-continuation.xhtml")
+    assert parsed["facts"][0]["raw_value"] == "<p>A</p><div>B</div>"
+    validate_sec_filing_parse_result(parsed, source_content=content)
+
+    relative_uri = _inline(
+        '<ix:nonNumeric name="ex:F" contextRef="c" escape="true">'
+        '<a href="relative">link</a></ix:nonNumeric>'
+    )
+    with pytest.raises(SecFilingParseError, match="relative URI"):
+        parse_sec_filing_document(relative_uri, document_name="escaped-relative-uri.xhtml")
+
+
+def test_escape_attribute_is_limited_to_inline_nonnumeric_facts() -> None:
+    plain = parse_sec_filing_document(
+        _inline('<ix:nonNumeric name="ex:F" contextRef="c" escape="false"><b>plain</b></ix:nonNumeric>'),
+        document_name="unescaped-text.xhtml",
+    )
+    assert plain["facts"][0]["escape"] is False
+    assert plain["facts"][0]["raw_value"] == "plain"
+
+    invalid = _inline(
+        '<ix:nonFraction name="ex:F" contextRef="c" unitRef="u" '
+        'decimals="0" escape="true">1</ix:nonFraction>'
+    )
+    with pytest.raises(SecFilingParseError, match="unsupported attributes"):
+        parse_sec_filing_document(invalid, document_name="numeric-escape.xhtml")
+
+
 def test_forever_context_and_unknown_scenario_are_explicit_partial():
     resources = f'''<xbrli:context id="c"><xbrli:entity><xbrli:identifier scheme="s">1</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:forever /></xbrli:period><xbrli:scenario><ex:VendorExtension>opaque</ex:VendorExtension></xbrli:scenario></xbrli:context>'''
     result = parse_sec_filing_document(_instance("", resources=resources), document_name="partial.xml")
@@ -205,6 +275,28 @@ def test_forever_context_and_unknown_scenario_are_explicit_partial():
 def test_unsafe_or_malformed_xml_is_rejected_without_recovery(payload, match):
     with pytest.raises(SecFilingParseError, match=match):
         parse_sec_filing_document(payload, document_name="unsafe.xml")
+
+
+@pytest.mark.parametrize("encoding", ["ASCII", "us-ascii"])
+def test_ascii_xml_declarations_are_admitted_for_ascii_payloads(encoding):
+    content = f'<?xml version="1.0" encoding="{encoding}"?>'.encode() + _instance(
+        '<ex:F contextRef="c" unitRef="u" decimals="0">1</ex:F>'
+    )
+    result = parse_sec_filing_document(content, document_name="ascii-declaration.xml")
+
+    assert result["facts"][0]["normalized_value"] == "1"
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        b'<?xml version="1.0" encoding="ASCII"?><r>Caf\xc3\xa9</r>',
+        b'<?xml version="1.0" encoding="us-ascii"?><r>Caf\xe9</r>',
+    ],
+)
+def test_ascii_xml_declarations_reject_contradictory_or_non_utf8_payloads(payload):
+    with pytest.raises(SecFilingParseError, match="UTF-8|ASCII"):
+        parse_sec_filing_document(payload, document_name="ascii-contradiction.xml")
 
 
 def test_qname_valued_attributes_must_be_bound():
@@ -363,6 +455,30 @@ def test_parser_performs_no_open_or_socket_calls(monkeypatch):
 def test_context_grammar_is_direct_ordered_and_temporally_valid(resources):
     with pytest.raises(SecFilingParseError):
         parse_sec_filing_document(_instance("", resources=resources), document_name="bad-context.xml")
+
+
+def test_same_day_date_only_duration_is_valid_but_zero_length_datetime_is_not() -> None:
+    date_only = '''<xbrli:context id="same-day"><xbrli:entity><xbrli:identifier scheme="s">1</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:startDate>2016-08-30</xbrli:startDate><xbrli:endDate>2016-08-30</xbrli:endDate></xbrli:period></xbrli:context>'''
+    content = _instance("", resources=date_only)
+    parsed = parse_sec_filing_document(content, document_name="same-day-duration.xml")
+    assert parsed["contexts"][0]["period"] == {
+        "kind": "duration",
+        "instant_date": None,
+        "start_date": "2016-08-30",
+        "end_date": "2016-08-30",
+        "source_span": parsed["contexts"][0]["period"]["source_span"],
+    }
+    validate_sec_filing_parse_result(parsed, source_content=content)
+
+    zero_length_datetime = date_only.replace(
+        "2016-08-30</xbrli:startDate><xbrli:endDate>2016-08-30",
+        "2016-08-30T00:00:00</xbrli:startDate><xbrli:endDate>2016-08-30T00:00:00",
+    )
+    with pytest.raises(SecFilingParseError, match="valid XBRL interval"):
+        parse_sec_filing_document(
+            _instance("", resources=zero_length_datetime),
+            document_name="zero-length-datetime-duration.xml",
+        )
 
 
 @pytest.mark.parametrize(
@@ -745,6 +861,47 @@ def test_header_uses_the_ixbrl11_body_placement_and_ordered_direct_content_model
 def test_numeric_facts_do_not_concatenate_nested_fact_or_foreign_markup_values(body):
     with pytest.raises(SecFilingParseError, match="nested|child elements"):
         parse_sec_filing_document(_inline(body), document_name="nested-numeric.xhtml")
+
+
+def test_exact_workiva_nonfraction_wrapper_preserves_both_numeric_facts_and_shared_lexical_text():
+    resources = f'''
+      <xbrli:context id="c"><xbrli:entity><xbrli:identifier scheme="s">1</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2025-12-31</xbrli:instant></xbrli:period></xbrli:context>
+      <xbrli:context id="c2"><xbrli:entity><xbrli:identifier scheme="s">2</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2024-12-31</xbrli:instant></xbrli:period></xbrli:context>
+      <xbrli:unit id="u"><xbrli:measure>ex:USD</xbrli:measure></xbrli:unit>
+    '''
+    content = _inline(
+        '<ix:nonFraction id="wrapper" name="ex:Wrapper" contextRef="c" unitRef="u" decimals="0" format="i3:numdotdecimal">'
+        '\n  <ix:nonFraction id="leaf" name="ex:Leaf" contextRef="c2" unitRef="u" decimals="0" format="i3:numdotdecimal">1,234.5</ix:nonFraction>\n'
+        '</ix:nonFraction>',
+        resources=resources,
+    )
+
+    facts = parse_sec_filing_document(content, document_name="workiva-wrapper.xhtml")["facts"]
+
+    assert [(fact["fact_id"], fact["concept_qname"], fact["context_ref"]) for fact in facts] == [
+        ("wrapper", "{urn:example}Wrapper", "c"),
+        ("leaf", "{urn:example}Leaf", "c2"),
+    ]
+    assert [fact["raw_value"] for fact in facts] == ["1,234.5", "1,234.5"]
+    assert [fact["normalized_value"] for fact in facts] == ["1234.5", "1234.5"]
+    assert facts[0]["text_spans"] == facts[1]["text_spans"]
+    validate_sec_filing_parse_result(
+        parse_sec_filing_document(content, document_name="workiva-wrapper.xhtml"), source_content=content
+    )
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        '<ix:nonFraction name="ex:F" contextRef="c" unitRef="u" decimals="0">1<ix:nonFraction name="ex:G" contextRef="c" unitRef="u" decimals="0">2</ix:nonFraction></ix:nonFraction>',
+        '<ix:nonFraction name="ex:F" contextRef="c" unitRef="u" decimals="0"><ix:nonFraction name="ex:G" contextRef="c" unitRef="u" decimals="0">1</ix:nonFraction><ix:nonFraction name="ex:H" contextRef="c" unitRef="u" decimals="0">2</ix:nonFraction></ix:nonFraction>',
+        '<ix:nonFraction name="ex:F" contextRef="c" unitRef="u" decimals="0"><b xmlns="http://www.w3.org/1999/xhtml">1</b></ix:nonFraction>',
+        '<ix:nonFraction name="ex:F" contextRef="c" unitRef="u" decimals="0"><ix:fraction name="ex:G" contextRef="c" unitRef="u"><ix:numerator>1</ix:numerator><ix:denominator>2</ix:denominator></ix:fraction></ix:nonFraction>',
+    ],
+)
+def test_nonfraction_numeric_nesting_admits_no_mixed_or_nonwrapper_shapes(body):
+    with pytest.raises(SecFilingParseError, match="wrapper|nested"):
+        parse_sec_filing_document(_inline(body), document_name="invalid-numeric-wrapper.xhtml")
 
 
 def test_exclude_is_limited_to_nonnumeric_and_continuation_owners():

@@ -36,8 +36,9 @@ class _Response:
     status_code = 200
     headers: dict[str, str] = {}
 
-    def __init__(self, body: bytes) -> None:
+    def __init__(self, body: bytes, *, url: str) -> None:
         self.body = body
+        self.url = url
 
     def iter_content(self, *, chunk_size: int):
         del chunk_size
@@ -55,8 +56,8 @@ def _receipt_path(object_path: str) -> str:
     return str(Path(object_path).with_suffix(".receipt.json"))
 
 
-def _companyfacts_body() -> bytes:
-    return _body(
+def _companyfacts_body(*, recent_value_token: str = "120") -> bytes:
+    content = _body(
         {
             "cik": 1,
             "entityName": "Pinned Fixture",
@@ -78,7 +79,7 @@ def _companyfacts_body() -> bytes:
                                 {
                                     "start": "2025-01-01",
                                     "end": "2025-12-31",
-                                    "val": 120,
+                                    "val": "__EXACT_RECENT_VALUE__",
                                     "accn": RECENT_ACCESSION,
                                     "fy": 2025,
                                     "fp": "FY",
@@ -91,6 +92,9 @@ def _companyfacts_body() -> bytes:
                 }
             },
         }
+    )
+    return content.replace(
+        b'"__EXACT_RECENT_VALUE__"', recent_value_token.encode("ascii")
     )
 
 
@@ -106,6 +110,7 @@ def _fixture(
     *,
     snapshot_at: str = RECORDED_AT,
     companyfacts_gzip_padding_bytes: int = 0,
+    companyfacts_recent_value_token: str = "120",
 ) -> tuple[PinnedSourceAuthority, CompanyFactsConversionSourceBundle]:
     tmp_path.mkdir(parents=True, exist_ok=True)
     raw_root = tmp_path / "raw"
@@ -119,7 +124,10 @@ def _fixture(
         user_agent="MastermindX research@example.com",
         source_snapshot_at=SOURCE_AT,
         recorded_at=SOURCE_AT,
-        fetcher=lambda *args, **kwargs: _Response(_companyfacts_body()),
+        fetcher=lambda url, **kwargs: _Response(
+            _companyfacts_body(recent_value_token=companyfacts_recent_value_token),
+            url=url,
+        ),
         utc_now=lambda: datetime(2026, 8, 2, 15, tzinfo=timezone.utc),
     )
     companyfacts_receipt = result["run"]["ticker_receipts"][0]
@@ -216,6 +224,82 @@ def test_materializes_only_named_pinned_members_and_ignores_latest(tmp_path: Pat
         "recent",
         OLDER_NAME,
     ]
+
+
+def test_fractional_exact_projection_uses_verified_legacy_witness(
+    tmp_path: Path,
+) -> None:
+    authority, bundle = _fixture(
+        tmp_path,
+        companyfacts_recent_value_token="123.4500000000000000000001",
+    )
+
+    conversion = load_companyfacts_ledger_from_pinned_source(
+        authority=authority,
+        source_bundle=bundle,
+        submissions_recorded_at=RECORDED_AT,
+    )
+
+    recent = next(
+        item for item in conversion.occurrences if item.accession == RECENT_ACCESSION
+    )
+    assert recent.occurrence.parsed_value == "123.4500000000000000000001"
+    assert conversion.receipt.companyfacts_sha256 != conversion.receipt.input_sha256
+
+
+def test_float_collision_cannot_collapse_two_pinned_exact_sources(
+    tmp_path: Path,
+) -> None:
+    # Both lexemes decode to the same IEEE-754 float under the collector's
+    # established manifest projection.  Response SHA and the exact Decimal
+    # projection must still keep their semantic outcomes distinct.
+    first_authority, first_bundle = _fixture(
+        tmp_path / "first",
+        companyfacts_recent_value_token="9007199254740992.0",
+    )
+    second_authority, second_bundle = _fixture(
+        tmp_path / "second",
+        companyfacts_recent_value_token="9007199254740993.0",
+    )
+    first_manifest = json.loads(
+        first_authority.read_file(
+            kind="archive",
+            relative_path=first_bundle.companyfacts_manifest_path,
+            maximum_bytes=1024 * 1024,
+        ).content
+    )
+    second_manifest = json.loads(
+        second_authority.read_file(
+            kind="archive",
+            relative_path=second_bundle.companyfacts_manifest_path,
+            maximum_bytes=1024 * 1024,
+        ).content
+    )
+    assert first_manifest["source"]["logical_sha256"] == second_manifest["source"]["logical_sha256"]
+    assert first_manifest["source"]["fact_occurrence_sha256"] == second_manifest["source"]["fact_occurrence_sha256"]
+    assert first_manifest["source"]["response_sha256"] != second_manifest["source"]["response_sha256"]
+
+    first = load_companyfacts_ledger_from_pinned_source(
+        authority=first_authority,
+        source_bundle=first_bundle,
+        submissions_recorded_at=RECORDED_AT,
+    )
+    second = load_companyfacts_ledger_from_pinned_source(
+        authority=second_authority,
+        source_bundle=second_bundle,
+        submissions_recorded_at=RECORDED_AT,
+    )
+    first_recent = next(
+        item for item in first.occurrences if item.accession == RECENT_ACCESSION
+    )
+    second_recent = next(
+        item for item in second.occurrences if item.accession == RECENT_ACCESSION
+    )
+    assert first_recent.occurrence.parsed_value == "9007199254740992"
+    assert second_recent.occurrence.parsed_value == "9007199254740993"
+    assert first.receipt.companyfacts_sha256 == second.receipt.companyfacts_sha256
+    assert first.receipt.input_sha256 != second.receipt.input_sha256
+    assert first.receipt.output_sha256 != second.receipt.output_sha256
 
 
 def test_requires_every_declared_older_source_before_loading_it(tmp_path: Path) -> None:

@@ -42,6 +42,122 @@ def _roots(tmp_path: Path) -> tuple[Path, Path]:
     return raw, archive
 
 
+class _ConditionalProxy:
+    """Expose CAS writes while making any legacy overwrite a test failure."""
+
+    def __init__(self, inner: LocalStore) -> None:
+        self.inner = inner
+        self.conditional_calls: list[tuple[str, bytes, str | None, str]] = []
+        self.unconditional_put_calls = 0
+
+    def get_bytes(self, key: str):
+        return self.inner.get_bytes(key)
+
+    def get_bytes_strict(self, key: str):
+        return self.inner.get_bytes_strict(key)
+
+    def get_bytes_strict_bounded(self, key: str, maximum_bytes: int):
+        return self.inner.get_bytes_strict_bounded(key, maximum_bytes)
+
+    def get_bytes_strict_bounded_versioned(self, key: str, maximum_bytes: int):
+        return self.inner.get_bytes_strict_bounded_versioned(key, maximum_bytes)
+
+    def validate_strict_conditional_write_capability(self):
+        return self.inner.validate_strict_conditional_write_capability()
+
+    def put_bytes_strict_conditional(
+        self,
+        key: str,
+        data: bytes,
+        *,
+        expected_version: str | None,
+        content_type: str = "application/octet-stream",
+    ):
+        self.conditional_calls.append((key, data, expected_version, content_type))
+        return self.inner.put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=expected_version,
+            content_type=content_type,
+        )
+
+    def put_bytes(self, key: str, data: bytes, content_type: str = "application/octet-stream"):
+        del key, data, content_type
+        self.unconditional_put_calls += 1
+        raise AssertionError("source sync must not invoke legacy put_bytes")
+
+    def list_prefix(self, prefix: str):
+        return self.inner.list_prefix(prefix)
+
+    def exists(self, key: str):
+        return self.inner.exists(key)
+
+    def upload_time(self, key: str):
+        return self.inner.upload_time(key)
+
+
+class _AmbiguousImmutableCreateProxy(_ConditionalProxy):
+    """Commit one create then surface an ambiguous response to the caller."""
+
+    def __init__(self, inner: LocalStore, *, target_key: str, result: bool | Exception) -> None:
+        super().__init__(inner)
+        self.target_key = target_key
+        self.result = result
+        self.triggered = False
+
+    def put_bytes_strict_conditional(self, key, data, *, expected_version, content_type="application/octet-stream"):
+        self.conditional_calls.append((key, data, expected_version, content_type))
+        if key == self.target_key and not self.triggered:
+            assert expected_version is None
+            assert self.inner.put_bytes_strict_conditional(
+                key,
+                data,
+                expected_version=expected_version,
+                content_type=content_type,
+            ) is True
+            self.triggered = True
+            if isinstance(self.result, Exception):
+                raise self.result
+            return self.result
+        return self.inner.put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=expected_version,
+            content_type=content_type,
+        )
+
+
+class _ReadOnlyStrictProxy:
+    """Legacy strict adapter shape without the required conditional writer."""
+
+    def __init__(self, inner: LocalStore) -> None:
+        self.inner = inner
+        self.put_calls = 0
+
+    def get_bytes(self, key: str):
+        return self.inner.get_bytes(key)
+
+    def get_bytes_strict(self, key: str):
+        return self.inner.get_bytes_strict(key)
+
+    def get_bytes_strict_bounded(self, key: str, maximum_bytes: int):
+        return self.inner.get_bytes_strict_bounded(key, maximum_bytes)
+
+    def put_bytes(self, key: str, data: bytes, content_type: str = "application/octet-stream"):
+        del key, data, content_type
+        self.put_calls += 1
+        return False
+
+    def list_prefix(self, prefix: str):
+        return self.inner.list_prefix(prefix)
+
+    def exists(self, key: str):
+        return self.inner.exists(key)
+
+    def upload_time(self, key: str):
+        return self.inner.upload_time(key)
+
+
 def test_private_source_sync_round_trips_exact_raw_and_archive_trees(tmp_path: Path):
     raw, archive = _roots(tmp_path)
     source_copy = {
@@ -75,6 +191,199 @@ def test_private_source_sync_round_trips_exact_raw_and_archive_trees(tmp_path: P
     current = restore_source_roots(raw_root=raw, archive_root=archive, store=store)
     assert current.restored_files == 0
     assert current.current_files == len(source_copy)
+
+
+def test_source_sync_uses_only_create_cas_and_never_legacy_put(tmp_path: Path):
+    raw, archive = _roots(tmp_path)
+    inner = LocalStore(tmp_path / "private-store")
+    store = _ConditionalProxy(inner)
+
+    snapshot = sync_source_roots(
+        raw_root=raw,
+        archive_root=archive,
+        store=store,
+        snapshot_at=SNAPSHOT_AT,
+    )
+
+    manifest = json.loads(inner.get_bytes(snapshot.manifest_key) or b"{}")
+    immutable_keys = [
+        entry["object_key"]
+        for tree in manifest["trees"]
+        for entry in tree["entries"]
+    ] + [snapshot.manifest_key]
+    assert [call[0] for call in store.conditional_calls] == immutable_keys + [
+        f"{SOURCE_SYNC_PREFIX}/latest.json"
+    ]
+    assert all(call[2] is None for call in store.conditional_calls)
+    assert store.unconditional_put_calls == 0
+
+
+def test_source_sync_rejects_legacy_store_before_any_write(tmp_path: Path):
+    raw, archive = _roots(tmp_path)
+    inner = LocalStore(tmp_path / "private-store")
+    legacy = _ReadOnlyStrictProxy(inner)
+
+    with pytest.raises(SourceSyncError, match="StrictConditionalWriteStore"):
+        sync_source_roots(
+            raw_root=raw,
+            archive_root=archive,
+            store=legacy,
+            snapshot_at=SNAPSHOT_AT,
+        )
+
+    assert legacy.put_calls == 0
+    assert inner.list_prefix(SOURCE_SYNC_PREFIX) == []
+
+
+def test_source_sync_reconciles_ambiguous_immutable_create_by_exact_readback(tmp_path: Path):
+    raw, archive = _roots(tmp_path)
+    target = raw / "0000000001" / "submissions" / "latest.json"
+    digest = sha256(target.read_bytes()).hexdigest()
+    key = f"{SOURCE_SYNC_PREFIX}/objects/sha256/{digest[:2]}/{digest}.bin"
+    inner = LocalStore(tmp_path / "private-store")
+    store = _AmbiguousImmutableCreateProxy(
+        inner,
+        target_key=key,
+        result=TimeoutError("conditional create acknowledgement lost"),
+    )
+
+    snapshot = sync_source_roots(
+        raw_root=raw,
+        archive_root=archive,
+        store=store,
+        snapshot_at=SNAPSHOT_AT,
+    )
+
+    assert store.triggered
+    assert inner.get_bytes(snapshot.manifest_key) is not None
+    assert store.unconditional_put_calls == 0
+
+
+def test_source_sync_rejects_immutable_collision_without_overwrite(tmp_path: Path):
+    raw, archive = _roots(tmp_path)
+    target = raw / "0000000001" / "submissions" / "latest.json"
+    digest = sha256(target.read_bytes()).hexdigest()
+    key = f"{SOURCE_SYNC_PREFIX}/objects/sha256/{digest[:2]}/{digest}.bin"
+    inner = LocalStore(tmp_path / "private-store")
+    winner = target.read_bytes().replace(b'"a"', b'"b"')
+    assert len(winner) == len(target.read_bytes())
+    assert inner.put_bytes_strict_conditional(
+        key,
+        winner,
+        expected_version=None,
+        content_type="application/json",
+    ) is True
+    store = _ConditionalProxy(inner)
+
+    with pytest.raises(SourceSyncError, match="immutable object collision"):
+        sync_source_roots(
+            raw_root=raw,
+            archive_root=archive,
+            store=store,
+            snapshot_at=SNAPSHOT_AT,
+        )
+
+    assert inner.get_bytes(key) == winner
+    assert inner.get_bytes(f"{SOURCE_SYNC_PREFIX}/latest.json") is None
+    assert store.unconditional_put_calls == 0
+
+
+def test_source_sync_stale_pointer_is_rejected_without_replacing_newer_latest(tmp_path: Path):
+    raw, archive = _roots(tmp_path)
+    inner = LocalStore(tmp_path / "private-store")
+    store = _ConditionalProxy(inner)
+    first = sync_source_roots(
+        raw_root=raw,
+        archive_root=archive,
+        store=store,
+        snapshot_at="2026-08-01T12:00:00Z",
+    )
+    (raw / "0000000001" / "submissions" / "latest.json").write_bytes(b'{"sha256":"b"}')
+    second = sync_source_roots(
+        raw_root=raw,
+        archive_root=archive,
+        store=store,
+        snapshot_at="2026-08-01T12:01:00Z",
+    )
+
+    with pytest.raises(SourceSyncError, match="stale source snapshot"):
+        source_sync_mod._publish_pointer(store, first)
+
+    latest = json.loads(inner.get_bytes(f"{SOURCE_SYNC_PREFIX}/latest.json") or b"{}")
+    assert latest["snapshot_id"] == second.snapshot_id
+    assert store.unconditional_put_calls == 0
+
+
+def test_source_sync_immutable_only_mode_leaves_latest_absent_or_unchanged(tmp_path: Path):
+    raw, archive = _roots(tmp_path)
+    store = LocalStore(tmp_path / "private-store")
+    sealed = sync_source_roots(
+        raw_root=raw,
+        archive_root=archive,
+        store=store,
+        snapshot_at="2026-08-01T12:00:00Z",
+        publish_latest=False,
+    )
+    assert store.get_bytes(sealed.manifest_key) is not None
+    assert store.get_bytes(f"{SOURCE_SYNC_PREFIX}/latest.json") is None
+
+    published = sync_source_roots(
+        raw_root=raw,
+        archive_root=archive,
+        store=store,
+        snapshot_at="2026-08-01T12:01:00Z",
+    )
+    (raw / "0000000001" / "submissions" / "latest.json").write_bytes(b'{"sha256":"b"}')
+    later_sealed = sync_source_roots(
+        raw_root=raw,
+        archive_root=archive,
+        store=store,
+        snapshot_at="2026-08-01T12:02:00Z",
+        publish_latest=False,
+    )
+    assert later_sealed.snapshot_id != published.snapshot_id
+    latest = json.loads(store.get_bytes(f"{SOURCE_SYNC_PREFIX}/latest.json") or b"{}")
+    assert latest["snapshot_id"] == published.snapshot_id
+
+
+def test_source_sync_omits_only_the_companyfacts_coordination_lock(tmp_path: Path):
+    raw, archive = _roots(tmp_path)
+    lock = archive / "wave3_companyfacts" / ".manifest_publish.lock"
+    lock.parent.mkdir(parents=True)
+    lock.write_bytes(b"")
+    store = LocalStore(tmp_path / "private-store")
+
+    snapshot = sync_source_roots(
+        raw_root=raw,
+        archive_root=archive,
+        store=store,
+        snapshot_at=SNAPSHOT_AT,
+    )
+    manifest = json.loads(store.get_bytes(snapshot.manifest_key) or b"{}")
+    entries = {
+        (tree["kind"], entry["relative_path"])
+        for tree in manifest["trees"]
+        for entry in tree["entries"]
+    }
+    assert ("archive", "wave3_companyfacts/.manifest_publish.lock") not in entries
+
+    lock.write_bytes(b"unexpected lock payload")
+    with pytest.raises(SourceSyncError, match="coordination lock must be empty"):
+        sync_source_roots(
+            raw_root=raw,
+            archive_root=archive,
+            store=store,
+            snapshot_at="2026-08-01T12:00:01Z",
+        )
+    lock.write_bytes(b"")
+    (archive / ".unexpected.lock").write_bytes(b"")
+    with pytest.raises(SourceSyncError, match="unsafe relative path"):
+        sync_source_roots(
+            raw_root=raw,
+            archive_root=archive,
+            store=store,
+            snapshot_at="2026-08-01T12:00:02Z",
+        )
 
 
 def test_pinned_strict_reader_maps_local_archive_paths_to_exact_outer_objects(tmp_path: Path):
@@ -256,10 +565,10 @@ def test_pinned_file_read_reloads_manifest_and_ignores_forgeable_session_mapping
 
 
 class _BadReadbackStore(LocalStore):
-    def get_bytes(self, key: str) -> bytes | None:
-        value = super().get_bytes(key)
+    def get_bytes_strict_bounded(self, key: str, maximum_bytes: int) -> bytes | None:
+        value = super().get_bytes_strict_bounded(key, maximum_bytes)
         if value is not None and "/objects/sha256/" in key:
-            return value + b"corrupt-readback"
+            return value[:-1] + (b"x" if value[-1:] != b"x" else b"y")
         return value
 
 

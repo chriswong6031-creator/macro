@@ -18,6 +18,7 @@ import io
 import json
 import logging
 import os
+import re
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -32,6 +33,10 @@ from lib import config
 
 log = logging.getLogger("edgar_forensics")
 SEC_DATA = "https://data.sec.gov"
+_STREAM_CHUNK_BYTES = 64 * 1024
+_OLDER_SUBMISSIONS_NAME_RE = re.compile(
+    r"^CIK([0-9]{10})-submissions-([0-9]{3})\.json$"
+)
 
 
 class SecResponseTooLarge(RuntimeError):
@@ -53,7 +58,9 @@ class RetrievalReceipt:
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    # Retrieval evidence must not be rounded backward to the start of the
+    # second in which a response completed.
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _canonical_cik(cik: int | str) -> str:
@@ -70,6 +77,22 @@ def endpoint_url(cik: int | str, endpoint: str) -> str:
     if endpoint == "submissions":
         return f"{SEC_DATA}/submissions/CIK{cik10}.json"
     raise ValueError(f"unsupported endpoint: {endpoint}")
+
+
+def historical_submissions_url(cik: int | str, source_name: str) -> str:
+    """Return one canonical SEC historical-Submissions URL.
+
+    The filename must be supplied by the issuer's current Submissions
+    ``filings.files`` inventory.  Binding it back to ``cik`` here prevents a
+    caller from retaining another issuer's shard under the selected CIK.
+    """
+    cik10 = _canonical_cik(cik)
+    if not isinstance(source_name, str):
+        raise ValueError("historical Submissions source_name must be text")
+    match = _OLDER_SUBMISSIONS_NAME_RE.fullmatch(source_name)
+    if match is None or match.group(1) != cik10:
+        raise ValueError("historical Submissions source_name does not bind CIK")
+    return f"{SEC_DATA}/submissions/{source_name}"
 
 
 def _temp_sibling(path: Path) -> Path:
@@ -140,8 +163,11 @@ def persist_response(
     retrieved_at: str,
     etag: str | None = None,
     last_modified: str | None = None,
+    publish_latest: bool = True,
 ) -> RetrievalReceipt:
     """Write one content-addressed immutable object plus its canonical receipt."""
+    if not isinstance(publish_latest, bool):
+        raise TypeError("publish_latest must be a boolean")
     cik10 = _canonical_cik(cik)
     digest = hashlib.sha256(content).hexdigest()
     rel = Path(cik10) / endpoint / f"{digest}.json.gz"
@@ -172,10 +198,14 @@ def persist_response(
     ).encode("utf-8")
     if not _receipt_matches(receipt_path, receipt):
         _atomic_write(receipt_path, encoded_receipt)
-    latest = target.parent / "latest.json"
-    # Pointer commits last: a reader can observe the previous complete receipt or
-    # the new complete receipt, never a pointer to a partial object/sidecar.
-    _atomic_write(latest, encoded_receipt)
+    if publish_latest:
+        latest = target.parent / "latest.json"
+        # Pointer commits last: a reader can observe the previous complete
+        # receipt or the new complete receipt, never a pointer to a partial
+        # object/sidecar. Historical Submissions shards deliberately skip this
+        # convenience pointer so ``latest`` continues to name the current
+        # ``CIK##########.json`` response.
+        _atomic_write(latest, encoded_receipt)
     return receipt
 
 
@@ -207,39 +237,66 @@ class SecForensicsCollector:
         if wait > 0:
             time.sleep(wait)
 
-    def fetch(
+    def _fetch_url(
         self,
         cik: int | str,
         endpoint: str,
+        url: str,
         *,
         retrieved_at: str | None = None,
         max_response_bytes: int | None = None,
+        publish_latest: bool = True,
     ) -> RetrievalReceipt:
-        url = endpoint_url(cik, endpoint)
         limit = self.max_response_bytes
         if max_response_bytes is not None:
             limit = _byte_limit(max_response_bytes, field="max_response_bytes")
         last_error: Exception | None = None
         for attempt in range(4):
             self._pace()
+            response: Any | None = None
             try:
-                response = self.session.get(
-                    url,
-                    headers={"User-Agent": self.user_agent, "Accept-Encoding": "gzip, deflate"},
-                    timeout=self.timeout_seconds,
-                )
-                self._last_request_at = time.monotonic()
-                if response.status_code in (429, 500, 502, 503, 504):
-                    raise requests.HTTPError(f"SEC transient HTTP {response.status_code}")
-                response.raise_for_status()
-                _reject_declared_oversize(response.headers, limit, url=url)
-                content = response.content
-                if not isinstance(content, bytes):
-                    raise RuntimeError(f"SEC response body is not bytes for {url}")
-                if limit is not None and len(content) > limit:
-                    raise SecResponseTooLarge(
-                        f"SEC response exceeds bounded ingest limit ({len(content)} > {limit}) for {url}"
+                try:
+                    response = self.session.get(
+                        url,
+                        headers={"User-Agent": self.user_agent, "Accept-Encoding": "gzip, deflate"},
+                        timeout=self.timeout_seconds,
+                        stream=True,
+                        allow_redirects=False,
                     )
+                except TypeError as exc:
+                    # Never fall back to an adapter that materializes ``content``
+                    # before this collector can enforce its decoded-byte cap.
+                    raise RuntimeError(
+                        "SEC session must support streamed responses with redirects disabled"
+                    ) from exc
+                try:
+                    self._last_request_at = time.monotonic()
+                    status = getattr(response, "status_code", None)
+                    if isinstance(status, bool) or not isinstance(status, int):
+                        raise RuntimeError("SEC response has no integer status_code")
+                    final_url = getattr(response, "url", None)
+                    if not isinstance(final_url, str) or final_url != url:
+                        raise RuntimeError("SEC response URL does not match the requested source")
+                    if 300 <= status < 400:
+                        raise RuntimeError("SEC redirects are refused")
+                    if status in (429, 500, 502, 503, 504):
+                        raise requests.HTTPError(f"SEC transient HTTP {status}")
+                    response.raise_for_status()
+                    _reject_declared_oversize(response.headers, limit, url=url)
+                    content = _stream_response_bytes(response, limit, url=url)
+                    etag = response.headers.get("ETag")
+                    last_modified = response.headers.get("Last-Modified")
+                except Exception as exc:
+                    # Never leave a streamed response open after a rejected
+                    # status, source URL, or body.  Keep that causal failure
+                    # primary if closing also faults: persistence is already
+                    # impossible and callers retain the admission failure.
+                    _close_response_after_failure(response, exc)
+                    raise
+                # A clean body is not admitted until its socket has closed.
+                # This puts close failure before JSON validation, wall-clock
+                # sampling, and every durable write.
+                _close_response(response)
                 # Reject non-JSON bodies before they enter the immutable source plane.
                 json.loads(content)
                 return persist_response(
@@ -249,8 +306,9 @@ class SecForensicsCollector:
                     url=url,
                     content=content,
                     retrieved_at=retrieved_at or _utc_now(),
-                    etag=response.headers.get("ETag"),
-                    last_modified=response.headers.get("Last-Modified"),
+                    etag=etag,
+                    last_modified=last_modified,
+                    publish_latest=publish_latest,
                 )
             except SecResponseTooLarge:
                 raise
@@ -258,7 +316,48 @@ class SecForensicsCollector:
                 last_error = exc
                 if attempt < 3:
                     time.sleep(min(2 ** attempt, 4))
+            # Source binding, redirect, bounded-stream capability, and close
+            # failures are security/admission failures, not transient SEC
+            # availability conditions.  Do not silently retry around them.
+            except RuntimeError:
+                raise
         raise RuntimeError(f"SEC fetch failed after retries for {url}: {last_error}")
+
+    def fetch(
+        self,
+        cik: int | str,
+        endpoint: str,
+        *,
+        retrieved_at: str | None = None,
+        max_response_bytes: int | None = None,
+    ) -> RetrievalReceipt:
+        """Fetch one current closed-set SEC data endpoint."""
+        return self._fetch_url(
+            cik,
+            endpoint,
+            endpoint_url(cik, endpoint),
+            retrieved_at=retrieved_at,
+            max_response_bytes=max_response_bytes,
+            publish_latest=True,
+        )
+
+    def fetch_historical_submissions_file(
+        self,
+        cik: int | str,
+        source_name: str,
+        *,
+        retrieved_at: str | None = None,
+        max_response_bytes: int | None = None,
+    ) -> RetrievalReceipt:
+        """Fetch one exact ``filings.files`` shard without moving ``latest``."""
+        return self._fetch_url(
+            cik,
+            "submissions",
+            historical_submissions_url(cik, source_name),
+            retrieved_at=retrieved_at,
+            max_response_bytes=max_response_bytes,
+            publish_latest=False,
+        )
 
     def fetch_company(self, cik: int | str, *, retrieved_at: str | None = None) -> list[RetrievalReceipt]:
         return [self.fetch(cik, endpoint, retrieved_at=retrieved_at) for endpoint in ("companyfacts", "submissions")]
@@ -289,6 +388,71 @@ def _reject_declared_oversize(headers: Any, limit: int | None, *, url: str) -> N
         raise SecResponseTooLarge(
             f"SEC response exceeds bounded ingest limit ({declared} > {limit}) for {url}"
         )
+
+
+def _stream_response_bytes(response: Any, limit: int | None, *, url: str) -> bytes:
+    """Consume a streamed response while retaining at most ``limit + 1`` bytes.
+
+    ``requests`` yields decoded bytes from ``iter_content``. Enforcing the cap
+    there, instead of after ``response.content`` has materialized, also bounds
+    bodies with no trustworthy Content-Length and compressed expansion bombs.
+    """
+    iterator = getattr(response, "iter_content", None)
+    if not callable(iterator):
+        raise RuntimeError("SEC session must provide bounded streamed responses")
+    chunk_size = _STREAM_CHUNK_BYTES if limit is None else min(_STREAM_CHUNK_BYTES, limit + 1)
+    chunks: list[bytes] = []
+    retained = 0
+    try:
+        for chunk in iterator(chunk_size=chunk_size):
+            if not isinstance(chunk, bytes):
+                raise RuntimeError("SEC response stream yielded non-bytes")
+            if not chunk:
+                continue
+            if limit is None:
+                chunks.append(chunk)
+                retained += len(chunk)
+                continue
+            remaining = limit + 1 - retained
+            if remaining <= 0:
+                raise SecResponseTooLarge(
+                    f"SEC response exceeds bounded ingest limit ({limit + 1} > {limit}) for {url}"
+                )
+            retained_chunk = chunk[:remaining]
+            chunks.append(retained_chunk)
+            retained += len(retained_chunk)
+            if retained > limit:
+                raise SecResponseTooLarge(
+                    f"SEC response exceeds bounded ingest limit ({retained} > {limit}) for {url}"
+                )
+    except SecResponseTooLarge:
+        raise
+    except requests.RequestException:
+        raise
+    except Exception as exc:
+        raise RuntimeError("SEC response stream failed") from exc
+    return b"".join(chunks)
+
+
+def _close_response(response: Any) -> None:
+    close = getattr(response, "close", None)
+    if not callable(close):
+        raise RuntimeError("SEC response has no close method")
+    try:
+        close()
+    except Exception as exc:
+        raise RuntimeError("SEC response close failed") from exc
+
+
+def _close_response_after_failure(response: Any, primary: Exception) -> None:
+    """Close a rejected response without masking its causal admission error."""
+    try:
+        _close_response(response)
+    except RuntimeError as close_error:
+        # Python 3.11 notes preserve the close failure for diagnostics while
+        # leaving the original bad URL/status/body exception as the one a
+        # caller can classify.  The response remains fail-closed either way.
+        primary.add_note(f"SEC response close also failed: {close_error}")
 
 
 def _user_agent(root: Path) -> str:

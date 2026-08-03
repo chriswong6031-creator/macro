@@ -662,6 +662,29 @@ def test_collector_retries_transient_response_using_injected_pacing_hooks(tmp_pa
     assert waits == pytest.approx([1, 0.12])
 
 
+def test_collector_samples_default_retrieval_clock_only_after_response_close(tmp_path):
+    manifest = _by_accession()["0000000001-26-000001"]
+    document = manifest["documents"][0]
+    response = _Response(200, b"ok")
+    clock_calls = 0
+
+    def utc_now() -> str:
+        nonlocal clock_calls
+        clock_calls += 1
+        assert response.close_calls == 1
+        return "2026-08-03T12:34:56Z"
+
+    receipt = SecFilingArchiveCollector(
+        tmp_path,
+        user_agent="MastermindX research@example.com",
+        session=_Session([response]),
+        utc_now=utc_now,
+    ).fetch_document(document)
+
+    assert receipt.retrieved_at == "2026-08-03T12:34:56.000000Z"
+    assert clock_calls == 1
+
+
 def test_collector_closes_response_if_an_injected_post_get_clock_fails(tmp_path):
     manifest = _by_accession()["0000000001-26-000001"]
     response = _Response(200, b"ok")

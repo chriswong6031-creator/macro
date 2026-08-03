@@ -29,7 +29,13 @@ import time
 from types import MappingProxyType
 from typing import Any, Iterable, Mapping
 
-from engine.research_vault.r2_store import StrictBoundedReadStore, Store, build_store
+from engine.research_vault.r2_store import (
+    StrictBoundedReadStore,
+    StrictConditionalWriteStore,
+    Store,
+    VersionedBytes,
+    build_store,
+)
 
 from .models import canonical_json, parse_utc, utc_text
 
@@ -38,6 +44,12 @@ SOURCE_SYNC_SCHEMA = "fundamental_forensics.sec_source_snapshot/v1"
 SOURCE_SYNC_LATEST_SCHEMA = "fundamental_forensics.sec_source_latest/v1"
 SOURCE_SYNC_PREFIX = "fundamental_forensics/sec-source/v1"
 SOURCE_KINDS = ("raw", "archive")
+# Collector coordination files are process state, never SEC evidence. Keep the
+# allowlist exact: arbitrary dotfiles still fail the canonical source-path
+# validator instead of disappearing from a snapshot silently.
+_EPHEMERAL_SOURCE_FILES = frozenset(
+    {("archive", "wave3_companyfacts/.manifest_publish.lock")}
+)
 
 # These are deliberately hard ceilings, not suggestions.  The operator may
 # lower them for a small recovery run but cannot accidentally turn this into an
@@ -350,7 +362,18 @@ def _walk_tree(
         if not path.is_file():
             raise SourceSyncError(f"{kind} source tree contains a non-file: {path}")
         try:
-            relative = _relative_path(path.relative_to(checked_root).as_posix())
+            relative_text = path.relative_to(checked_root).as_posix()
+            if (kind, relative_text) in _EPHEMERAL_SOURCE_FILES:
+                # This exact collector coordination sentinel is not evidence,
+                # but silently discarding arbitrary lock contents would create
+                # a hidden side channel outside the sealed source manifest.
+                # Only the collector's empty advisory-lock shape is omitted.
+                if path.stat().st_size != 0:
+                    raise SourceSyncError(
+                        "Company Facts coordination lock must be empty"
+                    )
+                continue
+            relative = _relative_path(relative_text)
             size = path.stat().st_size
         except OSError as exc:
             raise SourceSyncError(f"cannot inspect {kind} source file: {path}") from exc
@@ -713,13 +736,247 @@ load_verified_source_snapshot = load_pinned_source_snapshot_strict
 read_verified_source_snapshot_file = read_pinned_source_snapshot_file_strict
 
 
-def _put_readback(store: Store, key: str, content: bytes, *, content_type: str) -> None:
+def _read_bounded_optional(
+    store: StrictBoundedReadStore,
+    key: str,
+    *,
+    maximum_bytes: int,
+) -> bytes | None:
+    """Strictly read at most ``maximum_bytes`` while preserving absence.
+
+    This is publication-only plumbing.  Restore and historical readers retain
+    their original Store/StrictBoundedReadStore contracts below; an absent key
+    is meaningful here only because it is the predecessor for a conditional
+    create or pointer CAS.
+    """
     key = _validate_key(key)
-    if not store.put_bytes(key, content, content_type=content_type):
-        raise SourceSyncError(f"private source-store put failed for {key}")
-    readback = store.get_bytes(key)
-    if readback != content:
-        raise SourceSyncError(f"private source-store read-back mismatch for {key}")
+    if (
+        isinstance(maximum_bytes, bool)
+        or not isinstance(maximum_bytes, int)
+        or maximum_bytes < 0
+    ):
+        raise SourceSyncError("strict read maximum_bytes must be a non-negative integer")
+    try:
+        result = store.get_bytes_strict_bounded(key, maximum_bytes)
+    except Exception as exc:  # noqa: BLE001 - never downgrade an outage to absence.
+        raise SourceSyncError(f"private source-store bounded read failed for {key}") from exc
+    if result is not None and not isinstance(result, bytes):
+        raise SourceSyncError(f"private source-store returned non-bytes for {key}")
+    if result is not None and len(result) > maximum_bytes:
+        raise SourceSyncError(
+            f"private source-store ignored bounded read limit for {key}"
+        )
+    return result
+
+
+def _readback_immutable_create(
+    store: StrictConditionalWriteStore,
+    *,
+    key: str,
+    payload: bytes,
+    maximum_bytes: int,
+    write_error: str,
+    collision_error: str,
+    readback_error: str,
+    cause: BaseException | None,
+) -> None:
+    """Reconcile a failed/ambiguous create without attempting an overwrite."""
+    try:
+        echoed = _read_bounded_optional(store, key, maximum_bytes=maximum_bytes)
+    except SourceSyncError as exc:
+        error = SourceSyncError(write_error)
+        if cause is not None:
+            raise error from cause
+        raise error from exc
+    if echoed != payload:
+        error = SourceSyncError(collision_error if echoed is not None else readback_error)
+        if cause is not None:
+            raise error from cause
+        raise error
+
+
+def _create_immutable(
+    store: StrictConditionalWriteStore,
+    *,
+    key: str,
+    payload: bytes,
+    maximum_bytes: int,
+    content_type: str,
+    write_error: str,
+    collision_error: str,
+    readback_error: str,
+) -> None:
+    """Create one immutable object with ``If-None-Match`` semantics.
+
+    The former probe-then-unconditional-put pattern let a competing writer
+    overwrite an immutable object between the two calls.  A false conditional
+    response, timeout, or connection loss is deliberately resolved only by a
+    bounded exact-byte readback: exact bytes prove idempotent completion;
+    different bytes are a collision; no state is ever repaired by a legacy
+    overwrite.
+    """
+    key = _validate_key(key)
+    if type(payload) is not bytes:
+        raise SourceSyncError("immutable source payload must be exact bytes")
+    if len(payload) > maximum_bytes:
+        raise SourceSyncError("immutable source payload exceeds bounded read limit")
+    try:
+        written = store.put_bytes_strict_conditional(
+            key,
+            payload,
+            expected_version=None,
+            content_type=content_type,
+        )
+    except Exception as exc:  # noqa: BLE001 - remote commit may already have happened.
+        _readback_immutable_create(
+            store,
+            key=key,
+            payload=payload,
+            maximum_bytes=maximum_bytes,
+            write_error=write_error,
+            collision_error=collision_error,
+            readback_error=readback_error,
+            cause=exc,
+        )
+        return
+    if written is True:
+        echoed = _read_bounded_optional(store, key, maximum_bytes=maximum_bytes)
+        if echoed != payload:
+            raise SourceSyncError(readback_error)
+        return
+    if written is False:
+        _readback_immutable_create(
+            store,
+            key=key,
+            payload=payload,
+            maximum_bytes=maximum_bytes,
+            write_error=write_error,
+            collision_error=collision_error,
+            readback_error=readback_error,
+            cause=None,
+        )
+        return
+    raise SourceSyncError(write_error)
+
+
+def _read_versioned_pointer(store: StrictConditionalWriteStore) -> VersionedBytes:
+    """Read the exact predecessor token for the sole mutable source key."""
+    try:
+        observed = store.get_bytes_strict_bounded_versioned(_latest_key(), 16 * 1024)
+    except Exception as exc:  # noqa: BLE001 - latest availability is publication authority.
+        raise SourceSyncError("source snapshot latest pointer versioned read failed") from exc
+    if type(observed) is not VersionedBytes:
+        raise SourceSyncError("source snapshot latest pointer versioned read is invalid")
+    if observed.data is None:
+        if observed.version is not None:
+            raise SourceSyncError("missing source snapshot latest pointer has a version")
+    elif type(observed.data) is not bytes or not isinstance(observed.version, str) or not observed.version:
+        raise SourceSyncError("present source snapshot latest pointer lacks an opaque version")
+    return observed
+
+
+def _pointer_binds_snapshot(
+    store: StrictConditionalWriteStore,
+    pointer: Mapping[str, Any],
+) -> SourceSnapshot:
+    """Require a pointer to project exactly one independently sealed snapshot."""
+    try:
+        snapshot = load_pinned_source_snapshot_strict(
+            store=store,
+            snapshot_id=str(pointer["snapshot_id"]),
+        ).snapshot
+    except Exception as exc:  # noqa: BLE001 - pointer authority is fail-closed.
+        raise SourceSyncError("source snapshot latest pointer does not bind manifest") from exc
+    if (
+        snapshot.snapshot_id != pointer["snapshot_id"]
+        or snapshot.manifest_key != pointer["manifest_key"]
+        or snapshot.snapshot_at != pointer["snapshot_at"]
+    ):
+        raise SourceSyncError("source snapshot latest pointer does not bind manifest")
+    return snapshot
+
+
+def _pointer_after_failed_cas(
+    store: StrictConditionalWriteStore,
+    *,
+    pointer: Mapping[str, Any],
+    payload: bytes,
+    cause: BaseException | None,
+) -> None:
+    """Reconcile a lost CAS without retrying or restoring a predecessor."""
+    observed = _read_versioned_pointer(store)
+    if observed.data == payload:
+        return
+    if observed.data is not None:
+        current = _decode_pointer(observed.data)
+        _pointer_binds_snapshot(store, current)
+        if current["snapshot_id"] == pointer["snapshot_id"]:
+            raise SourceSyncError("source snapshot latest pointer disagrees with immutable snapshot") from cause
+        if current["snapshot_at"] >= pointer["snapshot_at"]:
+            error = SourceSyncError(
+                "stale source snapshot cannot rewind independent latest pointer"
+            )
+            if cause is not None:
+                raise error from cause
+            raise error
+    if cause is not None:
+        raise SourceSyncError(
+            "source snapshot latest pointer conditional write outcome could not be reconciled"
+        ) from cause
+    raise SourceSyncError("source snapshot latest pointer compare-and-swap conflict")
+
+
+def _publish_pointer(store: StrictConditionalWriteStore, snapshot: SourceSnapshot) -> None:
+    """Advance latest once with an exact predecessor CAS, never rollback."""
+    pointer = {
+        "schema": SOURCE_SYNC_LATEST_SCHEMA,
+        "snapshot_id": snapshot.snapshot_id,
+        "manifest_key": snapshot.manifest_key,
+        "snapshot_at": snapshot.snapshot_at,
+    }
+    payload = canonical_json(pointer).encode("utf-8")
+    prior = _read_versioned_pointer(store)
+    if prior.data is not None:
+        old = _decode_pointer(prior.data)
+        _pointer_binds_snapshot(store, old)
+        if old["snapshot_id"] == snapshot.snapshot_id:
+            if prior.data != payload:
+                raise SourceSyncError("source snapshot latest pointer disagrees with immutable snapshot")
+            return
+        if old["snapshot_at"] >= snapshot.snapshot_at:
+            raise SourceSyncError("stale source snapshot cannot rewind independent latest pointer")
+    try:
+        written = store.put_bytes_strict_conditional(
+            _latest_key(),
+            payload,
+            expected_version=prior.version,
+            content_type="application/json",
+        )
+    except Exception as exc:  # noqa: BLE001 - acknowledgement may have been lost.
+        _pointer_after_failed_cas(store, pointer=pointer, payload=payload, cause=exc)
+        return
+    if written is not True:
+        _pointer_after_failed_cas(store, pointer=pointer, payload=payload, cause=None)
+        return
+    echoed = _read_versioned_pointer(store)
+    if echoed.data == payload:
+        return
+    # A compliant competitor may have advanced the pointer after our accepted
+    # CAS.  Accept only a sealed, strictly newer successor; never compensate
+    # by rewriting ``prior`` because that would clobber the winner.
+    try:
+        successor = _decode_pointer(echoed.data) if echoed.data is not None else None
+        if successor is not None:
+            _pointer_binds_snapshot(store, successor)
+    except SourceSyncError as exc:
+        raise SourceSyncError("source snapshot latest pointer read-back mismatch") from exc
+    if (
+        successor is not None
+        and successor["snapshot_id"] != snapshot.snapshot_id
+        and successor["snapshot_at"] > snapshot.snapshot_at
+    ):
+        return
+    raise SourceSyncError("source snapshot latest pointer read-back mismatch")
 
 
 def _read_required(store: Store, key: str) -> bytes:
@@ -736,25 +993,38 @@ def sync_source_roots(
     *,
     raw_root: Path,
     archive_root: Path,
-    store: Store,
+    store: StrictConditionalWriteStore,
     snapshot_at: str | datetime,
     max_files: int = DEFAULT_MAX_FILES,
     max_file_bytes: int = DEFAULT_MAX_FILE_BYTES,
     max_total_bytes: int = DEFAULT_MAX_TOTAL_BYTES,
+    publish_latest: bool = True,
 ) -> SourceSnapshot:
     """Synchronize both SEC roots into a verified immutable private snapshot.
 
-    No remote deletion or local pruning occurs.  A failed object read-back leaves
-    no new ``latest`` pointer, so consumers keep their prior complete snapshot.
+    No remote deletion or local pruning occurs. Immutable objects and the
+    manifest use create-only writes; the sole mutable ``latest`` pointer uses
+    exact-predecessor CAS when ``publish_latest`` is true.  A sealed bootstrap
+    can set it false to leave both source evidence and an existing latest
+    pointer untouched until a later explicit publication authority exists.
     """
     limits = _validate_limits(
         max_files=max_files,
         max_file_bytes=max_file_bytes,
         max_total_bytes=max_total_bytes,
     )
-    if not isinstance(store, Store):
-        # ``@runtime_checkable`` verifies the explicit minimal Store protocol.
-        raise SourceSyncError("source sync requires a repository Store adapter")
+    if type(publish_latest) is not bool:
+        raise SourceSyncError("publish_latest must be a boolean")
+    if not isinstance(store, StrictConditionalWriteStore):
+        raise SourceSyncError(
+            "source sync requires a StrictConditionalWriteStore adapter"
+        )
+    try:
+        store.validate_strict_conditional_write_capability()
+    except Exception as exc:  # noqa: BLE001 - capability must be proven pre-write.
+        raise SourceSyncError(
+            "source sync conditional-write capability validation failed"
+        ) from exc
     raw_entries, raw_bytes = _walk_tree(
         Path(raw_root),
         kind="raw",
@@ -785,9 +1055,9 @@ def sync_source_roots(
             trees={"raw": raw_entries, "archive": archive_entries},
         )
     )
-    # Content objects are immutable and content-addressed.  We still perform a
-    # PUT+GET when the object exists: the Store protocol cannot distinguish an
-    # R2 transient from an object that merely happens to be listed elsewhere.
+    # Content objects are immutable and content-addressed. Each write is an
+    # atomic absent-key create; a losing or ambiguous response is resolved by
+    # bounded exact-byte readback, never by a legacy overwrite.
     for kind, root, entries in (
         ("raw", Path(raw_root), raw_entries),
         ("archive", Path(archive_root), archive_entries),
@@ -799,22 +1069,29 @@ def sync_source_roots(
             digest = sha256(content).hexdigest()
             if digest != entry["sha256"] or len(content) != entry["byte_length"]:
                 raise SourceSyncError("source file changed after snapshot enumeration")
-            _put_readback(
+            _create_immutable(
                 store,
-                str(entry["object_key"]),
-                content,
+                key=str(entry["object_key"]),
+                payload=content,
+                maximum_bytes=int(entry["byte_length"]),
                 content_type=str(entry["content_type"]),
+                write_error=f"private source-store immutable write failed for {entry['object_key']}",
+                collision_error="source snapshot immutable object collision",
+                readback_error="private source-store immutable object read-back mismatch",
             )
     manifest_bytes = _manifest_bytes(manifest)
-    _put_readback(store, snapshot.manifest_key, manifest_bytes, content_type="application/json")
-    pointer = {
-        "schema": SOURCE_SYNC_LATEST_SCHEMA,
-        "snapshot_id": snapshot.snapshot_id,
-        "manifest_key": snapshot.manifest_key,
-        "snapshot_at": snapshot.snapshot_at,
-    }
-    pointer_bytes = canonical_json(pointer).encode("utf-8")
-    _put_readback(store, _latest_key(), pointer_bytes, content_type="application/json")
+    _create_immutable(
+        store,
+        key=snapshot.manifest_key,
+        payload=manifest_bytes,
+        maximum_bytes=HARD_MAX_SNAPSHOT_MANIFEST_BYTES,
+        content_type="application/json",
+        write_error="source snapshot manifest write failed",
+        collision_error="source snapshot immutable manifest collision",
+        readback_error="source snapshot manifest read-back mismatch",
+    )
+    if publish_latest:
+        _publish_pointer(store, snapshot)
     return SourceSnapshot(
         snapshot_id=snapshot.snapshot_id,
         manifest_key=snapshot.manifest_key,
@@ -925,8 +1202,10 @@ def restore_source_roots(
     return RestoreResult(snapshot=snapshot, restored_files=restored, current_files=current)
 
 
-def build_private_source_store(*, local_dir: str | Path | None = None) -> Store:
-    """Return the existing private Research R2 Store or fail before any transfer.
+def build_private_source_store(
+    *, local_dir: str | Path | None = None
+) -> StrictConditionalWriteStore:
+    """Return a private source store capable of strict create/CAS publication.
 
     ``local_dir`` selects the repository's :class:`LocalStore` for dry-runs and
     tests.  Without it, ``R2_RESEARCH_BUCKET`` and the usual private R2
@@ -938,6 +1217,16 @@ def build_private_source_store(*, local_dir: str | Path | None = None) -> Store:
             "private Research R2 Store unavailable; set R2_RESEARCH_BUCKET and private R2 credentials, "
             "or pass an explicit local store directory"
         )
+    if not isinstance(store, StrictConditionalWriteStore):
+        raise SourceSyncError(
+            "private Research R2 Store lacks strict conditional-write capability"
+        )
+    try:
+        store.validate_strict_conditional_write_capability()
+    except Exception as exc:  # noqa: BLE001 - fail before any collection transfer.
+        raise SourceSyncError(
+            "private Research R2 Store conditional-write capability validation failed"
+        ) from exc
     return store
 
 
