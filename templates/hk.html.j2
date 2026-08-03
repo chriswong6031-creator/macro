@@ -197,8 +197,16 @@
   .tm-glabel { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
   .tm-flags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .badge { display: inline-block; padding: 3px 11px; border-radius: 11px; font-weight: 700; font-size: 12.5px; }
-  .badge.quad-Q1 { background: var(--q1); color: #fff; } .badge.quad-Q2 { background: var(--q2); color: #1a1a1a; }
+  /* per-quad ink/fill matrix — same recipe as dashboard.html.j2 small badges
+     (13px needs 4.5:1; green/gold carry near-black ink, blue/light-green deepen
+     the fill; zh rules after light so the q1/q3 hue swap wins ties). */
+  .badge.quad-Q1 { background: var(--q1); color: #1a1a1a; } .badge.quad-Q2 { background: var(--q2); color: #1a1a1a; }
   .badge.quad-Q3 { background: var(--q3); color: #fff; } .badge.quad-Q4 { background: var(--q4); color: #fff; }
+  html:not([data-theme="light"]) .badge.quad-Q4 { background: color-mix(in srgb, var(--q4) 88%, var(--bg)); }
+  html[data-theme="light"] .badge.quad-Q1 { background: color-mix(in srgb, var(--q1) 90%, var(--text)); color: #fff; }
+  html[data-lang="zh"] .badge.quad-Q1 { background: var(--q1); color: #fff; }
+  html[data-lang="zh"] .badge.quad-Q3 { color: #1a1a1a; }
+  html[data-theme="light"][data-lang="zh"] .badge.quad-Q3 { background: color-mix(in srgb, var(--q3) 90%, var(--text)); color: #fff; }
   .badge.state-STABLE { background: color-mix(in srgb, var(--muted) 16%, var(--panel)); color: color-mix(in srgb, var(--muted) 82%, var(--text)); }
   .kv { font-size: 12.5px; color: var(--muted); } .kv b { color: var(--text); font-variant-numeric: tabular-nums; }
   .gauge { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--down), var(--line) 50%, var(--up)); }
@@ -281,8 +289,10 @@
   .nb-az.az-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line)); }
   .nb-rk { color: var(--muted); font-variant-numeric: tabular-nums; }
   .nb-ent { font-weight: 700; padding: 0 5px; border-radius: 7px; }
-  .ent-good { color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
-  .ent-warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); }
+  .ent-good { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
+  .ent-warn { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); }
+  /* dark-zh: red-on-red-tint lands at 4.41:1 on the 14% tint; thin to 8% (W3 lever). */
+  html[data-lang="zh"]:not([data-theme="light"]) .ent-good { background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
   /* ---- unified Conviction Profile on each standout card (SCREEN framing) ----- */
   .nb-conv { display: flex; align-items: center; gap: 7px; margin: 5px 0 1px; }
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
@@ -1028,6 +1038,8 @@
   body.page-hk .hkx-stk-meta{flex:1;min-width:0;color:var(--muted);font-size:10.5px}
   body.page-hk .hkx-stk-meta b{color:var(--text);font-weight:650;font-size:11.5px}
   body.page-hk .hkx-stage{flex:0 0 auto;font-size:9px;font-weight:700;letter-spacing:.6px;border-radius:5px;padding:2px 7px;background:rgba(69,184,115,.14);color:#8fd7ae;border:1px solid rgba(69,184,115,.35)}
+  /* the mint literal is dark-tuned (1.45:1 on light paper); light takes the estate ink, dark is untouched */
+  html[data-theme="light"] body.page-hk .hkx-stage{color:var(--ink-up,var(--up));border-color:color-mix(in srgb,var(--ink-up,var(--up)) 40%,var(--line))}
   body.page-hk .hkx-screener-btn{display:block;width:100%;text-align:center;margin-top:11px;background:linear-gradient(135deg,rgba(91,155,240,.18),rgba(69,184,115,.14));border:1px solid rgba(91,155,240,.4);color:var(--text);font-weight:700;font-size:12.5px;border-radius:12px;padding:10px 0;cursor:pointer;text-decoration:none;letter-spacing:.4px}
   body.page-hk .hkx-bbar{display:flex;height:14px;border-radius:6px;overflow:hidden;margin:6px 0}
   body.page-hk .hkx-bbar .bull{background:var(--up)} body.page-hk .hkx-bbar .bear{background:var(--down)}
@@ -1265,9 +1277,9 @@
   body.page-hk .mx5-path-labels > span{position:absolute;white-space:nowrap;}
   body.page-hk .mx5-pl-y{left:4px;transform:translateY(-50%);color:var(--ink-3);font-variant-numeric:tabular-nums;}
   body.page-hk .mx5-pl-zone{right:10px;transform:translateY(-50%);font-weight:600;}
-  body.page-hk .mx5-pl-zone.on{color:color-mix(in srgb,var(--up) 78%,transparent);}
-  body.page-hk .mx5-pl-zone.mid{color:color-mix(in srgb,var(--warn) 80%,transparent);}
-  body.page-hk .mx5-pl-zone.off{color:color-mix(in srgb,var(--down) 78%,transparent);}
+  body.page-hk .mx5-pl-zone.on{color:var(--ink-up,var(--up));}
+  body.page-hk .mx5-pl-zone.mid{color:var(--ink-warn,var(--warn));}
+  body.page-hk .mx5-pl-zone.off{color:var(--ink-down,var(--down));}
   body.page-hk .mx5-pl-x{top:96.4%;color:var(--ink-3);}
   body.page-hk .mx5-pl-today{width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);background:currentColor;box-shadow:0 0 6px currentColor;}
   body.page-hk .mx5-path-cross{position:absolute;top:0;width:1px;height:100%;background:linear-gradient(rgba(255,255,255,.28),rgba(255,255,255,.06));opacity:0;transform:translateX(-1px);pointer-events:none;transition:opacity .12s ease-out;will-change:left,opacity;}
