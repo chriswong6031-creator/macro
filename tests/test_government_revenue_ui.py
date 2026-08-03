@@ -10,6 +10,8 @@ from pathlib import Path
 
 import pytest
 
+from scripts import build_government_revenue
+
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = (ROOT / "templates" / "government_revenue.html.j2").read_text(encoding="utf-8")
@@ -274,7 +276,7 @@ def test_generated_shell_and_workspace_share_a_fail_closed_bundle_id() -> None:
 
 
 def test_generated_html_stays_inside_the_raw_edge_budget() -> None:
-    assert SITE_PATH.stat().st_size <= 250_000
+    assert SITE_PATH.stat().st_size <= build_government_revenue.RAW_HTML_BUDGET_BYTES
 
 
 @needs_node
