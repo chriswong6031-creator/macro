@@ -1,7 +1,7 @@
 schema: sector_intelligence_ownership.v1
-effective_at: "2026-08-03T15:02:43Z"
+effective_at: "2026-08-03T16:36:06Z"
 status: f0_reconciled_partial_freeze
-reconciled_against_commit: 8bd108d3084825ec03e18a620095da2ac1d192f9
+reconciled_against_commit: e124f4ed2edcf77a82295c78f4feabc6c3e7bc90
 
 policy:
   one_writer_required: true
@@ -50,6 +50,7 @@ read_adapters:
     routes:
       - /api/biocatalyst/v1/health
       - /api/biocatalyst/v1/trials
+      - /api/biocatalyst/v1/trials:screen
       - /api/biocatalyst/v1/trial-peer-sets:resolve
       - /api/biocatalyst/v1/trials/changes
       - /api/biocatalyst/v1/trials/change-tape
@@ -59,6 +60,7 @@ read_adapters:
     input_identity: source_native_nct_id
     output_contracts:
       - trial_snapshot.v1
+      - trial_screen_read_model.v1
       - trial_protocol_projection.v1
       - trial_peer_set.v1
       - trial_history_read_model.v1

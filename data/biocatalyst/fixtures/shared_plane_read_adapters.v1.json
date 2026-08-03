@@ -1,7 +1,7 @@
 {
   "contract_id": "biocatalyst_shared_plane_read_adapters.v1",
   "schema_version": "1.0.0",
-  "baseline_commit": "8bd108d3084825ec03e18a620095da2ac1d192f9",
+  "baseline_commit": "e124f4ed2edcf77a82295c78f4feabc6c3e7bc90",
   "adapters": {
     "biocatalyst_trial_read_api.v1": {
       "canonical_owner": "biocatalyst",
@@ -12,6 +12,7 @@
       "routes": [
         "/api/biocatalyst/v1/health",
         "/api/biocatalyst/v1/trials",
+        "/api/biocatalyst/v1/trials:screen",
         "/api/biocatalyst/v1/trial-peer-sets:resolve",
         "/api/biocatalyst/v1/trials/changes",
         "/api/biocatalyst/v1/trials/change-tape",
@@ -22,6 +23,7 @@
       "input_identity": "source_native_nct_id",
       "output_contracts": [
         "trial_snapshot.v1",
+        "trial_screen_read_model.v1",
         "trial_protocol_projection.v1",
         "trial_peer_set.v1",
         "trial_history_read_model.v1",

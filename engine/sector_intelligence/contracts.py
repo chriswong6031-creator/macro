@@ -58,6 +58,7 @@ _TRIAL_HISTORY_SOURCE_SNAPSHOT_CONTRACT_ID = "trial_history_source_snapshot.v1"
 _TRIAL_HISTORY_DIFF_CONTRACT_ID = "trial_history_exact_diff.v1"
 _TRIAL_REGISTRY_CHANGE_FACT_CONTRACT_ID = "trial_registry_change_fact.v1"
 _TRIAL_HISTORY_READ_MODEL_CONTRACT_ID = "trial_history_read_model.v1"
+_TRIAL_SCREEN_READ_MODEL_CONTRACT_ID = "trial_screen_read_model.v1"
 _TRIAL_ENDPOINT_ALIGNMENT_CANDIDATE_CONTRACT_ID = (
     "trial_endpoint_alignment_candidate.v1"
 )
@@ -3753,6 +3754,12 @@ def _contract_semantic_issues(
         return _history_change_fact_issues(document)
     if contract_id == _TRIAL_HISTORY_READ_MODEL_CONTRACT_ID:
         return _history_read_model_issues(document)
+    if contract_id == _TRIAL_SCREEN_READ_MODEL_CONTRACT_ID:
+        # The owner module is a pure source-fact transform.  Keep the import
+        # lazy so generic contract discovery never opens a publication reader.
+        from engine.biocatalyst.trial_screen import trial_screen_contract_semantic_issues
+
+        return trial_screen_contract_semantic_issues(document)
     if contract_id == _TRIAL_ENDPOINT_ALIGNMENT_CANDIDATE_CONTRACT_ID:
         return _endpoint_alignment_candidate_issues(document)
     if contract_id == _TRIAL_ENDPOINT_ALIGNMENT_REVIEW_PROJECTION_CONTRACT_ID:

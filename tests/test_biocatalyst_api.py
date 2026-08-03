@@ -23,6 +23,7 @@ from fastapi import FastAPI, HTTPException  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 import app.biocatalyst as biocatalyst_api  # noqa: E402
+from engine.biocatalyst.trials import build_trial_snapshot  # noqa: E402
 from engine.sector_intelligence import canonical_json_bytes, canonical_json_sha256  # noqa: E402
 import scripts.biocatalyst_worker as worker  # noqa: E402
 from tests.test_biocatalyst_worker import (  # noqa: E402
@@ -236,6 +237,90 @@ def _observed(value: Any) -> dict[str, Any]:
     return {"state": "observed", "value": value}
 
 
+def _screen_snapshot(
+    nct_id: str,
+    *,
+    sponsor: str = "Northstar Biopharma",
+    intervention: str = "NX-101",
+    intervention_aliases: list[str] | None = None,
+    study_type: str = "INTERVENTIONAL",
+    phases: list[str] | None = None,
+    status: str = "RECRUITING",
+    conditions: list[str] | None = None,
+    primary_completion: tuple[str, str | None] | None = (
+        "2026-03",
+        "ESTIMATED",
+    ),
+    enrollment: tuple[int, str | None] = (160, "ESTIMATED"),
+) -> dict[str, Any]:
+    """Build a contract-valid public snapshot for Trial Screen API tests."""
+
+    root = Path(__file__).resolve().parents[1]
+    source = json.loads(
+        (
+            root
+            / "data"
+            / "biocatalyst"
+            / "fixtures"
+            / "clinicaltrials"
+            / "trial_source_snapshot.after.v1.valid.json"
+        ).read_text(encoding="utf-8")
+    )
+    source["nct_id"] = nct_id
+    source["source_snapshot_id"] = f"ctgov_snapshot_{nct_id}_screen"
+    source["source_uri"] = f"https://clinicaltrials.gov/study/{nct_id}"
+    protocol = source["canonical_study"]["protocolSection"]
+    protocol["identificationModule"].update(
+        {
+            "nctId": nct_id,
+            "briefTitle": f"Registry study {nct_id}",
+            "officialTitle": f"Registry study {nct_id} — full",
+        }
+    )
+    protocol["statusModule"]["overallStatus"] = status
+    if primary_completion is None:
+        protocol["statusModule"].pop("primaryCompletionDateStruct", None)
+    else:
+        raw_date, date_type = primary_completion
+        protocol["statusModule"]["primaryCompletionDateStruct"] = {
+            "date": raw_date,
+            "type": date_type,
+        }
+    enrollment_count, enrollment_type = enrollment
+    protocol["designModule"].update(
+        {
+            "studyType": study_type,
+            "phases": phases or ["PHASE2"],
+            "enrollmentInfo": {
+                "count": enrollment_count,
+                "type": enrollment_type,
+            },
+        }
+    )
+    protocol["sponsorCollaboratorsModule"] = {
+        "leadSponsor": {"name": sponsor, "class": "INDUSTRY"}
+    }
+    protocol["conditionsModule"] = {
+        "conditions": conditions or ["Glioma", "Solid Tumor"]
+    }
+    protocol["armsInterventionsModule"] = {
+        "interventions": [
+            {
+                "type": "DRUG",
+                "name": intervention,
+                "otherNames": intervention_aliases or ["NX ONE"],
+            }
+        ]
+    }
+    canonical_sha = canonical_json_sha256(source["canonical_study"])
+    source["canonical_content_sha256"] = canonical_sha
+    source["source_record_ref"] = f"src:ctgov:{nct_id}:sha256:{canonical_sha}"
+    source["raw_object_key"] = (
+        f"biocatalyst/raw/clinicaltrials/v2/{nct_id}/{canonical_sha}.json"
+    )
+    return build_trial_snapshot(source)
+
+
 def _milestone_snapshot(
     nct_id: str,
     *,
@@ -288,6 +373,22 @@ def _milestone_projection(
         configured_nct_count=len(snapshots),
         observed_nct_count=len(snapshots),
         last_attempt_at=as_of,
+    )
+    return SimpleNamespace(generation=generation, trials=tuple(snapshots))
+
+
+def _screen_projection(
+    snapshots: list[dict[str, Any]],
+    *,
+    generation_id: str = "ctgov_run_20260803_screen_fixture",
+):
+    generation = SimpleNamespace(
+        generation_id=generation_id,
+        last_success_at="2026-08-03T12:00:00Z",
+        source_dataset_timestamp_raw="2026-08-01T09:00:00",
+        configured_nct_count=len(snapshots),
+        observed_nct_count=len(snapshots),
+        last_attempt_at="2026-08-03T12:00:00Z",
     )
     return SimpleNamespace(generation=generation, trials=tuple(snapshots))
 
@@ -682,6 +783,413 @@ def test_list_filters_sorting_cursor_and_bounds_are_deterministic(entitled_clien
     # a paid, private data route and must not lose the response privacy policy.
     _assert_private_headers(invalid_sort)
     _assert_private_headers(invalid_limit)
+
+
+def test_trial_screen_literal_and_filters_preserve_source_facts(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [
+        _screen_snapshot(
+            "NCT00000010",
+            intervention_aliases=["NX ONE", "Nex-One"],
+            primary_completion=("2026-03", "ESTIMATED"),
+            enrollment=(160, "ESTIMATED"),
+        ),
+        _screen_snapshot(
+            "NCT00000011",
+            sponsor="Southstar Biopharma",
+            intervention_aliases=["NX ONE"],
+            primary_completion=("2026-03-15", "ACTUAL"),
+        ),
+    ]
+    projection = _screen_projection(snapshots)
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational()),
+    )
+
+    response = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen",
+        params={
+            "sponsor": "  NORTHSTAR   bio ",
+            "intervention": " nx   one ",
+            "study_type": "interventional",
+            "phase": "phase2",
+            "status": "recruiting",
+            "condition": "GLIOM",
+            "primary_completion_from": "2026-01-01",
+            "primary_completion_to": "2026-12-31",
+        },
+    )
+
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    payload = response.json()
+    assert payload["contract_id"] == "trial_screen_read_model.v1"
+    assert payload["query"]["sponsor"] == "northstar bio"
+    assert payload["query"]["intervention"] == "nx one"
+    assert payload["query"]["filter_composition"] == "literal_and"
+    assert payload["coverage"]["matched"] == 1
+    assert payload["pagination"]["total"] == 1
+    assert payload["row_count"] == 1
+    row = payload["rows"][0]
+    assert row["nct_id"] == "NCT00000010"
+    assert row["sponsor"]["value"] == {
+        "name": "Northstar Biopharma",
+        "class": "INDUSTRY",
+    }
+    assert row["interventions"]["values"] == [
+        {
+            "name": "NX-101",
+            "aliases": ["NX ONE", "Nex-One"],
+            "type": "DRUG",
+        }
+    ]
+    assert row["enrollment"] == {
+        "state": "observed",
+        "value": {"count": 160, "type": "ESTIMATED"},
+    }
+    assert row["primary_completion"] == {
+        "state": "observed",
+        "literal": "2026-03",
+        "precision": "month",
+        "interval": {"start": "2026-03-01", "end": "2026-03-31"},
+        "type": "ESTIMATED",
+    }
+    assert payload["authority"]["decision_authority"] is False
+    assert payload["authority"]["maximum_authority"] == "A1_EXPLAIN"
+    forbidden_public_keys = {
+        "ticker",
+        "issuer",
+        "score",
+        "rank",
+        "signal",
+        "prophet",
+        "neural_web",
+        "materiality",
+        "catalyst_probability",
+    }
+    assert forbidden_public_keys.isdisjoint(set(_walk_keys(payload)))
+
+
+def test_trial_screen_partial_date_containment_leap_boundaries_and_order(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [
+        _screen_snapshot("NCT00000014", primary_completion=None),
+        _screen_snapshot("NCT00000013", primary_completion=("2026-03-15", "ACTUAL")),
+        _screen_snapshot("NCT00000012", primary_completion=("2026-03", "ESTIMATED")),
+        _screen_snapshot("NCT00000011", primary_completion=("2026", "ESTIMATED")),
+        _screen_snapshot("NCT00000010", primary_completion=("2024-02", "ACTUAL")),
+    ]
+    projection = _screen_projection(snapshots)
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational()),
+    )
+
+    unfiltered = entitled_client.get("/api/biocatalyst/v1/trials:screen")
+    assert unfiltered.status_code == 200
+    assert [row["nct_id"] for row in unfiltered.json()["rows"]] == [
+        "NCT00000010",
+        "NCT00000011",
+        "NCT00000012",
+        "NCT00000013",
+        "NCT00000014",
+    ]
+    assert [
+        (row["primary_completion"]["literal"], row["primary_completion"]["precision"])
+        for row in unfiltered.json()["rows"]
+    ] == [
+        ("2024-02", "month"),
+        ("2026", "year"),
+        ("2026-03", "month"),
+        ("2026-03-15", "day"),
+        (None, None),
+    ]
+
+    march = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen",
+        params={
+            "primary_completion_from": "2026-03-01",
+            "primary_completion_to": "2026-03-31",
+        },
+    )
+    assert [row["nct_id"] for row in march.json()["rows"]] == [
+        "NCT00000012",
+        "NCT00000013",
+    ]
+    exact_day = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen",
+        params={
+            "primary_completion_from": "2026-03-15",
+            "primary_completion_to": "2026-03-15",
+        },
+    )
+    assert [row["nct_id"] for row in exact_day.json()["rows"]] == [
+        "NCT00000013"
+    ]
+    leap_month = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen",
+        params={
+            "primary_completion_from": "2024-02-01",
+            "primary_completion_to": "2024-02-29",
+        },
+    )
+    assert leap_month.json()["rows"][0]["primary_completion"]["interval"] == {
+        "start": "2024-02-01",
+        "end": "2024-02-29",
+    }
+
+
+def test_trial_screen_s1_cursor_binds_query_caller_and_generation_before_read(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [
+        _screen_snapshot("NCT00000010", primary_completion=("2026-01", "ESTIMATED")),
+        _screen_snapshot("NCT00000011", primary_completion=("2026-02", "ESTIMATED")),
+        _screen_snapshot("NCT00000012", primary_completion=("2026-03", "ESTIMATED")),
+    ]
+    projection = _screen_projection(
+        snapshots,
+        generation_id="ctgov_run_20260228_screen_fixture",
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational()),
+    )
+    first = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen",
+        params={"limit": "2"},
+    )
+    assert first.status_code == 200
+    cursor = first.json()["pagination"]["next_cursor"]
+    assert isinstance(cursor, str)
+    raw = base64.urlsafe_b64decode(
+        (cursor + "=" * (-len(cursor) % 4)).encode("ascii")
+    ).decode("ascii")
+    assert raw.startswith("s1:")
+    for secret_text in (
+        "ctgov_run_20260228_screen_fixture",
+        "paid-user",
+        "pro",
+        "northstar",
+    ):
+        assert secret_text not in raw
+        assert secret_text not in cursor
+    second = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen",
+        params={"limit": "2", "cursor": cursor},
+    )
+    assert [row["nct_id"] for row in second.json()["rows"]] == ["NCT00000012"]
+
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("query or caller mismatch reached the public reader")
+        ),
+    )
+    changed_query = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen",
+        params={"limit": "2", "sponsor": "northstar", "cursor": cursor},
+    )
+    assert changed_query.status_code == 400
+    assert changed_query.json() == {"detail": "cursor query mismatch"}
+    _assert_private_headers(changed_query)
+
+    entitled_client.app.dependency_overrides[
+        biocatalyst_api.require_site_full_user
+    ] = lambda: {"id": "other-paid-user", "tier": "pro"}
+    changed_caller = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen",
+        params={"limit": "2", "cursor": cursor},
+    )
+    assert changed_caller.status_code == 400
+    assert changed_caller.json() == {"detail": "cursor query mismatch"}
+    _assert_private_headers(changed_caller)
+
+    entitled_client.app.dependency_overrides[
+        biocatalyst_api.require_site_full_user
+    ] = lambda: {"id": "paid-user", "tier": "pro"}
+    changed_generation = _screen_projection(
+        snapshots,
+        generation_id="ctgov_run_20260301_screen_fixture",
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (changed_generation, _milestone_operational()),
+    )
+    restarted = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen",
+        params={"limit": "2", "cursor": cursor},
+    )
+    assert restarted.status_code == 409
+    assert restarted.json() == {"detail": "trial data changed; restart pagination"}
+    _assert_private_headers(restarted)
+
+
+def test_trial_screen_s1_rejects_forgery_foreign_cursor_and_oversized_offset_before_read(
+    entitled_client, monkeypatch
+) -> None:
+    filters = {
+        "sponsor": None,
+        "condition": None,
+        "intervention": None,
+        "phase": None,
+        "status": None,
+        "study_type": None,
+        "primary_completion_from": None,
+        "primary_completion_to": None,
+    }
+    binding = biocatalyst_api._trial_screen_query_binding(
+        filters=filters,
+        page_limit=2,
+        user={"id": "paid-user", "tier": "pro"},
+    )
+    generation_id = "ctgov_run_20260228_screen_fixture"
+    cursor = biocatalyst_api._encode_trial_screen_cursor(
+        1,
+        generation_id=generation_id,
+        query_binding=binding,
+    )
+    decoded = base64.urlsafe_b64decode(
+        (cursor + "=" * (-len(cursor) % 4)).encode("ascii")
+    ).decode("ascii")
+    forged_parts = decoded.split(":")
+    forged_parts[1] = "2"
+    forged = base64.urlsafe_b64encode(
+        ":".join(forged_parts).encode("ascii")
+    ).decode("ascii").rstrip("=")
+
+    milestone_cursor = biocatalyst_api._encode_milestone_cursor(
+        1,
+        generation_id=generation_id,
+        query_binding=biocatalyst_api._milestone_query_binding(
+            milestone_kind="primary_completion",
+            window="all",
+            from_date=None,
+            to_date=None,
+            q=None,
+            phase=None,
+            status=None,
+            condition=None,
+            limit=2,
+        ),
+    )
+    cursor_key = biocatalyst_api._trial_screen_cursor_key()
+    oversized_payload = biocatalyst_api._trial_screen_cursor_payload(
+        biocatalyst_api._TRIAL_SCREEN_MAX_CURSOR_OFFSET + 1,
+        generation_digest=biocatalyst_api._opaque_digest(
+            {"generation_id": generation_id}
+        ),
+        query_digest=biocatalyst_api._opaque_digest(binding),
+    )
+    oversized_signature = biocatalyst_api.hmac.new(
+        cursor_key,
+        oversized_payload,
+        sha256,
+    ).hexdigest()
+    oversized_offset = base64.urlsafe_b64encode(
+        oversized_payload + b":" + oversized_signature.encode("ascii")
+    ).decode("ascii").rstrip("=")
+
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("invalid s1 cursor reached the public reader")
+        ),
+    )
+    for candidate in (
+        forged,
+        milestone_cursor,
+        biocatalyst_api._encode_cursor(1),
+        "a" * 385,
+        oversized_offset,
+    ):
+        response = entitled_client.get(
+            "/api/biocatalyst/v1/trials:screen",
+            params={"limit": "2", "cursor": candidate},
+        )
+        assert response.status_code == 400
+        assert response.json() == {"detail": "invalid cursor"}
+        _assert_private_headers(response)
+
+
+def test_trial_screen_short_configured_cursor_secret_fails_closed_before_read(
+    entitled_client, monkeypatch
+) -> None:
+    monkeypatch.setenv("BIOCATALYST_CURSOR_SECRET", "x" * 31)
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("invalid screen cursor-key configuration reached public state")
+        ),
+    )
+    response = entitled_client.get("/api/biocatalyst/v1/trials:screen")
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "trial intelligence temporarily unavailable"
+    }
+    _assert_private_headers(response)
+
+
+def test_trial_screen_rejects_overlong_caller_identity_before_public_read(
+    entitled_client, monkeypatch
+) -> None:
+    entitled_client.app.dependency_overrides[
+        biocatalyst_api.require_site_full_user
+    ] = lambda: {"id": "x" * 257, "tier": "pro"}
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("overlong cursor identity reached the public reader")
+        ),
+    )
+    response = entitled_client.get("/api/biocatalyst/v1/trials:screen")
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "trial intelligence temporarily unavailable"
+    }
+    _assert_private_headers(response)
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    (
+        "sponsor=%20%20%20",
+        "sponsor=" + "x" * 241,
+        "intervention=" + "x" * 241,
+        "study_type=" + "x" * 81,
+        "phase=" + "x" * 81,
+        "status=" + "x" * 81,
+        "primary_completion_from=2026-03",
+        "primary_completion_to=2026-02-30",
+        "primary_completion_from=2026-03-02&primary_completion_to=2026-03-01",
+        "limit=251",
+        "cursor=not-a-valid-cursor",
+    ),
+)
+def test_trial_screen_invalid_queries_fail_before_any_public_read(
+    entitled_client, monkeypatch, suffix: str
+) -> None:
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("invalid Trial Screen query reached the public reader")
+        ),
+    )
+    response = entitled_client.get(f"/api/biocatalyst/v1/trials:screen?{suffix}")
+    assert response.status_code == 400
+    _assert_private_headers(response)
 
 
 def test_explicit_trial_peer_set_reads_only_public_protocol_projection(entitled_client) -> None:
@@ -2645,6 +3153,7 @@ def test_recursive_api_payload_has_no_private_provenance_or_integrity_keys(entit
     payloads = [
         entitled_client.get("/api/biocatalyst/v1/health").json(),
         entitled_client.get("/api/biocatalyst/v1/trials").json(),
+        entitled_client.get("/api/biocatalyst/v1/trials:screen").json(),
         entitled_client.get("/api/biocatalyst/v1/trials/milestones").json(),
         entitled_client.get("/api/biocatalyst/v1/trials/changes").json(),
         entitled_client.get("/api/biocatalyst/v1/trials/NCT00000001").json(),
@@ -2779,6 +3288,7 @@ def test_route_declares_paid_dependency_and_production_openapi_mounts_all_routes
     for path in (
         "/api/biocatalyst/v1/health",
         "/api/biocatalyst/v1/trials",
+        "/api/biocatalyst/v1/trials:screen",
         "/api/biocatalyst/v1/trial-peer-sets:resolve",
         "/api/biocatalyst/v1/trials/milestones",
         "/api/biocatalyst/v1/trials/changes",
@@ -2793,6 +3303,7 @@ def test_route_declares_paid_dependency_and_production_openapi_mounts_all_routes
     assert {
         "/api/biocatalyst/v1/health",
         "/api/biocatalyst/v1/trials",
+        "/api/biocatalyst/v1/trials:screen",
         "/api/biocatalyst/v1/trial-peer-sets:resolve",
         "/api/biocatalyst/v1/trials/milestones",
         "/api/biocatalyst/v1/trials/changes",
@@ -2875,6 +3386,10 @@ def test_anonymous_and_free_users_are_denied_before_public_disk_read(monkeypatch
             "/api/biocatalyst/v1/trials",
             headers={"Authorization": "Bearer free-token"},
         )
+        screen_denied = client.get(
+            "/api/biocatalyst/v1/trials:screen",
+            headers={"Authorization": "Bearer free-token"},
+        )
         milestone_denied = client.get(
             "/api/biocatalyst/v1/trials/milestones",
             headers={"Authorization": "Bearer free-token"},
@@ -2892,6 +3407,10 @@ def test_anonymous_and_free_users_are_denied_before_public_disk_read(monkeypatch
     assert denied.json() == {"detail": "site_full required"}
     _assert_private_headers(denied)
     assert denied.headers["retry-after"] == "60"
+    assert screen_denied.status_code == 402
+    assert screen_denied.json() == {"detail": "site_full required"}
+    _assert_private_headers(screen_denied)
+    assert screen_denied.headers["retry-after"] == "60"
     assert milestone_denied.status_code == 402
     assert milestone_denied.json() == {"detail": "site_full required"}
     _assert_private_headers(milestone_denied)

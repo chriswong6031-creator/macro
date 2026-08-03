@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts import build_government_revenue
+from scripts import build_government_revenue, build_government_revenue_candidates
 from scripts.check_government_revenue_projection import (
     ProjectionDriftError,
     validate_projection,
@@ -179,6 +179,43 @@ def test_projection_fence_accepts_source_owned_candidate_ui_before_first_materia
     result = validate_projection(tmp_path)
 
     assert result["candidate_content_id"] is None
+
+
+@pytest.mark.parametrize(
+    ("script_ref", "accepted"),
+    (
+        ("government-revenue-candidate-radar.js", True),
+        ("government-revenue-candidate-radar.js?v=0123abcd", True),
+        ("government-revenue-candidate-radar.js?v=custom", False),
+        ("candidate-radar-pending.js", False),
+    ),
+)
+def test_projection_fence_accepts_only_canonical_candidate_script_refs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    script_ref: str,
+    accepted: bool,
+) -> None:
+    _generation(tmp_path)
+    html_path = tmp_path / "site" / "government_revenue.html"
+    html = html_path.read_text(encoding="utf-8").replace(
+        "government-revenue-candidate-radar.js", script_ref
+    )
+    html_path.write_text(html, encoding="utf-8")
+    monkeypatch.setattr(
+        build_government_revenue_candidates,
+        "verify_candidate_artifacts",
+        lambda *_args, **_kwargs: {"status": "verified"},
+    )
+
+    if accepted:
+        validate_projection(tmp_path)
+    else:
+        with pytest.raises(
+            ProjectionDriftError,
+            match="public HTML is missing governed workspace markers",
+        ):
+            validate_projection(tmp_path)
 
 
 def test_projection_fence_requires_candidate_markers_in_the_canonical_template(
