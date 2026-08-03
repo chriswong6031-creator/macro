@@ -99,6 +99,15 @@ def _rehash(document: dict, field: str) -> None:
     document[field] = canonical_json_sha256({key: value for key, value in document.items() if key != field})
 
 
+def _bind_scope_and_rehash_run(document: dict, scope: dict) -> dict:
+    forged = copy.deepcopy(document)
+    forged["scope"] = scope
+    forged["scope_ref"] = scope["scope_id"]
+    forged["scope_payload_sha256"] = scope["scope_payload_sha256"]
+    _rehash(forged, "run_payload_sha256")
+    return forged
+
+
 def _time_shift(timestamp: str, seconds: int) -> str:
     return f"2026-08-03T00:{seconds:02d}:00Z"
 
@@ -156,6 +165,25 @@ def test_run_is_deterministic_and_reconciles_terminal_total_count() -> None:
         "declared_total_count": 2,
     }
     assert [row["nct_id"] for row in first_run["deduplicated_records"]] == ["NCT00000001", "NCT00000002"]
+
+
+def test_run_quarantines_when_any_later_page_omits_required_total_count() -> None:
+    first = _page(next_token=TOKEN_A, total=2)
+    second = _page(
+        ordinal=1,
+        request=TOKEN_A,
+        total=None,
+        nct_id="NCT00000002",
+        content=HASH_C,
+        updated="2026-08-02",
+        received_at="2026-08-03T00:01:30Z",
+    )
+
+    run = _run(pages=[first, second], run_id="ctgov_discovery_run_missing_later_total")
+
+    assert run["run_state"] == "quarantined"
+    assert "DISCOVERY_TOTAL_COUNT_MISMATCH" in run["quarantine_codes"]
+    assert run["deduplicated_records"] == []
 
 
 @pytest.mark.parametrize(
@@ -326,6 +354,60 @@ def test_generic_validators_reject_rehashed_internal_forgeries() -> None:
     with pytest.raises(ContractValidationError, match="discovery_run.scope_binding"):
         validate_discovery_run(forged_scope_binding)
 
+    wide_scope = build_discovery_scope(
+        selection_start_date="2026-08-01",
+        selection_end_date="2026-08-02",
+        page_size=1,
+        page_cap=2,
+        record_cap=2,
+    )
+    wide_run = _run(
+        scope=wide_scope,
+        run_id="ctgov_discovery_run_scope_capacity_forge",
+        pages=[
+            _page(next_token=TOKEN_A, total=2),
+            _page(
+                ordinal=1,
+                request=TOKEN_A,
+                total=2,
+                nct_id="NCT00000002",
+                content=HASH_C,
+                updated="2026-08-02",
+                received_at="2026-08-03T00:01:30Z",
+            ),
+        ],
+    )
+    narrow_scope = build_discovery_scope(
+        selection_start_date="2026-08-01",
+        selection_end_date="2026-08-02",
+        page_size=1,
+        page_cap=1,
+        record_cap=1,
+    )
+    forged_scope_capacity = _bind_scope_and_rehash_run(wide_run, narrow_scope)
+    with pytest.raises(ContractValidationError, match="discovery_run.scope_capacity"):
+        validate_contract(forged_scope_capacity, repo_root=ROOT)
+    with pytest.raises(ContractValidationError, match="discovery_run.scope_capacity"):
+        validate_discovery_run(forged_scope_capacity)
+    with pytest.raises(ContractValidationError, match="discovery_run.scope_capacity"):
+        build_discovery_coverage_epoch(
+            coverage_epoch_id="ctgov_discovery_coverage_scope_capacity_forge",
+            runs=[forged_scope_capacity],
+            declared_start_date="2026-08-01",
+            declared_end_date="2026-08-02",
+            transaction_from="2026-08-03T00:04:00Z",
+        )
+
+    valid_epoch = build_discovery_coverage_epoch(
+        coverage_epoch_id="ctgov_discovery_coverage_valid_wide_scope",
+        runs=[wide_run],
+        declared_start_date="2026-08-01",
+        declared_end_date="2026-08-02",
+        transaction_from="2026-08-03T00:04:00Z",
+    )
+    with pytest.raises(ContractValidationError, match="discovery_run.scope_capacity"):
+        validate_discovery_coverage_epoch(valid_epoch, runs=[forged_scope_capacity])
+
     first_scope = _scope("2026-08-01", "2026-08-02")
     second_scope = _scope("2026-08-02", "2026-08-03")
     first = _run(scope=first_scope, run_id="ctgov_discovery_run_forge_one")
@@ -342,6 +424,135 @@ def test_generic_validators_reject_rehashed_internal_forgeries() -> None:
     _rehash(forged_epoch, "coverage_payload_sha256")
     with pytest.raises(ContractValidationError, match="discovery_coverage.overlaps"):
         validate_discovery_coverage_epoch(forged_epoch, runs=[first, second])
+
+
+def test_rehashed_runs_replay_every_observable_immutable_scope_limit() -> None:
+    one_page = _run(run_id="ctgov_discovery_run_scope_limit_one_page")
+    two_page_scope = build_discovery_scope(
+        selection_start_date="2026-08-01",
+        selection_end_date="2026-08-02",
+        page_size=1,
+        page_cap=2,
+        record_cap=2,
+    )
+    two_pages = _run(
+        scope=two_page_scope,
+        run_id="ctgov_discovery_run_scope_limit_two_pages",
+        pages=[
+            _page(next_token=TOKEN_A, total=2),
+            _page(
+                ordinal=1,
+                request=TOKEN_A,
+                total=2,
+                nct_id="NCT00000002",
+                content=HASH_C,
+                updated="2026-08-02",
+                received_at="2026-08-03T00:01:30Z",
+            ),
+        ],
+    )
+    two_record_page = _page(total=2)
+    two_record_page["records"].append(
+        {
+            "nct_id": "NCT00000002",
+            "canonical_content_sha256": HASH_C,
+            "last_update_posted_date": "2026-08-02",
+        }
+    )
+    two_record_scope = build_discovery_scope(
+        selection_start_date="2026-08-01",
+        selection_end_date="2026-08-02",
+        page_size=2,
+        page_cap=1,
+        record_cap=2,
+    )
+    two_records = _run(
+        scope=two_record_scope,
+        run_id="ctgov_discovery_run_scope_limit_two_records",
+        pages=[two_record_page],
+    )
+
+    hostile_cases = (
+        (
+            "per-page bytes",
+            one_page,
+            build_discovery_scope(
+                selection_start_date="2026-08-01",
+                selection_end_date="2026-08-02",
+                page_size=1,
+                page_cap=1,
+                record_cap=1,
+                per_page_byte_cap=99,
+                total_byte_cap=100,
+            ),
+        ),
+        (
+            "total bytes",
+            two_pages,
+            build_discovery_scope(
+                selection_start_date="2026-08-01",
+                selection_end_date="2026-08-02",
+                page_size=1,
+                page_cap=2,
+                record_cap=2,
+                per_page_byte_cap=100,
+                total_byte_cap=199,
+            ),
+        ),
+        (
+            "page records",
+            two_records,
+            build_discovery_scope(
+                selection_start_date="2026-08-01",
+                selection_end_date="2026-08-02",
+                page_size=2,
+                page_record_cap=1,
+                page_cap=1,
+                record_cap=2,
+            ),
+        ),
+        (
+            "record bytes",
+            one_page,
+            build_discovery_scope(
+                selection_start_date="2026-08-01",
+                selection_end_date="2026-08-02",
+                page_size=1,
+                page_cap=1,
+                record_cap=1,
+                record_byte_cap=1,
+            ),
+        ),
+        (
+            "token bytes",
+            two_pages,
+            build_discovery_scope(
+                selection_start_date="2026-08-01",
+                selection_end_date="2026-08-02",
+                page_size=1,
+                page_cap=2,
+                record_cap=2,
+                token_byte_cap=63,
+            ),
+        ),
+        (
+            "string bytes",
+            one_page,
+            build_discovery_scope(
+                selection_start_date="2026-08-01",
+                selection_end_date="2026-08-02",
+                page_size=1,
+                page_cap=1,
+                record_cap=1,
+                string_byte_cap=10,
+            ),
+        ),
+    )
+
+    for _label, run, hostile_scope in hostile_cases:
+        forged = _bind_scope_and_rehash_run(run, hostile_scope)
+        with pytest.raises(ContractValidationError, match="discovery_run.scope_capacity"):
+            validate_discovery_run(forged)
 
 
 def test_dark_semantic_leak_scan() -> None:

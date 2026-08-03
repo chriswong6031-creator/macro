@@ -342,7 +342,11 @@ def _derive_run(
                 total_declared = current_total
             else:
                 conditions.add("total_count_mismatch")
-        elif current_total is not None and current_total != total_declared:
+        elif (
+            not isinstance(current_total, int)
+            or isinstance(current_total, bool)
+            or current_total != total_declared
+        ):
             conditions.add("total_count_mismatch")
         parsed_page_time = _safe_datetime(page.get("received_at"))
         if parsed_page_time is None:
@@ -748,6 +752,7 @@ def discovery_run_contract_semantic_issues(document: Mapping[str, Any]) -> list[
     if issue is not None:
         issues.append(issue)
     embedded_scope = document.get("scope")
+    bound_scope: dict[str, Any] | None = None
     if isinstance(embedded_scope, Mapping):
         try:
             bound_scope = validate_discovery_scope(embedded_scope)
@@ -765,6 +770,48 @@ def discovery_run_contract_semantic_issues(document: Mapping[str, Any]) -> list[
     pages, cut, window = document.get("pages"), document.get("source_cut"), document.get("selection_window")
     if not isinstance(pages, list) or not isinstance(cut, Mapping) or not isinstance(window, Mapping):
         return issues
+    if bound_scope is not None:
+        query = bound_scope["source_query"]
+        if len(pages) > query["page_cap"]:
+            issues.append(
+                ValidationIssue(
+                    "$.pages",
+                    "discovery_run.scope_capacity",
+                    "page count may not exceed the immutable scope page cap",
+                )
+            )
+        scoped_total_bytes = 0
+        scoped_total_records = 0
+        for index, page in enumerate(pages):
+            try:
+                normalized_page = _normalise_page(page, query=query)
+            except (DiscoveryError, ContractError, TypeError, ValueError, RecursionError, MemoryError):
+                issues.append(
+                    ValidationIssue(
+                        f"$.pages[{index}]",
+                        "discovery_run.scope_capacity",
+                        "page metadata and records must remain inside every immutable scope limit",
+                    )
+                )
+                continue
+            scoped_total_bytes += normalized_page["byte_count"]
+            scoped_total_records += len(normalized_page["records"])
+        if scoped_total_bytes > query["total_byte_cap"]:
+            issues.append(
+                ValidationIssue(
+                    "$.pages",
+                    "discovery_run.scope_capacity",
+                    "cumulative page bytes may not exceed the immutable scope total-byte cap",
+                )
+            )
+        if scoped_total_records > query["record_cap"]:
+            issues.append(
+                ValidationIssue(
+                    "$.pages",
+                    "discovery_run.scope_capacity",
+                    "record count may not exceed the immutable scope record cap",
+                )
+            )
     try:
         counts, deduplicated, conditions = _derive_run(
             pages=pages,

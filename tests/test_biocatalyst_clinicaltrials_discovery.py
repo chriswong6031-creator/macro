@@ -343,6 +343,33 @@ def test_success_path_refuses_a_zero_or_backwards_retrieval_clock() -> None:
     assert result.candidates == ()
 
 
+def test_invalid_initial_retrieval_clock_returns_empty_null_time_quarantine() -> None:
+    def raising_clock() -> datetime:
+        raise RuntimeError("injected clock failed")
+
+    for now_fn in (datetime.now, raising_clock):
+        transport = ScriptedTransport([])
+        walker = ClinicalTrialsDiscoveryWalker(
+            config=_config(),
+            transport=transport,
+            now_fn=now_fn,
+        )
+
+        result = _assert_quarantine(walker.walk(), "INVALID_RETRIEVAL_CLOCK")
+
+        assert result.retrieval_started_at is None
+        assert result.retrieval_finished_at is None
+        assert result.counters == discovery_module.DiscoveryCounters(
+            pages_attempted=0,
+            pages_accepted=0,
+            records_seen=0,
+            response_bytes=0,
+            decoded_json_bytes=0,
+            version_probes=0,
+        )
+        assert transport.calls == []
+
+
 def test_api_version_only_race_and_invalid_source_version_quarantine() -> None:
     before = _json({"apiVersion": "2.0.5", "dataTimestamp": "2026-08-03T08:00:00"})
     after = _json({"apiVersion": "2.0.6", "dataTimestamp": "2026-08-03T08:00:00"})

@@ -372,8 +372,8 @@ class DiscoveryQuarantine:
     state: str
     error_code: str
     query_params: tuple[tuple[str, str], ...]
-    retrieval_started_at: str
-    retrieval_finished_at: str
+    retrieval_started_at: str | None
+    retrieval_finished_at: str | None
     counters: DiscoveryCounters
     candidates: tuple[()] = ()
 
@@ -480,11 +480,23 @@ class ClinicalTrialsDiscoveryWalker:
         quarantined using a fixed code without retaining exception text.
         """
 
-        self._last_clock_value = None
-        started_clock = self._clock_now()
-        started = _iso(started_clock)
         query_params = discovery_base_query_params(self.config)
         counters = _MutableCounters()
+        self._last_clock_value = None
+        try:
+            started_clock = self._clock_now()
+            started = _iso(started_clock)
+        except Exception:
+            # No trustworthy receipt clock exists yet, so do not invent one or
+            # let a broken injected harness escape the empty quarantine seam.
+            return DiscoveryQuarantine(
+                state="quarantined",
+                error_code="INVALID_RETRIEVAL_CLOCK",
+                query_params=query_params,
+                retrieval_started_at=None,
+                retrieval_finished_at=None,
+                counters=counters.freeze(),
+            )
         try:
             version_before = self._fetch_version(counters)
             candidates_by_id: dict[str, DiscoveryCandidate] = {}
