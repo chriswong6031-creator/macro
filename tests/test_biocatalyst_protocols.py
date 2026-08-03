@@ -20,9 +20,16 @@ from engine.biocatalyst.protocols import (
     validate_trial_protocol_projection,
     validate_trial_protocol_projection_against_source,
 )
+from engine.biocatalyst.sector_packet import (
+    SectorPacketError,
+    compile_sector_packet,
+    plan_sector_packet_binding,
+    prepare_sector_packet_inputs,
+)
 from engine.biocatalyst.trials import build_trial_snapshot
 from engine.sector_intelligence import (
     ContractValidationError,
+    canonical_json_bytes,
     canonical_json_sha256,
     validate_contract,
 )
@@ -36,6 +43,14 @@ SOURCE_FIXTURE = (
     / "fixtures"
     / "clinicaltrials"
     / "trial_source_snapshot.after.v1.valid.json"
+)
+SECTOR_PACKET_HEALTH_FIXTURE = (
+    ROOT
+    / "data"
+    / "biocatalyst"
+    / "fixtures"
+    / "sector_packet"
+    / "operational_health.v1.passed.json"
 )
 
 
@@ -92,6 +107,117 @@ def _protocol(nct_id: str) -> dict:
     source = _source(nct_id)
     snapshot = build_trial_snapshot(source)
     return build_trial_protocol_projection(source, snapshot)
+
+
+def _sector_health(*, count: int) -> dict:
+    health = json.loads(SECTOR_PACKET_HEALTH_FIXTURE.read_text(encoding="utf-8"))
+    health["configured_nct_count"] = count
+    health["observed_nct_count"] = count
+    return health
+
+
+def _sector_governance(
+    projections: list[dict], health: dict, *, evaluated_at: str = "2026-08-01T15:01:00Z"
+) -> tuple[dict, dict]:
+    lobe_ref = "run:biocatalyst:n0a:20260801T150100Z"
+    manifest_ref = "authority:biocatalyst:n0a-display:v1"
+    cutoff = "2026-08-01T15:00:05Z"
+    binding = plan_sector_packet_binding(
+        trial_projections=projections,
+        operational_health=health,
+        evaluated_at=evaluated_at,
+        lobe_run_ref=lobe_ref,
+        lobe_knowledge_cutoff=cutoff,
+        authority_manifest_ref=manifest_ref,
+        max_authority="A1_EXPLAIN",
+        allowed_actions=["observe", "explain"],
+    )
+    manifest = {
+        "contract_id": "authority_manifest.v1",
+        "schema_version": "1.0.0",
+        "manifest_id": manifest_ref,
+        "sector": "biopharma",
+        "artifact_ref": binding.packet_id,
+        "artifact_type": "sector_intelligence_packet.v1",
+        "publication_tier": "DISPLAY",
+        "max_authority": "A1_EXPLAIN",
+        "allowed_actions": ["observe", "explain"],
+        "denied_actions": [
+            "originate_signal",
+            "raise_authority_from_llm",
+            "rank_security",
+            "select_security",
+            "size_position",
+            "gate_decision",
+            "execute_trade",
+        ],
+        "consumers": ["neural_web", "mastermind_ai"],
+        "issued_by": "external_governance",
+        "issued_at": "2026-08-01T15:00:05Z",
+        "valid_from": "2026-08-01T15:00:05Z",
+        "valid_to": None,
+        "expires_at": "2026-08-01T20:00:00Z",
+        "promotion_evidence_refs": [],
+        "governance_decision_refs": ["governance:biocatalyst:n0a-display:v1"],
+        "kill_switch": {"enabled": False, "owner": "external_governance", "reason": None, "activated_at": None},
+        "transaction_from": "2026-08-01T15:00:06Z",
+        "transaction_to": None,
+    }
+    lobe = {
+        "contract_id": "lobe_run.v1",
+        "schema_version": "1.0.0",
+        "run_id": lobe_ref,
+        "sector": "biopharma",
+        "lobe_id": "biocatalyst_context",
+        "producer": {"service": "external_lobe", "code_version": "n0a-test", "owner": "governance"},
+        "started_at": "2026-08-01T15:00:05Z",
+        "finished_at": "2026-08-01T15:00:06Z",
+        "knowledge_cutoff": cutoff,
+        "source_watermarks": [
+            {"source_id": "clinicaltrials_gov_v2", "watermark": cutoff, "observed_at": cutoff, "state": "current"}
+        ],
+        "input_hashes": sorted(
+            [canonical_json_sha256(health)]
+            + [projection["projection_sha256"] for projection in projections]
+        ),
+        "output_artifacts": [
+            {"artifact_ref": binding.packet_id, "content_sha256": binding.packet_hash, "row_count": binding.row_count}
+        ],
+        "warnings": [],
+        "failures": [],
+        "status": "ok",
+        "completeness": 1.0,
+        "model_versions": [],
+        "authority_manifest_ref": manifest_ref,
+    }
+    return lobe, manifest
+
+
+def _sector_packet(projections: list[dict]) -> dict:
+    health = _sector_health(count=len(projections))
+    lobe, manifest = _sector_governance(projections, health)
+    return compile_sector_packet(
+        prepare_sector_packet_inputs(
+            trial_projections=projections,
+            operational_health=health,
+            evaluated_at="2026-08-01T15:01:00Z",
+            lobe_run=lobe,
+            authority_manifest=manifest,
+        )
+    )
+
+
+def _sector_inputs(
+    projections: list[dict],
+    *,
+    health: dict | None = None,
+    evaluated_at: str = "2026-08-01T15:01:00Z",
+) -> tuple[dict, dict, dict]:
+    actual_health = _sector_health(count=len(projections)) if health is None else health
+    lobe, manifest = _sector_governance(
+        projections, actual_health, evaluated_at=evaluated_at
+    )
+    return actual_health, lobe, manifest
 
 
 def test_protocol_projection_copies_arm_groups_only_at_the_publication_boundary() -> None:
@@ -494,4 +620,300 @@ def test_peer_set_rejects_unsorted_or_untrusted_projection_inputs() -> None:
             page_limit=1,
             offset=0,
             next_cursor=None,
+        )
+
+
+def test_n0a_sector_packet_is_permutation_stable_and_facts_only() -> None:
+    first = build_trial_snapshot(_source("NCT00000001"))
+    second = build_trial_snapshot(_source("NCT00000002"))
+
+    forward = _sector_packet([first, second])
+    reverse = _sector_packet([dict(reversed(second.items())), dict(reversed(first.items()))])
+
+    validate_contract("sector_intelligence_packet.v1", forward, repo_root=ROOT)
+    assert canonical_json_bytes(forward) == canonical_json_bytes(reverse)
+    assert forward["entity_refs"] == ["trial:NCT00000001", "trial:NCT00000002"]
+    assert forward["security_refs"] == []
+    assert forward["portfolio_exposure"] == []
+    assert forward["material_change_event_refs"] == []
+    assert forward["upcoming_event_refs"] == []
+    assert forward["feature_snapshot_refs"] == []
+    assert forward["prediction_refs"] == []
+    # Live B1 read projections currently carry no evidence-claim artifact;
+    # N0a must retain that exact empty state rather than manufacturing refs.
+    assert forward["current_fact_refs"] == []
+    assert forward["evidence_claim_refs"] == []
+    assert forward["authority_caps"] == {
+        "max_authority": "A1_EXPLAIN",
+        "allowed_actions": ["observe", "explain"],
+        "forbidden_actions": [
+            "execute_trade",
+            "gate_decision",
+            "originate_signal",
+            "raise_authority_from_llm",
+            "rank_security",
+            "select_security",
+            "size_position",
+        ],
+        "llm_may_originate_signals": False,
+    }
+    serialized = json.dumps(forward, sort_keys=True)
+    assert "Northstar Biopharma" not in serialized
+    assert "NX-101" not in serialized
+
+
+def test_n0a_sector_packet_preserves_committed_evidence_and_source_refs_exactly() -> None:
+    snapshot = json.loads(
+        (
+            ROOT
+            / "data"
+            / "biocatalyst"
+            / "fixtures"
+            / "clinicaltrials"
+            / "trial_snapshot.v1.valid.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    packet = _sector_packet([snapshot])
+
+    assert packet["current_fact_refs"] == [
+        "claim:trial:NCT00000001:overall_status:20260801"
+    ]
+    assert packet["evidence_claim_refs"] == packet["current_fact_refs"]
+    assert packet["source_record_refs"] == [snapshot["source_record_ref"]]
+
+
+def test_n0a_sector_packet_keeps_a_ticker_like_sponsor_out_of_native_refs() -> None:
+    projection = build_trial_snapshot(_source())
+    projection["facts"]["sponsor"] = {
+        "state": "observed",
+        "value": {"name": "ABCD", "class": "INDUSTRY"},
+        "source_json_path": "/protocolSection/sponsorCollaboratorsModule/leadSponsor",
+    }
+    projection["projection_sha256"] = canonical_json_sha256(
+        {key: value for key, value in projection.items() if key != "projection_sha256"}
+    )
+
+    packet = _sector_packet([projection])
+
+    assert packet["entity_refs"] == ["trial:NCT00000001"]
+    assert "ABCD" not in canonical_json_bytes(packet).decode("utf-8")
+
+
+def test_n0a_sector_packet_rejects_raw_and_unobserved_trial_projection_inputs() -> None:
+    raw_store = build_trial_snapshot(_source())
+    raw_store["canonical_study"] = {"sentinel": "private"}
+    health = _sector_health(count=1)
+    lobe, manifest = _sector_governance([build_trial_snapshot(_source())], health)
+
+    with pytest.raises(SectorPacketError, match="trial_projection_unavailable"):
+        prepare_sector_packet_inputs(
+            trial_projections=[raw_store],
+            operational_health=health,
+            evaluated_at="2026-08-01T15:01:00Z",
+            lobe_run=lobe,
+            authority_manifest=manifest,
+        )
+
+    unobserved = build_trial_snapshot(_source())
+    for fact in unobserved["facts"].values():
+        fact["state"] = "source_missing"
+        fact["value"] = None
+    unobserved["projection_sha256"] = canonical_json_sha256(
+        {key: value for key, value in unobserved.items() if key != "projection_sha256"}
+    )
+    with pytest.raises(SectorPacketError, match="trial_projection_unavailable"):
+        prepare_sector_packet_inputs(
+            trial_projections=[unobserved],
+            operational_health=health,
+            evaluated_at="2026-08-01T15:01:00Z",
+            lobe_run=lobe,
+            authority_manifest=manifest,
+        )
+
+
+@pytest.mark.parametrize(
+    ("mutate", "expected"),
+    (
+        (
+            lambda lobe, manifest: lobe["output_artifacts"].clear(),
+            "governance_reference_unavailable",
+        ),
+        (
+            lambda lobe, manifest: lobe["output_artifacts"].__setitem__(
+                0, {**lobe["output_artifacts"][0], "content_sha256": "0" * 64}
+            ),
+            "governance_reference_unavailable",
+        ),
+        (
+            lambda lobe, manifest: lobe.update(input_hashes=["1" * 64]),
+            "governance_reference_unavailable",
+        ),
+        (
+            lambda lobe, manifest: manifest.update(artifact_ref="packet:biopharma:unplanned"),
+            "governance_reference_unavailable",
+        ),
+        (
+            lambda lobe, manifest: manifest.update(max_authority="A2_ATTEND"),
+            "governance_reference_unavailable",
+        ),
+        (
+            lambda lobe, manifest: manifest.update(allowed_actions=["observe", "attend"]),
+            "governance_reference_unavailable",
+        ),
+        (
+            lambda lobe, manifest: manifest.update(
+                denied_actions=[
+                    "originate_signal",
+                    "raise_authority_from_llm",
+                    "select_security",
+                    "size_position",
+                    "gate_decision",
+                    "execute_trade",
+                ]
+            ),
+            "governance_reference_unavailable",
+        ),
+        (
+            lambda lobe, manifest: manifest["kill_switch"].update(enabled=True),
+            "governance_reference_unavailable",
+        ),
+        (
+            lambda lobe, manifest: manifest.update(expires_at="2026-08-01T15:00:59Z"),
+            "governance_reference_unavailable",
+        ),
+    ),
+)
+def test_n0a_sector_packet_rejects_unbound_or_escalated_governance(
+    mutate, expected: str
+) -> None:
+    projection = build_trial_snapshot(_source())
+    health, lobe, manifest = _sector_inputs([projection])
+    mutate(lobe, manifest)
+
+    with pytest.raises(SectorPacketError, match=expected):
+        prepare_sector_packet_inputs(
+            trial_projections=[projection],
+            operational_health=health,
+            evaluated_at="2026-08-01T15:01:00Z",
+            lobe_run=lobe,
+            authority_manifest=manifest,
+        )
+
+
+def test_n0a_sector_packet_planning_is_not_a_publishable_authority_or_placeholder_bypass() -> None:
+    projection = build_trial_snapshot(_source())
+    health, lobe, manifest = _sector_inputs([projection])
+    binding = plan_sector_packet_binding(
+        trial_projections=[projection],
+        operational_health=health,
+        evaluated_at="2026-08-01T15:01:00Z",
+        lobe_run_ref=lobe["run_id"],
+        lobe_knowledge_cutoff=lobe["knowledge_cutoff"],
+        authority_manifest_ref=manifest["manifest_id"],
+        max_authority=manifest["max_authority"],
+        allowed_actions=manifest["allowed_actions"],
+    )
+
+    assert binding == type(binding)(
+        packet_id=manifest["artifact_ref"],
+        packet_hash=lobe["output_artifacts"][0]["content_sha256"],
+        row_count=1,
+    )
+    assert not hasattr(binding, "authority_caps")
+    lobe["output_artifacts"][0]["content_sha256"] = "f" * 64
+    with pytest.raises(SectorPacketError, match="governance_reference_unavailable"):
+        prepare_sector_packet_inputs(
+            trial_projections=[projection],
+            operational_health=health,
+            evaluated_at="2026-08-01T15:01:00Z",
+            lobe_run=lobe,
+            authority_manifest=manifest,
+        )
+
+
+def test_n0a_sector_packet_derives_staleness_from_passed_health_and_evaluated_at() -> None:
+    projection = build_trial_snapshot(_source())
+    evaluated_at = "2026-08-01T17:01:00Z"
+    health = _sector_health(count=1)
+    health, lobe, manifest = _sector_inputs(
+        [projection], health=health, evaluated_at=evaluated_at
+    )
+
+    packet = compile_sector_packet(
+        prepare_sector_packet_inputs(
+            trial_projections=[projection],
+            operational_health=health,
+            evaluated_at=evaluated_at,
+            lobe_run=lobe,
+            authority_manifest=manifest,
+        )
+    )
+
+    assert packet["freshness"] == {
+        "state": "stale",
+        "oldest_required_source_at": "2026-08-01T15:00:04Z",
+        "evaluated_at": evaluated_at,
+        "stale_source_ids": ["clinicaltrials_gov_v2"],
+        "unknown_source_ids": [],
+    }
+    assert packet["quality"]["state"] == "degraded"
+
+
+def test_n0a_sector_packet_rejects_future_evaluation_and_unresolved_contradictions() -> None:
+    projection = build_trial_snapshot(_source())
+    health, lobe, manifest = _sector_inputs([projection])
+    with pytest.raises(SectorPacketError, match="governance_reference_unavailable"):
+        prepare_sector_packet_inputs(
+            trial_projections=[projection],
+            operational_health=health,
+            evaluated_at="2026-08-01T21:00:00Z",
+            lobe_run=lobe,
+            authority_manifest=manifest,
+        )
+
+    unresolved = build_trial_snapshot(_source())
+    unresolved["contradiction_state"] = "open"
+    unresolved["projection_sha256"] = canonical_json_sha256(
+        {key: value for key, value in unresolved.items() if key != "projection_sha256"}
+    )
+    with pytest.raises(SectorPacketError, match="contradiction_reference_unavailable"):
+        prepare_sector_packet_inputs(
+            trial_projections=[unresolved],
+            operational_health=health,
+            evaluated_at="2026-08-01T15:01:00Z",
+            lobe_run=lobe,
+            authority_manifest=manifest,
+        )
+
+
+def test_n0a_sector_packet_refuses_hash_tampering_and_unsupported_output_lanes() -> None:
+    projection = build_trial_snapshot(_source())
+    health, lobe, manifest = _sector_inputs([projection])
+    prepared = prepare_sector_packet_inputs(
+        trial_projections=[projection],
+        operational_health=health,
+        evaluated_at="2026-08-01T15:01:00Z",
+        lobe_run=lobe,
+        authority_manifest=manifest,
+    )
+    tampered = compile_sector_packet(prepared)
+    tampered["security_refs"] = ["security:forbidden"]
+    tampered["prediction_refs"] = ["prediction:forbidden"]
+    tampered["packet_hash"] = canonical_json_sha256(
+        {key: value for key, value in tampered.items() if key != "packet_hash"}
+    )
+    # Generic packet validation alone permits those fields.  The private seal
+    # ensures they cannot enter the pure compiler by rehashing a public dict.
+    validate_contract("sector_intelligence_packet.v1", tampered, repo_root=ROOT)
+    with pytest.raises(SectorPacketError, match="validated_inputs_required"):
+        compile_sector_packet(type(prepared)(packet_bytes=canonical_json_bytes(tampered)))
+    with pytest.raises(TypeError):
+        prepare_sector_packet_inputs(  # type: ignore[call-arg]
+            trial_projections=[projection],
+            operational_health=health,
+            evaluated_at="2026-08-01T15:01:00Z",
+            lobe_run=lobe,
+            authority_manifest=manifest,
+            security_refs=["security:forbidden"],
         )
