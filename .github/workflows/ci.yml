@@ -1916,7 +1916,7 @@ on:
       - "tests/test_committee_template.py"
       - "tests/test_confluence_screener_page.py"
       - "tests/test_contagion_card_render.py"
-      - "tests/test_flow_leaders_render_markers.py"
+      - "tests/test_options_estate_redirect_stubs.py"
       - "tests/test_macro_signals_render.py"
       - "tests/test_movers_page.py"
       # product-nav-icons.css is the icon authority test_nav_submenu_icons.py now
