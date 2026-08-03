@@ -912,3 +912,36 @@ cut a neutral slice from. Free readers therefore see **zero** stock rows on this
 consistent with the pattern and with W1b §8 T1, but it is the harshest free tier in the program so
 far. **If the orchestrator wants rows, the only neutral cut available is alphabetical-by-ticker,
 which would still hand over board membership — the thing being sold. Recommend against.**
+
+## §R Commissioner rulings (Fable, 2026-08-03) — binding on the W2 builds
+
+- **F2 OVERRULED as a W2 gate.** The public-R2/public-mirror exposure of graded
+  per-ticker payloads is an ALREADY-ADJUDICATED class awaiting an operator
+  decision (`research/PAYWALL_GIT_MIRROR_EXPOSURE_ADJUDICATION.md`, #4099 —
+  its R1/R2 are the fix). W2 proceeds; the heatmap's free hover card treats the
+  graded block as walled REGARDLESS of the underlying file's current public
+  status, so the UI is correct under either resolution. W2 must not widen the
+  class (no new graded payloads onto the public R2 base or into git).
+- **T-A1 ACCEPTED.** The tile JSON is market-context; scrapability is the same
+  class as the public quote planes.
+- **T-A2 MITIGATE.** Move the two market facts that currently ride in the
+  per-ticker file into the tile JSON so the free hover keeps them.
+- **T-A3 ACCEPTED** (tiles link to gated dossiers for now — those pages are
+  future conversion targets, not this PR's problem).
+- **T-A4 CONFIRMED.** The heatmap conversion is a CONTENT build: the
+  server-rendered summary layer ships in the same PR, and the page enters the
+  sitemap only with that layer present.
+- **T-B1 RULED.** The free hero tile must be non-graded and deterministic
+  (largest-cap or largest-|move| — builder picks ONE rule and pins it).
+- **T-B2 RULED.** The engine-owned "Display-only" string is rewritten to
+  plain-words glance-tier copy at the EMITTER (with a test pin) before the page
+  goes public — banned Tier-1 vocabulary must not enter Google's index.
+- **T-B3 RULED.** The `<details>` default state unifies OPEN for both builds.
+- **T-B4 RULED.** Adopt the search-intent title with brand suffix.
+- **T-B5 ACCEPTED.** The spec's inventory of etfs.html as a 13F fund-conviction
+  desk supersedes the census's "cross-asset desk" label.
+- **T-B6 ACCEPTED.** Zero stock rows free on etfs is correct — both boards are
+  wholly graded/best-first; the free anchor is the fund directory + rotation
+  backdrop + honest totals.
+- **Build order:** etfs first (boundary files free after #4418), heatmap second
+  (sequential — shared boundary mirrors; heatmap also carries T-A2/T-B2).
