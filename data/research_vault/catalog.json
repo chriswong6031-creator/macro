@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T01:04:13.350469+00:00",
-  "count": 630,
+  "generated_at": "2026-08-03T01:19:10.767642+00:00",
+  "count": 631,
   "institutions": [
     "Amova",
     "Apollo",
@@ -265,6 +265,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6uczb3r5eja-56c3c6",
+      "title": "Chinese economy",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:59:30Z",
+      "summary_points": [
+        "**Fiscal Acceleration & Infrastructure**: Fiscal policy to accelerate spending/bond deployment for infrastructure (\"Two Key\"/\"Two New\" initiatives); \"Six Networks\" strategy (water, power grids) to boost H2 2026 growth, with H1 2026 fiscal spending up 0.8% y/y.",
+        "**Monetary Constraints & Geopolitical Risks**: PBOC limited rate cut room due to inflation, bank NIM pressure, and global rates; trade tensions (US tariffs, EU-China) and property stabilization efforts heighten geopolitical risks impacting trade flows and risk sentiment.",
+        "**Growth Divergence & Policy Timing**: Persistent activity divergence (rising exports vs.",
+        "weakening retail sales); growth target 4.5-5.0% achievable, with potential near-term rate cuts in Sep/Oct if momentum falters."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
