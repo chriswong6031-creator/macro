@@ -5,6 +5,7 @@ from base64 import b64decode
 from copy import deepcopy
 import fcntl
 from hashlib import sha256
+from io import BytesIO
 import json
 import multiprocessing
 import os
@@ -31,7 +32,7 @@ from collectors.biocatalyst.drugs_at_fda import (
     parse_drugs_at_fda_zip,
     stream_drugs_at_fda_zip_to_sqlite,
 )
-from engine.biocatalyst.regulatory import build_regulatory_graph
+from engine.biocatalyst.regulatory import RegulatoryGraphError, build_regulatory_graph
 from engine.sector_intelligence import (
     ContractValidationError,
     canonical_json_bytes,
@@ -65,6 +66,15 @@ def _table_payloads(*, mutate=None, payload_mutate=None) -> dict[str, bytes]:
     return payloads
 
 
+# ``writestr`` with a bare member name stamps the member with the current local
+# time at DOS two-second granularity, so two builds of the identical tables that
+# straddle a bucket boundary produce different archive bytes and different
+# ``archive_sha256``.  Tests cross-check archives built seconds apart, so every
+# member timestamp is pinned and the synthetic release is byte-reproducible.
+_PINNED_ZIP_DATE_TIME = (2026, 7, 31, 12, 54, 46)
+_WRITESTR_EXTERNAL_ATTR = 0o600 << 16
+
+
 def _zip_members(
     entries: list[tuple[str, bytes]], *, compression: int = zipfile.ZIP_DEFLATED,
     comment: bytes = b"", symlink_name: str | None = None,
@@ -74,13 +84,12 @@ def _zip_members(
         with zipfile.ZipFile(path, "w", compression=compression) as archive:
             archive.comment = comment
             for name, payload in entries:
-                if name == symlink_name:
-                    info = zipfile.ZipInfo(name)
-                    info.compress_type = compression
-                    info.external_attr = (stat.S_IFLNK | 0o777) << 16
-                    archive.writestr(info, payload)
-                else:
-                    archive.writestr(name, payload)
+                info = zipfile.ZipInfo(name, date_time=_PINNED_ZIP_DATE_TIME)
+                info.compress_type = compression
+                info.external_attr = (
+                    (stat.S_IFLNK | 0o777) << 16 if name == symlink_name else _WRITESTR_EXTERNAL_ATTR
+                )
+                archive.writestr(info, payload)
         return path.read_bytes()
 
 
@@ -272,6 +281,24 @@ def _publication_lock_worker(private_root: str, state_root: str, raw: bytes, res
         result_queue.put(("completed", result.release_id))
     except BaseException as exc:  # Process boundary: preserve an inspectable failure.
         result_queue.put(("error", f"{type(exc).__name__}: {exc}"))
+
+
+def test_synthetic_archive_bytes_never_depend_on_the_wall_clock() -> None:
+    """One synthetic release must hash the same however far apart it is built.
+
+    A member stamped with ``time.localtime()`` is only stable inside a DOS
+    two-second bucket, so archives built moments apart get different
+    ``archive_sha256`` values and any test that binds a receipt from one build to
+    rows from another fails on receipt validation at a wall-clock-dependent rate.
+    Two back-to-back builds usually land in the same bucket, so equality alone
+    cannot see that defect -- the pinned stamp is what this asserts.
+    """
+    raw = _zip_bytes()
+    with zipfile.ZipFile(BytesIO(raw)) as archive:
+        stamps = {member.date_time for member in archive.infolist()}
+    assert stamps == {_PINNED_ZIP_DATE_TIME}
+    assert raw == _zip_bytes()
+    assert _zip_bytes(symlink_name="TE.txt") == _zip_bytes(symlink_name="TE.txt")
 
 
 def test_synthetic_release_preserves_all_12_tables_and_blank_te_value() -> None:
@@ -641,10 +668,13 @@ def test_streamed_sqlite_replay_is_logically_deterministic_and_graph_has_small_s
         plan = one.execute("EXPLAIN QUERY PLAN SELECT count(*) FROM fda_submission_action_join j WHERE NOT EXISTS (SELECT 1 FROM fda_action_types_lookup a WHERE a.ActionTypes_LookupID=j.ActionTypes_LookupID)").fetchall()
         assert any("idx_action_lookup" in str(row) for row in plan)
     assert SQLITE_SCHEMA_SPEC_SHA256
-    _raw, parsed, _graph = _parsed_graph()
+    # The receipt must bind the same ``raw`` archive the rows came from: a second
+    # independently built archive fails receipt validation (a ValueError too) and
+    # the row ceiling this pins would never be reached.
+    parsed = parse_drugs_at_fda_zip(raw, config=DrugsAtFdaConfig(user_agent="test@example.invalid"))
     oversized = {name: list(rows) for name, rows in parsed.tables.items()}
     oversized["Applications.txt"] = oversized["Applications.txt"] * 10_001
-    with pytest.raises(ValueError, match="full_release_requires_private_sqlite_query_index"):
+    with pytest.raises(RegulatoryGraphError, match="full_release_requires_private_sqlite_query_index"):
         build_regulatory_graph(release=_release(raw, parsed), table_manifests=parsed.table_manifests, tables=oversized)
 
 
