@@ -35,6 +35,7 @@ import pandas as pd
 
 from engine import ai_desk as _desk          # reuse _check_by / _level_asof
 from engine import ai_desk_scorer as _scorer  # reuse the predicate evaluators
+from engine import desk_ledger               # append-time id-immutability gate
 from engine.regime_label import quad_label    # regime stamp → by_regime track record
 from engine import demand_chain as dc
 from lib import config
@@ -219,6 +220,13 @@ def emit(root=None, today=None) -> list[dict]:
     ledger = _read(d / "theses.jsonl")
     seen_vint = {r.get("vintage") for r in ledger.values()}
     fresh = [t for t in build_theses(root, today) if t["vintage"] not in seen_vint]
+    # The vintage dedupe alone cannot protect the id: the id is {asof}-{chain}-{tkr}
+    # while the vintage also carries fy + divergence, so a same-day re-run after a
+    # divergence flip (or fy roll) passes the vintage filter and would re-append a
+    # FLIPPED predicate under a live id — which the scorers' last-wins dedupe reads
+    # as a rewrite of the logged row. First write wins; the flip re-logs under the
+    # next day's id (docs/DESK_LEDGER_ID_MIGRATION.md, claim-keyed section).
+    fresh = desk_ledger.reject_existing_ids(d / "theses.jsonl", fresh, "demand_chain")
     if fresh:
         if _ledger_advance_enabled():
             with open(d / "theses.jsonl", "a", encoding="utf-8") as f:
