@@ -1,7 +1,7 @@
 {
   "contract_id": "biocatalyst_shared_plane_read_adapters.v1",
   "schema_version": "1.0.0",
-  "baseline_commit": "c2d466f2f568cc4c730d68ced758fafde0c6257a",
+  "baseline_commit": "8bd108d3084825ec03e18a620095da2ac1d192f9",
   "adapters": {
     "biocatalyst_trial_read_api.v1": {
       "canonical_owner": "biocatalyst",
@@ -36,6 +36,33 @@
       "limitations": [
         "current_record_facts_only",
         "no_issuer_or_security_identity",
+        "no_model_or_signal_authority"
+      ],
+      "blocker": null
+    },
+    "biocatalyst_earnings_transcript_span_adapter.v1": {
+      "canonical_owner": "earnings_narrative",
+      "implementation_state": "implemented_private_in_process_transcript_only",
+      "module": "engine.earnings_narrative.biocatalyst_transcript_adapter",
+      "callable": "read_earnings_transcript_context_bundle",
+      "route_prefix": null,
+      "routes": [],
+      "input_identity": "caller_supplied_ticker_optional_as_of",
+      "output_contracts": [
+        "biocatalyst_transcript_context_bundle.v1"
+      ],
+      "transport": "private_in_process_receipted_context_only_no_store",
+      "point_in_time_scope": "latest_selected_context_packet_known_at_and_correction_bound",
+      "available_dependency": null,
+      "compatibility_fixture": "data/biocatalyst/fixtures/shared_plane_read_adapters.v1.json",
+      "biocatalyst_eligible": true,
+      "limitations": [
+        "transcript_only",
+        "latest_selected_context_packet_only",
+        "explicit_caller_ticker_only",
+        "no_issuer_security_sponsor_or_trial_linkage",
+        "no_document_history_or_absence_conclusion",
+        "no_independent_source_authenticity_attestation",
         "no_model_or_signal_authority"
       ],
       "blocker": null
