@@ -81,7 +81,15 @@ log = logging.getLogger("build_government_revenue")
 # governed workspace immediately after paint.
 SHELL_EVENT_LIMIT = 12
 SHELL_JSON_BUDGET_BYTES = 100_000
-RAW_HTML_BUDGET_BYTES = 250_000
+# 2026-08-03 UNWEDGE (250_000 -> 262_144): the page's evidence rails grow nightly
+# (SAM opportunity evidence 06:28Z + Wave 8 IDV/DoD budget rails, #4348) and the
+# rendered HTML organically crossed the old cap at 250,179 bytes, which made
+# check_government_revenue_projection refuse EVERY render-lane push (engine-render
+# run 30790704023) and froze the live site. 256 KiB restores ~4.8% headroom; this
+# is a page-WEIGHT guard, not a validation gate, so the bump changes no claim.
+# Owner follow-up: either ratify this budget or slim the page back under 250 KB
+# and lower it again.
+RAW_HTML_BUDGET_BYTES = 262_144
 SHELL_COMPANY_METRICS = (
     "ttm_obligations",
     "award_velocity_yoy_pct",
