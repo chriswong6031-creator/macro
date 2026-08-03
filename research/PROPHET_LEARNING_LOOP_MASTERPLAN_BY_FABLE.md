@@ -20,7 +20,12 @@ STANDING rule), memory `us-board-definition-change-2026-06-25` (era-pooling trap
   deterministic failure taxonomy, entry-time context (theme/sector state AT ENTRY from git
   history of `data/baskets/latest.json` + sector stage artifacts), visible-at-entry flags, and
   an anomalous-vs-systemic aggregation. A fixture test pins ≥ the IPGP double-admission
-  detection (same ticker re-admitted ≤ 10 sessions after a ≥8% open loss).
+  detection — same ticker re-admitted ≤ 10 sessions after a prior episode that REALIZED a
+  ≥ 8% loss (`prior_episode_loss`). That is the leg IPGP actually fires on, and it is
+  HINDSIGHT: the first position was +3.04% green on the night the board bought the name
+  back. The sibling leg `open_drawdown_at_readmit` (prior position already ≥ 8% under
+  water AT the re-admission) is the buildable one and fires 0 times on the 2026-07-31
+  window; both are costed, separately labelled, in the veto table.
 - **G2 — Taxonomy is deterministic.** Every classification is a feature-threshold rule
   (documented in-module); no LLM anywhere in the classification path (A7: LLMs never originate
   signals). Multi-label allowed; every label carries its trigger values.
@@ -82,9 +87,14 @@ Two different jobs, two instruments — never one blended number:
     hold-state history when reconstructable; else close crossed entry-row stop level),
     `gap_event` (≥8% single-session gap against the position — earnings/news class),
     `market_beta` (excess loss < 40% of absolute loss — the tape, not the pick),
-    `re_admission` (same ticker re-admitted ≤10 sessions after a ≥8% loss — the IPGP case),
+    `re_admission` (same ticker re-admitted ≤10 sessions after a prior episode that was
+    already ≥8% under water — `open_drawdown_at_readmit`, BUILDABLE — or that realized a
+    ≥8% loss — `prior_episode_loss`, HINDSIGHT, the IPGP case),
     `idiosyncratic` (none of the above fired).
-  - `visible_at_entry`: bool per label (could the engine have known?).
+  - `visible_at_entry`: bool per label (could the engine have known?). A label whose legs
+    disagree is NOT visible-at-entry as a label — `re_admission` is excluded on exactly
+    that ground — and is costed one row per leg instead, each stamped `buildable` or
+    `hindsight_upper_bound`. The per-ROW flag stays leg-specific.
 - **Aggregations artifact** (`data/prophet_postmortem/summary.json` + a rendered
   `reports/prophet_postmortem_<asof>.md`): label frequencies, loss contribution per label,
   cohort splits (headwind-at-entry vs tailwind-at-entry loss rates + the SYMMETRIC winners

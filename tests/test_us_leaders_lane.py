@@ -25,6 +25,9 @@ Key invariants:
   C. Dual-class dedup keeps the FIRST-ranked variant; cap caps; rows tag lane='leader'.
   D. Serialisation: leaders rows go through the SAME whole-dict _json_safe scrub the
      artifact write applies, so allow_nan=False cannot trip on this lane.
+  E. G0.3 ON REAL DATA: the committed 2026-07-31 fixture. A-D are synthetic — numbers
+     picked to make the rule work, which can only show the rule is self-consistent. E is
+     the program's central claim measured on the actual board.
 
 PRODUCTION SHAPE (load-bearing): _select_leaders runs BEFORE the board-row enrichment
 pass, so at call time the row carries NEITHER `composite` NOR `off_high` — both arrive
@@ -36,6 +39,8 @@ from __future__ import annotations
 
 import json
 import math
+import random
+from pathlib import Path
 
 from scripts.build_stock_library import (
     LEADERS_CAP,
@@ -476,3 +481,202 @@ class TestLeadersArtifactSafety:
         wide = {"buy": [{"ticker": "A", "sector": "Energy"}], "watch": [], "laggards": []}
         assert _drop_spurious_sector_rows(wide) == {}
         assert "leaders" not in wide
+
+
+# ---------------------------------------------------------------------------
+# E. G0.3 on REAL data — the committed 2026-07-31 fixture
+# ---------------------------------------------------------------------------
+#
+# Everything above is synthetic: the numbers were chosen so the rule works, so they can
+# only prove the rule is internally consistent. They would all still pass on a v2 that
+# never surfaces a single software name in production, because no production number ever
+# enters them. The masterplan's central claim (§0 G0.3) is an empirical one — "the leaders
+# lane surfaces the software/AI cohort, not residual-alpha noise" — and this section is the
+# only place it is measured.
+#
+# The fixture is real. Every field is the production call on committed caches as of
+# 2026-07-31: total_return_z from engine.us_board_rank.total_return_z over the full 1563-name
+# universe, above200/weekly_bull from signal_gate.gate, off_high from technicals.snapshot,
+# dir from cycles.analyze, alpha from site/factordata/alpha.json, theme from the nightly
+# baskets snapshot. Provenance and regeneration: scripts/dev/make_leaders_fixture.py.
+#
+# The fixture holds the top 40 names by momentum z plus the charter names, and the generator
+# hard-asserts that no omitted universe name could reach the 15-row cap — so the strip these
+# tests see is the strip production would have shipped, not a flattering subset.
+
+_FIXTURE_PATH = (Path(__file__).resolve().parent
+                 / "fixtures" / "leaders_v2_realdata_fixture.json")
+_REALDATA = json.loads(_FIXTURE_PATH.read_text())
+_COHORT_THEMES = {"ai_software", "non_ai_software"}
+
+
+def _realdata_inputs(rows: list[dict] | None = None):
+    """(scored, row_by_t, sig_verdict, kwargs) from the committed real-data fixture.
+
+    Production shape, faithfully: a name with no residual alpha never becomes a board row
+    (build_stock_library L2354) and `scored` is itself filtered to `t in row_by_t` (L3274),
+    so `has_board_row` names are the only ones that reach the selector. Rows are rebuilt on
+    every call — _select_leaders stamps lane='leader' onto the dicts it returns.
+    """
+    rows = _REALDATA["names"] if rows is None else rows
+    board = [r for r in rows if r["has_board_row"]]
+    row_by_t = {r["ticker"]: {"ticker": r["ticker"], "name": r["name"],
+                              "sector": r["sector"], "alpha": r["alpha"],
+                              "dir": r["dir"]}
+                for r in board}
+    scored = [(r["ticker"], {"composite_z": 0.0}) for r in board]
+    sig_verdict = {r["ticker"]: {"above200": r["above200"],
+                                 "weekly_bull": r["weekly_bull"], "eligible": False}
+                   for r in rows}
+    kwargs = {
+        "momentum_by": {r["ticker"]: r["total_return_z"] for r in rows
+                        if r["total_return_z"] is not None},
+        "disp_by": {r["ticker"]: {"off_high": r["off_high"]} for r in rows},
+        "theme_by": {r["ticker"]: r["theme"] for r in rows if r["theme"]},
+    }
+    return scored, row_by_t, sig_verdict, kwargs
+
+
+def _realdata_leaders(**over):
+    scored, rbt, sv, kw = _realdata_inputs()
+    kw.update(over)
+    return _select_leaders(scored, rbt, sv, set(), **kw)
+
+
+def _by_ticker(ticker: str) -> dict:
+    return next(r for r in _REALDATA["names"] if r["ticker"] == ticker)
+
+
+class TestG03SoftwareCohortOnRealData:
+    """The claim, measured: 2026-07-31, real board readings, real selector."""
+
+    def test_the_strip_fills_to_the_cap(self):
+        """Read this first — every exclusion assertion below is worthless without it.
+        An empty or short strip would satisfy 'CALY is not present' trivially."""
+        out = _realdata_leaders()
+        assert len(out) == LEADERS_CAP
+        assert all(r["lane"] == "leader" for r in out)
+
+    def test_at_least_three_cohort_members_are_selected(self):
+        """G0.3 verbatim: >= 3 members of ai_software / non_ai_software on the strip."""
+        picked = _tickers(_realdata_leaders())
+        cohort = [t for t in picked
+                  if ((_by_ticker(t)["theme"] or {}).get("id")) in _COHORT_THEMES]
+        assert len(cohort) >= 3, (
+            f"only {len(cohort)} software-cohort names on the real-data strip: {cohort}")
+
+    def test_the_cohort_members_are_the_expected_names(self):
+        """Pin WHICH names, not just how many — a count-only assertion survives the
+        selector picking three entirely different cohort members."""
+        picked = set(_tickers(_realdata_leaders()))
+        assert {"SNOW", "PANW", "CRWD"} <= picked
+
+    def test_residual_alpha_only_names_are_excluded(self):
+        """CALY / TMP / NHC are the names the v1 residual-alpha rule put on the strip
+        (masterplan §1.3). v2 must not."""
+        picked = set(_tickers(_realdata_leaders()))
+        assert picked.isdisjoint(set(_REALDATA["residual_alpha_only"]))
+
+    def test_the_excluded_names_lose_on_RANK_not_on_admission(self):
+        """The load-bearing half of the exclusion.
+
+        If CALY / TMP / NHC were simply inadmissible on 2026-07-31 — or absent from the
+        fixture — the assertion above would pass on a selector that had regressed all the
+        way back to v1. Lift the cap and they ARE selected: they clear every admission
+        gate and are beaten purely by the momentum rank key.
+        """
+        big = _realdata_leaders(cap=len(_REALDATA["names"]))
+        picked = set(_tickers(big))
+        assert set(_REALDATA["residual_alpha_only"]) <= picked
+        # …and they sit well below the cap, not one slot outside it
+        order = _tickers(big)
+        assert all(order.index(t) >= LEADERS_CAP
+                   for t in _REALDATA["residual_alpha_only"])
+
+    def test_the_v1_rule_would_have_inverted_this_on_the_same_data(self):
+        """Counterfactual on the SAME real rows: v1 was `alpha >= 0.5`, alpha desc.
+
+        This is the regression the lane exists to prevent, priced in real numbers — the
+        residual-alpha rule selects all three small caps and cannot see SNOW at all: its
+        residual is NEGATIVE (-0.15) while it is the #2 total-return name of 1563.
+        """
+        v1 = sorted((r for r in _REALDATA["names"]
+                     if (r["alpha"] or -99) >= 0.5 and r["has_board_row"]),
+                    key=lambda r: -r["alpha"])[:LEADERS_CAP]
+        v1_tickers = {r["ticker"] for r in v1}
+        assert set(_REALDATA["residual_alpha_only"]) <= v1_tickers
+        assert "SNOW" not in v1_tickers
+        assert _by_ticker("SNOW")["alpha"] < 0.5      # invisible to the v1 floor
+        assert _by_ticker("SNOW")["z_rank"] == 2      # while leading on total return
+
+    def test_the_selection_does_not_depend_on_input_order(self):
+        """Same data, shuffled arrival order, identical strip — the board is rebuilt
+        nightly and its row order is not a contract."""
+        baseline = _tickers(_realdata_leaders())
+        for seed in (0, 1, 7, 42):
+            rows = list(_REALDATA["names"])
+            random.Random(seed).shuffle(rows)
+            scored, rbt, sv, kw = _realdata_inputs(rows)
+            assert _tickers(_select_leaders(scored, rbt, sv, set(), **kw)) == baseline
+
+
+class TestRealDataFixtureIntegrity:
+    """Guards on the fixture itself — a fixture that quietly stops containing the case
+    turns every assertion above into a tautology."""
+
+    def test_pinned_to_the_measured_day(self):
+        assert _REALDATA["as_of"] == "2026-07-31"
+        assert _REALDATA["theme_as_of"] == "2026-07-31"
+        assert _REALDATA["alpha_as_of"] == "2026-07-31"
+
+    def test_every_charter_name_is_present(self):
+        present = {r["ticker"] for r in _REALDATA["names"]}
+        assert set(_REALDATA["cohort"]) <= present
+        assert set(_REALDATA["residual_alpha_only"]) <= present
+
+    def test_the_fixture_params_match_the_builder(self):
+        """The fixture was generated against these constants; if the builder's cap or
+        floor moves, the recorded faithfulness proof no longer describes this test."""
+        p = _REALDATA["leaders_params"]
+        assert p["cap"] == LEADERS_CAP
+        assert p["off_high_floor"] == LEADERS_OFF_HIGH_FLOOR
+        assert p["theme_boost"] == LEADERS_THEME_BOOST
+
+    def test_no_omitted_universe_name_could_reach_the_cap(self):
+        """The generator's faithfulness proof, re-asserted here: the 15th admitted name
+        outscores the best any name outside the fixture could possibly reach."""
+        f = _REALDATA["faithfulness"]
+        assert f["cap_rank_key"] > f["omitted_ceiling"]
+        assert f["omitted_ceiling"] == round(
+            _REALDATA["universe"]["first_omitted_z"] + LEADERS_THEME_BOOST, 4)
+
+    def test_the_residual_names_really_are_residual_alpha_freaks(self):
+        """The fixture must keep reproducing the v1 failure: high residual alpha,
+        unremarkable total momentum. If these ever invert, the counterfactual above
+        stops proving anything."""
+        for t in _REALDATA["residual_alpha_only"]:
+            row = _by_ticker(t)
+            assert row["alpha"] >= 0.5, f"{t} no longer clears the v1 alpha floor"
+            assert row["z_rank"] > 100, f"{t} is now a genuine momentum leader"
+
+    def test_the_cohort_carries_its_theme_membership(self):
+        for t in _REALDATA["cohort"]:
+            assert (_by_ticker(t)["theme"] or {}).get("id") in _COHORT_THEMES
+
+    def test_pltr_is_recorded_as_structurally_inadmissible(self):
+        """Honest disclosure, not a hidden hole: PLTR is a charter cohort name that did
+        NOT qualify on 2026-07-31 (below its 200dma, 40% off its high). It is in the
+        fixture so the fact is visible; pinned so a regeneration that flips it is seen."""
+        pltr = _by_ticker("PLTR")
+        assert pltr["above200"] is False
+        assert pltr["off_high"] < LEADERS_OFF_HIGH_FLOOR
+        assert "PLTR" not in _tickers(_realdata_leaders())
+
+    def test_the_universe_behind_the_z_is_the_whole_board(self):
+        """The z values are cross-sectional standings over the real universe, not a
+        re-z of these 45 names — that is what makes SNOW's #1 meaningful."""
+        u = _REALDATA["universe"]
+        assert u["size"] > 1000
+        assert u["z_names"] == u["size"]
+        assert u["z_sessions"] == 63
+        assert len(_REALDATA["names"]) < u["size"]

@@ -639,6 +639,47 @@ class TestInvariantDSortContracts:
         buy = [{"ticker": "A", "stage": "live"}, {"ticker": "B", "stage": "ran"}]
         assert self._d(_check(self._write(tmp_path, buy))) == []
 
+    def test_a_scoreless_row_does_not_blind_the_walk_behind_it(self, tmp_path):
+        """A None score used to CLOBBER the comparison anchor, so one scoreless row in
+        the middle of a bucket masked the very violation that followed it: [100, None,
+        200] inside one stage compared nothing at all and passed clean. The anchor now
+        carries the last SCORED row forward, so the guard can see the failure."""
+        from scripts.check_board_contradictions import _check
+        buy = [self._row("TOP", "live", 100.0),
+               {"ticker": "GAP", "stage": "live", "lane": "continuation"},
+               self._row("BAD", "live", 200.0)]
+        viols = self._d(_check(self._write(tmp_path, buy)))
+        assert any("BAD" in v and "outranks the row above it" in v for v in viols), (
+            f"a scoreless row must not hide the score inversion behind it, got {viols}")
+
+    def test_a_scoreless_row_alone_is_still_not_a_violation(self, tmp_path):
+        """The anchor must not turn a MISSING reading into a reported one."""
+        from scripts.check_board_contradictions import _check
+        buy = [self._row("TOP", "live", 100.0),
+               {"ticker": "GAP", "stage": "live", "lane": "continuation"},
+               self._row("OK", "live", 90.0)]
+        assert self._d(_check(self._write(tmp_path, buy))) == []
+
+    def test_a_new_bucket_restarts_the_score_chain(self, tmp_path):
+        """Scores are only comparable inside one stage: a `setting_up` row may score
+        above the last `live` row without that being a sort break."""
+        from scripts.check_board_contradictions import _check
+        buy = [self._row("LIVE", "live", 10.0),
+               self._row("SETUP", "setting_up", 99.0),
+               self._row("SETUP2", "setting_up", 98.0)]
+        assert self._d(_check(self._write(tmp_path, buy))) == []
+
+    def test_an_unknown_stage_does_not_reset_the_anchor_either(self, tmp_path):
+        """The unknown-stage row is reported and skipped; the rows around it are still
+        judged against each other."""
+        from scripts.check_board_contradictions import _check
+        buy = [self._row("TOP", "live", 40.0),
+               self._row("WAT", "banana", 55.0),
+               self._row("BAD", "live", 88.0)]
+        viols = self._d(_check(self._write(tmp_path, buy)))
+        assert any("unknown stage" in v for v in viols)
+        assert any("BAD" in v and "outranks" in v for v in viols)
+
     # -- legacy branch ------------------------------------------------------
 
     def test_legacy_board_still_gets_the_alpha_check(self, tmp_path):

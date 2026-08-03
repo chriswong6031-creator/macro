@@ -164,8 +164,32 @@ class TestEdgeLeg:
         assert pct[1] == pytest.approx(1.0)   # AAA wins the tie
         assert pct[0] == pytest.approx(0.0)
 
-    def test_single_row_pool(self):
-        assert ubr.alpha_percentiles([_row("A", alpha=0.1)])[0] == pytest.approx(1.0)
+    def test_single_row_pool_has_no_percentile_and_earns_no_edge(self):
+        """m3: a cross-section of one has no cross-sectional reading.
+
+        The row is simultaneously the top AND the bottom of its own pool, so 1.0 was
+        an artifact of the degenerate pool, not evidence — and it handed the full
+        25-point edge leg to a name that had out-ranked nothing.
+        """
+        pct = ubr.alpha_percentiles([_row("A", alpha=0.1)])
+        assert pct[0] is None
+        assert ubr.edge_value(pct[0]) == 0.0
+
+    def test_a_lone_scored_row_gets_zero_edge_points_end_to_end(self):
+        scored = ubr.score_rows([_row("A", alpha=5.0)], board_asof="2026-07-31")
+        assert scored[0]["prophet"]["points"]["edge"] == 0.0
+        assert scored[0]["prophet"]["alpha_percentile"] is None
+
+    def test_a_pool_of_two_still_spans_the_full_range(self):
+        """The n==1 guard must not swallow the smallest REAL cross-section."""
+        pct = ubr.alpha_percentiles([_row("A", alpha=2.0), _row("B", alpha=1.0)])
+        assert pct[0] == pytest.approx(1.0) and pct[1] == pytest.approx(0.0)
+
+    def test_one_finite_alpha_among_many_rows_is_still_a_pool_of_one(self):
+        """The pool is the SCORED rows, not the row count: two alpha-less rows do not
+        turn a single reading into a cross-section."""
+        rows = [_row("A", alpha=1.0), _row("B", alpha=None), _row("C", alpha=None)]
+        assert ubr.alpha_percentiles(rows) == {0: None, 1: None, 2: None}
 
     def test_nan_alpha_is_treated_as_missing(self):
         rows = [_row("A", alpha=float("nan")), _row("B", alpha=1.0)]
@@ -233,8 +257,51 @@ class TestStages:
         assert ubr.stage_for({"dir": "down"}, {}) == "blocked"
         assert ubr.stage_for({"dir": "down"}, None) == "blocked"
 
-    def test_downtrend_with_an_entry_status_keeps_that_status_bucket(self):
-        assert ubr.stage_for({"dir": "down"}, {"status": "bounce_wait"}) == "setting_up"
+    @pytest.mark.parametrize("status", [
+        "buy_now", "partial", "buy_soon",           # would have been live
+        "await_confluence", "bounce_wait", "watch",  # would have been setting_up
+        "extended", "topping", "hold",               # would have been ran
+        "banana", "",                                # unknown -> setting_up default
+    ])
+    def test_downtrend_blocks_regardless_of_entry_status(self, status):
+        """m1 / masterplan §3.1: `blocked` is {blocked, exit, avoid} OR label DOWNTREND,
+        and the DOWNTREND clause is UNCONDITIONAL.
+
+        The engine used to apply it only to rows with NO status at all, so a falling
+        name carrying `bounce_wait` — the literal catch-the-knife row — rendered in
+        `setting_up`, ABOVE the blocked bucket. tests/test_us_board_priority_ui.py's
+        `_stage_of` (the rendered-HTML contract) has asserted the unconditional rule
+        since it was written; the engine was the side that disagreed.
+        """
+        assert ubr.stage_for({"dir": "down"}, {"status": status}) == "blocked"
+        assert ubr.stage_for({"label": "DOWNTREND"}, {"status": status}) == "blocked"
+
+    def test_downtrend_label_alone_blocks_without_a_dir(self):
+        assert ubr.stage_for({"label": "DOWNTREND"}, {"status": "buy_now"}) == "blocked"
+        assert ubr.stage_for({"label": "downtrend"}, {}) == "blocked"
+
+    def test_a_suffixed_downtrend_label_still_blocks(self):
+        """_enforce_blocked_buy_invariant appends ' (blocked)' to shipped labels — the
+        07-31 artifact carries 'UPTREND (blocked)'-shaped strings — so an equality test
+        would read a suffixed DOWNTREND as an unknown label."""
+        assert ubr.stage_for({"label": "DOWNTREND (blocked)"},
+                             {"status": "buy_now"}) == "blocked"
+        assert ubr.is_downtrend({"label": "DOWNTREND （受阻）"}) is True
+
+    def test_an_uptrend_row_is_not_downtrended_by_the_label_match(self):
+        """Mutation guard: the label test must not fire on every trend label."""
+        for label in ("UPTREND", "UPTREND (blocked)", "BOTTOMING", "BUY ZONE",
+                      "NEARING A HIGH", "UNCONFIRMED TURN"):
+            assert ubr.is_downtrend({"label": label}) is False, label
+        assert ubr.stage_for({"label": "UPTREND"}, {"status": "buy_now"}) == "live"
+
+    def test_downtrend_row_scores_and_sorts_into_the_blocked_bucket(self):
+        rows = [_row("FALL", status="buy_now", alpha=9.0, dir="down"),
+                _row("OK", status="buy_now", alpha=-1.0)]
+        scored = ubr.score_rows(rows, board_asof="2026-07-31")
+        assert [r["ticker"] for r in scored] == ["OK", "FALL"]
+        assert scored[1]["stage"] == "blocked"
+        assert scored[1]["featured"] is False
 
     def test_blocked_status_beats_everything(self):
         assert ubr.stage_for({"dir": "up"}, {"status": "avoid"}) == "blocked"
@@ -288,6 +355,63 @@ class TestFreshness:
         rows = ubr.score_rows([_row("A", asof=None)], board_asof="2026-07-31")
         assert rows[0]["new"] is False
         assert rows[0]["days_since_signal"] is None
+
+
+class TestSignalAgeBasis:
+    """m4: `days_since_signal` is read as SESSIONS by templates/stocktable.js
+    (`FRESH_DAYS = 2` gates the NEW dot + the fresh-only filter), so the resolver
+    answers in sessions when it can and DISCLOSES the basis when it cannot."""
+
+    def test_fresh_bars_is_the_session_answer(self):
+        assert ubr.signal_age({"fresh_bars": 13}, "2026-07-01", "2026-07-31") == (
+            13, "sessions")
+
+    def test_zero_fresh_bars_is_a_same_session_cross_not_a_missing_reading(self):
+        assert ubr.signal_age({"fresh_bars": 0}, "2026-07-01", "2026-07-31") == (
+            0, "sessions")
+
+    def test_calendar_is_the_disclosed_fallback(self):
+        assert ubr.signal_age({}, "2026-07-29", "2026-07-31") == (2, "calendar")
+        assert ubr.signal_age(None, "2026-07-29", "2026-07-31") == (2, "calendar")
+
+    def test_neither_basis_is_a_null_not_a_zero(self):
+        assert ubr.signal_age({}, None, "2026-07-31") == (None, None)
+        assert ubr.signal_age({"fresh_bars": None}, "x", "2026-07-31") == (None, None)
+
+    def test_a_negative_fresh_bars_falls_through_to_calendar(self):
+        assert ubr.signal_age({"fresh_bars": -3}, "2026-07-29", "2026-07-31") == (
+            2, "calendar")
+
+    def test_the_two_bases_disagree_by_more_than_units_on_real_shapes(self):
+        """Why the basis has to be disclosed rather than the units quietly swapped.
+
+        `signal.asof` is the ticker's LAST CLOSE BAR, not the date the signal fired
+        (engine.signal_quality.analyze stamps `str(idx[-1].date())`). On the committed
+        07-31 board NUE reads asof=2026-07-31 while its own last marker fired
+        2026-06-16 — calendar-only would call that 45-day-old signal 0 days old and
+        light the NEW dot.
+        """
+        nue_like = {"fresh_bars": 32}
+        age, basis = ubr.signal_age(nue_like, "2026-07-31", "2026-07-31")
+        assert (age, basis) == (32, "sessions")
+        assert ubr.days_since_signal("2026-07-31", "2026-07-31") == 0
+
+    def test_score_rows_stamps_both_the_age_and_its_basis(self):
+        rows = ubr.score_rows(
+            [_row("SESS", asof="2026-07-31",
+                  signal={**_verdict("T2", 1, asof="2026-07-31"), "fresh_bars": 9}),
+             _row("CAL", asof="2026-07-29")],
+            board_asof="2026-07-31")
+        by = {r["ticker"]: r for r in rows}
+        assert by["SESS"]["days_since_signal"] == 9
+        assert by["SESS"]["days_since_signal_basis"] == "sessions"
+        assert by["CAL"]["days_since_signal"] == 2
+        assert by["CAL"]["days_since_signal_basis"] == "calendar"
+
+    def test_an_unknown_age_carries_no_basis_claim(self):
+        rows = ubr.score_rows([_row("A", asof=None)], board_asof=None)
+        assert rows[0]["days_since_signal"] is None
+        assert rows[0]["days_since_signal_basis"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -421,11 +545,24 @@ class TestScoreRows:
         assert round(score, 1) == score
 
     def test_a_perfect_row_scores_100(self):
+        """100 needs a real cross-section: `edge` is a percentile, and m3 gives a pool
+        of ONE no percentile at all (top and bottom coincide), so the same row alone
+        tops out at 75."""
+        scored = ubr.score_rows(
+            [_row("A", status="buy_now", tier="T2", ticks=1, alpha=1.0,
+                  ext_z=0.0, coiled={"star": True}),
+             _row("Z", status="buy_now", tier="T2", ticks=1, alpha=0.0,
+                  ext_z=0.0, coiled={"star": True})],
+            board_asof="2026-07-31")
+        assert scored[0]["ticker"] == "A"
+        assert scored[0]["prophet"]["score"] == pytest.approx(100.0)
+
+    def test_a_lone_perfect_row_tops_out_at_the_scoreable_range(self):
         scored = ubr.score_rows(
             [_row("A", status="buy_now", tier="T2", ticks=1, alpha=1.0,
                   ext_z=0.0, coiled={"star": True})],
             board_asof="2026-07-31")
-        assert scored[0]["prophet"]["score"] == pytest.approx(100.0)
+        assert scored[0]["prophet"]["score"] == pytest.approx(75.0)
 
     def test_points_reconstruct_the_score(self):
         scored = ubr.score_rows([_row("A", ext_z=1.0, coiled={"coiled": True})],
@@ -493,6 +630,62 @@ class TestRankingBlock:
         block = ubr.ranking_block([])
         for stage, label in block["stage_labels"].items():
             assert label["en"] and label["zh"], stage
+
+
+class TestComponentCoverage:
+    """M1b: the score's own coverage receipt, recomputed every build.
+
+    A hardcoded "runway is 0" note outlives its recompute; a counted one cannot.
+    """
+
+    def test_every_leg_is_reported_even_when_it_is_dead(self):
+        scored = ubr.score_rows([_row("A", alpha=1.0), _row("B", alpha=0.0)],
+                                board_asof="2026-07-31")
+        cov = ubr.component_coverage(scored)
+        assert set(cov) == set(ubr.SCORE_WEIGHTS)
+        for name, bucket in cov.items():
+            assert set(bucket) == {"nonzero", "n"}, name
+            assert bucket["n"] == 2, name
+
+    def test_a_dead_leg_counts_zero_not_absent(self):
+        """The live board's shape: no row carries ext_z, so runway is 0 everywhere.
+        A MISSING bucket would read 'not measured' — a different claim from
+        'measured zero'."""
+        scored = ubr.score_rows([_row(f"T{i}", alpha=float(i)) for i in range(4)],
+                                board_asof="2026-07-31")
+        cov = ubr.component_coverage(scored)
+        assert cov["runway"] == {"nonzero": 0, "n": 4}
+
+    def test_a_live_leg_counts_its_nonzero_rows(self):
+        scored = ubr.score_rows(
+            [_row("EXT", alpha=2.0, ext_z=2.5), _row("ROOM", alpha=1.0, ext_z=0.0),
+             _row("NONE", alpha=0.0)],
+            board_asof="2026-07-31")
+        cov = ubr.component_coverage(scored)
+        # ext_z 2.5 -> fully extended -> 0 runway; 0.0 -> full runway; absent -> 0
+        assert cov["runway"] == {"nonzero": 1, "n": 3}
+
+    def test_an_unscored_row_is_not_counted_as_a_zero(self):
+        cov = ubr.component_coverage([{"ticker": "RAW"}])
+        assert cov["signal"] == {"nonzero": 0, "n": 0}
+
+    def test_the_block_carries_the_coverage_and_stays_json_safe(self):
+        scored = ubr.score_rows([_row("A")], board_asof="2026-07-31")
+        block = ubr.ranking_block(scored)
+        assert block["component_coverage"]["runway"] == {"nonzero": 0, "n": 1}
+        json.dumps(block, allow_nan=False)
+
+    def test_coverage_is_computed_not_hardcoded(self):
+        """Mutation check: change the input, the number must move."""
+        dead = ubr.ranking_block(
+            ubr.score_rows([_row("A", alpha=1.0), _row("B", alpha=0.0)],
+                           board_asof="2026-07-31"))
+        alive = ubr.ranking_block(
+            ubr.score_rows([_row("A", alpha=1.0, ext_z=0.0),
+                            _row("B", alpha=0.0, ext_z=0.5)],
+                           board_asof="2026-07-31"))
+        assert dead["component_coverage"]["runway"]["nonzero"] == 0
+        assert alive["component_coverage"]["runway"]["nonzero"] == 2
 
 
 # ---------------------------------------------------------------------------
@@ -704,12 +897,26 @@ class TestTotalReturnZ:
 # 8. ran lane
 # ---------------------------------------------------------------------------
 
+_UNSET = object()
+
+
 def _ran_verdict(ticks, *, eligible=False, above200=True, weekly_bull=True,
-                 last=None, asof="2026-07-31"):
+                 last=None, asof="2026-07-31", fresh_bars=_UNSET):
+    """A ran-lane verdict.
+
+    ``fresh_bars`` is what signal_gate stamps when the last marker is a buy/rebuy —
+    the count of DAILY bars since that marker — and it is the ran lane's fallback
+    anchor. It defaults to ``ticks`` here purely so the 10-bar fixture series can
+    resolve a MOVE as well as an age; on real names it runs ~3x larger (measured AEE
+    29 vs ticks 11), and the tick-vs-session divergence has its own tests below rather
+    than riding on this default. Pass ``fresh_bars=None`` for the real no-anchor shape
+    (last marker is a sell/cut), which the fail-closed rule must DROP.
+    """
     v = {"eligible": eligible, "ticks": ticks, "above200": above200,
          "weekly_bull": weekly_bull, "asof": asof}
     if last is not None:
         v["last"] = last
+    v["fresh_bars"] = ticks if fresh_bars is _UNSET else fresh_bars
     return v
 
 
@@ -754,6 +961,7 @@ class TestCrossRead:
         assert read["sessions_since"] == 4
         assert read["cross_date"] == "2026-07-27"
         assert read["pct_since"] == pytest.approx(round((110 / 105 - 1) * 100, 1))
+        assert read["anchor"] == "approx"
 
     def test_cross_date_anchor_wins(self):
         read = ubr.cross_read(self._DATES, self._CLOSES,
@@ -761,6 +969,24 @@ class TestCrossRead:
         assert read["cross_date"] == "2026-07-22"
         assert read["sessions_since"] == 7
         assert read["pct_since"] == pytest.approx(round((110 / 102 - 1) * 100, 1))
+        assert read["anchor"] == "marker"
+
+    def test_pct_since_is_measured_from_the_same_bar_as_the_age(self):
+        """The age and the move must never describe different anchors — on either
+        path. `pct_since` off the ticks bar while `sessions_since` counts from the
+        marker is the half of B3 that survives a units fix."""
+        for kwargs in ({"cross_date": "2026-07-22"}, {"sessions_back": 7}):
+            read = ubr.cross_read(self._DATES, self._CLOSES, **kwargs)
+            bar = len(self._CLOSES) - 1 - read["sessions_since"]
+            assert read["cross_date"] == self._DATES[bar]
+            assert read["pct_since"] == pytest.approx(
+                round((self._CLOSES[-1] / self._CLOSES[bar] - 1) * 100, 1))
+
+    def test_every_read_declares_its_anchor(self):
+        for kwargs in ({"cross_date": "2026-07-22"}, {"sessions_back": 3},
+                       {"cross_date": "2020-01-01", "sessions_back": 2}):
+            read = ubr.cross_read(self._DATES, self._CLOSES, **kwargs)
+            assert read["anchor"] in ("marker", "approx")
 
     def test_cross_date_between_sessions_anchors_to_the_last_one_at_or_before(self):
         read = ubr.cross_read(self._DATES, self._CLOSES, cross_date="2026-07-26")
@@ -770,6 +996,9 @@ class TestCrossRead:
         read = ubr.cross_read(self._DATES, self._CLOSES,
                               cross_date="2020-01-01", sessions_back=2)
         assert read["cross_date"] == "2026-07-29"
+        assert read["anchor"] == "approx", (
+            "a marker date that could not be resolved must not be reported as an "
+            "exact marker anchor")
 
     def test_zero_sessions_back_is_the_latest_bar(self):
         read = ubr.cross_read(self._DATES, self._CLOSES, sessions_back=0)
@@ -826,7 +1055,9 @@ class TestBuildRanRows:
         assert row["stage"] == "ran" and row["lane"] == "ran"
         assert row["pct_since"] == pytest.approx(round((110 / 105 - 1) * 100, 1))
         assert row["sessions_since"] == 4
-        assert row["days_since_signal"] == 0
+        assert row["anchor"] == "approx"
+        assert row["days_since_signal"] == 4          # sessions, from fresh_bars
+        assert row["days_since_signal_basis"] == "sessions"
 
     def test_ran_rows_carry_no_entry_claim(self):
         rows = ubr.build_ran_rows({"A": _ran_verdict(4)}, close_of=self._close_of)
@@ -871,14 +1102,43 @@ class TestBuildRanRows:
         assert len(rows) == 3
 
     def test_missing_closes_still_emits_the_row_with_null_move(self):
-        """No price history is a null to print, not a row to hide."""
+        """No price history is a null to print, not a row to hide.
+
+        The AGE lives in the verdict (`fresh_bars`, counted on the daily grid inside
+        signal_gate), not in this lane's closes — only `pct_since` needed the prices.
+        So the row keeps its anchor and its age and discloses the missing move. This
+        is NOT the B3 drop: that fires only when the age itself would be invented
+        (see test_no_marker_and_no_fresh_bars_drops_the_row)."""
         rows = ubr.build_ran_rows({"A": _ran_verdict(4)}, close_of=lambda _t: None)
-        assert rows[0]["pct_since"] is None and rows[0]["sessions_since"] is None
+        assert rows[0]["pct_since"] is None
+        assert rows[0]["sessions_since"] == 4
+        assert rows[0]["anchor"] == "approx"
         assert rows[0]["ticks"] == 4
+
+    def test_missing_closes_keeps_the_marker_date_when_there_is_one(self):
+        rows = ubr.build_ran_rows(
+            {"A": _ran_verdict(4, last={"type": "buy", "date": "2026-07-21"})},
+            close_of=lambda _t: None)
+        assert rows[0]["cross_date"] == "2026-07-21"
+        assert rows[0]["anchor"] == "marker"
+        assert rows[0]["sessions_since"] == 4 and rows[0]["pct_since"] is None
 
     def test_no_close_accessor_at_all(self):
         rows = ubr.build_ran_rows({"A": _ran_verdict(4)})
         assert [r["ticker"] for r in rows] == ["A"]
+        assert rows[0]["pct_since"] is None
+
+    def test_a_marker_date_alone_dates_the_cross_without_claiming_an_age(self):
+        """One anchor source is enough to keep the row: the marker date IS the cross
+        date. With no closes to count sessions across and no fresh_bars, the age is
+        honestly null — printed, not guessed, and not a reason to hide the row."""
+        rows = ubr.build_ran_rows(
+            {"A": _ran_verdict(4, fresh_bars=None,
+                               last={"type": "buy", "date": "2026-07-21"})},
+            close_of=lambda _t: None)
+        assert rows[0]["cross_date"] == "2026-07-21"
+        assert rows[0]["anchor"] == "marker"
+        assert rows[0]["sessions_since"] is None and rows[0]["pct_since"] is None
 
     def test_marker_date_is_preferred_over_the_tick_count(self):
         """ticks are counted on the signal's own higher-timeframe grid, so the §7
@@ -888,12 +1148,81 @@ class TestBuildRanRows:
             close_of=self._close_of)
         assert rows[0]["cross_date"] == "2026-07-21"
         assert rows[0]["sessions_since"] == 8      # not 4
+        assert rows[0]["anchor"] == "marker"
 
     def test_a_sell_marker_is_not_a_cross_anchor(self):
+        """A sell/cut marker cannot date a BUY cross, so the row falls back to the
+        session count — never to the marker."""
         rows = ubr.build_ran_rows(
-            {"A": _ran_verdict(4, last={"type": "sell", "date": "2026-07-21"})},
+            {"A": _ran_verdict(4, last={"type": "sell", "date": "2026-07-21"},
+                               fresh_bars=6)},
             close_of=self._close_of)
-        assert rows[0]["cross_date"] == "2026-07-27"   # fell back to ticks
+        assert rows[0]["cross_date"] == "2026-07-23"   # 6 sessions back, not the 21st
+        assert rows[0]["sessions_since"] == 6
+        assert rows[0]["anchor"] == "approx"
+
+    # -- B3: the anchor contract ------------------------------------------------
+
+    def test_the_fallback_reads_fresh_bars_and_not_ticks(self):
+        """B3, the whole defect. `sessions_back=ticks` made sessions_since == ticks —
+        a ~3x understatement (measured AEE 29 sessions reported as 11) — and anchored
+        pct_since on the wrong bar with it."""
+        rows = ubr.build_ran_rows(
+            {"A": _ran_verdict(3, fresh_bars=9)}, close_of=self._close_of)
+        assert rows[0]["sessions_since"] == 9, "must read fresh_bars, not ticks"
+        assert rows[0]["ticks"] == 3
+        assert rows[0]["pct_since"] == pytest.approx(round((110 / 100 - 1) * 100, 1))
+        assert rows[0]["anchor"] == "approx"
+
+    def test_no_marker_and_no_fresh_bars_drops_the_row(self):
+        """The real shape behind ~45% of ran admits on the local store: the last
+        marker is a sell, so signal_gate leaves fresh_bars None and there is no buy
+        date to anchor on. Fail closed — never render a wrong age."""
+        rows = ubr.build_ran_rows(
+            {"A": _ran_verdict(4, last={"type": "sell", "date": "2026-07-21"},
+                               fresh_bars=None)},
+            close_of=self._close_of)
+        assert rows == []
+
+    def test_the_drop_is_reported_as_a_line_start_annotation(self, capsys):
+        ubr.build_ran_rows({"A": _ran_verdict(4, fresh_bars=None)},
+                           close_of=self._close_of)
+        out = capsys.readouterr().out
+        assert any(line.startswith("::notice") for line in out.splitlines()), (
+            "the annotation must START the line — a logger prefix makes GitHub drop it")
+
+    def test_the_drop_removes_only_the_unanchored_rows(self):
+        """Mutation guard: the fail-closed rule must not empty the lane."""
+        rows = ubr.build_ran_rows(
+            {"KEEP": _ran_verdict(4, fresh_bars=5),
+             "DROP": _ran_verdict(4, fresh_bars=None),
+             "MARK": _ran_verdict(9, fresh_bars=None,
+                                  last={"type": "buy", "date": "2026-07-22"})},
+            close_of=self._close_of)
+        assert [r["ticker"] for r in rows] == ["KEEP", "MARK"]   # ticks 4 before 9
+        assert {r["ticker"]: r["anchor"] for r in rows} == {
+            "KEEP": "approx", "MARK": "marker"}
+
+    def test_every_emitted_row_carries_a_usable_anchor_and_age(self):
+        """The invariant is about the ANCHOR and the AGE only. `pct_since` may be
+        null on an anchored row whose closes could not measure the move — that is a
+        disclosed null, not a contract break."""
+        verdicts = {f"T{i:02d}": _ran_verdict(3 + (i % 6), fresh_bars=(i % 8) or None)
+                    for i in range(20)}
+        rows = ubr.build_ran_rows(verdicts, close_of=self._close_of)
+        assert rows, "fixture must keep some rows or this proves nothing"
+        for r in rows:
+            assert r["anchor"] in ("marker", "approx")
+            assert isinstance(r["sessions_since"], int)
+
+    def test_an_anchored_row_whose_anchor_predates_the_tail_keeps_its_age(self):
+        """fresh_bars 40 against a 10-bar tail: the move is unmeasurable here, the age
+        is not. Dropping this row would delete a name we can date precisely."""
+        rows = ubr.build_ran_rows(
+            {"A": _ran_verdict(14, fresh_bars=40)}, close_of=self._close_of)
+        assert rows[0]["sessions_since"] == 40
+        assert rows[0]["pct_since"] is None
+        assert rows[0]["anchor"] == "approx"
 
     def test_json_serialisable(self):
         rows = ubr.build_ran_rows({"A": _ran_verdict(4)}, close_of=self._close_of,
@@ -903,6 +1232,97 @@ class TestBuildRanRows:
     def test_empty_verdicts(self):
         assert ubr.build_ran_rows({}) == []
         assert ubr.build_ran_rows(None) == []
+
+
+# ---------------------------------------------------------------------------
+# 8b. artifact-ORDER consumers (m8) — the hidden priority-order dependency
+# ---------------------------------------------------------------------------
+
+class TestArtifactOrderConsumers:
+    """Two consumers slice `us_standouts.json["buy"]` by POSITION, so this module's
+    sort silently decides their population:
+
+      * engine/stock_desk.py — `board["buy"][:n]` picks which names the accountable
+        AI desk writes graded leans about (n = cfg max_picks, default 6, capped 12).
+      * scripts/build_vector.py `_standout_tickers` — `[:3]` of the BUY-ZONE-labelled
+        rows, falling back to `buy[:3]`, names the tickers on the vector card.
+
+    Neither reads a rank field, so nothing in either file fails if the order changes
+    underneath it — the dependency is invisible at both call sites. These tests make
+    it visible and mutation-checked: permute the artifact, the output must follow.
+    """
+
+    _ROWS = [
+        {"ticker": "AAA", "label": "BUY ZONE", "price": 10.0, "conviction": {}},
+        {"ticker": "BBB", "label": "BUY ZONE", "price": 11.0, "conviction": {}},
+        {"ticker": "CCC", "label": "BUY ZONE", "price": 12.0, "conviction": {}},
+        {"ticker": "DDD", "label": "BUY ZONE", "price": 13.0, "conviction": {}},
+        {"ticker": "EEE", "label": "UPTREND", "price": 14.0, "conviction": {}},
+    ]
+
+    def _write(self, root, rows):
+        out = root / "site" / "factordata"
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "us_standouts.json").write_text(
+            json.dumps({"as_of": "2026-07-31", "rank_by": "us_prophet_v1",
+                        "gate_go": True, "buy": rows}))
+
+    # -- engine/stock_desk.gather_top_picks ---------------------------------
+
+    def test_stock_desk_takes_the_board_top_n_in_artifact_order(self, tmp_path):
+        from engine import stock_desk
+        self._write(tmp_path, self._ROWS)
+        picks = stock_desk.gather_top_picks(root=tmp_path, cfg={"max_picks": 3})
+        assert [p["ticker"] for p in picks["picks"]] == ["AAA", "BBB", "CCC"]
+
+    def test_stock_desk_population_follows_a_reordered_board(self, tmp_path):
+        """Mutation check — the whole point of the pin. Reverse the artifact and the
+        desk writes notes about a DIFFERENT set of names, with no code change."""
+        from engine import stock_desk
+        self._write(tmp_path, list(reversed(self._ROWS)))
+        picks = stock_desk.gather_top_picks(root=tmp_path, cfg={"max_picks": 3})
+        assert [p["ticker"] for p in picks["picks"]] == ["EEE", "DDD", "CCC"]
+
+    # -- scripts/build_vector._standout_tickers -----------------------------
+
+    def test_vector_card_takes_the_first_three_buy_zone_rows_in_order(self, monkeypatch,
+                                                                      tmp_path):
+        from lib import config
+        from scripts import build_vector
+        self._write(tmp_path, self._ROWS)
+        monkeypatch.setattr(config, "ROOT", tmp_path)
+        assert build_vector._standout_tickers("us") == ["AAA", "BBB", "CCC"]
+
+    def test_vector_card_follows_a_reordered_board(self, monkeypatch, tmp_path):
+        from lib import config
+        from scripts import build_vector
+        self._write(tmp_path, list(reversed(self._ROWS)))
+        monkeypatch.setattr(config, "ROOT", tmp_path)
+        assert build_vector._standout_tickers("us") == ["DDD", "CCC", "BBB"]
+
+    def test_vector_fallback_slice_is_order_dependent_too(self, monkeypatch, tmp_path):
+        """No BUY ZONE row anywhere → the fallback `buy[:3]` carries the dependency."""
+        from lib import config
+        from scripts import build_vector
+        rows = [{**r, "label": "UPTREND"} for r in self._ROWS]
+        self._write(tmp_path, rows)
+        monkeypatch.setattr(config, "ROOT", tmp_path)
+        assert build_vector._standout_tickers("us") == ["AAA", "BBB", "CCC"]
+        self._write(tmp_path, list(reversed(rows)))
+        assert build_vector._standout_tickers("us") == ["EEE", "DDD", "CCC"]
+
+    def test_the_ranker_is_what_decides_that_order(self, monkeypatch, tmp_path):
+        """End to end: score_rows' output order is what both consumers slice."""
+        from lib import config
+        from scripts import build_vector
+        rows = ubr.score_rows(
+            [{**_row("LOW", alpha=0.1), "label": "BUY ZONE"},
+             {**_row("HIGH", alpha=9.0), "label": "BUY ZONE"},
+             {**_row("MID", alpha=1.0), "label": "BUY ZONE"}],
+            board_asof="2026-07-31")
+        self._write(tmp_path, rows)
+        monkeypatch.setattr(config, "ROOT", tmp_path)
+        assert build_vector._standout_tickers("us")[0] == "HIGH"
 
 
 # ---------------------------------------------------------------------------
@@ -994,11 +1414,68 @@ class TestCommittedArtifactIntegration:
         _board, rows = scored
         for r in rows:
             for key in ("stage", "featured", "new", "score_rank", "display_rank",
-                        "prophet", "days_since_signal"):
+                        "prophet", "days_since_signal", "days_since_signal_basis"):
                 assert key in r, key
             assert r["prophet"]["version"] == "us_prophet_v1"
             assert isinstance(r["featured"], bool) and isinstance(r["new"], bool)
+            assert r["days_since_signal_basis"] in ("sessions", "calendar", None)
         assert [r["display_rank"] for r in rows] == list(range(1, len(rows) + 1))
+
+    def test_the_runway_leg_is_measurably_dead_on_the_real_board(self, scored):
+        """M1: the disclosure, checked against production rows rather than asserted.
+
+        `ext_z` reaches 0 of the committed buy lane, so `runway` is 0 on every row —
+        the leg deducts a flat 10 points from everyone and carries no information.
+        If a future builder starts attaching ext_z this test fails LOUDLY, which is
+        the correct outcome: the docstrings and the artifact's own disclosure would
+        both be stale and must be re-stated from the new measurement.
+        """
+        _board, rows = scored
+        cov = ubr.ranking_block(rows)["component_coverage"]
+        assert cov["runway"] == {"nonzero": 0, "n": len(rows)}, (
+            "runway coverage moved off zero — re-measure and update the module "
+            "docstring + runway_value docstring, do not silence this test")
+        assert max(r["prophet"]["score"] for r in rows) <= 90.0
+
+    def test_the_scoring_legs_that_are_alive_are_alive(self, scored):
+        """Mutation guard for the coverage counter itself: a counter that reported
+        every leg dead would pass the runway assertion above and mean nothing."""
+        _board, rows = scored
+        cov = ubr.ranking_block(rows)["component_coverage"]
+        assert cov["signal"]["nonzero"] > 0
+        assert cov["entry"]["nonzero"] > 0
+        assert cov["edge"]["nonzero"] > 0
+
+    def test_the_session_basis_engages_on_real_verdicts(self, scored):
+        """m4 against production shape, and a pin on which verdict feeds the age.
+
+        The COMMITTED site/factordata/signal_gate.json carries the slim `buy_signal()`
+        verdict (no `fresh_bars`), so the fixture above resolves every row on the
+        disclosed `calendar` branch — that is the resolver degrading VISIBLY, which is
+        what the basis field is for. The nightly builder passes the FULL in-memory
+        verdicts instead, and the board rows themselves carry that shape under
+        `signal` (signal_gate.compact keeps `fresh_bars`). Re-scoring off the rows'
+        own verdicts proves the session branch engages on real data.
+        """
+        board, _rows = scored
+        assert {r["days_since_signal_basis"] for r in _rows} == {"calendar"}
+
+        rich = {r["ticker"]: r["signal"] for r in board["buy"]
+                if (r.get("signal") or {}).get("fresh_bars") is not None}
+        assert rich, "fixture must carry at least one marker-anchored verdict"
+        rows = ubr.score_rows([dict(r) for r in board["buy"]],
+                              verdict_by=rich, board_asof=board["as_of"])
+        by = {r["ticker"]: r for r in rows}
+        for ticker, verdict in rich.items():
+            assert by[ticker]["days_since_signal"] == verdict["fresh_bars"]
+            assert by[ticker]["days_since_signal_basis"] == "sessions"
+
+    def test_no_downtrend_row_escapes_the_blocked_bucket(self, scored):
+        """m1 on production shape: the 07-31 board carries DOWNTREND names."""
+        _board, rows = scored
+        downtrend = [r for r in rows if ubr.is_downtrend(r)]
+        assert downtrend, "fixture must contain a DOWNTREND row"
+        assert all(r["stage"] == "blocked" for r in downtrend)
 
     def test_the_board_is_json_safe(self, scored):
         board, rows = scored

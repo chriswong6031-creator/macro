@@ -3296,7 +3296,11 @@
   <div class="panel span12" id="standouts" data-stfacet="{{ _stf_default }}">
     <h2>{% if _cn_v2 %}{{ t('⚡ China Prophet — Live Board', '⚡ 中国先知 — 实时榜单') }}{% else %}{{ t('⚡ China Prophet — Featured Entries', '⚡ 中国先知 — 精选入场') }}{% endif %}
       {%- if _cn_v2 %}
-      {{ help("Two different things decide where a name sits. The glow is a GATE: a picked name has an actionable T1–T3 confluence (T3 is anticipatory), ENTRY lifecycle, an open or partial entry gauge, known liquidity, same-session fillability, no chase veto and no extension flag — capped per sector and per board, so fewer can show. Priority 0–100 is the ORDER inside that population: signal 35%, entry 25%, runway 20%, bottom quality 10%, deepest-quintile within-sector reversal membership 10%. The two can disagree: a name below the glowing picks can carry a higher score because it failed a gate, not because it ranked worse — and its own chip names which gate. Residual momentum, sector stories and fundamentals move neither, because China tests have not proven an incremental edge from them. The score is not a win probability or return forecast; the new definition's forward record is accruing.", "决定名次的是两件不同的事。发光是一道门槛：入选个股须具备可操作的T1–T3共振（T3为前瞻信号）、处于ENTRY生命周期、入场量表已开启或部分开启、流动性已知、当日可成交、无追涨否决且未过度延伸，并受行业与全榜名额限制，因此可能更少。优先级0–100是该池内的排序：信号35%、入场25%、上行空间20%、底部质量10%、行业内3个月跌幅最深五分位成员10%。两者可能不一致：发光卡下方的个股分数更高，可能是因为它没通过某道门槛，而非排名更靠后——其标签会写明是哪一道。残差动量、板块叙事与基本面对两者均无影响，因为中国市场测试尚未证明它们具有增量优势。该分数不是胜率或收益预测；新定义的前瞻记录仍在积累。") }}
+      {# Tier-2 budget is ~80 words (DESIGN_DOCTRINE §1). The two-axis rule — GATE decides
+         WHO glows, ORDER decides the sequence, and the two can disagree — is the whole
+         job of this tip; the gate list, the weights and the fuller receipts already live
+         on the ★ Featured chip, the Priority slot and the methodology note below. #}
+      {{ help("Two things decide a card's place. The glow is a GATE: live T1–T3 signal, entry window open, tradable size, no chase veto, price not extended — capped per sector and board. Priority 0–100 is the ORDER inside that pool: signal 35%, entry 25%, runway 20%, bottom quality 10%, reversal-sleeve membership 10%. A card below the picks can out-score one above: it failed a gate, not the ranking — its own chip names which. Not a win probability; the forward record is accruing.", "决定卡片位置的是两件事。发光是一道门槛：T1–T3信号有效、入场窗口已开启、成交足以买入、无追涨否决、价格未过度延伸，并受行业与全榜名额限制。优先级0–100是该池内的排序：信号35%、入场25%、上行空间20%、底部质量10%、反转组合成员10%。发光卡下方的个股分数可能更高：那是没通过某道门槛，而非排名更靠后——其标签会写明是哪一道。该分数不是胜率；前瞻记录仍在积累。") }}
       {%- else %}
       {{ help("The featured shelf is deliberately selective: an actionable T1–T3 confluence (T3 is anticipatory), ENTRY lifecycle, an open/partial entry gauge, known liquidity, same-session fillability, no chase veto, and no extension flag. Priority 0–100 is a transparent readiness rank: signal 35%, entry 25%, runway 20%, bottom quality 10%, and deepest-quintile within-sector reversal membership 10%. Residual momentum, sector stories and fundamentals do not move the live rank because China tests have not proven an incremental edge from them. The score is not a win probability or return forecast; the new definition's forward record is accruing. Broader and blocked names remain below on demand.", "精选区刻意保持严格：必须具备可操作的T1–T3共振（T3为前瞻信号）、处于ENTRY生命周期、入场量表已开启/部分开启、流动性已知、当日可成交、无追涨否决且未过度延伸。优先级0–100采用透明的就绪度排序：信号35%、入场25%、上行空间20%、底部质量10%、行业内3个月跌幅最深五分位成员10%。残差动量、板块叙事与基本面不会影响实时排名，因为中国市场测试尚未证明它们具有增量优势。该分数不是胜率或收益预测；新定义的前瞻记录仍在积累。更多候选与受阻标的可在下方按需展开。") }}
       {%- endif %}
@@ -3423,23 +3427,26 @@
       {% set _pr = n.get('prophet') or {} %}
       {% set _pc = _pr.get('components') or {} %}
       {% set _st = es.status if es else none %}
-      {# Verb + lifecycle stage. The FEATURED branch is byte-identical to the pre-merge
-         expression (its statuses can only be buy_now/partial, and a pre-v2 artifact runs
-         every row down this branch) so the legacy render is provably unchanged. The
-         newly-merged rows get the two statuses the old map never saw — and they get the
-         verb the engine's OWN headline uses: `bounce_wait` reads "Bounce — turn not
-         confirmed; wait", so it is a Wait, not a Near. Near would claim it is about to
-         trigger, which the engine never says. Same for the tracker: a bounce that has not
-         confirmed is Turning, a name the gauge says to hold is already in Trend — 111
-         cards all frozen at "Ready" would say nothing at all. #}
+      {# Verb + lifecycle stage. `_legacy_row` is the fail-soft switch and it is explicit
+         on BOTH counts: a featured row, OR ANY row of a pre-v2 artifact, takes the
+         pre-merge expressions verbatim. Gating on `_is_feat` alone was a bug — `_is_feat`
+         is set from `_cn_v2`, so on a pre-v2 artifact EVERY row is non-featured and all
+         110 of them fell down the new map (90 restyled: pv-near → pv-wait, stage 3 → 2/4).
+         The new map applies only to a v2 artifact's newly-merged rows, which carry the two
+         statuses the old map never saw — and they get the verb the engine's OWN headline
+         uses: `bounce_wait` reads "Bounce — turn not confirmed; wait", so it is a Wait, not
+         a Near. Near would claim it is about to trigger, which the engine never says. Same
+         for the tracker: a bounce that has not confirmed is Turning, a name the gauge says
+         to hold is already in Trend — 111 cards all frozen at "Ready" would say nothing. #}
+      {%- set _legacy_row = _is_feat or not _cn_v2 %}
       {%- set _verb = ('buy' if _st in ('buy_now','partial')
                else ('near' if _st in ('buy_soon','await_confluence')
                else ('hold' if _st in ('hold','topping')
-               else ('avoid' if _st in ('exit','avoid') else 'near')))) if _is_feat
+               else ('avoid' if _st in ('exit','avoid') else 'near')))) if _legacy_row
                else ({'buy_now':'buy','partial':'buy','buy_soon':'near','await_confluence':'near',
                       'hold':'hold','topping':'hold','exit':'avoid','avoid':'avoid',
                       'bounce_wait':'wait','extended':'wait','blocked':'wait'}.get(_st) or 'wait') %}
-      {%- set _stage_n = 3 if _is_feat else {'buy_now':3,'partial':3,'buy_soon':3,'await_confluence':2,
+      {%- set _stage_n = 3 if _legacy_row else {'buy_now':3,'partial':3,'buy_soon':3,'await_confluence':2,
                       'bounce_wait':2,'watch':2,'hold':4,'topping':4,'extended':4}.get(_st, 3) %}
       {% set _nmp = (n.name or n.ticker).split(' / ') %}
       {% set _mpkt = n.get('microstructure') or (cn_micro_by_ticker.get(n.ticker) if cn_micro_by_ticker else none) %}
@@ -3463,10 +3470,17 @@
       {% set _zk = ('active' if _verb in ('buy','near') else 'muted') if (_bz and _bz.high is not none) else 'confirm' %}
       {# ── MARKS ROW (G0.2 parity with the US board) ────────────────────────────
          Four categorically different facts in DESCENDING weight, then sliced to two:
-         rank (★ Featured) · recency (New) · the gate this row failed · the shape of its
+         rank (★ Featured) · the gate this row failed · recency (New) · the shape of its
          base. The slice is the discipline — the taxonomy decides what survives, so the
          row can never become chip spam. On the 2026-07-31 artifact the median card
          carries ONE chip and no card carries three.
+         EMIT ORDER IS LOAD-BEARING, TWICE: the [:2] slice drops the tail, and below
+         560px the one-chip CSS rule keeps only the FIRST chip. A featured row has no
+         gate chip, so it reads ★ Featured; every other row must lead with its gate —
+         "why is this one not glowing" is the only question the card cannot answer on
+         its own. Emitting New before the gate cost 000983.SZ its "Already ran" chip on
+         a phone (2 of 105 rows on the 2026-08-02 artifact), leaving a bare "New" that
+         reads like a recommendation. Do not reorder these blocks.
          The "why not featured" chip's hover is the row's OWN action line (per-name, with
          its stop level) rather than a constant restated 105 times — Law 4. #}
       {%- set _mk = namespace(rows=[]) %}
@@ -3474,19 +3488,27 @@
         {%- if _is_feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
           'tip_en':'One of today\'s picks: a live T1–T3 signal, the entry window open now, enough turnover to trade it, no chase veto and price not yet extended. Capped per sector and per board, so fewer names can show. Priority order, not a return forecast.',
           'tip_zh':'今日精选之一：T1–T3信号有效、入场窗口当前已打开、成交足以买入、无追涨否决且价格尚未拉伸。受行业与全榜名额限制，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
-        {%- set _dss = n.get('days_since_signal') %}
-        {%- if _dss is number and _dss <= 2 %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
-          'tip_en':'The signal fired within the last two sessions — a fresh turn, not an old one still sitting on the board.',
-          'tip_zh':'该信号在最近两个交易日内触发 — 属于新转向，而非仍挂在榜上的旧信号。'}] %}{% endif %}
         {%- if not _is_feat %}
           {%- set _lr0 = (n.get('lane_reasons') or [])[0] if (n.get('lane_reasons') or []) else none %}
           {%- set _lrw = _CN_MK.get(_lr0) %}
+          {# A hold chip may NOT contradict the row's own action line. The engine emits
+             exactly two RALLY-ON holds (engine/cycles.py): mid-cycle "add on dips toward
+             the 10-day average", and late-cycle "don't add here; a pullback is due". The
+             constant "No add here" chip contradicted the FIRST one on all 21 hold rows in
+             the 2026-08-02 grid — the chip said one thing, its own hover the opposite.
+             Key the copy off the action, and keep the no-add wording for the late holds. #}
+          {%- set _lrw = ['Hold — add on dips', '持有 · 逢低加仓'] if (_lr0 == 'entry_status_hold'
+                         and 'add on dips' in ((es.action if es else none) or '')) else _lrw %}
           {%- set _lr_tip_en = (es.action if (es and es.get('action')) else 'A real signal that has not cleared every entry check today. Watch it — do not act on it yet.') ~ (' (' ~ _lr0 ~ ')' if (_lr0 and not _lrw) else '') %}
           {%- set _lr_tip_zh = (es.action_zh if (es and es.get('action_zh')) else '这是真实信号，但今日尚未通过全部入场检查。请观察，暂不操作。') ~ (' (' ~ _lr0 ~ ')' if (_lr0 and not _lrw) else '') %}
           {%- set _mk.rows = _mk.rows + [{'k':'lane',
             'en':(_lrw[0] if _lrw else 'Entry not open yet'), 'zh':(_lrw[1] if _lrw else '入场尚未开启'),
             'tip_en':_lr_tip_en, 'tip_zh':_lr_tip_zh}] %}
         {%- endif %}
+        {%- set _dss = n.get('days_since_signal') %}
+        {%- if _dss is number and _dss <= 2 %}{% set _mk.rows = _mk.rows + [{'k':'new','en':'New','zh':'新',
+          'tip_en':'The signal fired within the last two sessions — a fresh turn, not an old one still sitting on the board.',
+          'tip_zh':'该信号在最近两个交易日内触发 — 属于新转向，而非仍挂在榜上的旧信号。'}] %}{% endif %}
         {# Base shape. "Coiled" itself is on the doctrine's banned Tier-1 list (§7 row 12)
            and it is true of 98 of 105 rows anyway — a constant, not a signal. Only the
            two DISCRIMINATING forms get a chip, in plain words. #}
@@ -3501,9 +3523,13 @@
       {# Priority is shown as a WHOLE number (Law 3 — precision belongs on Tier 2, and the
          US board already formats %.0f). Unrounded, the slot printed "82.37" on every card;
          across 111 of them the column read as noise, and two decimals claim a precision a
-         readiness heuristic does not have. #}
-      {%- set _edge_txt = ('%.0f'|format(_pr.get('score'))) if _pr.get('score') is number
-                         else (('%.0f'|format(c.score)) if (c and c.score is number) else none) %}
+         readiness heuristic does not have. The rounding is v2-ONLY: a pre-v2 artifact
+         passes the raw value through exactly as the pre-merge template did, so its render
+         stays byte-identical. #}
+      {%- set _edge_txt = (('%.0f'|format(_pr.get('score'))) if _pr.get('score') is number
+                         else (('%.0f'|format(c.score)) if (c and c.score is number) else none)) if _cn_v2
+                         else (_pr.get('score') if _pr.get('score') is not none
+                               else (c.score if (c and c.score is not none) else none)) %}
       {{ pv.pv_card({
         'href': 'china_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'cn',
         'name': _nmp[0], 'name_zh': _nmp[-1], 'sec': n.sector, 'sec_zh': SECZH.get(n.sector, n.sector),

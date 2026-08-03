@@ -91,7 +91,7 @@
   {
    "artifact": "site/factordata/us_standouts.json",
    "kind": "board",
-   "schema_version": "1.4.0",
+   "schema_version": "1.5.0",
    "schema_fields": [
     "as_of",
     "buy",
@@ -112,6 +112,7 @@
     "watch"
    ],
    "optional_fields": [
+    "anchor",
     "board_definition",
     "ran",
     "ranking",
@@ -124,11 +125,13 @@
     "align_tier",
     "alpha",
     "alpha_entry",
+    "anchor",
     "antichase_shadow_blocked",
     "composite",
     "conviction",
     "cross_date",
     "days_since_signal",
+    "days_since_signal_basis",
     "days_to_build_100k",
     "days_to_build_1m",
     "days_to_exit_at_10pct_adv",

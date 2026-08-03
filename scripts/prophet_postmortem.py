@@ -51,6 +51,16 @@ own exit rule, so the two agree except where that rule fired — e.g. IPGP 2026-
 scores -17.9% here and -18.7% in the ledger, which stopped out on day 8. Both are the
 same fill and the same window; only the exit differs.
 
+RE-ADMISSION: THE PRIOR-EPISODE SCAN
+------------------------------------
+`prior_episodes()` compares each entry against EVERY prior run of the same ticker whose
+board exit sits inside the 10-session window — not just the immediately preceding one —
+and reports one of them by a fixed precedence (buildable open drawdown, then resolved
+loss, then the nearest prior as a decided negative). An in-window prior that cannot be
+priced makes the row UNDECIDABLE rather than clean, and every row carries its comparison
+in `prior_episode` with `prior_matured`, so a reader can see whether the number the leg
+fired on is a resolved outcome or an outcome-conditioned mark.
+
 IN-FLIGHT ROWS
 --------------
 Episodes without H forward bars are marked to the latest close, CLASSIFIED (four of the
@@ -359,6 +369,127 @@ def _sessions_between(calendar: pd.DatetimeIndex, a: str, b: str) -> int | None:
     return int(ib - ia)
 
 
+def _mark_at(prev: dict, when: str) -> float | None:
+    """The prior position's open P/L, in %, on the night the name came back.
+
+    None when the prior episode has no series or no fill price — the input the
+    BUILDABLE `open_drawdown_at_readmit` leg is made of. The engine nulls that leg
+    rather than reading the absence as "was not under water".
+    """
+    sc, series = prev["sc"], prev["series"]
+    entry_px = (sc or {}).get("entry")
+    if series is None or not entry_px:
+        return None
+    j = series.index.searchsorted(pd.Timestamp(when), side="left")
+    if j >= len(series):
+        return None
+    return (float(series.iloc[j]) / float(entry_px) - 1.0) * 100.0
+
+
+def _rev(date: Any) -> str:
+    """Sort key that puts the LATEST date first inside an ascending `min()`.
+
+    Dates here are fixed-width ISO strings, so inverting each character's code point
+    orders them backwards without parsing. Keeps every tie-break deterministic.
+    """
+    return "".join(chr(255 - ord(ch)) for ch in str(date))
+
+
+def prior_episodes(scored: list[dict], calendar: "pd.DatetimeIndex"
+                   ) -> dict[tuple[str, str], dict]:
+    """{(ticker, entry_date): prior-episode comparison} for the `re_admission` label.
+
+    SCANS EVERY PRIOR EPISODE IN THE WINDOW, not just the immediately preceding one.
+    Reading `items[i-1]` alone made the label answer a different question than the one
+    it prints: a name that came back twice in a fortnight was compared only against its
+    latest run, so a qualifying loss two runs back — inside the same 10-session window —
+    was invisible. The scan collects every prior run whose board exit sits within
+    `READMIT_MAX_SESSIONS` sessions of this entry and then picks ONE to report, by a
+    fixed precedence:
+
+      1. a prior that was ALREADY >= 8% under water at the re-admission (the buildable
+         leg) — most negative mark wins, latest entry date breaks a tie;
+      2. else a prior that RESOLVED to a >= 8% loss (the hindsight leg) — most negative
+         outcome wins, latest entry date breaks a tie;
+      3. else the NEAREST in-window prior, reported as a decided negative so the reader
+         can see what the comparison actually was.
+
+    NULLS, NOT SILENT ZEROS. An in-window prior that could not be scored (no close path)
+    is not evidence that the name came back clean, so when no scoreable prior fires the
+    row comes back `{"undecidable": "prior_episode_not_scoreable"}` and the engine nulls
+    the label and both legs. An entry with NO in-window prior at all gets no key here at
+    all, so the caller's lookup yields None — a decided negative that stays in every
+    denominator.
+
+    Every row carries `prior_matured`, because an unmatured prior's `outcome_pct` is a
+    MARK — outcome-conditioned, and not the same evidence as a resolved loss.
+    """
+    by_ticker: dict[str, list[dict]] = {}
+    for item in scored:
+        by_ticker.setdefault(item["ep"]["ticker"], []).append(item)
+
+    out: dict[tuple[str, str], dict] = {}
+    for tk, items in sorted(by_ticker.items()):
+        items.sort(key=lambda it: (it["ep"]["entry_date"], str(it["ep"].get("exit_date"))))
+        for i, cur in enumerate(items):
+            cs = str(cur["ep"]["entry_date"])
+            cands: list[dict] = []
+            n_unscoreable = 0
+            for prev in items[:i]:
+                prev_exit = str(prev["ep"].get("exit_date") or prev["ep"]["entry_date"])
+                gap = _sessions_between(calendar, prev_exit, cs)
+                if gap is None or gap > pm.READMIT_MAX_SESSIONS:
+                    continue
+                if prev["sc"] is None:
+                    n_unscoreable += 1
+                    continue
+                psc = prev["sc"]
+                matured = bool(psc.get("matured"))
+                cands.append({
+                    "entry_date": prev["ep"]["entry_date"],
+                    "outcome_pct": psc.get("pnl") if matured else psc.get("mark"),
+                    "prior_matured": matured,
+                    "sessions_since_prior_exit": gap,
+                    "mark_at_readmit_pct": _mark_at(prev, cs),
+                })
+            n_window = len(cands) + n_unscoreable
+            if not n_window:
+                continue                      # decided negative: no prior in the window
+
+            open_leg = [c for c in cands
+                        if c["mark_at_readmit_pct"] is not None
+                        and c["mark_at_readmit_pct"] <= pm.READMIT_LOSS_PCT]
+            loss_leg = [c for c in cands
+                        if c["outcome_pct"] is not None
+                        and c["outcome_pct"] <= pm.READMIT_LOSS_PCT]
+            if open_leg:
+                pick = min(open_leg, key=lambda c: (float(c["mark_at_readmit_pct"]),
+                                                    _rev(c["entry_date"])))
+                selected_by = pm.READMIT_LEG_OPEN_DRAWDOWN
+            elif loss_leg:
+                pick = min(loss_leg, key=lambda c: (float(c["outcome_pct"]),
+                                                    _rev(c["entry_date"])))
+                selected_by = pm.READMIT_LEG_PRIOR_LOSS
+            elif n_unscoreable:
+                out[(tk, cs)] = {
+                    "undecidable": "prior_episode_not_scoreable",
+                    "n_priors_in_window": n_window,
+                    "n_priors_unscoreable": n_unscoreable,
+                }
+                continue
+            else:
+                pick = min(cands, key=lambda c: (c["sessions_since_prior_exit"],
+                                                 _rev(c["entry_date"])))
+                selected_by = "nearest_prior_no_leg_fired"
+            out[(tk, cs)] = {
+                **pick,
+                "selected_by": selected_by,
+                "n_priors_in_window": n_window,
+                "n_priors_unscoreable": n_unscoreable,
+            }
+    return out
+
+
 def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
     """Score, contextualise and classify every buy-lane episode. Returns the artifact."""
     retro = load_retro(root)
@@ -391,34 +522,8 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
             continue
         scored.append({"ep": ep, "sc": sc, "series": series})
 
-    # ── pass 2: prior-episode lookup, per ticker, in entry order ──────────────
-    prior_by_key: dict[tuple[str, str], dict] = {}
-    by_ticker: dict[str, list[dict]] = {}
-    for item in scored:
-        by_ticker.setdefault(item["ep"]["ticker"], []).append(item)
-    for tk, items in sorted(by_ticker.items()):
-        items.sort(key=lambda it: it["ep"]["entry_date"])
-        for i in range(1, len(items)):
-            prev, cur = items[i - 1], items[i]
-            psc, cs = prev["sc"], cur["ep"]["entry_date"]
-            if psc is None:
-                continue
-            prev_exit = prev["ep"].get("exit_date") or prev["ep"]["entry_date"]
-            gap = _sessions_between(calendar, str(prev_exit), str(cs))
-            mark = None
-            series = prev["series"]
-            entry_px = psc.get("entry")
-            if series is not None and entry_px:
-                j = series.index.searchsorted(pd.Timestamp(cs), side="left")
-                if j < len(series):
-                    mark = (float(series.iloc[j]) / float(entry_px) - 1.0) * 100.0
-            prior_by_key[(tk, cs)] = {
-                "entry_date": prev["ep"]["entry_date"],
-                "outcome_pct": psc.get("pnl") if psc.get("matured") else psc.get("mark"),
-                "prior_matured": bool(psc.get("matured")),
-                "sessions_since_prior_exit": gap,
-                "mark_at_readmit_pct": mark,
-            }
+    # ── pass 2: prior-episode scan, per ticker, in entry order ────────────────
+    prior_by_key = prior_episodes(scored, calendar)
 
     # ── pass 3: context + classification ──────────────────────────────────────
     rows: list[dict] = []
@@ -460,9 +565,10 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
                 path_reason = "window_too_short"
 
         broken = _hold_broken(snaps, tk, d0, ep.get("exit_date"))
+        prior = prior_by_key.get((tk, d0))
         labels, nulls = pm.classify(
             outcome_pct=outcome, excess_pct=excess, ctx=ctx, path=path,
-            hold_broken=broken, prior=prior_by_key.get((tk, d0)),
+            hold_broken=broken, prior=prior,
             path_missing_reason=path_reason,
         )
 
@@ -482,6 +588,14 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
             "mfe_pct": None if mfe is None else round(float(mfe), 2),
             "held": held,
             "cohort": pm.cohort_of(outcome, excess),
+            # The prior-episode comparison `re_admission` was decided on, on EVERY row
+            # that had one — including the rows where no leg fired and the rows where the
+            # prior could not be scored. Written out rather than left inside the label's
+            # trigger because a comparison that produced no label is exactly the one a
+            # reader cannot otherwise see, and `prior_matured` says whether the number it
+            # was compared against is a resolved outcome or an outcome-conditioned mark.
+            # None = the scan found no prior run inside the window (a decided negative).
+            "prior_episode": prior,
             "entry_context": ctx,
             "labels": labels,
             "labels_null": sorted(nulls, key=lambda d: (d["label"], d["reason"])),
@@ -637,21 +751,34 @@ def render_report(doc: dict) -> str:
       "unflagged bucket would silently deflate every rate below.")
     A("")
     A("| Label | Visible at entry | Losers | of decidable losers | Winners | "
-      "of decidable winners | loss contribution | nulls |")
-    A("|---|---|---|---|---|---|---|---|")
+      "of decidable winners | loss contribution | loser coverage | nulls |")
+    A("|---|---|---|---|---|---|---|---|---|")
     for f in s["label_frequency"]:
         A(f"| `{f['label']}` — {f['en']} | {'yes' if f['visible_at_entry'] else 'no'} "
           f"| {f['n_losers']} / {f['n_losers_evaluated']} "
           f"| {_pct(f['loser_share_pct'])} "
           f"| {f['n_winners']} / {f['n_winners_evaluated']} "
           f"| {_pct(f['winner_share_pct'])} "
-          f"| {_pct(f['loss_contribution_pct'])} | {f['n_null_disclosed']} |")
+          f"| {_pct(f['loss_contribution_pct'])} "
+          f"| {f['n_losers_evaluated']} / {f['n_losers_total']} "
+          f"({_pct(f['loser_coverage_pct'])}, {_pct(f['decidable_loss_share_pct'])} "
+          f"of the loss) | {f['n_null_disclosed']} |")
     A("")
-    A("`loss contribution` is the share of total loser loss carried by episodes with the "
-      "label; labels are multi-label, so the column does not sum to 100%. `nulls` counts "
-      "matured episodes where the label could not be evaluated (no entry state recorded, "
-      "no price path, no stop recorded, no benchmark leg) — those episodes stay in the "
-      "artifact with the reason named on the row.")
+    A(f"`loss contribution` uses ONE denominator on every row — the whole matured-loser "
+      f"book, {s['cohorts']['total_loser_loss_pct']:.2f}pp across "
+      f"{s['cohorts']['n_losers']} episodes — so the column is comparable down the table "
+      "and across runs. Labels are multi-label, so it does not sum to 100%.")
+    A("")
+    A("`loser coverage` is the honest companion to it: how many of those losers the label "
+      "could even be DECIDED on, and what share of the loss book those rows carry. A "
+      "label evaluable on a third of the book contributing 18.8% of it is a different "
+      "sentence from one with full reach contributing 18.8%. Read the two columns "
+      "together; never read contribution alone.")
+    A("")
+    A("`nulls` counts matured episodes where the label could not be evaluated (no entry "
+      "state recorded, no price path, no stop recorded, no benchmark leg, no priceable "
+      "prior episode) — those episodes stay in the artifact with the reason named on the "
+      "row, and are excluded from that label's denominators above.")
     A("")
 
     beta = s["diagnostics"]["market_beta_excess_share"]
@@ -671,23 +798,53 @@ def render_report(doc: dict) -> str:
 
     A("## What a veto would have cost — both sides")
     A("")
-    A("For every label the engine could have acted on AT ENTRY: what refusing those "
-      "picks would have avoided, **and what it would have thrown away**. The "
-      "winners-forfeited column is the point of the table. Each row is costed over the "
-      "episodes where that label was decidable, and `universe` says how many that is.")
+    A("What refusing the flagged picks would have avoided, **and what it would have "
+      "thrown away**. The winners-forfeited column is the point of the table. Each row is "
+      "costed over the episodes where its own trigger was decidable, and `universe` says "
+      "how many that is.")
     A("")
-    A("| Would-be veto | Flagged | universe | of universe | Losers avoided | Loss avoided | "
-      "**Winners forfeited** | **Gains forfeited** | Net | Mean flagged | Mean unflagged |")
-    A("|---|---|---|---|---|---|---|---|---|---|---|")
+    A("**A row is a TRIGGER, not a label.** The `evidence` column says whether that "
+      "trigger existed on the night of the pick (`buildable`) or needs a number that only "
+      "arrived later (`hindsight upper bound`). The two are not comparable and are never "
+      "summed: only a buildable row describes a rule anyone could pre-register.")
+    A("")
+    A("| Would-be veto | Evidence | Flagged | universe | of universe | Losers avoided "
+      "| Loss avoided | **Winners forfeited** | **Gains forfeited** | Net | Dates flagged "
+      "| Mean flagged | Mean unflagged |")
+    A("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for v in s["veto_cost"]:
-        A(f"| `{v['label']}` | {v['n_flagged']} | {v['n_universe']} "
+        A(f"| `{v['key']}` | {'buildable' if v['visible_at_entry'] else 'hindsight upper bound'} "
+          f"| {v['n_flagged']} | {v['n_universe']} "
           f"| {_pct(v['flagged_share_of_universe_pct'])} "
           f"| {v['n_losers_avoided']} | {v['loss_avoided_pct']:.2f}pp "
           f"| **{v['n_winners_forfeited']}** | **{v['winners_forfeited_pct']:.2f}pp** "
-          f"| {v['net_pct_if_vetoed']:+.2f}pp "
+          f"| {v['net_pct_if_vetoed']:+.2f}pp | {v['n_dates_flagged']} "
           f"| {_pct(v['mean_outcome_of_flagged_pct'])} "
           f"| {_pct(v['mean_outcome_of_unflagged_pct'])} |")
     A("")
+    for name in sorted({v["label"] for v in s["veto_cost"] if v.get("leg")}):
+        legs = [v for v in s["veto_cost"] if v["label"] == name]
+        A(f"**`{name}` is {len(legs)} claims, not one**, so it is costed on "
+          f"{len(legs)} lines:")
+        A("")
+        for v in legs:
+            if v["visible_at_entry"]:
+                zero = (" — it fires **zero** times on this window, and the zero is "
+                        "printed rather than dropped: an empty buildable row is the "
+                        "finding, and hiding it would leave only the hindsight line on "
+                        "the page." if not v["n_flagged"] else ".")
+                A(f"- `{v['leg']}` — **buildable**. {v['en']}. The board could read this "
+                  f"at entry. Flagged {v['n_flagged']} of the {v['n_universe']} matured "
+                  f"episodes it could be decided on{zero}")
+            else:
+                A(f"- `{v['leg']}` — **hindsight upper bound**. {v['en']}. This needs the "
+                  f"earlier episode's RESOLVED outcome, which did not exist on the night "
+                  f"the board bought the name back, so the "
+                  f"{v['loss_avoided_pct']:.2f}pp on this line is a CEILING on what the "
+                  f"pattern could be worth if a buildable trigger is ever found — never "
+                  f"the value of a rule. Flagged {v['n_flagged']} of {v['n_universe']} "
+                  f"across {v['n_dates_flagged']} entry dates.")
+        A("")
     A("`Net` is loss avoided minus gains forfeited, in summed percentage points across "
       "matured episodes — a raw arithmetic counterfactual on equal weights, not a "
       "backtest and not an expectancy. It ignores position sizing, the overlap between "
@@ -732,26 +889,70 @@ def render_report(doc: dict) -> str:
               f"| {r['total_loss_pct']:.2f}pp | {', '.join(r['labels'])} |")
         A("")
 
+    # ── the loser book, split by maturity, with counts that RECONCILE ─────────
+    # One table pooling matured and marked-to-market rows invites exactly the read the
+    # maturity gate exists to prevent, because today's worst open positions sort to the
+    # top of it. Two labelled blocks, and a sentence whose numbers add up.
+    losers = [r for r in doc["episodes"] if r["cohort"] == "loser"]
+    by_maturity = {
+        "matured": [r for r in losers if r["maturity"] == "matured"],
+        "in_flight": [r for r in losers if r["maturity"] == "in_flight"],
+        "unscored": [r for r in losers if r["maturity"] not in ("matured", "in_flight")],
+    }
+    parts = " + ".join(
+        f"**{len(v)} {k.replace('_', ' ')}**" for k, v in by_maturity.items() if v)
+
     A("## Every loser, with its trigger values")
     A("")
-    A("| Ticker | Entry | Maturity | Outcome | Excess | MAE | MFE | Labels |")
-    A("|---|---|---|---|---|---|---|---|")
-    losers = [r for r in doc["episodes"] if r["cohort"] == "loser"]
-    losers.sort(key=lambda r: (r["outcome_pct"] if r["outcome_pct"] is not None else 0.0))
-    for r in losers:
-        A(f"| {r['ticker']} | {r['entry_date']} | {r['maturity']} "
-          f"| {_pct(r['outcome_pct'])} | {_pct(r['excess_pct'])} "
-          f"| {_pct(r['mae_pct'])} | {_pct(r['mfe_pct'])} "
-          f"| {', '.join(lb['label'] for lb in r['labels']) or '—'} |")
+    A(f"{len(losers)} episodes sit in the loser cohort: {parts} = {len(losers)}. The "
+      "blocks are listed separately and never pooled. Every rate, share and "
+      f"counterfactual above is computed on the matured block alone "
+      f"({s['cohorts']['n_losers']} episodes) — a mark on an unresolved position is "
+      "outcome-conditioned, and today's worst open names would sort straight to the top "
+      "of a pooled table.")
     A("")
 
+    def _loser_table(rows: list[dict]) -> None:
+        A("| Ticker | Entry | Outcome | Excess | MAE | MFE | Held | Labels |")
+        A("|---|---|---|---|---|---|---|---|")
+        for r in sorted(rows, key=lambda r: (r["outcome_pct"]
+                                             if r["outcome_pct"] is not None else 0.0)):
+            A(f"| {r['ticker']} | {r['entry_date']} "
+              f"| {_pct(r['outcome_pct'])} | {_pct(r['excess_pct'])} "
+              f"| {_pct(r['mae_pct'])} | {_pct(r['mfe_pct'])} | {_plain(r['held'])} "
+              f"| {', '.join(lb['label'] for lb in r['labels']) or '—'} |")
+        A("")
+
+    A(f"### Matured losers ({len(by_maturity['matured'])}) — these carry every rate above")
+    A("")
+    _loser_table(by_maturity["matured"])
+    A(f"### In-flight losers ({len(by_maturity['in_flight'])}) — marked, in NO rate")
+    A("")
+    A("Fewer than H forward bars, so these are marked to the latest close. They are here "
+      "because dropping them would delete the most recent evidence — not because they "
+      "count. `Outcome` in this block is a MARK, not a result.")
+    A("")
+    _loser_table(by_maturity["in_flight"])
+    if by_maturity["unscored"]:
+        A(f"### Unscored losers ({len(by_maturity['unscored'])}) — no fill printed yet")
+        A("")
+        _loser_table(by_maturity["unscored"])
+
+    infl_block = s["in_flight"]
     A("## In-flight rows (classified, counted in no rate)")
     A("")
-    A(f"{s['in_flight']['n']} episodes have fewer than H={doc['method']['horizon']} "
+    A(f"{infl_block['n']} episodes have fewer than H={doc['method']['horizon']} "
       "forward bars. They are marked to the latest close so the most recent evidence "
       "stays visible, and they enter no rate or expectancy — an unresolved position's "
       "mark is outcome-conditioned in exactly the way the maturity gate exists to "
       "prevent.")
+    A("")
+    A(f"By the mark: {infl_block['n_losers_marked']} at loser levels · "
+      f"{infl_block['n_winners_marked']} at winner levels · "
+      f"{infl_block['n_neutral_marked']} neutral · "
+      f"{infl_block['n_unscored_marked']} unscored = {infl_block['n']}. The two tails are "
+      "tabled below (the loser half repeats the in-flight block above); the neutral "
+      "middle is in `summary.json`, not here.")
     A("")
     A("| Ticker | Entry | Mark | MAE | MFE | Held | Labels |")
     A("|---|---|---|---|---|---|---|")
@@ -808,7 +1009,10 @@ def main(argv: list[str] | None = None) -> int:
               f"({f['loser_share_pct']}%)  winners={f['n_winners']:<4} "
               f"({f['winner_share_pct']}%)  nulls={f['n_null_disclosed']}")
     for v in s["veto_cost"]:
-        print(f"  veto[{v['label']}] flagged={v['n_flagged']}/{v['n_universe']} "
+        # `key`, not `label`: two rows share the label `re_admission` and differ only in
+        # the leg, and the buildable one is the whole point of printing both.
+        print(f"  veto[{v['key']}] {v['variant']} "
+              f"flagged={v['n_flagged']}/{v['n_universe']} "
               f"losers_avoided={v['n_losers_avoided']} ({v['loss_avoided_pct']:.2f}pp) "
               f"winners_forfeited={v['n_winners_forfeited']} "
               f"({v['winners_forfeited_pct']:.2f}pp) net={v['net_pct_if_vetoed']:+.2f}pp")

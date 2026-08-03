@@ -49,10 +49,28 @@ Inside, in the order you should read them:
    feature-threshold rule (no LLM anywhere), each carrying the values that fired it.
    Shares are over the episodes where the label could be **decided**, never over the
    whole sample.
-3. **What a veto would have cost — both sides** — for every label the engine could have
-   acted on at entry: losses avoided **and winners forfeited**, with the net. This table
-   is the reason the loop exists. A rule that removes six losers and eight winners is a
-   losing rule, and this is where that shows up before anything ships.
+3. **What a veto would have cost — both sides** — for every TRIGGER the loop could be
+   built on: losses avoided **and winners forfeited**, with the net. This table is the
+   reason the loop exists. A rule that removes six losers and eight winners is a losing
+   rule, and this is where that shows up before anything ships.
+
+   A row is a trigger, not a label, and each carries an `evidence` column with one of two
+   values. **`buildable`** means the trigger was readable on the night of the pick.
+   **`hindsight upper bound`** means it needs a number that did not exist yet, so the row
+   is a CEILING on what the pattern could be worth if a buildable trigger is ever found —
+   never the value of a rule, and never a candidate for pre-registration as written.
+
+   `re_admission` is the worked example, and the reason the column exists. It is costed
+   on two lines. The **+79.08pp** on the 2026-07-31 artifact is the **hindsight upper
+   bound**: it sits entirely on the `prior_episode_loss` leg, which needs the earlier
+   episode's RESOLVED outcome — a number that does not exist on the night the board
+   re-admits the name (IPGP was +3.04% GREEN when it came back). The only buildable leg,
+   `open_drawdown_at_readmit` (the earlier position already ≥ 8% under water at the
+   re-admission), fires **0 times** on that window; the row is printed with its zero
+   rather than dropped. So the buildable trigger has **no sample yet**: it needs its own
+   accrual — enough fires to measure, both tails costed — before there is anything to
+   pre-register, and the hindsight number may not stand in for that accrual. Read the
+   +79.08pp as "this pattern is worth looking for a buildable trigger for", nothing more.
 4. **Systemic or anomalous** — label share across distinct entry DATES, not rows.
    Episodes surfaced on the same night are one bet.
 5. **Entry-state splits**, **repeat offenders**, **every loser with its triggers**,
@@ -67,10 +85,17 @@ Inside, in the order you should read them:
 | `thesis_break` | a later board night stamped `hold.state = broken`, else a close crossed the entry row's published stop | no |
 | `gap_event` | a single-session close-to-close move ≤ −8% against the position | no |
 | `market_beta` | benchmark-excess loss under 40% of the absolute loss | no |
-| `re_admission` | same ticker re-admitted ≤ 10 sessions after a ≥ 8% loss | only on the open-drawdown leg |
+| `re_admission` | same ticker re-admitted ≤ 10 sessions after a prior episode that was already ≥ 8% under water (`open_drawdown_at_readmit`) or that RESOLVED to a ≥ 8% loss (`prior_episode_loss`) | **no** — see below |
 | `idiosyncratic` | nothing else fired | — |
 
 Labels are multi-label; the shares do not sum to 100%.
+
+**`re_admission` is not a visible-at-entry label**, and the reason is item 3 above: its
+two legs have opposite epistemic status, and on today's data 100% of its fires are the
+hindsight one. The individual ROW still says which leg fired it, and a row carrying the
+open-drawdown leg is flagged visible-at-entry on that row — but the label as a whole
+makes the weaker, safer claim, and that is the one the report, `summary.json` and the
+admin panel read.
 
 ---
 
@@ -96,6 +121,13 @@ column. Nine losses on one night is one bad night.
 **`idiosyncratic` is a scoreboard, not a bucket.** A large idiosyncratic share means the
 taxonomy is not yet explaining the losses. That is a finding about the taxonomy, and the
 fix is a new candidate label with its own rule — not a wider threshold on an existing one.
+
+**A hindsight number is not a rule.** Before quoting any line of the veto table, read its
+`evidence` cell. A `hindsight upper bound` row measures a pattern nobody could have acted
+on; quoting its net as what a veto "would have saved" silently asserts that the board
+could have known something it could not. If the buildable sibling of that trigger fires
+zero times, the honest sentence is "the pattern is real and we have no buildable version
+of it yet" — and the next step is accrual, not a pre-registration.
 
 **The counterfactual is arithmetic, not a backtest.** `net_pct_if_vetoed` sums equal-weight
 percentage points. It ignores sizing, the overlap between episodes on one night, and the
@@ -177,8 +209,10 @@ and accrued. It may not rank, size, or gate.
   surface; `data/prophet_postmortem/summary.json` is the machine surface.
 - **Admin.** The Prophet panel (`admin/prophet.py` → `GET /api/prophet`) exposes a
   `learning_loop` block reading `summary.json`: as-of, episode/loser/winner counts, the
-  label frequencies, and the veto-cost table including the winners-forfeited column. It
-  is a read-only pointer at the artifact — the panel never recomputes anything.
+  label frequencies with their per-label coverage, and the veto-cost table including the
+  winners-forfeited column and each row's `variant` / `visible_at_entry` — a hindsight row
+  may not reach a surface without its evidence status attached. It is a read-only pointer
+  at the artifact — the panel never recomputes anything.
 - **CN continuity.** `site/factordata/cn_track_ledger.json` carries `prior_record`, the
   pre-2026-07-30 board graded under the same core and labelled as the previous
   definition. The current record is unchanged.

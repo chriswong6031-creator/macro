@@ -16,7 +16,9 @@ Two layers:
 """
 import json
 import math
+import re
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 import numpy as np
@@ -25,13 +27,16 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import track_scoring as ts  # noqa: E402
 from scripts.exit_policy_study import (  # noqa: E402
     BE_ARM_ATR,
     CAP_PLAN,
     CAP_TRAIL,
+    DISPLAY_ND,
     HORIZON_LADDER,
     LEDGER_HORIZON,
     POLICY_KEYS,
+    POLICY_SHORT,
     PLAN_ATR_MULT,
     PLAN_R_MULT,
     R_DATA_END,
@@ -40,16 +45,22 @@ from scripts.exit_policy_study import (  # noqa: E402
     R_PLAN_TARGET,
     R_TRAIL,
     _plan_geometry,
+    build_cohort,
     decompose,
+    evaluate,
+    excursions,
     paired_delta,
     policy_metrics,
+    reconcile_round,
     render_report,
     run_study,
     walk_fixed,
     walk_target_stop,
     walk_trail,
     wilder_atr,
+    window_overlap,
 )
+from scripts.grade_us_board import _TROUGH_LB, _TROUGH_TOL  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #
@@ -128,6 +139,65 @@ class TestWalkTrail:
     def test_bad_atr_raises(self, atr):
         with pytest.raises(ValueError):
             walk_trail([101.0], entry=100.0, atr=atr, k=2.0, cap=10)
+
+
+class TestCloseOnlyStopDiagnostics:
+    """The `lows` argument measures what the close-only convention costs (M5).
+
+    It is a DIAGNOSTIC: it must never move an exit, and it must be measured against the
+    stop that was RESTING before the session — not against a band the session's own close
+    lifted into place.
+    """
+
+    def test_a_low_path_never_changes_the_exit(self):
+        rng = np.random.default_rng(20260803)
+        for _ in range(200):
+            n = int(rng.integers(1, 30))
+            path = 100.0 * np.cumprod(1.0 + rng.normal(0.001, 0.03, n))
+            lows = path * (1.0 - np.abs(rng.normal(0.0, 0.02, n)))
+            k, atr = float(rng.choice([2.0, 3.0])), float(rng.uniform(0.5, 4.0))
+            blind = walk_trail(path, 100.0, atr, k, CAP_TRAIL)
+            seeing = walk_trail(path, 100.0, atr, k, CAP_TRAIL, lows=lows)
+            for key in ("exit_bar", "exit_px", "reason", "stop_level"):
+                assert blind[key] == seeing[key], f"the low path moved {key}"
+
+    def test_flags_a_low_through_the_resting_stop_that_no_close_ever_broke(self):
+        # Bar 1: resting stop is 100 - 2*1 = 98; the low pierces it, the close does not.
+        w = walk_trail([100.0, 99.0], entry=100.0, atr=1.0, k=2.0, cap=10,
+                       lows=[97.5, 99.0])
+        assert w["reason"] == R_DATA_END          # close-only: still holding
+        assert w["intraday_bar"] == 1             # a real stop would have been hit
+
+    def test_the_resting_stop_is_the_PREVIOUS_bars_band(self):
+        """MUTATION PIN. Bar 1 closes at a new high, which lifts the band to 108.
+
+        The low of 105 is under THAT band but nowhere near the 98 a resting order would
+        have carried into the session. Test the low against the same-bar band instead and
+        this goes red — it would manufacture an intraday break on every up-then-down day.
+        """
+        w = walk_trail([110.0, 109.0], entry=100.0, atr=1.0, k=2.0, cap=10,
+                       lows=[105.0, 109.0])
+        assert w["intraday_bar"] is None
+
+    def test_stop_level_is_reported_on_a_stop_exit_and_nowhere_else(self):
+        stopped = walk_trail([110.0, 107.0], entry=100.0, atr=1.0, k=2.0, cap=10)
+        assert stopped["reason"] == R_TRAIL
+        assert stopped["stop_level"] == pytest.approx(108.0)   # 110 anchor - 2*1
+        assert walk_fixed([101.0, 102.0], cap=2)["stop_level"] is None
+        assert walk_trail([101.0], entry=100.0, atr=1.0, k=2.0,
+                          cap=10)["stop_level"] is None
+
+    def test_plan_stop_intraday_test_is_inclusive_like_its_close_test(self):
+        """`p <= stop` on closes, so `low <= stop` intraday — one convention, not two."""
+        w = walk_target_stop([100.0, 100.0], stop=95.0, target=130.0, cap=21,
+                             lows=[95.0, 100.0])
+        assert w["reason"] == R_DATA_END and w["intraday_bar"] == 1
+
+    def test_plan_walker_reports_the_level_that_fired(self):
+        w = walk_target_stop([94.0], stop=95.0, target=130.0, cap=21)
+        assert (w["reason"], w["stop_level"]) == (R_PLAN_STOP, 95.0)
+        assert walk_target_stop([131.0], stop=95.0, target=130.0,
+                                cap=21)["stop_level"] is None
 
 
 class TestBreakevenPromotion:
@@ -315,6 +385,107 @@ class TestDecompose:
         assert b["extended_winner"]["contribution_pp"] == pytest.approx(4.0 / 5)
         assert b["cut_loser"]["contribution_pp"] == pytest.approx(3.0 / 5)
 
+    def test_the_winner_flag_is_the_ANCHORS_pnl_not_the_POLICYS(self):
+        """MUTATION PIN for the bucket key — the sibling test above cannot see it.
+
+        Up there every episode has the same SIGN in both legs, so keying on the policy's
+        own P&L (`float(r[field]) > 0`) reproduces the identical five buckets and the
+        test still passes. Here every pair CROSSES: the anchor's call and the policy's
+        call disagree on all four, so the two keyings put every episode in a different
+        bucket and the contributions separate.
+
+          F  anchor +3 green, policy −2 red,  held longer -> extended_WINNER
+          G  anchor −3 red,   policy +2 green,held longer -> extended_LOSER
+          H  anchor +4 green, policy −1 red,  cut early   -> cut_WINNER
+          I  anchor −4 red,   policy +1 green,cut early   -> cut_LOSER
+          J  anchor  0.0 (a win is `> 0`, so NOT green)   -> extended_LOSER
+        """
+        base = [_row("F", "d1", 3.0, 10), _row("G", "d1", -3.0, 10),
+                _row("H", "d1", 4.0, 10), _row("I", "d1", -4.0, 10),
+                _row("J", "d1", 0.0, 10)]
+        rows = [_row("F", "d1", -2.0, 15), _row("G", "d1", 2.0, 15),
+                _row("H", "d1", -1.0, 4), _row("I", "d1", 1.0, 4),
+                _row("J", "d1", -1.0, 15)]
+        b = decompose(rows, base)["buckets"]
+        assert (b["extended_winner"]["n"], b["extended_loser"]["n"]) == (1, 2)
+        assert (b["cut_winner"]["n"], b["cut_loser"]["n"]) == (1, 1)
+        # Keyed on the anchor: F alone extends a winner (Δ = −5), G and J extend losers
+        # (Δ = +5 and −1). Keyed on the policy the two contributions would be +1.00 and
+        # −1.20 instead.
+        assert b["extended_winner"]["contribution_pp"] == pytest.approx(-1.0)
+        assert b["extended_loser"]["contribution_pp"] == pytest.approx(0.8)
+        assert b["cut_winner"]["contribution_pp"] == pytest.approx(-1.0)
+        assert b["cut_loser"]["contribution_pp"] == pytest.approx(1.0)
+
+    def test_a_flat_anchor_is_not_a_winner(self):
+        """`> 0`, never `>= 0`. A 0.00% anchor row belongs to the LOSER side."""
+        b = decompose([_row("J", "d1", -1.0, 15)], [_row("J", "d1", 0.0, 10)])["buckets"]
+        assert (b["extended_loser"]["n"], b["extended_winner"]["n"]) == (1, 0)
+
+
+class TestReconcileRound:
+    def test_parts_sum_to_the_rounded_total(self):
+        exact = {"a": -0.4463, "b": -0.1487, "c": 0.0531, "d": 0.0162, "e": 0.0}
+        disp = reconcile_round(exact, 2)
+        assert sum(round(v, 10) for v in disp.values()) == pytest.approx(
+            round(sum(exact.values()), 2))
+
+    def test_recovers_a_total_that_naive_rounding_throws_away(self):
+        """Three parts that each round to zero still have to add up to their total."""
+        exact = {"a": 0.004, "b": 0.004, "c": 0.004}
+        disp = reconcile_round(exact, 2)
+        assert sum(disp.values()) == pytest.approx(0.01)
+        assert sorted(round(v, 2) for v in disp.values()) == [0.0, 0.0, 0.01]
+
+    def test_no_part_moves_by_more_than_one_display_unit(self):
+        rng = np.random.default_rng(3)
+        for _ in range(300):
+            exact = {k: float(rng.normal(0, 1)) for k in "abcde"}
+            disp = reconcile_round(exact, 2)
+            for k, v in exact.items():
+                assert abs(disp[k] - v) < 0.01 + 1e-9
+            assert sum(disp.values()) == pytest.approx(round(sum(exact.values()), 2))
+
+    def test_is_deterministic_including_on_ties(self):
+        exact = {"a": 0.005, "b": 0.005, "c": 0.005, "d": 0.005}
+        assert reconcile_round(exact) == reconcile_round(exact)
+        assert reconcile_round(exact) == reconcile_round(exact, DISPLAY_ND)
+
+
+class TestWindowOverlap:
+    """B4's measurement — the blocks the bootstrap treats as independent draws."""
+
+    def _sessions(self, n=60):
+        return pd.bdate_range("2026-01-01", periods=n)
+
+    def _cohort(self, days):
+        return [{"board_date": str(d.date()), "ticker": "X"} for d in days]
+
+    def test_consecutive_board_days_overlap_by_all_but_one_bar(self):
+        s = self._sessions()
+        ov = window_overlap(self._cohort([s[10], s[11]]), s, horizon=10)
+        assert ov["overlap_median_pct"] == pytest.approx(90.0)
+        assert ov["max_disjoint_windows"] == 1        # they share tape: only one is free
+
+    def test_board_days_a_full_horizon_apart_do_not_overlap(self):
+        s = self._sessions()
+        ov = window_overlap(self._cohort([s[10], s[20]]), s, horizon=10)
+        assert ov["overlap_median_pct"] == pytest.approx(0.0)
+        assert ov["max_disjoint_windows"] == 2
+        assert ov["union_sessions"] == ov["total_window_bars"] == 20
+
+    def test_the_union_of_windows_is_smaller_than_their_bar_count_when_they_overlap(self):
+        s = self._sessions()
+        ov = window_overlap(self._cohort(list(s[10:18])), s, horizon=10)
+        assert ov["n_board_days"] == 8
+        assert ov["union_sessions"] < ov["total_window_bars"]
+        assert ov["max_disjoint_windows"] < ov["n_board_days"]
+
+    def test_a_single_board_day_reports_no_neighbour_pairs(self):
+        s = self._sessions()
+        ov = window_overlap(self._cohort([s[10]]), s, horizon=10)
+        assert ov["n_neighbour_pairs"] == 0 and ov["overlap_median_pct"] is None
+
     def test_contributions_sum_EXACTLY_to_the_mean_delta(self):
         """The identity that makes the decomposition a decomposition rather than five
         loosely related numbers."""
@@ -378,6 +549,151 @@ class TestPolicyMetrics:
         assert m["n_censored"] == 1
         assert m["exit_reasons"] == {R_DATA_END: 1, R_HORIZON: 1, R_TRAIL: 1}
         assert m["max_hold"] == 12
+
+    def test_censored_rows_report_the_session_they_were_MARKED_on(self):
+        rows = [_row("A", "d1", 1.0, 10, exit_date="2026-07-30"),
+                _row("B", "d1", -1.0, 12, exit_reason=R_DATA_END, censored=True,
+                     exit_date="2026-07-31")]
+        m = policy_metrics(rows)
+        assert m["censor_dates"] == ["2026-07-31"]     # only the MARKS, not every exit
+        assert m["censored_pct"] == 50.0
+
+
+class TestCaptureGuard:
+    """m17 — realised/MFE is meaningless when MFE <= 0; the row is null, not a number."""
+
+    def _row_with(self, mfe, pnl):
+        return _row("A", "d1", pnl, 10, mfe=mfe, mae=min(mfe, pnl) - 1.0)
+
+    def test_a_negative_mfe_row_yields_a_null_capture_not_a_flattering_ratio(self):
+        rows = [self._row_with(mfe=-3.0, pnl=-5.0)]
+        # The defect being fixed: summarize's own filter is abs(mfe) > 1e-9, so it divides
+        # two negatives and reports a HEALTHY-LOOKING +1.67 for a position that never once
+        # traded above its entry.
+        assert ts.summarize(rows, metric="pnl")["capture"] == pytest.approx(1.67, abs=0.01)
+        m = policy_metrics(rows)
+        assert m["capture"] is None
+        assert (m["n_capture"], m["n_capture_undefined"]) == (0, 1)
+        assert m["capture_undefined_pct"] == 100.0
+
+    def test_a_zero_mfe_row_is_also_undefined(self):
+        m = policy_metrics([self._row_with(mfe=0.0, pnl=-2.0)])
+        assert m["capture"] is None and m["n_capture_undefined"] == 1
+
+    def test_the_median_is_taken_over_the_defined_rows_only(self):
+        rows = [self._row_with(mfe=10.0, pnl=5.0),      # capture 0.50
+                self._row_with(mfe=4.0, pnl=1.0),       # capture 0.25
+                self._row_with(mfe=-3.0, pnl=-5.0)]     # undefined, must not shift it
+        m = policy_metrics(rows)
+        assert m["capture"] == pytest.approx(0.38)      # median(0.50, 0.25), rounded
+        assert (m["n_capture"], m["n_capture_undefined"]) == (2, 1)
+        # Keeping the undefined row would make the meaningless +1.67 the MEDIAN.
+        assert ts.summarize(rows, metric="pnl")["capture"] == pytest.approx(0.50)
+
+
+# --------------------------------------------------------------------------- #
+# synthetic cohort — the trough stop and the excursion window, end to end
+# --------------------------------------------------------------------------- #
+_HIST = 130          # < 200 bars, so _ob_mask returns None and P0 keeps only its stop leg
+
+
+def _synthetic_cohort(forward: list[float], *, flat: float = 100.0, n_hist: int = _HIST):
+    """One episode on a flat history, with a forward path chosen by the caller.
+
+    Flat history => the 90-session trough IS ``flat``, so the incumbent's stop level is
+    exactly ``flat * _TROUGH_TOL`` and a test can place a close on either side of it.
+    """
+    idx = pd.bdate_range("2026-01-01", periods=n_hist + 1 + len(forward))
+    close = pd.Series([flat] * n_hist + [flat] + list(forward), index=idx, dtype=float)
+    tk = "SYN"
+    closes = close.to_frame(tk)
+    highs, lows = (close + 0.5).to_frame(tk), (close - 0.5).to_frame(tk)
+    board_date = str(idx[n_hist - 1].date())          # fill prints on the NEXT session
+    cohort, _excl = build_cohort({board_date: {tk}}, {}, closes, highs, lows)
+    return cohort
+
+
+class TestTroughStopTolerance:
+    """m16 — `_TROUGH_TOL` is load-bearing, so both sides of it are exercised.
+
+    The incumbent stops out on a break of the 90-session trough × 0.97, NOT on a break of
+    the trough. On a flat-100 history the two levels are 97.00 and 100.00, and the gap
+    between them is the tolerance. Delete it (TOL = 1.0) and the second test below fires
+    a stop that should not exist; widen it and the first stops firing.
+    """
+
+    def test_the_stop_level_is_the_trough_times_the_tolerance(self):
+        ep = _synthetic_cohort([100.0] * 11)[0]
+        assert ep["trough_stop"] == pytest.approx(100.0 * _TROUGH_TOL)
+        assert _TROUGH_LB >= 10                        # the lookback must cover the flat
+
+    def test_a_close_below_trough_x_tol_fires_the_stop(self):
+        stop = 100.0 * _TROUGH_TOL
+        fwd = [100.0, 100.0, stop - 0.01] + [100.0] * 8
+        row = evaluate(_synthetic_cohort(fwd), None)["P0"][0]
+        assert (row["exit_reason"], row["held"]) == ("stop", 3)
+
+    def test_a_close_below_the_TROUGH_but_above_trough_x_tol_does_NOT_fire(self):
+        """The tolerance is the whole point: 98.00 breaks the trough and is not a break.
+
+        With `_TROUGH_TOL = 1.0` this episode would stop out on bar 3 instead of running
+        to its horizon, and this test is what says so.
+        """
+        stop = 100.0 * _TROUGH_TOL
+        below_trough = (stop + 100.0) / 2.0            # strictly between 97 and 100
+        fwd = [100.0, 100.0, below_trough] + [100.0] * 8
+        row = evaluate(_synthetic_cohort(fwd), None)["P0"][0]
+        assert (row["exit_reason"], row["held"]) == (R_HORIZON, LEDGER_HORIZON)
+
+    def test_a_close_exactly_at_the_stop_level_holds(self):
+        """The grader's leg is `p < stop_level`. A touch is not a break."""
+        fwd = [100.0, 100.0, 100.0 * _TROUGH_TOL] + [100.0] * 8
+        row = evaluate(_synthetic_cohort(fwd), None)["P0"][0]
+        assert row["exit_reason"] == R_HORIZON
+
+
+class TestExcursionWindowIsShared:
+    """M6 — one MFE/MAE/capture window for the whole headline table, P0 included."""
+
+    def test_excursions_cover_the_held_window_only(self):
+        ep = _synthetic_cohort([101.0, 102.0, 130.0] + [100.0] * 8)[0]
+        mfe, mae = excursions(ep, 2)
+        assert mfe == pytest.approx(2.0)               # bar 3's +30% is NOT in the window
+        assert mae == pytest.approx(1.0)
+
+    def test_P0_takes_its_excursions_from_its_own_hold_not_the_full_horizon(self):
+        """MUTATION PIN for the unification.
+
+        P0 stops out on bar 3 and the name then rallies 30% inside the same 10-bar
+        forced-verdict window. `track_scoring.score_from_fill` — which still supplies
+        P0's P&L — reports that 30% as the episode's MFE. Reading P0's mfe/mae from the
+        grader again (`row["mfe"] = sc["mfe"]`) makes this test red, because the headline
+        table would once more be mixing two window conventions.
+        """
+        stop = 100.0 * _TROUGH_TOL
+        fwd = [101.0, 102.0, stop - 0.01, 130.0, 130.0, 130.0,
+               130.0, 130.0, 130.0, 130.0, 130.0]
+        cohort = _synthetic_cohort(fwd)
+        row = evaluate(cohort, None)["P0"][0]
+        assert (row["exit_reason"], row["held"]) == ("stop", 3)
+        assert row["mfe"] == pytest.approx(2.0)        # best close WHILE HELD, not +30%
+        assert row["mae"] == pytest.approx((stop - 0.01) / 100.0 * 100.0 - 100.0)
+        grader = ts.score_from_fill(cohort[0]["series"],
+                                    cohort[0]["series"].index[cohort[0]["i_fill"]],
+                                    100.0, LEDGER_HORIZON,
+                                    stop_level=cohort[0]["trough_stop"])
+        assert grader["mfe"] == pytest.approx(30.0)    # the definition NOT used here
+        assert row["pnl"] == pytest.approx(grader["pnl"])      # P&L still the grader's
+        assert row["held"] == grader["held"]
+
+    def test_every_policy_row_uses_the_same_window_definition(self):
+        cohort = _synthetic_cohort([101.0, 102.0, 103.0] + [104.0] * 8)
+        pol = evaluate(cohort, None)
+        for key, rows in pol.items():
+            r = rows[0]
+            mfe, mae = excursions(cohort[0], int(r["held"]))
+            assert r["mfe"] == pytest.approx(mfe), key
+            assert r["mae"] == pytest.approx(mae), key
 
 
 # --------------------------------------------------------------------------- #
@@ -492,6 +808,166 @@ class TestReport:
         sep = [k for k, d in study["deltas_vs_p0"].items() if d.get("separates")]
         if sep:
             assert ("ABOVE zero" in md) or ("BELOW zero" in md)
+
+
+def _section(md: str, heading: str) -> list[str]:
+    """The lines of one report section, heading excluded, next same-or-higher stop."""
+    lines = md.splitlines()
+    start = next(i for i, l in enumerate(lines) if l.strip() == heading)
+    depth = heading.split(" ")[0]
+    end = len(lines)
+    for j in range(start + 1, len(lines)):
+        head = lines[j].split(" ")[0]
+        if lines[j].startswith("#") and len(head) <= len(depth):
+            end = j
+            break
+    return lines[start + 1:end]
+
+
+_PP = re.compile(r"([+-]\d+\.\d{2}) pp")
+
+
+class TestDecompositionTableReconcilesOnThePage:
+    """m14 — the printed parts have to add up to the printed net, not just the exact ones.
+
+    Rounding each contribution independently used to print P3 as −0.45 / −0.15 beside a
+    net of −0.59 and five parts summing to −0.52 beside a total of −0.53. Exact numbers
+    that print as an arithmetic error are not a disclosure.
+    """
+
+    def test_printed_parts_sum_to_the_printed_nets(self, study):
+        md = render_report(study)
+        rows = [l for l in _section(md, "## Winners kept vs losers cut")
+                if l.startswith("| P") and "pp<br>" in l]
+        assert rows, "no decomposition rows found — did the table move?"
+        for line in rows:
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            nums = [Decimal(_PP.search(c).group(1)) for c in cells[2:]]
+            ew, el, wk, cl, cw, lc, same, total = nums
+            assert ew + el == wk, f"winners-kept net does not match its parts: {line}"
+            assert cl + cw == lc, f"losers-cut net does not match its parts: {line}"
+            assert ew + el + cl + cw + same == total, f"parts do not sum to total: {line}"
+            assert wk + lc + same == total, f"nets do not sum to total: {line}"
+
+    def test_the_printed_total_matches_the_printed_delta_vs_p0f(self, study):
+        """The same number lives in two tables; one rounding, so one figure."""
+        md = render_report(study)
+        deltas = {}
+        for line in _section(md, "## Does anything separate from the incumbent?"):
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            # 8 columns = the paired-delta table; the sensitivity table below has 5.
+            if line.startswith("| P") and len(cells) == 8:
+                m = _PP.search(cells[5])              # the Δ-vs-P0f cell
+                if m:
+                    deltas[cells[0]] = Decimal(m.group(1))
+        assert deltas, "no Δ-vs-P0f cells parsed — did the delta table change shape?"
+        for line in _section(md, "## Winners kept vs losers cut"):
+            if line.startswith("| P") and "pp<br>" in line:
+                cells = [c.strip() for c in line.strip("|").split("|")]
+                total = Decimal(_PP.search(cells[-1]).group(1))
+                if cells[0] in deltas:
+                    assert deltas[cells[0]] == total, f"two roundings of {cells[0]}"
+
+
+class TestPrintedDisclosures:
+    """The caveats a reader must not be able to miss — printed WHERE they bite."""
+
+    def test_the_overlap_caveat_sits_beside_every_bolded_excludes_0_flag(self, study):
+        """B4 — a reader who only sees the bold flag has to see the caveat too."""
+        lines = render_report(study).splitlines()
+        flags = [i for i, l in enumerate(lines) if "**yes**" in l]
+        assert flags, "no separating policy in this run — the adjacency is untestable"
+        for i in flags:
+            near = " ".join(lines[i:i + 12]).lower()
+            assert "blocks overlap" in near, \
+                f"line {i} bolds a separation with no overlap caveat within 12 lines"
+
+    def test_the_overlap_caveat_also_has_its_own_stats_section(self, study):
+        md = render_report(study)
+        ov = study["window_overlap"]
+        assert f"blocks are not {ov['n_board_days']} independent bets" in md
+        assert "effective sample is materially smaller" in md
+        assert f"{ov['max_disjoint_windows']} of the {ov['n_board_days']} board days" in md
+
+    def test_the_close_only_stop_convention_is_in_method_AND_limitations(self, study):
+        """M5 — one disclosure in each place a reader might start."""
+        md = render_report(study)
+        method = " ".join(_section(md, "## Method — the conventions that decide the numbers"))
+        limits = " ".join(_section(md, "## Limitations"))
+        sc = study["stop_convention"]
+        for text in (method, limits):
+            assert "close-only" in text.lower()
+            assert f"{sc['slip_mean_pct']:.2f}%" in text, "the measured slip is not printed"
+            assert str(sc["n_stop_exits"]) in text
+        assert f"{sc['intraday_earlier_pct_of_stops']:.1f}%" in method
+        assert str(sc["n_held_through_intraday_breach"]) in method
+
+    def test_the_terminal_mark_concentration_sits_beside_the_delta_table(self, study):
+        """M4 — the marks all land on one session, and the sensitivity says what that buys."""
+        sec = " ".join(_section(md := render_report(study),
+                                "## Does anything separate from the incumbent?"))
+        dates = sorted({d for k in POLICY_KEYS
+                        for d in study["metrics"][k]["censor_dates"]})
+        assert dates, "no data_end marks in this run"
+        for d in dates:
+            assert d in sec
+        assert "not spread across the sample" in sec
+        assert "One-session-back sensitivity" in sec
+        assert f"{study['sensitivity']['max_abs_shift_pp']:.2f} pp" in sec
+        assert "## Limitations" in md
+
+    def test_censoring_rates_are_repeated_on_BOTH_tables(self, study):
+        """m17c — a reader of either table has to meet the censoring rate."""
+        md = render_report(study)
+        for heading in ("## Does anything separate from the incumbent?",
+                        "## Winners kept vs losers cut"):
+            sec = _section(md, heading)
+            rows = [l for l in sec if l.startswith("| P")]
+            assert rows
+            for k in POLICY_KEYS:
+                m = study["metrics"][k]
+                if m["n_censored"]:
+                    stamp = f"{m['n_censored']} ({m['censored_pct']:.0f}%)"
+                    assert any(stamp in l for l in rows), f"{k} in {heading}: {stamp}"
+
+    def test_capture_nulls_are_printed_not_hidden(self, study):
+        """m17 — a null disclosed as a count is the compliant form; a null averaged in
+        as a positive-looking ratio is not."""
+        md = render_report(study)
+        assert "MFE ≤ 0" in md
+        for k in POLICY_KEYS:
+            n = study["metrics"][k]["n_capture_undefined"]
+            if n:
+                assert f"{POLICY_SHORT[k]} {n}" in md
+
+
+class TestReportWording:
+    def test_forward_bar_counts_say_AT_LEAST(self, study):
+        """The ladder counts episodes with >= h bars; printing "have h bars" is wrong."""
+        md = render_report(study)
+        n = study["ladder"][LEDGER_HORIZON]["n_episodes"]
+        assert f"**{n} have at least {LEDGER_HORIZON} forward bars**" in md
+        assert "AT LEAST that many forward bars" in md
+
+    def test_the_early_leg_counts_reconcile_with_the_exit_reason_mix(self, study):
+        """The "89 + 1" figure. `before` + `on the horizon bar` must equal the mix, and
+        `before` must equal what the decomposition buckets as "cut"."""
+        legs, mix = study["p0_early_legs"], study["metrics"]["P0"]["exit_reasons"]
+        for reason in set(legs["before"]) | set(legs["on_horizon_bar"]):
+            assert (legs["before"].get(reason, 0)
+                    + legs["on_horizon_bar"].get(reason, 0)) == mix[reason], reason
+        cut = study["decomposition"]["P0"]["buckets"]
+        assert legs["n_before"] == cut["cut_loser"]["n"] + cut["cut_winner"]["n"]
+        md = render_report(study)
+        assert f"exit {legs['n_before']} of the" in md
+        if legs["n_on_horizon_bar"]:
+            assert f"a further {legs['n_on_horizon_bar']} fire ON bar" in md
+
+    def test_the_data_edge_paragraph_states_an_unknown_direction_not_a_double_negative(
+            self, study):
+        md = render_report(study)
+        assert "biases nothing in a known direction" not in md
+        assert "Which way that pushes the estimate is unknown" in md
 
 
 class TestCommittedReportIsCurrent:

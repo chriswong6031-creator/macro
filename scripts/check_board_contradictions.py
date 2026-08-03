@@ -70,7 +70,7 @@ def _check_prophet_order(buy_rows: list) -> list[str]:
 
     prev_rank = -1
     prev_stage = None
-    prev_score = None
+    prev_score = None       # last SCORED row inside the CURRENT bucket
     for r in buy_rows:
         stage = r.get("stage")
         rank = rank_of.get(stage)
@@ -86,15 +86,25 @@ def _check_prophet_order(buy_rows: list) -> list[str]:
                 f"{prev_stage!r} — stage buckets must run "
                 f"{' -> '.join(_STAGE_ORDER)}"
             )
+        if rank != prev_rank:
+            # A new bucket restarts the chain: scores are only comparable within one
+            # stage, so the previous bucket's last score must not anchor this one.
+            prev_score = None
         score = ((r.get("prophet") or {}).get("score"))
-        if rank == prev_rank and prev_score is not None and score is not None:
-            if score > prev_score + 1e-9:
-                out.append(
-                    f"(d) {r.get('ticker')}: score={score} outranks the row above it "
-                    f"({prev_score}) inside stage={stage!r} — score must be "
-                    f"non-increasing within a bucket"
-                )
-        prev_rank, prev_stage, prev_score = rank, stage, score
+        if prev_score is not None and score is not None and score > prev_score + 1e-9:
+            out.append(
+                f"(d) {r.get('ticker')}: score={score} outranks the row above it "
+                f"({prev_score}) inside stage={stage!r} — score must be "
+                f"non-increasing within a bucket"
+            )
+        # A None score is a MISSING READING, not a reset. Overwriting the anchor with
+        # None blinded the walk for the row after it, so a single scoreless row in the
+        # middle of a bucket masked the very violation that follows it: [100, None,
+        # 200] compared nothing at all and passed clean. Carrying the last scored row
+        # forward keeps the guard able to SEE that failure.
+        if score is not None:
+            prev_score = score
+        prev_rank, prev_stage = rank, stage
 
     # The load-bearing one, stated independently of the sequence walk so it cannot be
     # masked by an unknown stage: nothing you are told not to buy may sit above

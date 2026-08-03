@@ -117,8 +117,55 @@ def _row(**over) -> dict:
     return base
 
 
-def _labelled(name: str, visible: bool = False) -> dict:
-    return {"label": name, "visible_at_entry": visible, "trigger": {}}
+def _labelled(name: str, visible: bool = False, **trigger) -> dict:
+    return {"label": name, "visible_at_entry": visible, "trigger": dict(trigger)}
+
+
+# ===========================================================================
+# 0. THRESHOLD PINS — literals, never the constants they guard
+# ===========================================================================
+class TestThresholdsArePinnedAsLiterals:
+    """Every threshold written out by hand.
+
+    The rest of this file reads `pm.GAP_PCT` and friends so each boundary test stays
+    honest when a threshold legitimately moves. That is the right shape for a boundary
+    test and the WRONG shape for the only record of what the numbers are: with nothing
+    but symbolic references, editing `GAP_PCT = -8.0` to `-5.0` re-points every test at
+    the new value and the whole suite goes green on a silently redefined taxonomy — the
+    artifact, the report and the masterplan would then be describing a rule no test
+    disagrees with. These literals are that disagreement. A threshold change must land
+    HERE, in a diff a reviewer reads, alongside the doc and masterplan edits.
+    """
+
+    def test_gap_event_threshold(self):
+        assert pm.GAP_PCT == -8.0
+
+    def test_extension_risk_threshold(self):
+        assert pm.EXT_RISK_MIN == 0.10
+
+    def test_readmission_window_in_sessions(self):
+        assert pm.READMIT_MAX_SESSIONS == 10
+
+    def test_cohort_and_remaining_thresholds(self):
+        assert pm.LOSER_ABS_PCT == -8.0
+        assert pm.LOSER_EXCESS_PCT == -5.0
+        assert pm.WINNER_ABS_PCT == 8.0
+        assert pm.BETA_SHARE_MAX == 0.40
+        assert pm.READMIT_LOSS_PCT == -8.0
+
+    def test_the_thresholds_the_artifact_publishes_match_the_module(self):
+        # The artifact prints its own thresholds block; a reader re-deriving a label by
+        # hand uses THOSE numbers. They must not be able to drift from the ones the
+        # classifier actually applied.
+        th = pm.aggregate([])["thresholds"]
+        assert th["gap_pct"] == -8.0
+        assert th["ext_risk_min"] == 0.10
+        assert th["readmit_max_sessions"] == 10
+        assert th["loser_abs_pct"] == -8.0
+        assert th["loser_excess_pct"] == -5.0
+        assert th["winner_abs_pct"] == 8.0
+        assert th["beta_share_max"] == 0.40
+        assert th["readmit_loss_pct"] == -8.0
 
 
 # ===========================================================================
@@ -140,6 +187,24 @@ class TestCohortGates:
 
     def test_no_numbers_is_unscored_not_neutral(self):
         assert pm.cohort_of(None, None) == "unscored"
+
+    def test_a_profitable_pick_is_a_WINNER_however_fast_the_tape_ran(self):
+        # PRECEDENCE PIN. +9% against a +14.5% tape is -5.5% excess, which trips the
+        # loser gate's excess leg. Testing the loser legs first booked that pick as a
+        # LOSS — and, worse, deleted it from the winners-forfeited column, so every veto
+        # in `veto_cost` looked cheaper than it is. The masterplan's winner gate is
+        # absolute (">= +8%"), so the absolute return decides first.
+        assert pm.cohort_of(9.0, -5.5) == "winner"
+        assert pm.cohort_of(8.0, -20.0) == "winner"
+        # ...and the excess leg keeps its real job: a name that LOST while the tape rose.
+        assert pm.cohort_of(-4.0, -5.5) == "loser"
+        assert pm.cohort_of(7.99, -5.5) == "loser"
+
+    def test_a_winner_by_absolute_return_never_lands_in_the_loser_cohort(self):
+        # The two gates cannot both be satisfied by an absolute return, so the only
+        # overlap is via the excess leg — pinned above. This walks the boundary.
+        for excess in (-50.0, -5.0, -4.99, 0.0, 5.0):
+            assert pm.cohort_of(8.0, excess) == "winner"
 
 
 # ===========================================================================
@@ -372,10 +437,193 @@ class TestReAdmission:
                                 path=_path(), prior=prior)
         assert "re_admission" not in _names(labels)
 
-    def test_no_prior_episode_does_not_fire(self):
-        labels, _ = pm.classify(outcome_pct=-10.0, excess_pct=-9.0, ctx=_ctx(),
-                                path=_path(), prior=None)
+    def test_a_BIG_profitable_prior_episode_does_not_fire(self):
+        """SIGN GUARD. The two legs read `<= -8%`; both thresholds are signed.
+
+        A prior that made +12% has |12| >= |−8|, so any rewrite that reaches for an
+        absolute value — `abs(prior_out) >= abs(READMIT_LOSS_PCT)`, the natural typo
+        when the constant is negative — turns "re-bought a name that had just LOST
+        money" into "re-bought a name that had just MOVED", flags winners, and quietly
+        fills the winners-forfeited column that
+        `test_the_readmission_veto_forfeits_exactly_zero_winners` pins at zero. The
+        +5% prior above cannot catch that (|5| < 8); this one can.
+        """
+        prior = {"entry_date": "2026-07-01", "outcome_pct": 12.0,
+                 "sessions_since_prior_exit": 1, "mark_at_readmit_pct": 11.0,
+                 "prior_matured": True}
+        labels, nulls = pm.classify(outcome_pct=-10.0, excess_pct=-9.0, ctx=_ctx(),
+                                    path=_path(), prior=prior)
         assert "re_admission" not in _names(labels)
+        assert _null_reasons(nulls, "re_admission") == []   # decided, not skipped
+
+    def test_no_prior_episode_does_not_fire_and_is_a_decided_negative(self):
+        # `prior=None` means the caller's scan found no prior run in the window. That is
+        # a decided negative and the row must stay in every denominator — nulling it
+        # would shrink the universe by every name that has only ever been bought once.
+        labels, nulls = pm.classify(outcome_pct=-10.0, excess_pct=-9.0, ctx=_ctx(),
+                                    path=_path(), prior=None)
+        assert "re_admission" not in _names(labels)
+        assert _null_reasons(nulls, "re_admission") == []
+
+    def test_the_window_boundary_is_inclusive_at_ten_sessions(self):
+        # Literal 10/11, not pm.READMIT_MAX_SESSIONS: see TestThresholdsArePinned.
+        def _fire(gap):
+            prior = {"entry_date": "2026-07-01", "outcome_pct": -12.0,
+                     "sessions_since_prior_exit": gap, "mark_at_readmit_pct": -9.0}
+            return "re_admission" in _names(pm.classify(
+                outcome_pct=-10.0, excess_pct=-9.0, ctx=_ctx(),
+                path=_path(), prior=prior)[0])
+        assert _fire(10) is True
+        assert _fire(11) is False
+
+    def test_an_unpriceable_prior_episode_is_NULL_on_the_label_and_BOTH_legs(self):
+        # A previous run that cannot be priced is not evidence that the name came back
+        # clean. It nulls the label AND both leg keys, because the leg keys are the
+        # denominators `veto_cost` costs each variant over — leaving them in would let
+        # the buildable row's "0 of N" count rows it never got to look at.
+        _labels, nulls = pm.classify(
+            outcome_pct=-10.0, excess_pct=-9.0, ctx=_ctx(), path=_path(),
+            prior={"undecidable": "prior_episode_not_scoreable",
+                   "n_priors_in_window": 1, "n_priors_unscoreable": 1})
+        assert _null_reasons(nulls, "re_admission") == ["prior_episode_not_scoreable"]
+        assert _null_reasons(nulls, pm.READMIT_NULL_OPEN_DRAWDOWN) == \
+            ["prior_episode_not_scoreable"]
+        assert _null_reasons(nulls, pm.READMIT_NULL_PRIOR_LOSS) == \
+            ["prior_episode_not_scoreable"]
+
+    def test_a_missing_mark_nulls_ONLY_the_buildable_leg(self):
+        # The prior resolved to a loss (hindsight leg decidable) but there is no mark at
+        # the re-admission, so the buildable leg had no input at all. Nulling both would
+        # throw away a real finding; nulling neither would let the buildable variant
+        # report a zero it never measured.
+        prior = {"entry_date": "2026-07-01", "outcome_pct": -12.0,
+                 "sessions_since_prior_exit": 2, "mark_at_readmit_pct": None,
+                 "prior_matured": True}
+        labels, nulls = pm.classify(outcome_pct=-10.0, excess_pct=-9.0, ctx=_ctx(),
+                                    path=_path(), prior=prior)
+        assert _trigger(labels, "re_admission")["leg"] == pm.READMIT_LEG_PRIOR_LOSS
+        assert _null_reasons(nulls, pm.READMIT_NULL_OPEN_DRAWDOWN) == \
+            ["no_mark_at_readmit"]
+        assert _null_reasons(nulls, pm.READMIT_NULL_PRIOR_LOSS) == []
+        assert _null_reasons(nulls, "re_admission") == []
+
+    def test_an_unmeasurable_gap_is_NULL_not_out_of_window(self):
+        prior = {"entry_date": "2026-07-01", "outcome_pct": -12.0,
+                 "sessions_since_prior_exit": None, "mark_at_readmit_pct": -9.0}
+        labels, nulls = pm.classify(outcome_pct=-10.0, excess_pct=-9.0, ctx=_ctx(),
+                                    path=_path(), prior=prior)
+        assert "re_admission" not in _names(labels)
+        assert _null_reasons(nulls, "re_admission") == ["prior_gap_not_measurable"]
+
+    def test_the_trigger_says_whether_the_prior_had_MATURED(self):
+        # An unmatured prior's `outcome_pct` is a MARK — outcome-conditioned, and not
+        # the same evidence as a resolved loss. The row has to say which it was.
+        prior = {"entry_date": "2026-07-10", "outcome_pct": -14.0, "prior_matured": False,
+                 "sessions_since_prior_exit": 1, "mark_at_readmit_pct": 3.0,
+                 "n_priors_in_window": 2, "selected_by": pm.READMIT_LEG_PRIOR_LOSS}
+        labels, _ = pm.classify(outcome_pct=-10.0, excess_pct=-9.0, ctx=_ctx(),
+                                path=_path(), prior=prior)
+        trig = _trigger(labels, "re_admission")
+        assert trig["prior_matured"] is False
+        assert trig["n_priors_in_window"] == 2
+        assert trig["selected_by"] == pm.READMIT_LEG_PRIOR_LOSS
+
+    def test_a_caller_that_says_nothing_about_maturity_gets_a_NULL_not_a_False(self):
+        prior = {"entry_date": "2026-07-01", "outcome_pct": -12.0,
+                 "sessions_since_prior_exit": 2, "mark_at_readmit_pct": -9.0}
+        labels, _ = pm.classify(outcome_pct=-10.0, excess_pct=-9.0, ctx=_ctx(),
+                                path=_path(), prior=prior)
+        assert _trigger(labels, "re_admission")["prior_matured"] is None
+
+
+# ===========================================================================
+# 7b. re_admission is HINDSIGHT wearing a visible-at-entry badge (M7)
+# ===========================================================================
+class TestReAdmissionIsNotAVisibleAtEntryLabel:
+    def test_the_label_is_not_in_the_visible_at_entry_list(self):
+        """The headline is carried by a leg that cannot be read at entry.
+
+        `re_admission`'s +79.08pp counterfactual (2026-07-31 artifact) comes entirely
+        from `prior_episode_loss`, which needs the PRIOR episode's resolved outcome — a
+        number that does not exist on the night the board re-admits the name (the IPGP
+        case was +3.04% green at re-admission). Listing the label as visible-at-entry
+        published that hindsight figure under a buildable badge.
+        """
+        assert "re_admission" not in pm.VISIBLE_AT_ENTRY_LABELS
+        assert pm.VISIBLE_AT_ENTRY_LABELS == ("sector_headwind", "bought_extended")
+
+    def test_the_row_level_flag_stays_leg_specific(self):
+        # The label-level list is the weaker claim. A row that fired on the open-drawdown
+        # leg really WAS visible at entry, and must keep saying so.
+        open_leg = {"entry_date": "2026-07-01", "outcome_pct": -12.0,
+                    "sessions_since_prior_exit": 2, "mark_at_readmit_pct": -9.0}
+        hindsight = {"entry_date": "2026-07-10", "outcome_pct": -14.35,
+                     "sessions_since_prior_exit": 1, "mark_at_readmit_pct": 3.04}
+        a, _ = pm.classify(outcome_pct=-10.0, excess_pct=-9.0, ctx=_ctx(),
+                           path=_path(), prior=open_leg)
+        b, _ = pm.classify(outcome_pct=-10.0, excess_pct=-9.0, ctx=_ctx(),
+                           path=_path(), prior=hindsight)
+        assert _visible(a, "re_admission") is True
+        assert _visible(b, "re_admission") is False
+
+    def test_the_aggregation_reports_the_label_as_not_visible_at_entry(self):
+        rows = [_row(ticker="A", outcome_pct=-10.0,
+                     labels=[_labelled("re_admission", False,
+                                       leg=pm.READMIT_LEG_PRIOR_LOSS)])]
+        agg = pm.aggregate(rows)
+        freq = {f["label"]: f for f in agg["label_frequency"]}
+        assert freq["re_admission"]["visible_at_entry"] is False
+        assert freq["sector_headwind"]["visible_at_entry"] is True
+        tax = {t["label"]: t for t in agg["taxonomy"]}
+        assert tax["re_admission"]["visible_at_entry"] is False
+        # ...and the reader is told WHY, not just "no": one leg is buildable.
+        legs = {lg["leg"]: lg for lg in tax["re_admission"]["legs"]}
+        assert legs[pm.READMIT_LEG_OPEN_DRAWDOWN]["visible_at_entry"] is True
+        assert legs[pm.READMIT_LEG_PRIOR_LOSS]["visible_at_entry"] is False
+
+    def test_veto_cost_splits_the_label_into_one_row_per_leg(self):
+        rows = [
+            _row(ticker="H", outcome_pct=-20.0,
+                 labels=[_labelled("re_admission", False,
+                                   leg=pm.READMIT_LEG_PRIOR_LOSS)]),
+            _row(ticker="N", outcome_pct=1.0, labels=[]),
+        ]
+        veto = {v["key"]: v for v in pm.aggregate(rows)["veto_cost"]}
+        assert set(veto) == {"sector_headwind", "bought_extended",
+                             "re_admission:open_drawdown_at_readmit",
+                             "re_admission:prior_episode_loss"}
+        build = veto["re_admission:open_drawdown_at_readmit"]
+        hind = veto["re_admission:prior_episode_loss"]
+        assert (build["variant"], build["visible_at_entry"]) == ("buildable", True)
+        assert (hind["variant"], hind["visible_at_entry"]) == \
+            ("hindsight_upper_bound", False)
+        # The whole counterfactual sits on the hindsight leg...
+        assert (hind["n_flagged"], hind["loss_avoided_pct"]) == (1, 20.0)
+        # ...and the buildable row is PRINTED with its zero, never dropped.
+        assert (build["n_flagged"], build["loss_avoided_pct"]) == (0, 0.0)
+        assert build["n_universe"] == 2
+
+    def test_a_leg_null_shrinks_only_ITS_variants_universe(self):
+        rows = [
+            _row(ticker="H", outcome_pct=-20.0,
+                 labels=[_labelled("re_admission", False,
+                                   leg=pm.READMIT_LEG_PRIOR_LOSS)],
+                 labels_null=[{"label": pm.READMIT_NULL_OPEN_DRAWDOWN,
+                               "reason": "no_mark_at_readmit"}]),
+            _row(ticker="N", outcome_pct=1.0, labels=[]),
+        ]
+        veto = {v["key"]: v for v in pm.aggregate(rows)["veto_cost"]}
+        assert veto["re_admission:open_drawdown_at_readmit"]["n_universe"] == 1
+        assert veto["re_admission:open_drawdown_at_readmit"]["n_null_disclosed"] == 1
+        assert veto["re_admission:prior_episode_loss"]["n_universe"] == 2
+
+    def test_a_row_with_no_recorded_leg_is_never_credited_to_one(self):
+        # `_labelled` with no trigger is the shape a hand-written row takes. It must not
+        # be guessed into either leg — a veto variant may only count triggers it can see.
+        rows = [_row(ticker="H", outcome_pct=-20.0, labels=[_labelled("re_admission")])]
+        veto = {v["key"]: v for v in pm.aggregate(rows)["veto_cost"]}
+        assert veto["re_admission:open_drawdown_at_readmit"]["n_flagged"] == 0
+        assert veto["re_admission:prior_episode_loss"]["n_flagged"] == 0
 
 
 # ===========================================================================
@@ -541,6 +789,45 @@ class TestAggregate:
         rep = pm.aggregate(rows)["repeat_offenders"]
         assert [r["ticker"] for r in rep] == ["B", "A"]
 
+    def test_loss_contribution_uses_ONE_denominator_and_prints_its_coverage(self):
+        """The loss-contribution column is comparable down the table, or it is noise.
+
+        Numerator and denominator used to come from different populations' worth of
+        thinking: the share column beside it is over the DECIDABLE losers while the
+        contribution is over the whole loser book, so a label evaluable on a third of
+        the book and one with full reach printed two different 100%s in one column. The
+        contribution keeps the whole-book denominator — the only one that is the same on
+        every row — and the per-label reach is disclosed separately as coverage.
+        """
+        rows = [
+            # a big loser this label could NOT be decided on
+            _row(ticker="U", outcome_pct=-30.0, labels=[],
+                 labels_null=[{"label": "sector_headwind", "reason": "x"}]),
+            _row(ticker="H", outcome_pct=-10.0,
+                 labels=[_labelled("sector_headwind", True)]),
+            _row(ticker="C", outcome_pct=-10.0, labels=[]),
+        ]
+        f = next(x for x in pm.aggregate(rows)["label_frequency"]
+                 if x["label"] == "sector_headwind")
+        assert f["loss_contribution_pct"] == 20.0            # 10pp of the 50pp book
+        assert f["loss_contribution_denominator_pp"] == 50.0
+        assert f["loss_contribution_basis"] == "all matured losers' summed absolute loss"
+        # ...and the reach that number was earned on, so 20% is never read as full reach
+        assert (f["n_losers_evaluated"], f["n_losers_total"]) == (2, 3)
+        assert f["loser_coverage_pct"] == 66.7
+        assert f["decidable_loss_share_pct"] == 40.0         # 20pp of the 50pp book
+
+    def test_every_label_shares_the_same_contribution_denominator(self):
+        rows = [
+            _row(ticker="A", outcome_pct=-20.0, labels=[_labelled("gap_event")],
+                 labels_null=[{"label": "sector_headwind", "reason": "x"}]),
+            _row(ticker="B", outcome_pct=-10.0,
+                 labels=[_labelled("sector_headwind", True)]),
+        ]
+        agg = pm.aggregate(rows)
+        denoms = {f["loss_contribution_denominator_pp"] for f in agg["label_frequency"]}
+        assert denoms == {30.0} == {agg["cohorts"]["total_loser_loss_pct"]}
+
     def test_market_beta_diagnostics_print_the_distribution_behind_a_zero(self):
         rows = [_row(ticker="A", outcome_pct=-10.0, excess_pct=-9.0),
                 _row(ticker="B", outcome_pct=-20.0, excess_pct=-15.0)]
@@ -556,6 +843,119 @@ class TestAggregate:
                  labels=[_labelled("sector_headwind", True)]),
         ]
         assert pm.aggregate(rows) == pm.aggregate(list(reversed(copy.deepcopy(rows))))
+
+
+# ===========================================================================
+# 10b. the prior-episode scan (scripts/prophet_postmortem.prior_episodes)
+# ===========================================================================
+CAL = pd.bdate_range("2026-06-01", periods=60)
+
+
+def _series(dips: dict[str, float] | None = None) -> pd.Series:
+    s = pd.Series(100.0, index=CAL, dtype=float)
+    for day, px in (dips or {}).items():
+        s.loc[pd.Timestamp(day)] = px
+    return s
+
+
+def _item(ticker: str, entry: str, exit_: str | None, *, pnl: float | None = None,
+          matured: bool = True, series: "pd.Series | None" = None) -> dict:
+    sc = None if pnl is None else {"pnl": pnl, "mark": pnl, "matured": matured,
+                                   "entry": 100.0}
+    return {"ep": {"ticker": ticker, "entry_date": entry, "exit_date": exit_},
+            "sc": sc, "series": _series() if series is None and pnl is not None
+            else series}
+
+
+class TestPriorEpisodeScan:
+    def test_it_scans_EVERY_prior_in_the_window_not_just_the_last_one(self):
+        """`items[i-1]` answered a different question than the label prints.
+
+        A name re-admitted twice inside a fortnight was compared only against its most
+        recent run, so a qualifying loss one run further back — still inside the same
+        10-session window — was invisible to the label. Here the OLDER prior is the
+        loser and the newer one is flat; the scan has to find the older one.
+        """
+        scored = [
+            _item("AAA", "2026-06-15", "2026-06-17", pnl=-12.0),
+            _item("AAA", "2026-06-18", "2026-06-19", pnl=1.0),
+            _item("AAA", "2026-06-22", None, pnl=-5.0),
+        ]
+        prior = ppm.prior_episodes(scored, CAL)[("AAA", "2026-06-22")]
+        assert prior["entry_date"] == "2026-06-15"
+        assert prior["outcome_pct"] == -12.0
+        assert prior["selected_by"] == pm.READMIT_LEG_PRIOR_LOSS
+        assert prior["n_priors_in_window"] == 2
+        assert prior["prior_matured"] is True
+
+    def test_the_buildable_leg_outranks_the_hindsight_leg_in_selection(self):
+        # One prior was already under water on the night of the re-admission; the other
+        # only resolved into a loss later. Report the one somebody could have acted on.
+        scored = [
+            _item("AAA", "2026-06-15", "2026-06-17", pnl=-20.0),
+            _item("AAA", "2026-06-18", "2026-06-19", pnl=-9.0,
+                  series=_series({"2026-06-22": 88.0})),
+            _item("AAA", "2026-06-22", None, pnl=-5.0),
+        ]
+        prior = ppm.prior_episodes(scored, CAL)[("AAA", "2026-06-22")]
+        assert prior["selected_by"] == pm.READMIT_LEG_OPEN_DRAWDOWN
+        assert prior["entry_date"] == "2026-06-18"
+        assert prior["mark_at_readmit_pct"] == pytest.approx(-12.0)
+
+    def test_an_unpriceable_prior_makes_the_row_UNDECIDABLE_not_clean(self):
+        # The prior run has no series at all, so nobody can say what it did. Reporting
+        # "no re-admission" here is a silent zero — the exact failure this scan owns.
+        scored = [
+            _item("AAA", "2026-06-15", "2026-06-17", pnl=None),
+            _item("AAA", "2026-06-22", None, pnl=-5.0),
+        ]
+        prior = ppm.prior_episodes(scored, CAL)[("AAA", "2026-06-22")]
+        assert prior["undecidable"] == "prior_episode_not_scoreable"
+        assert prior["n_priors_unscoreable"] == 1
+
+    def test_a_qualifying_scored_prior_outranks_an_unpriceable_sibling(self):
+        # An unpriceable prior only makes the row undecidable when nothing else fired:
+        # once a leg has fired, the verdict is the same whatever the sibling did.
+        scored = [
+            _item("AAA", "2026-06-15", "2026-06-16", pnl=None),
+            _item("AAA", "2026-06-17", "2026-06-19", pnl=-12.0),
+            _item("AAA", "2026-06-22", None, pnl=-5.0),
+        ]
+        prior = ppm.prior_episodes(scored, CAL)[("AAA", "2026-06-22")]
+        assert "undecidable" not in prior
+        assert prior["entry_date"] == "2026-06-17"
+        assert prior["n_priors_unscoreable"] == 1
+
+    def test_a_prior_outside_the_window_leaves_no_comparison_at_all(self):
+        scored = [
+            _item("AAA", "2026-06-01", "2026-06-02", pnl=-30.0),
+            _item("AAA", "2026-06-29", None, pnl=-5.0),
+        ]
+        assert ("AAA", "2026-06-29") not in ppm.prior_episodes(scored, CAL)
+
+    def test_a_non_qualifying_prior_is_still_reported_as_the_comparison_made(self):
+        scored = [
+            _item("AAA", "2026-06-15", "2026-06-17", pnl=-2.0),
+            _item("AAA", "2026-06-22", None, pnl=-5.0),
+        ]
+        prior = ppm.prior_episodes(scored, CAL)[("AAA", "2026-06-22")]
+        assert prior["selected_by"] == "nearest_prior_no_leg_fired"
+        assert prior["outcome_pct"] == -2.0
+
+    def test_an_unmatured_prior_is_carried_with_its_maturity_flag(self):
+        scored = [
+            _item("AAA", "2026-06-15", "2026-06-17", pnl=-12.0, matured=False),
+            _item("AAA", "2026-06-22", None, pnl=-5.0),
+        ]
+        prior = ppm.prior_episodes(scored, CAL)[("AAA", "2026-06-22")]
+        assert prior["prior_matured"] is False
+
+    def test_tickers_never_borrow_each_others_history(self):
+        scored = [
+            _item("AAA", "2026-06-15", "2026-06-17", pnl=-30.0),
+            _item("BBB", "2026-06-22", None, pnl=-5.0),
+        ]
+        assert ppm.prior_episodes(scored, CAL) == {}
 
 
 # ===========================================================================
@@ -661,6 +1061,81 @@ class TestLoserCohortFixture:
         assert headwind["n_winners_forfeited"] > 0, \
             "a headwind veto that forfeits no winners would be a free lunch — check it"
 
+    def test_the_readmission_veto_forfeits_exactly_zero_winners(self, artifact):
+        """A LITERAL zero, on real data, on both legs.
+
+        `re_admission` is the one veto row in the artifact whose winners-forfeited
+        column is empty, and an empty symmetric column is the shape of a free lunch —
+        so it is the one that has to be pinned rather than admired. The zero is only
+        earned because both legs read a SIGNED threshold (`<= -8%`): swap either for an
+        absolute value and the label starts flagging names re-bought after a big WIN,
+        winners land in the flagged set, and this assertion goes red. Pinned as `== 0`,
+        never `is not None`, so the mutation cannot pass by producing some other number.
+        """
+        readmit = [v for v in artifact["summary"]["veto_cost"]
+                   if v["label"] == "re_admission"]
+        assert len(readmit) == 2, "both legs must be costed, including an empty one"
+        for v in readmit:
+            assert v["n_winners_forfeited"] == 0, (
+                f"{v['key']} forfeits winners — the label is firing on names that MADE "
+                f"money, which means a threshold lost its sign")
+            assert v["winners_forfeited_pct"] == 0.0
+            assert v["net_pct_if_vetoed"] == v["loss_avoided_pct"]
+
+    def test_the_buildable_readmission_trigger_fires_zero_times_and_prints_it(self, artifact):
+        # The finding, not an omission: on this window the ONLY buildable version of the
+        # re-admission rule — the earlier position already 8% under water on the night
+        # the name came back — never fires. The row exists anyway, with its zero.
+        veto = {v["key"]: v for v in artifact["summary"]["veto_cost"]}
+        build = veto["re_admission:open_drawdown_at_readmit"]
+        hind = veto["re_admission:prior_episode_loss"]
+        assert build["variant"] == "buildable" and build["visible_at_entry"] is True
+        assert build["n_flagged"] == 0
+        assert build["loss_avoided_pct"] == 0.0
+        assert build["n_universe"] > 0, "a zero over an empty universe is not a finding"
+        # ...and every percentage point of the headline sits on the hindsight leg.
+        assert hind["variant"] == "hindsight_upper_bound"
+        assert hind["visible_at_entry"] is False
+        assert hind["n_flagged"] > 0 and hind["loss_avoided_pct"] > 0
+
+    def test_no_readmission_fire_claims_to_have_been_visible_at_entry(self, artifact):
+        # Today every fire is the hindsight leg. If that ever changes the row-level flag
+        # may legitimately go True — but a row flagged visible-at-entry must be carrying
+        # the open-drawdown leg, never the resolved-loss one.
+        seen = set()
+        for r in artifact["episodes"]:
+            for lb in r["labels"]:
+                if lb["label"] != "re_admission":
+                    continue
+                leg = lb["trigger"]["leg"]
+                seen.add(leg)
+                assert lb["visible_at_entry"] is (leg == pm.READMIT_LEG_OPEN_DRAWDOWN)
+                assert "prior_matured" in lb["trigger"]
+        assert seen == {pm.READMIT_LEG_PRIOR_LOSS}, \
+            f"the leg mix moved: {sorted(seen)} — re-read the veto table before shipping"
+
+    def test_prior_episode_comparisons_are_written_onto_the_rows(self, artifact):
+        # Every comparison the scan made, including the ones that produced no label —
+        # those are the ones a reader cannot otherwise see.
+        with_prior = [r for r in artifact["episodes"] if r["prior_episode"]]
+        assert with_prior, "no prior-episode comparisons recorded at all"
+        for r in with_prior:
+            p = r["prior_episode"]
+            assert p["n_priors_in_window"] >= 1
+            if p.get("undecidable"):
+                assert p["n_priors_unscoreable"] >= 1
+                # an undecidable prior nulls the label AND both legs
+                nulled = {n["label"] for n in r["labels_null"]}
+                assert {"re_admission", pm.READMIT_NULL_OPEN_DRAWDOWN,
+                        pm.READMIT_NULL_PRIOR_LOSS} <= nulled
+            else:
+                assert isinstance(p["prior_matured"], bool)
+                assert p["selected_by"] in (
+                    pm.READMIT_LEG_OPEN_DRAWDOWN, pm.READMIT_LEG_PRIOR_LOSS,
+                    "nearest_prior_no_leg_fired")
+        # ...and a row with no in-window prior says so with a null, not a missing key.
+        assert all("prior_episode" in r for r in artifact["episodes"])
+
     def test_no_price_path_tickers_are_disclosed_not_dropped(self, artifact):
         cov = artifact["coverage"]
         assert cov["n_no_price_path"] == len(
@@ -679,3 +1154,64 @@ class TestLoserCohortFixture:
             assert f"| {ticker} |" in text, f"{ticker} missing from the report tables"
         assert "Winners forfeited" in text
         assert "validated" not in text.lower()
+
+    def test_the_report_splits_the_loser_book_by_maturity_and_the_counts_add_up(
+            self, artifact):
+        """Matured and marked-to-market rows never share a table.
+
+        One pooled loser table sorted today's worst OPEN positions to the top of the
+        page — which is the read the maturity gate exists to prevent, arriving through
+        the layout instead of through a rate. Two labelled blocks, and section counts
+        that reconcile to the stated total, so a reader can check nothing was dropped
+        between them.
+        """
+        text = ppm.render_report(artifact)
+        losers = [r for r in artifact["episodes"] if r["cohort"] == "loser"]
+        n_matured = len([r for r in losers if r["maturity"] == "matured"])
+        n_flight = len([r for r in losers if r["maturity"] == "in_flight"])
+        n_other = len(losers) - n_matured - n_flight
+
+        assert f"### Matured losers ({n_matured})" in text
+        assert f"### In-flight losers ({n_flight})" in text
+        assert f"= {len(losers)}." in text
+        assert n_matured + n_flight + n_other == len(losers)
+        # the matured block is exactly what every rate above was computed on
+        assert n_matured == artifact["summary"]["cohorts"]["n_losers"]
+        # each block's table carries its own rows, and only its own
+        head, _, tail = text.partition(f"### In-flight losers ({n_flight})")
+        matured_block = head.rpartition(f"### Matured losers ({n_matured})")[2]
+        for r in losers:
+            line = f"| {r['ticker']} | {r['entry_date']} |"
+            assert (line in matured_block) is (r["maturity"] == "matured"), \
+                f"{r['ticker']}@{r['entry_date']} is in the wrong maturity block"
+        assert "In-flight rows (classified, counted in no rate)" in tail
+
+    def test_the_in_flight_block_reconciles_to_its_own_total(self, artifact):
+        text = ppm.render_report(artifact)
+        f = artifact["summary"]["in_flight"]
+        assert (f["n_losers_marked"] + f["n_winners_marked"] + f["n_neutral_marked"]
+                + f["n_unscored_marked"]) == f["n"]
+        assert (f"{f['n_losers_marked']} at loser levels · "
+                f"{f['n_winners_marked']} at winner levels · "
+                f"{f['n_neutral_marked']} neutral · "
+                f"{f['n_unscored_marked']} unscored = {f['n']}") in text
+
+    def test_the_report_marks_the_hindsight_row_as_hindsight(self, artifact):
+        """The +79pp may not appear on the page without its epistemic status attached."""
+        text = ppm.render_report(artifact)
+        veto = {v["key"]: v for v in artifact["summary"]["veto_cost"]}
+        hind = veto["re_admission:prior_episode_loss"]
+        build = veto["re_admission:open_drawdown_at_readmit"]
+        assert "| `re_admission:prior_episode_loss` | hindsight upper bound |" in text
+        assert "| `re_admission:open_drawdown_at_readmit` | buildable |" in text
+        assert f"{hind['loss_avoided_pct']:.2f}pp on this line is a CEILING" in text
+        # the buildable row is printed WITH its zero rather than dropped
+        assert build["n_flagged"] == 0
+        assert "it fires **zero** times on this window" in text
+        assert "Dates flagged" in text      # n_dates_flagged reaches the reader
+
+    def test_the_taxonomy_table_prints_per_label_coverage(self, artifact):
+        text = ppm.render_report(artifact)
+        assert "loser coverage" in text
+        for f in artifact["summary"]["label_frequency"]:
+            assert f"| {f['n_losers_evaluated']} / {f['n_losers_total']} " in text

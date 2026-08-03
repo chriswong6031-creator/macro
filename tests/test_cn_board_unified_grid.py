@@ -13,11 +13,15 @@ prophet-board-priority merge:
   * The `late_or_unfillable` / `forming` / legacy depth lanes are untouched.
   * A pre-v2 artifact (no `more_actionable`, no `ranking`, no `prophet` score) still
     renders the legacy shelf — the fail-soft contract. Byte-identity against the
-    pre-merge template was verified once at build time by diffing both renders of the
-    same fixture; a git-pinned diff cannot live in CI (HEAD moves), so what this suite
+    pre-merge template was verified at build time by rendering BOTH templates against
+    the real pre-v2 artifact (git 55836b2f89c) and diffing the tag stream and class
+    histogram; a git-pinned diff cannot live in CI (HEAD moves), so what this suite
     pins forward is every observable half of it: producer order preserved, no glow, no
-    marks row, no key line, the conviction-score fallback in the Edge slot, and the
-    pre-merge panel title.
+    marks row, no key line, the conviction-score fallback in the Edge slot UNROUNDED,
+    the legacy verb map (bounce_wait is a Near, never a Wait), stage 3 on every card,
+    and the pre-merge panel title. The pre-v2 fixture therefore carries the REAL
+    artifact's status mix — a bounce_wait majority — because a fixture built from
+    buy_now rows alone cannot see any of that.
   * The track-record dialog grows a "previous board definition" section when the ledger
     carries `prior_record`, and is unchanged when it does not.
 
@@ -26,6 +30,7 @@ SELECTORS as literal text, so bare substrings like "pv-featured" are ALWAYS pres
 the output. Every card assertion here targets the full element-class string
 (`class="pvcard pv-buy pv-featured"`), never a bare token.
 """
+import collections
 import re
 from pathlib import Path
 
@@ -93,12 +98,13 @@ def render_dialog(setups: dict) -> str:
 # ── fixtures ────────────────────────────────────────────────────────────────────────
 
 def _row(ticker, score, *, status="buy_now", lane="featured", reasons=None, dss=None,
-         star=False, washout=False, name=None, sector="Technology"):
+         star=False, washout=False, name=None, sector="Technology", conv=60,
+         stage="ENTRY", action="Buy in the zone.", action_zh="在买区买入。"):
     return {
         "ticker": ticker,
         "name": name or f"{ticker} Holdings / {ticker}控股",
         "sector": sector,
-        "stage": "ENTRY",
+        "stage": stage,
         "lane": lane,
         "lane_reasons": reasons if reasons is not None else ["buyable_signal"],
         "days_since_signal": dss,
@@ -110,12 +116,20 @@ def _row(ticker, score, *, status="buy_now", lane="featured", reasons=None, dss=
         "spark_svg": None,
         "signal": {"tier_cascade": "T1", "asof": "2026-07-31"},
         "prophet": {"score": score, "components": {"signal": 1.0, "reversal_member": 0.0}},
-        "conviction": {"score": 60, "verdict": "Buy zone", "verdict_zh": "买区",
+        "conviction": {"score": conv, "verdict": "Buy zone", "verdict_zh": "买区",
                        "cautions": None, "cautions_zh": None},
         "entry_signal": {"status": status, "headline": "Ready", "headline_zh": "就绪",
-                         "action": "Buy in the zone.", "action_zh": "在买区买入。",
+                         "action": action, "action_zh": action_zh,
                          "buy_zone": {"low": 11.0, "high": 12.5}},
     }
+
+
+# The two RALLY-ON hold action lines the engine actually emits (engine/cycles.py ~L819).
+# The mid-cycle one is what all 25 hold rows of the 2026-08-02 artifact carry.
+HOLD_DIP_EN = "Trend intact — hold; add on dips toward the 10-day average."
+HOLD_DIP_ZH = "趋势完好——持有；可在回调至 10 日均线附近时加仓。"
+HOLD_LATE_EN = "Trend intact — hold. Late in the cycle, so don't add here; a pullback is due."
+HOLD_LATE_ZH = "趋势完好——持有。已处周期晚期，此处不宜加仓；回调即将到来。"
 
 
 def v2_setups(**over):
@@ -129,8 +143,11 @@ def v2_setups(**over):
         "buy": [_row("601111.SS", 70.0, dss=1), _row("601222.SS", 88.0, dss=0),
                 _row("601333.SS", 64.0, dss=9)],
         "more_actionable": [
+            # a REAL hold row: the engine's own mid-cycle action line, which the chip
+            # copy has to agree with (it used to say "No add here" on top of it)
             _row("300111.SZ", 61.0, status="hold", lane="more_actionable",
-                 reasons=["entry_status_hold"]),
+                 reasons=["entry_status_hold"],
+                 action=HOLD_DIP_EN, action_zh=HOLD_DIP_ZH),
             _row("300222.SZ", 93.0, status="bounce_wait", lane="more_actionable",
                  reasons=["entry_status_bounce_wait"], star=True),
             _row("300333.SZ", 75.0, status="extended", lane="more_actionable",
@@ -148,15 +165,39 @@ def v2_setups(**over):
     return s
 
 
+# The real pre-v2 artifact (git 55836b2f89c:site/factordata/china_standouts.json) held
+# 110 buy rows: bounce_wait 84, hold 10, buy_now 7, partial 7, topping 2 — 104 ENTRY and
+# 6 RAN_LATE. This fixture keeps that SHAPE at 1/10 scale, and it is the whole point of
+# the pre-v2 half of this suite: the old fixture derived its rows from v2_setups()["buy"],
+# whose statuses are only ever buy_now, so every row took the one code path that happened
+# to be gated correctly. 90 of 110 real rows took the OTHER path and were silently
+# re-styled (pv-near → pv-wait, Ready → Turning / Trend) with nothing here to see it.
+PREV2_MIX = (("bounce_wait", 6), ("hold", 2), ("buy_now", 1), ("partial", 1), ("topping", 1))
+# what origin/main's legacy expression renders for each of those statuses
+PREV2_VERB = {"bounce_wait": "pv-near", "hold": "pv-hold", "topping": "pv-hold",
+              "buy_now": "pv-buy", "partial": "pv-buy"}
+
+
 def prev2_setups():
     """A pre-v2 artifact: no more_actionable lane, no ranking block, no prophet score."""
-    rows = []
-    for r in v2_setups()["buy"]:
-        r = dict(r)
-        r.pop("prophet")
-        rows.append(r)
+    rows, i = [], 0
+    for status, n in PREV2_MIX:
+        for _ in range(n):
+            i += 1
+            # one FRACTIONAL conviction score: the legacy Edge slot passes the raw value
+            # through, so a v2-only '%.0f' rounding leaking onto this path shows up here.
+            r = _row("6000%02d.SS" % i, 0.0, status=status,
+                     conv=61.5 if i == 1 else 60,
+                     action=HOLD_DIP_EN if status == "hold" else "Buy in the zone.",
+                     action_zh=HOLD_DIP_ZH if status == "hold" else "在买区买入。")
+            r.pop("prophet")
+            rows.append(r)
+    # one RAN_LATE row, as the real artifact had: it renders its own shelf below the
+    # grid, which is also what makes entry_grid()'s slice end somewhere real.
+    tail = _row("600900.SS", 0.0, status="hold", stage="RAN_LATE")
+    tail.pop("prophet")
     return {"as_of": "2026-07-31", "board_definition": "cn_standout_v1",
-            "buy": rows, "late_or_unfillable": [], "forming": [], "watch": [],
+            "buy": rows + [tail], "late_or_unfillable": [], "forming": [], "watch": [],
             "ripening": [], "ran": []}
 
 
@@ -193,17 +234,39 @@ PRIOR = {
 # ── helpers ─────────────────────────────────────────────────────────────────────────
 
 CARD_RE = re.compile(r'<a class="pvcard ([^"]+)" href="china_lookup\.html#([^"]+)"')
+# chip kind + its EN label, in emit order (the chip's first child is always the l-en span)
+MARK_RE = re.compile(r'<span class="pv-mk-i pv-mk-(\w+)"[^>]*><span class="l-en">([^<]*)</span>')
+
+# Everything that can legally follow the unified grid. The previous sentinel was the
+# Jinja comment `{# /stgf-entry #}`, which the renderer STRIPS — so the helper fell back
+# to "the rest of the page" and never actually excluded the RAN/LATE shelf or the depth
+# lanes. Count-based assertions written against it were reading the whole board.
+_GRID_END = ('<div class="stgf-grp" data-stf="ran">', '<div class="rip-shelf"',
+             '<details class="cn-depth')
 
 
 def entry_grid(html: str) -> str:
     """The unified live grid only (stops at the RAN/LATE shelf or the depth lanes)."""
     start = html.index('<div class="nbgrid" data-showmore-rows="3">')
-    tail = html.index("{# /stgf-entry #}") if "{# /stgf-entry #}" in html else len(html)
-    return html[start:tail]
+    hits = [html.index(m, start) for m in _GRID_END if m in html[start:]]
+    return html[start:min(hits)] if hits else html[start:]
 
 
 def cards(html: str):
     return CARD_RE.findall(entry_grid(html))
+
+
+def card_html(html: str, ticker: str) -> str:
+    """One card's markup, by ticker (pv_card emits no nested anchor)."""
+    grid = entry_grid(html)
+    i = grid.index('href="china_lookup.html#%s"' % ticker)
+    return grid[grid.rindex("<a class=", 0, i):grid.index("</a>", i)]
+
+
+def marks_of(html: str, ticker: str):
+    """[(kind, EN label), …] for one card, in EMIT order — the order the [:2] slice and
+    the ≤560px one-chip CSS rule both act on."""
+    return MARK_RE.findall(card_html(html, ticker))
 
 
 # ── G0.2 — one grid, featured first, then score order ───────────────────────────────
@@ -289,7 +352,8 @@ def test_featured_and_new_chips():
 
 def test_lane_chip_is_plain_words_never_a_raw_slug():
     html = entry_grid(render_board(v2_setups()))
-    for en, zh in (("Turn not confirmed", "转向未确认"), ("No add here", "此处不加仓"),
+    for en, zh in (("Turn not confirmed", "转向未确认"),
+                   ("Hold — add on dips", "持有 · 逢低加仓"),
                    ("Already ran", "已经拉升"), ("Sector quota full", "该行业已满额")):
         assert (f'<span class="l-en">{en}</span><span class="l-zh">{zh}</span>') in html
     # no machine slug survives into the grid at glance tier
@@ -307,8 +371,31 @@ def test_unknown_lane_code_falls_back_to_a_generic_chip_carrying_its_receipt():
 
 
 def test_lane_chip_hover_is_the_rows_own_action_line():
+    """The hover is the row's OWN action, per name — never a constant restated 105
+    times. Exercised on the hold row, whose action line is the real engine string."""
     html = entry_grid(render_board(v2_setups()))
+    assert f'data-tip-en="{HOLD_DIP_EN}" data-tip-zh="{HOLD_DIP_ZH}"' in html
     assert 'data-tip-en="Buy in the zone." data-tip-zh="在买区买入。"' in html
+
+
+def test_hold_chip_never_contradicts_the_rows_own_action_line():
+    """M13. `entry_status_hold` used to render a CONSTANT "No add here" chip whose own
+    hover said "add on dips toward the 10-day average" — the chip and its receipt gave
+    opposite instructions on all 21 hold rows in the 2026-08-02 grid. The chip now
+    reads the action: add-on-dips holds say so, late-cycle holds keep the no-add wording
+    (both strings come from engine/cycles.py, so this is the full hold vocabulary)."""
+    dips = entry_grid(render_board(v2_setups()))
+    assert ('<span class="l-en">Hold — add on dips</span>'
+            '<span class="l-zh">持有 · 逢低加仓</span>') in dips
+    assert "No add here" not in dips
+
+    s = v2_setups()
+    s["more_actionable"][0]["entry_signal"]["action"] = HOLD_LATE_EN
+    s["more_actionable"][0]["entry_signal"]["action_zh"] = HOLD_LATE_ZH
+    late = entry_grid(render_board(s))
+    assert ('<span class="l-en">No add here</span>'
+            '<span class="l-zh">此处不加仓</span>') in late
+    assert "add on dips</span>" not in late
 
 
 def test_shape_chip_uses_plain_words_and_only_the_discriminating_forms():
@@ -326,6 +413,43 @@ def test_marks_row_is_capped_at_two_chips():
 
 
 def test_narrow_screens_show_one_mark_so_the_grid_rows_stay_aligned():
+    assert "#standouts .nbgrid .pv-mk-i ~ .pv-mk-i { display:none; }" in SRC
+
+
+def test_the_phone_abbreviates_the_priority_label_it_does_not_rename_it():
+    """m24. Both labels are CURRENT and that is the whole answer: the card's own slot is
+    'Priority' (pv_card edge_label_*), and below 680px the board swaps the text for a
+    4-letter 'Rank' so a 2-up phone card keeps its ticker legible. The reference shots
+    read RANK because they are phone shots — pinning the pair here so the next reviewer
+    does not have to re-derive it from a screenshot."""
+    assert "'edge_label_en': 'Priority', 'edge_label_zh': '优先级'" in SRC
+    assert "#standouts .nbgrid[data-showmore-rows] .pv-edl::after" in SRC
+    assert 'content:"Rank"' in SRC
+    assert ('html[data-lang="zh"] #standouts .nbgrid[data-showmore-rows] .pv-edl::after'
+            '{ content:"序"; }') in SRC
+
+
+# The real 2026-08-02 row the review named: extended + fired yesterday + washed out, so
+# it earns three chips and only two survive the slice — one on a phone.
+CN_000983 = dict(status="extended", lane="more_actionable",
+                 reasons=["entry_status_extended"], dss=1, washout=True,
+                 name="Shanxi Coking Coal / 山西焦煤", sector="Energy")
+
+
+def test_gate_chip_leads_the_marks_row_so_a_phone_never_drops_it():
+    """M15. Emit order was feat · NEW · gate · shape, so a fresh non-featured row put
+    New first — and below 560px the one-chip rule shows only the first chip. 000983.SZ
+    lost "Already ran" and displayed a bare "New", which reads as encouragement on a row
+    the board is holding back. The gate chip now leads on every non-featured card."""
+    s = v2_setups()
+    s["more_actionable"] = s["more_actionable"] + [_row("000983.SZ", 46.9, **CN_000983)]
+    html = render_board(s)
+    got = marks_of(html, "000983.SZ")
+    assert [k for k, _lbl in got] == ["lane", "new"], got
+    assert got[0][1] == "Already ran"        # the chip the phone keeps
+    # a featured row has no gate chip, so its rank mark still leads
+    assert marks_of(html, "601222.SS")[0] == ("feat", "★ Featured")
+    # …and this only matters because of the CSS rule that drops the rest
     assert "#standouts .nbgrid .pv-mk-i ~ .pv-mk-i { display:none; }" in SRC
 
 
@@ -372,22 +496,68 @@ def test_grid_key_line_states_the_two_axis_rule_once():
     assert "发光卡＝今天可动手。" in html
 
 
+def _words(text: str) -> int:
+    return len([w for w in text.split() if re.search(r"[0-9A-Za-z]", w)])
+
+
+def test_tier_1_and_tier_2_copy_stay_inside_their_word_budgets():
+    """DESIGN_DOCTRINE §1: a Tier-1 subtitle is ≤14 words, a Tier-2 tip ≤ ~80. The key
+    line sits above 111 cards and the h2 `?` carries the two-axis receipt; both are the
+    kind of copy that grows a clause per review round if nothing counts it."""
+    key = re.search(r'<p class="cn-gridkey">.*?l-en">([^<]*)</span>',
+                    render_board(v2_setups()), re.S)
+    assert key and _words(key.group(1)) <= 14, key and key.group(1)
+    tip = SRC[SRC.index('help("Two things decide') + 6:]
+    assert _words(tip[:tip.index('", "')]) <= 80
+
+
 # ── fail-soft: a pre-v2 artifact renders the legacy shelf ───────────────────────────
 
 def test_pre_v2_artifact_gets_no_glow_no_marks_and_the_pre_merge_title():
     html = render_board(prev2_setups())
     got = cards(html)
-    assert [tk for _c, tk in got] == ["601111.SS", "601222.SS", "601333.SS"]
-    assert all(cls == "pv-buy" for cls, _tk in got)            # no pv-featured anywhere
+    # producer order, untouched — no score re-sort on the legacy path
+    assert [tk for _c, tk in got] == ["6000%02d.SS" % i for i in range(1, 12)]
+    assert not [c for c, _tk in got if "pv-featured" in c]     # no glow anywhere
     assert '<div class="pv-mk">' not in entry_grid(html)       # no marks row at all
     assert '<p class="cn-gridkey">' not in html
     assert "⚡ China Prophet — Featured Entries" in html
     assert "⚡ China Prophet — Live Board" not in html
 
 
-def test_pre_v2_edge_slot_falls_back_to_the_conviction_score():
-    html = entry_grid(render_board(prev2_setups()))
-    assert html.count('<span class="pv-edn">60</span>') == 3
+def test_pre_v2_verbs_follow_the_legacy_map_not_the_merged_one():
+    """THE pre-v2 regression (B1). `_is_feat` is set FROM `_cn_v2`, so on a pre-v2
+    artifact no row is featured — and gating the new status→verb map on `_is_feat` alone
+    sent every legacy row down it. Measured on the real artifact: 78 of 104 entry cards
+    flipped pv-near → pv-wait. bounce_wait is a NEAR on this path, and pv-wait cannot
+    appear in the grid at all, because origin/main's expression has no branch that
+    produces one."""
+    hist = collections.Counter(cls for cls, _tk in cards(render_board(prev2_setups())))
+    assert hist == collections.Counter(
+        {"pv-near": 6, "pv-hold": 3, "pv-buy": 2}), hist
+    assert "pv-wait" not in hist
+    # the same statement per status, so a future map edit names the row it broke
+    seq = [cls for cls, _tk in cards(render_board(prev2_setups()))]
+    expect = [PREV2_VERB[s] for s, n in PREV2_MIX for _ in range(n)]
+    assert seq == expect, list(zip(seq, expect))
+
+
+def test_pre_v2_lifecycle_stage_is_pinned_at_ready_on_every_card():
+    """main hard-codes stage 3. The merged map moves bounce_wait to Turning and hold to
+    Trend — correct for a v2 row, a silent re-style of 90 of 110 legacy ones."""
+    grid = entry_grid(render_board(prev2_setups()))
+    assert grid.count('<span class="on"><span class="l-en">Ready</span>') == 11
+    for other in ("Bottoming", "Turning", "Trend"):
+        assert '<span class="on"><span class="l-en">%s</span>' % other not in grid
+
+
+def test_pre_v2_edge_slot_falls_back_to_the_conviction_score_unrounded():
+    """The '%.0f' whole-number Priority is a v2 decision. On the legacy path the raw
+    value is passed through exactly as the pre-merge template did."""
+    grid = entry_grid(render_board(prev2_setups()))
+    assert '<span class="pv-edn">61.5</span>' in grid       # fractional, NOT rounded
+    assert '<span class="pv-edn">62</span>' not in grid
+    assert grid.count('<span class="pv-edn">60</span>') == 10
 
 
 def test_v2_gate_survives_an_empty_more_actionable_lane():
@@ -451,7 +621,11 @@ def test_prior_record_caps_its_row_list_and_says_so():
                           "track_ledger": _ledger(big)})
     prior = html[html.index('class="trd-stg trd-stg-3 trd-prior"'):]
     assert prior.count('<td class="trd-tk">') == 25
-    assert "Showing the 25 most recent of 40." in prior
+    # STALE PIN REPAIRED (was "Showing the 25 most recent of 40."): the dialog no longer
+    # keeps the NEWEST 25 — it keeps the finished trades first (_track_record_dlg.html.j2
+    # "WHICH 25"), and the total it discloses is the era's own logged count (meta.n_total
+    # = 65 here), not the length of the row list it was handed.
+    assert "Showing 25 of 65 — finished trades first." in prior
 
 
 def test_prior_record_absent_leaves_the_dialog_untouched():
@@ -485,9 +659,12 @@ def test_no_cjk_inside_a_title_attribute_anywhere_in_the_touched_blocks():
             assert not re.search(r"[一-鿿]", attr), attr
 
 
-def test_the_featured_glow_is_never_pinned_to_the_language_flipping_tokens():
-    """--up/--down swap red/green under html[data-lang="zh"]; the CN key dot and the
-    card glow must both stay on --pv-buy or a Chinese reader sees a red 'buy'."""
+def test_the_cn_grid_key_dot_is_never_pinned_to_the_language_flipping_tokens():
+    """SCOPE: the CN grid-key dot only — the one glow-coloured element this template
+    owns. `--up`/`--down` swap red/green under html[data-lang="zh"], so a key bullet on
+    --up would print a RED dot next to "glowing = act today" for a Chinese reader. The
+    card's own aura lives in templates/_prophet_card.html.j2 and is pinned by the
+    prophet-card suite, not here; this file cannot see a change to it."""
     key = SRC[SRC.index(".cn-gridkey-dot {"):SRC.index(".cn-gridkey-dot {") + 400]
     assert "var(--pv-buy)" in key
     assert "var(--up)" not in key

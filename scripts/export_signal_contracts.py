@@ -174,7 +174,11 @@ def build_golden_signals() -> dict:
 #                     Documented for consumers but EXCLUDED from drift (present-or-absent is
 #                     fine); a conditional field belongs here, NOT in schema_fields, or it
 #                     flaps the drift lane red↔green with the data. A key in NEITHER list is
-#                     undocumented and still trips `added` drift.
+#                     undocumented and still trips `added` drift. An ITEM-level key that is
+#                     emitted on only one of an artifact's arrays (us_standouts `anchor`,
+#                     ran[] rows only) may also be registered here as the contract's
+#                     may-be-absent notice to consumers — check_contract_drift reads
+#                     top-level keys only, so this exempts nothing it would otherwise catch.
 #   Per-wildcard artifacts (per_stock_intel, per_stock_signal): schema is derived from a
 #   representative sample; all files in the same kind share the schema.
 #
@@ -224,9 +228,20 @@ ARTIFACT_MANIFEST = [
     # themes_in_favour; new per-row keys stage, featured, new, score_rank,
     # display_rank, prophet, theme, signal_asof, days_since_signal. Additive —
     # nothing was removed or renamed, and buy-lane MEMBERSHIP is unchanged.
+    # 1.4.0 -> 1.5.0 (2026-08-02, review pass): two per-row disclosure keys, both
+    # additive. `anchor` ("marker"|"approx") on every ran[] row says how that row's
+    # cross age was anchored — the ran lane now DROPS a row whose cross cannot be
+    # anchored at all rather than rendering an age derived from the tick count, so
+    # a present row's `sessions_since` is trustworthy and `anchor` says how much.
+    # `days_since_signal_basis` ("sessions"|"calendar") discloses the units of
+    # days_since_signal, which the shared stocktable.js NEW-dot filter reads as
+    # sessions; the US board now answers in sessions whenever the verdict carries a
+    # marker-anchored fresh_bars count and labels the calendar fallback.
+    # `ranking.component_coverage` also lands here (inside the existing `ranking`
+    # object, so it adds no top-level or item-level key).
     {"artifact": "site/factordata/us_standouts.json",
      "kind": "board",
-     "schema_version": "1.4.0",
+     "schema_version": "1.5.0",
      "schema_fields": [
          "as_of", "buy", "concentration", "delta", "dispersion_regime", "donor",
          "earnings_blackout_note", "eligible", "gate_go", "laggards", "lane_counts",
@@ -241,13 +256,21 @@ ARTIFACT_MANIFEST = [
          # (breaking) drift. They sit here for exactly that transition window and
          # GRADUATE TO schema_fields (minor bump) once the first us_prophet_v1
          # render is committed — the same order china_standouts reached 2.0.0 in.
+         #
+         # `anchor` is the odd one out and deliberately so: it is a ran[] ITEM key,
+         # registered here as well as in schema_item_fields because it is the
+         # contract's may-be-absent register and `anchor` is emitted only on ran
+         # rows (buy rows carry no cross anchor). check_contract_drift compares
+         # TOP-LEVEL keys only, so listing an item key here exempts nothing that
+         # would otherwise be caught — it documents conditionality for consumers.
          # (List order is alphabetical — test_contract_drift asserts it sorted.)
-         "board_definition", "ran", "ranking", "themes_in_favour",
+         "anchor", "board_definition", "ran", "ranking", "themes_in_favour",
      ],
      "schema_item_fields": [
          "above_trend", "adv_dollar_20d_median", "adv_dollar_21d", "align_tier", "alpha",
-         "alpha_entry", "antichase_shadow_blocked", "composite", "conviction",
-         "cross_date", "days_since_signal", "days_to_build_100k", "days_to_build_1m",
+         "alpha_entry", "anchor", "antichase_shadow_blocked", "composite", "conviction",
+         "cross_date", "days_since_signal", "days_since_signal_basis",
+         "days_to_build_100k", "days_to_build_1m",
          "days_to_exit_at_10pct_adv", "dd_pct", "dir", "display_rank", "entry_signal",
          "eq_dir", "f1d_shadow_bonus", "f1d_shadow_c6", "f1d_shadow_rank", "factor_z",
          "featured", "featured_blocked_by", "hold", "label", "label_zh", "lane",

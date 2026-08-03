@@ -211,6 +211,8 @@ ran, watch=too early) so both boards speak one filter language.
   reconciliation) is NOT this program — its §24 forbade ranking changes; today's operator order
   supersedes that for ranking only. Don't start the IA rebuild here.
 - prophet plans index / prophet_bridge intake: untouched (chips continue reading the artifacts).
+- prophet_bridge: one-line tie-key hardening so intake is provably order-invariant; selection rule
+  otherwise untouched.
 - HK/Canada: explicitly out of scope this session (operator: "after US board has reached
   complete perfection"); the rank module is written market-parameterizable for that follow-on.
 - No admission-gate loosening (FRESH_TICKS, signal_gate) — US_BOARD_MEASUREMENT §5 keeps the

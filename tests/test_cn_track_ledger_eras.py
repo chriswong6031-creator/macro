@@ -14,6 +14,11 @@ The fix these tests pin has two halves, and BOTH have to hold:
      different rules, so a union measures neither
      (memory `us-board-definition-change-2026-06-25`).
 
+Section 3 pins the OTHER half of "no row is ever lost": the split originally
+recognised exactly two stamps, so a row carrying any third value matched neither mask
+and vanished from the artifact silently. Unknown stamps now get their own labelled
+`extra_records` block plus a line-start ``::warning``.
+
 The era-split arithmetic runs against the REAL committed parquet — no price data
 needed, so it cannot be skipped into vacuity — while the emit-shape assertions run on
 synthetic prices so they are deterministic and fast.
@@ -96,6 +101,8 @@ def _price_frame(ticker: str):
         return _ohlc(_JUNE, [200.0 - i * 1.5 for i in range(len(_JUNE))])
     if ticker == "601318.SS":                      # current era, still early
         return _ohlc(_JULY, [40.0 + i * 0.1 for i in range(len(_JULY))])
+    if ticker == "000001.SZ":                      # UNRECOGNISED stamp's era
+        return _ohlc(_JUNE, [50.0 + i * 0.8 for i in range(len(_JUNE))])
     return None
 
 
@@ -241,7 +248,161 @@ class TestEmitTwoEras:
         assert "prior_record" not in doc
 
 
+# ===========================================================================
+# 3. a stamp the split does not recognise is NEVER dropped
+# ===========================================================================
+# The split matched exactly two masks — the live stamp and the pre-version
+# spellings — and `bdf_all` rows that matched neither simply fell out of the
+# artifact. The store kept them, the desk stopped counting them, and nothing in the
+# JSON or the Actions log said so. That is the silent-data-loss shape: a number
+# quietly built on fewer rows than the store holds.
+def _store_three_eras(tmp_path: Path) -> Path:
+    """current + pre-version + one stamp this build has never heard of."""
+    d = tmp_path / "china_standout_track"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / "board.parquet"
+    pd.DataFrame([
+        {"date": "2026-06-01", "ticker": "600519.SS", "board_rank": 1, "tier": "T1",
+         "board_definition": None},                       # pre-version era
+        {"date": "2026-06-15", "ticker": "000001.SZ", "board_rank": 1, "tier": "T1",
+         "board_definition": "cn_prophet_v1"},            # UNRECOGNISED
+        {"date": "2026-07-20", "ticker": "601318.SS", "board_rank": 1, "tier": "T1",
+         "board_definition": "cn_prophet_v2"},            # live era
+    ]).to_parquet(p, index=False)
+    return p
+
+
+@pytest.fixture()
+def three_eras(monkeypatch, tmp_path, capsys):
+    """(doc, stdout) — stdout is captured so the annotation's COLUMN can be asserted."""
+    from engine import china_standout_track as cst
+    p = _store_three_eras(tmp_path)
+    monkeypatch.setattr(cst, "_store_path", lambda: p)
+    monkeypatch.setattr(cst, "_price_frame", _price_frame)
+    monkeypatch.setattr(cst, "_bench_close", _bench)
+    site = tmp_path / "site_three"
+    (site / "factordata").mkdir(parents=True)
+    assert bcl.emit_cn_track_ledger(site, None, [],
+                                    board_definition="cn_prophet_v2",
+                                    asof="2026-07-31") is True
+    out = capsys.readouterr().out
+    return json.loads((site / "factordata" / "cn_track_ledger.json").read_text()), out
+
+
+class TestUnknownStampIsNeverDropped:
+    def test_all_three_stamps_produce_an_era(self, three_eras):
+        doc, _ = three_eras
+        assert {r["t"] for r in doc["rows"]} == {"601318.SS"}
+        assert {r["t"] for r in doc["prior_record"]["rows"]} == {"600519.SS"}
+        extra = doc["extra_records"]
+        assert len(extra) == 1
+        assert {r["t"] for r in extra[0]["rows"]} == {"000001.SZ"}
+
+    def test_no_store_row_is_lost(self, three_eras):
+        """The count that actually pins the bug: every stored row reaches SOME era."""
+        doc, _ = three_eras
+        published = (len(doc["rows"])
+                     + doc["prior_record"]["meta"]["n_total"]
+                     + sum(e["meta"]["n_total"] for e in doc["extra_records"]))
+        assert published == 3
+
+    def test_the_unknown_era_is_labelled_by_its_stamp_value(self, three_eras):
+        doc, _ = three_eras
+        block = doc["extra_records"][0]
+        assert block["board_definition"] == "cn_prophet_v1"
+        assert block["summary"]["board_definition"] == "cn_prophet_v1"
+        assert "cn_prophet_v1" in block["label_en"]
+        assert "cn_prophet_v1" in block["label_zh"]
+        assert block["label_en"] != block["label_zh"]
+        # It is NOT relabelled as the known prior era — that would claim an ordering
+        # this build does not have.
+        assert block["board_definition"] != bcl._CN_PRIOR_ERA_ID
+        assert (block["date_from"], block["date_to"]) == ("2026-06-15", "2026-06-15")
+
+    def test_the_unknown_era_uses_the_same_block_shape_and_scorer(self, three_eras):
+        doc, _ = three_eras
+        block, prior = doc["extra_records"][0], doc["prior_record"]
+        assert set(block) == set(prior)
+        assert set(block["meta"]) == set(prior["meta"])
+        assert block["summary"]["metric"] == doc["summary"]["metric"] == "excess"
+        assert block["summary"]["horizon"] == doc["summary"]["horizon"] == bcl._CN_HORIZON
+        assert block["meta"]["exit_rule"] == doc["meta"]["exit_rule"]
+        assert "never be added together" in block["meta"]["pooling_note_en"]
+        # An unrecognised stamp cannot be declared closed — nothing here knows
+        # whether a lane is still writing it.
+        assert block["meta"]["closed"] is False
+        assert prior["meta"]["closed"] is True
+
+    def test_the_three_eras_are_never_pooled(self, three_eras):
+        doc, _ = three_eras
+        live = {(r["t"], r["d"]) for r in doc["rows"]}
+        prior = {(r["t"], r["d"]) for r in doc["prior_record"]["rows"]}
+        extra = {(r["t"], r["d"]) for r in doc["extra_records"][0]["rows"]}
+        assert live and prior and extra
+        assert live & prior == set() and live & extra == set() and prior & extra == set()
+
+    def test_the_warning_names_the_stamp_and_starts_its_line(self, three_eras):
+        """Column 0 is the whole point: GitHub only parses '::' at line start, and
+        every builder here logs through a prefixing formatter, so an annotation sent
+        via log.* runs clean and produces NOTHING in the Actions summary."""
+        _, out = three_eras
+        hits = [ln for ln in out.splitlines()
+                if ln.startswith("::") and "cn_prophet_v1" in ln]
+        assert hits, (
+            "no line-start annotation named the unrecognised stamp; captured stdout:\n"
+            + out)
+        line = hits[0]
+        assert line.startswith("::warning title=")
+        assert "cn-track-unknown-board-definition" in line
+        assert "cn_prophet_v2" in line, "the annotation must also name the LIVE stamp"
+
+    def test_a_store_with_no_unknown_stamp_emits_neither_block_nor_warning(
+        self, emitted, capsys
+    ):
+        """The guard must stay quiet on the normal two-era store, or the annotation
+        becomes noise nobody reads."""
+        assert "extra_records" not in emitted
+        assert "cn-track-unknown-board-definition" not in capsys.readouterr().out
+
+
+class TestEraSpan:
+    """m18b: each language carried the year on ONE end only — EN on the close, ZH on
+    the open. Inside a single year that reads fine; across a year boundary it dates the
+    far end to the wrong year in BOTH languages. The emitter is the live path, not the
+    template: `_track_record_dlg.html.j2` splits label_en/label_zh on ' · ' and prints
+    this span verbatim, and its own cross-year branch only runs when no label shipped.
+    """
+
+    def test_a_span_inside_one_year_keeps_the_terse_form(self):
+        # byte-for-byte unchanged — this string is user-visible on china.html.
+        assert bcl._cn_era_span("2026-06-30", "2026-07-29") == \
+            ("Jun 30 – Jul 29 2026", "2026年6月30日–7月29日")
+
+    def test_a_span_across_new_year_prints_both_years(self):
+        en, zh = bcl._cn_era_span("2025-11-03", "2026-02-12")
+        assert en == "Nov 3 2025 – Feb 12 2026"
+        assert zh == "2025年11月3日–2026年2月12日"
+
+    def test_the_cross_year_fix_reaches_the_joined_label_the_dialog_reads(self):
+        """The dialog prints label_*.split(' · ')[1:], so the fix only lands if the
+        JOINED label carries it — a span-level fix that never reached the label would
+        leave the live page wrong with the unit test green."""
+        en, zh = bcl._cn_era_label("2025-11-03", "2026-02-12")
+        assert en.split(" · ", 1)[1] == "Nov 3 2025 – Feb 12 2026"
+        assert zh.split(" · ", 1)[1] == "2025年11月3日–2026年2月12日"
+
+
 class TestEraLabel:
+    def test_unknown_label_names_the_stamp_in_both_languages(self):
+        en, zh = bcl._cn_unknown_era_label("cn_prophet_v9", "2026-06-30", "2026-07-29")
+        assert en == "other board definition · cn_prophet_v9 · Jun 30 – Jul 29 2026"
+        assert zh == "其他选股口径 · cn_prophet_v9 · 2026年6月30日–7月29日"
+
+    def test_unknown_label_degrades_without_dates_but_keeps_the_stamp(self):
+        en, zh = bcl._cn_unknown_era_label("cn_prophet_v9", None, None)
+        assert "cn_prophet_v9" in en and "cn_prophet_v9" in zh
+        assert en != zh
+
     def test_label_is_derived_from_the_span_not_hard_coded(self):
         en, zh = bcl._cn_era_label("2026-06-30", "2026-07-29")
         assert en == "previous board definition · Jun 30 – Jul 29 2026"

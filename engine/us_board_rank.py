@@ -20,7 +20,15 @@ Three US-specific departures from the CN module are deliberate and evidenced:
    ``clip01((pctile − 0.25) / 0.75)`` so the bottom quartile of alpha earns nothing.
 2. ``runway`` (10 pts) reads the own-history extension z (``ext_z``) rather than CN's
    fuel/extension blend, because that is the extension evidence the US builder
-   attaches to a board row.
+   attaches to a board row.  **MEASURED 2026-08-02: that evidence reaches ZERO board
+   rows — ``ext_z`` is absent on 0/71 of the live 07-31 buy lane, so the leg scores 0
+   on every row without exception.**  It is not "rare", it is dead: the 10 points are
+   deducted from every row identically, which leaves the ORDER untouched but means the
+   score's usable range is 0–90, not 0–100.  Printed, never hidden — every ``ranking``
+   block carries :func:`component_coverage`, computed from the rows actually scored, so
+   a reader sees ``{"runway": {"nonzero": 0, "n": 71}}`` rather than inferring health
+   from a weight table.  No formula change: a null is a fact to disclose, not a reason
+   to re-tune (house epistemics — the gauntlet gates PROMOTION, not building).
 3. Timing decides **grouping** (the stage bucket), never the within-bucket order —
    the same measurement found the timing leg net-negative to sort by (§3, Study 2).
 
@@ -53,6 +61,16 @@ RAN_TICKS_MAX = 15
 
 # ext_z at or above this is fully extended (mirrors engine.extension.PARABOLIC_Z —
 # do not tune here).  ext_z <= 0 is "not extended"; the leg is linear between.
+#
+# BOUNDARY CONVENTION (intended, not incidental): the SCORE leg is CLOSED at the top —
+# ``runway_value`` clips, so ext_z == 2.0 earns 0 runway (>= is the effective test).
+# The FEATURED veto is OPEN — ``featured_shortfalls`` flags "extended" only on
+# ``ext_z > EXT_Z_FULL``, so a row sitting exactly ON the parabolic line is still
+# featurable.  The asymmetry is deliberate: scoring is a continuous dial where the
+# endpoint must saturate (2.0 and 2.5 are both "no room left"), while featuring is a
+# discrete veto, and a veto fires on evidence that is PAST the line, never on evidence
+# that merely reaches it — the same fail-open-on-the-boundary rule the tier freshness
+# window uses (``ticks <= FEATURED_MAX_TICKS`` qualifies at exactly 2).
 EXT_Z_FULL = 2.0
 
 # Featured freshness window (mirrors engine.confluence_tiers.FRESH_TICKS).
@@ -210,6 +228,15 @@ def signal_value(verdict: Mapping[str, Any] | None) -> float:
     Base ``{T2: 1.0, T1: 0.9, T3: 0.7}`` (the operator re-ranked T2 above T1 on
     2026-07-06); a provisional verdict loses 0.1; a cross that is 2 ticks old is
     decayed 15%.  Any other tier — including ``T4`` and a cleared ``None`` — is 0.
+
+    KNOWN NON-MONOTONE FRESHNESS (documented, NOT fixed this round).  The decay fires
+    on ``ticks == 2`` exactly, so the leg reads 1.00 / 1.00 / 0.85 / 1.00 for ticks
+    0 / 1 / 2 / 3: a 3-tick-old cross scores HIGHER than a 2-tick-old one.  The shape
+    is inherited verbatim from :mod:`engine.china_board_rank` (the two boards speak one
+    scoring language by charter), and it is only reachable at ticks >= 3, which the
+    featured gate already excludes as ``ticks_stale``.  Any repair is a re-tune of a
+    FROZEN shared constant, so it belongs in a measured change to both boards at once —
+    not in a one-sided edit here.  Left as-is deliberately; do not "fix" it in passing.
     """
     verdict = verdict or {}
     value = _SIGNAL_BASE.get(str(verdict.get("tier_cascade")), 0.0)
@@ -234,6 +261,14 @@ def alpha_percentiles(rows: Sequence[Mapping[str, Any]]) -> dict[int, float | No
     inputs.  Rows with no finite ``alpha`` are excluded from the pool (they neither
     occupy a rank nor distort the spread) and map to ``None`` — the fail-closed
     outcome is zero points, not a mid-pool default.
+
+    A pool of ONE also maps to ``None``.  A percentile is a CROSS-SECTIONAL reading,
+    and a cross-section of one has none: the single row is simultaneously the top and
+    the bottom of its own pool, so any number here is an artifact of the degenerate
+    pool rather than evidence about the name.  Awarding it 1.0 handed the full 25-point
+    ``edge`` leg to a row that had out-ranked nothing.  ``None`` earns 0 by the same
+    fail-closed rule that governs an unknown alpha — unknown evidence never earns
+    best-case points.
     """
     ranked: list[tuple[int, str, float]] = []
     for index, row in enumerate(rows):
@@ -243,12 +278,12 @@ def alpha_percentiles(rows: Sequence[Mapping[str, Any]]) -> dict[int, float | No
         ranked.append((index, str(row.get("ticker") or ""), alpha))
 
     out: dict[int, float | None] = {index: None for index in range(len(rows))}
-    if not ranked:
+    count = len(ranked)
+    if count < 2:                    # empty pool, or a degenerate pool of one
         return out
     ranked.sort(key=lambda item: (-item[2], item[1]))
-    count = len(ranked)
     for rank, (index, _ticker, _alpha) in enumerate(ranked, start=1):
-        percentile = 1.0 if count == 1 else 1.0 - (rank - 1) / (count - 1)
+        percentile = 1.0 - (rank - 1) / (count - 1)
         out[index] = round(_clip01(percentile), 6)
     return out
 
@@ -270,9 +305,16 @@ def runway_value(row: Mapping[str, Any]) -> float:
     ``ext_z >= EXT_Z_FULL`` is fully extended (0 runway), ``ext_z <= 0`` is not
     extended (full runway), linear in between; an ``antichase_shadow_blocked`` row is
     treated as fully extended.  **Unknown extension evidence earns 0**, never the
-    best case — CN's fail-closed rule.  On the current US builder ``ext_z`` reaches
-    very few board rows, so this leg is usually a constant 0 across the pool: it
-    costs every row the same 10 points and therefore does not distort the order.
+    best case — CN's fail-closed rule.
+
+    MEASURED 2026-08-02: this leg is DEAD, not merely sparse.  ``ext_z`` is absent on
+    0/71 rows of the live 07-31 buy lane — the US builder never attaches it to a board
+    row — so ``runway`` is exactly 0 on every row, always.  That costs each row the
+    same 10 points and therefore cannot distort the ORDER, but it does cap the score
+    at 90 and it means the leg contributes no information at all.  The null is
+    published rather than patched: :func:`component_coverage` recomputes the nonzero
+    count from the rows actually scored on every build, so the disclosure can never go
+    stale the way this docstring's earlier "very few board rows" wording did.
     """
     if row.get("antichase_shadow_blocked") is True:
         return 0.0
@@ -297,18 +339,46 @@ def quality_value(row: Mapping[str, Any]) -> float:
 # --------------------------------------------------------------------------- #
 # stage bucketing
 # --------------------------------------------------------------------------- #
+def is_downtrend(row: Mapping[str, Any]) -> bool:
+    """True when the row is a DOWNTREND name (masterplan §3.1's second blocked clause).
+
+    Two independent readings, either of which is sufficient: the cycle ladder's own
+    ``dir == "down"``, or its ``DOWNTREND`` headline label (``engine.cycles`` stamps
+    both on a DECLINE row).  The label match is on the leading token because
+    ``build_stock_library._enforce_blocked_buy_invariant`` may suffix it — the shipped
+    07-31 board carries ``"UPTREND (blocked)"``-style labels, so an equality test would
+    read a suffixed DOWNTREND as unknown.
+    """
+    if str(row.get("dir") or "").strip().lower() == "down":
+        return True
+    label = str(row.get("label") or "").strip().upper()
+    for opener in ("(", "（"):        # ASCII " (blocked)" and its zh "（受阻）" twin
+        label = label.split(opener)[0]
+    return label.strip() == "DOWNTREND"
+
+
 def stage_for(row: Mapping[str, Any], entry: Mapping[str, Any] | None = None) -> str:
     """Bucket a row into ``live`` / ``setting_up`` / ``ran`` / ``blocked``.
 
-    Blocked wins over everything: an ``avoid``/``exit``/``blocked`` entry status, or a
-    downtrending name (``dir == "down"``) that carries no entry status at all, must
-    never render above an actionable row.  A missing or unrecognised status buckets to
-    ``setting_up`` — an unknown timing state is never advertised as live.
+    Blocked wins over everything.  Masterplan §3.1 defines the bucket as
+    ``{blocked, exit, avoid} OR label DOWNTREND``, and the DOWNTREND clause is
+    UNCONDITIONAL: a name the cycle read calls a downtrend is blocked whatever its
+    entry status claims.  The two clauses are independent evidence, and the entry
+    status does not get to overrule the trend — a ``bounce_wait`` on a falling name is
+    exactly the "catch the knife" row the stage buckets exist to demote.  (This engine
+    previously applied the DOWNTREND clause only to rows with NO entry status at all,
+    which silently let a downtrending ``bounce_wait`` render in ``setting_up``, above
+    the blocked bucket.  ``tests/test_us_board_priority_ui.py::_stage_of`` — the
+    rendered-HTML contract — has asserted the unconditional rule all along, so the
+    engine was the side that disagreed with the spec AND with its own UI.)
+
+    A missing or unrecognised status buckets to ``setting_up`` — an unknown timing
+    state is never advertised as live.
     """
     status = _status_of(entry if entry is not None else row.get("entry_signal"))
     if status in _BLOCKED_STATUSES:
         return STAGE_BLOCKED
-    if not status and str(row.get("dir") or "").strip().lower() == "down":
+    if is_downtrend(row):
         return STAGE_BLOCKED
     if status in _LIVE_STATUSES:
         return STAGE_LIVE
@@ -353,6 +423,53 @@ def days_since_signal(sig_asof: Any, board_asof: Any) -> int | None:
         return (date.fromisoformat(right) - date.fromisoformat(left)).days
     except ValueError:
         return None
+
+
+BASIS_SESSIONS = "sessions"
+BASIS_CALENDAR = "calendar"
+
+
+def signal_age(
+    verdict: Mapping[str, Any] | None,
+    sig_asof: Any,
+    board_asof: Any,
+) -> tuple[int | None, str | None]:
+    """``(days_since_signal, basis)`` — the SESSION count when one is known.
+
+    ``days_since_signal`` is read as a SESSION count by the shared consumer
+    (``templates/stocktable.js``: ``FRESH_DAYS = 2`` gates the NEW dot and the
+    fresh-only filter), so this resolver prefers the session answer and DISCLOSES the
+    basis whenever it has to fall back.
+
+    * ``sessions`` — the verdict's ``fresh_bars``: the count of daily bars strictly
+      after the §7 buy marker (``engine.signal_gate._bars_since``).  It is the closes-
+      index distance, the same quantity :func:`cross_read` reports as
+      ``sessions_since`` — verified equal on real rows (AEE 29, AMGN 40, APD 23).
+    * ``calendar`` — the plain date difference, used only when no marker-anchored
+      session count exists.
+
+    The two are NOT interchangeable and the gap is not small.  The calendar leg
+    measures the distance from ``signal.asof``, which is the ticker's LAST CLOSE BAR
+    (``engine.signal_quality.analyze`` stamps ``str(idx[-1].date())``), not the date
+    the signal fired: on the committed 07-31 board NUE reads ``signal.asof
+    2026-07-31`` while its own last marker fired ``2026-06-16``.  Calendar-only would
+    therefore report that 45-day-old signal as 0 days and light the NEW dot on nearly
+    every row.  ``fresh_bars`` measures the marker, which is what the field's name and
+    its consumer both mean.
+
+    Emitting the basis rather than silently switching units is the point: the same
+    field carries calendar days on the CN/CA boards (days since first board
+    appearance), so a consumer reading across boards must be able to see which
+    question this number answers.  Returns ``(None, None)`` when neither is available —
+    an unknown age is a null to print, never a zero.
+    """
+    bars = _finite_int((verdict or {}).get("fresh_bars"))
+    if bars is not None and bars >= 0:
+        return bars, BASIS_SESSIONS
+    days = days_since_signal(sig_asof, board_asof)
+    if days is None:
+        return None, None
+    return days, BASIS_CALENDAR
 
 
 # --------------------------------------------------------------------------- #
@@ -477,7 +594,9 @@ def score_rows(
         # ``prophet.score`` is the display/sort authority; the legacy fields stay.
         sig_date = signal_asof(row, verdict)
         row["signal_asof"] = sig_date
-        row["days_since_signal"] = days_since_signal(sig_date, board_date)
+        age, basis = signal_age(verdict, sig_date, board_date)
+        row["days_since_signal"] = age
+        row["days_since_signal_basis"] = basis
         row["new"] = bool(sig_date and board_date and sig_date == board_date)
 
         shortfalls = featured_shortfalls(
@@ -519,6 +638,37 @@ def score_rows(
     return pool
 
 
+def component_coverage(rows: Iterable[Mapping[str, Any]]) -> dict[str, dict[str, int]]:
+    """Per-leg ``{"nonzero": k, "n": total}`` over the rows actually scored.
+
+    The score's own coverage receipt, RECOMPUTED on every build so it can never drift
+    from the board it describes (a hardcoded number outlives its recompute — this is
+    the disclosure, not a comment about one night's data).
+
+    A leg with ``nonzero == 0`` is dead: it subtracts the same points from every row,
+    so it cannot change the ORDER, but it also carries no information and it caps the
+    attainable score below 100.  Measured 2026-08-02 on the live 07-31 board:
+    ``runway`` is ``{"nonzero": 0, "n": 71}`` because ``ext_z`` never reaches a US
+    board row.  Printed rather than hidden, and printed as a NUMBER rather than a
+    hedge — display-tier disclosure is exactly what the epistemics law asks of a null.
+
+    Every leg in :data:`SCORE_WEIGHTS` is reported, present or not: a bucket missing
+    from this dict would read as "not measured", which is a different claim from
+    "measured zero".
+    """
+    out = {name: {"nonzero": 0, "n": 0} for name in SCORE_WEIGHTS}
+    for row in rows:
+        components = (row.get("prophet") or {}).get("components") or {}
+        for name in SCORE_WEIGHTS:
+            value = _finite_float(components.get(name))
+            if value is None:            # leg not scored on this row — not a zero
+                continue
+            out[name]["n"] += 1
+            if value != 0.0:
+                out[name]["nonzero"] += 1
+    return out
+
+
 def stage_counts(rows: Iterable[Mapping[str, Any]]) -> dict[str, int]:
     """Per-stage row counts, every bucket present (a zero is a fact, not an absence)."""
     counts = {stage: 0 for stage in STAGE_ORDER}
@@ -539,8 +689,10 @@ def ranking_block(
     """The artifact-disclosed ``ranking`` block — the score's own receipt.
 
     Everything a reader needs to reproduce the order is printed here: the weights,
-    what each leg reads, the featured requirements, and the explicit list of inputs
-    that carry no score authority at all.
+    what each leg reads, the featured requirements, the explicit list of inputs that
+    carry no score authority at all — and ``component_coverage``, the measured nonzero
+    count per leg, so a leg that is dead on this board (``runway``, 0/71) is visible
+    in the artifact instead of inferable only from the weight table.
     """
     scored = list(rows)
     counts = stage_counts(scored)
@@ -566,6 +718,10 @@ def ranking_block(
              "reads": "coiled / washout context",
              "basis": "coiled star 1.0 · coiled 0.8 · washout context 0.4"},
         ],
+        # Measured nonzero coverage per leg, recomputed from `scored` every build.
+        # `runway` reads {"nonzero": 0, "n": <board size>} on the live board — the
+        # honest receipt for a leg whose input (ext_z) never arrives.
+        "component_coverage": component_coverage(scored),
         "sort_key": "stage bucket, then priority score desc, then ticker",
         "stage_order": list(STAGE_ORDER),
         "stage_labels": {stage: dict(STAGE_LABELS[stage]) for stage in STAGE_ORDER},
@@ -814,6 +970,11 @@ def stamp_themes(
 # --------------------------------------------------------------------------- #
 RAN_LABEL = "RAN"
 RAN_LABEL_ZH = "已启动"
+
+# How a ran row's cross age was anchored.  Emitted on every ran row (`anchor`) so a
+# consumer can tell an exact marker-dated age from a session-count reconstruction.
+ANCHOR_MARKER = "marker"
+ANCHOR_APPROX = "approx"
 RAN_THEME_LINE = "Theme just confirmed — watch for the next entry"
 RAN_THEME_LINE_ZH = "主题刚确认 — 关注下一个买点"
 
@@ -846,14 +1007,30 @@ def cross_read(
     cross_date: Any = None,
     sessions_back: int | None = None,
 ) -> dict[str, Any] | None:
-    """Move-since-the-cross read: ``{cross_date, sessions_since, pct_since}``.
+    """Move-since-the-cross read: ``{cross_date, sessions_since, pct_since, anchor}``.
 
-    The anchor is the last session at or before ``cross_date`` when the signal's own
-    marker date is known (the China ran-lane idiom, and the only exact answer); it
-    falls back to ``sessions_back`` sessions before the last close otherwise.  The
-    fallback is approximate on purpose: ``ticks`` are counted on the signal's native
-    higher-timeframe grid (one 3D tick ≈ 3 sessions), so ``sessions_since`` is the
-    field to render as "fired N sessions ago", never the raw tick count.
+    Two anchors, both on the DAILY session grid, and the read says which one it used:
+
+    * ``anchor == "marker"`` — the last session at or before ``cross_date``, the
+      signal's own §7 buy-marker date.  The China ran-lane idiom and the exact answer.
+    * ``anchor == "approx"`` — ``sessions_back`` sessions before the last close, used
+      when no marker date resolves inside the supplied series.
+
+    ``sessions_back`` MUST be a count of daily SESSIONS.  Callers pass the verdict's
+    ``fresh_bars`` (``engine.signal_gate._bars_since`` — daily bars strictly after the
+    marker).  Passing ``ticks`` instead is the B3 defect this signature exists to
+    prevent: ticks are counted on the signal's NATIVE higher-timeframe grid (one 3D
+    tick ≈ 3 sessions), so ``sessions_back=ticks`` makes ``sessions_since == ticks`` —
+    a ~3x understatement of the age, and it mis-anchors ``pct_since`` onto the wrong
+    bar as well.  Measured on the 235-name local store: the marker path returns 29 / 40
+    / 23 sessions where ticks read 11 / 15 / 9.
+
+    Returns ``None`` when the supplied series cannot produce a reading at all — no
+    anchor resolves inside it, it is too short, or the anchor bar's price is not
+    positive.  That is a statement about THESE CLOSES, not about the row: the caller
+    decides whether an anchor exists (see :func:`_anchor_only_read`) and drops the row
+    only when the AGE would have to be invented — a missing row beats a wrong number,
+    but a null move is a disclosed null and gets printed.
     """
     values: list[float] = []
     stamps: list[str | None] = []
@@ -867,6 +1044,7 @@ def cross_read(
         return None
 
     anchor: int | None = None
+    kind = ANCHOR_MARKER
     anchor_date = _as_date(cross_date)
     if anchor_date:
         for index in range(len(stamps) - 1, -1, -1):
@@ -875,6 +1053,7 @@ def cross_read(
                 anchor = index
                 break
     if anchor is None:
+        kind = ANCHOR_APPROX
         back = _finite_int(sessions_back)
         if back is None or back < 0:
             return None
@@ -889,7 +1068,35 @@ def cross_read(
     return {
         "cross_date": stamps[anchor],
         "sessions_since": len(values) - 1 - anchor,
+        # pct_since is measured from the SAME bar the age is measured from, on both
+        # paths — the age and the move must never describe different anchors.
         "pct_since": round((spot / price_at_cross - 1.0) * 100.0, 1),
+        "anchor": kind,
+    }
+
+
+def _anchor_only_read(cross_date: Any, fresh_bars: Any) -> dict[str, Any]:
+    """The cross read a row can still give with NO usable close series: age, no move.
+
+    ``fresh_bars`` is counted on the daily grid inside :mod:`engine.signal_gate`, so
+    the AGE never needed this lane's copy of the closes — only ``pct_since`` did.  A
+    row with a real anchor and no prices therefore keeps its age and its anchor and
+    prints ``pct_since: None``.
+
+    That null is a DISCLOSED null (house epistemics: print it, don't hide the row),
+    and it is a different thing from a wrong age — which is why the drop in
+    :func:`build_ran_rows` keys on whether an anchor SOURCE exists and never on
+    whether prices arrived.
+    """
+    stamp = _as_date(cross_date)
+    bars = _finite_int(fresh_bars)
+    return {
+        "cross_date": stamp,
+        "sessions_since": bars if (bars is not None and bars >= 0) else None,
+        "pct_since": None,
+        # fresh_bars is measured FROM the buy marker, so an age that came from it is
+        # marker-anchored whenever we also hold the marker's date.
+        "anchor": ANCHOR_MARKER if stamp else ANCHOR_APPROX,
     }
 
 
@@ -911,12 +1118,29 @@ def build_ran_rows(
     conviction claim and no priority score — the honest read is "the move already
     started; wait for the next entry", which is why they cannot outrank a live row.
 
+    FAIL-CLOSED AGE (B3, 2026-08-02).  The row's AGE is the thing that must never be
+    invented.  The anchor is the §7 buy-marker date, falling back to the verdict's
+    ``fresh_bars`` session count; the previous fallback was the raw ``ticks`` count,
+    which made ``sessions_since == ticks`` — the age understated ~3x (measured: 29/40/23
+    true sessions shown as 11/15/9) — and it anchored ``pct_since`` on the wrong bar
+    with it.  A row with NEITHER a marker date NOR a usable ``fresh_bars`` is DROPPED,
+    because any age it could show would be fabricated: measured on the 235-name local
+    store, 25 of 55 ran admits (45%) carry a sell/cut as their last marker and so have
+    no cross date at all.  Every emitted row therefore carries ``anchor`` ∈
+    {``marker``, ``approx``} and an age that is either exact or absent — never wrong.
+
+    A missing PRICE SERIES is a different question and does not drop the row.  The age
+    lives in the verdict, not in this lane's closes, so such a row still states when
+    the cross fired and prints ``pct_since: None`` — a disclosed null, per the house
+    rule that nulls are printed rather than hidden.
+
     Order: theme-confirmed rows first (their theme only just turned, so the desync is
     the point), then the freshest cross, then the largest move since it fired.
     """
     skip = {str(t or "").strip().upper() for t in exclude}
     meta_by = meta_by or {}
     rows: list[dict] = []
+    dropped_no_anchor = 0
 
     for ticker, verdict in (verdict_by or {}).items():
         key = str(ticker or "").strip().upper()
@@ -927,13 +1151,30 @@ def build_ran_rows(
             continue
 
         ticks = _finite_int((verdict or {}).get("ticks"))
+        marker = (verdict or {}).get("last") or {}
+        marker_date = (marker.get("date")
+                       if marker.get("type") in ("buy", "rebuy") else None)
+        # fresh_bars, NOT ticks: the session count on the DAILY grid the closes series
+        # is indexed by.  ticks live on the signal's native 2D/3D grid (~3 sessions
+        # each), which is what made the old fallback understate the age ~3x.
+        fresh = _finite_int((verdict or {}).get("fresh_bars"))
+        if fresh is not None and fresh < 0:
+            fresh = None
+        if not _as_date(marker_date) and fresh is None:
+            # No anchor SOURCE at all — the age would have to be invented. Fail closed.
+            dropped_no_anchor += 1
+            continue
+
         series = close_of(ticker) if close_of is not None else None
         read: dict[str, Any] | None = None
         if series is not None:
             dates, closes = series
-            marker = (verdict or {}).get("last") or {}
-            marker_date = marker.get("date") if marker.get("type") in ("buy", "rebuy") else None
-            read = cross_read(dates, closes, cross_date=marker_date, sessions_back=ticks)
+            read = cross_read(dates, closes, cross_date=marker_date,
+                              sessions_back=fresh)
+        if read is None:
+            # Anchored, but these closes cannot measure the move (absent, too short,
+            # or the anchor bar falls outside the tail we hold). Age yes, move null.
+            read = _anchor_only_read(marker_date, fresh)
 
         theme = (theme_by or {}).get(key)
         sig_date = signal_asof(meta, verdict)
@@ -943,16 +1184,20 @@ def build_ran_rows(
             "sector": meta.get("sector"),
             "price": meta.get("price"),
             "ticks": ticks,
-            "cross_date": (read or {}).get("cross_date"),
-            "sessions_since": (read or {}).get("sessions_since"),
-            "pct_since": (read or {}).get("pct_since"),
+            "cross_date": read["cross_date"],
+            "sessions_since": read["sessions_since"],
+            "pct_since": read["pct_since"],
+            "anchor": read["anchor"],
             "stage": STAGE_RAN,
             "lane": "ran",
             "label": RAN_LABEL,
             "label_zh": RAN_LABEL_ZH,
             "signal_asof": sig_date,
-            "days_since_signal": days_since_signal(sig_date, board_asof),
         }
+        # Same session-first resolver the buy lane uses, so one field means one thing
+        # across both arrays of the artifact.
+        row["days_since_signal"], row["days_since_signal_basis"] = signal_age(
+            verdict, sig_date, board_asof)
         if meta.get("spark_svg"):
             row["spark_svg"] = meta["spark_svg"]
         if theme:
@@ -962,6 +1207,12 @@ def build_ran_rows(
                 row["theme_note"] = RAN_THEME_LINE
                 row["theme_note_zh"] = RAN_THEME_LINE_ZH
         rows.append(row)
+
+    if dropped_no_anchor:
+        _notice("us_board_ran_anchor",
+                f"{dropped_no_anchor} ran-lane admit(s) dropped — no buy-marker date "
+                f"and no fresh_bars, so the cross age is unknowable; a missing row "
+                f"beats a wrong age ({len(rows)} row(s) kept)")
 
     rows.sort(
         key=lambda row: (

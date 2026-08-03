@@ -770,3 +770,138 @@ def test_leaders_strip_renders_without_top_setups():
     html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
     assert _LEADERS_WRAPPER in html
     assert '<div class="topsetups">' not in html   # the trigger sub-board is gone
+
+
+# --------------------------------------------------------------------------- #
+# M12 — the leaders strip names its real rank key.
+#
+# The strip has ranked by trailing 3-month TOTAL return plus a theme boost since the
+# v2 rebuild (_select_leaders, scripts/build_stock_library.py), with residual alpha
+# only as the tiebreak.  The headline still said "Strongest runners by edge" and sat
+# directly above a column headed "edge (α)", so the two together claimed an ordering
+# the engine does not perform.  The column stays — it is a real read — but neither
+# the headline nor the header may claim it sorts the table.
+#
+# Every assertion below is SCOPED TO THE STRIP: "edge (α)" also heads the unrelated
+# top-setups table on the same page, so a document-wide assertion would be vacuous
+# in one direction and wrong in the other.
+# --------------------------------------------------------------------------- #
+
+def _leaders_strip(html: str) -> str:
+    start = html.find(_LEADERS_WRAPPER)
+    assert start != -1, "the leaders strip did not render"
+    end = html.find("</table>", start)
+    assert end != -1
+    return html[start:end]
+
+
+def test_leaders_strip_slicer_excludes_the_top_setups_table():
+    """Guard the guard: `edge (α)` heads BOTH this strip and the top-setups table
+    above it, so the header assertions below are only meaningful if the slice really
+    is the leaders strip.  Render both tables at once and prove the slice holds one
+    and not the other — otherwise "edge (α) not in strip" could never fail."""
+    vm = _vm_with_leaders([_leader_row()])
+    vm["top_setups"] = {"buy": [_setup_row()], "eligible": 1}
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    strip = _leaders_strip(html)
+    assert "edge (α)" in html, "the top-setups table must still head its own α column"
+    assert "ZORB" in html and "ZORB" not in strip     # its rows are outside the slice
+    assert "RUNR" in strip
+    assert len(strip) < len(html) / 4
+
+
+def test_leaders_headline_names_momentum_not_edge():
+    vm = _vm_with_leaders([_leader_row()])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    strip = _leaders_strip(html)
+    assert ('<span class="l-en">Strongest runners by 3-month momentum, theme-boosted — '
+            'no fresh entry signal; watch, don’t chase.</span>') in strip
+    assert ("按3个月动量排名（顺风主题另有加成）的最强领跑股 — 暂无新入场信号；观察，勿追高。") in strip
+    # the retired overclaim, in both languages
+    assert "Strongest runners by edge" not in html
+    assert "按优势排名的最强领跑股" not in html
+    # the stance survives the rewrite (DESIGN_DOCTRINE Law 1)
+    assert "watch, don’t chase" in strip and "观察，勿追高" in strip
+
+
+def test_leaders_headline_tip_names_the_intact_trend_and_near_high_gates():
+    """Admission is `above200 AND weekly_bull` plus `off_high >= -20%` — the two gates
+    that decide who can appear at all.  A coverage strip that lists neither reads as
+    an unfiltered top-N."""
+    vm = _vm_with_leaders([_leader_row()])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    strip = _leaders_strip(html)
+    assert "intact uptrend (above the 200-day line, weekly structure bullish)" in strip
+    assert "within 20% of its 52-week high" in strip
+    assert "站上200日线、周线结构看多" in strip
+    assert "距52周高点不超过20%" in strip
+    # …and the tip names the real rank key, not the retired one
+    assert "Order here is trailing 3-month total return" in strip
+    assert "本表按3个月总回报排序" in strip
+    assert "the one leg our measurements ranked positively" not in strip
+
+
+def test_leaders_alpha_header_stops_claiming_it_orders_the_table():
+    """α is a TIEBREAK.  The header says so, and the old label goes — but the column
+    itself stays, values and all."""
+    vm = _vm_with_leaders([_leader_row()])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    strip = _leaders_strip(html)
+    assert '<span class="l-en">α (tiebreak)</span><span class="l-zh">α（并列时排序）</span>' in strip
+    assert "It does NOT order this table" in strip
+    assert "α only separates names that rank level" in strip
+    assert "它并不决定本表排序" in strip
+    assert "α 仅用于分开名次并列的标的" in strip
+    # the retired header, scoped to the strip (the top-setups table still uses it)
+    assert "edge (α)" not in strip and "优势 (α)" not in strip
+    # the column is KEPT: the value still renders under the new header
+    assert "+2.31" in strip
+
+
+def test_leaders_theme_header_does_not_contradict_the_theme_boost():
+    """The header used to say theme membership "does not rank this table" while the
+    rank key adds +0.5 for it — the two halves of the same surface disagreeing."""
+    vm = _vm_with_leaders([_leader_row(theme={"id": "ai_software", "name": "AI software",
+                                              "name_zh": "AI软件", "rank": 3})])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    strip = _leaders_strip(html)
+    assert "Membership adds a small boost to where a name sits in this table" in strip
+    assert "归属会为该股在本表的名次带来小幅加成" in strip
+    assert "theme membership does not rank this table" not in html
+    assert "主题归属不影响本表排序" not in html
+
+
+# --------------------------------------------------------------------------- #
+# m6 (leaders half) — bull_days == 0 is "turned today", not a missing age.
+# The same truthiness bug lived in three conditionals; this is the third.
+# --------------------------------------------------------------------------- #
+
+def _themed_leader(bull_days):
+    theme = {"id": "ai_software", "name": "AI software", "name_zh": "AI软件", "rank": 3}
+    if bull_days is not None:
+        theme["bull_days"] = bull_days
+    return _leader_row(theme=theme, theme_confirmed=True)
+
+
+def test_leaders_theme_tip_reads_today_at_zero_bull_days():
+    html = _env().get_template("dashboard.html.j2").render(
+        **_vm_with_leaders([_themed_leader(0)]), mode="stocks")
+    strip = _leaders_strip(html)
+    assert "The theme itself only just turned up (today) —" in strip
+    assert "主题本身刚刚转强（今日） —" in strip
+    assert "(0 days in)" not in html and "（已进入第0天）" not in html
+
+
+def test_leaders_theme_tip_keeps_a_real_age_and_stays_silent_on_none():
+    """Both other directions of the same conditional: a real age still prints, and a
+    genuinely unknown one must not be reported as 'today'."""
+    env = _env()
+    real = env.get_template("dashboard.html.j2").render(
+        **_vm_with_leaders([_themed_leader(4)]), mode="stocks")
+    assert "The theme itself only just turned up (4 days in) —" in _leaders_strip(real)
+    assert "（已进入第4天）" in _leaders_strip(real)
+    unknown = env.get_template("dashboard.html.j2").render(
+        **_vm_with_leaders([_themed_leader(None)]), mode="stocks")
+    strip = _leaders_strip(unknown)
+    assert "The theme itself only just turned up —" in strip
+    assert "(today)" not in strip and "（今日）" not in strip

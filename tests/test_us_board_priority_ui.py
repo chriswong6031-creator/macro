@@ -139,6 +139,12 @@ def ran_overlay(rows, *, cap=6):
     (engine/us_board_rank.py cross_read).  The fixture keeps them deliberately
     different so a template that renders the wrong one fails visibly.
 
+    `anchor` (B3) is the age's provenance, and the fixture ships BOTH values plus the
+    absent case: "marker" = counted from the row's own buy-marker date, "approx" =
+    worked back from the fresh-bar window, so the number is an estimate and must not
+    print like a measurement.  Row 1 is approx, the rest are marker; the caller drops
+    the key entirely to reproduce a pre-B3 artifact.
+
     Two rows carry theme_confirmed plus the engine's own theme_note strings — the
     front-running case the warm treatment marks."""
     out = []
@@ -151,6 +157,7 @@ def ran_overlay(rows, *, cap=6):
             "price": row.get("price"),
             "ticks": ticks,
             "sessions_since": ticks * 3 - 1,
+            "anchor": "approx" if i == 1 else "marker",
             "cross_date": "2026-07-14",
             "pct_since": round(-2.0 + _pseudo_score(row.get("ticker") or "X") / 8.0, 1),
             "label": row.get("label"),
@@ -296,7 +303,11 @@ def test_stage_headings_carry_label_count_and_stance():
     tail sentence stays under the 14-word subtitle cap."""
     html = _priority_html()
     assert '<span class="l-en">Live now</span><span class="l-zh">现在可操作</span>' in html
-    assert '<span class="l-en">Ran — don’t chase</span><span class="l-zh">已启动 · 勿追</span>' in html
+    # The ZH separator is the em-dash the EN label uses, not a middot: the two halves
+    # are a state and a stance, and every sibling ZH label on this surface
+    # (`尚未触发 — 做好准备`) already joins them that way.
+    assert '<span class="l-en">Ran — don’t chase</span><span class="l-zh">已启动 — 勿追</span>' in html
+    assert "已启动 · 勿追" not in html
     assert '<span class="l-en">entry window is open</span>' in html
     assert '<span class="l-en">stand aside for now</span>' in html
     assert '<span class="sh-n">' in html
@@ -468,6 +479,93 @@ def test_ran_theme_confirmed_rows_get_the_warm_treatment():
     assert ".pbr-r.pbr-warm { border-color: color-mix(in srgb, var(--warn)" in html
 
 
+# --------------------------------------------------------------------------- #
+# B3 — approximate session ages carry the ≈ marker AND say why
+#
+# The engine emits `anchor` on every ran row: "marker" when the age was measured
+# from that row's own buy-marker date, "approx" when it was worked back from the
+# fresh-bar window instead.  Printed identically, an estimate reads as a
+# measurement — the same class of wrong number the `ticks`/`sessions_since` note
+# above this section exists to prevent.  Two states only: an absent `anchor`
+# (every artifact older than the engine lane) reads as "marker".
+# --------------------------------------------------------------------------- #
+
+_APPROX_TIP_EN = 'the age is counted back from its recent bars'
+_APPROX_TIP_ZH = '此处的交易日数由近期K线倒推得出'
+
+
+def _ran_row_markup(html: str, ticker: str) -> str:
+    """One ran-lane row, from its own <a> to the next — so an assertion about the
+    approx row can never be satisfied by a marker row's markup, or vice versa."""
+    anchor = html.find(f'<span class="pbr-tk">{ticker}</span>')
+    assert anchor != -1, f"ran row for {ticker} not found"
+    start = html.rfind('<a class="pbr-r', 0, anchor)
+    assert start != -1
+    end = html.find('<a class="pbr-r', start + 10)
+    return html[start:end if end != -1 else html.find("</div>", anchor)]
+
+
+def test_ran_row_markup_helper_isolates_one_row():
+    """Guard the guard: a slicer that returned the whole ran list would make every
+    per-row ≈ assertion below pass vacuously in both directions."""
+    vm = _priority_vm()
+    html = _render(vm)
+    approx, marker = _approx_and_marker_tickers(vm)
+    row = _ran_row_markup(html, approx)
+    assert f'<span class="pbr-tk">{approx}</span>' in row
+    assert f'<span class="pbr-tk">{marker}</span>' not in row
+
+
+def _approx_and_marker_tickers(vm: dict) -> tuple[str, str]:
+    rows = vm["us_standouts"]["ran"]
+    approx = next(r["ticker"] for r in rows if r["anchor"] == "approx")
+    marker = next(r["ticker"] for r in rows if r["anchor"] == "marker")
+    return approx, marker
+
+
+def test_approx_ran_age_prints_the_marker_and_discloses_why():
+    vm = _priority_vm()
+    html = _render(vm)
+    approx_tk, _ = _approx_and_marker_tickers(vm)
+    row = next(r for r in vm["us_standouts"]["ran"] if r["ticker"] == approx_tk)
+    markup = _ran_row_markup(html, approx_tk)
+    n = row["sessions_since"]
+    # ≈ sits on the FIGURE, not the sentence — both languages.
+    assert f'fired ≈{n} sessions ago' in markup
+    assert f'≈{n}个交易日前触发' in markup
+    # …and the reason is disclosed in plain words on the row's own hover, bilingually.
+    assert _APPROX_TIP_EN in markup and _APPROX_TIP_ZH in markup
+    assert 'data-tip-en="≈ means' in markup
+
+
+def test_marker_ran_age_prints_no_marker_and_no_disclosure():
+    """The other half of the guard: a one-directional test would pass with ≈ stamped
+    on every row, which would disclose nothing and mistrust an exact number."""
+    vm = _priority_vm()
+    html = _render(vm)
+    _, marker_tk = _approx_and_marker_tickers(vm)
+    row = next(r for r in vm["us_standouts"]["ran"] if r["ticker"] == marker_tk)
+    markup = _ran_row_markup(html, marker_tk)
+    n = row["sessions_since"]
+    assert f'fired {n} sessions ago' in markup
+    assert f'fired ≈{n} sessions ago' not in markup
+    assert "≈" not in markup
+    assert _APPROX_TIP_EN not in markup and _APPROX_TIP_ZH not in markup
+
+
+def test_ran_row_without_anchor_reads_as_a_marker_row():
+    """Fail-soft for every artifact older than the engine lane: a missing `anchor`
+    renders exactly as it does today — no ≈, no hover, and NO third state."""
+    vm = _priority_vm()
+    ran = [{k: v for k, v in r.items() if k != "anchor"} for r in vm["us_standouts"]["ran"]]
+    vm["us_standouts"] = dict(vm["us_standouts"], ran=ran)
+    html = _render(vm)
+    section = html[html.find('<div class="pbr" data-stage="ran">'):html.find('<p class="pb-fn">')]
+    assert f'fired {ran[0]["sessions_since"]} sessions ago' in section   # rows DID render
+    assert "≈" not in section
+    assert _APPROX_TIP_EN not in section and _APPROX_TIP_ZH not in section
+
+
 def test_ran_section_absent_when_the_artifact_carries_no_ran_array():
     vm = _priority_vm()
     vm["us_standouts"] = dict(vm["us_standouts"])
@@ -620,6 +718,190 @@ def test_stage_heading_tips_disclose_priority_order_not_a_forecast():
     html = _priority_html()
     assert "Priority order, not a return forecast." in html
     assert "这是排序，不是收益预测。" in html
+
+
+# --------------------------------------------------------------------------- #
+# M1 — the runway leg is dead, and the surface that advertises its weight says so
+#
+# Measured 2026-08-02: the runway leg contributes 0 on 0 of 71 rows, because the
+# extension reading it scores (ext_z) is absent everywhere.  The formula is printed
+# in exactly two places — the board footnote and the card's Priority tooltip — and
+# a weight advertised while its input is dark is an overclaim in both.
+#
+# The claim is COUNTED FROM THE ARTIFACT (`ranking.component_coverage`), never a
+# literal, so the night the evidence is wired the note switches itself off; a
+# hardcoded sentence would outlive the null it discloses.
+# --------------------------------------------------------------------------- #
+
+_RW_EN = "Runway currently contributes 0 for "
+_RW_ZH = "上行空间目前对"
+_RW_TAIL_EN = "the extension reading it scores is not wired up yet"
+_RW_TAIL_ZH = "它所依据的拉伸幅度数据尚未接入"
+
+
+def _coverage_vm(runway: dict | None) -> dict:
+    vm = _priority_vm()
+    ranking = {"component_coverage": {"runway": runway}} if runway is not None else {}
+    vm["us_standouts"] = dict(vm["us_standouts"], ranking=ranking)
+    return vm
+
+
+def _footnote(html: str) -> str:
+    start = html.find('<p class="pb-fn">')
+    assert start != -1, "the board footnote did not render"
+    return html[start:html.find("</p>", start)]
+
+
+def _priority_tip(html: str, ticker: str) -> str:
+    """The Priority slot's tooltip on one card — the second of the two places."""
+    card = _card_markup(html, ticker)
+    idx = card.find('data-tip-en="US Prophet priority')
+    assert idx != -1, f"{ticker} carries no Priority tooltip"
+    return card[idx:card.find("</div>", idx)]
+
+
+def test_dead_runway_leg_is_disclosed_in_the_footnote_and_the_card_tooltip():
+    """Both places, both languages, with the count read off the artifact."""
+    html = _render(_coverage_vm({"nonzero": 0, "n": 71}))
+    for place in (_footnote(html), _priority_tip(html, "AAPL")):
+        assert _RW_EN + "all 71 names" in place
+        assert _RW_TAIL_EN in place
+        assert _RW_ZH + "全部 71 只股票" in place
+        assert _RW_TAIL_ZH in place
+        # no English left inside the ZH half (bilingual parity law)
+        zh = place[place.find('l-zh') if 'l-zh' in place else place.find('data-tip-zh'):]
+        assert "Runway currently contributes" not in zh
+
+
+def test_runway_disclosure_reads_the_artifact_and_stops_when_the_leg_scores():
+    """The kill switch: a nightly where the extension evidence IS wired reports a
+    non-zero count, and the note must disappear from BOTH places rather than
+    outliving the null.  Without this half the disclosure is a hardcoded sentence."""
+    html = _render(_coverage_vm({"nonzero": 12, "n": 71}))
+    for place in (_footnote(html), _priority_tip(html, "AAPL")):
+        assert _RW_EN not in place
+        assert _RW_ZH not in place
+        assert _RW_TAIL_ZH not in place
+    # the formula itself is untouched — this is a disclosure, not a weight change
+    assert "runway 10%" in _footnote(html)
+    assert "上行空间10%" in _footnote(html)
+
+
+def test_runway_disclosure_without_the_coverage_key_claims_no_count():
+    """Every artifact predating the coverage key IS the measured state, so the note
+    stays on — but it may not print a count it never read."""
+    html = _render(_coverage_vm(None))
+    for place in (_footnote(html), _priority_tip(html, "AAPL")):
+        assert _RW_EN + "every name" in place
+        assert _RW_ZH + "每一只股票" in place
+        assert "71" not in place.split(_RW_EN)[1].split(".")[0]
+
+
+def test_runway_disclosure_never_reaches_the_legacy_board():
+    """The legacy path prints no formula at all, so it must grow no disclosure."""
+    html = _legacy_html()
+    assert _RW_EN not in html and _RW_ZH not in html
+
+
+# --------------------------------------------------------------------------- #
+# m5 — the featured edge gate is an absolute floor, not a rank
+# --------------------------------------------------------------------------- #
+
+def test_featured_tip_calls_the_edge_gate_an_absolute_floor():
+    """engine ranking_block featured_requirements: "residual alpha at or above zero".
+    The old copy ("above the board's midpoint") described a cross-sectional test the
+    engine never runs — on a weak board it promised the opposite of the real gate."""
+    html = _priority_html()
+    assert "edge above zero (an absolute floor)" in html
+    assert "优势为正（绝对下限，而非同榜排名）" in html
+    assert "above the board’s midpoint" not in html
+    assert "above the board's midpoint" not in html
+    assert "优势高于本板中位" not in html
+
+
+# --------------------------------------------------------------------------- #
+# m6 — bull_days == 0 is a theme that turned TODAY, not a missing age
+#
+# Truthiness deleted the age chip on exactly the freshest reading.  All three sites
+# are pinned together: a fix applied to one conditional and not its twins is the
+# recurring shape of this defect.
+# --------------------------------------------------------------------------- #
+
+def _zero_bull_days_vm() -> dict:
+    """Every theme turned TODAY — strip, ran lane and leaders table at once."""
+    vm = _priority_vm()
+    art = dict(vm["us_standouts"])
+    art["themes_in_favour"] = [dict(t, bull_days=0)
+                               for t in art["themes_in_favour"]]
+    for key in ("buy", "ran", "leaders"):
+        rows = []
+        for row in art[key]:
+            row = dict(row)
+            if row.get("theme"):
+                row["theme"] = dict(row["theme"], bull_days=0)
+            rows.append(row)
+        art[key] = rows
+    vm["us_standouts"] = art
+    return vm
+
+
+def test_theme_that_turned_today_keeps_its_age_chip_and_reads_today():
+    vm = _zero_bull_days_vm()
+    html = _render(vm)
+    strip = html[html.find('<div class="pbt">'):html.find('<div class="pbf-bar"')]
+    assert '<span class="pbt-age">' in strip, "bull_days == 0 lost the age chip entirely"
+    assert '<span class="l-en">turned today</span><span class="l-zh">今日转向</span>' in strip
+    assert "turned 0d ago" not in html and "0天前转向" not in html
+
+
+def test_ran_lane_theme_note_reads_today_at_zero_bull_days():
+    html = _render(_zero_bull_days_vm())
+    assert "watch for the next entry (turned today)" in html
+    assert "关注下一个买点（今日转向）" in html
+    assert "(turned 0d ago)" not in html and "（0天前转向）" not in html
+
+
+def test_nonzero_bull_days_still_prints_the_age():
+    """The other direction: the None-test must not swallow real ages."""
+    strip = _priority_html()
+    assert '<span class="l-en">turned 5d ago</span><span class="l-zh">5天前转向</span>' in strip
+    assert "turned today" not in strip
+
+
+def test_absent_bull_days_still_prints_no_age_chip():
+    """None is genuinely unknown and stays silent — the fix must not turn a missing
+    age into a claim that the theme turned today."""
+    vm = _priority_vm()
+    art = dict(vm["us_standouts"])
+    art["themes_in_favour"] = [{k: v for k, v in t.items() if k != "bull_days"}
+                               for t in art["themes_in_favour"]]
+    vm["us_standouts"] = art
+    html = _render(vm)
+    strip = html[html.find('<div class="pbt">'):html.find('<div class="pbf-bar"')]
+    assert '<div class="pbt-r">' in strip          # the strip DID render
+    assert '<span class="pbt-age">' not in strip
+    assert "turned today" not in strip
+
+
+# --------------------------------------------------------------------------- #
+# m20 — no CSS for markup nothing emits
+# --------------------------------------------------------------------------- #
+
+def test_no_dead_empty_bucket_css_ships():
+    """`.pbf-empty` was styled but never emitted by any template, macro or script,
+    and it cannot be: a bucket with zero rows renders no filter chip, so there is no
+    way to filter into one.  Dead CSS on a stylesheet that ships on every render
+    reads at review like a shipped feature.
+
+    Asserted as CSS/markup shapes, not the bare token: the removal note left in the
+    stylesheet names the class in prose, and a token test would fail on the very
+    comment that records the fix."""
+    for html in (_priority_html(), _legacy_html()):
+        assert not re.search(r"\.pbf-empty\s*[\[{,]", html), "the dead rule is back"
+        assert not re.search(r'class="[^"]*\bpbf-empty\b', html)
+    # …and the assertion is not vacuous: the filter rules it sat among still ship.
+    assert ('#us-standouts[data-stagef="blocked"]    [data-stage]:not([data-stage="blocked"])'
+            in _priority_html())
 
 
 # --------------------------------------------------------------------------- #

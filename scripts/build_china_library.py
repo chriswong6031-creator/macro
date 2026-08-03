@@ -860,12 +860,9 @@ def _cn_is_legacy_stamp(value) -> bool:
     return str(value).strip().lower() in _CN_LEGACY_STAMPS
 
 
-def _cn_era_label(date_from: str | None, date_to: str | None) -> tuple[str, str]:
-    """Bilingual era label from the era's own date span.
-
-    Derived rather than hard-coded so the label cannot drift away from the rows it
-    describes if the store is ever backfilled.
-    """
+def _cn_era_span(date_from: str | None,
+                 date_to: str | None) -> tuple[str | None, str | None]:
+    """Bilingual date-span suffix for an era label, or (None, None) with no dates."""
     def _parts(d):
         try:
             ts = pd.Timestamp(d)
@@ -875,17 +872,56 @@ def _cn_era_label(date_from: str | None, date_to: str | None) -> tuple[str, str]
         return None if pd.isna(ts) else ts
     a, b = _parts(date_from), _parts(date_to)
     if a is None or b is None:
-        return ("previous board definition", "上一版选股口径")
+        return (None, None)
     # Month names are built from a fixed table rather than strftime: `%-d` is a
     # platform-specific extension, and a locale-sensitive `%b` would make the emitted
     # artifact depend on the runner's environment.
     mon = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-    en = (f"previous board definition · {mon[a.month - 1]} {a.day} – "
-          f"{mon[b.month - 1]} {b.day} {b.year}")
-    zh = (f"上一版选股口径 · {a.year}年{a.month}月{a.day}日–"
-          f"{b.month}月{b.day}日")
-    return (en, zh)
+    # A span that crosses New Year needs BOTH years. Each language carries the year on
+    # ONE end only — EN on the close, ZH on the open — which reads correctly inside a
+    # single year and LIES across two: "Nov 3 – Feb 12 2026" dates the November to
+    # 2026, and "2025年11月3日–2月12日" dates the February to 2025. This is the live
+    # path, not the display: _track_record_dlg.html.j2 splits label_en/label_zh on
+    # ' · ' and prints this span VERBATIM (its own cross-year branch is only the
+    # no-label fallback), so the same-year form below stays byte-for-byte identical.
+    cross = a.year != b.year
+    en_from = f"{mon[a.month - 1]} {a.day}"
+    if cross:
+        en_from = f"{en_from} {a.year}"
+    zh_to = f"{b.month}月{b.day}日"
+    if cross:
+        zh_to = f"{b.year}年{zh_to}"
+    return (f"{en_from} – {mon[b.month - 1]} {b.day} {b.year}",
+            f"{a.year}年{a.month}月{a.day}日–{zh_to}")
+
+
+def _cn_era_label(date_from: str | None, date_to: str | None) -> tuple[str, str]:
+    """Bilingual label for the PRIOR (pre-version) era, from the era's own date span.
+
+    Derived rather than hard-coded so the label cannot drift away from the rows it
+    describes if the store is ever backfilled.
+    """
+    en_span, zh_span = _cn_era_span(date_from, date_to)
+    if en_span is None:
+        return ("previous board definition", "上一版选股口径")
+    return (f"previous board definition · {en_span}", f"上一版选股口径 · {zh_span}")
+
+
+def _cn_unknown_era_label(stamp, date_from: str | None,
+                          date_to: str | None) -> tuple[str, str]:
+    """Bilingual label for a board_definition stamp the era split does not recognise.
+
+    Keyed by the STAMP VALUE, never by a position in the version history: an
+    unrecognised stamp is by definition one this build has no ordering for, so the
+    only honest label names it and lets the reader decide what it was.
+    """
+    s = str(stamp)
+    en_span, zh_span = _cn_era_span(date_from, date_to)
+    if en_span is None:
+        return (f"other board definition · {s}", f"其他选股口径 · {s}")
+    return (f"other board definition · {s} · {en_span}",
+            f"其他选股口径 · {s} · {zh_span}")
 
 
 def _cn_grade_era(bdf, bench_ser, look, _cst) -> dict:
@@ -913,6 +949,60 @@ def _cn_grade_era(bdf, bench_ser, look, _cst) -> dict:
         "n_skipped": n_skipped,
         "state": _ts.publish_state(summary),
     }
+
+
+def _cn_era_block(graded: dict, *, era_id: str, label_fn, closed: bool) -> dict:
+    """Publish ONE non-live era: newest-first capped rows, its own summary, its own
+    publish state, and a bilingual label derived from its own date span.
+
+    Shared by `prior_record` and by every unrecognised-stamp record in
+    `extra_records`, so the two can never drift into different shapes — a consumer
+    that can read one can read all of them. `label_fn(date_from, date_to)` returns
+    the (en, zh) pair; the span is computed here because the label describes the
+    rows this function just sorted.
+    """
+    from engine import track_ledger as _tl
+
+    rows = sorted(graded["rows"], key=lambda r: (r.get("d") or ""), reverse=True)
+    dates = [r["d"] for r in rows if r.get("d")]
+    d_from, d_to = (min(dates), max(dates)) if dates else (None, None)
+    label_en, label_zh = label_fn(d_from, d_to)
+    n_total = len(rows)
+    capped = rows[:_tl.MAX_ROWS]
+    summary = dict(graded["summary"])
+    summary["board_definition"] = era_id
+    return _tl.pyify({
+        "label_en": label_en,
+        "label_zh": label_zh,
+        "board_definition": era_id,
+        "date_from": d_from,
+        "date_to": d_to,
+        "state": graded["state"],
+        "summary": summary,
+        "rows": capped,
+        "meta": {
+            "n_total": n_total,
+            "truncated": max(0, n_total - len(capped)),
+            "grain": "episode",
+            "closed": closed,
+            "survivorship": {
+                "n_locked_excluded": graded["n_locked"],
+                "n_skipped_no_price": graded["n_skipped"],
+                "note": ("locked-limit T+1 rows are unfillable — flagged, "
+                         "excluded from stats"),
+            },
+            "exit_rule": (f"{_CN_HORIZON}-session forced verdict · T+1 open fill · "
+                          "no oscillator target (3D thresholds not yet refit for "
+                          "A-shares)"),
+            "pooling_note_en": ("Graded with the same scorer, horizon and exit rule "
+                                "as the current record, and reported separately. Each "
+                                "era selected its board by a different rule, so these "
+                                "records must never be added together."),
+            "pooling_note_zh": ("与当前记录采用完全相同的评分方法、持有期与退出规则，"
+                                "但单独统计。各时期的选股口径不同，"
+                                "因此绝不可合并计算。"),
+        },
+    })
 
 
 def _cn_track_state(bt: dict | None) -> str:
@@ -1083,13 +1173,17 @@ def emit_cn_track_ledger(
         every existing consumer expects it (`summary`, `rows`, `meta.board_definition`);
       * `prior_record` carries the pre-version rows (null / '' / 'legacy' stamps) with
         its own summary, its own rows, its own publish state and a bilingual era label.
+      * `extra_records` catches any OTHER stamp in the store — one labelled block per
+        stamp value. Those rows used to match neither mask and disappear from the
+        artifact without a trace; they are now graded, published under their own name
+        and announced with a ``::warning`` in the Actions log.
 
-    Both go through `_cn_grade_era`, so the scorer, horizon, fill, locked-limit rule and
-    CI method are identical and a reader may legitimately compare them. They are never
-    summed. Filtering to the live stamp alone is what erased the desk's history on
-    2026-07-30 (348 matured episodes at 66.7% became n=0 `accruing` overnight); pooling
-    the two would have been the opposite error, since the boards selected their names by
-    different rules and their union measures neither.
+    All of them go through `_cn_grade_era`, so the scorer, horizon, fill, locked-limit
+    rule and CI method are identical and a reader may legitimately compare them. They
+    are never summed. Filtering to the live stamp alone is what erased the desk's
+    history on 2026-07-30 (348 matured episodes at 66.7% became n=0 `accruing`
+    overnight); pooling the eras would have been the opposite error, since the boards
+    selected their names by different rules and their union measures neither.
 
     A-share specifics preserved (these are real market differences, not style):
       • T+1 OPEN (or (H+L)/2 proxy) fill via _t1_fill — CN can trade the open; the US
@@ -1163,6 +1257,7 @@ def emit_cn_track_ledger(
             look[str(tk)] = {"nm": r.get("name"), "sec": r.get("sector")}
 
     prior: dict | None = None
+    unknown: dict[str, dict] = {}
     store_path = _cst._store_path()  # noqa: SLF001 — read-only path accessor
     if store_path.exists():
         try:
@@ -1176,21 +1271,55 @@ def emit_cn_track_ledger(
         # two masks are disjoint by construction and neither row set ever enters the
         # other's summary — that separation IS the fix (see the era note above).
         bdf, bdf_prior = bdf_all, pd.DataFrame()
+        unknown_slices: dict[str, pd.DataFrame] = {}
         if not bdf_all.empty:
             has_col = "board_definition" in bdf_all.columns
             legacy_current = _cn_is_legacy_stamp(board_definition)
             if board_definition and has_col:
                 stamps = bdf_all["board_definition"]
-                bdf = bdf_all[stamps.astype(str) == str(board_definition)].copy()
-                if not legacy_current:
-                    bdf_prior = bdf_all[stamps.map(_cn_is_legacy_stamp)].copy()
+                is_legacy = stamps.map(_cn_is_legacy_stamp)
+                # With a pre-version LIVE definition every pre-version spelling IS the
+                # live era — the same reading the no-stamp-column branch below takes —
+                # and there is no prior era to publish beside it.
+                live_mask = is_legacy if legacy_current else \
+                    (stamps.astype(str) == str(board_definition))
+                prior_mask = pd.Series(False, index=bdf_all.index) if legacy_current \
+                    else is_legacy
+                bdf = bdf_all[live_mask].copy()
+                bdf_prior = bdf_all[prior_mask].copy()
+
+                # ── rows NO era claimed ───────────────────────────────────────
+                # A stamp this build has never heard of matched neither mask and fell
+                # straight out of the artifact: the store kept the rows, the desk
+                # simply stopped counting them, and nothing said so. Every unclaimed
+                # stamp now gets its OWN labelled record — never pooled with either
+                # known era, for exactly the reason the two known eras are never
+                # pooled — plus a line-start Actions annotation naming it.
+                orphan = bdf_all[~(live_mask | prior_mask)]
+                if not orphan.empty:
+                    for _stamp, _grp in orphan.groupby(
+                            orphan["board_definition"].astype(str), sort=True):
+                        _stamp = str(_stamp)
+                        unknown_slices[_stamp] = _grp.copy()
+                        # Bare print, NOT log.* — a logger prefixes the line and
+                        # GitHub only parses '::' at column 0 (CLAUDE.md). The opening
+                        # literal stays on the `print(` line on purpose: the repo guard
+                        # (tests/test_gh_annotation_line_start.py) prefilters files on
+                        # the bytes `("::`, so a call split before its first literal is
+                        # invisible to it. flush because CI pipes stdout block-buffered.
+                        print("::warning title=cn-track-unknown-board-definition::"
+                              f"CN track ledger: {len(_grp)} board row(s) carry "
+                              f"board_definition '{_stamp}' — neither the live stamp "
+                              f"'{board_definition}' nor a pre-version stamp. Split "
+                              "into its own labelled era (extra_records), never "
+                              "pooled with either.", flush=True)
             elif board_definition and not legacy_current:
                 # Never publish a pre-version ledger under a new board label. The rows
                 # are not lost — with no stamp column at all, every row IS the prior era.
                 bdf = pd.DataFrame()
                 bdf_prior = bdf_all.copy()
 
-        if not bdf.empty or not bdf_prior.empty:
+        if not bdf.empty or not bdf_prior.empty or unknown_slices:
             bench_ser = _cst._bench_close()  # noqa: SLF001 — single read, reused below
             _pf_orig = _cst._price_frame
             _pf_memo: dict[str, pd.DataFrame | None] = {}
@@ -1200,7 +1329,7 @@ def emit_cn_track_ledger(
                     _pf_memo[tk] = _pf_orig(tk)
                 return _pf_memo[tk]
 
-            # One memo across BOTH eras: the same names appear either side of the
+            # One memo across EVERY era: the same names appear either side of the
             # definition change, and the store reads are uncached (render budget).
             _cst._price_frame = _pf_cached  # type: ignore[assignment]  # noqa: SLF001
             try:
@@ -1208,6 +1337,8 @@ def emit_cn_track_ledger(
                     live = _cn_grade_era(bdf, bench_ser, look, _cst)
                 if not bdf_prior.empty:
                     prior = _cn_grade_era(bdf_prior, bench_ser, look, _cst)
+                for _stamp, _slice in unknown_slices.items():
+                    unknown[_stamp] = _cn_grade_era(_slice, bench_ser, look, _cst)
             finally:
                 _cst._price_frame = _pf_orig  # noqa: SLF001
                 _pf_memo.clear()
@@ -1239,47 +1370,23 @@ def emit_cn_track_ledger(
     )
 
     # ── the prior-definition record, alongside and NEVER pooled ────────────────
+    # `closed=True`: no future row can carry a null stamp, so this era's numbers are
+    # frozen and only ever move if the price history is revised.
     if prior and prior["rows"]:
-        p_rows = sorted(prior["rows"], key=lambda r: (r.get("d") or ""), reverse=True)
-        p_dates = [r["d"] for r in p_rows if r.get("d")]
-        d_from, d_to = (min(p_dates), max(p_dates)) if p_dates else (None, None)
-        label_en, label_zh = _cn_era_label(d_from, d_to)
-        n_total = len(p_rows)
-        capped = p_rows[:_tl.MAX_ROWS]
-        p_summary = dict(prior["summary"])
-        p_summary["board_definition"] = _CN_PRIOR_ERA_ID
-        doc["prior_record"] = _tl.pyify({
-            "label_en": label_en,
-            "label_zh": label_zh,
-            "board_definition": _CN_PRIOR_ERA_ID,
-            "date_from": d_from,
-            "date_to": d_to,
-            "state": prior["state"],
-            "summary": p_summary,
-            "rows": capped,
-            "meta": {
-                "n_total": n_total,
-                "truncated": max(0, n_total - len(capped)),
-                "grain": "episode",
-                "closed": True,
-                "survivorship": {
-                    "n_locked_excluded": prior["n_locked"],
-                    "n_skipped_no_price": prior["n_skipped"],
-                    "note": ("locked-limit T+1 rows are unfillable — flagged, "
-                             "excluded from stats"),
-                },
-                "exit_rule": (f"{_CN_HORIZON}-session forced verdict · T+1 open fill · "
-                              "no oscillator target (3D thresholds not yet refit for "
-                              "A-shares)"),
-                "pooling_note_en": ("Graded with the same scorer, horizon and exit rule "
-                                    "as the current record, and reported separately. The "
-                                    "two eras selected their boards by different rules, "
-                                    "so they must never be added together."),
-                "pooling_note_zh": ("与当前记录采用完全相同的评分方法、持有期与退出规则，"
-                                    "但单独统计。两个时期的选股口径不同，"
-                                    "因此绝不可合并计算。"),
-            },
-        })
+        doc["prior_record"] = _cn_era_block(
+            prior, era_id=_CN_PRIOR_ERA_ID, label_fn=_cn_era_label, closed=True)
+
+    # ── stamps this build does not recognise — labelled, never dropped ─────────
+    # Same block shape as prior_record, keyed by the stamp itself, and NOT marked
+    # closed: an unknown stamp is one this build has no version ordering for, so it
+    # cannot honestly claim the era stopped accruing.
+    extras = [
+        _cn_era_block(graded, era_id=stamp, closed=False,
+                      label_fn=lambda a, b, _s=stamp: _cn_unknown_era_label(_s, a, b))
+        for stamp, graded in unknown.items() if graded["rows"]
+    ]
+    if extras:
+        doc["extra_records"] = extras
 
     _CN_LAST_LEDGER["doc"] = doc
     return _tl.atomic_write(site / "factordata" / "cn_track_ledger.json", doc)

@@ -39,9 +39,10 @@ WINNERS ARE FIRST-CLASS (the symmetric cost column)
 The failure taxonomy is only half an answer. "Every loser had a sector headwind at
 entry" is worthless on its own, because the winners may have had one too — a headwind
 veto that removes six losers and eight winners is a losing trade. So the same labels
-are computed for winners (>= +8%), and `veto_cost` reports, for every visible-at-entry
-label, BOTH sides of the counterfactual: losses avoided AND winners forfeited, with the
-net. The winners-forfeited column is a column, never a footnote.
+are computed for winners (>= +8%), and `veto_cost` reports, for every costable claim
+(one row per label-and-leg, `VETO_COST_SPECS`), BOTH sides of the counterfactual: losses
+avoided AND winners forfeited, with the net. The winners-forfeited column is a column,
+never a footnote.
 
 SYSTEMIC VS ANOMALOUS
 ---------------------
@@ -72,21 +73,51 @@ THE LABELS (§2 of research/PROPHET_LEARNING_LOOP_MASTERPLAN_BY_FABLE.md)
   market_beta       the tape, not the pick: |excess| < 40% of |absolute| loss.
                     NOT visible at entry.
   re_admission      the same ticker was re-admitted <= 10 sessions after a prior
-                    episode that resolved to a >= 8% loss (the operator's IPGP case),
-                    or while the prior position was already >= 8% under water.
-                    The two legs differ in what the engine could have known, so the
-                    row carries `prior_mark_at_readmit_pct` and the label's
-                    `visible_at_entry` is TRUE only for the second leg.
+                    episode, on either of two legs that are NOT the same claim:
+                      * `open_drawdown_at_readmit` — the prior position was ALREADY
+                        >= 8% under water on the night of the re-admission. BUILDABLE.
+                      * `prior_episode_loss` — the prior episode RESOLVED to a >= 8%
+                        loss. HINDSIGHT (the operator's IPGP case was +3.04% GREEN on
+                        the night the board bought it back).
+                    NOT visible at entry as a label — see BUILDABLE VS HINDSIGHT.
   idiosyncratic     none of the above fired. Not a residual bucket to be proud of —
                     a large idiosyncratic share means the taxonomy is not yet
                     explaining the losses.
+
+BUILDABLE VS HINDSIGHT (why `re_admission` is not a visible-at-entry label)
+---------------------------------------------------------------------------
+`VISIBLE_AT_ENTRY_LABELS` is a promise: every label in it could have been read off the
+board's own state on the night of the pick, so costing a veto out of it answers a
+question somebody could act on. `re_admission` fails that promise. Its headline
+counterfactual (+79.08pp avoided over 7 flagged episodes, 2026-07-31 artifact) is
+carried ENTIRELY by the `prior_episode_loss` leg, which needs the prior episode's
+RESOLVED outcome — a number that does not exist on the night the board re-admits the
+name. Leaving the label in the visible-at-entry list published a hindsight figure under
+a buildable badge, which is the exact error the promotion gauntlet exists to prevent.
+So:
+
+  * the label sits OUTSIDE `VISIBLE_AT_ENTRY_LABELS`;
+  * `veto_cost` carries ONE ROW PER LEG (`VETO_COST_SPECS`), each stamped
+    `variant: buildable | hindsight_upper_bound`;
+  * the buildable row is PRINTED EVEN WHEN IT FIRES ZERO TIMES. On today's data it
+    fires zero times, and that zero is the finding — suppressing an empty row would
+    leave only the hindsight number on the page, which is how a hindsight number gets
+    read as a rule.
+
+The per-ROW `visible_at_entry` flag stays leg-specific: an episode that fired on the
+open-drawdown leg really was visible at entry and says so on the row. The label-level
+list is the weaker, safer claim, and it is the one the aggregations, the report and the
+admin panel read.
 
 NULLS ARE PRINTED, NEVER DROPPED
 --------------------------------
 A ticker with no close path cannot be asked about gaps or stop crosses. Those labels
 come back as an explicit null entry in `labels_null` with a reason, the episode still
 appears in the artifact, and `aggregate()` reports the null counts per label so a
-reader can see the denominator each label was actually evaluated on.
+reader can see the denominator each label was actually evaluated on. The same holds one
+level down for `re_admission`: a prior episode that could not be priced, or an
+in-window prior with no mark, nulls the LEG it starves (`re_admission:<leg>`) so each
+veto variant is costed only over the rows its own input reached.
 """
 from __future__ import annotations
 
@@ -131,6 +162,16 @@ BETA_SHARE_MAX = 0.40
 #: Re-admission window, in sessions, and the loss that makes a re-admission notable.
 READMIT_MAX_SESSIONS = 10
 READMIT_LOSS_PCT = -8.0
+
+#: The two `re_admission` legs, named once so the classifier, the veto specs, the null
+#: keys and the tests all spell them the same way.
+READMIT_LEG_OPEN_DRAWDOWN = "open_drawdown_at_readmit"   # buildable at entry
+READMIT_LEG_PRIOR_LOSS = "prior_episode_loss"            # hindsight only
+
+#: Leg-scoped null keys. `evaluated()` keys off the string in `labels_null[].label`, so
+#: a leg that had no input leaves ITS universe without dragging the other leg out too.
+READMIT_NULL_OPEN_DRAWDOWN = f"re_admission:{READMIT_LEG_OPEN_DRAWDOWN}"
+READMIT_NULL_PRIOR_LOSS = f"re_admission:{READMIT_LEG_PRIOR_LOSS}"
 
 #: The taxonomy, in the order aggregations print it. `idiosyncratic` sorts last on
 #: purpose: it is the residual, and a reader should read it after the explanations.
@@ -177,9 +218,60 @@ TAXONOMY_COPY: dict[str, dict[str, str]] = {
     },
 }
 
-#: Labels the engine could in principle have acted on at entry — the only ones a veto
-#: could ever be built from, and therefore the only ones `veto_cost` costs out.
-VISIBLE_AT_ENTRY_LABELS = ("sector_headwind", "bought_extended", "re_admission")
+#: Labels the engine could in principle have acted on at entry, WHOLE — every episode
+#: they fire on had the trigger readable on the night of the pick.
+#:
+#: `re_admission` is deliberately NOT here (see BUILDABLE VS HINDSIGHT in the module
+#: docstring). It fires on two legs with opposite epistemic status, and on today's data
+#: 100% of its fires are the hindsight leg, so a single "visible at entry: yes" badge on
+#: the label would put a hindsight counterfactual in front of a reader as a buildable
+#: one. It is costed instead through `VETO_COST_SPECS`, one row per leg.
+VISIBLE_AT_ENTRY_LABELS = ("sector_headwind", "bought_extended")
+
+#: What each veto row is worth as evidence. `buildable` = the trigger exists on the
+#: night of the pick, so the row is a candidate a pre-registration could be written
+#: against. `hindsight_upper_bound` = the trigger needs a number that did not exist yet;
+#: read the row as a CEILING on what the pattern could be worth if a buildable proxy is
+#: ever found, never as the value of a rule.
+VETO_VARIANT_COPY: dict[str, dict[str, str]] = {
+    "buildable": {
+        "en": ("Buildable — the trigger was readable on the night of the pick, so this "
+               "counterfactual is about a rule someone could pre-register."),
+        "zh": ("可落地 —— 触发条件在选股当晚即可读到，因此该反事实对应的是一条可以先行"
+               "预注册再检验的规则。"),
+    },
+    "hindsight_upper_bound": {
+        "en": ("Hindsight upper bound — the trigger needs a number that did not exist "
+               "yet at entry. It is a ceiling on what the pattern could be worth if a "
+               "buildable trigger is ever found, NOT the value of a rule."),
+        "zh": ("事后上限 —— 触发条件依赖入场当时尚不存在的数字。它只是「若日后找到可落地"
+               "触发条件，该规律最多值多少」的上限，并非某条规则的实际价值。"),
+    },
+}
+
+#: Per-leg plain-word copy, for rows whose label is split by leg.
+VETO_LEG_COPY: dict[str, dict[str, str]] = {
+    READMIT_LEG_OPEN_DRAWDOWN: {
+        "en": "Re-bought while the earlier position was already 8% under water",
+        "zh": "前一笔仍浮亏 8% 以上时又被买入",
+    },
+    READMIT_LEG_PRIOR_LOSS: {
+        "en": "Re-bought a name whose earlier position ended up losing 8% or more",
+        "zh": "前一笔最终亏损 8% 以上的股票被再次买入",
+    },
+}
+
+#: One veto row per COSTABLE claim, in print order. A row is (label, leg) rather than
+#: just a label because `re_admission` is two different claims sharing one name, and
+#: costing them on one line publishes the hindsight number under a buildable badge.
+#: A spec with `leg=None` costs the whole label.
+VETO_COST_SPECS: tuple[dict[str, Any], ...] = (
+    {"label": "sector_headwind", "leg": None, "variant": "buildable"},
+    {"label": "bought_extended", "leg": None, "variant": "buildable"},
+    {"label": "re_admission", "leg": READMIT_LEG_OPEN_DRAWDOWN, "variant": "buildable"},
+    {"label": "re_admission", "leg": READMIT_LEG_PRIOR_LOSS,
+     "variant": "hindsight_upper_bound"},
+)
 
 #: GICS sector name (both the retro-ledger spelling and the board's spotlight
 #: spelling) -> the equal-weight sector basket id in data/baskets/latest.json.
@@ -419,15 +511,27 @@ def path_features(
 # cohort assignment
 # --------------------------------------------------------------------------- #
 def cohort_of(outcome_pct: float | None, excess_pct: float | None) -> str:
-    """`loser` / `winner` / `neutral` / `unscored`, from the two-leg gates above."""
+    """`loser` / `winner` / `neutral` / `unscored`, from the two-leg gates above.
+
+    PRECEDENCE — THE ABSOLUTE RETURN DECIDES FIRST. The masterplan (§2) defines the
+    winner gate as ">= +8%", absolute, with no excess leg; only the LOSER gate carries
+    one. The excess leg exists to catch a name that LOST while the tape rose — not to
+    demote a name that made money into a tape that rose faster.
+
+    Testing the loser legs first made a +9% pick with -5.5% excess come back `loser`,
+    which is wrong in both directions at once: it books a profitable pick as a loss, and
+    it deletes a real winner from the winners-forfeited column, making every veto in
+    `veto_cost` look cheaper than it is. Winner first, then the two loser legs, then
+    neutral.
+    """
     o = _f(outcome_pct)
     x = _f(excess_pct)
     if o is None and x is None:
         return "unscored"
-    if (o is not None and o <= LOSER_ABS_PCT) or (x is not None and x <= LOSER_EXCESS_PCT):
-        return "loser"
     if o is not None and o >= WINNER_ABS_PCT:
         return "winner"
+    if (o is not None and o <= LOSER_ABS_PCT) or (x is not None and x <= LOSER_EXCESS_PCT):
+        return "loser"
     return "neutral"
 
 
@@ -444,6 +548,18 @@ def _label(name: str, visible: bool, **trigger: Any) -> dict:
     }
 
 
+def _null_readmit(nulls: list[dict], reason: str) -> None:
+    """Null `re_admission` at the label level AND on both legs, with one reason.
+
+    The leg-scoped keys are the denominators `veto_cost` costs each variant over, so a
+    row the label could not be decided on has to leave BOTH leg universes as well —
+    otherwise the buildable variant's "0 of N" would quietly count rows it never got to
+    look at, which is the coverage lie this module exists to refuse.
+    """
+    for key in ("re_admission", READMIT_NULL_OPEN_DRAWDOWN, READMIT_NULL_PRIOR_LOSS):
+        nulls.append({"label": key, "reason": reason})
+
+
 def classify(
     *,
     outcome_pct: float | None,
@@ -458,8 +574,14 @@ def classify(
 
     ``hold_broken``  {"date": .., "source": "hold_state_history"} when a later board
                      night stamped this run's hold state `broken`; None otherwise.
-    ``prior``        {"entry_date", "outcome_pct", "sessions_since_prior_exit",
-                     "mark_at_readmit_pct"} for the ticker's previous episode, or None.
+    ``prior``        the prior-episode comparison the caller's scan selected:
+                     {"entry_date", "outcome_pct", "prior_matured",
+                      "sessions_since_prior_exit", "mark_at_readmit_pct",
+                      "n_priors_in_window", "selected_by"}.
+                     None means the scan found NO prior episode in the window — a
+                     DECIDED NEGATIVE that stays in every denominator, not a null.
+                     {"undecidable": <reason>} means a prior existed and could not be
+                     measured, which nulls the label and both legs.
     ``path_missing_reason``
                      why ``path`` is None, written onto the nulled path labels. The
                      caller must distinguish these: a delisted name with no series at
@@ -589,29 +711,62 @@ def classify(
                                      abs_pct=round(o, 2), excess_pct=round(x, 2)))
 
     # ── re_admission ──────────────────────────────────────────────────────────
-    # Two legs that differ in what the engine could have known, and the difference is
-    # the finding, not a detail: a name re-bought while ALREADY 8% under water is a
-    # rule the board could apply tonight; a name re-bought two days before the first
-    # position rolled over is only visible in hindsight. Both are recorded; only the
-    # first is marked visible_at_entry.
-    if prior:
+    # Two legs that differ in WHAT THE ENGINE COULD HAVE KNOWN, and the difference is
+    # the finding, not a detail: a name re-bought while ALREADY 8% under water is a rule
+    # the board could apply tonight; a name re-bought two days before the first position
+    # rolled over is visible only in hindsight. Both are recorded, the row's
+    # `visible_at_entry` is leg-specific, and `veto_cost` costs them on separate lines.
+    #
+    # NULL DISCIPLINE. `prior=None` means the caller's scan found NO prior episode inside
+    # the window — a DECIDED NEGATIVE, and the row belongs in the denominator. Anything
+    # the caller could not resolve arrives as a dict instead:
+    #   {"undecidable": <reason>}  the in-window prior could not be priced or scored, so
+    #                              this row is nulled on the label AND on both legs. A
+    #                              name whose previous run cannot be measured is not
+    #                              evidence that it came back clean.
+    # An in-window prior missing ONE leg's input (no mark, or no prior outcome) nulls
+    # only that leg, so the buildable variant's "0 of N" never counts rows whose
+    # open-drawdown input never existed.
+    if prior is not None:
+        undecidable = _s(prior.get("undecidable"))
         gap = _f(prior.get("sessions_since_prior_exit"))
         prior_out = _f(prior.get("outcome_pct"))
         mark = _f(prior.get("mark_at_readmit_pct"))
-        in_window = gap is not None and gap <= READMIT_MAX_SESSIONS
-        open_loss = mark is not None and mark <= READMIT_LOSS_PCT
-        resolved_loss = prior_out is not None and prior_out <= READMIT_LOSS_PCT
-        if in_window and (open_loss or resolved_loss):
-            labels.append(_label(
-                "re_admission", open_loss,
-                prior_entry_date=prior.get("entry_date"),
-                prior_outcome_pct=None if prior_out is None else round(prior_out, 2),
-                mark_at_readmit_pct=None if mark is None else round(mark, 2),
-                sessions_since_prior_exit=None if gap is None else int(gap),
-                leg="open_drawdown_at_readmit" if open_loss else "prior_episode_loss",
-                threshold_pct=READMIT_LOSS_PCT,
-                max_sessions=READMIT_MAX_SESSIONS,
-            ))
+        if undecidable:
+            _null_readmit(nulls, undecidable)
+        elif gap is None:
+            _null_readmit(nulls, "prior_gap_not_measurable")
+        else:
+            in_window = gap <= READMIT_MAX_SESSIONS
+            open_loss = mark is not None and mark <= READMIT_LOSS_PCT
+            resolved_loss = prior_out is not None and prior_out <= READMIT_LOSS_PCT
+            if in_window and mark is None:
+                nulls.append({"label": READMIT_NULL_OPEN_DRAWDOWN,
+                              "reason": "no_mark_at_readmit"})
+            if in_window and prior_out is None:
+                nulls.append({"label": READMIT_NULL_PRIOR_LOSS,
+                              "reason": "no_prior_episode_outcome"})
+            if in_window and mark is None and prior_out is None:
+                nulls.append({"label": "re_admission",
+                              "reason": "no_mark_and_no_prior_episode_outcome"})
+            if in_window and (open_loss or resolved_loss):
+                labels.append(_label(
+                    "re_admission", open_loss,
+                    prior_entry_date=prior.get("entry_date"),
+                    prior_outcome_pct=None if prior_out is None else round(prior_out, 2),
+                    # None when the caller did not say. A missing maturity flag is a
+                    # null, never a False: an UNMATURED prior's "outcome" is a mark, and
+                    # a reader comparing legs has to be able to see which is which.
+                    prior_matured=prior.get("prior_matured"),
+                    mark_at_readmit_pct=None if mark is None else round(mark, 2),
+                    sessions_since_prior_exit=None if gap is None else int(gap),
+                    leg=(READMIT_LEG_OPEN_DRAWDOWN if open_loss
+                         else READMIT_LEG_PRIOR_LOSS),
+                    n_priors_in_window=prior.get("n_priors_in_window"),
+                    selected_by=prior.get("selected_by"),
+                    threshold_pct=READMIT_LOSS_PCT,
+                    max_sessions=READMIT_MAX_SESSIONS,
+                ))
 
     # ── idiosyncratic — the residual ──────────────────────────────────────────
     # Fires whenever nothing else did. It deliberately does NOT suppress itself when a
@@ -621,7 +776,12 @@ def classify(
     # `aggregate` splits the residual into fully-checked and partially-checked counts so
     # "no pattern found" is never confused with "not looked at".
     if not labels:
-        unchecked = sorted({str(n.get("label")) for n in nulls} - {"path"})
+        # Intersected with the taxonomy on purpose: `labels_null` also carries
+        # LEG-scoped keys (`re_admission:<leg>`), which are denominator bookkeeping for
+        # one variant of one label, not a taxonomy leg a reader can be told went
+        # unchecked. The label-level key is appended alongside them whenever the whole
+        # label is undecidable, so nothing is lost by filtering here.
+        unchecked = sorted({str(n.get("label")) for n in nulls} & set(TAXONOMY))
         labels.append(_label(
             "idiosyncratic", False,
             checked=[t for t in TAXONOMY[:-1] if t not in unchecked],
@@ -645,12 +805,37 @@ def _labels_of(row: Mapping[str, Any]) -> set[str]:
     return {str(lb.get("label")) for lb in (row.get("labels") or [])}
 
 
+def _fired(row: Mapping[str, Any], label: str, leg: str | None) -> bool:
+    """Did ``label`` fire on this row — and, when ``leg`` is given, on THAT leg?
+
+    Leg filtering reads the label's own recorded trigger, so a veto variant is costed
+    over exactly the episodes whose trigger it names. A row carrying the label with no
+    recorded leg matches only the whole-label spec (``leg=None``); it is never credited
+    to a specific leg on a guess.
+    """
+    for lb in (row.get("labels") or []):
+        if str(lb.get("label")) != label:
+            continue
+        if leg is None or str((lb.get("trigger") or {}).get("leg")) == leg:
+            return True
+    return False
+
+
+def _loss(rows: Iterable[Mapping[str, Any]]) -> float:
+    """Summed ABSOLUTE loss over rows, in percentage points."""
+    return sum(abs(_f(r.get("outcome_pct")) or 0.0) for r in rows)
+
+
 def _nulled(row: Mapping[str, Any]) -> set[str]:
     return {str(nl.get("label")) for nl in (row.get("labels_null") or [])}
 
 
 def evaluated(rows: Sequence[Mapping[str, Any]], label: str) -> list[Mapping[str, Any]]:
     """Rows on which ``label`` could actually be decided.
+
+    ``label`` is any key that appears in a row's ``labels_null`` — a taxonomy label, or
+    a LEG key like ``re_admission:open_drawdown_at_readmit`` when one leg of a label had
+    an input the other did not.
 
     The single most important filter in this module. A row whose entry state was never
     recorded is NOT evidence that the label did not apply, and letting it sit in the
@@ -677,11 +862,22 @@ def aggregate(rows: Sequence[Mapping[str, Any]]) -> dict:
 
     losers = [r for r in matured if r.get("cohort") == "loser"]
     winners = [r for r in matured if r.get("cohort") == "winner"]
-    loss_total = sum(abs(_f(r.get("outcome_pct")) or 0.0) for r in losers)
+    loss_total = _loss(losers)
 
     # ── label frequencies, both tails, on the denominator each label EARNED ───
     # Shares are over rows where the label could be decided (see `evaluated`), and the
     # raw counts sit beside them so the two are never confused.
+    #
+    # `loss_contribution_pct` is the ONE column that does not move with the label: its
+    # denominator is ALWAYS the whole matured-loser book, so the column is comparable
+    # down the table and across runs. Mixing it with the per-label decidable denominator
+    # made a label evaluable on 34 of 109 losers look like it carried a share of a
+    # 34-loser book while the row beside it was sharing a 109-loser one — two different
+    # 100%s in the same column. The per-label reach is disclosed SEPARATELY, as coverage:
+    # `loser_coverage_pct` (share of losers the label could be decided on) and
+    # `decidable_loss_share_pct` (share of the loser BOOK those rows carry). Read
+    # contribution against coverage: 18.8% of the book carried by a label that could only
+    # be decided on 31% of it is a very different sentence from 18.8% out of full reach.
     label_freq: list[dict] = []
     for name in TAXONOMY:
         l_eval = evaluated(losers, name)
@@ -689,7 +885,6 @@ def aggregate(rows: Sequence[Mapping[str, Any]]) -> dict:
         l_rows = [r for r in l_eval if name in _labels_of(r)]
         w_rows = [r for r in w_eval if name in _labels_of(r)]
         n_null = len(matured) - len(evaluated(matured, name))
-        contrib = sum(abs(_f(r.get("outcome_pct")) or 0.0) for r in l_rows)
         label_freq.append({
             "label": name,
             "en": TAXONOMY_COPY[name]["en"],
@@ -697,11 +892,19 @@ def aggregate(rows: Sequence[Mapping[str, Any]]) -> dict:
             "visible_at_entry": name in VISIBLE_AT_ENTRY_LABELS,
             "n_losers": len(l_rows),
             "n_losers_evaluated": len(l_eval),
+            "n_losers_total": len(losers),
             "loser_share_pct": _rate(len(l_rows), len(l_eval)),
             "n_winners": len(w_rows),
             "n_winners_evaluated": len(w_eval),
+            "n_winners_total": len(winners),
             "winner_share_pct": _rate(len(w_rows), len(w_eval)),
-            "loss_contribution_pct": round(100.0 * contrib / loss_total, 1) if loss_total else None,
+            "loss_contribution_pct": (
+                round(100.0 * _loss(l_rows) / loss_total, 1) if loss_total else None),
+            "loss_contribution_basis": "all matured losers' summed absolute loss",
+            "loss_contribution_denominator_pp": round(loss_total, 2),
+            "loser_coverage_pct": _rate(len(l_eval), len(losers)),
+            "decidable_loss_share_pct": (
+                round(100.0 * _loss(l_eval) / loss_total, 1) if loss_total else None),
             "n_matured_with_label": len([r for r in matured if name in _labels_of(r)]),
             "n_evaluated": len(matured) - n_null,
             "n_null_disclosed": n_null,
@@ -733,26 +936,49 @@ def aggregate(rows: Sequence[Mapping[str, Any]]) -> dict:
         })
 
     # ── the SYMMETRIC counterfactual: what each would-be veto costs ───────────
-    # Both sides of the ledger for every visible-at-entry label. `n_winners_forfeited`
-    # and `winners_forfeited_pct` are the operator's "don't weed out real winners"
+    # Both sides of the ledger for every costable claim. `n_winners_forfeited` and
+    # `winners_forfeited_pct` are the operator's "don't weed out real winners"
     # requirement expressed as first-class columns.
+    #
+    # ONE ROW PER (label, leg), not per label — `VETO_COST_SPECS`. `re_admission` is two
+    # claims with opposite epistemic status, and a single line for it printed a hindsight
+    # number (+79.08pp on the 2026-07-31 artifact, carried entirely by the resolved-loss
+    # leg) under a visible-at-entry badge. Every row now says which it is, and a
+    # buildable row that fires ZERO times is still printed — the zero is the finding.
     veto_cost: list[dict] = []
-    for name in VISIBLE_AT_ENTRY_LABELS:
-        universe = evaluated(matured, name)      # the veto's real reach
-        flagged = [r for r in universe if name in _labels_of(r)]
+    for spec in VETO_COST_SPECS:
+        name, leg, variant = spec["label"], spec["leg"], spec["variant"]
+        key = name if leg is None else f"{name}:{leg}"
+        universe = evaluated(matured, key)       # the veto's real reach, leg-aware
+        flagged = [r for r in universe if _fired(r, name, leg)]
         f_losers = [r for r in flagged if r.get("cohort") == "loser"]
         f_winners = [r for r in flagged if r.get("cohort") == "winner"]
-        loss_avoided = sum(abs(_f(r.get("outcome_pct")) or 0.0) for r in f_losers)
+        loss_avoided = _loss(f_losers)
         wins_forfeited = sum(_f(r.get("outcome_pct")) or 0.0 for r in f_winners)
         pnl_flagged = [_f(r.get("outcome_pct")) for r in flagged]
         pnl_flagged = [v for v in pnl_flagged if v is not None]
+        copy = VETO_LEG_COPY.get(leg or "") or TAXONOMY_COPY[name]
         veto_cost.append({
+            "key": key,
             "label": name,
-            "en": TAXONOMY_COPY[name]["en"],
-            "zh": TAXONOMY_COPY[name]["zh"],
-            "basis": "matured episodes on which this label could be decided",
+            "leg": leg,
+            "variant": variant,
+            # A row-level restatement of the label-level promise. `buildable` here means
+            # the trigger existed at entry; it is NOT read off VISIBLE_AT_ENTRY_LABELS,
+            # because a label can be excluded there precisely BECAUSE one of its legs is
+            # hindsight while the other is not.
+            "visible_at_entry": variant == "buildable",
+            "en": copy["en"],
+            "zh": copy["zh"],
+            "variant_en": VETO_VARIANT_COPY[variant]["en"],
+            "variant_zh": VETO_VARIANT_COPY[variant]["zh"],
+            "basis": (
+                "matured episodes on which this label could be decided" if leg is None
+                else f"matured episodes on which the `{leg}` leg could be decided"
+            ),
             "n_universe": len(universe),
             "n_matured_total": len(matured),
+            "n_null_disclosed": len(matured) - len(universe),
             "n_flagged": len(flagged),
             "flagged_share_of_universe_pct": _rate(len(flagged), len(universe)),
             "n_losers_avoided": len(f_losers),
@@ -764,7 +990,7 @@ def aggregate(rows: Sequence[Mapping[str, Any]]) -> dict:
                 round(sum(pnl_flagged) / len(pnl_flagged), 2) if pnl_flagged else None
             ),
             "mean_outcome_of_unflagged_pct": _mean_outcome(
-                [r for r in universe if name not in _labels_of(r)]
+                [r for r in universe if not _fired(r, name, leg)]
             ),
             "n_dates_flagged": len({str(r.get("entry_date")) for r in flagged}),
         })
@@ -887,8 +1113,12 @@ def aggregate(rows: Sequence[Mapping[str, Any]]) -> dict:
                         "position's mark is outcome-conditioned."),
             "note_zh": ("按最新收盘价标记，仅用于复盘分类。此类记录不计入任何胜率或期望值 —— "
                         "未了结持仓的浮动盈亏会受结果选择影响。"),
+            # The four marks add to `n`, so a reader can check that the two tails the
+            # report prints are the whole in-flight block and not a chosen slice.
             "n_losers_marked": len([r for r in inflight if r.get("cohort") == "loser"]),
             "n_winners_marked": len([r for r in inflight if r.get("cohort") == "winner"]),
+            "n_neutral_marked": len([r for r in inflight if r.get("cohort") == "neutral"]),
+            "n_unscored_marked": len([r for r in inflight if r.get("cohort") == "unscored"]),
             "label_frequency": [
                 {
                     "label": name,
@@ -900,7 +1130,18 @@ def aggregate(rows: Sequence[Mapping[str, Any]]) -> dict:
         "taxonomy": [
             {"label": name, "en": TAXONOMY_COPY[name]["en"],
              "zh": TAXONOMY_COPY[name]["zh"],
-             "visible_at_entry": name in VISIBLE_AT_ENTRY_LABELS}
+             "visible_at_entry": name in VISIBLE_AT_ENTRY_LABELS,
+             # Only `re_admission` needs this today: the label is not visible at entry,
+             # but one of its two legs is, and a reader who sees a bare "no" is owed the
+             # reason rather than left to infer that the pattern is unusable.
+             "legs": [
+                 {"leg": s["leg"], "variant": s["variant"],
+                  "visible_at_entry": s["variant"] == "buildable",
+                  "en": VETO_LEG_COPY[s["leg"]]["en"],
+                  "zh": VETO_LEG_COPY[s["leg"]]["zh"]}
+                 for s in VETO_COST_SPECS
+                 if s["label"] == name and s["leg"] is not None
+             ] or None}
             for name in TAXONOMY
         ],
         "thresholds": {
@@ -915,6 +1156,11 @@ def aggregate(rows: Sequence[Mapping[str, Any]]) -> dict:
             "beta_share_max": BETA_SHARE_MAX,
             "readmit_max_sessions": READMIT_MAX_SESSIONS,
             "readmit_loss_pct": READMIT_LOSS_PCT,
+            "readmit_legs": {
+                READMIT_LEG_OPEN_DRAWDOWN: "buildable",
+                READMIT_LEG_PRIOR_LOSS: "hindsight_upper_bound",
+            },
+            "visible_at_entry_labels": list(VISIBLE_AT_ENTRY_LABELS),
         },
     }
 

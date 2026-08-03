@@ -196,6 +196,13 @@ def _learning_loop(repo: Path) -> dict | None:
     losses-avoided alone would turn a symmetric counterfactual into an argument for a
     veto — which is the exact reading the artifact exists to prevent.
 
+    It is also forwarded WITH `visible_at_entry` / `variant` / `leg` per row. A veto row
+    is a TRIGGER, not a label: `re_admission` arrives as two rows, one buildable (the
+    prior position was already under water at the re-admission) and one hindsight (the
+    prior episode's resolved loss, a number that did not exist at entry). Dropping those
+    fields here would put the hindsight row's headline on the panel with nothing to mark
+    it as hindsight — the same badge error the engine was fixed to stop making.
+
     Fail-soft: returns None when the artifact has not been written yet (the panel then
     shows an honest accruing note). See docs/PROPHET_POSTMORTEM_PROTOCOL.md.
     """
@@ -228,17 +235,26 @@ def _learning_loop(repo: Path) -> dict | None:
                 "loser_share_pct":  f.get("loser_share_pct"),
                 "n_winners":        f.get("n_winners"),
                 "winner_share_pct": f.get("winner_share_pct"),
+                "loser_coverage_pct": f.get("loser_coverage_pct"),
+                "loss_contribution_pct": f.get("loss_contribution_pct"),
                 "n_null_disclosed": f.get("n_null_disclosed"),
             }
             for f in (summary.get("label_frequency") or [])
         ],
         "veto_cost": [
             {
+                "key":                   v.get("key"),
                 "label":                 v.get("label"),
+                "leg":                   v.get("leg"),
+                "variant":               v.get("variant"),
+                "visible_at_entry":      v.get("visible_at_entry"),
                 "en":                    v.get("en"),
                 "zh":                    v.get("zh"),
+                "variant_en":            v.get("variant_en"),
+                "variant_zh":            v.get("variant_zh"),
                 "n_flagged":             v.get("n_flagged"),
                 "n_universe":            v.get("n_universe"),
+                "n_dates_flagged":       v.get("n_dates_flagged"),
                 "n_losers_avoided":      v.get("n_losers_avoided"),
                 "loss_avoided_pct":      v.get("loss_avoided_pct"),
                 "n_winners_forfeited":   v.get("n_winners_forfeited"),

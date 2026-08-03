@@ -4005,13 +4005,18 @@ def main() -> int:
         # days_since_signal on the non-buy display lanes: stocktable.js keys its
         # NEW dot on this field, and the US payload never carried it. Buy rows get
         # it inside score_rows; leaders/laggards/watch get it here.
+        # us_board_rank.signal_age() is the shared resolver: SESSIONS from the
+        # verdict's fresh_bars when a buy marker exists, calendar days otherwise,
+        # with the basis disclosed alongside. Calling days_since_signal() directly
+        # here would put calendar units on these lanes and session units on the buy
+        # lane, in one field, in one artifact.
         for _lane_name in ("watch", "leaders", "laggards"):
             for _r_ds in wide.get(_lane_name) or []:
-                _sig_ds = us_board_rank.signal_asof(
-                    _r_ds, sig_verdict.get(_r_ds.get("ticker")))
+                _v_ds = sig_verdict.get(_r_ds.get("ticker"))
+                _sig_ds = us_board_rank.signal_asof(_r_ds, _v_ds)
                 _r_ds["signal_asof"] = _sig_ds
-                _r_ds["days_since_signal"] = us_board_rank.days_since_signal(
-                    _sig_ds, wide.get("as_of"))
+                _r_ds["days_since_signal"], _r_ds["days_since_signal_basis"] = (
+                    us_board_rank.signal_age(_v_ds, _sig_ds, wide.get("as_of")))
 
         # ── Ran lane (us_prophet_v1 §3.5) ────────────────────────────────────
         # Names whose cross already fired (3-15 ticks back) with the trend still
@@ -4579,12 +4584,22 @@ def main() -> int:
         # only — a nightly render that regresses an invariant ships silently (the
         # 2026-07 invariant-(d) latent red). Grade the fresh artifact here, warn-only:
         # a display-tier guard must never fail the render.
+        #
+        # The violation is reported as a BARE print at line start with flush=True
+        # (house law, CLAUDE.md §GitHub annotations). This module's logger prefixes
+        # every record with its level, so log.warning("::warning ...") emits
+        # "WARNING ::warning ..." and GitHub drops the annotation silently — the
+        # alarm reviews as wired, runs clean, and produces nothing in the Actions
+        # summary. build_stock_library runs INSIDE an Actions step (daily.yml), so it
+        # is NOT on the FastAPI exemption list in tests/test_gh_annotation_line_start.
+        # flush is load-bearing: stdout is block-buffered when piped in CI.
         try:
             from scripts.check_board_contradictions import _check as _board_invariants
             _bc_viol = _board_invariants(str(site / "factordata" / "us_standouts.json"))
             if _bc_viol:
-                log.warning("board-contradictions self-check: %d violation(s) in fresh "
-                            "us_standouts.json: %s", len(_bc_viol), "; ".join(_bc_viol))
+                print(f"::warning title=board_contradictions::"
+                      f"{len(_bc_viol)} invariant violation(s) in fresh "
+                      f"us_standouts.json: {'; '.join(_bc_viol)}", flush=True)
         except Exception as _bc_e:  # noqa: BLE001 — guard must never break the render
             log.debug("board-contradictions self-check skipped (%s)", _bc_e)
         # forward shadow book — freeze the live score at build time so it can be graded on
