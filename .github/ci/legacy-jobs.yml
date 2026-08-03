@@ -4321,6 +4321,33 @@ jobs:
       - name: vector allocation surfaces + the calibration ledger and basket pulse they read
         run: python -m pytest tests/test_basket_turn_watch.py tests/test_btc_overrides.py tests/test_build_basket_pulse.py tests/test_signal_surface_bugfixes.py tests/test_spvector_page.py tests/test_trial_log_refresh.py tests/test_validation_effective_t.py tests/test_vector_conviction.py -q
 
+  unrun-page-guards:
+    # Shipped-page regression guards over the rendered estate: the US
+    # action-board hover cards, the macro desk surface + its proportional
+    # primary type + the "What To Do Now" glance, dashboard cold-load
+    # budgets, the stock-dashboard Grid/Table bootstrap + logo adapter, the
+    # landing globe overlays, the Divergence Radar page boot, the reports
+    # timeline, and the bilingual span-leak scan. Source-scanning suites over
+    # templates/** + site/** — the strictly-dark class the census's fourth
+    # measurement trap describes: their subjects were always path-covered,
+    # but no run: step named the suites themselves before 2026-08-03.
+    if: ${{ false }}
+    timeout-minutes: 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: macro desk surface, typography, glance + action-board hover cards
+        run: python -m pytest tests/test_macro_desk_surface.py tests/test_macro_primary_typography.py tests/test_macro_what_to_do_glance.py tests/test_action_board_hover_cards.py -q
+      - name: dashboard cold-load budget + stocktable bootstrap + logo adapter + globe overlays
+        run: python -m pytest tests/test_dashboard_cold_load_budget.py tests/test_stocktable_load_order.py tests/test_stock_logo_system.py tests/test_globe_tooltip_behavior.py -q
+      - name: radar page boot + reports timeline + bilingual span-leak scan
+        run: python -m pytest tests/test_radar_page_boot.py tests/test_reports_timeline_ui.py tests/test_bilingual_span_leak.py -q
+
   unrun-picks-boards:
     # pick lab runners + US board grading — shipped picks and their outcome ledgers.
     if: ${{ false }}
