@@ -1,6 +1,7 @@
-# Capital Structure Intelligence — Wave 0–2A operating contract
+# Capital Structure Intelligence — Wave 0–2A plus authenticated share observations
 
-Status: implemented evidence spine plus observed-filing-state projection, context-only
+Status: implemented evidence spine and observed-filing-state projection; authenticated
+Company Facts share-observation code is pre-production/default-off; all context-only
 Owner: `capital-structure-intelligence`
 Canonical build docket: `research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md`
 
@@ -34,6 +35,11 @@ flowchart LR
   H --> L
   I --> L
   L --> M["Self-healing byte-identical public JSON twin"]
+  E --> N["Bounded Company Facts collector"]
+  N --> O["Signed Company Facts generation and external head"]
+  O --> P["Authenticated metadata reader and strict raw-object bridge"]
+  P --> Q["Observed share-count v2 ledger"]
+  Q --> R["Independent signed materialization head"]
   J["Legacy edgar_dilution writer"] --> K["Existing six-column dilution feed"]
   G -. "shadow parity only; no cutover in Wave 1" .-> K
 ```
@@ -52,11 +58,99 @@ flowchart LR
 | `data/capital_structure/telemetry.json` | same | Coverage, exclusions, failures, migration, and authority receipt |
 | `data/capital_structure/projection.json` | `scripts/build_capital_structure_projection.py` | Canonical public-safe observed-filing-state bundle |
 | `site/capital-structure-data/latest.json` | same | Byte-identical static read twin after each successful build or startup recovery |
+| `data/capital_structure/companyfacts/generations/<sha256>/*` | `collectors/sec_capital_structure_companyfacts.py` | Immutable Company Facts manifest/coverage generation selected by a signed receipt and external head |
+| R2 `capital_structure/share_counts/v2/generations/<sha256>/ledger.json` | `scripts/materialize_capital_structure_share_counts.py` | Immutable v2 direct share/public-float observations bound to authenticated Company Facts bytes |
+| R2 `capital_structure/share_counts/v2/receipts/<sha256>.json` | same | HMAC-authenticated exact-predecessor publication receipt with constant-size rolling-prefix binding, bounded skip refs, and all-false authority |
+| R2 `capital_structure/share_counts/v2/current_head.json` | same | Mutable HMAC-authenticated compare-and-swap selector for exactly one immutable receipt/generation |
+| ignored local `data/capital_structure/share_counts/v2/current_receipt.json` | same | Runner-local recovery/high-water cache; never an independent selector and never staged by the nightly broad `git add data/` |
 | `data/edgar/dilution_events.parquet` | `collectors/edgar_dilution.py` | Existing legacy feed; unchanged in Wave 1 |
 
 The collector runs inside the serial SEC host group. The compiler runs immediately after
 collection and before the nightly data checkpoint. Render workflows never fetch SEC or
 compile the spine.
+
+The share-count materializer is placed immediately after collection but its R2
+step is default-off behind
+`CAPITAL_STRUCTURE_SHARE_COUNT_PUBLICATION_ENABLED`. Once its scalable
+publication gate passes and a safe retention protocol is separately released,
+it will recover its
+independent external head first, re-authenticate the selected Company Facts
+generation, reads only exact retained objects, and publishes at most one outer
+generation per invocation. It never fetches SEC, selects a current denominator,
+or feeds Prophet. Code deployment is not issuer coverage: activation is not
+complete until the lane deliberately publishes and verifies its first external
+receipt from retained source bytes.
+
+## Authenticated share-observation law
+
+The original `capital_structure.share_count_ledger.v1` compiler remains a
+lab/compatibility kernel. Production uses
+`capital_structure.share_count_ledger.v2`: every source snapshot embeds a bridge
+receipt that binds the signed Company Facts receipt bytes, generation, ordered
+manifest/coverage prefixes, manifest ID, issuer, filing anchor, raw object store
+namespace/key/hash/length, and Mastermind acquisition clock.
+
+Only direct `CommonStockSharesOutstanding`,
+`EntityCommonStockSharesOutstanding`, and `EntityPublicFloat` facts are in
+scope. The concepts remain separate; public-float dollars are not converted to
+shares; ambiguity/defer outcomes remain explicit; and
+`public_available_at=null` rather than a guessed filing clock. The ledger does
+not choose current outstanding shares or derive fully diluted supply.
+
+Share publication has its own HMAC domain and external R2 compare-and-swap head.
+Immutable receipt and ledger bytes are externally sealed before that head moves;
+the local pointer is replaced afterward. A clean runner authenticates the signed
+head plus exactly its selected receipt and ledger in O(1) remote artifact reads.
+A runner retaining a prior authenticated local high-water accepts a later head
+only after an O(log delta) binary-lifting proof lands on that exact prior receipt.
+Exact replay is a no-op. Tamper, fork, rollback below a retained local high-water,
+store rebinding, missing source, oversize input, split-brain, or an indeterminate
+post-CAS result fails closed. A clean runner has no independent monotonic witness
+and therefore cannot detect credential-level restoration of an older otherwise
+valid signed head; global rollback protection requires a separate durable witness
+or signer domain. The current two-record local recovery journal has the same
+boundary: if its marker and retained local pointer are both lost while only the
+signed capsule survives, it cannot distinguish a pre-marker competing successor
+from a credential-level post-commit fork. Recovery anchors that state at the
+signed expected witness. Activation therefore requires a single signed journal
+(or an equivalent unambiguous cleanup protocol), not another ancestry heuristic.
+Zero authenticated source manifests remain explicitly unavailable and do not
+create an empty green ledger.
+
+Each inner ledger receipt is one bounded append transition for at most 24 source
+snapshots. It stores only that batch's new identities plus domain-separated
+rolling commitments (`count`, `rolling_sha256`) to the exact ordered observation,
+snapshot, bridge, and source-manifest histories. The outer signed receipt repeats
+only those tail commitments, compiler version, materializer clock, and inner head;
+it never copies the cumulative identity arrays. Canonical ledgers are capped at
+128 MiB, snapshot-fact views at one million, source history at 16,384, and inner
+receipt history at 4,096. Crossing a bound fails before publication and requires
+an explicit authenticated epoch/checkpoint migration; no bound may be raised by
+silently discarding history.
+
+Each outer v2 receipt also carries at most 64 authenticated binary-lifting
+references at exact powers-of-two distances. These remove the outer publication
+lane's former 512-receipt full-replay cliff without deleting receipt history.
+They do not remove the upstream dependency: the Company Facts source selector
+still authenticates a v1 predecessor chain capped at 512 receipts and will block
+at that checkpoint until its own authenticated migration lands.
+
+The v2 R2 head, immutable receipts, and immutable generations are the publication
+data plane. Local generation, receipt, pointer, pending, recovery, and lease files
+are crash-recovery mirrors and are excluded by `.gitignore`; this lane never turns
+a cumulative ledger into a Git object or public site payload. The publisher never
+deletes, and ancestry receipts remain retained. A bounded retention planner and
+receipt contract exist, but the production compactor is hard-disabled before
+credential lookup or remote I/O. Release requires all three of: a live isolated
+proof that the provider offers atomic conditional delete, a shared external fence
+covering publisher staging through head CAS and each retention delete, and a
+verifier-only/minted capability that can never write the signed head or receipts.
+Publication activation also requires the unambiguous single-journal recovery
+change above and a selector/receipt-only high-water read so ancestry checks do not
+load a retained ledger of up to 128 MiB. One 15-minute in-process deadline is
+propagated through recovery, authenticated source reading, and publication, and
+the nightly command has a process-level timeout backstop for a blocking storage
+SDK call.
 
 The projection writer replaces each output atomically and ordinarily rolls both files back
 if either replace fails. The two paths are not one cross-file filesystem transaction: a hard
@@ -239,11 +333,13 @@ falsifier histories.
 
 ## Authority firewall
 
-The event, issuer-context, and compiler-telemetry contracts hard-code context-only,
-rank=false, sizing=false, entry=false, and Prophet=false authority. Source manifests and
-term observations contain evidence and provenance rather than an authority object; their
-closed schemas reject undeclared authority fields, and canonical extraction methods exclude
-LLM-originated truth. Wave 0–1 cannot:
+The event, issuer-context, compiler-telemetry, share-count v2 publication, and
+retention-receipt contracts hard-code context-only, rank=false, sizing=false,
+entry=false, and Prophet=false authority. A share-count ledger is observed
+denominator evidence, not a selected current denominator. Source manifests and
+term observations contain evidence and provenance rather than an authority object;
+their closed schemas reject undeclared authority fields, and canonical extraction
+methods exclude LLM-originated truth. These waves cannot:
 
 - modify Prophet signals, labels, ordering, confidence, entry, or sizing;
 - originate an offering-probability score;

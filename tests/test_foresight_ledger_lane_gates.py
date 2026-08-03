@@ -52,7 +52,10 @@ import pytest
 # The probe must NOT be an Exception: most of the pinned writers are fail-soft
 # (`except Exception` bodies), so an AssertionError raised inside them is SWALLOWED
 # and the off-lane test passes vacuously on ungated code. A BaseException travels
-# through those wrappers and makes the breach visible.
+# through those wrappers and makes the breach visible. Strictly stronger for the
+# original 12 entries too — gated first, they never reach the probe.
+#
+# Defined HERE, above _TripRoot, because _TripRoot.__fspath__ raises it.
 class _LaneBreach(BaseException):
     pass
 

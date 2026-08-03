@@ -38,6 +38,23 @@
        card's ruling stance (a Wait card with ⚡ = fired trigger, extended price).
        'imminent' renders dashed (pending semantics). Like every element, the chip
        follows the card hue --pvh (one-hue law).
+     featured — OPTIONAL bool (prophet board priority engine, 2026-08-02): the
+       glow cohort. Adds .pv-featured — a soft green aura + a full-bleed lit rail.
+       It is the ONE element that does NOT follow --pvh: the aura is pinned to
+       --pv-buy because "featured" MEANS the pick cohort, and it must stay green
+       even if a future stage rule ever lets a non-buy verb be featured. Callers
+       must not also pass triage on a featured row (one accent per card) — the
+       aura supersedes the triage ring.
+     stage_key — OPTIONAL slug ('live'|'setting_up'|'ran'|'blocked'): emitted as
+       data-stage so a board can filter its grid client-side with pure CSS.
+     marks — OPTIONAL list of {k, en, zh, tip_en?, tip_zh?}: the sub-line chip row
+       between the sector and the lifecycle tracker. `k` picks the visual weight:
+       'feat' (filled green, the strongest), 'new' (accent outline), 'warm'
+       (amber — a context event just turned), 'lane' / 'theme' (plain muted).
+       ABSENT key → no row at all, card height unchanged (every non-US board).
+       EMPTY list → an empty row that still RESERVES its height, so a board using
+       marks keeps the tracker and zone rows aligned across a grid row even when one
+       card has nothing to mark. Pass `none`, not `[]`, to opt out per-board.
    Live-price contract preserved: the price pill keeps class "nb-px" + data-sym/data-mkt
    (templates/live.js binds .nb-px[data-sym]). #}
 {% macro t(en, zh='') -%}<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>{%- endmacro %}
@@ -49,6 +66,53 @@
 .pv-buy{--pvh:var(--pv-buy)}.pv-near{--pvh:var(--pv-near)}.pv-wait{--pvh:var(--pv-wait)}.pv-hold{--pvh:var(--pv-hold)}.pv-avoid{--pvh:var(--pv-avoid)}
 .pvcard::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;z-index:3;pointer-events:none;border-radius:12px 12px 0 0;background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 12%,transparent) 90%);box-shadow:0 1px 8px color-mix(in srgb,var(--pvh) 45%,transparent)}
 .pvcard.pv-triage::before{box-shadow:0 1px 12px color-mix(in srgb,var(--pvh) 70%,transparent)}
+{# ── FEATURED GLOW (prophet board priority engine, G0.2 — 2026-08-02) ──────────
+   The board's flagship "these are the picks" affordance, and the one place this
+   design spends its boldness. ONE idea — the card is LIT — carried at three
+   distances so it survives every way the board is looked at: the tinted body
+   reads across a full-page scan, the aura separates the card from its neighbours
+   at arm's length, and up close the card's own hue rail stops fading out and
+   stays lit edge to edge.
+
+   The tinted body is load-bearing, not decoration. A rim glow ALONE was tried
+   first and it vanished in a dense 5-column grid where every card is already
+   tinted by its own verb hue: on a 40-card screenshot only the chip separated
+   featured from plain. Do not "clean this up" back to a bare ring.
+
+   Deliberately STATIC: a dozen simultaneously pulsing cards on a dense dashboard
+   is noise, and a still glow is legible at every distance — so there is no
+   animation here and therefore no prefers-reduced-motion kill block to keep in
+   sync (the strongest form of that compliance is having nothing to disable).
+
+   The glow is pinned to --pv-buy, NOT --pvh (see the macro header) — and never
+   to --up, which flips to RED under html[data-lang="zh"]; a featured pick glowing
+   red in Chinese would invert the entire message. Colour is never the only
+   carrier either: every featured card also renders a "★ Featured / 精选" chip in
+   its marks row (contrast-checked below). #}
+.pvcard.pv-featured{background:color-mix(in srgb,var(--pv-buy) 7%,var(--panel2));
+  border-color:color-mix(in srgb,var(--pv-buy) 55%,var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 40%,transparent),
+             0 0 26px -4px color-mix(in srgb,var(--pv-buy) 60%,transparent),
+             0 10px 26px -14px rgba(0,0,0,.7)}
+{# hover must ADD the lift, not replace the aura (.pvcard:hover sets a bare shadow) #}
+.pvcard.pv-featured:hover{border-color:color-mix(in srgb,var(--pv-buy) 70%,var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 50%,transparent),
+             0 0 32px -4px color-mix(in srgb,var(--pv-buy) 72%,transparent),
+             0 8px 22px -8px rgba(0,0,0,.5)}
+.pvcard.pv-featured::before{background:linear-gradient(90deg,var(--pvh),color-mix(in srgb,var(--pvh) 55%,transparent));
+  box-shadow:0 1px 14px color-mix(in srgb,var(--pvh) 85%,transparent)}
+{# Light theme: the same aura on a white card over a #f7f8fa page reads as a
+   smudge at dark-theme spread, so it tightens and the elevation drops to a
+   green-tinted neutral instead of black. #}
+html[data-theme="light"] .pvcard.pv-featured{background:color-mix(in srgb,var(--pv-buy) 8%,#fff);
+  border-color:color-mix(in srgb,var(--pv-buy) 50%,var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 32%,transparent),
+             0 0 20px -5px color-mix(in srgb,var(--pv-buy) 50%,transparent),
+             0 8px 20px -14px rgba(24,58,40,.45)}
+html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srgb,var(--pv-buy) 66%,var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 44%,transparent),
+             0 0 26px -5px color-mix(in srgb,var(--pv-buy) 62%,transparent),
+             0 8px 20px -10px rgba(24,58,40,.30)}
 {# The ⚠ popover lives inside .pv-chart, so .pvcard{overflow:hidden} used to CLIP it:
    a 5-caution name rendered a 207px popover inside a 180px card and two whole rows —
    the sector stance and the "already moving" warning — were unreachable at any width.
@@ -92,6 +156,44 @@
 .pv-edn{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--pvh);line-height:1}
 .pv-edn.pv-edna{color:var(--muted);font-weight:600;font-size:12px}
 .pv-ind{font-size:10.5px;color:var(--muted);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+{# ── MARKS ROW (prophet board priority engine, 2026-08-02) ────────────────────
+   One wrapping row of ≤1–2-word chips under the sector line. Four categorically
+   DIFFERENT facts, in descending weight, so the row reads as a taxonomy rather
+   than chip spam: rank (★ Featured) · recency (New) · a context event that just
+   turned (amber) · setup shape and theme (both plain muted context, the demoted
+   bottoming/continuation lane among them). The median card shows one muted chip.
+   Contrast: every coloured chip's text is color-mix(<hue> 60%, var(--text)) over
+   a 13–16% tint of the same hue on --panel2. That single formula clears WCAG AA
+   in BOTH themes because --text itself inverts — measured ratios:
+   featured 6.05 dark / 4.81 light · new 6.13 / 6.07 · warm 6.46 / 4.94.
+   Do not "simplify" it to the raw token: raw --pv-buy on its own tint is 2.69:1
+   in light mode, a fail. #}
+{# min-height RESERVES the slot. The macro's founding contract is that the layout never
+   moves between cards or states, and the tracker + zone rows are the landmarks the eye
+   uses to compare cards across a grid row — a card with nothing to mark used to pull
+   them ~18px up out of line with its neighbours. A caller that passes an EMPTY list
+   (rather than omitting the key) opts into the reserved slot; a caller that omits
+   `marks` entirely — every non-US board today — renders no row and no reservation. #}
+.pv-mk{display:flex;flex-wrap:wrap;align-items:center;gap:3px 4px;margin-top:4px;min-width:0;min-height:18px}
+.pv-mk-i{font-size:9.5px;font-weight:700;line-height:1.45;padding:1px 6px;border-radius:6px;
+  white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+  color:var(--muted);background:color-mix(in srgb,var(--muted) 10%,transparent);
+  border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
+.pv-mk-feat{font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--pv-buy) 60%,var(--text));
+  background:color-mix(in srgb,var(--pv-buy) 16%,var(--panel2));
+  border-color:color-mix(in srgb,var(--pv-buy) 44%,transparent)}
+.pv-mk-new{font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--info) 60%,var(--text));
+  background:color-mix(in srgb,var(--info) 13%,var(--panel2));
+  border-color:color-mix(in srgb,var(--info) 38%,transparent)}
+.pv-mk-warm{color:color-mix(in srgb,var(--warn) 60%,var(--text));
+  background:color-mix(in srgb,var(--warn) 15%,var(--panel2));
+  border-color:color-mix(in srgb,var(--warn) 38%,transparent)}
+.pv-mk-theme{color:color-mix(in srgb,var(--muted) 55%,var(--text));
+  border-color:color-mix(in srgb,var(--muted) 34%,transparent)}
+{# a marks chip carrying a data-tip is a hover target, not a link — say so #}
+.pv-mk-i[data-tip-en]{cursor:help}
 .pv-stp{display:flex;align-items:center;margin:7px 1px 0}
 .pv-dot{width:6.5px;height:6.5px;border-radius:50%;background:var(--line);flex:none}
 .pv-seg{flex:1;height:2px;background:var(--line);opacity:.75}
@@ -137,6 +239,7 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
 [data-showmore-rows] .pvcard .pv-chart svg,[data-showmore-rows] .pvcard .pv-nochart{height:56px}
 [data-showmore-rows] .pvcard .pv-tk{font-size:11.5px}
 [data-showmore-rows] .pvcard .pv-stl span{font-size:9px}
+[data-showmore-rows] .pvcard .pv-mk{margin-top:3px}
 @media (min-width:681px){
   .nbgrid:has(> .pvcard),.cards:has(> .pvcard),.rip-grid:has(> .pvcard){grid-template-columns:repeat(auto-fill,minmax(246px,1fr))!important}
 }
@@ -154,6 +257,10 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
   /* same collapse-to-glyph rule for the ◐ live chip */
   .pv-live .l-en,.pv-live .l-zh{display:none!important}
   .pv-live{padding:2px 5px;gap:0}
+  /* marks chips do NOT collapse to a glyph — "Featured" and the theme name are
+     the words that make the row non-colour-only; they get one size UP instead,
+     because a phone is where 9.5px stops being readable. */
+  .pv-mk-i{font-size:10px;padding:2px 7px}
 }
 </style>
 {% endmacro %}
@@ -164,7 +271,7 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
 {%- set _MN = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} -%}
 {%- set _verb = cx.verb if cx.verb in _VEN else 'wait' -%}
 {%- set _stage = cx.get('stage') or 0 -%}
-<a class="pvcard pv-{{ _verb }}{% if cx.get('triage') %} pv-triage{% endif %}" href="{{ cx.href|e }}" data-ticker="{{ cx.tk|e }}">
+<a class="pvcard pv-{{ _verb }}{% if cx.get('featured') %} pv-featured{% elif cx.get('triage') %} pv-triage{% endif %}" href="{{ cx.href|e }}" data-ticker="{{ cx.tk|e }}"{% if cx.get('stage_key') %} data-stage="{{ cx.stage_key|e }}"{% endif %}>
   <div class="pv-chart">
     {% if cx.get('spark') %}{{ cx.spark|safe }}{% else %}<div class="pv-nochart"></div>{% endif %}
     <span class="pv-ov pv-ovl">
@@ -191,6 +298,9 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
       <span class="pv-edge"{% if cx.get('edge_tip_en') %} data-tip-en="{{ cx.edge_tip_en|e }}" data-tip-zh="{{ (cx.get('edge_tip_zh') or cx.edge_tip_en)|e }}"{% endif %}><span class="pv-edl">{{ t(cx.get('edge_label_en') or 'Edge', cx.get('edge_label_zh') or '优势') }}</span>{% if cx.get('edge') is not none %}<span class="pv-edn">{{ cx.edge }}</span>{% elif cx.get('edge_txt') %}<span class="pv-edn">{{ cx.edge_txt }}</span>{% else %}<span class="pv-edn pv-edna">—</span>{% endif %}</span>
     </div>
     {% if cx.get('sec') %}<div class="pv-ind">{{ t(cx.sec, cx.get('sec_zh') or cx.sec) }}</div>{% endif %}
+    {%- if cx.get('marks') is not none %}
+    <div class="pv-mk">{% for _mk in cx.marks %}<span class="pv-mk-i pv-mk-{{ _mk.get('k') or 'lane' }}"{% if _mk.get('tip_en') %} data-tip-en="{{ _mk.tip_en|e }}" data-tip-zh="{{ (_mk.get('tip_zh') or _mk.tip_en)|e }}"{% endif %}>{{ t(_mk.en, _mk.get('zh') or _mk.en) }}</span>{% endfor %}</div>
+    {%- endif %}
     <div class="pv-stp">{% for _i in [1,2,3,4] %}{% if _i > 1 %}<span class="pv-seg{% if _stage >= _i %} pa{% endif %}"></span>{% endif %}<span class="pv-dot{% if _stage == _i %} on{% elif _stage > _i %} pa{% endif %}"></span>{% endfor %}</div>
     <div class="pv-stl"><span{% if _stage == 1 %} class="on"{% endif %}>{{ t('Bottoming','筑底') }}</span><span{% if _stage == 2 %} class="on"{% endif %}>{{ t('Turning','转向') }}</span><span{% if _stage == 3 %} class="on"{% endif %}>{{ t('Ready','就绪') }}</span><span{% if _stage == 4 %} class="on"{% endif %}>{{ t('Trend','趋势') }}</span></div>
   </div>

@@ -101,6 +101,22 @@ def _board_row(**overrides) -> dict:
         "label": None,
         "entry_signal": None,
         "above_trend": None,
+        # us_prophet_v1 row contract (research/PROPHET_BOARD_PRIORITY_ENGINE_
+        # MASTERPLAN_BY_FABLE.md §3) — explicit None ON PURPOSE.  The committed
+        # artifact does not carry these yet; the first nightly after the engine lane
+        # merges fills them.  Keeping the whole census None here means the DEFAULT
+        # fixture exercises the fail-soft branch (legacy lane partition, no filter
+        # chips, no glow) on every test in this module and in the modules that import
+        # _base_vm.  The populated shapes live in tests/test_us_board_priority_ui.py.
+        "stage": None,            # live | setting_up | ran | blocked
+        "prophet": None,          # {version, score, components{...}}
+        "score_rank": None,
+        "display_rank": None,
+        "featured": None,         # the glow cohort (<=12 rows)
+        "new": None,              # signal fired this session
+        "days_since_signal": None,
+        "theme": None,            # {id, name, name_zh, rank, reco}
+        "theme_confirmed": None,
         # Buy Decision Packet dossier (PR #1784 shape) — see module docstring.
         "dossier": {
             "action": {"verb": "WAIT", "verb_zh": "等待", "tone": "wait"},
@@ -298,6 +314,66 @@ def test_both_modes_render_with_no_standouts():
     for mode in ("macro", "stocks"):
         html = env.get_template("dashboard.html.j2").render(**vm, mode=mode)
         assert len(html) > 50_000
+
+
+# --------------------------------------------------------------------------- #
+# us_prophet_v1 priority board — both artifact shapes through THIS harness
+# --------------------------------------------------------------------------- #
+# The full rendered-HTML contract lives in tests/test_us_board_priority_ui.py.
+# These three cases keep the pair visible from the harness that mirrors build_site:
+# the default fixture (old schema) must take the legacy path, the overlaid fixture
+# must take the priority path, and the degraded lane=None row must survive both.
+# The overlay is imported INSIDE the functions — the priority module imports
+# _base_vm/_env/_board_row from here, so a module-level import would be circular.
+
+def test_old_schema_rows_take_the_legacy_lane_partition():
+    html = _render("stocks")
+    assert '<div class="nb-lane-hd">' in html
+    assert '<div class="nb-stage-hd sg-' not in html
+    assert '<div class="pbf-bar" id="us-stage-filter"' not in html
+    assert '<span class="l-en">Edge</span><span class="l-zh">优势</span>' in html
+
+
+def test_new_schema_rows_take_the_priority_path():
+    from tests.test_us_board_priority_ui import priority_overlay, ran_overlay  # noqa: PLC0415
+
+    vm = _base_vm()
+    rows = [
+        _board_row(ticker="ACME", entry_signal={"status": "buy_now"}, signal={"asof": "2026-07-04"}),
+        _board_row(ticker="ZEUS", name="Zeus Industries", sector="Energy",
+                   entry_signal={"status": "extended"}, signal={"asof": "2026-07-01"}),
+        _board_row(ticker="NXE", name="NexGen Energy", sector="Energy", label="DOWNTREND",
+                   entry_signal={"status": "avoid"}, signal={"asof": "2026-06-28"}),
+    ]
+    board = priority_overlay(rows)
+    vm["us_standouts"] = {"buy": board, "ran": ran_overlay(board[-1:]), "eligible": 3}
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert '<div class="nb-stage-hd sg-live"' in html
+    assert '<div class="nb-stage-hd sg-blocked"' in html
+    assert '<div class="pbf-bar" id="us-stage-filter"' in html
+    assert '<div class="pbr" data-stage="ran">' in html
+    assert '<div class="pbt">' in html                       # themes-in-favour strip
+    assert '<a class="pvcard pv-buy pv-featured"' in html     # the glow cohort
+    assert '<div class="nb-lane-hd">' not in html             # legacy headings stood down
+    assert html.find('data-ticker="ACME"') < html.find('data-ticker="NXE"')
+
+
+def test_priority_path_survives_a_lane_none_row():
+    """The dev-VM degradation case, on the NEW path: lane=None costs the card its
+    demoted lane chip and nothing else."""
+    from tests.test_us_board_priority_ui import priority_overlay  # noqa: PLC0415
+
+    vm = _base_vm()
+    board = priority_overlay([
+        _board_row(ticker="ACME", lane=None, entry_signal={"status": "buy_now"}),
+        _board_row(ticker="ZEUS", lane=None, entry_signal={"status": "bounce_wait"}),
+    ])
+    vm["us_standouts"] = {"buy": board, "eligible": 2}
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert len(html) > 50_000
+    assert '<div class="nb-stage-hd sg-live"' in html
+    assert '<span class="pv-mk-i pv-mk-lane"' not in html
+    assert 'data-ticker="ACME"' in html and 'data-ticker="ZEUS"' in html
 
 
 # --------------------------------------------------------------------------- #
@@ -698,6 +774,141 @@ def test_leaders_strip_renders_without_top_setups():
 
 
 # --------------------------------------------------------------------------- #
+# M12 — the leaders strip names its real rank key.
+#
+# The strip has ranked by trailing 3-month TOTAL return plus a theme boost since the
+# v2 rebuild (_select_leaders, scripts/build_stock_library.py), with residual alpha
+# only as the tiebreak.  The headline still said "Strongest runners by edge" and sat
+# directly above a column headed "edge (α)", so the two together claimed an ordering
+# the engine does not perform.  The column stays — it is a real read — but neither
+# the headline nor the header may claim it sorts the table.
+#
+# Every assertion below is SCOPED TO THE STRIP: "edge (α)" also heads the unrelated
+# top-setups table on the same page, so a document-wide assertion would be vacuous
+# in one direction and wrong in the other.
+# --------------------------------------------------------------------------- #
+
+def _leaders_strip(html: str) -> str:
+    start = html.find(_LEADERS_WRAPPER)
+    assert start != -1, "the leaders strip did not render"
+    end = html.find("</table>", start)
+    assert end != -1
+    return html[start:end]
+
+
+def test_leaders_strip_slicer_excludes_the_top_setups_table():
+    """Guard the guard: `edge (α)` heads BOTH this strip and the top-setups table
+    above it, so the header assertions below are only meaningful if the slice really
+    is the leaders strip.  Render both tables at once and prove the slice holds one
+    and not the other — otherwise "edge (α) not in strip" could never fail."""
+    vm = _vm_with_leaders([_leader_row()])
+    vm["top_setups"] = {"buy": [_setup_row()], "eligible": 1}
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    strip = _leaders_strip(html)
+    assert "edge (α)" in html, "the top-setups table must still head its own α column"
+    assert "ZORB" in html and "ZORB" not in strip     # its rows are outside the slice
+    assert "RUNR" in strip
+    assert len(strip) < len(html) / 4
+
+
+def test_leaders_headline_names_momentum_not_edge():
+    vm = _vm_with_leaders([_leader_row()])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    strip = _leaders_strip(html)
+    assert ('<span class="l-en">Strongest runners by 3-month momentum, theme-boosted — '
+            'no fresh entry signal; watch, don’t chase.</span>') in strip
+    assert ("按3个月动量排名（顺风主题另有加成）的最强领跑股 — 暂无新入场信号；观察，勿追高。") in strip
+    # the retired overclaim, in both languages
+    assert "Strongest runners by edge" not in html
+    assert "按优势排名的最强领跑股" not in html
+    # the stance survives the rewrite (DESIGN_DOCTRINE Law 1)
+    assert "watch, don’t chase" in strip and "观察，勿追高" in strip
+
+
+def test_leaders_headline_tip_names_the_intact_trend_and_near_high_gates():
+    """Admission is `above200 AND weekly_bull` plus `off_high >= -20%` — the two gates
+    that decide who can appear at all.  A coverage strip that lists neither reads as
+    an unfiltered top-N."""
+    vm = _vm_with_leaders([_leader_row()])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    strip = _leaders_strip(html)
+    assert "intact uptrend (above the 200-day line, weekly structure bullish)" in strip
+    assert "within 20% of its 52-week high" in strip
+    assert "站上200日线、周线结构看多" in strip
+    assert "距52周高点不超过20%" in strip
+    # …and the tip names the real rank key, not the retired one
+    assert "Order here is trailing 3-month total return" in strip
+    assert "本表按3个月总回报排序" in strip
+    assert "the one leg our measurements ranked positively" not in strip
+
+
+def test_leaders_alpha_header_stops_claiming_it_orders_the_table():
+    """α is a TIEBREAK.  The header says so, and the old label goes — but the column
+    itself stays, values and all."""
+    vm = _vm_with_leaders([_leader_row()])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    strip = _leaders_strip(html)
+    assert '<span class="l-en">α (tiebreak)</span><span class="l-zh">α（并列时排序）</span>' in strip
+    assert "It does NOT order this table" in strip
+    assert "α only separates names that rank level" in strip
+    assert "它并不决定本表排序" in strip
+    assert "α 仅用于分开名次并列的标的" in strip
+    # the retired header, scoped to the strip (the top-setups table still uses it)
+    assert "edge (α)" not in strip and "优势 (α)" not in strip
+    # the column is KEPT: the value still renders under the new header
+    assert "+2.31" in strip
+
+
+def test_leaders_theme_header_does_not_contradict_the_theme_boost():
+    """The header used to say theme membership "does not rank this table" while the
+    rank key adds +0.5 for it — the two halves of the same surface disagreeing."""
+    vm = _vm_with_leaders([_leader_row(theme={"id": "ai_software", "name": "AI software",
+                                              "name_zh": "AI软件", "rank": 3})])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    strip = _leaders_strip(html)
+    assert "Membership adds a small boost to where a name sits in this table" in strip
+    assert "归属会为该股在本表的名次带来小幅加成" in strip
+    assert "theme membership does not rank this table" not in html
+    assert "主题归属不影响本表排序" not in html
+
+
+# --------------------------------------------------------------------------- #
+# m6 (leaders half) — bull_days == 0 is "turned today", not a missing age.
+# The same truthiness bug lived in three conditionals; this is the third.
+# --------------------------------------------------------------------------- #
+
+def _themed_leader(bull_days):
+    theme = {"id": "ai_software", "name": "AI software", "name_zh": "AI软件", "rank": 3}
+    if bull_days is not None:
+        theme["bull_days"] = bull_days
+    return _leader_row(theme=theme, theme_confirmed=True)
+
+
+def test_leaders_theme_tip_reads_today_at_zero_bull_days():
+    html = _env().get_template("dashboard.html.j2").render(
+        **_vm_with_leaders([_themed_leader(0)]), mode="stocks")
+    strip = _leaders_strip(html)
+    assert "The theme itself only just turned up (today) —" in strip
+    assert "主题本身刚刚转强（今日） —" in strip
+    assert "(0 days in)" not in html and "（已进入第0天）" not in html
+
+
+def test_leaders_theme_tip_keeps_a_real_age_and_stays_silent_on_none():
+    """Both other directions of the same conditional: a real age still prints, and a
+    genuinely unknown one must not be reported as 'today'."""
+    env = _env()
+    real = env.get_template("dashboard.html.j2").render(
+        **_vm_with_leaders([_themed_leader(4)]), mode="stocks")
+    assert "The theme itself only just turned up (4 days in) —" in _leaders_strip(real)
+    assert "（已进入第4天）" in _leaders_strip(real)
+    unknown = env.get_template("dashboard.html.j2").render(
+        **_vm_with_leaders([_themed_leader(None)]), mode="stocks")
+    strip = _leaders_strip(unknown)
+    assert "The theme itself only just turned up —" in strip
+    assert "(today)" not in strip and "（今日）" not in strip
+
+
+# --------------------------------------------------------------------------- #
 # §17 mobile (2026-08-02) — the prophet-panel strip tables must fit a 390px
 # panel without x-scroll: at ≤680px the tertiary columns are hidden, keyed by
 # per-column c-* classes.  The contract has two halves:
@@ -706,6 +917,8 @@ def test_leaders_strip_renders_without_top_setups():
 #   2. each class is either in the mobile KEEP set (identity, edge, stance) or
 #      named in the 680px hide rule.
 # Adding a column therefore forces an explicit mobile decision here.
+# The G0.5a theme column only renders when a row stamps a theme, so the fixture
+# stamps one to bring it under contract; its decision: context, not stance → hidden.
 # --------------------------------------------------------------------------- #
 
 _MOBILE_KEEP = {"c-stock", "c-edge", "c-buy", "c-entry"}
@@ -727,7 +940,8 @@ def _strip_thead_class_sets(html: str) -> list[set[str]]:
 
 
 def test_strip_tables_mobile_column_contract():
-    vm = _vm_with_leaders([_leader_row()])
+    vm = _vm_with_leaders([_leader_row(theme={"id": "ai_software", "name": "AI software",
+                                              "name_zh": "AI软件", "rank": 3})])
     vm["top_setups"] = {"buy": [_setup_row()]}   # ZORB — residual, so the trigger table renders
     html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
 
@@ -736,8 +950,8 @@ def test_strip_tables_mobile_column_contract():
     trigger, leaders = per_table
     assert trigger == {"c-stock", "c-sector", "c-edge", "c-rank", "c-buy",
                        "c-cycle", "c-trend", "c-factor", "c-setup"}
-    assert leaders == {"c-stock", "c-sector", "c-edge", "c-offhigh", "c-state",
-                       "c-entry"}
+    assert leaders == {"c-stock", "c-sector", "c-theme", "c-edge", "c-offhigh",
+                       "c-state", "c-entry"}
 
     # Half 2: the ≤680px rule hides exactly every non-keep column of both
     # tables.  `.topsetups .ts-tbl .c-*` selectors exist ONLY in that rule, so

@@ -161,7 +161,14 @@ HORIZONS = [5, 10, 21, 63]  # W0.1 B-b: 63d lane added per §5.1 sub-task 2
 # forward cohort from tonight. Purely additive: both call sites read the lane with
 # `d.get(lane)` / `if lane in d`, so a snapshot or git revision without the key grades
 # exactly as before.
-LANES = ["buy", "watch", "leaders", "laggards", "laggard"]
+# "ran" added 2026-08-02 (us_prophet_v1) on exactly the same terms: a NEW forward
+# cohort that starts accruing from ship date. Every board before tonight has no "ran"
+# key, so no history is re-graded and no existing lane's series moves. The ran lane is
+# display-tier by construction (no entry claim); grading it forward is how a claim
+# would EVENTUALLY be earned, not a claim being made now.
+# Scope: this is the LIVE-board grader only. The v2 shadow board keeps its own lane
+# vocabulary in V2_LANES and its own sibling stores — untouched here.
+LANES = ["buy", "watch", "leaders", "ran", "laggards", "laggard"]
 K_LIST = [1, 3, 5, 10]
 
 # GICS sector -> SPDR sector ETF (mirrors engine/ai_desk.py _GICS_ETF, plus the

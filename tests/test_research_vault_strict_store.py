@@ -1,6 +1,7 @@
 """Fail-closed object reads used by immutable research snapshot publication."""
 from __future__ import annotations
 
+import multiprocessing
 import sys
 from types import ModuleType
 from pathlib import Path
@@ -14,7 +15,9 @@ from engine.research_vault.r2_store import (
     R2Store,
     Store,
     StrictBoundedReadStore,
+    StrictConditionalWriteStore,
     StrictReadStore,
+    VersionedBytes,
 )
 
 
@@ -131,6 +134,19 @@ class _LegacyFailOpenStore:
         return None
 
 
+def _local_conditional_worker(root, key, payload, barrier, results):
+    """Spawn-safe contender used to prove the LocalStore lock crosses processes."""
+    store = LocalStore(root)
+    barrier.wait()
+    try:
+        outcome = store.put_bytes_strict_conditional(
+            key, payload, expected_version=None, content_type="application/json",
+        )
+        results.put((payload, outcome, None))
+    except BaseException as exc:  # pragma: no cover - surfaced in the parent assertion
+        results.put((payload, None, f"{type(exc).__name__}: {exc}"))
+
+
 def test_strict_read_protocol_preserves_legacy_store_runtime_compatibility(tmp_path):
     legacy = _LegacyFailOpenStore()
     local = LocalStore(tmp_path / "store")
@@ -140,14 +156,17 @@ def test_strict_read_protocol_preserves_legacy_store_runtime_compatibility(tmp_p
     assert not isinstance(legacy, StrictReadStore)
     assert not isinstance(legacy, BoundedStrictReadStore)
     assert not isinstance(legacy, StrictBoundedReadStore)
+    assert not isinstance(legacy, StrictConditionalWriteStore)
     assert isinstance(local, Store)
     assert isinstance(local, StrictReadStore)
     assert isinstance(local, StrictBoundedReadStore)
     assert isinstance(local, BoundedStrictReadStore)
+    assert isinstance(local, StrictConditionalWriteStore)
     assert isinstance(remote, Store)
     assert isinstance(remote, StrictReadStore)
     assert isinstance(remote, StrictBoundedReadStore)
     assert isinstance(remote, BoundedStrictReadStore)
+    assert isinstance(remote, StrictConditionalWriteStore)
 
 
 def test_local_strict_read_returns_bytes_or_authoritative_missing(tmp_path):
@@ -512,3 +531,301 @@ def test_r2_bounded_read_closes_extra_byte_body_and_propagates_failures(monkeypa
             )).get_bytes_strict_bounded(
                 "object", expected_byte_length=4, max_byte_length=4,
             )
+
+
+class _ConditionalServiceModel:
+    def __init__(self, members):
+        self.members = members
+
+    def operation_model(self, name):
+        assert name == "PutObject"
+        return type("Operation", (), {
+            "input_shape": type("Shape", (), {"members": self.members})(),
+        })()
+
+
+class _ConditionalS3:
+    def __init__(self, *, get=None, put=None, members=None):
+        if members is None:
+            members = {"IfMatch": object(), "IfNoneMatch": object()}
+        self.meta = type("Meta", (), {
+            "service_model": _ConditionalServiceModel(members),
+        })()
+        self.get = get
+        self.put = put
+        self.get_calls = []
+        self.put_calls = []
+
+    def get_object(self, **kwargs):
+        self.get_calls.append(kwargs)
+        if isinstance(self.get, BaseException):
+            raise self.get
+        return self.get
+
+    def put_object(self, **kwargs):
+        self.put_calls.append(kwargs)
+        if isinstance(self.put, BaseException):
+            raise self.put
+        return self.put if self.put is not None else {}
+
+
+def test_versioned_bytes_rejects_partial_or_noncanonical_states():
+    assert VersionedBytes(data=None, version=None) == VersionedBytes(None, None)
+    assert VersionedBytes(data=b"x", version='"etag"').data == b"x"
+    with pytest.raises(ValueError, match="wholly present"):
+        VersionedBytes(data=b"x", version=None)
+    with pytest.raises(ValueError, match="wholly present"):
+        VersionedBytes(data=None, version='"etag"')
+    with pytest.raises(ValueError, match="exact bytes"):
+        VersionedBytes(data=bytearray(b"x"), version='"etag"')
+    with pytest.raises(ValueError, match="non-empty version"):
+        VersionedBytes(data=b"x", version="")
+
+
+def test_r2_versioned_read_is_bounded_closes_body_and_preserves_exact_etag():
+    body = _Body(b"safe")
+    client = _ConditionalS3(get={
+        "Body": body, "ContentLength": 4, "ETag": '"quoted-etag"',
+    })
+    observed = R2Store("evidence", client=client).get_bytes_strict_bounded_versioned(
+        "pointer.json", 4,
+    )
+    assert observed == VersionedBytes(data=b"safe", version='"quoted-etag"')
+    assert client.get_calls == [{"Bucket": "evidence", "Key": "pointer.json"}]
+    assert body.read_limits == [5, 1]
+    assert body.closed
+
+
+def test_r2_versioned_read_softens_only_404_and_rejects_unversioned_or_oversized_body(
+    monkeypatch,
+):
+    ClientError = _install_fake_botocore(monkeypatch)
+    missing = _ConditionalS3(get=ClientError("NoSuchKey"))
+    assert R2Store(
+        "evidence", client=missing,
+    ).get_bytes_strict_bounded_versioned("missing", 16) == VersionedBytes(None, None)
+
+    for response in (
+        {"Body": _Body(b"safe"), "ContentLength": 4},
+        {"Body": _Body(b"safe"), "ContentLength": 4, "ETag": ""},
+    ):
+        with pytest.raises(RuntimeError, match="valid ETag"):
+            R2Store(
+                "evidence", client=_ConditionalS3(get=response),
+            ).get_bytes_strict_bounded_versioned("pointer", 4)
+        assert response["Body"].closed
+
+    oversized_body = _Body(b"12345")
+    with pytest.raises(ValueError, match="bounded read limit"):
+        R2Store("evidence", client=_ConditionalS3(get={
+            "Body": oversized_body, "ContentLength": 5, "ETag": '"etag"',
+        })).get_bytes_strict_bounded_versioned("pointer", 4)
+    assert oversized_body.closed and oversized_body.read_limits == []
+
+    denied = ClientError("AccessDenied")
+    with pytest.raises(ClientError):
+        R2Store(
+            "evidence", client=_ConditionalS3(get=denied),
+        ).get_bytes_strict_bounded_versioned("pointer", 16)
+
+
+@pytest.mark.parametrize(
+    ("announced", "payload"),
+    ((4, b"123"), (3, b"1234")),
+    ids=("short-body", "long-body"),
+)
+def test_r2_versioned_read_rejects_content_length_mismatch_after_closing(
+    announced, payload,
+):
+    body = _Body(payload)
+    with pytest.raises(RuntimeError, match="ContentLength/body length mismatch"):
+        R2Store("evidence", client=_ConditionalS3(get={
+            "Body": body, "ContentLength": announced, "ETag": '"etag"',
+        })).get_bytes_strict_bounded_versioned("pointer", 4)
+    assert body.closed
+
+
+def test_r2_conditional_put_uses_mutually_exclusive_exact_predecessor_headers():
+    client = _ConditionalS3()
+    store = R2Store("evidence", client=client)
+    assert store.validate_strict_conditional_write_capability() is None
+    assert client.get_calls == [] and client.put_calls == []
+    assert store.put_bytes_strict_conditional(
+        "pointer", b"first", expected_version=None, content_type="application/json",
+    ) is True
+    assert store.put_bytes_strict_conditional(
+        "pointer", b"second", expected_version='"etag-1"', content_type="application/json",
+    ) is True
+    assert client.put_calls == [
+        {
+            "Bucket": "evidence", "Key": "pointer", "Body": b"first",
+            "ContentType": "application/json", "IfNoneMatch": "*",
+        },
+        {
+            "Bucket": "evidence", "Key": "pointer", "Body": b"second",
+            "ContentType": "application/json", "IfMatch": '"etag-1"',
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    "code", ("409", "412", "ConditionalRequestConflict", "PreconditionFailed"),
+)
+def test_r2_conditional_put_returns_false_only_for_authoritative_conflict(monkeypatch, code):
+    ClientError = _install_fake_botocore(monkeypatch)
+    store = R2Store("evidence", client=_ConditionalS3(put=ClientError(code)))
+    assert store.put_bytes_strict_conditional(
+        "pointer", b"candidate", expected_version='"old"',
+    ) is False
+
+
+def test_r2_conditional_put_propagates_operational_and_spoofed_failures(monkeypatch):
+    ClientError = _install_fake_botocore(monkeypatch)
+    for failure in (ClientError("AccessDenied"), ClientError("InternalError"), TimeoutError("late")):
+        with pytest.raises(type(failure)):
+            R2Store(
+                "evidence", client=_ConditionalS3(put=failure),
+            ).put_bytes_strict_conditional("pointer", b"candidate", expected_version=None)
+
+    class SpoofedConflict(RuntimeError):
+        response = {"Error": {"Code": "PreconditionFailed"}}
+
+    with pytest.raises(SpoofedConflict):
+        R2Store(
+            "evidence", client=_ConditionalS3(put=SpoofedConflict("not an SDK response")),
+        ).put_bytes_strict_conditional("pointer", b"candidate", expected_version=None)
+
+
+@pytest.mark.parametrize(
+    "members",
+    ({"IfMatch": object()}, {"IfNoneMatch": object()}, {}, None),
+)
+def test_r2_conditional_put_fails_before_io_without_full_sdk_capability(members):
+    if members is None:
+        class NoModelClient:
+            def put_object(self, **kwargs):
+                raise AssertionError("must not PUT")
+
+        client = NoModelClient()
+    else:
+        client = _ConditionalS3(members=members)
+    with pytest.raises(RuntimeError, match="capability is unavailable"):
+        R2Store("evidence", client=client).put_bytes_strict_conditional(
+            "pointer", b"candidate", expected_version=None,
+        )
+    assert not getattr(client, "put_calls", [])
+
+
+@pytest.mark.parametrize(
+    "members", ({"IfMatch": object()}, {"IfNoneMatch": object()}, {}),
+)
+def test_r2_explicit_capability_preflight_requires_both_conditional_headers(members):
+    client = _ConditionalS3(members=members)
+    with pytest.raises(RuntimeError, match="capability is unavailable"):
+        R2Store(
+            "evidence", client=client,
+        ).validate_strict_conditional_write_capability()
+    assert client.get_calls == [] and client.put_calls == []
+
+
+def test_conditional_put_validates_nominals_before_any_r2_io():
+    client = _ConditionalS3()
+    store = R2Store("evidence", client=client)
+    with pytest.raises(TypeError, match="exact bytes"):
+        store.put_bytes_strict_conditional("pointer", bytearray(b"x"), expected_version=None)
+    with pytest.raises(ValueError, match="expected_version"):
+        store.put_bytes_strict_conditional("pointer", b"x", expected_version="")
+    with pytest.raises(ValueError, match="content_type"):
+        store.put_bytes_strict_conditional(
+            "pointer", b"x", expected_version=None, content_type="",
+        )
+    assert client.put_calls == []
+
+
+def test_local_versioned_read_and_conditional_update_are_exact(tmp_path):
+    store = LocalStore(tmp_path / "store")
+    assert store.validate_strict_conditional_write_capability() is None
+    assert store.get_bytes_strict_bounded_versioned("pointer", 16) == VersionedBytes(None, None)
+    assert store.put_bytes_strict_conditional(
+        "pointer", b"first", expected_version=None, content_type="application/json",
+    ) is True
+    first = store.get_bytes_strict_bounded_versioned("pointer", 16)
+    assert first.data == b"first" and first.version
+    assert store.put_bytes_strict_conditional(
+        "pointer", b"lost", expected_version=None,
+    ) is False
+    assert store.put_bytes_strict_conditional(
+        "pointer", b"second", expected_version=first.version,
+    ) is True
+    assert store.put_bytes_strict_conditional(
+        "pointer", b"stale", expected_version=first.version,
+    ) is False
+    assert store.get_bytes_strict_bounded("pointer", 16) == b"second"
+    with pytest.raises(ValueError, match="bounded read limit"):
+        store.get_bytes_strict_bounded_versioned("pointer", 3)
+    with pytest.raises(ValueError, match="unsafe key"):
+        store.put_bytes_strict_conditional("../escape", b"x", expected_version=None)
+
+
+def test_local_conditional_predecessor_rejects_oversize_before_hash_read(
+    tmp_path, monkeypatch,
+):
+    store = LocalStore(tmp_path / "store")
+    store.put_bytes(
+        "pointer",
+        b"x" * (store_mod.HARD_MAX_STRICT_CONDITIONAL_OBJECT_BYTES + 1),
+    )
+    reads = []
+    original_read = store_mod.os.read
+
+    def observed_read(descriptor, amount):
+        reads.append((descriptor, amount))
+        return original_read(descriptor, amount)
+
+    monkeypatch.setattr(store_mod.os, "read", observed_read)
+    with pytest.raises(RuntimeError, match="predecessor exceeds its byte safety limit"):
+        store.put_bytes_strict_conditional(
+            "pointer", b"candidate", expected_version="sha256:" + "0" * 64,
+        )
+    assert reads == []
+
+
+def test_local_conditional_create_has_one_cross_process_winner(tmp_path):
+    context = multiprocessing.get_context("spawn")
+    barrier = context.Barrier(2)
+    results = context.Queue()
+    root = tmp_path / "store"
+    LocalStore(root)
+    contenders = [
+        context.Process(
+            target=_local_conditional_worker,
+            args=(root, "snapshots/latest.json", payload, barrier, results),
+        )
+        for payload in (b"candidate-a", b"candidate-b")
+    ]
+    for contender in contenders:
+        contender.start()
+    outcomes = [results.get(timeout=10) for _ in contenders]
+    for contender in contenders:
+        contender.join(timeout=10)
+        assert not contender.is_alive()
+        assert contender.exitcode == 0
+    assert all(error is None for _payload, _won, error in outcomes)
+    assert sorted(won for _payload, won, _error in outcomes) == [False, True]
+    winner = next(payload for payload, won, _error in outcomes if won)
+    assert LocalStore(root).get_bytes_strict("snapshots/latest.json") == winner
+
+
+def test_local_conditional_write_rejects_symlink_leaf_and_lock(tmp_path):
+    store = LocalStore(tmp_path / "store")
+    outside = tmp_path / "outside"
+    outside.write_bytes(b"outside")
+    (store.root / "pointer").symlink_to(outside)
+    with pytest.raises(OSError):
+        store.put_bytes_strict_conditional("pointer", b"candidate", expected_version=None)
+    (store.root / "pointer").unlink()
+    lock = store.root / ".strict-conditional-write.lock"
+    lock.unlink()
+    lock.symlink_to(outside)
+    with pytest.raises(OSError):
+        store.put_bytes_strict_conditional("pointer", b"candidate", expected_version=None)

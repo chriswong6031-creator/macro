@@ -86,9 +86,21 @@ def test_payload_prefix_is_enforced_ahead_of_the_launch_switch():
     )
 
 
-def test_preview_shell_is_free_registered_not_premium():
-    """The page URL must stay reachable for Free, or there is no preview at all."""
-    assert "/special_situations.html" in _policy()["free_registered"]["exact"]
+def test_preview_shell_is_anonymously_public_not_premium():
+    """The page URL must stay reachable WITHOUT a session, or there is no preview
+    at all — and since W1a (research/SEO_SUPERCHARGE_MASTERPLAN_BY_FABLE.md) no
+    crawl either: the registration wall 302s Googlebot, which never has a session,
+    into /?signin=1. Promoted free_registered → public on 2026-08-02. The paid rows
+    never lived on this URL; they live in the payload the tests above keep gated.
+    """
+    pol = _policy()
+    page = "/special_situations.html"
+    assert page in pol["public"]["exact"]
+    assert page not in pol["free_registered"]["exact"], (
+        "one class only — a path left in both lists serves as public while the "
+        "policy file documents it as gated"
+    )
+    assert page not in pol["deny"]["exact"]
 
 
 def test_payload_prefix_is_not_public():

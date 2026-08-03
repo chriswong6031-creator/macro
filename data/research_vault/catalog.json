@@ -1,8 +1,9 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T05:49:58.666434+00:00",
-  "count": 644,
+  "generated_at": "2026-08-03T08:59:27.027660+00:00",
+  "count": 653,
   "institutions": [
+    "Alger",
     "Amova",
     "Apollo",
     "BTIG",
@@ -40,6 +41,7 @@
     "The Punchline",
     "UBS",
     "Weekly Preview",
+    "William Blair",
     "ZKB",
     "Zero Hedge"
   ],
@@ -594,6 +596,42 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bv6lgvckdpx-c19452",
+      "title": "AOM Political Gridlock 1",
+      "institution": "Alger",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:44:41Z",
+      "summary_points": [
+        "**Political Gridlock & Equity Returns**: Split elections yield 12.0% median S&P 500 1-year returns vs.",
+        "6% for sweeps, driven by reduced policy risks limiting radical tax/regulatory changes.",
+        "**Fundamental Investment Approach**: Prioritize long-term secular growth companies and fundamentals over political dynamics, as historical data shows political outcomes lead to undesirable results."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qcdztlqs9oe-a09eab",
+      "title": "Dailyspark 2026 08 01",
+      "institution": "Apollo",
+      "side": "buy",
+      "desk": "",
+      "published_at": "2026-08-02T14:44:01Z",
+      "summary_points": [
+        "Document Missing**: No source document provided for extraction"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-nffr9ga8rgt-e4fabf",
       "title": "MS Nick Savone Global Reflections Aug 1",
       "institution": "Morgan Stanley",
@@ -775,6 +813,23 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-kiuovgwwmcn-9fd6a4",
+      "title": "ING Think rates spark recalibrating rate assumptions",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T11:03:05Z",
+      "summary_points": [
+        "**USD/GBP Dovish Repricing**: Fed hold + benign PCE deflator → markets no longer expect Fed hikes twice next year → lower USD/GBP rates - **Eurozone Rate Outlook**: Robust GDP supports higher euro swap rates; ECB’s inflation focus → 10Y euro swap likely around 3.2% - **BoE Inflation Comfort**: BoE’s inflation data extends policy hold timeline (30% Sept hike probability)"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-amdunuthhkf-e33b3d",
       "title": "ING Think boj leaves rates at 100 with no surprises",
       "institution": "Ing Econ",
@@ -815,6 +870,63 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-4qbn7ukale5-1571c6",
+      "title": "ING Think eurozone inflation only increased modestly in july",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T11:00:39Z",
+      "summary_points": [
+        "**Eurozone inflation resilience**: Headline inflation rose to 2.9% in July despite Middle East conflict and energy price spikes, indicating persistent underlying inflationary pressures.",
+        "**Core inflation acceleration**: Core inflation (excluding energy and food) reached 2.5%, driven by surging fuel prices to multi-year highs, signaling sustained cost-push pressures.",
+        "**Goods inflation outlook**: Goods inflation expected to rise further due to fuel price surges, posing a key risk to corporate margins and central bank policy decisions.",
+        "**Geopolitical inflation risk**: Middle East conflict and energy volatility continue to act as significant inflation catalysts, complicating monetary policy normalization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-3ty04t9tqv8-c282e6",
+      "title": "ING Think polands inflation up in july amid end of fuel price support",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T11:00:01Z",
+      "summary_points": [
+        "**Fuel-Driven Inflation Surge**: CPI rose to 3.0% YoY (July) due to 13.9% MoM fuel price spike post-support end, with 23% VAT reinstatement adding 0.5-0.6 ppts; food prices fell (-0.8% MoM), contrasting eurozone.",
+        "**NBP Rate Hold Confirmed**: No rate hikes expected in 2024 despite inflation above target; policy shift to higher fuel VAT and scrapped price caps signals contained price pressure, not broad-based inflation.",
+        "**Core Inflation Misleading**: Core inflation (ex-food/energy) at 3.1% YoY driven by geopolitical oil shocks, not general pressure; inflation ex-fuel remains low at 2.2% YoY due to falling food prices.",
+        "**Geopolitical Fuel Shock Risk**: Key risk is prolonged Middle East conflict causing persistent fuel price shocks, potentially disrupting the current inflation trajectory despite limited spillover."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fxd90qbfbjq-485ae5",
+      "title": "ING Think italian confidence data point to a decent start for the third quarter",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:59:14Z",
+      "summary_points": [
+        "**Italian confidence data signals broad-based Q3 improvement (construction sector exception), lifting 2026 GDP growth forecast above 0.8% base case** - **Business confidence divergence: Manufacturing peaks, construction slumps amid Middle East war impact** - **GDP forecast upside risk: Q2 data shows service weakness vs manufacturing strength, geopolitical/energy pressures persist** - **Construction slump driven by EU recovery plan delays and Italian housing plan implementation lag**"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-vr9pxcwoy44-c03eb7",
       "title": "ING Think think ahead warsh wants a quieter fed the bank of england shows how",
       "institution": "Ing Econ",
@@ -832,6 +944,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dbrvoev0a0n-4d73a4",
+      "title": "ING Think china pmi",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:57:19Z",
+      "summary_points": [
+        "**Manufacturing Contraction**: Manufacturing PMI at 49.2 (5-month low, below 50 threshold), with all key subindices (production 49.6, new orders 48.5, export orders 49.6) contracting, signaling sustained economic slowdown.",
+        "**PPI Inflation Peak Confirmed**: Declining PMI (50.3→49.2) and ex-factory prices in contraction for 2nd month indicate PPI inflation peak has passed, heightening urgency for policy easing.",
+        "**Non-Manufacturing PMI at 43-Month Low**: Services sector PMI fell to 49.0 (43-month low), with new orders (44.4) and sales prices (47.9) at multi-month lows, confirming post-pandemic weakness.",
+        "**Fiscal Policy Shift Signal**: Politburo meeting signals incremental fiscal easing amid prolonged contraction, targeting support for growth amid geopolitical uncertainty and regulatory headwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -919,6 +1051,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-2n2sxcgdpvd-3707ca",
+      "title": "WilliamBlair Lev Fin Newsletter Q2 2026",
+      "institution": "William Blair",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:42:26Z",
+      "summary_points": [
+        "**M&A Resilience vs.",
+        "PE Weakness**: M&A activity surged to $94.1B YTD (+17% YoY), highest first-half since 2022, driven by sponsors in healthcare/aerospace; private equity deal value down 38% (Q1 $177.3B), lowest in 2 years.",
+        "**Lender Discipline Intensifies**: 31% of lenders made borrower-friendly concessions (mostly pricing), 76% maintained pricing stability, and 55% require >40% minimum equity in PE deals (up from 52% YoY).",
+        "**Geopolitical & AI Sector Risks**: Geopolitical volatility (Iran/U.S.",
+        "Strait of Hormuz) and AI disruption drive 87% lender caution in software/Tech, 46% reduced appetite for SaaS, and binary underwriting decisions in AI-adjacent sectors."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-jsbbbq5ngwc-8d0619",
       "title": "mfse fly",
       "institution": "Other",
@@ -976,6 +1129,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-htyurthnx3b-e36a4f",
+      "title": "Relais Group Oyj 202607280847 flash",
+      "institution": "Nordea",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:35:45Z",
+      "summary_points": [
+        "**Acquisition Metrics**: 70% stake in Tershine (vehicle care firm) with 33% sales CAGR (2021–2025), SEK 155m net sales (2026), 18.7% EBIT margin (GAAP), strong Swedish brand positioning.",
+        "**Growth & Strategic Fit**: Steady net sales growth (2020/21–2025/26), EBIT margin stabilizing near 20%, aligning with Products & Solutions to expand vehicle care niche.",
+        "**Debt Pressure**: Net debt/EBITDA spikes to 3.80 (2025) after declining to 2.72 (2024), despite EPS growth surge (36.5% in 2024) and prior strong performance.",
+        "**Valuation Recovery**: P/E ratio declines to 9.99 (2028E), dividend yield rebounds to 3.82% (2028E), indicating potential undervaluation and income recovery."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },

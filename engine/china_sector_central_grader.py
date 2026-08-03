@@ -111,14 +111,22 @@ def _mhash_stable_cn(basket_id: str, d0: pd.Timestamp, h: int, frozen_df) -> boo
 def _basket_levels_cn() -> tuple[dict, object]:
     """Basket level series from the FROZEN store for China + THS domains.
 
-    W3.8: replaces the live compute_china_baskets() path.  Returns (basket_lvl_dict,
-    merged_frozen_df).  Before the first freeze both are empty/None and the grader
-    reports 'accruing from <freeze_start>'.
+    W3.8: replaces the live compute_china_baskets() path.  Returns
+    ({bid: (series, return_valid_start)}, merged_frozen_df).  Before the first freeze
+    both are empty/None and the grader reports 'accruing from <freeze_start>'.
+
+    2026-08 (chain fix): the frozen series is a RETURN series only from its chain
+    anchor onward — rows written before the chain-linked writer each sat on that
+    night's rolling-window base.  Each basket is clamped to
+    ``basket_freeze.return_valid_start()`` (per DOMAIN, since anchors are per-store)
+    and a basket with no anchor at all is EXCLUDED outright.
     """
     out: dict = {}
     merged_frozen = None
     try:
-        from engine.basket_freeze import read_frozen
+        # _return_valid_start_from: the public return_valid_start() contract against
+        # the frame we already read (one parquet read per domain, not per basket).
+        from engine.basket_freeze import read_frozen, _return_valid_start_from
         for domain in ("china", "china_ths"):
             df = read_frozen(domain)
             if df is None or df.empty:
@@ -129,11 +137,20 @@ def _basket_levels_cn() -> tuple[dict, object]:
             else:
                 merged_frozen = pd.concat([merged_frozen, df], axis=1)
             for col in df.columns:
-                if col.endswith("__level_tr"):
-                    bid = col[: -len("__level_tr")]
-                    s = df[col].dropna()
-                    if not s.empty:
-                        out[bid] = s
+                if not col.endswith("__level_tr"):
+                    continue
+                bid = col[: -len("__level_tr")]
+                s = df[col].dropna()
+                if s.empty:
+                    continue
+                vs = _return_valid_start_from(df, bid)
+                if vs is None:
+                    log.info("basket_levels_cn[%s]: %s has no chain anchor — excluded", domain, bid)
+                    continue
+                s = s[s.index >= pd.Timestamp(vs)]
+                if s.empty:
+                    continue
+                out[bid] = (s, vs)
     except Exception as e:  # noqa: BLE001
         log.warning("basket_levels_cn: frozen read failed: %s", e)
     return out, merged_frozen
@@ -146,6 +163,12 @@ def _fwd_return(row: pd.Series, h: int, basket_lvl: dict,
 
     W3.8: basket calls additionally check membership-hash stability over the forward
     window.  Returns (return_float | None, invalidation_reason | None).
+
+    2026-08: basket calls dated BEFORE the basket's chain anchor are invalidated
+    ('pre_chain_anchor').  The check is load-bearing on its own — clamping the series
+    truncates the window but cannot express the error: without it, a pre-anchor call
+    would be graded against a window that silently STARTS at the anchor while still
+    wearing the call's own (earlier) date.
     """
     try:
         from engine import china_sector_index as csi
@@ -160,9 +183,19 @@ def _fwd_return(row: pd.Series, h: int, basket_lvl: dict,
             return float(s.iloc[h] / s.iloc[0] - 1.0), None
         else:
             bid = row.get("basket_id")
-            s = basket_lvl.get(bid)
+            entry = basket_lvl.get(bid)
+            if entry is None:
+                # Not in the chained set: no frozen series at all (accruing — honest
+                # null) or present-but-unanchored, which is a pre-anchor read.
+                cols = getattr(frozen_df, "columns", ())
+                if f"{bid}__level_tr" in cols:
+                    return None, "pre_chain_anchor"
+                return None, None
+            s, vs = entry
             if s is None or s.empty:
                 return None, None
+            if vs is None or d0 < pd.Timestamp(vs):
+                return None, "pre_chain_anchor"
             # W3.8: membership-hash stability check
             if not _mhash_stable_cn(bid, d0, h, frozen_df):
                 return None, "membership_changed"
@@ -184,6 +217,11 @@ def grade() -> dict | None:
       (dropped with reason 'membership_changed'; counted in invalidated_membership).
     - Pre-freeze basket calls are NOT graded: the scorecard reports
       'accruing from <freeze_start>' — the permanent survivorship hole (D4-N3 / R1).
+
+    2026-08 (chain fix): basket calls dated before the basket's chain anchor are
+    INVALIDATED (dropped with reason 'pre_chain_anchor'; counted in
+    invalidated_pre_chain).  The scorecard exposes basket_return_valid_start — the
+    newest chain anchor among gradable baskets.
     """
     p = config.data_dir() / _STORE[0] / _STORE[1]
     if not p.exists():
@@ -220,12 +258,17 @@ def grade() -> dict | None:
     except Exception:  # noqa: BLE001
         pass
 
+    # 2026-08: newest chain anchor across the baskets we can actually grade.
+    _valid_starts = [vs for _s, vs in basket_lvl.values() if vs]
+    basket_valid_start = max(_valid_starts) if _valid_starts else None
+
     out = {
         "available": True, "n_calls": int(len(df)),
         "dates": sorted(df["date"].dropna().unique().tolist()),
         "horizons_d": list(_HORIZONS_D), "by_horizon": {},
         # W3.8 transparency fields
         "freeze_start": freeze_start,
+        "basket_return_valid_start": basket_valid_start,
         "pre_freeze_note": (
             f"Basket grading accruing from {freeze_start} (W3.8 freeze date). "
             "Pre-freeze basket calls are not graded: the series before this date is "
@@ -233,13 +276,21 @@ def grade() -> dict | None:
             if freeze_start else
             "Basket grading not yet started (no frozen store). "
             "Basket calls will accrue once the first freeze runs."
+        ) + (
+            " Basket return math re-anchored 2026-08 after the moving-base freeze "
+            "defect; grades accrue from the chain anchor"
+            + (f" ({basket_valid_start})." if basket_valid_start else ".")
         ),
     }
     for h in _HORIZONS_D:
         recs = []
         n_invalidated_membership = 0
+        n_invalidated_pre_chain = 0
         for _i, row in df.iterrows():
             fr, inv_reason = _fwd_return(row, h, basket_lvl, frozen_df=frozen_df)
+            if inv_reason == "pre_chain_anchor":
+                n_invalidated_pre_chain += 1
+                continue
             if inv_reason == "membership_changed":
                 n_invalidated_membership += 1
                 continue
@@ -257,6 +308,7 @@ def grade() -> dict | None:
             out["by_horizon"][f"{h}d"] = {
                 "n": len(recs), "note": "accruing",
                 "invalidated_membership": n_invalidated_membership,
+                "invalidated_pre_chain": n_invalidated_pre_chain,
             }
             continue
         g = pd.DataFrame(recs)
@@ -283,6 +335,7 @@ def grade() -> dict | None:
                                      if g["excess"].notna().any() else None),
             "by_tier": by_tier,
             "invalidated_membership": n_invalidated_membership,
+            "invalidated_pre_chain": n_invalidated_pre_chain,
         }
     out["n_graded"] = max((v.get("n", 0) for v in out["by_horizon"].values()), default=0)
     return out
