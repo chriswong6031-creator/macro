@@ -48,6 +48,7 @@ read_adapters:
     routes:
       - /api/biocatalyst/v1/health
       - /api/biocatalyst/v1/trials
+      - /api/biocatalyst/v1/trial-peer-sets:resolve
       - /api/biocatalyst/v1/trials/changes
       - /api/biocatalyst/v1/trials/milestones
       - /api/biocatalyst/v1/trials/prospective-changes
@@ -55,6 +56,8 @@ read_adapters:
     input_identity: source_native_nct_id
     output_contracts:
       - trial_snapshot.v1
+      - trial_protocol_projection.v1
+      - trial_peer_set.v1
       - trial_history_read_model.v1
       - trial_prospective_change_read_model.v1
     transport: authenticated_site_full_private_no_store
@@ -174,6 +177,8 @@ registrations:
       artifact: "/var/lib/macro-biocatalyst/public/"
       schemas:
         - trial_snapshot.v1
+        - trial_protocol_projection.v1
+        - trial_peer_set.v1
         - trial_version_diff.v1
         - trial_history_read_model.v1
         - trial_prospective_change_read_model.v1

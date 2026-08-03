@@ -21,7 +21,10 @@ POST-STEP — W6 PROMOTION-READINESS MONITOR:
         n_families_approaching, families_ready[]).
     On first-cross ready=True for any family, a Telegram/Discord alert fires once
     (fired state persisted in data/qledger/readiness_alerts_fired.json so it does
-    not re-fire nightly). A grader-quiet alert fires if n_graded_today==0 for two
+    not re-fire nightly); when a family×horizon later reads ready=False its key
+    is released, so a genuine re-cross alerts again — an entry from a
+    since-withdrawn gate must not suppress the honest cross forever.
+    A grader-quiet alert fires if n_graded_today==0 for two
     consecutive days when open claims exist (checked in the summary as
     grader_quiet_days).
 
@@ -343,10 +346,13 @@ def run_readiness_post_step(root: Path, n_graded_today: int, n_open: int,
                 elif rec.get("approaching"):
                     families_approaching.append(f"{fam}@{h_str}d")
 
-        # First-cross alert (deduped)
+        # First-cross alert (two-sided dedup: a family×horizon that drops back
+        # to ready=False releases its key, so a later genuine re-cross alerts
+        # again — otherwise an entry fired under a since-withdrawn gate would
+        # suppress the honest cross forever)
         if not dry_run:
             fired = _load_fired(root)
-            newly_fired = False
+            fired_dirty = False
             for fam, horizons in readiness.items():
                 if fam.startswith("_"):
                     continue
@@ -359,8 +365,14 @@ def run_readiness_post_step(root: Path, n_graded_today: int, n_open: int,
                             "n_dates": rec["n_dates"],
                             "wilson_ci_low": rec["wilson_ci_low"],
                         }
-                        newly_fired = True
-            if newly_fired:
+                        fired_dirty = True
+                    elif not rec.get("ready") and key in fired:
+                        log.info("readiness dedup released: %s ready=False "
+                                 "(ci_low=%s) — will alert on next cross",
+                                 key, rec.get("wilson_ci_low"))
+                        del fired[key]
+                        fired_dirty = True
+            if fired_dirty:
                 _save_fired(root, fired)
 
         # Grader-quiet check

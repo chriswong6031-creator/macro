@@ -654,7 +654,12 @@ class _Messages:
                 "--ignore-rules",
                 "-c", 'approval_policy="never"',
                 "-c", 'web_search="disabled"',
-                "-c", "agents.enabled=false",
+                # Sub-agents off. The key is `multi_agent` — NOT `agents`, which
+                # codex-cli >= 0.144 parses as a map of agent-role structs, so
+                # `agents.enabled=false` fails config load ("expected struct
+                # AgentRoleToml in `agents`") and kills every call on this rung
+                # (2026-08-03 nightly, all three brain lanes degraded).
+                "-c", "multi_agent.enabled=false",
                 "-c", "features.shell_tool=false",
                 "-c", f"tools.view_image={'true' if vision_dir else 'false'}",
             ]

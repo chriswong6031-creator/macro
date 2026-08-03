@@ -32,6 +32,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from lib import config
+from engine import desk_ledger as _ledger_law    # run-scoped ids + immutable appends (leaf util)
 from engine.catalyst_tone import _extract_json   # shared tolerant JSON parser (leaf util)
 
 log = logging.getLogger(__name__)
@@ -390,7 +391,7 @@ def _mb_check_by(asof, horizon: int):
         return None
 
 
-def _mb_build_thesis(t: dict, i: int, asof, root, cfg: dict) -> dict | None:
+def _mb_build_thesis(t: dict, i: int, asof, root, cfg: dict, run_token: str = "") -> dict | None:
     """Validate one model-authored cross-asset lean + attach the engine-derived falsifier.
     Returns None for malformed / non-directional entries (every kept lean is scorable)."""
     if not isinstance(t, dict):
@@ -408,7 +409,7 @@ def _mb_build_thesis(t: dict, i: int, asof, root, cfg: dict) -> dict | None:
     if conv not in _CONVICTIONS:
         conv = "low"
     return {
-        "id": f"mb-{asof}-{i + 1}",
+        "id": f"mb-{asof}-{run_token}-{i + 1}" if run_token else f"mb-{asof}-{i + 1}",
         "subject": subject, "lean": lean, "conviction": conv, "horizon_d": horizon,
         "thesis": t.get("thesis"),
         "falsifier": {"text": t.get("falsifier_text"),
@@ -443,17 +444,22 @@ def _append_ledger(brief: dict, root) -> None:
         d.mkdir(parents=True, exist_ok=True)
         asof = brief.get("state_asof")
         regime = quad_label(root)
+        rows = []
+        for t in theses:
+            check = (t.get("falsifier") or {}).get("check") or {}
+            rows.append({
+                "id": t["id"], "logged_at": brief["generated_at"], "state_asof": asof,
+                "subject": t["subject"], "lean": t["lean"], "conviction": t["conviction"],
+                "horizon_d": t["horizon_d"], "falsifier": t["falsifier"],
+                "check_by": t["check_by"], "entry_levels": _mb_entry_levels(check, asof, root),
+                "regime": regime, "status": "open", "scored_at": None,
+                "outcome": None, "realized": None,
+            })
+        # Immutability gate: a logged thesis is pre-registered — an id already in the
+        # ledger is refused loudly, never rewritten (engine.desk_ledger).
+        rows = _ledger_law.reject_existing_ids(d / "theses.jsonl", rows, "master_brain")
         with open(d / "theses.jsonl", "a") as fh:
-            for t in theses:
-                check = (t.get("falsifier") or {}).get("check") or {}
-                row = {
-                    "id": t["id"], "logged_at": brief["generated_at"], "state_asof": asof,
-                    "subject": t["subject"], "lean": t["lean"], "conviction": t["conviction"],
-                    "horizon_d": t["horizon_d"], "falsifier": t["falsifier"],
-                    "check_by": t["check_by"], "entry_levels": _mb_entry_levels(check, asof, root),
-                    "regime": regime, "status": "open", "scored_at": None,
-                    "outcome": None, "realized": None,
-                }
+            for row in rows:
                 fh.write(json.dumps(row, default=str) + "\n")
     except Exception as e:  # noqa: BLE001
         log.warning("master_brain: ledger append failed: %s", e)
@@ -1907,8 +1913,10 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=N
         try:
             raw = parsed.get("theses") if isinstance(parsed.get("theses"), list) else []
             built = []
+            token = _ledger_law.run_token(brief.get("generated_at"))
             for t in raw[: int(cfg.get("max_theses", 2))]:
-                th = _mb_build_thesis(t, len(built), brief["state_asof"], root, cfg)
+                th = _mb_build_thesis(t, len(built), brief["state_asof"], root, cfg,
+                                      run_token=token)
                 if th is not None:
                     built.append(th)
             brief["theses"] = built

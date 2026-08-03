@@ -1,0 +1,104 @@
+[
+  {
+    "ticker": "NVDA",
+    "claim_kind": "level_touch",
+    "fact_id": "ma_touch_200",
+    "timeframe": "DAILY",
+    "axis_start": "2025-06-23",
+    "axis_end": "2026-07-31",
+    "fact_window_start": "2025-07-31",
+    "drawn_level": 192.928,
+    "level_kind": "level_touch",
+    "in_frame_numbers": [
+      "200.75",
+      "192.93",
+      "5"
+    ],
+    "rejected": [],
+    "notes": [],
+    "lookback_bars": 279,
+    "file": "a-level-touch-nvda-daily.png",
+    "note": "prior-touch discs blue-grey, gold disc on now, level tag in the MA colour"
+  },
+  {
+    "ticker": "INTC",
+    "claim_kind": "streak",
+    "fact_id": "tf_streak_down",
+    "timeframe": "WEEKLY",
+    "axis_start": "2023-08-11",
+    "axis_end": "2026-07-31",
+    "fact_window_start": "2026-06-26",
+    "drawn_level": null,
+    "level_kind": "streak",
+    "in_frame_numbers": [
+      "90.20",
+      "6"
+    ],
+    "rejected": [],
+    "notes": [],
+    "lookback_bars": 156,
+    "file": "d-streak-intc-weekly.png",
+    "note": "consecutive-candles pane; y-unit IS the claim's unit"
+  },
+  {
+    "ticker": "AME",
+    "claim_kind": "analog",
+    "fact_id": "multi_year_high",
+    "timeframe": "WEEKLY",
+    "axis_start": "2020-11-06",
+    "axis_end": "2026-07-31",
+    "fact_window_start": "2021-05-28",
+    "drawn_level": 244.71,
+    "level_kind": "analog",
+    "in_frame_numbers": [
+      "241.71",
+      "244.71",
+      "1.2%",
+      "5"
+    ],
+    "rejected": [],
+    "notes": [],
+    "lookback_bars": 300,
+    "file": "b-analog-ame-weekly.png",
+    "note": "blue-grey discs on each prior instance, gold 'You are here'"
+  },
+  {
+    "ticker": "DUOL",
+    "claim_kind": "stage_read",
+    "fact_id": "stage_read",
+    "timeframe": "WEEKLY",
+    "axis_start": "2023-08-11",
+    "axis_end": "2026-07-31",
+    "fact_window_start": "",
+    "drawn_level": null,
+    "level_kind": "stage_read",
+    "in_frame_numbers": [
+      "134.81"
+    ],
+    "rejected": [],
+    "notes": [],
+    "lookback_bars": 156,
+    "file": "c-stage-read-duol-weekly.png",
+    "note": "30-week average + Stage 2 chart label; the COPY says 'marking up'"
+  },
+  {
+    "ticker": "AX",
+    "claim_kind": "superlative",
+    "fact_id": "tf_record_high",
+    "timeframe": "WEEKLY",
+    "axis_start": "2020-11-06",
+    "axis_end": "2026-07-31",
+    "fact_window_start": "2021-05-28",
+    "drawn_level": null,
+    "level_kind": "superlative",
+    "in_frame_numbers": [
+      "101.41",
+      "5"
+    ],
+    "rejected": [],
+    "notes": [],
+    "lookback_bars": 300,
+    "file": "e-longtail-ax-weekly.png",
+    "note": "pool=retail_attention row: search attention z 3.7 (153 page views) (asof 2026-07-31, source wiki_attention)"
+  }
+]

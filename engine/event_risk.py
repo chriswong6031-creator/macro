@@ -22,6 +22,8 @@ import json
 from datetime import date
 from pathlib import Path
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
+
 # Typical 1-day |S&P 500| move around the event and historical up-rate (approximate,
 # long-run ballparks — DISPLAY calibration only, never a forecast). up_rate near 0.5
 # is the whole point: these are two-sided.
@@ -256,7 +258,15 @@ def _write_log(p: Path, rows: list[dict]) -> None:
 
 def append_log(snap: dict | None, path: str | Path | None = None) -> bool:
     """On the EVENT DAY (days_to==0), append one row (realized move filled later by
-    resolve()). Idempotent per (date,type). Returns True if a row was added."""
+    resolve()). Idempotent per (date,type). Returns True if a row was added.
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of data/ forward
+    ledgers. Appended from scripts/build_site.py, which runs on daily.yml's engine job
+    (armed) AND on every express render lane (must be read-only); keep-first per
+    (date, type) means one off-lane event-day append displaces the nightly row for
+    good."""
+    if not _ledger_advance_enabled():
+        return False
     if not snap or not snap.get("show") or snap.get("days_to") != 0:
         return False
     p = _log_path(path)
@@ -273,7 +283,12 @@ def append_log(snap: dict | None, path: str | Path | None = None) -> bool:
 
 def resolve(spy_closes: dict, path: str | Path | None = None) -> int:
     """Fill realized event-day move (close_t / close_{t-1} - 1) for unresolved rows
-    whose date is present in `spy_closes` ({iso_date: close}). Returns # resolved."""
+    whose date is present in `spy_closes` ({iso_date: close}). Returns # resolved.
+
+    Gate: COLLECT_LANE=nightly — grading IS an advance of the forward ledger, so it is
+    bound by the same sole-advancer law as append_log."""
+    if not _ledger_advance_enabled():
+        return 0
     p = _log_path(path)
     rows = _read_log(p)
     if not rows or not spy_closes:

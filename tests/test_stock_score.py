@@ -62,7 +62,9 @@ def test_parabolic_penalised_and_not_chased():
     p = ss.conviction_profile(rec, "US")
     v = p["verdict"].lower()
     assert "chase" in v or "extended" in v or "wait" in v
-    assert any("parabolic" in c for c in p["cautions"])
+    # the caution is the de-jargoned form of "parabolic" (#4297): it must still
+    # name the vertical move; the chase/wait action is pinned on the verdict above.
+    assert any("straight-up" in c.lower() for c in p["cautions"])
 
 
 def test_cautions_are_bilingual():
@@ -103,7 +105,7 @@ def test_accounting_warn_flags_leader():
     rec = _rec(accounting={"verdict": "warn"})
     p = ss.conviction_profile(rec, "US")
     assert "accounting" in p["verdict"].lower()
-    assert any("accounting" in c for c in p["cautions"])
+    assert any("accounting" in c.lower() for c in p["cautions"])
 
 
 # --- the constructive cases -------------------------------------------------
@@ -431,7 +433,10 @@ def test_overextended_name_is_blocked_and_dont_chase():
     assert "over-200dma" in present
     p = ss.conviction_profile(rec, "US")
     assert "don't chase" in p["verdict"].lower() or "chase" in p["verdict"].lower()
-    assert any("extended" in c and "200dma" in c for c in p["cautions"])
+    # de-jargoned copy (#4297): "200dma" is banned vocabulary now, but the caution
+    # must still QUANTIFY the extension (+31% -> "31%") and call the buy a chase.
+    assert any("31%" in c and "trend line" in c.lower() and "chasing" in c.lower()
+               for c in p["cautions"])
     assert "buy" not in p["verdict"].lower()
 
 
@@ -576,11 +581,25 @@ def test_imminent_earnings_sizes_down_and_cautions():
     assert "leader" in base["verdict"].lower()                  # no event -> leader verb
     assert "earnings" not in base["verdict"].lower()
     assert "earnings" in soon["verdict"].lower()                # event tomorrow -> not the leader verb
-    assert any("earnings" in c for c in soon["cautions"])
+    # sentence-cased copy (#4297) + the singular-day grammar fix: the period pins
+    # "1 day." (never "1 days."), and the size-down action must survive rewrites.
+    assert any("earnings in 1 day." in c.lower() and "size down" in c.lower()
+               for c in soon["cautions"])
     assert soon["size"]["pct"] < base["size"]["pct"]            # sized down
     assert soon["risk"]["total"] >= 0.5
     # earnings is a SIZE/verb concern, NOT a composite-rank tax (transient risk)
     assert soon["composite_z"] == base["composite_z"]
+
+
+def test_risk_veto_is_exported_structurally():
+    # stock_dossier maps 'risk_veto' from risk.veto — never from caution prose,
+    # which #4297 rewrote out from under a substring-matching consumer.
+    rec = _rec(tech={"off_52w_high_pct": -2.0, "rsi14": 70.0, "pct_vs_200dma": 35.0})
+    calm = ss.conviction_profile(rec, "US")
+    hot = ss.conviction_profile(rec, "US", ctx={"risk_overlay": {"stress": 0.9}})
+    assert not calm["risk"].get("veto")
+    assert hot["risk"]["veto"] is True
+    assert any("under stress" in c.lower() for c in hot["cautions"])
 
 
 # --- overhaul: technical confirmers wired into the ENTRY axis (verifiers, never alpha) -------

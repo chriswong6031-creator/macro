@@ -647,6 +647,185 @@ def summarize_item(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Restatement gates — "only use illustrations when you have valuable details"
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Operator defect report 2026-08-02, from live posts. Two distinct failures that
+# share one cause: nothing ever compared the card against the words beside it.
+#
+#   (2) The card printed the same sentence twice. For an X-relay item the feed
+#       builds headline = snippet[:120] and body_snippet = the same snippet, so
+#       the card's headline and its summary were one string rendered at two
+#       sizes.
+#   (3) The card restated the post. The gold flash shipped as "On the tape:
+#       <headline> -- <credit>" with a card whose only content was <headline>.
+#       The reader got the same sentence in two places and learned nothing from
+#       the picture.
+#
+# Both are decided by containment, NOT similarity: the question is "is the card's
+# content already IN the other text", and the gold case is a strict subset, which
+# a symmetric measure (Jaccard) would score as merely similar. Containment over
+# the SHORTER token set answers the question asked.
+
+#: Tokens carrying no information for the restatement test — dropping them stops
+#: a shared scaffold of filler from either masking a restatement or inventing a
+#: difference. Deliberately small: this is a stop list, not a stemmer.
+_RESTATE_STOP: frozenset[str] = frozenset({
+    "a", "an", "and", "as", "at", "be", "by", "for", "from", "has", "have",
+    "in", "is", "it", "its", "of", "on", "or", "that", "the", "to", "was",
+    "were", "with", "after", "says", "said", "this", "will", "would",
+})
+
+#: Above this share of the shorter token set appearing in the longer one, the
+#: two texts are the same statement. 0.70 was picked against the real outbox:
+#: it drops the restating flashes while keeping every genuinely distinct pair.
+_RESTATE_THRESHOLD = 0.70
+
+_RESTATE_WORD_RE = re.compile(r"[a-z0-9$%.]+")
+
+#: MIRROR of press_lane._CASHTAG_RE — kept in sync by a test, because the two
+#: gates must answer the same question about the same string. A `breaking` post
+#: that NAMES TICKERS and ships no picture is quarantined by the publisher
+#: (operator law 2026-07-30, scripts/marketing_publisher._bare_cashtag_post:
+#: "I'D RATHER YOU DESTROY THE ENTIRE ENGINE THAN SHIP TEXT ONLY"), and the
+#: radar draws each breaking item a card precisely to satisfy that gate. So the
+#: card-value rule below must never strip a card off a cashtag-bearing post:
+#: doing so would not produce a leaner post, it would kill the post outright.
+_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}(?:\.[A-Z])?\b")
+
+
+def restatement_tokens(text: str) -> frozenset[str]:
+    """Normalized content tokens for the restatement test. Deterministic.
+
+    Lower-cases, drops emoji/punctuation, strips a leading wire opener and the
+    trailing credit clause, and removes stop words. Numbers are KEPT and keep
+    their decimal point ("30.32b" stays one token), because a figure is exactly
+    the kind of detail that makes two texts genuinely different.
+    """
+    s = str(text or "").lower()
+    # A wire opener and our own credit are scaffolding, not content: leaving them
+    # in makes an identical pair look 15% different and defeats the gate.
+    s = re.sub(r"^\s*(?:just\s*in|breaking|urgent|alert|developing|flash)\s*[:\-]+\s*",
+               " ", s)
+    s = re.sub(r"\s+--\s+.*$", " ", s)
+    s = re.sub(r"^\s*(?:on the tape|now crossing|heads up)\s*[.:]\s*", " ", s)
+    toks = {
+        t.strip(".") for t in _RESTATE_WORD_RE.findall(s)
+        if t.strip(".") and t.strip(".") not in _RESTATE_STOP
+    }
+    return frozenset(t for t in toks if len(t) > 1 or t.isdigit())
+
+
+def restatement_score(a: str, b: str) -> float:
+    """Share of the SHORTER text's tokens that also appear in the longer one.
+
+    1.0 means one text says nothing the other does not. Returns 0.0 when either
+    side has no content tokens — an empty side cannot be a restatement, and
+    failing open here would drop cards for having no words to compare.
+    """
+    ta, tb = restatement_tokens(a), restatement_tokens(b)
+    if not ta or not tb:
+        return 0.0
+    small, large = (ta, tb) if len(ta) <= len(tb) else (tb, ta)
+    return len(small & large) / len(small)
+
+
+class _CardHandleLeak(Exception):
+    """A card param carried a foreign @handle — the render is abandoned."""
+
+
+def _card_param_violations(card_kwargs: dict) -> list[str]:
+    """Foreign @mentions in anything the card would draw. [] = clean.
+
+    Delegates to copywriter.card_input_violations (same allowlist and the same
+    regex as the publisher's post-text gate, so the two cannot drift). Fail-SOFT
+    on any import/lookup error: this is a backstop behind ingestion-time
+    de-handling, and it must never be the reason a card fails to build.
+    """
+    try:
+        from engine.marketing.copywriter import (  # noqa: PLC0415
+            card_input_violations,
+        )
+    except Exception:  # noqa: BLE001
+        return []
+    try:
+        screened = {
+            k: v for k, v in card_kwargs.items()
+            if k not in ("logo_root", "cta", "suppress_cta")
+        }
+        return card_input_violations(**screened)
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def summary_earns_the_card(headline: str, summary: str) -> bool:
+    """Does this summary tell the card anything its headline does not? (defect 2)
+
+    False means the renderer is handed summary=None and omits the block cleanly,
+    rather than printing one sentence at two sizes.
+    """
+    if not str(summary or "").strip():
+        return False
+    return restatement_score(headline, summary) < _RESTATE_THRESHOLD
+
+
+def card_earns_attachment(
+    post_text: str,
+    headline: str,
+    summary: str = "",
+    tickers: "list[dict] | None" = None,
+) -> tuple[bool, str]:
+    """Does the card carry information beyond the post text? (defect 3)
+
+    Returns (attach?, reason). A card earns its place when it adds a genuinely
+    distinct summary, a tape reading the copy does not carry, or a headline the
+    post text does not already state. Everything else ships TEXT-ONLY — and for
+    short wire flashes that is the expected outcome, not a regression.
+    """
+    post = str(post_text or "").strip()
+    if not post:
+        # Nothing to compare against: keep the card rather than strip a post of
+        # its only content.
+        return True, "no post text to compare"
+
+    # THE TICKER-POST LAW OUTRANKS THIS ONE. A cashtag in the copy makes the
+    # picture a shipping requirement, not an embellishment — see _CASHTAG_RE
+    # above. This clause is what keeps the card-value rule from silently
+    # becoming a post-killer.
+    cashtags = sorted(set(_CASHTAG_RE.findall(post)))
+    if cashtags:
+        return True, (
+            f"post names {' '.join(cashtags)} — a ticker post ships a picture "
+            f"(operator law 2026-07-30)"
+        )
+
+    if summary and summary_earns_the_card(headline, summary):
+        if restatement_score(post, summary) < _RESTATE_THRESHOLD:
+            return True, "card summary adds detail the post text does not carry"
+
+    rows = tickers if isinstance(tickers, list) else []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        for key in ("price", "pct"):
+            try:
+                val = float(row.get(key))
+            except (TypeError, ValueError):
+                continue
+            if val == val and val not in (float("inf"), float("-inf")):
+                return True, "card carries a tape reading (price/move) the copy lacks"
+
+    score = restatement_score(post, headline)
+    if score < _RESTATE_THRESHOLD:
+        return True, f"card headline differs from the post text ({score:.2f})"
+
+    return False, (
+        f"card restates the post text ({score:.2f} of its words already posted) "
+        f"and carries no tape reading"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # build_breaking_payload — outbox-shaped artifact
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -676,6 +855,9 @@ def build_breaking_payload(
         cta_suppress: bool
         tickers: list[str]   # matched tickers from relevance scoring
         card_svg: str        # "" if renderer not available yet
+        card_summary: str|None  # what the CARD was given (None = dropped as a
+                                # restatement of the headline)
+        card_tickers: list[dict]  # enriched rows the card's tape strip drew
         provenance: {source_url: str, source: str, ingested_at: str}
     """
     summary_result = summarize_item(item, cfg, _llm_override=_llm_override, wire=wire)
@@ -697,6 +879,21 @@ def build_breaking_payload(
     raw_headline = str(item.get("headline", "") or "")
     card_headline = raw_headline
     headline_chars_dropped = 0
+    # DEFECT 2 — the card printed one sentence twice. The summary reaches the
+    # renderer only when it says something the headline does not; the POST body
+    # keeps the full summary either way (this gate is about what the picture
+    # shows, never about what we publish). Decided OUTSIDE the renderer's
+    # try/except so the dispatch gate downstream still sees what the card was
+    # given even when the render itself degraded. Gated against the RAW headline
+    # (the derived W4g hero is a whole-sentence prefix of it, so containment
+    # over the shorter token set answers the same for either form) — the raw
+    # form is the one that exists before the renderer import can fail.
+    card_summary = (
+        summary_result["summary"]
+        if summary_earns_the_card(raw_headline, summary_result["summary"])
+        else None
+    )
+    card_tickers: list[dict] = []
 
     # Lazy import of card renderer (degrades gracefully)
     card_svg = ""
@@ -720,19 +917,35 @@ def build_breaking_payload(
                 "the post body still carries the full summary",
                 flush=True,
             )
+        card_tickers = _enrich_tickers(tickers, root) or []
         card_kwargs = dict(
             headline=card_headline,
             source_name=item.get("source_name", item.get("source", "")),
             source_tier=item.get("source_tier", "aggregator"),
             published_at=item.get("published_at", ""),
-            tickers=_enrich_tickers(tickers, root),
+            tickers=card_tickers,
             suppress_cta=bool(item.get("cta_suppress", False)),
             # Account-wide footer posture (publish.chart_cta_enabled); distinct
             # from the per-item tragedy rule above, which drops the URL too.
             cta=chart_cta_enabled(cfg),
-            summary=summary_result["summary"],
+            summary=card_summary,
             logo_root=root,
         )
+        # BACKSTOP — no source handle may reach a card surface (operator law
+        # 2026-08-02). De-handling happens at ingestion, so this should never
+        # fire; it exists because the live defect rendered "@BRICSinfo ·
+        # AGGREGATOR" into the card art, and a card is built from params that
+        # copywriter.banned_language (the publisher's last gate, which screens
+        # POST TEXT) can never see. A leak drops the picture, not the post: the
+        # post has its own gate, and shipping no card beats shipping a card that
+        # tags a competitor.
+        _card_violations = _card_param_violations(card_kwargs)
+        if _card_violations:
+            print("::warning title=breaking-card-handle-mention::"
+                  f"{item.get('id', '')}: {'; '.join(_card_violations[:3])} — "
+                  f"card dropped, posting text-only", flush=True)
+            raise _CardHandleLeak(_card_violations[0])
+
         try:
             card_svg = render_breaking_card(
                 event_class=item.get("event_class"), **card_kwargs
@@ -765,6 +978,12 @@ def build_breaking_payload(
         "cta_suppress": bool(item.get("cta_suppress", False)),
         "tickers": tickers,
         "card_svg": card_svg,
+        # What the CARD was actually given — the dispatch gate compares these
+        # against the composed post text to decide whether the picture earns its
+        # place (card_earns_attachment). card_summary is None when the summary
+        # was dropped as a restatement of the headline.
+        "card_summary": card_summary,
+        "card_tickers": card_tickers,
         "provenance": {
             "source_url": item.get("url", ""),
             "source": item.get("source", ""),

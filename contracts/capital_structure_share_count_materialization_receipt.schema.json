@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_share_count_materialization_receipt.schema.json",
+  "title": "Authenticated share-count materialization receipt",
+  "description": "An immutable, HMAC-authenticated v2 publication receipt with a bounded binary-lifting ancestor table, exact constant-size materializer tail commitments, and no output authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "receipt_id", "sequence", "previous_receipt", "ancestor_refs", "published_at", "generation", "input_binding", "output_authority", "auth"],
+  "properties": {
+    "schema": {"const": "capital_structure.share_count_materialization_receipt/v2"},
+    "receipt_id": {"type": "string", "pattern": "^receipt:cs-share-count-materialization-v2:[a-f0-9]{64}$"},
+    "sequence": {"type": "integer", "minimum": 1, "maximum": 18446744073709551616},
+    "previous_receipt": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/receipt_ref"}]},
+    "ancestor_refs": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/receipt_ref"}
+    },
+    "published_at": {"type": "string", "format": "date-time"},
+    "generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generation_id", "ledger_sha256", "ledger_byte_length"],
+      "properties": {
+        "generation_id": {"type": "string", "pattern": "^generation:cs-share-count-materialization-v2:[a-f0-9]{64}$"},
+        "ledger_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "ledger_byte_length": {"type": "integer", "minimum": 1, "maximum": 134217728}
+      }
+    },
+    "input_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "ledger_head_receipt_id", "ledger_sequence", "compiler_version", "materialized_at", "prefixes"],
+      "properties": {
+        "schema": {"const": "capital_structure.share_count_materialization_input_binding/v1"},
+        "ledger_head_receipt_id": {"type": "string", "pattern": "^share-count-ledger-receipt-v2:cs:[a-f0-9]{24}$"},
+        "ledger_sequence": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "compiler_version": {"type": "string", "minLength": 1},
+        "materialized_at": {"type": "string", "format": "date-time"},
+        "prefixes": {"$ref": "#/$defs/prefixes"}
+      }
+    },
+    "output_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_context_only", "share_count_ledger_authority", "instrument_authority", "capacity_authority", "runway_authority", "risk_authority", "rank_authority", "sizing_authority", "entry_authority", "trade_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true},
+        "share_count_ledger_authority": {"const": false}, "instrument_authority": {"const": false}, "capacity_authority": {"const": false}, "runway_authority": {"const": false}, "risk_authority": {"const": false}, "rank_authority": {"const": false}, "sizing_authority": {"const": false}, "entry_authority": {"const": false}, "trade_authority": {"const": false}, "prophet_authority": {"const": false}
+      }
+    },
+    "auth": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scheme", "key_id", "signature"],
+      "properties": {"scheme": {"const": "hmac-sha256/v1"}, "key_id": {"type": "string", "minLength": 1}, "signature": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+    }
+  },
+  "$defs": {
+    "receipt_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "receipt_id", "receipt_sha256", "receipt_byte_length"],
+      "properties": {
+        "sequence": {"type": "integer", "minimum": 1, "maximum": 18446744073709551616},
+        "receipt_id": {"type": "string", "pattern": "^receipt:cs-share-count-materialization-v2:[a-f0-9]{64}$"},
+        "receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "receipt_byte_length": {"type": "integer", "minimum": 1, "maximum": 4194304}
+      }
+    },
+    "prefixes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observations", "source_snapshots", "bridges", "source_manifests"],
+      "properties": {
+        "observations": {"$ref": "#/$defs/prefix"},
+        "source_snapshots": {"$ref": "#/$defs/prefix"},
+        "bridges": {"$ref": "#/$defs/prefix"},
+        "source_manifests": {"$ref": "#/$defs/prefix"}
+      }
+    },
+    "prefix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "rolling_sha256"],
+      "properties": {
+        "count": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "rolling_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"sequence": {"const": 1}}, "required": ["sequence"]}, "then": {"properties": {"previous_receipt": {"type": "null"}, "ancestor_refs": {"maxItems": 0}}}, "else": {"properties": {"previous_receipt": {"type": "object"}, "ancestor_refs": {"minItems": 1}}}}
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_peer_set.v1.schema.json",
+  "title": "BioCatalyst Trial Protocol Peer Set v1",
+  "description": "Authenticated, facts-only response for an explicit NCT cohort. Cohort membership is supplied by the caller; this contract does not assert a clinical or commercial peer relationship.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "as_of", "cohort_nct_ids", "uncovered_nct_ids",
+    "coverage", "pagination", "trials", "authority"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_peer_set.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "cohort_nct_ids": {"type": "array", "minItems": 2, "maxItems": 100, "uniqueItems": true, "items": {"$ref": "#/$defs/nctId"}},
+    "uncovered_nct_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nctId"}},
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["class", "selection_basis", "requested_count", "covered_count", "uncovered_count"],
+      "properties": {
+        "class": {"const": "current_only"},
+        "selection_basis": {"const": "explicit_nct_id_cohort"},
+        "requested_count": {"type": "integer", "minimum": 2, "maximum": 100},
+        "covered_count": {"type": "integer", "minimum": 0, "maximum": 100},
+        "uncovered_count": {"type": "integer", "minimum": 0, "maximum": 100}
+      }
+    },
+    "pagination": {
+      "type": "object", "additionalProperties": false,
+      "required": ["limit", "total", "next_cursor"],
+      "properties": {
+        "limit": {"type": "integer", "minimum": 1, "maximum": 100},
+        "total": {"type": "integer", "minimum": 0, "maximum": 100},
+        "next_cursor": {"type": ["string", "null"], "minLength": 1, "maxLength": 512}
+      }
+    },
+    "trials": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/trial"}},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "nctId": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+    "nullableText": {"type": ["string", "null"], "maxLength": 6000},
+    "stringList": {"type": "array", "maxItems": 200, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
+    "date": {"type": "object", "additionalProperties": false, "required": ["date", "type", "precision"], "properties": {"date": {"type": "string", "pattern": "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"}, "type": {"type": ["string", "null"], "maxLength": 20}, "precision": {"enum": ["year", "month", "day"]}}},
+    "intervention": {"type": "object", "additionalProperties": false, "required": ["name", "type", "description", "other_names"], "properties": {"name": {"type": "string", "minLength": 1, "maxLength": 512}, "type": {"type": ["string", "null"], "maxLength": 80}, "description": {"type": ["string", "null"], "maxLength": 4000}, "other_names": {"$ref": "#/$defs/stringList"}}},
+    "armGroupInterventionNames": {"type": "array", "maxItems": 100, "items": {"type": "string", "minLength": 1, "maxLength": 512}},
+    "armGroup": {"type": "object", "additionalProperties": false, "required": ["label", "type", "description", "intervention_names"], "properties": {"label": {"type": "string", "minLength": 1, "maxLength": 1000}, "type": {"type": ["string", "null"], "maxLength": 80}, "description": {"type": ["string", "null"], "maxLength": 6000}, "intervention_names": {"$ref": "#/$defs/armGroupInterventionNames"}}},
+    "endpoint": {"type": "object", "additionalProperties": false, "required": ["measure", "time_frame", "description"], "properties": {"measure": {"type": "string", "minLength": 1, "maxLength": 1000}, "time_frame": {"type": ["string", "null"], "maxLength": 1000}, "description": {"type": ["string", "null"], "maxLength": 6000}}},
+    "sponsor": {"type": ["object", "null"], "additionalProperties": false, "required": ["name", "class"], "properties": {"name": {"type": "string", "minLength": 1, "maxLength": 512}, "class": {"type": ["string", "null"], "maxLength": 80}}},
+    "enrollment": {"type": ["object", "null"], "additionalProperties": false, "required": ["count", "type"], "properties": {"count": {"type": "integer", "minimum": 0}, "type": {"type": ["string", "null"], "maxLength": 20}}},
+    "trial": {
+      "type": "object", "additionalProperties": false,
+      "required": ["nct_id", "title", "brief_title", "status", "study_type", "phases", "sponsor", "conditions", "interventions", "arm_groups", "enrollment", "endpoints", "dates", "site_count", "countries", "record_age", "evidence", "history", "field_evidence"],
+      "properties": {
+        "nct_id": {"$ref": "#/$defs/nctId"}, "title": {"$ref": "#/$defs/nullableText"}, "brief_title": {"$ref": "#/$defs/nullableText"}, "status": {"$ref": "#/$defs/nullableText"}, "study_type": {"$ref": "#/$defs/nullableText"}, "phases": {"$ref": "#/$defs/stringList"}, "sponsor": {"$ref": "#/$defs/sponsor"}, "conditions": {"$ref": "#/$defs/stringList"}, "interventions": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/intervention"}}, "arm_groups": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/armGroup"}}, "enrollment": {"$ref": "#/$defs/enrollment"},
+        "endpoints": {"type": "object", "additionalProperties": false, "required": ["primary", "secondary"], "properties": {"primary": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/endpoint"}}, "secondary": {"type": "array", "maxItems": 200, "items": {"$ref": "#/$defs/endpoint"}}}},
+        "dates": {"type": "object", "additionalProperties": false, "required": ["start", "primary_completion", "completion"], "properties": {"start": {"anyOf": [{"$ref": "#/$defs/date"}, {"type": "null"}]}, "primary_completion": {"anyOf": [{"$ref": "#/$defs/date"}, {"type": "null"}]}, "completion": {"anyOf": [{"$ref": "#/$defs/date"}, {"type": "null"}]}}},
+        "site_count": {"type": ["integer", "null"], "minimum": 0}, "countries": {"$ref": "#/$defs/stringList"},
+        "record_age": {"type": "object", "additionalProperties": false, "required": ["seconds", "basis"], "properties": {"seconds": {"type": "integer", "minimum": 0}, "basis": {"const": "as_of_minus_retrieved_at_floor_seconds"}}},
+        "evidence": {"type": "object", "additionalProperties": false, "required": ["provider", "record_id", "url", "updated_at", "retrieved_at", "first_seen_at", "coverage"], "properties": {"provider": {"const": "ClinicalTrials.gov"}, "record_id": {"$ref": "#/$defs/nctId"}, "url": {"type": "string", "format": "uri", "pattern": "^https://clinicaltrials\\.gov/study/NCT[0-9]{8}$"}, "updated_at": {"type": ["string", "null"], "maxLength": 64}, "retrieved_at": {"type": "string", "format": "date-time"}, "first_seen_at": {"type": "string", "format": "date-time"}, "coverage": {"const": "current_only"}}},
+        "history": {"type": "object", "additionalProperties": false, "required": ["available", "state", "coverage", "reason"], "properties": {"available": {"type": "boolean"}, "state": {"enum": ["available", "unavailable"]}, "coverage": {"type": ["string", "null"], "maxLength": 80}, "reason": {"type": ["string", "null"], "maxLength": 80}}},
+        "field_evidence": {"type": "object", "additionalProperties": false, "required": ["title", "brief_title", "status", "study_type", "phases", "sponsor", "conditions", "interventions", "arm_groups", "enrollment", "endpoints", "dates", "site_count", "countries"], "properties": {"title": {"$ref": "#/$defs/fieldEvidence"}, "brief_title": {"$ref": "#/$defs/fieldEvidence"}, "status": {"$ref": "#/$defs/fieldEvidence"}, "study_type": {"$ref": "#/$defs/fieldEvidence"}, "phases": {"$ref": "#/$defs/fieldEvidence"}, "sponsor": {"$ref": "#/$defs/fieldEvidence"}, "conditions": {"$ref": "#/$defs/fieldEvidence"}, "interventions": {"$ref": "#/$defs/fieldEvidence"}, "arm_groups": {"$ref": "#/$defs/fieldEvidence"}, "enrollment": {"$ref": "#/$defs/fieldEvidence"}, "endpoints": {"$ref": "#/$defs/fieldEvidence"}, "dates": {"$ref": "#/$defs/fieldEvidence"}, "site_count": {"$ref": "#/$defs/fieldEvidence"}, "countries": {"$ref": "#/$defs/fieldEvidence"}}}
+      }
+    },
+    "fieldEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "source_field_locators", "transform"],
+      "properties": {
+        "state": {"enum": ["observed", "source_null", "source_missing", "not_applicable", "parser_degraded", "license_restricted", "mixed"]},
+        "source_field_locators": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "/protocolSection/identificationModule/briefTitle",
+              "/protocolSection/identificationModule/officialTitle",
+              "/protocolSection/statusModule/overallStatus",
+              "/protocolSection/designModule/studyType",
+              "/protocolSection/designModule/phases",
+              "/protocolSection/sponsorCollaboratorsModule/leadSponsor",
+              "/protocolSection/designModule/enrollmentInfo",
+              "/protocolSection/statusModule/startDateStruct",
+              "/protocolSection/statusModule/primaryCompletionDateStruct",
+              "/protocolSection/statusModule/completionDateStruct",
+              "/protocolSection/conditionsModule/conditions",
+              "/protocolSection/armsInterventionsModule/interventions",
+              "/protocolSection/armsInterventionsModule/armGroups",
+              "/protocolSection/outcomesModule/primaryOutcomes",
+              "/protocolSection/outcomesModule/secondaryOutcomes",
+              "/protocolSection/contactsLocationsModule/locations"
+            ]
+          }
+        },
+        "transform": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "authority": {"type": "object", "additionalProperties": false, "required": ["classification", "decision_authority", "allowed_uses", "forbidden_uses"], "properties": {"classification": {"const": "source_fact"}, "decision_authority": {"const": false}, "allowed_uses": {"const": ["display", "context", "explain"]}, "forbidden_uses": {"const": ["originate_signal", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "raise_authority"]}}}
+  }
+}

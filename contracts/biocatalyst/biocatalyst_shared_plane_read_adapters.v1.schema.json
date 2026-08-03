@@ -24,7 +24,7 @@
     },
     "route": {
       "type": "string",
-      "pattern": "^/[A-Za-z0-9_{}./-]{1,255}$"
+      "pattern": "^/[A-Za-z0-9_{}./:-]{1,255}$"
     },
     "availableDependency": {
       "type": "object",

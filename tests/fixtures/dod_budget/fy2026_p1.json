@@ -1,0 +1,10 @@
+{
+  "fiscal_year": 2026,
+  "exhibit": "p1",
+  "source_url": "https://comptroller.war.gov/Portals/45/Documents/defbudget/FY2026/FY2026_p1.pdf",
+  "final_url": "https://comptroller.war.gov/Portals/45/Documents/defbudget/FY2026/FY2026_p1.pdf",
+  "pages": [
+    "PROCUREMENT PROGRAMS (P-1)\nDepartment of Defense Budget\nFiscal Year 2026\nOffice of the Under Secretary of Defense (Comptroller)",
+    "P-1 fixture detail\nline|component=Department of Army|appropriation=Aircraft Procurement, Army|appropriation_code=2031A|activity=01 Aircraft|line=10|name=UH-60 Black Hawk M Model|actual_quantity=26|enacted_quantity=26|disc_request_quantity=24|recon_request_quantity=|total_request_quantity=24|actual=728258|enacted=769054|disc_request=732060|recon_request=0|total_request=732060\ntotal|appropriation_code=2031A|activity=01 Aircraft|actual=728258|enacted=769054|disc_request=732060|recon_request=0|total_request=732060"
+  ]
+}

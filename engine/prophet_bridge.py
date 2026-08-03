@@ -259,10 +259,16 @@ def select_candidates(
 
         selected.append(b)
 
-    # Sort: score desc, then act_level desc
+    # Sort: score desc, then act_level desc, then ticker asc.
+    # The ticker leg is load-bearing, not cosmetic: without it a (score, act_level)
+    # tie is resolved by the ARTIFACT's incoming buy[] order, so the same board
+    # re-emitted in a different order would originate a different set of plans and
+    # the intake would not be provably deterministic. Ticker is the only stable
+    # per-row identity here, so it is the final key.
     selected.sort(key=lambda x: (
         -(x.get("conviction") or {}).get("score", 0),
         -((x.get("entry_signal") or {}).get("act_level") or 0),
+        str(x.get("ticker") or ""),
     ))
     return selected[:n]
 
@@ -458,6 +464,52 @@ def _load_government_revenue_context(
         }
         out[ticker] = context
     return out
+
+
+def _load_earnings_evidence_context(
+    standouts_path: Path, tickers: list[str], *, asof: str,
+) -> dict[str, dict[str, Any]]:
+    """Load exact earnings evidence strictly after candidate selection.
+
+    This is an inert annotation seam. It never enters ``select_candidates`` or
+    any geometry/horizon/option calculation, and every returned packet carries
+    explicit false signal-authority permissions.
+    """
+    from engine.neuralweb.earnings_context_reader import read_earnings_evidence  # noqa: PLC0415
+
+    candidate_root = standouts_path.resolve().parent
+    for ancestor in (candidate_root, *candidate_root.parents):
+        if (ancestor / "engine").is_dir() and (ancestor / "site").is_dir():
+            candidate_root = ancestor
+            break
+    out: dict[str, dict[str, Any]] = {}
+    for ticker in sorted(set(tickers)):
+        result = read_earnings_evidence(
+            {"ticker": ticker, "as_of": asof}, root=candidate_root,
+        )
+        if result.get("available") is True and result.get("authority") == "context_only":
+            out[ticker] = result
+    return out
+
+
+def _earnings_plan_annotation(context: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Keep only the citation-bearing display subset a plan renderer can use."""
+    if not context or context.get("available") is not True:
+        return None
+    permissions = context.get("permissions") if isinstance(context.get("permissions"), dict) else {}
+    if permissions.get("prophet_authority") is not False or permissions.get("may_rank") is not False:
+        return None
+    return {
+        "schema": "earnings.context_annotation/v1",
+        "authority": "context_only",
+        "event": context.get("event"),
+        "categories": list(context.get("categories") or [])[:8],
+        "facts": list(context.get("facts") or [])[:2],
+        "receipts": context.get("receipts"),
+        "links": context.get("links"),
+        "permissions": permissions,
+        "note": "attached after selection; cannot change rank, confidence, geometry, horizon, options, or tranches",
+    }
 
 
 def _government_revenue_sentence(context: dict | None) -> tuple[str, str] | None:
@@ -1521,6 +1573,16 @@ def originate_plans(
     standouts_asof = standouts.get("as_of", asof)
 
     candidates = select_candidates(standouts, n=N_CANDIDATES)
+    # Exact earnings evidence is loaded only for the already-selected names.
+    # It cannot broaden the candidate set or influence ordering.
+    try:
+        _earnings_evidence_map = _load_earnings_evidence_context(
+            standouts_path, [str(row.get("ticker") or "") for row in candidates],
+            asof=asof,
+        )
+    except Exception as e:  # noqa: BLE001 - display context is fail-open.
+        log.info("prophet_bridge: exact earnings evidence unavailable (%s); plans remain unchanged", e)
+        _earnings_evidence_map = {}
     log.info(
         "prophet_bridge: %d candidates selected (gate_go=%s)",
         len(candidates), standouts.get("gate_go"),
@@ -1743,6 +1805,11 @@ def originate_plans(
         if government_revenue_ctx:
             plan["government_revenue_context"] = government_revenue_ctx
             plan["context_engines"] = ["government_revenue_foresight"]
+
+        earnings_annotation = _earnings_plan_annotation(_earnings_evidence_map.get(ticker))
+        if earnings_annotation:
+            plan["earnings_evidence_context"] = earnings_annotation
+            plan.setdefault("context_engines", []).append("earnings_evidence_spine")
 
         # Validate
         from engine.options_structure import validate_trade_plan as _vtp  # noqa: PLC0415

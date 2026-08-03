@@ -45,6 +45,30 @@ lanes:
           graders (grade_breadth_divergence / grade_policy_calendar /
           grade_qledger) STAY inside this step (COLLECT_LANE=nightly) — the
           nightly sole-advancer law is untouched by the split.
+      - id: materialize_capital_structure_share_counts
+        module: scripts.materialize_capital_structure_share_counts
+        note: >
+          Authenticated Company Facts to observed share-count materializer. Runs after
+          the SEC collection step selects a signed Company Facts generation and before
+          the nightly checkpoint. It re-authenticates that immutable input, reads raw
+          objects only through their exact bounded content-addressed store namespace,
+          and advances a separately witnessed all-or-nothing share-count generation.
+          Production execution remains default-off behind the step-level
+          CAPITAL_STRUCTURE_SHARE_COUNT_PUBLICATION_ENABLED repository-variable gate;
+          DAG declaration and code deployment alone are not live coverage.
+          Direct observations remain context-only: no current-share selector, fully
+          diluted arithmetic, capacity, risk, rank, sizing, entry, trade, or Prophet
+          authority originates here.
+      - id: retain_capital_structure_share_counts
+        module: scripts.retain_capital_structure_share_counts
+        note: >
+          Pre-production retention shell immediately after share-count publication.
+          It is default-off behind separate visibility/apply variables and is also
+          hard-disabled in code before credential lookup or remote I/O. The bounded
+          pure planner and all-false receipt contract do not authorize deletion.
+          Release requires provider-proven atomic conditional delete, a shared
+          publisher/retention fence, a verifier-only capability that cannot write
+          the signed head/receipts, an end-to-end deadline, and a fresh security audit.
       - id: compile_capital_structure_events
         module: scripts.compile_capital_structure_events
         note: >
@@ -55,8 +79,9 @@ lanes:
           Prophet authority.
           The preceding collect step also runs the separate bounded Company Facts
           source intake only after verified complete-submission anchors exist. That
-          collector publishes its own source-manifest/coverage receipt and is not an
-          input to this event compiler or a share-count ledger consumer.
+          collector publishes its own source-manifest/coverage receipt; the
+          authenticated share-count materializer consumes it independently before
+          this event compiler.
       - id: compile_capital_structure_document_terms
         module: scripts.compile_capital_structure_document_terms
         note: >

@@ -28,16 +28,21 @@ absent object: it returns ``None`` only for an authoritative not-found result.
 from __future__ import annotations
 
 import errno
+import fcntl
 import logging
 import os
 import stat
+import time
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from hashlib import sha256
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 log = logging.getLogger("research_vault.r2_store")
 
 _MAX_STRICT_STREAM_READ_CALLS = 8_192
+HARD_MAX_STRICT_CONDITIONAL_OBJECT_BYTES = 16 * 1024
 
 
 @runtime_checkable
@@ -77,6 +82,50 @@ class StrictBoundedReadStore(StrictReadStore, Protocol):
     """
 
     def get_bytes_strict_bounded(self, key: str, maximum_bytes: int) -> bytes | None: ...
+
+
+@dataclass(frozen=True)
+class VersionedBytes:
+    """One bounded object value and its opaque exact-predecessor token."""
+
+    data: bytes | None
+    version: str | None
+
+    def __post_init__(self) -> None:
+        missing = self.data is None
+        if missing != (self.version is None):
+            raise ValueError("versioned bytes must be wholly present or wholly absent")
+        if not missing and (
+            type(self.data) is not bytes
+            or not isinstance(self.version, str)
+            or not self.version
+        ):
+            raise ValueError("present versioned bytes require exact bytes and a non-empty version")
+
+
+@runtime_checkable
+class StrictConditionalWriteStore(StrictBoundedReadStore, Protocol):
+    """A strict store with an atomic opaque-version compare-and-swap primitive.
+
+    ``False`` from the write has exactly one meaning: the backing authority
+    rejected the supplied predecessor. Operational and protocol failures raise.
+    ``expected_version=None`` means the key must still be absent.
+    """
+
+    def get_bytes_strict_bounded_versioned(
+        self, key: str, maximum_bytes: int,
+    ) -> VersionedBytes: ...
+
+    def validate_strict_conditional_write_capability(self) -> None: ...
+
+    def put_bytes_strict_conditional(
+        self,
+        key: str,
+        data: bytes,
+        *,
+        expected_version: str | None,
+        content_type: str = "application/octet-stream",
+    ) -> bool: ...
 
 
 def _validate_bounded_read_limit(maximum_bytes: int) -> int:
@@ -180,6 +229,26 @@ def _is_authoritative_r2_not_found(error: Exception) -> bool:
     if not isinstance(details, dict):
         return False
     return str(details.get("Code", "")) in {"404", "NoSuchKey", "NotFound"}
+
+
+def _is_authoritative_r2_conditional_conflict(error: Exception) -> bool:
+    """Whether R2 authoritatively rejected an exact-predecessor PUT."""
+    try:
+        from botocore.exceptions import ClientError
+    except ImportError:
+        return False
+    if not isinstance(error, ClientError):
+        return False
+    response = getattr(error, "response", None)
+    if not isinstance(response, dict):
+        return False
+    details = response.get("Error")
+    metadata = response.get("ResponseMetadata")
+    code = str(details.get("Code", "")) if isinstance(details, dict) else ""
+    status = metadata.get("HTTPStatusCode") if isinstance(metadata, dict) else None
+    return code in {
+        "409", "412", "ConditionalRequestConflict", "PreconditionFailed",
+    } or status in {409, 412}
 
 
 class R2Store:
@@ -384,6 +453,126 @@ class R2Store:
             close = getattr(body, "close", None)
             if callable(close):
                 close()
+
+    def get_bytes_strict_bounded_versioned(
+        self, key: str, maximum_bytes: int,
+    ) -> VersionedBytes:
+        """Read one capped R2 object together with its exact service ETag."""
+        limit = _validate_bounded_read_limit(maximum_bytes)
+        if not self.available:
+            raise RuntimeError("R2 store unavailable: missing bucket or credentials")
+        try:
+            response = self._s3.get_object(Bucket=self.bucket, Key=key)
+        except Exception as error:
+            if _is_authoritative_r2_not_found(error):
+                return VersionedBytes(data=None, version=None)
+            raise
+        if not isinstance(response, dict):
+            raise RuntimeError("R2 get_object returned a malformed response")
+        body = response.get("Body")
+        if body is None or not callable(getattr(body, "read", None)):
+            raise RuntimeError("R2 get_object response is missing a readable body")
+        close = getattr(body, "close", None)
+        if not callable(close):
+            raise RuntimeError("R2 get_object response body is not closeable")
+        try:
+            etag = response.get("ETag")
+            if not isinstance(etag, str) or not etag:
+                raise RuntimeError("R2 versioned get_object response lacks a valid ETag")
+            announced_length = response.get("ContentLength")
+            if announced_length is not None:
+                if (
+                    isinstance(announced_length, bool)
+                    or not isinstance(announced_length, int)
+                    or announced_length < 0
+                ):
+                    raise RuntimeError("R2 get_object returned an invalid ContentLength")
+                if announced_length > limit:
+                    raise ValueError(
+                        f"R2 object exceeds bounded read limit ({announced_length} > {limit})"
+                    )
+            chunks: list[bytes] = []
+            observed = 0
+            read_calls = 0
+            while observed <= limit:
+                read_calls += 1
+                if read_calls > _MAX_STRICT_STREAM_READ_CALLS:
+                    raise RuntimeError("R2 object body exceeded strict read iteration limit")
+                requested = limit + 1 - observed
+                chunk = body.read(requested)
+                if not isinstance(chunk, bytes):
+                    raise RuntimeError("R2 object body returned non-bytes")
+                if not chunk:
+                    break
+                if len(chunk) > requested:
+                    raise RuntimeError("R2 object body returned more bytes than requested")
+                chunks.append(chunk)
+                observed += len(chunk)
+            content = b"".join(chunks)
+        finally:
+            close()
+        if len(content) > limit:
+            raise ValueError(
+                f"R2 object exceeds bounded read limit ({len(content)} > {limit})"
+            )
+        if announced_length is not None and len(content) != announced_length:
+            raise BoundedReadLengthMismatch(
+                "R2 versioned object ContentLength/body length mismatch"
+            )
+        return VersionedBytes(data=content, version=etag)
+
+    def _require_conditional_put_capability(self) -> None:
+        """Fail before I/O when the active botocore model cannot sign CAS headers."""
+        try:
+            operation = self._s3.meta.service_model.operation_model("PutObject")
+            members = operation.input_shape.members
+            supported = "IfMatch" in members and "IfNoneMatch" in members
+        except Exception as exc:
+            raise RuntimeError("R2 conditional PutObject capability is unavailable") from exc
+        if not supported:
+            raise RuntimeError("R2 conditional PutObject capability is unavailable")
+
+    def validate_strict_conditional_write_capability(self) -> None:
+        """Validate CAS support from the local SDK model without remote I/O."""
+        self._require_conditional_put_capability()
+
+    def put_bytes_strict_conditional(
+        self,
+        key: str,
+        data: bytes,
+        *,
+        expected_version: str | None,
+        content_type: str = "application/octet-stream",
+    ) -> bool:
+        """Atomically create or replace an R2 object at one exact predecessor."""
+        if type(data) is not bytes:
+            raise TypeError("conditional object data must be exact bytes")
+        if expected_version is not None and (
+            not isinstance(expected_version, str) or not expected_version
+        ):
+            raise ValueError("expected_version must be None or a non-empty string")
+        if not isinstance(content_type, str) or not content_type:
+            raise ValueError("content_type must be a non-empty string")
+        if not self.available:
+            raise RuntimeError("R2 store unavailable: missing bucket or credentials")
+        self.validate_strict_conditional_write_capability()
+        arguments = {
+            "Bucket": self.bucket,
+            "Key": key,
+            "Body": data,
+            "ContentType": content_type,
+        }
+        if expected_version is None:
+            arguments["IfNoneMatch"] = "*"
+        else:
+            arguments["IfMatch"] = expected_version
+        try:
+            self._s3.put_object(**arguments)
+        except Exception as error:
+            if _is_authoritative_r2_conditional_conflict(error):
+                return False
+            raise
+        return True
 
     def put_bytes(self, key: str, data: bytes,
                   content_type: str = "application/octet-stream") -> bool:
@@ -635,6 +824,183 @@ class LocalStore:
         finally:
             for descriptor in reversed(descriptors):
                 os.close(descriptor)
+
+    @staticmethod
+    def _local_version(data: bytes) -> str:
+        return "sha256:" + sha256(b"research-vault-local-version-v1\0" + data).hexdigest()
+
+    @staticmethod
+    def _conditional_key_parts(key: str) -> tuple[str, ...]:
+        if (
+            not isinstance(key, str)
+            or not key
+            or key.startswith("/")
+            or "\\" in key
+        ):
+            raise ValueError(f"unsafe key: {key!r}")
+        parts = tuple(key.split("/"))
+        if any(part in {"", ".", ".."} for part in parts):
+            raise ValueError(f"unsafe key: {key!r}")
+        return parts
+
+    @staticmethod
+    def _version_at(parent_fd: int, name: str) -> str | None:
+        try:
+            descriptor = os.open(
+                name, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0), dir_fd=parent_fd,
+            )
+        except FileNotFoundError:
+            return None
+        try:
+            metadata = os.fstat(descriptor)
+            if not stat.S_ISREG(metadata.st_mode):
+                raise BoundedReadProtocolError("local conditional object is not a regular file")
+            if metadata.st_size > HARD_MAX_STRICT_CONDITIONAL_OBJECT_BYTES:
+                raise BoundedReadTooLarge(
+                    "local conditional predecessor exceeds its byte safety limit"
+                )
+            digest = sha256(b"research-vault-local-version-v1\0")
+            observed = 0
+            while observed <= HARD_MAX_STRICT_CONDITIONAL_OBJECT_BYTES:
+                requested = HARD_MAX_STRICT_CONDITIONAL_OBJECT_BYTES + 1 - observed
+                chunk = os.read(descriptor, min(1024 * 1024, requested))
+                if not chunk:
+                    break
+                if len(chunk) > requested:
+                    raise BoundedReadProtocolError(
+                        "local conditional predecessor read exceeded its requested boundary"
+                    )
+                observed += len(chunk)
+                digest.update(chunk)
+            if observed > HARD_MAX_STRICT_CONDITIONAL_OBJECT_BYTES:
+                raise BoundedReadTooLarge(
+                    "local conditional predecessor exceeds its byte safety limit"
+                )
+            if observed != metadata.st_size:
+                raise BoundedReadLengthMismatch(
+                    "local conditional predecessor changed during version read"
+                )
+            return "sha256:" + digest.hexdigest()
+        finally:
+            os.close(descriptor)
+
+    def get_bytes_strict_bounded_versioned(
+        self, key: str, maximum_bytes: int,
+    ) -> VersionedBytes:
+        """Read bounded local bytes and derive a portable opaque value token."""
+        data = self.get_bytes_strict_bounded(key, maximum_bytes)
+        if data is None:
+            return VersionedBytes(data=None, version=None)
+        return VersionedBytes(data=data, version=self._local_version(data))
+
+    def validate_strict_conditional_write_capability(self) -> None:
+        """Local conditional writes are implemented directly by this adapter."""
+
+    def put_bytes_strict_conditional(
+        self,
+        key: str,
+        data: bytes,
+        *,
+        expected_version: str | None,
+        content_type: str = "application/octet-stream",
+    ) -> bool:
+        """Cross-process exact-predecessor replacement for the local test lane."""
+        if type(data) is not bytes:
+            raise TypeError("conditional object data must be exact bytes")
+        if expected_version is not None and (
+            not isinstance(expected_version, str) or not expected_version
+        ):
+            raise ValueError("expected_version must be None or a non-empty string")
+        if not isinstance(content_type, str) or not content_type:
+            raise ValueError("content_type must be a non-empty string")
+        del content_type
+        parts = self._conditional_key_parts(key)
+        directory_flags = (
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        )
+        root_fd = os.open(self.root, directory_flags)
+        lock_fd: int | None = None
+        parent_fd: int | None = None
+        temporary: str | None = None
+        try:
+            # Open-or-create without a check/create race.  On a missing key one
+            # contender creates with O_EXCL; all losers retry the no-follow open
+            # of that exact regular file.
+            while lock_fd is None:
+                try:
+                    lock_fd = os.open(
+                        ".strict-conditional-write.lock",
+                        os.O_RDWR | getattr(os, "O_NOFOLLOW", 0),
+                        dir_fd=root_fd,
+                    )
+                except FileNotFoundError:
+                    try:
+                        lock_fd = os.open(
+                            ".strict-conditional-write.lock",
+                            os.O_RDWR | os.O_CREAT | os.O_EXCL
+                            | getattr(os, "O_NOFOLLOW", 0),
+                            0o600,
+                            dir_fd=root_fd,
+                        )
+                    except FileExistsError:
+                        continue
+            if not stat.S_ISREG(os.fstat(lock_fd).st_mode):
+                raise BoundedReadProtocolError("local conditional lock is not a regular file")
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            parent_fd = os.dup(root_fd)
+            for part in parts[:-1]:
+                try:
+                    os.mkdir(part, 0o700, dir_fd=parent_fd)
+                except FileExistsError:
+                    pass
+                opened = os.open(part, directory_flags, dir_fd=parent_fd)
+                if not stat.S_ISDIR(os.fstat(opened).st_mode):
+                    os.close(opened)
+                    raise BoundedReadProtocolError(
+                        "local conditional object parent is not a directory"
+                    )
+                os.close(parent_fd)
+                parent_fd = opened
+            current_version = self._version_at(parent_fd, parts[-1])
+            if current_version != expected_version:
+                return False
+            temporary = f".{parts[-1]}.cas.{os.getpid()}.{time.time_ns()}"
+            staged_fd = os.open(
+                temporary,
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                0o600,
+                dir_fd=parent_fd,
+            )
+            try:
+                offset = 0
+                while offset < len(data):
+                    written = os.write(staged_fd, data[offset:])
+                    if written <= 0:
+                        raise OSError("local conditional write made no progress")
+                    offset += written
+                os.fsync(staged_fd)
+            finally:
+                os.close(staged_fd)
+            os.replace(
+                temporary, parts[-1], src_dir_fd=parent_fd, dst_dir_fd=parent_fd,
+            )
+            temporary = None
+            os.fsync(parent_fd)
+            return True
+        finally:
+            if temporary is not None and parent_fd is not None:
+                try:
+                    os.unlink(temporary, dir_fd=parent_fd)
+                except FileNotFoundError:
+                    pass
+            if parent_fd is not None:
+                os.close(parent_fd)
+            if lock_fd is not None:
+                try:
+                    fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                finally:
+                    os.close(lock_fd)
+            os.close(root_fd)
 
     def put_bytes(self, key: str, data: bytes,
                   content_type: str = "application/octet-stream") -> bool:
