@@ -47,8 +47,10 @@ cadence:
   # never be the throttle" contract that tests/test_marketing_cadence_ramp_coherence.py
   # enforces for every ENABLED desk. The governor is the D08 ramp
   # (config/marketing.yml sentinel.ramp), which holds this desk at weeks_1_2 =
-  # 10 posts/day from its `created: 2026-08-02`; the resolver ANDs with the ramp,
-  # so 20 here means "impose no extra volume bound", not "post 20 today".
+  # 14 posts/day for its first five days from `created: 2026-08-02` (10 posts/day
+  # for the first fourteen, before the 2026-08-03 ramp relaxation); the resolver
+  # ANDs with the ramp, so 20 here means "impose no extra volume bound", not
+  # "post 20 today".
   #
   # The W1 declarations (posts_per_day 8, jitter_min 10, weekend_shape light) were
   # written when this file was spec-only and failed four coherence assertions the

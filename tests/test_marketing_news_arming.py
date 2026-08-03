@@ -210,13 +210,23 @@ def test_the_cold_tier_is_resolved_not_failed_closed(cfg):
 
 @pytest.mark.parametrize("offset,tier", [
     (0, "weeks_1_2"),      # arming day
-    (13, "weeks_1_2"),     # last cold day — the window, not a moment
-    (14, "weeks_3_4"),     # the boundary is asserted from BOTH sides
-    (28, "week_5_plus"),
+    (4, "weeks_1_2"),      # last cold day — the window, not a moment
+    (5, "weeks_3_4"),      # the boundary is asserted from BOTH sides
+    (9, "weeks_3_4"),
+    (10, "week_5_plus"),
+    (20, "week_5_plus"),
+    (21, "graduated"),
 ])
 def test_the_ramp_walks_the_expected_tiers_from_the_created_date(cfg, offset, tier):
     """Anchored to the desk's OWN created date + a fixed offset, never to the
-    wall clock — a suite that asserted "cold today" would go red on day 14."""
+    wall clock — a suite that asserted "cold today" would go red on day 5.
+
+    Re-pinned 2026-08-03 to the operator's relaxed schedule (tier boundaries 5/10,
+    graduation 21; they were 14/28/56). The ramp is a PLATFORM-RISK throttle, not
+    a quality gate, so how fast a new desk walks it is an operator dial — what
+    this parametrisation defends is that the desk walks the ladder the config
+    declares, from BOTH sides of every boundary.
+    """
     created = date.fromisoformat(str(_raw_entry(cfg)["created"])[:10])
     row = _ramp_row(cfg, (created + timedelta(days=offset)).isoformat())
     assert row["tier"] == tier, (
@@ -225,17 +235,25 @@ def test_the_ramp_walks_the_expected_tiers_from_the_created_date(cfg, offset, ti
 
 
 def test_the_cold_caps_are_the_weeks_1_2_contract(cfg):
-    """A brand-new posting account RAMPS. These are the numbers the arming chose:
-    10 posts/day, a 30-minute floor, theme_list banned (its >=4 member cashtags
-    are the D08 R3 piggybacking fingerprint on an account with no history to be
-    read against), 2 cashtags/post, no links until week 5."""
+    """A brand-new posting account RAMPS. These are the numbers the first tier
+    carries after the 2026-08-03 relaxation: 14 posts/day (was 10), a 30-minute
+    floor, 2 cashtags/post, no links, no replies — and theme_list ALLOWED.
+
+    The theme_list ban was the one knob the relaxation reversed outright: it read
+    as a piggybacking guard (>=4 member cashtags on an account with no history)
+    and behaved as a total volume kill, because a new desk's only planned at-bat
+    was routinely that format (masterplan §8.1 V2 — kelly, zero posts ever).
+    Links stay shut on the first tier on purpose: an outbound link from a
+    days-old account is the strongest spam signal on the platform, and it now
+    opens on day 5 rather than day 28.
+    """
     created = str(_raw_entry(cfg)["created"])[:10]
     caps = _ramp_row(cfg, created)["caps"]
-    assert caps["max_posts_per_account_per_day"] == 10
-    assert caps["max_media_posts_per_account_per_day"] == 10
+    assert caps["max_posts_per_account_per_day"] == 14
+    assert caps["max_media_posts_per_account_per_day"] == 14
     assert caps["min_minutes_between_posts"] == 30
     assert caps["max_cashtags_per_post"] == 2
-    assert caps["theme_list_allowed"] is False
+    assert caps["theme_list_allowed"] is True
     assert caps["links_allowed"] is False
     assert caps["max_replies_per_account_per_day"] == 0
 

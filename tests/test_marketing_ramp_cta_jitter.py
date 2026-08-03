@@ -505,13 +505,22 @@ class TestLiveConfigRamp:
             .read_text(encoding="utf-8")) or {}
 
     def test_ramp_table_carries_the_enforced_keys(self):
+        """Re-pinned 2026-08-03 to the operator's relaxed schedule: graduation at
+        21 days, tier boundaries at 5/10 (config-readable since the same order),
+        and theme_list allowed from day 0 — the ban was what left kelly with zero
+        posts, ever, because her only at-bat was that format (masterplan §8.1 V2).
+        The ramp is a platform-risk throttle, so these numbers are an operator
+        dial; what this test defends is that the table still CARRIES every key the
+        gate enforces."""
         ramp = self._live_cfg()["sentinel"]["ramp"]
-        assert ramp["graduate_after_days"] == 56
+        assert ramp["graduate_after_days"] == 21
+        assert ramp["weeks_1_2_days"] == 5
+        assert ramp["weeks_3_4_days"] == 10
         for tier in ("weeks_1_2", "weeks_3_4", "week_5_plus"):
             assert "max_cashtags_per_post" in ramp[tier]
             assert "theme_list_allowed" in ramp[tier]
-        assert ramp["weeks_1_2"]["theme_list_allowed"] is False
-        assert ramp["weeks_3_4"]["theme_list_allowed"] is False
+        assert ramp["weeks_1_2"]["theme_list_allowed"] is True
+        assert ramp["weeks_3_4"]["theme_list_allowed"] is True
         assert ramp["week_5_plus"]["theme_list_allowed"] is True
 
     def test_every_enabled_live_account_carries_a_created_date(self):

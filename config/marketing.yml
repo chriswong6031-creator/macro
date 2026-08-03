@@ -212,7 +212,8 @@ sentinel:
   # is an actively-suspended financial-spam vector (D08 R3). Cap distinct $TICKER
   # tokens in headline+body. theme_list is exempt (see sentinel.py comment).
   # A ramping account uses the STRICTER of this and its tier's own
-  # max_cashtags_per_post (2 for weeks 1-4).
+  # max_cashtags_per_post (2 on the first tier; 3 from tier 2 — day 5 — since the
+  # 2026-08-03 ramp relaxation).
   max_cashtags_per_post: 3
 
   # New-follows cap — follow churn is the fastest X suspension trigger; automated
@@ -264,12 +265,21 @@ sentinel:
   # Ramp schedule — full per-tier cap table (D08 §3). ENFORCED since 2026-07-27
   # (the "decorative table" gap, MASTERPLAN F1, is closed).
   #
+  # WHAT THIS BLOCK IS. A PLATFORM-RISK throttle, NOT a content-quality gate. It
+  # exists so a brand-new X account does not post like a spambot on day one and
+  # get flagged; nothing in it judges whether a post is any good (that is
+  # salience_threshold, the near-dup ceiling, the number budget, the payload gate,
+  # tape freshness and the approval desk — none of which live here and none of
+  # which move when this block does). Relaxing the ramp is therefore an operator
+  # lever, and it was pulled on 2026-08-03: see THE 2026-08-03 RELAXATION below.
+  #
   # HOW IT BINDS. sentinel.resolve_ramp() reads each ENABLED desk_network
   # account's `created:` date, subtracts it from the PLAN's as_of date, and picks
-  # a tier: <14d weeks_1_2, <28d weeks_3_4, <graduate_after_days week_5_plus,
-  # and at/after graduate_after_days the account is GRADUATED — it uses the base
-  # block above untouched. Never a wall-clock read: the tier is a pure function of
-  # (as_of, created), so re-gating the same plan always yields the same verdict.
+  # a tier: <weeks_1_2_days weeks_1_2, <weeks_3_4_days weeks_3_4,
+  # <graduate_after_days week_5_plus, and at/after graduate_after_days the account
+  # is GRADUATED — it uses the base block above untouched. Never a wall-clock
+  # read: the tier is a pure function of (as_of, created), so re-gating the same
+  # plan always yields the same verdict.
   #
   # MERGE LAW while ramping (not graduated) — the effective cap is the STRICTER
   # of (base, tier), per knob:
@@ -285,7 +295,10 @@ sentinel:
   # Missing/unparseable `created:` on an ENABLED account fails CLOSED to
   # weeks_1_2 and prints a ::warning. So does a missing/unparseable plan `as_of`
   # (which fails the WHOLE network closed) and an unparseable value inside a tier
-  # row below (that value is ignored; the base block governs that one knob).
+  # row below (that value is ignored; the base block governs that one knob). An
+  # incoherent boundary pair (`weeks_1_2_days` >= `weeks_3_4_days`, or either <= 0)
+  # reverts BOTH to the code defaults 14/28 and prints a ::warning — half-applying
+  # a typo would hand a new account a tier it has not earned.
   #
   # WHAT IS AND IS NOT WIRED. The tier rows below are enforced by the PLAN gate
   # (sentinel.gate_plan) and by the two post-time seams that consult
@@ -305,14 +318,56 @@ sentinel:
   # Do not write a comment claiming either is honoured at post time until a
   # consumer actually reads it.
   ramp:
+    # ── THE 2026-08-03 RELAXATION (operator order) ───────────────────────────
+    # "uhhh she should be posting. relax the account age thingy and speed up its
+    # ramp up for new accs added."
+    #
+    # WHAT WENT WRONG. Kelly was created 2026-07-28 and had never posted once,
+    # ever. Her only at-bat on 08-02 was a `theme_list`, which the old
+    # `weeks_1_2.theme_list_allowed: false` killed at plan-build — a desk spent
+    # its entire life's volume on a format its account-age tier forbade. The old
+    # schedule also put a 5-day-old desk at 10 posts/day with theme_list banned
+    # until DAY 28 and links until day 28, which is a launch posture, not a
+    # working one, for accounts that have been running clean for a week.
+    #
+    # THE NEW SCHEDULE resolves to: days 0-4 weeks_1_2 (14/day, theme_list ON,
+    # links OFF), days 5-9 weeks_3_4 (18/day, theme_list ON, links ON, 3
+    # cashtags/post), day 10+ week_5_plus (20/day, everything on), day 21+
+    # GRADUATED (base block alone). A desk is at full cadence in ten days
+    # instead of twenty-eight.
+    #
+    # Nothing here is a quality gate and nothing here was traded for volume:
+    # salience_threshold, the near-dup Jaccard, the number budget, the payload
+    # gate, tape freshness and the approval desk are all untouched by this block
+    # and unchanged by this edit.
+    # ─────────────────────────────────────────────────────────────────────────
+
     # Days of account age at which the ramp stops applying entirely and the base
-    # block above governs alone. 8 weeks — one full ramp plus a 4-week cushion
-    # past week_5_plus, which is where D08 §3 stops prescribing.
-    # CLAMPED to >= 28 in code (sentinel.effective_graduate_after_days): below
-    # that the knob is inert, because the age<14 and age<28 branches fire first,
-    # so a configured 20 would delete the week_5_plus window without graduating
-    # anyone sooner. The resolved value is printed in the gate report.
-    graduate_after_days: 56
+    # block above governs alone. 21 days (was 56) — 11 days past the start of
+    # week_5_plus, which is where D08 §3 stops prescribing.
+    # CLAMPED to >= `weeks_3_4_days` in code (sentinel.effective_graduate_after_days):
+    # below that the knob is inert, because the two age branches above fire first,
+    # so a value under the tier-2 boundary would delete the week_5_plus window
+    # without graduating anyone sooner. Until 2026-08-03 the clamp floor was the
+    # hardcoded 28, which made every configured value under 28 silently inert —
+    # this 21 would have been read as 28. The resolved value is printed in the
+    # gate report.
+    graduate_after_days: 21
+
+    # ── Tier boundaries, in days of account age ──────────────────────────────
+    # Half-open on the left: at 5/10, age 4 is still weeks_1_2 and age 5 is
+    # weeks_3_4. Config-readable since 2026-08-03 (they were module constants
+    # 14/28 in sentinel.py, which is why "speed up the ramp" needed a code
+    # change). Absent ⇒ the old 14/28. Must satisfy 0 < weeks_1_2_days <
+    # weeks_3_4_days or BOTH revert to 14/28 with a ::warning.
+    #
+    # 5 and 10 are the operator's speed-up: the platform-risk story a ramp tells
+    # is "this account did not arrive posting at full tilt", and five clean days
+    # at 14/day tells it. The tier NAMES still say weeks — they are the config
+    # keys sentinel reads and renaming them would break every consumer; read them
+    # as tier-1 / tier-2 / tier-3.
+    weeks_1_2_days: 5
+    weeks_3_4_days: 10
 
     # Per-account cap overrides — sentinel.resolve_ramp applies these ON TOP of
     # the account's tier row, and unlike the tier merge they may LOOSEN (an
@@ -343,20 +398,34 @@ sentinel:
         # against) does not describe flagship; it stays in force for every
         # other desk.
         theme_list_allowed: true
+    # TIER 1 — days 0-4 (was days 0-13).
     weeks_1_2:
       # Operator re-spec 2026-07-28: 10 posts/account/day (was 2). The desks were
       # publishing ~5 posts across the WHOLE network because 2/day is a launch
-      # floor, not a working cadence. Spacing drops 45 -> 30 to match the 30-min
-      # ladder. See account_overrides below for flagship's 20.
-      max_posts_per_account_per_day: 10
+      # floor, not a working cadence. Raised 10 -> 14 on 2026-08-03 with the ramp
+      # relaxation: this tier is now only five days long, and 14 with a 30-min
+      # floor still cannot fill the 28-rung ladder. Spacing stays 30 to match the
+      # ladder. See account_overrides above for flagship's 20.
+      max_posts_per_account_per_day: 14
+      # DO NOT CHANGE. Coupled to the 28-rung 30-minute Pacific ladder
+      # (outbox._LADDER_PT_TIMES / content_studio._LADDER_SLOTS); any other value
+      # desyncs slot times from the clock table. Every tier is 30 for that reason,
+      # and tests/test_marketing_cadence_ramp_coherence.py pins it to the step.
       min_minutes_between_posts: 30
+      # STAYS FALSE ON PURPOSE, and it is the one thing the 2026-08-03 relaxation
+      # deliberately did NOT relax. An outbound link from a days-old account is
+      # the single strongest spam signal X reads, and the desks do not need links
+      # to post — every format here works without one. It flips on at day 5
+      # (weeks_3_4 below) instead of day 28, so the cost is five days, not four
+      # weeks. Adjudicated by Fable 2026-08-03; the operator was told and can
+      # override.
       links_allowed: false
       # Tracks max_posts_per_account_per_day ON PURPOSE — see the base block's
       # note: charts and daily volume "must move together". A media cap BELOW
       # the post cap does not strip the image, it QUARANTINES the post
       # (reason media_cap_daily), so every ticker post now carrying a chart
       # would have cost this desk half its daily volume. (operator 2026-07-28)
-      max_media_posts_per_account_per_day: 10
+      max_media_posts_per_account_per_day: 14
       # 1/day made the cashtag cap the binding limit the moment volume rose:
       # 10 posts drawn from a 47-name plan pool collide constantly. 3 keeps the
       # piggybacking guard meaningful (D08 R3 is about MANY tickers in ONE post,
@@ -369,24 +438,34 @@ sentinel:
       # piggybacking fingerprint D08 R3 describes; 2 is the conservative floor.
       max_cashtags_per_post: 2
       # theme_list ("Theme Tape") posts carry ≥4 member cashtags BY FORMAT
-      # (copywriter.validate_copy requires it), which is exactly the shape the
-      # breadth cap exists to stop — so on a cold account the format itself is
-      # quarantined (reason ramp_theme_list) rather than exempted. Re-allowed at
-      # week 5, when the account has a posting history to be read against.
-      theme_list_allowed: false
+      # (copywriter.validate_copy requires it). Banned here until 2026-08-03 on
+      # the theory that the format's breadth reads as piggybacking on an account
+      # with no history — but the ban's real-world effect was to delete a new
+      # desk's entire output: kelly's one and only planned item, ever, was a
+      # theme_list, and the ban killed it at plan-build (masterplan §8.1 V2).
+      # A theme list is house-generated from live quotes and names a SECTOR, not
+      # a bandwagon; max_cashtags_per_post is the wrong guard for it and W4b now
+      # stops a banned kind being allocated at all. Allowed from day 0.
+      theme_list_allowed: true
+    # TIER 2 — days 5-9 (was days 14-27).
     weeks_3_4:
-      max_posts_per_account_per_day: 14
-      min_minutes_between_posts: 30
-      links_allowed: false
-      max_media_posts_per_account_per_day: 14
+      max_posts_per_account_per_day: 18
+      min_minutes_between_posts: 30   # DO NOT CHANGE — see tier 1
+      # ON from day 5 (was day 28). Five clean days of posting is the history the
+      # link gate was actually asking for.
+      links_allowed: true   # ≤1 link post/day enforced by actuator
+      max_media_posts_per_account_per_day: 18
       max_same_cashtag_per_account_per_day: 3
       max_replies_per_account_per_day: 0
+      max_cashtags_per_post: 3
       max_new_follows_per_account_per_day: 0
-      max_cashtags_per_post: 2
-      theme_list_allowed: false
+      theme_list_allowed: true
+    # TIER 3 — days 10-20 (was days 28-55). UNCHANGED by the 2026-08-03
+    # relaxation: this tier was already the full working cadence, it is simply
+    # reached eighteen days sooner.
     week_5_plus:
       max_posts_per_account_per_day: 20
-      min_minutes_between_posts: 30
+      min_minutes_between_posts: 30   # DO NOT CHANGE — see tier 1
       links_allowed: true   # ≤1 link post/day enforced by actuator
       max_media_posts_per_account_per_day: 20
       max_same_cashtag_per_account_per_day: 3
@@ -1373,8 +1452,11 @@ desk_network:
       # registration date or the 2026-07-28 Buffer-bind date, for the reason the
       # flagship entry states above: reading YOUNGER is the safe direction, and
       # this desk has never posted once, so its posting history genuinely starts
-      # today. Resolves to weeks_1_2 (10 posts/day, 30-min spacing, theme_list
-      # banned, max 2 cashtags/post) until 2026-08-16, then weeks_3_4.
+      # today. Under the 2026-08-03 ramp relaxation this resolves to weeks_1_2
+      # (14 posts/day, 30-min spacing, no links, max 2 cashtags/post) until
+      # 2026-08-07, then weeks_3_4 (18/day, links on) to 2026-08-11, then
+      # week_5_plus, graduating 2026-08-23. It was weeks_1_2 to 2026-08-16 on the
+      # old 14/28 schedule.
       created: "2026-08-02"
       tilt:
         signal: 0.28
@@ -1987,8 +2069,9 @@ breaking:
   # (`sentinel.ramp.account_overrides.flagship.max_posts_per_account_per_day: 20`):
   # the wire must not be able to eat a desk's entire day, because the nightly
   # ladder and the publish-time lanes draw from that same 20. Half is the
-  # operator-legible split. It is also exactly the cold tier's
-  # `weeks_1_2.max_posts_per_account_per_day`, so on the newly-armed
+  # operator-legible split. It also sits UNDER the cold tier's
+  # `weeks_1_2.max_posts_per_account_per_day` (14 since the 2026-08-03 ramp
+  # relaxation; it was exactly 10 before), so on the newly-armed
   # mastermind_news desk the wire alone can never exceed the tier this arming
   # deliberately chose — press items ship `scheduled_at: immediate` and an
   # immediate item is EXEMPT from the per-account daily cap downstream (standing

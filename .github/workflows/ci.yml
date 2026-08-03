@@ -1516,6 +1516,13 @@ on:
       - "tests/test_marketing_copy_yield.py"
       - "tests/test_marketing_news_arming.py"
       - "tests/test_marketing_breaking_card_geometry.py"
+      # The D08 age-ramp relaxation (operator 2026-08-03): the two tier
+      # boundaries became config keys (`sentinel.ramp.weeks_1_2_days` /
+      # `weeks_3_4_days`) and `graduate_after_days` stopped being clamped up to a
+      # hardcoded 28. Subject modules are engine/marketing/sentinel.py +
+      # config/marketing.yml (both matched above); the suite is named so a
+      # TEST-ONLY edit still reaches the lane that runs it.
+      - "tests/test_marketing_ramp_speedup.py"
       # X Growth W3 (XG-W3): the franchise register + slot scheduler, the
       # four-lane desk feed, the persona memory stores (promises/phrases/
       # relations) and the Gift-Grip-Proof value gate. Its subject modules are

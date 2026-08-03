@@ -126,13 +126,20 @@ def _reachable_caps(cfg, acct: dict) -> dict[str, "int | None"]:
     ``account_overrides`` all run exactly as they do in the publisher. ``None`` is
     the ramp's "unlimited" and imposes no bound.
     """
-    from engine.marketing.sentinel import resolve_ramp
+    from engine.marketing.sentinel import resolve_ramp, resolve_ramp_boundaries
 
     created = date.fromisoformat(str(acct["created"])[:10])
-    grad = int(((cfg.get("sentinel") or {}).get("ramp") or {})
-               .get("graduate_after_days", 56))
+    ramp_cfg = ((cfg.get("sentinel") or {}).get("ramp") or {})
+    grad = int(ramp_cfg.get("graduate_after_days", 56))
+    # OFFSETS DERIVE FROM THE CONFIGURED BOUNDARIES, never the old literals
+    # (2026-08-03). They were hardcoded (0, 14, 28, grad) against the 14/28
+    # schedule. The fast ramp moved the tiers to 5/10, at which those offsets
+    # land on weeks_1_2 / week_5_plus / graduated / graduated — `weeks_3_4`
+    # stopped being sampled at all and this suite went quietly green over a tier
+    # it no longer covered. A coherence guard that skips a tier is not a guard.
+    _w12, _w34 = resolve_ramp_boundaries(ramp_cfg, announce=False)
     out: dict[str, int | None] = {}
-    for offset in (0, 14, 28, grad):
+    for offset in (0, _w12, _w34, grad):
         ramp = resolve_ramp(cfg, (created + timedelta(days=offset)).isoformat(),
                             root=ROOT, announce=False)
         entry = ramp["accounts"][str(acct["id"])]

@@ -395,8 +395,54 @@ def test_no_permission_knob_in_the_table_is_missing_from_the_caps(tmp_path):
 # The SHIPPED config — the defect as it actually stands tonight
 # ─────────────────────────────────────────────────────────────────────────────
 
+def test_the_shipped_ramp_no_longer_bans_a_format_for_any_live_desk():
+    """The 2026-08-03 operator relaxation, stated on the shipped config.
+
+    `weeks_1_2.theme_list_allowed: false` was what left kelly with zero posts,
+    ever (masterplan §8.1 V2): her only planned at-bat was a theme_list her
+    account-age tier forbade. Every tier now allows it, so on the live config
+    W4b's intersection has nothing to remove — which is exactly why the
+    end-to-end guard below re-arms the ban on a COPY rather than relying on the
+    config to keep supplying one.
+    """
+    from engine.marketing.accounts import effective_accounts
+    from engine.marketing.sentinel import resolve_ramp
+
+    cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text(encoding="utf-8"))
+    as_of = "2026-08-02"
+    ramp = resolve_ramp(cfg, as_of, root=ROOT, announce=False)
+    enabled = [a for a in effective_accounts(cfg, ROOT) if a.get("enabled")]
+    assert enabled, "fixture needs at least one enabled desk"
+
+    banned = {str(a["id"]): sorted(cs.ramp_banned_kinds_for(
+        cfg, a["id"], as_of, root=ROOT, ramp=ramp)) for a in enabled}
+    assert not any(banned.values()), (
+        f"a live desk is still banned from a format by its ramp tier: "
+        f"{ {k: v for k, v in banned.items() if v} }")
+
+
+def _shipped_cfg_with_theme_list_rebanned() -> dict:
+    """The shipped config with the theme_list ban re-armed on every tier row.
+
+    The FENCE is "a cold account never spends an at-bat on a format its tier
+    forbids", and it has to keep being tested against the real desks, tilts and
+    ladder shapes. Since 2026-08-03 the live ramp forbids nothing, so the ban is
+    re-armed on a deep copy: the config supplies the accounts, the copy supplies
+    the condition. The flagship's `account_overrides` entry is left untouched so
+    override precedence keeps being exercised on the same path.
+    """
+    import copy
+
+    cfg = copy.deepcopy(
+        yaml.safe_load((ROOT / "config" / "marketing.yml").read_text(encoding="utf-8")))
+    ramp_cfg = cfg["sentinel"]["ramp"]
+    for tier in ("weeks_1_2", "weeks_3_4", "week_5_plus"):
+        ramp_cfg[tier]["theme_list_allowed"] = False
+    return cfg
+
+
 def test_on_the_shipped_config_no_cold_desk_is_planned_a_banned_format():
-    """END-TO-END on config/marketing.yml + the real ramp table.
+    """END-TO-END on config/marketing.yml's real desks + a re-armed ramp ban.
 
     Non-vacuous by construction: the test first proves at least one enabled desk
     IS on a theme_list-banning tier AND that the pre-fix allocator planned that
@@ -405,7 +451,7 @@ def test_on_the_shipped_config_no_cold_desk_is_planned_a_banned_format():
     from engine.marketing.accounts import effective_accounts
     from engine.marketing.sentinel import resolve_ramp
 
-    cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text(encoding="utf-8"))
+    cfg = _shipped_cfg_with_theme_list_rebanned()
     as_of = "2026-08-02"
     ramp = resolve_ramp(cfg, as_of, root=ROOT, announce=False)
     enabled = [a for a in effective_accounts(cfg, ROOT) if a.get("enabled")]
