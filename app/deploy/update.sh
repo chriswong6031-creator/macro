@@ -120,8 +120,8 @@ if ! cmp -s "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile; then
 fi
 
 # Codex CLI: keep the provider runtime pinned and self-healing just like the
-# reviewed systemd units below. Authentication is durable VPS state under
-# /var/lib/macro-codex and is never copied from or written into git.
+# reviewed systemd units below. Authentication is durable VPS state under the
+# root-only /var/lib/macro-codex* stores and is never copied into git.
 if ! bash "$APP_DIR/app/deploy/codex-runtime-setup.sh" --quiet; then
 	echo "macro-update: Codex runtime reconciliation failed; Claude/DeepSeek fallbacks remain available" >&2
 fi

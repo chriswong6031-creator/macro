@@ -183,8 +183,8 @@ class TestEnabledKeyIdsSeven:
 # ── 4. usage_snapshot includes Claude pool + shared providers + legacy ────────
 
 class TestUsageSnapshotSeven:
-    def test_snapshot_has_eleven_rows(self, tmp_path: Path, monkeypatch) -> None:
-        """Snapshot has 7 Claude rows + 2 Codex + DeepSeek + legacy = 11."""
+    def test_snapshot_has_twelve_rows(self, tmp_path: Path, monkeypatch) -> None:
+        """Snapshot has 7 Claude rows + 3 Codex + DeepSeek + legacy = 12."""
         monkeypatch.delenv("METAB_KEYS_ENABLED", raising=False)
         monkeypatch.setattr(
             "engine.neuralweb.key_pool.discover_present_keys",
@@ -195,8 +195,8 @@ class TestUsageSnapshotSeven:
         from engine.neuralweb.key_pool import usage_snapshot  # noqa: PLC0415
         snap = usage_snapshot(root=tmp_path)
 
-        assert len(snap) == 11, (
-            f"Expected 11 rows (7 pool + 3 providers + legacy), got {len(snap)}.\n"
+        assert len(snap) == 12, (
+            f"Expected 12 rows (7 pool + 4 providers + legacy), got {len(snap)}.\n"
             f"key_ids present: {[r['key_id'] for r in snap]}"
         )
 
@@ -216,6 +216,7 @@ class TestUsageSnapshotSeven:
             assert cap_id in snap_ids, f"{cap_id} missing from usage_snapshot"
         assert "codex_account" in snap_ids
         assert "codex_account_2" in snap_ids
+        assert "codex_account_3" in snap_ids
         assert "deepseek_api_key" in snap_ids
         assert "legacy" in snap_ids
 
@@ -226,7 +227,11 @@ class TestUsageSnapshotSeven:
         )
         monkeypatch.setattr(
             "engine.codex_provider.available_accounts",
-            lambda: [("codex_account", None), ("codex_account_2", None)],
+            lambda: [
+                ("codex_account", None),
+                ("codex_account_2", None),
+                ("codex_account_3", None),
+            ],
         )
         monkeypatch.setattr(
             "engine.codex_provider.provider_enabled",
@@ -241,6 +246,7 @@ class TestUsageSnapshotSeven:
         rows = {row["key_id"]: row for row in usage_snapshot(root=tmp_path)}
         assert rows["codex_account"]["present"] is True
         assert rows["codex_account_2"]["present"] is True
+        assert rows["codex_account_3"]["present"] is True
         assert rows["codex_account"]["provider"] == "Codex subscription"
         assert "Opus/Fable→Sol" in rows["codex_account"]["model_translation"]
         assert rows["deepseek_api_key"]["present"] is True
