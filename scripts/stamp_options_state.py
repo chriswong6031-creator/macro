@@ -73,6 +73,19 @@ computed None NEVER overwrites an existing non-null, so running it on a machine 
 gitignored stores are absent is a no-op rather than a data loss. Run it once, where the
 stores live, after the session filter lands.
 
+REPAIR — ``--backfill-ovc`` (2026-08-02, registry defect opex-vanna-charm-wovc):
+from the W-OVC build (2026-07-17) to 2026-08-02, ``opt_root_class`` had NO write path
+(excluded from ``STAMP_COVERAGE_COLS`` like ``opt_opex_days``, but without the dedicated
+write ``opt_opex_days`` has) and ``opt_front7_charm_share`` was computed against the pruned
+default chain reader, whose column list lacked ``expiry``/``T``/``iv`` — so
+``_ovc_from_chain``'s required-column check silently returned null on every nightly call.
+Both paths are fixed (dedicated root_class write below; reader widened in
+engine/options_stamp.py); ``--backfill-ovc`` repairs the already-stamped rows the retry
+gate can no longer reach. The ``_twin_silent_null_guard`` tripwire now makes this failure
+class loud: a stamp column 100% null in the ledger while its display-store twin is
+populated prints a ::warning on every nightly pass, and tests/test_options_stamp.py
+enforces the same invariant on the committed parquets at PR time.
+
 Idempotent, resilient: if the ledger is absent this is a no-op.
 """
 from __future__ import annotations
@@ -248,6 +261,13 @@ def stamp_ledger(
             # fires without poisoning the retry gate.
             if stamp.get("opt_opex_days") is not None:
                 df.at[idx, "opt_opex_days"] = stamp["opt_opex_days"]
+            # opt_root_class is the other always-computable column (ticker taxonomy,
+            # excluded from STAMP_COVERAGE_COLS) and needs the same dedicated write:
+            # the coverage-col commit below never touches it, which is exactly how it
+            # sat at 0/2282 for six weeks (W-OVC repair 2026-08-02, defect
+            # opex-vanna-charm-wovc).  Like opt_opex_days it never flips the retry gate.
+            if stamp.get("opt_root_class") is not None:
+                df.at[idx, "opt_root_class"] = stamp["opt_root_class"]
             # Apply coverage-gated cols only when at least one is non-null (else the
             # retry gate stays open so a future run fills them when coverage extends).
             coverage_vals = {c: stamp[c] for c in STAMP_COVERAGE_COLS if c in stamp}
@@ -347,6 +367,138 @@ def stamp_ledger(
     return df, newly_stamped
 
 
+def backfill_ovc(df: pd.DataFrame) -> tuple[pd.DataFrame, int, int]:
+    """ONE-OFF W-OVC REPAIR (2026-08-02): backfill opt_root_class + opt_front7_charm_share.
+
+    From the W-OVC build (2026-07-17) to 2026-08-02 neither column ever reached the
+    ledger: opt_root_class had no write path at all (excluded from STAMP_COVERAGE_COLS,
+    and unlike opt_opex_days no dedicated write existed), and opt_front7_charm_share was
+    computed against the pruned default chain reader whose column list lacked
+    expiry/T/iv, so _ovc_from_chain's required-column check silently nulled it on every
+    call.  Both write paths are now fixed for FUTURE rows; this pass repairs the rows
+    already stamped while the paths were dead.
+
+    Scope — deliberately narrower than the ordinary pass:
+
+      * opt_root_class: filled wherever null.  Taxonomy-derived from the ticker alone,
+        excluded from the coverage gate, so writing it can never lock a row out of
+        future retries (same contract as opt_opex_days).
+      * opt_front7_charm_share: filled ONLY on rows where the options-state family has
+        already committed (≥1 STAMP_COVERAGE_COLS non-null — the gate is closed and the
+        ordinary pass can never reach them again).  Rows still retryable are LEFT ALONE:
+        front7 is itself a coverage column, so writing it on an all-null row would close
+        the retry gate and permanently lock out the summary/skew/ivspread columns that a
+        future run could fill.  Those rows get front7 from the fixed ordinary pass at
+        their normal commit time.
+      * opt_vanna_relief: NOT touched.  Its write path always worked (211/2282), and its
+        cross-sectional tercile was ranked over each pass's stamp universe — recomputing
+        historical flags over a different universe is a re-adjudication, not a backfill.
+
+    PIT: values derive only from frozen chains/{date}.parquet snapshots with filename
+    date ≤ as_of (and the file-D-carries-session-D−1 vintage makes that strictly
+    conservative).  The pass prints the max(chain_date − as_of) it used, which must be
+    ≤ 0 by construction.  Never overwrites a non-null.  Idempotent.
+    """
+    from engine.options_stamp import _default_read_chain, _ovc_from_chain
+    from engine.options_entry_state import _root_class
+
+    if df.empty:
+        return df, 0, 0
+    df = _ensure_stamp_columns(df.copy())
+
+    n_root = 0
+    root_null = df["opt_root_class"].isna()
+    for idx in df.index[root_null]:
+        tk = df.at[idx, "ticker"]
+        if tk is None or (isinstance(tk, float) and math.isnan(tk)):
+            continue
+        df.at[idx, "opt_root_class"] = _root_class(str(tk))
+        n_root += 1
+
+    coverage_cols_present = [c for c in STAMP_COVERAGE_COLS if c in df.columns]
+    committed = df[coverage_cols_present].notna().any(axis=1)
+    target = committed & df["opt_front7_charm_share"].isna()
+
+    chain_dates = _default_chain_dates()
+    # per-(as_of, ticker) cache + as_of-sorted iteration so the 2-file read window
+    # slides forward once instead of thrashing across dates
+    ovc_cache: dict[tuple, dict] = {}
+    chain_cache: dict = {}
+
+    def _cached_read_chain(d):
+        if d not in chain_cache:
+            if len(chain_cache) > 3:  # window is 2 files; keep the footprint tiny
+                chain_cache.clear()
+            chain_cache[d] = _default_read_chain(d)
+        return chain_cache[d]
+
+    n_front7 = 0
+    max_lookahead_days: int | None = None
+    for idx in sorted(df.index[target], key=lambda i: str(df.at[i, "as_of"])):
+        as_of = df.at[idx, "as_of"]
+        ticker = df.at[idx, "ticker"]
+        as_of_d = pd.Timestamp(as_of).date()
+        key = (as_of, ticker)
+        if key not in ovc_cache:
+            ovc_cache[key] = _ovc_from_chain(as_of_d, ticker, chain_dates, _cached_read_chain)
+        val = ovc_cache[key].get("opt_front7_charm_share")
+        if val is None:
+            continue
+        df.at[idx, "opt_front7_charm_share"] = val
+        n_front7 += 1
+        usable = [cd for cd in chain_dates if cd <= as_of_d]
+        if usable:
+            gap = (usable[-1] - as_of_d).days
+            max_lookahead_days = gap if max_lookahead_days is None else max(max_lookahead_days, gap)
+
+    print(f"[options_stamp] --backfill-ovc: opt_root_class filled on {n_root} rows; "
+          f"opt_front7_charm_share filled on {n_front7} of {int(target.sum())} "
+          f"gate-closed candidate rows "
+          f"(rest have no chain coverage for their ticker/as_of); "
+          f"PIT audit: max(chain_date − as_of) = {max_lookahead_days} days (must be ≤ 0)")
+    return df, n_root, n_front7
+
+
+def _twin_silent_null_guard(df: pd.DataFrame, *, ledger_name: str = "retro_grades.parquet") -> int:
+    """Print a ::warning for every stamp column that is 100% null in the ledger while its
+    display-store twin (data/options_entry/state.parquet) is populated.
+
+    That combination can only mean the ledger write path is dead — both sides compute
+    from the same pinned stores — and it is the exact signature that hid the W-OVC
+    defect for six weeks (opt_front7_charm_share / opt_root_class at 0/2282 while the
+    display store carried 370/415 and 415/415).  Returns the number of columns flagged.
+
+    tests/test_options_stamp.py enforces the same invariant on the committed parquets at
+    PR time; this nightly print covers drift between PRs (the stamp step runs `|| true`,
+    so a warning in the Actions summary is the loud path, not a job failure)."""
+    from engine.options_stamp import DISPLAY_TWIN_COLS
+
+    state_path = config.data_dir() / "options_entry" / "state.parquet"
+    if df.empty or not state_path.exists():
+        return 0
+    try:
+        state = pd.read_parquet(state_path)
+    except Exception:  # noqa: BLE001 — a corrupt display store must not break the stamp pass
+        return 0
+    n_flagged = 0
+    for led_col, disp_col in DISPLAY_TWIN_COLS.items():
+        if disp_col not in state.columns:
+            continue
+        n_disp = int(state[disp_col].notna().sum())
+        if n_disp == 0:
+            continue
+        n_led = int(df[led_col].notna().sum()) if led_col in df.columns else 0
+        if n_led == 0:
+            # GitHub annotation law: bare print, line-start, flush (never via a logger)
+            print(f"::warning title=stamp-col-silent-null::{led_col} is 0/{len(df)} "
+                  f"non-null in {ledger_name} while display twin {disp_col} is "
+                  f"{n_disp}/{len(state)} non-null in options_entry/state.parquet — "
+                  f"the ledger stamp path for this column is dead (W-OVC class defect; "
+                  f"see engine/options_stamp.DISPLAY_TWIN_COLS)", flush=True)
+            n_flagged += 1
+    return n_flagged
+
+
 def _get_iv30_5d_chg_from_summary(
     as_of: str,
     ticker: str,
@@ -396,12 +548,26 @@ def main() -> None:
                          "carry them, against the session-filtered stores. Never writes a "
                          "null over an existing value, so it is a no-op where the "
                          "gitignored stores are absent. Not part of the nightly pass.")
+    ap.add_argument("--backfill-ovc", action="store_true",
+                    help="ONE-OFF W-OVC REPAIR (2026-08-02, see backfill_ovc docstring): "
+                         "fill opt_root_class wherever null and opt_front7_charm_share on "
+                         "gate-closed rows only, from the frozen chain snapshots. "
+                         "Never overwrites a non-null; never opens or closes a retry gate. "
+                         "Not part of the nightly pass.")
     args = ap.parse_args()
 
     ledger = Path(args.ledger)
     if not ledger.exists():
         if not args.quiet:
             print(f"[options_stamp] ledger absent ({ledger}); nothing to stamp")
+        return
+
+    if args.backfill_ovc:
+        df = pd.read_parquet(ledger)
+        df, n_root, n_front7 = backfill_ovc(df)
+        if n_root or n_front7:
+            df.to_parquet(ledger, index=False)
+        _twin_silent_null_guard(df)
         return
 
     df = pd.read_parquet(ledger)
@@ -469,6 +635,11 @@ def main() -> None:
                 n_col = int(df[col].notna().sum())
                 pct = round(n_col / max(n_before, 1) * 100, 1)
                 print(f"  W-OVC coverage [{col}]: {n_col}/{n_before} rows ({pct}%)")
+
+    # Silent-permanent-null tripwire (W-OVC class): a stamp column that is 100% null
+    # while its display-store twin is populated means the ledger write path is dead.
+    # Runs on every pass, loud in the Actions summary (the step itself is `|| true`).
+    _twin_silent_null_guard(df)
 
 
 if __name__ == "__main__":

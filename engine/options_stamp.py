@@ -117,6 +117,38 @@ STAMP_COVERAGE_COLS: list[str] = [
     c for c in STAMP_COLS if c not in ("opt_opex_days", "opt_root_class")
 ]
 
+# Ledger stamp column → its twin in the display store (data/options_entry/state.parquet,
+# engine/options_entry_state.py).  Both sides are computed from the SAME pinned stores, so
+# "ledger column 100% null while the display twin is populated" can only mean the ledger
+# stamp path is dead — the compute works, the write never lands.  That is the exact
+# silent-permanent-null signature that hid the W-OVC defect for six weeks (2026-07-17 →
+# 2026-08-02: opt_front7_charm_share and opt_root_class at 0/2282 while the display store
+# carried 370/415 and 415/415).  tests/test_options_stamp.py asserts this invariant on the
+# committed parquets and scripts/stamp_options_state.py prints a ::warning nightly.
+#
+# Deliberately EXCLUDED (do not add without reading why):
+#   opt_iv_rank_252   — designed-null in the ledger until the thetadata dedup repair
+#                       lands (ruling A9); its display twin iv_rank_252 populates first.
+#   opt_vanna_relief  — ledger-only cross-sectional construction (tercile per as_of over
+#                       stamped fires); the display store carries raw vanna_hedge_5d, not
+#                       the flag, so there is no twin to compare.
+#   opt_doi_slope_5d / opt_voi_flag / opt_wall_up / opt_wall_down — no display twin
+#                       (the display store carries different chain-derived fields).
+DISPLAY_TWIN_COLS: dict[str, str] = {
+    "opt_gamma_regime": "gamma_regime",
+    "opt_dist_to_flip_pct": "dist_to_flip_pct",
+    "opt_iv30": "iv30",
+    "opt_ivspread_rel": "ivspread_rel",
+    "opt_skew": "skew",
+    "opt_skew_5d_chg": "skew_5d_chg",
+    "opt_opex_days": "opex_days",
+    "opt_pin_risk": "pin_risk",
+    "opt_wall_dist_up_pct": "wall_up_dist_pct",
+    "opt_wall_dist_down_pct": "wall_down_dist_pct",
+    "opt_front7_charm_share": "front7_charm_share",
+    "opt_root_class": "root_class",
+}
+
 # every stamp starts as all-None so a name with no options coverage yields a clean null row
 _NULL_STAMP: dict = {c: None for c in STAMP_COLS}
 
@@ -230,9 +262,14 @@ def _default_read_chain(d: _dt.date) -> pd.DataFrame | None:
     if not p.exists():
         return None
     try:
-        # only the columns the chain signals need
+        # only the columns the chain signals need.  expiry/T/iv are REQUIRED by
+        # _ovc_from_chain's column check: from 2026-07-17 to 2026-08-02 this list
+        # lacked them, so every default-path call silently nulled
+        # opt_front7_charm_share (0/2282 ledger rows while the display store
+        # carried 370/415 — registry defect opex-vanna-charm-wovc).
         return pd.read_parquet(
-            p, columns=["underlying", "K", "is_call", "oi", "volume", "spot"]
+            p, columns=["underlying", "K", "expiry", "T", "iv",
+                        "is_call", "oi", "volume", "spot"]
         )
     except Exception:  # noqa: BLE001
         return None
@@ -542,16 +579,10 @@ def _wall_dist_stamp(
 
 
 # ── W-OVC stamp functions (2026-07-17) ──────────────────────────────────────
-
-def _default_read_chain_by_date(d: _dt.date) -> pd.DataFrame | None:
-    """Read chains/{date}.parquet; returns None if absent or unreadable."""
-    p = _chains_dir() / f"{d.isoformat()}.parquet"
-    if not p.exists():
-        return None
-    try:
-        return pd.read_parquet(p)
-    except Exception:  # noqa: BLE001
-        return None
+# (A full-width `_default_read_chain_by_date` reader lived here 2026-07-17..2026-08-02
+# but was never wired — `stamp_options_state` handed `_ovc_from_chain` the pruned
+# `_default_read_chain` instead, whose column list lacked expiry/T/iv.  The pruned
+# reader now carries those columns and the dead twin is removed.)
 
 
 def _ovc_from_chain(

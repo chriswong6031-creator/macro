@@ -238,11 +238,17 @@ def test_schema_union_adds_columns(monkeypatch):
     # every stamp column now present
     for c in STAMP_COLS:
         assert c in out.columns
-    # FOO rows stamped (regime present), BAR row all-null
+    # FOO rows stamped (regime present); BAR row null on every column EXCEPT the
+    # always-computable opt_root_class (ticker taxonomy — dedicated write, same
+    # contract as opt_opex_days; W-OVC repair 2026-08-02)
     foo = out[out["ticker"] == "FOO"]
     bar = out[out["ticker"] == "BAR"]
     assert foo["opt_gamma_regime"].notna().all()
-    assert bar[STAMP_COLS].isna().all(axis=1).all()
+    _null_for_bar = [c for c in STAMP_COLS if c not in ("opt_root_class", "opt_opex_days")]
+    assert bar[_null_for_bar].isna().all(axis=1).all()
+    assert (bar["opt_root_class"] == "single_name").all(), (
+        "opt_root_class is always-computable and must be written even on no-coverage rows"
+    )
     assert n == 2  # two FOO rows stamped
 
 
@@ -1510,3 +1516,226 @@ def test_restamp_positional_leaves_unstamped_rows_to_the_normal_gate(monkeypatch
     foo = out[out["ticker"] == "FOO"]
     assert n >= 1
     assert foo["opt_gamma_regime"].notna().all()
+
+
+# ── W-OVC silent-null repair (2026-08-02; registry defect opex-vanna-charm-wovc) ────
+# From the W-OVC build (2026-07-17) to 2026-08-02 opt_front7_charm_share and
+# opt_root_class never reached the ledger (0/2282) while the display store carried
+# 370/415 and 415/415: the default chain reader's pruned column list lacked
+# expiry/T/iv (so _ovc_from_chain's required-column check silently nulled front7 on
+# every default-path call), and opt_root_class had no write path at all (excluded
+# from STAMP_COVERAGE_COLS like opt_opex_days, but without the dedicated write).
+# These tests pin the repaired wiring end-to-end AND the tripwire that makes the
+# failure class loud.
+
+_OVC_REQUIRED_CHAIN_COLS = {"underlying", "K", "T", "iv", "oi", "is_call", "spot", "expiry"}
+
+
+def _ovc_full_chain_frame(tickers=("FOO",)):
+    """A FULL-SCHEMA chain snapshot: two expiries per name — 2026-07-22 (5 days from the
+    2026-07-17 fire → inside the front-7 window) and 2026-08-14 (28 days → outside).
+    Expiries are FIXED dates (not offsets from the file date) so the prior-day OI lookup
+    keyed by (expiry, K, is_call) matches across the two snapshots."""
+    rows = []
+    for tk in tickers:
+        for k in (95.0, 105.0):
+            for exp, t_years in (("2026-07-22", 5 / 365.0), ("2026-08-14", 28 / 365.0)):
+                for is_call in (True, False):
+                    rows.append({
+                        "underlying": tk, "K": k, "expiry": pd.Timestamp(exp),
+                        "T": t_years, "iv": 0.30, "is_call": is_call,
+                        "oi": 500.0, "volume": 25.0, "spot": 100.0,
+                    })
+    return pd.DataFrame(rows)
+
+
+def test_default_chain_reader_carries_ovc_required_columns(tmp_path, monkeypatch):
+    """THE DEFECT PIN: _default_read_chain must return every column _ovc_from_chain
+    requires.  2026-07-17..2026-08-02 its pruned list dropped expiry/T/iv, so the
+    required-column check returned early and front7 was silently null on every call."""
+    from engine.options_stamp import _default_read_chain
+
+    d = _dt.date(2026, 7, 17)
+    chains = tmp_path / "chains"
+    chains.mkdir()
+    _ovc_full_chain_frame().to_parquet(chains / f"{d.isoformat()}.parquet", index=False)
+    monkeypatch.setattr("engine.options_stamp._chains_dir", lambda: chains)
+
+    out = _default_read_chain(d)
+    assert out is not None, "reader must not fail on a full-schema chain file"
+    missing = _OVC_REQUIRED_CHAIN_COLS - set(out.columns)
+    assert not missing, (
+        f"_default_read_chain drops {sorted(missing)} — _ovc_from_chain's required-column "
+        "check will silently null opt_front7_charm_share on every default-path call "
+        "(the six-week W-OVC silent-null, registry defect opex-vanna-charm-wovc)"
+    )
+
+
+def test_stamp_default_path_fills_front7_and_root_class(tmp_path, monkeypatch):
+    """End-to-end through the PRODUCTION default readers: two full-schema chain files on
+    disk, no injected read_chain — the stamp must fill opt_front7_charm_share (greeks
+    from usable[-1], prior-day OI from usable[-2]) and opt_root_class."""
+    chains = tmp_path / "chains"
+    chains.mkdir()
+    for d in (_dt.date(2026, 7, 16), _dt.date(2026, 7, 17)):  # Thu, Fri — both sessions
+        _ovc_full_chain_frame().to_parquet(chains / f"{d.isoformat()}.parquet", index=False)
+    monkeypatch.setattr("engine.options_stamp._chains_dir", lambda: chains)
+
+    s = stamp_options_state(
+        "2026-07-17", "FOO",
+        read_summary=lambda t: None,
+        skew_df=None, ivspread_df=None,
+        _skew_loader=lambda: None, _ivspread_loader=lambda: None,
+    )
+    f7 = s["opt_front7_charm_share"]
+    assert f7 is not None, (
+        "opt_front7_charm_share must be non-null when chains carry full schema — "
+        "null here means the default chain reader lost the OVC columns again"
+    )
+    assert 0.0 < f7 < 1.0, f"one front expiry of two → share strictly inside (0,1), got {f7}"
+    assert s["opt_root_class"] == "single_name"
+
+
+def test_stamp_ledger_writes_root_class_on_all_eligible_rows(monkeypatch):
+    """opt_root_class gets the dedicated always-computable write (opt_opex_days contract):
+    written on covered AND no-coverage rows, without closing the retry gate."""
+    df = _legacy_ledger()
+    monkeypatch.setattr("engine.options_stamp._default_chain_dates",
+                        lambda: [_dt.date(2026, 6, d) for d in range(15, 22)])
+    monkeypatch.setattr("scripts.stamp_options_state._default_chain_dates",
+                        lambda: [_dt.date(2026, 6, d) for d in range(15, 22)])
+    monkeypatch.setattr("engine.options_stamp._default_read_chain",
+                        lambda d: _chain_frame("FOO"))
+    monkeypatch.setattr("engine.options_stamp._default_read_summary",
+                        lambda t: _summary_frame([f"2026-06-{d}" for d in range(15, 22)])
+                        if t == "FOO" else None)
+
+    out, _ = stamp_ledger(df)
+    assert (out["opt_root_class"] == "single_name").all(), (
+        "every row must carry opt_root_class after a pass — it is ticker taxonomy, "
+        "needs no data store, and sat at 0/2282 for six weeks without this write"
+    )
+    # the no-coverage row must REMAIN retryable — root_class is not a coverage column
+    bar = out[out["ticker"] == "BAR"]
+    present = [c for c in STAMP_COVERAGE_COLS if c in out.columns]
+    assert bar[present].isna().all(axis=1).all(), (
+        "writing opt_root_class must never close the options-family retry gate"
+    )
+
+
+def test_backfill_ovc_fills_gate_closed_rows_only(monkeypatch):
+    """--backfill-ovc scope contract:
+      * opt_root_class: filled wherever null (every row);
+      * opt_front7_charm_share: ONLY on gate-closed rows (≥1 coverage col non-null) —
+        writing it on a retryable row would close the gate and permanently lock out
+        the summary/skew/ivspread columns;
+      * never overwrites a non-null; idempotent."""
+    from scripts.stamp_options_state import backfill_ovc
+
+    df = pd.DataFrame({
+        "as_of": ["2026-07-17"] * 3,
+        "ticker": ["FOO", "FOO", "BAR"],
+        "lane": ["buy"] * 3, "horizon": [21] * 3,
+    })
+    for c in STAMP_COLS:
+        df[c] = None
+    df.loc[0, "opt_gamma_regime"] = "long"       # gate closed → backfill target
+    df.loc[1, "opt_gamma_regime"] = "long"
+    df.loc[1, "opt_front7_charm_share"] = 0.123  # already stamped → must survive
+    # row 2 (BAR): fully null → retryable → front7 must NOT be written even though
+    # the chain fixture below carries BAR data
+
+    monkeypatch.setattr("scripts.stamp_options_state._default_chain_dates",
+                        lambda: [_dt.date(2026, 7, 16), _dt.date(2026, 7, 17)])
+    monkeypatch.setattr("engine.options_stamp._default_read_chain",
+                        lambda d: _ovc_full_chain_frame(("FOO", "BAR")))
+
+    out, n_root, n_front7 = backfill_ovc(df)
+    assert n_root == 3 and n_front7 == 1
+    f7 = out.loc[0, "opt_front7_charm_share"]
+    assert f7 is not None and 0.0 < f7 < 1.0
+    assert out.loc[1, "opt_front7_charm_share"] == 0.123, "backfill overwrote a stamped value"
+    assert pd.isna(out.loc[2, "opt_front7_charm_share"]), (
+        "backfill wrote front7 on a RETRYABLE row — that closes the retry gate and "
+        "permanently locks out the summary/skew/ivspread columns"
+    )
+    assert (out["opt_root_class"] == "single_name").all()
+    # idempotent: a second pass changes nothing
+    out2, n_root2, n_front72 = backfill_ovc(out)
+    assert n_root2 == 0 and n_front72 == 0
+
+
+def test_display_twin_map_integrity():
+    """DISPLAY_TWIN_COLS maps real stamp columns and carries the two W-OVC columns whose
+    silent null it exists to catch; opt_iv_rank_252 stays exempt (A9 designed-null)."""
+    from engine.options_stamp import DISPLAY_TWIN_COLS
+
+    unknown = set(DISPLAY_TWIN_COLS) - set(STAMP_COLS)
+    assert not unknown, f"twin map names non-stamp columns: {sorted(unknown)}"
+    assert "opt_front7_charm_share" in DISPLAY_TWIN_COLS
+    assert "opt_root_class" in DISPLAY_TWIN_COLS
+    assert "opt_iv_rank_252" not in DISPLAY_TWIN_COLS, (
+        "opt_iv_rank_252 is designed-null in the ledger (ruling A9) until the thetadata "
+        "dedup repair lands — mapping it would fire a permanent false alarm the day its "
+        "display twin starts populating"
+    )
+    assert "opt_vanna_relief" not in DISPLAY_TWIN_COLS, (
+        "opt_vanna_relief has no display twin (ledger-only cross-sectional flag)"
+    )
+
+
+def test_twin_guard_prints_line_start_warning(tmp_path, monkeypatch, capsys):
+    """The nightly tripwire prints a GitHub annotation that STARTS the line (bare print,
+    never a logger — the ::warning is silently dropped otherwise) when a stamp column is
+    100% null while its display twin is populated."""
+    from lib import config as _config
+    from scripts.stamp_options_state import _twin_silent_null_guard
+
+    (tmp_path / "options_entry").mkdir()
+    pd.DataFrame({"front7_charm_share": [0.4, 0.5]}).to_parquet(
+        tmp_path / "options_entry" / "state.parquet", index=False)
+    monkeypatch.setattr(_config, "data_dir", lambda: tmp_path)
+
+    df = pd.DataFrame({"as_of": ["2026-07-17"], "ticker": ["FOO"]})
+    for c in STAMP_COLS:
+        df[c] = None
+
+    n = _twin_silent_null_guard(df)
+    assert n == 1, "exactly one twin pair (front7) is present in the fixture display store"
+    out_lines = capsys.readouterr().out.splitlines()
+    hits = [ln for ln in out_lines if ln.startswith("::warning title=stamp-col-silent-null::")]
+    assert len(hits) == 1 and "opt_front7_charm_share" in hits[0], (
+        "the annotation must START the line or GitHub drops it (annotation-line-start law)"
+    )
+
+
+def test_committed_ledger_has_no_silent_null_stamp_cols():
+    """THE SIX-WEEK SIGNATURE, enforced on the committed parquets: a stamp column that is
+    100% null in data/us_board_ledger/retro_grades.parquet while its display twin in
+    data/options_entry/state.parquet is populated means the ledger write path is dead —
+    the compute works (display proves it), the write never lands, and the gate bucket
+    sits at n=0 forever.  If this fails for a NEW stamp column you just shipped: wire its
+    ledger write (or backfill) in the same PR — do not exempt it here without a ruling."""
+    from engine.options_stamp import DISPLAY_TWIN_COLS
+
+    repo = Path(__file__).resolve().parent.parent
+    ledger_p = repo / "data" / "us_board_ledger" / "retro_grades.parquet"
+    state_p = repo / "data" / "options_entry" / "state.parquet"
+    if not ledger_p.exists() or not state_p.exists():
+        pytest.skip("committed stores absent in this checkout")
+
+    led = pd.read_parquet(ledger_p)
+    state = pd.read_parquet(state_p)
+    if led.empty or state.empty:
+        pytest.skip("committed stores empty")
+
+    dead = []
+    for led_col, disp_col in DISPLAY_TWIN_COLS.items():
+        if led_col not in led.columns or disp_col not in state.columns:
+            continue
+        if int(state[disp_col].notna().sum()) > 0 and int(led[led_col].notna().sum()) == 0:
+            dead.append(f"{led_col} (display twin {disp_col} is populated)")
+    assert not dead, (
+        "silent-permanent-null stamp columns — ledger write path is dead while the "
+        f"display store computes fine: {dead}"
+    )
