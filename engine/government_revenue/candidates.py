@@ -1,0 +1,985 @@
+"""Pure, receipt-bound Government Revenue research-candidate construction.
+
+This module is intentionally an admission gate, not a signal generator.  It
+only turns a reviewed, exact listed-company impact on a receipt-bound official
+award-change event into research context.  Discovery-name matches, legacy
+award tables, incomplete ownership paths, or non-current receipts return no
+candidate.  The queue keeps those discovery names visible as mapping backlog
+without asserting issuer attribution.
+"""
+
+from __future__ import annotations
+
+from collections import Counter
+from datetime import date, datetime, time, timezone
+from functools import lru_cache
+from hashlib import sha256
+import json
+import math
+from pathlib import Path
+import re
+from typing import Any, Mapping, Sequence
+
+from jsonschema import Draft202012Validator, FormatChecker
+from referencing import Registry, Resource
+
+from engine.government_revenue import entity_resolution
+from engine.government_revenue.entity_resolution import load_recipient_entity_graph
+
+
+CONTRACT = "government_revenue_candidate.v1"
+QUEUE_CONTRACT = "government_revenue_candidate_queue.v1"
+SCHEMA_VERSION = "1.0.0"
+_HEX_SHA256 = re.compile(r"^[a-f0-9]{64}$")
+_TICKER = re.compile(r"^[A-Z][A-Z0-9.-]{0,9}$")
+_SUPPORTED_FAMILIES = {
+    "obligation": "award_obligation_change",
+    "deobligation": "award_obligation_change",
+    "ceiling_changed": "award_ceiling_change",
+    "option_exercised": "option_exercise",
+    "new_award": "new_award",
+}
+
+
+def _authority() -> dict[str, Any]:
+    return {
+        "tier": "display",
+        "context_only": True,
+        "can_rank": False,
+        "can_size": False,
+        "can_gate": False,
+        "can_originate_signal": False,
+        "can_add_candidates": False,
+        "can_escalate": False,
+    }
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+
+
+def _digest(prefix: str, value: Any) -> str:
+    return f"{prefix}-{sha256(_canonical_json(value).encode('utf-8')).hexdigest()[:24]}"
+
+
+def _without_queue_volatile_fields(value: Any) -> Any:
+    """Drop generated-at envelope values before calculating a queue content ID."""
+    if isinstance(value, Mapping):
+        return {
+            key: _without_queue_volatile_fields(child)
+            for key, child in value.items()
+            if key not in {"content_id", "generated_at"}
+        }
+    if isinstance(value, list):
+        return [_without_queue_volatile_fields(child) for child in value]
+    return value
+
+
+def candidate_queue_content_id(payload: Mapping[str, Any]) -> str:
+    """Return the deterministic queue ID, excluding envelope/content generation time.
+
+    Writers and serving code must recompute this value instead of trusting an
+    artifact-provided ID.  ``generated_at`` is excluded at every nesting level:
+    it is delivery metadata and is not source evidence or candidate identity.
+    """
+    if not isinstance(payload, Mapping):
+        raise ValueError("candidate queue must be a mapping")
+    return _digest("grcq1", _without_queue_volatile_fields(payload))
+
+
+def candidate_latest_semantic_sha256(payload: Mapping[str, Any]) -> str:
+    """Fingerprint every candidate-relevant latest field without delivery clocks.
+
+    The mapping backlog consumes top-level company coverage while exact
+    candidates consume the embedded procurement workspace.  Binding only the
+    workspace would therefore allow a stale company backlog to survive a
+    changed latest generation.  ``generated_at`` is assembly metadata at every
+    nesting level and is the sole excluded field.
+    """
+    if not isinstance(payload, Mapping):
+        raise ValueError("candidate latest payload must be a mapping")
+    def without_delivery_clock(value: Any) -> Any:
+        if isinstance(value, Mapping):
+            return {
+                key: without_delivery_clock(child)
+                for key, child in value.items()
+                if key != "generated_at"
+            }
+        if isinstance(value, list):
+            return [without_delivery_clock(child) for child in value]
+        return value
+
+    return sha256(
+        _canonical_json(without_delivery_clock(payload)).encode("utf-8")
+    ).hexdigest()
+
+
+def _text(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    normalized = value.strip()
+    return normalized or None
+
+
+def _iso(value: Any, *, end_of_day: bool = False) -> str | None:
+    """Return a normalized UTC instant, accepting the contracts' date values."""
+    if isinstance(value, datetime):
+        parsed = value
+    elif isinstance(value, date):
+        parsed = datetime.combine(value, time.max if end_of_day else time.min)
+    elif isinstance(value, str):
+        raw = value.strip()
+        if not raw:
+            return None
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw):
+            try:
+                parsed = datetime.combine(date.fromisoformat(raw), time.max if end_of_day else time.min)
+            except ValueError:
+                return None
+        else:
+            try:
+                parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            except ValueError:
+                return None
+    else:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc).isoformat()
+
+
+def _instant(value: Any, *, end_of_day: bool = False) -> datetime | None:
+    normalized = _iso(value, end_of_day=end_of_day)
+    return datetime.fromisoformat(normalized) if normalized is not None else None
+
+
+def _source_graph(loaded: Mapping[str, Any]) -> Mapping[str, Any]:
+    strict_source = loaded.get("_strict_source_graph")
+    if isinstance(strict_source, Mapping):
+        return strict_source
+    graph = loaded.get("graph")
+    return graph if isinstance(graph, Mapping) else {}
+
+
+def _as_mapping(value: Any) -> Mapping[str, Any] | None:
+    return value if isinstance(value, Mapping) else None
+
+
+def _as_rows(value: Any) -> list[Mapping[str, Any]]:
+    return [row for row in value if isinstance(row, Mapping)] if isinstance(value, list) else []
+
+
+def _row_active(row: Mapping[str, Any], *, effective_at: datetime, analysis_as_of: datetime) -> bool:
+    """The graph contract requires evidence refs, which are strings rather than rows."""
+    known_at = _instant(row.get("known_at"))
+    valid_from = _instant(row.get("valid_from"))
+    valid_to = _instant(row.get("valid_to")) if row.get("valid_to") is not None else None
+    evidence_refs = [ref for ref in row.get("evidence_refs", []) if _text(ref)] if isinstance(row.get("evidence_refs"), list) else []
+    return bool(
+        known_at is not None
+        and valid_from is not None
+        and known_at <= analysis_as_of
+        and valid_from <= effective_at
+        and (valid_to is None or effective_at <= valid_to)
+        and evidence_refs
+    )
+
+
+def _event_freshness(payload: Mapping[str, Any]) -> Mapping[str, Any]:
+    workspace = _as_mapping(payload.get("procurement_workspace")) or {}
+    freshness = _as_mapping(workspace.get("freshness")) or {}
+    return _as_mapping(freshness.get("award_events")) or {}
+
+
+def _workspace(payload: Mapping[str, Any]) -> Mapping[str, Any]:
+    return _as_mapping(payload.get("procurement_workspace")) or {}
+
+
+def _workspace_content_id(payload: Mapping[str, Any]) -> str:
+    workspace = _workspace(payload)
+    bundle_id = _text(workspace.get("bundle_id"))
+    if bundle_id:
+        return bundle_id
+    return f"workspace-sha256:{sha256(_canonical_json(workspace).encode('utf-8')).hexdigest()}"
+
+
+def _graph_content_id(loaded: Mapping[str, Any]) -> str:
+    digest = _text(loaded.get("graph_digest"))
+    return f"graph-sha256:{digest}" if digest else "graph-sha256:unavailable"
+
+
+def _official_receipt(receipt: Mapping[str, Any], *, analysis_as_of: datetime) -> dict[str, Any] | None:
+    ref_id = _text(receipt.get("ref_id"))
+    record_id = _text(receipt.get("record_id"))
+    content_sha256 = _text(receipt.get("content_sha256"))
+    effective_at = _instant(receipt.get("effective_at"))
+    known_at = _instant(receipt.get("known_at"))
+    publisher = (_text(receipt.get("publisher")) or "").lower()
+    url = _text(receipt.get("url")) or ""
+    url_lower = url.lower()
+    if not (
+        ref_id
+        and record_id
+        and content_sha256
+        and _HEX_SHA256.fullmatch(content_sha256)
+        and effective_at is not None
+        and known_at is not None
+        and known_at <= analysis_as_of
+        and "usaspending" in publisher
+        and (url_lower.startswith("https://api.usaspending.gov/") or url_lower.startswith("https://www.usaspending.gov/"))
+    ):
+        return None
+    return {
+        "ref_id": ref_id,
+        "record_id": record_id,
+        "content_sha256": content_sha256,
+        "effective_at": effective_at.isoformat(),
+        "known_at": known_at.isoformat(),
+        # Internal admission-only value.  It is stripped before the bounded
+        # candidate contract is published.
+        "_source_url": url,
+    }
+
+
+def _receipt_bound_event(event: Mapping[str, Any], *, analysis_as_of: datetime) -> tuple[dict[str, Any], list[dict[str, Any]]] | None:
+    if event.get("kind") != "award_change":
+        return None
+    award_change = _as_mapping(event.get("award_change"))
+    evidence = _as_mapping(event.get("evidence"))
+    change = _as_mapping(event.get("change"))
+    if award_change is None or evidence is None or change is None:
+        return None
+    event_type = _text(award_change.get("event_type")) or _text(change.get("type"))
+    source_rail = _text(award_change.get("source_rail"))
+    source_identity = _as_mapping(award_change.get("source_identity"))
+    source_content_id = _text(source_identity.get("content_sha256")) if source_identity else None
+    effective_at = _instant(change.get("effective_at"))
+    known_at = _instant(change.get("known_at"))
+    if not (
+        event_type in _SUPPORTED_FAMILIES
+        and source_rail in {"usaspending_award_snapshot", "usaspending_award_action"}
+        and source_content_id
+        and _HEX_SHA256.fullmatch(source_content_id)
+        and evidence.get("source_class") in {"official_fact", "observed_source_revision"}
+        and evidence.get("mapping_class") == "reviewed"
+        and not _as_rows(evidence.get("conflicts"))
+        and effective_at is not None
+        and known_at is not None
+        and known_at <= analysis_as_of
+    ):
+        return None
+    if event_type == "new_award" and award_change.get("is_late_discovery") is not False:
+        return None
+    receipts = [_official_receipt(row, analysis_as_of=analysis_as_of) for row in _as_rows(evidence.get("receipts"))]
+    usable = [row for row in receipts if row is not None]
+    if not usable:
+        return None
+    event_record_ids = {
+        value
+        for value in (
+            _text(event.get("record_id")),
+            _text(award_change.get("award_key")),
+            _text(award_change.get("generated_award_id")),
+            _text(award_change.get("piid")),
+        )
+        if value
+    }
+    event_record_ids.update(
+        value.removeprefix("award:")
+        for value in list(event_record_ids)
+        if value.startswith("award:")
+    )
+    if not event_record_ids or any(receipt["record_id"] not in event_record_ids for receipt in usable):
+        return None
+    if source_content_id not in {receipt["content_sha256"] for receipt in usable}:
+        return None
+    return (
+        {
+            "event_id": _text(event.get("event_id")),
+            "record_id": _text(event.get("record_id")),
+            "event_type": event_type,
+            "source_rail": source_rail,
+            "source_content_id": source_content_id,
+            "is_late_discovery": bool(award_change.get("is_late_discovery")),
+            "effective_at": effective_at,
+            "known_at": known_at,
+            "change_summary": _text(change.get("what_changed_en")) or event_type.replace("_", " "),
+        },
+        usable,
+    ) if _text(event.get("event_id")) and _text(event.get("record_id")) else None
+
+
+def _event_amount(event: Mapping[str, Any], *, effective_at: datetime) -> dict[str, Any] | None:
+    primary_amount_id = _text(event.get("primary_amount_id"))
+    if not primary_amount_id:
+        return None
+    amount = next((row for row in _as_rows(event.get("amounts")) if _text(row.get("id")) == primary_amount_id), None)
+    if amount is None:
+        return None
+    value = amount.get("value")
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(float(value)):
+        return None
+    if amount.get("currency") != "USD" or not _text(amount.get("semantic")) or not _text(amount.get("source_ref")):
+        return None
+    return {
+        "amount_id": primary_amount_id,
+        "value": float(value),
+        "currency": "USD",
+        "semantic": _text(amount.get("semantic")),
+        "as_of": _iso(amount.get("as_of")) or effective_at.isoformat(),
+        "source_ref": _text(amount.get("source_ref")),
+    }
+
+
+def _graph_evidence_clocks(
+    loaded: Mapping[str, Any],
+    refs: Sequence[str],
+    *,
+    effective_at: datetime,
+    analysis_as_of: datetime,
+) -> list[datetime] | None:
+    """Resolve every required graph evidence reference and its availability."""
+    evidence_index = {
+        _text(row.get("evidence_id")): row
+        for row in _as_rows(_source_graph(loaded).get("evidence"))
+        if _text(row.get("evidence_id"))
+    }
+    clocks: list[datetime] = []
+    for ref in sorted(set(refs)):
+        evidence = evidence_index.get(ref)
+        if evidence is None:
+            return None
+        known_at = _instant(evidence.get("known_at"))
+        valid_from = _instant(evidence.get("valid_from"))
+        valid_to = _instant(evidence.get("valid_to"), end_of_day=True) if evidence.get("valid_to") is not None else None
+        if not (
+            known_at is not None
+            and valid_from is not None
+            and known_at <= analysis_as_of
+            and valid_from <= effective_at
+            and (valid_to is None or effective_at <= valid_to)
+            and _text(evidence.get("source_ref"))
+        ):
+            return None
+        clocks.append(known_at)
+    return clocks
+
+
+def _reviewed_ownership_path(
+    impact_path: Sequence[Mapping[str, Any]],
+    *,
+    loaded: Mapping[str, Any],
+    issuer_company_id: str,
+    effective_at: datetime,
+    analysis_as_of: datetime,
+) -> tuple[list[dict[str, Any]], float, list[str], list[datetime]] | None:
+    """Bind the event path to the strict graph view active at both clocks.
+
+    Award events already construct their path through the recipient resolver,
+    but this second admission boundary deliberately replays the graph edge
+    decision.  A stale, blocked, substituted, or economically changed path
+    therefore cannot become a candidate merely because its event JSON still
+    says ``reviewed``.
+    """
+    graph = _source_graph(loaded)
+    active_overrides = entity_resolution._active_overrides(  # noqa: SLF001
+        graph,
+        effective_at=effective_at,
+        knowledge_cutoff=analysis_as_of,
+    )
+    normalized: list[dict[str, Any]] = []
+    evidence_refs: list[str] = []
+    clocks: list[datetime] = []
+    economic_share = 1.0
+    expected_child: str | None = None
+    seen_edges: set[str] = set()
+    for raw in impact_path:
+        edge_id = _text(raw.get("edge_id"))
+        child_entity_id = _text(raw.get("child_entity_id") or raw.get("from_id"))
+        if not edge_id or not child_entity_id or edge_id in seen_edges:
+            return None
+        if expected_child is not None and child_entity_id != expected_child:
+            return None
+        active = entity_resolution._ownership_edges(  # noqa: SLF001
+            graph,
+            child_entity_id=child_entity_id,
+            effective_at=effective_at,
+            knowledge_cutoff=analysis_as_of,
+            overrides=active_overrides,
+        )
+        matches = [
+            edge
+            for edge in active
+            if _text(edge.get("edge_id") or edge.get("override_id")) == edge_id
+        ]
+        if len(matches) != 1:
+            return None
+        edge = matches[0]
+        share, share_error = entity_resolution._edge_share(edge)  # noqa: SLF001
+        if share_error or share is None:
+            return None
+        raw_share = raw.get("economic_share")
+        if (
+            not isinstance(raw_share, (int, float))
+            or isinstance(raw_share, bool)
+            or not math.isclose(float(raw_share), share, rel_tol=0.0, abs_tol=1e-12)
+        ):
+            return None
+        relationship = _text(edge.get("relationship")) or "unknown"
+        parent_entity_id = _text(edge.get("parent_entity_id") or edge.get("target_entity_id"))
+        parent_company_id = _text(edge.get("parent_company_id") or edge.get("target_company_id"))
+        raw_parent_entity = _text(raw.get("parent_entity_id") or raw.get("to_id"))
+        raw_parent_company = _text(raw.get("parent_company_id"))
+        raw_refs = sorted(
+            ref for ref in raw.get("evidence_refs", []) if _text(ref)
+        ) if isinstance(raw.get("evidence_refs"), list) else []
+        edge_refs = sorted(
+            ref for ref in edge.get("evidence_refs", []) if _text(ref)
+        ) if isinstance(edge.get("evidence_refs"), list) else []
+        if (
+            _text(raw.get("relationship")) != relationship
+            or raw_parent_entity != parent_entity_id
+            or raw_parent_company != parent_company_id
+            or not edge_refs
+            or raw_refs != edge_refs
+            or bool(parent_entity_id) == bool(parent_company_id)
+        ):
+            return None
+        edge_known_at = _instant(edge.get("known_at"))
+        if edge_known_at is None:
+            return None
+        clocks.append(edge_known_at)
+        evidence_refs.extend(edge_refs)
+        economic_share *= share
+        normalized.append({
+            "edge_id": edge_id,
+            "from_entity_id": child_entity_id,
+            "to_entity_id": parent_entity_id or parent_company_id,
+            "relationship": relationship,
+            "economic_share": share,
+            "evidence_refs": edge_refs,
+        })
+        seen_edges.add(edge_id)
+        expected_child = parent_entity_id
+        if parent_company_id:
+            if parent_company_id != issuer_company_id:
+                return None
+            expected_child = None
+            if len(normalized) != len(impact_path):
+                return None
+    if not normalized or expected_child is not None:
+        return None
+    return normalized, economic_share, evidence_refs, clocks
+
+
+def _active_graph_company(
+    loaded: Mapping[str, Any],
+    *,
+    issuer_company_id: str,
+    ticker: str,
+    effective_at: datetime,
+    analysis_as_of: datetime,
+) -> Mapping[str, Any] | None:
+    for company in _as_rows(_source_graph(loaded).get("companies")):
+        if (
+            _text(company.get("company_id")) == issuer_company_id
+            and _text(company.get("ticker")) == ticker
+            and (_text(company.get("verification_state")) or "").lower() in {"confirmed", "reviewed", "analyst_approved"}
+            and _row_active(company, effective_at=effective_at, analysis_as_of=analysis_as_of)
+        ):
+            return company
+    return None
+
+
+def _active_conflict(
+    loaded: Mapping[str, Any], *, issuer_company_id: str, effective_at: datetime, analysis_as_of: datetime
+) -> bool:
+    for conflict in _as_rows(_source_graph(loaded).get("conflicts")):
+        company_ids = {_text(value) for value in conflict.get("candidate_company_ids", []) if _text(value)}
+        if issuer_company_id in company_ids and _row_active(conflict, effective_at=effective_at, analysis_as_of=analysis_as_of):
+            return True
+    return False
+
+
+def _reviewed_impact(
+    impact: Mapping[str, Any],
+    *,
+    loaded: Mapping[str, Any],
+    receipts: Sequence[Mapping[str, Any]],
+    effective_at: datetime,
+    analysis_as_of: datetime,
+) -> tuple[dict[str, Any], Mapping[str, Any]] | None:
+    ticker = _text(impact.get("ticker"))
+    issuer_company_id = _text(impact.get("issuer_company_id"))
+    company_name = _text(impact.get("company_name"))
+    resolution_state = _text(impact.get("resolution_state"))
+    if not (
+        ticker and _TICKER.fullmatch(ticker)
+        and issuer_company_id and company_name
+        and impact.get("relation_semantic") == "reviewed"
+        and resolution_state in {"confirmed", "reviewed"}
+    ):
+        return None
+    company = _active_graph_company(
+        loaded, issuer_company_id=issuer_company_id, ticker=ticker,
+        effective_at=effective_at, analysis_as_of=analysis_as_of,
+    )
+    if company is None or _active_conflict(
+        loaded, issuer_company_id=issuer_company_id, effective_at=effective_at, analysis_as_of=analysis_as_of
+    ):
+        return None
+    path = _reviewed_ownership_path(
+        _as_rows(impact.get("ownership_path")),
+        loaded=loaded,
+        issuer_company_id=issuer_company_id,
+        effective_at=effective_at,
+        analysis_as_of=analysis_as_of,
+    )
+    if path is None:
+        return None
+    edges, economic_share, edge_evidence, path_clocks = path
+    impact_evidence = [ref for ref in impact.get("evidence_refs", []) if _text(ref)] if isinstance(impact.get("evidence_refs"), list) else []
+    company_evidence = [ref for ref in company.get("evidence_refs", []) if _text(ref)] if isinstance(company.get("evidence_refs"), list) else []
+    if not impact_evidence or not company_evidence:
+        return None
+    graph_evidence_ids = {
+        _text(row.get("evidence_id"))
+        for row in _as_rows(_source_graph(loaded).get("evidence"))
+        if _text(row.get("evidence_id"))
+    }
+    receipt_clocks_by_ref: dict[str, list[datetime]] = {}
+    for receipt in receipts:
+        receipt_known_at = _instant(receipt.get("known_at"))
+        if receipt_known_at is None:
+            return None
+        for ref in (_text(receipt.get("ref_id")), _text(receipt.get("_source_url"))):
+            if ref:
+                receipt_clocks_by_ref.setdefault(ref, []).append(receipt_known_at)
+    impact_evidence_clocks: list[datetime] = []
+    for ref in sorted(set(impact_evidence)):
+        matched = False
+        if ref in graph_evidence_ids:
+            graph_clocks = _graph_evidence_clocks(
+                loaded,
+                [ref],
+                effective_at=effective_at,
+                analysis_as_of=analysis_as_of,
+            )
+            if graph_clocks is not None:
+                impact_evidence_clocks.extend(graph_clocks)
+                matched = True
+        if ref in receipt_clocks_by_ref:
+            impact_evidence_clocks.extend(receipt_clocks_by_ref[ref])
+            matched = True
+        if not matched:
+            return None
+    graph_evidence = sorted(set(company_evidence + edge_evidence))
+    evidence_clocks = _graph_evidence_clocks(
+        loaded,
+        graph_evidence,
+        effective_at=effective_at,
+        analysis_as_of=analysis_as_of,
+    )
+    company_known_at = _instant(company.get("known_at"))
+    graph_known_at = _instant(loaded.get("graph_known_at"))
+    if evidence_clocks is None or company_known_at is None or graph_known_at is None:
+        return None
+    resolution_known_at = max(
+        company_known_at,
+        graph_known_at,
+        *path_clocks,
+        *evidence_clocks,
+        *impact_evidence_clocks,
+    )
+    return ({
+        "ticker": ticker,
+        "issuer_company_id": issuer_company_id,
+        "company_name": company_name,
+        "ownership_path": edges,
+        "economic_share": economic_share,
+        "resolution_state": resolution_state,
+        "evidence_refs": sorted(set(impact_evidence + company_evidence + [ref for edge in edges for ref in edge["evidence_refs"]])),
+        "resolution_known_at": resolution_known_at,
+    }, company)
+
+
+def _candidate_from_event(
+    event: Mapping[str, Any],
+    *,
+    loaded: Mapping[str, Any],
+    analysis_as_of: datetime,
+    generated_at: str,
+) -> list[dict[str, Any]]:
+    eligible_event = _receipt_bound_event(event, analysis_as_of=analysis_as_of)
+    if eligible_event is None or loaded.get("status") != "ready":
+        return []
+    source_event, receipts = eligible_event
+    amount = _event_amount(event, effective_at=source_event["effective_at"])
+    if amount is None:
+        return []
+    receipt_urls = {receipt["_source_url"] for receipt in receipts}
+    receipt_refs = {receipt["ref_id"] for receipt in receipts}
+    if amount["source_ref"] not in receipt_urls | receipt_refs:
+        return []
+    public_receipts = [
+        {key: value for key, value in receipt.items() if not key.startswith("_")}
+        for receipt in receipts
+    ]
+    result: list[dict[str, Any]] = []
+    for raw_impact in _as_rows(event.get("listed_company_impacts")):
+        reviewed = _reviewed_impact(
+            raw_impact,
+            loaded=loaded,
+            receipts=receipts,
+            effective_at=source_event["effective_at"],
+            analysis_as_of=analysis_as_of,
+        )
+        if reviewed is None:
+            continue
+        impact, _company = reviewed
+        family = _SUPPORTED_FAMILIES[source_event["event_type"]]
+        candidate_id = _digest("grc1", {
+            "candidate_family": family,
+            "issuer_company_id": impact["issuer_company_id"],
+            "event_id": source_event["event_id"],
+        })
+        artifact_content_ids = sorted({
+            source_event["source_content_id"],
+            *(receipt["content_sha256"] for receipt in receipts),
+            _graph_content_id(loaded),
+        })
+        availability_known_at = max(
+            source_event["known_at"],
+            impact["resolution_known_at"],
+            *(_instant(receipt["known_at"]) for receipt in receipts),
+        )
+        resolution_fingerprint = sha256(_canonical_json({
+            "graph_id": loaded["graph_id"],
+            "graph_digest": loaded["graph_digest"],
+            "issuer_company_id": impact["issuer_company_id"],
+            "ownership_path": impact["ownership_path"],
+            "economic_share": impact["economic_share"],
+            "evidence_refs": impact["evidence_refs"],
+        }).encode("utf-8")).hexdigest()
+        observation_id = _digest("gro1", {
+            "candidate_id": candidate_id,
+            "known_at": availability_known_at.isoformat(),
+            "candidate_state": "awaiting_crosscheck",
+            "artifact_content_ids": artifact_content_ids,
+            "issuer_resolution_fingerprint": resolution_fingerprint,
+        })
+        direction = "possible_negative" if source_event["event_type"] == "deobligation" else "possible_positive"
+        evidence_refs = sorted(set(impact["evidence_refs"] + [receipt["ref_id"] for receipt in receipts]))
+        result.append({
+            "contract": CONTRACT,
+            "schema_version": SCHEMA_VERSION,
+            "candidate_id": candidate_id,
+            "observation_id": observation_id,
+            "candidate_scope": "government_revenue_research",
+            "is_neuralweb_trade_candidate": False,
+            "candidate_family": family,
+            "candidate_state": "awaiting_crosscheck",
+            "ticker": impact["ticker"],
+            "issuer_company_id": impact["issuer_company_id"],
+            "issuer": {
+                "company_name": impact["company_name"],
+                "ticker": impact["ticker"],
+            },
+            "issuer_resolution_ref": {
+                "contract": "government_recipient_resolution.v1",
+                "resolution_state": impact["resolution_state"],
+                "relation_semantic": "reviewed",
+                "graph_id": loaded["graph_id"],
+                "graph_digest": loaded["graph_digest"],
+                "evidence_refs": evidence_refs,
+            },
+            "ownership_path_refs": [edge["edge_id"] for edge in impact["ownership_path"]],
+            "event_refs": [source_event["event_id"], source_event["record_id"]],
+            "source_event": {
+                "event_id": source_event["event_id"],
+                "record_id": source_event["record_id"],
+                "event_type": source_event["event_type"],
+                "source_rail": source_event["source_rail"],
+                "source_content_id": source_event["source_content_id"],
+                "is_late_discovery": source_event["is_late_discovery"],
+                "effective_at": source_event["effective_at"].isoformat(),
+                "known_at": source_event["known_at"].isoformat(),
+                "amount": amount,
+            },
+            "source_receipt_refs": public_receipts,
+            "artifact_content_ids": artifact_content_ids,
+            "effective_at": source_event["effective_at"].isoformat(),
+            "known_at": availability_known_at.isoformat(),
+            "analysis_as_of": analysis_as_of.isoformat(),
+            "generated_at": generated_at,
+            "freshness": {
+                "status": "ok",
+                "award_events_status": "ok",
+                "recipient_graph_status": "ready",
+                "event_known_at": source_event["known_at"].isoformat(),
+                "graph_known_at": loaded["graph_known_at"],
+            },
+            "coverage": {
+                "scope": "receipt-bound forward-only USAspending award-event ledger; exact reviewed issuer linkage only",
+                "exact_link_status": "exact_linked",
+                "is_complete": False,
+            },
+            "materiality": {
+                "observed_event_amount": amount["value"],
+                "attributable_amount": amount["value"] * impact["economic_share"],
+                "economic_share": impact["economic_share"],
+                "issuer_attributed_denominator": None,
+                "materiality_ratio": None,
+                "comparison_state": "not_comparable",
+                "reason_code": "exact_issuer_attributed_denominator_not_available",
+            },
+            "transmission_direction": direction,
+            "mechanism": {
+                "observed_change": source_event["change_summary"],
+                "issuer_role": "reviewed_recipient",
+                "possible_channels": ["backlog", "revenue", "margin", "cash", "guidance", "narrative"],
+                "mechanism_steps": [
+                    "Official receipt-bound award event was observed.",
+                    "Reviewed ownership evidence links the recipient path to the listed issuer.",
+                    "Financial transmission requires future performance, funding, and accounting recognition evidence.",
+                ],
+                "timing_window": "Future reported periods; timing depends on scope, funding, performance, and accounting recognition.",
+                "dependencies": ["contract scope", "appropriation or obligation availability", "performance timing", "issuer accounting recognition"],
+                "evidence_refs": evidence_refs,
+            },
+            "earnings_transmission": {
+                "direction": direction,
+                "statement_status": "research_context_not_trade_signal",
+                "possible_earnings_channels": ["backlog", "revenue", "margin", "cash", "guidance", "narrative"],
+            },
+            "crosscheck_state": "not_evaluated",
+            "counterevidence": [],
+            "internal_watch_conditions": [
+                "Confirm contract scope, funding, and performance milestones.",
+                "Confirm issuer disclosure or other independently sourced financial transmission evidence.",
+                "Require cross-layer confirmation before any downstream signal process considers the observation.",
+            ],
+            "authority": _authority(),
+            "limitations": [
+                "This is Government Revenue research context, not a trade or sizing signal.",
+                "Materiality ratio remains unavailable until an exact issuer-attributed denominator has its own receipt and clock.",
+                "Observed award amounts do not establish revenue timing, margin impact, or earnings impact.",
+            ],
+        })
+    return result
+
+
+def build_candidate_observations(
+    latest_payload: Mapping[str, Any],
+    recipient_graph: Mapping[str, Any] | None,
+    *,
+    generated_at: str,
+) -> list[dict[str, Any]]:
+    """Return only exact, receipt-bound research candidates visible at ``as_of``.
+
+    The function is pure: it writes nothing, does not use wall-clock time, and
+    fails closed by returning an empty list for malformed or unavailable input.
+    """
+    if not isinstance(latest_payload, Mapping):
+        return []
+    generated = _iso(generated_at)
+    analysis_as_of = _instant(latest_payload.get("as_of"), end_of_day=True)
+    if generated is None or analysis_as_of is None:
+        return []
+    loaded = load_recipient_entity_graph(recipient_graph, as_of=analysis_as_of)
+    if loaded.get("status") != "ready":
+        return []
+    award_freshness = _event_freshness(latest_payload)
+    if award_freshness.get("status") != "ok":
+        return []
+    events = _as_rows(_workspace(latest_payload).get("events"))
+    candidates = {
+        candidate["candidate_id"]: candidate
+        for event in events
+        for candidate in _candidate_from_event(
+            event, loaded=loaded, analysis_as_of=analysis_as_of, generated_at=generated,
+        )
+    }
+    return [candidates[candidate_id] for candidate_id in sorted(candidates)]
+
+
+def build_mapping_backlog(
+    latest_payload: Mapping[str, Any],
+    recipient_graph: Mapping[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Expose discovery coverage that is not an exact reviewed issuer mapping."""
+    if not isinstance(latest_payload, Mapping):
+        return []
+    analysis_as_of = _instant(latest_payload.get("as_of"), end_of_day=True)
+    known_at = _iso(latest_payload.get("known_at"))
+    if analysis_as_of is None or known_at is None:
+        return []
+    loaded = load_recipient_entity_graph(recipient_graph, as_of=analysis_as_of)
+    graph_companies = {
+        (_text(row.get("ticker")), _text(row.get("company_id")))
+        for row in _as_rows(_source_graph(loaded).get("companies"))
+    } if loaded.get("status") == "ready" else set()
+    graph_tickers = {ticker for ticker, _company_id in graph_companies if ticker}
+    source_content_ids = sorted({
+        _workspace_content_id(latest_payload),
+        _graph_content_id(loaded),
+        f"latest-sha256:{candidate_latest_semantic_sha256(latest_payload)}",
+    })
+    rows: list[dict[str, Any]] = []
+    for company in _as_rows(latest_payload.get("companies")):
+        ticker = _text(company.get("ticker"))
+        company_name = _text(company.get("name"))
+        if not ticker or _TICKER.fullmatch(ticker) is None or not company_name or ticker in graph_tickers:
+            continue
+        entity_match = _as_mapping(company.get("entity_match")) or {}
+        reason_codes = ["exact_identifier_mapping_required"]
+        if not graph_tickers:
+            reason_codes.append("recipient_graph_no_reviewed_issuer")
+        rows.append({
+            "backlog_id": _digest("grmb1", {"ticker": ticker, "company_name": company_name, "graph_digest": loaded.get("graph_digest")}),
+            "ticker": ticker,
+            "company_name": company_name,
+            "mapping_state": "mapping_needed",
+            "reason_codes": reason_codes,
+            "source_association_method": _text(entity_match.get("method")),
+            "issuer_attribution": "not_asserted",
+            "known_at": known_at,
+            "source_artifact_content_ids": source_content_ids,
+            "limitations": [
+                "Discovery-name association is retained only as mapping backlog and is not issuer attribution.",
+                "An exact identifier and time-valid reviewed ownership path are required before a listed-company candidate can be emitted.",
+            ],
+        })
+    return sorted(rows, key=lambda row: (row["ticker"], row["backlog_id"]))
+
+
+def _queue_counts(candidates: Sequence[Mapping[str, Any]], backlog: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    return {
+        "total": len(candidates),
+        "exact_linked": len(candidates),
+        "mapping_needed": len(backlog),
+        "by_family": dict(sorted(Counter(row["candidate_family"] for row in candidates).items())),
+        "by_state": dict(sorted(Counter(row["candidate_state"] for row in candidates).items())),
+        "by_freshness": dict(sorted(Counter(row["freshness"]["status"] for row in candidates).items())),
+        "by_exact_link_status": {"exact_linked": len(candidates), "mapping_needed": len(backlog)},
+    }
+
+
+def build_candidate_queue(
+    latest_payload: Mapping[str, Any],
+    recipient_graph: Mapping[str, Any] | None,
+    *,
+    generated_at: str,
+) -> dict[str, Any]:
+    """Build a deterministic display-only queue and explicit mapping backlog."""
+    if not isinstance(latest_payload, Mapping):
+        raise ValueError("latest_payload must be a mapping")
+    generated = _iso(generated_at)
+    analysis_as_of = _instant(latest_payload.get("as_of"), end_of_day=True)
+    known_at = _iso(latest_payload.get("known_at"))
+    if generated is None or analysis_as_of is None or known_at is None:
+        raise ValueError("latest_payload.as_of, latest_payload.known_at, and generated_at must be parseable")
+    loaded = load_recipient_entity_graph(recipient_graph, as_of=analysis_as_of)
+    candidates = build_candidate_observations(latest_payload, recipient_graph, generated_at=generated)
+    backlog = build_mapping_backlog(latest_payload, recipient_graph)
+    award_freshness = _event_freshness(latest_payload)
+    award_status = _text(award_freshness.get("status")) or "unavailable"
+    exact_availability = "available" if candidates else ("not_observed" if award_status == "ok" else "unavailable")
+    if candidates:
+        reason = "Exact, receipt-bound award-change candidates are available for crosscheck."
+    elif award_status == "ok":
+        reason = "No reviewed, receipt-bound award-change event met exact candidate eligibility at the analysis clock."
+    else:
+        reason = "No receipt-bound award-change event generation is currently available; mapping backlog remains visible."
+    workspace = _workspace(latest_payload)
+    candidates = sorted(candidates, key=lambda row: row["candidate_id"])
+    candidates.sort(key=lambda row: row["known_at"], reverse=True)
+    queue = {
+        "contract": QUEUE_CONTRACT,
+        "schema_version": SCHEMA_VERSION,
+        "as_of": analysis_as_of.isoformat(),
+        "known_at": known_at,
+        "generated_at": generated,
+        "content_id": "grcq1-000000000000000000000000",
+        "candidates": candidates,
+        "mapping_backlog": backlog,
+        "recently_matured": [],
+        "counts": _queue_counts(candidates, backlog),
+        "source_generation_ids": [_workspace_content_id(latest_payload), _text(loaded.get("graph_id")) or "recipient_graph:unavailable"],
+        "source_content_ids": sorted({
+            _workspace_content_id(latest_payload),
+            _graph_content_id(loaded),
+            f"latest-sha256:{candidate_latest_semantic_sha256(latest_payload)}",
+        }),
+        "freshness": {
+            "status": "ok" if award_status == "ok" and loaded.get("status") == "ready" else "degraded",
+            "award_events_status": award_status,
+            "recipient_graph_status": _text(loaded.get("status")) or "unavailable",
+            "exact_candidate_availability": exact_availability,
+            "reason": reason,
+        },
+        "coverage": {
+            "company_coverage_count": len(_as_rows(latest_payload.get("companies"))),
+            "reviewed_issuer_company_count": len(_as_rows(_source_graph(loaded).get("companies"))) if loaded.get("status") == "ready" else 0,
+            "mapping_backlog_count": len(backlog),
+            "award_change_events_visible": sum(1 for event in _as_rows(workspace.get("events")) if event.get("kind") == "award_change"),
+            "is_complete": False,
+        },
+        "display_sort": {"primary": "known_at_desc", "tie_breaker": "candidate_id_asc", "is_investment_rank": False},
+        "authority": _authority(),
+        "limitations": [
+            "Government Revenue candidates are research context only and cannot originate, rank, size, gate, or escalate a trade signal.",
+            "Discovery-name coverage is visible as mapping backlog; it is never issuer attribution or a candidate source.",
+            "No materiality ratio is emitted without an exact issuer-attributed denominator and its own receipt-bound clock.",
+        ],
+    }
+    queue["content_id"] = candidate_queue_content_id(queue)
+    if not is_valid_candidate_queue(queue):
+        raise ValueError("candidate queue failed its contract validation")
+    return queue
+
+
+@lru_cache(maxsize=1)
+def _validators() -> tuple[Draft202012Validator, Draft202012Validator]:
+    root = Path(__file__).resolve().parents[2]
+    candidate_schema = json.loads((root / "contracts/government_revenue/government_revenue_candidate.v1.schema.json").read_text(encoding="utf-8"))
+    queue_schema = json.loads((root / "contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json").read_text(encoding="utf-8"))
+    registry = Registry().with_resource(candidate_schema["$id"], Resource.from_contents(candidate_schema))
+    registry = registry.with_resource(queue_schema["$id"], Resource.from_contents(queue_schema))
+    checker = FormatChecker()
+    return (
+        Draft202012Validator(candidate_schema, registry=registry, format_checker=checker),
+        Draft202012Validator(queue_schema, registry=registry, format_checker=checker),
+    )
+
+
+def is_valid_candidate_payload(payload: Mapping[str, Any]) -> bool:
+    """Return ``True`` only for a schema-valid, fail-closed research candidate."""
+    if not isinstance(payload, Mapping):
+        return False
+    validator, _queue_validator = _validators()
+    return not list(validator.iter_errors(dict(payload)))
+
+
+def is_valid_candidate_queue(payload: Mapping[str, Any]) -> bool:
+    """Return ``True`` only for a schema-valid candidate queue."""
+    if not isinstance(payload, Mapping):
+        return False
+    _candidate_validator, validator = _validators()
+    if list(validator.iter_errors(dict(payload))):
+        return False
+    try:
+        return payload.get("content_id") == candidate_queue_content_id(payload)
+    except ValueError:
+        return False
+
+
+__all__ = [
+    "build_candidate_observations",
+    "build_candidate_queue",
+    "build_mapping_backlog",
+    "candidate_queue_content_id",
+    "candidate_latest_semantic_sha256",
+    "is_valid_candidate_payload",
+    "is_valid_candidate_queue",
+]

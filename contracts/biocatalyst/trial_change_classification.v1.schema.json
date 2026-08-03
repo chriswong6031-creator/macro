@@ -1,0 +1,345 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_change_classification.v1.schema.json",
+  "title": "BioCatalyst Trial Change Classification v1",
+  "description": "A bounded, replay-derived classification of exact ClinicalTrials.gov registry operations. It is not an alert, correction assessment, protocol assertion, materiality assessment, identity resolution, score, rank, or authority input.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "classification_id", "nct_id", "evidence_profile",
+    "diff_contract_id", "diff_ref", "diff_payload_sha256", "before_source_snapshot_ref",
+    "after_source_snapshot_ref", "before_content_sha256", "after_content_sha256", "source_clock",
+    "prospective_activation_provenance",
+    "available", "unavailable_reason", "capacity", "input_operation_count",
+    "eligible_operation_count", "row_count", "row_order", "rows", "classification_method",
+    "source_fact", "protocol_change_asserted", "materiality_assessed", "correction_assessed",
+    "authority", "hash_scope", "classification_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_change_classification.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "classification_id": {
+      "type": "string",
+      "pattern": "^trial_change_classification_(NCT[0-9]{8}|unavailable)_[a-f0-9]{24}$"
+    },
+    "nct_id": {"anyOf": [{"$ref": "#/$defs/nctId"}, {"type": "null"}]},
+    "evidence_profile": {
+      "enum": ["retrospective_record_history", "prospective_first_observed", "unavailable"]
+    },
+    "diff_contract_id": {
+      "type": ["string", "null"],
+      "enum": ["trial_history_exact_diff.v1", "trial_version_diff.v1", null]
+    },
+    "diff_ref": {
+      "anyOf": [
+        {"type": "string", "pattern": "^trial_history_diff_[A-Za-z0-9_-]+$"},
+        {"type": "string", "pattern": "^trial_diff_[A-Za-z0-9_-]+$"},
+        {"type": "null"}
+      ]
+    },
+    "diff_payload_sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "before_source_snapshot_ref": {"anyOf": [{"$ref": "#/$defs/snapshotRef"}, {"type": "null"}]},
+    "after_source_snapshot_ref": {"anyOf": [{"$ref": "#/$defs/snapshotRef"}, {"type": "null"}]},
+    "before_content_sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "after_content_sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "source_clock": {"$ref": "#/$defs/sourceClock"},
+    "prospective_activation_provenance": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {
+              "allOf": [
+                {"$ref": "#/$defs/prospectiveActivationProvenanceEntry"},
+                {"properties": {"side": {"const": "before"}}}
+              ]
+            },
+            {
+              "allOf": [
+                {"$ref": "#/$defs/prospectiveActivationProvenanceEntry"},
+                {"properties": {"side": {"const": "after"}}}
+              ]
+            }
+          ],
+          "items": false
+        }
+      ]
+    },
+    "available": {"type": "boolean"},
+    "unavailable_reason": {
+      "type": ["string", "null"],
+      "enum": [
+        "history_disabled", "retention_gate_closed", "prospective_activation_missing",
+        "prospective_activation_invalid", "prospective_activation_stale", "missing_evidence",
+        "schema_profile_mismatch", "unsupported_diff_contract", "evidence_replay_failed",
+        "input_before_snapshot_must_be_canonical_json", "input_after_snapshot_must_be_canonical_json",
+        "input_before_observation_must_be_canonical_json", "input_after_observation_must_be_canonical_json",
+        "input_diff_must_be_canonical_json", "input_before_run_must_be_canonical_json",
+        "input_after_run_must_be_canonical_json", "input_before_receipts_must_be_canonical_json",
+        "input_after_receipts_must_be_canonical_json", "input_before_raw_evidence_invalid",
+        "input_after_raw_evidence_invalid", "input_before_raw_bytes_limit_exceeded",
+        "input_after_raw_bytes_limit_exceeded", "input_canonical_byte_limit_exceeded",
+        "input_before_raw_key_bytes_limit_exceeded", "input_after_raw_key_bytes_limit_exceeded",
+        "input_node_limit_exceeded", "input_nesting_limit_exceeded",
+        "input_container_limit_exceeded", "operation_count_limit_exceeded",
+        "row_count_limit_exceeded", "classification_byte_limit_exceeded",
+        "projection_byte_limit_exceeded", null
+      ]
+    },
+    "capacity": {"$ref": "#/$defs/capacity"},
+    "input_operation_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+    "eligible_operation_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+    "row_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+    "row_order": {"const": "exact_op_index_ascending"},
+    "rows": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {"$ref": "#/$defs/changeRow"}
+    },
+    "classification_method": {"const": "deterministic_exact_registry_operation_class.v1"},
+    "source_fact": {"const": false},
+    "protocol_change_asserted": {"const": false},
+    "materiality_assessed": {"const": false},
+    "correction_assessed": {"const": false},
+    "authority": {"$ref": "#/$defs/authority"},
+    "hash_scope": {"const": "canonical_payload_excluding_classification_payload_sha256"},
+    "classification_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"available": {"const": true}}},
+      "then": {
+        "properties": {
+          "nct_id": {"$ref": "#/$defs/nctId"},
+          "evidence_profile": {"enum": ["retrospective_record_history", "prospective_first_observed"]},
+          "diff_contract_id": {"type": "string"},
+          "diff_ref": {"type": "string"},
+          "diff_payload_sha256": {"$ref": "#/$defs/sha256"},
+          "before_source_snapshot_ref": {"$ref": "#/$defs/snapshotRef"},
+          "after_source_snapshot_ref": {"$ref": "#/$defs/snapshotRef"},
+          "before_content_sha256": {"$ref": "#/$defs/sha256"},
+          "after_content_sha256": {"$ref": "#/$defs/sha256"},
+          "unavailable_reason": {"const": null}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"available": {"const": false}}},
+      "then": {
+        "properties": {
+          "nct_id": {"const": null},
+          "evidence_profile": {"const": "unavailable"},
+          "diff_contract_id": {"const": null},
+          "diff_ref": {"const": null},
+          "diff_payload_sha256": {"const": null},
+          "before_source_snapshot_ref": {"const": null},
+          "after_source_snapshot_ref": {"const": null},
+          "before_content_sha256": {"const": null},
+          "after_content_sha256": {"const": null},
+          "prospective_activation_provenance": {"const": null},
+          "source_clock": {"properties": {"profile": {"const": "unavailable"}}},
+          "unavailable_reason": {"type": "string"},
+          "input_operation_count": {"const": 0},
+          "eligible_operation_count": {"const": 0},
+          "row_count": {"const": 0},
+          "rows": {"maxItems": 0}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"evidence_profile": {"const": "retrospective_record_history"}}},
+      "then": {
+        "properties": {
+          "diff_contract_id": {"const": "trial_history_exact_diff.v1"},
+          "diff_ref": {"type": "string", "pattern": "^trial_history_diff_[A-Za-z0-9_-]+$"},
+          "prospective_activation_provenance": {"const": null},
+          "source_clock": {"properties": {"profile": {"const": "retrospective_source_versions"}}}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"evidence_profile": {"const": "prospective_first_observed"}}},
+      "then": {
+        "properties": {
+          "diff_contract_id": {"const": "trial_version_diff.v1"},
+          "diff_ref": {"type": "string", "pattern": "^trial_diff_[A-Za-z0-9_-]+$"},
+          "prospective_activation_provenance": {"type": "array"},
+          "source_clock": {"properties": {"profile": {"const": "prospective_first_observed_interval"}}}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "nctId": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+    "snapshotRef": {
+      "type": "string",
+      "pattern": "^ctgov_(history_)?snapshot_[A-Za-z0-9_-]+$"
+    },
+    "prospectiveActivationProvenanceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "side", "run_ref", "evaluated_at", "activation_id", "gate_payload_sha256",
+        "heartbeat_id", "heartbeat_payload_sha256", "target_binding_sha256"
+      ],
+      "properties": {
+        "side": {"enum": ["before", "after"]},
+        "run_ref": {"type": "string", "pattern": "^ctgov_run_[A-Za-z0-9_-]+$"},
+        "evaluated_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+        "activation_id": {"type": "string", "pattern": "^r2_activation_[a-f0-9]{24}$"},
+        "gate_payload_sha256": {"$ref": "#/$defs/sha256"},
+        "heartbeat_id": {"type": "string", "pattern": "^r2_heartbeat_[a-f0-9]{24}$"},
+        "heartbeat_payload_sha256": {"$ref": "#/$defs/sha256"},
+        "target_binding_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "capacity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_input_document_bytes", "max_raw_bytes_per_side", "max_raw_bodies_per_side",
+        "max_raw_descriptor_key_bytes",
+        "max_input_nodes", "max_input_nesting_depth", "max_input_container_items",
+        "max_operations", "max_rows", "max_classification_bytes", "max_projection_bytes"
+      ],
+      "properties": {
+        "max_input_document_bytes": {"const": 2097152},
+        "max_raw_bytes_per_side": {"const": 8388608},
+        "max_raw_bodies_per_side": {"const": 512},
+        "max_raw_descriptor_key_bytes": {"const": 512},
+        "max_input_nodes": {"const": 65536},
+        "max_input_nesting_depth": {"const": 128},
+        "max_input_container_items": {"const": 16384},
+        "max_operations": {"const": 4096},
+        "max_rows": {"const": 4096},
+        "max_classification_bytes": {"const": 1048576},
+        "max_projection_bytes": {"const": 1048576}
+      }
+    },
+    "sourceClock": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "profile", "before_source_version", "after_source_version", "before_retrieved_at",
+            "after_retrieved_at", "before_transaction_from", "after_transaction_from"
+          ],
+          "properties": {
+            "profile": {"const": "retrospective_source_versions"},
+            "before_source_version": {"type": "integer", "minimum": 0},
+            "after_source_version": {"type": "integer", "minimum": 1},
+            "before_retrieved_at": {"type": "string", "format": "date-time"},
+            "after_retrieved_at": {"type": "string", "format": "date-time"},
+            "before_transaction_from": {"type": "string", "format": "date-time"},
+            "after_transaction_from": {"type": "string", "format": "date-time"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["profile", "after", "at_or_before"],
+          "properties": {
+            "profile": {"const": "prospective_first_observed_interval"},
+            "after": {"type": "string", "format": "date-time"},
+            "at_or_before": {"type": "string", "format": "date-time"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["profile"],
+          "properties": {"profile": {"const": "unavailable"}}
+        }
+      ]
+    },
+    "changeRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "row_id", "row_payload_sha256", "nct_id", "field_class", "review_state",
+        "semantic_resolution", "diff_contract_id", "diff_ref", "diff_payload_sha256",
+        "exact_op_index", "canonical_op_sha256", "op", "json_path", "before_state",
+        "after_state", "before_source_snapshot_ref", "after_source_snapshot_ref",
+        "before_content_sha256", "after_content_sha256", "protocol_change_asserted",
+        "materiality_assessed", "correction_assessed", "hash_scope"
+      ],
+      "properties": {
+        "row_id": {
+          "type": "string",
+          "pattern": "^trial_change_row_NCT[0-9]{8}_[a-f0-9]{24}$"
+        },
+        "row_payload_sha256": {"$ref": "#/$defs/sha256"},
+        "nct_id": {"$ref": "#/$defs/nctId"},
+        "field_class": {
+          "enum": [
+            "registry_status", "enrollment", "milestone_date_constraint", "site_list",
+            "intervention", "endpoint_record_delta"
+          ]
+        },
+        "review_state": {"enum": ["not_required", "needs_review"]},
+        "semantic_resolution": {"enum": ["registry_field_class_only", "unresolved"]},
+        "diff_contract_id": {"enum": ["trial_history_exact_diff.v1", "trial_version_diff.v1"]},
+        "diff_ref": {
+          "type": "string",
+          "pattern": "^(trial_history_diff|trial_diff)_[A-Za-z0-9_-]+$"
+        },
+        "diff_payload_sha256": {"$ref": "#/$defs/sha256"},
+        "exact_op_index": {"type": "integer", "minimum": 0, "maximum": 4095},
+        "canonical_op_sha256": {"$ref": "#/$defs/sha256"},
+        "op": {"enum": ["add", "remove", "replace"]},
+        "json_path": {"type": "string", "pattern": "^/"},
+        "before_state": {"enum": ["missing", "present"]},
+        "after_state": {"enum": ["missing", "present"]},
+        "before_source_snapshot_ref": {"$ref": "#/$defs/snapshotRef"},
+        "after_source_snapshot_ref": {"$ref": "#/$defs/snapshotRef"},
+        "before_content_sha256": {"$ref": "#/$defs/sha256"},
+        "after_content_sha256": {"$ref": "#/$defs/sha256"},
+        "protocol_change_asserted": {"const": false},
+        "materiality_assessed": {"const": false},
+        "correction_assessed": {"const": false},
+        "hash_scope": {"const": "canonical_payload_excluding_row_payload_sha256"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"field_class": {"const": "endpoint_record_delta"}}},
+          "then": {
+            "properties": {
+              "review_state": {"const": "needs_review"},
+              "semantic_resolution": {"const": "unresolved"}
+            }
+          },
+          "else": {
+            "properties": {
+              "review_state": {"const": "not_required"},
+              "semantic_resolution": {"const": "registry_field_class_only"}
+            }
+          }
+        }
+      ]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "decision_authority", "maximum_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "classification": {"const": "deterministic_registry_change_projection"},
+        "decision_authority": {"const": false},
+        "maximum_authority": {"const": "A1_EXPLAIN"},
+        "allowed_uses": {"const": ["display", "context", "explain"]},
+        "forbidden_uses": {
+          "const": [
+            "originate_signal", "issuer_resolution", "security_resolution", "asset_resolution",
+            "rank_security", "select_security", "size_position", "gate_decision", "execute_trade",
+            "neural_web_authority", "all_prophet_uses", "assess_materiality",
+            "assert_protocol_change", "assess_correction", "deliver_alert", "raise_authority"
+          ]
+        }
+      }
+    }
+  }
+}

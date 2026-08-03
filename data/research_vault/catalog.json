@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T11:50:29.139619+00:00",
-  "count": 661,
+  "generated_at": "2026-08-03T12:05:32.221609+00:00",
+  "count": 662,
   "institutions": [
     "Alger",
     "Amova",
@@ -64,6 +64,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tbuesj1nzhm-46e1b0",
+      "title": "This Week in Asia Pacific Macro 3 9 August (Audio)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:24:39Z",
+      "summary_points": [
+        "**Data Catalysts**: Japan's June wage report, regional CPI/trade data, and RBI meeting as key drivers for Asia-Pacific market movements.",
+        "**Election Risk**: Malaysia state election introducing significant uncertainty requiring portfolio adjustments in regional markets.",
+        "**Policy Shifts**: RBI meeting and central bank policy changes creating volatility in Asia-Pacific asset pricing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
