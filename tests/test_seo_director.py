@@ -264,6 +264,33 @@ def _build_mini_site(
     return site
 
 
+@pytest.fixture
+def public_boundary(tmp_path, monkeypatch):
+    """Install a fixture-level public serving boundary for the mini-site.
+
+    missing_from_sitemap judges pages against config/site_access.yml via
+    lib.seo.is_public_path (the sitemap builder's source of truth). Fixture
+    pages are not in the REAL policy, so tests that need the detector to fire
+    must declare their own boundary. Yields an installer taking (exact,
+    prefixes); clears lib.seo's boundary cache on install AND on teardown so
+    neither the real nor the fixture boundary leaks across tests.
+    """
+    import lib.seo as lib_seo
+    import yaml
+
+    def _install(exact: list[str], prefixes: list[str] | None = None) -> None:
+        policy = tmp_path / "site_access.yml"
+        policy.write_text(
+            yaml.safe_dump({"public": {"exact": exact, "prefixes": prefixes or []}}),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(lib_seo, "ACCESS_POLICY", policy)
+        lib_seo._public_boundary.cache_clear()
+
+    yield _install
+    lib_seo._public_boundary.cache_clear()
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -346,8 +373,8 @@ class TestIssueDetection:
         assert len(orphans) >= 1
         assert any("orphan_that_does_not_exist" in u for u in orphans)
 
-    def test_missing_from_sitemap_detected(self, tmp_path):
-        # Add a page not in sitemap
+    def test_missing_from_sitemap_detected(self, tmp_path, public_boundary):
+        # Add a PUBLIC page not in sitemap — this is the real defect shape.
         site = _build_mini_site(tmp_path)
         extra = site / "extra_page.html"
         extra.write_text(
@@ -356,9 +383,121 @@ class TestIssueDetection:
             ).replace("Good Core Page", "Extra Core Page"),
             encoding="utf-8",
         )
+        public_boundary(["/extra_page.html"])
         result = audit_site(site)
         missing = result["sitemap"]["missing_from_sitemap"]
         assert any("extra_page" in p for p in missing)
+        assert any(
+            i["class"] == "missing_from_sitemap" and "extra_page" in i["page"]
+            for i in result["issues"]
+        )
+
+    def test_gated_absent_page_not_flagged(self, tmp_path, public_boundary):
+        """A page OUTSIDE the public boundary that is absent from the sitemap is
+        CORRECT, not a defect (#4324: 243/244 legacy flags were access-gated
+        pages). A detector that ignores the boundary turns this red."""
+        site = _build_mini_site(tmp_path)
+        for name in ("gated_page.html", "extra_page.html"):
+            (site / name).write_text(
+                _GOOD_PAGE.format(canonical_host=_CANONICAL_HOST).replace(
+                    "good.html", name
+                ).replace("Good Core Page", f"Page {name}"),
+                encoding="utf-8",
+            )
+        # extra_page is public (control proving the detector is alive);
+        # gated_page is NOT in the boundary.
+        public_boundary(["/extra_page.html"])
+        result = audit_site(site)
+        missing = result["sitemap"]["missing_from_sitemap"]
+        assert any("extra_page" in p for p in missing)
+        assert not any("gated_page" in p for p in missing)
+        assert not any(
+            i["class"] == "missing_from_sitemap" and "gated_page" in i["page"]
+            for i in result["issues"]
+        )
+        assert result["sitemap"]["non_public_absent_count"] >= 1
+
+    def test_excluded_public_page_informational_not_defect(self, tmp_path, public_boundary):
+        """A page that IS public but sits in lib.seo's deliberate exclusion set
+        (unsubscribe.html — documented rationale in _EXCLUDE_NAMES) must NOT be
+        a missing_from_sitemap defect; it is counted distinctly as informational."""
+        site = _build_mini_site(tmp_path)
+        (site / "unsubscribe.html").write_text(
+            _GOOD_PAGE.format(canonical_host=_CANONICAL_HOST).replace(
+                "good.html", "unsubscribe.html"
+            ).replace("Good Core Page", "Unsubscribe"),
+            encoding="utf-8",
+        )
+        public_boundary(["/unsubscribe.html"])
+        result = audit_site(site)
+        sm = result["sitemap"]
+        assert not any("unsubscribe" in p for p in sm["missing_from_sitemap"])
+        assert not any(
+            i["class"] == "missing_from_sitemap" and "unsubscribe" in i["page"]
+            for i in result["issues"]
+        )
+        assert any("unsubscribe" in p for p in sm["excluded_public"])
+        assert sm["excluded_public_count"] >= 1
+
+    def test_public_prefix_nested_page_flagged(self, tmp_path, public_boundary):
+        """prefixes in the access policy make nested pages public; an absent one
+        is a real defect (the exclusion sets apply to root pages only)."""
+        site = _build_mini_site(tmp_path)
+        (site / "products" / "extra-product.html").write_text(
+            _GOOD_PAGE.format(canonical_host=_CANONICAL_HOST).replace(
+                "good.html", "products/extra-product.html"
+            ).replace("Good Core Page", "Extra Product"),
+            encoding="utf-8",
+        )
+        public_boundary([], ["/products/"])
+        result = audit_site(site)
+        assert any(
+            "extra-product" in p for p in result["sitemap"]["missing_from_sitemap"]
+        )
+
+    def test_homepage_bare_root_counts_as_present(self, tmp_path, public_boundary):
+        """The sitemap carries the homepage as the bare root URL; index.html must
+        read as present, while a public absentee still flags (control)."""
+        site = _build_mini_site(
+            tmp_path, extra_sitemap_urls=[f"{_CANONICAL_HOST}/"]
+        )
+        for name in ("index.html", "extra_page.html"):
+            (site / name).write_text(
+                _GOOD_PAGE.format(canonical_host=_CANONICAL_HOST).replace(
+                    "good.html", name
+                ).replace("Good Core Page", f"Page {name}"),
+                encoding="utf-8",
+            )
+        public_boundary(["/", "/index.html", "/extra_page.html"])
+        result = audit_site(site)
+        missing = result["sitemap"]["missing_from_sitemap"]
+        assert any("extra_page" in p for p in missing)
+        assert not any("index" in p for p in missing)
+
+    def test_unreadable_access_policy_reports_not_floods(self, tmp_path, monkeypatch):
+        """An unreadable policy must NOT be guessed around: no per-page flood, no
+        silent zero — one loud distinct HIGH issue (absent ≠ unreadable)."""
+        import lib.seo as lib_seo
+
+        site = _build_mini_site(tmp_path)
+        (site / "extra_page.html").write_text(
+            _GOOD_PAGE.format(canonical_host=_CANONICAL_HOST).replace(
+                "good.html", "extra_page.html"
+            ).replace("Good Core Page", "Extra Core Page"),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(lib_seo, "ACCESS_POLICY", tmp_path / "absent_policy.yml")
+        lib_seo._public_boundary.cache_clear()
+        try:
+            result = audit_site(site)
+        finally:
+            lib_seo._public_boundary.cache_clear()
+        assert result["sitemap"]["missing_from_sitemap"] == []
+        unreadable = [
+            i for i in result["issues"] if i["class"] == "access_policy_unreadable"
+        ]
+        assert len(unreadable) == 1
+        assert unreadable[0]["severity"] == "high"
 
     def test_no_llms_txt_flagged_as_low(self, tmp_path):
         site = _build_mini_site(tmp_path, include_llms=False)
@@ -808,9 +947,10 @@ class TestLinkResolver:
 class TestHonestCounts:
     """Counts and health score must reflect TRUE totals, not the display-capped list."""
 
-    def test_missing_from_sitemap_true_count(self, tmp_path):
+    def test_missing_from_sitemap_true_count(self, tmp_path, public_boundary):
         # good/other/nodesc/wronghost/broken_links/fund_ako are in the fixture sitemap;
-        # add several pages NOT in the sitemap and assert the honest count includes all.
+        # add several PUBLIC pages NOT in the sitemap and assert the honest count
+        # includes all.
         site = _build_mini_site(tmp_path)
         for i in range(6):
             (site / f"loose_{i}.html").write_text(
@@ -819,6 +959,7 @@ class TestHonestCounts:
                 ).replace("Good Core Page", f"Loose Page {i}"),
                 encoding="utf-8",
             )
+        public_boundary([], ["/loose_"])
         result = audit_site(site)
         # 6 loose pages must all be counted (field is a capped sample, count is honest).
         assert result["sitemap"]["missing_from_sitemap_count"] >= 6
@@ -871,18 +1012,19 @@ class TestHonestCounts:
 
 
 class TestWorkOrdersHonesty:
-    def test_late_emitted_class_still_gets_order(self, tmp_path):
+    def test_late_emitted_class_still_gets_order(self, tmp_path, public_boundary):
         """missing_from_sitemap / sitemap_apex_host are emitted LATE and can overflow the
         display cap; they must still produce work orders with true counts."""
         from engine.marketing.seo_director import _build_work_orders
 
         site = _build_mini_site(tmp_path)  # apex host in sitemap
-        # add a page NOT in the sitemap so missing_from_sitemap fires
+        # add a PUBLIC page NOT in the sitemap so missing_from_sitemap fires
         (site / "loose.html").write_text(
             _GOOD_PAGE.format(canonical_host=_CANONICAL_HOST).replace(
                 "good.html", "loose.html").replace("Good Core Page", "Loose Page"),
             encoding="utf-8",
         )
+        public_boundary(["/loose.html"])
         audit = audit_site(site)
         wo = _build_work_orders(audit, audit["as_of"])
         classes = {o["class"] for o in wo["orders"]}
