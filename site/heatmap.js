@@ -158,20 +158,20 @@
     var la = relLum(a), lb = relLum(b);
     return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
   }
-  var FG_DARK = [16, 21, 28], FG_LIGHT = [244, 247, 251];   // #10151c / #f4f7fb
-  function _relLum(c) {
-    // WCAG relative luminance from an [r,g,b] 0–255 triple.
-    var f = function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
-    return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]);
-  }
-  function fgFor(_c) {
-    // All tile labels are white — operator preference for the institutional
-    // board look across all four heatmaps (China / HK / Canada / US).
-    // Bright/saturated tiles (e.g. pure green ~#1ec173) get a subtle text-shadow
-    // (added to .hm-tile / .hm-mpc via injectStyle) so the white ink stays
-    // legible even on the lightest bins.
-    return '#ffffff';
-  }
+  // Label ink per tile: white where white reads, near-black where the fill is
+  // too bright for white (saturated / pale bins measured ~3.07:1 in both themes
+  // — SI V2 W3 contrast audit, 2026-08-03). The ink is CHOSEN by WCAG contrast
+  // against the tile's own fill, so every bin clears 4.5:1; the fill itself
+  // never changes (红涨绿跌 tile colours stay exactly as assigned — the zh
+  // palette swap reassigns fills, and the ink simply follows the fill).
+  // INK_DARK is deliberately darker than the house slate: at the white/dark
+  // crossover a #10151c ink tops out ~4.3:1, this one keeps the worst bin ≥4.5.
+  var INK_DARK = [8, 10, 14], INK_DARK_HEX = '#080a0e', INK_WHITE = [255, 255, 255];
+  function inkDark(c) { return contrast(c, INK_DARK) >= contrast(c, INK_WHITE); }
+  function fgFor(c) { return inkDark(c) ? INK_DARK_HEX : '#ffffff'; }
+  // Dark-ink tiles also drop the white-ink text-shadow (a dark halo under dark
+  // ink smears instead of helping) — inkCls tags them for injectStyle's rule.
+  function inkCls(c) { return inkDark(c) ? ' hm-ink-dark' : ''; }
   function neutral() {
     // flat ~0% tile: a dark slate in both themes so the white label stays legible
     // (light mode used to be a pale grey that white text vanished on).
@@ -1071,6 +1071,7 @@
       var c = pal[binIndex(livePc, edges)];
       rec.el.style.backgroundColor = rgb(c);
       rec.el.style.color = fgFor(c);
+      rec.el.classList.toggle('hm-ink-dark', inkDark(c));
       // Update the visible % label on the tile too.
       if (rec.pcEl) rec.pcEl.textContent = fmtPc(livePc);
     }
@@ -1198,6 +1199,7 @@
         var c = pal[binIndex(pc, edges)];
         rec.el.style.backgroundColor = rgb(c);
         rec.el.style.color = fgFor(c);
+        rec.el.classList.toggle('hm-ink-dark', inkDark(c));
         if (rec.pcEl) rec.pcEl.textContent = fmtPc(pc);
       });
       secPc.forEach(function (sp) {
@@ -1242,7 +1244,7 @@
               ? t.members.length + ' ' + lz('members', '成员')
               : esc(t.desc || '');
             html.push('<div class="hm-mrow hm-mrow-th">'
-              + '<span class="hm-mpc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
+              + '<span class="hm-mpc' + inkCls(c) + '" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
               + '<span class="hm-mid"><b>' + esc(t.name) + '</b><span>' + det + '</span></span></div>');
             return;
           }
@@ -1257,7 +1259,7 @@
             : (t.industry && t.industry !== t.sector ? t.industry
                : ((isZh() && t.name_zh) ? t.name_zh : t.name));
           html.push('<a class="hm-mrow" href="' + STOCK_URL + encodeURIComponent(t.t) + '">'
-            + '<span class="hm-mpc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
+            + '<span class="hm-mpc' + inkCls(c) + '" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
             + '<span class="hm-mid"><b>' + esc(primary) + '</b><span>' + esc(sub) + '</span></span>'
             + '<span class="hm-mgo">›</span></a>');
         });
@@ -1704,7 +1706,7 @@
           var tw = tr.w - TILE_GAP, th = tr.h - TILE_GAP;
           if (tw < 1.5 || th < 1.5) return;
           var c = pal[binIndex(t.perf[TF], edges)];
-          var cls = 'hm-tile';
+          var cls = 'hm-tile' + inkCls(c);
           if (tw >= 88 && th >= 50) cls += ' big';
           if (animate) cls += ' hm-in';
           var dly = animate ? ';animation-delay:' + Math.min(tileEls.length * 0.7, 360).toFixed(0) + 'ms' : '';
@@ -1914,13 +1916,18 @@
       + '.hm-sub:hover>.hm-sub-hd{color:var(--text);background:color-mix(in srgb,var(--link) 30%,transparent);}'
       + '.hm-sub-hd .snm{pointer-events:none;}'
       + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.05;transition:filter .1s,box-shadow .1s;text-shadow:0 1px 2px rgba(0,0,0,.45);}'
+      // dark-ink tiles (bright fills): the white-ink halo would smear dark text.
+      // Compound selectors so this outranks .hm-mpc's own later shadow rule.
+      + '.hm-tile.hm-ink-dark,.hm-mpc.hm-ink-dark{text-shadow:none;}'
       + '.hm-tile.big{border-radius:3px;} .hm-tile.huge{border-radius:4px;}'
       + '.hm-tile:hover{z-index:8;filter:brightness(1.06);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--text) 78%,transparent);}'
       + '.hm-tile .sym,.hm-tile .pc{display:block;max-width:calc(100% - 3px);white-space:nowrap;overflow:hidden;text-overflow:clip;}'
       + '.hm-tile .sym{font-weight:800;letter-spacing:.2px;}'
       // small tiles read better without the heavy weight; tracking off too
       + '.hm-tile .sym.sm{font-weight:600;letter-spacing:0;}'
-      + '.hm-tile .pc{font-weight:600;font-variant-numeric:tabular-nums;opacity:.95;margin-top:1px;}'
+      // full opacity: at .95 the % label blends toward the fill and the
+      // crossover bins dip back under 4.5:1 — the % is data, not decoration
+      + '.hm-tile .pc{font-weight:600;font-variant-numeric:tabular-nums;margin-top:1px;}'
       // map-type switcher (multi-map host: S&P 500 ⇄ Themes …)
       + '.hm-maptype{display:inline-flex;gap:3px;margin:0 0 14px;padding:4px;border-radius:12px;background:color-mix(in srgb,var(--panel2) 60%,transparent);border:1px solid var(--hm-edge);}'
       + '.hm-mt{font:700 13px/1 Inter,sans-serif;color:var(--muted);background:transparent;border:0;padding:8px 16px;border-radius:9px;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;}'
