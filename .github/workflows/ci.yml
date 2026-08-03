@@ -2144,6 +2144,23 @@ on:
       - "tests/test_wiki_pageviews.py"
       - "scripts/c4_cnh_basis.py"
       - "scripts/c4_reer_value.py"
+      # Page-guard suites (unrun-suite backfill 2026-08-03): rendered-estate
+      # regression guards — macro desk/typography/glance, action-board hover
+      # cards, cold-load budgets, stocktable bootstrap, logo adapter, globe
+      # overlays, radar boot, reports timeline, bilingual span scan. Their
+      # subjects were always covered by templates/** + site/**; only the test
+      # halves were missing.
+      - "tests/test_macro_desk_surface.py"
+      - "tests/test_macro_primary_typography.py"
+      - "tests/test_macro_what_to_do_glance.py"
+      - "tests/test_action_board_hover_cards.py"
+      - "tests/test_dashboard_cold_load_budget.py"
+      - "tests/test_stocktable_load_order.py"
+      - "tests/test_stock_logo_system.py"
+      - "tests/test_globe_tooltip_behavior.py"
+      - "tests/test_radar_page_boot.py"
+      - "tests/test_reports_timeline_ui.py"
+      - "tests/test_bilingual_span_leak.py"
       # unrun-release-forecast
       - "tests/test_content_stamp_freshness_sweep2.py"
       - "tests/test_cpi_postmortem_fixes.py"
