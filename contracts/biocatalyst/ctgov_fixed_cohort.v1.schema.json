@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/ctgov_fixed_cohort.v1.schema.json",
+  "title": "BioCatalyst ClinicalTrials.gov Fixed Cohort v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "cohort_id", "source_id", "universe_mode",
+    "membership_authority", "candidate_admission_policy", "nct_ids", "query_id",
+    "control_registration", "control", "source_registry_ref", "source_registry_sha256",
+    "prohibited_claims", "prohibited_uses", "provenance", "hash_scope",
+    "cohort_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "ctgov_fixed_cohort.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "cohort_id": {"type": "string", "pattern": "^ctgov_fixed_cohort_[a-f0-9]{24}$"},
+    "source_id": {"const": "clinicaltrials_gov_v2"},
+    "universe_mode": {"const": "fixed_explicit_nct_cohort"},
+    "membership_authority": {"const": "fixed_cohort_only"},
+    "candidate_admission_policy": {"const": "candidate_subset_only"},
+    "nct_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 25,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^NCT[0-9]{8}$"}
+    },
+    "query_id": {"type": "string", "minLength": 11, "maxLength": 299},
+    "control_registration": {"const": "b1s1_fixed_cohort_control"},
+    "control": {"$ref": "#/$defs/darkControl"},
+    "source_registry_ref": {"const": "config/biocatalyst_sources.yml"},
+    "source_registry_sha256": {"$ref": "#/$defs/sha256"},
+    "prohibited_claims": {"const": [
+      "dynamic_cohort_expansion", "live_ingestion", "identity_mapping", "scoring",
+      "prediction", "prophet_authority", "neural_web_authority", "ranking", "sizing", "alerts"
+    ]},
+    "prohibited_uses": {"const": [
+      "dynamic_cohort_expansion", "live_ingestion", "identity_mapping", "scoring",
+      "prediction", "prophet_authority", "neural_web_authority", "ranking", "sizing", "alerts"
+    ]},
+    "provenance": {
+      "oneOf": [
+        {"$ref": "#/$defs/hermeticFixtureProvenance"},
+        {"$ref": "#/$defs/registeredControlProvenance"}
+      ]
+    },
+    "hash_scope": {"const": "canonical_payload_excluding_cohort_payload_sha256"},
+    "cohort_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "darkControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state", "live_network_allowed", "worker_mode_available",
+        "storage_publication_allowed", "public_projection_allowed",
+        "api_exposure_allowed", "default_enabled", "consumers", "authority"
+      ],
+      "properties": {
+        "state": {"const": "validation_only_fixed_cohort_control"},
+        "live_network_allowed": {"const": false},
+        "worker_mode_available": {"const": false},
+        "storage_publication_allowed": {"const": false},
+        "public_projection_allowed": {"const": false},
+        "api_exposure_allowed": {"const": false},
+        "default_enabled": {"const": false},
+        "consumers": {"type": "array", "maxItems": 0},
+        "authority": {"const": "facts_and_context_only"}
+      }
+    },
+    "hermeticFixtureProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "fixture_id"],
+      "properties": {
+        "kind": {"const": "hermetic_fixture"},
+        "fixture_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,95}$"}
+      }
+    },
+    "registeredControlProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "control_registration", "source_registry_ref"],
+      "properties": {
+        "kind": {"const": "registered_control"},
+        "control_registration": {"const": "b1s1_fixed_cohort_control"},
+        "source_registry_ref": {"const": "config/biocatalyst_sources.yml"}
+      }
+    }
+  }
+}

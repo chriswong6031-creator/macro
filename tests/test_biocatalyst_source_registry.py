@@ -9,6 +9,49 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE_REGISTRY = ROOT / "config" / "biocatalyst_sources.yml"
 OUTCOME_POLICY = ROOT / "config" / "biocatalyst_outcomes.yml"
 LAUNCH_SLO_MANIFEST = ROOT / "config" / "biocatalyst_launch_slo_manifest.yml"
+_FIXED_COHORT_CONTRACT_ID = "ctgov_fixed_cohort.v1"
+_FIXED_COHORT_CONTROL_RAW = b"""b1s1_fixed_cohort_control:
+  source_id: clinicaltrials_gov_v2
+  implementation_state: validation_only_fixed_cohort_control
+  universe_mode: fixed_explicit_nct_cohort
+  membership_authority: fixed_cohort_only
+  candidate_admission_policy: candidate_subset_only
+  minimum_nct_ids: 1
+  maximum_nct_ids: 25
+  maximum_query_bytes: 299
+  default_enabled: false
+  live_network_allowed: false
+  worker_mode_available: false
+  public_projection_allowed: false
+  api_exposure_allowed: false
+  storage_publication_allowed: false
+  consumers: []
+  authority: facts_and_context_only
+  allowed_contracts:
+    - ctgov_fixed_cohort.v1
+  prohibited_claims:
+    - dynamic_cohort_expansion
+    - live_ingestion
+    - identity_mapping
+    - scoring
+    - prediction
+    - prophet_authority
+    - neural_web_authority
+    - ranking
+    - sizing
+    - alerts
+  prohibited_uses:
+    - dynamic_cohort_expansion
+    - live_ingestion
+    - identity_mapping
+    - scoring
+    - prediction
+    - prophet_authority
+    - neural_web_authority
+    - ranking
+    - sizing
+    - alerts
+"""
 
 
 def _load_yaml(path: Path) -> dict:
@@ -123,6 +166,78 @@ def test_scalable_discovery_control_is_dark_bounded_and_non_authoritative() -> N
         "discovery_membership_is_issuer_or_security_identity",
         "partial_or_quarantined_run_is_publishable",
     } <= set(control["prohibited_claims"])
+
+
+def test_fixed_cohort_control_is_byte_pinned_dark_and_facts_context_only() -> None:
+    registry_bytes = SOURCE_REGISTRY.read_bytes()
+    start = registry_bytes.index(b"b1s1_fixed_cohort_control:\n")
+    end = registry_bytes.index(b"\nb2_history_canary:\n", start)
+    assert registry_bytes[start:end] == _FIXED_COHORT_CONTROL_RAW
+
+    control = _load_yaml(SOURCE_REGISTRY)["b1s1_fixed_cohort_control"]
+    assert control == {
+        "source_id": "clinicaltrials_gov_v2",
+        "implementation_state": "validation_only_fixed_cohort_control",
+        "universe_mode": "fixed_explicit_nct_cohort",
+        "membership_authority": "fixed_cohort_only",
+        "candidate_admission_policy": "candidate_subset_only",
+        "minimum_nct_ids": 1,
+        "maximum_nct_ids": 25,
+        "maximum_query_bytes": 299,
+        "default_enabled": False,
+        "live_network_allowed": False,
+        "worker_mode_available": False,
+        "public_projection_allowed": False,
+        "api_exposure_allowed": False,
+        "storage_publication_allowed": False,
+        "consumers": [],
+        "authority": "facts_and_context_only",
+        "allowed_contracts": [_FIXED_COHORT_CONTRACT_ID],
+        "prohibited_claims": [
+            "dynamic_cohort_expansion",
+            "live_ingestion",
+            "identity_mapping",
+            "scoring",
+            "prediction",
+            "prophet_authority",
+            "neural_web_authority",
+            "ranking",
+            "sizing",
+            "alerts",
+        ],
+        "prohibited_uses": [
+            "dynamic_cohort_expansion",
+            "live_ingestion",
+            "identity_mapping",
+            "scoring",
+            "prediction",
+            "prophet_authority",
+            "neural_web_authority",
+            "ranking",
+            "sizing",
+            "alerts",
+        ],
+    }
+
+
+def test_fixed_cohort_contract_has_no_operational_wiring() -> None:
+    # A contract declaration is allowed to reach only the generic semantic
+    # registry.  These are the real route, collector, worker, store,
+    # publication, consumer, and activation seams that must remain unaware of
+    # B1S1 until a separately reviewed implementation exists.
+    forbidden_paths = (
+        ROOT / "app" / "biocatalyst.py",
+        ROOT / "collectors" / "biocatalyst" / "clinicaltrials_v2.py",
+        ROOT / "engine" / "biocatalyst" / "storage.py",
+        ROOT / "engine" / "biocatalyst" / "publication.py",
+        ROOT / "scripts" / "biocatalyst_worker.py",
+        ROOT / "scripts" / "biocatalyst_activation.py",
+        ROOT / "config" / "sector_intelligence_ownership.yml",
+    )
+
+    assert all(path.is_file() for path in forbidden_paths)
+    for path in forbidden_paths:
+        assert _FIXED_COHORT_CONTRACT_ID not in path.read_text(encoding="utf-8")
 
 
 def test_launch_slo_manifest_covers_exact_critical_set_without_arming_it() -> None:

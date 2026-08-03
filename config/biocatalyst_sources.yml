@@ -373,6 +373,50 @@ b1s0_discovery_control:
     - discovery_membership_is_issuer_or_security_identity
     - partial_or_quarantined_run_is_publishable
 
+# BC-B1S1 validates a finite declared cohort against fixtures only.  It is not
+# a discovery, collection, storage, publication, product, or activation lane.
+b1s1_fixed_cohort_control:
+  source_id: clinicaltrials_gov_v2
+  implementation_state: validation_only_fixed_cohort_control
+  universe_mode: fixed_explicit_nct_cohort
+  membership_authority: fixed_cohort_only
+  candidate_admission_policy: candidate_subset_only
+  minimum_nct_ids: 1
+  maximum_nct_ids: 25
+  maximum_query_bytes: 299
+  default_enabled: false
+  live_network_allowed: false
+  worker_mode_available: false
+  public_projection_allowed: false
+  api_exposure_allowed: false
+  storage_publication_allowed: false
+  consumers: []
+  authority: facts_and_context_only
+  allowed_contracts:
+    - ctgov_fixed_cohort.v1
+  prohibited_claims:
+    - dynamic_cohort_expansion
+    - live_ingestion
+    - identity_mapping
+    - scoring
+    - prediction
+    - prophet_authority
+    - neural_web_authority
+    - ranking
+    - sizing
+    - alerts
+  prohibited_uses:
+    - dynamic_cohort_expansion
+    - live_ingestion
+    - identity_mapping
+    - scoring
+    - prediction
+    - prophet_authority
+    - neural_web_authority
+    - ranking
+    - sizing
+    - alerts
+
 b2_history_canary:
   source_id: clinicaltrials_gov_record_history
   universe_mode: explicit_nct_allowlist
