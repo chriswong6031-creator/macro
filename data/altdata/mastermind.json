@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
-  "as_of": "2026-08-02",
-  "generated_utc": "2026-08-02T03:12:38.954046+00:00",
+  "as_of": "2026-08-03",
+  "generated_utc": "2026-08-03T02:59:48.741993+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": null,
   "brain_present": false,
@@ -11,7 +11,7 @@
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
     "evidence_asof": "2026-08-02",
-    "evaluated_at": "2026-08-02T03:12:08+00:00"
+    "evaluated_at": "2026-08-03T02:59:16+00:00"
   },
   "is_context_only": true,
   "calibration": {
@@ -20,7 +20,7 @@
     "open": 0,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 78,
+  "n_signals": 79,
   "n_broken": 33,
   "signals": [
     {
@@ -1719,6 +1719,35 @@
       "clamped": null
     },
     {
+      "ticker": "LITE",
+      "signal_score": 19,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.85,
+      "convergence_score": 2,
+      "channels": [
+        "analyst_upgrade_cluster",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": -31.4,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -32.2,
+      "ret_20d": -2.0,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "LHX",
       "signal_score": 19,
       "conviction": "medium",
@@ -1991,35 +2020,6 @@
       "clamped": null
     },
     {
-      "ticker": "LUNR",
-      "signal_score": 11,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.6,
-      "convergence_score": 2,
-      "channels": [
-        "gov_contract",
-        "retail_buzz"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -53.5,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -73.0,
-      "ret_20d": -37.0,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "VRT",
       "signal_score": 10,
       "conviction": "medium",
@@ -2049,5 +2049,5 @@
       "clamped": null
     }
   ],
-  "disclaimer": "An AI reading of the desk's own deterministic convergence \u2014 accountable and falsifiable, not a guarantee. Every call cites the channels/actors it is based on, is graded vs SPY over the horizon, and can be wrong or overconfident. The Mastermind sizes it through its own risk framework; treat as odds, not a forecast."
+  "disclaimer": "An AI reading of the desk's own deterministic convergence \u2014 accountable and checkable, not a guarantee. Every call cites the channels/actors it is based on, is graded vs SPY over the horizon, and can be wrong or overconfident. The Mastermind sizes it through its own risk framework; treat as odds, not a forecast."
 }

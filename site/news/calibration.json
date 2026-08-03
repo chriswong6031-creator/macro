@@ -1,8 +1,8 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-08-01",
-  "n_events_logged": 245,
+  "asof": "2026-08-02",
+  "n_events_logged": 249,
   "n_events_graded": 111,
   "classes": [
     {
@@ -125,7 +125,7 @@
     {
       "event_type": "litigation",
       "direction": "bearish",
-      "n": 94,
+      "n": 95,
       "n_graded": 61,
       "hit_5d": 0.39344262295081966,
       "hit_21d": null,
@@ -138,7 +138,7 @@
     {
       "event_type": "macro_release",
       "direction": "informational",
-      "n": 11,
+      "n": 12,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -164,7 +164,7 @@
     {
       "event_type": "mna_confirmed",
       "direction": "bullish",
-      "n": 7,
+      "n": 8,
       "n_graded": 5,
       "hit_5d": 0.4,
       "hit_21d": null,
@@ -190,7 +190,7 @@
     {
       "event_type": "policy_trade_control",
       "direction": "mixed",
-      "n": 24,
+      "n": 25,
       "n_graded": 4,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -254,7 +254,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 486,
+    "n_sampled": 507,
     "n_graded": 0,
     "classes": []
   }

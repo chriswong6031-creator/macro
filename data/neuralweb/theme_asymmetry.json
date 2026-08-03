@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_asymmetry.v1",
-  "as_of": "2026-08-02",
-  "generated_at": "2026-08-02T03:31:39Z",
+  "as_of": "2026-08-03",
+  "generated_at": "2026-08-03T03:19:18Z",
   "hard_caveat": "not a buy score; no behavior-changing consumer",
   "authority": {
     "is_context_only": true,
@@ -104,8 +104,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=56, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=56，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=56, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=56，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.623,
@@ -200,8 +200,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.727,
@@ -277,7 +277,7 @@
           "note_zh": "平均入场质量=0.45，平均超买=0.25，延伸绝对值=0.00，炒作拉伸=0.80 → 入场整洁度=0.13"
         },
         "crowding_hazard": {
-          "value": 0.3,
+          "value": 0.4,
           "band": "low",
           "inputs": [
             "baskets:theme_intel.components.crowding",
@@ -285,8 +285,8 @@
             "divergence_log:money_pct"
           ],
           "stale": false,
-          "note_en": "avg_crowding=0.30, div_log=quadrant=hidden-opportunity → crowding_hazard=0.30. HAZARD framing only; not a directional read.",
-          "note_zh": "平均拥挤=0.30，背离日志=quadrant=hidden-opportunity → 拥挤风险=0.30。仅为风险识别，非方向性判断。"
+          "note_en": "avg_crowding=0.30, div_log=money_pct=0.82 (elevated) → crowding_hazard=0.40. HAZARD framing only; not a directional read.",
+          "note_zh": "平均拥挤=0.30，背离日志=money_pct=0.82 (elevated) → 拥挤风险=0.40。仅为风险识别，非方向性判断。"
         },
         "falsifier_clarity": {
           "value": 0.0,
@@ -296,8 +296,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=21, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=21，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=21, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=21，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.451,
@@ -393,8 +393,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.322,
@@ -490,8 +490,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.161,
@@ -586,8 +586,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=9, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=9，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=9, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=9，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.357,
@@ -682,8 +682,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 1.0,
@@ -778,8 +778,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=36, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=36，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=36, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=36，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.625,
@@ -874,8 +874,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=51, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=51，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=51, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=51，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.586,
@@ -970,8 +970,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.744,
@@ -1066,8 +1066,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.599,
@@ -1162,8 +1162,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.278,
@@ -1258,8 +1258,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.093,
@@ -1354,8 +1354,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=12, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=12，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.595,
@@ -1448,8 +1448,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.93,
@@ -1544,8 +1544,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.844,
@@ -1638,8 +1638,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=8, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=8，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.93,
@@ -1732,8 +1732,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "watch_conditions=6, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "改判条件总数=6，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.93,
@@ -1751,16 +1751,18 @@
     }
   ],
   "stale_legs": [
+    "divergence_log[cybersecurity]: stale (as_of=2026-07-29)",
+    "divergence_log[robotics_automation]: stale (as_of=2026-07-29)",
     "divergence_log[defense_aerospace]: stale (as_of=2026-07-14)",
     "divergence_log[glp1_obesity]: stale (as_of=2026-07-26)",
-    "divergence_log[semicap_equipment]: stale (as_of=2026-07-27)",
     "divergence_log[fintech_payments]: stale (as_of=2026-07-28)",
+    "divergence_log[memory_storage]: stale (as_of=2026-07-29)",
     "divergence_log[diagnostics_lifesci]: stale (as_of=2026-07-27)",
     "finnhub_recs: parquet absent — per-member revision dispersion unavailable"
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-02T03:31:39Z",
-  "inputs_hash": "sha256:e42f9f5b11a19e409130ce1fd1785971711249e1f3ad740d488407e2bb28e707",
+  "produced_at": "2026-08-03T03:19:18Z",
+  "inputs_hash": "sha256:4326b89f0d47c4ec34488c41d3927c6af14ad024c649857f91a6ac73a102b921",
   "tier": "display"
 }

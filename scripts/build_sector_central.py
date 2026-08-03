@@ -190,7 +190,10 @@ def main() -> int:
                   # MOVEMENT donors extracted from the retired subsector_rotation page.
                   # subsector_rotation.js exports window.SRR, which time_machine.js needs.
                   "subsector_rotation.js", "rotation_events.js", "desk_watch.js",
-                  "time_machine.js"):
+                  "time_machine.js",
+                  # _forming_narratives.html.j2 (end of MOVEMENT) loads this; the panel
+                  # self-hides when basketdata/narrative_emergence.json is absent.
+                  "forming_narratives.js"):
         src = root / "templates" / asset
         if src.exists():
             shutil.copy2(src, site / asset)

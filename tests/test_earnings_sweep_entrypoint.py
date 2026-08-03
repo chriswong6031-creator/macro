@@ -432,3 +432,179 @@ class TestAuditUsesTheSessionCalendar:
         # of the previous day is the newest completed one, and a from->to distance would
         # have called that store a session stale.
         assert af._session_age(date.today()) == 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# F. The 07-29→08-02 starvation cancel + the single-stamp as_of contract
+#
+# Second freeze, same store, new mechanism.  #3979 fixed the smoke-path bug on
+# 07-29 — and the fixed sweep then never ran once: collect_tail's two
+# shadow-importance scorers had outgrown their "~13-14m combined" estimate to
+# 80-120m+ (they re-score the full, nightly-accruing qbus store), the job died
+# at its 150m cap five nights running, and every step behind the scorers — the
+# earnings sweep, its tripwire, qledger, CCW, and "commit tail data" — was
+# SKIPPED.  On 2026-08-02 the store still carried the pre-fix two-stamp shape
+# (1361 rows at 06-19 beside the 3 smoke rows at 07-28).
+#
+# These tests pin the three workflow defenses (earnings before the scorer band;
+# the scorers step-bounded; the commit reachable on cancel) and the collector's
+# single-stamp contract (one certified sweep → one as_of for the whole file;
+# mixed stamps only ever mean a partial refresh).
+# ═══════════════════════════════════════════════════════════════════════════
+
+import yaml as _yaml
+
+
+def _collect_tail_steps():
+    wf = _yaml.safe_load(DAILY)
+    return wf["jobs"]["collect_tail"]["steps"]
+
+
+def _step_index(steps, fragment):
+    for i, s in enumerate(steps):
+        if fragment in (s.get("name") or ""):
+            return i, s
+    raise AssertionError(f"no collect_tail step named like {fragment!r}")
+
+
+class TestCollectTailStarvationDefenses:
+    def test_earnings_sweep_runs_before_the_shadow_importance_band(self):
+        """The cheap ~4m sweep must never queue behind the unbudgeted scorers."""
+        steps = _collect_tail_steps()
+        i_sweep, _ = _step_index(steps, "US earnings calendar sweep")
+        i_trip, _ = _step_index(steps, "earnings freshness tripwire")
+        i_w3, _ = _step_index(steps, "W3 scorer")
+        i_w4, _ = _step_index(steps, "W4 PIT-correct scorer")
+        assert i_sweep < i_trip < i_w3 < i_w4, (
+            f"order sweep={i_sweep} tripwire={i_trip} W3={i_w3} W4={i_w4} — the "
+            "earnings band moved back behind the scorers; that is the 07-29→08-02 "
+            "starvation shape (five nights of job-timeout cancels, sweep SKIPPED)"
+        )
+
+    def test_shadow_importance_scorers_are_step_bounded(self):
+        """Each scorer needs timeout-minutes + continue-on-error so a blowout is
+        truncated loudly instead of cancelling the job and starving the tail band."""
+        steps = _collect_tail_steps()
+        job = _yaml.safe_load(DAILY)["jobs"]["collect_tail"]
+        bound_sum = 0
+        for frag in ("W3 scorer", "W4 PIT-correct scorer"):
+            _, step = _step_index(steps, frag)
+            assert step.get("timeout-minutes"), f"{frag}: no step timeout — unbounded again"
+            assert step.get("continue-on-error") is True, (
+                f"{frag}: a step timeout without continue-on-error fails the job "
+                "and still skips every later step"
+            )
+            bound_sum += step["timeout-minutes"]
+        # the two bounds together must leave the rest of the band real headroom
+        assert bound_sum <= job["timeout-minutes"] - 60, (
+            f"scorer bounds sum {bound_sum}m leave <60m of the job's "
+            f"{job['timeout-minutes']}m for tape-flow/census/earnings/commit"
+        )
+
+    def test_commit_tail_data_runs_on_cancel(self):
+        """if: always() — the grace-window backstop.  Five nights of completed
+        accrual evaporated because the commit was skipped on cancel and the next
+        night's clean checkout discarded the uncommitted writes."""
+        _, step = _step_index(_collect_tail_steps(), "commit tail data")
+        assert str(step.get("if", "")).strip() == "always()"
+
+
+class TestSingleStampAsOfContract:
+    """One certified full sweep → ONE as_of for the whole file (standing law:
+    one freshness anchor key, one writer, one stamp)."""
+
+    OLD = "2026-06-19T00:00:00+00:00"
+
+    def _seed_cache(self, tmp_path, names):
+        rows = [{"ticker": t, "next_date": "2026-05-01", "next_time": None,
+                 "eps_forecast": None, "surprises_json": "[]",
+                 "surprises_as_of": self.OLD, "as_of": self.OLD} for t in names]
+        pd.DataFrame(rows).set_index("ticker").to_parquet(tmp_path / "earnings.parquet")
+
+    def test_full_sweep_single_stamps_every_row(self, monkeypatch, tmp_path):
+        """Carried-forward names (no calendar row in the 66-weekday window) get the
+        SAME stamp as swept names: their absence from the whole forward calendar is
+        itself an observation made by this sweep."""
+        universe = {f"TK{i:03d}" for i in range(100)}
+        cal = {t: {"next_date": "2026-08-14", "next_time": None, "eps_forecast": 1.0}
+               for t in sorted(universe)[:80]}                       # 80% >= floor
+        self._seed_cache(tmp_path, [f"OLD{i}" for i in range(10)])   # not in tonight's cal
+        _stub_network(monkeypatch, tmp_path, universe, cal)
+
+        assert ee.main([]) == 0
+        out = pd.read_parquet(tmp_path / "earnings.parquet")
+        assert len(out) == 90
+        stamps = set(out["as_of"].astype(str))
+        assert len(stamps) == 1, (
+            f"a certified full sweep left {len(stamps)} distinct as_of stamps — "
+            "mixed-asof files force every consumer to gate per row"
+        )
+        assert next(iter(stamps)).startswith(
+            datetime.now(timezone.utc).date().isoformat())
+
+    def test_below_floor_sweep_keeps_old_stamps_honest(self, monkeypatch, tmp_path):
+        """A broken sweep (coverage < MIN_SWEEP_COVERAGE) must NOT certify the file:
+        uniform-stamping a partial refresh is how the 06-19 freeze hid behind a
+        max()-based tripwire."""
+        universe = {f"TK{i:03d}" for i in range(100)}
+        cal = {t: {"next_date": "2026-08-14", "next_time": None, "eps_forecast": 1.0}
+               for t in sorted(universe)[:20]}                       # 20% < 50% floor
+        self._seed_cache(tmp_path, [f"OLD{i}" for i in range(10)])
+        _stub_network(monkeypatch, tmp_path, universe, cal)
+
+        assert ee.main([]) == 0
+        out = pd.read_parquet(tmp_path / "earnings.parquet")
+        old = out.loc[[f"OLD{i}" for i in range(10)], "as_of"].astype(str)
+        assert (old == self.OLD).all(), (
+            "a below-floor sweep re-stamped carried-forward rows — rot certified "
+            "as freshness"
+        )
+
+    def test_smoke_run_never_restamps_untouched_rows(self, monkeypatch, tmp_path):
+        """--tickers touches its named subset only; every other row keeps its
+        honest old stamp (a smoke run must never look like a full sweep)."""
+        self._seed_cache(tmp_path, ["OLD0", "OLD1", "OLD2"])
+        cal = {"AAPL": {"next_date": "2026-08-14", "next_time": None,
+                        "eps_forecast": 1.0}}
+        _stub_network(monkeypatch, tmp_path, {"AAPL"}, cal)
+
+        assert ee.main(["--tickers", "AAPL"]) == 0
+        out = pd.read_parquet(tmp_path / "earnings.parquet")
+        assert out.loc["AAPL", "as_of"].startswith(
+            datetime.now(timezone.utc).date().isoformat())
+        old = out.loc[["OLD0", "OLD1", "OLD2"], "as_of"].astype(str)
+        assert (old == self.OLD).all(), "smoke run restamped rows it never touched"
+
+
+class TestUniverseUnionsHotTapePack:
+    """TrendSpider supply widening: the sweep universe = breadth union ∪ Hot Tape
+    liquid names.  The calendar sweep is date-keyed, so the wider set costs zero
+    extra requests — membership only decides which returned rows are kept."""
+
+    def _seed_breadth(self, root, names):
+        d = root / "breadth"
+        d.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame({"x": [1] * len(names)}, index=pd.Index(names, name="ticker")
+                     ).to_parquet(d / "constituents.parquet")
+
+    def test_pack_tickers_join_the_universe(self, monkeypatch, tmp_path):
+        self._seed_breadth(tmp_path, ["AAA", "BBB"])
+        mk = tmp_path / "marketing"
+        mk.mkdir()
+        (mk / "hot_tape_pack.json").write_text(json.dumps(
+            {"tickers": {"CCC": {}, "ddd": {}}}))
+        monkeypatch.setattr(ee.config, "data_dir", lambda: tmp_path)
+        assert ee._universe() == {"AAA", "BBB", "CCC", "DDD"}
+
+    def test_absent_pack_fails_open_to_the_breadth_union(self, monkeypatch, tmp_path):
+        self._seed_breadth(tmp_path, ["AAA", "BBB"])
+        monkeypatch.setattr(ee.config, "data_dir", lambda: tmp_path)
+        assert ee._universe() == {"AAA", "BBB"}
+
+    def test_corrupt_pack_fails_open_too(self, monkeypatch, tmp_path):
+        self._seed_breadth(tmp_path, ["AAA"])
+        mk = tmp_path / "marketing"
+        mk.mkdir()
+        (mk / "hot_tape_pack.json").write_text("{not json")
+        monkeypatch.setattr(ee.config, "data_dir", lambda: tmp_path)
+        assert ee._universe() == {"AAA"}

@@ -1,15 +1,15 @@
 {
   "date": "2026-07-31",
-  "generated_utc": "2026-08-02 19:32",
+  "generated_utc": "2026-08-03 01:15",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
     "tiers": {
       "leading": {
         "asof": "2026-07-31",
-        "index": 94.76789860321732,
+        "index": 94.7678986032173,
         "mom6": 0.3272239880686669,
-        "trend": 0.578229103435966,
+        "trend": 0.5782291034359678,
         "diffusion": 100.0,
         "n_legs": 4,
         "direction": "rising",
@@ -1138,7 +1138,7 @@
       },
       "coincident": {
         "asof": "2026-06-30",
-        "index": 35.55988880342643,
+        "index": 35.559888803426404,
         "mom6": -0.1853034047449853,
         "trend": -0.37425912018952023,
         "diffusion": 66.66666666666667,
@@ -2269,9 +2269,9 @@
       },
       "lagging": {
         "asof": "2026-06-30",
-        "index": 93.08862432878894,
+        "index": 93.08862432878897,
         "mom6": 0.6895405510982613,
-        "trend": 0.014849205830394842,
+        "trend": 0.014849205830394367,
         "diffusion": 50.0,
         "n_legs": 4,
         "direction": "rising",
@@ -4165,7 +4165,7 @@
       "initial_claims_4wk": 202750.0,
       "continued_claims": 1782000.0,
       "claims_yoy_pct": -8.568207440811726,
-      "claims_z": -1.8937247791653002,
+      "claims_z": -1.8937247791655172,
       "claims_trend": "falling",
       "indeed_postings": 102.09,
       "indeed_chg_3m_pct": -0.6520046710782434,
@@ -4183,22 +4183,22 @@
       "read": "transitory (flexible-led)"
     },
     "risk_appetite": {
-      "vrp": 3.618505983063839,
+      "vrp": 3.6185059830638426,
       "vrp_pctile": 0.36507936507936506,
       "vrp_state": "normal",
-      "realized_vol": 12.371493788054325,
+      "realized_vol": 12.371493788054321,
       "vix_term": 0.8406939740420086,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
       "skew": 141.23,
       "skew_pctile": 0.23809523809523808,
-      "stock_bond_corr": 0.5248137773737395,
+      "stock_bond_corr": 0.52481377737374,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 1.041478732008555,
+      "roro": 1.0414787320087702,
       "roro_state": "risk-on",
-      "vol_target_scalar": 0.9699717920552947,
+      "vol_target_scalar": 0.969971792055295,
       "news_sentiment": 0.015339049510657787,
-      "news_sentiment_z": 0.653144234935035,
+      "news_sentiment_z": 0.6531442349350338,
       "news_sentiment_state": "optimistic"
     },
     "drawdown_risk": {
@@ -4338,7 +4338,7 @@
   "fear_euphoria": {
     "fe_score": 100,
     "band": "Euphoria",
-    "roro": 1.041478732008555,
+    "roro": 1.0414787320087702,
     "roro_state": "risk-on",
     "legs": [
       {
@@ -5312,7 +5312,7 @@
     ],
     "n_legs_qualifying": 11,
     "as_of": "2026-07-31",
-    "generated_utc": "2026-08-02T14:54:16Z",
+    "generated_utc": "2026-08-02T20:07:05Z",
     "disclaimer_en": "Sentiment context only \u2014 display-only composite of public market indicators. Never scored, never feeds the regime engine, no forward claim. Greed/fear readings are not contrarian signals without regime context.",
     "disclaimer_zh": "\u4ec5\u4e3a\u60c5\u7eea\u53c2\u8003 \u2014 \u516c\u5f00\u5e02\u573a\u6307\u6807\u7684\u4ec5\u5c55\u793a\u5408\u6210\u3002\u4e0d\u8ba1\u5206\uff0c\u4e0d\u8fdb\u5165\u5468\u671f\u5f15\u64ce\uff0c\u65e0\u524d\u77bb\u6027\u5224\u65ad\u3002\u8d2a\u5a6a/\u6050\u60e7\u8bfb\u6570\u82e5\u65e0\u5468\u671f\u80cc\u666f\uff0c\u4e0d\u6784\u6210\u53cd\u5411\u4fe1\u53f7\u3002"
   },
@@ -5933,7 +5933,7 @@
       }
     ],
     "as_of": "2026-07-31",
-    "generated_utc": "2026-08-02T14:54:17Z",
+    "generated_utc": "2026-08-02T20:07:07Z",
     "n_young": 0,
     "disclaimer_en": "Display-only context \u2014 volatility surface indicators from public CBOE / Yahoo data. Never scored, no forward claim. These chips describe the current vol environment; they do not predict direction.",
     "disclaimer_zh": "\u4ec5\u4f9b\u5c55\u793a\u7684\u80cc\u666f \u2014 \u6765\u81ea\u516c\u5f00 CBOE / Yahoo \u6570\u636e\u7684\u6ce2\u52a8\u7387\u66f2\u9762\u6307\u6807\u3002\u4e0d\u8ba1\u5206\uff0c\u65e0\u524d\u77bb\u5224\u65ad\u3002\u8fd9\u4e9b\u82af\u7247\u63cf\u8ff0\u5f53\u524d\u6ce2\u52a8\u7387\u73af\u5883\uff0c\u4e0d\u9884\u6d4b\u65b9\u5411\u3002"

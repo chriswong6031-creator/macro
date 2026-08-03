@@ -82,6 +82,7 @@ EXPECTED_PUBLIC_RESEARCH_DESTINATIONS = {
     "state_of_themes.html",
     "radar.html",
     "confluence_screener.html",
+    "stock_seasonality.html",
     "smart_money.html",
     "etfs.html",
     "cycle.html",
@@ -174,8 +175,8 @@ def test_research_mega_menu_uses_complete_semantic_icon_set() -> None:
 
     assert "submenu-icon" not in research
     assert destinations == EXPECTED_PUBLIC_RESEARCH_DESTINATIONS
-    assert public_grid.count('class="icon-drawing nm-ic') == 13
-    assert public_grid.count('<svg viewBox="0 0 48 48">') == 13
+    assert public_grid.count('class="icon-drawing nm-ic') == 14
+    assert public_grid.count('<svg viewBox="0 0 48 48">') == 14
     assert "research-icon" not in public_grid
     assert '<span class="nm-ic">' not in research
 
@@ -185,8 +186,8 @@ def test_jinja_nav_partial_preserves_research_icon_markup_on_rerender() -> None:
     research = _research_menu(partial)
     public_grid = research.split('<aside class="mega-rail', 1)[0]
 
-    assert public_grid.count('class="icon-drawing nm-ic') == 13
-    assert public_grid.count('<svg viewBox="0 0 48 48">') == 13
+    assert public_grid.count('class="icon-drawing nm-ic') == 14
+    assert public_grid.count('<svg viewBox="0 0 48 48">') == 14
     assert "research-icon" not in public_grid
     assert '<span class="nm-ic">' not in partial
 

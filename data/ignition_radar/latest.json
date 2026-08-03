@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-01",
+  "as_of": "2026-08-02",
   "state": "off",
   "k_count": 0,
   "chips": [
@@ -286,19 +286,19 @@
         "above_200d_rising": false
       }
     ],
-    "as_of": "2026-08-01"
+    "as_of": "2026-08-02"
   },
   "narrow_top": {
     "basket_id": "non_ai_software",
     "name": "Non-AI Software",
     "name_zh": "\u975eAI\u8f6f\u4ef6",
     "score": 0.857,
-    "streak_sessions": 4
+    "streak_sessions": 5
   },
   "radar_xref": {
     "state": "watch",
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 2.06
+  "_timing_s": 2.45
 }

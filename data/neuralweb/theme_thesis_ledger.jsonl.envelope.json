@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-02T03:31:38Z",
+  "produced_at": "2026-08-03T03:19:18Z",
   "inputs_hash": "sha256:c78ecd3fa7314352e03920395f60753e72fb6a1a5c8d7eee4d752ec43ade13c8",
   "tier": "shadow",
   "artifact_path": "data/neuralweb/theme_thesis_ledger.jsonl",

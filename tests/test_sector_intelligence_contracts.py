@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
 
 import pytest
+import yaml
 
 from engine.sector_intelligence.contracts import (
     ContractError,
@@ -23,6 +25,7 @@ from engine.sector_intelligence.contracts import (
     validate_ctgov_fetch_run_against_receipts,
     validate_evidence_claim_against_source_records,
     validate_source_page_receipt_against_raw_response,
+    validate_biocatalyst_launch_slo_manifest,
     validate_trial_observation_against_source_evidence,
     validate_trial_source_snapshot_against_fetch_evidence,
     validate_trial_diff_against_snapshots,
@@ -37,6 +40,130 @@ BIOCATALYST_FIXTURE_DIR = ROOT / "data" / "biocatalyst" / "fixtures"
 
 def _load(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _load_launch_slo_manifest() -> dict:
+    payload = yaml.safe_load(
+        (ROOT / "config" / "biocatalyst_launch_slo_manifest.yml").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert isinstance(payload, dict)
+    return payload
+
+
+def _rebind_launch_slo_manifest(payload: dict) -> dict:
+    rebound = deepcopy(payload)
+    content = {
+        key: value
+        for key, value in rebound.items()
+        if key not in {"manifest_id", "content_sha256"}
+    }
+    digest = canonical_json_sha256(content)
+    rebound["content_sha256"] = digest
+    rebound["manifest_id"] = f"biocatalyst_launch_slo_{digest[:24]}"
+    return rebound
+
+
+def _launch_slo_artifact(
+    kind: str,
+    *,
+    scheduled_manifest_id: str,
+    scheduled_manifest_content_sha256: str,
+    source_id: str | None = None,
+) -> dict:
+    digest = hashlib.sha256(f"synthetic-{kind}-evidence".encode()).hexdigest()
+    return {
+        "artifact_id": f"biocatalyst_artifact_{digest[:24]}",
+        "kind": kind,
+        "object_ref": f"r2://biocatalyst-soak/{kind}/{digest}.json",
+        "content_sha256": digest,
+        "byte_count": 128,
+        "captured_at": "2026-08-18T00:01:00Z",
+        "scheduled_manifest_id": scheduled_manifest_id,
+        "scheduled_manifest_content_sha256": scheduled_manifest_content_sha256,
+        "source_id": source_id,
+        "window_start": "2026-08-04T00:00:00Z",
+        "window_end": "2026-08-18T00:00:00Z",
+    }
+
+
+def _completed_launch_slo_manifest() -> dict:
+    payload = _load_launch_slo_manifest()
+    predecessor_id = payload["manifest_id"]
+    predecessor_hash = payload["content_sha256"]
+    payload["state"] = "soak_complete_passed"
+    payload["supersedes_manifest_id"] = predecessor_id
+    payload["supersedes_manifest_content_sha256"] = predecessor_hash
+    payload["sources"][0]["activation_state"] = "armed"
+    payload["soak"] = {
+        "required_duration_seconds": 1209600,
+        "window_start": "2026-08-04T00:00:00Z",
+        "window_end": "2026-08-18T00:00:00Z",
+        "telemetry_generation_ref": _launch_slo_artifact(
+            "telemetry_generation",
+            scheduled_manifest_id=predecessor_id,
+            scheduled_manifest_content_sha256=predecessor_hash,
+        ),
+        "raw_telemetry_refs": [
+            _launch_slo_artifact(
+                "raw_telemetry",
+                scheduled_manifest_id=predecessor_id,
+                scheduled_manifest_content_sha256=predecessor_hash,
+                source_id="clinicaltrials_gov_v2",
+            )
+        ],
+        "correction_replay_evidence_refs": [
+            _launch_slo_artifact(
+                "correction_replay",
+                scheduled_manifest_id=predecessor_id,
+                scheduled_manifest_content_sha256=predecessor_hash,
+                source_id="clinicaltrials_gov_v2",
+            )
+        ],
+        "rollback_restore_evidence_refs": [
+            _launch_slo_artifact(
+                "rollback_restore",
+                scheduled_manifest_id=predecessor_id,
+                scheduled_manifest_content_sha256=predecessor_hash,
+                source_id="clinicaltrials_gov_v2",
+            )
+        ],
+        "ci_validation_receipt_ref": _launch_slo_artifact(
+            "ci_validation",
+            scheduled_manifest_id=predecessor_id,
+            scheduled_manifest_content_sha256=predecessor_hash,
+        ),
+        "source_results": [
+            {
+                "source_id": "clinicaltrials_gov_v2",
+                "expected_opportunities": 336,
+                "excluded_predeclared_maintenance": 0,
+                "excluded_source_native_nonpublication": 0,
+                "denominator": 336,
+                "stage_successes": {
+                    "fetch": 335,
+                    "parse": 335,
+                    "contract_validation": 335,
+                    "completeness_reconciliation": 335,
+                    "publication": 335,
+                    "watermark_or_pointer": 335,
+                },
+                "successful_opportunities": 335,
+                "misses": 1,
+                "upstream_unavailable_observations": 1,
+                "maximum_consecutive_misses_observed": 1,
+                "freshness_p95_seconds": 3600,
+                "minimum_completeness_ratio_observed": 1.0,
+                "minimum_vs_prior_scope_ratio_observed": 1.0,
+                "critical_failure_types": [],
+                "passed": True,
+            }
+        ],
+        "aggregate_passed": True,
+        "scheduling_blockers": [],
+    }
+    return _rebind_launch_slo_manifest(payload)
 
 
 def _load_trial_run_evidence() -> tuple[dict, list[dict], dict, list[dict]]:
@@ -1517,4 +1644,352 @@ def test_final_censored_outcome_waits_for_window_close() -> None:
     payload["transaction_from"] = "2027-01-01T00:00:01Z"
 
     with pytest.raises(ContractValidationError, match="outcome.censoring_window"):
+        validate_contract(payload, repo_root=ROOT)
+
+
+def test_biocatalyst_launch_slo_schema_is_discovered_and_committed_forms_validate() -> None:
+    registry = ContractRegistry(ROOT)
+    assert "biocatalyst_launch_slo_manifest.v1" in registry.contract_ids
+
+    configured = _load_launch_slo_manifest()
+    fixture = _load(
+        BIOCATALYST_FIXTURE_DIR / "biocatalyst_launch_slo_manifest.v1.valid.json"
+    )
+    assert canonical_json_bytes(configured) == canonical_json_bytes(fixture)
+    validate_biocatalyst_launch_slo_manifest(configured, repo_root=ROOT)
+    validate_contract(fixture, repo_root=ROOT)
+
+
+def test_launch_slo_digest_is_map_order_stable_and_semantic_edits_require_new_identity() -> None:
+    payload = _load_launch_slo_manifest()
+    reordered = {key: payload[key] for key in reversed(tuple(payload))}
+    assert canonical_json_sha256(
+        {key: value for key, value in payload.items() if key not in {"manifest_id", "content_sha256"}}
+    ) == canonical_json_sha256(
+        {key: value for key, value in reordered.items() if key not in {"manifest_id", "content_sha256"}}
+    )
+    validate_contract(reordered, repo_root=ROOT)
+
+    edited = deepcopy(payload)
+    edited["sources"][0]["error_budget"]["minimum_opportunity_success_ratio"] = 0.999
+    with pytest.raises(ContractValidationError, match="launch_slo.hash"):
+        validate_contract(edited, repo_root=ROOT)
+
+    rebound = _rebind_launch_slo_manifest(edited)
+    assert rebound["manifest_id"] != payload["manifest_id"]
+    with pytest.raises(ContractValidationError, match="launch_slo.error_budget"):
+        validate_contract(rebound, repo_root=ROOT)
+
+
+def test_launch_slo_rejects_self_supersession_and_registry_hash_drift() -> None:
+    payload = _load_launch_slo_manifest()
+    payload["supersedes_manifest_id"] = payload["manifest_id"]
+    with pytest.raises(ContractValidationError, match="launch_slo.self_supersession"):
+        validate_contract(payload, repo_root=ROOT)
+
+    payload = _load_launch_slo_manifest()
+    payload["source_registry_sha256"] = "0" * 64
+    payload = _rebind_launch_slo_manifest(payload)
+    with pytest.raises(ContractValidationError, match="launch_slo.source_registry_hash"):
+        validate_contract(payload, repo_root=ROOT)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected_code"),
+    [
+        (lambda rows: rows.clear(), "launch_slo.omitted_source"),
+        (
+            lambda rows: rows.append(
+                {**deepcopy(rows[0]), "source_id": "unknown_launch_source"}
+            ),
+            "launch_slo.unknown_source",
+        ),
+        (lambda rows: rows.append(deepcopy(rows[0])), "launch_slo.duplicate_source"),
+    ],
+)
+def test_launch_slo_source_set_is_exact_and_closed(mutation, expected_code: str) -> None:
+    payload = _load_launch_slo_manifest()
+    mutation(payload["sources"])
+    payload = _rebind_launch_slo_manifest(payload)
+    with pytest.raises(ContractValidationError, match=expected_code):
+        validate_contract(payload, repo_root=ROOT)
+
+
+def test_launch_slo_rejects_source_owner_and_registry_binding_mismatch() -> None:
+    payload = _load_launch_slo_manifest()
+    payload["sources"][0]["owner"] = "another_owner"
+    payload["sources"][0]["registry_binding"]["freshness_slo_seconds"] = 3600
+    payload = _rebind_launch_slo_manifest(payload)
+
+    with pytest.raises(ContractValidationError) as caught:
+        validate_contract(payload, repo_root=ROOT)
+    assert "launch_slo.owner_mismatch" in str(caught.value)
+    assert "launch_slo.registry_mismatch" in str(caught.value)
+
+
+def test_launch_slo_rejects_vague_denominators_missing_stage_gates_and_weighting() -> None:
+    payload = _load_launch_slo_manifest()
+    payload["sources"][0]["denominator_policy"]["upstream_outage_treatment"] = (
+        "exclude_upstream_outage"
+    )
+    del payload["sources"][0]["success_gates"]["publication"]
+    payload["aggregate_pass_policy"]["weighted_aggregate_allowed"] = True
+    payload = _rebind_launch_slo_manifest(payload)
+
+    with pytest.raises(ContractValidationError) as caught:
+        validate_contract(payload, repo_root=ROOT)
+    message = str(caught.value)
+    assert "record_denominator_miss_and_upstream_unavailable_observation" in message
+    assert "publication" in message
+    assert "False was expected" in message
+
+
+def test_pre_soak_manifest_is_explicitly_unarmed_and_cannot_claim_release_pass() -> None:
+    payload = _load_launch_slo_manifest()
+    assert payload["state"] == "pre_soak_unarmed"
+    assert payload["sources"][0]["activation_state"] == "dark_unarmed"
+    assert payload["soak"]["window_start"] is None
+    assert payload["soak"]["source_results"] == []
+    assert payload["soak"]["aggregate_passed"] is False
+    assert all(value is False for value in payload["authority"].values())
+
+    false_pass = deepcopy(payload)
+    false_pass["state"] = "soak_complete_passed"
+    false_pass["soak"]["aggregate_passed"] = True
+    false_pass = _rebind_launch_slo_manifest(false_pass)
+    with pytest.raises(ContractValidationError) as caught:
+        validate_contract(false_pass, repo_root=ROOT)
+    assert "window_start" in str(caught.value)
+    assert "telemetry_generation_ref" in str(caught.value)
+    assert "source_results" in str(caught.value)
+
+
+def test_completed_launch_slo_candidate_is_fail_closed_without_external_evidence() -> None:
+    valid = _completed_launch_slo_manifest()
+    issues = ContractRegistry(ROOT).issues(valid["contract_id"], valid)
+    assert {issue.code for issue in issues} == {
+        "launch_slo.trusted_evidence_verifier_unavailable"
+    }
+    with pytest.raises(
+        ContractValidationError,
+        match="launch_slo.trusted_evidence_verifier_unavailable",
+    ):
+        validate_contract(valid, repo_root=ROOT)
+
+    denominator = deepcopy(valid)
+    denominator["soak"]["source_results"][0]["denominator"] = 335
+    denominator = _rebind_launch_slo_manifest(denominator)
+    with pytest.raises(ContractValidationError, match="launch_slo.denominator"):
+        validate_contract(denominator, repo_root=ROOT)
+
+    outage = deepcopy(valid)
+    outage["soak"]["source_results"][0]["upstream_unavailable_observations"] = 2
+    outage = _rebind_launch_slo_manifest(outage)
+    with pytest.raises(ContractValidationError, match="launch_slo.upstream_outage"):
+        validate_contract(outage, repo_root=ROOT)
+
+    critical = deepcopy(valid)
+    critical["soak"]["source_results"][0]["critical_failure_types"] = [
+        "integrity_failure"
+    ]
+    critical = _rebind_launch_slo_manifest(critical)
+    with pytest.raises(ContractValidationError) as caught:
+        validate_contract(critical, repo_root=ROOT)
+    assert "launch_slo.source_pass" in str(caught.value)
+    assert "launch_slo.aggregate_pass" in str(caught.value)
+
+
+def test_launch_slo_completed_window_is_exactly_fourteen_days() -> None:
+    payload = _completed_launch_slo_manifest()
+    payload["soak"]["window_end"] = "2026-08-17T23:59:59Z"
+    payload = _rebind_launch_slo_manifest(payload)
+    with pytest.raises(ContractValidationError, match="launch_slo.soak_window"):
+        validate_contract(payload, repo_root=ROOT)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected_code"),
+    [
+        (
+            lambda result, payload: result.update(
+                expected_opportunities=1,
+                denominator=1,
+                successful_opportunities=1,
+                misses=0,
+                upstream_unavailable_observations=0,
+                maximum_consecutive_misses_observed=0,
+                stage_successes={
+                    stage: 1 for stage in result["stage_successes"]
+                },
+            ),
+            "launch_slo.expected_opportunities",
+        ),
+        (
+            lambda result, payload: result.update(
+                excluded_predeclared_maintenance=335,
+                denominator=1,
+                successful_opportunities=1,
+                misses=0,
+                upstream_unavailable_observations=0,
+                maximum_consecutive_misses_observed=0,
+                stage_successes={
+                    stage: 1 for stage in result["stage_successes"]
+                },
+            ),
+            "launch_slo.maintenance_exclusion_unverifiable",
+        ),
+        (
+            lambda result, payload: result.update(
+                excluded_source_native_nonpublication=335,
+                denominator=1,
+                successful_opportunities=1,
+                misses=0,
+                upstream_unavailable_observations=0,
+                maximum_consecutive_misses_observed=0,
+                stage_successes={
+                    stage: 1 for stage in result["stage_successes"]
+                },
+            ),
+            "launch_slo.nonpublication_must_remain_in_denominator",
+        ),
+        (
+            lambda result, payload: result["stage_successes"].update(parse=1),
+            "launch_slo.stage_reconciliation",
+        ),
+    ],
+)
+def test_launch_slo_rejects_manufactured_denominators_and_stage_passes(
+    mutation, expected_code: str
+) -> None:
+    payload = _completed_launch_slo_manifest()
+    mutation(payload["soak"]["source_results"][0], payload)
+    payload = _rebind_launch_slo_manifest(payload)
+    with pytest.raises(ContractValidationError, match=expected_code):
+        validate_contract(payload, repo_root=ROOT)
+
+
+def test_launch_slo_rejects_non_content_addressed_evidence() -> None:
+    payload = _completed_launch_slo_manifest()
+    payload["soak"]["raw_telemetry_refs"] = ["fake:raw"]
+    payload = _rebind_launch_slo_manifest(payload)
+
+    with pytest.raises(ContractValidationError) as caught:
+        validate_contract(payload, repo_root=ROOT)
+    assert "is not of type 'object'" in str(caught.value)
+
+
+def test_launch_slo_rejects_inexact_or_noncanonical_utc_windows() -> None:
+    payload = _completed_launch_slo_manifest()
+    payload["soak"]["window_end"] = "2026-08-18T00:00:00.999Z"
+    payload = _rebind_launch_slo_manifest(payload)
+    with pytest.raises(ContractValidationError, match="launch_slo.soak_window"):
+        validate_contract(payload, repo_root=ROOT)
+
+    payload = _completed_launch_slo_manifest()
+    payload["soak"]["window_start"] = "2026-08-03T17:00:00-07:00"
+    payload["soak"]["window_end"] = "2026-08-17T17:00:00-07:00"
+    payload = _rebind_launch_slo_manifest(payload)
+    with pytest.raises(ContractValidationError) as caught:
+        validate_contract(payload, repo_root=ROOT)
+    assert "does not match" in str(caught.value)
+    assert "launch_slo.soak_window" in str(caught.value)
+
+    payload = _completed_launch_slo_manifest()
+    payload["soak"]["window_start"] = "3000-01-01T00:00:00.000001Z"
+    payload["soak"]["window_end"] = "3000-01-15T00:00:00.000001Z"
+    payload = _rebind_launch_slo_manifest(payload)
+    with pytest.raises(ContractValidationError, match="launch_slo.schedule_alignment"):
+        validate_contract(payload, repo_root=ROOT)
+
+
+def test_launch_slo_rejects_predecessor_digest_mismatch_and_artifact_reuse() -> None:
+    payload = _completed_launch_slo_manifest()
+    payload["supersedes_manifest_content_sha256"] = "f" * 64
+    payload = _rebind_launch_slo_manifest(payload)
+    with pytest.raises(ContractValidationError, match="launch_slo.predecessor_identity"):
+        validate_contract(payload, repo_root=ROOT)
+
+    payload = _completed_launch_slo_manifest()
+    reused = deepcopy(payload["soak"]["telemetry_generation_ref"])
+    reused["kind"] = "ci_validation"
+    payload["soak"]["ci_validation_receipt_ref"] = reused
+    payload = _rebind_launch_slo_manifest(payload)
+    with pytest.raises(ContractValidationError, match="launch_slo.artifact_role_reuse"):
+        validate_contract(payload, repo_root=ROOT)
+
+
+def test_launch_slo_artifacts_bind_predecessor_window_and_source_scope() -> None:
+    payload = _completed_launch_slo_manifest()
+    artifact = payload["soak"]["raw_telemetry_refs"][0]
+    artifact["scheduled_manifest_id"] = "biocatalyst_launch_slo_" + "f" * 24
+    artifact["window_start"] = "2026-08-05T00:00:00Z"
+    artifact["source_id"] = "unknown_source"
+    payload = _rebind_launch_slo_manifest(payload)
+
+    with pytest.raises(ContractValidationError) as caught:
+        validate_contract(payload, repo_root=ROOT)
+    message = str(caught.value)
+    assert "launch_slo.artifact_manifest_binding" in message
+    assert "launch_slo.artifact_window_binding" in message
+    assert "launch_slo.artifact_source_binding" in message
+
+
+def test_launch_slo_rejects_completed_dark_or_blocked_claims() -> None:
+    payload = _completed_launch_slo_manifest()
+    payload["sources"][0]["activation_state"] = "dark_unarmed"
+    payload["soak"]["scheduling_blockers"] = ["operator_arming"]
+    payload = _rebind_launch_slo_manifest(payload)
+
+    with pytest.raises(ContractValidationError) as caught:
+        validate_contract(payload, repo_root=ROOT)
+    assert "launch_slo.passed_soak_activation" in str(caught.value)
+    assert "launch_slo.active_soak_blockers" in str(caught.value)
+
+
+@pytest.mark.parametrize(
+    "bad_value",
+    ["not-a-number", 10**400],
+)
+def test_launch_slo_malformed_numbers_fail_as_contract_validation(
+    bad_value,
+) -> None:
+    payload = _completed_launch_slo_manifest()
+    payload["sources"][0]["error_budget"][
+        "minimum_opportunity_success_ratio"
+    ] = bad_value
+    payload = _rebind_launch_slo_manifest(payload)
+
+    with pytest.raises(ContractValidationError):
+        validate_contract(payload, repo_root=ROOT)
+
+
+def test_launch_slo_cyclic_python_mapping_fails_as_contract_validation() -> None:
+    payload = _load_launch_slo_manifest()
+    payload["cycle"] = payload
+
+    with pytest.raises(ContractValidationError, match="schema.cyclic_document"):
+        validate_contract(payload, repo_root=ROOT)
+
+
+def test_launch_slo_superseded_label_cannot_smuggle_a_pass() -> None:
+    payload = _completed_launch_slo_manifest()
+    payload["state"] = "superseded"
+    payload["sources"][0]["activation_state"] = "dark_unarmed"
+    payload["soak"]["scheduling_blockers"] = ["operator_arming"]
+    payload = _rebind_launch_slo_manifest(payload)
+
+    with pytest.raises(ContractValidationError) as caught:
+        validate_contract(payload, repo_root=ROOT)
+    assert "launch_slo.trusted_evidence_verifier_unavailable" in str(caught.value)
+    assert "False was expected" in str(caught.value)
+    assert "is expected to be empty" in str(caught.value)
+
+
+def test_launch_slo_extreme_python_integer_fails_as_contract_validation() -> None:
+    payload = _completed_launch_slo_manifest()
+    payload["soak"]["source_results"][0]["expected_opportunities"] = 10**5000
+
+    with pytest.raises(
+        ContractValidationError, match="schema.invalid_in_memory_document"
+    ):
         validate_contract(payload, repo_root=ROOT)

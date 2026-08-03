@@ -599,6 +599,18 @@ jobs:
       # every other guard already passes is not a guard.
       - name: group-flow display-only detector + baskets.html.j2 money-flow render guard
         run: python -m pytest tests/test_group_flow.py -q
+      # Wired 2026-08-02: neither tests/test_theme_hash_deeplink.py nor
+      # tests/test_sector_intelligence_page.py was named by any job in any workflow,
+      # so both sat dark while the Sector Intelligence consolidation (#4237) turned
+      # baskets.html.j2 into a redirect stub that ATE inbound #theme-<id> hashes —
+      # the exact silent deep-link failure the deeplink suite was written against
+      # (#4254), invisible because the suite never ran. Both are stdlib text guards
+      # over templates this job already covers. Ordered before the sweep below for
+      # the same reason as the group-flow step above: a trailing guard is
+      # unreachable whenever anything in the ~100-file sweep is red. Path-gated in
+      # ci.yml on the test files; templates are covered by "templates/**" (#3488).
+      - name: theme deep-link contract + sector-intelligence consolidation invariants
+        run: python -m pytest tests/test_theme_hash_deeplink.py tests/test_sector_intelligence_page.py -q
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -3408,7 +3420,7 @@ jobs:
         # import closure is stdlib + pyyaml (cadence_resolver, personas, accounts,
         # outbox and sentinel all stay on those two in the lanes above), and
         # nothing is importorskip-gated.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_admin_marketing_floor.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_reply_warmth.py tests/test_marketing_reply_tails.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_marketing_copy_auditor.py tests/test_marketing_bare_cashtag.py tests/test_marketing_voice_laws.py tests/test_marketing_publisher_names.py tests/test_marketing_media_backfill.py tests/test_chart_facts.py tests/test_confluence_source.py tests/test_chart_since_setup.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py tests/test_marketing_cadence_ramp_coherence.py tests/test_news_translate_render_gate.py -q
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_admin_marketing_floor.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_reply_warmth.py tests/test_marketing_reply_tails.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_marketing_copy_auditor.py tests/test_marketing_bare_cashtag.py tests/test_marketing_voice_laws.py tests/test_marketing_publisher_names.py tests/test_marketing_media_backfill.py tests/test_chart_facts.py tests/test_confluence_source.py tests/test_chart_since_setup.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py tests/test_marketing_cadence_ramp_coherence.py tests/test_marketing_ladder_collapse.py tests/test_marketing_wire_headroom.py tests/test_marketing_copy_yield.py tests/test_marketing_news_arming.py tests/test_marketing_breaking_card_geometry.py tests/test_news_translate_render_gate.py -q
       - name: reply-target register validates (config/reply_targets.yml)
         # The register is operator-curated, so a bad handle or an unknown tier is
         # an editing mistake, not a code change. Runs as its own step so a
@@ -3566,7 +3578,25 @@ jobs:
         # The gates stay; the suites get a lane that satisfies them. The thin lane
         # keeps test_chart_facts and test_marketing_bare_cashtag for their
         # dependency-free tests, which is the split the guard is asking for.
-        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py tests/test_chart_facts.py tests/test_marketing_bare_cashtag.py tests/test_confluence_honesty.py tests/test_tech_confluence.py tests/test_news_translate_en.py -q -rs
+        #
+        # THREE SUITES JOIN 2026-08-02 (TrendSpider hardening PR-B — the supply
+        # widening: cashtag tiers 520 → 1,317 names, mover board 503 → ~1,190,
+        # six new read-only candidate pools). Two of them were already DARK:
+        #   * test_movers_source.py and test_marketing_radar.py were named by NO
+        #     job in this manifest. `grep -rn` across .github/ returned nothing
+        #     for either. They are the only guards the two modules PR-B edits
+        #     have — the tier ladder, the T3 mover exclusion, the theme-list
+        #     whitelist — and they have been running nowhere, which is the
+        #     unrun-suite class this file has now repaired six times. Shipping a
+        #     universe widening while its own regression suite stays dark would
+        #     have been the seventh.
+        #   * test_marketing_supply_feeds.py is new and belongs here from birth:
+        #     every pool fixture is a parquet (options_flow, WSB, earnings,
+        #     stage backfill), so the thin marketing-engine lane could never run
+        #     it — the hot_tape_pack case above, not a repair.
+        # All three need pandas+pyarrow, which this lane already installs, so
+        # they provision no new environment.
+        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py tests/test_chart_facts.py tests/test_marketing_bare_cashtag.py tests/test_confluence_honesty.py tests/test_tech_confluence.py tests/test_news_translate_en.py tests/test_marketing_supply_feeds.py tests/test_movers_source.py tests/test_marketing_radar.py -q -rs
 
   publish-r2-client:
     if: ${{ false }}
@@ -3677,7 +3707,7 @@ jobs:
       - name: install deps
         run: pip install pytest pyyaml
       - name: chart_render SVG suites
-        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_marketing_card_parity.py -q
+        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_chart_render_grammar.py tests/test_marketing_card_parity.py -q
 
   chart-render-data:
     if: ${{ false }}
@@ -3724,7 +3754,7 @@ jobs:
       - name: prove the data-dependent modules are present
         run: python -c "import pandas, pyarrow, numpy"
       - name: chart_render SVG suites (data-dependent tests execute here)
-        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_marketing_card_parity.py -q -rs
+        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_chart_render_grammar.py tests/test_marketing_card_parity.py -q -rs
 
   portfolio-ctx:
     if: ${{ false }}
@@ -3745,7 +3775,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic
+        # pyyaml is load-bearing here, not incidental: the theme_lanes side-write reads
+        # config/theme_crosswalk.yml for the basket-keyed lane projection. Without it
+        # build_state_of_themes.load_primary_basket_ids fail-opens to {} and the
+        # projection silently collapses to empty (PR #4300 shipped red on exactly that).
+        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic pyyaml
       - name: portfolio-ctx bake unit tests
         run: python -m pytest tests/test_build_portfolio_ctx.py tests/test_portfolio_ctx_chains.py -q
       - name: portfolio-brief composer + endpoint tests
@@ -4392,8 +4426,10 @@ jobs:
         run: python -m pytest tests/test_gex_model.py tests/test_gex_engine.py tests/test_polygon_gex.py -q
       # MSC R2.4 (2026-08-01): the live Level Report Card publisher. Wired at birth —
       # pure pandas/pytest, same import closure as the step above (pandas+pyarrow only).
+      # R2.4b (2026-08-02) adds the nulls/index-lane suite AND back-wires the two
+      # WP-C1 grader suites that were never CI-named (the named-test-files trap).
       - name: Level Report Card — grade-summary publisher (Wilson CI vs null, coverage honesty)
-        run: python -m pytest tests/test_level_grades_summary.py -q
+        run: python -m pytest tests/test_level_grades_summary.py tests/test_levels_grade_nulls.py tests/test_levels_grade.py tests/test_levels_track_record_rebase.py -q
       # MSC R3.2/R3.3 (2026-08-02): the cross-root gex_state _index.json aggregator
       # (lib/gex_state_index.py, called from build_gex_board). Wired at birth — pure
       # stdlib json/pathlib, no new wheels.

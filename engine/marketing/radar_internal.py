@@ -27,7 +27,7 @@ import logging
 import math
 import os
 import tempfile
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -245,8 +245,58 @@ def _feed_earnings(root: Path, as_of_date: str | None = None) -> list[dict]:
         return []
 
 
+#: Sessions the stage snapshot may lag before the feed refuses it. Same law and
+#: config key as attention_source (supply.freshness.max_stale_sessions in
+#: config/marketing.yml) so ONE operator lever governs every stage consumer.
+_STAGE_MAX_STALE_SESSIONS = 3
+
+
+def _sessions_since(earlier: str | None, later: str | None) -> int | None:
+    """Mon–Fri sessions in (earlier, later] — how stale *earlier* is.
+
+    Mirrors attention_source.sessions_since (deliberately not an import — that
+    module lands in a sibling PR). No holiday calendar: counting a holiday as a
+    session only makes a source look older, so the gate trips sooner, never
+    later. None when unparseable (callers fail closed); 0 when later <= earlier.
+    """
+    try:
+        d0 = date.fromisoformat(str(earlier)[:10])
+        d1 = date.fromisoformat(str(later)[:10])
+    except (TypeError, ValueError):
+        return None
+    if d1 <= d0:
+        return 0
+    if (d1 - d0).days > 400:
+        return 9999
+    n = 0
+    cur = d0
+    while cur < d1:
+        cur += timedelta(days=1)
+        if cur.weekday() < 5:
+            n += 1
+    return n
+
+
+def _stage_stale_budget(root: Path) -> int:
+    """supply.freshness.max_stale_sessions from config/marketing.yml, else 3."""
+    try:
+        from engine.marketing.state import _load_cfg  # noqa: PLC0415
+        fresh = ((_load_cfg(root).get("supply") or {}).get("freshness") or {})
+        return max(0, int(fresh["max_stale_sessions"]))
+    except Exception:  # noqa: BLE001
+        return _STAGE_MAX_STALE_SESSIONS
+
+
 def _feed_stage(root: Path) -> list[dict]:
-    """Read equitydesk_overview.parquet → USA stage 2 names."""
+    """Read equitydesk_overview.parquet → USA stage 2 names, freshness-gated.
+
+    The parquet retains the immutable vendor seed plus nightly engine
+    snapshots (stage_analysis.append_stage_snapshot), so rows are filtered to
+    the NEWEST as_of_date only — mixing snapshots would resurrect stale names.
+    A snapshot more than the session budget behind today empties the feed with
+    ONE ::warning annotation: 15 Stage-2 names off a dead snapshot are not
+    evidence, and this feed spent 16 days proving it.
+    """
     try:
         import pandas as pd
         path = root / "data" / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
@@ -256,6 +306,18 @@ def _feed_stage(root: Path) -> list[dict]:
         df = pd.read_parquet(path, columns=cols)
         if df.empty:
             return []
+        snapshots = sorted({str(x)[:10] for x in df["as_of_date"].dropna()})
+        latest = snapshots[-1] if snapshots else None
+        n_lag = _sessions_since(latest, _today_str())
+        budget = _stage_stale_budget(root)
+        if n_lag is None or n_lag > budget:
+            # Bare print, line start, flushed — a logger's prefix would make
+            # GitHub drop the annotation silently.
+            print(f"::warning title=marketing-radar-stage::stage snapshot "
+                  f"{latest or 'unstamped'} is more than {budget} sessions behind "
+                  f"{_today_str()} — stage feed empty", flush=True)
+            return []
+        df = df[df["as_of_date"].astype(str).str[:10] == latest]
         df = df[(df["region"] == "USA") & (df["stage_flag"] == 2)].copy()
         df = df.sort_values(["sata_score", "ticker"], ascending=[False, True]).head(15)
         results: list[dict] = []
@@ -704,11 +766,92 @@ def _load_t1_always(root: Path) -> list[str]:
     return list(_DEFAULT_T1_ALWAYS)
 
 
+def _load_hot_tape_universe(root: Path) -> tuple[dict[str, dict], str]:
+    """ADV-ranked names from ``data/marketing/hot_tape_pack.json``, fail-soft.
+
+    Returns ``({TICKER: record}, trade_date)`` for every pack name clearing the
+    configured ADV floor, or ``({}, "")`` when the pack is missing or stale.
+    The pack is the only artifact in the repo that ranks the LIQUID US market
+    rather than an index membership list, and it is the whole reason a
+    non-index name can be tiered at all (masterplan §3 PR-B.1).
+
+    A missing or stale pack is not fatal — the caller falls back to the
+    index-only universe it has always used — but it is not silent either: the
+    universe quietly collapsing 1,316 → 518 is exactly the kind of narrowing
+    that looks like normal output, so it costs one GitHub annotation (bare
+    print, line start, flushed; never a logger, CLAUDE.md five-strike law).
+    """
+    try:
+        from engine.marketing.attention_source import (
+            load_hot_tape_pack,
+            max_stale_sessions,
+            pack_min_adv_dollars,
+            sessions_since,
+        )
+    except Exception:  # noqa: BLE001
+        return {}, ""
+
+    try:
+        pack = load_hot_tape_pack(root)
+        if pack is None:
+            print("::warning title=marketing-cashtag-tiers::hot_tape_pack absent at "
+                  "data/marketing/hot_tape_pack.json — cashtag tier universe falls back "
+                  "to S&P 500 + Nasdaq-100 + always-list only", flush=True)
+            return {}, ""
+
+        trade_date = str(pack.get("trade_date") or "")[:10]
+        budget = max_stale_sessions(root, "cashtag_tiers")
+        # UTC, matching attention_source — one definition of "now" across the
+        # supply side, so a pool and the tier universe never disagree about
+        # whether the same pack is fresh.
+        stale = sessions_since(trade_date, datetime.now(timezone.utc).date())
+        if stale is None or stale > budget:
+            print(f"::warning title=marketing-cashtag-tiers::hot_tape_pack trade_date "
+                  f"{trade_date or '?'} is more than {budget} sessions stale — cashtag "
+                  f"tier universe falls back to S&P 500 + Nasdaq-100 + always-list only",
+                  flush=True)
+            return {}, ""
+
+        floor = pack_min_adv_dollars(root)
+        out: dict[str, dict] = {}
+        for ticker, rec in (pack.get("tickers") or {}).items():
+            if not isinstance(rec, dict):
+                continue
+            adv = _finite(rec.get("adv20_dollars"))
+            if adv is None or adv < floor:
+                continue
+            out[str(ticker).upper()] = rec
+        return out, trade_date
+    except Exception:  # noqa: BLE001
+        return {}, ""
+
+
 def build_cashtag_tiers(root: Path) -> dict | None:
     """Build cashtag attention tiers from nightly artifacts.
 
     Returns a dict with schema marketing.cashtag_tiers/v1, or None only if
     the universe itself cannot be built.
+
+    UNIVERSE (widened 2026-08-02, masterplan §3 PR-B.1). S&P 500 membership ∪
+    Nasdaq-100 ∪ the operator always-list ∪ every ``hot_tape_pack`` name above
+    the ADV floor — 518 names to ~1,316. The tier LADDER is untouched: the same
+    T1/T2/T3 rules at the same thresholds decide every row, and a liquid
+    non-index name that is quiet today still lands T3. What changes is that it
+    now HAS a tier, so the day it moves 3% or reports earnings the existing T2
+    rules can see it, instead of the name being invisible to the whole pipeline.
+
+    Two proxies are extended to match, both additively and both recording where
+    the value came from:
+
+    * ``dollar_vol_musd`` — unchanged for any name ``data/stocks`` covers; for
+      the rest it falls back to the pack's 20-day average dollar volume, which
+      is a different (steadier) measurement of the same quantity, so the row
+      also carries ``dollar_vol_source``.
+    * ``pct_1d`` — unchanged for any name the heatmap covers; for the rest it is
+      the pack's own last/prev close, guarded by the pack's split-suspicion flag
+      and by the record being current with the pack tip. A name the pack marks
+      ``suspect`` gets NO price proxy at all: ``data/massive_stock_day`` is not
+      split-adjusted and a 3-for-1 split reads as a 66% crash.
     """
     try:
         import pandas as pd
@@ -748,6 +891,16 @@ def build_cashtag_tiers(root: Path) -> dict | None:
                     universe.add(str(t).upper())
     except Exception:  # noqa: BLE001
         pass
+
+    # Index-only universe, kept as its own set so the report can say how much
+    # of the final universe the ADV pack contributed.
+    index_universe = set(universe)
+
+    # ADV-liquid names from the nightly hot-tape pack. Fail-soft: {} on a
+    # missing/stale pack, which reproduces the pre-2026-08-02 index-only
+    # universe exactly (plus one annotation).
+    pack_records, pack_trade_date = _load_hot_tape_universe(root)
+    universe.update(pack_records.keys())
 
     # Always-list tickers outside the index universe must be included as T1.
     # Add them now so they participate in proxy lookups and tier assignment.
@@ -845,6 +998,29 @@ def build_cashtag_tiers(root: Path) -> dict | None:
         pct_1w = hm.get("pct_1w")
         earnings_in_days = earnings_by_ticker.get(ticker)
         dollar_vol = dollar_vol_by_ticker.get(ticker)
+        pack_rec = pack_records.get(ticker) or {}
+
+        # ── Pack fallbacks, only where the index-era source has nothing ──────
+        # Same thresholds, same reason names; only the reach widens. The source
+        # of each filled proxy is recorded so a row is always auditable back to
+        # the artifact that produced it.
+        dollar_vol_source = "stocks_last_bar" if dollar_vol is not None else None
+        if dollar_vol is None and pack_rec:
+            adv = _finite(pack_rec.get("adv20_dollars"))
+            if adv is not None:
+                dollar_vol = adv / 1e6
+                dollar_vol_source = "hot_tape_adv20"
+
+        pct_1d_source = "sp500_heatmap" if pct_1d is not None else None
+        if pct_1d is None and pack_rec and not pack_rec.get("suspect"):
+            # Current with the pack tip only: a lagging record's "1-day" move
+            # is a move from some other week.
+            if str(pack_rec.get("last_date") or "")[:10] == pack_trade_date:
+                last_c = _finite(pack_rec.get("last_close"))
+                prev_c = _finite(pack_rec.get("prev_close"))
+                if last_c is not None and prev_c is not None and prev_c > 0:
+                    pct_1d = (last_c / prev_c - 1.0) * 100.0
+                    pct_1d_source = "hot_tape_pack"
 
         reasons: list[str] = []
         tier = "T3"
@@ -881,6 +1057,14 @@ def build_cashtag_tiers(root: Path) -> dict | None:
                 "pct_1w": _finite(pct_1w),
                 "earnings_in_days": int(earnings_in_days) if earnings_in_days is not None else None,
                 "dollar_vol_musd": _finite(dollar_vol),
+                # Which artifact each fillable proxy actually came from. Absent
+                # proxies carry None so a reader can tell "no source" from
+                # "sourced and zero".
+                "pct_1d_source": pct_1d_source,
+                "dollar_vol_source": dollar_vol_source,
+                "adv20_musd": _finite((_finite(pack_rec.get("adv20_dollars")) or 0.0) / 1e6)
+                              if pack_rec.get("adv20_dollars") is not None else None,
+                "in_index_universe": ticker in index_universe,
             },
         }
 
@@ -899,6 +1083,15 @@ def build_cashtag_tiers(root: Path) -> dict | None:
         "tier": "display",
         "as_of": heatmap_asof,
         "universe_n": len(universe),
+        # Additive provenance for the 2026-08-02 widening: how the universe was
+        # composed, so a collapse back to the index-only set is legible in the
+        # artifact itself and not only in the annotation stream.
+        "universe_sources": {
+            "index_n": len(index_universe),
+            "hot_tape_pack_n": len(pack_records),
+            "hot_tape_pack_added_n": len(set(pack_records) - index_universe),
+            "hot_tape_pack_trade_date": pack_trade_date or None,
+        },
         "tiers": {
             "T1": sorted(t1_list),
             "T2": sorted(t2_list),

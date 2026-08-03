@@ -5,13 +5,34 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {# Redirect stub — Thematic Baskets merged into Sector Intelligence (sector_central.html).
    Pattern: vector_allocation.html.j2 (noindex + meta refresh + canonical to the TARGET via
-   seo_path + location.replace). The 47 basket detail pages (site/basket/*) stay live. #}
+   seo_path + location.replace). The 47 basket detail pages (site/basket/*) stay live.
+   #theme-<id> hashes must FORWARD to the merged page, whose resolveThemeHash() routes them
+   to basket/<id>.html — alert rows live ~90d and bookmarks longer, so inbound
+   baskets.html#theme-<id> links outlast this page (tests/test_theme_hash_deeplink.py). #}
 {% set seo_title = "Thematic Baskets moved into Sector Intelligence — Mastermind" %}
 {% set seo_desc = "The 47 equal-weight theme baskets — action lanes, rotation map and performance — now live inside the US Sector Intelligence page." %}
 {% set seo_path = "sector_central.html" %}
 {% include "_seo_head.html.j2" %}
 <title>Thematic Baskets moved into Sector Intelligence — Mastermind</title>
 <meta name="robots" content="noindex,follow">
+{# THEME DEEP-LINK RESOLVER. Emitters still link baskets.html#theme-<id> (alerts rows —
+   engine/alert_triage.py assembles page+anchor — plus bookmarks and outbound marketing
+   links). This stub is the RECEIVER: a bare redirect discards the hash and dumps the
+   visitor at the lanes anchor, which is how the contract regressed. Resolve to the
+   theme's own detail page instead. Runs before the meta refresh is parsed so the
+   redirect can never win the race. `theme_ids` is the nightly basket id list from
+   build_baskets.py — the same ids build_theme_detail writes basket/<id>.html for, so a
+   stale id falls through to the merged page instead of becoming a 404. #}
+<script>
+window.__THEME_IDS={{ theme_ids | default([]) | tojson }};
+function themeById(id){return (window.__THEME_IDS||[]).indexOf(id)<0?null:id}
+function resolveThemeHash(){
+var id=themeById(location.hash.slice(7));
+if(id){window.__THEME_RESOLVED=1;location.replace('basket/'+id+'.html');return}
+location.replace("sector_central.html#actnow-section");
+}
+if(location.hash.startsWith('#theme-'))resolveThemeHash();
+</script>
 <meta http-equiv="refresh" content="0;url=sector_central.html#actnow-section">
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0c0f16;color:#edf0f7;font:15px/1.5 system-ui,sans-serif}main{width:min(560px,calc(100% - 40px));padding:32px;border:1px solid #2a3040;border-radius:14px}h1{margin:0 0 10px;font-size:25px}p{color:#aab1c1}a{color:#a895ff}</style>
 </head>
@@ -21,6 +42,9 @@
 <p>The 47 equal-weight theme baskets — the action lanes, the rotation map and the performance explorer — merged into one page with the sector cycle map and the whole-market rotation desk.</p>
 <p><a href="sector_central.html#actnow-section">Open Sector Intelligence →</a></p>
 </main>
-<script>location.replace("sector_central.html#actnow-section")</script>
+<script>
+if(location.hash&&location.hash.startsWith('#theme-')){location.replace('sector_central.html'+location.hash)}
+else{location.replace("sector_central.html#actnow-section")}
+</script>
 </body>
 </html>

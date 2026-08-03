@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T01:19:10.767642+00:00",
-  "count": 631,
+  "generated_at": "2026-08-03T04:34:36.406041+00:00",
+  "count": 640,
   "institutions": [
     "Amova",
     "Apollo",
@@ -289,6 +289,43 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-npqf72vsgni-5296ae",
+      "title": "USDZAR",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:58:39Z",
+      "summary_points": [
+        "**ZAR Strength Drivers**: Fitch upgrade, fiscal consolidation, 3.2% ZAR yield carry, gold >$4k supporting rand despite SARB hold - **Inflation-Policy Mismatch**: SARB held rates at 7.00% despite 5.0% headline inflation (vs 4.7% expected), services inflation at 5.2% - **GDP Revision**: 2026 growth revised down to 1.3% (from 1.6%), SARB growth forecast cut to 1.2% - **USDZAR Forecasts**: Medium-term path 16.80-16.20 through 2027 despite near-term geopolitical/Fed headwinds - **Key SARB Catalysts**: Data releases (Sept 23, Nov 19) on GDP, inflation expectations, policy outlook"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ikrwglzkpsd-653769",
+      "title": "USDJPY",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:58:25Z",
+      "summary_points": [
+        "**MoF Intervention Unpredictability**: Japan’s MoF intervention caps near-term USDJPY upside but fails to reverse structural yen weakness; lack of \"final warning\" heightens intervention unpredictability, deterring speculative positioning and triggering short-JPY liquidation.",
+        "**Fed Policy Dominance & Downside Risk**: Revised Fed forecasts (162/160/158) dominate USDJPY dynamics; base case (softer US data) likely to weaken USDJPY, but Fed credibility erosion could push rates to 150-152.",
+        "**Yield Divergence Fundamentals**: US-Japan 5-yr yield divergence (since Oct 2024) reflects Japan’s fiscal outlook, amplifying USDJPY volatility as stretched speculative positioning may unwind if Fed lags.",
+        "**Critical Trade Levels**: Sell USDJPY ≥163 (1-mo horizon) for USD-based portfolios; JPY-based portfolios target AUDJPY ≤110/NZDJPY ≤92 amid low Japanese money rates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-e6ywbs1jblw-bb70a0",
       "title": "Weekly viewpoints",
       "institution": "UBS",
@@ -310,6 +347,46 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-fgnrqel6xpr-6837ee",
+      "title": "Blog",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:57:10Z",
+      "summary_points": [
+        "**Fed Communication Gap**: 34% of households unaware of Fed's mandate (2022 Ipsos), with inflation expectations below 2% occurring only 8 months in 48 years (U-M survey), undermining policy transmission.",
+        "**Policy Efficacy Risk**: Misaligned public understanding of Fed targets reduces monetary policy effectiveness, creating market uncertainty due to low engagement with Fed communications.",
+        "**Asset Tier Collapse Risk**: Equity \"Most Attractive\" and \"Least Attractive\" tiers collapse into \"Unattractive\" under three-tier portfolio construction, invalidating tactical allocation logic."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zcedaloqolt-b8ef16",
+      "title": "Emerging market bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:57:06Z",
+      "summary_points": [
+        "**Fitch AA Watch Negative**: Fitch placed Qatar’s AA rating on credit watch negative due to security uncertainty, prolonged conflict risks, and energy infrastructure threats (Ras Laffan attack), triggering deteriorating outlook for sovereign, banks, and Ooredoo.",
+        "**LNG Export Capacity Drop**: 17% decline in LNG export capacity from Ras Laffan attack; IMF revised 2026 GDP forecast to 8.6% (from 9.5%), reflecting hydrocarbon dependency risks and North Field expansion delays.",
+        "**Bank Dividend Suspensions**: Key banks (QCB, QNB) suspended dividends amid cost pressures, deposit competition, and geopolitical risks; QCB announced liquidity facility/loan deferral despite solid capitalization (avg CET1 16.1%).",
+        "**Geopolitical-Driven Profit Declines**: Banks reported mixed results (e.g., CBQ net profit down 19.6% y/y, QNB net profit +3% y/y but pressured by conflict), with Ooredoo net profit down 16.1% q/q due to legal provisions and conflict.",
+        "**Critical Rating Alignment**: S&P/Moody's/Fitch ratings (AAA to D) and credit quality tiers (BBB- = lowest Investment Grade, BB+ = highest Speculative Grade) are essential for EM bond risk stratification and portfolio allocation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-ozmkycijd1m-13d85a",
       "title": "Japanese economy",
       "institution": "UBS",
@@ -327,6 +404,109 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wpjerysqtlm-ab261e",
+      "title": "Financial Capital Navigator",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:55:56Z",
+      "summary_points": [
+        "**Credit Concentration Risk**: 17/17 bonds rated BBB- (S&P) or BBB+ (Moody's), indicating near-investment grade exposure with elevated downgrade risk, particularly for perpetual structures.",
+        "**Perpetual Structure Dominance**: 100% of bonds are perpetual (T1/T2), amplifying interest rate sensitivity and duration risk, compounded by coupon deferrable features across all instruments.",
+        "**Coupon Deferral Prevalence**: 82% of bonds feature \"coupon deferrable: yes,\" with yield-to-call (5-7%) significantly exceeding yield-to-maturity (1.2-1.7%), signaling high call risk and deferred payment exposure.",
+        "**EUR/GBP Yield Disparity**: GBP bonds yield 5.8–7.1% vs.",
+        "EUR bonds' 0.7–5.2%, driven by currency risk and credit quality (BBB-rated bonds like La Mondiale command higher yields)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 80,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pcoxbejte46-10d8d1",
+      "title": "UBS Equity Preference List European Automobiles 2026 07 31",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:54:58Z",
+      "summary_points": [
+        "**Concentration Risk**: 35% Ferrari + 45% German automakers/suppliers (BMW, Porsche, Mercedes, Continental) creates severe single-stock/region exposure; France (Michelin, Valeo) adds minimal diversification.",
+        "**Geopolitical Tariff Impact**: US-EU 15% levy on EU auto imports (10% US export exemption) = 10% profit hit for US-exposed firms; EU \"Made in EU\" Act intensifies China competition.",
+        "**Valuation Discount**: Sector at 0.5x PB (vs 15-yr avg 0.9x); Ferrari at 7x 2027 P/E, Continental at 10x 2027 P/E—undemanding vs peers amid restructuring.",
+        "**Ferrari's Pricing Power**: Unique supply tightness and brand strength sustain margins; EV roadmap (40% hybrids by 2030) leverages high plug-in demand (42% FY25).",
+        "**EU Policy Shift**: \"Made in EU\" Act and CO₂ regulations accelerate EV adoption (Europe); US policy delays (incentives expire Sept 2025) risk electrification timeline."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-m29ihkzhpyr-e92c62",
+      "title": "UBS Equity Preference List Beneficiaries of Japan s inflation 2026 07 31",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:54:30Z",
+      "summary_points": [
+        "**Japan Inflation Catalyst**: Sustainable 30-yr high inflation drives corporate governance reforms, portfolio optimization, and preference for high ROE stocks with buyback potential (e.g., Kokusai Electric added, East Japan Railway removed).",
+        "**Semiconductor Equipment Leaders**: Advantest (70% SoC tester share, AI/ASIC demand), CKD (SPE leader, 40-50% revenue), and Kokusai Electric (50% global batch deposition) benefit from AI capex cycles; risks include semiconductor slowdown and yen volatility.",
+        "**BoJ Policy Tailwinds**: Rate hikes (50bps to 1.5%) boost bank ROE (Mitsubishi UFJ, Resona) via loan demand and net interest margins; key risk: BoJ rate hike shortfall or global slowdown.",
+        "**Defense Policy Catalyst**: Mitsubishi Heavy Industries gains from Takaichi administration’s defense spending rise (1.8%→2% GDP by 2027) and nuclear policy support; geopolitical tailwinds amid Middle East conflict.",
+        "**Yen Appreciation Risk**: Cross-cutting risk for all Japanese holdings (e.g., CKD, Daifuku, Murata), threatening margins and earnings despite inflation benefits."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hcxyltj8a9c-11397c",
+      "title": "What role can gold play in portfolios",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:54:10Z",
+      "summary_points": [
+        "**Structural Support Targets**: Near-term pressure from strong US data, higher real yields, and firmer USD offset by central bank demand and global diversification, supporting $4,600/oz end-year price target and $5,200/oz by June 2027.",
+        "**Strategic Entry Zone**: Pullbacks to $3,850–4,000/oz present undervalued entry points, leveraging gold’s diversification benefits during equity stress, geopolitical shocks, and weaker fiat currencies.",
+        "**Diversification Hedge**: Gold serves as critical portfolio hedge during equity market volatility and geopolitical risks, with near-term weakness viewed as a reset, not a broken trend.",
+        "**Long-Term Price Projection**: Structural demand fundamentals (central bank buying, diversification) underpin $5,200/oz target by mid-2027, reinforcing strategic allocation despite short-term headwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wg00xnqlvcr-b959c6",
+      "title": "Blog",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:53:57Z",
+      "summary_points": [
+        "**Structural Inflation Breakpoint**: Quandt-Andrews test confirms Q4 2022 structural break in past inflation coefficient (p=0.0339), signaling persistent post-pandemic inflation dynamics with shocks now lasting longer.",
+        "**Food/Fuel Shock Persistence**: VAR analysis shows food/fuel price shocks generate more persistent core inflation effects (peaking at 4-5 quarters, upper CI 0.75 vs.",
+        "gas’s 0.40), indicating structural change in transmission.",
+        "**Monetary Policy Implications**: Slower shock dissipation requires prolonged restrictive policy (Selic likely 14% in Dec 2023), elevating policy uncertainty and delaying disinflation convergence to target."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },

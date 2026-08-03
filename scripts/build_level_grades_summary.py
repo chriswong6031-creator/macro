@@ -86,6 +86,11 @@ def summarize(df: pd.DataFrame, root: str | None) -> dict | None:
     if len(boards) < MIN_BOARDS:
         return None
 
+    # R2.4b columns are additive: a pre-R2.4b parquet simply lacks them and every
+    # null/intraday field degrades to absent — never invented.
+    has_null = "null_held" in sub.columns
+    has_pierce = "pierce_pct" in sub.columns
+
     roles_out: dict[str, dict] = {}
     for role in SCORED_ROLES:
         r = sub[sub["role"] == role]
@@ -96,7 +101,7 @@ def summarize(df: pd.DataFrame, root: str | None) -> dict | None:
         n_scored = int(len(scored))
         held = int((scored["held"] == True).sum())  # noqa: E712
         ci = wilson_ci(held, n_scored)
-        roles_out[role] = {
+        entry = {
             "nodes": int(len(r)),
             "touched": int(len(touched)),
             "scored": n_scored,
@@ -106,9 +111,68 @@ def summarize(df: pd.DataFrame, root: str | None) -> dict | None:
             # Tier C gate: only a lower bound clear of the coin-flip null earns a claim.
             "beats_null": bool(ci and ci[0] > NULL_P) if n_scored else None,
         }
+        if has_null:
+            # equidistant-mirror null: the same close-side hold test on the strike
+            # mirrored across the board spot — distance information, zero positioning.
+            # Two honesty constraints on the verdict:
+            #   (1) the null's rate carries its OWN sampling error, so the gate is
+            #       interval separation — real Wilson LOWER must clear the null's
+            #       Wilson UPPER (comparing the lower bound to the null's raw rate
+            #       would let a lucky small-n null hand out spurious edges);
+            #   (2) the mirror sits on the OPPOSITE side of spot and is touched on
+            #       different sessions, so this is a between-sample comparison that
+            #       also absorbs up/down asymmetry — the side-matched null is the
+            #       prior-day extreme (boards.prevday_null). The payload's `null`
+            #       string discloses both.
+            nn = r[r["null_held"].notna()]
+            n_null = int(len(nn))
+            null_held_k = int((nn["null_held"] == True).sum())  # noqa: E712
+            p_null = (null_held_k / n_null) if n_null else None
+            nci = wilson_ci(null_held_k, n_null)
+            entry["null_equidistant"] = {
+                "scored": n_null, "held": null_held_k, "p_hold": _r4(p_null),
+                "ci95": [_r4(nci[0]), _r4(nci[1])] if nci else None,
+            }
+            entry["beats_equidistant_null"] = (
+                bool(ci and nci and ci[0] > nci[1]) if (n_scored and n_null) else None
+            )
+        if has_pierce:
+            pp = pd.to_numeric(touched["pierce_pct"], errors="coerce").dropna()
+            entry["median_pierce_pct"] = _r4(pp.median()) if len(pp) else None
+        roles_out[role] = entry
 
     flip = sub[(sub["role"] == "flip") & (sub["touched"] == True)]  # noqa: E712
     flip_moves = pd.to_numeric(flip["post_touch_move_pct"], errors="coerce").dropna()
+
+    def _board_rate(col: str) -> dict | None:
+        """{rate, n} over boards where the column carries a verdict; None pre-R2.4b."""
+        if col not in boards.columns:
+            return None
+        s = boards[boards[col].notna()][col]
+        if not len(s):
+            return None
+        return {"rate": _r4((s == True).mean()), "n": int(len(s))}  # noqa: E712
+
+    boards_out = {
+        "n": int(len(boards)),
+        "wall_contained_rate": _r4((boards["wall_contained"] == True).mean()),  # noqa: E712
+        "band_contained_rate": _r4((boards["band_contained"] == True).mean()),  # noqa: E712
+    }
+    # R2.4b intraday variants + the prior-day structural null (absent on old rows)
+    wr = _board_rate("wall_range_contained")
+    bc = _board_rate("band_close_contained")
+    if wr is not None:
+        boards_out["wall_range_contained"] = wr
+    if bc is not None:
+        boards_out["band_close_contained"] = bc
+    pdv = {k: v for k, v in {
+        "high_held": _board_rate("pd_high_held"),
+        "low_held": _board_rate("pd_low_held"),
+        "range_contained_close": _board_rate("pd_range_contained_close"),
+        "range_contained_range": _board_rate("pd_range_contained_range"),
+    }.items() if v is not None}
+    if pdv:
+        boards_out["prevday_null"] = pdv
 
     dates = sorted(sub["session_date"].dropna().unique())
     return {
@@ -121,22 +185,23 @@ def summarize(df: pd.DataFrame, root: str | None) -> dict | None:
             "sessions": len(dates),
             "requested_sessions": WINDOW_SESSIONS,
         },
-        "boards": {
-            "n": int(len(boards)),
-            "wall_contained_rate": _r4((boards["wall_contained"] == True).mean()),  # noqa: E712
-            "band_contained_rate": _r4((boards["band_contained"] == True).mean()),  # noqa: E712
-        },
+        "boards": boards_out,
         "roles": roles_out,
         "flip": {
             "touched": int(len(flip)),
             "mean_abs_post_move_pct": _r4(flip_moves.abs().mean()) if len(flip_moves) else None,
         },
-        "null": "coin-flip 0.5 on the two-sided hold definition; equidistant and "
-                "prior-day-extreme nulls arrive with R2.4b",
+        "null": "coin-flip 0.5 on the two-sided hold definition; where the store carries "
+                "them (R2.4b), each role also reports the equidistant-mirror null and each "
+                "board the prior-day-extreme null — a level only earns a claim by beating "
+                "its null, never by its rate alone. beats_equidistant_null is interval "
+                "separation (real Wilson lower > null Wilson upper). The mirror null is "
+                "measured on opposite-side touches (different sessions), so it also absorbs "
+                "up/down asymmetry — the side-matched null is the prior-day extreme",
         "coverage_note": None if root else
-            "Aggregate across every graded root (single names). Index anchors are not "
-            "yet in the grading lane — a consumer showing this for an uncovered root "
-            "must label it as universe context, not that root's record.",
+            "Aggregate across every graded root. A consumer showing this for a root "
+            "without its own card must label it as universe context, not that "
+            "root's record.",
         "authority_tier": "display",
     }
 
