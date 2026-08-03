@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T13:20:44.324830+00:00",
-  "count": 666,
+  "generated_at": "2026-08-03T13:51:10.184008+00:00",
+  "count": 667,
   "institutions": [
     "Alger",
     "Amova",
@@ -184,6 +184,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-olxnsycycqd-97c98d",
+      "title": "August 2026",
+      "institution": "Week Ahead",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:02:17Z",
+      "summary_points": [
+        "Document Missing**: Source document not provided for extraction; critical data unavailable for analysis **Fundamentals Gap**: No fundamental data (earnings, revenue, margins) included to assess company/sector health **Risk Factor Omission**: Key risk factors (geopolitical, policy shifts, flow data) absent from input list"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
       "language": "en",
       "needs_metadata": false
     },
