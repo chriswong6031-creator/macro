@@ -750,7 +750,7 @@ def _sample_ohlcv(n: int = 60, base: float = 100.0):
     return dates, o, h, lo, c, v
 
 
-_BUTTON_LABEL = "Start free 14-day trial"
+_BUTTON_LABEL = "Try Pro free for 7 days"
 _BUTTON_GRADIENT = "bb_btn_"
 _URL_LOCKUP = "mastermind-x.com"
 

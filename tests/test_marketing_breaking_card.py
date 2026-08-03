@@ -231,7 +231,7 @@ def test_ticker_down_color_and_cap():
 
 def test_cta_present_by_default():
     svg = render_breaking_card(_CPI, "Reuters", "wire", "2026-07-19T14:32:00Z")
-    assert "14-day" in svg
+    assert "Try Pro free for 7 days" in svg  # the REAL trial: Pro 7-day; 14-day was a false claim (operator catch 2026-08-03)
     assert "mastermind-x.com" in svg
 
 

@@ -53,7 +53,7 @@ log = logging.getLogger(__name__)
 # the v1 line chart (render_signal_chart_png) while the admin preview and the
 # outbox artifact showed the v2 candlestick SVG. The two drifted: v2 grew
 # candles, volume/MACD subpanels, the logo overlay and the footer marketing bar
-# (mastermind-x.com + "Start free 14-day trial"); the PNG never followed. The
+# (mastermind-x.com + "Try Pro free for 7 days"); the PNG never followed. The
 # account therefore posted a plain line chart with no URL and no CTA while the
 # mockup promised the full card. Rasterizing the EXACT SVG we already rendered
 # removes the second renderer, so preview and post cannot diverge again.
@@ -1259,7 +1259,7 @@ def _brand_bar(
     show_url: bool = True,
     show_button: bool = True,
     tagline: str | None = "AI stock signals",
-    button_label: str = "Start free 14-day trial",
+    button_label: str = "Try Pro free for 7 days",
     copyright_text: str = "© 2026 Mastermind",
     band_h: int = 46,
 ) -> tuple[str, str]:

@@ -632,7 +632,7 @@ def build_card(
     Returns an outbox media entry ({kind, path, chart_id, ticker, media_url,
     media_png_path}) or None when the chart cannot be built. Goes through
     media_publish.publish_card, so the PNG X receives is a raster of this exact
-    SVG — footer marketing bar (mastermind-x.com + "Start free 14-day trial")
+    SVG — footer marketing bar (mastermind-x.com + "Try Pro free for 7 days")
     included. Before 2026-07-26 this lane attached NO media at all: every post
     went out as bare text.
     """

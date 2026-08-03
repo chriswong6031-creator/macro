@@ -133,7 +133,7 @@ def publish_card(
     a raster of the SAME SVG the Content Studio preview shows. Before the
     2026-07-26 incident each lane rastered its own lookalike and they drifted:
     the preview promised the full candlestick card with the mastermind-x.com
-    footer + "Start free 14-day trial" button, the account posted a bare line
+    footer + "Try Pro free for 7 days" button, the account posted a bare line
     chart with neither. One seam, one renderer, no drift.
 
     Writes:

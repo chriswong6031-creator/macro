@@ -2650,7 +2650,7 @@ def _attach_chart_media(
     THE POSTED IMAGE IS THE PREVIEWED IMAGE (2026-07-26 incident fix). The PNG is
     a raster of `fc["svg"]` — the exact artwork the Content Studio preview and
     the outbox artifact show, footer marketing bar (mastermind-x.com + "Start
-    free 14-day trial") included. Before this, the publish path rendered a
+    try Pro free for 7 days") included. Before this, the publish path rendered a
     SEPARATE hand-drawn PIL lookalike of the older v1 line chart, so the account
     posted a bare line chart with no URL and no CTA while the mockup promised the
     full candlestick card. Two renderers = guaranteed drift; there is now one.
