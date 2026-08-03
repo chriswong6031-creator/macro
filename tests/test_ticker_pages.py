@@ -39,8 +39,10 @@ from scripts.build_ticker_pages import (  # noqa: E402
     _build_why_moving,
     _build_ownership,
     _build_financials,
+    _build_earnings,
     _build_ladder,
     _build_meta,
+    _build_stats,
     _day_change,
     _range52,
 )
@@ -622,6 +624,37 @@ class TestIsStale:
 
     def test_none_is_stale(self):
         assert is_stale(None)
+
+
+class TestNextEarningsDate:
+    def test_past_date_is_never_presented_as_next_earnings(self):
+        yesterday = (date.today() - timedelta(days=1)).isoformat()
+        blob = {
+            "earnings": {
+                "next_date": yesterday,
+                # A stale snapshot value must not override the live calendar.
+                "days_to_next": 14,
+                "last_date": (date.today() - timedelta(days=90)).isoformat(),
+            }
+        }
+
+        earnings = _build_earnings(blob)
+        stats = _build_stats("AAPL", blob, {})
+
+        assert earnings["next_date"] == ""
+        assert earnings["days_to_next"] is None
+        assert stats["next_earnings"] == ""
+
+    def test_future_date_recomputes_the_live_countdown(self):
+        future = (date.today() + timedelta(days=3)).isoformat()
+        blob = {"earnings": {"next_date": future, "days_to_next": -9}}
+
+        earnings = _build_earnings(blob)
+        stats = _build_stats("AAPL", blob, {})
+
+        assert earnings["next_date"] == future
+        assert earnings["days_to_next"] == 3
+        assert stats["next_earnings"] == f"{future} (3d)"
 
 
 class TestBuildSitemap:
