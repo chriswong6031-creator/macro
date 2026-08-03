@@ -547,7 +547,8 @@ artifacts:
     path: data/us_board_ledger/retro_grades.parquet
     format: parquet
     producer: scripts/grade_us_board.py
-    known_extra_writers: []
+    known_extra_writers:
+      - "scripts/stamp_options_state.py — nightly options-state + tape-flow stamp pass (runs after grade_us_board in daily.yml): schema-unions and fills the nullable opt_* columns from engine/options_stamp.STAMP_COLS (incl. W-OVC keys opt_vanna_relief, opt_front7_charm_share, opt_root_class; registered 2026-08-02 after the six-week silent-null repair) + engine/tape_flow_stamp.TAPE_FLOW_STAMP_COLS; no-overwrite per family, never touches grading columns (A9)"
     owner_program: setup-species
     cadence: daily-engine
     storage: git
@@ -570,7 +571,7 @@ artifacts:
       - scripts/us_board_studies.py
       - scripts/validate_options_entry.py
     external_consumers: []
-    notes: "Producer: scripts/grade_us_board.py:11 append-only per as_of, lane, ticker, horizon."
+    notes: "Producer: scripts/grade_us_board.py:11 append-only per as_of, lane, ticker, horizon. Stamp keys: scripts/stamp_options_state.py additionally writes the nullable options-state columns (W1.3/W-C/W-OVC families incl. opt_vanna_relief / opt_front7_charm_share / opt_root_class) and tape-flow columns; a stamp column 100% null while its display twin (options-entry-state) is populated is the silent-null defect signature guarded by engine/options_stamp.DISPLAY_TWIN_COLS (tests/test_options_stamp.py + nightly ::warning)."
 
   # SA-W5: v2 parallel grader lane artifacts (isolated from main lane)
   us-board-ledger-snapshots-v2:
