@@ -208,17 +208,6 @@ def _basket_universe(existing: set[str]) -> list[tuple]:
     return rows
 
 
-def _ordered_groups(universe: list[tuple]) -> list[str]:
-    """Board section order: curated groups first (in UNIVERSE order), then the
-    Theme · <category> groups alphabetically."""
-    core, themes = [], []
-    for _, _, _, _, grp in universe:
-        bucket = themes if grp.startswith("Theme · ") else core
-        if grp not in bucket:
-            bucket.append(grp)
-    return core + sorted(themes)
-
-
 # Index/ETF GEX is the *validatable* slice — the dealer long-call/short-put SIGN is
 # robust for broad indices, fragile for single names (LIMITATIONS.md) — so the daily
 # archive snapshot keeps that slice plus the market-wide CBOE SKEW / put-call context.
@@ -456,20 +445,20 @@ def main() -> int:
     from lib.gex_state_index import write_index as _write_gex_state_index
     _write_gex_state_index(gex_state_dir)
 
-    built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    from engine.i18n import td, tr
+    # OIP W1.6-B: gex.html is a redirect stub into the workspace's Ticker mode.
+    # EVERY JSON above is unchanged and still law — site/gex/<KEY>.json and
+    # index.json are exactly what the workspace's own Ticker mode fetches, and
+    # the gex_state payloads feed the screener/watchlist. Only the HTML step
+    # moved, so the stub's zero-context render retires `built`, the i18n env
+    # globals, and the group/default-key derivation with the page they fed.
+    # `coverage` above is deliberately NOT deleted even though nothing reads it
+    # now: tests/test_options_coverage_object.py pins its construction by source
+    # text (coverage["__all__"], coverage["coverage_v1"]) as this builder's half
+    # of the options family's shared coverage schema.
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
-    env.globals.update(td=td, tr=tr)
-    present = {m["grp"] for m in manifest}
-    groups = [g for g in _ordered_groups(universe) if g in present]
-    keys = {m["key"] for m in manifest}
-    default_key = "SPY" if "SPY" in keys else manifest[0]["key"]
-    html = env.get_template("gex.html.j2").render(
-        manifest=manifest, groups=groups, built=built, default_key=default_key,
-        coverage=coverage, coverage_json=json.dumps(coverage, default=float),
-        manifest_json=json.dumps(manifest, default=float))
-    write_page(site / "gex.html", html)
-    log.info("gex: wrote %s/gex.html + %d payloads (%d of %d symbols had liquid options)",
+    write_page(site / "gex.html", env.get_template("gex.html.j2").render())
+    log.info("gex: wrote %s/gex.html (redirect stub) + %d payloads "
+             "(%d of %d symbols had liquid options)",
              site, len(manifest), len(manifest), len(rows))
     return 0
 

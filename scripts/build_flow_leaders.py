@@ -1107,7 +1107,10 @@ def build(
         try:
             env = Environment(loader=FileSystemLoader(str(tpl_root)), autoescape=False)
             tpl = env.get_template("flow_leaders.html.j2")
-            rendered = tpl.render(flow_leaders=payload)
+            # OIP W1.6-B: the template is a redirect stub into the workspace's
+            # Leaders mode and takes no context. leaders.json above is unchanged
+            # and is what that mode reads.
+            rendered = tpl.render()
             # write_page, not write_text — the template carries no data-base shim,
             # so a raw write drops the R2 reroute in any standalone builder run
             # (the stub write above already goes through write_page).

@@ -876,7 +876,13 @@ def build() -> dict:
 
 
 def _render_html(payload: dict, site_dir: Path) -> None:
-    """Render flow_desk.html from template."""
+    """Render flow_desk.html — a redirect stub into the workspace's Flow mode.
+
+    OIP W1.6-B. `payload` is no longer read: the desk itself lives in
+    options.html#flow now, fed by the flow_desk.json this builder still writes
+    above. The argument stays so callers are unchanged, and so the day this page
+    ever needs content again there is somewhere to put it.
+    """
     tpl_dir = config.ROOT / "templates"
     env = Environment(loader=FileSystemLoader(str(tpl_dir)), autoescape=False)
     try:
@@ -884,7 +890,7 @@ def _render_html(payload: dict, site_dir: Path) -> None:
     except Exception as e:  # noqa: BLE001
         log.error("flow_desk: template not found: %s", e)
         return
-    rendered = tpl.render(flow_desk=payload)
+    rendered = tpl.render()
     # write_page, not write_text: flow_desk.html.j2 carries no data-base shim of
     # its own, so a raw write ships the page with its per-ticker fetches pointed
     # at Pages instead of R2 in any run outside the render lane's
