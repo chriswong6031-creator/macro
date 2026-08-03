@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T08:05:06.597391+00:00",
-  "count": 650,
+  "generated_at": "2026-08-03T08:20:04.233882+00:00",
+  "count": 651,
   "institutions": [
     "Alger",
     "Amova",
@@ -866,6 +866,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4qbn7ukale5-1571c6",
+      "title": "ING Think eurozone inflation only increased modestly in july",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T11:00:39Z",
+      "summary_points": [
+        "**Eurozone inflation resilience**: Headline inflation rose to 2.9% in July despite Middle East conflict and energy price spikes, indicating persistent underlying inflationary pressures.",
+        "**Core inflation acceleration**: Core inflation (excluding energy and food) reached 2.5%, driven by surging fuel prices to multi-year highs, signaling sustained cost-push pressures.",
+        "**Goods inflation outlook**: Goods inflation expected to rise further due to fuel price surges, posing a key risk to corporate margins and central bank policy decisions.",
+        "**Geopolitical inflation risk**: Middle East conflict and energy volatility continue to act as significant inflation catalysts, complicating monetary policy normalization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
