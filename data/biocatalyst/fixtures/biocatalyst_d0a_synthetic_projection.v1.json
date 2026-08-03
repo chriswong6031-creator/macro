@@ -1,0 +1,12 @@
+{
+  "projection_id": "biocatalyst_d0a_synthetic_projection_v1",
+  "synthetic_only": true,
+  "generation_id": "synthetic-d0a-v1",
+  "records": [
+    {"nct_id": "NCT00000001", "title": "AUR-101 protocol", "phase": "PHASE2", "status": "RECRUITING", "primary_completion": {"value": "2026-08", "precision": "MONTH"}},
+    {"nct_id": "NCT00000002", "title": "SYN-44 protocol", "phase": "PHASE2", "status": "ACTIVE_NOT_RECRUITING", "primary_completion": {"value": "2026-08-09", "precision": "DAY"}},
+    {"nct_id": "NCT00000003", "title": "NWK-9 protocol", "phase": "PHASE1|PHASE2", "status": "RECRUITING", "primary_completion": null},
+    {"nct_id": "NCT00000004", "title": "OBI-7 protocol", "phase": "PHASE3", "status": "COMPLETED", "primary_completion": {"value": "2026-Q3", "precision": "QUARTER"}}
+  ],
+  "provenance": {"source": "synthetic design fixture", "not_for_api_or_model_use": true}
+}

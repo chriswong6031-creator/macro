@@ -1,0 +1,19 @@
+{
+  "receipt_id": "biocatalyst_d0a_reference_capture_v1",
+  "state": "reference_only_not_browser_verified",
+  "purpose": "Records the deterministic design-reference render only. This is not a production browser-verification receipt and cannot approve a user-facing release.",
+  "reference_truth_class": "draft_contract_state_plate",
+  "portable_across_browser_or_font_environments": false,
+  "renderer": {"name": "deterministic_svg_to_png_sips", "entrypoint": "mockups/refs/biocatalyst/d0a/render_reference.py", "platform": "macos", "device_scale_factor": 1},
+  "fixture": {"path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json", "synthetic_only": true},
+  "capture_timestamp": "2026-08-02T16:00:00Z",
+  "browser_engine": null,
+  "browser_version": null,
+  "font_bundle": "macos_system_font_fallback",
+  "run_id": null,
+  "reviewer": null,
+  "approval": "pending_fable_or_opus_design_owner",
+  "non_authorizing": true,
+  "cell_count": 24,
+  "blocked_by": ["named_human_design_approval", "production_shaped_browser_capture", "D0b_state_harness"]
+}

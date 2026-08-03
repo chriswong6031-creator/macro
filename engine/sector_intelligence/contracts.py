@@ -61,6 +61,9 @@ _TRIAL_HISTORY_READ_MODEL_CONTRACT_ID = "trial_history_read_model.v1"
 _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID = (
     "biocatalyst_launch_slo_manifest.v1"
 )
+_BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID = (
+    "biocatalyst_product_acceptance_manifest.v1"
+)
 _SOURCE_RECORD_CONTRACT_ID = "source_record.v1"
 _EVIDENCE_CLAIM_CONTRACT_ID = "evidence_claim.v1"
 _FEATURE_SNAPSHOT_CONTRACT_ID = "feature_snapshot.v1"
@@ -3047,6 +3050,503 @@ def _fda_application_dossier_issues(document: Mapping[str, Any]) -> list[Validat
     return issues
 
 
+def _biocatalyst_product_repo_file(
+    repo_root: Path, relative_path: Any
+) -> Path | None:
+    """Resolve a manifest-owned file without accepting traversal or an external link."""
+
+    if not isinstance(relative_path, str) or not relative_path or "\\" in relative_path:
+        return None
+    unresolved = repo_root.resolve() / relative_path
+    try:
+        unresolved.relative_to(repo_root.resolve())
+    except ValueError:
+        return None
+    # A content-addressed acceptance artifact must name a repository file, not
+    # a symlink whose meaning can change outside the manifest review. Rejecting
+    # every symlink in the declared path is intentional and keeps this validator
+    # equally strict on developer machines and CI checkouts.
+    cursor = unresolved
+    while cursor != repo_root.resolve():
+        if cursor.is_symlink():
+            return None
+        cursor = cursor.parent
+    candidate = unresolved.resolve()
+    try:
+        candidate.relative_to(repo_root.resolve())
+    except ValueError:
+        return None
+    return candidate
+
+
+def _biocatalyst_product_file_binding_issues(
+    binding: Any,
+    *,
+    path: str,
+    repo_root: Path,
+) -> list[ValidationIssue]:
+    """Bind a committed design input to exact bytes, never a mutable label."""
+
+    if not isinstance(binding, Mapping):
+        return []  # JSON Schema owns the shape failure.
+    relative_path = binding.get("path")
+    target = _biocatalyst_product_repo_file(repo_root, relative_path)
+    if target is None or not target.is_file():
+        return [
+            ValidationIssue(
+                f"{path}.path",
+                "product_acceptance.file_unavailable",
+                "bound artifact must be a committed regular file below the repository root",
+            )
+        ]
+    expected = binding.get("sha256")
+    actual = hashlib.sha256(target.read_bytes()).hexdigest()
+    if isinstance(expected, str) and expected != actual:
+        return [
+            ValidationIssue(
+                f"{path}.sha256",
+                "product_acceptance.file_hash",
+                "bound artifact SHA-256 must match exact committed bytes",
+            )
+        ]
+    return []
+
+
+def _biocatalyst_product_acceptance_manifest_issues(
+    document: Mapping[str, Any], repo_root: Path
+) -> list[ValidationIssue]:
+    """Fail-closed validation for the D0a finite visual/performance contract.
+
+    The validator proves only that the *draft corpus* is immutable, finite, and
+    internally coherent. It deliberately cannot confer product release authority:
+    an approved candidate remains blocked until a separate trusted browser receipt
+    verifier exists in D0b/O2.
+    """
+
+    issues: list[ValidationIssue] = []
+    payload = {
+        key: value
+        for key, value in document.items()
+        if key not in {"manifest_id", "content_sha256"}
+    }
+    try:
+        digest = canonical_json_sha256(payload)
+    except ContractError:
+        return [
+            ValidationIssue(
+                "$",
+                "product_acceptance.canonical_payload",
+                "product-acceptance manifests must be canonicalizable finite JSON",
+            )
+        ]
+    if document.get("content_sha256") != digest:
+        issues.append(
+            ValidationIssue(
+                "$.content_sha256",
+                "product_acceptance.hash",
+                "content_sha256 must bind canonical payload excluding manifest_id and content_sha256",
+            )
+        )
+    expected_id = f"biocatalyst_product_acceptance_{digest[:24]}"
+    if isinstance(document.get("manifest_id"), str) and document.get("manifest_id") != expected_id:
+        issues.append(
+            ValidationIssue(
+                "$.manifest_id",
+                "product_acceptance.identity",
+                "manifest_id must be derived from the canonical content SHA-256",
+            )
+        )
+    if document.get("supersedes_manifest_id") == document.get("manifest_id") and document.get("manifest_id") is not None:
+        issues.append(
+            ValidationIssue(
+                "$.supersedes_manifest_id",
+                "product_acceptance.self_supersession",
+                "a product-acceptance manifest cannot supersede itself",
+            )
+        )
+    predecessor_id = document.get("supersedes_manifest_id")
+    predecessor_hash = document.get("supersedes_manifest_content_sha256")
+    if isinstance(predecessor_id, str) and isinstance(predecessor_hash, str):
+        if predecessor_id != f"biocatalyst_product_acceptance_{predecessor_hash[:24]}":
+            issues.append(
+                ValidationIssue(
+                    "$.supersedes_manifest_content_sha256",
+                    "product_acceptance.predecessor_identity",
+                    "superseded manifest ID must derive from the declared predecessor digest",
+                )
+            )
+
+    design_path = _biocatalyst_product_repo_file(repo_root, document.get("design_spec_ref"))
+    if design_path is None or not design_path.is_file():
+        issues.append(
+            ValidationIssue(
+                "$.design_spec_ref",
+                "product_acceptance.file_unavailable",
+                "design spec must be a committed regular file below the repository root",
+            )
+        )
+    elif document.get("design_spec_sha256") != hashlib.sha256(design_path.read_bytes()).hexdigest():
+        issues.append(
+            ValidationIssue(
+                "$.design_spec_sha256",
+                "product_acceptance.file_hash",
+                "design spec SHA-256 must match exact committed bytes",
+            )
+        )
+    expected_bound_paths = {
+        "reference_fixture": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
+        "benchmark_corpus": "data/biocatalyst/fixtures/biocatalyst_d0a_benchmark_corpus.v1.json",
+    }
+    for field, expected_path in expected_bound_paths.items():
+        binding = document.get(field)
+        if isinstance(binding, Mapping) and binding.get("path") != expected_path:
+            issues.append(
+                ValidationIssue(
+                    f"$.{field}.path",
+                    "product_acceptance.binding_path",
+                    "this manifest version must bind its declared D0a artifact kind, not another committed file",
+                )
+            )
+        issues.extend(
+            _biocatalyst_product_file_binding_issues(
+                binding, path=f"$.{field}", repo_root=repo_root
+            )
+        )
+
+    performance = document.get("performance")
+    if isinstance(performance, Mapping):
+        artifacts = performance.get("artifacts")
+        if isinstance(artifacts, list):
+            for index, artifact in enumerate(artifacts):
+                issues.extend(
+                    _biocatalyst_product_file_binding_issues(
+                        artifact,
+                        path=f"$.performance.artifacts[{index}]",
+                        repo_root=repo_root,
+                    )
+                )
+
+    visual = document.get("visual")
+    cells = visual.get("cells") if isinstance(visual, Mapping) else None
+    required_states = (
+        set(visual.get("required_state_codes", ()))
+        if isinstance(visual, Mapping) and isinstance(visual.get("required_state_codes"), list)
+        else set()
+    )
+    expected_combinations = {
+        (viewport, theme, language, motion)
+        for viewport in ("desktop", "tablet", "mobile")
+        for theme in ("dark", "light")
+        for language in ("en", "zh")
+        for motion in ("standard", "reduced")
+    }
+    actual_combinations: set[tuple[str, str, str, str]] = set()
+    actual_states: set[str] = set()
+    if isinstance(cells, list):
+        for index, cell in enumerate(cells):
+            if not isinstance(cell, Mapping):
+                continue
+            viewport = cell.get("viewport")
+            if not isinstance(viewport, Mapping):
+                continue
+            name = viewport.get("name")
+            theme = cell.get("theme")
+            language = cell.get("language")
+            motion = cell.get("motion")
+            if all(isinstance(value, str) for value in (name, theme, language, motion)):
+                combo = (name, theme, language, motion)
+                if combo in actual_combinations:
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}]",
+                            "product_acceptance.duplicate_visual_cell",
+                            "viewport/theme/language/motion combination must occur exactly once",
+                        )
+                    )
+                actual_combinations.add(combo)
+                if cell.get("id") != f"d0a_{name}_{theme}_{language}_{motion}":
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].id",
+                            "product_acceptance.visual_cell_identity",
+                            "visual cell ID must exactly derive from its finite matrix coordinates",
+                        )
+                    )
+            state = cell.get("ui_state")
+            if isinstance(state, str):
+                actual_states.add(state)
+            image_path = _biocatalyst_product_repo_file(
+                repo_root, cell.get("reference_png_path")
+            )
+            if image_path is None or not image_path.is_file():
+                issues.append(
+                    ValidationIssue(
+                        f"$.visual.cells[{index}].reference_png_path",
+                        "product_acceptance.reference_unavailable",
+                        "every visual cell needs a committed reference PNG",
+                    )
+                )
+            else:
+                image_bytes = image_path.read_bytes()
+                if cell.get("reference_png_sha256") != hashlib.sha256(image_bytes).hexdigest():
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].reference_png_sha256",
+                            "product_acceptance.reference_hash",
+                            "reference PNG SHA-256 must match exact committed image bytes",
+                        )
+                    )
+                if image_bytes[:8] != b"\x89PNG\r\n\x1a\n" or image_bytes[12:16] != b"IHDR":
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].reference_png_path",
+                            "product_acceptance.reference_png",
+                            "reference image must be a well-formed PNG with an IHDR header",
+                        )
+                    )
+                elif viewport.get("width") != int.from_bytes(image_bytes[16:20], "big") or viewport.get("height") != int.from_bytes(image_bytes[20:24], "big"):
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].viewport",
+                            "product_acceptance.reference_dimensions",
+                            "reference PNG dimensions must exactly match the frozen viewport",
+                        )
+                    )
+            fixture = document.get("reference_fixture")
+            if isinstance(fixture, Mapping):
+                if cell.get("fixture_path") != fixture.get("path") or cell.get("fixture_sha256") != fixture.get("sha256"):
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}]",
+                            "product_acceptance.fixture_binding",
+                            "each visual cell must bind the exact top-level synthetic fixture bytes",
+                        )
+                    )
+            for mask_index, mask in enumerate(cell.get("masks", ())):
+                if not isinstance(mask, Mapping):
+                    continue
+                values = tuple(mask.get(key) for key in ("x", "y", "width", "height"))
+                if not all(isinstance(value, int) and not isinstance(value, bool) for value in values):
+                    continue
+                mask_x, mask_y, mask_width, mask_height = values
+                viewport_width = viewport.get("width")
+                viewport_height = viewport.get("height")
+                if not isinstance(viewport_width, int) or not isinstance(viewport_height, int):
+                    continue
+                if (mask_x + mask_width > viewport_width or mask_y + mask_height > viewport_height or mask_width * mask_height > viewport_width * viewport_height * 0.08):
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].masks[{mask_index}]",
+                            "product_acceptance.unbounded_mask",
+                            "masks must be bounded inside the viewport and cover at most 8% of its area",
+                        )
+                    )
+        if actual_combinations != expected_combinations:
+            issues.append(
+                ValidationIssue(
+                    "$.visual.cells",
+                    "product_acceptance.visual_matrix",
+                    "visual corpus must contain exactly every desktop/tablet/mobile × dark/light × EN/ZH × motion/reduced cell",
+                )
+            )
+        if actual_states != required_states:
+            issues.append(
+                ValidationIssue(
+                    "$.visual.required_state_codes",
+                    "product_acceptance.state_atlas",
+                    "visual cells must cover exactly the finite required state atlas",
+                )
+            )
+    if isinstance(visual, Mapping):
+        artifact = visual.get("artifact")
+        if isinstance(artifact, Mapping) and artifact.get("path") != "mockups/refs/biocatalyst/d0a/artifacts/visual_capture_receipt.v1.json":
+            issues.append(
+                ValidationIssue(
+                    "$.visual.artifact.path",
+                    "product_acceptance.binding_path",
+                    "visual receipt must bind the D0a capture artifact, not another committed file",
+                )
+            )
+        issues.extend(
+            _biocatalyst_product_file_binding_issues(
+                artifact, path="$.visual.artifact", repo_root=repo_root
+            )
+        )
+
+    # The benchmark corpus is a real content-addressed design input. Inspect it rather
+    # than trusting a prose label: a future measured pass must have all dimensions.
+    benchmark = document.get("benchmark_corpus")
+    benchmark_path = (
+        _biocatalyst_product_repo_file(repo_root, benchmark.get("path"))
+        if isinstance(benchmark, Mapping)
+        else None
+    )
+    corpus: Any = None
+    if benchmark_path is not None and benchmark_path.is_file():
+        try:
+            corpus = json.loads(benchmark_path.read_text(encoding="utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.path",
+                    "product_acceptance.benchmark_shape",
+                    "frozen benchmark corpus must be parseable JSON",
+                )
+            )
+    if isinstance(corpus, Mapping):
+        required_corpus_fields = {
+            "projection_generation", "projection_path", "projection_sha256",
+            "primary_endpoints", "search_scenarios", "entitlement_states", "tenant_mix",
+            "environment", "warmup", "browser_device_network_profiles",
+            "measurement_rules", "future_measurement_receipt",
+        }
+        missing_fields = sorted(field for field in required_corpus_fields if field not in corpus)
+        if missing_fields:
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus",
+                    "product_acceptance.benchmark_dimensions",
+                    "benchmark corpus lacks required dimensions: " + ", ".join(missing_fields),
+                )
+            )
+        projection_path = _biocatalyst_product_repo_file(repo_root, corpus.get("projection_path"))
+        if projection_path is None or not projection_path.is_file() or corpus.get("projection_sha256") != hashlib.sha256(projection_path.read_bytes()).hexdigest():
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus",
+                    "product_acceptance.projection_binding",
+                    "projection generation must name a committed synthetic/projection file and its exact SHA-256",
+                )
+            )
+        endpoints = corpus.get("primary_endpoints")
+        if not isinstance(endpoints, list) or not endpoints or any(
+            not isinstance(endpoint, Mapping)
+            or not all(isinstance(endpoint.get(field), str) and endpoint.get(field) for field in ("method", "path", "response_shape"))
+            or not all(isinstance(endpoint.get(field), int) and endpoint.get(field) > 0 for field in ("page_size", "result_cardinality"))
+            for endpoint in endpoints
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus",
+                    "product_acceptance.endpoint_corpus",
+                    "each primary endpoint needs method, path, page size, cardinality, and response shape",
+                )
+            )
+        has_peer_resolver = isinstance(endpoints, list) and any(
+            isinstance(endpoint, Mapping) and endpoint.get("path") == "/api/biocatalyst/v1/trial-peer-sets:resolve"
+            for endpoint in endpoints
+        )
+        if not has_peer_resolver:
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.primary_endpoints",
+                    "product_acceptance.peer_resolver_corpus",
+                    "first visible Trial Peer Matrix performance corpus must name the bounded peer resolver",
+                )
+            )
+        environment = corpus.get("environment")
+        required_environment = {"host_class", "runtime", "process_runtime", "worker_count", "storage_topology", "network_location"}
+        if not isinstance(environment, Mapping) or any(field not in environment for field in required_environment):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.environment",
+                    "product_acceptance.environment_dimensions",
+                    "benchmark must freeze host, process/runtime, worker count, storage topology, and network location",
+                )
+            )
+        profiles = corpus.get("browser_device_network_profiles")
+        if not isinstance(profiles, list) or len(profiles) < 3:
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.browser_device_network_profiles",
+                    "product_acceptance.browser_profiles",
+                    "benchmark must freeze desktop, tablet, and mobile browser/device/network profiles",
+                )
+            )
+
+    approval = document.get("approval")
+    all_cells_approved = isinstance(cells, list) and all(
+        isinstance(cell, Mapping)
+        and cell.get("approval_status") == "approved"
+        and isinstance(cell.get("reviewer_name"), str)
+        and cell.get("browser_verification_state") == "passed"
+        for cell in cells
+    )
+    approval_complete = (
+        isinstance(approval, Mapping)
+        and approval.get("status") == "approved"
+        and isinstance(approval.get("named_reviewer"), str)
+        and isinstance(approval.get("recorded_at"), str)
+    )
+    if not approval_complete or not all_cells_approved:
+        issues.append(
+            ValidationIssue(
+                "$.approval",
+                "product_acceptance.human_approval_pending",
+                "all visual cells and the root manifest require named Fable/Opus design-owner approval",
+            )
+        )
+    if not isinstance(performance, Mapping) or performance.get("state") != "measured_passed":
+        issues.append(
+            ValidationIssue(
+                "$.performance.state",
+                "product_acceptance.performance_not_measured",
+                "a product-acceptance pass requires the frozen performance corpus to be measured",
+            )
+        )
+    if isinstance(corpus, Mapping):
+        receipt = corpus.get("future_measurement_receipt")
+        if not isinstance(receipt, Mapping) or receipt.get("state") != "completed" or any(
+            receipt.get(field) is None
+            for field in (
+                "run_id", "started_at", "completed_at", "raw_samples_path",
+                "summary_code_path", "summary_code_version", "summary_sha256",
+                "pass_fail_digest",
+            )
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus",
+                    "product_acceptance.measurement_receipt_pending",
+                    "a product-acceptance pass requires run ID, timestamps, raw samples, summary code version, and pass/fail digest",
+                )
+            )
+        else:
+            raw_samples = _biocatalyst_product_repo_file(
+                repo_root, receipt.get("raw_samples_path")
+            )
+            summary_code = _biocatalyst_product_repo_file(
+                repo_root, receipt.get("summary_code_path")
+            )
+            summary_sha = receipt.get("summary_sha256")
+            if (
+                raw_samples is None
+                or not raw_samples.is_file()
+                or summary_code is None
+                or not summary_code.is_file()
+                or not isinstance(summary_sha, str)
+                or summary_sha != hashlib.sha256(summary_code.read_bytes()).hexdigest()
+                or not isinstance(receipt.get("pass_fail_digest"), str)
+                or not re.fullmatch(r"[a-f0-9]{64}", receipt["pass_fail_digest"])
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "$.benchmark_corpus",
+                        "product_acceptance.measurement_artifact_binding",
+                        "a measured pass requires committed raw samples, content-addressed summary code, and a fixed pass/fail digest",
+                    )
+                )
+    if document.get("state") == "approved":
+        issues.append(
+            ValidationIssue(
+                "$.state",
+                "product_acceptance.trusted_browser_verifier_unavailable",
+                "generic D0a validation cannot trust a self-described browser capture; D0b/O2 must supply an independent verifier",
+            )
+        )
+    return issues
+
+
 def _contract_semantic_issues(
     contract_id: str, document: Mapping[str, Any], repo_root: Path
 ) -> list[ValidationIssue]:
@@ -3098,6 +3598,8 @@ def _contract_semantic_issues(
         return _history_read_model_issues(document)
     if contract_id == _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID:
         return _biocatalyst_launch_slo_manifest_issues(document, repo_root)
+    if contract_id == _BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID:
+        return _biocatalyst_product_acceptance_manifest_issues(document, repo_root)
     if contract_id == _PAGE_RECEIPT_CONTRACT_ID:
         response = document.get("response")
         issues: list[ValidationIssue] = []
@@ -3291,6 +3793,20 @@ def validate_biocatalyst_launch_slo_manifest(
 
     validate_contract(
         _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID,
+        manifest,
+        repo_root=repo_root,
+    )
+
+
+def validate_biocatalyst_product_acceptance_manifest(
+    manifest: Mapping[str, Any],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Validate the finite D0a acceptance manifest; pending drafts fail closed."""
+
+    validate_contract(
+        _BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID,
         manifest,
         repo_root=repo_root,
     )
