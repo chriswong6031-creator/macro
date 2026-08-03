@@ -1906,3 +1906,49 @@ class TestScheduleFloorAtEnqueue:
         assert enqueue(over, root=tmp_path, max_per_account_day=1) == "cap_exceeded"
         assert over["scheduled_at"] == "2026-07-19T09:00:00Z", over["scheduled_at"]
         assert "scheduled_at_original" not in (over.get("source") or {}), over
+
+
+class TestBriefTriggerFork:
+    """The fact-anchor guard's context-brief exemption keys off a FORKED constant.
+
+    engine/marketing/outbox.py cannot import the radar module that owns the
+    trigger name — the safety-stack fence in that lane's own suite forbids this
+    file from naming it at all, and the module is heavyweight besides. So the
+    string is duplicated, and a duplicated constant needs a guard rather than a
+    comment: a rename on either side would silently re-arm the guard against
+    every two-step brief, which is exactly the ten-test failure this exemption
+    was written to fix.
+    """
+
+    def test_brief_trigger_mirrors_the_radar_lane(self):
+        from engine.marketing import hot_tape
+        from engine.marketing.outbox import BRIEF_TRIGGER
+
+        assert BRIEF_TRIGGER == hot_tape.BRIEF_TRIGGER, (
+            "outbox.BRIEF_TRIGGER has drifted from the radar's BRIEF_TRIGGER; "
+            "the fact-anchor exemption is keyed on this string, so a mismatch "
+            "silently refuses every two-step context brief"
+        )
+
+    def test_the_exemption_is_scoped_to_that_one_trigger(self):
+        """A DIFFERENT trigger dressing the same fact is still refused.
+
+        Without this, "exempt the brief" and "disable the guard" look identical
+        from the passing side — the fan-out defect the guard exists for would
+        walk straight through under any other trigger name.
+        """
+        from engine.marketing.outbox import BRIEF_TRIGGER, _rejection_reason
+
+        ctx = {
+            "ids": set(),
+            "day_counts": {},
+            "fact_anchors": {("2026-08-03", "pct:breaking:MU:8.2"): "ob-parent"},
+            "recent_texts_by_account": {},
+        }
+        text = "$MU is down 8.2% so far today."
+        kwargs = dict(item_id="ob-child", account="flagship", as_of="2026-08-03",
+                      text=text, ctx=ctx, cap=-1, kind="breaking")
+
+        assert _rejection_reason(**kwargs, trigger=BRIEF_TRIGGER) is None
+        assert _rejection_reason(**kwargs, trigger="mover_drop") == "fact_fanout"
+        assert _rejection_reason(**kwargs, trigger="") == "fact_fanout"

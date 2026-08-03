@@ -72,6 +72,21 @@ KINDS: frozenset[str] = frozenset({
     "congress", "insider",
 })
 
+# The one source trigger whose SECOND post about a fact is by design rather
+# than fan-out — see the exemption in `_rejection_reason`'s fact-anchor guard.
+#
+# Deliberately a literal rather than an import from the radar lane that owns
+# it: that module pulls in the pack, quote and chart stacks, while this one is
+# the low-level queue every marketing lane loads. The safety-stack fence in the
+# radar's own suite independently forbids naming that module here, so the
+# literal is the only form this file may carry at all.
+#
+# The copy is pinned equal to the original by
+# tests/test_marketing_outbox.py::test_brief_trigger_mirrors_the_radar_lane, so
+# the fork cannot drift silently — a rename on either side fails that test
+# rather than quietly disarming the exemption and re-refusing every brief.
+BRIEF_TRIGGER = "context_brief"
+
 # Status machine — only these transitions are legal.
 #
 # "posting" is the in-flight state the W1 live publisher
@@ -1010,6 +1025,7 @@ def _rejection_reason(
     ctx: dict,
     cap: int,
     kind: str = "",
+    trigger: str = "",
 ) -> str | None:
     """Why `enqueue` would refuse this item, or None if it would accept it.
 
@@ -1022,7 +1038,12 @@ def _rejection_reason(
     is worse than no preflight — it either wastes the render it promised to
     save, or silently drops a post the gate would have taken. (`kind` joined the
     signature with the fact-fan-out guard below; `preflight_enqueue` already
-    took it, so both callers still answer identically.)
+    took it, so both callers still answer identically. `trigger` joined it the
+    same way for that guard's context-brief exemption — and it had to reach the
+    PREFLIGHT too: the brief was being refused there, before any render, so
+    exempting only the authoritative path would have left the lane refusing
+    briefs with `fact_fanout (preflight, no render)` and never reaching the
+    check that now allows them.)
     """
     if item_id in ctx["ids"]:
         return "duplicate"
@@ -1073,8 +1094,26 @@ def _rejection_reason(
     # next week, and refusing that would be a guard about arithmetic rather than
     # about repetition. The publisher's trailing-window gate is the one that
     # judges across days, on the corpus that has actually shipped.
+    #
+    # ONE DELIBERATE EXEMPTION: the two-step context brief. This guard and the
+    # two-step publish were built in parallel and first met at a merge, where
+    # the guard refused every brief and took ten of the radar lane's tests with
+    # it. They are not actually in conflict — the guard's target is SIX
+    # DRESSINGS of one fact, fanned across slots and desks, each pretending to
+    # be its own news. A brief is the opposite shape: the designed SECOND HALF
+    # of one publish, which exists only because its parent alert already POSTED
+    # and which says why that post mattered. It is supposed to share the fact —
+    # that is the feature.
+    #
+    # The exemption cannot become a fan-out hole, because the brief lane caps
+    # itself upstream: the radar's `pending_briefs` files at most ONE brief per
+    # alert event key (`if HT.brief_key(key) in done: continue`), only for an
+    # alert that reached "posted", and only inside a delay window. So the count
+    # this guard protects — one fact, one post per day — becomes one fact, one
+    # alert plus its one brief. Any OTHER trigger dressing the same fact is
+    # still refused.
     anchors = ctx.get("fact_anchors")
-    if anchors is not None:
+    if anchors is not None and trigger != BRIEF_TRIGGER:
         for key in _clock.fact_anchor_keys(str(text or ""), kind):
             owner = anchors.get((as_of, key))
             if owner and owner != item_id:
@@ -1133,6 +1172,7 @@ def preflight_enqueue(
     root: Path | str | None = None,
     cfg: dict | None = None,
     max_per_account_day: int | None = None,
+    trigger: str = "",
 ) -> str:
     """Would `enqueue` refuse this copy? Answered WITHOUT building the media.
 
@@ -1161,7 +1201,7 @@ def preflight_enqueue(
         ctx = _enqueue_ctx(root, as_of, cfg)
         return _rejection_reason(
             item_id=item_id, account=account, as_of=as_of,
-            text=text, ctx=ctx, cap=cap, kind=kind,
+            text=text, ctx=ctx, cap=cap, kind=kind, trigger=trigger,
         ) or "ok"
     except Exception as exc:  # noqa: BLE001
         log.warning("outbox.preflight_enqueue: %s — assuming ok", exc)
@@ -1289,6 +1329,7 @@ def enqueue(
                 item_id=item_id, account=account, as_of=as_of,
                 text=str(item.get("text") or ""), ctx=ctx, cap=cap,
                 kind=str(item.get("kind") or ""),
+                trigger=str((item.get("source") or {}).get("trigger") or ""),
             )
             if rejection is not None:
                 return rejection
