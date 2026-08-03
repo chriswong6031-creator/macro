@@ -172,17 +172,17 @@ def test_enforced_early_anon_payload_locks(monkeypatch):
     assert _check("/premiumdata/special_situations.json", "asset").status_code == 403
 
 
-def test_tier_preview_shell_is_open_but_its_payload_is_not(monkeypatch):
-    """The pattern's two halves: open shell at the page URL, gated payload.
+def test_tier_preview_shell_access_matches_reverted_etfs_boundary(monkeypatch):
+    """Public W1a shells stay open while the reverted ETF shell stays gated.
 
     The shells were promoted free_registered → public by SEO_SUPERCHARGE_MASTERPLAN
     W1a (2026-08-02), so the classification moved but the BOUNDARY did not: the
-    payload is what carries the paid rows and it is still enforced_early. W2 added
-    /etfs.html on the same contract — it went from `premium` straight to `public`,
-    which is only sound BECAUSE the same PR moved its graded rows into
-    /premiumdata/etfs.json. The free-tier control below keeps classify_path's
-    `free` branch under test, so this cannot quietly become "everything reads as
-    public".
+    payload is what carries the paid rows and it is still enforced_early. W2's
+    /etfs.html public flip was deliberately reverted after the boundary deployed
+    before its free-shell render; until the gate-6b re-flip, that document must
+    classify premium and deny a Free user. The free-tier control below keeps
+    classify_path's `free` branch under test, so this cannot quietly become
+    "everything reads as public".
     """
     _arm(monkeypatch)
     monkeypatch.setattr(
@@ -190,10 +190,11 @@ def test_tier_preview_shell_is_open_but_its_payload_is_not(monkeypatch):
         "_store_entitlement",
         lambda uid: ({"tier": "free", "status": "none", "features": []}, True),
     )
-    for shell in ("/special_situations.html", "/china_special_situations.html",
-                  "/etfs.html"):
+    for shell in ("/special_situations.html", "/china_special_situations.html"):
         assert paywall.classify_path(shell) == "public"
         assert _check(shell, "document").status_code == 204
+    assert paywall.classify_path("/etfs.html") == "premium"
+    assert _check("/etfs.html", "document").status_code == 403
     assert paywall.classify_path("/biocatalyst.html") == "free", (
         "control: a registered-preview shell must still classify free"
     )

@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T16:06:10.143045+00:00",
-  "count": 674,
+  "generated_at": "2026-08-03T17:39:53.331206+00:00",
+  "count": 678,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -48,6 +48,89 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-f3bliu8p1gc-1b7c0c",
+      "title": "US Weekly Kickstart Q2 2026 mid season earnings update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:06:55Z",
+      "summary_points": [
+        "**Mega-cap tech earnings dependency**: Q2 2026 GAAP net income from \"other income\" (investment gains) surged to 61% (vs.",
+        "9% Q1 2026), signaling unsustainable earnings reliance on unrealized gains, a critical valuation risk.",
+        "**Hyperscaler capex vs.",
+        "cash flow**: Hyperscaler capex to exceed cash flow from operations (2026–2028), with 2027 estimates at $1T+ (up 33% from $929B), pressuring free cash flow and necessitating $400B in IG debt funding.",
+        "**Earnings beat rate vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-29mubbh7xgk-c004f9",
+      "title": "US Daily Less Information, More Noise",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:06:39Z",
+      "summary_points": [
+        "**Market Volatility Risk**: Reduced Fed communication increases error-proneness in short-term rate markets, lengthening policy lags and introducing unnecessary volatility.",
+        "**Policy Destabilization Risk**: FOMC meeting/press conference cuts risk market underreaction (delayed impact) or overreaction (volatility), undermining monetary policy's stabilizing role.",
+        "**Messaging Failure Risk**: Inadequate distillation of committee views amplifies noise in interest rates and financial conditions via dominant market voices.",
+        "**US Economics Team Advantage**: Goldman Sachs' dedicated US economic team (Hatzius, Mericle) provides primary source for fundamentals/data/policy insights, enabling timely portfolio adjustments."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5fcnmaa9vs4-f9ce28",
+      "title": "LATAM Today August 3, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:06:24Z",
+      "summary_points": [
+        "**Brazil Copom Rate Cut**: 25bp cut to 14% with open-ended guidance, but limited by inflation, oil prices, tight labor market, and El Niño; further cuts uncertain despite data-dependent easing.",
+        "**Fiscal Risk**: Brazil’s nominal fiscal deficit deep in red (8.70% of GDP for 2026), low credibility of fiscal framework, and primary balance negative through 2028 (-0.50% of GDP).",
+        "**Chile GDP Growth Downgrade**: 2026 growth forecast cut to 1.3% (from 1.4%) due to weak non-mining activity and labor market, despite mining-driven June GDP rise (2.4% yoy).",
+        "**Colombia MPC Dovish Hold & FX Policy**: Rate held at 12.0% (4-3 vote), FX reserve accumulation ($4.0bn) signals weaker currency concerns; policy stance favors \"high-for-long\" approach.",
+        "**Mexico Inflation Above Target**: Annual headline inflation at 4.07% (above 2% target), core ex-food/energy at 0.29% (vs 0.09% June), services inflation at 2.13% yoy—challenging 6.50% rate hold."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4xoz2ba562w-b131ba",
+      "title": "Taylor Wimpey (TW.L) Margin compression and downgraded shareholder returns, Maintain Sell",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:04:03Z",
+      "summary_points": [
+        "**Sell rating with margin compression and pricing/volume pressure**: PBT estimates down 5-9% (lower gross margins, higher operating expenses), PT cut to 69p (-12% downside), pricing contraction (-2.0%), completions mix below 1.0% guidance.",
+        "**Valuation Metrics**: Trades at +1.3 s.d.",
+        "vs LT EPS average and -1.7 s.d.",
+        "vs LT P/B average, with EPS expected to decline 36% by Dec-26, signaling significant overvaluation.",
+        "**PBT Estimate Downgrade & Consensus Gap**: Profit before tax estimates revised -5% to -9%, 2026 PBT 7% below consensus, reflecting weak fundamentals and pricing pressures in London/Southern operations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-zonnzrvd3vn-004fec",
       "title": "THIS AINT MARADONA CENTRAL BANKING",

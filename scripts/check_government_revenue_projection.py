@@ -37,7 +37,14 @@ _REQUIRED_SITE_MARKERS = (
 _REQUIRED_CANDIDATE_MARKERS = (
     'data-mode="candidates"',
     'data-mode="companies"',
-    'src="government-revenue-candidate-radar.js"',
+)
+_CANDIDATE_SCRIPT_MARKER = 'src="government-revenue-candidate-radar.js"'
+_REQUIRED_TEMPLATE_CANDIDATE_MARKERS = (
+    *_REQUIRED_CANDIDATE_MARKERS,
+    _CANDIDATE_SCRIPT_MARKER,
+)
+_CANDIDATE_SCRIPT_RE = re.compile(
+    r'\bsrc="government-revenue-candidate-radar\.js(?:\?v=[0-9a-f]{8})?"'
 )
 
 
@@ -262,7 +269,9 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
             f"Government Revenue template is unavailable or invalid: {template_path}"
         ) from exc
     missing_template = [
-        marker for marker in _REQUIRED_CANDIDATE_MARKERS if marker not in template
+        marker
+        for marker in _REQUIRED_TEMPLATE_CANDIDATE_MARKERS
+        if marker not in template
     ]
     if missing_template:
         raise ProjectionDriftError(
@@ -274,6 +283,11 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
     if candidate_projection.get("status") != "absent":
         required_site_markers += _REQUIRED_CANDIDATE_MARKERS
     missing = [marker for marker in required_site_markers if marker not in html]
+    if (
+        candidate_projection.get("status") != "absent"
+        and _CANDIDATE_SCRIPT_RE.search(html) is None
+    ):
+        missing.append(_CANDIDATE_SCRIPT_MARKER)
     if missing:
         raise ProjectionDriftError(
             "public HTML is missing governed workspace markers: " + ", ".join(missing)
