@@ -49,6 +49,7 @@ from typing import Any
 from urllib.request import Request, urlopen
 
 from engine.marketing.breaking_feed import FeedItem, _make_id, _parse_pub_date, _snippet
+from engine.marketing.press_providers import display_source_name
 
 log = logging.getLogger(__name__)
 
@@ -334,7 +335,10 @@ def normalize_event(payload: Any, register: dict[str, dict],
         items.append(FeedItem(
             id=_make_id(f"x:{handle}", tid),
             source=f"x_{handle}",
-            source_name=f"@{handle}",
+            # De-handling law (operator 2026-08-02): the DISPLAY name of an
+            # X-relay item is generic — never the @handle we relay. x_handle
+            # below stays: it is the independence key for corroboration.
+            source_name=display_source_name(f"@{handle}"),
             source_tier="x_relay",
             url=f"https://twitter.com/{handle}/status/{tid}",
             published_at=_parse_pub_date(created),
