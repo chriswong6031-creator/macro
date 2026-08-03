@@ -1476,25 +1476,40 @@ def _build_meta(
         meta_desc += f" Price: {price_str}."
     if sector:
         meta_desc += f" Sector: {sector}."
-    meta_desc += " Signals, options positioning, factor profile updated nightly."
+    meta_desc += " Signals, options positioning and factor context updated nightly."
 
+    canonical = f"{CANONICAL_BASE}/stocks/{ticker}.html"
+    company_entity: dict[str, Any] = {
+        "@type": "Corporation",
+        "@id": f"{canonical}#company",
+        "name": name,
+        "tickerSymbol": ticker,
+        "url": canonical,
+    }
+    if sector:
+        company_entity["industry"] = sector
+    if desc_trunc:
+        company_entity["description"] = desc_trunc
+
+    # The ticker URL is a living entity dossier, not a dated article. Event
+    # briefs carry Article/NewsArticle markup on their own canonical URLs.
     jsonld = {
         "@context": "https://schema.org",
-        "@type": "Article",
-        "headline": f"{ticker} — {name}: signals, options & factor profile",
+        "@type": "ProfilePage",
+        "@id": f"{canonical}#profile",
+        "name": f"{ticker} — {name} company dossier",
         "datePublished": freshness,
         "dateModified": freshness,
-        "author": {"@type": "Organization", "name": "MastermindX Research"},
         "publisher": {"@type": "Organization", "name": "MastermindX"},
-        "about": {"@type": "Corporation", "name": name, "tickerSymbol": ticker},
-        "url": f"{CANONICAL_BASE}/stocks/{ticker}.html",
+        "mainEntity": company_entity,
+        "url": canonical,
     }
     jsonld_str = json.dumps(jsonld, ensure_ascii=False).replace("</", "<\\/")
 
     return {
         "ticker": ticker,
         "name": name,
-        "canonical": f"{CANONICAL_BASE}/stocks/{ticker}.html",
+        "canonical": canonical,
         "meta_desc": meta_desc,
         "jsonld_str": jsonld_str,
         "freshness": freshness,
@@ -1723,6 +1738,25 @@ def _build_hero(
     }
 
 
+def _next_earnings_date(earnings: dict) -> tuple[str, int | None]:
+    """Return only a valid future earnings date and a live day count.
+
+    ``days_to_next`` inside committed stockdata is a snapshot and can outlive
+    the calendar date it described.  Recompute from the date on every render so
+    a stale positive countdown can never label a past event as "Next earnings".
+    """
+    next_date = _clean_str(earnings.get("next_date"))
+    if not next_date:
+        return "", None
+    try:
+        days_to_next = (date.fromisoformat(next_date) - date.today()).days
+    except (ValueError, TypeError):
+        return "", None
+    if days_to_next < 0:
+        return "", None
+    return next_date, days_to_next
+
+
 def _build_stats(ticker: str, blob: dict | None, factor_betas: dict) -> dict | None:
     if not blob:
         return None
@@ -1795,14 +1829,7 @@ def _build_stats(ticker: str, blob: dict | None, factor_betas: dict) -> dict | N
     beta_zh = f"波动幅度约为市场的 {mkt_beta:.1f} 倍" if mkt_beta is not None else ""
 
     # Next earnings
-    next_date = _clean_str(earnings.get("next_date"))
-    days_to_next = earnings.get("days_to_next")
-    if days_to_next is None and next_date:
-        try:
-            nd = date.fromisoformat(next_date)
-            days_to_next = (nd - date.today()).days
-        except (ValueError, TypeError):
-            pass
+    next_date, days_to_next = _next_earnings_date(earnings)
     earnings_str = f"{next_date} ({days_to_next}d)" if next_date and days_to_next is not None else next_date
 
     # Short interest
@@ -2135,14 +2162,7 @@ def _build_earnings(blob: dict | None) -> dict | None:
     revs = blob.get("revisions") or {}
     es = blob.get("expectation_state") or {}
 
-    next_date = _clean_str(earns.get("next_date"))
-    days_to = earns.get("days_to_next")
-    if days_to is None and next_date:
-        try:
-            nd = date.fromisoformat(next_date)
-            days_to = (nd - date.today()).days
-        except (ValueError, TypeError):
-            pass
+    next_date, days_to = _next_earnings_date(earns)
 
     summary = earns.get("summary") or {}
     beats = summary.get("beats")
@@ -3135,6 +3155,7 @@ def run(
     context_only: bool = False,
     dump_context: Path | None = None,
     only_tickers: set[str] | None = None,
+    manifest_out: Path | None = None,
 ) -> int:
     """Main entrypoint. Returns exit code 0 always (non-fatal).
 
@@ -3239,6 +3260,9 @@ def run(
     n_limited = 0
     sitemap_entries: list[dict] = []
     index_rows: list[dict] = []
+    rendered_tickers: list[str] = []
+    failed_tickers: list[str] = []
+    index_written = False
 
     generated_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -3247,6 +3271,11 @@ def run(
     _sc_skipped = 0
     _sc_logo_fetches = 0
     _sc_fetch_skipped_recent = 0
+    # Express render lanes promise to be pure functions of the committed tree.
+    # They set RENDER_NO_DRIP=1, so a missing cached logo must never turn this
+    # static-page build into a CDN fetch. The nightly leaves the sentinel unset
+    # and retains the existing bounded logo-cache fill behavior.
+    _allow_logo_fetch = os.environ.get("RENDER_NO_DRIP") != "1"
     import time as _time
     _sc_t0 = _time.perf_counter()
 
@@ -3341,7 +3370,8 @@ def run(
                                 pass
                         if _recently_attempted:
                             _sc_fetch_skipped_recent += 1
-                        elif _LOGO_CACHE is not None and _sc_logo_fetches < MAX_LOGO_FETCH_PER_RUN:
+                        elif (_allow_logo_fetch and _LOGO_CACHE is not None
+                              and _sc_logo_fetches < MAX_LOGO_FETCH_PER_RUN):
                             _logo_attempts[ticker] = _today_iso
                             try:
                                 _LOGO_CACHE.white_logo_datauri(ticker, _ROOT, fetch=True)
@@ -3398,6 +3428,7 @@ def run(
             if not context_only and tmpl_page:
                 html = tmpl_page.render(**ctx)
                 write_page(out / f"{ticker}.html", html)
+                rendered_tickers.append(ticker)
             n_rendered += 1
 
             # Sitemap
@@ -3454,6 +3485,7 @@ def run(
 
         except Exception as e:  # noqa: BLE001
             print(f"::warning title={ticker}::page render failed: {e}", flush=True)
+            failed_tickers.append(ticker)
             n_skipped += 1
             continue
 
@@ -3468,6 +3500,7 @@ def run(
                 canonical_url=f"{CANONICAL_BASE}/stocks/index.html",
             )
             write_page(out / "index.html", index_html)
+            index_written = True
             sitemap_entries.insert(0, {
                 "loc": f"{CANONICAL_BASE}/stocks/index.html",
                 "lastmod": date.today().isoformat(),
@@ -3520,6 +3553,28 @@ def run(
         except Exception as e:  # noqa: BLE001
             print(f"::warning title=sitemap::sitemap update failed: {e}", flush=True)
 
+    if manifest_out is not None:
+        try:
+            manifest_out.parent.mkdir(parents=True, exist_ok=True)
+            manifest = {
+                "schema": "ticker-page-render-manifest.v1",
+                "generated_at": generated_utc,
+                "rendered_count": len(rendered_tickers),
+                "tickers": rendered_tickers,
+                "failure_count": len(failed_tickers),
+                "failed_tickers": failed_tickers,
+                "index_written": index_written,
+            }
+            tmp_manifest = manifest_out.with_suffix(manifest_out.suffix + ".tmp")
+            tmp_manifest.write_text(
+                json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            os.replace(tmp_manifest, manifest_out)
+        except Exception as e:  # noqa: BLE001
+            print(f"::error title=ticker_pages::render manifest failed: {e}", flush=True)
+            return 1
+
     print(f"::notice title=ticker_pages::rendered={n_rendered} skipped={n_skipped} "
           f"limited={n_limited} noindexed={n_noindexed}",
           flush=True)
@@ -3536,11 +3591,14 @@ def main(argv: list[str] | None = None) -> int:
                         help="Directory to write per-ticker ctx JSON files (contract for template builder)")
     parser.add_argument("--only", default=None,
                         help="Comma-separated list of tickers to render (skips sitemap merge when used)")
+    parser.add_argument("--manifest-out", default=None,
+                        help="Optional JSON receipt listing ticker pages rendered in this invocation")
     args = parser.parse_args(argv)
 
     out = Path(args.out) if args.out else (SITE / "stocks")
     sitemap_out = Path(args.sitemap_out) if args.sitemap_out else None
     dump_context = Path(args.dump_context) if args.dump_context else None
+    manifest_out = Path(args.manifest_out) if args.manifest_out else None
     only_tickers: set[str] | None = (
         {t.strip().upper() for t in args.only.split(",") if t.strip()}
         if args.only else None
@@ -3552,6 +3610,7 @@ def main(argv: list[str] | None = None) -> int:
         context_only=args.context_only,
         dump_context=dump_context,
         only_tickers=only_tickers,
+        manifest_out=manifest_out,
     )
     return rc
 

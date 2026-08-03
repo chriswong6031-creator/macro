@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://www.mastermind-x.com/sitemap.xml
+Sitemap: https://www.mastermind-x.com/stocks/earnings/sitemap.xml

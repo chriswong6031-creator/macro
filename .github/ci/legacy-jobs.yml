@@ -765,10 +765,11 @@ jobs:
 
   capital-structure-intelligence:
     if: ${{ false }}
-    # W0-W2B is an evidence/event/precision-term contract, not merely a collector.
+    # W0-W3A is an evidence/event/precision/candidate-term contract, not merely a collector.
     # This dedicated offline job keeps schemas, PIT/correction behavior, R2 wrapper,
     # graph linkage, exact fee-table spans, legacy boundary, and SEC fixtures in one
-    # hard gate. Document terms are direct transcriptions, never capacity/risk math.
+    # hard gate. Document and candidate terms remain pre-instrument transcriptions,
+    # never capacity/risk math.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -777,13 +778,14 @@ jobs:
         with:
           python-version: "3.12"
       - name: install capital-structure test deps
-        run: pip install pytest pandas numpy pyarrow jsonschema requests pyyaml jinja2 fastapi httpx
+        run: pip install pytest pandas numpy pyarrow jsonschema==4.26.0 requests pyyaml jinja2 fastapi httpx
       - name: capital-structure contracts, compilers, projection, graph, source store, and legacy boundary
         run: >
           python -m pytest
           tests/test_capital_structure_compiler.py
           tests/test_capital_structure_contracts.py
           tests/test_capital_structure_document_terms.py
+          tests/test_capital_structure_instrument_candidates.py
           tests/test_capital_structure_event_spine.py
           tests/test_capital_structure_graph.py
           tests/test_capital_structure_legacy_compat.py
@@ -1744,12 +1746,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # jinja2/markupsafe are for the chat-nav guard below, which RENDERS
+      # _site_nav.html.j2 rather than grepping it (CI packs install minimal deps,
+      # not requirements.txt — an unlisted import here is an ImportError, not a skip).
       - name: install minimal deps (theme.js bake reads config.yml)
-        run: pip install pyyaml pytest
+        run: pip install pyyaml pytest jinja2 markupsafe
       - name: template-site-sync selftest (gate fires on synthetic divergence)
         run: python3 scripts/check_template_site_sync.py --selftest
       - name: site copies of template assets must byte-match templates/
         run: python3 scripts/check_template_site_sync.py
+      # The other half of plain-copy integrity: byte-matching its site copy says
+      # nothing about whether chat.html's HEADER still matches the shared partial.
+      # It did not — 12 live pages missing, 17 removed pages still linked — because
+      # the block was hand-copied and no gate compared it to anything.
+      - name: chat-nav selftest (gate fires on a hand-edited header)
+        run: python3 scripts/sync_chat_nav.py --selftest
+      - name: chat.html's header must match _site_nav.html.j2
+        run: python3 scripts/sync_chat_nav.py
       # ui.asset_stamp — the OTHER half of this law, and the reason it bit users. The
       # `--fix` above rewrites the site copy of every plain-copy pair FROM templates/,
       # and it runs AFTER the stamping sweep in every lane, so a ?v= stamp written only
@@ -3033,6 +3046,7 @@ jobs:
       - name: BioCatalyst worker and ClinicalTrials current-record contracts
         run: >
           python -m pytest
+          tests/test_biocatalyst_activation.py
           tests/test_biocatalyst_worker.py
           tests/test_clinicaltrials_biocatalyst.py -q
 
@@ -3792,9 +3806,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest fastapi httpx pyyaml
+        run: pip install pytest fastapi httpx pyyaml requests
       - name: collect beacon throttle + tape per-IP cap + generic billing/auth errors
-        run: python -m pytest tests/test_collect_throttle.py tests/test_tape_relay.py tests/test_billing_subscribe.py -q
+        run: python -m pytest tests/test_collect_throttle.py tests/test_tape_relay.py tests/test_billing_subscribe.py tests/test_company_intelligence_api.py -q
 
   free-content-estate:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
@@ -4030,12 +4044,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # lxml is required (not optional) because the THS concept boards are HTML:
+      # collectors.china_ths_concepts parses them with pandas.read_html, which
+      # raises ImportError("`Import lxml` failed") without it. Verified against a
+      # venv holding exactly this list — beautifulsoup4 alone does not satisfy
+      # read_html's default flavor. It is a first-class dep (requirements.txt).
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 lxml openpyxl scikit-learn
       - name: china + hk + canada library builders and their manifests
         run: python -m pytest tests/test_w0_5_10_8.py tests/test_hk_closes_fallback.py tests/test_canada_branch_b.py tests/test_stock_library_manifests.py tests/test_stocktable_hk_data.py -q
       - name: china intel/analog/facet organs + fx context render
         run: python -m pytest tests/test_baskets_china_intel.py tests/test_china_analogs.py tests/test_china_stf_facets.py tests/test_china_fx_context_render.py tests/test_backfill_china_communiques.py -q
+      # 同花顺 (THS) themes: the concept collector, the PIT membership seeding, and
+      # the page-weight split that moves member rows + level history out of
+      # baskets_china_ths.html into the fetched hydrate payload. The split's
+      # row-conservation and no-mutation guards are the reason this suite has to be
+      # reachable — a builder edit that silently thinned members would otherwise
+      # ship green (#3488: a guard the guarded change cannot trigger is not a guard).
+      - name: china THS concept baskets — collector, PIT seeding, page-weight split
+        run: python -m pytest tests/test_baskets_china_ths.py -q
 
   unrun-data-plane:
     # R2 transport, accrual audits and the ledger-advance guards.
@@ -4406,7 +4433,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: publish/transport, asset pipeline, ticker pages and the nightly ops tripwires
-        run: python -m pytest tests/test_backfill_qledger_us.py tests/test_check_price_store_freshness.py tests/test_demand_chain_phase0.py tests/test_envelope_conformance.py tests/test_importance_v0.py tests/test_oracle_contract.py tests/test_publish_r2.py tests/test_radar_single_writer.py tests/test_refresh_regime_if_stale.py tests/test_research_factory_monitor.py tests/test_seo_foundation.py tests/test_signal_contracts_wiring.py tests/test_signal_sanity.py tests/test_ticker_pages.py tests/test_ts_u1_session_date.py tests/test_w4_pit_fixes.py tests/test_w6b_push_ops.py tests/test_watchlist_sentinel.py tests/test_world_state_migrations.py -q
+        run: python -m pytest tests/test_backfill_qledger_us.py tests/test_check_price_store_freshness.py tests/test_demand_chain_phase0.py tests/test_earnings_public_wire.py tests/test_envelope_conformance.py tests/test_importance_v0.py tests/test_oracle_contract.py tests/test_publish_r2.py tests/test_public_chrome.py tests/test_radar_single_writer.py tests/test_refresh_regime_if_stale.py tests/test_research_factory_monitor.py tests/test_seo_foundation.py tests/test_signal_contracts_wiring.py tests/test_signal_sanity.py tests/test_ticker_dossier_render_lane.py tests/test_ticker_pages.py tests/test_ts_u1_session_date.py tests/test_w4_pit_fixes.py tests/test_w6b_push_ops.py tests/test_watchlist_sentinel.py tests/test_world_state_migrations.py -q
 
   unrun-inline-js-guard:
     # the inline-JS deploy guard's own unit tests (node --check round-trips; ~3.5 min alone).

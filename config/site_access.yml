@@ -13,6 +13,12 @@ public:
   exact:
     - /
     - /index.html
+    # Entity page (SEO_SUPERCHARGE_MASTERPLAN §0.10). Public for the same
+    # structural reason the legal pages are: a page whose whole job is to tell a
+    # stranger — and a crawler that has never had a session — who we are cannot
+    # sit behind a wall that asks them to prove who THEY are first. No signals,
+    # no customer data, no write surface.
+    - /about.html
     - /plans.html
     # Free signal-stack lead magnet. Rank 1 exposes its matching tickers; paid
     # rows are omitted server-side and render only counts + the trial CTA, so
@@ -70,16 +76,17 @@ public:
     # carry the styling that used to ride inline inside index.html / chat.html,
     # so they are exactly as public as the pages themselves — and must be, or
     # the landing ships unstyled to every anonymous visitor. Presentation only:
-    # no signals, no customer data, no application logic. chat_nav.css is
-    # chat.html's second block, kept separate because it is linked from the
-    # BODY to hold its place in the cascade (see templates/chat_nav.css).
+    # no signals, no customer data, no application logic. chat_nav.css used to
+    # sit here as chat.html's second block; it was a frozen fork of the mega-menu
+    # half of navigation-refresh.css, styling markup the shared partial no longer
+    # emits, and was deleted when chat.html adopted the canonical header
+    # (scripts/sync_chat_nav.py). navigation-refresh.css below now covers it.
     - /landing.css
     # Shared choreography for the public landing and product-story pages.
     # Presentation only: no market payloads, account state, or customer data.
     - /scene-motion.css
     - /scene-motion.js
     - /chat.css
-    - /chat_nav.css
     - /theme.css
     # Shared navigation layout + animated ticker search. Presentation only; the
     # protected stock libraries it reads remain behind the registration wall.

@@ -10,6 +10,29 @@ policy:
   user_state_owner: terminal_supabase
   authority_owner: neural_web_a5_governor
 
+runtime_controls:
+  biocatalyst_prospective_accrual:
+    operational_owner: mastermindx_platform_ops
+    implementation_state: implemented_b4e_dark_until_external_seal
+    verifier_module: engine.biocatalyst.activation
+    worker_gate:
+      gate_artifact: "/var/lib/macro-biocatalyst/activation/gate.json"
+      heartbeat_artifact: "/var/lib/macro-biocatalyst/activation/heartbeat.json"
+      access: root_write_worker_read_only
+      failure_behavior: quarantine_before_collection_store_or_pointer_mutation
+    credential_planes:
+      worker_data_plane: "/etc/macro-biocatalyst.env"
+      root_control_plane: "/etc/macro-biocatalyst-control.env"
+      control_token_visible_to_worker: false
+    external_requirements:
+      - exact_bucket_scoped_worker_token
+      - indefinite_bucket_lock_covering_biocatalyst_prefix
+      - no_lifecycle_delete_covering_biocatalyst_prefix
+      - immutable_preflight_receipt_conditional_create_and_readback
+      - fresh_root_written_heartbeat
+    deprecated_non_authority:
+      BIOCATALYST_R2_RETENTION_CONFIRMED: "cannot authorize prospective collection"
+
 # B0a froze the source-fact lanes needed by the NCT Trial Capsule; B4D advances
 # only their official-API prospective observation and public read-model seams.
 # Company identity, a complete security master, Corporate documents, and Capital
@@ -267,11 +290,19 @@ b0_closure:
       availability: dark_until_runtime_retention_gate
       required_environment:
         BIOCATALYST_PROSPECTIVE_ENABLED: "1"
-        BIOCATALYST_R2_RETENTION_CONFIRMED: "1"
+        BIOCATALYST_R2_ACTIVATION_ID: "r2_activation_<24-hex>"
+        BIOCATALYST_R2_ACCOUNT_ID: "<32-hex-cloudflare-account>"
+      required_root_artifacts:
+        - "/var/lib/macro-biocatalyst/activation/gate.json"
+        - "/var/lib/macro-biocatalyst/activation/heartbeat.json"
     exact_registry_record_diffs:
       canonical_registration: trial_snapshot_and_exact_diff
       schema: trial_version_diff.v1
       availability: dark_until_runtime_retention_gate
       required_environment:
         BIOCATALYST_PROSPECTIVE_ENABLED: "1"
-        BIOCATALYST_R2_RETENTION_CONFIRMED: "1"
+        BIOCATALYST_R2_ACTIVATION_ID: "r2_activation_<24-hex>"
+        BIOCATALYST_R2_ACCOUNT_ID: "<32-hex-cloudflare-account>"
+      required_root_artifacts:
+        - "/var/lib/macro-biocatalyst/activation/gate.json"
+        - "/var/lib/macro-biocatalyst/activation/heartbeat.json"

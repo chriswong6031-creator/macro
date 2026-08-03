@@ -1816,6 +1816,13 @@ try:
 except ImportError:
     pass  # app/research.py not yet present — vault routes unavailable until RV W2
 
+# Public per-ticker event context for the static dossier layer.  The router
+# delegates retrieval and immutable-receipt verification to the existing
+# context-only Company Intelligence reader; it is deliberately not a signal or
+# recommendation surface.
+from app.company_intelligence import router as company_intelligence_router  # noqa: E402
+app.include_router(company_intelligence_router)
+
 # Filing Forensics private state transport. The public page is only a shell;
 # this route enforces the same authenticated site_full entitlement as the paid
 # site before reading the private Research Vault bucket.

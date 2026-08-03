@@ -180,6 +180,7 @@ on:
       - "scripts/build_stage_analysis_page.py"
       - "scripts/build_state_of_themes.py"
       - "scripts/build_stock_library.py"
+      - "scripts/build_ticker_pages.py"
       - "scripts/build_strategies.py"
       - "scripts/build_subsector_confluence.py"
       - "scripts/build_subsector_rotation.py"
@@ -477,7 +478,7 @@ jobs:
               # OIP E8 leaf-page narrowing — rationale in the step's YAML comment block.
               templates/options.html.j2|templates/options_screener.html.j2|scripts/build_options_command.py|scripts/build_options_screener.py) echo gex;;
               templates/baskets.html.j2|templates/methodology.html.j2|templates/government_revenue.html.j2|scripts/build_baskets.py|scripts/build_methodology.py|scripts/build_government_revenue.py|scripts/check_government_revenue_projection.py) echo baskets;;
-              templates/dashboard.html.j2|templates/stock.html.j2|templates/news.html.j2|templates/fundamental_forensics.*|templates/biocatalyst.*|scripts/build_site.py|scripts/build_fundamental_forensics.py|scripts/build_biocatalyst.py) echo macro;;
+              templates/dashboard.html.j2|templates/stock.html.j2|templates/news.html.j2|templates/ticker.html.j2|templates/ticker_index.html.j2|templates/fundamental_forensics.*|templates/biocatalyst.*|scripts/build_site.py|scripts/build_ticker_pages.py|scripts/build_fundamental_forensics.py|scripts/build_biocatalyst.py) echo macro;;
               templates/special_situations.html.j2|templates/_special_situations_*.html.j2|scripts/build_special_situations.py) echo sits;;
               templates/*|scripts/build_*.py|config.yml|lib/*) echo all;;
               *) echo skip;;
@@ -995,6 +996,78 @@ jobs:
           echo "RENDER_OK=1" >> "$GITHUB_ENV"
           echo "complete=true" >> "$GITHUB_OUTPUT"
           exit 0
+      - name: render ticker dossiers from rebuilt US stockdata
+        if: steps.render_pages.outputs.complete == 'true'
+        env:
+          # Keep the express lane network-free. Cached logos still render; cache misses
+          # wait for the nightly instead of reaching the logo CDN from this job.
+          RENDER_NO_DRIP: "1"
+        run: |
+          set -euo pipefail
+          SCOPE="${{ steps.pick.outputs.scope }}"; SCOPE="${SCOPE:-all}"
+          case "+$SCOPE+" in
+            *+all+*|*+macro+*) ;;
+            *) echo "::notice title=ticker_dossiers::scope=$SCOPE does not rebuild US stockdata — skipped"; exit 0 ;;
+          esac
+
+          LOG="$RUNNER_TEMP/ticker-pages.log"
+          MANIFEST="$RUNNER_TEMP/ticker-pages-manifest.json"
+          python -m scripts.build_ticker_pages --manifest-out "$MANIFEST" 2>&1 | tee "$LOG"
+          COUNT=$(sed -nE 's/.*ticker_pages::rendered=([0-9]+).*/\1/p' "$LOG" | tail -n 1)
+          if [ -z "$COUNT" ] || [ "$COUNT" -eq 0 ]; then
+            echo "::error title=ticker_dossiers::builder emitted no ticker pages"
+            exit 1
+          fi
+
+          python - "$MANIFEST" "$COUNT" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          root = Path("site/stocks")
+          manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          logged_count = int(sys.argv[2])
+          tickers = manifest.get("tickers") or []
+          pages = [root / f"{ticker}.html" for ticker in tickers]
+          markers = ("data-company-intelligence", "company-intelligence-dossier.js")
+          missing = [
+              path.name
+              for path in pages
+              if not path.is_file()
+              or any(marker not in path.read_text(encoding="utf-8") for marker in markers)
+          ]
+          if manifest.get("schema") != "ticker-page-render-manifest.v1":
+              print("::error title=ticker_dossiers::render manifest schema is invalid", flush=True)
+              raise SystemExit(1)
+          if manifest.get("failure_count") or manifest.get("failed_tickers"):
+              failures = manifest.get("failed_tickers") or []
+              sample = ", ".join(str(ticker) for ticker in failures[:20])
+              print(
+                  f"::error title=ticker_dossiers::{len(failures)} admitted ticker pages failed to render; "
+                  f"sample: {sample}",
+                  flush=True,
+              )
+              raise SystemExit(1)
+          if manifest.get("index_written") is not True:
+              print("::error title=ticker_dossiers::ticker index did not render", flush=True)
+              raise SystemExit(1)
+          if (not tickers or manifest.get("rendered_count") != len(tickers)
+                  or manifest.get("rendered_count") != logged_count):
+              print("::error title=ticker_dossiers::render manifest is empty or inconsistent", flush=True)
+              raise SystemExit(1)
+          if missing:
+              sample = ", ".join(missing[:20])
+              print(
+                  f"::error title=ticker_dossiers::{len(missing)} of {len(tickers)} rendered ticker pages "
+                  f"lack the Company Intelligence shell; sample: {sample}",
+                  flush=True,
+              )
+              raise SystemExit(1)
+          print(
+              f"::notice title=ticker_dossiers::{len(tickers)} rendered ticker pages carry the Company Intelligence shell",
+              flush=True,
+          )
+          PY
       - name: ensure node for the inline-JS guard
         # check_inline_js shells out to `node --check`. pc-render-1 (WSL2, #2771) shipped
         # WITHOUT node, so this guard failed on every render there 07-18; the old

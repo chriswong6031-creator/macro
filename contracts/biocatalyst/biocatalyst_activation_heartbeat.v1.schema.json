@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_activation_heartbeat.v1.schema.json",
+  "title": "BioCatalyst R2 Activation Heartbeat v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "heartbeat_id", "activation_id", "checked_at", "valid_until", "state", "target_binding_sha256", "receipt_sha256", "activation", "hash_scope", "heartbeat_payload_sha256"],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_activation_heartbeat.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "heartbeat_id": {"type": "string", "pattern": "^r2_heartbeat_[a-f0-9]{24}$"},
+    "activation_id": {"type": "string", "pattern": "^r2_activation_[a-f0-9]{24}$"},
+    "checked_at": {"type": "string", "format": "date-time"},
+    "valid_until": {"type": "string", "format": "date-time"},
+    "state": {"const": "ready"},
+    "target_binding_sha256": {"$ref": "#/$defs/sha256"},
+    "receipt_sha256": {"$ref": "#/$defs/sha256"},
+    "activation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_collection", "ledger_accrual", "public_pointer_advanced"],
+      "properties": {
+        "source_collection": {"const": false},
+        "ledger_accrual": {"const": false},
+        "public_pointer_advanced": {"const": false}
+      }
+    },
+    "hash_scope": {"const": "canonical_payload_excluding_heartbeat_payload_sha256"},
+    "heartbeat_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

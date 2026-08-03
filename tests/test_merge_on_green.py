@@ -150,8 +150,13 @@ def test_a_head_carrying_only_the_spurious_check_is_also_unproven():
 # --- the sweep itself, with HTTP mocked ---------------------------------------
 
 
-def _fake_api(monkeypatch, *, check_pages, merge_status=200):
-    """Route every `_request` call by method+URL and record what was sent."""
+def _fake_api(monkeypatch, *, check_pages, merge_status=200, update_status=422):
+    """Route every `_request` call by method+URL and record what was sent.
+
+    `update_status` defaults to 422 — GitHub's "I cannot fast-forward this"
+    answer — so a test that does not opt in keeps the old behaviour: a refused
+    merge falls through to `merge-blocked`.
+    """
     calls: list[tuple[str, str, dict | None]] = []
 
     def fake_request(method, url, token, payload=None):
@@ -159,6 +164,10 @@ def _fake_api(monkeypatch, *, check_pages, merge_status=200):
         if "/check-runs" in url:
             page = int(url.rsplit("page=", 1)[1].split("&")[0])
             return 200, check_pages.get(page, {"total_count": 0, "check_runs": []})
+        if url.endswith("/update-branch"):
+            if update_status in {200, 202}:
+                return update_status, {"message": "Updating pull request branch."}
+            return update_status, {"message": "merge conflict between base and head"}
         if url.endswith("/merge"):
             if merge_status == 200:
                 return 200, {"sha": "c" * 40, "merged": True}
@@ -226,16 +235,72 @@ def test_an_unproven_head_is_never_merged_and_says_so(monkeypatch, capsys):
     assert "::notice" in out and "manually" in out
 
 
-def test_a_conflict_is_reported_as_merge_blocked(monkeypatch, capsys):
-    """Every check was clean but GitHub refused: that needs a human, not a retry loop."""
+def test_a_real_conflict_is_reported_as_merge_blocked(monkeypatch, capsys):
+    """Clean checks, refused merge, and GitHub cannot fast-forward it either: a
+    genuine content conflict, which needs a human rather than a retry loop."""
     calls = _fake_api(
         monkeypatch,
         check_pages={1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}},
         merge_status=409,
+        update_status=422,
     )
     assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write") == "conflict"
+    assert any(call[1].endswith("/update-branch") for call in calls), (
+        "the sweeper must TRY to clear a stale base before labelling it blocked"
+    )
     comments = [call for call in calls if call[0] == "POST" and call[1].endswith("/comments")]
     assert len(comments) == 1 and "not mergeable" in comments[0][2]["body"]
+    assert "REAL content conflict" in comments[0][2]["body"], (
+        "the comment must say the stale-base case was already ruled out"
+    )
+
+
+def test_a_stale_base_is_updated_instead_of_blocked(monkeypatch, capsys):
+    """The treadmill fix.
+
+    main takes ~19 commits in 3 hours and a pack run takes ~30 minutes, so a pull
+    request routinely goes green and is stale before its own proof finishes. That
+    used to end in `merge-blocked` and wait for a human to rebase by hand — which
+    is how a one-hour-old pull request becomes a three-day-old one. The sweeper
+    now merges main into the head itself.
+    """
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}},
+        merge_status=409,
+        update_status=202,
+    )
+    assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write") == "updated"
+
+    updates = [call for call in calls if call[1].endswith("/update-branch")]
+    assert len(updates) == 1 and updates[0][0] == "PUT"
+    assert updates[0][2] == {"expected_head_sha": "a" * 40}, (
+        "update-branch must pin the head it judged, or it can clobber a head that "
+        "moved again between the check read and this call"
+    )
+
+    # Nothing may merge on this pass: the updated head is unproven until its
+    # fresh checks conclude.
+    assert [c for c in calls if c[1].endswith("/merge") and c[0] == "PUT"][1:] == []
+    posts = [call for call in calls if call[0] == "POST"]
+    assert not any(call[1].endswith("/comments") for call in posts), "no comment on progress"
+    assert not any(call[1].endswith("/labels") for call in posts), "must not label blocked"
+
+
+def test_an_updated_branch_clears_a_stale_merge_blocked_label(monkeypatch, capsys):
+    """A branch that is moving again must not keep wearing `merge-blocked` from an
+    earlier pass, or the label stops meaning anything."""
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={1: {"total_count": 1, "check_runs": [_run("ci-pack-1", conclusion="success")]}},
+        merge_status=409,
+        update_status=202,
+    )
+    already = _pull(labels=("merge-on-green", "merge-blocked"))
+    assert MOG.sweep_pull("acme/widgets", already, "read", "write") == "updated"
+    assert any(
+        call[0] == "DELETE" and "labels/merge-blocked" in call[1] for call in calls
+    ), "the stale merge-blocked label must be dropped once the branch moves again"
 
 
 def test_the_check_listing_pages_past_the_first_hundred(monkeypatch, capsys):

@@ -26,6 +26,12 @@ import uuid
 
 import yaml
 
+from engine.biocatalyst.activation import (
+    ActivationError,
+    activation_target_binding_sha256,
+    validate_activation_gate,
+    validate_activation_heartbeat,
+)
 from engine.biocatalyst.publication import (
     CommittedGeneration,
     HistoryPublicationEvidence,
@@ -95,10 +101,24 @@ _HISTORY_RUN_ID_RE = re.compile(r"^ctgov_history_run_NCT[0-9]{8}_[A-Za-z0-9_-]+$
 _HISTORY_SNAPSHOT_ID_RE = re.compile(r"^ctgov_history_snapshot_[A-Za-z0-9_-]+$")
 _SERVICE_STATE_ROOT = Path("/var/lib/macro-biocatalyst/state")
 _SERVICE_PUBLIC_ROOT = Path("/var/lib/macro-biocatalyst/public")
+_SERVICE_ACTIVATION_GATE_PATH = Path(
+    "/var/lib/macro-biocatalyst/activation/gate.json"
+)
+_SERVICE_ACTIVATION_HEARTBEAT_PATH = Path(
+    "/var/lib/macro-biocatalyst/activation/heartbeat.json"
+)
 _SOURCE_REGISTRY_PATH = Path(__file__).resolve().parents[1] / "config" / "biocatalyst_sources.yml"
+_ACTIVATION_ID_RE = re.compile(r"^r2_activation_[a-f0-9]{24}$")
+_R2_ACCOUNT_ID_RE = re.compile(r"^[a-f0-9]{32}$")
+_R2_JURISDICTIONS = frozenset({"default", "eu", "fedramp"})
+_ACTIVATION_ARTIFACT_MAX_BYTES = 64 * 1024
 _SAFE_ERROR_CODES = frozenset(
     {
         "ARCHIVE_READBACK_MISMATCH",
+        "BIOCATALYST_CANARY_NCTS_INVALID",
+        "BIOCATALYST_ENABLED_INVALID",
+        "BIOCATALYST_HISTORY_ENABLED_INVALID",
+        "BIOCATALYST_HISTORY_SOURCE_NOT_APPROVED",
         "BIOCATALYST_R2_BUCKET_INVALID",
         "BIOCATALYST_R2_CLIENT_UNAVAILABLE",
         "BIOCATALYST_R2_CONFIG_MISSING",
@@ -110,7 +130,23 @@ _SAFE_ERROR_CODES = frozenset(
         "BIOCATALYST_R2_READ_FAILED",
         "BIOCATALYST_R2_RETENTION_CONFIRMED_INVALID",
         "BIOCATALYST_R2_RETENTION_NOT_CONFIRMED",
+        "BIOCATALYST_R2_ACTIVATION_GATE_INVALID",
+        "BIOCATALYST_R2_ACTIVATION_HEARTBEAT_INVALID",
+        "BIOCATALYST_R2_ACTIVATION_HEARTBEAT_STALE",
+        "BIOCATALYST_R2_ACTIVATION_RECEIPT_COLLISION",
+        "BIOCATALYST_R2_ACTIVATION_RECEIPT_INVALID",
+        "BIOCATALYST_R2_ACTIVATION_TIME_INVALID",
+        "BIOCATALYST_R2_CONTROL_CONFIG_INVALID",
+        "BIOCATALYST_R2_CONTROL_PLANE_UNAVAILABLE",
+        "BIOCATALYST_R2_CONTROL_RESPONSE_INVALID",
+        "BIOCATALYST_R2_DATA_PLANE_INVALID",
+        "BIOCATALYST_R2_LIFECYCLE_DELETE_PRESENT",
+        "BIOCATALYST_R2_RETENTION_LOCK_MISSING",
+        "BIOCATALYST_R2_RETENTION_LOCK_SCOPE_INVALID",
+        "BIOCATALYST_R2_WORKER_TOKEN_INVALID",
+        "BIOCATALYST_R2_WORKER_TOKEN_SCOPE_INVALID",
         "BIOCATALYST_RUNTIME_PATH_INVALID",
+        "BIOCATALYST_USER_AGENT_INVALID",
         "BIOCATALYST_PROSPECTIVE_DOWNGRADE_FORBIDDEN",
         "BIOCATALYST_PROSPECTIVE_ENABLED_INVALID",
         "COLLECTION_FAILED",
@@ -319,6 +355,13 @@ class WorkerConfig:
     history_enabled: bool = False
     prospective_enabled: bool = False
     r2_retention_confirmed: bool = False
+    activation_id: str | None = None
+    activation_gate_path: Path | None = None
+    activation_heartbeat_path: Path | None = None
+    r2_account_id: str | None = None
+    r2_jurisdiction: str = "default"
+    activation_owner_uid: int = 0
+    activation_group_gid: int | None = None
 
     def __post_init__(self) -> None:
         state_root, public_root = _validated_root_pair(self.state_root, self.public_root)
@@ -337,8 +380,52 @@ class WorkerConfig:
             raise WorkerConfigError("BIOCATALYST_PROSPECTIVE_ENABLED_INVALID")
         if not isinstance(self.r2_retention_confirmed, bool):
             raise WorkerConfigError("BIOCATALYST_R2_RETENTION_CONFIRMED_INVALID")
-        if self.prospective_enabled and not self.r2_retention_confirmed:
-            raise WorkerConfigError("BIOCATALYST_R2_RETENTION_NOT_CONFIRMED")
+        if (
+            not isinstance(self.activation_owner_uid, int)
+            or isinstance(self.activation_owner_uid, bool)
+            or self.activation_owner_uid < 0
+        ):
+            raise WorkerConfigError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
+        if (
+            self.activation_group_gid is not None
+            and (
+                not isinstance(self.activation_group_gid, int)
+                or isinstance(self.activation_group_gid, bool)
+                or self.activation_group_gid < 0
+            )
+        ):
+            raise WorkerConfigError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
+        if self.prospective_enabled:
+            gate_path = self.activation_gate_path
+            heartbeat_path = self.activation_heartbeat_path
+            if (
+                not isinstance(self.activation_id, str)
+                or not _ACTIVATION_ID_RE.fullmatch(self.activation_id)
+                or not isinstance(gate_path, Path)
+                or not isinstance(heartbeat_path, Path)
+                or not gate_path.is_absolute()
+                or not heartbeat_path.is_absolute()
+                or gate_path == heartbeat_path
+                or not isinstance(self.r2_account_id, str)
+                or not _R2_ACCOUNT_ID_RE.fullmatch(self.r2_account_id)
+                or self.r2_jurisdiction not in _R2_JURISDICTIONS
+            ):
+                raise WorkerConfigError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
+            if gate_path.parent != heartbeat_path.parent:
+                raise WorkerConfigError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
+            for artifact_path in (gate_path, heartbeat_path):
+                try:
+                    artifact_path.relative_to(state_root)
+                except ValueError:
+                    pass
+                else:
+                    raise WorkerConfigError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
+                try:
+                    artifact_path.relative_to(public_root)
+                except ValueError:
+                    pass
+                else:
+                    raise WorkerConfigError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
         object.__setattr__(self, "state_root", state_root)
         object.__setattr__(self, "public_root", public_root)
 
@@ -350,6 +437,7 @@ class EnvironmentPlan:
     state_root: Path | None
     public_root: Path | None
     configured_nct_count: int
+    requested_enabled: bool = False
     error_code: str | None = None
 
 
@@ -399,6 +487,7 @@ class HistoryCollector(Protocol):
 
 HistoryCollectorFactory = Callable[..., HistoryCollector]
 StoreFactory = Callable[[DedicatedR2Config], BinaryObjectStore]
+ActivationVerifier = Callable[["WorkerConfig", datetime], None]
 
 
 def _utc_now() -> datetime:
@@ -468,6 +557,52 @@ def _parse_r2_retention_confirmed(raw: str | None) -> bool:
     raise WorkerConfigError("BIOCATALYST_R2_RETENTION_CONFIRMED_INVALID")
 
 
+def _service_activation_paths(
+    values: Mapping[str, str],
+) -> tuple[Path | None, Path | None]:
+    raw_gate = values.get("BIOCATALYST_R2_ACTIVATION_GATE_PATH", "").strip()
+    raw_heartbeat = values.get(
+        "BIOCATALYST_R2_ACTIVATION_HEARTBEAT_PATH", ""
+    ).strip()
+    if not raw_gate and not raw_heartbeat:
+        return None, None
+    gate_path = Path(raw_gate)
+    heartbeat_path = Path(raw_heartbeat)
+    if (
+        gate_path != _SERVICE_ACTIVATION_GATE_PATH
+        or heartbeat_path != _SERVICE_ACTIVATION_HEARTBEAT_PATH
+        or gate_path.is_symlink()
+        or heartbeat_path.is_symlink()
+    ):
+        raise WorkerConfigError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
+    return gate_path, heartbeat_path
+
+
+def _parse_activation_id(raw: str | None) -> str | None:
+    value = (raw or "").strip()
+    if not value:
+        return None
+    if not _ACTIVATION_ID_RE.fullmatch(value):
+        raise WorkerConfigError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
+    return value
+
+
+def _parse_r2_account_id(raw: str | None) -> str | None:
+    value = (raw or "").strip().lower()
+    if not value:
+        return None
+    if not _R2_ACCOUNT_ID_RE.fullmatch(value):
+        raise WorkerConfigError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
+    return value
+
+
+def _parse_r2_jurisdiction(raw: str | None) -> str:
+    value = (raw or "default").strip().lower()
+    if value not in _R2_JURISDICTIONS:
+        raise WorkerConfigError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
+    return value
+
+
 def _history_source_production_allowed(
     registry_path: Path | None = None,
 ) -> bool:
@@ -499,6 +634,8 @@ def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPla
     state_root, public_root = _service_runtime_paths(values)
     raw_ncts = values.get("BIOCATALYST_CANARY_NCTS", "")
     configured_nct_count = len({item.strip() for item in raw_ncts.split(",") if item.strip()})
+    enabled = values.get("BIOCATALYST_ENABLED", "").strip()
+    requested_enabled = enabled == "1"
     try:
         history_enabled = _parse_history_enabled(values.get("BIOCATALYST_HISTORY_ENABLED"))
         prospective_enabled = _parse_prospective_enabled(
@@ -507,8 +644,23 @@ def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPla
         r2_retention_confirmed = _parse_r2_retention_confirmed(
             values.get("BIOCATALYST_R2_RETENTION_CONFIRMED")
         )
-        if prospective_enabled and not r2_retention_confirmed:
-            raise WorkerConfigError("BIOCATALYST_R2_RETENTION_NOT_CONFIRMED")
+        activation_gate_path, activation_heartbeat_path = _service_activation_paths(
+            values
+        )
+        activation_id = _parse_activation_id(
+            values.get("BIOCATALYST_R2_ACTIVATION_ID")
+        )
+        r2_account_id = _parse_r2_account_id(values.get("BIOCATALYST_R2_ACCOUNT_ID"))
+        r2_jurisdiction = _parse_r2_jurisdiction(
+            values.get("BIOCATALYST_R2_JURISDICTION")
+        )
+        if prospective_enabled and (
+            activation_gate_path is None
+            or activation_heartbeat_path is None
+            or activation_id is None
+            or r2_account_id is None
+        ):
+            raise WorkerConfigError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
         if history_enabled and not _history_source_production_allowed():
             raise WorkerConfigError("BIOCATALYST_HISTORY_SOURCE_NOT_APPROVED")
     except WorkerConfigError as exc:
@@ -518,9 +670,9 @@ def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPla
             state_root=state_root,
             public_root=public_root,
             configured_nct_count=configured_nct_count,
+            requested_enabled=requested_enabled,
             error_code=exc.code,
         )
-    enabled = values.get("BIOCATALYST_ENABLED", "").strip()
     if enabled in {"", "0"}:
         return EnvironmentPlan(
             state="disabled",
@@ -528,6 +680,7 @@ def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPla
             state_root=state_root,
             public_root=public_root,
             configured_nct_count=configured_nct_count,
+            requested_enabled=False,
         )
     if enabled != "1":
         return EnvironmentPlan(
@@ -536,6 +689,7 @@ def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPla
             state_root=state_root,
             public_root=public_root,
             configured_nct_count=configured_nct_count,
+            requested_enabled=False,
             error_code="BIOCATALYST_ENABLED_INVALID",
         )
     try:
@@ -550,6 +704,13 @@ def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPla
             history_enabled=history_enabled,
             prospective_enabled=prospective_enabled,
             r2_retention_confirmed=r2_retention_confirmed,
+            activation_id=activation_id,
+            activation_gate_path=activation_gate_path,
+            activation_heartbeat_path=activation_heartbeat_path,
+            r2_account_id=r2_account_id,
+            r2_jurisdiction=r2_jurisdiction,
+            activation_owner_uid=0,
+            activation_group_gid=os.getgid(),
         )
     except (StorageError, WorkerConfigError) as exc:
         return EnvironmentPlan(
@@ -558,6 +719,7 @@ def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPla
             state_root=state_root,
             public_root=public_root,
             configured_nct_count=configured_nct_count,
+            requested_enabled=True,
             error_code=exc.code,
         )
     return EnvironmentPlan(
@@ -566,6 +728,7 @@ def load_environment(environ: Mapping[str, str] | None = None) -> EnvironmentPla
         state_root=state_root,
         public_root=public_root,
         configured_nct_count=len(config.nct_ids),
+        requested_enabled=True,
     )
 
 
@@ -599,7 +762,13 @@ def _strict_json_object(path: Path) -> dict[str, Any]:
             object_pairs_hook=reject_duplicates,
             parse_float=lossless_float,
         )
-    except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
+    except (
+        OSError,
+        UnicodeError,
+        ValueError,
+        json.JSONDecodeError,
+        RecursionError,
+    ) as exc:
         raise PublicationError("RUN_CONTRACT_INVALID") from exc
     if not isinstance(payload, dict):
         raise PublicationError("RUN_CONTRACT_INVALID")
@@ -608,6 +777,143 @@ def _strict_json_object(path: Path) -> dict[str, Any]:
     except Exception as exc:
         raise PublicationError("RUN_CONTRACT_INVALID") from exc
     return payload
+
+
+def _read_activation_artifact(
+    path: Path,
+    *,
+    config: WorkerConfig,
+    code: str,
+) -> dict[str, Any]:
+    """Read one root-controlled activation artifact without following links.
+
+    The fixed activation directory is deliberately not writable by the worker.
+    Exact ownership and modes turn the local documents into a privilege split,
+    while the contract hashes bind them to the independently verified R2
+    control plane.
+    """
+
+    candidate = Path(path)
+    parent = candidate.parent
+    file_fd: int | None = None
+    try:
+        if (
+            not candidate.is_absolute()
+            or candidate.name not in {"gate.json", "heartbeat.json"}
+            or parent.is_symlink()
+            or parent.resolve(strict=True) != parent
+        ):
+            raise ActivationError(code)
+        parent_metadata = parent.lstat()
+        if (
+            not stat.S_ISDIR(parent_metadata.st_mode)
+            or parent_metadata.st_uid != config.activation_owner_uid
+            or (
+                config.activation_group_gid is not None
+                and parent_metadata.st_gid != config.activation_group_gid
+            )
+            or stat.S_IMODE(parent_metadata.st_mode) != 0o750
+        ):
+            raise ActivationError(code)
+
+        flags = os.O_RDONLY | os.O_CLOEXEC
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        file_fd = os.open(os.fspath(candidate), flags)
+        metadata_before = os.fstat(file_fd)
+        if (
+            not stat.S_ISREG(metadata_before.st_mode)
+            or metadata_before.st_uid != config.activation_owner_uid
+            or (
+                config.activation_group_gid is not None
+                and metadata_before.st_gid != config.activation_group_gid
+            )
+            or stat.S_IMODE(metadata_before.st_mode) != 0o440
+            or metadata_before.st_nlink != 1
+            or metadata_before.st_size <= 0
+            or metadata_before.st_size > _ACTIVATION_ARTIFACT_MAX_BYTES
+        ):
+            raise ActivationError(code)
+        raw = os.read(file_fd, _ACTIVATION_ARTIFACT_MAX_BYTES + 1)
+        metadata_after = os.fstat(file_fd)
+        if (
+            len(raw) != metadata_before.st_size
+            or metadata_after.st_dev != metadata_before.st_dev
+            or metadata_after.st_size != metadata_before.st_size
+            or metadata_after.st_mtime_ns != metadata_before.st_mtime_ns
+            or metadata_after.st_ctime_ns != metadata_before.st_ctime_ns
+            or metadata_after.st_ino != metadata_before.st_ino
+            or metadata_after.st_mode != metadata_before.st_mode
+            or metadata_after.st_uid != metadata_before.st_uid
+            or metadata_after.st_gid != metadata_before.st_gid
+            or metadata_after.st_nlink != metadata_before.st_nlink
+        ):
+            raise ActivationError(code)
+
+        def reject_constant(_: str) -> None:
+            raise ValueError("non-finite JSON")
+
+        def reject_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+            value: dict[str, Any] = {}
+            for key, item in pairs:
+                if key in value:
+                    raise ValueError("duplicate JSON key")
+                value[key] = item
+            return value
+
+        payload = json.loads(
+            raw.decode("utf-8"),
+            parse_constant=reject_constant,
+            object_pairs_hook=reject_duplicates,
+        )
+        if not isinstance(payload, dict):
+            raise ActivationError(code)
+        return payload
+    except ActivationError:
+        raise
+    except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
+        raise ActivationError(code) from exc
+    finally:
+        if file_fd is not None:
+            os.close(file_fd)
+
+
+def _default_activation_verifier(config: WorkerConfig, now: datetime) -> None:
+    """Validate a root-sealed gate and its latest read-only heartbeat locally."""
+
+    if (
+        config.activation_gate_path is None
+        or config.activation_heartbeat_path is None
+        or config.activation_id is None
+        or config.r2_account_id is None
+    ):
+        raise ActivationError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
+    gate = _read_activation_artifact(
+        config.activation_gate_path,
+        config=config,
+        code="BIOCATALYST_R2_ACTIVATION_GATE_INVALID",
+    )
+    heartbeat = _read_activation_artifact(
+        config.activation_heartbeat_path,
+        config=config,
+        code="BIOCATALYST_R2_ACTIVATION_HEARTBEAT_INVALID",
+    )
+    validate_activation_gate(gate, now=now)
+    validate_activation_heartbeat(heartbeat, gate, now=now)
+    expected_binding = activation_target_binding_sha256(
+        account_id=config.r2_account_id,
+        bucket=config.r2.bucket,
+        endpoint=config.r2.endpoint,
+        jurisdiction=config.r2_jurisdiction,
+        worker_token_id=config.r2.access_key_id,
+    )
+    if (
+        gate.get("activation_id") != config.activation_id
+        or heartbeat.get("activation_id") != config.activation_id
+        or gate.get("target_binding_sha256") != expected_binding
+        or heartbeat.get("target_binding_sha256") != expected_binding
+    ):
+        raise ActivationError("BIOCATALYST_R2_ACTIVATION_GATE_INVALID")
 
 
 def _path_within(path: Path, root: Path, *, code: str) -> Path:
@@ -2239,6 +2545,7 @@ def run_once(
     store_factory: StoreFactory = _default_store_factory,
     now_fn: Callable[[], datetime] = _utc_now,
     publisher_factory: Callable[[Path], PublicGenerationPublisher] = PublicGenerationPublisher,
+    activation_verifier: ActivationVerifier = _default_activation_verifier,
 ) -> WorkerResult:
     """Run one bounded evidence transaction through injectable collector/store seams."""
 
@@ -2282,6 +2589,13 @@ def run_once(
                 and not config.prospective_enabled
             ):
                 raise PublicationError("BIOCATALYST_PROSPECTIVE_DOWNGRADE_FORBIDDEN")
+            if config.prospective_enabled:
+                # The worker performs no Cloudflare control-plane request.  It
+                # accepts only a root-sealed gate plus a fresh, root-written
+                # heartbeat that bind the exact R2 account, endpoint, bucket,
+                # and worker credential identity.  This check precedes even a
+                # disposable attempt directory, source collector, or R2 store.
+                activation_verifier(config, now_fn())
             expected_watermark = prior.watermark_after if prior else None
 
             attempt_root = config.state_root / "staging" / attempt_id
@@ -2495,6 +2809,7 @@ def run_from_environment(
     history_collector_factory: HistoryCollectorFactory = _default_history_collector_factory,
     store_factory: StoreFactory = _default_store_factory,
     now_fn: Callable[[], datetime] = _utc_now,
+    activation_verifier: ActivationVerifier = _default_activation_verifier,
 ) -> WorkerResult:
     """Entry point with safe disabled/misconfigured semantics and no network work."""
 
@@ -2507,15 +2822,21 @@ def run_from_environment(
             history_collector_factory=history_collector_factory,
             store_factory=store_factory,
             now_fn=now_fn,
+            activation_verifier=activation_verifier,
         )
 
     if plan.public_root is not None:
         publisher = PublicGenerationPublisher(plan.public_root)
         prior = _actual_committed_or(publisher, None)
+        health_state = "disabled"
+        health_enabled = False
+        if plan.state == "invalid" and plan.requested_enabled:
+            health_state = _failure_state(plan.error_code or "COLLECTION_FAILED")
+            health_enabled = True
         _try_write_health(
             publisher,
-            state="disabled",
-            enabled=False,
+            state=health_state,
+            enabled=health_enabled,
             configured_nct_count=plan.configured_nct_count,
             error_code=plan.error_code,
             prior=prior,

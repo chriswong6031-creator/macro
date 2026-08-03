@@ -16333,6 +16333,100 @@ artifacts:
       records legacy/modern/EFFECT XML file-number provenance and each new bundle
       retains EX-1 underwriting and EX-FILING FEES children when present.
 
+  capital-structure-companyfacts-source-manifest:
+    path: data/capital_structure/companyfacts/generations/*/source_manifest.parquet
+    format: parquet
+    producer: collectors/sec_capital_structure_companyfacts.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: retrieval.first_seen_at
+    freshness_sla_hours: 30
+    schema: capital_structure.companyfacts_source_manifest/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sec_capital_structure_companyfacts.py]
+    external_consumers: []
+    notes: >
+      Generation-named immutable manifest for byte-verified SEC Company Facts responses,
+      intentionally distinct from capital_structure.source_manifest/v1. Admission is
+      limited to unique CIKs anchored by a verified Capital Structure complete
+      submission. The collector stores exact JSON bytes through the existing
+      content-addressed SEC store and performs no fact interpretation or share-count
+      ledger write; later consumers must explicitly register before reading it.
+
+  capital-structure-companyfacts-coverage:
+    path: data/capital_structure/companyfacts/generations/*/coverage.parquet
+    format: parquet
+    producer: collectors/sec_capital_structure_companyfacts.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: attempted_at
+    freshness_sla_hours: 30
+    schema: capital_structure.companyfacts_coverage_row/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sec_capital_structure_companyfacts.py]
+    external_consumers: []
+    notes: >
+      Generation-contained append-only bounded Company Facts queue outcomes. It records only current
+      source-retrieval states (retrieved, retry, deferred), retry clocks, and exact
+      manifest references. A defer is operational uncertainty, not a negative issuer
+      fact or a dilution conclusion.
+
+  capital-structure-companyfacts-current-pointer:
+    path: data/capital_structure/companyfacts/coverage_receipt.json
+    format: json
+    producer: collectors/sec_capital_structure_companyfacts.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: published_at
+    freshness_sla_hours: 30
+    schema: capital_structure.companyfacts_current_pointer/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Tiny atomically replaced pointer to one immutable, exact-byte-authenticated
+      receipt and generation. A failed publish leaves the prior pointer selected;
+      consumers must authenticate the complete receipt predecessor chain and selected
+      generation before use. It grants no share-count, instrument, capacity, runway,
+      risk, rank, entry, sizing, or Prophet authority.
+
+  capital-structure-companyfacts-coverage-receipts:
+    path: data/capital_structure/companyfacts/receipts/*.json
+    format: json
+    producer: collectors/sec_capital_structure_companyfacts.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: published_at
+    freshness_sla_hours: 30
+    schema: capital_structure.companyfacts_coverage_receipt/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sec_capital_structure_companyfacts.py]
+    external_consumers: []
+    notes: >
+      Immutable sequence-numbered Company Facts receipts. Each binds the filing-anchor,
+      source-manifest, and coverage ordered prefixes plus exact generation-file bytes
+      and its predecessor receipt reference. Only the current pointer may select one.
+
   capital-structure-document-term-observations:
     path: data/capital_structure/document_term_observations.parquet
     format: parquet

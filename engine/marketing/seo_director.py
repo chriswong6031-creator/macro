@@ -66,9 +66,19 @@ log = logging.getLogger(__name__)
 try:  # single source of truth (lib/seo.py, PR A / D12A R1)
     from lib.seo import SITE_BASE
     from lib.seo import _APEX_HOST as _SITE_BASE_ALT
+    # Public serving boundary + deliberate sitemap exclusions — the SAME rules
+    # the sitemap builder applies (config/site_access.yml via is_public_path,
+    # _EXCLUDE_NAMES/_EXCLUDE_PREFIXES via _should_exclude). missing_from_sitemap
+    # must judge pages against these, not flag every absent page (#4324: 243/244
+    # legacy flags were access-gated pages the sitemap correctly omits).
+    from lib.seo import is_public_path
+    from lib.seo import _should_exclude as _sitemap_excluded
 except Exception:  # pragma: no cover — lib layout changes must not kill the Director
     SITE_BASE = "https://www.mastermind-x.com/"
     _SITE_BASE_ALT = "https://mastermind-x.com/"
+    # Boundary unavailable → the detector reports that loudly, never guesses.
+    is_public_path = None
+    _sitemap_excluded = None
 
 _STOCKS_SAMPLE_N = 25          # evenly-spaced sample from site/stocks/
 _MAX_ISSUES = 200              # cap issues list
@@ -687,6 +697,9 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
     sitemap_data = {"total_urls": 0, "core": 0, "products": 0, "stocks": 0,
                     "host_ok": False, "bad_host_count": 0, "apex_host_count": 0,
                     "orphans_in_sitemap": [], "missing_from_sitemap": [],
+                    "missing_from_sitemap_count": 0,
+                    "excluded_public": [], "excluded_public_count": 0,
+                    "non_public_absent_count": 0,
                     "duplicates": [], "parse_ok": False}
 
     if sitemap_path.exists():
@@ -749,9 +762,21 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
                 _add_issue("high", "sitemap_duplicates", "sitemap.xml",
                            f"{len(dups)} duplicate <loc> entries in sitemap")
 
-            # Pages missing from sitemap: core/fund/strategy/report pages not in utility
+            # Pages missing from sitemap — judged against the SAME source of truth
+            # the sitemap builder uses: config/site_access.yml (lib.seo.is_public_path)
+            # plus the deliberate _EXCLUDE_NAMES/_EXCLUDE_PREFIXES sets. A gated page
+            # absent from the sitemap is CORRECT, not a defect (#4324: 243/244 legacy
+            # flags were access-gated pages). Only a PUBLIC, un-excluded absentee is a
+            # defect; deliberate exclusions are counted informationally, and gated
+            # absentees only tallied.
             in_sitemap_paths = {_url_path(u) for u in urls if _is_valid_host(u)}
-            missing_from_sm = []
+            missing_from_sm: list[str] = []
+            excluded_public: list[str] = []
+            non_public_absent = 0
+            boundary_error: str | None = (
+                None if (is_public_path is not None and _sitemap_excluded is not None)
+                else "lib.seo public boundary unavailable"
+            )
             for page in non_stocks_pages:
                 fam = _classify_html(page, site_dir)
                 if fam == "utility":
@@ -760,15 +785,49 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
                     rel = str(page.relative_to(site_dir))
                 except ValueError:
                     rel = page.name
-                if rel not in in_sitemap_paths and rel.replace("\\", "/") not in in_sitemap_paths:
-                    missing_from_sm.append(rel)
-                    _add_issue("medium", "missing_from_sitemap", rel,
-                               f"Public page not in sitemap: {rel}")
+                rel_posix = rel.replace("\\", "/")
+                if rel in in_sitemap_paths or rel_posix in in_sitemap_paths:
+                    continue
+                # The homepage is emitted as the bare root URL, not /index.html.
+                if rel_posix == "index.html" and "" in in_sitemap_paths:
+                    continue
+                if boundary_error is not None:
+                    continue
+                try:
+                    if rel_posix == "index.html":
+                        public = is_public_path("/") or is_public_path("/index.html")
+                    else:
+                        public = is_public_path("/" + rel_posix)
+                except Exception as exc:  # noqa: BLE001 — unreadable policy: report, don't guess
+                    boundary_error = f"{type(exc).__name__}: {exc}"
+                    continue
+                if not public:
+                    non_public_absent += 1  # correctly omitted by the serving boundary
+                    continue
+                # Root pages only — lib.seo applies its exclusion sets to root discovery.
+                if "/" not in rel_posix and _sitemap_excluded(Path(rel_posix).stem):
+                    excluded_public.append(rel)
+                    continue
+                missing_from_sm.append(rel)
+                _add_issue("medium", "missing_from_sitemap", rel,
+                           f"Public page not in sitemap: {rel}")
+            if boundary_error is not None:
+                # Absent ≠ unreadable: a broken policy must be LOUD — one distinct
+                # issue, not a silent zero and not a several-hundred-page flood.
+                _add_issue("high", "access_policy_unreadable", "config/site_access.yml",
+                           "Cannot judge sitemap membership against the public serving "
+                           f"boundary ({boundary_error}); missing_from_sitemap was not "
+                           "evaluated this run")
             # Full truthful total — the list field below is a capped SAMPLE (50), and the
             # per-page issues above can be starved by the _MAX_ISSUES cap on large sites,
             # so the honest count must live in its own field.
             sitemap_data["missing_from_sitemap_count"] = len(missing_from_sm)
             sitemap_data["missing_from_sitemap"] = missing_from_sm[:50]
+            # Informational, NOT defects: public pages the exclusion sets deliberately
+            # keep out of the sitemap, and gated pages the boundary correctly omits.
+            sitemap_data["excluded_public_count"] = len(excluded_public)
+            sitemap_data["excluded_public"] = excluded_public[:50]
+            sitemap_data["non_public_absent_count"] = non_public_absent
     else:
         _add_issue("critical", "missing_sitemap", "sitemap.xml", "sitemap.xml not found")
 
@@ -952,6 +1011,9 @@ def audit_site(site_dir: Path, *, as_of: datetime | None = None) -> dict:
             "orphans_in_sitemap": sitemap_data.get("orphans_in_sitemap", []),
             "missing_from_sitemap": sitemap_data.get("missing_from_sitemap", []),
             "missing_from_sitemap_count": sitemap_data.get("missing_from_sitemap_count", 0),
+            "excluded_public": sitemap_data.get("excluded_public", []),
+            "excluded_public_count": sitemap_data.get("excluded_public_count", 0),
+            "non_public_absent_count": sitemap_data.get("non_public_absent_count", 0),
             "duplicates": sitemap_data.get("duplicates", []),
         },
         "crawl_infra": crawl_infra,
@@ -1207,6 +1269,10 @@ def _build_work_orders(audit: dict, as_of: str) -> dict:
             "Add public pages to sitemap",
             "Run sitemap audit: zero public pages missing"
         ),
+        "access_policy_unreadable": (
+            "Restore a readable config/site_access.yml public boundary",
+            "lib.seo.is_public_path('/') runs without raising; next audit drops this class"
+        ),
         "robots_blocks_all": (
             "Fix robots.txt — remove Disallow: /",
             "robots.txt: no Disallow: / for User-agent: *"
@@ -1410,7 +1476,9 @@ def _print_summary(audit: dict) -> None:
           "orphans:", len(sm_block["orphans_in_sitemap"]),
           "missing_from_sm:", sm_block.get("missing_from_sitemap_count",
                                            len(sm_block["missing_from_sitemap"])),
-          f"(showing {len(sm_block['missing_from_sitemap'])})")
+          f"(showing {len(sm_block['missing_from_sitemap'])};",
+          f"excluded_public: {sm_block.get('excluded_public_count', 0)},",
+          f"gated_absent: {sm_block.get('non_public_absent_count', 0)})")
     if audit.get("_issues_truncated_count"):
         print(f"NOTE: {audit['_issues_truncated_count']} issues truncated from display "
               f"(health score + counts use TRUE totals)")

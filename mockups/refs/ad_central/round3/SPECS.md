@@ -61,6 +61,31 @@ anything without re-opening the brief.
   full-width CTA button `7-DAY FREE TRIAL + 50% OFF`. Launch flag retained (operator
   may rule the double 50% redundant).
 
+## Headline A/B set (R3.7 — 7 variants, all 3-card fan + trial CTA)
+
+`call-hd1…hd7--1080x1080` — identical creative, headline is the ONLY variable
+(clean single-axis test). All carry the 3-card fan, the campaign description, and the
+price-free CTA `7-DAY FREE TRIAL + 50% OFF`.
+
+| slug | headline |
+|---|---|
+| hd1 | FIND THE MOVE / BEFORE THE CROWD |
+| hd2 | STOP GUESSING. / START KNOWING. |
+| hd3 | THE SIGNAL / COMES FIRST |
+| hd4 | BUY BEFORE / THE BREAKOUT |
+| hd5 | KNOW THE MOVE / BEFORE IT MOVES |
+| hd6 | KNOW WHEN TO BUY / KNOW WHAT TO BUY (the motto; = the standalone 3-card motto ad) |
+| hd7 | FIND IT BEFORE / THEY CHASE IT |
+
+Contact sheet: `renders/_headline_contact_sheet.png`.
+
+**Tape treatment (R3.8, supersedes the R3.7 clip):** the field runs **continuous across
+the full canvas** — clipping it produced a visible cut line wherever text sat, which
+reads worse than an overlap. Text clearance now comes from **whisper opacity**
+(.17/.14 on the squares, .19/.15 on the 628) instead of geometry: the tape stays a
+readable rising chart everywhere while nothing competes with the copy. Never
+reintroduce a clip/mask edge inside the composition.
+
 ## Verification state
 
 - 4/4 renders exit-0 via `render.py` (exact sizes, Inter loaded), every PNG eyeballed

@@ -457,7 +457,13 @@ class TestTemplateSiteSyncUnaffected:
     and went red on unrelated nightly render drift (2026-07-23:
     templates/chat.html vs site/chat.html drifted on main, healed by #3358)."""
 
-    _KNOWN_PLAIN_HTML = {"chat.html", "index.html"}
+    # about.html joined 2026-08-02 (SEO_SUPERCHARGE_MASTERPLAN §0.10): the entity
+    # page is a landing-native chapter — it byte-copies index.html's chrome and
+    # its own <head> carries the full meta/JSON-LD set by hand, so a .j2 with
+    # _seo_head would have bought it nothing and cost it a render lane. It is a
+    # deliberate member of the pairing system, which is precisely what this list
+    # exists to make someone say out loud.
+    _KNOWN_PLAIN_HTML = {"about.html", "chat.html", "index.html"}
 
     def test_plain_html_templates_are_known_paired_set(self) -> None:
         html_files = sorted(p.name for p in TMPL.iterdir()

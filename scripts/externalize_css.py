@@ -64,6 +64,7 @@ log = logging.getLogger("externalize_css")
 MIN_BYTES = 1024  # below this, an inline block is cheaper than a request
 _CSS_SUBDIR = ("assets", "css")
 _JS_SUBDIR = ("assets", "js")
+_HASH_STEM_RE = re.compile(r"[0-9a-f]{6,64}")
 _REF_RE = re.compile(r"assets/css/([0-9a-f]{6,64})\.css")  # hash refs in final pages
 _JS_REF_RE = re.compile(r"assets/js/([0-9a-f]{6,64})\.js")  # ditto, JS side
 
@@ -292,6 +293,13 @@ def _prune_orphans(asset_root: Path, referenced: Set[str], suffix: str = ".css")
         return 0
     pruned = 0
     for f in asset_root.glob(f"*{suffix}"):
+        # This sweep owns only the content-addressed files it mints. Named
+        # product assets share these directories and can legitimately land in
+        # the same commit as the template that will first reference them; a
+        # public-only render may run before that heavier template render. Never
+        # treat those human/product-owned assets as sweep-owned orphans.
+        if _HASH_STEM_RE.fullmatch(f.stem) is None:
+            continue
         if f.stem not in referenced:
             try:
                 f.unlink()

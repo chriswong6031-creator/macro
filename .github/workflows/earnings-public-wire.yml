@@ -1,0 +1,105 @@
+name: earnings-public-wire
+
+# Public, token-free projection of the receipt-bound earnings story catalog.
+# The source-packet and Company Intelligence lanes move independently. Follow
+# either successful promotion, then keep the :47 backstop so a missed
+# workflow_run cannot leave the public archive waiting for a manual backfill.
+on:
+  workflow_run:
+    workflows: ["earnings-story-packets", "company-intelligence"]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "47 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: earnings-public-wire
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 20
+          filter: blob:none
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deterministic wire dependencies
+        run: python -m pip install --quiet jinja2 pyyaml requests
+
+      - name: regenerate current wire from latest main and publish
+        run: |
+          set -euo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          push_retry_init "earnings public wire"
+          if ! push_on_main_ok; then exit 0; fi
+          while push_attempt; do
+            # Generated pages cannot be safely replayed onto a newer render:
+            # even a one-byte asset-stamp change can conflict across every
+            # article, while a conflict-free template change can still make
+            # the old render stale. Fetch the named ref, discard only this
+            # ephemeral runner's prior attempt, and regenerate on the exact
+            # main tree that will be the new commit's parent.
+            if ! push_fetch_main_for_rebase; then
+              push_backoff
+              continue
+            fi
+            if ! git reset --hard origin/main; then
+              PUSH_FAIL_CLASS="sync"
+              push_backoff
+              continue
+            fi
+            # A failed push can leave newly generated routes untracked after
+            # the hard reset. This literal, lane-owned scope is the only clean
+            # target; unrelated main files are never removed or staged.
+            git clean -fd -- site/stocks/earnings
+            WIRE_BASE=$(git rev-parse HEAD)
+
+            python -m scripts.build_earnings_public_wire
+
+            # This lane owns only its nested public estate. It persists no
+            # packet/source manifests; site/sitemap.xml remains nightly-owned.
+            git add site/stocks/earnings
+            if git diff --cached --quiet; then
+              echo "earnings-public-wire: latest main already carries the current publication"
+              exit 0
+            fi
+            if git diff --cached --name-only | grep -Ev '^site/stocks/earnings/' >/dev/null; then
+              echo "::error title=earnings-public-wire containment::refusing to commit outside site/stocks/earnings"
+              exit 1
+            fi
+            if ! push_staged_clean site/stocks/earnings; then
+              echo "::error title=earnings-public-wire conflict markers::refusing to commit an unsafe publication"
+              exit 1
+            fi
+            git commit -m "earnings-wire: publish current verified records [skip ci]"
+            if [ "$(git rev-parse HEAD^)" != "$WIRE_BASE" ]; then
+              echo "::error title=earnings-public-wire parent drift::generated commit is not based on the fetched main snapshot"
+              exit 1
+            fi
+            if push_do origin HEAD:main; then
+              echo "earnings-public-wire: pushed regenerated publication on attempt ${PUSH_ATTEMPT}"
+              push_won
+              exit 0
+            fi
+            # A ref race is retried by resetting to the winner and running the
+            # builder again. Never rebase/replay the stale generated commit.
+            push_backoff
+          done
+          push_lost
+          echo "::error title=earnings-public-wire::could not publish after ${PUSH_ATTEMPT} attempts"
+          exit 1
