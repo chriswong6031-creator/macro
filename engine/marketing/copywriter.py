@@ -1506,6 +1506,154 @@ SHAPE_CONTRACT: dict[str, str] = {
 }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# CHART-FAMILY COPY SHAPES (TrendSpider hardening PR-C §4)
+# ─────────────────────────────────────────────────────────────────────────────
+# These are SHAPES UNDER the existing voice law, not a new voice. "Every post is
+# a fact plus a reaction that costs you something" is unchanged; what changes is
+# the FORM a chart post's fact-plus-reaction takes, and the budget it takes it in.
+#
+# The numbers are the corpus's, measured over 396 posts: the chart family is
+# 40.7% of output, its median caption is 11 words / 61 chars, only 25% carry a
+# hard number at all, and %-bearing captions UNDERPERFORM (5.3% top-decile).
+# Interjection openers are the strongest hook in the family (41.7% top-decile).
+# The picture is doing the talking; the caption says the one thing it cannot.
+
+#: Kinds whose posts ship with a chart and therefore take these shapes.
+CHART_FAMILY_KINDS: frozenset[str] = frozenset({
+    "signal", "chart", "watchlist", "receipt", "mover",
+})
+
+#: Target word band and the hard character cap for a chart-family CAPTION —
+#: the single-line forms, which are the ones that function as captions. The
+#: multi-line shapes (stack/list/two_part) are arguments, not captions, and keep
+#: their own budgets: capping a three-line stack at 100 characters would delete
+#: the shape rather than tighten it.
+CHART_CAPTION_WORDS = (7, 12)
+CHART_CAPTION_MAX_CHARS = 100
+
+#: Shapes that ARE captions for the purpose of the cap above.
+_CAPTION_SHAPES: frozenset[str] = frozenset({"caption", "one_liner"})
+
+#: Terminal stance glyphs the chart family may end on. Emoji is TERMINAL
+#: PUNCTUATION in the corpus (53% inside the last 14 characters) and the tension
+#: register out-reaches the celebration register — 😬🌶️🩸 beat 🔥. The set is
+#: allow-list, not suggestion: a glyph outside it is either the alarm register
+#: (🚨, which belongs to the wire lanes) or the ledger register (🟢🔴, which
+#: belongs to receipts), and the three registers never mix.
+CHART_STANCE_GLYPHS: tuple[str, ...] = ("👀", "🔥", "🩸", "🌶️", "😬", "✅", "❔", "📌")
+
+#: The four chart-family copy shapes, kept as data so the prompt and any
+#: validator read the same text.
+CHART_COPY_SHAPES: dict[str, str] = {
+    "interjection": (
+        "INTERJECTION OPENER: start on the reaction, then the fact. One word or "
+        "two, then what the chart shows. Strongest hook in this family (41.7% "
+        "of its top decile). The interjection has to be earned by the picture: "
+        "an opener over a boring chart reads as noise."
+    ),
+    "enumerate_and_circle": (
+        "ENUMERATE AND CIRCLE: the caption lines map one to one onto the "
+        "circles on the chart, in the same order, each line two or three words "
+        "with a check or a question mark on it. The last one is the question "
+        "mark, because it is the one happening now. Never enumerate more "
+        "instances than the chart actually draws."
+    ),
+    "superlative": (
+        "SUPERLATIVE: say the record, scoped to the window the chart shows. The "
+        "scope is not optional and it is not yours to choose. It comes from the "
+        "fact, and the chart draws exactly that window. Never say ever, never "
+        "say in history."
+    ),
+    "question_delegation": (
+        "QUESTION DELEGATION: end on a real question a trader would ask, or "
+        "hand the read to somebody else. This is how a directional lean gets "
+        "said without you making the call. A rhetorical question that sets up "
+        "your own answer is NOT this shape."
+    ),
+}
+
+
+def chart_copy_block() -> str:
+    """The chart-family shape guidance, for the system prompt.
+
+    NO DASH TELLS IN HERE. The prompt is checked against its own validators
+    (tests/test_marketing_copy_v2.py::test_no_prompt_the_model_reads_contains_a
+    _dash_tell): a paragraph that uses an em dash while banning em dashes is an
+    instruction whose compliance is a rejection, which is the self-cancelling
+    failure that whole test class exists to catch.
+    """
+    lines = [
+        "CHART-FAMILY COPY (kinds: " + ", ".join(sorted(CHART_FAMILY_KINDS)) + ").",
+        "A picture is attached and it is doing the talking. Say the one thing "
+        "it cannot.",
+        f"- Budget: aim for {CHART_CAPTION_WORDS[0]} to "
+        f"{CHART_CAPTION_WORDS[1]} words. Hard cap {CHART_CAPTION_MAX_CHARS} "
+        "characters on the single-line shapes. The real corpus median for this "
+        "family is 11 words, 61 characters.",
+        "- The horizon is printed in the chart header (TICKER WEEKLY). Never "
+        "spend caption words restating it.",
+        "- Numbers live in the IMAGE. Only a quarter of these captions carry a "
+        "hard number at all, and the percent-bearing ones underperform. If you "
+        "do print a number, the chart has to restate it in frame already. A "
+        "validator checks that and drops the post when it does not.",
+        "- One terminal stance glyph is allowed, at the END, from this set: "
+        + " ".join(CHART_STANCE_GLYPHS)
+        + ". Tension reads better than celebration here. No alarm glyph and no "
+          "ledger glyph in this family; those belong to other lanes.",
+        "- Chart labels may name indicators. YOUR TEXT MAY NOT. The picture "
+        "showing the average is exactly why you never have to write its name.",
+        "- Stage language in plain words: base building, marking up, stalling "
+        "out, under distribution. The numbered form is a chart label, never a "
+        "caption.",
+        "Four shapes, and your item's angle usually implies one:",
+    ]
+    lines.extend(f"- {v}" for v in CHART_COPY_SHAPES.values())
+    return "\n".join(lines)
+
+
+def chart_caption_violations(text: str, ctx: dict | None) -> list[str]:
+    """Chart-family caption budget + glyph-register conformance. [] = clean.
+
+    Scoped to the single-line shapes on chart-family kinds — see
+    :data:`_CAPTION_SHAPES` for why a stack is not a caption. Returns
+    VIOLATIONS, which the v2 writer answers with its repair turn; this is not a
+    drop path. The one hard drop in this program is the in-frame restatement
+    gate, which lives in ``chart_director`` because only the director knows what
+    the picture actually restates.
+    """
+    if not isinstance(ctx, dict):
+        return []
+    kind = str(ctx.get("type") or "")
+    shape = str(ctx.get("shape") or DEFAULT_SHAPE)
+    if kind not in CHART_FAMILY_KINDS or shape not in _CAPTION_SHAPES:
+        return []
+    raw = str(text or "").strip()
+    if not raw:
+        return []
+    out: list[str] = []
+    if len(raw) > CHART_CAPTION_MAX_CHARS:
+        out.append(
+            f"chart caption: {len(raw)} chars (max {CHART_CAPTION_MAX_CHARS}); "
+            f"the corpus median for this family is 61")
+    # Glyph register. A celebration/alarm/ledger glyph in a chart caption is a
+    # register collision, not a taste call — the three never mix (§1.2).
+    for ch in raw:
+        if not _is_emoji(ch):
+            continue
+        if ch not in "".join(CHART_STANCE_GLYPHS):
+            out.append(f"chart caption: glyph {ch!r} is outside the stance set "
+                       f"({' '.join(CHART_STANCE_GLYPHS)})")
+            break
+    return out
+
+
+def _is_emoji(ch: str) -> bool:
+    """Rough emoji test — the pictographic and symbol blocks. No dependency."""
+    cp = ord(ch)
+    return (0x1F300 <= cp <= 0x1FAFF) or (0x2600 <= cp <= 0x27BF)
+
+
 def split_shaped_text(text: str, shape: str) -> tuple[str, str]:
     """Split shaped text into the stored (headline, body) pair.
 
@@ -3054,6 +3202,10 @@ def validate_copy_v2(
         )
 
     violations.extend(shape_violations(text, shape))
+    # TrendSpider PR-C §4: the chart family's own caption budget and glyph
+    # register. Additive — it can only ADD violations, never license a post the
+    # existing gates would have refused.
+    violations.extend(chart_caption_violations(text, ctx))
     violations.extend(validate_copy(headline, body, ctx, recent=recent))
     violations.extend(fake_precision_violations(text))
     violations.extend(orphan_hedge_violations(text))
@@ -5779,8 +5931,13 @@ _V2_SYSTEM_PROMPT_BASE = (
     "where), group_read (the name as a read on its group), precedent (what "
     "this shape did before), process (the rule you are following), "
     "receipt_frame (the outcome, posted flat), macro_read (what the data "
-    "plainly shows), event_read (what just happened and what it changes). "
+    "plainly shows), event_read (what just happened and what it changes), "
+    "long_term_structure (where the name sits on a multi-year picture, not "
+    "this week's tape), stage_read (what phase the name is in, in plain words: "
+    "base building, marking up, stalling out, under distribution). "
     "Write that job. Do not write a general post that happens to mention it.\n\n"
+
+    + chart_copy_block() + "\n\n"
 
     "DIVERGENCE. If your item lists `sibling_texts`, another desk already "
     "posted about this same fact today. Yours must share NO six-word run with "
