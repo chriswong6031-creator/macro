@@ -100,6 +100,22 @@ def _board_row(**overrides) -> dict:
         "label": None,
         "entry_signal": None,
         "above_trend": None,
+        # us_prophet_v1 row contract (research/PROPHET_BOARD_PRIORITY_ENGINE_
+        # MASTERPLAN_BY_FABLE.md §3) — explicit None ON PURPOSE.  The committed
+        # artifact does not carry these yet; the first nightly after the engine lane
+        # merges fills them.  Keeping the whole census None here means the DEFAULT
+        # fixture exercises the fail-soft branch (legacy lane partition, no filter
+        # chips, no glow) on every test in this module and in the modules that import
+        # _base_vm.  The populated shapes live in tests/test_us_board_priority_ui.py.
+        "stage": None,            # live | setting_up | ran | blocked
+        "prophet": None,          # {version, score, components{...}}
+        "score_rank": None,
+        "display_rank": None,
+        "featured": None,         # the glow cohort (<=12 rows)
+        "new": None,              # signal fired this session
+        "days_since_signal": None,
+        "theme": None,            # {id, name, name_zh, rank, reco}
+        "theme_confirmed": None,
         # Buy Decision Packet dossier (PR #1784 shape) — see module docstring.
         "dossier": {
             "action": {"verb": "WAIT", "verb_zh": "等待", "tone": "wait"},
@@ -297,6 +313,66 @@ def test_both_modes_render_with_no_standouts():
     for mode in ("macro", "stocks"):
         html = env.get_template("dashboard.html.j2").render(**vm, mode=mode)
         assert len(html) > 50_000
+
+
+# --------------------------------------------------------------------------- #
+# us_prophet_v1 priority board — both artifact shapes through THIS harness
+# --------------------------------------------------------------------------- #
+# The full rendered-HTML contract lives in tests/test_us_board_priority_ui.py.
+# These three cases keep the pair visible from the harness that mirrors build_site:
+# the default fixture (old schema) must take the legacy path, the overlaid fixture
+# must take the priority path, and the degraded lane=None row must survive both.
+# The overlay is imported INSIDE the functions — the priority module imports
+# _base_vm/_env/_board_row from here, so a module-level import would be circular.
+
+def test_old_schema_rows_take_the_legacy_lane_partition():
+    html = _render("stocks")
+    assert '<div class="nb-lane-hd">' in html
+    assert '<div class="nb-stage-hd sg-' not in html
+    assert '<div class="pbf-bar" id="us-stage-filter"' not in html
+    assert '<span class="l-en">Edge</span><span class="l-zh">优势</span>' in html
+
+
+def test_new_schema_rows_take_the_priority_path():
+    from tests.test_us_board_priority_ui import priority_overlay, ran_overlay  # noqa: PLC0415
+
+    vm = _base_vm()
+    rows = [
+        _board_row(ticker="ACME", entry_signal={"status": "buy_now"}, signal={"asof": "2026-07-04"}),
+        _board_row(ticker="ZEUS", name="Zeus Industries", sector="Energy",
+                   entry_signal={"status": "extended"}, signal={"asof": "2026-07-01"}),
+        _board_row(ticker="NXE", name="NexGen Energy", sector="Energy", label="DOWNTREND",
+                   entry_signal={"status": "avoid"}, signal={"asof": "2026-06-28"}),
+    ]
+    board = priority_overlay(rows)
+    vm["us_standouts"] = {"buy": board, "ran": ran_overlay(board[-1:]), "eligible": 3}
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert '<div class="nb-stage-hd sg-live"' in html
+    assert '<div class="nb-stage-hd sg-blocked"' in html
+    assert '<div class="pbf-bar" id="us-stage-filter"' in html
+    assert '<div class="pbr" data-stage="ran">' in html
+    assert '<div class="pbt">' in html                       # themes-in-favour strip
+    assert '<a class="pvcard pv-buy pv-featured"' in html     # the glow cohort
+    assert '<div class="nb-lane-hd">' not in html             # legacy headings stood down
+    assert html.find('data-ticker="ACME"') < html.find('data-ticker="NXE"')
+
+
+def test_priority_path_survives_a_lane_none_row():
+    """The dev-VM degradation case, on the NEW path: lane=None costs the card its
+    demoted lane chip and nothing else."""
+    from tests.test_us_board_priority_ui import priority_overlay  # noqa: PLC0415
+
+    vm = _base_vm()
+    board = priority_overlay([
+        _board_row(ticker="ACME", lane=None, entry_signal={"status": "buy_now"}),
+        _board_row(ticker="ZEUS", lane=None, entry_signal={"status": "bounce_wait"}),
+    ])
+    vm["us_standouts"] = {"buy": board, "eligible": 2}
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert len(html) > 50_000
+    assert '<div class="nb-stage-hd sg-live"' in html
+    assert '<span class="pv-mk-i pv-mk-lane"' not in html
+    assert 'data-ticker="ACME"' in html and 'data-ticker="ZEUS"' in html
 
 
 # --------------------------------------------------------------------------- #
