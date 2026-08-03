@@ -237,6 +237,9 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
 .trd-rail{ position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;
   padding:10px 0 12px;margin-bottom:6px;border-bottom:1px solid var(--trd-line);
   background:color-mix(in srgb,var(--trd-panel1) 92%,#05070d); }
+/* The US ledger has a dense, wrapping filter rail. Keep it in normal document
+   flow so it scrolls with the ledger instead of dropping over the rows below. */
+.trd-dlg[data-market="us"] .trd-rail{ position:static;top:auto;z-index:auto; }
 [data-theme="light"] .trd-rail{ background:#ffffff; }
 .trd-chips{ display:inline-flex;flex-wrap:wrap;gap:6px; }
 .trd-chip{ font:600 11.5px/1 var(--font-ui,inherit);padding:6px 11px;border-radius:999px;cursor:pointer;
@@ -918,6 +921,16 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
   var STDOT = { up:'trd-dot-up', stopped:'trd-dot-dn', flat:'trd-dot-flat', early:'trd-dot-early', beat:'trd-dot-up', lag:'trd-dot-dn', onboard:'trd-dot-flat' };
   function stWord(st){ var mp = { up:L('up'), stopped:L('stopped'), flat:L('flat'), early:L('early'), beat:L('beat'), lag:L('lag'), onboard:L('onboard') }; return mp[st]||st; }
   var FLAG = { locked:{en:'Locked-limit day excluded', zh:'一字板剔除'}, susp:{en:'Suspended', zh:'停牌'}, delisted:{en:'Delisted', zh:'退市'} };
+  // Lane names in plain words. The sub-cell under a ticker falls back to the row's
+  // GROUP when a name was never logged, and the group is a raw engine slug —
+  // "setting_up" / "entry_open" printing at the glance tier is the slug leak the
+  // doctrine bans. Same pattern as canada.html.j2's GROUP_LABELS, extended to the
+  // hk_prophet_v1 display lanes so a future non-buy cohort cannot leak either.
+  // Unknown slug → the raw value, which is still better than nothing.
+  var GRP = { entry_open:{en:'Entry open', zh:'入场开启'}, setting_up:{en:'Setting up', zh:'蓄势中'},
+              watch:{en:'Watch', zh:'观察'}, leaders:{en:'Market leaders', zh:'市场领跑股'},
+              ran:{en:'Recently fired', zh:'近期已触发'}, vetoed:{en:'Entry gate refused', zh:'入场闸门未放行'} };
+  function grpWord(g){ var d = GRP[g]; return d ? (isZh()? d.zh : d.en) : (g||''); }
 
   function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
   function primaryCol(){ return (market==='us') ? 'p' : 'x'; } // CN/HK/CA grade on excess
@@ -981,7 +994,7 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
       // active language; fall back to sector/group when a name isn't logged.
       var nmTxt = '';
       if(r.nm){ var np = String(r.nm).split(' / '); nmTxt = isZh() ? (np[1]||np[0]) : np[0]; }
-      var subInfo = nmTxt || r.sec || r.grp || '';
+      var subInfo = nmTxt || r.sec || grpWord(r.grp);
       var flags = (r.fl||[]).map(function(f){ var d=FLAG[f]; return d? '<span class="trd-flag" data-tip-en="'+d.en+'" data-tip-zh="'+d.zh+'">⚑</span>':''; }).join('');
       h += '<tr class="'+(reduce?'':'trd-anim')+'" style="'+(reduce?'':'animation-delay:'+Math.min(i,25)*12+'ms')+'">';
       h += '<td><span class="trd-tk">'+tkInner+'</span>'+flags+(subInfo?'<span class="trd-sub-cell">'+esc(subInfo)+'</span>':'')+'</td>';

@@ -34,12 +34,40 @@ Prophet-card redesign (2026-07-21) — what moved, and why this suite was re-pin
 import re
 from pathlib import Path
 
-from jinja2 import DictLoader, Environment
+from jinja2 import ChoiceLoader, DictLoader, Environment, FileSystemLoader
 
 from engine import i18n  # real tr() — light (markupsafe only); builders inject it as a global
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = (ROOT / "templates" / "china.html.j2").read_text()
+TPL = ROOT / "templates"
+SRC = (TPL / "china.html.j2").read_text()
+
+# Imports the real template carries at file top, OUTSIDE every snippet these
+# helpers slice out. Mirror them here or the slice renders against Undefined —
+# {{ dc.dc_card(...) }} then raises UndefinedError, which is a harness fault, not
+# a template fault. Paired with the FileSystemLoader in _env() below, the slices
+# exercise the REAL shared partials instead of stubs.
+SNIPPET_IMPORTS = (
+    '{% import "_prophet_card.html.j2" as pv %}\n'
+    '{% import "_decision_card.html.j2" as dc %}\n'
+    '{% import "_lens.html.j2" as lens %}\n'
+)
+
+
+def _env(extra: dict | None = None) -> Environment:
+    """Jinja env whose loader can resolve ANY partial templates/ holds.
+
+    The old harness hand-registered each partial in a DictLoader, so every new
+    {% import %} in china.html.j2 broke these tests until someone remembered to
+    add it. A FileSystemLoader fallback removes that failure mode for good.
+    """
+    env = Environment(
+        loader=ChoiceLoader([DictLoader(extra or {}), FileSystemLoader(str(TPL))]),
+        autoescape=False,
+    )
+    env.globals["tr"] = i18n.tr
+    env.globals["td"] = i18n.td
+    return env
 
 # ---------------------------------------------------------------------------
 # Helper: extract the W1-C block (balanced Jinja tags) and render it.
@@ -81,7 +109,7 @@ def _render_w1c(setups: dict) -> str:
     # Prophet-card partial (2026-07-21 redesign): the shelf cards render via
     # {{ pv.pv_card(...) }}; the real template imports it at file top (outside this
     # snippet), so mirror the import here and register the partial with the loader.
-    full = '{% import "_prophet_card.html.j2" as pv %}\n' + macros + snippet
+    full = SNIPPET_IMPORTS + macros + snippet
 
     SECZH = {
         "Technology": "科技",
@@ -89,13 +117,7 @@ def _render_w1c(setups: dict) -> str:
         "Industrials": "工业",
     }
 
-    env = Environment(
-        loader=DictLoader({
-            "blk": full,
-            "_prophet_card.html.j2": (ROOT / "templates" / "_prophet_card.html.j2").read_text(),
-        }),
-        autoescape=False,
-    )
+    env = _env({"blk": full})
     env.globals["SECZH"] = SECZH
     # Real i18n tr() — the extended (W-FCT) snippet calls tr() (limit-state ZH twin);
     # the builders inject env.globals.update(tr=i18n.tr).  cn_micro_by_ticker is guarded
@@ -823,7 +845,7 @@ def _render_anv2(rows_by_lane: dict, sectors_by_ticker: dict | None = None,
         # Balance the outer {% if mode == 'stocks' %} that opened before the snippet
         "{% if mode == 'stocks' %}\n"
     )
-    full = macros + snippet
+    full = SNIPPET_IMPORTS + macros + snippet
 
     # Build lanes dict
     default_lanes = {"buy_now": [], "wait_pullback": [], "bottoming_watch": [], "reduce_avoid": []}
@@ -841,10 +863,9 @@ def _render_anv2(rows_by_lane: dict, sectors_by_ticker: dict | None = None,
         },
     }
 
-    env = Environment(loader=DictLoader({"blk": full}), autoescape=False)
     # The anv2 board calls tr() for every l-zh fallback (name/kind/reco/tag/phase/
-    # organ_state/reasons).  Register the REAL tr — the builders inject it as a global.
-    env.globals["tr"] = i18n.tr
+    # organ_state/reasons).  _env registers the REAL tr — the builders inject it as a global.
+    env = _env({"blk": full})
     return env.get_template("blk").render(
         act_now_v2=act_now_v2,
         mode="stocks",
@@ -864,14 +885,14 @@ def test_anv2_row_has_rp_src_child():
     """Every anv2-row must contain a .rp-src payload span (PR-4)."""
     html = _render_anv2({"buy_now": [_full_anv2_row()]})
     assert "Growth Theme" in html, "fixture row name missing (render is vacuous)"
-    assert 'class="rp-src"' in html, ".rp-src payload span missing from anv2 row"
+    assert "rp-src row-pop-decision" in html, "shared decision-card payload missing from anv2 row"
 
 
 def test_anv2_payload_with_all_fields_none():
     """A fully null row must render without crash; empty cells omitted."""
     html = _render_anv2({"buy_now": [_blank_anv2_row()]})
     assert "data-rpop" in html, "data-rpop missing on null row"
-    assert 'class="rp-src"' in html, ".rp-src missing on null row"
+    assert "rp-src row-pop-decision" in html, "shared decision-card payload missing on null row"
     # Name must appear in header
     assert "Test Theme" in html, "Row name missing in payload header"
 
@@ -881,9 +902,13 @@ def test_anv2_payload_fully_populated_theme_row():
     html = _render_anv2({"buy_now": [_full_anv2_row()]})
     assert "Growth Theme" in html, "Row name missing from payload"
     assert "Accumulate" in html, "reco_en missing from payload tag"
-    assert "Composite score" in html, "score label missing"
-    assert "63d RS" in html, "RS label missing"
-    assert "Strong breadth" in html, "reason bullet missing"
+    # Score rides the ring, not a "Composite score" label cell (shared decision card).
+    assert "row-pop-score-ring" in html, "score ring missing from theme payload"
+    assert 'style="--score:75"' in html, "score not driving the ring fill"
+    assert "Current read" in html, "read kicker missing from theme payload"
+    assert "20d lead" in html, "20d lead stat missing"
+    # Engine reasons collapse onto the one-line sub, no longer a bullet list.
+    assert "Strong breadth" in html, "engine reason missing from theme sub line"
 
 
 def test_anv2_payload_bottoming_row_has_not_buy_caveat():
@@ -907,8 +932,8 @@ def test_anv2_payload_non_bottoming_row_no_buy_caveat_in_rp_src():
     assert "Growth Theme" in html, "fixture row name missing (render is vacuous)"
     # Isolate the rp-src payload block for the buy-lane row.  It appears before
     # the anv2-row-top div and ends at </span> of the .rp-src span.
-    rp_start = html.index('class="rp-src"')
-    rp_end = html.index('</span>', html.index('row-pop-ft', rp_start)) + len('</span>')
+    rp_start = html.index("rp-src row-pop-decision")
+    rp_end = html.index("anv2-row-top", rp_start)
     rp_block = html[rp_start:rp_end]
     # The bottoming caveat must NOT be in the buy-lane rp-src footer
     assert "early signs of a bottom" not in rp_block, (
@@ -928,8 +953,8 @@ def test_anv2_sector_row_enriched_via_sectors_by_ticker():
         {"buy_now": [row]},
         sectors_by_ticker={"512480.SS": sc},
     )
-    assert "20d mom" in html, "20d mom label missing from SECTOR payload"
-    assert "RS percentile" in html, "RS percentile label missing"
+    assert "20d move" in html, "20d move stat missing from SECTOR payload"
+    assert "Strength rank" in html, "strength rank stat missing"
     assert "Buy zone" in html or "买入区" in html, "Entry text missing from SECTOR payload"
     assert "EQ+" in html, "eq_badge missing from SECTOR payload"
     # pctile 82.0 must render as '82p', NOT '8200p' (already-0-100 value)
@@ -937,7 +962,9 @@ def test_anv2_sector_row_enriched_via_sectors_by_ticker():
     assert "8200" not in html, "pctile double-scaled to 8200 — ×100 bug present"
     # above200=True bool must render as '▲' glyph, NOT as a percentage
     assert "▲" in html, "above200=True bool must render as ▲ glyph"
-    assert "100%" not in html, "above200 bool must not render as '100%'"
+    payload = html[html.index("rp-src row-pop-decision"):]
+    payload = payload[:payload.index("anv2-row-top")]
+    assert "100%" not in payload, "above200 bool must not render as '100%' in the payload"
 
 
 def test_anv2_sector_row_missing_sector_card_graceful():
@@ -989,12 +1016,30 @@ def test_anv2_payload_bilingual_header():
     assert 'class="l-zh"' in html, "l-zh span missing in anv2 payload"
 
 
-def test_anv2_payload_no_leadership_word():
-    """'Leadership' word must not appear in the anv2 payload (brief spec)."""
-    html = _render_anv2({"buy_now": [_full_anv2_row()]})
-    # Positive control: the fixture row rendered (the absence check below is non-vacuous).
+def test_anv2_payload_leadership_word_only_when_leadership_data_present():
+    """The payload may claim a "Leadership read" ONLY when the row carries one.
+
+    The original PR-4 brief banned the word outright, because the board carried no
+    leadership data at all — the word would have been an unsupported claim. The
+    2026-08-02 US-parity pass lifts theme_intel.leadership onto the lane row, so
+    the honest invariant is no longer "never say it" but "only say it when the
+    evidence is there". That is the stronger guard: a blanket string ban would
+    still pass if the kicker claimed a leadership read on a row with no data.
+    """
+    # With leadership data — the kicker names it.
+    lead = _full_anv2_row()
+    lead["leadership"] = "broad"
+    html = _render_anv2({"buy_now": [lead]})
     assert "Growth Theme" in html, "fixture row name missing (render is vacuous)"
-    assert "Leadership" not in html, "'Leadership' word found in anv2 payload"
+    assert "Leadership read" in html, "leadership read kicker missing when data present"
+
+    # Without it — the word must not appear anywhere in the payload.
+    bare = _full_anv2_row()
+    bare.pop("leadership", None)
+    html = _render_anv2({"buy_now": [bare]})
+    assert "Growth Theme" in html, "fixture row name missing (render is vacuous)"
+    assert "Leadership" not in html, "'Leadership' claimed on a row with no leadership data"
+    assert "Current read" in html, "neutral kicker missing on a row with no leadership data"
 
 
 def test_anv2_view_all_button_present_when_items_exceed_4():
@@ -1035,7 +1080,7 @@ def test_anv2_sector_card_none_enrichment_fields_render_without_crash():
     # Must render at all (no crash) — fixture content present proves the row rendered
     assert "Tech Sector" in html, "fixture row name missing (render is vacuous)"
     assert "data-rpop" in html, "data-rpop missing when enrichment fields are None"
-    assert 'class="rp-src"' in html, ".rp-src missing when enrichment fields are None"
+    assert "rp-src row-pop-decision" in html, "decision card missing when enrichment fields are None"
     # None-valued cells must be omitted — labels should NOT appear
     assert "20d mom" not in html, "20d mom label rendered despite mom20=None"
     assert "60d mom" not in html, "60d mom label rendered despite mom60=None"

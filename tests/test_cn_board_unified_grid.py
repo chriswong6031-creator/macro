@@ -35,7 +35,7 @@ import re
 from pathlib import Path
 
 import pytest
-from jinja2 import DictLoader, Environment
+from jinja2 import ChoiceLoader, DictLoader, Environment, FileSystemLoader
 
 from engine import i18n
 
@@ -69,7 +69,14 @@ def _env(extra: dict | None = None) -> Environment:
         "_track_record_dlg.html.j2": (ROOT / "templates" / "_track_record_dlg.html.j2").read_text(),
     }
     loader.update(extra or {})
-    env = Environment(loader=DictLoader(loader), autoescape=False)
+    # FileSystemLoader fallback so a partial newly imported by china.html.j2 resolves
+    # instead of failing this harness — the same fix tests/test_china_stocks_copy_w09.py
+    # carries ("so a new {% import %} never breaks this harness again"). The featured-
+    # shelf tip becoming a _lens.html.j2 card is exactly that case.
+    env = Environment(
+        loader=ChoiceLoader([DictLoader(loader), FileSystemLoader(str(ROOT / "templates"))]),
+        autoescape=False,
+    )
     env.globals.update(tr=i18n.tr, td=i18n.td, cn_micro_by_ticker={}, SECZH=SECZH)
     return env
 
@@ -79,7 +86,10 @@ def render_board(setups: dict) -> str:
     start = SRC.index("{# ── W-FCT: shelf partitions hoisted above the panel")
     end = SRC.index("{# ── BOARD TRACK RECORD")
     body = (
+        # Mirror china.html.j2's file-top imports — they sit outside every slice.
         '{% import "_prophet_card.html.j2" as pv %}\n'
+        '{% import "_decision_card.html.j2" as dc %}\n'
+        '{% import "_lens.html.j2" as lens %}\n'
         + MACROS + _macro_src("cn_lane_reason") + "\n" + _macro_src("cn_depth_grid") + "\n"
         + SRC[start:end]
     )
@@ -503,12 +513,25 @@ def _words(text: str) -> int:
 def test_tier_1_and_tier_2_copy_stay_inside_their_word_budgets():
     """DESIGN_DOCTRINE §1: a Tier-1 subtitle is ≤14 words, a Tier-2 tip ≤ ~80. The key
     line sits above 111 cards and the h2 `?` carries the two-axis receipt; both are the
-    kind of copy that grows a clause per review round if nothing counts it."""
-    key = re.search(r'<p class="cn-gridkey">.*?l-en">([^<]*)</span>',
-                    render_board(v2_setups()), re.S)
+    kind of copy that grows a clause per review round if nothing counts it.
+
+    The h2 tip is now a _lens.html.j2 card rather than a help() paragraph, so this
+    counts the RENDERED English copy instead of grepping the template for a literal
+    `help("Two things decide` — a source-literal probe silently rots into a
+    ValueError the moment the copy is reworded, which is how it failed on the merge
+    that introduced the card. The receipt line is excluded on purpose: Law 5 puts n,
+    windows and weights on their own line precisely so they do not spend the tip's
+    word budget.
+    """
+    html = render_board(v2_setups())
+    key = re.search(r'<p class="cn-gridkey">.*?l-en">([^<]*)</span>', html, re.S)
     assert key and _words(key.group(1)) <= 14, key and key.group(1)
-    tip = SRC[SRC.index('help("Two things decide') + 6:]
-    assert _words(tip[:tip.index('", "')]) <= 80
+
+    card = html[html.index('class="lens-src"'):]
+    card = card[:card.index("</div>", card.index('class="lens-receipt"'))]
+    tip = card[:card.index('class="lens-receipt"')]
+    spoken = " ".join(re.findall(r'<span class="l-en">([^<]*)</span>', tip))
+    assert _words(spoken) <= 80, f"{_words(spoken)} words: {spoken}"
 
 
 # ── fail-soft: a pre-v2 artifact renders the legacy shelf ───────────────────────────

@@ -210,3 +210,29 @@ Supabase under owner-scoped RLS.
 
 §3's placement-REJECT row and §11's "no macro-repo held-book surface" clause are superseded
 to the extent above; historical text retained as adjudication record.
+
+## 13. Amendment 2 (2026-08-03) — operator override: user-facing display-tier composite score
+
+Operator directive (2026-08-03 session, Portfolio Superintelligence round 2): *"override of
+PRD-R2 since this isn't a live money portfolio, it's just for viewing by the user."* The
+PRD-R2 prohibition is **narrowed**: a fused composite portfolio score (and per-dimension
+sub-scores) MAY now display on the user-facing watchlist/portfolio surfaces of the macro
+site and Terminal, and in the portfolio digest emails, under the binding construction law
+of `PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md` §3.1.2 (transparent named legs,
+printed v0-equal weights, coverage abstention, client/server golden parity, nightly
+forward grading from day one, versioned weight changes only).
+
+**Remains in force (NOT struck):**
+- The score (and any PSI state) carries **no authority**: it never feeds board ordering,
+  rankers, sizing, `allocation()`, the Neural Web, alert escalation, or any scored path
+  (Signal Commons R3 / FR-1 / NWC-U4 / NWP-U18 all intact).
+- The operator held-desk clauses (§5–§9) and the desk's own no-fused-score design are
+  untouched — Amendment 2 covers the USER-FACING product surface only.
+- PRD-R3 (deterministic only — no LLM in the loop), PRD-R4 (review language), PRD-R6
+  (coverage honesty), PRD-R7 (privacy), PRD-R10 (earned authority via forward ledger).
+- The word "validated" and accuracy claims stay banned until the PSI ledger's
+  pre-registered reads say otherwise.
+
+Fable dissent recorded (unearned weights can mislead even display-tier); resolution
+mechanism = the §3.1.2 grading + `PSI_COMPOSITE_PREREG` program, not re-litigation. The
+registry row derived from PRD-R2 is amended in the same PR.

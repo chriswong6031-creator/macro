@@ -253,6 +253,76 @@ def test_wilson_ci_low():
 
 
 # --------------------------------------------------------------------------- #
+# §3 promotion gate — the bound is a PROPORTION, so the null is a coin, not zero
+#
+# 2026-08-03 experiments audit: the gate tested `wilson_ci_low > 0` on the Wilson lower
+# bound of a HIT-RATE, which lives in [0, 1]. Any nonzero hit count cleared it — the gate
+# could not fail. It opened radar@5d on 2026-07-28 (a live alert fired) at hit=51.0%, whose
+# CI [0.340, 0.693] brackets 0.5 outright, with mean excess NEGATIVE at -0.26%.
+# --------------------------------------------------------------------------- #
+def _seed_family(tmp_path, *, n_dates: int, n_hits: int, family: str = "radar",
+                 horizon: int = 5) -> None:
+    """Write claims + grades directly: one claim per distinct asof date, `n_hits` of them
+    directional hits. promotion_check reads only these two files — no price layer needed."""
+    d = tmp_path / "data" / "qledger"
+    d.mkdir(parents=True, exist_ok=True)
+    claims, grades = [], []
+    for i in range(n_dates):
+        cid = f"{family}_{i:04d}"
+        asof = (pd.Timestamp("2026-01-05") + pd.Timedelta(days=7 * i)).date().isoformat()
+        claims.append({"claim_id": cid, "desk": family, "asof": asof,
+                       "scope": {"type": "entity", "key": "SUBJ"}, "direction": 1,
+                       "horizon_d": horizon, "bench": "SPY", "control": "CTRL",
+                       "timestamp_quality": "CRAWL_BOUNDED", "is_placebo": False,
+                       "status": "open", "claim_family": family,
+                       "timestamp": "2026-01-01T00:00:00+00:00"})
+        hit = i < n_hits
+        grades.append({"claim_id": cid, "horizon_d": horizon,
+                       "graded_at": "2026-06-01T00:00:00+00:00",
+                       "subject_ret": 0.05 if hit else -0.03, "bench_ret": 0.01,
+                       "control_ret": 0.02,
+                       "excess": 0.04 if hit else -0.04, "hit": hit,
+                       "embargo_applied": False})
+    (d / "claims.jsonl").write_text("".join(json.dumps(r) + "\n" for r in claims))
+    (d / "grades.jsonl").write_text("".join(json.dumps(r) + "\n" for r in grades))
+
+
+def test_promotion_gate_refuses_a_coin_flip_hit_rate(tmp_path):
+    """radar@5d as it actually stood: 27 date-clusters at ~51%. NOT eligible."""
+    _seed_family(tmp_path, n_dates=27, n_hits=14)          # 14/27 = 51.9%
+    r = q.promotion_check("radar", 5, root=tmp_path)
+
+    assert r.n_dates == 27 >= q.PROMOTION_MIN_DATES         # criterion 1 clears...
+    assert r.wilson_ci_low == pytest.approx(0.3399, abs=1e-3)   # ...the live CI-low exactly
+    assert r.wilson_ci_low > 0, (
+        "the OLD predicate — this is why `> 0` was vacuous: the bound is a proportion")
+    assert not r.eligible, (
+        f"a hit-rate CI that brackets 0.5 is consistent with no skill at all. "
+        f"ci_low={r.wilson_ci_low}, reason={r.reason}")
+    assert r.demote is True
+    assert "coin" in r.reason.lower()
+
+
+def test_promotion_gate_admits_a_hit_rate_that_clears_the_coin(tmp_path):
+    """The floor is a bar, not a wall: 75% over 27 dates puts the whole CI above 0.5."""
+    _seed_family(tmp_path, n_dates=27, n_hits=20)          # 20/27 = 74.1%
+    r = q.promotion_check("radar", 5, root=tmp_path)
+
+    assert r.n_dates == 27
+    assert r.wilson_ci_low == pytest.approx(0.5532, abs=1e-3)
+    assert r.wilson_ci_low > q.PROMOTION_MIN_CI_LOW
+    assert r.eligible, f"ci_low={r.wilson_ci_low} clears 0.5 — reason={r.reason}"
+    assert not r.demote
+
+
+def test_promotion_gate_still_needs_the_date_floor(tmp_path):
+    """A great hit-rate on too few clusters is still refused on criterion 1."""
+    _seed_family(tmp_path, n_dates=10, n_hits=9)
+    r = q.promotion_check("radar", 5, root=tmp_path)
+    assert not r.eligible and "n_dates=10" in r.reason
+
+
+# --------------------------------------------------------------------------- #
 # state derivation
 # --------------------------------------------------------------------------- #
 def test_derive_state():

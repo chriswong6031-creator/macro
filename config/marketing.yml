@@ -2341,6 +2341,46 @@ breaking:
       source_name: "MarketWatch"
       tier: wire
 
+    # ── Free replacements for the twitterapi.io x_follow lane ────────────────
+    # (operator order 2026-08-03 — see press_sources.yml x_follow.enabled for
+    # the spend postmortem). Every feed below is the PUBLISHER'S OWN documented
+    # RSS endpoint — no scraping, no mirror ambiguity — and each was verified
+    # live from the VPS on 2026-08-03 (HTTP 200 with items minutes old).
+    # zerohedge / CoinDesk / Cointelegraph replace their own X handles 1:1;
+    # ForexLive + Investing.com carry the fast macro/market flash flow that the
+    # squawk relays (DeItaone / FirstSquawk) used to corroborate. Wire tier =
+    # the same +8 salience bonus x_relay carried, so desk/rail admission
+    # arithmetic is unchanged.
+    - key: zerohedge_feed
+      kind: rss
+      url: "https://feeds.feedburner.com/zerohedge/feed"
+      source_name: "ZeroHedge"
+      tier: wire
+
+    - key: forexlive_news
+      kind: rss
+      url: "https://www.forexlive.com/feed/news/"
+      source_name: "ForexLive"
+      tier: wire
+
+    - key: investing_news
+      kind: rss
+      url: "https://www.investing.com/rss/news.rss"
+      source_name: "Investing.com"
+      tier: wire
+
+    - key: coindesk_rss
+      kind: rss
+      url: "https://www.coindesk.com/arc/outboundfeeds/rss"
+      source_name: "CoinDesk"
+      tier: wire
+
+    - key: cointelegraph_rss
+      kind: rss
+      url: "https://cointelegraph.com/rss"
+      source_name: "Cointelegraph"
+      tier: wire
+
   llm:
     enabled: true
     model_key: "marketing_copy"

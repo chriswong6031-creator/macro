@@ -108,13 +108,16 @@ html[data-theme="light"] .sc-mbtn.on, html[data-theme="light"] .sc-sbtn.on { col
 .sc-page .cyc-gchip:not(.on):hover { opacity: 1; transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--ph, var(--muted)) 60%, var(--line));
   box-shadow: 0 3px 12px color-mix(in srgb, var(--ph, var(--muted)) 22%, transparent); }
-.sc-page .cyc-gchip.on { color: #fff; opacity: 1; transform: translateY(-1px);
-  background: color-mix(in srgb, var(--ph, var(--link)) 86%, #000 6%);
-  border-color: var(--ph, var(--link));
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--ph, var(--link)) 36%, transparent); }
-html[data-theme="light"] .sc-page .cyc-gchip.on { color: #fff; }
-.sc-page .cyc-gchip.on .gdot { background: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, #fff 32%, transparent); }
-.sc-page .cyc-gchip.on i { opacity: .95; color: #fff; }
+/* selected chip: ink-on-tint, not white-on-hue — the phase hues are dark-theme
+   bright (#2dd4bf teal worst: white sat at 2.46:1 dark / 1.09:1 light, the least
+   legible element in the W3 audit). Same hue identity, 4.5–6.4:1 in both themes;
+   matches the recipe the SI V2 workspace already applies to its embedded copy. */
+.sc-page .cyc-gchip.on { color: color-mix(in srgb, var(--ph, var(--link)) 38%, var(--text)); opacity: 1; transform: translateY(-1px);
+  background: color-mix(in srgb, var(--ph, var(--link)) 12%, var(--panel));
+  border-color: color-mix(in srgb, var(--ph, var(--link)) 55%, var(--line));
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ph, var(--link)) 24%, transparent); }
+.sc-page .cyc-gchip.on .gdot { background: currentColor; box-shadow: none; }
+.sc-page .cyc-gchip.on i { opacity: .95; color: inherit; }
 
 /* legend peak/trough glyphs */
 .cyc-legend .lm { width: 0; height: 0; }

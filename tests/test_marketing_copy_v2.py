@@ -1691,11 +1691,18 @@ def test_an_all_red_day_never_ships_as_sectors_closed_green(tmp_path):
 
 
 def test_a_mixed_board_still_folds_its_breadth_digit_into_the_macro_read(tmp_path):
+    """CLOCK PINNED (2026-08-02). The breadth clause's day word now comes from
+    the exchange calendar, so an unpinned `now` made this fixture assert one
+    thing on a weekday and another every weekend. Friday 2026-07-31 23:51 ET is
+    the real nightly-run instant: a session day, after the close, "today" true.
+    """
+    from datetime import datetime, timezone
     from engine.marketing import market_facts as mf
     rows = [(f"Sector{i}", 1.0) for i in range(4)]
     rows += [(f"Sector{i}", -1.0) for i in range(4, 11)]
     root = _heatmap(tmp_path, rows)
-    texts = " ".join(f["text"] for f in mf.macro_facts(root)["facts"])
+    friday_night = datetime(2026, 8, 1, 3, 51, 26, tzinfo=timezone.utc)
+    texts = " ".join(f["text"] for f in mf.macro_facts(root, now=friday_night)["facts"])
     assert "4 of 11 sectors closed green today." in texts, texts
 
 
@@ -2097,7 +2104,10 @@ def test_every_marketing_lane_is_authorized_in_the_capability_manifest():
     lanes = set(_marketing_llm_blocks()) | {"marketing-copy-review"}
     for cap in manifest.get("capabilities") or []:
         cap_id = str(cap.get("capability_id") or "")
-        if not (cap_id.startswith("claude_code_oauth") or cap_id == "codex_account"):
+        if not (
+            cap_id.startswith("claude_code_oauth")
+            or cap_id.startswith("codex_account")
+        ):
             continue
         missing = lanes - set(cap.get("allowed_lanes") or [])
         assert not missing, f"{cap_id} does not authorize {sorted(missing)}"

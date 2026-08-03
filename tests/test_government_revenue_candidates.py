@@ -27,14 +27,24 @@ GENERATED_AT = "2026-08-03T07:00:00+00:00"
 def _graph() -> dict:
     return {
         "contract": "government_recipient_entity_graph.v1",
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "graph_id": "recipient-graph:test-noc",
         "graph_known_at": "2026-08-02T00:00:00+00:00",
         "graph_effective_at": "2026-08-02T00:00:00+00:00",
         "evidence": [
             {
                 "evidence_id": "evidence:noc",
-                "source_ref": "https://investor.northropgrumman.com/",
+                "source_ref": f"recipient-evidence:sha256:{SHA_A}",
+                "publisher": "SEC",
+                "evidence_class": "official_filing",
+                "record_id": "0000000000-26-000001",
+                "url": "https://www.sec.gov/Archives/edgar/data/1/test.htm",
+                "content_sha256": SHA_A,
+                "byte_length": 100,
+                "retrieved_at": "2026-08-01T00:00:00+00:00",
+                "claim_scopes": [
+                    "public_company", "legal_entity", "exact_identifier", "ownership",
+                ],
                 "known_at": "2026-08-01T00:00:00+00:00",
                 "valid_from": "2026-01-01T00:00:00+00:00",
                 "valid_to": None,
@@ -204,6 +214,11 @@ def test_current_truth_is_zero_candidates_with_twenty_one_mapping_rows() -> None
     assert queue["counts"]["mapping_needed"] == 21
     assert len(queue["mapping_backlog"]) == 21
     assert queue["freshness"]["exact_candidate_availability"] == "unavailable"
+    assert queue["coverage"]["reviewed_issuer_company_count"] == 1
+    assert queue["coverage"]["reviewed_issuer_tickers"] == ["PLTR"]
+    assert next(
+        row for row in queue["mapping_backlog"] if row["ticker"] == "PLTR"
+    )["mapping_state"] == "partial_identifier_coverage"
     assert all(row["issuer_attribution"] == "not_asserted" for row in queue["mapping_backlog"])
     assert is_valid_candidate_queue(queue)
 
@@ -226,6 +241,7 @@ def test_exact_receipt_bound_reviewed_event_builds_one_context_candidate() -> No
     }
     assert candidate["authority"]["can_originate_signal"] is False
     assert candidate["authority"]["can_add_candidates"] is False
+    assert SHA_A in candidate["artifact_content_ids"]
     assert is_valid_candidate_payload(candidate)
 
 
@@ -300,7 +316,15 @@ def test_candidate_known_at_waits_for_impact_specific_graph_evidence() -> None:
     graph["graph_known_at"] = "2026-08-02T18:00:00+00:00"
     graph["evidence"].append({
         "evidence_id": "evidence:impact-later",
-        "source_ref": "https://investor.northropgrumman.com/impact-later",
+        "source_ref": f"recipient-evidence:sha256:{SHA_B}",
+        "publisher": "SEC",
+        "evidence_class": "official_filing",
+        "record_id": "0000000000-26-000002",
+        "url": "https://www.sec.gov/Archives/edgar/data/1/impact-later.htm",
+        "content_sha256": SHA_B,
+        "byte_length": 101,
+        "retrieved_at": "2026-08-02T18:00:00+00:00",
+        "claim_scopes": ["public_company"],
         "known_at": "2026-08-02T18:00:00+00:00",
         "valid_from": "2026-01-01T00:00:00+00:00",
         "valid_to": None,
@@ -334,7 +358,15 @@ def test_graph_revision_creates_a_new_immutable_observation_identity() -> None:
     second_graph["graph_known_at"] = "2026-08-02T18:00:00+00:00"
     second_graph["evidence"].append({
         "evidence_id": "evidence:noc-revision",
-        "source_ref": "https://investor.northropgrumman.com/revision",
+        "source_ref": f"recipient-evidence:sha256:{'c' * 64}",
+        "publisher": "SEC",
+        "evidence_class": "official_filing",
+        "record_id": "0000000000-26-000003",
+        "url": "https://www.sec.gov/Archives/edgar/data/1/revision.htm",
+        "content_sha256": "c" * 64,
+        "byte_length": 102,
+        "retrieved_at": "2026-08-02T18:00:00+00:00",
+        "claim_scopes": ["public_company"],
         "known_at": "2026-08-02T18:00:00+00:00",
         "valid_from": "2026-01-01T00:00:00+00:00",
         "valid_to": None,
@@ -382,10 +414,12 @@ def test_candidate_rechecks_graph_path_and_receipt_binding(mutation) -> None:
 def test_mapping_backlog_keeps_fuzzy_discovery_out_of_issuer_attribution() -> None:
     backlog = build_mapping_backlog(_payload(), _graph())
 
-    assert [row["ticker"] for row in backlog] == ["LMT"]
+    assert [row["ticker"] for row in backlog] == ["LMT", "NOC"]
     assert backlog[0]["source_association_method"] == "curated_fuzzy_name"
     assert backlog[0]["issuer_attribution"] == "not_asserted"
     assert "exact_identifier_mapping_required" in backlog[0]["reason_codes"]
+    assert backlog[1]["mapping_state"] == "partial_identifier_coverage"
+    assert backlog[1]["reason_codes"] == ["partial_identifier_coverage"]
 
 
 def test_candidate_schema_rejects_trade_authority_or_borrowed_materiality_ratio() -> None:
@@ -405,7 +439,8 @@ def test_queue_is_deterministic_and_never_an_investment_rank() -> None:
 
     assert first == second
     assert first["counts"]["exact_linked"] == 1
-    assert first["counts"]["mapping_needed"] == 1
+    assert first["counts"]["mapping_needed"] == 2
+    assert first["coverage"]["reviewed_issuer_tickers"] == ["NOC"]
     assert first["display_sort"]["is_investment_rank"] is False
     assert first["authority"]["can_rank"] is False
 

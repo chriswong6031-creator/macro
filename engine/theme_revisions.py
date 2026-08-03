@@ -39,6 +39,7 @@ from datetime import date, datetime, timezone
 
 import pandas as pd
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -377,7 +378,13 @@ def compute_theme_revisions(write_ledger: bool = True) -> dict | None:
 def _append_ledger(payload: dict) -> None:
     """Append-only forward-grading ledger: one row per (theme, asof). Deduped so a
     rebuild on the same asof does not spam. Graded forward by a later pass (did breadth
-    keep broadening? did the basket outperform?)."""
+    keep broadening? did the basket outperform?).
+
+    Lane-gated (house law: nightly is the sole advancer): engine/run.py calls
+    compute_theme_revisions() with write_ledger defaulting True, and engine.run also
+    runs on the express render lanes and closing-bell with no COLLECT_LANE set."""
+    if not _ledger_advance_enabled():
+        return
     d = config.data_dir() / "themes"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "revisions_log.jsonl"

@@ -119,3 +119,32 @@ Tier-catalog freeze during #4176/#4185; render budget law (page bakes ride
 render.yml scopes, never local); public repo — no credential/identity material
 in committed artifacts (SA identity is masked on disk); GitHub quota discipline;
 navigation source-of-truth law (footer/nav edits in family sources only).
+
+
+## W1b-REDUX (2026-08-03, Fable) — the target moved; the program adapts
+
+PR #4299 (China Sector Intelligence consolidation, operator-chartered program)
+merged `baskets_china.html` into `sector_central_china.html` seven hours after
+the W1b spec landed — the spec's target is now a redirect stub, and the builder
+correctly STOPPED against the stale brief (zero changes). Rulings:
+
+- **R1** — the China tier-preview conversion RIDES the SI program's China V2
+  workspace port (its W5), which owns that surface; a spec written against the
+  interim page would be overtaken again. Handshake requirement delivered to that
+  program: the V2 China workspace ships with an ANONYMOUS-PUBLIC preview shell
+  per A1/A4 + the W1B §8 rulings (neutral slice, no scores free, breadth-only
+  stance line), and its `chinabasketdata/baskets.json` splits into a free slice
+  + `premium.enforced_early` remainder in the same build.
+- **R2** — `/baskets_china.html` demand equity is preserved NOW via an edge 301
+  to `/sector_central_china.html` (this PR), replacing the meta-noindex stub hop.
+- **R3** — `chinabasketdata/baskets.json` being readable by free REGISTERED
+  accounts today is the staged-paywall status quo (the page is registration-
+  gated), NOT an emergency leak; the premium split lands with R1. The 5-region
+  `narrative_emergence.json` gating decision (all regions vs China-only) is
+  OPERATOR-level — it changes what registered users see today.
+- **R4** — W2 conversion queue re-orders to non-colliding targets:
+  `china_heatmap.html` (survives consolidation as a standalone page) and
+  `etfs.html`, then `china_lookup.html` after an ownership check. hk.html holds
+  pending the HK Board Resurrection program's scope.
+- The W1B spec (`research/seo_supercharge/W1B_BASKETS_CHINA_PREVIEW_SPEC.md`)
+  is SUPERSEDED as a build brief; its §8 rulings remain binding on R1.

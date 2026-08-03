@@ -10,7 +10,7 @@ updated: 2026-07-25
 related:
   lessons: [options/gamma-flip-levels]
   live:
-    - {href: /gex.html, label: "GEX & dealer positioning desk"}
+    - {href: /options.html#ticker, label: "Options workspace — per-name dealer positioning"}
 cta: {href: /learn/options/gamma-flip-levels.html, label: "Next lesson: the gamma flip and walls as regime boundaries"}
 ---
 <div class="callout lead">

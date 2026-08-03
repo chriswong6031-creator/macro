@@ -50,19 +50,21 @@
       if(!obj(value)||value.contract!=='government_revenue_candidate_queue.v1'||value.schema_version!=='1.0.0'||!/^grcq1-[a-f0-9]{24}$/.test(requiredText(value.content_id))||!validAuthority(value.authority))throw new Error('candidate_queue_contract');
       var items=Array.isArray(value.candidates)?value.candidates:(Array.isArray(value.items)?value.items:null),counts=obj(value.counts)?value.counts:{},total=n(value.total);if(total==null)total=n(counts.total);
       if(!items||total==null||total<0||Math.floor(total)!==total||items.length>total)throw new Error('candidate_queue_shape');
-      return{rows:items.map(normalize),total:total,mappingBacklog:n(value.mapping_backlog_total)||(Array.isArray(value.mapping_backlog)?value.mapping_backlog.length:0),mappingBacklogTickers:arr(value.mapping_backlog_tickers).filter(function(ticker){return /^[A-Z][A-Z0-9.-]{0,9}$/.test(ticker)}),contentId:value.content_id,knownAt:value.known_at||null,asOf:value.as_of||null,freshness:obj(value.freshness)?value.freshness:{},limitations:arr(value.limitations)};
+      var mappingStates=obj(value.mapping_backlog_states)?value.mapping_backlog_states:{};
+      Object.keys(mappingStates).forEach(function(ticker){if(!/^[A-Z][A-Z0-9.-]{0,9}$/.test(ticker)||['mapping_needed','partial_identifier_coverage'].indexOf(mappingStates[ticker])<0)throw new Error('mapping_state_map')});
+      return{rows:items.map(normalize),total:total,mappingBacklog:n(value.mapping_backlog_total)||(Array.isArray(value.mapping_backlog)?value.mapping_backlog.length:0),mappingBacklogTickers:arr(value.mapping_backlog_tickers).filter(function(ticker){return /^[A-Z][A-Z0-9.-]{0,9}$/.test(ticker)}),mappingBacklogStates:mappingStates,contentId:value.content_id,knownAt:value.known_at||null,asOf:value.as_of||null,freshness:obj(value.freshness)?value.freshness:{},limitations:arr(value.limitations)};
     }
     function publish(value){
       listing=value;loadState=value.total?'ok':'empty';
-      if(typeof api.onRows==='function')api.onRows(value.rows,{status:loadState,total:value.total,mapping_backlog_total:value.mappingBacklog,mapping_backlog_tickers:value.mappingBacklogTickers,content_id:value.contentId,known_at:value.knownAt,as_of:value.asOf,freshness:value.freshness,limitations:value.limitations});
+      if(typeof api.onRows==='function')api.onRows(value.rows,{status:loadState,total:value.total,mapping_backlog_total:value.mappingBacklog,mapping_backlog_tickers:value.mappingBacklogTickers,mapping_backlog_states:value.mappingBacklogStates,content_id:value.contentId,known_at:value.knownAt,as_of:value.asOf,freshness:value.freshness,limitations:value.limitations});
       return value.rows;
     }
-    function unavailable(){listing=null;loadState='unavailable';if(typeof api.onRows==='function')api.onRows([],{status:'unavailable',total:0,mapping_backlog_total:0,mapping_backlog_tickers:null,content_id:null});return[]}
+    function unavailable(){listing=null;loadState='unavailable';if(typeof api.onRows==='function')api.onRows([],{status:'unavailable',total:0,mapping_backlog_total:0,mapping_backlog_tickers:null,mapping_backlog_states:null,content_id:null,freshness:{exact_candidate_availability:'unavailable'}});return[]}
     function pageEnvelope(value,kind){
       if(!obj(value)||value.contract!=='government_revenue_candidate_queue.v1'||value.schema_version!=='1.0.0'||!/^grcq1-[a-f0-9]{24}$/.test(requiredText(value.content_id))||!validAuthority(value.authority))throw new Error(kind+'_contract');
       var items=Array.isArray(value.items)?value.items:null,total=n(value.total),cursor=value.next_cursor;
       if(!items||total==null||total<0||Math.floor(total)!==total||items.length>total||!(cursor==null||typeof cursor==='string'&&cursor))throw new Error(kind+'_shape');
-      if(kind==='mapping')items.forEach(function(row){if(!obj(row)||!/^grmb1-[a-f0-9]{24}$/.test(requiredText(row.backlog_id))||row.mapping_state!=='mapping_needed'||row.issuer_attribution!=='not_asserted'||!/^[A-Z][A-Z0-9.-]{0,9}$/.test(requiredText(row.ticker)))throw new Error('mapping_row')});
+      if(kind==='mapping')items.forEach(function(row){if(!obj(row)||!/^grmb1-[a-f0-9]{24}$/.test(requiredText(row.backlog_id))||['mapping_needed','partial_identifier_coverage'].indexOf(row.mapping_state)<0||row.issuer_attribution!=='not_asserted'||!/^[A-Z][A-Z0-9.-]{0,9}$/.test(requiredText(row.ticker)))throw new Error('mapping_row')});
       return{value:value,items:items,total:total,next:cursor||null,contentId:value.content_id};
     }
     function fetchPages(path,kind){
@@ -93,7 +95,7 @@
         if(ticket!==epoch)return[];
         var candidatePages=result[0],mappingPages=result[1],value=Object.assign({},candidatePages.envelope),expectedBacklog=n(value.mapping_backlog_total);
         if(candidatePages.contentId!==mappingPages.contentId||expectedBacklog==null||expectedBacklog!==mappingPages.total)throw new Error('candidate_mapping_generation_drift');
-        value.items=candidatePages.items;value.total=candidatePages.total;value.next_cursor=null;value.mapping_backlog_total=mappingPages.total;value.mapping_backlog_tickers=Array.from(new Set(mappingPages.items.map(function(row){return row.ticker}))).sort();
+        value.items=candidatePages.items;value.total=candidatePages.total;value.next_cursor=null;value.mapping_backlog_total=mappingPages.total;value.mapping_backlog_tickers=Array.from(new Set(mappingPages.items.map(function(row){return row.ticker}))).sort();value.mapping_backlog_states=mappingPages.items.reduce(function(states,row){states[row.ticker]=row.mapping_state;return states},{});
         return publish(queueRows(value));
       }).catch(function(){if(ticket!==epoch)return[];return unavailable()});
     }
@@ -112,8 +114,8 @@
     function proofCopy(value){var resolution=obj(value.issuer_resolution_ref)?value.issuer_resolution_ref:{};return tr('Exact issuer path retained in graph ','精确发行人路径已保留于图谱 ')+requiredText(resolution.graph_id)+'. '+tr('The linked legal entity and ownership path are available in the evidence record.','关联法人及所有权路径可在证据记录中查看。')}
     function render(row){
       var host=hostFor(),value=row&&row.candidate;if(!host||!obj(value))return;
-      var ticker=requiredText(value.ticker),source=arr(value.source_receipt_refs).map(refUrl).find(Boolean)||'',limits=arr(value.limitations).map(refText).filter(Boolean),evidenceHtml=sourceRows(value)+
-        '<article class="receipt"><div class="receipt-kind">'+esc(tr('Issuer path','发行人路径'))+'</div><p>'+esc(proofCopy(value))+'</p><div class="receipt-code">'+esc('candidate_id: '+requiredText(value.candidate_id)+'\nissuer_company_id: '+requiredText(value.issuer_company_id)+'\nissuer_resolution_ref: '+requiredText((value.issuer_resolution_ref||{}).graph_id)+'\nownership_path_refs: '+arr(value.ownership_path_refs).map(refText).join(', ')+'\neffective_at: '+requiredText(value.effective_at)+'\nknown_at: '+requiredText(value.known_at))+'</div></article>'+
+      var ticker=requiredText(value.ticker),source=arr(value.source_receipt_refs).map(refUrl).find(Boolean)||'',limits=arr(value.limitations).map(refText).filter(Boolean),resolution=obj(value.issuer_resolution_ref)?value.issuer_resolution_ref:{},evidenceHtml=sourceRows(value)+
+        '<article class="receipt"><div class="receipt-kind">'+esc(tr('Issuer path','发行人路径'))+'</div><p>'+esc(proofCopy(value))+'</p><div class="receipt-code">'+esc('candidate_id: '+requiredText(value.candidate_id)+'\nissuer_company_id: '+requiredText(value.issuer_company_id)+'\nissuer_resolution_ref: '+requiredText(resolution.graph_id)+'\ngraph_evidence_refs: '+arr(resolution.evidence_refs).map(refText).join(', ')+'\nownership_path_refs: '+arr(value.ownership_path_refs).map(refText).join(', ')+'\nartifact_content_ids: '+arr(value.artifact_content_ids).map(refText).join(', ')+'\neffective_at: '+requiredText(value.effective_at)+'\nknown_at: '+requiredText(value.known_at))+'</div></article>'+
         '<article class="receipt"><div class="receipt-kind">'+esc(tr('Research boundary','研究边界'))+'</div><p>'+esc(limits.concat([tr('This is a research candidate, not a buy signal or trade instruction.','这是研究候选，并非买入信号或交易指令。')]).join(' · '))+'</p></article>';
       host.className='inspector candidate-inspector';
       host.innerHTML='<div class="inspect-hero"><div class="inspect-kicker"><span class="inspect-type">'+esc(tr('Research candidate','研究候选'))+'</span><span class="inspect-id">'+esc(ticker)+'</span></div><h2>'+esc(ticker+' · '+candidateCompany(value,ticker))+'</h2><div class="inspect-meta">'+esc(candidateState(value)+' · '+date(value.known_at))+'</div><div class="inspect-truth"><span class="truth official">'+esc(tr('Receipt-bound event','与凭证绑定的事件'))+'</span><span class="truth reviewed">'+esc(tr('Exact issuer path','精确发行人路径'))+'</span></div><div class="inspect-actions"><button class="tool-btn" type="button" data-candidate-evidence>'+esc(tr('View evidence','查看证据'))+'</button><button class="tool-btn" type="button" data-candidate-copy>'+esc(tr('Copy link','复制链接'))+'</button>'+(source?'<a class="tool-btn" href="'+esc(source)+'" target="_blank" rel="noopener">'+esc(tr('Open source ↗','打开来源 ↗'))+'</a>':'')+'</div></div>'+

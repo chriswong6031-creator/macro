@@ -16,7 +16,7 @@ from tests.test_government_revenue_candidates import _award_event, _graph, _payl
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FROZEN_AT = "2026-08-03T07:00:00+00:00"
+FROZEN_AT = "2026-08-03T15:00:00+00:00"
 
 
 def _fixture_root(tmp_path: Path) -> Path:
@@ -133,7 +133,7 @@ def test_verifier_allows_generated_at_only_workspace_reassembly(tmp_path: Path) 
     workspace_path = root / "data/government_revenue/workspace.json"
     latest = json.loads(latest_path.read_text(encoding="utf-8"))
     workspace = json.loads(workspace_path.read_text(encoding="utf-8"))
-    reassembled_at = "2026-08-03T08:00:00+00:00"
+    reassembled_at = "2026-08-03T16:00:00+00:00"
     latest["generated_at"] = reassembled_at
     workspace["generated_at"] = reassembled_at
     latest["procurement_workspace"] = deepcopy(workspace)
@@ -189,7 +189,7 @@ def test_repeated_observation_keeps_immutable_row_when_envelope_clock_advances(
     ledger_path = root / "data/government_revenue/candidate_ledger.jsonl"
     first_ledger = ledger_path.read_bytes()
 
-    later = "2026-08-03T08:00:00+00:00"
+    later = "2026-08-03T16:00:00+00:00"
     result = projection.project_candidate_artifacts(root, generated_at=later)
 
     queue = json.loads((root / "data/government_revenue/candidate_queue.json").read_text())
@@ -220,7 +220,7 @@ def test_unseen_historical_observation_cannot_backfill_after_prior_materializati
     ):
         projection.project_candidate_artifacts(
             root,
-            generated_at="2026-08-03T08:00:00+00:00",
+            generated_at="2026-08-03T16:00:00+00:00",
         )
 
     assert _artifact_bytes(root) == before
@@ -234,12 +234,12 @@ def test_unseen_observation_newer_than_prior_materialization_can_append(
     _candidate_projection_with_one_candidate(
         monkeypatch,
         root,
-        known_at="2026-08-03T07:30:00+00:00",
+        known_at="2026-08-03T15:30:00+00:00",
     )
 
     result = projection.project_candidate_artifacts(
         root,
-        generated_at="2026-08-03T08:00:00+00:00",
+        generated_at="2026-08-03T16:00:00+00:00",
     )
 
     assert result["append_count"] == 1
@@ -247,7 +247,7 @@ def test_unseen_observation_newer_than_prior_materialization_can_append(
         root / "data/government_revenue/candidate_ledger.jsonl"
     )
     assert ledger.line_count == 1
-    assert ledger.observations[0]["known_at"] == "2026-08-03T07:30:00+00:00"
+    assert ledger.observations[0]["known_at"] == "2026-08-03T15:30:00+00:00"
 
 
 def test_candidate_projection_writer_clock_cannot_regress(tmp_path: Path) -> None:
@@ -261,7 +261,7 @@ def test_candidate_projection_writer_clock_cannot_regress(tmp_path: Path) -> Non
     ):
         projection.project_candidate_artifacts(
             root,
-            generated_at="2026-08-03T06:59:59+00:00",
+            generated_at="2026-08-03T14:59:59+00:00",
         )
 
     assert _artifact_bytes(root) == before

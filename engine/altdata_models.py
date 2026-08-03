@@ -132,7 +132,18 @@ CHANNEL_WEIGHTS: dict[str, float] = {
     "patent_cluster":     0.40,   # patent-grant cluster (innovation cadence)
     "app_demand":         0.40,   # app-store rating + review momentum
     "analyst_upgrade_cluster": 0.35,  # Finnhub: bullish analyst consensus rising (lagging, noisy)
-    "clinical_phase3_start": 0.35,  # new Phase-3 trial registration (biotech pipeline advancing)
+    "clinical_phase3_start": 0.20,  # new Phase-3 trial registration. GAUNTLET-CAPPED to context
+                                  # tier (was 0.35): NULL TWICE, by two independent measurements.
+                                  # (1) House event study 2026-07-19, ss_event_priors.v2
+                                  # (data/special_situations/event_priors/clinicaltrials.json,
+                                  # 1,592 events): HAC-t -0.78 / -0.42 / +0.60 at h5/h20/h60,
+                                  # DSR <= 0.21, BH q=0.6614 reject:false, split_half_same_sign
+                                  # false at ALL horizons. (2) Independent exploratory replication
+                                  # 2026-08-03: day-0 abnormal -0.9bp (t=-0.17), CAR[0,20] vs SPY
+                                  # +0.07% (t=0.28), and a random-date placebo reproduces ~70% of
+                                  # the apparent XLV effect (empirical p=0.186) — the residue is
+                                  # sector drift, not the trial. Display-only confluence
+                                  # confirmer, not a handshake vote.
     "hf_model_momentum":  0.35,   # Hugging Face model-download velocity (AI adoption proxy)
     "github_momentum":    0.30,   # GitHub star velocity (developer-mindshare proxy)
     # earnings_beat: no convergence weight (#3211) — the earnings feed is now a NON-directional

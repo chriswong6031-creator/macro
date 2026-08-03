@@ -1,8 +1,9 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T12:05:32.221609+00:00",
-  "count": 662,
+  "generated_at": "2026-08-03T14:20:54.550862+00:00",
+  "count": 669,
   "institutions": [
+    "Academy Securities",
     "Alger",
     "Amova",
     "Apollo",
@@ -40,12 +41,72 @@
     "The Market Ear",
     "The Punchline",
     "UBS",
+    "Week Ahead",
     "Weekly Preview",
     "William Blair",
     "ZKB",
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-zonnzrvd3vn-004fec",
+      "title": "THIS AINT MARADONA CENTRAL BANKING",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T12:14:09Z",
+      "summary_points": [
+        "**Fed's Guidance Contradiction**: Warsh's \"market as signal\" stance clashes with Fed's \"Maradona central banking\" (no action), risking market substitution of policy and undermining credibility as rising yields signal hikes but Fed holds steady.",
+        "**Dotplot-Driven Expectation Gap**: Persistent divergence between market-implied (blue) and realized (red) 2-year rates since Dotplot's 2013 introduction, with implied rates now consistently higher, signaling markets price forward guidance beyond historical outcomes.",
+        "**Market Policy Substitution Risk**: Rising yields push for rate hikes, yet Fed's no-change decision implies market is doing Fed's work; contradiction threatens policy coherence and increases volatility as market summarizes collective bets on Fed's *will* do, not *should* do."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-z1i4guo3cne-b3896e",
+      "title": "EMR July 2026 Performance Review",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T12:09:06Z",
+      "summary_points": [
+        "**Geopolitical Oil Surge**: US-Iran escalation and Strait of Hormuz disruptions drove Brent (+23.6%) and WTI (+21.8%) to 50% YTD gains, with wheat (+10.1%) and corn (+6.8%) surging on supply fears.",
+        "**AI/Sec Semiconductor Reversal**: Chinese competition fears triggered KOSPI (-22.2%) and Philly Semiconductor index (-20.6%) drops, offsetting Mag-7 earnings amid AI trade volatility.",
+        "**KOSPI & Brent Outperformance**: KOSPI and Brent Oil recorded highest YTD returns in local currency and USD terms, signaling strong domestic sentiment and energy demand dynamics.",
+        "**EM Equity Surge**: MSCI Emerging Market equities surged 16.3% in Q1, driven by China’s policy tailwinds, Latin American growth, and reduced risk aversion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6zpbvfbc2y9-d5d2b0",
+      "title": "Trying Not To Use It But...Situational Unawareness",
+      "institution": "Academy Securities",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T12:05:33Z",
+      "summary_points": [
+        "**SPR Risk**: US economic punishment (including SPR release) as critical market risk amid Iran tensions; SPR drawdown could significantly shift narrative.",
+        "**AI Fund Hedging Imperative**: Leverage, illiquid private stakes in AI funds face severe volatility; prioritize hedging liquid positions (e.g., short MSFT/AMZN, long AAPL) over illiquid assets.",
+        "**Volatility & Earnings Disruption**: SOXX 10-day volatility spiked to ~80 (vs avg 20s), IPO delays, and massive earnings swings (MSFT +$500B, AMZN +$400B, AAPL -$400B) signal structural inefficiency from passive investing.",
+        "**Geopolitical Rate Hike Skepticism**: Iran conflict prolonging inflation narrative, making rate hikes unlikely (4.5% 10y yield less probable than 5% due to bond supply/demand favoring buyers)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-zmun1pxghor-c0a3c8",
       "title": "MS Latin America's Unfinished Business",
@@ -64,6 +125,48 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-we83r0jgu1z-f07611",
+      "title": "MS El Niño's Back",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T11:03:01Z",
+      "summary_points": [
+        "**El Niño Sovereign Credit Risk**: 47% of EMBI-D index negatively exposed; 11% highest-risk bucket (Ecuador, Mozambique, Zambia, Colombia, Costa Rica, Peru) with avg sovereign risk score 5.9 for HY names vs.",
+        "8 for moderate risks.",
+        "**Risk Framework Channels**: Sovereigns scored on physical (40%: hydropower/agriculture exposure), fiscal (40%: 2026 deficit, EMBI spreads), and macro (20%: food CPI, FDI) channels; direct physical impacts drive upfront credit stress.",
+        "**Regional Exposure Disparity**: Africa/Asia face highest negative exposure; LatAm (Argentina, Chile, Mexico, Uruguay) potential beneficiaries if rainfall supports agriculture; Peru/Costa Rica highest sovereign risk in LatAm.",
+        "**HY Credit Vulnerability**: Lower-quality HY names (Ecuador, Mozambique, Zambia) exhibit elevated sovereign risk scores (avg 5.9) and underperform during El Niño peaks, with spreads peaking near physical impact dates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 47,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mwblyx01ibp-e17461",
+      "title": "MS Debunking the Value Add Myth",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T11:03:00Z",
+      "summary_points": [
+        "**GDP Forecast Upgrade**: Mexico 2027 GDP growth lifted to 1.9% (from 1.7%) driven by export boom, with IT hardware/AI sector as structural growth driver.",
+        "**Export Growth Divergence**: IT hardware/AI exports up 53% YTD vs auto exports down 8% YTD; IT sector nears auto export volume ($100bn vs $120bn+).",
+        "**Capital Efficiency Leadership**: IT hardware/AI generates $1.5 value added per $1 capital vs auto’s $1.2, with 1.3x higher productivity per worker.",
+        "**Structural Value-Add Surpass**: IT hardware/AI value added (~$20bn) nears auto benchmark (29% vs auto’s 29% in Exhibit 2), contradicting prior narratives.",
+        "**Auto Tariff Risk Disparity**: Auto faces elevated USMCA tariff risk (-8% YTD exports) vs IT hardware/AI’s growth (+53% YTD), extending uncertainty beyond July."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 39,
       "language": "en",
       "needs_metadata": false
     },
@@ -93,11 +196,51 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-03T10:23:55Z",
-      "summary_points": [],
+      "summary_points": [
+        "**Engie: Data center catalyst drives 2.8% EPS uplift** – 4 GW co-siting projects (12-month horizon) lift 2026-28 EPS forecasts amid strong H1 2026 results (€7.7bn EBITDA) - **Europe electrification accelerates utility outperformance** – Power demand +5% pa, €2tn infrastructure investment (2026-35); utilities with strong balance sheets (RWE, Orsted, EDP) gain structural tailwinds - **Agentic AI fuels 25% datacenter demand surge** – +10pp AI queries → +25% power needs, driving 1.5-2% annual consumption growth and 9% EPS CAGR (2025-30) for renewables/FlexGen - **France offshore wind policy unlocks €260mn infrastructure** – €260mn allocated to 5 ports for 6GW floating wind (geopolitical policy catalyst), enabling sector capacity expansion"
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4axyr6wffzv-83a7c8",
+      "title": "Weekly US Earnings Estimates 3rd 7th August 2026",
+      "institution": "Week Ahead",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:02:18Z",
+      "summary_points": [
+        "**GILD Earnings Deterioration**: GILD's negative Qtrly Exp.",
+        "EPS (-7.26) and Current FY Exp.",
+        "EPS (-0.75) signal severe earnings deterioration, creating critical fundamental risk for portfolio managers.",
+        "**Nasdaq 100 Sector Divergence**: AMGN shows robust EPS growth (5.62 → 5.78) and positive FY trends (22.36 → 23.42), while GILD faces quarterly pressure (-7.26) despite recovery signals (Next Qtr EPS 2.20), highlighting sector volatility.",
+        "**Aggregate Revenue-Earnings Mismatch**: Next FY Exp."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-olxnsycycqd-97c98d",
+      "title": "August 2026",
+      "institution": "Week Ahead",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:02:17Z",
+      "summary_points": [
+        "Document Missing**: Source document not provided for extraction; critical data unavailable for analysis **Fundamentals Gap**: No fundamental data (earnings, revenue, margins) included to assess company/sector health **Risk Factor Omission**: Key risk factors (geopolitical, policy shifts, flow data) absent from input list"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
       "language": "en",
       "needs_metadata": false
     },

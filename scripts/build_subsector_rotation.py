@@ -276,6 +276,16 @@ def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict
         asof_date = snap.get("asof") or datetime.now(timezone.utc).date().isoformat()
         n_logged = strk.snapshot(payload, member_map, today=asof_date)
         tr = strk.compute(today=asof_date)
+        # PUBLISH GUARD (2026-08-03 experiments audit): the note is the only sentence from
+        # this ledger a reader sees, and it rides a runtime JSON fetch that the BC-2 claim
+        # gate structurally cannot scan. Audit it against its OWN disclosed numbers before it
+        # leaves the builder; an unbacked note is withdrawn to the honest 'measuring' copy
+        # rather than shipped. compute() cannot currently produce one — this fires only if a
+        # future gate change re-opens the hole, which is exactly when nobody is looking.
+        viol = strk.withdraw_unbacked_note(tr)
+        if viol:
+            print("::error title=subsector_rotation::track-record note was not backed by its "
+                  f"own numbers and has been withdrawn — {viol}", flush=True)
         payload["track_record"] = tr
         _data("subsector_rotation", "track_record.json").write_text(json.dumps(tr, indent=2))
         log.info("track record: +%d snapshots, %d days logged, verdict=%s",
