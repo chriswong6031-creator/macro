@@ -1,0 +1,1057 @@
+#!/usr/bin/env python3
+"""Publish the receipt-bound Government Revenue candidate projection.
+
+This module is deliberately the only writer for the Government Revenue
+research-candidate ledger and its current public projection.  Candidate
+construction itself lives in :mod:`engine.government_revenue.candidates` and
+is pure.  This boundary validates the immutable sources, preserves the prior
+ledger byte-for-byte, appends only new observations, and binds the resulting
+generation to a state and publication-status receipt.
+
+Usage::
+
+    python -m scripts.build_government_revenue_candidates \
+        --generated-at 2026-08-03T07:00:00+00:00
+"""
+
+from __future__ import annotations
+
+import argparse
+from collections.abc import Mapping, Sequence
+from copy import deepcopy
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from hashlib import sha256
+import json
+import os
+from pathlib import Path
+import tempfile
+from typing import Any
+
+from engine.government_revenue.candidates import (
+    build_candidate_observations,
+    build_candidate_queue,
+    candidate_latest_semantic_sha256,
+    candidate_queue_content_id,
+    is_valid_candidate_payload,
+    is_valid_candidate_queue,
+)
+from engine.government_revenue.entity_resolution import load_recipient_entity_graph
+from engine.government_revenue.workspace import is_valid_procurement_workspace
+from scripts import build_government_revenue
+
+
+STATE_CONTRACT = "government_revenue.candidate_projection_state.v1"
+STATUS_CONTRACT = "government_revenue.candidate_projection_status.v1"
+SCHEMA_VERSION = "1.0.0"
+DATA_DIRECTORY = Path("data/government_revenue")
+PUBLIC_DIRECTORY = Path("site/government-revenue-data")
+LEDGER_FILENAME = "candidate_ledger.jsonl"
+QUEUE_FILENAME = "candidate_queue.json"
+STATE_FILENAME = "candidate_projection_state.json"
+STATUS_FILENAME = "candidate_projection_status.json"
+PUBLIC_QUEUE_FILENAME = "candidates.json"
+
+_AUTHORITY = {
+    "tier": "display",
+    "context_only": True,
+    "can_rank": False,
+    "can_size": False,
+    "can_gate": False,
+    "can_originate_signal": False,
+    "can_add_candidates": False,
+    "can_escalate": False,
+}
+_STATE_FIELDS = {
+    "contract",
+    "schema_version",
+    "generated_at",
+    "as_of",
+    "known_at",
+    "queue_content_id",
+    "latest_sha256",
+    "workspace_bundle_id",
+    "workspace_sha256",
+    "recipient_graph_id",
+    "recipient_graph_digest",
+    "ledger",
+}
+_STATUS_FIELDS = {
+    "contract",
+    "schema_version",
+    "status",
+    "generated_at",
+    "as_of",
+    "known_at",
+    "queue_content_id",
+    "candidate_count",
+    "mapping_backlog_count",
+    "latest_sha256",
+    "workspace_bundle_id",
+    "recipient_graph_id",
+    "recipient_graph_digest",
+    "ledger_sha256",
+    "ledger_byte_count",
+    "ledger_line_count",
+    "source_health",
+    "authority",
+}
+_LEDGER_STATE_FIELDS = {
+    "sha256",
+    "byte_count",
+    "line_count",
+    "prior_sha256",
+    "prior_byte_count",
+    "prior_line_count",
+    "append_count",
+}
+
+__all__ = [
+    "CandidateProjectionError",
+    "CandidateProjectionInputs",
+    "LedgerSnapshot",
+    "load_candidate_ledger",
+    "project_candidate_artifacts",
+    "validate_candidate_projection_inputs",
+    "verify_candidate_artifacts",
+]
+
+
+class CandidateProjectionError(ValueError):
+    """A source, lineage, or publication binding is not safe to project."""
+
+
+@dataclass(frozen=True)
+class LedgerSnapshot:
+    """Canonical ledger bytes plus the decoded immutable observations."""
+
+    raw: bytes
+    observations: tuple[dict[str, Any], ...]
+
+    @property
+    def sha256(self) -> str:
+        return sha256(self.raw).hexdigest()
+
+    @property
+    def byte_count(self) -> int:
+        return len(self.raw)
+
+    @property
+    def line_count(self) -> int:
+        return len(self.observations)
+
+
+@dataclass(frozen=True)
+class CandidateProjectionInputs:
+    """Verified immutable source material used by one frozen projection run."""
+
+    latest: dict[str, Any]
+    workspace: dict[str, Any]
+    recipient_graph: dict[str, Any]
+    latest_sha256: str
+    workspace_bundle_id: str
+    workspace_sha256: str
+    recipient_graph_id: str
+    recipient_graph_digest: str
+    generated_at: str
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def _canonical_json(value: Any) -> str:
+    try:
+        return json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+    except (TypeError, ValueError) as exc:
+        raise CandidateProjectionError("value cannot be represented as canonical JSON") from exc
+
+
+def _canonical_bytes(value: Any) -> bytes:
+    return _canonical_json(value).encode("utf-8")
+
+
+def _workspace_semantic_sha256(workspace: Mapping[str, Any]) -> str:
+    """Bind evidence semantics without treating assembly time as source state."""
+    fingerprint = {
+        key: value
+        for key, value in workspace.items()
+        if key != "generated_at"
+    }
+    return sha256(_canonical_bytes(fingerprint)).hexdigest()
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _instant(value: Any, *, label: str) -> datetime:
+    if not isinstance(value, str) or not value.strip():
+        raise CandidateProjectionError(f"{label} must be a non-empty ISO-8601 timestamp")
+    try:
+        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise CandidateProjectionError(f"{label} must be an ISO-8601 timestamp") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise CandidateProjectionError(f"{label} must include an explicit timezone")
+    return parsed.astimezone(timezone.utc)
+
+
+def _normalized_instant(value: Any, *, label: str) -> str:
+    return _instant(value, label=label).isoformat()
+
+
+def _read_json_object(path: Path, *, label: str) -> tuple[bytes, dict[str, Any]]:
+    try:
+        raw = path.read_bytes()
+        decoded = raw.decode("utf-8")
+        parsed = json.loads(decoded)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise CandidateProjectionError(f"{label} is missing or malformed: {path}") from exc
+    if not isinstance(parsed, dict):
+        raise CandidateProjectionError(f"{label} must be a JSON object")
+    return raw, parsed
+
+
+def _require_text(value: Any, *, label: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise CandidateProjectionError(f"{label} must be a non-empty string")
+    return value.strip()
+
+
+def _queue_content_id(queue: Mapping[str, Any]) -> str:
+    """Read the queue content identifier across the W9A schema rename.
+
+    The queue contract originally exposed ``queue_content_id``.  The canonical
+    public docket calls this content-addressed value ``content_id``.  Accepting
+    either keeps the writer coupled to the final engine/schema pair, while a
+    document carrying both must agree exactly.
+    """
+    content_id = queue.get("content_id")
+    legacy_id = queue.get("queue_content_id")
+    if content_id is not None and legacy_id is not None and content_id != legacy_id:
+        raise CandidateProjectionError("candidate queue content identifiers disagree")
+    result = content_id if content_id is not None else legacy_id
+    result = _require_text(result, label="candidate queue content id")
+    if not result.startswith("grcq1-") or len(result) != len("grcq1-") + 24:
+        raise CandidateProjectionError("candidate queue content id is invalid")
+    return result
+
+
+def _validate_authority(value: Any, *, label: str) -> dict[str, Any]:
+    if not isinstance(value, Mapping) or dict(value) != _AUTHORITY:
+        raise CandidateProjectionError(f"{label} must retain display-only all-false authority")
+    return dict(value)
+
+
+def _validate_canonical_latest_workspace(
+    root: Path,
+    *,
+    generated_at: str,
+) -> tuple[dict[str, Any], dict[str, Any], str, str, str]:
+    canonical_dir = root / DATA_DIRECTORY
+    _latest_raw, latest = _read_json_object(canonical_dir / "latest.json", label="canonical latest")
+    _workspace_raw, workspace = _read_json_object(
+        canonical_dir / "workspace.json", label="canonical workspace"
+    )
+    try:
+        build_government_revenue._validate_payload(latest)
+    except (TypeError, ValueError) as exc:
+        raise CandidateProjectionError("canonical latest is not a valid Government Revenue generation") from exc
+    if (
+        workspace.get("schema_version") != "government_procurement_workspace.v2"
+        or workspace.get("event_contract") != "government_procurement_event.v2"
+        or not is_valid_procurement_workspace(workspace)
+    ):
+        raise CandidateProjectionError("canonical workspace is not a valid procurement workspace")
+    embedded = latest.get("procurement_workspace")
+    if not isinstance(embedded, Mapping) or _canonical_json(dict(embedded)) != _canonical_json(workspace):
+        raise CandidateProjectionError("canonical latest/workspace semantic binding mismatch")
+    bundle_id = _require_text(workspace.get("bundle_id"), label="workspace bundle_id")
+    if bundle_id != build_government_revenue._workspace_bundle_id(workspace):
+        raise CandidateProjectionError("canonical workspace bundle identity mismatch")
+    frozen = _instant(generated_at, label="generated_at")
+    for label, value in (
+        ("canonical latest known_at", latest.get("known_at")),
+        ("canonical workspace known_at", workspace.get("known_at")),
+    ):
+        if _instant(value, label=label) > frozen:
+            raise CandidateProjectionError(f"{label} is after the frozen generated_at clock")
+    return (
+        latest,
+        workspace,
+        bundle_id,
+        _workspace_semantic_sha256(workspace),
+        candidate_latest_semantic_sha256(latest),
+    )
+
+
+def validate_candidate_projection_inputs(
+    root: Path = _repo_root(),
+    *,
+    generated_at: str,
+) -> CandidateProjectionInputs:
+    """Load and validate the exact source generation before any output write.
+
+    A degraded award-event freshness state remains a valid *source health*
+    observation.  An absent/malformed source document or a non-strict reviewed
+    recipient graph is not an empty candidate result and therefore fails.
+    """
+    root = root.resolve()
+    normalized_generated_at = _normalized_instant(generated_at, label="generated_at")
+    latest, workspace, bundle_id, workspace_sha, latest_sha = _validate_canonical_latest_workspace(
+        root,
+        generated_at=normalized_generated_at,
+    )
+    _graph_raw, recipient_graph = _read_json_object(
+        root / DATA_DIRECTORY / "recipient_entity_graph.json",
+        label="reviewed recipient graph",
+    )
+    loaded = load_recipient_entity_graph(recipient_graph, as_of=latest.get("as_of"))
+    if loaded.get("status") != "ready":
+        errors = loaded.get("errors")
+        suffix = f": {', '.join(str(item) for item in errors)}" if isinstance(errors, list) else ""
+        raise CandidateProjectionError(f"reviewed recipient graph is not strict-ready{suffix}")
+    graph_id = _require_text(loaded.get("graph_id"), label="recipient graph_id")
+    graph_digest = _require_text(loaded.get("graph_digest"), label="recipient graph digest")
+    if len(graph_digest) != 64 or any(character not in "0123456789abcdef" for character in graph_digest):
+        raise CandidateProjectionError("recipient graph digest is invalid")
+    graph_known_at = _instant(loaded.get("graph_known_at"), label="recipient graph known_at")
+    if graph_known_at > _instant(normalized_generated_at, label="generated_at"):
+        raise CandidateProjectionError("recipient graph known_at is after the frozen generated_at clock")
+    return CandidateProjectionInputs(
+        latest=latest,
+        workspace=workspace,
+        recipient_graph=recipient_graph,
+        latest_sha256=latest_sha,
+        workspace_bundle_id=bundle_id,
+        workspace_sha256=workspace_sha,
+        recipient_graph_id=graph_id,
+        recipient_graph_digest=graph_digest,
+        generated_at=normalized_generated_at,
+    )
+
+
+def _ledger_from_bytes(raw: bytes, *, label: str) -> LedgerSnapshot:
+    if not raw:
+        return LedgerSnapshot(raw=b"", observations=())
+    if not raw.endswith(b"\n"):
+        raise CandidateProjectionError(f"{label} must end with one canonical JSONL newline")
+    if b"\r" in raw:
+        raise CandidateProjectionError(f"{label} must use LF-only canonical JSONL")
+    lines = raw[:-1].split(b"\n")
+    if not lines or any(not line for line in lines):
+        raise CandidateProjectionError(f"{label} contains an empty JSONL row")
+    observations: list[dict[str, Any]] = []
+    observation_ids: set[str] = set()
+    for index, line in enumerate(lines, start=1):
+        try:
+            value = json.loads(line.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise CandidateProjectionError(f"{label} row {index} is malformed JSON") from exc
+        if not isinstance(value, dict) or not is_valid_candidate_payload(value):
+            raise CandidateProjectionError(f"{label} row {index} violates the candidate contract")
+        if line != _canonical_bytes(value):
+            raise CandidateProjectionError(f"{label} row {index} is not canonical JSON")
+        observation_id = _require_text(value.get("observation_id"), label=f"{label} row {index} observation_id")
+        if observation_id in observation_ids:
+            raise CandidateProjectionError(f"{label} has a duplicate observation_id")
+        observation_ids.add(observation_id)
+        observations.append(value)
+    return LedgerSnapshot(raw=raw, observations=tuple(observations))
+
+
+def load_candidate_ledger(path: Path) -> LedgerSnapshot:
+    """Load every prior ledger row, rejecting any non-canonical or invalid row."""
+    try:
+        raw = path.read_bytes() if path.exists() else b""
+    except OSError as exc:
+        raise CandidateProjectionError(f"candidate ledger is unavailable: {path}") from exc
+    return _ledger_from_bytes(raw, label="candidate ledger")
+
+
+def _validate_ledger_state_binding(state: Mapping[str, Any], ledger: LedgerSnapshot) -> None:
+    if set(state) != _STATE_FIELDS:
+        raise CandidateProjectionError("candidate projection state has an invalid field set")
+    if state.get("contract") != STATE_CONTRACT or state.get("schema_version") != SCHEMA_VERSION:
+        raise CandidateProjectionError("candidate projection state has an invalid contract")
+    _normalized_instant(state.get("generated_at"), label="candidate projection state generated_at")
+    _normalized_instant(state.get("as_of"), label="candidate projection state as_of")
+    _normalized_instant(state.get("known_at"), label="candidate projection state known_at")
+    _queue_content_id({"content_id": state.get("queue_content_id")})
+    _require_text(state.get("latest_sha256"), label="candidate projection state latest_sha256")
+    _require_text(state.get("workspace_bundle_id"), label="candidate projection state workspace_bundle_id")
+    _require_text(state.get("workspace_sha256"), label="candidate projection state workspace_sha256")
+    _require_text(state.get("recipient_graph_id"), label="candidate projection state recipient_graph_id")
+    _require_text(state.get("recipient_graph_digest"), label="candidate projection state recipient_graph_digest")
+    state_ledger = state.get("ledger")
+    if not isinstance(state_ledger, Mapping) or set(state_ledger) != _LEDGER_STATE_FIELDS:
+        raise CandidateProjectionError("candidate projection state ledger receipt is invalid")
+    for field in ("sha256", "prior_sha256"):
+        value = state_ledger.get(field)
+        if (
+            not isinstance(value, str)
+            or len(value) != 64
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise CandidateProjectionError(f"candidate projection state {field} is invalid")
+    for field in ("byte_count", "line_count", "prior_byte_count", "prior_line_count", "append_count"):
+        value = state_ledger.get(field)
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise CandidateProjectionError(f"candidate projection state {field} is invalid")
+    if (
+        state_ledger["sha256"] != ledger.sha256
+        or state_ledger["byte_count"] != ledger.byte_count
+        or state_ledger["line_count"] != ledger.line_count
+    ):
+        raise CandidateProjectionError("candidate ledger does not match its prior projection state")
+    prior_byte_count = state_ledger["prior_byte_count"]
+    prior_line_count = state_ledger["prior_line_count"]
+    if prior_byte_count > ledger.byte_count or prior_line_count > ledger.line_count:
+        raise CandidateProjectionError("candidate projection state prior prefix exceeds the ledger")
+    prefix = ledger.raw[:prior_byte_count]
+    if sha256(prefix).hexdigest() != state_ledger["prior_sha256"]:
+        raise CandidateProjectionError("candidate ledger prior prefix does not match projection state")
+    if _ledger_from_bytes(prefix, label="candidate ledger prior prefix").line_count != prior_line_count:
+        raise CandidateProjectionError("candidate projection state prior line count is invalid")
+    if state_ledger["append_count"] != ledger.line_count - prior_line_count:
+        raise CandidateProjectionError("candidate projection state append count is invalid")
+
+
+def _load_prior_ledger_and_state(
+    root: Path,
+) -> tuple[LedgerSnapshot, dict[str, Any] | None]:
+    canonical_dir = root / DATA_DIRECTORY
+    ledger_path = canonical_dir / LEDGER_FILENAME
+    state_path = canonical_dir / STATE_FILENAME
+    ledger = load_candidate_ledger(ledger_path)
+    if not state_path.exists():
+        if ledger.line_count:
+            raise CandidateProjectionError("non-empty candidate ledger has no projection state")
+        return ledger, None
+    if not ledger_path.exists():
+        raise CandidateProjectionError("candidate projection state exists but candidate ledger is absent")
+    _state_raw, state = _read_json_object(state_path, label="candidate projection state")
+    _validate_ledger_state_binding(state, ledger)
+    return ledger, state
+
+
+def _current_projection(
+    inputs: CandidateProjectionInputs,
+) -> tuple[list[dict[str, Any]], dict[str, Any], str, dict[str, Any]]:
+    """Build current pure observations and refuse queue/authority drift."""
+    observations = build_candidate_observations(
+        inputs.latest,
+        inputs.recipient_graph,
+        generated_at=inputs.generated_at,
+    )
+    if not isinstance(observations, list):
+        raise CandidateProjectionError("candidate observation engine returned a non-list")
+    observation_ids: set[str] = set()
+    for index, observation in enumerate(observations, start=1):
+        if not isinstance(observation, dict) or not is_valid_candidate_payload(observation):
+            raise CandidateProjectionError(f"current candidate observation {index} violates the candidate contract")
+        observation_id = _require_text(
+            observation.get("observation_id"),
+            label=f"current candidate observation {index} id",
+        )
+        if observation_id in observation_ids:
+            raise CandidateProjectionError("current candidate observations duplicate an observation_id")
+        observation_ids.add(observation_id)
+        observation_known_at = observation.get("known_at")
+        if observation_known_at is None and isinstance(observation.get("clocks"), Mapping):
+            # Retain a narrow compatibility bridge for an already-persisted
+            # pre-W9A draft row while the final contract exposes known_at at
+            # the top level.
+            observation_known_at = observation["clocks"].get("known_at")
+        if _instant(observation_known_at, label=f"current candidate observation {index} known_at") > _instant(
+            inputs.generated_at, label="generated_at"
+        ):
+            raise CandidateProjectionError("current candidate observation is after the frozen generated_at clock")
+        _validate_authority(observation.get("authority"), label=f"current candidate observation {index} authority")
+    queue = build_candidate_queue(
+        inputs.latest,
+        inputs.recipient_graph,
+        generated_at=inputs.generated_at,
+    )
+    if not isinstance(queue, dict) or not is_valid_candidate_queue(queue):
+        raise CandidateProjectionError("current candidate queue violates its contract")
+    queue_content_id = _queue_content_id(queue)
+    # ``content_id`` is the final W9A field name.  Recompute it at the writer
+    # boundary rather than trusting a self-consistent serialized queue.
+    if "content_id" in queue:
+        try:
+            expected_content_id = candidate_queue_content_id(queue)
+        except ValueError as exc:
+            raise CandidateProjectionError("current candidate queue content id cannot be recomputed") from exc
+        if queue_content_id != expected_content_id:
+            raise CandidateProjectionError("current candidate queue content id is detached from its payload")
+    _validate_authority(queue.get("authority"), label="current candidate queue authority")
+    if (
+        _normalized_instant(
+            queue.get("generated_at"), label="current candidate queue generated_at"
+        )
+        != inputs.generated_at
+    ):
+        raise CandidateProjectionError("current candidate queue drifted from the frozen generated_at clock")
+    queue_candidates = queue.get("candidates")
+    backlog = queue.get("mapping_backlog")
+    recently_matured = queue.get("recently_matured", [])
+    if (
+        not isinstance(queue_candidates, list)
+        or not isinstance(backlog, list)
+        or not isinstance(recently_matured, list)
+    ):
+        raise CandidateProjectionError(
+            "current candidate queue is missing candidates, mapping backlog, or recently matured rows"
+        )
+    if any(not isinstance(row, dict) for row in backlog):
+        raise CandidateProjectionError("current candidate queue contains a malformed mapping backlog row")
+    candidate_by_id = {row["observation_id"]: row for row in observations}
+    queue_by_id = {
+        row.get("observation_id"): row
+        for row in queue_candidates
+        if isinstance(row, Mapping)
+    }
+    if len(queue_by_id) != len(queue_candidates) or set(queue_by_id) != set(candidate_by_id):
+        raise CandidateProjectionError("candidate queue is not the current exact-observation projection")
+    for observation_id, observation in candidate_by_id.items():
+        if (
+            not isinstance(queue_by_id.get(observation_id), Mapping)
+            or _canonical_json(queue_by_id[observation_id]) != _canonical_json(observation)
+        ):
+            raise CandidateProjectionError("candidate queue altered a current exact observation")
+    # Mapping backlog is deliberately a separate discovery surface.  It cannot
+    # acquire an observation identity or issuer-attribution assertion en route
+    # to the candidate ledger.
+    for index, row in enumerate(backlog, start=1):
+        if "observation_id" in row or row.get("issuer_attribution") != "not_asserted":
+            raise CandidateProjectionError(f"mapping backlog row {index} is being promoted as a candidate")
+    counts = queue.get("counts")
+    if not isinstance(counts, Mapping):
+        raise CandidateProjectionError("current candidate queue counts are invalid")
+    if counts.get("total") != len(queue_candidates) or counts.get("mapping_needed") != len(backlog):
+        raise CandidateProjectionError("current candidate queue counts disagree with its rows")
+    health = _queue_source_health(queue)
+    if health["recipient_graph_status"] != "ready":
+        raise CandidateProjectionError("candidate queue did not retain the strict recipient graph")
+    _assert_candidate_source_binding(queue, inputs=inputs)
+    return observations, queue, queue_content_id, health
+
+
+def _queue_source_health(queue: Mapping[str, Any]) -> dict[str, Any]:
+    source_health = queue.get("freshness")
+    if not isinstance(source_health, Mapping):
+        raise CandidateProjectionError("candidate queue source health is invalid")
+    return {
+        "status": _require_text(source_health.get("status"), label="candidate source health status"),
+        "award_events_status": _require_text(
+            source_health.get("award_events_status"), label="candidate source award event status"
+        ),
+        "recipient_graph_status": _require_text(
+            source_health.get("recipient_graph_status"), label="candidate source recipient graph status"
+        ),
+    }
+
+
+def _assert_candidate_source_binding(
+    queue: Mapping[str, Any],
+    *,
+    inputs: CandidateProjectionInputs,
+) -> None:
+    """Bind exact rows and backlog provenance to this complete source view."""
+    source_content_ids = queue.get("source_content_ids")
+    required_content_ids = {
+        f"latest-sha256:{inputs.latest_sha256}",
+        f"graph-sha256:{inputs.recipient_graph_digest}",
+        inputs.workspace_bundle_id,
+    }
+    if (
+        not isinstance(source_content_ids, list)
+        or not required_content_ids.issubset(set(source_content_ids))
+    ):
+        raise CandidateProjectionError("candidate queue is not bound to every source input")
+    for collection_name in ("candidates", "recently_matured"):
+        rows = queue.get(collection_name, [])
+        if not isinstance(rows, list):
+            raise CandidateProjectionError(f"candidate queue {collection_name} is invalid")
+        for index, row in enumerate(rows, start=1):
+            resolution = row.get("issuer_resolution_ref") if isinstance(row, Mapping) else None
+            artifact_ids = row.get("artifact_content_ids") if isinstance(row, Mapping) else None
+            if (
+                not isinstance(resolution, Mapping)
+                or resolution.get("graph_id") != inputs.recipient_graph_id
+                or resolution.get("graph_digest") != inputs.recipient_graph_digest
+                or not isinstance(artifact_ids, list)
+                or f"graph-sha256:{inputs.recipient_graph_digest}" not in artifact_ids
+            ):
+                raise CandidateProjectionError(
+                    f"candidate queue {collection_name} row {index} is detached from the reviewed graph"
+                )
+    for index, row in enumerate(queue.get("mapping_backlog") or [], start=1):
+        artifact_ids = row.get("source_artifact_content_ids") if isinstance(row, Mapping) else None
+        if (
+            not isinstance(artifact_ids, list)
+            or f"latest-sha256:{inputs.latest_sha256}" not in artifact_ids
+            or f"graph-sha256:{inputs.recipient_graph_digest}" not in artifact_ids
+        ):
+            raise CandidateProjectionError(
+                f"candidate queue mapping backlog row {index} is detached from its source generation"
+            )
+
+
+def _assert_queue_ledger_binding(queue: Mapping[str, Any], ledger: LedgerSnapshot) -> None:
+    """Ensure every projected exact observation exactly matches immutable history."""
+    ledger_by_observation_id = {
+        row["observation_id"]: row for row in ledger.observations
+    }
+    for collection_name in ("candidates", "recently_matured"):
+        rows = queue.get(collection_name, [])
+        if not isinstance(rows, list):
+            raise CandidateProjectionError(f"candidate queue {collection_name} is invalid")
+        for index, row in enumerate(rows, start=1):
+            if not isinstance(row, Mapping) or not is_valid_candidate_payload(row):
+                raise CandidateProjectionError(
+                    f"candidate queue {collection_name} row {index} violates the candidate contract"
+                )
+            observation_id = _require_text(
+                row.get("observation_id"),
+                label=f"candidate queue {collection_name} row {index} observation_id",
+            )
+            ledger_row = ledger_by_observation_id.get(observation_id)
+            if ledger_row is None:
+                raise CandidateProjectionError(
+                    f"candidate queue {collection_name} is not bound to the candidate ledger"
+                )
+            if _canonical_json(dict(row)) != _canonical_json(ledger_row):
+                raise CandidateProjectionError(
+                    f"candidate queue {collection_name} differs from its immutable ledger observation"
+                )
+
+
+def _queue_bound_to_immutable_ledger(
+    queue: Mapping[str, Any], ledger: LedgerSnapshot
+) -> tuple[dict[str, Any], str]:
+    """Replace current rows with their immutable observations and re-address queue.
+
+    Candidate observations contain ``generated_at``.  The observation ID does
+    not; therefore a later run can rediscover a known observation with a new
+    envelope clock.  The ledger is the historical authority for that ID, so
+    the current queue must retain the ledger row rather than silently retime
+    it.  New IDs are already present in ``ledger`` because the caller appended
+    their canonical rows first.
+    """
+    bound = deepcopy(dict(queue))
+    ledger_by_observation_id = {
+        row["observation_id"]: row for row in ledger.observations
+    }
+    for collection_name in ("candidates", "recently_matured"):
+        rows = bound.get(collection_name, [])
+        if not isinstance(rows, list):
+            raise CandidateProjectionError(f"candidate queue {collection_name} is invalid")
+        rebound_rows: list[dict[str, Any]] = []
+        for index, row in enumerate(rows, start=1):
+            if not isinstance(row, Mapping):
+                raise CandidateProjectionError(
+                    f"candidate queue {collection_name} row {index} is invalid"
+                )
+            observation_id = _require_text(
+                row.get("observation_id"),
+                label=f"candidate queue {collection_name} row {index} observation_id",
+            )
+            ledger_row = ledger_by_observation_id.get(observation_id)
+            if ledger_row is None:
+                raise CandidateProjectionError(
+                    f"candidate queue {collection_name} is not bound to the candidate ledger"
+                )
+            rebound_rows.append(deepcopy(ledger_row))
+        bound[collection_name] = rebound_rows
+    if "content_id" not in bound:
+        raise CandidateProjectionError("candidate queue lacks the canonical content_id field")
+    try:
+        bound["content_id"] = candidate_queue_content_id(bound)
+    except ValueError as exc:
+        raise CandidateProjectionError("candidate queue content id cannot be recomputed") from exc
+    if not is_valid_candidate_queue(bound):
+        raise CandidateProjectionError("candidate queue is invalid after immutable-ledger binding")
+    content_id = _queue_content_id(bound)
+    _assert_queue_ledger_binding(bound, ledger)
+    return bound, content_id
+
+
+def _ledger_state(
+    *,
+    inputs: CandidateProjectionInputs,
+    queue: Mapping[str, Any],
+    queue_content_id: str,
+    prior: LedgerSnapshot,
+    ledger: LedgerSnapshot,
+    append_count: int,
+) -> dict[str, Any]:
+    return {
+        "contract": STATE_CONTRACT,
+        "schema_version": SCHEMA_VERSION,
+        "generated_at": inputs.generated_at,
+        "as_of": _normalized_instant(queue.get("as_of"), label="candidate queue as_of"),
+        "known_at": _normalized_instant(queue.get("known_at"), label="candidate queue known_at"),
+        "queue_content_id": queue_content_id,
+        "latest_sha256": inputs.latest_sha256,
+        "workspace_bundle_id": inputs.workspace_bundle_id,
+        "workspace_sha256": inputs.workspace_sha256,
+        "recipient_graph_id": inputs.recipient_graph_id,
+        "recipient_graph_digest": inputs.recipient_graph_digest,
+        "ledger": {
+            "sha256": ledger.sha256,
+            "byte_count": ledger.byte_count,
+            "line_count": ledger.line_count,
+            "prior_sha256": prior.sha256,
+            "prior_byte_count": prior.byte_count,
+            "prior_line_count": prior.line_count,
+            "append_count": append_count,
+        },
+    }
+
+
+def _projection_status(
+    *,
+    inputs: CandidateProjectionInputs,
+    queue: Mapping[str, Any],
+    queue_content_id: str,
+    ledger: LedgerSnapshot,
+    source_health: Mapping[str, Any],
+) -> dict[str, Any]:
+    candidates = queue.get("candidates")
+    backlog = queue.get("mapping_backlog")
+    if not isinstance(candidates, list) or not isinstance(backlog, list):
+        raise CandidateProjectionError("candidate queue cannot supply publication counts")
+    return {
+        "contract": STATUS_CONTRACT,
+        "schema_version": SCHEMA_VERSION,
+        # Publication integrity is independent from upstream source freshness.
+        # A valid zero-candidate projection is a successful, honest artifact.
+        "status": "ok",
+        "generated_at": inputs.generated_at,
+        "as_of": _normalized_instant(queue.get("as_of"), label="candidate queue as_of"),
+        "known_at": _normalized_instant(queue.get("known_at"), label="candidate queue known_at"),
+        "queue_content_id": queue_content_id,
+        "candidate_count": len(candidates),
+        "mapping_backlog_count": len(backlog),
+        "latest_sha256": inputs.latest_sha256,
+        "workspace_bundle_id": inputs.workspace_bundle_id,
+        "recipient_graph_id": inputs.recipient_graph_id,
+        "recipient_graph_digest": inputs.recipient_graph_digest,
+        "ledger_sha256": ledger.sha256,
+        "ledger_byte_count": ledger.byte_count,
+        "ledger_line_count": ledger.line_count,
+        "source_health": dict(source_health),
+        "authority": dict(_AUTHORITY),
+    }
+
+
+def _atomic_write_bytes(path: Path, raw: bytes) -> None:
+    """Atomically replace one artifact after all generation checks have passed."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(raw)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    except Exception:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
+def _artifact_paths(root: Path) -> dict[str, Path]:
+    canonical_dir = root / DATA_DIRECTORY
+    return {
+        "ledger": canonical_dir / LEDGER_FILENAME,
+        "queue": canonical_dir / QUEUE_FILENAME,
+        "state": canonical_dir / STATE_FILENAME,
+        "status": canonical_dir / STATUS_FILENAME,
+        "public_queue": root / PUBLIC_DIRECTORY / PUBLIC_QUEUE_FILENAME,
+    }
+
+
+def _validate_status_binding(
+    status: Mapping[str, Any],
+    *,
+    inputs: CandidateProjectionInputs,
+    queue: Mapping[str, Any],
+    queue_content_id: str,
+    ledger: LedgerSnapshot,
+) -> None:
+    if set(status) != _STATUS_FIELDS:
+        raise CandidateProjectionError("candidate projection status has an invalid field set")
+    if (
+        status.get("contract") != STATUS_CONTRACT
+        or status.get("schema_version") != SCHEMA_VERSION
+        or status.get("status") != "ok"
+    ):
+        raise CandidateProjectionError("candidate projection status has an invalid contract")
+    for clock in ("as_of", "known_at", "generated_at"):
+        if status.get(clock) != queue.get(clock):
+            raise CandidateProjectionError("candidate projection status clock mismatch")
+        _normalized_instant(status.get(clock), label=f"candidate projection status {clock}")
+    if (
+        status.get("queue_content_id") != queue_content_id
+        or status.get("latest_sha256") != inputs.latest_sha256
+        or status.get("workspace_bundle_id") != inputs.workspace_bundle_id
+        or status.get("recipient_graph_id") != inputs.recipient_graph_id
+        or status.get("recipient_graph_digest") != inputs.recipient_graph_digest
+        or status.get("ledger_sha256") != ledger.sha256
+        or status.get("ledger_byte_count") != ledger.byte_count
+        or status.get("ledger_line_count") != ledger.line_count
+    ):
+        raise CandidateProjectionError("candidate projection status binding mismatch")
+    _validate_authority(status.get("authority"), label="candidate projection status authority")
+    if status.get("source_health") != _queue_source_health(queue):
+        raise CandidateProjectionError("candidate projection status source health mismatch")
+    candidates = queue.get("candidates")
+    backlog = queue.get("mapping_backlog")
+    if (
+        not isinstance(candidates, list)
+        or not isinstance(backlog, list)
+        or status.get("candidate_count") != len(candidates)
+        or status.get("mapping_backlog_count") != len(backlog)
+    ):
+        raise CandidateProjectionError("candidate projection status count mismatch")
+
+
+def verify_candidate_artifacts(
+    root: Path = _repo_root(),
+    *,
+    mirror_public: bool = False,
+) -> dict[str, Any]:
+    """Verify one persisted candidate generation without advancing any clocks.
+
+    Generic render/site-only callers use this read-only fence.  With
+    ``mirror_public=True`` it can repair a missing/stale public half *only*
+    after the canonical queue, ledger, state, status, and their current source
+    bindings have all passed.  It never rebuilds observations or appends a
+    ledger row.
+    """
+    root = root.resolve()
+    paths = _artifact_paths(root)
+    exists = {name: path.exists() for name, path in paths.items()}
+    if not any(exists.values()):
+        return {"status": "absent"}
+    canonical_names = ("ledger", "queue", "state", "status")
+    if not all(exists[name] for name in canonical_names):
+        raise CandidateProjectionError("candidate projection rail is partial")
+    if not mirror_public and not exists["public_queue"]:
+        raise CandidateProjectionError("candidate projection public twin is absent")
+
+    queue_raw, queue = _read_json_object(paths["queue"], label="canonical candidate queue")
+    _state_raw, state = _read_json_object(paths["state"], label="candidate projection state")
+    _status_raw, status = _read_json_object(paths["status"], label="candidate projection status")
+    ledger = load_candidate_ledger(paths["ledger"])
+    if not is_valid_candidate_queue(queue):
+        raise CandidateProjectionError("canonical candidate queue violates its contract")
+    queue_content_id = _queue_content_id(queue)
+    if "content_id" not in queue:
+        raise CandidateProjectionError("canonical candidate queue lacks content_id")
+    try:
+        if candidate_queue_content_id(queue) != queue_content_id:
+            raise CandidateProjectionError("canonical candidate queue content id is detached")
+    except ValueError as exc:
+        raise CandidateProjectionError("canonical candidate queue content id cannot be recomputed") from exc
+    _validate_authority(queue.get("authority"), label="canonical candidate queue authority")
+    _validate_ledger_state_binding(state, ledger)
+    state_generated_at = _normalized_instant(
+        state.get("generated_at"), label="candidate projection state generated_at"
+    )
+    inputs = validate_candidate_projection_inputs(root, generated_at=state_generated_at)
+    for clock in ("as_of", "known_at", "generated_at"):
+        if state.get(clock) != queue.get(clock):
+            raise CandidateProjectionError("candidate projection state clock mismatch")
+    if (
+        state.get("queue_content_id") != queue_content_id
+        or state.get("latest_sha256") != inputs.latest_sha256
+        or state.get("workspace_bundle_id") != inputs.workspace_bundle_id
+        or state.get("workspace_sha256") != inputs.workspace_sha256
+        or state.get("recipient_graph_id") != inputs.recipient_graph_id
+        or state.get("recipient_graph_digest") != inputs.recipient_graph_digest
+    ):
+        raise CandidateProjectionError("candidate projection state source binding mismatch")
+    _assert_candidate_source_binding(queue, inputs=inputs)
+    _assert_queue_ledger_binding(queue, ledger)
+    counts = queue.get("counts")
+    candidates = queue.get("candidates")
+    backlog = queue.get("mapping_backlog")
+    if (
+        not isinstance(counts, Mapping)
+        or not isinstance(candidates, list)
+        or not isinstance(backlog, list)
+        or counts.get("total") != len(candidates)
+        or counts.get("exact_linked") != len(candidates)
+        or counts.get("mapping_needed") != len(backlog)
+    ):
+        raise CandidateProjectionError("candidate queue count mismatch")
+    for index, row in enumerate(backlog, start=1):
+        if not isinstance(row, Mapping) or "observation_id" in row or row.get("issuer_attribution") != "not_asserted":
+            raise CandidateProjectionError(f"candidate queue mapping backlog row {index} is invalid")
+    _validate_status_binding(
+        status,
+        inputs=inputs,
+        queue=queue,
+        queue_content_id=queue_content_id,
+        ledger=ledger,
+    )
+
+    if mirror_public:
+        _atomic_write_bytes(paths["public_queue"], queue_raw)
+    try:
+        public_raw = paths["public_queue"].read_bytes()
+    except OSError as exc:
+        raise CandidateProjectionError("candidate projection public twin is unavailable") from exc
+    if public_raw != queue_raw:
+        raise CandidateProjectionError("candidate projection canonical/public queue twins differ")
+    return {
+        "status": "ok",
+        "generated_at": state["generated_at"],
+        "as_of": state["as_of"],
+        "known_at": state["known_at"],
+        "queue_content_id": queue_content_id,
+        "candidate_count": len(candidates),
+        "mapping_backlog_count": len(backlog),
+        "ledger": dict(state["ledger"]),
+    }
+
+
+def project_candidate_artifacts(
+    root: Path = _repo_root(),
+    *,
+    generated_at: str,
+) -> dict[str, Any]:
+    """Append unseen candidate observations and atomically publish one generation.
+
+    This is the public writer entrypoint.  It performs every source, prior
+    ledger, lineage, queue, and authority validation before it touches an
+    output path.  ``generated_at`` is intentionally caller supplied so the
+    serialized live lane and tests share one immutable run clock.
+    """
+    root = root.resolve()
+    inputs = validate_candidate_projection_inputs(root, generated_at=generated_at)
+    prior, prior_state = _load_prior_ledger_and_state(root)
+    observations, queue, queue_content_id, source_health = _current_projection(inputs)
+    existing_ids = {row["observation_id"] for row in prior.observations}
+    appended = [row for row in observations if row["observation_id"] not in existing_ids]
+    if prior_state is not None:
+        prior_frozen_at = _instant(
+            prior_state.get("generated_at"),
+            label="prior candidate projection generated_at",
+        )
+        current_frozen_at = _instant(inputs.generated_at, label="generated_at")
+        if current_frozen_at < prior_frozen_at:
+            raise CandidateProjectionError(
+                "candidate projection generated_at cannot move backward"
+            )
+        historical_append_ids = [
+            _require_text(
+                row.get("observation_id"),
+                label="new candidate observation id",
+            )
+            for row in appended
+            if _instant(
+                row.get("known_at"),
+                label="new candidate observation known_at",
+            )
+            <= prior_frozen_at
+        ]
+        if historical_append_ids:
+            raise CandidateProjectionError(
+                "new candidate observation is not forward of the prior frozen "
+                "generated_at clock: " + ", ".join(sorted(historical_append_ids))
+            )
+    append_raw = b"".join(_canonical_bytes(row) + b"\n" for row in appended)
+    ledger = _ledger_from_bytes(prior.raw + append_raw, label="next candidate ledger")
+    queue, queue_content_id = _queue_bound_to_immutable_ledger(queue, ledger)
+    _assert_candidate_source_binding(queue, inputs=inputs)
+    queue_raw = _canonical_bytes(queue)
+    state = _ledger_state(
+        inputs=inputs,
+        queue=queue,
+        queue_content_id=queue_content_id,
+        prior=prior,
+        ledger=ledger,
+        append_count=len(appended),
+    )
+    _validate_ledger_state_binding(state, ledger)
+    status = _projection_status(
+        inputs=inputs,
+        queue=queue,
+        queue_content_id=queue_content_id,
+        ledger=ledger,
+        source_health=source_health,
+    )
+    if set(status) != _STATUS_FIELDS or status["authority"] != _AUTHORITY:
+        raise CandidateProjectionError("candidate projection status contract is invalid")
+    state_raw = _canonical_bytes(state)
+    status_raw = _canonical_bytes(status)
+
+    canonical_dir = root / DATA_DIRECTORY
+    public_dir = root / PUBLIC_DIRECTORY
+    ledger_path = canonical_dir / LEDGER_FILENAME
+    queue_path = canonical_dir / QUEUE_FILENAME
+    state_path = canonical_dir / STATE_FILENAME
+    status_path = canonical_dir / STATUS_FILENAME
+    public_queue_path = public_dir / PUBLIC_QUEUE_FILENAME
+    # Do not replace an unchanged ledger.  This is stronger than merely writing
+    # identical bytes: every pre-existing byte keeps its inode-level history.
+    if not ledger_path.exists() or append_raw:
+        _atomic_write_bytes(ledger_path, ledger.raw)
+    _atomic_write_bytes(queue_path, queue_raw)
+    _atomic_write_bytes(state_path, state_raw)
+    _atomic_write_bytes(status_path, status_raw)
+    _atomic_write_bytes(public_queue_path, queue_raw)
+    try:
+        if queue_path.read_bytes() != public_queue_path.read_bytes():
+            raise CandidateProjectionError("canonical/public candidate queue twins differ after publication")
+    except OSError as exc:
+        raise CandidateProjectionError(
+            "canonical/public candidate queue twins are unavailable after publication"
+        ) from exc
+    return {
+        "status": "ok",
+        "generated_at": inputs.generated_at,
+        "as_of": state["as_of"],
+        "known_at": state["known_at"],
+        "queue_content_id": queue_content_id,
+        "candidate_count": status["candidate_count"],
+        "mapping_backlog_count": status["mapping_backlog_count"],
+        "append_count": len(appended),
+        "ledger": dict(state["ledger"]),
+        "paths": {
+            "ledger": str(ledger_path),
+            "queue": str(queue_path),
+            "state": str(state_path),
+            "status": str(status_path),
+            "public_queue": str(public_queue_path),
+        },
+    }
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--root", type=Path, default=_repo_root(), help="repository root")
+    parser.add_argument(
+        "--generated-at",
+        default=_now_iso(),
+        help="frozen ISO-8601 writer clock (default: current UTC instant)",
+    )
+    args = parser.parse_args(argv)
+    print(_canonical_json(project_candidate_artifacts(args.root, generated_at=args.generated_at)))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
