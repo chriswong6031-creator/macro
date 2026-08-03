@@ -59,3 +59,47 @@ integrity this fix restores. Concretely:
 
 Tests pinning the contract: `tests/test_desk_thesis_ids.py` (disjoint ids across runs on
 the same `state_asof`; mutation-by-append rejected loudly; ledger row preserved).
+
+## Claim-keyed ledgers — the audited boundary (2026-08 follow-up)
+
+The migration above covers the ORDINAL-id desks, where `{asof}-{i}` made the id an
+accident of enumeration order. A second family keys the id to the CLAIM itself —
+`{asof}-<subject>` — deliberately stable across re-registration of the same logical
+claim (engine/qledger.py documents the intent: "stable across re-registration...so
+adapters are idempotent"). Stable ids are only safe when the append path enforces
+FIRST-WINS: if duplicates can enter the file, the scorers' last-wins dedupe turns a
+re-append into a rewrite of the logged predicate — the same mutation class as
+stock_desk above. Audit result per module (2026-08-03, code + measured ledgers):
+
+| module · id shape | append gate | ledger measured |
+|---|---|---|
+| narrative_brain · `{asof}-nb-{basket}` | first-wins (`seen` id set) | never accrued a row (lane degraded) |
+| altdata_brain · `{asof}-{tk}-brain` | first-wins + active-window skip | never accrued a row (lane degraded) |
+| altdata_ledger · `{asof}-{tk}-altconv` | first-wins + active/cooldown skip | 422 rows / 422 unique ids — clean |
+| risk_brain · `{asof}-rb-state` | first-wins (`seen` id set) | never accrued a row (lane degraded; no scorer consumes it yet) |
+| qledger · sha1 of desk·asof·scope·horizon·direction·salt | keep-FIRST dedupe in register()/register_batch() | 29,719 rows / 29,719 unique ids — clean |
+| demand_ledger · `{asof}-{chain}-{tkr}` | was VINTAGE-only → **id gate added 2026-08** | 45 rows / 45 unique ids — clean |
+
+* **The first five are sound.** A same-asof re-run that produces different content
+  (LLM-authored or state-dependent) is silently dropped at append: first write
+  stays the pre-registered predicate, so no post-hoc mutation is possible. The
+  SILENT skip is intentional in this family — re-registration of the same logical
+  claim is the normal idempotent path, unlike the ordinal desks where any id
+  collision means minting regressed and is announced loudly. qledger is stronger
+  still: direction and horizon are inside the id hash, so a flipped claim mints a
+  NEW id by construction, and `backfill_regime_stamps()` rewrites are
+  fill-null-only (stamp fields, never predicate fields).
+* **demand_ledger was the gap.** `emit()` deduped by vintage
+  (`chain:ticker:fy:divergence`) while the id omits fy + divergence, so a same-day
+  re-run after a divergence flip (or fy roll) passed the vintage filter and would
+  have appended a FLIPPED lean/op/threshold under a live id — silently shadowing
+  the logged predicate under `dedupe_by_id`'s last-wins. Never observed in the
+  data (45/45 unique ids) but open by construction; now closed with
+  `desk_ledger.reject_existing_ids` at append. Run-scoped ids are NOT appropriate
+  here — the stable claim key is the design. A same-day flip is refused loudly
+  and re-logs under the next day's id (one nightly cycle of latency, no lost
+  pre-registration).
+
+Tests pinning the claim-keyed contract: `tests/test_demand_ledger.py`
+(same-day divergence flip refused loudly + original row preserved; next-day flip
+mints a disjoint id).
