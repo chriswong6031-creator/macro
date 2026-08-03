@@ -1130,7 +1130,7 @@ jobs:
       - name: "all workflow files must parse with on:/jobs: blocks"
         run: python scripts/check_workflow_yaml.py .github/workflows
       - name: hosted-runner packing contract
-        run: python -m pytest tests/test_ci_pack.py -q
+        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py -q
       # SKIP-ONLY suites: a test that skips in every job naming it executes
       # nowhere, so a job list and a green run both lie about it. This is what an
       # `importorskip` added to clear a red lane creates by construction — it
@@ -3135,6 +3135,7 @@ jobs:
           python -m pytest
           tests/test_biocatalyst_history.py
           tests/test_biocatalyst_endpoint_alignment.py
+          tests/test_biocatalyst_change_classification.py
           tests/test_clinicaltrials_history.py -q
 
   biocatalyst-contracts:
