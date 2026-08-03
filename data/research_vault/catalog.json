@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T15:06:00.290939+00:00",
-  "count": 671,
+  "generated_at": "2026-08-03T15:21:02.132223+00:00",
+  "count": 672,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -188,6 +188,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 118,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-e3rfjwo837h-fc1292",
+      "title": "JPM JPM US Market Intell",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:26:43Z",
+      "summary_points": [
+        "**Mag7 Valuation Gap**: Trades >2 standard deviations below 2018Q3 mean (forward P/E), implying ~30% upside to 1 SD below mean and ~56% to average valuation due to catch-up dynamics.",
+        "**Bond Yield Forecasts**: Jay Barry raises 10Y yield forecast to 4.85% (from 4.70%) and 30Y to 5.40% (from 5.20%), driven by inflation expectations and term premium, amplifying Tech/Cyclicals risk.",
+        "**US-Iran Escalation Risk**: Iranian attack on US forces in Jordan, Chinese weapons, and US ammunition depletion (EIA/CSIS) heighten escalation risk with historically low oil reserves amplifying vulnerability.",
+        "**Hyperscaler Credit Spreads**: Widening driven by investor terms, not capacity; $1.7T IG/HG debt issuance needed to trigger capacity headwinds (Nate Rosenbaum), overstating credit concerns.",
+        "**Earnings Beat Momentum**: 86% EPS beats (vs 78% 5-yr avg), magnitude up 31.4%, led by Tech/Comm Svcs; key sector leadership for margins (Tech/Comm Svcs/Fins)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 24,
       "language": "en",
       "needs_metadata": false
     },
