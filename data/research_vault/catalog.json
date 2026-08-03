@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T22:21:43.265650+00:00",
-  "count": 692,
+  "generated_at": "2026-08-03T23:36:54.465804+00:00",
+  "count": 696,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -48,6 +48,86 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-ovegn6rwo5n-3ac8f3",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:44:20Z",
+      "summary_points": [
+        "**Earnings/Disinflation Catalyst**: Megacap tech earnings (cloud revenue acceleration, hyperscaler spending) and moderating inflation support Fed rate hold; US-Iran tensions drive oil volatility but energy flows recovery expected.",
+        "**Global Earnings Momentum**: S&P 500 Q2 earnings growth estimate at 20% YoY, Europe Stoxx 600 upgrades, Asia profits rising 72%—fundamentals drive broad equity rally.",
+        "**Yen Vulnerability**: Japan’s coordinated yen-buying (USDJPY 156.7) caps near-term upside but underlying drivers (BoJ normalization, negative real rates) persist; geopolitics and policy flows keep yen weak."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1eyjfgvqlsc-e7d9cf",
+      "title": "GOAL Positioning Tracking the momentum led deleveraging in Tech",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:42Z",
+      "summary_points": [
+        "**AI-driven Tech deleveraging accelerates**: Hedge funds reversed gross leverage (half-yearly), retail leverage peaked in DM Asia (South Korea, Japan), largest long selling in AI Tech since Jan '21.",
+        "**FOMC-driven Treasury ETF skew spike**: Post-FOMC put-call skew surge signals heightened risk aversion, critical for fixed income positioning.",
+        "**Money Market outflows**: Negative flows across all horizons (4-week, 3-month, 12-month) signal risk aversion/capital flight from safe havens.",
+        "**Persistent risk aversion**: 12-month rolling data confirms sustained capital allocation to safe assets (e.g., government bonds) with net outflows from risky assets.",
+        "**Geopolitical leverage shifts**: Korea’s margin trading decline vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 23,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-iu9sntokcuf-3d191a",
+      "title": "Global FX Trader Policy Pushback",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:39Z",
+      "summary_points": [
+        "**JPY Intervention Effectiveness**: Japan's maximal BoJ intervention shows diminishing returns (market response at lower historical average), signaling potential need for further action if Yen unwinds, with repatriation as key long-term policy lever.",
+        "**BRL Critical Risks**: Brazil's BRL strength driven by trade terms faces election deadline (Aug 15), deteriorating fiscal deficits, and BCB rate cuts (25bp to 14%), amplifying volatility and sensitivity to election outcomes.",
+        "**EUR/USD Bearish Divergence**: 12-month forecast at 1.12 (vs current 1.15) reflects sustained weakening due to ECB vs Fed policy divergence, a fundamental driver for FX positioning.",
+        "**GBP/USD Misalignment**: 26% Trade-Weighted Misalignment (G10) signals overvaluation, threatening carry trade flows and short-term directional bets amid fiscal volatility and BoE no-hike stance.",
+        "**EM Carry Resilience**: BRL and COP strongest EM carry propositions due to energy price support, though vulnerable to higher long-end yields; MXN preferred over INR/ZAR for rising carry-to-vol and oil exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-n5xvtkuy8ik-6f9902",
+      "title": "GS FX JPY Intervention",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:14:18Z",
+      "summary_points": [
+        "**JPY Intervention Scale & Coordination**: Japan and US confirmed coordinated yen-buying intervention (8.45T yen), with Japan signaling readiness for further joint action; interventions now $60bn vs prior $25bn, targeting EURJPY 187.50 to avoid broader USD sell-off.",
+        "**Short-Term JPY Bearish Asymmetry**: Asymmetric downside risk with intervention likely if USDJPY >158; technicals target 152/153 (critical 152.00 if 155 breaks), breaking 200d MA and reflecting tighter JPY distribution.",
+        "**Policy Contradiction & Structural Risk**: Japan’s loose monetary/fiscal policy bears JPY long-term, but repatriation slow and reserve depletion could amplify weakness; BOJ hikes unlikely to sustain strength due to priced-in inflation risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-kymvavdcyqb-db21e5",
       "title": "SpaceX Aug 3",
