@@ -434,6 +434,8 @@ on:
       - "app/requirements.txt"
       - "scripts/compile_capital_structure_events.py"
       - "scripts/compile_capital_structure_document_terms.py"
+      - "scripts/materialize_capital_structure_share_counts.py"
+      - "scripts/retain_capital_structure_share_counts.py"
       - "scripts/build_capital_structure_projection.py"
       - "scripts/build_capital_structure_page.py"
       - "contracts/capital_structure_*.schema.json"
@@ -445,6 +447,7 @@ on:
       - "tests/test_capital_structure_*.py"
       - "tests/test_build_capital_structure_projection.py"
       - "tests/test_sec_capital_structure.py"
+      - "tests/test_sec_capital_structure_companyfacts.py"
       - "tests/test_nwqs_c_dilution.py"
       - "tests/fixtures/capital_structure/**"
       # LHB-W2b 8-K item expansion: test-only edits must still trigger the job
@@ -569,10 +572,11 @@ on:
       - "templates/fundamental_forensics.js"
       - "tests/fixtures/fundamental_forensics/**"
       - "tests/test_fundamental_forensics_*.py"
-      # Wave 3B-B4A: the broad fundamental-forensics glob also matches this
-      # suite, but the explicit name documents the engine-render guard's
-      # provenance contract and protects test-only re-pins from future narrowing.
+      # Wave 3B-B4A/B4B: the broad fundamental-forensics glob also matches these
+      # suites, but the explicit names document the engine-render guard's sealed
+      # history + bounded serving contracts and protect test-only re-pins.
       - "tests/test_fundamental_forensics_attested_query_snapshots.py"
+      - "tests/test_fundamental_forensics_attested_history_reader.py"
       - "tests/test_sec_document_spine.py"
       - "tests/test_forensics_api.py"
       - "tests/test_edgar_forensics_collector.py"

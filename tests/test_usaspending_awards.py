@@ -7,6 +7,7 @@ import pandas as pd
 
 import collectors.usaspending_awards as usaspending_awards
 from engine.government_revenue.award_events import build_award_change_events
+from scripts.ci.validate_government_revenue_award_event_bundle import validate_bundle
 from collectors.usaspending_awards import (
     ACTION_COLUMNS,
     AWARD_ACTION_VERSION_COLUMNS,
@@ -683,6 +684,12 @@ def test_forward_event_spine_baselines_then_preserves_receipt_bound_a_b_a_versio
     second = collect(_EventSession(current_amount=150.0, action_obligation=25.0))
     clock[0] = "2026-08-01T14:00:00+00:00"
     third = collect(_EventSession(current_amount=100.0, action_obligation=12.0))
+
+    validate_bundle(
+        data_dir / AWARD_EVENT_PROJECTION_STATE_FILENAME,
+        data_dir / "award_event_snapshots.parquet",
+        data_dir / "award_action_versions.parquet",
+    )
 
     snapshots = pd.read_parquet(data_dir / "award_event_snapshots.parquet").sort_values("known_at")
     actions = pd.read_parquet(data_dir / "award_action_versions.parquet").sort_values("known_at")

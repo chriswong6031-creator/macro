@@ -1,14 +1,16 @@
 """One-off migration: stamp board_definition="legacy" on pre-version CN board rows.
 
 Why this exists: cn_prophet_v2 (#4029) began stamping `board_definition` on new
-data/china_standout_track/board.parquet rows, and emit_cn_track_ledger filters the
-published ledger to the current definition. Every pre-2026-07-30 row carried NaN,
-so 1,082 of 1,097 rows — the entire pre-version history, including matured winners
-like 600547.SS (+7.44% vs CSI300, "beat") — silently fell out of
-site/factordata/cn_track_ledger.json (563 rows → 9). The definition gate's intent
-is "never publish a pre-version ledger under a new board label"; the honest reading
-of that is LABEL the old cohort, not delete it. This stamps the NaN rows "legacy"
-so the emitter can publish them as their own clearly-separated cohort.
+data/china_standout_track/board.parquet rows; every pre-2026-07-30 row carried NaN,
+and the current-definition filter of the time silently evicted all 1,082 of them —
+the entire pre-version history, including matured winners like 600547.SS (+7.44%
+vs CSI300, "beat") — from site/factordata/cn_track_ledger.json (563 rows → 9).
+emit_cn_track_ledger now grades unstamped rows as the prior era (`prior_record`,
+via _cn_is_legacy_stamp, which treats null / '' / 'legacy' identically), so this
+backfill changes no published number. It makes the store itself carry the label:
+an explicit "legacy" stamp cannot be silently re-evicted by a future consumer that
+filters on stamp equality, which is exactly how the history vanished the first
+time. Label, never delete.
 
 Safe by construction:
   * `_latest_definition_frame` (engine/china_standout_track.py) picks the definition

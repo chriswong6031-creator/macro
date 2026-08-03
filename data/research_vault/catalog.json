@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T05:35:08.160974+00:00",
-  "count": 643,
+  "generated_at": "2026-08-03T07:35:16.720582+00:00",
+  "count": 649,
   "institutions": [
     "Amova",
     "Apollo",
@@ -40,10 +40,32 @@
     "The Punchline",
     "UBS",
     "Weekly Preview",
+    "William Blair",
     "ZKB",
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-vvy2usrko4a-0d8de9",
+      "title": "Diversification",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-02T15:37:29Z",
+      "summary_points": [
+        "**60/40 Strategy Collapse**: 2022 Sharpe ratio plummeted to 0.14 (vs.",
+        "47 long-term), with bonds failing to offset equity drawdowns; policy uncertainty (not inflation) drove positive equity-bond correlation (+0.77 in May 2022), eroding diversification.",
+        "**No-Regret Portfolio Performance**: 16% gold, 29% private credit, 16% private equity delivers 1.33 Sharpe ratio (vs.",
+        "benchmark 0.59), doubling risk-adjusted returns and reducing max drawdown from -24.6% to -15.3%.",
+        "**Policy Uncertainty Dominance**: Unprecedented policy uncertainty index (+1.7 z-score, sustained since May 2022) is primary driver of positive correlation; unresolved Iran conflict (ceasefire July 2026) and tariff litigation sustain regime shift."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-viqbfc2ds47-a12f56",
       "title": "Quantum",
@@ -573,6 +595,23 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qcdztlqs9oe-a09eab",
+      "title": "Dailyspark 2026 08 01",
+      "institution": "Apollo",
+      "side": "buy",
+      "desk": "",
+      "published_at": "2026-08-02T14:44:01Z",
+      "summary_points": [
+        "Document Missing**: No source document provided for extraction"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-nffr9ga8rgt-e4fabf",
       "title": "MS Nick Savone Global Reflections Aug 1",
       "institution": "Morgan Stanley",
@@ -754,6 +793,23 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-kiuovgwwmcn-9fd6a4",
+      "title": "ING Think rates spark recalibrating rate assumptions",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T11:03:05Z",
+      "summary_points": [
+        "**USD/GBP Dovish Repricing**: Fed hold + benign PCE deflator → markets no longer expect Fed hikes twice next year → lower USD/GBP rates - **Eurozone Rate Outlook**: Robust GDP supports higher euro swap rates; ECB’s inflation focus → 10Y euro swap likely around 3.2% - **BoE Inflation Comfort**: BoE’s inflation data extends policy hold timeline (30% Sept hike probability)"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-amdunuthhkf-e33b3d",
       "title": "ING Think boj leaves rates at 100 with no surprises",
       "institution": "Ing Econ",
@@ -811,6 +867,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dbrvoev0a0n-4d73a4",
+      "title": "ING Think china pmi",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:57:19Z",
+      "summary_points": [
+        "**Manufacturing Contraction**: Manufacturing PMI at 49.2 (5-month low, below 50 threshold), with all key subindices (production 49.6, new orders 48.5, export orders 49.6) contracting, signaling sustained economic slowdown.",
+        "**PPI Inflation Peak Confirmed**: Declining PMI (50.3→49.2) and ex-factory prices in contraction for 2nd month indicate PPI inflation peak has passed, heightening urgency for policy easing.",
+        "**Non-Manufacturing PMI at 43-Month Low**: Services sector PMI fell to 49.0 (43-month low), with new orders (44.4) and sales prices (47.9) at multi-month lows, confirming post-pandemic weakness.",
+        "**Fiscal Policy Shift Signal**: Politburo meeting signals incremental fiscal easing amid prolonged contraction, targeting support for growth amid geopolitical uncertainty and regulatory headwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -898,6 +974,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-2n2sxcgdpvd-3707ca",
+      "title": "WilliamBlair Lev Fin Newsletter Q2 2026",
+      "institution": "William Blair",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:42:26Z",
+      "summary_points": [
+        "**M&A Resilience vs.",
+        "PE Weakness**: M&A activity surged to $94.1B YTD (+17% YoY), highest first-half since 2022, driven by sponsors in healthcare/aerospace; private equity deal value down 38% (Q1 $177.3B), lowest in 2 years.",
+        "**Lender Discipline Intensifies**: 31% of lenders made borrower-friendly concessions (mostly pricing), 76% maintained pricing stability, and 55% require >40% minimum equity in PE deals (up from 52% YoY).",
+        "**Geopolitical & AI Sector Risks**: Geopolitical volatility (Iran/U.S.",
+        "Strait of Hormuz) and AI disruption drive 87% lender caution in software/Tech, 46% reduced appetite for SaaS, and binary underwriting decisions in AI-adjacent sectors."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-jsbbbq5ngwc-8d0619",
       "title": "mfse fly",
       "institution": "Other",
@@ -955,6 +1052,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-htyurthnx3b-e36a4f",
+      "title": "Relais Group Oyj 202607280847 flash",
+      "institution": "Nordea",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:35:45Z",
+      "summary_points": [
+        "**Acquisition Metrics**: 70% stake in Tershine (vehicle care firm) with 33% sales CAGR (2021–2025), SEK 155m net sales (2026), 18.7% EBIT margin (GAAP), strong Swedish brand positioning.",
+        "**Growth & Strategic Fit**: Steady net sales growth (2020/21–2025/26), EBIT margin stabilizing near 20%, aligning with Products & Solutions to expand vehicle care niche.",
+        "**Debt Pressure**: Net debt/EBITDA spikes to 3.80 (2025) after declining to 2.72 (2024), despite EPS growth surge (36.5% in 2024) and prior strong performance.",
+        "**Valuation Recovery**: P/E ratio declines to 9.99 (2028E), dividend yield rebounds to 3.82% (2028E), indicating potential undervaluation and income recovery."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },

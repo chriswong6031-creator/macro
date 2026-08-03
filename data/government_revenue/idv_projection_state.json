@@ -1,0 +1,3307 @@
+{
+  "activation_state": "live",
+  "bounded_collection_complete": true,
+  "bounds": {
+    "max_detail_rows_per_idv": 500,
+    "max_detail_rows_per_run": 2000,
+    "max_idvs": 80,
+    "max_pages_per_idv": 5,
+    "page_size": 100,
+    "public_downstream_row_cap": 2000,
+    "selected_idv_limit": 24
+  },
+  "contract": "government_revenue.idv_projection_state.v1",
+  "detail_rows_this_run": 452,
+  "idv_relationship_snapshots_row_count": 452,
+  "idv_relationship_snapshots_semantic_sha256": "354ec0ef49330f0cdcc1a71e5758d0ff93f78928ec081292e03b16efb8b9dce6",
+  "last_successful_observed_at": "2026-08-03T03:05:20.603011+00:00",
+  "observed_at": "2026-08-03T03:05:20.603011+00:00",
+  "parent_coverage_semantic_sha256": "127931b5e901772bf9a847f574923b8e5871b6f21772af9ba8d5f8deeed0b8fc",
+  "parents": [
+    {
+      "active_relationships": [],
+      "active_relationships_semantic_sha256": "936c3816c0101fe8b5038f8d621da762aecbc640ef70dd8257d711d8955ee9f3",
+      "child_award_count": 0,
+      "collection_state": "zero",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_NNJ16GU21B_8000",
+        "receipt_id": "usaspending-idv:f0d8e19194b0f082f38a1653f25276dcd800a084ad8891c10caced685c85bceb",
+        "reported_child_award_count": 0
+      },
+      "count_receipt_id": "usaspending-idv:f0d8e19194b0f082f38a1653f25276dcd800a084ad8891c10caced685c85bceb",
+      "count_verified": true,
+      "detail_receipt_ids": [],
+      "detail_rows": 0,
+      "idv_generated_award_id": "CONT_IDV_NNJ16GU21B_8000",
+      "pages_fetched": 0,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [],
+      "active_relationships_semantic_sha256": "936c3816c0101fe8b5038f8d621da762aecbc640ef70dd8257d711d8955ee9f3",
+      "child_award_count": 0,
+      "collection_state": "zero",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_80JSC019C0012_8000",
+        "receipt_id": "usaspending-idv:1547151ac8d45cc5e93077b8f26a6bcdb51851e9df67dc21af0fe2cd7d286107",
+        "reported_child_award_count": 0
+      },
+      "count_receipt_id": "usaspending-idv:1547151ac8d45cc5e93077b8f26a6bcdb51851e9df67dc21af0fe2cd7d286107",
+      "count_verified": true,
+      "detail_receipt_ids": [],
+      "detail_rows": 0,
+      "idv_generated_award_id": "CONT_IDV_80JSC019C0012_8000",
+      "pages_fetched": 0,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_80KSC017F0073_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "91534f276e7636c8ad4ace5566da1f3c0624fa56fdc8f70e6253f62eb7cad7a1",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_80KSC018F0200_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "849e1339291b40cc4c58fb1e09e1b6c4abd22e624bcec540ec38942648a820f2",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_80KSC018F0219_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ac4364dcfbc592f3087578037626d94ed0c4369f69ba2749d3c8848535e14ee9",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_80KSC018F0280_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f0d4e27aa637bae90386d450b01d56ae023d7d5fc172efeff8793c69a0729e01",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_80KSC019F0026_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "656447ddf7e8941446466d85cd69bffff14158f9980a0f5023d10923f354aecf",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_80KSC022FA027_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "fcecb40132cae4b89882c7a3404bb1ff43704bca364430ec347852acc1143906",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_80KSC022FA041_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7d3d6a675276d585466ce2b258751ff113a13dd11ab10b7b8072353717b7c632",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_80KSC024FA002_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b2d8d1479c10bb134ffe37b8072af3efd99c58709f2bd235724be625fe9dce8d",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_NNK15MA50T_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "961624d346182b7c30b14f923804b4b49427f2e99c52316a5a75ad242b51b50d",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_NNK16MA04T_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7277371e73cd1279b5580ba3b9366fd8e65b3e87be6d3c1798248f3aafe61e0a",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_NNK16MA53T_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "fde56ca279e05286cad181d5d63f7d032c763fe225650b09f7c4368dee4eff8d",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_NNK17MA02T_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b7c6af5d805b57e0d843baf47c7b898297feb135530db557fcd34c536b208d41",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_NNK17MA30T_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "282d152bedef99206cb5375ee40b0a720e956ba1ef2eb3d83843a6bff3b91ed7",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_NNK17MA37T_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "45fe6782f81cbe81e8213cf09d1aba6ec0b36db68781373a1025b3ecfd47b189",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_NNK17MA39T_8000_NNK14MA75C_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "69d64d27b504d62d4ee89adecc36a5e23b38de82ffdedbcff66b7c5fb8ba67b7",
+          "source_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+        }
+      ],
+      "active_relationships_semantic_sha256": "7dcefd9e12ec2b66c6ffc1c3d4b85a2822a496c4e570008478e780b8923d8fc2",
+      "child_award_count": 15,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_NNK14MA75C_8000",
+        "receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a",
+        "reported_child_award_count": 15
+      },
+      "count_receipt_id": "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:ed60cbdff3b7fa7c85906322e94e5750e12d64f8693d423f6293a9606322228a"
+      ],
+      "detail_rows": 15,
+      "idv_generated_award_id": "CONT_IDV_NNK14MA75C_8000",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_80MSFC22F0087_8000_80MSFC20D0008_8000",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "99f53a57c93a75fc616f6fda1193abdf05f829076c80a7e4e8b367363d3d8fc4",
+          "source_receipt_id": "usaspending-idv:1c350327157c740debc3be13f0ccd320b25a93389213465e2e920eb831ce0a98"
+        }
+      ],
+      "active_relationships_semantic_sha256": "b7b868590b12a19191a6b7101b94e659534dcdab597f6f66771d6920792f1574",
+      "child_award_count": 1,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_80MSFC20D0008_8000",
+        "receipt_id": "usaspending-idv:1c350327157c740debc3be13f0ccd320b25a93389213465e2e920eb831ce0a98",
+        "reported_child_award_count": 1
+      },
+      "count_receipt_id": "usaspending-idv:1c350327157c740debc3be13f0ccd320b25a93389213465e2e920eb831ce0a98",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:1c350327157c740debc3be13f0ccd320b25a93389213465e2e920eb831ce0a98"
+      ],
+      "detail_rows": 1,
+      "idv_generated_award_id": "CONT_IDV_80MSFC20D0008_8000",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [],
+      "active_relationships_semantic_sha256": "936c3816c0101fe8b5038f8d621da762aecbc640ef70dd8257d711d8955ee9f3",
+      "child_award_count": 0,
+      "collection_state": "zero",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_DTFAWA08C00117R_6920",
+        "receipt_id": "usaspending-idv:b6401acd890d66a4ee5cc5ce8cb188e4a91ecdaf4f86b6f793b3c5d07fd7612d",
+        "reported_child_award_count": 0
+      },
+      "count_receipt_id": "usaspending-idv:b6401acd890d66a4ee5cc5ce8cb188e4a91ecdaf4f86b6f793b3c5d07fd7612d",
+      "count_verified": true,
+      "detail_receipt_ids": [],
+      "detail_rows": 0,
+      "idv_generated_award_id": "CONT_IDV_DTFAWA08C00117R_6920",
+      "pages_fetched": 0,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_0001_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "82e4afb13875c230459cfbf37dda2831ad1e679dac4eeee2497347e77a52d7cd",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0002_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f21d5511da1526134dc61b753805d9607aaa98d1925f17ef3652b74400eadca3",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0003_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "04fa225597b0544b8a9fee8386b33e29ffae4750a1aff6683eb08c0fc260244d",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0004_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7b6a41ca205cfae2243ed0e1c5e1aba8170a6b721d396f789c0cf2314753c67b",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0005_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "65219253779ef877f33c005a5215bbbcd1643563fc6351e7109caf30c1bce284",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0006_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3765bf9c4347963a78e5ffa52779467ca1dbca666d63c555eb7a384950822c48",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0007_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "bffccc395e57ae040cf89959524a44b1e63eced1a9e2d8d029b5c2ab6ec4680f",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0008_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "268cd9354632cd8d19827686693b2c2337706f958653e63680e56d8e1204f946",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0009_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0113e1edd46519ac3e7abefed4faf8d399d735701a2d5d3244f42c3ccdb012d5",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA718F00006_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2e3f65dff86c5cb2befd1c1b05cb233885b02aae64eeecaf4c81ed3066e6aa22",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA718F00008_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2660020de486b731a498e3c2298d9060b4c477290c03304e5cdd8da4140a5f52",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DTFAWA11F00050_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "cef59f510144f25efe9668160d930afaddaa64bdb5183a3ca78ce87ff09e0b08",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DTFAWA11F00061_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2a28501bccef760a08177447a0de2cf457a7482cfc1351e01e1feb030e334a33",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DTFAWA11F00064_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "be3ed9e11be51be6648cf92069194294f7bdce33c18fc6010554cd6b65aabc9d",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DTFAWA11F00065_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c39095ebda5baf84fc5d1e53ff243fe1c520b12b0962cebb44af2627bf6a3b0c",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DTFAWA11F00068_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "8a72c21363333a04a0b630b50ffc31c80f01941e99473470302f42aacdb09b01",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DTFAWA11F00074_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a191d6c5b09f27ac5bb952d3ee765745a1d3843ae03858b07b945420a93865d8",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DTFAWA11F00075_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "423c423cd9d2077d60660125346f710cf1927e484c2460cf5a10941333bf9ca9",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DTFAWA12F00078_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4ecb17115b342649b2c292a08ac06fc0bd9b428fb9c02a88efcb5e7616da3bab",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DTFAWA12F00087_6920_DTFAWA04C00045_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f46320b0a053c3b3149ed1b09105f234d3fbda21bfd27f878f227922940fe59c",
+          "source_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+        }
+      ],
+      "active_relationships_semantic_sha256": "9a7d31180e418f77bf4667d116441a5bd1619cae9242c2e62d1693d2aec2c38f",
+      "child_award_count": 20,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_DTFAWA04C00045_6920",
+        "receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011",
+        "reported_child_award_count": 20
+      },
+      "count_receipt_id": "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:153b809242152109cd82e3d5d922d21de5789e67eaa4a6d105329947ed9a1011"
+      ],
+      "detail_rows": 20,
+      "idv_generated_award_id": "CONT_IDV_DTFAWA04C00045_6920",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_0001_2800_SS000560011_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "62f0129246f94333eafb482695901118706ea19bb87b48e91cab5278f89a8466",
+          "source_receipt_id": "usaspending-idv:6821d34270d11720e1a746b06d579d36a191c6e2c5281c9fb01e5e7e4995de5d"
+        }
+      ],
+      "active_relationships_semantic_sha256": "3797b3203df75c5161af0a7be92204895bd00cd36f04e7c01529039d596adcf1",
+      "child_award_count": 1,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_SS000560011_2800",
+        "receipt_id": "usaspending-idv:6821d34270d11720e1a746b06d579d36a191c6e2c5281c9fb01e5e7e4995de5d",
+        "reported_child_award_count": 1
+      },
+      "count_receipt_id": "usaspending-idv:6821d34270d11720e1a746b06d579d36a191c6e2c5281c9fb01e5e7e4995de5d",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:6821d34270d11720e1a746b06d579d36a191c6e2c5281c9fb01e5e7e4995de5d"
+      ],
+      "detail_rows": 1,
+      "idv_generated_award_id": "CONT_IDV_SS000560011_2800",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_DTFAWA12D00012CALL0001_6920_DTFAWA12D00012_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4dbf1f55176d516cc4dd0d24ebffbc2f2a6ec89f3b372beb0d74d8c58dc6d0d7",
+          "source_receipt_id": "usaspending-idv:1b0adbe755725481117a1d7ba27ffde0ab0154adb27ce8e230be37241dc75ffb"
+        }
+      ],
+      "active_relationships_semantic_sha256": "63fbfc62de07379e15ae42f9863657edd83aa0ff0c07246960219677a4aab506",
+      "child_award_count": 1,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_DTFAWA12D00012_6920",
+        "receipt_id": "usaspending-idv:1b0adbe755725481117a1d7ba27ffde0ab0154adb27ce8e230be37241dc75ffb",
+        "reported_child_award_count": 1
+      },
+      "count_receipt_id": "usaspending-idv:1b0adbe755725481117a1d7ba27ffde0ab0154adb27ce8e230be37241dc75ffb",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:1b0adbe755725481117a1d7ba27ffde0ab0154adb27ce8e230be37241dc75ffb"
+      ],
+      "detail_rows": 1,
+      "idv_generated_award_id": "CONT_IDV_DTFAWA12D00012_6920",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_70Z04419F19007200_7008_HSCG7916DPC5023_7008",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "366c378745f58416e8f06b260b219fa4e6cd0d54df2e2f3ef11947d6d29a7b7b",
+          "source_receipt_id": "usaspending-idv:03ebf5d68e8c20c8987bded0c3ef9067d637afa57aac978ab8e6f0345b09c788"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_70Z04419F19007300_7008_HSCG7916DPC5023_7008",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0712b3830691d0facbed07f58dad80ac668ec95509f3ce0539cbec0e03c88766",
+          "source_receipt_id": "usaspending-idv:03ebf5d68e8c20c8987bded0c3ef9067d637afa57aac978ab8e6f0345b09c788"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_70Z04419F19007400_7008_HSCG7916DPC5023_7008",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "e1f3319ea8afdab04c2b8dc28165688c4d7bb1749721b37c2030618cf89043c5",
+          "source_receipt_id": "usaspending-idv:03ebf5d68e8c20c8987bded0c3ef9067d637afa57aac978ab8e6f0345b09c788"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_70Z04420F20003500_7008_HSCG7916DPC5023_7008",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2989324209edd3db6ac50907cb4b2e88a088dd9a5a9e53ed992011603cd52058",
+          "source_receipt_id": "usaspending-idv:03ebf5d68e8c20c8987bded0c3ef9067d637afa57aac978ab8e6f0345b09c788"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_70Z04420F20004400_7008_HSCG7916DPC5023_7008",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "1caab52cf0e92535d34df2c22f7cea03ac7df40420da9c55f9aa214082940dd8",
+          "source_receipt_id": "usaspending-idv:03ebf5d68e8c20c8987bded0c3ef9067d637afa57aac978ab8e6f0345b09c788"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_70Z07918FPC502300_7008_HSCG7916DPC5023_7008",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "6cd8323b62fbe848ed8eab3bee5a8440b0e322cfe602ae846903976f4b645ba3",
+          "source_receipt_id": "usaspending-idv:03ebf5d68e8c20c8987bded0c3ef9067d637afa57aac978ab8e6f0345b09c788"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HSCG7916JPC5085_7008_HSCG7916DPC5023_7008",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c2af10a99ae0b055abfe10966b1ebc3afbb91013cc52594905d168e5f1919b84",
+          "source_receipt_id": "usaspending-idv:03ebf5d68e8c20c8987bded0c3ef9067d637afa57aac978ab8e6f0345b09c788"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HSCG7916JPC5086_7008_HSCG7916DPC5023_7008",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0131ae629819b9045386cdc88e6119f44acccb6a4171ff87a765f0eea76f2574",
+          "source_receipt_id": "usaspending-idv:03ebf5d68e8c20c8987bded0c3ef9067d637afa57aac978ab8e6f0345b09c788"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HSCG7917JPC5014_7008_HSCG7916DPC5023_7008",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f69077709f355113e53f04773de093f5788ca4d0290b032e9691dfd99b360a40",
+          "source_receipt_id": "usaspending-idv:03ebf5d68e8c20c8987bded0c3ef9067d637afa57aac978ab8e6f0345b09c788"
+        }
+      ],
+      "active_relationships_semantic_sha256": "e1259b171e011651470ba67808ef0d70edef643ac2d55d06bf6bedbee4011288",
+      "child_award_count": 9,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_HSCG7916DPC5023_7008",
+        "receipt_id": "usaspending-idv:03ebf5d68e8c20c8987bded0c3ef9067d637afa57aac978ab8e6f0345b09c788",
+        "reported_child_award_count": 9
+      },
+      "count_receipt_id": "usaspending-idv:03ebf5d68e8c20c8987bded0c3ef9067d637afa57aac978ab8e6f0345b09c788",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:03ebf5d68e8c20c8987bded0c3ef9067d637afa57aac978ab8e6f0345b09c788"
+      ],
+      "detail_rows": 9,
+      "idv_generated_award_id": "CONT_IDV_HSCG7916DPC5023_7008",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [],
+      "active_relationships_semantic_sha256": "936c3816c0101fe8b5038f8d621da762aecbc640ef70dd8257d711d8955ee9f3",
+      "child_award_count": 0,
+      "collection_state": "zero",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_80JSC017C0001_8000",
+        "receipt_id": "usaspending-idv:f58ccb679c525cc1c6e76d602b68a12bd833637e9533a97dc64f635d7b2b4048",
+        "reported_child_award_count": 0
+      },
+      "count_receipt_id": "usaspending-idv:f58ccb679c525cc1c6e76d602b68a12bd833637e9533a97dc64f635d7b2b4048",
+      "count_verified": true,
+      "detail_receipt_ids": [],
+      "detail_rows": 0,
+      "idv_generated_award_id": "CONT_IDV_80JSC017C0001_8000",
+      "pages_fetched": 0,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_HHSD2002004094740001_7523_HHSD200200409474I_7523",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "05c1f0d5704a9ec85721fd9f568deda90517feb869c4cd625a2c19daed8f9111",
+          "source_receipt_id": "usaspending-idv:e0af11815a32959bbb652c4e8551d14fbbaf7acbcb1775cc0aee61cacaf39403"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HHSD2002004094740002_7523_HHSD200200409474I_7523",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "81db753158cc8167c97c0a9b1284120503e88e11652c24cbfdc134be482a2df3",
+          "source_receipt_id": "usaspending-idv:e0af11815a32959bbb652c4e8551d14fbbaf7acbcb1775cc0aee61cacaf39403"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HHSD2002004094740003_7523_HHSD200200409474I_7523",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "150d50e4c3d28171df93a24593081ea642828a060a02fc3904082a6145dc1d90",
+          "source_receipt_id": "usaspending-idv:e0af11815a32959bbb652c4e8551d14fbbaf7acbcb1775cc0aee61cacaf39403"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HHSD2002004094740004_7523_HHSD200200409474I_7523",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "374350fbb0f791a546d15bac0712aa0cefd626d07f9fc5b4601346c355d8c4a8",
+          "source_receipt_id": "usaspending-idv:e0af11815a32959bbb652c4e8551d14fbbaf7acbcb1775cc0aee61cacaf39403"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HHSD2002004094740005_7523_HHSD200200409474I_7523",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7825f1d200e7b82034c46be323372b58a785a5fbf0cd0fbbd2f0eeefb815f24c",
+          "source_receipt_id": "usaspending-idv:e0af11815a32959bbb652c4e8551d14fbbaf7acbcb1775cc0aee61cacaf39403"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HHSD2002004094740007_7523_HHSD200200409474I_7523",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f41d189aeacb6ab21aebba4c62841544ae3311df6e15b20596b9282168318b0f",
+          "source_receipt_id": "usaspending-idv:e0af11815a32959bbb652c4e8551d14fbbaf7acbcb1775cc0aee61cacaf39403"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HHSD2002004094740008_7523_HHSD200200409474I_7523",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "bcc5f664332206e594a84a46e9e48b81f5b62067c883bdfbfcf70584a602e022",
+          "source_receipt_id": "usaspending-idv:e0af11815a32959bbb652c4e8551d14fbbaf7acbcb1775cc0aee61cacaf39403"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HHSD2002004094740009_7523_HHSD200200409474I_7523",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "625273fdf171933893dcb79d1546cac0ae999949864df6cc340e8ea1fe22f362",
+          "source_receipt_id": "usaspending-idv:e0af11815a32959bbb652c4e8551d14fbbaf7acbcb1775cc0aee61cacaf39403"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HHSD2002004094740010_7523_HHSD200200409474I_7523",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "241c6efa6996f12813f101fd30378e03956a5d0de1d903bca904b46b3f164133",
+          "source_receipt_id": "usaspending-idv:e0af11815a32959bbb652c4e8551d14fbbaf7acbcb1775cc0aee61cacaf39403"
+        }
+      ],
+      "active_relationships_semantic_sha256": "cc017cdd59621623a72aa8078f9d929ed9a17354d13e22506b80aa966c87aeec",
+      "child_award_count": 9,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_HHSD200200409474I_7523",
+        "receipt_id": "usaspending-idv:e0af11815a32959bbb652c4e8551d14fbbaf7acbcb1775cc0aee61cacaf39403",
+        "reported_child_award_count": 9
+      },
+      "count_receipt_id": "usaspending-idv:e0af11815a32959bbb652c4e8551d14fbbaf7acbcb1775cc0aee61cacaf39403",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:e0af11815a32959bbb652c4e8551d14fbbaf7acbcb1775cc0aee61cacaf39403"
+      ],
+      "detail_rows": 9,
+      "idv_generated_award_id": "CONT_IDV_HHSD200200409474I_7523",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [],
+      "active_relationships_semantic_sha256": "936c3816c0101fe8b5038f8d621da762aecbc640ef70dd8257d711d8955ee9f3",
+      "child_award_count": 0,
+      "collection_state": "zero",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_NNK10LB01B_8000",
+        "receipt_id": "usaspending-idv:7b32ee5776c89fd15b3ed9ba8779a454c57448824413244899201a871ee2c20b",
+        "reported_child_award_count": 0
+      },
+      "count_receipt_id": "usaspending-idv:7b32ee5776c89fd15b3ed9ba8779a454c57448824413244899201a871ee2c20b",
+      "count_verified": true,
+      "detail_receipt_ids": [],
+      "detail_rows": 0,
+      "idv_generated_award_id": "CONT_IDV_NNK10LB01B_8000",
+      "pages_fetched": 0,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [],
+      "active_relationships_semantic_sha256": "936c3816c0101fe8b5038f8d621da762aecbc640ef70dd8257d711d8955ee9f3",
+      "child_award_count": 0,
+      "collection_state": "zero",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_HSHQDC06C00066_7001",
+        "receipt_id": "usaspending-idv:4afda4c83a78ca51b3d907857f7a6c4fa4ad751a60cd8ca1d3f74298e4165c1f",
+        "reported_child_award_count": 0
+      },
+      "count_receipt_id": "usaspending-idv:4afda4c83a78ca51b3d907857f7a6c4fa4ad751a60cd8ca1d3f74298e4165c1f",
+      "count_verified": true,
+      "detail_receipt_ids": [],
+      "detail_rows": 0,
+      "idv_generated_award_id": "CONT_IDV_HSHQDC06C00066_7001",
+      "pages_fetched": 0,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_0001_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ddb452569b9d5cfb2a4d9db0fdcb3b9d3a1a23ac7df71db85eed18ca0775f946",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0002_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5c2df4b723398d59e5a6a83ce508b0e0523d2b2339c38c56bc1086117be7c087",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0003_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "95d9317ff5df94edf3a1dc07eb793e99182d3119c5b94fa6ab74077bd97ea78e",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0004_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5199e9ba30bdd9d00b6fe9e61d3c2804f52a22188941e4af7899961a1b9ed216",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0005_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "50799d39c7c4959664c2cadadfa1c1fbbc2324ad399a0dd50ebf886ec69ceacf",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0006_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c6967f7913d00b27ddfd0963c2f073cf477a9b98ded61ac0d6741a44190186c9",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0007_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "1b5fb56f84f13255513194162bc07477054076ac3cb30b12873606ccadfa1ba7",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0008_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "e593bb260de32abf131dc31014c0fed80c3c5ce9a271ff36bd74905535d32404",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0009_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ba06bec56844bb6a1f7a41d51fe9645741660fb3d3cd42383503c9da725cf163",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0010_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d09b49ce3e7133660b8b9ed1ad4839503c1ce96c9f10498925da6c15bc379c73",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0011_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "757a8ded5b372ade173e49e76d963af4e9e7a46a5ea4c53e66879ab8e4a194b6",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0012_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "dc9deee92b1a6a6c7348ff5ae96ca6718116b0fe6d966e0a2f940febe9683a62",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0013_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a1ed4f6b28c1ef138b5b27b79ebe10b8b5113765fd8deebfb2e874b24d7ebd76",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0014_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9b3a2970f5b94bab0a26d52696356bb74d981a2b063d8bd187611d8a4eb42385",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0015_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "97f0a93e98133865e42ffea9427b9062900f657d735031833cc45fa6a89f4bb3",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0016_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "97ef07a1884111f2e433ef42044115d63c43f97d5d9dcaa12470ebf2026f4ddc",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0017_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "95b6efa39154fbf62efd02b14ff82731290c55c0a74ee098a7a0b6421c48053d",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0018_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ebeb81d4bb44576a9ea0567b899b34fd8c74d34d6bbe6887b169be65fda150ec",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0019_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d11cc211926aceb2f95e2a28160e2fc15468ed88d632fdf19edbf0da0bc0373e",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0020_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3537a6c80dfdac85729745a8ca0ee893e98f3ded46f70bbe2c1ba6ea329cdf99",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0021_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9a5c33667159e0d1dbd171d7c65328bb761a7d3e8a1c65e1e7bd8adc92c9b42b",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0022_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7653d09f6012fdbdcfda5d2442b472d8f759e976c9cf0fe8e49e4c6e32f0e33e",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0023_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3f74bcbec87096811b9052917dc12e418559a53b83c80097217e3c86ddbfd37a",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0024_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "40ca66cd1e836f81c8af4f62b587e462817aa911611963a5b47897772ea16c01",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0025_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a72ad8bb94d58231bcce49a0b2be1c38e4f516cf108aee0a3e8065e4b9c91be1",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0026_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "146d39d34045190a2a0cc04a2ce05cf2dd741be8caa28b8e576ba4aac9532e29",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0027_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f384ca67a79fc0c480aab84140816548a98a1951899ada996616e8a3eb924afb",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0028_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c2ebe3a1ea918b333f0001f42ef5d1b190323093ec42a5d1cb953164917d91b3",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0029_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "82962c3f1931eb45c3328c8d162588a7ab17c89b1b83e17c8a98086de53abd0d",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0030_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "209bdc4cd0581e9b9b3e1e78fa292814bd68d31c23057377655b50c394bc4492",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0031_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7b1304c7033fa6be57869428512ff0ed93ab2b0d8481c26b6a3b53d43ada1372",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0032_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "94e14b4f83d840d02eb0b707341a00236d08244394ffbdec1676ec261cbf5e7f",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0033_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4024a787dbdf4251d72995ef68de3ba17926534073e3ec5bb4c21c6b5305aef2",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0034_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2adbd42ec9908389d10971aeb517e2627ee7f08ce47b4e0561e1a4c7ed518aee",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0035_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "811cab84f024d5be9e9dfa9ca4933be789f75a866d9cabb0e51f6dbf787c26e7",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_28321317FDS030052_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "90653e3ae717d7045182da91c297bbf4cc43ea283b1d7a653f35536dfd27c843",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_28321317FDS030056_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4c8fbf7e8e88cf01ab6db07c627e306730a29c44db05eb6d9a7d672c9ccdfefd",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_28321318FDS030007_2800_SS001060082_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f6db91e43f0b9f27ba78a10c022599287c60707d08ac0270b95fb9b24f187acc",
+          "source_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+        }
+      ],
+      "active_relationships_semantic_sha256": "6806841f9fdfe7889263dd4dd51a74ea2c946d534c227a1aa140fc9fd96bb8c7",
+      "child_award_count": 38,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_SS001060082_2800",
+        "receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e",
+        "reported_child_award_count": 38
+      },
+      "count_receipt_id": "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:54c3e97af3a9d863355af14dd43ec346293c03947d40299b656d62833a0dd72e"
+      ],
+      "detail_rows": 38,
+      "idv_generated_award_id": "CONT_IDV_SS001060082_2800",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_0001_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "48f39ce8b7362f50bf2607f84332e2d98f709457f9e4df68b68291a56bdd8b3a",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0002_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "6682d5be3600cc31b5623561cb7c7e8cfbf83a87e30bc5c45ca01b80c724e98b",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0003_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "50d284284d3c650c9a302fda892a2e1288fa102aee82196a7ece7bbf6d8097d8",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0004_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "00e740f419693ab302286d943e64869fed6cf2015d6df65b4a699673173dfc96",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0005_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "1081a4eec04d71108c1454f912f25440c399f751530c2d28e14ca1fe61b595a8",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0006_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "fdb47a5fdfaf53fcf8c331139bcdcd27ba8cb18cbb3103c9500db8576920ab29",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0007_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3cc47eae96272a48b466a8c0654ebe3deac755df9ed80b438cf8e917d420f2eb",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0008_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a937c0575fdb75debdcf0346c6223bf33c39320e49277c0f85e65cac0a016159",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0009_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "fc4ebba55e4aa89e4fb1f948947b54bb92186ba212394fe35c32a82049288fac",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0010_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7330670b14937ee2cea5d632194463add5d3e0b065a4f95cccec26b844911840",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0011_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f03542d0b3506b8831463a47e2ab14ee67e5ca511e7ec44715887f52d415d632",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0012_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "cac9b5b77a939f554f3f684f71ada3a55f9a9a98e17226400e07c8903373ca94",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0013_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "bc3a5b605d90fc76b8075e183bcbaf9fe525abde3e90fccfe9e991344a7ea939",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_28321317FDS030057_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2596c52fc662268b764ad4a60d5a7de8c1a1f1edcfa20f4a8c6f0dd16bb83d1e",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_28321318FDS030005_2800_SS001060107_2800",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3c139b269501e885f25f981ee3eb195a974ae93168f9eceef431565ec393dbee",
+          "source_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+        }
+      ],
+      "active_relationships_semantic_sha256": "d4be375e968ada8e580bc436c7aa3bf294fc7f5051e953898ae4f465dd8bf64c",
+      "child_award_count": 15,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_SS001060107_2800",
+        "receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f",
+        "reported_child_award_count": 15
+      },
+      "count_receipt_id": "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:31362d79725de6d0b69540ca80175d8ee8941fd347f079088a78a7943d87167f"
+      ],
+      "detail_rows": 15,
+      "idv_generated_award_id": "CONT_IDV_SS001060107_2800",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_000PA200210C50PAPT20100650PAPT201006_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9405c63c2aa9434f15176b36e7eb9ca2bde8372d03b463dc833adb165d8c0878",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603001_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4bef58dafa4ccd4384ecd4430d0d43d0a39ece171e1fba2e93de61081d6e7d85",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603002_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9bf2761050a7d53e2e801a7c7e8a97d3abba666e9ed3081adc5124798dcf3cbc",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603003_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "e5cf646cfbe39e1e63b2f25aacfb6b840216902716dcd0b38e731b39878a4dc2",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603004_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "da32f617aa86bee407c7160242ca947230be1f37eb68807850882410edb9a3d1",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603005_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "20406035cb0e1303225bb69d68bff436361e07ab741e9b50a5c691ca57c34ce1",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603006_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "dcd9fbd78c4ff2b43c5e92a773e2eb503bcaa1501f262bad805454389c96e860",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603008_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0f8bff0f8ee2f667573b7de96d0debc1c6e4ab77aee8553159c318697db35d82",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603011_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5e8f6659b2a80921cd95199088f876ebefb55c47a19e1b649de9d9c244ab85d3",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603012_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "265b73dca7e982ed9b4047142eeb099314935d9f01786e7a239100d6e931fa2c",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603013_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d8a0eade5da042333b5366242331b858c2e426c8afdc56edee60ab0c1d13d09e",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603015_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "dfa25dbfac97d1280e9dd095bf748991cdbe6ad11e21451e84d1e05dbab28a55",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603017_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "58a3fc6d2a16453cf4e8b0c7a47eead53f8082096d19b0ea46dd67c0ce37cf8b",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603020_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b698264c86236fca9e9f296ae030bfc38d3da3a2aa226fec854d7cbbad50d7e6",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603021_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a30571c0b9f1e81d8262d2f44c4973e72dbe47ae52b4849f2d35abeabcf8ba22",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0603025_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f8e4eecc5fc3e549f05089ffb5a6e037149164d4408c78fe62b209e4ae273c10",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0703022_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a8d7f1138512badd6db4cc61d7afad3c8b6b8ac06b6825de58fe9f54e4cf7c6b",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0705078_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "af197ef60f9137795521e16f729258573b02f4d12880f1f6a38e1ca449fd12c6",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0705079_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3fdbe91f9058024dca76ab909dd846684db3589a8c6dead30ff3f3cb8b25630c",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0705084_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2387d64b4caa6496c230efe846c71aebb6555f0896838cf5c0da71ba9db754eb",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0800801_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "37f7f6a3d4e3998655ff9f3a30ace15f5114f01cadc4218c313b41c392666a79",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0800803_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5b0989d37d136d334c22100c1ec0810046cdddc242eec0778f1110624aa74339",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0800804_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3b35006c0bcd5ebe3c291c34e034fde9c250ea30d8d94e32d4efb929d808d3d3",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0800806_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "962ca810d0ab0058fbca203d714768513652e4a9f6a669cbde45ee6d21e8dce6",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0800808_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3d432367286cb7a7b3905702aa6dcba7efdd242fab7bfb0bf1674d1d3cf6341f",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0800812_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a75ef10c72ba44ff9e45d6bc11dcadb6a51f64470ccfeeeb14da49308c9c880b",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0800813_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "bd5b4c6d5b895f7713893a5f1e94f5bbe6f5bcf28d97e163dcfecfcd12874f45",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0800815_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4270f11e2163bcca72705045e86fb470a9ce0599fe8993c895cd426bf336fe1c",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0800824_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "450d7ec1814ba75f69caac1530d42aa29ff4505f3ea9598a423654412626faed",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0800825_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "dc566446e32c7d7d33704d94780ba8355b9cec9c29ed90266b29658588dbbe3b",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT0800828_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9bac3cd058a04ab6b77103b0f737b1e81fbf2a4d0898eb6fca249414b76fa0ce",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT303007_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "62419668e0f95a6000b49c9ca4645c2938262cd743ea3e3462ac2233bb44f553",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT403001_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "646a9e63ece250a717a6600a660acd26d5afb4c5689780b3fb1d248d7397d14e",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT403003_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b31c28f19b3e2853bca23d55a5122d8a3e8da401cfddadbc1a46ddb81550e548",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT403004_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ddbba66a031ced0e2c1eb6e73f7b65d00cf30f8f51ea6ef663739bad1718cec8",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT403006_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "99a1ae34b75be6a8004692d5eaf654980a1404fd39dc49cfa7c35a674d9f4ec1",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT403007_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "59f1ba88f486f826dd5abd43ef55271aad496ab09fe0351803bae95a37ed86f9",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT403008_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4fe4752cf1a517a1c9bd85f46e5def0f24d68d0610a7c087224832b6137f871e",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT403009_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "fe567ea1cacdb5f0d69a7af46d7389d9bef010225a1c6f504fdac5b55f3b152c",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT403010_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0d8597ce329d3437ab5c78b684088c02a82cdc1f3a31733fcdf41c97377caed3",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT403011_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4e3878d85d1acc61863989e0b487262f136e598943c6e0903326e1f481ba2c74",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT403012_1344_50PAPT201006_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "477981ee6cc51f4354edaecfaabaaad19125953e08e87567cfaaa1667ee4282a",
+          "source_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+        }
+      ],
+      "active_relationships_semantic_sha256": "088ce2972fa7282451984ecc77be171aabe79e6752c95b93f81e0678de1691a4",
+      "child_award_count": 42,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_50PAPT201006_1344",
+        "receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490",
+        "reported_child_award_count": 42
+      },
+      "count_receipt_id": "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:bf553255668518fc3bc530ce1ebe853b92dd53530a218705db1d397b3cc0a490"
+      ],
+      "detail_rows": 42,
+      "idv_generated_award_id": "CONT_IDV_50PAPT201006_1344",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199904COPCT0006CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "60ef052a05e05ebd341e29d2e446ae80afbe183f941e733483a1059f045e8f75",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199908COPCT0001CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c69c499baa21a823fb9a63d9b55f8d9c6a7eebf7bbe842f0a4c3ebd192d31aef",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199908COPCT0002CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2179f0e181915fafe0b05ffe1cbd7787a41d4ff3dec8170416501e3ce47323f5",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199909COPCT0004CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "145703c7d2866ac10d678fda52a37b92ab8763b68b90466cbcd82a4b4f71ed2e",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199909COPCT0005CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "26a2e012690eef5620339cb10729a20104e15a4da7ae235cae6a3578027d343b",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199910COPCT0003CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9e51a8f5e20a4033d3832674d1362144b8e09ccf72671a299b144a738e23e19d",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200001COPCT0007CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5fa7fb96cb80862844749800a586ff6faa10c22757ef442aeaf820f0c6aab07e",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200001COPCT0008CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "95d18f8d9f1c38efd64d6c14e283b5d009f4d5b30527c2bfaac6516ca6610f38",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200001COPCT0009CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0b960d1ac210fdcfc54beacbb2fef6cd6689f78455320025d1b6b6a8974ee100",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200002COPCT0006CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "366e64ddba3886e8281184bec11a5fd13be8d615340072bf3145b6c9ddddd829",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200004COPCT0010CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "70761dfe9be7eb2d84cb5d68a6622350f2a795a32f4d8fad0936fb2f16ae51a7",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200007COPCT0011CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ec31479f0120ec82dba871041daa21e79ef4d87d403acfcec5dad9f4483f6e66",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200008COPCT0011CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "96c5f152586c1ecd0fcf6b6efa83a573ce4f3e0d91989198759fe2700646fca5",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200008COPCT0012CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d9fa7196f5a9a0b9fc01943327aa4066e128a6633356c53e66e828a38b0ecc15",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200009COPCT0013CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "fea9b6d819386a7aebb0735189baa74b63de204318945253b9b5e1dcb4d60a71",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200009COPCT0014CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "629f763ba4be3de9bd59d60716a105fcf3d28cb41b10f300e33ff210cedde564",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200009COPCT0015CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3cf0d47b27566188f70bc61091a65d8a44e1377bdf125cf0e24af25878b5c6f9",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200009COPCT0016CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3c30094ad3f55a7993bece48243fb8e23ed4bdaf9681517cc9b65a9e76e711fa",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200011COPCT0017CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ac1a0c0cda1cef28ac98fc1137cbe6f3a4756088697166b4b4385559b4bd58b7",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200101COPCT0018CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "96c39abf9b8611ab79d86024883b902bc1a74d3745885394caed59921c068416",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200107COPCT0021CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b32688d7096d1e54754040d2540496bfb7cda1a032addf5c13ce9c4e2093b9fe",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200111COPCT0020CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "1faf3960c72bd69db3a4101ef38dbb6c4a6e2a7e7d1822e9068df5ea59f25728",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200112COPCT0021CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ae8e73e4d180f1cda4decf1f2edda43be45cdc82d65cad5f424c35c6ddc47432",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200112COPCT0022CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "41e20081bf649697b8b330fa462180de0592b968e565d307307ec14eab5a405b",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200203COPCT0019CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2e8c02b1e2ec45d7bbaad72e4f85cf95ee2c1442b494dcd136cac4ce59217fb1",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200209COPCT0023CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "eb7c5dac74ea62254afe2a63645d6ef2532d5b3d242687c8ad034f93f653524e",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200210COPCT0024CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "57c49b9192d7581740d03c7f9f7d6447d5c1900535e058440525f12e0fe84c90",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200211COPCT0026CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "20173a3d7eebf4441bab03bb9df871c96eaf8ce49f8307a4a9b1aa2c4ce6027e",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200303COPCT0027CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5b8377933e967b3b4627d454d2b8305fdb751c53feee7c61c53f1bf2b1bc9e96",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200309COPCT0028CGNMA99PA01_8600_CGNMA99PA01_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b14476245440bd897c7e618d6e83ba83fa78f08d5498dc10e71523070121658d",
+          "source_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+        }
+      ],
+      "active_relationships_semantic_sha256": "cd15a982d05a6ccde67bd4298ea94f8624c2fcdd2ec53e9ac0822861cd1b0e0a",
+      "child_award_count": 30,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_CGNMA99PA01_8600",
+        "receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b",
+        "reported_child_award_count": 30
+      },
+      "count_receipt_id": "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:34ffa1b1cc6c5f8ea8da26cb625d7d89d62874a9b5c84ca1e7d3e6fb82a92d2b"
+      ],
+      "detail_rows": 30,
+      "idv_generated_award_id": "CONT_IDV_CGNMA99PA01_8600",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_0001_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "339798adf831f69ce51b8dd92d9435064b73fe7afa583fcee869504a7cbdea92",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_0002_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "da5e70f1d2fe688eb1d70f91de39a84e3e911ffac7e995f772053e08cf0a647b",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA818F00165_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c677f413a8ac6e12afbebf90190080d3527d6d315f489c0b723f1f245928763c",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA821F00166_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a45d7d994e4d6191b2c41fce89a8267f6b207e8a01741efc580c888942b67be0",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA822F00111_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "63ce9923c7f9bfa5835123f3003992c75bffdbdd3511d37dbe35557c48166d20",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA822F00162_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "318e07f8b929f0c81f36ef3cfbf3579121b411e33b5cc36963efed4def9fca23",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA822F00419_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "dfb3f7ba4e75b6ddf9f5da61ef00fd7622976e83891b93b25ca7a729221c914f",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA822F00420_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "27deecf714f5aed4ba7de51f3b695b8eb8095d0c4a2f81d0821aae45196cfb7c",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA823F00082_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "8dd6ee22e8d83ed26db2a48a15102adc0c13b245178b9c86d667d1f0993e76bb",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA823F00114_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0069ee3921d67843c5d7dfa68f3e5a202466b9cce62cb17f68ecead12594f717",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA823F00223_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a2686e54cf6103f75d1546ff3769304d106ec6f318819e1735dd7b4cc6f3aacf",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA824F00108_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b51df2659bc2146a00b01898f7c8dc3d1c678563c807b5897b11f58e41e44c54",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA824F00131_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b073ad29f346374076727418c668b6d4123435c8ded4e222fc515a2e29c74cb6",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA825F00239_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f6c9be9667d64c8d0659e1cf6f60d16fc75ab24409b620f86a610e2e3358459a",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA825F00283_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4fa30d4261408893858143b0552f5bf422bd2adabad14b23aa71775b4131f8f6",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA825F00287_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "29a1381a410e5df84a1a14fd958c7e2ec9f1d0baef03e9c95ebacaf5e8f1d643",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_693KA826F00147_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "99af625f5f8319036236584ddea5e9bc909a6255aa9c09eadb5d601672119cba",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DTFAWA16T00018_6920_DTFAWA15D00004_6920",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3b31e449e222ec62722edaf6559da2f5553475590876d3dcc39fa331a5c8c709",
+          "source_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+        }
+      ],
+      "active_relationships_semantic_sha256": "a46c718d589b899b0841f626e2cac7f17534c9d5d7d2dde0c6de3fe2d7903a1f",
+      "child_award_count": 18,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_DTFAWA15D00004_6920",
+        "receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f",
+        "reported_child_award_count": 18
+      },
+      "count_receipt_id": "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:79690334da6520d13de9ca9893990d7ecda89bf48cf2e232fcab91467e42132f"
+      ],
+      "detail_rows": 18,
+      "idv_generated_award_id": "CONT_IDV_DTFAWA15D00004_6920",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ18F00280035_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2aea4d595e0c1253092bbdab5fe7d9eeac6538ace54d95308d70217eb83e5085",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ18F00280100_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9d6bc4d8691d24c03d6612eca306af8275ce353f4b9407029de7745a256da87f",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ18F00280107_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "6e1ca4abdbe1b3100d56c48281d0da8a18694d0522ef186af9448724ea4e0ca2",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ18F00281010_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2447118241df37c378a7ce19a82bc64ab0da724dd0fc96a1e305214b55b5c9b2",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ18F00281012_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "616fcf0f1571bb46583ab6ce96c4243614255cc3ef4bb190339fbe3fbff49607",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ18F00281015_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "48febfb645b3a59ec1f87e0b926bccb9d6520580aa96b30fa9f801a2ad5a6ba3",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ18F00281016_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "6dc0f5c7721ad33b396a901d82b652cdd633e087167e88073e370f904f768c0e",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ18F00281017_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ea738b510be462c1beaa82ce9b2dccd30a7f441e3a10a158440f94ab88822f36",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ18F00281020_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "38ea99f985087540ca56188127a167c00b0bcf4ba3cb4f110f0cf9b3934b23f6",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ18F00281021_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3e05ceb4c9ea574c124ae88ac6711dbe1bcf8725bededaf2ce684cdc01c423ce",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ18F00281024_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b970100ec0431799e020b7543afa9f9d7933e643c2661803ade3287f0ca3d270",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ19F00000006_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c773e761d3f5436558bdc803e78780dd752ce56d0f5af77c3b93123ae321468a",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ19F00000007_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "46388dc331c5f62ab194a220ff3007808506dd361594bcaa31ce165a06b36952",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ19F00000008_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "76064d5f0c20d77ec6659711d89add51ea4634e4627a7114af4b4fc832d9a7f5",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ19F00000009_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f9917c552ea967cf7d6ec1a46e6733b0647b33b0d2bddd2abadf2b1bc2af5845",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ19F00000012_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "e11fd564ec664bca551c92e93352ebb0c641960bd4db16ce9e16a315ae5dd728",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ19F00280031_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b461c2322d917c905e80f4d31cd8deab38ba255b12be1d481b6d889f1e5bcc6a",
+          "source_receipt_id": "usaspending-idv:0d9af08a6c9ee4f60832cf9e5da746507f53f3fa29c58083d38774ba60617096"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ19F00280052_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7787ce01e4a4dfd9def86bf770fc67d0dfbc936d40fd3641f1a99f858842203b",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ19F00280053_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "6805a5c2ff68054148fddb8e825b6a2be73d4f1cadeedb959395f03cbfade393",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ19F00280064_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "25b0c6dbf84b56e7438c2b0f1b91d78e5d7694f48f68553c2e61dd8a962db9c2",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ19F00280070_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7e5397e731f600803e3b73ee39ee1783291987c4a3a7a2dcc25a5c1041bb7505",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ19F00280082_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2cd921240679ee53cec00ddd1049b70b7cd477b70173baec5bf5f6281ba9c6c6",
+          "source_receipt_id": "usaspending-idv:0d9af08a6c9ee4f60832cf9e5da746507f53f3fa29c58083d38774ba60617096"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ20F00280034_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4d846278d485cf804345a4779578f8f5ba2848d0a3c4b87f1ac5eaeff9c8d6fe",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ20F00280039_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7a987171112910144813ad0ae4ac102a533d63d636e46ea83a0ae77acd4866ae",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ20F00280044_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a4e630554d1dd5c7875ef44dcba1d3a45cee56264723cf979752c8ba1c287a0a",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ20F00280045_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "e7f6a273b5cba0ea4224ee4d82aaec4a40909baa4e7440c5e1c082a915bc9ba9",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ20F00280047_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "1754558b8212517c34b06f75312e8fb1462e090c6ab0ce7cbde59a8e202040f4",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ20F00280050_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "309d4198e5b24e09a1c1d6afc99b19a6bc75d595abcef70bc9b60f2fb701f024",
+          "source_receipt_id": "usaspending-idv:0d9af08a6c9ee4f60832cf9e5da746507f53f3fa29c58083d38774ba60617096"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ20F00280054_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "55936eb67370b16717be79b16afbcf251e76f6ae72111292da04748b1f451def",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ20F00280055_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "51bd2941b9c15b630d4d5c098b645b1b8bdbe1a245157b8ec13d84d5a55d3ec7",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ20F00280056_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "81dfe642c177cfee1b6c36b9843040180ac3a79127bc39579df62d5dc8e5910a",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ20F00282044_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "e4297a9761b90ff4170d36fd028b9b09784ae86adb641bb945535f8fd0b62c02",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ21F00280001_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5e1f04bf9d5c6aaddda3ef1bb4fbf5f4665138e0589fa20c79a8bd12ee38dc79",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ21F00280002_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "293c6c22306fb4ab94bd0f8bfcebdd548b08dd9ecb06f56f69b4c6a88e9dde87",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1333BJ21F00280009_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a12c92e05a1f7dd1c2fda2c3701acc366cdd075193bd068a8bd8fde2168b34f3",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400487_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4c7bad38fe11428e8e2dd4ee0ad5388e71741335561cd3889843bebf7b6ca6df",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400488_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b32c2f507d685ae892c8bf16e41eda65b6966a4443aa816123d9871f85189342",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400499_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f8cef023bc13206e0079aee3b0464012498271d4acd430cf53cea172ae49a381",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400500_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "be6281bd3a4676f5d572a6a87b9722caba5f851ecd3debf4793a9622c7660512",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400512_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "46785ab601445ac5698d8aa91287988e96197adb6fd77a28e6c151d820627d34",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400513_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "87cb94c84b4b7bf17f264c6684e96fd88a3e67332c01f63902e99f2bd6e4475a",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400514_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "040881e8c5d6bb737eb5139cd31c092fe8913ec60917ebb9afbf7105ade2f883",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400515_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "6c18e5e75ab44d693d687b4210b8872c485dca301b186684a80fb80992c46c1e",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400517_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "6e791c6b09b4aa27373846801357d29790eb50d8119f71ccad9e77d6624cbbf4",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400518_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3dc85cf6faf6eddc5252de1d273da920da2dead8e9520990727b5f4130b305aa",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400527_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "113bbf881c252b82b0f92e9e3072da9c1c75aa305afb502d195dfbe991cceef7",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400536_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "43ddf659f9c48f126c6181d0f928250a4763c4f6e2bac445f3a5c69656ae8931",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400537_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "dc92c5671a55acde43291d0eabecb5ecaf68fd7a1a09a83c791940a2679e4f7a",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400540_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9b6283cf34ca600ed938906630ceb9cb3ddd1806b529803c28501473e5b05af9",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400541_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "cbf95e7c116a80229c77a91d6af217f54fc4c8d09d3ab5732076ec595a40cf49",
+          "source_receipt_id": "usaspending-idv:0d9af08a6c9ee4f60832cf9e5da746507f53f3fa29c58083d38774ba60617096"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400573_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b274dc194a77e23d5e2c1551fe88239e677818b611755123dc1d147df37aa3d9",
+          "source_receipt_id": "usaspending-idv:0d9af08a6c9ee4f60832cf9e5da746507f53f3fa29c58083d38774ba60617096"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400583_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2507419b642ea10d2cf32ff3016db46dbfeae055c3a07720f77ff2800346e85f",
+          "source_receipt_id": "usaspending-idv:0d9af08a6c9ee4f60832cf9e5da746507f53f3fa29c58083d38774ba60617096"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400584_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "707bac41093c929ab7b52f0c85b512e65f6eface58c993c69597aa9a4dcfee63",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400630_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "13d4e0d52acff8ab79d3ef651d50aa425c49369da12b61e14389be6766d6f42a",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1400646_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0b9f1fae787c80f51393fa22b2b8c4cd0dfa543c7f7028fff43c1ddf061be0c3",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500359_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a5da3ff134cf1e81fe43714d74ba9dffa1eb9b68fc2d631ce50d412edd37b0ea",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500371_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5a7c5cc46cea06a7965ea36105e1c15e15018d60d628a5bea59cef98d9338d38",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500384_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "96d72a516aa09a488b54ba65da5eba6b556446dcb517b10f47eeb5fec62150c3",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500435_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "6dce282de7598be319e5bb2d334c0e21b8e0dee1991ea411aef4767b06466ce7",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500438_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7e4c169aab63e63a429117a50fba3c648df9df771c0a388b777a0b64e81b61f5",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500440_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "8760b967ff58146bafaddf684fa6a520dd4c165cefaaef5616bd654d01a2eab5",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500452_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d949ce768eb97f763356b8ce436be6d3f493f1e860cd3f0ce3af75a9d6d3ebc0",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500453_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "8fcd35793134bddf45741d674c1bbac04fd48015de0a71838b7146822d7048dc",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500454_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9aeb0a365223d1c22cb701c4315fd96cb6d76cfe444e8d4695af3fcf5602d120",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500468_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7388dcb72d39a6e6d08051cdececc43d6f42da2092b9cc066d29a6e2552e87a9",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500469_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5115656b769940b59110e55a33cf7824db86a12c87c5a8a0237b25d3abbfb4f9",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500470_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5dc3f90439fe9d074bdec28977611a86bc058838122ecd16c94e0fa4a1370c6b",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500476_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "00c53966e31e687b07fb98e1da16f29df893342d2051346a742b99214b638acb",
+          "source_receipt_id": "usaspending-idv:0d9af08a6c9ee4f60832cf9e5da746507f53f3fa29c58083d38774ba60617096"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500489_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f2305c9b5f5af6d702246d051f689c204e2e43157c10b9d33e3166ab8ece3782",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500495_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4cc9d600077c5b6721ed05032d5631bec0e2c46d3d5072ecd6fd1076186109ff",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500511_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "83b342b8326475746e6bd65d89d2374e9cefe95790d0ece1ddc804af0120a48d",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500521_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a1d17e5091ab2f4d09232927eb25ab63cfe2a91a202ecdab99300c2fc5de2c90",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500532_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "bd2ffa87761d0783cd080193708137d0d91c2fdd7c6362477ee89454781a6ffe",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500536_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2dcb151fc9ad97fd3809c085b681e4d9239b3802813f7574b14820862a47c206",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500549_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "e193388707c8773123630f12cedf7fd923ac6c5169cfef0754e7c37d77139619",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500554_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "43400bee0fcb066dc066169a73273a9b1bbd7d3fd8926c0379224b67ef6662b9",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500571_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "811dfd0bc3d4f2bbf047eaf0b259dd62ba0c2d37ac13918a9de87e01a39471a4",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500608_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "81be51578b9d35a0974ed06e5e46a8f236950727e78ef9a88a832505a134649a",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500640_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ecb4fc92a933ffcf02d5dc4f897344ad5567432023ccdbcd44622b70015a2047",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1500642_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "26bc8792fc08f6fc6ccad3409c05a10dc3ef0ad47e34670f3743a2eec8666af8",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600379_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a9245e06de2388530ba7de5c5a5e29a1cc695a3fe190b4518f1eeffd22ddbbee",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600380_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "96bae34a0f639e5e37d32fb50da01017f26d06c481e2ed0e6d6e82bbdb0e801e",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600381_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5926ba6ecd5f512bfadfb6396cc2453bef7aa39473c17c1c362ce38eb8dba01b",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600382_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0ed53e588223d3ff9314ed807fa01273f02e8c3e7b4c1c3fd24ca5971c13e788",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600399_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5156e96e6b7a2314839cf1b45a00945e913d2cb07225157542acfacc77c61e01",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600412_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3aecb05dd123b3dd21621c9a92fc5b3757ddf2a1a71aa953fa047fc01d90a054",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600420_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b72b62796ffe9fcde761e6c2cd5b5754e2f07f5fdc7faeeb197507a45323d097",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600427_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4d584f9542691da7cafcd11015cd0a12ef03131186860dba0afc169bd19982d4",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600431_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "797329d2b1d1aa7890a7369c21fa7fb0031c54d06e195ae1627db59bd7fb9f45",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600452_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "50cc01d8df11d00776540934fbd6e2d18fbdac3f32a82003b4fb4926d402f3c3",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600454_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a03c34db291be320b0b1c10db20d07fa3e84d2c1845c7d5bafef84f291da0882",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600456_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9453f5a2329d7b50270e743bd23fbad5957abb06d4bb1f77be67366d2e977b8a",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600472_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "fd7010ba5c9b3b54ebd7a23d4361f6a77b9e280be83a194558a4b3cdefb58533",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600477_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ab9319c97826f24364a5299a5b25a020d409f4308e7b4e9b0deb495686d68193",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600479_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "eee2b956e2204790b44ea27dcc6833dda4aacea091efc3c389c5a1edeb90af76",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600489_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c34e0c42c8c6f2167c0131a24ddebfca599b29d00c9378f46023a9e08cce0ab1",
+          "source_receipt_id": "usaspending-idv:0d9af08a6c9ee4f60832cf9e5da746507f53f3fa29c58083d38774ba60617096"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600494_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "53c122f597a28287bfd28104135095efe5ada5f048a8392023a6bb9b818fc8c7",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600523_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "985b7746ce93c8ce4c436ce4677887d9dbbb28a68626a7c47d47c39061104ccc",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600528_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "eecc23a6fcb255c1e9d45189e7abc599c53eda2720886116184060be4ad461e3",
+          "source_receipt_id": "usaspending-idv:0d9af08a6c9ee4f60832cf9e5da746507f53f3fa29c58083d38774ba60617096"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1600552_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4bae494e321cd75e8b28e9e782a29f0b661f4181193b2b176cd73f8b4d74c445",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1700347_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "191179ec7d71873b7f062f4eab24d34024b9dbb41f139e0fca2ff4ef9deae992",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1700348_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9eca70905413f7107066ad917613f4027b9c0fd7efbe5c0cd4592049177f8315",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1700351_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "347d37111dd6a6175254bc74e8847eec4340be4ac7164682f9080dff39c5cfb3",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1700363_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "40902e756c308596020cf5e7d73b39f05eb5dfc8b1c8c31e25dd72eaa493299b",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1700364_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "cf79281d8a9b3e29b4c2d67edf9a52efa82ffa7080775c17c5b16913452a3a14",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1700387_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "815b8b97f9fdfdddf1313c014cf1949d2e209eb2efe11143ebd2a833defbb172",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1700388_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "33b3558ab6912214906d6b21a2d58daff2b5d10403120149e1ff5f546636d347",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1700391_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "da0fa8a1f6fa6c6555a68be1407cfebef7c42284ff7da47cb0f23d858c7fc2eb",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1700393_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3e8f491c03d9fb67b4b99720110e44cb86d6ce32013b37972bd260831d5e24ab",
+          "source_receipt_id": "usaspending-idv:0d9af08a6c9ee4f60832cf9e5da746507f53f3fa29c58083d38774ba60617096"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DOC56PAPT1700416_1344_DOC50PAPT1400015_1344",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "645f928f8e4029eaf98473b106f2a361063a4bf6f80e5f36fd147011c58c9e32",
+          "source_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7"
+        }
+      ],
+      "active_relationships_semantic_sha256": "312533c1e765f65788709408d0e23315541c38b095afdab1bb344d5753b4c3d5",
+      "child_award_count": 110,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_DOC50PAPT1400015_1344",
+        "receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7",
+        "reported_child_award_count": 110
+      },
+      "count_receipt_id": "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:863c40689d07da2754dd40b9eb4856c53921641590d8e16ef38fae183b29c4e7",
+        "usaspending-idv:0d9af08a6c9ee4f60832cf9e5da746507f53f3fa29c58083d38774ba60617096"
+      ],
+      "detail_rows": 110,
+      "idv_generated_award_id": "CONT_IDV_DOC50PAPT1400015_1344",
+      "pages_fetched": 2,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199305COPCD0026COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "211a8bda0874a4c0bc8d6d7d475fc405999b1d53b9eebf9a7ccd43969c7ab27b",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199306COPCD0027COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d2140089e8d266d3726279270be79ada9772cae3283fd34916554f5c3c5b9436",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199307COPCD0029COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c571937b8c3c55a92f0701a0867c2dc12781af4b11688d221f9b05abd18cb3c1",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199307COPCD0030COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d3f240a2b3ef28f1d77939fe6e68763f0b9bb45aae669a6e39d198ef781023c3",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199308COPCD0028COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "83d6831f188850a2ac90618135293ab89bab477e7248e5cc1e432a575a0e3267",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199309COPCD0031COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "fc4227e01ea5c59f5f5b35d7ed8903bba1da59b21df3d2239587a5c84b5ed5ef",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199309COPCD0032COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4e9eafc5f7e1348e98af230a7cc5e787300e02c73dcd4764494892fb15b2b765",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199309COPCD0033COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2e58cc57d69ddfbbdb3d2ab90c43576b49658d41dd454e46abb5442174b5aad1",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199309COPCD0034COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d38b44affebccc19833f10967c663886bb766f398085c15140f10a640450dacb",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199309COPCD0035COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9ea2901fbd8c93f917880939533e37ff46dc24009520f1d3bfa1d855c9d72e1c",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199310COPCD0036COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2e0db570a65d5d482ab64856617eada9b5de1af56fdeb490ccfa1b0ae0ec3751",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199401COPCD0037COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3325c711fa4c65aa77fa8e7e5908a581475a138efd7e536c908f91077c1df628",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199402COPCD0038COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3169f09896843b27d8804488387239ce5a9e92b1359241dad9587cabb5c2b350",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199402COPCD0039COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "e1d8ca0fd8a1b3444524a3e3aae24648d14f708c1e0cc3e6848ca0308cd0d682",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199404COPCD0040COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "aa91a43ca16a0bfcd5b14dd5e9b66b51c9ca94e33a75a4f173a828236c1b2d77",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199404COPCD0041COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "59c57ea2d5e117704fe898dfbb4b7249d30eb29a380a08c239a1f4c0e0658f64",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199404COPCD0042COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "27f753e9670e3f81287c4f60a0ba39a430d5e2ed9077698f1108ce579e5a30c2",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199405COPCD0043COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "24e62ce23f65e7df70c50eb0dd80bbfdd5cd0ae3c84500c064443a3572f1245c",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199407COPCD0045COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f858d51ab93414f580df867f8a10e0e1dda24f0a054285e87f34dc864962fca3",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199407COPCD0046COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "02f28f17f5ebe7ff50d89e0f29389cad3a09315e7d74391b701a3068cc6d60a1",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199408COPCD0047COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "24d885bea34a852eb83b86e80e0b689cf9716835ce471f95d1aeb8c0763e5db9",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199409COPCD0044COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3003982156bcdded994e78d080067ed084b688da2b5f327324e92b8d54a748d0",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199409COPCD0048COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ecfdc13a5031de5fda15a9ac339042e827faf90430cf0a030577bc5f108c5b4d",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199409COPCD0049COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7d1737a241b396aaf338a10f95ac1bba9936af4def49ad3d73575bca665fecf4",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199409COPCD0050COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9eba81b9a90efee4e49619924427396571405357e638cf44d27a7c074bda724f",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199409COPCD0051COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "5e7ebb9bd6970abd3c7d87341245e9464e03670392e93a0b3360ffc07dea7046",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199409COPCD0052COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "861ab67370c2cb5ed77f150fd7d7e0922a1791ce91428e977184e2ac55a357cd",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199409COPCD0053COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "6a4224bc9be10b5dea2d722f76220e6da7da65fb16f2bdaf38261fa61a63eb5f",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199409COPCD0054COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "cecf3e70116d75933eb624e4a5bf5d0b9343563a5e444438b8132017b0ee3199",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199409COPCD0055COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2be1e44af423396b582b8e7abe5319beb945832478891ae80c5369b5a6e4f1c5",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199410COPCD0056COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ddd4885fda67dec56765f65bb1495348c60fad20c8bdd1a1398cdc0aea06379a",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199410COPCD0057COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0f62886b6fee19b8bc61013682deddd86d23691fb140afbd545d67dcf886bd35",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199410COPCD0058COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7d8f695a8a500f31030e4deeca96ad88d8c82967d367696fa73c8477c5c55ff6",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199411COPCD0060COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "804ffb193afb00ae282138c7517febe4bad8a9bc716185e3a3b348115f7cbff4",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199411COPCD0061COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a2c9cef66298ede0419dc718c9b3cfdbb819d0351e063e63bba47a669db68ee8",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199412COPCD0059COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a58701f1439821184b4a6073cc31d0dee616d29c95836d32505229a774a5da1c",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199501COPCD0062COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9a870a16de7f77ee3e7a8a152ad905b2cac583d999921727cbc8857b7529df59",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199501COPCD0065COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0d9223b4835112b7b5d550af5c4d3e81ef175a7d4dedbf5b8bafd908e726a9af",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199502COPCD0067COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "266de0c1be19b759866729cdc781727641dcb04e04b36cb2475e0746eb4e2307",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199504COPCD0064COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2e9a3479fe71b968b29d0a5c051bbd375abbc374c63b8c683a0a39fa77bb7f4b",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199504COPCD0066COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b4a3e4bb8b2f705ef851b5f00bb399ac6c42fc17a59be38cd7d204d888d92ee9",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199504COPCD0072COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7873fd5141ab6e4947499c96367794afa68709c828e4c1015cc5338fcbb00ba0",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199504COPCD0073COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "02e95123a6d6062650d409d954b6a695231f4c96d55b6cff78d0e9e0bc07c4b1",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199505COPCD0068COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b7cc7692d5232406090632e7f9206fdbe32492652c17b4b2eb8acfc749f6f3a9",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199505COPCD0069COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "90c11bff2c072a3506f46f91a11fd3d490266217f53ce5a85ef44a1436cb23d5",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199505COPCD0070COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "381ac43dbf7cf818440861e257677d831854f6f0c64552e5d76d08f16c94b142",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199505COPCD0071COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "fb986606d149c3a53b3217d7df2e5b3bd36c04f432c51faa663240d507a66c5b",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199505COPCD0074COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "bf9c9f246964404da04a442bc5bab7a3d1598de3768cc9fcb083359cae20269c",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199505COPCD0075COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "46f190f6cff02d905416d372ea2b7cf0a720fc1c1da743c6014083c6dbc2f538",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199506COPCD0076COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ba8e2f7e75976f02f5fe8b744a32a5a56c187f68d6e948f05ef5e94527a0c8c0",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199506COPCD0078COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ab98a4a3992de2c823bdd9ce9fa05eb492faec1bbe15c324ea9b90a0cf1db8cc",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199506COPCD0079COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "dded65608bd0bb8f036c0ad852944f08323fa27ac6eced151417c5916f3aed16",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199507COPCD0082COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c64a835a195eb80be1e962f1bb3ccea4ca277364dad1a9454e2643b69160fdb2",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199508COPCD0083COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "532321464362549d25d39088c792135140fdbb15084cad22a3cbfb50d8e16ce9",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199508COPCD0084COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a003ecaf42722838460124474760d3b9e6d581f4f007117b81fb053c36b8b84e",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199508COPCD0085COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "84d87ea604e78636973e644649b141d68e386ee16b957813bd23909f8512a823",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199508COPCD0086COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "dc48f47c9fdf9bcae4d2876d05fc0a5e73c2d2bde3d92c3f51cee1d23ed808a9",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199509COPCD0080COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7cd993722768b59af3cb976159408ed3ed6724341fd61f78ea983e8a0701b4b7",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199509COPCD0087COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3f47f296c48463f1ac4a3f1d4f7fc5ccd4e8804102206b8e0d64c64fb689b997",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199509COPCD0088COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0cba2768c0c081ca3892d11740890710291c6e6c452caf45ddc73c8988c50ff7",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199509COPCD0089COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ad38f18ced10e9e9f45e8ef3345ae1464192b8f0a58cf8d6d5b28d6d37d4dab9",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199509COPCD0090COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d3849cec1a3ec865789a9038162799cf58f72cfa858b6d45f5f02f24d8392b51",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199602COPCD0091COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "6aa191f872d8b13bbecb975fa23454430a771f671b00ab21bc4047dabe9cdd98",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199603COPCD0092COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3df63c969b0a9457a8c739eeb9659e76c511599da824b341888685bc92365360",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199603COPCD0094COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0ff6f4b50318011f5bf6454f0f30ebfb6eeba5cd8e1666f92440d1dad74870d6",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199604COPCD0093COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "8b966434ba0412c0cd0e1e5e29cedcfd107514f125aa72adb0c4de4ef8554e43",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199604COPCD0096COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "e12f2f666970594f1508f5b2d51cbeb870eb1eda73e837a03aa84bb3f5ae44f4",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199605COPCD0095COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b87fc6dc20bef1346ce0574366726044744ad49fe28a5848b40ab1386433fcf8",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199606COPCD0000COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ffecadbfcfb607881698ae6fe91df92ffd2dff901ba300eadda81b842d81100c",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199606COPCD0097COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9e9f2fc34e4c923037a659ab69a672169ee9f5da28bf81793405d61264fa8303",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199606COPCD0099COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "26e63397c68885d5304e539ed722266450579c522b5f9f8353a23237f99d4af5",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199606COPCD0100COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d30c4d4f384af3421a65a04b94783cccb52d125db74d13cf9bf86ef892a0a0aa",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199607COPCD0004COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "8df3d4de2a1905c7d9e2330fc8bf0bf2fd2eb60156ffe24c12a7466cb3987fc3",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199607COPCD0098COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0042f4b41d83cf3bcc1c7044bd7963c83a002aa33b1ccb5b87aada6092a8725c",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199607COPCD0101COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "7a20d582a8c289599530a06671ebcb89ab2362428360b89fdbdaf50c0c2eca61",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199607COPCD0102COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "348a37d623554a7e34e77890815537b8bf2349577849323ff54fda7e210d59a9",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199607COPCD0103COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "2967356a06a281dbb1f7f46c4812867b4d40b920e5f877a8b624c133ff07a95f",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199607COPCD0104COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3665803cab6c6df2edb21e699e42ebedec630f5b505e0ae5b78dfd5745e69ca2",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199608COPCD0107COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3efdf5261a86f1bda95011c9c59b971b1b373fb128dc4454ff1c5ffb0d0dca26",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199609COPCD0005COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "49b18ac13c4dc01e737e875e66dea5da38c40a37e3c01536645d1f837fb88175",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199609COPCD0006COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "8abaa43f78ca517141feebd0a3694f8bcc586c861b8e8017d9f2beec2193c00d",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199609COPCD0007COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "505ffc07f10551df5095e61f3c31ef5925bc54354d495c1f5aada83f7896726e",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199609COPCD0008COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "aa83b83d61dedff84868d40c418930b10ed42d4654455910833db9ec494dca03",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199609COPCD0105COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9a9da5d7434c8500c6e567a8bf48216dde2df4764e10ba08c3f6d15341ce494a",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199609COPCD0106COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "62523217fa386a9875ca6364daf5b9e651bb57c9a2a2af7580ec6a10759317dd",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199609COPCD0108COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "fa9ea6484ac6dd8cdf83e306a889ddf8c09f2287020b14c6ded783e0c4c0c6d6",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199611COPCD0009COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "35281dc1666b0d8249a8fde511b8f15970d12c5d38dd596b0e903e5a37f6f9f6",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199611COPCD0011COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9524a4c9c1abb2e67feeb75f0682d9eb69b9c262c66889091fd10a2fdb0fa19f",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199612COPCD0010COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "74ce3fe6cf8f7d49a3db2e06337a665bd63c431dbf326aeae35d9f8fd7f240b9",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199612COPCD0110COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "82b6e5c1257e2f2582adaf3229918d16fc3da7c89f2af0df20019824d8e6358c",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199704COPCD0117COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9207882184d12f4b6307b81e6573213e830db44ba0c90ce166b01595310a2d61",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199707COPCD0119COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "1d47188b7f3b732252d13649c414403ec1caff2ad8476d31475e73fc56aec580",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199708COPCD0121COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "727bf1c3e2f5bd7a517e617c1e280c9b0cbdcc0f10dbe16b45c59fdc91c2a32c",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199806COPCD0128COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "df08f3bc372dad4a143db2cae970dc6eeb291ef7b96e8c073a546ea81e7dd390",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199807COPCD0129COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "72164266fba33ac0594f9ab0c59a84d94fcbcfcc988ecdadd81a1283c4603fb7",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199812COPCD0133COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9199920759e6132697211034fa39039019ecfd4f07944302f726c07640be3389",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199901BOPCD0114COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a8c7543605aea34de8c452e58ccb76fc6474f6f2a278afbd81c42f8ea2bc68dd",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199904COPCD0136COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d9b5853097b2cbf2db96c846be95ea03cc618389ec9758aa17c3fa4f5569bde9",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199905COPCD0137COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "1c09f39f89cec2cd0f9e39f1e9fbad3db55817549869f676a6ad32c66accb63f",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199906COPCD0138COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "76b8910531089badba06ff224e9f838443aa14628dfe5536db372e60b2366cef",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199907COPCD0139COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "50e3800ecab395f60c0c9e0f5d0a39e0955687f24f6573189bfc8e7fe8a2f4a0",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199907COPCD0140COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "36d5f94cd66bb7bcaa7cc90d004da88f5ebe473477438c2400b337250d428141",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199907COPCD0141COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "1886dd4a9e1df0bafbff723f1c01caeca89394feaca4d5dfe99f7270c80b9aa4",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199908COPCD0142COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "47778c669b83999ffab4ab23531b052676f76ce89b8499778190110ffebcfc88",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199909COPCD0143COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c9ee75561e34599bfcdd5364b3f9d884cdae63ff082f4f740aa015c0cf4be4bb",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100199909COPCD0144COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ac5771cb328b2561932cc5609ce0629c6416d19ac7847ebee1dc5d1f847ac85c",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200003COPCD0146COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "ad55b0c376774558fcd4916c0d921fcd907d873090c246defba0f4d279abdb2f",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200003COPCD0147COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "353545f3f38c80a3d83bc476ebe52a075b6d41a517538561563c7aec655552f0",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200003COPCD0148COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "eccae8bc3cd49750a7a096617490c5a5de09d38f583be5c333def9f9bb7b5f81",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200003COPCD0149COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "9f2a5c2a619217cb691ebca51d375f998103c75e8ee3267bc8cd805c50b8e4b0",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200004COPCD0150COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "26ca955a4df7e0ced3dc7586de4b3eaecda66e46094b4c9e9de94f418e3ca2da",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200004COPCD0151COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4bd9f9cdb64191b7dd4fe3a206978fd8f616bb4e2cb1d9b9e44e6d2720f697d0",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200006COPCD0152COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "fc68cfd950e4441e53e7a77ac91e8c640cba05fd1d625504d117d4a481fc2b2d",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200009COPCD0153COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c95cf8d89cc602dbb170bd48c26862af2f6af19ef869adde3d83ea9a6e39f0ea",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200102COPCD0154COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "317b6bf4119e5293139a99cceb747210c45722ae422a8d2353b9f128aaa38d1a",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200102COPCD0155COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "469f358dad7306b137452b0bc14bbb48f108b503b1d52865473fc0dc94d4a2be",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200102COPCD0156COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "98a0e410d842cd9a73164f7eca9ae235d1aa8eecdb89148d5bcf0af847741735",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200104COPCD0157COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "c77304ffa79595e877228cb92f6061698e2f6c35dd0ff503732b503d6754d18e",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200104COPCD0158COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "13a7c318a93322a91a2b38a83f0fbdc4819ff97b40de618469d2d4da9cf4bfb4",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200106COPCD0159COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "fff8ff310076a464b1db9d97fb0e584ce70832a9daa92fbb368bb007860bd007",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200107COPCD0160COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a23c6be52596ebc453d6275834d92a58cc531732ba48e0caa18d71ea191226b2",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200107COPCD0161COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d714e625e4ba56d7a25037fac02f4b9e5a7882a944e6309252710d1eeeabaf79",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200109COPCD0162COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d529cc2e327d78b0d0bd94f1123635a6f59f4f10046b77fd9c9598330f4fdeb5",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200202COPCD0163COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a956e9cc3872bda6bd10983390633075bbd66966707ba973087f1e1638a8830a",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200203COPCD0131COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "eb2d22dee5cccfe9a215c253af08e0bd50cf360188e8040937fd765907220776",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200203COPCD0164COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "a57b77cdc2780b2ebc47448cf01da29d1c13095c05f2afa1d153451f9f5bbbb1",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200204COPCD0165COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "4212bedba8d9e32ae410bf38fb09a066f04af83c5d743fc8a90b8adc849bbb4b",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200207COPCD0166COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "d6d019c95cc546211a59954c32f1b80d92b7809d873dd76968a4ddbfe9c06fd5",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200207COPCD0167COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "39876182d0e18d36474d0ae72f077e3fc0b4c10013c22c8ee2c305d080bb7e16",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200208COPCD0168COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "f089b9ec67e149999462592e5fb4c94182b52d56492b38c1fc876378cf8f5daa",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200208COPCD0169COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "b349229072bf8c6be475a6f98853fda7db25e1a5da176ebdce24e65603495624",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200209COPCD0170COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0091180c5c4bc86d2bad2a32c7383e108e8bf746304980fbf6c804218c3b5b0c",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200209COPCD0171COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0cd00e7a8560e24e1118c0a3b008bd7912492f050dd38fa8358595ece8c05359",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200209COPCD0172COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "45fb3404132cd405124b0fbdeda8c4d83944108f648b6616b9f7daeec8cffb94",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_DU100200305COPCD0173COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "0bbed1a7510b763e452b5add9e3bc924fdfb8aa787a9f7dd9256c9e3fdeedb48",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HUDCOPC14703OPCD0131_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "3e6fc28a1ecc336e64bef6974589f02815f43fe04384d9bcd156ee416f959c36",
+          "source_receipt_id": "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_HUDDU100200311COPCD0174COPC14703_8600_COPC14703_8600",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "bf976a75fcfaee8a5c20978a493c338328695e3c907cd84730773d8b0aad94ba",
+          "source_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b"
+        }
+      ],
+      "active_relationships_semantic_sha256": "5a901f00ad5df2cf3250974c4a9b9fbc06ea7cee5ce5bc7b662e690615d7a820",
+      "child_award_count": 137,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_COPC14703_8600",
+        "receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b",
+        "reported_child_award_count": 137
+      },
+      "count_receipt_id": "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:ff34603b71e916a22c366ae3182395c3a2c0c11860bff4a4d78bc21022ea1a5b",
+        "usaspending-idv:965e191f57d91992af4c49c9485e053d45577b8fcf920ca2c5558820bfe538bd"
+      ],
+      "detail_rows": 137,
+      "idv_generated_award_id": "CONT_IDV_COPC14703_8600",
+      "pages_fetched": 2,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [
+        {
+          "child_generated_award_id": "CONT_AWD_1501_2044_TMHQ14C0008_2044",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "596467e6a17fe99940c0223ed763435f77d0e133ee33e791627649d7b81908aa",
+          "source_receipt_id": "usaspending-idv:450e16e858e7f90bc45e3bd0a81b2d4a25bfe85d15075c2f9cdde165141ff777"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1502_2044_TMHQ14C0008_2044",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "54e1e8b5bfb958bce860e1f7ff0613c80e3fb523da5e5ae7c37678321df98aa2",
+          "source_receipt_id": "usaspending-idv:450e16e858e7f90bc45e3bd0a81b2d4a25bfe85d15075c2f9cdde165141ff777"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1503_2044_TMHQ14C0008_2044",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "240f81abbe37c0c549ba6882b153ad16fc370084bcce0ad788e2dea23e6444ac",
+          "source_receipt_id": "usaspending-idv:450e16e858e7f90bc45e3bd0a81b2d4a25bfe85d15075c2f9cdde165141ff777"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1601_2044_TMHQ14C0008_2044",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "962092292fd7877c8070ee86b1ff987088d1cb10c0bcca5ac5884d94a1f2ceaf",
+          "source_receipt_id": "usaspending-idv:450e16e858e7f90bc45e3bd0a81b2d4a25bfe85d15075c2f9cdde165141ff777"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1701_2044_TMHQ14C0008_2044",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "124052e449f496d07986fc9f435923bd3014ff6b23d4b903b76fd4d3f2f11067",
+          "source_receipt_id": "usaspending-idv:450e16e858e7f90bc45e3bd0a81b2d4a25bfe85d15075c2f9cdde165141ff777"
+        },
+        {
+          "child_generated_award_id": "CONT_AWD_1702_2044_TMHQ14C0008_2044",
+          "grandchild": false,
+          "idv_relationship_state_sha256": "95c315806a6110e1d1534d0aa7540e6e6e4d66e92c2d06f3627e8decf112d612",
+          "source_receipt_id": "usaspending-idv:450e16e858e7f90bc45e3bd0a81b2d4a25bfe85d15075c2f9cdde165141ff777"
+        }
+      ],
+      "active_relationships_semantic_sha256": "5f29fd38b2fd6f5fdb9b656c1ed6586bac3f72e78fc7c1e5a16f221e4d9b71c6",
+      "child_award_count": 6,
+      "collection_state": "complete",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_TMHQ14C0008_2044",
+        "receipt_id": "usaspending-idv:450e16e858e7f90bc45e3bd0a81b2d4a25bfe85d15075c2f9cdde165141ff777",
+        "reported_child_award_count": 6
+      },
+      "count_receipt_id": "usaspending-idv:450e16e858e7f90bc45e3bd0a81b2d4a25bfe85d15075c2f9cdde165141ff777",
+      "count_verified": true,
+      "detail_receipt_ids": [
+        "usaspending-idv:450e16e858e7f90bc45e3bd0a81b2d4a25bfe85d15075c2f9cdde165141ff777"
+      ],
+      "detail_rows": 6,
+      "idv_generated_award_id": "CONT_IDV_TMHQ14C0008_2044",
+      "pages_fetched": 1,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [],
+      "active_relationships_semantic_sha256": "936c3816c0101fe8b5038f8d621da762aecbc640ef70dd8257d711d8955ee9f3",
+      "child_award_count": 0,
+      "collection_state": "zero",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_HSCG2312CADC405_7008",
+        "receipt_id": "usaspending-idv:719a5e1645c7dc41ed13b0f4d64fd51c41031033622efd3a957fe494ca02e966",
+        "reported_child_award_count": 0
+      },
+      "count_receipt_id": "usaspending-idv:719a5e1645c7dc41ed13b0f4d64fd51c41031033622efd3a957fe494ca02e966",
+      "count_verified": true,
+      "detail_receipt_ids": [],
+      "detail_rows": 0,
+      "idv_generated_award_id": "CONT_IDV_HSCG2312CADC405_7008",
+      "pages_fetched": 0,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [],
+      "active_relationships_semantic_sha256": "936c3816c0101fe8b5038f8d621da762aecbc640ef70dd8257d711d8955ee9f3",
+      "child_award_count": 0,
+      "collection_state": "zero",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_HSCENV08C00002_7012",
+        "receipt_id": "usaspending-idv:a5787965e1a9b008b167c6395c9df4739645a7de9e5c2ff4ff76d5e4f373cf48",
+        "reported_child_award_count": 0
+      },
+      "count_receipt_id": "usaspending-idv:a5787965e1a9b008b167c6395c9df4739645a7de9e5c2ff4ff76d5e4f373cf48",
+      "count_verified": true,
+      "detail_receipt_ids": [],
+      "detail_rows": 0,
+      "idv_generated_award_id": "CONT_IDV_HSCENV08C00002_7012",
+      "pages_fetched": 0,
+      "source_exhausted": true
+    },
+    {
+      "active_relationships": [],
+      "active_relationships_semantic_sha256": "936c3816c0101fe8b5038f8d621da762aecbc640ef70dd8257d711d8955ee9f3",
+      "child_award_count": 0,
+      "collection_state": "zero",
+      "count_receipt_binding": {
+        "idv_generated_award_id": "CONT_IDV_HSCG2312CADC400_7008",
+        "receipt_id": "usaspending-idv:daea9b9081bc6a6d9d4fc0d401c54976cdc69614559528db97ca49287b3d4a4a",
+        "reported_child_award_count": 0
+      },
+      "count_receipt_id": "usaspending-idv:daea9b9081bc6a6d9d4fc0d401c54976cdc69614559528db97ca49287b3d4a4a",
+      "count_verified": true,
+      "detail_receipt_ids": [],
+      "detail_rows": 0,
+      "idv_generated_award_id": "CONT_IDV_HSCG2312CADC400_7008",
+      "pages_fetched": 0,
+      "source_exhausted": true
+    }
+  ],
+  "projection_eligible": true,
+  "projection_generation_id": "idv-b5f27bb4a2bf27186550effa",
+  "projection_semantic_sha256": "b5f27bb4a2bf27186550effae413329c870a57a1cbe6625b780267b55525b43a",
+  "public_downstream_row_cap": 2000,
+  "run_id": "usaspending-idv-cc89c05d2a5d99c9b81c60b5",
+  "schema_version": "1.0.0",
+  "selected_idv_count": 24,
+  "selection_manifest": {
+    "collection_scope_tickers": [
+      "BA",
+      "GD",
+      "HII",
+      "LMT",
+      "NOC",
+      "RTX"
+    ],
+    "contract": "government_revenue.idv_selection_manifest.v1",
+    "discovery_receipts": [
+      {
+        "contract": "government_revenue.idv_discovery_receipt.v1",
+        "endpoint": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+        "observed_at": "2026-08-03T03:05:20.603011+00:00",
+        "page": 1,
+        "rail": "idv_discovery_page",
+        "receipt_id": "usaspending-idv-discovery:a5ceb1352efea4f26afd888d0582efcd03f65c62c7e49223b5cdad365fa44b47",
+        "record_count": 24,
+        "request_sha256": "51b0b6444dfc82d27757e92b7112bf26413d4e2b0674690f0c5e7232498846f4",
+        "response_sha256": "903858b6bc904907ff02c34c9e4f14abca963421b4434f61e805e7a491add7a2",
+        "schema_version": "1.0.0",
+        "selected_parent_ids": [
+          "CONT_IDV_NNJ16GU21B_8000",
+          "CONT_IDV_80JSC019C0012_8000",
+          "CONT_IDV_NNK14MA75C_8000",
+          "CONT_IDV_80MSFC20D0008_8000",
+          "CONT_IDV_DTFAWA08C00117R_6920",
+          "CONT_IDV_DTFAWA04C00045_6920",
+          "CONT_IDV_SS000560011_2800",
+          "CONT_IDV_DTFAWA12D00012_6920",
+          "CONT_IDV_HSCG7916DPC5023_7008",
+          "CONT_IDV_80JSC017C0001_8000",
+          "CONT_IDV_HHSD200200409474I_7523",
+          "CONT_IDV_NNK10LB01B_8000",
+          "CONT_IDV_HSHQDC06C00066_7001",
+          "CONT_IDV_SS001060082_2800",
+          "CONT_IDV_SS001060107_2800",
+          "CONT_IDV_50PAPT201006_1344",
+          "CONT_IDV_CGNMA99PA01_8600",
+          "CONT_IDV_DTFAWA15D00004_6920",
+          "CONT_IDV_DOC50PAPT1400015_1344",
+          "CONT_IDV_COPC14703_8600",
+          "CONT_IDV_TMHQ14C0008_2044",
+          "CONT_IDV_HSCG2312CADC405_7008",
+          "CONT_IDV_HSCENV08C00002_7012",
+          "CONT_IDV_HSCG2312CADC400_7008"
+        ]
+      }
+    ],
+    "endpoint": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+    "filters_semantic_sha256": "0508c0236e626f4057ce3699950d8689d783135f8bfe6fedf622db1f97615f29",
+    "observed_at": "2026-08-03T03:05:20.603011+00:00",
+    "recipient_scope_sha256": "f40c9a8b570d0b7e67a83295272657ea58d46ae0fc77deeb3e248cbe92694d13",
+    "reviewed_at": "2026-08-02T23:45:00+00:00",
+    "schema_version": "1.0.0",
+    "selected_parent_ids": [
+      "CONT_IDV_NNJ16GU21B_8000",
+      "CONT_IDV_80JSC019C0012_8000",
+      "CONT_IDV_NNK14MA75C_8000",
+      "CONT_IDV_80MSFC20D0008_8000",
+      "CONT_IDV_DTFAWA08C00117R_6920",
+      "CONT_IDV_DTFAWA04C00045_6920",
+      "CONT_IDV_SS000560011_2800",
+      "CONT_IDV_DTFAWA12D00012_6920",
+      "CONT_IDV_HSCG7916DPC5023_7008",
+      "CONT_IDV_80JSC017C0001_8000",
+      "CONT_IDV_HHSD200200409474I_7523",
+      "CONT_IDV_NNK10LB01B_8000",
+      "CONT_IDV_HSHQDC06C00066_7001",
+      "CONT_IDV_SS001060082_2800",
+      "CONT_IDV_SS001060107_2800",
+      "CONT_IDV_50PAPT201006_1344",
+      "CONT_IDV_CGNMA99PA01_8600",
+      "CONT_IDV_DTFAWA15D00004_6920",
+      "CONT_IDV_DOC50PAPT1400015_1344",
+      "CONT_IDV_COPC14703_8600",
+      "CONT_IDV_TMHQ14C0008_2044",
+      "CONT_IDV_HSCG2312CADC405_7008",
+      "CONT_IDV_HSCENV08C00002_7012",
+      "CONT_IDV_HSCG2312CADC400_7008"
+    ],
+    "selection_source": "official_usaspending_idv_discovery",
+    "semantic_sha256": "bc569d99d161a98b96fa14fa9a17200a15875d6917a583bc42ddbae49e3fba13"
+  },
+  "selection_manifest_semantic_sha256": "bc569d99d161a98b96fa14fa9a17200a15875d6917a583bc42ddbae49e3fba13",
+  "selection_source": "official_usaspending_idv_discovery"
+}

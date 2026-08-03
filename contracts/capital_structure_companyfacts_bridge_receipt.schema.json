@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_companyfacts_bridge_receipt.schema.json",
+  "title": "Authenticated Company Facts to share-count materialization bridge receipt",
+  "description": "One immutable bridge from an authenticated Company Facts coverage-receipt prefix and retained raw manifest to a v2 share-count materialization. It records source retrieval separately from materialization availability and grants no authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "bridge_receipt_id", "source_manifest_id", "issuer", "source", "anchor", "selection", "point_in_time", "authority"],
+  "properties": {
+    "schema": {"const": "capital_structure.companyfacts_bridge_receipt.v2"},
+    "bridge_receipt_id": {"type": "string", "pattern": "^companyfacts-bridge:cs:[a-f0-9]{24}$"},
+    "source_manifest_id": {"type": "string", "pattern": "^manifest:cs-companyfacts:[a-f0-9]{64}$"},
+    "issuer": {"$ref": "#/$defs/issuer"},
+    "source": {"$ref": "#/$defs/source"},
+    "anchor": {"$ref": "#/$defs/anchor"},
+    "selection": {"$ref": "#/$defs/selection"},
+    "point_in_time": {"$ref": "#/$defs/point_in_time"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "issuer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["issuer_id", "cik"],
+      "properties": {
+        "issuer_id": {"type": "string", "pattern": "^issuer:[0-9]{10}$"},
+        "cik": {"type": "string", "pattern": "^[0-9]{10}$"}
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_id", "source_url", "content_sha256", "byte_length", "backend", "store_id", "object_key"],
+      "properties": {
+        "source_id": {"type": "string", "pattern": "^sec-companyfacts:[0-9]{10}:[a-f0-9]{64}$"},
+        "source_url": {"type": "string", "format": "uri", "pattern": "^https://data\\.sec\\.gov/api/xbrl/companyfacts/CIK[0-9]{10}\\.json$"},
+        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "byte_length": {"type": "integer", "minimum": 1},
+        "backend": {"type": "string", "enum": ["local", "r2"]},
+        "store_id": {"type": "string", "enum": ["capital_structure_local", "r2_capital_structure", "r2_research", "r2_shared"]},
+        "object_key": {"type": "string", "pattern": "^capital_structure/sec/sha256/[a-f0-9]{2}/[a-f0-9]{64}$"}
+      },
+      "allOf": [
+        {"if": {"properties": {"store_id": {"const": "capital_structure_local"}}, "required": ["store_id"]}, "then": {"properties": {"backend": {"const": "local"}}}},
+        {"if": {"properties": {"store_id": {"enum": ["r2_capital_structure", "r2_research", "r2_shared"]}}, "required": ["store_id"]}, "then": {"properties": {"backend": {"const": "r2"}}}}
+      ]
+    },
+    "anchor": {
+      "type": "object", "additionalProperties": false,
+      "required": ["capital_structure_manifest_id", "capital_structure_source_id", "complete_submission_sha256", "complete_submission_byte_length", "complete_submission_backend", "complete_submission_store_id", "complete_submission_object_key", "first_seen_at"],
+      "properties": {
+        "capital_structure_manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"},
+        "capital_structure_source_id": {"type": "string", "minLength": 1},
+        "complete_submission_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "complete_submission_byte_length": {"type": "integer", "minimum": 1},
+        "complete_submission_backend": {"type": "string", "enum": ["local", "r2"]},
+        "complete_submission_store_id": {"type": "string", "enum": ["capital_structure_local", "r2_capital_structure", "r2_research", "r2_shared"]},
+        "complete_submission_object_key": {"type": "string", "pattern": "^capital_structure/sec/sha256/[a-f0-9]{2}/[a-f0-9]{64}$"},
+        "first_seen_at": {"type": "string", "format": "date-time"}
+      },
+      "allOf": [
+        {"if": {"properties": {"complete_submission_store_id": {"const": "capital_structure_local"}}, "required": ["complete_submission_store_id"]}, "then": {"properties": {"complete_submission_backend": {"const": "local"}}}},
+        {"if": {"properties": {"complete_submission_store_id": {"enum": ["r2_capital_structure", "r2_research", "r2_shared"]}}, "required": ["complete_submission_store_id"]}, "then": {"properties": {"complete_submission_backend": {"const": "r2"}}}}
+      ]
+    },
+    "selection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["coverage_receipt_id", "coverage_receipt", "coverage_sequence", "generation", "companyfacts_manifest_prefix", "coverage_prefix"],
+      "properties": {
+        "coverage_receipt_id": {"type": "string", "pattern": "^receipt:cs-companyfacts:[a-f0-9]{64}$"},
+        "coverage_receipt": {
+          "type": "object", "additionalProperties": false,
+          "required": ["sha256", "byte_length"],
+          "properties": {
+            "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "byte_length": {"type": "integer", "minimum": 1}
+          }
+        },
+        "coverage_sequence": {"type": "integer", "minimum": 1},
+        "generation": {
+          "type": "object", "additionalProperties": false,
+          "required": ["generation_id", "source_manifest", "coverage"],
+          "properties": {
+            "generation_id": {"type": "string", "pattern": "^generation:cs-companyfacts:[a-f0-9]{64}$"},
+            "source_manifest": {
+              "type": "object", "additionalProperties": false,
+              "required": ["path", "sha256", "byte_length"],
+              "properties": {
+                "path": {"type": "string", "pattern": "^generations/[a-f0-9]{64}/source_manifest\\.parquet$"},
+                "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+                "byte_length": {"type": "integer", "minimum": 1}
+              }
+            },
+            "coverage": {
+              "type": "object", "additionalProperties": false,
+              "required": ["path", "sha256", "byte_length"],
+              "properties": {
+                "path": {"type": "string", "pattern": "^generations/[a-f0-9]{64}/coverage\\.parquet$"},
+                "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+                "byte_length": {"type": "integer", "minimum": 1}
+              }
+            }
+          }
+        },
+        "companyfacts_manifest_prefix": {
+          "type": "object", "additionalProperties": false,
+          "required": ["record_count", "prefix_sha256", "immutable_prefix"],
+          "properties": {
+            "record_count": {"type": "integer", "minimum": 1},
+            "prefix_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "immutable_prefix": {"const": true}
+          }
+        },
+        "coverage_prefix": {
+          "type": "object", "additionalProperties": false,
+          "required": ["record_count", "prefix_sha256", "immutable_prefix"],
+          "properties": {
+            "record_count": {"type": "integer", "minimum": 0},
+            "prefix_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "immutable_prefix": {"const": true}
+          }
+        }
+      }
+    },
+    "point_in_time": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_retrieved_at", "materialized_at", "available_at", "public_available_at"],
+      "properties": {
+        "source_retrieved_at": {"type": "string", "format": "date-time"},
+        "materialized_at": {"type": "string", "format": "date-time"},
+        "available_at": {"type": "string", "format": "date-time"},
+        "public_available_at": {"type": "null", "description": "Company Facts does not supply a fact-level public availability timestamp."}
+      }
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["is_context_only", "share_count_ledger_authority", "instrument_authority", "capacity_authority", "runway_authority", "risk_authority", "rank_authority", "sizing_authority", "entry_authority", "trade_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true}, "share_count_ledger_authority": {"const": false}, "instrument_authority": {"const": false}, "capacity_authority": {"const": false}, "runway_authority": {"const": false}, "risk_authority": {"const": false}, "rank_authority": {"const": false}, "sizing_authority": {"const": false}, "entry_authority": {"const": false}, "trade_authority": {"const": false}, "prophet_authority": {"const": false}
+      }
+    }
+  }
+}
