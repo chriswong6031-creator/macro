@@ -212,7 +212,8 @@ fi
 #   government_revenue/*   app/government_revenue.py imports workspace through
 #                          the non-inert package __init__, which loads the award,
 #                          dossier, exact entity-resolution, federation,
-#                          freshness, metric, opportunity, and PIT helpers.
+#                          freshness, metric, opportunity, PIT, budget-program,
+#                          IDV-dossier, and subaward-dossier helpers.
 #                          These serving-plane modules remain cached for the
 #                          life of macro-api and must advance with a deploy.
 #   company_intelligence/* app/company_intelligence.py imports the verified
@@ -250,7 +251,7 @@ fi
 #     schemas/implementations only and never calls run(), so those ~90 modules are
 #     NOT in the API's sys.modules. Adding them would restart /api on nearly every
 #     engine commit — exactly what this narrow list exists to prevent.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|doctrine|analyst_doctrine|market_packet|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|award_events|dossiers|entity_resolution|federation|freshness|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
+if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|doctrine|analyst_doctrine|market_packet|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|award_events|budget_program|dossiers|entity_resolution|federation|freshness|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
 	# Verified restart, not fire-and-forget: on 2026-07-30 the old one-liner
 	# (`... && systemctl restart macro-api || true`) left the API on its 5-hour-old
 	# PID after a matching deploy, and the `|| true` destroyed every trace of why.
