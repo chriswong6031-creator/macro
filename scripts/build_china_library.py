@@ -975,6 +975,7 @@ def emit_cn_track_ledger(
     *,
     board_definition: str | None = None,
     asof: str | None = None,
+    out_name: str = "cn_track_ledger.json",
 ) -> bool:
     """Emit site/factordata/cn_track_ledger.json (track_ledger/v1).
 
@@ -1110,7 +1111,7 @@ def emit_cn_track_ledger(
         },
     )
     _CN_LAST_LEDGER["doc"] = doc
-    return _tl.atomic_write(site / "factordata" / "cn_track_ledger.json", doc)
+    return _tl.atomic_write(site / "factordata" / out_name, doc)
 
 
 def _find_bad_json_keys(obj, path: str = "$") -> list[str]:
@@ -2687,6 +2688,52 @@ def main(alpha: dict | None = None) -> dict | None:
         _ranking_contract["input_coverage"] = {
             "reversal": _reversal_coverage,
         }
+
+        # ── WASHOUT REVERSAL WATCH shelf (prereg §5.4 measurement lane) ────────
+        # Names the raw gate blocks for trend/regime reasons where the frozen
+        # washout context + hold-confirmed reversal trigger are true
+        # (engine/china_reversal_watch.py, canon 3D grid). MEASUREMENT surface
+        # only: rows log under their own board_definition so they can never
+        # pollute the Prophet featured grade (grade() additionally excludes
+        # WATCH_DEFINITIONS), and their forward CSI300-relative grades accrue in
+        # a separate ledger (cn_reversal_ledger.json).
+        _rev_watch_rows: list[dict] = []
+        try:
+            from engine import china_reversal_watch as _crw  # noqa: PLC0415
+            _rw_close_by_t = {t: c for (t, c, _h, _n, _s) in uni}
+            _t0_revw = time.time()
+            _n_revw_scanned = 0
+            for _rw_row in _scored_candidates:
+                if signal_gate.is_buyable(_rw_row.get("signal")):
+                    continue              # eligible/buyable names have real lanes
+                _rw_t = str(_rw_row.get("ticker") or "")
+                _rw_c = _rw_close_by_t.get(_rw_t)
+                if _rw_c is None:
+                    continue
+                _n_revw_scanned += 1
+                _rw_det = _crw.detect(_rw_c)
+                if not _rw_det:
+                    continue
+                _rw_det["pct_from_trigger"] = round(
+                    (_rw_det["last_px"] / _rw_det["trigger_px"] - 1) * 100, 1)
+                _rev_watch_rows.append({
+                    "ticker": _rw_t,
+                    "name": _rw_row.get("name"),
+                    "sector": _rw_row.get("sector"),
+                    "price": _rw_det["last_px"],
+                    "lane": "reversal_watch",
+                    "board_definition": _crw.BOARD_DEFINITION,
+                    "reversal": _rw_det,
+                })
+            _rev_watch_rows.sort(key=lambda r: (r["reversal"]["bars_since_confirm"],
+                                                r["reversal"]["dd_pct"]))
+            _rev_watch_rows = _rev_watch_rows[:30]
+            log.info("china reversal_watch: %d active of %d non-buyable scanned in %.0fs",
+                     len(_rev_watch_rows), _n_revw_scanned, time.time() - _t0_revw)
+        except Exception as _rw_e:  # noqa: BLE001 — a watch shelf must never break the build
+            log.warning("china reversal_watch scan failed (%s) — shelf empty, build continues", _rw_e)
+            _rev_watch_rows = []
+
         wide = {
             "schema_version": "2.0.0",
             "as_of": as_of,
@@ -2697,6 +2744,7 @@ def main(alpha: dict | None = None) -> dict | None:
             "more_actionable": _more_rows,
             "late_or_unfillable": _late_rows,
             "forming": _forming_rows,
+            "reversal_watch": _rev_watch_rows,
             # Compatibility union for older consumers. New UI and contracts use
             # the three explicit depth lanes above.
             "watch": _watch_rows,
@@ -2852,6 +2900,12 @@ def main(alpha: dict | None = None) -> dict | None:
             except Exception as _rs_e:  # noqa: BLE001 — SA-R16: never suppress grade()
                 log.warning("china_regime_store.append failed (%s) — board track continues", _rs_e)
             _bn = china_standout_track.append_board(wide["buy"], asof=as_of, lane=_lane)
+            # reversal_watch cohort: same store, own board_definition (never the
+            # headline grade — see WATCH_DEFINITIONS in china_standout_track).
+            if wide.get("reversal_watch"):
+                _bn_rw = china_standout_track.append_board(
+                    wide["reversal_watch"], asof=as_of, lane=_lane)
+                log.info("china reversal_watch board-track: logged %d rows", _bn_rw)
             _bt = china_standout_track.grade()
             # Detach the tuple-keyed F7 map BEFORE _bt reaches wide/setups — it must
             # never ride into the JSON artifact (see _detach_board_track_plumbing).
@@ -2896,6 +2950,26 @@ def main(alpha: dict | None = None) -> dict | None:
                 log.info("cn track_ledger: %s", "wrote cn_track_ledger.json" if _cnok else "write skipped")
             except Exception as _cnle:  # noqa: BLE001 — ledger is additive; never fatal
                 log.warning("cn track_ledger emit failed (%s) — render continues", _cnle)
+            # reversal_watch cohort ledger — separate file, separate definition;
+            # NOTE: emitted AFTER the headline ledger so the _CN_LAST_LEDGER memo
+            # captured into setups["track_ledger"] above is the headline doc.
+            try:
+                from engine import china_reversal_watch as _crw_led  # noqa: PLC0415
+                _rwok = emit_cn_track_ledger(
+                    site,
+                    None,
+                    wide.get("reversal_watch"),
+                    board_definition=_crw_led.BOARD_DEFINITION,
+                    asof=as_of,
+                    out_name="cn_reversal_ledger.json",
+                )
+                setups["reversal_ledger"] = (
+                    _CN_LAST_LEDGER.get("doc") if _rwok else None
+                )
+                log.info("cn reversal_ledger: %s",
+                         "wrote cn_reversal_ledger.json" if _rwok else "write skipped")
+            except Exception as _rwle:  # noqa: BLE001 — additive; never fatal
+                log.warning("cn reversal_ledger emit failed (%s) — render continues", _rwle)
             log.info("china standout board-track: logged top-%d (ledger=%d, graded=%s, lane=%s, partial=%s)",
                      min(60, len(wide["buy"])), _bn, _bt.get("n_graded"), _lane,
                      wide["coverage"]["partial_session"])

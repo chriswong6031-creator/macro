@@ -3646,6 +3646,47 @@
     </div>{# /rip-shelf #}
     {% endif %}
 
+    {# ── WASHOUT REVERSAL WATCH (prereg §5.4 — charting-app docs/PREREG_WASHOUT_REVERSAL.md)
+       Deep-washout names with a hold-confirmed reversal trigger inside a still-bearish
+       regime. A MEASUREMENT shelf: rows log under board_definition cn_reversal_watch_v1
+       and grade separately vs CSI300 (cn_reversal_ledger.json) — never pooled with the
+       Prophet featured record. NOT entry signals; no BUY-family language. #}
+    {% set _revw = setups.get('reversal_watch') or [] %}
+    {% if _revw %}
+    <div class="rip-shelf" data-stf="rip early" style="margin-top:16px">
+      <div class="rip-shelf-hdr">
+        <span class="rip-shelf-title"><span class="l-en">WASHOUT REVERSAL WATCH</span><span class="l-zh">洗盘反转观察区</span></span>
+        <span class="rip-shelf-sub"><span class="l-en">deep washout + confirmed reversal trigger, trend still bearish — a measurement shelf, NOT a buy list; grades accrue separately vs CSI300</span><span class="l-zh">深度洗盘＋经确认的反转触发，但大趋势仍偏空 — 仅为观察统计，绝非买入清单；相对沪深300成绩单独累计</span></span>
+        {% if setups.get('as_of') %}<span class="rip-shelf-asof"><span class="l-en">as of {{ setups.get('as_of','') }}</span><span class="l-zh">截至 {{ setups.get('as_of','') }}</span></span>{% endif %}
+      </div>
+      <div class="revw-rows">
+      {% for r in _revw %}
+      {%- set _rw = r.get('reversal') or {} -%}
+      <div class="revw-row">
+        <div>
+          <a href="china_lookup.html#{{ r.get('ticker','') }}" style="font-weight:800;color:var(--text);text-decoration:none">{{ r.get('ticker','') }}</a>
+          <div class="rip-fall-nm">{{ nm(r.get('name','')) }}</div>
+          <div class="rip-fall-nm" style="font-size:9.5px">{{ t(r.get('sector',''), SECZH.get(r.get('sector',''), r.get('sector',''))) }}</div>
+        </div>
+        <div>
+          <div class="revw-val" data-tip-en="Drawdown vs the trailing 252-session high at the trigger bar — the washout depth." data-tip-zh="触发时相对近252个交易日高点的回撤 — 洗盘深度。">{{ '%.0f'|format(_rw.get('dd_pct') or 0) }}%</div>
+          <div class="rip-fall-lbl"><span class="l-en">washout depth</span><span class="l-zh">洗盘深度</span></div>
+        </div>
+        <div>
+          <div class="revw-val {{ 'pos' if (_rw.get('pct_from_trigger') or 0) >= 0 else 'neg' }}">{{ '%+.1f'|format(_rw.get('pct_from_trigger') or 0) }}%</div>
+          <div class="rip-fall-lbl"><span class="l-en">since trigger</span><span class="l-zh">触发以来</span></div>
+        </div>
+        <div>
+          <div class="revw-val">{{ _rw.get('confirm_date','') }}</div>
+          <div class="rip-fall-lbl"><span class="l-en">confirmed</span><span class="l-zh">确认日</span></div>
+        </div>
+      </div>
+      {% endfor %}
+      </div>
+      <div class="revw-null"><span class="l-en">Null to beat: reversal context is validated but high-variance; single-name hold rates in this shop's own measurements sit near coin-flip. The separate ledger is the referee.</span><span class="l-zh">须战胜的基准：反转情境已验证但波动极大；本店自测的个股支撑/阻力命中率接近抛硬币。独立成绩单是唯一裁判。</span></div>
+    </div>
+    {% endif %}
+
     {# ── W1-C: RAN array (non-buy universe, rule 3) ───────────────────────────
        Names whose 3D/2D cross fired within 15 sessions but are now gate-ineligible.
        Shown for honesty — do not chase. No BUY-family language.
