@@ -2896,7 +2896,11 @@ def test_workspace_reads_the_gex_stubs_search_param_contract(page):
     console.log(JSON.stringify({ fetched: fetched }));
     })();
     """
-    out = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=60)
+    # Stream the rendered workspace over stdin: Linux caps a single argv entry
+    # near 128 KiB, while this deliberately full-page driver can exceed it.
+    out = _subprocess.run(
+        ["node", "-"], input=driver, capture_output=True, text=True, timeout=60
+    )
     assert out.returncode == 0, out.stderr[-2000:]
     res = _json.loads(out.stdout.strip().splitlines()[-1])
     assert any("gex/NVDA.json" in u for u in res["fetched"]), \
