@@ -98,8 +98,7 @@ def test_public_dashboard_previews_allow_without_session(path):
 
 
 @pytest.mark.parametrize(
-    "path", ["/special_situations.html", "/china_special_situations.html",
-             "/etfs.html"])
+    "path", ["/special_situations.html", "/china_special_situations.html"])
 def test_tier_preview_shells_allow_without_session(path):
     """W1a/W2 (SEO_SUPERCHARGE_MASTERPLAN): the tier-preview SHELLS were promoted
     free_registered → public, so an anonymous visitor — and Googlebot, which never

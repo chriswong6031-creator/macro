@@ -65,7 +65,6 @@ public:
     # premium.enforced_early prefix below 403s for anonymous and Free alike.
     # Zero stock rows are free here: both boards are best-first, and previewing a
     # best-first board hands over its head, which is the part people pay for.
-    - /etfs.html
     # Support desk (SEE W2). Public by construction: the people who most need it
     # are the ones who cannot sign in, and a contact form behind a registration
     # wall is a contact form that never receives the account/billing tickets it
