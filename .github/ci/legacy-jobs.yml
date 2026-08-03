@@ -398,6 +398,25 @@ jobs:
           tests/test_radar_scorer.py tests/test_narrative_brain.py
           tests/test_demand_ledger.py tests/test_policy_intent_desk.py -q
 
+  conviction-profile:
+    if: ${{ false }}
+    # Wired 2026-08-02: neither suite was named by ANY run step, so #4297's caution
+    # rewrite ran 4 stock_score pins red for a day with no CI signal, and the dossier's
+    # prose-matched risk_veto died silently. test_stock_score pins the honesty
+    # invariants of engine/stock_score.py (no Buy against the tape, HK never buys,
+    # parabolic penalised, missing legs recorded); test_stock_dossier pins the
+    # no_buy_reasons contract including the structural risk.veto flag.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy markupsafe
+      - name: conviction profile honesty invariants + dossier reason codes
+        run: python -m pytest tests/test_stock_score.py tests/test_stock_dossier.py -q
+
   chronicle-suite:
     if: ${{ false }}
     # Chronicle W0 (agentic_media program, CHRONICLE_CONTEXT_TIMELINE_MASTERPLAN_BY_FABLE.md):
