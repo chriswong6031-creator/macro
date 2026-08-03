@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T10:38:08.676547+00:00",
-  "count": 658,
+  "generated_at": "2026-08-03T11:20:27.959416+00:00",
+  "count": 660,
   "institutions": [
     "Alger",
     "Amova",
@@ -46,6 +46,21 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-jpjm7habrsh-5ec3bc",
+      "title": "GS Utilities Daily Engie EPS upgrades and a new data center catalyst on the horizon Veolia Environnement Update numbers...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:23:55Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-wfck0fzgrei-8ff7c8",
       "title": "JPM U S Fixed Income Ma",
@@ -126,6 +141,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gt7f6c98cyb-b303c3",
+      "title": "RBC UK & EUROPEAN RESEARCH AT A GLANCE",
+      "institution": "RBC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T09:30:55Z",
+      "summary_points": [
+        "**Rating Revisions**: Elis (Outperform, PT 28.00) on H1 earnings/OSG acceleration; Legrand (Outperform, PT 160.00) on strong Q2/high-margin profile; Drax (Outperform, PT £1,050) driven by power system evolution and BSIF acquisition - **Geopolitical Risk**: Renewed Middle East tensions limit near-term tailwinds (Puma SE) and compound downturn narrative (Taylor Wimpey); ExxonMobil Q2 results weighed by Hormuz Strait concerns - **Fundamental Execution**: Holcim EBIT 5.1% above consensus, 17th consecutive quarter of positive price over cost; EssilorLuxottica maintains mid-single-digit core growth despite AI Smartglasses miss, supported by 20x FY27E P/E - **Key Risk Factors**: Chevron CPC issues key near-term risk for volumes/shares; AXA SA P&C trends offset stronger L&H earnings, with net-net EPS unchanged - **Sector-Specific Catalysts**: European retailing structural growth drivers (KGF, BME, NXT) with UK housing market stability; Life sciences cell therapy outlook +15%–20% annually (Repligen, Oxford Biomedica, Sartorius)"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },

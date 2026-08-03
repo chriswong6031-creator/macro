@@ -1507,7 +1507,7 @@ def test_shipping_x1_cutoff_comparison_normalizes_offsets_to_utc() -> None:
         _validate_shipping_x1_bundle(bundle)
 
 
-def test_shipping_x1_extreme_offset_overflow_fails_closed_as_point_in_time() -> None:
+def test_shipping_x1_extreme_offset_fails_closed_as_contract_validation() -> None:
     bundle = _load_shipping_x1_bundle()
     bundle["packet"]["knowledge_cutoff"] = "0001-01-01T00:00:00+23:59"
     _rebind_shipping_x1_packet(bundle["packet"])
@@ -1515,8 +1515,11 @@ def test_shipping_x1_extreme_offset_overflow_fails_closed_as_point_in_time() -> 
     with pytest.raises(ValueError, match=r"^shipping_x1\.contract_validation$") as caught:
         _validate_shipping_x1_bundle(bundle)
 
-    assert isinstance(caught.value.__cause__, ContractValidationError)
-    assert "schema.invalid_in_memory_document" in str(caught.value.__cause__)
+    cause = caught.value.__cause__
+    assert isinstance(cause, ContractValidationError)
+    assert [(issue.path, issue.code) for issue in cause.issues] == [
+        ("$", "schema.invalid_in_memory_document")
+    ]
 
 
 def test_shipping_x1_schema_failure_is_wrapped_as_deterministic_bundle_error() -> None:

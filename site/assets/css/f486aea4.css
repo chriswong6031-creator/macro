@@ -1066,6 +1066,33 @@
   #standouts[data-stfacet="rip"] .rip-zone:not(.rz-ready) { display:none; }
   #standouts[data-stfacet="early"] .rip-zone.rz-ready { display:none; }
 
+  /* ── unified live grid key (prophet board priority engine G0.2, 2026-08-02) ──
+     One quiet line above 111 cards. Its bullet is a MINIATURE OF THE GLOW — same
+     --pv-buy token, same aura recipe as .pvcard.pv-featured — so the sentence
+     "glowing = act today" shows the reader the thing it is naming instead of
+     asking them to hold a colour in memory while they scroll. It is the only
+     ornament added to this panel; the featured aura keeps the boldness budget.
+     Pinned to --pv-buy, never --up: --up flips to RED under html[data-lang="zh"]
+     and a red key over a green board would invert the message. */
+  .cn-gridkey { display:flex; align-items:center; gap:8px; margin:0 0 10px;
+    font-size:11.5px; line-height:1.45; color:var(--muted); }
+  .cn-gridkey-dot { flex:none; width:9px; height:9px; border-radius:50%;
+    background:color-mix(in srgb,var(--pv-buy) 78%,transparent);
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--pv-buy) 45%,transparent),
+               0 0 10px -1px color-mix(in srgb,var(--pv-buy) 75%,transparent); }
+  @media(max-width:560px) { .cn-gridkey { align-items:flex-start; font-size:11px; }
+    .cn-gridkey-dot { margin-top:4px; } }
+  /* Phone: ONE mark per card. The grid goes 2-up below 560px (~150px cards at 390),
+     where a second chip wraps to a new line — and a wrapped row on some cards and not
+     others breaks the prophet card's founding contract that the tracker and zone rows
+     line up across a grid row. The marks list is already built in descending
+     importance, so keeping only the first chip keeps the RIGHT one: ★ Featured on a
+     pick, the gate it failed on everything else. It stays a WORD, never collapsed to a
+     glyph — that is the macro's own mobile law (a colour-only mark is not a mark). */
+  @media(max-width:560px) {
+    #standouts .nbgrid .pv-mk-i ~ .pv-mk-i { display:none; }
+  }
+
   /* China Prophet v2 depth lanes.  The featured shelf keeps full decision
      cards; the much wider discovery population uses compact, collapsed cards
      so breadth remains inspectable without masquerading as another buy board. */

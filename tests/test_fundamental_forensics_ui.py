@@ -56,6 +56,27 @@ def test_disclosure_surfaces_make_the_text_comparison_boundary_and_source_path_p
     assert "Confirm the reporting form, filing date, accession, and original SEC document" in html
 
 
+def test_sources_tab_preserves_compatibility_and_adds_a_scoped_receipt_reader():
+    html = _render()
+    # ``trace`` remains the stable outer view contract for navigation, deep
+    # links, and the pre-existing evidence map. The receipt view is nested so
+    # it cannot displace the SEC source path.
+    assert 'id="ff-tab-trace"' in html
+    assert 'id="ff-panel-trace"' in html
+    assert 'id="ff-source-tabs"' in html
+    assert 'id="ff-source-tab-map"' in html
+    assert 'id="ff-source-tab-receipt"' in html
+    assert 'id="ff-source-panel-map" role="tabpanel" aria-labelledby="ff-source-tab-map" tabindex="-1"' in html
+    assert 'id="ff-source-panel-receipt" role="tabpanel" aria-labelledby="ff-source-tab-receipt" tabindex="-1"' in html
+    assert 'id="ff-receipt"' in html
+    assert 'id="ff-receipt-inspector"' in html
+    assert 'id="ff-receipt-inspector-close"' in html
+    assert '</aside>\n  <div class="ff-scrim" id="ff-scrim" hidden></div>\n</div>\n\n<template' in html
+    assert "Sources &amp; receipt" in html
+    assert "Sealed receipt" in html
+    assert "密封凭据" in html
+
+
 def test_workbench_dom_ids_are_unique_and_bilingual():
     html = _render()
     ids = re.findall(r'\bid="([^"]+)"', html)
@@ -97,6 +118,17 @@ def test_runtime_contract_accessibility_and_security_guards():
         "prior_receipt",
         "current_receipt",
         "renderEvidence",
+        "ATTESTED_HISTORY_URL",
+        "historyRequest",
+        "/api/forensics/v1/attested-history",
+        "/latest",
+        "normalizedCik",
+        "receiptOwnerMatches",
+        "loadReceiptRoots",
+        "requestReceiptRoot",
+        "renderReceiptInspector",
+        "openReceiptInspector",
+        "closeReceiptInspector",
         "setInert",
         "focusableInEvidence",
         "safeUrl",
@@ -117,6 +149,17 @@ def test_runtime_contract_accessibility_and_security_guards():
     assert "No comparable filing pair yet" in js
     assert "suppressed_boilerplate" in js
     assert "Array.isArray(bundle.redlines) ? bundle.redlines : []" in js
+    assert "No published receipt for this selected issuer" in js
+    assert "all_leaves_attested" in js
+    assert "partially_attested" in js
+    assert "not_attested" in js
+    assert "not_evaluable" in js
+    assert "does not reread source material" in js
+    assert "Cell identifiers are trace keys" in js
+    assert "No selected correspondence is recorded in this receipt." in js
+    assert "if (!receiptReadyPayload(payload)) throw new Error('Receipt identity is malformed');" in js
+    assert "credentials: 'same-origin'" in js
+    assert "cache: 'no-store'" in js
 
 
 def test_runtime_is_valid_javascript():
@@ -132,6 +175,19 @@ def test_runtime_is_valid_javascript():
     assert result.returncode == 0, result.stderr
 
 
+def test_receipt_runtime_contract_rejects_malformed_dynamic_payloads():
+    node = shutil.which("node")
+    if node is None:
+        return
+    result = subprocess.run(
+        [node, "--test", str(ROOT / "tests" / "fundamental_forensics_receipt_contract.test.mjs")],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 def test_responsive_evidence_lens_has_desktop_drawer_and_mobile_sheet():
     css = (TEMPLATES / "fundamental_forensics.css").read_text(encoding="utf-8")
     assert "@media (min-width: 1100px)" in css
@@ -145,6 +201,11 @@ def test_responsive_evidence_lens_has_desktop_drawer_and_mobile_sheet():
     assert ".ff-source-excerpt" in css
     assert ".ff-lexical-glyph" in css
     assert ".ff-timeline-card" in css
+    assert ".ff-source-tabs" in css
+    assert ".ff-receipt-inspector" in css
+    assert ".ff-receipt-waterfall" in css
+    assert ".ff-receipt-status-grid" in css
+    assert "body.ff-modal-open #mmb-launch" in css
     assert ":focus-visible" in css
     assert "prefers-reduced-motion" in css
 
