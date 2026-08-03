@@ -889,10 +889,155 @@
   /* head-link: the anchor inside the div card; wraps nb-top so Terminal interceptor still fires */
   .nb-head-link { display: block; text-decoration: none; color: inherit; }
   .nb-head-link:hover { text-decoration: none; }
-  /* lane sub-heading separators (additive) */
+  /* lane sub-heading separators (additive) — LEGACY path, kept byte-identical: an
+     artifact with no row.stage still renders the old bottoming/continuation groups. */
   .nb-lane-hd { grid-column: 1 / -1; margin: 6px 0 2px; font-size: 10px; font-weight: 800;
                 letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
                 padding: 3px 6px; border-bottom: 1px solid var(--line); }
+
+  /* ═══ PROPHET BOARD PRIORITY ENGINE — US board display layer (2026-08-02) ═══
+     research/PROPHET_BOARD_PRIORITY_ENGINE_MASTERPLAN_BY_FABLE.md §0 G0.1/G0.4–G0.6.
+     Everything below renders ONLY when the artifact carries row.stage; the legacy
+     lane-partition path above is untouched so an old artifact renders unchanged.
+
+     ── stage-bucket headings ──────────────────────────────────────────────────
+     These replaced the lane headings as the board's PRIMARY structure, so they get
+     more presence than .nb-lane-hd had: a coloured left bar plus a tint that fades
+     out to the right, instead of a hairline underline. The bar is the non-verbal
+     encoding of the bucket (canonized §7 pattern) and the label is the stance —
+     "Live now", "Ran — don't chase" are complete instructions on their own; the
+     lighter tail sentence is the ≤14-word Tier-1 subtitle. --sgc carries the tone
+     so one rule set serves four buckets. Tones are --pv-* (direction-STABLE): they
+     never flip under html[data-lang="zh"] the way --up/--down do. */
+  .nb-stage-hd { grid-column: 1 / -1; display: flex; align-items: baseline; flex-wrap: wrap;
+                 gap: 3px 9px; margin: 15px 0 4px; padding: 5px 11px 5px 9px;
+                 border-left: 3px solid var(--sgc, var(--muted)); border-radius: 0 8px 8px 0;
+                 background: linear-gradient(90deg,
+                   color-mix(in srgb, var(--sgc, var(--muted)) 12%, transparent), transparent 62%); }
+  .nb-stage-hd:first-child { margin-top: 2px; }
+  .nb-stage-hd .sh-l { font-size: 11.5px; font-weight: 800; letter-spacing: .05em;
+                 text-transform: uppercase;
+                 color: color-mix(in srgb, var(--sgc, var(--muted)) 52%, var(--text)); }
+  .nb-stage-hd .sh-n { font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums;
+                 padding: 1px 7px; border-radius: 999px;
+                 background: color-mix(in srgb, var(--sgc, var(--muted)) 17%, transparent);
+                 color: color-mix(in srgb, var(--sgc, var(--muted)) 55%, var(--text)); }
+  .nb-stage-hd .sh-s { font-size: 11px; font-weight: 500; color: var(--muted);
+                 text-transform: none; letter-spacing: 0; }
+  html[data-lang="zh"] .nb-stage-hd .sh-l { letter-spacing: 0; }
+  .sg-live       { --sgc: var(--pv-buy); }
+  .sg-setting_up { --sgc: var(--pv-near); }
+  .sg-ran        { --sgc: var(--muted); }
+  .sg-blocked    { --sgc: var(--pv-avoid); }
+
+  /* ── stage filter chips (G0.6) ─────────────────────────────────────────────
+     Same segmented idiom as the China board's facet bar, with the count pills the
+     stage headings use, so the panel counts one way throughout. Real <button>s
+     with aria-pressed (a toggle group, not tabs — there is no tabpanel). */
+  .pbf-bar { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 11px;
+             background: var(--panel2); border: 1px solid var(--line); margin: 2px 0 12px; }
+  .pbf-bar button { font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+             display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+             border: 1px solid transparent; background: transparent; color: var(--muted);
+             padding: 6px 13px; border-radius: 8px; line-height: 1.2;
+             -webkit-tap-highlight-color: transparent;
+             transition: color .14s ease, background .14s ease, border-color .14s ease; }
+  .pbf-bar button:hover { color: var(--text); }
+  .pbf-bar button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+  .pbf-bar button[aria-pressed="true"] { background: var(--panel); color: var(--text);
+             border-color: var(--line); box-shadow: var(--popover-shadow, 0 1px 3px rgba(0,0,0,.12)); }
+  .pbf-n { font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums;
+           padding: 1px 7px; border-radius: 999px;
+           background: color-mix(in srgb, var(--muted) 14%, transparent); color: var(--muted); }
+  .pbf-bar button[aria-pressed="true"] .pbf-n {
+           background: color-mix(in srgb, var(--link) 16%, transparent); color: var(--link); }
+  @media (max-width: 680px) { .pbf-bar button { min-height: 44px; padding: 6px 14px; font-size: 13px; } }
+  /* the polite result announcement — visible to assistive tech only */
+  .pbf-live { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+              overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+  /* filter visibility. The hide half and the reveal half target DISJOINT sets
+     (`:not([data-stage=X])` vs `[data-stage=X]`), so they never fight on specificity.
+     The reveal half exists because .sm-hidden is `display:none!important` — without
+     it, filtering to a bucket that sits below the show-more fold (Blocked always
+     does) would show an EMPTY board. While a bucket is filtered the show-more bar
+     is hidden too: its "Showing 12 of 71" counts the unfiltered board. */
+  #us-standouts[data-stagef="live"]       [data-stage]:not([data-stage="live"]),
+  #us-standouts[data-stagef="setting_up"] [data-stage]:not([data-stage="setting_up"]),
+  #us-standouts[data-stagef="ran"]        [data-stage]:not([data-stage="ran"]),
+  #us-standouts[data-stagef="blocked"]    [data-stage]:not([data-stage="blocked"]) { display: none !important; }
+  #us-standouts[data-stagef="live"]       .sm-hidden[data-stage="live"],
+  #us-standouts[data-stagef="setting_up"] .sm-hidden[data-stage="setting_up"],
+  #us-standouts[data-stagef="ran"]        .sm-hidden[data-stage="ran"],
+  #us-standouts[data-stagef="blocked"]    .sm-hidden[data-stage="blocked"] { display: flex !important; }
+  #us-standouts[data-stagef]:not([data-stagef="all"]) .nb-grid-section .sm-bar { display: none !important; }
+  /* NOTE: the `.pbf-empty` rules that used to sit here were removed 2026-08-02 — no
+     template, macro or script has ever emitted that class, so the "honest emptiness"
+     note they styled never rendered. It cannot render either: a bucket with zero rows
+     emits no filter chip at all (the chip row is gated on its own count), so there is
+     no way to filter INTO an empty bucket from this surface. Dead CSS on a stylesheet
+     that ships on every render reads at review like a shipped feature. */
+
+  /* ── themes in favour mini-strip (G0.5b) ───────────────────────────────────
+     Context, never a verb: it names where today's board clusters and stops there. */
+  .pbt { margin: 2px 0 10px; padding: 9px 12px 10px; border: 1px solid var(--line);
+         border-radius: 10px; background: color-mix(in srgb, var(--panel2) 55%, var(--panel)); }
+  .pbt-hd { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 9px; margin-bottom: 5px; }
+  .pbt-t { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+           color: var(--muted); }
+  html[data-lang="zh"] .pbt-t { letter-spacing: 0; }
+  .pbt-sub { font-size: 11px; color: var(--muted); opacity: .9; }
+  .pbt-r { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 9px;
+           padding: 4px 0; font-size: 11.5px; min-width: 0; }
+  .pbt-r + .pbt-r { border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+  .pbt-nm { font-weight: 750; color: var(--text); flex: none; min-width: 8.5em; }
+  .pbt-tk { display: flex; flex-wrap: wrap; gap: 2px 8px; min-width: 0;
+            color: color-mix(in srgb, var(--muted) 40%, var(--text)); font-weight: 700; }
+  .pbt-more { color: var(--muted); font-weight: 600; }
+  /* sits right after the tickers, NOT pushed to the far edge: at 1400px a
+     margin-left:auto stranded a three-word tail ~1,100px from the theme it belongs to. */
+  .pbt-age { flex: none; font-size: 10.5px; color: var(--muted); white-space: nowrap; opacity: .85; }
+
+  /* ── ran section (G0.4 display) ────────────────────────────────────────────
+     Deliberately NOT a fourth table: two tables already follow this panel, and the
+     ran lane is a "these are gone" list, not a comparison. Quiet one-line rows,
+     panel-tinted rather than panel-filled, so they read as visible-but-not-entries. */
+  .pbr { margin-top: 17px; }
+  .pbr-hd { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 9px; }
+  .pbr-t { font-size: 11.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+           color: var(--muted); }
+  html[data-lang="zh"] .pbr-t { letter-spacing: 0; }
+  .pbr-n { font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums;
+           padding: 1px 7px; border-radius: 999px;
+           background: color-mix(in srgb, var(--muted) 14%, transparent); color: var(--muted); }
+  .pbr-s { font-size: 11px; color: var(--muted); line-height: 1.5; margin: 4px 0 8px; }
+  .pbr-l { display: flex; flex-direction: column; gap: 5px; }
+  .pbr-r { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 9px; padding: 6px 10px;
+           border: 1px solid var(--line); border-radius: 8px; text-decoration: none;
+           background: color-mix(in srgb, var(--panel2) 45%, transparent);
+           color: var(--text); font-size: 11px; min-width: 0; }
+  .pbr-r:hover { border-color: color-mix(in srgb, var(--muted) 45%, var(--line)); }
+  .pbr-tk { font-weight: 800; font-size: 11.5px; flex: none; }
+  .pbr-nm { color: var(--muted); min-width: 0; flex: 1 1 7em;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pbr-m { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
+  /* `az-up`/`az-dn` are semantic-only class names in this file — every existing use
+     pairs them with a scoped colour rule (.nb-az.az-up, .oc-pct.az-up, .ts-tbl td.az-up)
+     and there is no bare .az-up rule to inherit, so this one is required or the move
+     since the signal renders colourless.  --up/--down (NOT --pv-*) is correct here:
+     this IS a directional figure, so it must flip red/green under html[data-lang="zh"]. */
+  .pbr-m .az-up { color: var(--up); font-weight: 700; }
+  .pbr-m .az-dn { color: var(--down); font-weight: 700; }
+  /* theme_confirmed: the name's own signal is old but its THEME only just turned.
+     A touch of warmth — an amber wash and one amber line — deliberately a quieter
+     register than the featured aura, which stays the board's only green glow. */
+  .pbr-r.pbr-warm { border-color: color-mix(in srgb, var(--warn) 34%, var(--line));
+           background: linear-gradient(90deg, color-mix(in srgb, var(--warn) 10%, transparent),
+                       transparent 58%), color-mix(in srgb, var(--panel2) 45%, transparent); }
+  .pbr-wl { flex: 1 1 100%; font-size: 10.5px; font-weight: 700;
+            color: color-mix(in srgb, var(--warn) 60%, var(--text)); }
+  /* board order / priority framing footnote */
+  .pb-fn { margin: 9px 0 0; font-size: 11px; color: var(--muted); line-height: 1.55; }
   /* per-card expander toggle bar */
   .nb-more-btn { display: flex; align-items: center; justify-content: center; gap: 4px;
                  width: 100%; margin-top: 4px; padding: 4px 0; min-height: 32px;
@@ -1341,6 +1486,22 @@
   .ts-buy { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; white-space: nowrap; border: 1px solid var(--line); }
   .ts-buy.ok { color: var(--up); border-color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
   .ts-buy.soon { color: var(--up); border-color: color-mix(in srgb, var(--up) 55%, var(--line)); }
+  /* ── strip tables on phones (UX handoff §17: primary decisions never x-scroll) ──
+     Both prophet-panel strips (⚡ fresh triggers, 9 cols · 🏃 market leaders, 6 cols,
+     7 when the artifact stamps themes) are wider than a 390px panel, so .tbl-scroll
+     clipped their header mid-word and hid whole columns behind an in-panel x-scroll.
+     At the board's own 680px mobile break the tertiary columns demote to the row's
+     stock page (every row is a tap-through); what stays — ticker+name, edge (α), and
+     the stance column (buy / entry) — keeps its visible header as its label.
+     .tbl-scroll remains underneath as the fail-safe if a future column outgrows the
+     budget. */
+  @media (max-width: 680px){
+    .topsetups .ts-tbl .c-sector, .topsetups .ts-tbl .c-rank,
+    .topsetups .ts-tbl .c-cycle,  .topsetups .ts-tbl .c-trend,
+    .topsetups .ts-tbl .c-factor, .topsetups .ts-tbl .c-setup,
+    .topsetups .ts-tbl .c-offhigh, .topsetups .ts-tbl .c-state,
+    .topsetups .ts-tbl .c-theme { display: none; }
+  }
   .ts-empty { margin-top: 9px; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
   /* major-index health (macro page hero) */
   .idx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
