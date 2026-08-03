@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import plotly.graph_objects as go  # noqa: E402
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled  # noqa: E402
 from lib import config, illus, site_assets, store  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
@@ -830,6 +831,36 @@ QUAD_MEANING = {
 }
 
 
+def _append_ms_score_log(latest_date, ms_snap: dict | None) -> None:
+    """Append tonight's market-state score to the forward score log (keep-last per
+    date). Gate-first (house law: nightly is the sole advancer of data/ forward
+    ledgers): the old inline guard checked CANADA_FAST_RENDER — an env no CI lane
+    sets (render.yml's canada() exports SKIP_CANADA_HOOK, not this) — so every
+    express render bake advanced the ledger. The READ stays with the caller and
+    is unconditional."""
+    if not _ledger_advance_enabled():
+        return
+    ms_sc = ms_snap.get("score") if ms_snap else None
+    if ms_sc is None:
+        log.warning("canada score_log: market_state score unavailable — no append "
+                    "(path renders from the committed log)")
+        return
+    p = config.data_dir() / "canada_market_state" / "score_log.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    new_row = pd.DataFrame([{
+        "date": latest_date,
+        "score": int(ms_sc),
+        "verdict": ms_snap.get("verdict", ""),
+        "color": ms_snap.get("color", ""),
+    }])
+    if p.exists():
+        combined = (pd.concat([pd.read_parquet(p), new_row], ignore_index=True)
+                    .drop_duplicates(subset=["date"], keep="last"))
+    else:
+        combined = new_row
+    combined.sort_values("date").reset_index(drop=True).to_parquet(p, index=False)
+
+
 def main() -> int:
     try:
         from engine.canada_run import run
@@ -980,36 +1011,13 @@ def main() -> int:
 
         # ── ms_history: score_log forward ledger ─────────────────────────────
         # Appended nightly; deduped by date.  Never fatal.  The READ is
-        # unconditional — every render (incl. CANADA_FAST_RENDER dev renders and
-        # nights where the snapshot degrades) draws the path from the committed
-        # log; only the APPEND is gated so off-lane renders never advance the
-        # ledger (house law: nightly is the sole advancer).
+        # unconditional — every render (incl. dev renders and nights where the
+        # snapshot degrades) draws the path from the committed log; only the
+        # APPEND is lane-gated (in _append_ms_score_log) so off-lane renders
+        # never advance the ledger (house law: nightly is the sole advancer).
         try:
-            import os as _osenv
             _score_log_path = config.data_dir() / "canada_market_state" / "score_log.parquet"
-            _ms_snap = vm.get("market_state")
-            _ms_sc = _ms_snap.get("score") if _ms_snap else None
-            if _osenv.environ.get("CANADA_FAST_RENDER"):
-                pass                       # dev re-render: read-only, never append
-            elif _ms_sc is None:
-                log.warning("canada score_log: market_state score unavailable — no append "
-                            "(path renders from the committed log)")
-            else:
-                _score_log_path.parent.mkdir(parents=True, exist_ok=True)
-                _new_row = pd.DataFrame([{
-                    "date": latest.get("date"),
-                    "score": int(_ms_sc),
-                    "verdict": _ms_snap.get("verdict", ""),
-                    "color": _ms_snap.get("color", ""),
-                }])
-                if _score_log_path.exists():
-                    _existing = pd.read_parquet(_score_log_path)
-                    _combined = pd.concat([_existing, _new_row], ignore_index=True)
-                    _combined = _combined.drop_duplicates(subset=["date"], keep="last")
-                else:
-                    _combined = _new_row
-                _combined = _combined.sort_values("date").reset_index(drop=True)
-                _combined.to_parquet(_score_log_path, index=False)
+            _append_ms_score_log(latest.get("date"), vm.get("market_state"))
             # Expose last 11 rows as vm['ms_history'] for the hero path chart
             if _score_log_path.exists():
                 _all = pd.read_parquet(_score_log_path).sort_values("date")

@@ -142,6 +142,9 @@ def test_append_log_is_keep_first(tmp_path, monkeypatch):
     """The audit log appends one row per date (keep-first) and skips unknown reads."""
     from lib import config
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    # arm the asia advance gate (2026-08-02 lane-gate sweep): this log's advancing
+    # lane is asia-close.yml (CN_LANE=asia); off-lane the append is a no-op
+    monkeypatch.setenv("CN_LANE", "asia")
     base = {"asof": "2026-01-02", "verdict": "clear", "primary": "china_stimulus",
             "direction": "x", "dir_sign": 1, "confidence": "high", "strength": 2.0,
             "dominance_ratio": 1.8, "evidence": ["a", "b"]}
