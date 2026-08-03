@@ -52,20 +52,63 @@ def _store_path(market: str):
     return d / "name_score" / f"{m.lower()}_calls.parquet"
 
 
+_MAX_BAR_LAG_DAYS = 7  # calendar days a name's own last bar may lag the ledger stamp.
+# The worst structural lag on the real NYSE calendar 2000-2026 is exactly 7 (the
+# post-9/11-class 4-session closure: reopen stamp ← last bar one week back), which
+# passes only because the test below is strict `>`; since 2015 the max is 4. Beyond 7
+# the "call" is an echo of a dead or stale feed (store stopped / halt / delisting),
+# not a market observation. Eleven US names were frozen this way when the gate
+# shipped — SATS dead since 2026-06-18 (33 echo rows), QCOM stamped `setting_up`
+# score-63 off a 24-day-stale store — see
+# research/ADJUDICATION_20260803_ORCL_NAME_SCORE_FLATLINE.md. Accepted residual: a
+# future market-wide closure that beats 7 calendar days would refuse one reopen-day
+# stamp universe-wide (warned loudly below, self-heals the next session).
+
+
 def append_name_calls(calls: list[dict], market: str = "CN", asof: str | None = None) -> int:
     """Append today's POTENTIAL calls for one market. Each call carries {ticker, score,
     tier, fuel, trigger} plus an as-of `level` (the day's close). Keep-FIRST per
-    (date, ticker). Returns the ledger row count after the merge."""
+    (date, ticker). Returns the ledger row count after the merge.
+
+    A call may also carry `bar_asof` — the date of the name's OWN last price bar.
+    When it lags `asof` by more than _MAX_BAR_LAG_DAYS the feed is dead and the call
+    is refused (a frozen series re-stamped daily is a fabricated observation, and via
+    the dead-name resolve path it could even be graded). `bar_asof` is admission-gate
+    input only, never persisted; callers that don't pass it are un-gated (unchanged)."""
     if not calls or not asof:
         return 0
     rows = []
-    for c in calls:
-        tk = c.get("ticker")
+    stale: list[str] = []
+    ungated: list[str] = []   # bar_asof present but unusable (NaT / unparseable / clock
+    for c in calls:           # anomaly) — kept fail-open, but NEVER silently: a format
+        tk = c.get("ticker")  # drift that darkened the gate must surface in the log.
         if not tk:
             continue
+        ba = c.get("bar_asof")
+        if ba is not None:
+            lag = None
+            try:
+                ts = pd.Timestamp(ba)
+                if not pd.isna(ts):
+                    lag = (pd.Timestamp(asof) - ts).days
+            except (TypeError, ValueError):
+                pass
+            if lag is None or lag < -1:      # -1 tolerates a tz-vs-UTC stamp slop
+                ungated.append(str(tk))
+            elif lag > _MAX_BAR_LAG_DAYS:
+                stale.append(str(tk))
+                continue
         rows.append({"date": str(asof), "ticker": str(tk), "score": c.get("score"),
                      "tier": c.get("tier"), "fuel": c.get("fuel"),
                      "trigger": c.get("trigger"), "level": c.get("level")})
+    if stale:
+        log.warning("name-score grader (%s): refused %d frozen-feed call(s) — last bar "
+                    ">%dd behind %s: %s", market, len(stale), _MAX_BAR_LAG_DAYS, asof,
+                    ", ".join(sorted(stale)[:12]))
+    if ungated:
+        log.warning("name-score grader (%s): staleness gate DARK for %d call(s) — "
+                    "bar_asof unusable (NaT/unparseable/future): %s", market,
+                    len(ungated), ", ".join(sorted(ungated)[:12]))
     if not rows:
         return 0
     try:
@@ -83,6 +126,29 @@ def append_name_calls(calls: list[dict], market: str = "CN", asof: str | None = 
     except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
         log.warning("name-score grader (%s): append failed: %s", market, e)
         return 0
+
+
+def _drop_frozen_echoes(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+    """Quarantine pre-gate frozen-feed echoes from MEASUREMENT (the ledger itself is
+    append-only PIT and is never mutated). A row is an echo iff it sits deeper than
+    the closure-safe window inside a consecutive run of byte-identical `level` values
+    for one ticker: weekend/holiday stamps legitimately repeat a close for ≤ ~4
+    calendar days, so a run older than _MAX_BAR_LAG_DAYS from its own start can only
+    be a feed that stopped printing while the scan kept stamping (98 such rows —
+    18 of them buy-tier, e.g. QCOM `setting_up` score-63 — predate the admission
+    gate; a store that later heals/backfills would otherwise grade those fabricated
+    calls with real forward returns). Rows with no level are never quarantined.
+    Returns (kept_rows, n_excluded); the caller PRINTS the count (disclosure, not
+    fail-dark)."""
+    if df.empty or "level" not in df.columns or "date" not in df.columns:
+        return df, 0
+    d = df.sort_values(["ticker", "date"], kind="stable")
+    lv = d["level"]
+    new_run = (d["ticker"].ne(d["ticker"].shift()) | lv.ne(lv.shift()) | lv.isna())
+    run_start = pd.to_datetime(d["date"]).groupby(new_run.cumsum()).transform("first")
+    age_d = (pd.to_datetime(d["date"]) - run_start).dt.days
+    echo = (age_d > _MAX_BAR_LAG_DAYS) & lv.notna()
+    return d.loc[~echo], int(echo.sum())
 
 
 def _fwd_return(market: str, ticker: str, d0: pd.Timestamp, h: int) -> float | None:
@@ -139,8 +205,15 @@ def grade(market: str = "CN") -> dict | None:
         return {"available": False, "market": m, "note": f"unreadable: {e}"}
     if df.empty:
         return {"available": False, "market": m, "note": "empty"}
+    # frozen-feed echoes are excluded from measurement and the count is printed —
+    # never silently absorbed into hit-rates (see _drop_frozen_echoes).
+    df, n_frozen = _drop_frozen_echoes(df)
+    if df.empty:
+        return {"available": False, "market": m, "note": "all rows frozen-feed echoes",
+                "n_frozen_excluded": n_frozen}
 
     out = {"available": True, "market": m, "n_calls": int(len(df)),
+           "n_frozen_excluded": n_frozen,
            "dates": sorted(df["date"].dropna().unique().tolist()),
            "horizons_d": list(_HORIZONS_D), "by_horizon": {}}
     for h in _HORIZONS_D:
