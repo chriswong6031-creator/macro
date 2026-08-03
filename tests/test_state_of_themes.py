@@ -1,4 +1,8 @@
-"""tests/test_state_of_themes.py — TIL W4 State of Themes builder acceptance tests.
+"""tests/test_state_of_themes.py — TIL W4 Theme Tracker builder acceptance tests.
+
+NAME NOTE: the page displays as "Theme Tracker / 主题追踪" (matching its nav entry).
+The slug, module name, artifact keys and ledger ids stay `state_of_themes` /
+`theme_lanes` — stable identifiers, never user-facing copy.
 
 Tests:
 1. Live render: builder renders a non-empty matrix from the real artifacts.
@@ -1071,6 +1075,133 @@ def test_theme_lanes_side_write_never_raises_on_bad_ctx(tmp_path):
     payload = _json.loads(out.read_text(encoding="utf-8"))
     assert payload["schema"] == "theme_lanes.v1"
     assert payload["lanes"] == {}   # neither row had a valid (id, lane) pair
+
+
+# ---------------------------------------------------------------------------
+# Naming: the page must keep the nav's promise (PR-A1)
+# ---------------------------------------------------------------------------
+# Three names existed for one artifact: slug `state_of_themes`, page title "State of
+# Themes"/主题态势, nav label "Theme Tracker"/主题追踪. The nav promise wins — a user
+# who clicks "Theme Tracker" must land on a page that says Theme Tracker. The SLUG is
+# deliberately NOT renamed (stable SEO canonical + ledger/artifact keys).
+
+def test_display_name_matches_the_nav_label():
+    """Template title / seo_title / brand all read Theme Tracker, EN and ZH."""
+    tpl = (REPO_ROOT / "templates" / "state_of_themes.html.j2").read_text(encoding="utf-8")
+    assert "<title>Theme Tracker — Market Intelligence</title>" in tpl
+    assert 'seo_title = "Theme Tracker — Mastermind"' in tpl
+    assert "t('Theme Tracker', '主题追踪')" in tpl, "brand block not aligned"
+    # no old display name survives anywhere in the template, either language
+    assert "State of Themes" not in tpl, "stale EN display name left in template"
+    assert "主题态势" not in tpl, "stale ZH display name left in template"
+
+
+def test_slug_and_seo_canonical_unchanged():
+    """The rename is display-only: URL + canonical + artifact keys must not move."""
+    tpl = (REPO_ROOT / "templates" / "state_of_themes.html.j2").read_text(encoding="utf-8")
+    assert 'seo_path = "state_of_themes.html"' in tpl, "canonical moved — URL churn"
+    import scripts.build_state_of_themes as sot
+    assert sot.THEME_LANES_SCHEMA == "theme_lanes.v1", "artifact schema key renamed"
+
+
+def test_nav_label_is_the_single_source_of_the_name():
+    """Every nav entry pointing at the page uses the same label, EN and ZH.
+
+    _navlinks.html.j2 is the canonical inventory; templates/chat.html carries its own
+    hand-authored copy of the flyout, which had drifted to the old name.
+    """
+    for rel in ("templates/_navlinks.html.j2", "templates/chat.html", "site/chat.html"):
+        s = (REPO_ROOT / rel).read_text(encoding="utf-8")
+        if "state_of_themes.html" not in s:
+            continue
+        assert "Theme Tracker" in s and "主题追踪" in s, f"{rel}: nav label not aligned"
+        assert "State of Themes" not in s, f"{rel}: stale EN nav label"
+        assert "主题态势" not in s, f"{rel}: stale ZH nav label"
+
+
+# ---------------------------------------------------------------------------
+# theme_lanes ↔ basket-id crosswalk (PR-A1, Change 2b)
+# ---------------------------------------------------------------------------
+# Story ids key LEDGERS and are never renamed; only 7 of 18 happen to be spelled like
+# their basket. The artifact now also ships an explicit basket-keyed projection taken
+# from theme_crosswalk.yml's primary_basket_id, so the Portfolio join stops silently
+# reading null for the other 11.
+
+def test_crosswalk_primary_basket_id_present_and_sound():
+    """Every theme carries primary_basket_id; non-null values are real baskets and
+    are always drawn from that theme's own basket_ids (never invented)."""
+    import yaml
+    cw = yaml.safe_load(
+        (REPO_ROOT / "config" / "theme_crosswalk.yml").read_text(encoding="utf-8"))
+    membership = REPO_ROOT / "data" / "baskets" / "membership.json"
+    if not membership.exists():
+        pytest.skip("data/baskets/membership.json not present")
+    real = set(json.loads(membership.read_text(encoding="utf-8")).get("baskets", {}))
+    seen: dict[str, str] = {}
+    for t in cw["themes"]:
+        assert "primary_basket_id" in t, f"{t['id']}: primary_basket_id missing"
+        bid = t["primary_basket_id"]
+        if bid is None:
+            continue
+        assert bid in (t.get("basket_ids") or []), \
+            f"{t['id']}: primary {bid!r} is not one of its own basket_ids"
+        assert bid in real, f"{t['id']}: primary {bid!r} is not a real basket"
+        assert bid not in seen, \
+            f"basket {bid!r} claimed as primary by both {seen[bid]!r} and {t['id']!r}"
+        seen[bid] = t["id"]
+
+
+def test_theme_lanes_ships_basket_keyed_projection(tmp_path):
+    """write_theme_lanes emits basket_lanes + theme_baskets alongside lanes."""
+    import scripts.build_state_of_themes as sot
+    ctx = sot.compose(REPO_ROOT)
+    # `root` locates BOTH the output and the crosswalk — sandbox the write, but give
+    # it the real registry (same idiom as tests/test_thematic_state.py).
+    (tmp_path / "site" / "basketdata").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+    shutil.copy2(REPO_ROOT / "config" / "theme_crosswalk.yml",
+                 tmp_path / "config" / "theme_crosswalk.yml")
+    # Pin the CAUSE before the consequences. load_primary_basket_ids fail-opens to {}
+    # when the registry cannot be read — including when the lane has no PyYAML — and an
+    # empty map makes every assertion below fail as an untraceable "0 > 7" instead of
+    # naming the registry. This assert is the sentinel that outranks that fail-open.
+    assert sot.load_primary_basket_ids(tmp_path), (
+        "theme_crosswalk primary_basket_id map loaded EMPTY — the registry did not "
+        "parse (PyYAML missing from this lane, or the crosswalk moved/lost the key). "
+        "Fix the loader or the lane's deps; do NOT relax the assertions below."
+    )
+    out = sot.write_theme_lanes(ctx, tmp_path)
+    payload = json.loads(out.read_text(encoding="utf-8"))
+
+    lanes, basket_lanes = payload["lanes"], payload["basket_lanes"]
+    theme_baskets = payload["theme_baskets"]
+    assert isinstance(basket_lanes, dict) and isinstance(theme_baskets, dict)
+    # basket_lanes speaks the same 5-lane vocabulary and fabricates nothing
+    assert set(basket_lanes.values()) <= set(sot._LANE_ORDER)
+    assert set(basket_lanes.values()) <= set(lanes.values())
+    # every basket key traces back to exactly one story via theme_baskets
+    for bid, lane in basket_lanes.items():
+        owners = [t for t, b in theme_baskets.items() if b == bid]
+        assert len(owners) == 1, f"{bid}: {len(owners)} owning stories"
+        assert lanes[owners[0]] == lane, f"{bid}: lane disagrees with its story"
+    # nulls are printed, not hidden: a story with no basket keeps an explicit null
+    assert None in theme_baskets.values(), "no honest nulls — crosswalk not read?"
+    # the projection strictly widens the join: >7 stories resolve a basket
+    assert sum(1 for v in theme_baskets.values() if v) > 7, \
+        "basket-keyed join no wider than the legacy same-id join"
+
+
+def test_theme_lanes_basket_projection_is_fail_open(tmp_path):
+    """No crosswalk on disk → empty basket_lanes, valid artifact, no raise."""
+    import scripts.build_state_of_themes as sot
+    (tmp_path / "site" / "basketdata").mkdir(parents=True, exist_ok=True)
+    assert sot.load_primary_basket_ids(tmp_path) == {}   # no config/ under tmp_path
+    out = sot.write_theme_lanes(
+        {"themes": [{"theme_id": "ai_semiconductors", "lane": "working"}]}, tmp_path)
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["lanes"] == {"ai_semiconductors": "working"}
+    assert payload["basket_lanes"] == {}
+    assert payload["theme_baskets"] == {"ai_semiconductors": None}
 
 
 def test_page_html_byte_identical_with_precomposed_ctx():

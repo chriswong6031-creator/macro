@@ -592,6 +592,12 @@ data/mastermind/response_eval.jsonl
 data/mastermind/eval_summary_latest.json
 data/mastermind/*.json.tmp
 
+# Authenticated share-count publication is an R2 data plane. The local generation,
+# receipt, pointer, pending, recovery, and lease files are crash-recovery mirrors for
+# the current runner only. The nightly workflow broadly stages data/, so this rule is
+# load-bearing: cumulative ledgers must never become Git objects or public site data.
+data/capital_structure/share_counts/
+
 # Agent worktree roots. Parallel Claude/Codex sessions create linked git worktrees
 # under these paths; they are checkouts, never content, and must never be committed.
 # `.claude/worktrees/` has historically been excluded per-clone via .git/info/exclude,

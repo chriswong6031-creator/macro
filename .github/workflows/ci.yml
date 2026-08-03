@@ -434,6 +434,8 @@ on:
       - "app/requirements.txt"
       - "scripts/compile_capital_structure_events.py"
       - "scripts/compile_capital_structure_document_terms.py"
+      - "scripts/materialize_capital_structure_share_counts.py"
+      - "scripts/retain_capital_structure_share_counts.py"
       - "scripts/build_capital_structure_projection.py"
       - "scripts/build_capital_structure_page.py"
       - "contracts/capital_structure_*.schema.json"
@@ -445,6 +447,7 @@ on:
       - "tests/test_capital_structure_*.py"
       - "tests/test_build_capital_structure_projection.py"
       - "tests/test_sec_capital_structure.py"
+      - "tests/test_sec_capital_structure_companyfacts.py"
       - "tests/test_nwqs_c_dilution.py"
       - "tests/fixtures/capital_structure/**"
       # LHB-W2b 8-K item expansion: test-only edits must still trigger the job
@@ -569,10 +572,15 @@ on:
       - "templates/fundamental_forensics.js"
       - "tests/fixtures/fundamental_forensics/**"
       - "tests/test_fundamental_forensics_*.py"
-      # Wave 3B-B4A: the broad fundamental-forensics glob also matches this
-      # suite, but the explicit name documents the engine-render guard's
-      # provenance contract and protects test-only re-pins from future narrowing.
+      # Wave 3B-B4A/B4B/B4D-A: the broad fundamental-forensics glob also matches
+      # these suites, but the explicit names document the sealed-history reader,
+      # bounded serving, and pinned-source materializer contracts and protect
+      # test-only re-pins if the broad glob is ever narrowed.
       - "tests/test_fundamental_forensics_attested_query_snapshots.py"
+      - "tests/test_fundamental_forensics_attested_history_reader.py"
+      - "tests/test_fundamental_forensics_filing_package_materializer.py"
+      - "tests/test_fundamental_forensics_companyfacts_pinned_loader.py"
+      - "tests/test_fundamental_forensics_attested_history_materializer.py"
       - "tests/test_sec_document_spine.py"
       - "tests/test_forensics_api.py"
       - "tests/test_edgar_forensics_collector.py"
@@ -585,6 +593,7 @@ on:
       # start the pack that executes it.
       - "engine/biocatalyst/**"
       - "engine/sector_intelligence/contracts.py"
+      - "engine/sector_intelligence/launch_slo_verifier.py"
       - "collectors/biocatalyst/**"
       - "app/biocatalyst.py"
       - "app/main.py"
@@ -595,9 +604,19 @@ on:
       - "scripts/build_site.py"
       - "config/biocatalyst_sources.yml"
       - "config/biocatalyst_outcomes.yml"
+      - "config/biocatalyst_launch_slo_manifest.yml"
+      # BC-D0a: finite design-reference corpus and non-authorizing product
+      # acceptance contract. These paths must reach the same contracts pack even
+      # when an edit changes only a PNG/hash/spec/test, otherwise a reference can
+      # drift while its integrity verifier never runs.
+      - "config/biocatalyst_product_acceptance.yml"
+      - "config/sector_intelligence_ownership.yml"
       - "config/site_access.yml"
       - "contracts/biocatalyst/**"
       - "data/biocatalyst/fixtures/**"
+      - "mockups/refs/biocatalyst/**"
+      - "scripts/verify_biocatalyst_d0a_references.py"
+      - "research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md"
       - "templates/biocatalyst.*"
       - "templates/_navlinks.html.j2"
       - "templates/_site_nav.html.j2"
@@ -610,11 +629,13 @@ on:
       - "app/deploy/biocatalyst-requirements.txt"
       - "app/deploy/update.sh"
       - "docs/biocatalyst_operations_runbook.md"
+      - "docs/BIOCATALYST_LAUNCH_SLO_OFFLINE_VERIFIER.md"
       - "tests/test_biocatalyst_*.py"
       - "tests/test_clinicaltrials_biocatalyst.py"
       - "tests/test_clinicaltrials_history.py"
       - "tests/test_sector_intelligence_contracts.py"
       - "tests/test_sector_intelligence_ownership.py"
+      - "tests/test_launch_slo_evidence_verifier.py"
       - "tests/test_deploy_update_self_heal.py"
       # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
       # the test file must re-prove the conformance check still holds.
@@ -1076,6 +1097,8 @@ on:
       - "engine/signal_gate.py"
       - "engine/confluence_tiers.py"
       - "scripts/build_prophet_live_pack.py"
+      # Unrun backfill 2026-08-03: the P1 user-facing surface suite's own half.
+      - "tests/test_prophet_live_surface.py"
       - "scripts/prophet_live_evaluator.py"
       - "scripts/reconcile_prophet_live.py"
       - ".github/workflows/prophet-live.yml"
@@ -1276,6 +1299,17 @@ on:
       # The design pin the page and the email base are ported FROM: a change to the pin
       # without a matching change to the implementation is exactly the drift to catch.
       - "mockups/support_email/**"
+      # X-growth desk suites (unrun backfill 2026-08-03): ad plane O, persona
+      # model, reply arming, and the two committed ad-campaign manifests. The
+      # mockups trees are the campaigns' source of truth and matched no glob;
+      # engine/marketing/** and the scripts entries cover the rest.
+      - "mockups/x-ads-2026-07/**"
+      - "mockups/x-mobile-ads-2026-07/**"
+      - "tests/test_marketing_ad_plane_o.py"
+      - "tests/test_marketing_persona_model.py"
+      - "tests/test_marketing_reply_arming.py"
+      - "tests/test_x_ad_campaign_assets.py"
+      - "tests/test_x_mobile_campaign_assets.py"
       # Support + Email estate (SEE W4): the marketing foundation. Same #3509 lesson —
       # every SOURCE by name, not only the tests. app/email_segments.py is listed first
       # because it is the shared one: BOTH the admin console's SQL and the sweeper's
@@ -1632,6 +1666,14 @@ on:
       # engine/** covers indicators_m2.py — so this list needs no new entry.
       - "tests/test_chart_render_inline.py"
       - "tests/test_chart_render_m2.py"
+      # TrendSpider-hardening PR-A: the annotation-grammar suite runs in the
+      # SAME paired lanes (thin proves the imports stay lazy, fat executes the
+      # three loader/profile tests). Its committed SVG samples are inputs to it,
+      # so a fixture-only edit must reach the lanes too — a stale golden that no
+      # job re-renders is the dead-suite trap one layer down.
+      - "tests/test_chart_render_grammar.py"
+      - "tests/fixtures/chart_render/**"
+      - "scripts/dev_render_chart_grammar_pngs.py"
       - "tests/test_marketing_card_parity.py"
       # Hot Tape P1 — the intraday attention radar (jobs: marketing-engine for the
       # two thin suites, marketing-data for the pandas-heavy nightly pack suite).
@@ -1645,6 +1687,16 @@ on:
       - "tests/test_marketing_hot_tape_radar.py"
       - "scripts/hot_tape_radar.py"
       - "config/hot_tape.yml"
+      # TrendSpider hardening PR-B — the supply widening (job: marketing-data).
+      # Same OTHER-half reason as the block above: engine/marketing/** and
+      # config/marketing.yml already reach the subjects, so these three entries
+      # exist so a PR editing ONLY a suite still reaches the lane that runs it.
+      # test_movers_source and test_marketing_radar were named by no path filter
+      # AND no job before this PR — they are the only regression guards the tier
+      # ladder and the mover board have, and they ran nowhere.
+      - "tests/test_marketing_supply_feeds.py"
+      - "tests/test_movers_source.py"
+      - "tests/test_marketing_radar.py"
       # tier-gate serving/revenue boundary (job: tier-gate). Found 2026-07-25
       # shipping #3488: NONE of the boundary's enforcement files were listed, so a
       # PR that changes ONLY the site-access boundary (regwall, Caddy public list,
@@ -2121,7 +2173,9 @@ on:
       - "scripts/check_synapse_registry.py"
       # unrun-vector-baskets
       - "tests/test_basket_turn_watch.py"
+      - "tests/test_btc_deferred_legs.py"
       - "tests/test_btc_overrides.py"
+      - "tests/test_btc_reentry.py"
       - "tests/test_build_basket_pulse.py"
       - "tests/test_signal_surface_bugfixes.py"
       - "tests/test_spvector_page.py"

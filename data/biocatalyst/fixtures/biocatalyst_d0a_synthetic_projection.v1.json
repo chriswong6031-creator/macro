@@ -1,0 +1,40 @@
+{
+  "projection_id": "biocatalyst_d0a_synthetic_projection_v1",
+  "synthetic_only": true,
+  "generation_id": "synthetic-d0a-v1",
+  "records": [
+    {
+      "nct_id": "NCT00000001", "title": "AUR-101 protocol", "asset": "AUR-101",
+      "phase": "PHASE2", "status": "RECRUITING",
+      "enrollment": {"value": 184, "basis": "ESTIMATED"},
+      "primary_endpoint": "Week 24 response", "site_count": 18,
+      "primary_completion": {"value": "2026-08", "precision": "MONTH"},
+      "change": {"field": "Primary endpoint", "before": "Week 12 response", "after": "Week 24 response", "versions": "v8 → v9"}
+    },
+    {
+      "nct_id": "NCT00000002", "title": "SYN-44 protocol", "asset": "SYN-44",
+      "phase": "PHASE2", "status": "ACTIVE_NOT_RECRUITING",
+      "enrollment": {"value": 216, "basis": "ESTIMATED"},
+      "primary_endpoint": "Month 6 function", "site_count": 22,
+      "primary_completion": {"value": "2026-08-09", "precision": "DAY"},
+      "change": {"field": "Enrollment", "before": "160 estimated", "after": "216 estimated", "versions": "v7 → v8"}
+    },
+    {
+      "nct_id": "NCT00000003", "title": "NWK-9 protocol", "asset": "NWK-9",
+      "phase": "PHASE1|PHASE2", "status": "RECRUITING",
+      "enrollment": {"value": 72, "basis": "ACTUAL"},
+      "primary_endpoint": "Dose-limiting safety", "site_count": 9,
+      "primary_completion": null,
+      "change": {"field": "Record correction", "before": "Earlier value retained", "after": "Corrected value linked", "versions": "v6 → v7"}
+    },
+    {
+      "nct_id": "NCT00000004", "title": "OBI-7 protocol", "asset": "OBI-7",
+      "phase": "PHASE3", "status": "COMPLETED",
+      "enrollment": {"value": 540, "basis": "ESTIMATED"},
+      "primary_endpoint": "Time to event", "site_count": 31,
+      "primary_completion": {"value": "2026-Q3", "precision": "QUARTER"},
+      "change": {"field": "Site listing", "before": "14 locations", "after": "18 locations", "versions": "v8 → v9"}
+    }
+  ],
+  "provenance": {"source": "synthetic design fixture", "not_for_api_or_model_use": true}
+}

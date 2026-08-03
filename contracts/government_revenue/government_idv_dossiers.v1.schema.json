@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_idv_dossiers.v1.schema.json",
+  "title": "Government Revenue IDV Relationship Dossiers v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "schema_version", "content_id", "as_of", "known_at", "generated_at", "authority", "source_coverage", "freshness", "selection_provenance", "limitations", "idvs", "relationships"],
+  "properties": {
+    "contract": {"const": "government_idv_dossiers.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "content_id": {"type": "string", "pattern": "^griv1-[a-f0-9]{24}$"},
+    "as_of": {"type": "string", "format": "date"},
+    "known_at": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date-time"}]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "source_coverage": {"$ref": "#/$defs/sourceCoverage"},
+    "freshness": {"$ref": "#/$defs/freshness"},
+    "selection_provenance": {"$ref": "#/$defs/selectionProvenance"},
+    "limitations": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
+    "idvs": {"type": "array", "maxItems": 80, "items": {"$ref": "#/$defs/idv"}},
+    "relationships": {"type": "array", "maxItems": 2000, "items": {"$ref": "#/$defs/relationship"}}
+  },
+  "$defs": {
+    "nullableText": {"type": ["string", "null"], "maxLength": 2000},
+    "nullableDate": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date"}]},
+    "nullableInstant": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date-time"}]},
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tier", "context_only", "can_rank", "can_size", "can_gate", "can_originate_signal", "can_add_candidates", "can_escalate"],
+      "properties": {
+        "tier": {"const": "display"}, "context_only": {"const": true}, "can_rank": {"const": false}, "can_size": {"const": false}, "can_gate": {"const": false}, "can_originate_signal": {"const": false}, "can_add_candidates": {"const": false}, "can_escalate": {"const": false}
+      }
+    },
+    "sourceCoverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "records_loaded", "records_published", "records_dropped", "configured_cap", "truncated_by_artifact_cap", "bounded_collection", "reason"],
+      "properties": {
+        "status": {"enum": ["ok", "partial", "unavailable", "failed"]}, "records_loaded": {"type": "integer", "minimum": 0}, "records_published": {"type": "integer", "minimum": 0, "maximum": 2000}, "records_dropped": {"type": "integer", "minimum": 0}, "configured_cap": {"const": 2000}, "truncated_by_artifact_cap": {"type": "boolean"}, "bounded_collection": {"type": ["boolean", "null"]}, "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "freshness": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "observed_at", "known_at", "reason"],
+      "properties": {"status": {"enum": ["ok", "partial", "stale", "unavailable", "failed"]}, "observed_at": {"$ref": "#/$defs/nullableInstant"}, "known_at": {"$ref": "#/$defs/nullableInstant"}, "reason": {"type": "string", "minLength": 1, "maxLength": 1000}}
+    },
+    "selectionProvenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "selection_source", "selection_manifest_id", "reviewed_at", "selected_parent_count", "scope_hashes"],
+      "properties": {
+        "status": {"enum": ["verified", "unavailable"]},
+        "selection_source": {
+          "oneOf": [
+            {"type": "null"},
+            {"enum": ["official_usaspending_idv_discovery", "reviewed_source_native_idv_manifest"]}
+          ]
+        },
+        "selection_manifest_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^idvsel1-[a-f0-9]{24}$"}
+          ]
+        },
+        "reviewed_at": {"$ref": "#/$defs/nullableInstant"},
+        "selected_parent_count": {"type": "integer", "minimum": 0, "maximum": 80},
+        "scope_hashes": {"$ref": "#/$defs/selectionScopeHashes"}
+      }
+    },
+    "selectionScopeHashes": {
+      "type": "object", "additionalProperties": false,
+      "required": ["recipient_scope_sha256", "filters_semantic_sha256", "reviewed_manifest_sha256"],
+      "properties": {
+        "recipient_scope_sha256": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[a-f0-9]{64}$"}]},
+        "filters_semantic_sha256": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[a-f0-9]{64}$"}]},
+        "reviewed_manifest_sha256": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[a-f0-9]{64}$"}]}
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "collection_state", "reported_count", "count_verified", "detail_rows", "pages_fetched", "source_exhausted", "truncated_by_collection_policy", "records_published", "reason"],
+      "properties": {
+        "status": {"enum": ["ok", "partial", "unavailable", "failed"]}, "collection_state": {"enum": ["not_selected", "zero", "complete", "high_count_count_only", "run_cap_count_only"]}, "reported_count": {"type": ["integer", "null"], "minimum": 0}, "count_verified": {"type": "boolean"}, "detail_rows": {"type": "integer", "minimum": 0}, "pages_fetched": {"type": "integer", "minimum": 0}, "source_exhausted": {"type": "boolean"}, "truncated_by_collection_policy": {"type": "boolean"}, "records_published": {"type": "integer", "minimum": 0, "maximum": 2000}, "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "idv": {
+      "type": "object", "additionalProperties": false,
+      "required": ["idv_generated_award_id", "coverage", "relationship_keys", "relationship_count"],
+      "properties": {
+        "idv_generated_award_id": {"type": "string", "pattern": "^CONT_IDV_[A-Za-z0-9_]+$", "maxLength": 1000}, "coverage": {"$ref": "#/$defs/coverage"}, "relationship_keys": {"type": "array", "maxItems": 2000, "items": {"type": "string", "pattern": "^idvrel:[a-f0-9]{32}$"}}, "relationship_count": {"type": "integer", "minimum": 0, "maximum": 2000}
+      }
+    },
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["idv_generated_award_id", "child_generated_award_id", "relationship_depth", "parent_piid", "child_piid"],
+      "properties": {
+        "idv_generated_award_id": {"type": "string", "pattern": "^CONT_IDV_[A-Za-z0-9_]+$", "maxLength": 1000}, "child_generated_award_id": {"type": "string", "pattern": "^CONT_AWD_[A-Za-z0-9_]+$", "maxLength": 1000}, "relationship_depth": {"enum": ["direct_child", "grandchild_award"]}, "parent_piid": {"$ref": "#/$defs/nullableText"}, "child_piid": {"$ref": "#/$defs/nullableText"}
+      }
+    },
+    "relationship": {
+      "type": "object", "additionalProperties": false,
+      "required": ["relationship_key", "child_award_key", "identity", "recipient_name", "agency", "dates", "amounts", "source", "provenance"],
+      "properties": {
+        "relationship_key": {"type": "string", "pattern": "^idvrel:[a-f0-9]{32}$"}, "child_award_key": {"type": ["string", "null"], "maxLength": 1000}, "identity": {"$ref": "#/$defs/identity"}, "recipient_name": {"$ref": "#/$defs/nullableText"}, "agency": {"$ref": "#/$defs/nullableText"}, "dates": {"$ref": "#/$defs/dates"}, "amounts": {"$ref": "#/$defs/amounts"}, "source": {"$ref": "#/$defs/source"}, "provenance": {"$ref": "#/$defs/provenance"}
+      }
+    },
+    "dates": {"type": "object", "additionalProperties": false, "required": ["start_date", "potential_end_date", "known_at", "first_seen_at"], "properties": {"start_date": {"$ref": "#/$defs/nullableDate"}, "potential_end_date": {"$ref": "#/$defs/nullableDate"}, "known_at": {"type": "string", "format": "date-time"}, "first_seen_at": {"type": "string", "format": "date-time"}}},
+    "amounts": {"type": "object", "additionalProperties": false, "required": ["obligated_amount", "awarded_amount", "currency", "semantic"], "properties": {"obligated_amount": {"type": ["number", "null"]}, "awarded_amount": {"type": ["number", "null"]}, "currency": {"const": "USD"}, "semantic": {"const": "source_reported_idv_activity"}}},
+    "source": {"type": "object", "additionalProperties": false, "required": ["publisher", "activity_url"], "properties": {"publisher": {"const": "USAspending.gov"}, "activity_url": {"const": "https://api.usaspending.gov/api/v2/idvs/activity/"}}},
+    "provenance": {"type": "object", "additionalProperties": false, "required": ["receipt_id", "response_sha256", "source_record_count", "known_at", "collection_scope_ticker", "limitations"], "properties": {"receipt_id": {"type": "string", "minLength": 1, "maxLength": 400}, "response_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "source_record_count": {"type": "integer", "minimum": 0}, "known_at": {"type": "string", "format": "date-time"}, "collection_scope_ticker": {"type": ["string", "null"], "maxLength": 32}, "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1, "maxLength": 1000}}}}
+  }
+}

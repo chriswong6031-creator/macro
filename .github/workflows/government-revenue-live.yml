@@ -65,6 +65,14 @@ on:
       - "data/government_revenue/subaward_projection_state.json"
       - "data/government_revenue/subaward_ingest_status.json"
       - "data/government_revenue/subaward_collector_heartbeat.parquet"
+      - "data/government_revenue/idv_relationship_snapshots.parquet"
+      - "data/government_revenue/idv_collection_receipts.jsonl"
+      - "data/government_revenue/idv_projection_state.json"
+      - "data/government_revenue/idv_ingest_status.json"
+      - "data/government_revenue/idv_collector_heartbeat.parquet"
+      - "data/government_revenue/dod_budget_line_snapshots.jsonl"
+      - "data/government_revenue/dod_budget_collection_receipts.jsonl"
+      - "data/government_revenue/dod_budget_projection_state.json"
       - "data/government_revenue/opportunities.parquet"
       - "data/government_revenue/opportunity_revisions.parquet"
       - "data/government_revenue/opportunity_documents.parquet"
@@ -75,8 +83,14 @@ on:
       - "collectors/sam_gov.py"
       - "collectors/usaspending_awards.py"
       - "collectors/usaspending_subawards.py"
+      - "collectors/usaspending_idv_graph.py"
+      - "collectors/dod_budget.py"
       - "engine/government_revenue/**"
+      - "contracts/government_revenue/**"
+      - "config/government_revenue/budget_program_reviewed_edges.v1.json"
+      - "config/government_revenue/idv_discovery.v1.json"
       - "lib/pages.py"
+      - "scripts/ci/validate_government_revenue_award_event_bundle.py"
       - "scripts/build_government_revenue.py"
       - "scripts/collect.py"
       - "templates/_interfonts.html.j2"
@@ -339,25 +353,19 @@ jobs:
         if: ${{ steps.gate.outputs.publish == 'yes' }}
         run: python -m scripts.build_government_revenue
 
+      # Checkout is pinned to main, every collector-owned source bundle is
+      # verified and kept clean, and only governed source/output paths may be
+      # staged. The retry loop rebuilds after each rebase so a concurrent daily
+      # evidence commit cannot be overwritten by a mixed generation.
       - name: commit complete evidence projection
         if: ${{ steps.gate.outputs.publish == 'yes' }}
         run: |
           set -euo pipefail
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
-          # Defence in depth: this job pins `ref: main` at checkout, so HEAD is main on
-          # any trigger ref and this guard is a no-op today. It is the tripwire for the
-          # day that pin is dropped — workflow_dispatch takes any ref, and publishing
-          # HEAD to main from one lands unreviewed commits with no PR and no CI.
           PUSH_LABEL="government-revenue evidence"
           if ! push_on_main_ok; then exit 0; fi
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          # The receipt-bound award-event spine is collector/daily-owned.  Preserve a
-          # complete already-committed triad through this serialized projection path,
-          # but fail before staging if a source mutation appears in this SAM-only
-          # checkout: that would create a second writer or split event rows from their
-          # canonical receipt ledger. The check is deliberately local and bounded; the
-          # strict projector still validates receipt bindings when it renders.
           award_event_bundle_paths=(
             data/government_revenue/award_event_snapshots.parquet
             data/government_revenue/award_action_versions.parquet
@@ -371,6 +379,18 @@ jobs:
             data/government_revenue/subaward_ingest_status.json
           )
           subaward_heartbeat_path=data/government_revenue/subaward_collector_heartbeat.parquet
+          idv_bundle_paths=(
+            data/government_revenue/idv_relationship_snapshots.parquet
+            data/government_revenue/idv_collection_receipts.jsonl
+            data/government_revenue/idv_projection_state.json
+            data/government_revenue/idv_ingest_status.json
+          )
+          idv_heartbeat_path=data/government_revenue/idv_collector_heartbeat.parquet
+          dod_budget_bundle_paths=(
+            data/government_revenue/dod_budget_line_snapshots.jsonl
+            data/government_revenue/dod_budget_collection_receipts.jsonl
+            data/government_revenue/dod_budget_projection_state.json
+          )
           recipient_graph_path=data/government_revenue/recipient_entity_graph.json
 
           assert_award_event_bundle() {
@@ -397,115 +417,8 @@ jobs:
               echo "::error title=award-event receipts missing::a receipt-bound award bundle requires the committed canonical receipt ledger"
               return 1
             fi
-            python - "${award_event_bundle_paths[@]}" <<'PY'
-          from __future__ import annotations
-
-          import hashlib
-          import json
-          import sys
-          from datetime import datetime
-          from pathlib import Path
-
-          try:
-              state = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-          except Exception:
-              raise SystemExit("award-event activation state is unreadable")
-          if not isinstance(state, dict):
-              raise SystemExit("award-event activation state is not an object")
-          if state.get("schema_version") != "government_revenue.award_event_projection_state.v1":
-              raise SystemExit("award-event activation state schema is not recognized")
-          activation = state.get("activation_state")
-          if activation not in {"baseline", "live"}:
-              raise SystemExit("award-event activation state is invalid")
-          if not isinstance(state.get("coverage_scope"), str) or not state["coverage_scope"].strip():
-              raise SystemExit("award-event activation state lacks coverage scope")
-
-          # The activation receipt is bound to the exact bounded collection
-          # contract, not merely to a non-empty set of event files.  This
-          # keeps an entity/query/cap change from being folded as if it shared
-          # the old baseline, and catches a hand-edited or partially-written
-          # state before the serialized projection can replace the last-good
-          # public generation.
-          manifest = state.get("coverage_manifest")
-          manifest_id = state.get("coverage_manifest_id")
-          if not isinstance(manifest, dict):
-              raise SystemExit("award-event activation state lacks coverage manifest")
-          if manifest.get("schema_version") != "government_revenue.award_event_coverage_manifest.v1":
-              raise SystemExit("award-event coverage manifest schema is not recognized")
-          if manifest.get("coverage_scope") != state["coverage_scope"]:
-              raise SystemExit("award-event coverage manifest scope does not match activation state")
-          if not isinstance(manifest.get("entities"), list) or not manifest["entities"]:
-              raise SystemExit("award-event coverage manifest lacks configured entities")
-          discovery = manifest.get("award_discovery")
-          if not isinstance(discovery, dict) or any(
-              not isinstance(discovery.get(field), int) or isinstance(discovery.get(field), bool)
-              for field in ("page_size", "max_pages")
-          ):
-              raise SystemExit("award-event coverage manifest lacks bounded discovery limits")
-          canonical_manifest = json.dumps(
-              manifest,
-              sort_keys=True,
-              separators=(",", ":"),
-              ensure_ascii=True,
-              default=str,
-          ).encode("utf-8")
-          expected_manifest_id = "award-coverage-" + hashlib.sha256(canonical_manifest).hexdigest()
-          if not isinstance(manifest_id, str) or manifest_id != expected_manifest_id:
-              raise SystemExit("award-event coverage manifest identity does not bind its contents")
-
-          for field in (
-              "last_run_was_full_receipt_bound_baseline",
-              "bounded_sample_complete",
-              "source_exhausted",
-              "truncated_by_safety_cap",
-              "coverage_manifest_changed_this_run",
-          ):
-              if not isinstance(state.get(field), bool):
-                  raise SystemExit(f"award-event activation state lacks boolean {field}")
-          if state["source_exhausted"] and state["truncated_by_safety_cap"]:
-              raise SystemExit("award-event state cannot be source-exhausted and safety-cap-truncated")
-
-          def instant(name: str) -> datetime:
-              value = state.get(name)
-              if not isinstance(value, str) or not value.strip():
-                  raise SystemExit(f"award-event activation state lacks {name}")
-              try:
-                  parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-              except ValueError:
-                  raise SystemExit(f"award-event activation state has invalid {name}")
-              if parsed.tzinfo is None:
-                  raise SystemExit(f"award-event activation state has timezone-free {name}")
-              return parsed
-
-          observed_at = instant("last_observed_at")
-          if activation == "live":
-              if instant("baseline_completed_at") > observed_at:
-                  raise SystemExit("award-event baseline completion is later than its observation")
-              if (
-                  state["bounded_sample_complete"] is not True
-                  or state.get("last_run_was_full_receipt_bound_baseline") is not True
-              ):
-                  raise SystemExit("live award-event state lacks a completed bounded receipt-bound baseline")
-
-          # File presence alone cannot prove the two append-only ledgers and
-          # state belong to one generation.  Recompute the collector-owned
-          # semantic binding before this lane builds public twins.  If an
-          # interrupted collector left a mixed pair, leave the prior public
-          # generation authoritative rather than committing an unavailable
-          # replacement from those source files.
-          try:
-              import pandas as pd
-              from collectors.usaspending_awards import award_event_projection_generation_matches
-
-              snapshots = pd.read_parquet(Path(sys.argv[2]))
-              actions = pd.read_parquet(Path(sys.argv[3]))
-              if not award_event_projection_generation_matches(state, snapshots, actions):
-                  raise SystemExit("award-event source ledgers do not match activation generation")
-          except SystemExit:
-              raise
-          except Exception as exc:
-              raise SystemExit("award-event source generation could not be verified") from exc
-          PY
+            python scripts/ci/validate_government_revenue_award_event_bundle.py \
+              "${award_event_bundle_paths[@]}"
             AWARD_EVENT_BUNDLE_PRESENT=true
           }
 
@@ -566,15 +479,142 @@ jobs:
           }
 
           assert_subaward_source_clean() {
-            # The 30-minute SAM lane is a reader of daily-owned subaward evidence.
-            # It may publish deterministic dossier twins, but it cannot advance,
-            # rewrite, or stage any collector-owned source or health artifact.
             if ! git diff --quiet -- "${subaward_bundle_paths[@]}" "$subaward_heartbeat_path"; then
               echo "::error title=subaward source mutation::the SAM fast path cannot publish a locally changed USAspending subaward source bundle"
               return 1
             fi
             if ! git diff --cached --quiet -- "${subaward_bundle_paths[@]}" "$subaward_heartbeat_path"; then
               echo "::error title=subaward source staged::the SAM fast path cannot stage a USAspending subaward source mutation"
+              return 1
+            fi
+          }
+
+          assert_idv_bundle() {
+            local present=0 tracked=0 path
+            for path in "${idv_bundle_paths[@]}"; do
+              [ -f "$path" ] && present=$((present + 1))
+              git ls-files --error-unmatch -- "$path" >/dev/null 2>&1 && tracked=$((tracked + 1))
+            done
+            if [ "$present" -eq 0 ]; then
+              if [ "$tracked" -ne 0 ]; then
+                echo "::error title=idv bundle missing::tracked receipt-bound IDV artifacts disappeared from the checkout; refusing a partial projection"
+                return 1
+              fi
+              echo "receipt-bound IDV bundle not initialized yet; publishing an unavailable relationship dossier"
+              return 0
+            fi
+            if [ "$present" -ne "${#idv_bundle_paths[@]}" ] || [ "$tracked" -ne "${#idv_bundle_paths[@]}" ]; then
+              echo "::error title=idv bundle incomplete::IDV snapshots, receipts, activation state, and ingest status must arrive as one committed bundle"
+              return 1
+            fi
+            python - \
+              data/government_revenue/idv_projection_state.json \
+              data/government_revenue/idv_relationship_snapshots.parquet <<'PY'
+          from __future__ import annotations
+
+          import json
+          import sys
+          from pathlib import Path
+
+          import pandas as pd
+
+          from collectors.usaspending_idv_graph import idv_projection_generation_matches
+
+          try:
+              state = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+              snapshots = pd.read_parquet(Path(sys.argv[2]))
+          except Exception as exc:
+              raise SystemExit("IDV source generation could not be read") from exc
+          if not isinstance(state, dict) or not idv_projection_generation_matches(state, snapshots):
+              raise SystemExit("IDV source snapshot does not match its activation generation")
+          PY
+          }
+
+          assert_idv_source_clean() {
+            if ! git diff --quiet -- "${idv_bundle_paths[@]}" "$idv_heartbeat_path"; then
+              echo "::error title=idv source mutation::the SAM fast path cannot publish a locally changed USAspending IDV source bundle"
+              return 1
+            fi
+            if ! git diff --cached --quiet -- "${idv_bundle_paths[@]}" "$idv_heartbeat_path"; then
+              echo "::error title=idv source staged::the SAM fast path cannot stage a USAspending IDV source mutation"
+              return 1
+            fi
+          }
+
+          assert_dod_budget_bundle() {
+            local present=0 tracked=0 path
+            for path in "${dod_budget_bundle_paths[@]}"; do
+              [ -f "$path" ] && present=$((present + 1))
+              git ls-files --error-unmatch -- "$path" >/dev/null 2>&1 && tracked=$((tracked + 1))
+            done
+            if [ "$present" -eq 0 ]; then
+              if [ "$tracked" -ne 0 ]; then
+                echo "::error title=dod-budget bundle missing::tracked DoD budget source artifacts disappeared from the checkout; refusing a partial graph"
+                return 1
+              fi
+              echo "DoD budget source bundle not initialized yet; keeping the optional graph unavailable"
+              return 0
+            fi
+            if [ "$present" -ne "${#dod_budget_bundle_paths[@]}" ] || [ "$tracked" -ne "${#dod_budget_bundle_paths[@]}" ]; then
+              echo "::error title=dod-budget bundle incomplete::DoD budget lines, receipts, and projection state must arrive as one committed bundle"
+              return 1
+            fi
+            python - "${dod_budget_bundle_paths[@]}" <<'PY'
+          from __future__ import annotations
+
+          import json
+          import sys
+          from pathlib import Path
+
+          from collectors.dod_budget import projection_state_matches
+
+          try:
+              lines = [json.loads(row) for row in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()]
+              receipts = [json.loads(row) for row in Path(sys.argv[2]).read_text(encoding="utf-8").splitlines()]
+              state = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
+          except Exception as exc:
+              raise SystemExit("DoD budget source generation could not be read") from exc
+          if not lines or not receipts or not isinstance(state, dict) or not projection_state_matches(state, lines, receipts):
+              raise SystemExit("DoD budget source ledgers do not match their projection generation")
+          PY
+          }
+
+          assert_dod_budget_source_clean() {
+            if ! git diff --quiet -- "${dod_budget_bundle_paths[@]}"; then
+              echo "::error title=dod-budget source mutation::the SAM fast path cannot publish a locally changed DoD budget source bundle"
+              return 1
+            fi
+            if ! git diff --cached --quiet -- "${dod_budget_bundle_paths[@]}"; then
+              echo "::error title=dod-budget source staged::the SAM fast path cannot stage a DoD budget source mutation"
+              return 1
+            fi
+          }
+
+          assert_idv_dossier_twins() {
+            local canonical=data/government_revenue/idv_dossiers.json
+            local public=site/government-revenue-data/idv-dossiers.json
+            if [ ! -f "$canonical" ] || [ ! -f "$public" ]; then
+              echo "::error title=idv dossier twin missing::the build must publish both canonical and public IDV dossier bytes"
+              return 1
+            fi
+            if ! cmp -s "$canonical" "$public"; then
+              echo "::error title=idv dossier twin mismatch::canonical and public IDV dossier bytes differ"
+              return 1
+            fi
+          }
+
+          assert_optional_budget_graph_twins() {
+            local canonical=data/government_revenue/budget_program_graph.json
+            local public=site/government-revenue-data/budget-program.json
+            if [ ! -e "$canonical" ] && [ ! -e "$public" ]; then
+              return 0
+            fi
+            if [ ! -f "$canonical" ] || [ ! -f "$public" ]; then
+              echo "::error title=budget graph twin incomplete::DoD budget graph must be absent or present as exact canonical/public twins"
+              return 1
+            fi
+            if ! cmp -s "$canonical" "$public"; then
+              echo "::error title=budget graph twin mismatch::canonical and public DoD budget graph bytes differ"
               return 1
             fi
           }
@@ -597,18 +637,14 @@ jobs:
           assert_award_event_source_clean
           assert_subaward_bundle
           assert_subaward_source_clean
+          assert_idv_bundle
+          assert_idv_source_clean
+          assert_dod_budget_bundle
+          assert_dod_budget_source_clean
           assert_recipient_graph_source_clean
+          assert_idv_dossier_twins
+          assert_optional_budget_graph_twins
 
-          # Stage only the first-seen SAM evidence, its runner heartbeat, the protected
-          # complete event bundle, and rebuilt context/display twins (including the
-          # separately governed subaward dossier). In particular, do
-          # NOT stage shared collect run-status, qledger, governance, receipt-ledger, or
-          # other forward-ledger byproducts. The event bundle paths below are clean
-          # carry-through inputs after the guard above, never a second collection writer.
-          # A projection-only or path-triggered first run can legitimately have
-          # no SAM ledger yet (for example before SAM_API_KEY is installed).
-          # `git add` fatals on an absent, never-tracked path, so stage only
-          # evidence paths that currently exist or whose deletion is tracked.
           stage_candidates=(
             data/government_revenue/opportunities.parquet
             data/government_revenue/opportunity_revisions.parquet
@@ -619,11 +655,15 @@ jobs:
             data/government_revenue/workspace.json
             data/government_revenue/dossiers.json
             data/government_revenue/subaward_dossiers.json
+            data/government_revenue/idv_dossiers.json
+            data/government_revenue/budget_program_graph.json
             data/government_revenue/recipient_resolution_coverage.json
             site/government-revenue-data/latest.json
             site/government-revenue-data/workspace.json
             site/government-revenue-data/dossiers.json
             site/government-revenue-data/subaward-dossiers.json
+            site/government-revenue-data/idv-dossiers.json
+            site/government-revenue-data/budget-program.json
             site/government_revenue.html
           )
           if [ "$AWARD_EVENT_BUNDLE_PRESENT" = true ]; then
@@ -653,52 +693,59 @@ jobs:
             data/government_revenue/workspace.json \
             data/government_revenue/dossiers.json \
             data/government_revenue/subaward_dossiers.json \
+            data/government_revenue/idv_dossiers.json \
+            data/government_revenue/budget_program_graph.json \
             data/government_revenue/recipient_resolution_coverage.json \
             site/government-revenue-data/latest.json \
             site/government-revenue-data/workspace.json \
             site/government-revenue-data/dossiers.json \
             site/government-revenue-data/subaward-dossiers.json \
+            site/government-revenue-data/idv-dossiers.json \
+            site/government-revenue-data/budget-program.json \
             site/government_revenue.html
           git commit -m "govrev: SAM opportunity evidence $(date -u +%FT%H:%MZ)"
 
-          # Generated files are committed before the rebase.  Any remaining
-          # tracked mutation is a shared collect byproduct and is deliberately
-          # allowed to autostash on this disposable runner checkout, never staged.
           PUSH_MAX_ATTEMPTS=8
           PUSH_BUDGET_SECS=300
           PUSH_ALARM=90
           push_retry_init "government-revenue evidence"
           while push_attempt; do
             git fetch origin main || true
-            # A mid-run main commit can start tracking an untracked side-effect;
-            # autostash only contains tracked changes.  The generated projection
-            # is already committed, so the origin/main copy is authoritative for
-            # this narrow intersection and the local side-effect is disposable.
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
             if git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
-              # Rebuild AFTER every successful rebase.  A daily USAspending commit
-              # can land while this run is collecting SAM; replaying the pre-sync
-              # projection would otherwise publish a mixed evidence generation.
-              # A non-fast-forward push loops back through this same re-render.
+              # Rebuild AFTER every successful rebase; retry loops do the same.
               assert_award_event_bundle
               assert_award_event_source_clean
               assert_subaward_bundle
               assert_subaward_source_clean
+              assert_idv_bundle
+              assert_idv_source_clean
+              assert_dod_budget_bundle
+              assert_dod_budget_source_clean
               assert_recipient_graph_source_clean
               python -m scripts.build_government_revenue
+              assert_idv_dossier_twins
+              assert_optional_budget_graph_twins
               git add \
                 data/government_revenue/latest.json \
                 data/government_revenue/workspace.json \
                 data/government_revenue/dossiers.json \
                 data/government_revenue/subaward_dossiers.json \
+                data/government_revenue/idv_dossiers.json \
                 data/government_revenue/recipient_resolution_coverage.json \
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
                 site/government-revenue-data/dossiers.json \
                 site/government-revenue-data/subaward-dossiers.json \
+                site/government-revenue-data/idv-dossiers.json \
                 site/government_revenue.html
+              if [ -f data/government_revenue/budget_program_graph.json ]; then
+                git add -- \
+                  data/government_revenue/budget_program_graph.json \
+                  site/government-revenue-data/budget-program.json
+              fi
               push_staged_clean \
                 data/government_revenue/award_event_snapshots.parquet \
                 data/government_revenue/award_action_versions.parquet \
@@ -707,11 +754,15 @@ jobs:
                 data/government_revenue/workspace.json \
                 data/government_revenue/dossiers.json \
                 data/government_revenue/subaward_dossiers.json \
+                data/government_revenue/idv_dossiers.json \
+                data/government_revenue/budget_program_graph.json \
                 data/government_revenue/recipient_resolution_coverage.json \
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
                 site/government-revenue-data/dossiers.json \
                 site/government-revenue-data/subaward-dossiers.json \
+                site/government-revenue-data/idv-dossiers.json \
+                site/government-revenue-data/budget-program.json \
                 site/government_revenue.html
               if ! git diff --cached --quiet; then
                 git commit --amend --no-edit

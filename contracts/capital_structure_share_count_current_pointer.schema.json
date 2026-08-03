@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_share_count_current_pointer.schema.json",
+  "title": "Current authenticated share-count materialization pointer",
+  "description": "A small local selector. Its integrity is established by the signed receipt and external head witness, not by this mutable pointer alone.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "pointer_id", "sequence", "receipt_id", "receipt_path", "receipt_sha256", "receipt_byte_length", "generation_id", "ledger_path", "ledger_sha256", "ledger_byte_length", "published_at"],
+  "properties": {
+    "schema": {"const": "capital_structure.share_count_current_pointer/v2"},
+    "pointer_id": {"type": "string", "pattern": "^pointer:cs-share-count-materialization-v2:[a-f0-9]{64}$"},
+    "sequence": {"type": "integer", "minimum": 1, "maximum": 18446744073709551616},
+    "receipt_id": {"type": "string", "pattern": "^receipt:cs-share-count-materialization-v2:[a-f0-9]{64}$"},
+    "receipt_path": {"type": "string", "pattern": "^data/capital_structure/share_counts/v2/receipts/[a-f0-9]{64}\\.json$"},
+    "receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "receipt_byte_length": {"type": "integer", "minimum": 1, "maximum": 4194304},
+    "generation_id": {"type": "string", "pattern": "^generation:cs-share-count-materialization-v2:[a-f0-9]{64}$"},
+    "ledger_path": {"type": "string", "pattern": "^data/capital_structure/share_counts/v2/generations/[a-f0-9]{64}/ledger\\.json$"},
+    "ledger_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "ledger_byte_length": {"type": "integer", "minimum": 1, "maximum": 134217728},
+    "published_at": {"type": "string", "format": "date-time"}
+  }
+}

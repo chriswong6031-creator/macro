@@ -201,7 +201,7 @@ def _history_model_for_security() -> dict[str, Any]:
     return model
 
 
-def _install_rehashed_v12_history_artifact(
+def _install_rehashed_v14_history_artifact(
     publisher: PublicGenerationPublisher,
     model: dict[str, Any],
 ) -> None:
@@ -219,7 +219,7 @@ def _install_rehashed_v12_history_artifact(
         for prospective_artifact in prospective_dir.iterdir():
             prospective_artifact.unlink()
         prospective_dir.rmdir()
-    manifest["schema_version"] = "1.2.0"
+    manifest["schema_version"] = "1.4.0"
     manifest["artifacts"] = [
         item
         for item in manifest["artifacts"]
@@ -320,7 +320,7 @@ def test_rehashed_history_artifact_without_its_own_hash_cannot_be_read(
     # the public model's own content-address intact.  Both promotion-time and
     # request-time validation must reject it.
     model["generated_at"] = "2026-08-01T15:00:03.000000Z"
-    _install_rehashed_v12_history_artifact(publisher, model)
+    _install_rehashed_v14_history_artifact(publisher, model)
 
     with pytest.raises(PublicationError) as exc:
         publisher.read_trial_projection()

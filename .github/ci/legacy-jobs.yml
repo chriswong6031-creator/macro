@@ -611,6 +611,19 @@ jobs:
       # ci.yml on the test files; templates are covered by "templates/**" (#3488).
       - name: theme deep-link contract + sector-intelligence consolidation invariants
         run: python -m pytest tests/test_theme_hash_deeplink.py tests/test_sector_intelligence_page.py -q
+      # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
+      # pinned SEC source objects into filing packages, Company Facts ledgers,
+      # and deterministic B4 binding plans. Keep these security/provenance
+      # contracts ahead of the broad sweep so an unrelated red guard cannot
+      # leave the new materialization boundary dark.
+      - name: B4D-A offline materialization foundation
+        run: >-
+          python -m pytest
+          tests/test_sec_document_spine.py
+          tests/test_fundamental_forensics_attestation.py
+          tests/test_fundamental_forensics_filing_package_materializer.py
+          tests/test_fundamental_forensics_companyfacts_pinned_loader.py
+          tests/test_fundamental_forensics_attested_history_materializer.py -q
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -678,6 +691,7 @@ jobs:
           tests/test_fundamental_forensics_query.py
           tests/test_fundamental_forensics_query_snapshots.py
           tests/test_fundamental_forensics_attested_query_snapshots.py
+          tests/test_fundamental_forensics_attested_history_reader.py
           tests/test_sec_document_spine.py
           tests/test_fundamental_forensics_filing_package.py
           tests/test_forensics_api.py
@@ -790,7 +804,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install capital-structure test deps
-        run: pip install pytest pandas numpy pyarrow jsonschema==4.26.0 requests pyyaml jinja2 fastapi httpx
+        run: pip install pytest pandas numpy pyarrow jsonschema==4.26.0 requests pyyaml jinja2 fastapi httpx boto3
       - name: capital-structure contracts, compilers, projection, graph, source store, and legacy boundary
         run: >
           python -m pytest
@@ -808,7 +822,14 @@ jobs:
           tests/test_capital_structure_api.py
           tests/test_capital_structure_source_identity.py
           tests/test_capital_structure_source_manifest.py
+          tests/test_capital_structure_share_count_truth.py
+          tests/test_capital_structure_companyfacts_authenticated_read.py
+          tests/test_capital_structure_share_count_materializer_model.py
+          tests/test_capital_structure_share_count_publication.py
+          tests/test_capital_structure_share_count_retention.py
+          tests/test_capital_structure_share_count_materializer.py
           tests/test_sec_capital_structure.py
+          tests/test_sec_capital_structure_companyfacts.py
           tests/test_nwqs_c_dilution.py -q
 
   stock-seasonality:
@@ -3016,6 +3037,7 @@ jobs:
         run: >
           python -m pytest
           tests/test_biocatalyst_api.py
+          tests/test_biocatalyst_peer_api_contract.py
           tests/test_biocatalyst_deploy.py
           tests/test_biocatalyst_page.py -q
 
@@ -3039,6 +3061,7 @@ jobs:
           tests/test_biocatalyst_security.py
           tests/test_biocatalyst_source_registry.py
           tests/test_biocatalyst_storage.py
+          tests/test_biocatalyst_protocols.py
           tests/test_biocatalyst_trials.py -q
 
   biocatalyst-worker:
@@ -3098,7 +3121,11 @@ jobs:
         run: >
           python -m pytest
           tests/test_sector_intelligence_contracts.py
+          tests/test_launch_slo_evidence_verifier.py
+          tests/test_biocatalyst_d0a_design_contract.py
           tests/test_sector_intelligence_ownership.py -q
+      - name: BioCatalyst D0a finite reference integrity
+        run: python scripts/verify_biocatalyst_d0a_references.py --reference-integrity
 
   biocatalyst-deploy-integration:
     if: ${{ false }}
@@ -3578,7 +3605,25 @@ jobs:
         # The gates stay; the suites get a lane that satisfies them. The thin lane
         # keeps test_chart_facts and test_marketing_bare_cashtag for their
         # dependency-free tests, which is the split the guard is asking for.
-        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py tests/test_chart_facts.py tests/test_marketing_bare_cashtag.py tests/test_confluence_honesty.py tests/test_tech_confluence.py tests/test_news_translate_en.py -q -rs
+        #
+        # THREE SUITES JOIN 2026-08-02 (TrendSpider hardening PR-B — the supply
+        # widening: cashtag tiers 520 → 1,317 names, mover board 503 → ~1,190,
+        # six new read-only candidate pools). Two of them were already DARK:
+        #   * test_movers_source.py and test_marketing_radar.py were named by NO
+        #     job in this manifest. `grep -rn` across .github/ returned nothing
+        #     for either. They are the only guards the two modules PR-B edits
+        #     have — the tier ladder, the T3 mover exclusion, the theme-list
+        #     whitelist — and they have been running nowhere, which is the
+        #     unrun-suite class this file has now repaired six times. Shipping a
+        #     universe widening while its own regression suite stays dark would
+        #     have been the seventh.
+        #   * test_marketing_supply_feeds.py is new and belongs here from birth:
+        #     every pool fixture is a parquet (options_flow, WSB, earnings,
+        #     stage backfill), so the thin marketing-engine lane could never run
+        #     it — the hot_tape_pack case above, not a repair.
+        # All three need pandas+pyarrow, which this lane already installs, so
+        # they provision no new environment.
+        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py tests/test_chart_facts.py tests/test_marketing_bare_cashtag.py tests/test_confluence_honesty.py tests/test_tech_confluence.py tests/test_news_translate_en.py tests/test_marketing_supply_feeds.py tests/test_movers_source.py tests/test_marketing_radar.py -q -rs
 
   publish-r2-client:
     if: ${{ false }}
@@ -3689,7 +3734,7 @@ jobs:
       - name: install deps
         run: pip install pytest pyyaml
       - name: chart_render SVG suites
-        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_marketing_card_parity.py -q
+        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_chart_render_grammar.py tests/test_marketing_card_parity.py -q
 
   chart-render-data:
     if: ${{ false }}
@@ -3736,7 +3781,7 @@ jobs:
       - name: prove the data-dependent modules are present
         run: python -c "import pandas, pyarrow, numpy"
       - name: chart_render SVG suites (data-dependent tests execute here)
-        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_marketing_card_parity.py -q -rs
+        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_chart_render_grammar.py tests/test_marketing_card_parity.py -q -rs
 
   portfolio-ctx:
     if: ${{ false }}
@@ -3757,7 +3802,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic
+        # pyyaml is load-bearing here, not incidental: the theme_lanes side-write reads
+        # config/theme_crosswalk.yml for the basket-keyed lane projection. Without it
+        # build_state_of_themes.load_primary_basket_ids fail-opens to {} and the
+        # projection silently collapses to empty (PR #4300 shipped red on exactly that).
+        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic pyyaml
       - name: portfolio-ctx bake unit tests
         run: python -m pytest tests/test_build_portfolio_ctx.py tests/test_portfolio_ctx_chains.py -q
       - name: portfolio-brief composer + endpoint tests
@@ -4029,6 +4078,27 @@ jobs:
       - name: oracle gauntlet phases + onset quality + regime gate + intraday asymmetry
         run: python -m pytest tests/test_oracle_gauntlet.py tests/test_oracle_gauntlet_p3b.py tests/test_oracle_gauntlet_p8.py tests/test_oracle_onset_quality_w1.py tests/test_oracle_single_regime_gate.py tests/test_oracle_asymmetry_intraday.py -q
 
+  unrun-marketing-desk:
+    # X-growth desk organs beyond the engine/publisher lanes that already run:
+    # the Ad Central owned-inventory plane, the persona internal model +
+    # familiarity ladder (XG-W4b §E), the reply-desk arming/actuation contract
+    # (XG-W7), and the two committed X ad-campaign asset manifests. None was
+    # named by any run: step before the 2026-08-03 backfill.
+    if: ${{ false }}
+    timeout-minutes: 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: ad plane O + persona model + reply-desk arming
+        run: python -m pytest tests/test_marketing_ad_plane_o.py tests/test_marketing_persona_model.py tests/test_marketing_reply_arming.py -q
+      - name: X ad-campaign asset manifests (desktop + mobile)
+        run: python -m pytest tests/test_x_ad_campaign_assets.py tests/test_x_mobile_campaign_assets.py -q
+
   unrun-grading-board:
     # US board grading — the shipped verdict ledgers and their tenure stamps.
     if: ${{ false }}
@@ -4231,6 +4301,11 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: scripts/build_site.py panels and view-models — the dashboard organs the nightly render ships
         run: python -m pytest tests/test_action_board_coherence.py tests/test_advanced_breadth.py tests/test_basket_integration.py tests/test_breadth_panel.py tests/test_c4_dollar.py tests/test_factor_ic_panel.py tests/test_macro_glance.py tests/test_macro_signals_vm.py tests/test_market_gamma.py tests/test_market_gamma_contract.py tests/test_regime_snap.py tests/test_spark_zone_band.py tests/test_ts_u3_dashboard_surfaces.py tests/test_vol_shock_scorecard.py tests/test_wiki_pageviews.py -q
+      # Unrun backfill 2026-08-03: the Prophet Live P1 user-facing dashboard
+      # surfaces join the lane that owns the dashboard organs. (Distinct from
+      # the #4331 prophet-board suites, whose staging follows that PR's merge.)
+      - name: prophet live user-facing surfaces
+        run: python -m pytest tests/test_prophet_live_surface.py -q
 
   unrun-release-forecast:
     # the macro-release forecast producer — projections, benchmarks and the graded forward ledger.
@@ -4291,6 +4366,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: vector allocation surfaces + the calibration ledger and basket pulse they read
         run: python -m pytest tests/test_basket_turn_watch.py tests/test_btc_overrides.py tests/test_build_basket_pulse.py tests/test_signal_surface_bugfixes.py tests/test_spvector_page.py tests/test_trial_log_refresh.py tests/test_validation_effective_t.py tests/test_vector_conviction.py -q
+      - name: W4 staged re-entry spine + P5 deferred-context BTC chips (dat/netliq/cascade)
+        run: python -m pytest tests/test_btc_reentry.py tests/test_btc_deferred_legs.py -q
 
   unrun-picks-boards:
     # pick lab runners + US board grading — shipped picks and their outcome ledgers.

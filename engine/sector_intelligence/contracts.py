@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections import Counter
 import binascii
 from dataclasses import dataclass
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from difflib import SequenceMatcher
 import copy
@@ -48,6 +48,8 @@ _PAGE_RECEIPT_CONTRACT_ID = "source_page_receipt.v1"
 _TRIAL_SOURCE_SNAPSHOT_CONTRACT_ID = "trial_source_snapshot.v1"
 _TRIAL_OBSERVATION_CONTRACT_ID = "trial_snapshot_observation.v1"
 _TRIAL_SNAPSHOT_CONTRACT_ID = "trial_snapshot.v1"
+_TRIAL_PROTOCOL_PROJECTION_CONTRACT_ID = "trial_protocol_projection.v1"
+_TRIAL_PEER_SET_CONTRACT_ID = "trial_peer_set.v1"
 _TRIAL_DIFF_CONTRACT_ID = "trial_version_diff.v1"
 _TRIAL_COVERAGE_CONTRACT_ID = "trial_coverage_epoch.v1"
 _CTGOV_HISTORY_RECEIPT_CONTRACT_ID = "ctgov_history_receipt.v1"
@@ -56,6 +58,40 @@ _TRIAL_HISTORY_SOURCE_SNAPSHOT_CONTRACT_ID = "trial_history_source_snapshot.v1"
 _TRIAL_HISTORY_DIFF_CONTRACT_ID = "trial_history_exact_diff.v1"
 _TRIAL_REGISTRY_CHANGE_FACT_CONTRACT_ID = "trial_registry_change_fact.v1"
 _TRIAL_HISTORY_READ_MODEL_CONTRACT_ID = "trial_history_read_model.v1"
+_BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID = (
+    "biocatalyst_launch_slo_manifest.v1"
+)
+_BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID = (
+    "biocatalyst_product_acceptance_manifest.v1"
+)
+_BIOCATALYST_D0A_PROJECTION_GENERATION = "synthetic-d0a-v1"
+_BIOCATALYST_D0A_BROWSER_PROFILES = (
+    {
+        "name": "desktop", "viewport": "1440x900", "engine": "chromium",
+        "engine_version": "140.0.7339.41", "os": "macos-15.6-arm64",
+        "font_bundle": "sf-pro-20_pingfang-sc-20", "device_scale_factor": 1,
+        "network": "wired-100mbps-20ms",
+    },
+    {
+        "name": "tablet", "viewport": "820x1180", "engine": "webkit",
+        "engine_version": "620.1.16", "os": "macos-15.6-arm64",
+        "font_bundle": "sf-pro-20_pingfang-sc-20", "device_scale_factor": 2,
+        "network": "wifi-40mbps-40ms",
+    },
+    {
+        "name": "mobile", "viewport": "390x844", "engine": "webkit",
+        "engine_version": "620.1.16", "os": "macos-15.6-arm64",
+        "font_bundle": "sf-pro-20_pingfang-sc-20", "device_scale_factor": 3,
+        "network": "4g-10mbps-80ms",
+    },
+)
+_BIOCATALYST_D0A_RECEIPT_APPROVAL = "pending_fable_or_opus_design_owner"
+_BIOCATALYST_D0A_RECEIPT_BLOCKERS = (
+    "named_human_design_approval",
+    "production_shaped_browser_capture",
+    "D0b_state_harness",
+    "trusted_browser_verifier_successor_contract",
+)
 _SOURCE_RECORD_CONTRACT_ID = "source_record.v1"
 _EVIDENCE_CLAIM_CONTRACT_ID = "evidence_claim.v1"
 _FEATURE_SNAPSHOT_CONTRACT_ID = "feature_snapshot.v1"
@@ -421,6 +457,18 @@ def _parse_temporal(value: object) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
+def _finite_decimal(value: object) -> Decimal | None:
+    """Return one finite JSON number without lossy float coercion."""
+
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    try:
+        parsed = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return None
+    return parsed if parsed.is_finite() else None
+
+
 def _ordered_pair_issue(
     document: Mapping[str, Any],
     path: tuple[object, ...],
@@ -445,8 +493,25 @@ def _ordered_pair_issue(
     return None
 
 
-def _interval_issues(value: Any, path: tuple[object, ...] = ()) -> list[ValidationIssue]:
+def _interval_issues(
+    value: Any,
+    path: tuple[object, ...] = (),
+    active_container_ids: set[int] | None = None,
+) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
+    is_container = isinstance(value, (Mapping, list))
+    active = active_container_ids if active_container_ids is not None else set()
+    container_id = id(value)
+    if is_container and container_id in active:
+        return [
+            ValidationIssue(
+                _json_path(path),
+                "schema.cyclic_document",
+                "contract documents must be acyclic JSON trees",
+            )
+        ]
+    if is_container:
+        active.add(container_id)
     if isinstance(value, Mapping):
         for first, second, code in (
             ("valid_from", "valid_to", "interval.valid"),
@@ -471,10 +536,12 @@ def _interval_issues(value: Any, path: tuple[object, ...] = ()) -> list[Validati
                     )
 
         for key in sorted(value, key=lambda item: str(item)):
-            issues.extend(_interval_issues(value[key], (*path, key)))
+            issues.extend(_interval_issues(value[key], (*path, key), active))
     elif isinstance(value, list):
         for index, item in enumerate(value):
-            issues.extend(_interval_issues(item, (*path, index)))
+            issues.extend(_interval_issues(item, (*path, index), active))
+    if is_container:
+        active.remove(container_id)
     return issues
 
 
@@ -553,6 +620,848 @@ def _content_hash_issue(
         code,
         f"declared hash {expected} does not match canonical payload hash {actual}",
     )
+
+
+def _biocatalyst_launch_slo_manifest_issues(
+    document: Mapping[str, Any], repo_root: Path
+) -> list[ValidationIssue]:
+    """Validate the immutable launch policy against the canonical source registry.
+
+    This is intentionally a read-only acceptance check.  The manifest can
+    describe an eventual soak, but it cannot arm a source, alter rights, or
+    convert absent telemetry into a release pass.
+    """
+
+    issues: list[ValidationIssue] = []
+    hash_payload = {
+        key: value
+        for key, value in document.items()
+        if key not in {"manifest_id", "content_sha256"}
+    }
+    try:
+        actual_content_hash = canonical_json_sha256(hash_payload)
+    except ContractError:
+        issues.append(
+            ValidationIssue(
+                "$",
+                "launch_slo.canonical_payload",
+                "launch SLO manifests must be canonicalizable finite JSON",
+            )
+        )
+        return issues
+    declared_content_hash = document.get("content_sha256")
+    if (
+        isinstance(declared_content_hash, str)
+        and declared_content_hash != actual_content_hash
+    ):
+        issues.append(
+            ValidationIssue(
+                "$.content_sha256",
+                "launch_slo.hash",
+                "content_sha256 must bind the canonical manifest payload excluding "
+                "manifest_id and content_sha256",
+            )
+        )
+
+    expected_manifest_id = f"biocatalyst_launch_slo_{actual_content_hash[:24]}"
+    manifest_id = document.get("manifest_id")
+    if isinstance(manifest_id, str) and manifest_id != expected_manifest_id:
+        issues.append(
+            ValidationIssue(
+                "$.manifest_id",
+                "launch_slo.identity",
+                f"manifest_id must equal {expected_manifest_id!r}",
+            )
+        )
+    if manifest_id is not None and document.get("supersedes_manifest_id") == manifest_id:
+        issues.append(
+            ValidationIssue(
+                "$.supersedes_manifest_id",
+                "launch_slo.self_supersession",
+                "a launch SLO manifest cannot supersede itself",
+            )
+        )
+    predecessor_id = document.get("supersedes_manifest_id")
+    predecessor_hash = document.get("supersedes_manifest_content_sha256")
+    if isinstance(predecessor_id, str) and isinstance(predecessor_hash, str):
+        expected_predecessor_id = (
+            f"biocatalyst_launch_slo_{predecessor_hash[:24]}"
+        )
+        if predecessor_id != expected_predecessor_id:
+            issues.append(
+                ValidationIssue(
+                    "$.supersedes_manifest_content_sha256",
+                    "launch_slo.predecessor_identity",
+                    "the predecessor manifest ID must be derived from its full content SHA-256",
+                )
+            )
+
+    registry_path = repo_root / "config" / "biocatalyst_sources.yml"
+    source_registry: Mapping[str, Any] | None = None
+    try:
+        registry_bytes = registry_path.read_bytes()
+        registry_sha256 = hashlib.sha256(registry_bytes).hexdigest()
+        import yaml  # noqa: PLC0415 - only the BioCatalyst policy needs YAML.
+
+        loaded_registry = yaml.safe_load(registry_bytes.decode("utf-8"))
+        if isinstance(loaded_registry, Mapping):
+            source_registry = loaded_registry
+        else:
+            raise ValueError("source registry must contain a mapping")
+    except Exception as exc:  # noqa: BLE001 - a missing registry is a hard policy issue.
+        issues.append(
+            ValidationIssue(
+                "$.source_registry_ref",
+                "launch_slo.source_registry_unavailable",
+                f"canonical source registry could not be loaded: {exc}",
+            )
+        )
+        return issues
+
+    if document.get("source_registry_sha256") != registry_sha256:
+        issues.append(
+            ValidationIssue(
+                "$.source_registry_sha256",
+                "launch_slo.source_registry_hash",
+                "source_registry_sha256 must bind the exact committed registry bytes",
+            )
+        )
+
+    registered_sources = source_registry.get("sources")
+    if not isinstance(registered_sources, Mapping):
+        issues.append(
+            ValidationIssue(
+                "$.source_registry_ref",
+                "launch_slo.source_registry_shape",
+                "source registry must expose a sources mapping",
+            )
+        )
+        return issues
+
+    launch_critical_ids = {
+        str(source_id)
+        for source_id, source in registered_sources.items()
+        if isinstance(source, Mapping) and source.get("launch_critical") is True
+    }
+    rows = document.get("sources")
+    manifest_rows = rows if isinstance(rows, list) else []
+    manifest_ids = [
+        str(row.get("source_id"))
+        for row in manifest_rows
+        if isinstance(row, Mapping) and isinstance(row.get("source_id"), str)
+    ]
+    duplicate_ids = sorted(
+        source_id for source_id, count in Counter(manifest_ids).items() if count > 1
+    )
+    if duplicate_ids:
+        issues.append(
+            ValidationIssue(
+                "$.sources",
+                "launch_slo.duplicate_source",
+                "source rows must be unique: " + ", ".join(duplicate_ids),
+            )
+        )
+    actual_ids = set(manifest_ids)
+    omitted = sorted(launch_critical_ids - actual_ids)
+    unknown_or_noncritical = sorted(actual_ids - launch_critical_ids)
+    if omitted:
+        issues.append(
+            ValidationIssue(
+                "$.sources",
+                "launch_slo.omitted_source",
+                "every launch-critical source must appear exactly once: "
+                + ", ".join(omitted),
+            )
+        )
+    if unknown_or_noncritical:
+        issues.append(
+            ValidationIssue(
+                "$.sources",
+                "launch_slo.unknown_source",
+                "manifest contains unknown or non-launch-critical sources: "
+                + ", ".join(unknown_or_noncritical),
+            )
+        )
+
+    required_telemetry = {
+        "opportunity",
+        "attempt",
+        "fetch",
+        "parse",
+        "contract_validation",
+        "completeness",
+        "publication",
+        "watermark_or_pointer",
+        "freshness",
+        "upstream_unavailable",
+    }
+    policies_by_source: dict[str, Mapping[str, Any]] = {}
+    for index, row in enumerate(manifest_rows):
+        if not isinstance(row, Mapping):
+            continue
+        source_id = row.get("source_id")
+        if not isinstance(source_id, str):
+            continue
+        policies_by_source[source_id] = row
+        source = registered_sources.get(source_id)
+        if not isinstance(source, Mapping):
+            continue
+        binding = row.get("registry_binding")
+        if not isinstance(binding, Mapping):
+            continue
+        expected_bindings = {
+            "launch_critical": source.get("launch_critical"),
+            "production_ingest_allowed": source.get("production_ingest_allowed"),
+            "collection_target": source.get("collection_target"),
+            "opportunity_semantics": source.get("opportunity_semantics"),
+            "completeness_semantics": source.get("completeness_semantics"),
+            "freshness_slo_seconds": source.get("freshness_slo_seconds"),
+            "maximum_consecutive_misses": source.get("maximum_consecutive_misses"),
+        }
+        for field, expected in expected_bindings.items():
+            if binding.get(field) != expected:
+                issues.append(
+                    ValidationIssue(
+                        f"$.sources[{index}].registry_binding.{field}",
+                        "launch_slo.registry_mismatch",
+                        f"must exactly match source registry value {expected!r}",
+                    )
+                )
+        if row.get("owner") != source.get("owner"):
+            issues.append(
+                ValidationIssue(
+                    f"$.sources[{index}].owner",
+                    "launch_slo.owner_mismatch",
+                    "source owner must exactly match the source registry",
+                )
+            )
+
+        freshness = row.get("freshness")
+        if (
+            isinstance(freshness, Mapping)
+            and freshness.get("maximum_seconds") != source.get("freshness_slo_seconds")
+        ):
+            issues.append(
+                ValidationIssue(
+                    f"$.sources[{index}].freshness.maximum_seconds",
+                    "launch_slo.freshness_mismatch",
+                    "freshness ceiling must equal the registered source SLO",
+                )
+            )
+        opportunity = row.get("opportunity_rule")
+        if isinstance(opportunity, Mapping):
+            opened = opportunity.get("window_open_offset_seconds")
+            closed = opportunity.get("window_close_offset_seconds")
+            cadence = opportunity.get("cadence_seconds")
+            if all(isinstance(value, int) and not isinstance(value, bool) for value in (opened, closed, cadence)):
+                if not (0 <= opened < closed <= cadence):
+                    issues.append(
+                        ValidationIssue(
+                            f"$.sources[{index}].opportunity_rule",
+                            "launch_slo.opportunity_window",
+                            "UTC opportunity offsets must satisfy 0 <= open < close <= cadence",
+                        )
+                    )
+        telemetry = row.get("required_telemetry_streams")
+        if (
+            isinstance(telemetry, list)
+            and all(isinstance(stream, str) for stream in telemetry)
+            and set(telemetry) != required_telemetry
+        ):
+            issues.append(
+                ValidationIssue(
+                    f"$.sources[{index}].required_telemetry_streams",
+                    "launch_slo.telemetry",
+                    "all opportunity, stage, freshness, and upstream-outage streams are required",
+                )
+            )
+        budget = row.get("error_budget")
+        if isinstance(budget, Mapping):
+            success_ratio = budget.get("minimum_opportunity_success_ratio")
+            error_fraction = budget.get("maximum_error_budget_fraction")
+            success_decimal = _finite_decimal(success_ratio)
+            error_decimal = _finite_decimal(error_fraction)
+            if (
+                success_decimal is not None
+                and error_decimal is not None
+                and abs(success_decimal + error_decimal - Decimal("1"))
+                > Decimal("1e-12")
+            ):
+                issues.append(
+                    ValidationIssue(
+                        f"$.sources[{index}].error_budget",
+                        "launch_slo.error_budget",
+                        "minimum success ratio and maximum error fraction must sum to 1",
+                    )
+                )
+
+    state = document.get("state")
+    soak = document.get("soak")
+    if isinstance(soak, Mapping):
+        raw_start = soak.get("window_start")
+        raw_end = soak.get("window_end")
+        start = _parse_temporal(raw_start)
+        end = _parse_temporal(raw_end)
+        window_states = {
+            "soak_scheduled",
+            "soak_complete_passed",
+            "soak_complete_failed",
+        }
+        window_valid = bool(
+            isinstance(raw_start, str)
+            and isinstance(raw_end, str)
+            and raw_start.endswith("Z")
+            and raw_end.endswith("Z")
+            and start is not None
+            and end is not None
+            and end - start == timedelta(days=14)
+        )
+        if state in window_states and not window_valid:
+            issues.append(
+                ValidationIssue(
+                    "$.soak",
+                    "launch_slo.soak_window",
+                    "scheduled and completed soaks require canonical-Z bounds for one exact fourteen-day UTC window",
+                )
+            )
+        if state in window_states:
+            effective = _parse_temporal(document.get("effective_at"))
+            if effective is not None and start is not None and effective > start:
+                issues.append(
+                    ValidationIssue(
+                        "$.effective_at",
+                        "launch_slo.effective_after_start",
+                        "the frozen manifest must become effective no later than its soak start",
+                    )
+                )
+            blockers = soak.get("scheduling_blockers")
+            if isinstance(blockers, list) and blockers:
+                issues.append(
+                    ValidationIssue(
+                        "$.soak.scheduling_blockers",
+                        "launch_slo.active_soak_blockers",
+                        "scheduled and completed soaks cannot retain unresolved scheduling blockers",
+                    )
+                )
+        if state == "pre_soak_unarmed":
+            if not soak.get("scheduling_blockers"):
+                issues.append(
+                    ValidationIssue(
+                        "$.soak.scheduling_blockers",
+                        "launch_slo.pre_soak_blockers",
+                        "an unarmed pre-soak manifest must state why the window is not scheduled",
+                    )
+                )
+            for index, row in enumerate(manifest_rows):
+                if isinstance(row, Mapping) and row.get("activation_state") != "dark_unarmed":
+                    issues.append(
+                        ValidationIssue(
+                            f"$.sources[{index}].activation_state",
+                            "launch_slo.pre_soak_activation",
+                            "pre-soak source rows must remain dark and unarmed",
+                        )
+                    )
+        if state == "soak_complete_passed":
+            for index, row in enumerate(manifest_rows):
+                if isinstance(row, Mapping) and row.get("activation_state") != "armed":
+                    issues.append(
+                        ValidationIssue(
+                            f"$.sources[{index}].activation_state",
+                            "launch_slo.passed_soak_activation",
+                            "a claimed completed pass requires every source row to have been armed",
+                        )
+                    )
+
+        artifact_slots: tuple[tuple[str, object, str], ...] = (
+            (
+                "$.soak.telemetry_generation_ref",
+                soak.get("telemetry_generation_ref"),
+                "telemetry_generation",
+            ),
+            (
+                "$.soak.ci_validation_receipt_ref",
+                soak.get("ci_validation_receipt_ref"),
+                "ci_validation",
+            ),
+        )
+        artifact_lists: tuple[tuple[str, object, str], ...] = (
+            (
+                "$.soak.raw_telemetry_refs",
+                soak.get("raw_telemetry_refs"),
+                "raw_telemetry",
+            ),
+            (
+                "$.soak.correction_replay_evidence_refs",
+                soak.get("correction_replay_evidence_refs"),
+                "correction_replay",
+            ),
+            (
+                "$.soak.rollback_restore_evidence_refs",
+                soak.get("rollback_restore_evidence_refs"),
+                "rollback_restore",
+            ),
+        )
+        artifacts: list[tuple[str, Mapping[str, Any], str]] = []
+        for path, candidate, expected_kind in artifact_slots:
+            if isinstance(candidate, Mapping):
+                artifacts.append((path, candidate, expected_kind))
+        for path, candidates, expected_kind in artifact_lists:
+            if not isinstance(candidates, list):
+                continue
+            artifacts.extend(
+                (f"{path}[{index}]", candidate, expected_kind)
+                for index, candidate in enumerate(candidates)
+                if isinstance(candidate, Mapping)
+            )
+        artifact_digest_paths: dict[str, str] = {}
+        for path, artifact, expected_kind in artifacts:
+            digest = artifact.get("content_sha256")
+            artifact_id = artifact.get("artifact_id")
+            object_ref = artifact.get("object_ref")
+            if artifact.get("kind") != expected_kind:
+                issues.append(
+                    ValidationIssue(
+                        f"{path}.kind",
+                        "launch_slo.artifact_kind",
+                        f"this evidence slot requires kind {expected_kind!r}",
+                    )
+                )
+            if (
+                artifact.get("scheduled_manifest_id") != predecessor_id
+                or artifact.get("scheduled_manifest_content_sha256")
+                != predecessor_hash
+            ):
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        "launch_slo.artifact_manifest_binding",
+                        "every evidence artifact must bind the exact scheduled predecessor ID and full digest",
+                    )
+                )
+            if (
+                artifact.get("window_start") != raw_start
+                or artifact.get("window_end") != raw_end
+            ):
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        "launch_slo.artifact_window_binding",
+                        "every evidence artifact must bind the exact frozen soak window",
+                    )
+                )
+            artifact_source_id = artifact.get("source_id")
+            if (
+                artifact_source_id is not None
+                and artifact_source_id not in launch_critical_ids
+            ):
+                issues.append(
+                    ValidationIssue(
+                        f"{path}.source_id",
+                        "launch_slo.artifact_source_binding",
+                        "artifact source_id must be null for aggregate evidence or one launch-critical source",
+                    )
+                )
+            if (
+                isinstance(digest, str)
+                and artifact_id != f"biocatalyst_artifact_{digest[:24]}"
+            ):
+                issues.append(
+                    ValidationIssue(
+                        f"{path}.artifact_id",
+                        "launch_slo.artifact_identity",
+                        "artifact_id must be derived from the declared content SHA-256",
+                    )
+                )
+            if (
+                isinstance(digest, str)
+                and isinstance(object_ref, str)
+                and digest not in object_ref
+            ):
+                issues.append(
+                    ValidationIssue(
+                        f"{path}.object_ref",
+                        "launch_slo.artifact_object_ref",
+                        "the immutable object reference must contain the full content SHA-256",
+                    )
+                )
+            if isinstance(digest, str):
+                prior_path = artifact_digest_paths.get(digest)
+                if prior_path is not None:
+                    issues.append(
+                        ValidationIssue(
+                            f"{path}.content_sha256",
+                            "launch_slo.artifact_role_reuse",
+                            f"evidence roles must bind distinct artifacts; digest already appears at {prior_path}",
+                        )
+                    )
+                else:
+                    artifact_digest_paths[digest] = path
+
+        scheduled_opportunities: dict[str, int] = {}
+        if window_valid and start is not None and end is not None:
+            epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
+            start_delta = start - epoch
+            start_microseconds = (
+                (start_delta.days * 86400 + start_delta.seconds) * 1_000_000
+                + start_delta.microseconds
+            )
+            duration = end - start
+            duration_seconds = duration.days * 86400 + duration.seconds
+            for index, row in enumerate(manifest_rows):
+                if not isinstance(row, Mapping) or not isinstance(row.get("source_id"), str):
+                    continue
+                opportunity = row.get("opportunity_rule")
+                cadence = (
+                    opportunity.get("cadence_seconds")
+                    if isinstance(opportunity, Mapping)
+                    else None
+                )
+                if not isinstance(cadence, int) or isinstance(cadence, bool) or cadence <= 0:
+                    continue
+                if (
+                    start_microseconds % (cadence * 1_000_000) != 0
+                    or duration_seconds % cadence != 0
+                ):
+                    issues.append(
+                        ValidationIssue(
+                            f"$.sources[{index}].opportunity_rule.cadence_seconds",
+                            "launch_slo.schedule_alignment",
+                            "the UTC soak bounds must align exactly to every source cadence",
+                        )
+                    )
+                    continue
+                scheduled_opportunities[row["source_id"]] = duration_seconds // cadence
+
+        results = soak.get("source_results")
+        source_results = results if isinstance(results, list) else []
+        if state in {"soak_complete_passed", "soak_complete_failed"}:
+            result_ids = {
+                str(result.get("source_id"))
+                for result in source_results
+                if isinstance(result, Mapping)
+            }
+            if result_ids != launch_critical_ids or len(source_results) != len(result_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.soak.source_results",
+                        "launch_slo.result_source_set",
+                        "completed soak results must cover every launch-critical source exactly once",
+                    )
+                )
+
+        stage_names = (
+            "fetch",
+            "parse",
+            "contract_validation",
+            "completeness_reconciliation",
+            "publication",
+            "watermark_or_pointer",
+        )
+        computed_passes: list[bool] = []
+        for index, result in enumerate(source_results):
+            if not isinstance(result, Mapping):
+                continue
+            source_id = result.get("source_id")
+            policy = policies_by_source.get(str(source_id))
+            if policy is None:
+                continue
+            expected = result.get("expected_opportunities")
+            maintenance = result.get("excluded_predeclared_maintenance")
+            nonpublication = result.get("excluded_source_native_nonpublication")
+            denominator = result.get("denominator")
+            successful = result.get("successful_opportunities")
+            misses = result.get("misses")
+            integer_values = (
+                expected,
+                maintenance,
+                nonpublication,
+                denominator,
+                successful,
+                misses,
+            )
+            integers_valid = all(
+                isinstance(value, int) and not isinstance(value, bool)
+                for value in integer_values
+            )
+            expected_from_schedule = scheduled_opportunities.get(str(source_id))
+            schedule_matches = bool(
+                isinstance(expected, int)
+                and not isinstance(expected, bool)
+                and expected_from_schedule is not None
+                and expected == expected_from_schedule
+            )
+            if expected_from_schedule is not None and expected != expected_from_schedule:
+                issues.append(
+                    ValidationIssue(
+                        f"$.soak.source_results[{index}].expected_opportunities",
+                        "launch_slo.expected_opportunities",
+                        f"expected opportunities must be derived from the frozen UTC schedule ({expected_from_schedule})",
+                    )
+                )
+
+            denominator_policy = policy.get("denominator_policy")
+            maintenance_supported = maintenance == 0
+            if isinstance(maintenance, int) and not isinstance(maintenance, bool) and maintenance:
+                issues.append(
+                    ValidationIssue(
+                        f"$.soak.source_results[{index}].excluded_predeclared_maintenance",
+                        "launch_slo.maintenance_exclusion_unverifiable",
+                        "v1 has no structured interval ledger, so maintenance exclusions must remain zero",
+                    )
+                )
+            nonpublication_supported = nonpublication == 0
+            treatment = (
+                denominator_policy.get("source_nonpublication_treatment")
+                if isinstance(denominator_policy, Mapping)
+                else None
+            )
+            if (
+                isinstance(nonpublication, int)
+                and not isinstance(nonpublication, bool)
+                and nonpublication
+            ):
+                code = (
+                    "launch_slo.nonpublication_must_remain_in_denominator"
+                    if treatment
+                    == "retain_in_denominator_fetch_and_validate_unchanged_state"
+                    else "launch_slo.nonpublication_exclusion_unverifiable"
+                )
+                issues.append(
+                    ValidationIssue(
+                        f"$.soak.source_results[{index}].excluded_source_native_nonpublication",
+                        code,
+                        "source-native nonpublication cannot leave the denominator without a structured predeclared evidence ledger",
+                    )
+                )
+
+            reconciliation_matches = False
+            if integers_valid:
+                expected_denominator = expected - maintenance - nonpublication
+                reconciliation_matches = bool(
+                    denominator == expected_denominator
+                    and successful + misses == denominator
+                )
+                if not reconciliation_matches:
+                    issues.append(
+                        ValidationIssue(
+                            f"$.soak.source_results[{index}].denominator",
+                            "launch_slo.denominator",
+                            "denominator must equal schedule-derived opportunities minus only eligible exclusions, and successes plus misses must reconcile",
+                        )
+                    )
+
+            upstream_unavailable = result.get("upstream_unavailable_observations")
+            if (
+                isinstance(upstream_unavailable, int)
+                and not isinstance(upstream_unavailable, bool)
+                and isinstance(misses, int)
+                and not isinstance(misses, bool)
+                and upstream_unavailable > misses
+            ):
+                issues.append(
+                    ValidationIssue(
+                        f"$.soak.source_results[{index}].upstream_unavailable_observations",
+                        "launch_slo.upstream_outage",
+                        "upstream-unavailable observations are denominator misses, never exclusions",
+                    )
+                )
+
+            stage_successes = result.get("stage_successes")
+            stage_counts_valid = isinstance(stage_successes, Mapping)
+            if isinstance(stage_successes, Mapping):
+                prior_stage_count: int | None = None
+                for stage in stage_names:
+                    count = stage_successes.get(stage)
+                    valid_count = isinstance(count, int) and not isinstance(count, bool)
+                    stage_counts_valid = stage_counts_valid and valid_count
+                    if (
+                        valid_count
+                        and isinstance(denominator, int)
+                        and not isinstance(denominator, bool)
+                        and count > denominator
+                    ):
+                        stage_counts_valid = False
+                        issues.append(
+                            ValidationIssue(
+                                f"$.soak.source_results[{index}].stage_successes.{stage}",
+                                "launch_slo.stage_denominator",
+                                "a stage success count cannot exceed the opportunity denominator",
+                            )
+                        )
+                    if (
+                        valid_count
+                        and prior_stage_count is not None
+                        and count > prior_stage_count
+                    ):
+                        stage_counts_valid = False
+                        issues.append(
+                            ValidationIssue(
+                                f"$.soak.source_results[{index}].stage_successes.{stage}",
+                                "launch_slo.stage_reconciliation",
+                                "stage success counts must be non-increasing in pipeline order",
+                            )
+                        )
+                    if valid_count:
+                        prior_stage_count = count
+                terminal_count = stage_successes.get("watermark_or_pointer")
+                if (
+                    isinstance(terminal_count, int)
+                    and not isinstance(terminal_count, bool)
+                    and isinstance(successful, int)
+                    and not isinstance(successful, bool)
+                    and terminal_count != successful
+                ):
+                    stage_counts_valid = False
+                    issues.append(
+                        ValidationIssue(
+                            f"$.soak.source_results[{index}].stage_successes.watermark_or_pointer",
+                            "launch_slo.stage_reconciliation",
+                            "the terminal watermark-or-pointer count must equal end-to-end successful opportunities",
+                        )
+                    )
+
+            max_misses_observed = result.get("maximum_consecutive_misses_observed")
+            miss_run_valid = bool(
+                isinstance(max_misses_observed, int)
+                and not isinstance(max_misses_observed, bool)
+                and isinstance(misses, int)
+                and not isinstance(misses, bool)
+                and (
+                    (misses == 0 and max_misses_observed == 0)
+                    or (misses > 0 and 1 <= max_misses_observed <= misses)
+                )
+            )
+            if (
+                isinstance(max_misses_observed, int)
+                and not isinstance(max_misses_observed, bool)
+                and isinstance(misses, int)
+                and not isinstance(misses, bool)
+                and not miss_run_valid
+            ):
+                issues.append(
+                    ValidationIssue(
+                        f"$.soak.source_results[{index}].maximum_consecutive_misses_observed",
+                        "launch_slo.consecutive_misses",
+                        "maximum consecutive misses must reconcile with the total miss count",
+                    )
+                )
+
+            budget = policy.get("error_budget")
+            freshness_policy = policy.get("freshness")
+            completeness_policy = policy.get("completeness")
+            registry_binding = policy.get("registry_binding")
+            threshold = (
+                _finite_decimal(budget.get("minimum_opportunity_success_ratio"))
+                if isinstance(budget, Mapping)
+                else None
+            )
+            ratio = (
+                Decimal(successful) / Decimal(denominator)
+                if isinstance(successful, int)
+                and not isinstance(successful, bool)
+                and isinstance(denominator, int)
+                and not isinstance(denominator, bool)
+                and denominator > 0
+                else None
+            )
+            freshness_observed = _finite_decimal(result.get("freshness_p95_seconds"))
+            freshness_limit = (
+                _finite_decimal(freshness_policy.get("maximum_seconds"))
+                if isinstance(freshness_policy, Mapping)
+                else None
+            )
+            completeness_observed = _finite_decimal(
+                result.get("minimum_completeness_ratio_observed")
+            )
+            prior_scope_observed = _finite_decimal(
+                result.get("minimum_vs_prior_scope_ratio_observed")
+            )
+            completeness_limit = (
+                _finite_decimal(completeness_policy.get("minimum_ratio"))
+                if isinstance(completeness_policy, Mapping)
+                else None
+            )
+            prior_scope_limit = (
+                _finite_decimal(
+                    completeness_policy.get("minimum_vs_prior_scope_ratio")
+                )
+                if isinstance(completeness_policy, Mapping)
+                else None
+            )
+            maximum_misses = (
+                registry_binding.get("maximum_consecutive_misses")
+                if isinstance(registry_binding, Mapping)
+                else None
+            )
+            critical_failures = result.get("critical_failure_types")
+            computed_pass = bool(
+                schedule_matches
+                and maintenance_supported
+                and nonpublication_supported
+                and reconciliation_matches
+                and stage_counts_valid
+                and ratio is not None
+                and threshold is not None
+                and ratio >= threshold
+                and miss_run_valid
+                and isinstance(maximum_misses, int)
+                and not isinstance(maximum_misses, bool)
+                and isinstance(max_misses_observed, int)
+                and max_misses_observed <= maximum_misses
+                and freshness_observed is not None
+                and freshness_limit is not None
+                and freshness_observed <= freshness_limit
+                and completeness_observed is not None
+                and completeness_limit is not None
+                and completeness_observed >= completeness_limit
+                and prior_scope_observed is not None
+                and prior_scope_limit is not None
+                and prior_scope_observed >= prior_scope_limit
+                and isinstance(critical_failures, list)
+                and not critical_failures
+            )
+            computed_passes.append(computed_pass)
+            if result.get("passed") is not computed_pass:
+                issues.append(
+                    ValidationIssue(
+                        f"$.soak.source_results[{index}].passed",
+                        "launch_slo.source_pass",
+                        "declared source pass must equal the frozen schedule, every stage gate, thresholds, and unconditional-failure policy",
+                    )
+                )
+
+        if source_results:
+            aggregate_pass = bool(computed_passes) and all(computed_passes)
+            if soak.get("aggregate_passed") is not aggregate_pass:
+                issues.append(
+                    ValidationIssue(
+                        "$.soak.aggregate_passed",
+                        "launch_slo.aggregate_pass",
+                        "aggregate pass is true only when every launch-critical source passes",
+                    )
+                )
+        if state == "soak_complete_passed":
+            if not soak.get("aggregate_passed"):
+                issues.append(
+                    ValidationIssue(
+                        "$.state",
+                        "launch_slo.false_release_pass",
+                        "soak_complete_passed requires an all-source pass",
+                    )
+                )
+        claimed_source_pass = any(
+            isinstance(result, Mapping) and result.get("passed") is True
+            for result in source_results
+        )
+        if soak.get("aggregate_passed") is True or claimed_source_pass:
+            issues.append(
+                ValidationIssue(
+                    "$.soak.aggregate_passed",
+                    "launch_slo.trusted_evidence_verifier_unavailable",
+                    "no lifecycle label can carry a pass until BC-O2 resolves content-addressed telemetry and recovery artifacts and recomputes every result",
+                )
+            )
+    return issues
 
 
 def _timestamp_order_issue(
@@ -1179,6 +2088,254 @@ def _trial_projection_issues(document: Mapping[str, Any]) -> list[ValidationIssu
                 "source_published_at cannot be later than retrieved_at",
             )
         )
+    return issues
+
+
+def _trial_protocol_projection_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    """Keep a public protocol artifact tied to one immutable source cut."""
+
+    issues: list[ValidationIssue] = []
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="protocol_projection_sha256",
+        excluded_fields=frozenset(("protocol_projection_sha256",)),
+        code="trial_protocol_projection.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    nct_id = document.get("nct_id")
+    source_snapshot_ref = document.get("source_snapshot_ref")
+    canonical_sha = document.get("canonical_content_sha256")
+    if (
+        isinstance(nct_id, str)
+        and isinstance(source_snapshot_ref, str)
+        and isinstance(canonical_sha, str)
+    ):
+        expected_id = "trial_protocol_" + nct_id + "_" + canonical_json_sha256(
+            {
+                "nct_id": nct_id,
+                "source_snapshot_ref": source_snapshot_ref,
+                "canonical_content_sha256": canonical_sha,
+            }
+        )[:24]
+        if document.get("protocol_projection_id") != expected_id:
+            issues.append(
+                ValidationIssue(
+                    "$.protocol_projection_id",
+                    "trial_protocol_projection.identity",
+                    "protocol_projection_id must be bound to the source snapshot and canonical content hash",
+                )
+            )
+        expected_source_record_ref = f"src:ctgov:{nct_id}:sha256:{canonical_sha}"
+        if document.get("source_record_ref") != expected_source_record_ref:
+            issues.append(
+                ValidationIssue(
+                    "$.source_record_ref",
+                    "trial_protocol_projection.source_record",
+                    "source_record_ref must bind the wrapper NCT ID and canonical content hash",
+                )
+            )
+        attribution = document.get("source_attribution")
+        if (
+            isinstance(attribution, Mapping)
+            and attribution.get("source_uri") != f"https://clinicaltrials.gov/study/{nct_id}"
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.source_attribution.source_uri",
+                    "trial_protocol_projection.source_uri",
+                    "source_uri must bind the wrapper NCT ID",
+                )
+            )
+    first_seen = _parse_temporal(document.get("first_seen_at"))
+    retrieved = _parse_temporal(document.get("retrieved_at"))
+    cutoff = _parse_temporal(document.get("knowledge_cutoff"))
+    if first_seen is not None and retrieved is not None and first_seen > retrieved:
+        issues.append(
+            ValidationIssue(
+                "$.first_seen_at",
+                "trial_protocol_projection.chronology",
+                "first_seen_at must not be later than retrieved_at",
+            )
+        )
+    if retrieved is not None and cutoff is not None and retrieved != cutoff:
+        issues.append(
+            ValidationIssue(
+                "$.knowledge_cutoff",
+                "trial_protocol_projection.knowledge_cutoff",
+                "knowledge_cutoff must equal retrieved_at for a current protocol projection",
+            )
+        )
+    return issues
+
+
+def _trial_peer_set_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    """Enforce deterministic, explicit-cohort peer-set semantics."""
+
+    issues: list[ValidationIssue] = []
+    cohort = document.get("cohort_nct_ids")
+    uncovered = document.get("uncovered_nct_ids")
+    trials = document.get("trials")
+    coverage = document.get("coverage")
+    pagination = document.get("pagination")
+    if isinstance(cohort, list) and all(isinstance(item, str) for item in cohort):
+        if cohort != sorted(cohort):
+            issues.append(
+                ValidationIssue(
+                    "$.cohort_nct_ids",
+                    "trial_peer_set.cohort_order",
+                    "explicit cohort NCT IDs must be in lexical order",
+                )
+            )
+    if isinstance(uncovered, list) and all(isinstance(item, str) for item in uncovered):
+        if uncovered != sorted(uncovered):
+            issues.append(
+                ValidationIssue(
+                    "$.uncovered_nct_ids",
+                    "trial_peer_set.uncovered_order",
+                    "uncovered NCT IDs must be in lexical order",
+                )
+            )
+        if isinstance(cohort, list) and any(item not in cohort for item in uncovered):
+            issues.append(
+                ValidationIssue(
+                    "$.uncovered_nct_ids",
+                    "trial_peer_set.uncovered_scope",
+                    "uncovered NCT IDs must be members of the explicit cohort",
+                )
+            )
+    trial_ids: list[str] = []
+    if isinstance(trials, list):
+        trial_ids = [item.get("nct_id") for item in trials if isinstance(item, Mapping)]
+        if len(trial_ids) == len(trials) and all(isinstance(item, str) for item in trial_ids):
+            if trial_ids != sorted(trial_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.trials",
+                        "trial_peer_set.trial_order",
+                        "covered trials must be in lexical NCT order",
+                    )
+                )
+            if len(set(trial_ids)) != len(trial_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.trials",
+                        "trial_peer_set.trial_unique",
+                        "covered trial NCT IDs must be unique within a page",
+                    )
+                )
+            if isinstance(cohort, list) and any(item not in cohort for item in trial_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.trials",
+                        "trial_peer_set.trial_scope",
+                        "covered trials must be members of the explicit cohort",
+                    )
+                )
+            for index, trial in enumerate(trials):
+                if not isinstance(trial, Mapping):
+                    continue
+                row_nct_id = trial.get("nct_id")
+                evidence = trial.get("evidence")
+                if not isinstance(row_nct_id, str) or not isinstance(evidence, Mapping):
+                    continue
+                if evidence.get("record_id") != row_nct_id:
+                    issues.append(
+                        ValidationIssue(
+                            _json_path(("trials", index, "evidence", "record_id")),
+                            "trial_peer_set.evidence_record",
+                            "evidence.record_id must bind the row NCT ID",
+                        )
+                    )
+                if evidence.get("url") != f"https://clinicaltrials.gov/study/{row_nct_id}":
+                    issues.append(
+                        ValidationIssue(
+                            _json_path(("trials", index, "evidence", "url")),
+                            "trial_peer_set.evidence_url",
+                            "evidence.url must bind the row NCT ID",
+                        )
+                    )
+            if isinstance(uncovered, list) and any(item in uncovered for item in trial_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.trials",
+                        "trial_peer_set.coverage_overlap",
+                        "a trial cannot be both covered and uncovered",
+                    )
+                )
+    if isinstance(cohort, list) and isinstance(uncovered, list) and isinstance(coverage, Mapping):
+        expected_covered = len(cohort) - len(uncovered)
+        if coverage.get("requested_count") != len(cohort):
+            issues.append(
+                ValidationIssue(
+                    "$.coverage.requested_count",
+                    "trial_peer_set.requested_count",
+                    "requested_count must equal the explicit cohort size",
+                )
+            )
+        if coverage.get("uncovered_count") != len(uncovered):
+            issues.append(
+                ValidationIssue(
+                    "$.coverage.uncovered_count",
+                    "trial_peer_set.uncovered_count",
+                    "uncovered_count must equal uncovered_nct_ids length",
+                )
+            )
+        if coverage.get("covered_count") != expected_covered:
+            issues.append(
+                ValidationIssue(
+                    "$.coverage.covered_count",
+                    "trial_peer_set.covered_count",
+                    "covered_count must equal requested_count minus uncovered_count",
+                )
+            )
+        if isinstance(pagination, Mapping) and pagination.get("total") != expected_covered:
+            issues.append(
+                ValidationIssue(
+                    "$.pagination.total",
+                    "trial_peer_set.total",
+                    "pagination total must equal covered_count",
+                )
+            )
+    if isinstance(pagination, Mapping) and isinstance(trials, list):
+        limit = pagination.get("limit")
+        if isinstance(limit, int) and len(trials) > limit:
+            issues.append(
+                ValidationIssue(
+                    "$.trials",
+                    "trial_peer_set.page_bound",
+                    "returned trials may not exceed the declared page limit",
+                )
+            )
+    as_of = _parse_temporal(document.get("as_of"))
+    if isinstance(trials, list) and as_of is not None:
+        for index, trial in enumerate(trials):
+            if not isinstance(trial, Mapping):
+                continue
+            evidence = trial.get("evidence")
+            record_age = trial.get("record_age")
+            if not isinstance(evidence, Mapping) or not isinstance(record_age, Mapping):
+                continue
+            retrieved = _parse_temporal(evidence.get("retrieved_at"))
+            if retrieved is None:
+                continue
+            elapsed_seconds = (as_of - retrieved).total_seconds()
+            if elapsed_seconds < 0:
+                issues.append(
+                    ValidationIssue(
+                        _json_path(("trials", index, "record_age")),
+                        "trial_peer_set.record_age_chronology",
+                        "record age cannot be negative relative to response as_of",
+                    )
+                )
+            elif record_age.get("seconds") != int(elapsed_seconds):
+                issues.append(
+                    ValidationIssue(
+                        _json_path(("trials", index, "record_age", "seconds")),
+                        "trial_peer_set.record_age_binding",
+                        "record age seconds must equal the floored as_of minus retrieved_at interval",
+                    )
+                )
     return issues
 
 
@@ -1921,8 +3078,622 @@ def _fda_application_dossier_issues(document: Mapping[str, Any]) -> list[Validat
     return issues
 
 
+def _biocatalyst_product_repo_file(
+    repo_root: Path, relative_path: Any
+) -> Path | None:
+    """Resolve a manifest-owned file without accepting traversal or an external link."""
+
+    if not isinstance(relative_path, str) or not relative_path or "\\" in relative_path:
+        return None
+    unresolved = repo_root.resolve() / relative_path
+    try:
+        unresolved.relative_to(repo_root.resolve())
+    except ValueError:
+        return None
+    # A content-addressed acceptance artifact must name a repository file, not
+    # a symlink whose meaning can change outside the manifest review. Rejecting
+    # every symlink in the declared path is intentional and keeps this validator
+    # equally strict on developer machines and CI checkouts.
+    cursor = unresolved
+    while cursor != repo_root.resolve():
+        if cursor.is_symlink():
+            return None
+        cursor = cursor.parent
+    candidate = unresolved.resolve()
+    try:
+        candidate.relative_to(repo_root.resolve())
+    except ValueError:
+        return None
+    return candidate
+
+
+def _biocatalyst_product_file_binding_issues(
+    binding: Any,
+    *,
+    path: str,
+    repo_root: Path,
+) -> list[ValidationIssue]:
+    """Bind a committed design input to exact bytes, never a mutable label."""
+
+    if not isinstance(binding, Mapping):
+        return []  # JSON Schema owns the shape failure.
+    relative_path = binding.get("path")
+    target = _biocatalyst_product_repo_file(repo_root, relative_path)
+    if target is None or not target.is_file():
+        return [
+            ValidationIssue(
+                f"{path}.path",
+                "product_acceptance.file_unavailable",
+                "bound artifact must be a committed regular file below the repository root",
+            )
+        ]
+    expected = binding.get("sha256")
+    actual = hashlib.sha256(target.read_bytes()).hexdigest()
+    if isinstance(expected, str) and expected != actual:
+        return [
+            ValidationIssue(
+                f"{path}.sha256",
+                "product_acceptance.file_hash",
+                "bound artifact SHA-256 must match exact committed bytes",
+            )
+        ]
+    return []
+
+
+def _biocatalyst_product_acceptance_manifest_issues(
+    document: Mapping[str, Any], repo_root: Path
+) -> list[ValidationIssue]:
+    """Fail-closed validation for the D0a finite visual/performance contract.
+
+    The validator proves only that the *draft corpus* is immutable, finite, and
+    internally coherent. This v1 is draft-only and deliberately cannot confer product
+    release authority under any self-described manifest state or receipt combination.
+    """
+
+    issues: list[ValidationIssue] = []
+    payload = {
+        key: value
+        for key, value in document.items()
+        if key not in {"manifest_id", "content_sha256"}
+    }
+    try:
+        digest = canonical_json_sha256(payload)
+    except ContractError:
+        return [
+            ValidationIssue(
+                "$",
+                "product_acceptance.canonical_payload",
+                "product-acceptance manifests must be canonicalizable finite JSON",
+            )
+        ]
+    if document.get("content_sha256") != digest:
+        issues.append(
+            ValidationIssue(
+                "$.content_sha256",
+                "product_acceptance.hash",
+                "content_sha256 must bind canonical payload excluding manifest_id and content_sha256",
+            )
+        )
+    expected_id = f"biocatalyst_product_acceptance_{digest[:24]}"
+    if isinstance(document.get("manifest_id"), str) and document.get("manifest_id") != expected_id:
+        issues.append(
+            ValidationIssue(
+                "$.manifest_id",
+                "product_acceptance.identity",
+                "manifest_id must be derived from the canonical content SHA-256",
+            )
+        )
+    if document.get("state") != "draft_human_approval_pending":
+        issues.append(
+            ValidationIssue(
+                "$.state",
+                "product_acceptance.v1_draft_only",
+                "D0a v1 is a draft-only integrity contract and rejects every acceptance or superseded state",
+            )
+        )
+    if document.get("supersedes_manifest_id") is not None or document.get("supersedes_manifest_content_sha256") is not None:
+        issues.append(
+            ValidationIssue(
+                "$.supersedes_manifest_id",
+                "product_acceptance.v1_supersession_forbidden",
+                "D0a v1 has no predecessor; both supersession fields must remain null",
+            )
+        )
+
+    design_path = _biocatalyst_product_repo_file(repo_root, document.get("design_spec_ref"))
+    if design_path is None or not design_path.is_file():
+        issues.append(
+            ValidationIssue(
+                "$.design_spec_ref",
+                "product_acceptance.file_unavailable",
+                "design spec must be a committed regular file below the repository root",
+            )
+        )
+    elif document.get("design_spec_sha256") != hashlib.sha256(design_path.read_bytes()).hexdigest():
+        issues.append(
+            ValidationIssue(
+                "$.design_spec_sha256",
+                "product_acceptance.file_hash",
+                "design spec SHA-256 must match exact committed bytes",
+            )
+        )
+    expected_bound_paths = {
+        "reference_fixture": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
+        "benchmark_corpus": "data/biocatalyst/fixtures/biocatalyst_d0a_benchmark_corpus.v1.json",
+    }
+    for field, expected_path in expected_bound_paths.items():
+        binding = document.get(field)
+        if isinstance(binding, Mapping) and binding.get("path") != expected_path:
+            issues.append(
+                ValidationIssue(
+                    f"$.{field}.path",
+                    "product_acceptance.binding_path",
+                    "this manifest version must bind its declared D0a artifact kind, not another committed file",
+                )
+            )
+        issues.extend(
+            _biocatalyst_product_file_binding_issues(
+                binding, path=f"$.{field}", repo_root=repo_root
+            )
+        )
+
+    performance = document.get("performance")
+    if isinstance(performance, Mapping):
+        artifacts = performance.get("artifacts")
+        if isinstance(artifacts, list):
+            for index, artifact in enumerate(artifacts):
+                issues.extend(
+                    _biocatalyst_product_file_binding_issues(
+                        artifact,
+                        path=f"$.performance.artifacts[{index}]",
+                        repo_root=repo_root,
+                    )
+                )
+
+    visual = document.get("visual")
+    visual_receipt: Any = None
+    cells = visual.get("cells") if isinstance(visual, Mapping) else None
+    required_states = (
+        set(visual.get("required_state_codes", ()))
+        if isinstance(visual, Mapping) and isinstance(visual.get("required_state_codes"), list)
+        else set()
+    )
+    expected_combinations = {
+        (viewport, theme, language, motion)
+        for viewport in ("desktop", "tablet", "mobile")
+        for theme in ("dark", "light")
+        for language in ("en", "zh")
+        for motion in ("standard", "reduced")
+    }
+    actual_combinations: set[tuple[str, str, str, str]] = set()
+    actual_states: set[str] = set()
+    if isinstance(cells, list):
+        for index, cell in enumerate(cells):
+            if not isinstance(cell, Mapping):
+                continue
+            viewport = cell.get("viewport")
+            if not isinstance(viewport, Mapping):
+                continue
+            name = viewport.get("name")
+            theme = cell.get("theme")
+            language = cell.get("language")
+            motion = cell.get("motion")
+            if all(isinstance(value, str) for value in (name, theme, language, motion)):
+                combo = (name, theme, language, motion)
+                if combo in actual_combinations:
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}]",
+                            "product_acceptance.duplicate_visual_cell",
+                            "viewport/theme/language/motion combination must occur exactly once",
+                        )
+                    )
+                actual_combinations.add(combo)
+                if cell.get("id") != f"d0a_{name}_{theme}_{language}_{motion}":
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].id",
+                            "product_acceptance.visual_cell_identity",
+                            "visual cell ID must exactly derive from its finite matrix coordinates",
+                        )
+                    )
+            state = cell.get("ui_state")
+            if isinstance(state, str):
+                actual_states.add(state)
+            image_path = _biocatalyst_product_repo_file(
+                repo_root, cell.get("reference_png_path")
+            )
+            if image_path is None or not image_path.is_file():
+                issues.append(
+                    ValidationIssue(
+                        f"$.visual.cells[{index}].reference_png_path",
+                        "product_acceptance.reference_unavailable",
+                        "every visual cell needs a committed reference PNG",
+                    )
+                )
+            else:
+                image_bytes = image_path.read_bytes()
+                if cell.get("reference_png_sha256") != hashlib.sha256(image_bytes).hexdigest():
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].reference_png_sha256",
+                            "product_acceptance.reference_hash",
+                            "reference PNG SHA-256 must match exact committed image bytes",
+                        )
+                    )
+                if image_bytes[:8] != b"\x89PNG\r\n\x1a\n" or image_bytes[12:16] != b"IHDR":
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].reference_png_path",
+                            "product_acceptance.reference_png",
+                            "reference image must be a well-formed PNG with an IHDR header",
+                        )
+                    )
+                elif viewport.get("width") != int.from_bytes(image_bytes[16:20], "big") or viewport.get("height") != int.from_bytes(image_bytes[20:24], "big"):
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].viewport",
+                            "product_acceptance.reference_dimensions",
+                            "reference PNG dimensions must exactly match the frozen viewport",
+                        )
+                    )
+            fixture = document.get("reference_fixture")
+            if isinstance(fixture, Mapping):
+                if cell.get("fixture_path") != fixture.get("path") or cell.get("fixture_sha256") != fixture.get("sha256"):
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}]",
+                            "product_acceptance.fixture_binding",
+                            "each visual cell must bind the exact top-level synthetic fixture bytes",
+                        )
+                    )
+            for mask_index, mask in enumerate(cell.get("masks", ())):
+                if not isinstance(mask, Mapping):
+                    continue
+                values = tuple(mask.get(key) for key in ("x", "y", "width", "height"))
+                if not all(isinstance(value, int) and not isinstance(value, bool) for value in values):
+                    continue
+                mask_x, mask_y, mask_width, mask_height = values
+                viewport_width = viewport.get("width")
+                viewport_height = viewport.get("height")
+                if not isinstance(viewport_width, int) or not isinstance(viewport_height, int):
+                    continue
+                if (mask_x + mask_width > viewport_width or mask_y + mask_height > viewport_height or mask_width * mask_height > viewport_width * viewport_height * 0.08):
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].masks[{mask_index}]",
+                            "product_acceptance.unbounded_mask",
+                            "masks must be bounded inside the viewport and cover at most 8% of its area",
+                        )
+                    )
+        if actual_combinations != expected_combinations:
+            issues.append(
+                ValidationIssue(
+                    "$.visual.cells",
+                    "product_acceptance.visual_matrix",
+                    "visual corpus must contain exactly every desktop/tablet/mobile × dark/light × EN/ZH × motion/reduced cell",
+                )
+            )
+        if actual_states != required_states:
+            issues.append(
+                ValidationIssue(
+                    "$.visual.required_state_codes",
+                    "product_acceptance.state_atlas",
+                    "visual cells must cover exactly the finite required state atlas",
+                )
+            )
+    if isinstance(visual, Mapping):
+        renderer_source = visual.get("renderer_source")
+        expected_renderer_path = "mockups/refs/biocatalyst/d0a/render_reference.py"
+        if isinstance(renderer_source, Mapping) and renderer_source.get("path") != expected_renderer_path:
+            issues.append(
+                ValidationIssue(
+                    "$.visual.renderer_source.path",
+                    "product_acceptance.binding_path",
+                    "visual renderer must bind the exact committed D0a renderer source",
+                )
+            )
+        issues.extend(
+            _biocatalyst_product_file_binding_issues(
+                renderer_source, path="$.visual.renderer_source", repo_root=repo_root
+            )
+        )
+        artifact = visual.get("artifact")
+        if isinstance(artifact, Mapping) and artifact.get("path") != "mockups/refs/biocatalyst/d0a/artifacts/visual_capture_receipt.v1.json":
+            issues.append(
+                ValidationIssue(
+                    "$.visual.artifact.path",
+                    "product_acceptance.binding_path",
+                    "visual receipt must bind the D0a capture artifact, not another committed file",
+                )
+            )
+        issues.extend(
+            _biocatalyst_product_file_binding_issues(
+                artifact, path="$.visual.artifact", repo_root=repo_root
+            )
+        )
+        artifact_path = (
+            _biocatalyst_product_repo_file(repo_root, artifact.get("path"))
+            if isinstance(artifact, Mapping)
+            else None
+        )
+        if artifact_path is not None and artifact_path.is_file():
+            try:
+                visual_receipt = json.loads(artifact_path.read_text(encoding="utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                issues.append(
+                    ValidationIssue(
+                        "$.visual.artifact.path",
+                        "product_acceptance.visual_receipt_shape",
+                        "D0a visual receipt must be parseable JSON",
+                    )
+                )
+
+    # The benchmark corpus is a real content-addressed design input. Inspect it rather
+    # than trusting a prose label: a future measured pass must have all dimensions.
+    benchmark = document.get("benchmark_corpus")
+    benchmark_path = (
+        _biocatalyst_product_repo_file(repo_root, benchmark.get("path"))
+        if isinstance(benchmark, Mapping)
+        else None
+    )
+    corpus: Any = None
+    if benchmark_path is not None and benchmark_path.is_file():
+        try:
+            corpus = json.loads(benchmark_path.read_text(encoding="utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.path",
+                    "product_acceptance.benchmark_shape",
+                    "frozen benchmark corpus must be parseable JSON",
+                )
+            )
+    if isinstance(corpus, Mapping):
+        required_corpus_fields = {
+            "projection_generation", "projection_path", "projection_sha256",
+            "primary_endpoints", "search_scenarios", "entitlement_states", "tenant_mix",
+            "environment", "warmup", "browser_device_network_profiles",
+            "measurement_rules", "future_measurement_receipt",
+        }
+        missing_fields = sorted(field for field in required_corpus_fields if field not in corpus)
+        if missing_fields:
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus",
+                    "product_acceptance.benchmark_dimensions",
+                    "benchmark corpus lacks required dimensions: " + ", ".join(missing_fields),
+                )
+            )
+        projection_path = _biocatalyst_product_repo_file(repo_root, corpus.get("projection_path"))
+        projection: Any = None
+        if projection_path is None or not projection_path.is_file() or corpus.get("projection_sha256") != hashlib.sha256(projection_path.read_bytes()).hexdigest():
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus",
+                    "product_acceptance.projection_binding",
+                    "projection generation must name a committed synthetic/projection file and its exact SHA-256",
+                )
+            )
+        elif corpus.get("projection_path") != "data/biocatalyst/fixtures/biocatalyst_d0a_synthetic_projection.v1.json":
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.projection_path",
+                    "product_acceptance.projection_binding",
+                    "D0a benchmark must bind the exact synthetic projection path",
+                )
+            )
+        else:
+            try:
+                projection = json.loads(projection_path.read_text(encoding="utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                issues.append(
+                    ValidationIssue(
+                        "$.benchmark_corpus.projection_path",
+                        "product_acceptance.projection_shape",
+                        "bound synthetic projection must be parseable JSON",
+                    )
+                )
+        if (
+            corpus.get("projection_generation") != _BIOCATALYST_D0A_PROJECTION_GENERATION
+            or not isinstance(projection, Mapping)
+            or projection.get("synthetic_only") is not True
+            or projection.get("generation_id") != _BIOCATALYST_D0A_PROJECTION_GENERATION
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.projection_generation",
+                    "product_acceptance.projection_generation",
+                    "corpus projection_generation and bound projection generation_id must both equal literal synthetic-d0a-v1",
+                )
+            )
+        endpoints = corpus.get("primary_endpoints")
+        if not isinstance(endpoints, list) or not endpoints or any(
+            not isinstance(endpoint, Mapping)
+            or not all(isinstance(endpoint.get(field), str) and endpoint.get(field) for field in ("method", "path", "response_shape"))
+            or not all(isinstance(endpoint.get(field), int) and endpoint.get(field) > 0 for field in ("page_size", "result_cardinality"))
+            for endpoint in endpoints
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus",
+                    "product_acceptance.endpoint_corpus",
+                    "each primary endpoint needs method, path, page size, cardinality, and response shape",
+                )
+            )
+        has_peer_resolver = isinstance(endpoints, list) and any(
+            isinstance(endpoint, Mapping) and endpoint.get("path") == "/api/biocatalyst/v1/trial-peer-sets:resolve"
+            for endpoint in endpoints
+        )
+        if not has_peer_resolver:
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.primary_endpoints",
+                    "product_acceptance.peer_resolver_corpus",
+                    "first visible Trial Peer Matrix performance corpus must name the bounded peer resolver",
+                )
+            )
+        environment = corpus.get("environment")
+        required_environment = {"host_class", "runtime", "process_runtime", "worker_count", "storage_topology", "network_location"}
+        if not isinstance(environment, Mapping) or any(field not in environment for field in required_environment):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.environment",
+                    "product_acceptance.environment_dimensions",
+                    "benchmark must freeze host, process/runtime, worker count, storage topology, and network location",
+                )
+            )
+        profiles = corpus.get("browser_device_network_profiles")
+        if profiles != list(_BIOCATALYST_D0A_BROWSER_PROFILES):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.browser_device_network_profiles",
+                    "product_acceptance.browser_profiles",
+                    "browser/device/network profiles must equal the literal frozen D0a desktop, tablet, and mobile dictionaries",
+                )
+            )
+
+        if isinstance(visual_receipt, Mapping):
+            renderer_receipt = visual_receipt.get("renderer")
+            renderer_source = visual.get("renderer_source") if isinstance(visual, Mapping) else None
+            fixture_receipt = visual_receipt.get("fixture")
+            projection_receipt = visual_receipt.get("projection")
+            reference_fixture = document.get("reference_fixture")
+            receipt_mismatch = (
+                visual_receipt.get("state") != "reference_only_not_browser_verified"
+                or visual_receipt.get("reference_truth_class") != "draft_contract_state_plate"
+                or visual_receipt.get("portable_across_browser_or_font_environments") is not False
+                or visual_receipt.get("browser_engine") is not None
+                or visual_receipt.get("browser_version") is not None
+                or visual_receipt.get("reviewer") is not None
+                or visual_receipt.get("non_authorizing") is not True
+                or visual_receipt.get("approval") != _BIOCATALYST_D0A_RECEIPT_APPROVAL
+                or visual_receipt.get("blocked_by") != list(_BIOCATALYST_D0A_RECEIPT_BLOCKERS)
+                or not isinstance(renderer_receipt, Mapping)
+                or not isinstance(renderer_source, Mapping)
+                or renderer_receipt.get("entrypoint") != renderer_source.get("path")
+                or renderer_receipt.get("source_sha256") != renderer_source.get("sha256")
+                or not isinstance(fixture_receipt, Mapping)
+                or not isinstance(reference_fixture, Mapping)
+                or fixture_receipt.get("path") != reference_fixture.get("path")
+                or fixture_receipt.get("sha256") != reference_fixture.get("sha256")
+                or not isinstance(projection_receipt, Mapping)
+                or projection_receipt.get("path") != corpus.get("projection_path")
+                or projection_receipt.get("sha256") != corpus.get("projection_sha256")
+                or projection_receipt.get("generation_id") != _BIOCATALYST_D0A_PROJECTION_GENERATION
+                or projection_receipt.get("synthetic_only") is not True
+            )
+            if receipt_mismatch:
+                issues.append(
+                    ValidationIssue(
+                        "$.visual.artifact",
+                        "product_acceptance.visual_receipt_binding",
+                        "draft receipt must preserve literal non-browser, non-authorizing, pending-approval, blocker, renderer, fixture, and projection bindings",
+                    )
+                )
+        elif visual_receipt is not None:
+            issues.append(
+                ValidationIssue(
+                    "$.visual.artifact",
+                    "product_acceptance.visual_receipt_shape",
+                    "D0a visual receipt must be a JSON object",
+                )
+            )
+
+    approval = document.get("approval")
+    all_cells_approved = isinstance(cells, list) and all(
+        isinstance(cell, Mapping)
+        and cell.get("approval_status") == "approved"
+        and isinstance(cell.get("reviewer_name"), str)
+        and cell.get("browser_verification_state") == "passed"
+        for cell in cells
+    )
+    approval_complete = (
+        isinstance(approval, Mapping)
+        and approval.get("status") == "approved"
+        and isinstance(approval.get("named_reviewer"), str)
+        and isinstance(approval.get("recorded_at"), str)
+    )
+    if not approval_complete or not all_cells_approved:
+        issues.append(
+            ValidationIssue(
+                "$.approval",
+                "product_acceptance.human_approval_pending",
+                "all visual cells and the root manifest require named Fable/Opus design-owner approval",
+            )
+        )
+    if not isinstance(performance, Mapping) or performance.get("state") != "measured_passed":
+        issues.append(
+            ValidationIssue(
+                "$.performance.state",
+                "product_acceptance.performance_not_measured",
+                "a product-acceptance pass requires the frozen performance corpus to be measured",
+            )
+        )
+    if isinstance(corpus, Mapping):
+        receipt = corpus.get("future_measurement_receipt")
+        required_receipt_strings = (
+            "run_id", "started_at", "completed_at", "raw_samples_path",
+            "raw_samples_sha256", "summary_code_path", "summary_code_sha256",
+            "summary_code_version", "summary_sha256", "pass_fail_digest",
+        )
+        receipt_complete = (
+            isinstance(receipt, Mapping)
+            and receipt.get("state") == "completed"
+            and receipt.get("missing_reason") is None
+            and all(
+                isinstance(receipt.get(field), str) and receipt[field].strip()
+                for field in required_receipt_strings
+            )
+            and _parse_temporal(receipt.get("started_at")) is not None
+            and _parse_temporal(receipt.get("completed_at")) is not None
+        )
+        if not receipt_complete:
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus",
+                    "product_acceptance.measurement_receipt_pending",
+                    "a product-acceptance pass requires valid timestamps plus nonempty byte-bound raw-sample and summary-code fields and result digests",
+                )
+            )
+        else:
+            raw_samples = _biocatalyst_product_repo_file(
+                repo_root, receipt.get("raw_samples_path")
+            )
+            summary_code = _biocatalyst_product_repo_file(
+                repo_root, receipt.get("summary_code_path")
+            )
+            if (
+                raw_samples is None
+                or not raw_samples.is_file()
+                or receipt.get("raw_samples_sha256") != hashlib.sha256(raw_samples.read_bytes()).hexdigest()
+                or summary_code is None
+                or not summary_code.is_file()
+                or receipt.get("summary_code_sha256") != hashlib.sha256(summary_code.read_bytes()).hexdigest()
+                or not isinstance(receipt.get("summary_sha256"), str)
+                or not re.fullmatch(r"[a-f0-9]{64}", receipt["summary_sha256"])
+                or not isinstance(receipt.get("pass_fail_digest"), str)
+                or not re.fullmatch(r"[a-f0-9]{64}", receipt["pass_fail_digest"])
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "$.benchmark_corpus",
+                        "product_acceptance.measurement_artifact_binding",
+                        "a measured pass requires byte-bound raw samples and summary code plus fixed summary and pass/fail digests",
+                    )
+                )
+    issues.append(
+        ValidationIssue(
+            "$.state",
+            "product_acceptance.trusted_browser_verifier_unavailable",
+            "D0a v1 generic validation is integrity-only and can never trust self-described acceptance; a successor contract with an independent verifier is required",
+        )
+    )
+    return issues
+
+
 def _contract_semantic_issues(
-    contract_id: str, document: Mapping[str, Any]
+    contract_id: str, document: Mapping[str, Any], repo_root: Path
 ) -> list[ValidationIssue]:
     if contract_id == _PACKET_CONTRACT_ID:
         issue = _content_hash_issue(
@@ -1952,6 +3723,10 @@ def _contract_semantic_issues(
         return _ctgov_watermark_issues(document)
     if contract_id == _TRIAL_SNAPSHOT_CONTRACT_ID:
         return _trial_projection_issues(document)
+    if contract_id == _TRIAL_PROTOCOL_PROJECTION_CONTRACT_ID:
+        return _trial_protocol_projection_issues(document)
+    if contract_id == _TRIAL_PEER_SET_CONTRACT_ID:
+        return _trial_peer_set_issues(document)
     if contract_id == _TRIAL_COVERAGE_CONTRACT_ID:
         return _trial_coverage_issues(document)
     if contract_id == _CTGOV_HISTORY_RECEIPT_CONTRACT_ID:
@@ -1966,6 +3741,10 @@ def _contract_semantic_issues(
         return _history_change_fact_issues(document)
     if contract_id == _TRIAL_HISTORY_READ_MODEL_CONTRACT_ID:
         return _history_read_model_issues(document)
+    if contract_id == _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID:
+        return _biocatalyst_launch_slo_manifest_issues(document, repo_root)
+    if contract_id == _BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID:
+        return _biocatalyst_product_acceptance_manifest_issues(document, repo_root)
     if contract_id == _PAGE_RECEIPT_CONTRACT_ID:
         response = document.get("response")
         issues: list[ValidationIssue] = []
@@ -2076,15 +3855,28 @@ class ContractRegistry:
             registry=self._reference_registry,
             format_checker=_FORMAT_CHECKER,
         )
-        issues = [
-            ValidationIssue(_json_path(tuple(error.absolute_path)), "schema", error.message)
-            for error in validator.iter_errors(document)
-        ]
+        try:
+            issues = [
+                ValidationIssue(
+                    _json_path(tuple(error.absolute_path)), "schema", error.message
+                )
+                for error in validator.iter_errors(document)
+            ]
+        except (OverflowError, RecursionError, ValueError):
+            issues = [
+                ValidationIssue(
+                    "$",
+                    "schema.invalid_in_memory_document",
+                    "contract documents must be finite acyclic JSON trees",
+                )
+            ]
         issues.extend(_interval_issues(document))
         if requested == _PACKET_CONTRACT_ID and isinstance(document, Mapping):
             issues.extend(_packet_authority_issues(document))
         if isinstance(document, Mapping):
-            issues.extend(_contract_semantic_issues(requested, document))
+            issues.extend(
+                _contract_semantic_issues(requested, document, self.repo_root)
+            )
         return tuple(sorted(set(issues)))
 
     def validate(self, contract_id: str, document: Any) -> None:
@@ -2135,6 +3927,34 @@ def validate_contract(
         payload = document
     registry = ContractRegistry(repo_root)
     registry.validate(_validate_requested_id(requested), payload)
+
+
+def validate_biocatalyst_launch_slo_manifest(
+    manifest: Mapping[str, Any],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Validate one immutable policy; BC-F0 intentionally rejects pass claims."""
+
+    validate_contract(
+        _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID,
+        manifest,
+        repo_root=repo_root,
+    )
+
+
+def validate_biocatalyst_product_acceptance_manifest(
+    manifest: Mapping[str, Any],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Validate the finite D0a acceptance manifest; pending drafts fail closed."""
+
+    validate_contract(
+        _BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID,
+        manifest,
+        repo_root=repo_root,
+    )
 
 
 def validate_drugs_at_fda_release_receipt(

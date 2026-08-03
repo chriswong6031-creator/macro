@@ -146,58 +146,67 @@ class TestLaneRAdmission:
 
 
 # ---------------------------------------------------------------------------
-# 2. Ordering: alpha desc within lane; no negative-alpha above positive-alpha
+# 2. Ordering: the emitted board contract (us_prophet_v1, 2026-08-02)
 # ---------------------------------------------------------------------------
 
-class TestAlphaOrdering:
-    """Within each lane, rows must be sorted by alpha descending."""
+class TestEmittedBoardOrdering:
+    """What the artifact's `buy` array is actually sorted by.
 
-    def _make_buy_rows(self, alphas_trend, alphas_recovery) -> list[dict]:
-        """Build synthetic buy rows as the builder would assemble them."""
-        rows = []
-        for a in alphas_trend:
-            rows.append({"ticker": f"T{int(a*100)}", "alpha": a, "lane": "trend",
-                         "composite_z": a, "conviction": {"score": int(50 + a * 10)}})
-        for a in alphas_recovery:
-            rows.append({"ticker": f"R{int(a*100)}", "alpha": a, "lane": "recovery",
-                         "composite_z": a, "conviction": {"score": int(40 + a * 10)}})
-        return rows
+    RE-PINNED 2026-08-02. The old contract was alpha-desc within lane (W8, forward
+    ledger #1062). us_prophet_v1 replaced it with (stage bucket, priority score desc,
+    ticker) because ordering by edge alone still let a name you cannot act on today
+    open the board — the 07-31 live board's slot 1 was an "Extended — don't chase"
+    row, with `avoid`/DOWNTREND names mid-board above `buy_now` rows.
 
-    def test_highest_alpha_trend_is_slot1(self):
-        rows = self._make_buy_rows([0.3, 0.8, 0.1, 0.5], [0.2, 0.6])
-        # Verify trend block is alpha desc and precedes recovery block
-        trend_rows = [r for r in rows if r["lane"] == "trend"]
-        alphas = [r["alpha"] for r in trend_rows]
-        # Sort them as the builder does
-        trend_rows_sorted = sorted(trend_rows, key=lambda r: -r["alpha"])
-        assert trend_rows_sorted[0]["alpha"] == 0.8, "Highest alpha trend name must be slot 1"
+    Alpha did not lose: it is the 25-point `edge` leg, and the ONLY leg
+    research/US_BOARD_MEASUREMENT.md §3 found positive-IC. What it lost is the power
+    to put an unactionable name at slot 1.
 
-    def test_no_negative_above_positive_within_lane(self):
-        alphas = [0.4, -0.1, 0.7, 0.2, -0.3]
-        trend_rows = [{"alpha": a, "lane": "trend"} for a in alphas]
-        sorted_rows = sorted(trend_rows, key=lambda r: -(r["alpha"] or 0.0))
-        alphas_out = [r["alpha"] for r in sorted_rows]
-        # After sorting desc, all positive alphas must precede all negatives
-        positives = [a for a in alphas_out if a >= 0]
-        negatives = [a for a in alphas_out if a < 0]
-        first_neg_idx = next((i for i, a in enumerate(alphas_out) if a < 0), len(alphas_out))
-        last_pos_idx = next((len(alphas_out) - 1 - i
-                             for i, a in enumerate(reversed(alphas_out)) if a >= 0), -1)
-        assert last_pos_idx < first_neg_idx, (
-            "No negative-alpha name may appear above a positive-alpha name within lane")
+    These tests drive the REAL ranker (engine.us_board_rank.score_rows) — the sort
+    under test is the one the builder emits, not a copy of it.
+    """
 
-    def test_trend_precedes_recovery(self):
-        rows = self._make_buy_rows([0.5, 0.3], [0.9, 0.7])
-        # Even a high-alpha recovery name should be AFTER trend block
-        trend_rows = [r for r in rows if r["lane"] == "trend"]
-        recov_rows = [r for r in rows if r["lane"] == "recovery"]
-        # In the assembled list (trend first), the last trend index < first recovery index
-        assembled = sorted(trend_rows, key=lambda r: -r["alpha"]) + \
-                    sorted(recov_rows, key=lambda r: -r["alpha"])
-        lane_order = [r["lane"] for r in assembled]
-        last_trend = max(i for i, l in enumerate(lane_order) if l == "trend")
-        first_recov = min(i for i, l in enumerate(lane_order) if l == "recovery")
-        assert last_trend < first_recov, "All trend rows must precede recovery rows"
+    @staticmethod
+    def _row(ticker, alpha, status="buy_now", **extra):
+        row = {"ticker": ticker, "alpha": alpha, "sector": ticker,
+               "entry_signal": {"status": status},
+               "signal": {"eligible": True, "tier_cascade": "T2", "ticks": 1,
+                          "asof": "2026-07-31"}}
+        row.update(extra)
+        return row
+
+    @staticmethod
+    def _order(rows):
+        from engine import us_board_rank as ubr
+        return [r["ticker"]
+                for r in ubr.score_rows([dict(r) for r in rows],
+                                        board_asof="2026-07-31")]
+
+    def test_highest_edge_leads_within_a_stage(self):
+        rows = [self._row(f"T{int(a * 100)}", a) for a in (0.3, 0.8, 0.1, 0.5)]
+        assert self._order(rows)[0] == "T80"
+
+    def test_stage_outranks_edge(self):
+        """The load-bearing change: a blocked name with the board's best alpha still
+        renders below a live name with the worst."""
+        rows = [self._row("BLOCKED", 0.9, "avoid"), self._row("LIVE", -0.3)]
+        assert self._order(rows) == ["LIVE", "BLOCKED"]
+
+    def test_full_stage_sequence(self):
+        rows = [self._row("BLK", 0.9, "blocked"), self._row("RAN", 0.8, "extended"),
+                self._row("SETUP", 0.7, "bounce_wait"), self._row("LIVE", 0.1)]
+        assert self._order(rows) == ["LIVE", "SETUP", "RAN", "BLK"]
+
+    def test_within_stage_the_score_never_rises(self):
+        from engine import us_board_rank as ubr
+        rows = [self._row(f"T{i}", i / 10.0) for i in range(8)]
+        scored = ubr.score_rows([dict(r) for r in rows], board_asof="2026-07-31")
+        scores = [r["prophet"]["score"] for r in scored]
+        assert scores == sorted(scores, reverse=True)
+
+    def test_order_is_deterministic_under_input_permutation(self):
+        rows = [self._row(f"T{i}", (i % 3) / 10.0) for i in range(9)]
+        assert self._order(rows) == self._order(list(reversed(rows)))
 
 
 # ---------------------------------------------------------------------------
@@ -212,9 +221,16 @@ class TestBoardAlphaSortKeyRegression:
     original in-closure sort key read the profile, so the primary key was a
     constant -0.0 and the #1494 ticker tiebreaker silently became the whole
     sort: the board shipped ticker-alphabetical (live: ARES alpha=-1.32 at
-    continuation slot-1 above MS alpha=1.20). The TestAlphaOrdering tests above
-    re-implement the sort inline, which is why the bug survived them — these
-    tests exercise the REAL module-level key with prod-shaped fixtures.
+    continuation slot-1 above MS alpha=1.20).
+
+    SCOPE NOTE (2026-08-02, us_prophet_v1): ``_board_alpha_sort_key`` is no longer
+    the board's TERMINAL sort — the emitted order is now (stage, score desc, ticker)
+    and is pinned by TestEmittedBoardOrdering above. The key is still live as the
+    PRE-CAP ordering that decides which names survive the 120-row trend slice, so
+    the bug it guards is still reachable and these tests still hold. The artifact
+    fixture below deliberately carries no ``stage`` field, which keeps
+    check_board_contradictions on its legacy alpha-desc branch — that is the branch
+    under test here.
     """
 
     # Live regression shape (2026-07-10 artifact): alphabetically-first ticker

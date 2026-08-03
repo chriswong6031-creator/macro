@@ -1739,6 +1739,13 @@ def _normalise_earnings_source(df, source_tier: str, root: Path | None = None):
                 log.warning("earnings_qual: score-seed metadata join failed (%s)", exc)
 
     elif source_tier == "committed_overview_fallback":
+        # The overview parquet now also accrues nightly ENGINE stage snapshots
+        # (source="stage_engine", no earnings fields) — only the vendor seed
+        # rows are earnings evidence here.
+        if "source" in out.columns:
+            out = out[
+                out["source"].fillna("equitydesk_backfill") != "stage_engine"
+            ].copy()
         ticker = out.get("ticker", pd.Series("", index=out.index)).astype(str).str.upper()
         out["document_ticker"] = ticker
         out["company_ticker"] = ticker
