@@ -801,7 +801,8 @@ class IntelligenceStore:
 
     def snapshot(self, *, now: datetime, active_h: float = 48.0,
                  max_items: int = 80, pace_cfg: dict | None = None,
-                 market_stale_min: float = DEFAULT_MARKET_STALE_MIN) -> dict:
+                 market_stale_min: float = DEFAULT_MARKET_STALE_MIN,
+                 confirmed_max: int = 0) -> dict:
         now = _utc(now)
         pace = _pace_cfg(pace_cfg)
         cutoff = _iso(now - timedelta(hours=max(1.0, active_h)))
@@ -825,12 +826,25 @@ class IntelligenceStore:
                     market_stale_min=market_stale_min,
                 ))
         # Stage priority first; within each stage the latest story leads.
+        #
+        # confirmed_max (0 = unlimited, the historical shape): at the 2026-08-03
+        # admission floors the 48 h window holds MORE confirmed stories than the
+        # whole snapshot cap — Truth-mirror direct-quotes alone can fill it — so
+        # unbounded stage priority silently evicted every developing story and
+        # the "live" desk stopped showing the newest single-source tape at all.
+        # A bounded confirmed group keeps the editorial order (impact first)
+        # while guaranteeing the fold still carries the live tail. high_impact
+        # is deliberately never capped: a desk with 80 genuinely high-impact
+        # stories SHOULD be wall-to-wall high impact.
         ordered: list[dict] = []
         for stage in ("high_impact", "confirmed", "developing"):
-            group = [p for p in stories if p.get("stage") == stage]
-            ordered.extend(sorted(
-                group, key=lambda p: str(p.get("updated_at") or ""), reverse=True
-            ))
+            group = sorted(
+                (p for p in stories if p.get("stage") == stage),
+                key=lambda p: str(p.get("updated_at") or ""), reverse=True,
+            )
+            if stage == "confirmed" and confirmed_max > 0:
+                group = group[:confirmed_max]
+            ordered.extend(group)
         known_stages = {"high_impact", "confirmed", "developing"}
         ordered.extend(sorted(
             (p for p in stories if p.get("stage") not in known_stages),
@@ -973,6 +987,7 @@ def _store_cycle(db_target: Path, packets: list[dict], *, now: datetime,
             market_stale_min=float(
                 cfg.get("market_stale_min", DEFAULT_MARKET_STALE_MIN)
             ),
+            confirmed_max=int(cfg.get("snapshot_confirmed_max", 0) or 0),
         )
     finally:
         try:

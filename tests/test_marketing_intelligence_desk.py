@@ -1862,3 +1862,81 @@ def test_the_served_snapshot_leaks_no_phrasing_marker_and_no_fact_internals(
     for token in ("_why_phrased", "salience", "rank_score", "source_count\":0"):
         assert token not in rendered
     assert json.loads(sink.read_text(encoding="utf-8")) == payload
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bounded confirmed group (2026-08-03 — the 4.5-floor recalibration follow-up).
+# At the new admission volume the 48 h window holds more confirmed stories than
+# snapshot_max_items, and unbounded stage priority evicted every developing
+# story from the served payload — the "live" desk stopped showing the newest
+# single-source tape entirely.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _staged_packet(iid: str, stage: str, updated_at: str) -> dict:
+    packet = _packet(iid, "Reuters", f"https://reuters.com/{iid}")
+    packet["id"] = f"story-{iid}"
+    packet["stage"] = stage
+    packet["updated_at"] = updated_at
+    return packet
+
+
+def _stamp(minutes: int) -> str:
+    return (NOW + timedelta(minutes=minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def test_confirmed_cap_reserves_snapshot_slots_for_the_developing_tail(tmp_path):
+    store = IntelligenceStore(tmp_path / "intelligence.db")
+    try:
+        # One upsert per minute: the store stamps updated_at with ITS clock, so
+        # recency has to come from distinct upsert times, not packet fields.
+        for i in range(6):
+            store.upsert([_staged_packet(f"c{i}", "confirmed", _stamp(i))],
+                         now=NOW + timedelta(minutes=i))
+        for i in range(3):
+            store.upsert([_staged_packet(f"d{i}", "developing", _stamp(i))],
+                         now=NOW + timedelta(minutes=6 + i))
+        payload = store.snapshot(now=NOW + timedelta(minutes=10),
+                                 max_items=8, confirmed_max=4)
+    finally:
+        store.close()
+    stages = [s["stage"] for s in payload["stories"]]
+    assert stages.count("confirmed") == 4
+    assert stages.count("developing") == 3, (
+        "the developing tail must survive a confirmed surplus")
+    # The bounded confirmed group keeps the NEWEST confirmed stories.
+    confirmed_ids = [s["id"] for s in payload["stories"]
+                     if s["stage"] == "confirmed"]
+    assert confirmed_ids == ["story-c5", "story-c4", "story-c3", "story-c2"]
+    # Stage priority itself is unchanged: confirmed still leads developing.
+    assert stages == sorted(stages, key=["high_impact", "confirmed",
+                                         "developing"].index)
+
+
+def test_confirmed_cap_zero_keeps_the_historical_truncation(tmp_path):
+    store = IntelligenceStore(tmp_path / "intelligence.db")
+    try:
+        for i in range(6):
+            store.upsert([_staged_packet(f"c{i}", "confirmed", _stamp(i))],
+                         now=NOW + timedelta(minutes=i))
+        for i in range(3):
+            store.upsert([_staged_packet(f"d{i}", "developing", _stamp(i))],
+                         now=NOW + timedelta(minutes=6 + i))
+        payload = store.snapshot(now=NOW + timedelta(minutes=10),
+                                 max_items=8, confirmed_max=0)
+    finally:
+        store.close()
+    stages = [s["stage"] for s in payload["stories"]]
+    assert stages.count("confirmed") == 6
+    assert stages.count("developing") == 2
+
+
+def test_shipped_config_bounds_the_confirmed_group():
+    import yaml
+    cfg = yaml.safe_load(
+        (ROOT / "config" / "press_sources.yml").read_text(encoding="utf-8")
+    )["wire"]["intelligence"]
+    cap = int(cfg["snapshot_confirmed_max"])
+    max_items = int(cfg["snapshot_max_items"])
+    assert 0 < cap < max_items, (
+        "the confirmed bound only reserves developing slots while it is "
+        "strictly inside the snapshot cap")
