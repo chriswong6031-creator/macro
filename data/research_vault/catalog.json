@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T08:59:27.027660+00:00",
-  "count": 653,
+  "generated_at": "2026-08-03T09:20:20.748774+00:00",
+  "count": 654,
   "institutions": [
     "Alger",
     "Amova",
@@ -1006,6 +1006,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hzcijhpserp-89b97b",
+      "title": "Asia FX Weekly China’s PMIs, Asia trade data and RBI policy will be key 2",
+      "institution": "MUFG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:47:05Z",
+      "summary_points": [
+        "**China’s PMI Divergence**: Manufacturing PMI (49.2) and non-manufacturing (49.0) show weak activity, but tech sectors (Hi-Tech >50) outperform non-tech (Consumer Goods <50), signaling entrenched sectoral stress amid delayed fiscal policy rollout.",
+        "**RBI Policy & FX Intervention**: RBI holds repo at 5.25% (oil/bond risks), intervenes to support USD/INR near 96.15, with MPC meeting (3-5 Aug) focusing on inflation, oil prices, and liquidity amid PMI decline (54.3 → 57.1).",
+        "**US-Iran Conflict & Oil Shock**: Middle East tensions revive oil to $90/bbl, triggering inflation risks; Indonesia, Philippines, and South Korea tighten policy (25bps+), contrasting with China’s easing bias.",
+        "**Asia Equity Flow Shifts**: South Korea/Taiwan record massive outflows ($5bn/$4.4bn) amid tech volatility and US-Iran uncertainty; India sees inflows ($400mn), Indonesia/Thailand mixed.",
+        "**Fed FOMC Policy Uncertainty**: 9-3 split on rate hold (3.50%-3.75%) with dissenters citing inflation; no forward guidance increases September meeting uncertainty, widening Fed funds futures vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
       "language": "en",
       "needs_metadata": false
     },
