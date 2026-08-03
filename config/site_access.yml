@@ -52,6 +52,51 @@ public:
     # the product statement we actually want a stranger to read.
     - /special_situations.html
     - /china_special_situations.html
+    # china_heatmap.html — the A-share sector treemap, opened by
+    # SEO_SUPERCHARGE_MASTERPLAN W2 (spec:
+    # research/seo_supercharge/W2_HEATMAP_ETFS_PREVIEW_SPEC.md, Part A). This one
+    # is neither of the two shapes above. The Special Situations shells were
+    # already split and W1a moved only their access class; etfs.html was fully
+    # server-rendered and had to have its graded rows taken off the URL. The
+    # heatmap shipped ZERO content: a 76-line shell that built every tile, stat
+    # and mover in the browser, so flipping the boundary alone would have handed
+    # Google a thin-content 200 in place of a 302 — the same soft-404 shape this
+    # program exists to undo, with the worse failure mode that Google keeps it.
+    # The same PR therefore server-renders the summary layer (market pulse,
+    # breadth stats, sector ladder, both mover boards) so the page has real
+    # above-the-fold content before any JS runs.
+    #
+    # What is free is nearly everything, and honestly so: a heatmap of market
+    # performance IS market context. Returns, breadth, medians, sector strength,
+    # market-cap sizing, biggest movers and every one of the ~1,500 tiles are how
+    # the market traded, not something we compute. The single walled surface is
+    # our graded read on one name (band, 0-100 score, verdict), which reaches the
+    # page only through <market>stockdata/<T>.json — a path this file does not
+    # list, so it keeps its default-deny class and the hover card renders a
+    # locked slot instead. So the page gets one gate note, one micro-wall inside
+    # the hover card and one CTA row: no .tier-wall, because a wall over content
+    # that is free would be a lie, and five walls on a free page would be nagging.
+    #
+    # Only china flips here. hk_heatmap.html and canada_heatmap.html run the same
+    # template and builder and adopt the preview by adding one line each — the
+    # page reads its gate state from THIS list, so the boundary and the wall can
+    # never disagree.
+    - /china_heatmap.html
+    # The tile map itself. It IS the free content: without it the treemap never
+    # draws for an anonymous visitor, and it carries only returns, sector labels,
+    # market-cap sizing and (W2 T-A2) the two market facts the hover card shows —
+    # last close and distance from the 200-day average. No score, no ranking, no
+    # verdict; the graded block stays in the per-ticker files, which stay gated.
+    #
+    # Registered deliberately rather than assumed: this hands a clean daily-close
+    # A-share returns dataset to any scraper. It is the same data the page renders
+    # anyway, on a daily-close cadence with the delay disclosed, so it is free by
+    # the same policy that makes the public quote planes free — but it is a give,
+    # and the give is the point (W2 spec T-A1, ACCEPTED).
+    #
+    # marketdata/sp500_heatmap.json is NOT here: it is served from the VPS live
+    # plane through @vps_external and has its own handling. Leave it alone.
+    - /marketdata/china_heatmap.json
     # etfs.html — the fund-conviction desk, converted to a tier-preview shell and
     # opened to anonymous visitors by SEO_SUPERCHARGE_MASTERPLAN W2 (spec:
     # research/seo_supercharge/W2_HEATMAP_ETFS_PREVIEW_SPEC.md, Part B). Unlike

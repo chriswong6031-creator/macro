@@ -207,6 +207,39 @@ def test_tier_preview_shell_is_open_but_its_payload_is_not(monkeypatch):
         assert _check(payload, "asset").status_code == 403, payload
 
 
+def test_china_heatmap_preview_opens_the_map_and_not_the_graded_read(monkeypatch):
+    """W2's heatmap conversion, at the paywall's own mirror.
+
+    Deliberately its OWN test rather than another entry in the loop above: that
+    one still names /etfs.html, whose flip was reverted by #4446 pending the
+    gate-6b re-flip, so it is red on main for a reason that has nothing to do
+    with this page. Folding china_heatmap into it would hide a green assertion
+    inside a failing test.
+
+    Two halves, and the second is the one worth guarding. The PAGE and the tile
+    map open — a heatmap of market performance is market context, and the map
+    cannot draw for an anonymous visitor without the tiles. The per-name graded
+    read does not: it arrives from <market>stockdata/<T>.json, which carries no
+    public classification and so must keep answering `premium` even while an
+    armed paywall is letting the page itself through.
+    """
+    _arm(monkeypatch)
+    monkeypatch.setattr(
+        paywall,
+        "_store_entitlement",
+        lambda uid: ({"tier": "free", "status": "none", "features": []}, True),
+    )
+    assert paywall.classify_path("/china_heatmap.html") == "public"
+    assert _check("/china_heatmap.html", "document").status_code == 204
+    assert paywall.classify_path("/marketdata/china_heatmap.json") == "public"
+    assert _check("/marketdata/china_heatmap.json", "asset").status_code == 204
+    # The siblings run the same template and builder and did NOT flip.
+    for sibling in ("/hk_heatmap.html", "/canada_heatmap.html"):
+        assert paywall.classify_path(sibling) == "premium", sibling
+    # The one walled surface on the page.
+    assert paywall.classify_path("/chinastockdata/601398.SS.json") == "premium"
+
+
 def test_malformed_enforced_early_policy_denies(monkeypatch):
     _arm(monkeypatch)
     monkeypatch.setattr(
