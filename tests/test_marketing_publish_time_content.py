@@ -1261,17 +1261,20 @@ def test_generated_theme_copy_never_ends_on_reader_bait(tmp_path, monkeypatch,
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_marketing_publish_workflow_can_render_and_host_a_card():
-    """PINS defect 2. The publish job runs on ubuntu-latest with a pip line that
-    had neither a rasteriser fallback nor an S3 client, and no R2 credentials in
-    the publisher step's env — so every card this lane renders would fail to host
-    and every candidate would be dropped."""
+    """PINS defect 2. The publish job originally ran with a pip line that had
+    neither a rasteriser fallback nor an S3 client, and no R2 credentials in
+    the publisher step's env — so every card this lane renders would fail to
+    host and every candidate would be dropped. The pinned defect is the missing
+    deps/R2 env, not the runner vendor: #4436 deliberately moved the job onto
+    the idle self-hosted light lane (hosted queueing was the outage), so the
+    runner assertion tracks that lane."""
     import yaml
     root = Path(__file__).resolve().parents[1]
     wf = yaml.safe_load(
         (root / ".github" / "workflows" / "marketing-publish.yml").read_text(
             encoding="utf-8"))
     job = wf["jobs"]["publish"]
-    assert job["runs-on"] == "ubuntu-latest"
+    assert job["runs-on"] == ["self-hosted", "macstudio-light"]
 
     install = next(st for st in job["steps"] if st.get("name") == "install deps")
     for pkg in ("pillow", "boto3", "pyarrow", "pyyaml"):
