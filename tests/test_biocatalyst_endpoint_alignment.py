@@ -984,6 +984,65 @@ def test_input_text_and_residual_capacity_breaches_are_explicit_and_fail_empty()
     assert source_limited["candidates"] == []
 
 
+def test_endpoint_byte_cap_matches_exact_canonical_size_for_reviewer_shaped_mapping() -> None:
+    def reviewer_endpoint(target_size: int) -> dict:
+        endpoint = {
+            "measure": "Tumor response rate",
+            "timeFrame": "12 weeks",
+            "description": "Independent central review",
+            "reviewer_flags": [True, False, None],
+            "reviewer_note": "line one\nline two\t\"quoted\"\\path",
+            "reviewer_ratio": 1.25,
+            **{
+                f"reviewer_field_{index:03d}": "x" * 180
+                for index in range(100)
+            },
+            "padding": "",
+        }
+        remaining = target_size - len(canonical_json_bytes(endpoint))
+        assert 0 < remaining < endpoint_alignment._MAX_ENDPOINT_TEXT_BYTES
+        endpoint["padding"] = "p" * remaining
+        assert len(canonical_json_bytes(endpoint)) == target_size
+        return endpoint
+
+    exact = reviewer_endpoint(endpoint_alignment._MAX_ENDPOINT_BYTES)
+    one_over = deepcopy(exact)
+    one_over["padding"] += "p"
+    exact_reversed = dict(reversed(tuple(exact.items())))
+    one_over_reversed = dict(reversed(tuple(one_over.items())))
+
+    assert len(canonical_json_bytes(one_over)) == endpoint_alignment._MAX_ENDPOINT_BYTES + 1
+    assert endpoint_alignment._endpoint_input_limit_reason(exact) is None
+    assert endpoint_alignment._endpoint_input_limit_reason(exact_reversed) is None
+    assert (
+        endpoint_alignment._endpoint_input_limit_reason(one_over)
+        == "endpoint_byte_limit_exceeded"
+    )
+    assert (
+        endpoint_alignment._endpoint_input_limit_reason(one_over_reversed)
+        == "endpoint_byte_limit_exceeded"
+    )
+
+    eligible_after = {
+        "measure": "Tumour response rate",
+        "timeFrame": "12 weeks",
+        "description": "Independent central review",
+    }
+    _snapshots, _diff, accepted = _projection(
+        _study(outcomes=[exact]), _study(outcomes=[eligible_after])
+    )
+    _snapshots, _diff, refused = _projection(
+        _study(outcomes=[one_over]), _study(outcomes=[eligible_after])
+    )
+
+    assert accepted["available"] is True
+    assert accepted["candidate_count"] == 1
+    assert refused["available"] is False
+    assert refused["unavailable_reason"] == "endpoint_byte_limit_exceeded"
+    assert refused["candidate_count"] == 0
+    assert refused["candidates"] == []
+
+
 def test_more_than_64_eligible_pairs_short_circuits_to_a_fixed_empty_unavailable_state() -> None:
     before = [
         {"measure": f"Tumor response rate A{index}", "timeFrame": "12 weeks", "description": "A"}

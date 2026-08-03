@@ -424,10 +424,10 @@ def _utf8_byte_count_exceeds(value: str, limit: int) -> bool:
 def _endpoint_input_limit_reason(endpoint: Any) -> str | None:
     """Bound source objects before canonicalization or lexical comparison.
 
-    This is deliberately a simple JSON-byte upper bound, not a normalizer. It
-    counts every string (keys included), escaped control punctuation, container
-    punctuation, and scalar rendering while stopping as soon as a fixed limit
-    is crossed. It also bounds recursive node traversal.
+    This is deliberately an exact canonical JSON byte count, not a normalizer.
+    It counts every string (keys included), escaped control punctuation,
+    container punctuation, and scalar rendering while stopping as soon as a
+    fixed limit is crossed. It also bounds recursive node traversal.
     """
 
     total = 0
@@ -446,33 +446,49 @@ def _endpoint_input_limit_reason(endpoint: Any) -> str | None:
             total += 2
             for character in value:
                 codepoint = ord(character)
-                if character in {'"', "\\"}:
+                if character in {'"', "\\"} or character in {
+                    "\b",
+                    "\f",
+                    "\n",
+                    "\r",
+                    "\t",
+                }:
                     total += 2
                 elif codepoint < 0x20:
                     total += 6
                 else:
                     total += 1 if codepoint <= 0x7F else 2 if codepoint <= 0x7FF else 3 if codepoint <= 0xFFFF else 4
         elif isinstance(value, Mapping):
-            total += 2
+            item_count = len(value)
+            total += 2 + item_count + max(0, item_count - 1)
             if len(stack) + 2 * len(value) > _MAX_ENDPOINT_NODES - nodes:
                 return "endpoint_complexity_limit_exceeded"
-            for key, child in value.items():
-                if not isinstance(key, str):
-                    return "endpoint_complexity_limit_exceeded"
+            items = list(value.items())
+            if any(not isinstance(key, str) for key, _child in items):
+                return "endpoint_complexity_limit_exceeded"
+            items.sort(key=lambda item: item[0])
+            for key, child in reversed(items):
                 stack.append((child, depth + 1))
                 stack.append((key, depth + 1))
-                total += 1
         elif isinstance(value, list):
             total += 2 + max(0, len(value) - 1)
             if len(stack) + len(value) > _MAX_ENDPOINT_NODES - nodes:
                 return "endpoint_complexity_limit_exceeded"
-            stack.extend((child, depth + 1) for child in value)
-        elif value is None or isinstance(value, bool):
-            total += 4 if value is None else 5
+            stack.extend((child, depth + 1) for child in reversed(value))
+        elif value is None:
+            total += 4
+        elif isinstance(value, bool):
+            total += 4 if value else 5
         elif isinstance(value, (int, float)) and not isinstance(value, bool):
             # Source JSON scalar values are already finite JSON; this bounded
             # rendering is only an input guard, never an identity hash.
-            total += len(str(value))
+            try:
+                rendered = json.dumps(
+                    value, allow_nan=False, separators=(",", ":")
+                )
+            except (TypeError, ValueError):
+                return "endpoint_complexity_limit_exceeded"
+            total += len(rendered)
         else:
             return "endpoint_complexity_limit_exceeded"
         if total > _MAX_ENDPOINT_BYTES:
