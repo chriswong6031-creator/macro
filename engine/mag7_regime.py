@@ -17,11 +17,24 @@ NVDA AMZN GOOGL META TSLA) with:
                   pc_word thresholds (volume P/C ratio: call_tilted ≤ 0.75,
                   put_tilted ≥ 1.25, else balanced). NO direction language;
                   display-only (FC-R5 / FL-D).
+  events        — F1 event lens (postmortem 2026-08-03 §6): per-member realized
+                  5-/21-session return + percentile vs that member's OWN full
+                  trading history, with receipts (n_windows, hist_years,
+                  last_larger_date, source).  Descriptive only — no forecast, no
+                  direction word, no score/rank/gate authority anywhere (DNR §2
+                  Mag-7 row: "plain data display" is the lawful form).  Born
+                  from the week the cap-weighted headline read `rolling_over`
+                  while MSFT printed the 99.90th percentile of its own 40-year
+                  history; the aggregate lens is structurally unable to see a
+                  3-of-7 dispersion, so the per-member lens states it as fact.
   ledger        — data/mag7_regime/ledger.jsonl, one row per session,
                   idempotent by date
 
 Inputs:
   data/baskets/ohlcv/<SYM>.parquet   member closes (column: close, Date index)
+  data/stocks/<SYM>.parquet          deep member history for the event lens
+                                     (column: close; falls back to the ohlcv
+                                     series above, with the span disclosed)
   store.read("yahoo", "SPY")         SPY closes for relative returns + CW index
   data/polygon_universe/reference.parquet  market_cap_usd for mktcap weights (legacy fallback: data/sp500_heatmap/reference.parquet shares)
   site/stockdata/mtf_upturn.json     per-member MTF state (fail-open → null)
@@ -119,6 +132,31 @@ def _load_closes(sym: str, *, root: Path | None = None) -> pd.Series | None:
         return s
     except Exception as e:  # noqa: BLE001
         log.warning("mag7_regime: ohlcv load failed %s: %s", sym, e)
+        return None
+
+
+def _load_deep_closes(sym: str, *, root: Path | None = None) -> pd.Series | None:
+    """Load the deep (full-listing-history) close series from data/stocks/<SYM>.parquet.
+
+    The baskets/ohlcv store starts 2014 for every name; the event lens needs the
+    member's OWN full history so "99.90th percentile of 40 years" is a real
+    statement rather than a statement about the last decade.  Returns None when
+    the file is absent or unreadable — the caller falls back to the ohlcv series
+    and discloses the shorter span via `source` / `hist_years`.
+    """
+    try:
+        base = root or config.data_dir()
+        p = base / "stocks" / f"{sym}.parquet"
+        if not p.exists():
+            return None
+        df = pd.read_parquet(p)
+        if "close" not in df.columns:
+            return None
+        s = df["close"].dropna().sort_index().astype(float)
+        s.index = pd.to_datetime(s.index)
+        return s
+    except Exception as e:  # noqa: BLE001
+        log.warning("mag7_regime: deep history load failed %s: %s", sym, e)
         return None
 
 
@@ -878,6 +916,270 @@ def _compute_flow_block(
 
 
 # ---------------------------------------------------------------------------
+# Event lens (F1) — postmortem 2026-08-03 §6
+# ---------------------------------------------------------------------------
+#
+# DOCTRINE.  This block is plain data display and nothing else:
+#   - it states REALIZED returns and where they sit in the member's own history;
+#   - it carries no direction word, no forecast, no continuation claim, no
+#     score, rank, size or gate — DO_NOT_REBUILD §2 (Mag-7) and MLC-R2..R5 keep
+#     every cohort read out of authority, and S-MLC-1 owns the only promotion
+#     path.  A percentile of a realized window is outside that domain and cannot
+#     preempt it.
+#   - it is deterministic: same stores in, same block out, no wall clock.
+# The tier words below are EVENT SIZE labels ("this week is rare for this
+# stock"), never quality labels.
+
+_EVENT_WINDOWS: tuple[tuple[int, str], ...] = ((5, "5d"), (21, "21d"))
+
+_EVENT_HISTORIC_HI = 99.5   # percentile at/above which a window is a record-class up move
+_EVENT_HISTORIC_LO = 0.5    # …and its down-side mirror
+_EVENT_EXTREME_HI = 98.0
+_EVENT_EXTREME_LO = 2.0
+_EVENT_MIN_HISTORIC_YEARS = 15.0  # below this span "historic" is not sayable → capped at extreme
+
+# A percentile over a handful of windows is noise, not history: "rare for this
+# stock" is not sayable off one year of tape, where the 98th percentile is one
+# week in fifty.  Below this many finite overlapping windows (~3 trading years)
+# the percentile is still COMPUTED and printed as a receipt, but no tier is
+# assigned — the lens declines to call it an event rather than guessing.  Both
+# production sources clear it comfortably (ohlcv ≈ 3.1k windows from 2014, deep
+# 3.5k–11.5k), so this binds only on genuinely young series.
+_EVENT_MIN_WINDOWS = 750
+
+_EVENT_COHORT_DOWN_RET = -0.05  # 5-session return at/below which a member joins cohort.down
+_EVENT_BROAD_N = 4              # members needed for a broad_up / broad_down cohort read
+
+# Calendar days a member's series may lag the artifact's as_of before the lens
+# declines to speak for it (covers a long weekend + a nightly hiccup).
+_EVENT_MAX_LAG_DAYS = 7
+
+_EVENT_WINDOW_NOTE = (
+    "descriptive percentiles of realized 5- and 21-session returns vs the "
+    "member's own full trading history; no forecast"
+)
+
+_EVENT_TIER_RANK: dict[str, int] = {"extreme": 1, "historic": 2}
+
+
+def _empty_events(as_of: str) -> dict:
+    """The honest-null event block: nothing rare happened (or nothing was readable)."""
+    return {
+        "as_of": as_of,
+        "display": False,
+        "window_note": _EVENT_WINDOW_NOTE,
+        "members": [],
+        "cohort": {"kind": None, "up": [], "down": [], "generals": {}},
+    }
+
+
+def _window_stat(series: pd.Series, w: int) -> dict | None:
+    """Realized w-session return of *series* + its own-history receipts.
+
+    percentile = 100 × share of ALL finite overlapping w-session windows in the
+    series strictly below the current one (denominator includes the current
+    window, so a new record prints just under 100 rather than exactly 100).
+    Windows overlap by construction — this is a descriptive rank of the move,
+    not an independent-sample statistic.
+
+    last_larger_date = the most recent PRIOR window end whose return was at
+    least as large in the SAME direction; None when the current window is the
+    record.  Returns None when the series cannot support the window.
+    """
+    try:
+        s = series.dropna()
+        if len(s) < w + 2:
+            return None
+        r = (s / s.shift(w) - 1.0).replace([np.inf, -np.inf], np.nan).dropna()
+        if r.empty:
+            return None
+        cur = float(r.iloc[-1])
+        if not math.isfinite(cur):
+            return None
+        n = int(len(r))
+        pctile = round(100.0 * float((r < cur).sum()) / n, 2)
+
+        prior = r.iloc[:-1]
+        last_larger: str | None = None
+        if len(prior):
+            mask = (prior >= cur) if cur >= 0 else (prior <= cur)
+            if bool(mask.any()):
+                last_larger = _iso(prior.index[mask.to_numpy()][-1])
+
+        return {
+            "ret": round(cur, 6),
+            "pctile": pctile,
+            "n_windows": n,
+            "last_larger_date": last_larger,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.warning("mag7_regime: window stat failed (w=%d): %s", w, e)
+        return None
+
+
+def _event_tier(pctile: float | None, hist_years: float | None, n_windows: int) -> str | None:
+    """Event-size label for a percentile, or None when the window is unremarkable."""
+    if pctile is None or n_windows < _EVENT_MIN_WINDOWS:
+        return None
+    if not (pctile >= _EVENT_EXTREME_HI or pctile <= _EVENT_EXTREME_LO):
+        return None
+    record_class = pctile >= _EVENT_HISTORIC_HI or pctile <= _EVENT_HISTORIC_LO
+    if record_class and hist_years is not None and hist_years >= _EVENT_MIN_HISTORIC_YEARS:
+        return "historic"
+    return "extreme"
+
+
+def _event_series_for(
+    sym: str,
+    fallback: pd.Series | None,
+    *,
+    root: Path | None = None,
+) -> tuple[pd.Series | None, str]:
+    """Pick the series the event lens measures: deep history when usable, else ohlcv.
+
+    The deep store is only preferred when it is at least as CURRENT as the
+    series the rest of the snapshot uses.  A lagging deep store would otherwise
+    describe last week's window under today's as_of — the frozen-last-value
+    trap — and the notification lane keys off that date.
+    """
+    deep = _load_deep_closes(sym, root=root)
+    if deep is not None and len(deep) >= 2:
+        if fallback is None or len(fallback) == 0 or deep.index[-1] >= fallback.index[-1]:
+            return deep, "deep"
+        log.warning(
+            "mag7_regime: deep history for %s stale (%s < %s) — using ohlcv span",
+            sym, _iso(deep.index[-1]), _iso(fallback.index[-1]),
+        )
+    return fallback, "ohlcv"
+
+
+def _compute_events(
+    closes: dict[str, pd.Series],
+    generals: dict,
+    as_of: str,
+    *,
+    root: Path | None = None,
+) -> dict:
+    """Per-member event lens + cohort split read.  Never raises.
+
+    `closes` is the already-loaded ohlcv series map (the fallback source);
+    `generals` is the already-computed generals dict (copied in, NOT recomputed
+    — the two lenses must never disagree); `root` is the data root.
+    """
+    members: list[dict] = []
+    up: list[dict] = []
+    down: list[dict] = []
+    n_up_extreme = 0
+    n_down_extreme = 0
+
+    for sym in MAG7:
+        try:
+            series, source = _event_series_for(sym, closes.get(sym), root=root)
+            if series is None or len(series.dropna()) < _EVENT_WINDOWS[0][0] + 2:
+                log.debug("mag7_regime: event lens: no usable series for %s", sym)
+                continue
+
+            s = series.dropna()
+            # A window is stamped with the artifact's as_of, and the notification
+            # lane keys off that date — so a series that has stopped updating may
+            # not speak at all.  Silence beats a stale week wearing today's date.
+            last_iso = _iso(s.index[-1])
+            if as_of and last_iso and (
+                abs((pd.Timestamp(as_of) - pd.Timestamp(last_iso)).days) > _EVENT_MAX_LAG_DAYS
+            ):
+                log.warning(
+                    "mag7_regime: event lens: %s series ends %s vs as_of %s — skipped",
+                    sym, last_iso, as_of,
+                )
+                continue
+            span_days = (s.index[-1] - s.index[0]).days
+            hist_years = round(span_days / 365.25, 1) if span_days > 0 else 0.0
+
+            stats: dict[str, dict] = {}
+            for w, label in _EVENT_WINDOWS:
+                st = _window_stat(s, w)
+                if st is None:
+                    continue
+                st["tier"] = _event_tier(st["pctile"], hist_years, st["n_windows"])
+                stats[label] = st
+
+            # cohort membership reads the 5-session leg of the SAME source
+            five = stats.get("5d")
+            if five is not None:
+                if five["pctile"] >= _EVENT_EXTREME_HI:
+                    n_up_extreme += 1
+                    up.append({"sym": sym, "r5": five["ret"]})
+                if five["pctile"] <= _EVENT_EXTREME_LO:
+                    n_down_extreme += 1
+                if five["pctile"] <= _EVENT_EXTREME_LO or five["ret"] <= _EVENT_COHORT_DOWN_RET:
+                    down.append({"sym": sym, "r5": five["ret"]})
+
+            # qualifying window: higher tier wins; 5d wins a tie (the operator's
+            # question is always "what just happened this week")
+            qualifying = [(lbl, st) for lbl, st in stats.items() if st.get("tier")]
+            if not qualifying:
+                continue
+            qualifying.sort(
+                key=lambda kv: (
+                    -_EVENT_TIER_RANK.get(kv[1]["tier"], 0),
+                    0 if kv[0] == "5d" else 1,
+                )
+            )
+            win_label, win = qualifying[0]
+            members.append({
+                "sym": sym,
+                "window": win_label,
+                "ret": win["ret"],
+                "pctile": win["pctile"],
+                "tier": win["tier"],
+                "n_windows": win["n_windows"],
+                "hist_years": hist_years,
+                "last_larger_date": win["last_larger_date"],
+                "source": source,
+            })
+        except Exception as e:  # noqa: BLE001
+            log.warning("mag7_regime: event lens failed for %s (skipped): %s", sym, e)
+            continue
+
+    if n_up_extreme >= _EVENT_BROAD_N:
+        kind: str | None = "broad_up"
+    elif n_down_extreme >= _EVENT_BROAD_N:
+        kind = "broad_down"
+    elif up and down:
+        kind = "split"
+    else:
+        kind = None
+
+    events = {
+        "as_of": as_of,
+        "display": bool(members),
+        "window_note": _EVENT_WINDOW_NOTE,
+        "members": members,
+        "cohort": {
+            "kind": kind,
+            "up": up,
+            "down": down,
+            "generals": dict(generals or {}),
+        },
+    }
+
+    # A record-class member week is worth an Actions annotation: the July 2026
+    # miss was a week nobody was told about.  HOUSE LAW — annotations must START
+    # the line, so this is a bare print (never a logger) with flush=True.
+    for m in members:
+        if m["tier"] != "historic":
+            continue
+        w_sessions = 5 if m["window"] == "5d" else 21
+        print(
+            f"::notice title=mag7_event::{m['sym']} {m['ret'] * 100:+.1f}% in "
+            f"{w_sessions} sessions — {m['pctile']:.1f} pctile of own history",
+            flush=True,
+        )
+
+    return events
+
+
+# ---------------------------------------------------------------------------
 # Main snapshot
 # ---------------------------------------------------------------------------
 
@@ -989,6 +1291,13 @@ def snapshot(root: str | Path | None = None) -> dict:
     # --- generals ---
     generals = _compute_generals(member_rows, weights)
 
+    # --- event lens (F1) — display-tier plain data; fail-soft to an honest null ---
+    try:
+        events = _compute_events(closes, generals, as_of, root=_data_root)
+    except Exception as _ev_ex:  # noqa: BLE001
+        log.warning("mag7_regime: event lens failed (null block): %s", _ev_ex)
+        events = _empty_events(as_of)
+
     # --- MAGS chip ---
     mags_raw = _load_mags(root=_data_root)
     mags_payload: dict | None = None
@@ -1088,6 +1397,10 @@ def snapshot(root: str | Path | None = None) -> dict:
         # FC-R5 / FL-D: optional flow context block. None when FL-B cohorts.parquet
         # absent (fail-open). NO direction language; display-only context chip.
         "flow": flow_block,
+        # F1 event lens (postmortem 2026-08-03 §6): realized per-member windows
+        # ranked against each member's own history. Display-tier plain data —
+        # no direction, no forecast, no rank/size/gate authority.
+        "events": events,
         "_timing_s": elapsed,
     }
 
@@ -1120,6 +1433,11 @@ def snapshot(root: str | Path | None = None) -> dict:
         "k7_trend": k7["trend"],
         "cw_r10": cw_r10,
         "generals": generals.get("now"),
+        # F1: the event lens travels with the row so the ledger can answer
+        # "what did the tape do that day" after the fact. Additive field —
+        # trend_state / structure_chip / k7_trend / cw_r10 / generals are
+        # unchanged (ledger vocabulary continuity).
+        "events": events,
     }
     _append_ledger(ledger_row, root=_data_root)
 

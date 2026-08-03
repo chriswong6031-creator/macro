@@ -1,0 +1,276 @@
+{#- ═══════════════════════════════════════════════════════════════════════════════
+    MEGA-CAP TAPE strip (#megacap-tape / .m7t-*) — us_stocks, mode == 'stocks'.
+    超大盘行情 — 美股页事件条。
+
+    WHAT THIS IS (and is emphatically not).
+    Charter: research/POSTMORTEM_20260803_MAG7_RALLY_SILENCE_BY_FABLE.md §6 F2.
+    Fences:  research/DO_NOT_REBUILD.md §2 Mag-7 row — the KILLED construction is the
+             forced directional call (leadership board + ignition strip, removed
+             2026-07-23). What stays lawful, verbatim, is "Mag-7 as plain data display"
+             and "a display-tier watch item". This strip is that and only that:
+
+               · realized returns, already printed on the tape, stated as facts;
+               · ranked against THE MEMBER'S OWN past, never against each other;
+               · no direction word, no forecast, no continuation claim, no score,
+                 no rank number, no size, no gate, no board membership effect;
+               · one stance, and the stance is "watch — don't chase".
+
+    EVENT-GATED — the honest-null idiom of the "Forming today" strip below: when the
+    engine fires no tier, this file emits NOTHING AT ALL (no panel shell, no <style>,
+    no empty box). Silence is the correct read on the ~99% of days when no mega-cap
+    had a rare week. A panel that appears only when it has something to say cannot
+    become wallpaper.
+
+    DESIGN NOTE — why there is not a single chip, badge, dot or tinted container here.
+    This strip sits between the page header and the Prophet action board. Everything
+    below it is a CALL; this is a READING. The 2026-07-23 kill was, precisely, a
+    cohort STATE encoded into signal furniture. So the strip carries no state
+    vocabulary to encode: event size is expressed by how the sentence is PHRASED
+    ("its biggest five-day gain since Oct 2000" vs "last bigger in May 2026"), never
+    by a colour or a pill. Colour appears on exactly one class of glyph — the numeric
+    figure — via --ink-up/--ink-down, which flip under 红涨绿跌 at paint. State WORDS
+    stay --text/--muted (estate text-grade ink law). The one ornament is the hairline
+    rail down the left of the record block: these lines are quotations from the tape,
+    set apart from the strip's own stance sentence under the footer rule.
+    Zero animation, zero transition — so no reduced-motion block is required. Add one
+    and you must gate it.
+
+    TIERS (docs/DESIGN_DOCTRINE.md):
+      1 GLANCE  eyebrow · one line per event · split line · stance line
+      2 HOVER   per-line receipt (percentile, window count, span, last-larger date)
+                on data-tip-en/zh; the method disclosure on the panel's `?`
+    No translated text ever enters a title= attribute (CI-guarded), and every tip is
+    a raw data-tip-* attribute written by hand — never through the t()/help() macros,
+    which emit spans and would break attribute quoting.
+
+    CONTEXT IT READS (all fail-open; the `events` block is newer than this template's
+    first deploy, so its absence must render exactly like a quiet day):
+      latest.mag7_regime.events   {display, as_of, window_note, members[], cohort{}}
+      us_standouts.ran[]          {ticker, cross_date, pct_since} — presentation-tier
+                                  linkage only, a label lookup, never an input.
+    ═══════════════════════════════════════════════════════════════════════════════ -#}
+
+{%- macro m7t_t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro -%}
+
+{#- "2000-10-24" → "Oct 2000" / "2000年10月". Returns '' on anything unparseable. -#}
+{%- macro m7t_month(iso, lang) -%}
+{%- set _mo = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
+               '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} -%}
+{%- if iso and iso is string and iso|length >= 7 -%}
+{%- if lang == 'zh' %}{{ iso[:4] }}年{{ iso[5:7]|int }}月{% else %}{{ _mo.get(iso[5:7], iso[5:7]) }} {{ iso[:4] }}{% endif -%}
+{%- endif -%}
+{%- endmacro -%}
+
+{#- "2026-07-20" → "Jul 20" / "7月20日" -#}
+{%- macro m7t_day(iso, lang) -%}
+{%- set _mo = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
+               '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} -%}
+{%- if iso and iso is string and iso|length >= 10 -%}
+{%- if lang == 'zh' %}{{ iso[5:7]|int }}月{{ iso[8:10]|int }}日{% else %}{{ _mo.get(iso[5:7], iso[5:7]) }} {{ iso[8:10]|int }}{% endif -%}
+{%- endif -%}
+{%- endmacro -%}
+
+{#- Signed percent from a decimal return, with a TRUE minus (U+2212): these are set in
+    the mono face with tabular numerals, where U+2212 carries the same advance as a
+    digit and the ASCII hyphen reads as a dash mid-sentence. -#}
+{%- macro m7t_pct(x) -%}
+{{ '%+.1f'|format((x|float) * 100.0) | replace('-', '−') }}%
+{%- endmacro -%}
+
+{#- Rarity band, ALWAYS rounded away from rare (ceil): a 98.57th-percentile week is
+    "top 2%", never "top 1%". Rounding the other way would claim the move is rarer
+    than it was measured to be — an overclaim, in a strip whose entire job is not to
+    overclaim. Sub-1% bands keep one decimal so a genuine 0.1% is not inflated to 1%. -#}
+{%- macro m7t_band(x) -%}
+{%- set _b = x|float -%}
+{%- if _b < 1.0 %}{{ '%.1f'|format(((_b * 10.0)|round(0, 'ceil')) / 10.0) }}{% else %}{{ (_b|round(0, 'ceil'))|int }}{% endif -%}
+{%- endmacro -%}
+
+{%- set _m7t_reg = latest.mag7_regime if (latest is defined and latest and latest.mag7_regime is mapping) else none -%}
+{%- set _m7t_ev = (_m7t_reg.get('events') or {}) if _m7t_reg else {} -%}
+{%- set _m7t_all = (_m7t_ev.get('members') or []) if (_m7t_ev is mapping) else [] -%}
+
+{#- Tier order: record-class weeks first, then merely-extreme ones; within a tier the
+    rarest first (up moves by descending percentile, down moves by ascending). Capped
+    at 3 — a fourth line turns a glance into a table, and the engine's own tiers are
+    already the filter. -#}
+{%- set _m7t_ns = namespace(rows=[]) -%}
+{%- for _tier in ['historic', 'extreme'] -%}
+  {%- set _bk = _m7t_all | selectattr('tier', 'equalto', _tier) | list -%}
+  {%- set _bk_up = _bk | selectattr('pctile', 'ge', 50) | list | sort(attribute='pctile', reverse=True) -%}
+  {%- set _bk_dn = _bk | rejectattr('pctile', 'ge', 50) | list | sort(attribute='pctile') -%}
+  {%- set _m7t_ns.rows = _m7t_ns.rows + _bk_up + _bk_dn -%}
+{%- endfor -%}
+{%- set _m7t_rows = _m7t_ns.rows[:3] -%}
+
+{%- if _m7t_ev.get('display') and _m7t_rows -%}
+{%- set _m7t_co = (_m7t_ev.get('cohort') or {}) if (_m7t_ev.get('cohort') is mapping) else {} -%}
+{%- set _m7t_syms = _m7t_rows | map(attribute='sym') | list -%}
+{%- set _m7t_ran_all = (us_standouts.get('ran') or []) if (us_standouts is defined and us_standouts is mapping) else [] -%}
+{%- set _m7t_ran = (_m7t_ran_all | selectattr('ticker', 'in', _m7t_syms) | list)[:2] -%}
+  <style id="megacap-tape-css">
+  /* ── MEGA-CAP TAPE (F2) ────────────────────────────────────────────────────
+     Every value below resolves from an existing theme.css token. No new hex is
+     introduced and theme.css is untouched, so light / dark / zh all repaint at
+     `color-mix` time with nothing to keep in sync. */
+  body.page-stocks #megacap-tape{padding:15px 18px 14px}
+  body.page-stocks .m7t-hd{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin:0 0 11px}
+  body.page-stocks .m7t-eyebrow{margin:0;font-size:11px;font-weight:800;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted);line-height:1.2}
+  /* zh Hanzi read wrong under Latin display tracking (theme.css makes the same call
+     for headings) — the eyebrow keeps its rhythm from weight and colour instead. */
+  html[data-lang="zh"] body.page-stocks .m7t-eyebrow{letter-spacing:.06em}
+  body.page-stocks .m7t-asof{margin-left:auto;font-family:var(--font-mono,monospace);font-size:10.5px;
+    color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  /* THE SIGNATURE — the tape rail. These three lines are quotations of realized
+     fact; the rail is what separates them from the strip's own stance below the
+     footer rule. Neutral by construction — it is drawn from the muted token, never
+     from a directional one, so it cannot read as a direction and has nothing to
+     flip under 红涨绿跌. */
+  body.page-stocks .m7t-rec{border-left:2px solid color-mix(in srgb,var(--muted) 48%,transparent);
+    padding-left:13px;margin:0 0 11px}
+  /* Fixed columns, not max-content: each row is its own grid, so max-content would
+     size per ROW and the tickers would not form a column. The mega-cap set is a
+     seven-symbol engine constant whose longest ticker is 5 characters — 42px clears
+     that at 12px mono (~7.2px/char) with slack; 56px clears a 7-character figure
+     ("+100.0%"). Both nowrap, so an over-long value overflows into the gap rather
+     than reflowing the sentence column. */
+  body.page-stocks .m7t-line{display:grid;grid-template-columns:42px 56px 1fr;
+    align-items:baseline;gap:0 10px;padding:4px 0;cursor:help}
+  body.page-stocks .m7t-sym{font-family:var(--font-mono,monospace);font-size:12px;font-weight:700;
+    letter-spacing:.02em;color:var(--text);white-space:nowrap}
+  body.page-stocks .m7t-fig{font-family:var(--font-mono,monospace);font-size:12.5px;font-weight:700;
+    font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+  /* The ONLY colour on the strip, and only ever on a figure. --ink-* is the
+     text-grade form of the state palette (raw --up/--down is fill-grade and fails
+     the contrast floor as light-theme text); the var() fallback keeps a
+     cache-stale theme.css rendering today's colours rather than an invalid decl. */
+  body.page-stocks .m7t-fig.is-up{color:var(--ink-up,var(--up))}
+  body.page-stocks .m7t-fig.is-dn{color:var(--ink-down,var(--down))}
+  body.page-stocks .m7t-say{font-size:12.5px;line-height:1.5;color:var(--text)}
+  /* The rarity annotation hangs off the tape line behind a middot. The separator is
+     a pseudo, not a text node: it keeps its spacing symmetric no matter how the
+     surrounding markup is wrapped, and it stays out of the copy a vocabulary scan
+     reads. Both languages take the same rule — a middot needs no translation. */
+  body.page-stocks .m7t-rare{color:var(--muted)}
+  body.page-stocks .m7t-rare::before{content:"·";padding:0 5px 0 4px;opacity:.5}
+  /* The two PROSE blocks take a reading measure; the tape lines above keep their
+     natural length. On a span12 panel the stance ran 1,108px unwrapped — a ~95
+     character line, well past where the eye loses the return sweep. 74ch lands
+     English at a comfortable measure and, because `ch` is the width of "0" while a
+     Hanzi is roughly two of them, gives the Chinese twin ~37 characters a line,
+     which is its own comfortable measure. One number, both languages. */
+  body.page-stocks .m7t-split{font-size:12.5px;line-height:1.5;color:var(--text);
+    margin:0 0 11px;max-width:74ch}
+  /* A real thematic break, and it carries the strip's only structural claim: above
+     the rule is what the tape did, below it is what we do about it. Full-width on
+     purpose — the measure cap belongs to the prose, not to the boundary. */
+  body.page-stocks .m7t-rule{border:0;border-top:1px solid var(--line);margin:0 0 10px}
+  body.page-stocks .m7t-foot{margin:0;font-size:12.5px;line-height:1.55;
+    color:var(--muted);max-width:74ch}
+  body.page-stocks .m7t-stance{color:var(--text);font-weight:650}
+  /* nowrap: the quoted lane name is a single label the reader has to match against
+     the board below. At 375px zh it broke as 「已启 / 动」 — a bracketed term split
+     across two lines stops looking like a name. */
+  body.page-stocks .m7t-lane{font-weight:650;color:var(--text);white-space:nowrap}
+  @media (max-width:900px){
+    body.page-stocks #megacap-tape .m7t-asof{margin-left:0}
+  }
+  @media (max-width:560px){
+    /* The three-column almanac alignment is a desktop luxury; on a phone the
+       reading order is what matters, so the row becomes one flowing sentence. */
+    body.page-stocks #megacap-tape{padding:13px 14px}
+    body.page-stocks .m7t-line{display:block;padding:5px 0}
+    body.page-stocks .m7t-sym{margin-right:7px}
+    body.page-stocks .m7t-fig{margin-right:5px;text-align:left}
+  }
+  </style>
+  <div class="panel span12" id="megacap-tape">
+    <div class="m7t-hd">
+      <h2 class="m7t-eyebrow">{{ m7t_t('Mega-cap tape', '超大盘行情') }}</h2>
+      {#- Tier-2, the sanctioned home for method. The engine's own window_note is
+          re-said in plain words here rather than pasted: it is written for the
+          artifact's reader, not for this page's. -#}
+      <span class="help">?<span class="tip tip-wide"><span class="l-en">Plain tape facts: how far each name has already moved over the last 5 and 21 sessions, and where that sits in the stock's own full trading history. Descriptive only — no forecast, no call, and nothing here changes the board below. The windows overlap, so a percentile ranks this move against the stock's past, it is not an independent-sample statistic.</span><span class="l-zh">纯粹的行情事实：每只股票在过去5个及21个交易日内已经走出的幅度，以及它在该股自身完整交易历史中的位置。仅为描述，不含预测或建议，也不会改变下方看板。窗口互相重叠，因此分位是对本次走势相对该股过去的排序，并非独立样本统计。</span></span></span>
+      {%- if _m7t_ev.get('as_of') %}
+      <span class="m7t-asof">{{ m7t_t('as of ' ~ _m7t_ev.as_of, '截至 ' ~ _m7t_ev.as_of) }}</span>
+      {%- endif %}
+    </div>
+
+    <div class="m7t-rec">
+      {%- for m in _m7t_rows %}
+      {%- set _up = (m.ret|float) >= 0 -%}
+      {%- set _n = 21 if m.window == '21d' else 5 -%}
+      {%- set _span_en = '21-day' if _n == 21 else 'five-day' -%}
+      {%- set _span_zh = '21日' if _n == 21 else '五日' -%}
+      {%- set _hist = m.hist_years|float if m.get('hist_years') else 0 -%}
+      {%- set _band = (100.0 - (m.pctile|float)) if _up else (m.pctile|float) -%}
+      {%- set _last = m.get('last_larger_date') -%}
+      {#- Tier-2 receipt. Written as raw attributes: the i18n macros emit spans and
+          would break the quoting if piped through here. -#}
+      <div class="m7t-line"
+           data-tip-en="{{ m.sym }} — {{ '%.2f'|format(m.pctile|float) }}th percentile of {{ '{:,}'.format(m.n_windows|int) }} overlapping {{ _n }}-session windows across {{ '%.1f'|format(_hist) }} years of tape.{% if _last %} Last {{ 'larger' if _up else 'deeper' }}: {{ _last }}.{% else %} No {{ 'larger' if _up else 'deeper' }} window on record.{% endif %} Source: {{ 'full trading history' if m.get('source') == 'deep' else 'daily price store' }}. Windows overlap — this ranks the move, it is not an independent sample."
+           data-tip-zh="{{ m.sym }} — 在 {{ '%.1f'|format(_hist) }} 年、{{ '{:,}'.format(m.n_windows|int) }} 个重叠的 {{ _n }} 日窗口中位于第 {{ '%.2f'|format(m.pctile|float) }} 百分位。{% if _last %}上一次更{{ '大' if _up else '深' }}：{{ _last }}。{% else %}历史上没有更{{ '大' if _up else '深' }}的窗口。{% endif %}来源：{{ '完整交易历史' if m.get('source') == 'deep' else '日线价格库' }}。窗口互相重叠，因此这是对本次走势的排序，并非独立样本。">
+        <span class="m7t-sym">{{ m.sym }}</span>
+        <span class="m7t-fig {{ 'is-up' if _up else 'is-dn' }}">{{ m7t_pct(m.ret) }}</span>
+        <span class="m7t-say">
+          {#- A tape line, not a sentence: no terminal period before the rarity
+              annotation. Event SIZE is carried by the phrasing — a record-class week
+              gets the record-book clause ("its biggest … since"), a merely-extreme one
+              gets the plain "last bigger in" fact. Never a badge, never a colour. -#}
+          <span class="l-en">
+            {%- if _n == 21 %}over 21 sessions{% else %}in 5 sessions{% endif %} —
+            {%- if m.tier == 'historic' and _last %} its biggest {{ _span_en }} {{ 'gain' if _up else 'fall' }} since {{ m7t_month(_last, 'en') }}
+            {%- elif _last %} last {{ 'bigger' if _up else 'deeper' }} in {{ m7t_month(_last, 'en') }}
+            {%- else %} the biggest {{ _span_en }} {{ 'gain' if _up else 'fall' }} on its record
+            {%- endif %}
+            {%- if m.get('pctile') is not none %}<span class="m7t-rare">{{ 'top' if _up else 'bottom' }} {{ m7t_band(_band) }}% of{% if _hist >= 1 %} its {{ _hist|round|int }}-year{% endif %} record</span>{% endif -%}
+          </span>
+          <span class="l-zh">
+            {{- _n }}个交易日内 —
+            {%- if m.tier == 'historic' and _last %} 自{{ m7t_month(_last, 'zh') }}以来最{{ '大' if _up else '深' }}的{{ _span_zh }}{{ '涨幅' if _up else '跌幅' }}
+            {%- elif _last %} 上一次更{{ '大' if _up else '深' }}是{{ m7t_month(_last, 'zh') }}
+            {%- else %} 历史上最{{ '大' if _up else '深' }}的{{ _span_zh }}{{ '涨幅' if _up else '跌幅' }}
+            {%- endif %}
+            {%- if m.get('pctile') is not none %}<span class="m7t-rare">位于{% if _hist >= 1 %}其 {{ _hist|round|int }} 年{% endif %}历史{{ '最强' if _up else '最弱' }}的 {{ m7t_band(_band) }}%</span>{% endif -%}
+          </span>
+        </span>
+      </div>
+      {%- endfor %}
+    </div>
+
+    {#- The cohort line. It exists because the July-2026 miss was a DISPERSION read as
+        a cohort move: naming the other side of the same week is what stops three
+        strong lines from reading as "the group is running". -#}
+    {%- if _m7t_co.get('kind') == 'split' and (_m7t_co.get('down') or []) %}
+    {%- set _dn = (_m7t_co.get('down') or [])[:3] %}
+    <p class="m7t-split">
+      <span class="l-en">The move is split — {% for d in _dn %}{{ d.sym }} {{ m7t_pct(d.r5) }}{% if not loop.last %}, {% endif %}{% endfor %} over the same week.</span>
+      <span class="l-zh">走势分化 — 同一周 {% for d in _dn %}{{ d.sym }} {{ m7t_pct(d.r5) }}{% if not loop.last %}、{% endif %}{% endfor %}。</span>
+    </p>
+    {%- elif _m7t_co.get('kind') in ('broad_up', 'broad_down') and (_m7t_co.get('up') or _m7t_co.get('down')) %}
+    {%- set _bn = (_m7t_co.get('up') or []) | length if _m7t_co.get('kind') == 'broad_up' else (_m7t_co.get('down') or []) | length %}
+    <p class="m7t-split">
+      <span class="l-en">The move is broad — {{ _bn }} of the seven had a week this rare in their own history.</span>
+      <span class="l-zh">走势整体一致 — 七只中有 {{ _bn }} 只本周在各自历史中同样罕见。</span>
+    </p>
+    {%- endif %}
+
+    {#- Law 1 — the stance, and the honest stance is to do nothing. It names the
+        board's OWN lane label ("Ran" / 「已启动」, templates/dashboard.html.j2
+        _stage_en/_stage_zh) so a reader can find the name they just read about.
+        The radar sentence that follows is a FACT about existing board rows, not a
+        new call: presentation-tier linkage only (postmortem §6 F2). -#}
+    {#- Each language is ONE span, not a chain of t() calls: the newline between two
+        inline spans collapses to a space, which is correct between English words and
+        wrong inside a Chinese clause (「已启动」 came out with gaps on both sides).
+        Written out per language, the spacing is exactly what each one needs. -#}
+    <hr class="m7t-rule">
+    <p class="m7t-foot">
+      <span class="l-en"><span class="m7t-stance">Watch — don't chase.</span> A name that has already run sits in the board's <span class="m7t-lane">“Ran”</span> lane below; the entry watched is the next clean base.{% if _m7t_ran %} On the board already — {% for r in _m7t_ran %}{{ r.ticker }}{% if r.get('cross_date') %} since {{ m7t_day(r.cross_date, 'en') }}{% endif %}{% if r.get('pct_since') is not none %}, {{ '%+.1f'|format(r.pct_since|float)|replace('-', '−') }}% since{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}.{% endif %}</span>
+      <span class="l-zh"><span class="m7t-stance">观望，勿追高。</span>已经启动的名字位于下方看板的<span class="m7t-lane">「已启动」</span>栏；真正等待的是下一个扎实的整理平台。{% if _m7t_ran %}已在看板上 — {% for r in _m7t_ran %}{{ r.ticker }}{% if r.get('cross_date') %} 自{{ m7t_day(r.cross_date, 'zh') }}{% endif %}{% if r.get('pct_since') is not none %}，此后 {{ '%+.1f'|format(r.pct_since|float)|replace('-', '−') }}%{% endif %}{% if not loop.last %}；{% endif %}{% endfor %}。{% endif %}</span>
+    </p>
+  </div>
+{%- endif -%}

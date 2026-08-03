@@ -972,12 +972,27 @@ artifacts:
     consumers:
       - engine/run.py
       - scripts/build_site.py
+      - scripts/notify_turn_events.py
     external_consumers: []
     notes: >
       DISPLAY-ONLY / NOT VALIDATED. Ruling M7C-R2/R3. Trend state, structure,
-      run meter, k7 breadth count, member table, generals, spread20, tech_legs.
-      Ledger at data/mag7_regime/ledger.jsonl (idempotent by date). Site copy at
-      site/stockdata/mag7_regime.json.
+      run meter, k7 breadth count, member table, generals, spread20, tech_legs,
+      events. Ledger at data/mag7_regime/ledger.jsonl (idempotent by date). Site
+      copy at site/stockdata/mag7_regime.json.
+      The `events` block (added 2026-08-03, postmortem
+      POSTMORTEM_20260803_MAG7_RALLY_SILENCE_BY_FABLE.md F1) is an OPTIONAL
+      additive field on mag7_regime.v1 — consumers written before it must keep
+      working, and it is absent from rows written before that date. Shape:
+      {as_of, display (bool), window_note, members: [{sym, window 5d|21d, ret,
+      pctile, tier historic|extreme, n_windows, hist_years, last_larger_date,
+      source deep|ohlcv}], cohort: {kind broad_up|broad_down|split|null, up,
+      down, generals}}. Per-member realized 5-/21-session returns ranked against
+      that member's OWN full history (data/stocks/<SYM>.parquet, falling back to
+      the ohlcv span with `source` disclosed). Descriptive plain-data display
+      only — no direction word, no forecast, no continuation claim, and no
+      rank/size/gate authority anywhere (DO_NOT_REBUILD §2 Mag-7 row; MLC-R2..R5;
+      S-MLC-1 owns the only promotion path). Members list is EMPTY on ordinary
+      days — display=false is the honest null, not a failure.
 
   # M7C-R2/R3: Mag-7 Regime CDN-facing site copy.
   mag7-regime-site:
@@ -1000,7 +1015,9 @@ artifacts:
     external_consumers: []
     notes: >
       CDN-facing copy of data/mag7_regime/latest.json written in the same
-      engine/mag7_regime.snapshot() call.
+      engine/mag7_regime.snapshot() call — byte-identical payload, including the
+      optional additive `events` block (F1 event lens, added 2026-08-03; see the
+      mag7-regime-latest notes for its shape and display-tier fences).
 
   # XSR-R2: US fast-sector rotation artifact.
   us-sector-rotation-latest:
@@ -1050,8 +1067,12 @@ artifacts:
     external_consumers: []
     notes: >
       One row per session: {date, trend_state, structure_chip, k7_trend,
-      cw_r10, generals}. Idempotent — re-running the same date does not
-      duplicate. Nightly is the sole advancer.
+      cw_r10, generals, events}. Idempotent — re-running the same date does not
+      duplicate. Nightly is the sole advancer. `events` is the optional additive
+      F1 event lens block (added 2026-08-03; same shape as in
+      mag7-regime-latest) — absent from rows written before that date, so
+      readers must treat it as optional. The five original fields are unchanged
+      (ledger vocabulary continuity).
 
   # MWR-W0: Mag-7 washout re-entry gate — BACKGROUND-ONLY (no surface, no site
   # consumer by ruling).  DO_NOT_REBUILD §2 mandates prereg+gauntlet before any
