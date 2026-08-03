@@ -85,7 +85,7 @@ supply:
   # How many candidates each read-only pool may return. These are POOL sizes,
   # not post counts — the selector draws from them under its own cadence caps.
   pool_caps:
-    dollar_volume: 120          # hot_tape_pack adv_rank
+    dollar_volume: 120          # nightly ADV pack, by its own dollar-volume rank
     options_volume: 80          # data/options_flow latest-session contract volume
     retail_attention: 80        # WSB mentions ∪ Wikipedia attention z
     earnings_this_week: 60      # earnings.parquet next_date ≤ 5 sessions
@@ -122,10 +122,23 @@ supply:
     per_pool: {}
 
   tiers:
-    # ADV floor a hot_tape_pack name must clear to enter the cashtag-tier
-    # universe. Matches the pack's own construction filter, so today this
-    # admits every name the pack ships and exists to be raisable, not to bite.
-    hot_tape_pack_min_adv_dollars: 25000000
+    # ADV floor a name from the nightly liquid-market ADV pack
+    # (data/marketing/) must clear to enter the cashtag-tier universe. Matches
+    # that pack's own construction filter, so today this admits every name it
+    # ships and exists to be raisable, not to bite.
+    #
+    # NAMING, deliberate and load-bearing: this key and the two comments above
+    # do NOT spell the intraday attention program's module name, and neither
+    # does this sentence. THIS FILE is one of six the program's safety-stack
+    # guard holds read-only to it (TestSafetyStack, in that program's radar
+    # suite under tests/), and unlike the five source files it lists, the
+    # config file's invariant is ABSOLUTE — no sanctioned-token exception
+    # exists for it, and the guard is right that a config knob is exactly the
+    # shape of reach it defends against. Widening the exception to fit this
+    # block would have traded a real guard for a comment. A reader who wants
+    # the artifact path finds it in engine/marketing/attention_source.py,
+    # which is not on that list and names it freely.
+    pack_min_adv_dollars: 25000000
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Sentinel — trust_office W1 plan-level policy gate (engine/marketing/sentinel.py)

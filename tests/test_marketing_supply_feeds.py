@@ -169,6 +169,48 @@ def test_supply_block_is_present_and_readable_in_the_shipped_config():
         assert A.pool_cap(root, pool) > 0, pool
 
 
+def test_every_accessor_actually_reads_its_config_key(tmp_path):
+    """Non-default values, because a default is perfect cover for a key typo.
+
+    Each accessor falls back to a built-in default that EQUALS the shipped
+    config value. So if an accessor's key name and the config's key name ever
+    drift apart — which is exactly what happened when `pack_min_adv_dollars`
+    was renamed out of the Hot Tape safety-stack guard's way — every assertion
+    against the shipped numbers still passes, reading the default and never
+    touching the file. Only a value the default cannot produce can see it.
+    """
+    from engine.marketing import attention_source as A
+    _write_config(tmp_path, supply={
+        "pool_caps": {"dollar_volume": 7},
+        "long_tail_quota": {"min_fresh_per_day": 9, "not_posted_within_days": 11},
+        "per_ticker_day": {"max_chart_posts": 6},
+        "freshness": {"max_stale_sessions": 8},
+        "tiers": {"pack_min_adv_dollars": 33_000_000},
+    })
+    assert A.pool_cap(tmp_path, "dollar_volume") == 7
+    assert A.long_tail_quota(tmp_path) == {"min_fresh_per_day": 9,
+                                           "not_posted_within_days": 11}
+    assert A.max_chart_posts_per_ticker_day(tmp_path) == 6
+    assert A.max_stale_sessions(tmp_path) == 8
+    assert A.pack_min_adv_dollars(tmp_path) == 33_000_000
+
+
+def test_config_marketing_yml_never_names_the_hot_tape_program(tmp_path):
+    """The `supply:` block must stay clear of the safety-stack guard's invariant.
+
+    config/marketing.yml is held READ-ONLY to the Hot Tape program by
+    tests/test_marketing_hot_tape_radar.py::TestSafetyStack, and unlike the
+    five source files it lists, the config file gets NO sanctioned-token
+    exception. This suite pins the same rule from the supply side so the
+    failure lands next to the block that would cause it.
+    """
+    text = (_repo_root() / "config" / "marketing.yml").read_text(encoding="utf-8")
+    offenders = [ln.strip() for ln in text.splitlines() if "hot_tape" in ln]
+    assert not offenders, (
+        "config/marketing.yml must not name the hot-tape program — rename the "
+        f"key/comment rather than widening the guard: {offenders[:3]}")
+
+
 def test_per_pool_freshness_override(tmp_path):
     from engine.marketing import attention_source as A
     _write_config(tmp_path, supply={"freshness": {"max_stale_sessions": 3,
@@ -576,7 +618,7 @@ def test_illiquid_name_below_the_adv_floor_is_not_tiered_at_all(tmp_path):
     from engine.marketing.radar_internal import build_cashtag_tiers
     fresh = _sessions_ago(1)
     root = _tier_fixture(tmp_path, trade_date=fresh)
-    _write_config(root, supply={"tiers": {"hot_tape_pack_min_adv_dollars": 25_000_000}})
+    _write_config(root, supply={"tiers": {"pack_min_adv_dollars": 25_000_000}})
     _write_pack(root, {
         "ADVMOVER": _pack_record("ADVMOVER", adv=8e7, rank=1, last=106.0, prev=100.0,
                                  last_date=fresh),

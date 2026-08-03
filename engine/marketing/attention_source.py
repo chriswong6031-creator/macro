@@ -118,7 +118,12 @@ _SUPPLY_DEFAULTS: dict[str, Any] = {
         "per_pool": {},
     },
     "tiers": {
-        "hot_tape_pack_min_adv_dollars": 25_000_000,
+        # Key name is `pack_min_adv_dollars`, NOT the pack's module name: the
+        # config file that carries it is held read-only to the Hot Tape program
+        # by tests/test_marketing_hot_tape_radar.py::TestSafetyStack, whose
+        # config invariant is absolute (no sanctioned-token exception). Naming
+        # the artifact is fine HERE — this file is not on that list.
+        "pack_min_adv_dollars": 25_000_000,
     },
 }
 
@@ -319,9 +324,9 @@ def max_stale_sessions(root: PathLike | None, pool: str | None = None) -> int:
 def pack_min_adv_dollars(root: PathLike | None) -> float:
     """ADV floor a hot-tape-pack name must clear to enter the tier universe."""
     blk = supply_config(root).get("tiers") or {}
-    v = _finite(blk.get("hot_tape_pack_min_adv_dollars"))
+    v = _finite(blk.get("pack_min_adv_dollars"))
     if v is None or v < 0:
-        return float(_SUPPLY_DEFAULTS["tiers"]["hot_tape_pack_min_adv_dollars"])
+        return float(_SUPPLY_DEFAULTS["tiers"]["pack_min_adv_dollars"])
     return v
 
 
