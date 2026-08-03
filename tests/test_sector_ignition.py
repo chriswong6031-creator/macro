@@ -214,9 +214,27 @@ def test_persist_and_read_roundtrip(tmp_path, monkeypatch):
     assert df is not None and "b1__level" in df.columns and "__bench" in df.columns
     s = blp.level_series("hk", "b1")
     assert s is not None and len(s) == 40 and s.iloc[-1] > s.iloc[0]
-    # 20d rel stamped on the as-of row only
-    assert abs(df["b1__rel20"].dropna().iloc[-1] - 0.05) < 1e-9
+    # retired schema: the payload perf block must NOT become __rel20 columns
+    assert not [c for c in df.columns if c.endswith("__rel20")]
     assert blp.bench_series("hk") is not None
+
+
+def test_persist_drops_legacy_rel20_columns(tmp_path, monkeypatch):
+    """A prior store carrying retired __rel20 columns is healed on the next write: the
+    legacy columns must not survive via the carried-columns path (they are missing from
+    the fresh frame, so without the explicit drop they would be carried forever)."""
+    monkeypatch.setattr(blp.config, "data_dir", lambda: tmp_path)
+    blp.persist(_payload(), "hk")
+    p = tmp_path / blp.DOMAIN_DIR / "hk_levels.parquet"
+    old = pd.read_parquet(p)
+    old["b1__rel20"] = np.nan
+    old.loc[old.index[-1], "b1__rel20"] = 0.05     # the as-of stamp the legacy writer left
+    old.to_parquet(p)
+    res = blp.persist(_payload(), "hk")
+    assert res["wrote"]
+    df = blp.read_levels("hk")
+    assert not [c for c in df.columns if c.endswith("__rel20")]
+    assert "b1__level" in df.columns and "__bench" in df.columns
 
 
 def test_persist_idempotent_merge(tmp_path, monkeypatch):

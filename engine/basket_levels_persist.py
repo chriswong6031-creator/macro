@@ -1,16 +1,22 @@
-"""Persist the per-basket EW level SERIES + 20d rel returns (HK / Canada).
+"""Persist the per-basket EW level SERIES (HK / Canada).
 
 Masterplan §5.2 / §5.0 precise gap: the HK/CA thematic-basket LEVEL SERIES are recomputed
 and DISCARDED on every render. engine.basket_freeze already persists a PIT last-value tape
 (one float/basket/day). This module persists the *full computed level series* the render
-throws away, plus each basket's 20d relative-vs-benchmark return, so downstream ignition
-grading / structure math can read a level series without re-deriving it.
+throws away, so downstream ignition grading / structure math can read a level series
+without re-deriving it.
 
   data/basket_levels/<market>_levels.parquet   (market ∈ {hk, ca})
     index   : date (datetime64[ns])          — one row per session in the payload's chart
     columns : <bid>__level     float64        — EW level (chart.baskets[bid], TR basis)
               __bench           float64        — benchmark level (chart.bench)
-              <bid>__rel20      float64        — this basket's 20d rel-vs-bench return (as-of row only)
+
+  (A `<bid>__rel20` as-of-stamp column shipped with the module was retired 2026-08:
+  no reader ever existed, the last-row-only stamp could never accrue history — prior
+  stamps were overwritten under the old fresh-wins merge and fall behind the front
+  under the window trim — and within the surviving window rel20 is derivable from
+  `<bid>__level` / `__bench`. persist() drops the legacy columns from a prior store
+  so they cannot ride the carried-columns path.)
 
 VALIDITY CONTRACT (window-trimmed; small, git-tracked):
   The EW levels are recomputed each render over a rolling price window and rebased at the
@@ -38,7 +44,6 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from lib import config
@@ -55,9 +60,9 @@ def _path(market: str) -> Path:
 
 
 def _frame_from_payload(data: dict) -> pd.DataFrame | None:
-    """Build the wide [date × (<bid>__level, __bench, <bid>__rel20)] frame from a baskets payload.
+    """Build the wide [date × (<bid>__level, __bench)] frame from a baskets payload.
 
-    `data` must still carry `chart` (call BEFORE the builder pops it) and `baskets`.
+    `data` must still carry `chart` (call BEFORE the builder pops it).
     """
     chart = (data or {}).get("chart") or {}
     dates = chart.get("dates")
@@ -70,15 +75,7 @@ def _frame_from_payload(data: dict) -> pd.DataFrame | None:
             cols[f"{bid}__level"] = lv
     if len(cols) <= 1:                      # only bench, no basket levels
         return None
-    df = pd.DataFrame(cols, index=idx)
-    # attach each basket's 20d rel (as-of row only; NaN elsewhere) from the payload perf block
-    rel20 = {b["id"]: ((b.get("perf") or {}).get("20d") or {}).get("rel") for b in (data.get("baskets") or [])}
-    for bid, rel in rel20.items():
-        s = pd.Series(np.nan, index=idx, dtype="float64")
-        if rel is not None and len(idx):
-            s.iloc[-1] = float(rel)
-        df[f"{bid}__rel20"] = s
-    return df
+    return pd.DataFrame(cols, index=idx)
 
 
 def persist(data: dict, market: str) -> dict:
@@ -98,6 +95,13 @@ def persist(data: dict, market: str) -> dict:
             try:
                 old = pd.read_parquet(p)
                 old.index = pd.DatetimeIndex(old.index)
+                # schema-retired (module docstring): legacy __rel20 columns must not ride
+                # the carried-columns path below
+                legacy = [c for c in old.columns if c.endswith("__rel20")]
+                if legacy:
+                    old = old.drop(columns=legacy)
+                    log.info("basket_levels_persist[%s]: dropped %d retired __rel20 column(s)",
+                             market, len(legacy))
                 # VALIDITY (module docstring): only tonight's window survives — fresh cells
                 # replace everything on shared dates, and old rows outside tonight's window
                 # are trimmed, never merged. Columns for baskets absent tonight are carried
