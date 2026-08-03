@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T08:59:27.027660+00:00",
-  "count": 653,
+  "generated_at": "2026-08-03T10:05:17.875973+00:00",
+  "count": 656,
   "institutions": [
     "Alger",
     "Amova",
@@ -46,6 +46,48 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-bqlsvpaeo5c-2e2061",
+      "title": "JPM JPM International Ma",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T09:47:28Z",
+      "summary_points": [
+        "**Geopolitics & AI Correction**: Iran talks resume post-strike; SoH normalization odds +8%pts, Brent -5% amid military realities.",
+        "AI/MOMO correction over, hyperscalers reassured on cloud ARR/backlog surge; market shrugged off Qwen 3.8-Max.",
+        "**Macro Gold Hedge**: Fed credibility/long-end volatility risk (10-20bp 10Y USTs pressure equities).",
+        "Gold hedge active; Tether/central-bank demand returning, 3-6m carry-efficient upside via call spreads.",
+        "**US TPM Level**: Near March low (-0.6z, 20% tile) signals tactical positioning low, reversal risk or underweight vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ocgyjy6nnzc-9c32f3",
+      "title": "JPM Europe Equity Research | Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T09:32:30Z",
+      "summary_points": [
+        "**Equity Strategy Outlook**: Bullish on resilient activity, strong earnings momentum, and Fed accommodative policy (lower yields, curve steepening favoring Cyclicals/Value); Eurozone PMIs up, credit growth rebounding; geopolitical dips (Iran) tactical.",
+        "**DSM-Firmenich Upgrade**: Strong 2Q organic sales (+6% YoY), adj EBITDA (+10% YoY); cost focus acceleration post-ME conflict; 2H26 guidance implies stronger trajectory, driving sector positioning.",
+        "**Cybersecurity Over Credit Risk**: Cybersecurity now primary risk factor for global banks (replacing credit risk), critical for portfolio risk management and allocation.",
+        "**Key EPS Growth Signals**: Robust fundamentals in European banks (Standard Chartered +6.8% EPS) and energy (TotalEnergies +4.8% EPS); contrasted with downside risks (Ferretti Group -13.3% EPS).",
+        "**Sector-Specific Institutional Flows**: Concentrated institutional interest in Capital Goods (12 events), Building Materials (8 events), and European Chemicals (4 events) during Aug–Sep 2026, signaling flow opportunities."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-vvy2usrko4a-0d8de9",
       "title": "Diversification",
@@ -1006,6 +1048,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hzcijhpserp-89b97b",
+      "title": "Asia FX Weekly China’s PMIs, Asia trade data and RBI policy will be key 2",
+      "institution": "MUFG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:47:05Z",
+      "summary_points": [
+        "**China’s PMI Divergence**: Manufacturing PMI (49.2) and non-manufacturing (49.0) show weak activity, but tech sectors (Hi-Tech >50) outperform non-tech (Consumer Goods <50), signaling entrenched sectoral stress amid delayed fiscal policy rollout.",
+        "**RBI Policy & FX Intervention**: RBI holds repo at 5.25% (oil/bond risks), intervenes to support USD/INR near 96.15, with MPC meeting (3-5 Aug) focusing on inflation, oil prices, and liquidity amid PMI decline (54.3 → 57.1).",
+        "**US-Iran Conflict & Oil Shock**: Middle East tensions revive oil to $90/bbl, triggering inflation risks; Indonesia, Philippines, and South Korea tighten policy (25bps+), contrasting with China’s easing bias.",
+        "**Asia Equity Flow Shifts**: South Korea/Taiwan record massive outflows ($5bn/$4.4bn) amid tech volatility and US-Iran uncertainty; India sees inflows ($400mn), Indonesia/Thailand mixed.",
+        "**Fed FOMC Policy Uncertainty**: 9-3 split on rate hold (3.50%-3.75%) with dissenters citing inflation; no forward guidance increases September meeting uncertainty, widening Fed funds futures vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
       "language": "en",
       "needs_metadata": false
     },

@@ -205,12 +205,27 @@ def test_sr_js_themes_unit_flag_is_backward_compatible() -> None:
     assert "data-u=\"subsectors\"" in js
 
 
-def test_china_templates_untouched_by_consolidation() -> None:
-    # The China siblings must keep their own pages (follow-up program ports them).
-    for name in ("sector_central_china.html.j2", "baskets_china.html.j2",
-                 "subsector_rotation_china.html.j2"):
+def test_china_consolidation_landed_on_its_own_page() -> None:
+    """The follow-up program this test was waiting for has landed.
+
+    Was test_china_templates_untouched_by_consolidation: while the US merge shipped
+    alone, the China siblings had to keep their own pages, so it asserted none of the
+    three was a stub. The China Sector Intelligence consolidation (2026-08) ported the
+    merge, so the premise inverts for the two absorbed pages — but the guard it was
+    really providing survives, and is what matters now: the US merge must not have
+    reached across and stubbed China's HUB. Full China invariants live in
+    tests/test_china_sector_intelligence_page.py.
+    """
+    hub = _read(TPL / "sector_central_china.html.j2")
+    assert "http-equiv=\"refresh\"" not in hub, (
+        "sector_central_china.html.j2 is the China hub — it must never be a stub"
+    )
+    for name in ("baskets_china.html.j2", "subsector_rotation_china.html.j2"):
         s = _read(TPL / name)
-        assert "http-equiv=\"refresh\"" not in s, f"{name} must not be a stub"
+        assert "http-equiv=\"refresh\"" in s, (
+            f"{name} is an absorbed page and must stay a redirect stub"
+        )
+        assert "sector_central_china.html" in s, f"{name} retargeted off the China hub"
 
 
 def test_us_builder_flags_themes_unit_hidden() -> None:
