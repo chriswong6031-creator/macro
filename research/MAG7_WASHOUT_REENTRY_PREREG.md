@@ -298,3 +298,49 @@ behind a flag — so no un-gauntleted selection path exists to flip on by accide
   Acknowledged head-on: MWR's Use-B is graded on FORWARD returns with pre-stated
   hit/fail/kill rules, and Use-A is a gate, not a forecast.
 - DO_NOT_REBUILD §2 forced-call row — this prereg is that row's mandated re-entry path.
+
+## §8. 2026-08-03 band-gap note (Fable) — the July flush that never armed the gate
+
+Recorded because §0's own warning cuts both ways: a miss you can see on a chart is the
+most tempting thing in the world to fit. This section changes **no construction, no
+threshold, and no state-machine rule** — it exists so the next session asking "why didn't
+MWR fire in July?" finds the answer already written instead of reaching for the dial.
+
+**The tape (measured from `data/baskets/ohlcv`, house EW basket per §1).** The Mag-7
+basket fell −7.1% from its 2026-07-21 close to its 2026-07-29 trough close, with a single
+−4.95% session on 07-23 (the 14th-worst of the 1,255 sessions since 2021-08; cap-weighted
+−3.87%, 30th — sharp, but **not** a five-year record). It then V-reversed on earnings:
++4.3% over 07-29 → 07-31, with MSFT +21.75% over the five sessions to 07-31 (99.90th
+percentile of its own 40-year history) against AAPL −7.2% and META −6.5% — a dispersion,
+not a cohort move. Full account: `POSTMORTEM_20260803_MAG7_RALLY_SILENCE_BY_FABLE.md`.
+
+**What MWR did: nothing, correctly.** `data/mag7_washout/latest.json` (as_of 2026-07-31):
+state `idle`, `members_washed` 0, basket 2W-A Stoch-RSI K **55.7** (D 54.6). The two 2W
+bars spanning the whole episode read K 55.1 (bar 2026-07-17) and 55.7 (bar 2026-07-31) —
+never within 35 points of the <20 washout floor. No member cleared the floor either
+(lowest: TSLA 23.4, GOOGL 26.7), so breadth was 0/7 against the ≥4/7 requirement. With
+neither the K-floor nor the breadth condition met, §1's state machine cannot leave `idle`,
+so S1 could not arm and S3 (armed-only) could not be evaluated. Lifetime trigger count
+remains 0.
+
+**This is idle-BY-BAND, not idle-broken.** S1/S3 are pinned to 2-week-deep washouts —
+April-2026-class capitulations where a fortnight of selling drives the 2W oscillator under
+20. A one-week flush that reverses on an earnings print is outside that band **by
+construction**, exactly as §1 specifies. The gate did not fail to detect a washout; there
+was no washout of the kind it registers. Reading its silence as a defect would be reading
+a thermometer as broken because the room is warm.
+
+**Fence.** Any shallow-flush arm — a faster oscillator, a lower bar count, a 1W/3D
+primary, a drawdown-percent trigger — would be fitted to this exact miss, which is §0's
+chart-memory trap with a different chart. Such a construction may enter ONLY as a **new,
+separately named phase-1 candidate** with its own census, its own pre-registered gates,
+and **multiplicity accounting** that counts it against every other Mag-7 construction
+tried (§4). It may never be introduced as an amendment to S1/S3, and never after seeing
+its own motivating episode graded.
+
+**Where the July fact was narrated instead.** The lawful surface for "this member's week
+was a 1-in-2,000 window of its own history" is the display-tier event lens in
+`engine/mag7_regime.py` (`events` block, postmortem §6 F1) — realized returns plus
+own-history percentile receipts, no direction, no forecast, no rank. That lens claims
+nothing about continuation and therefore neither competes with nor preempts this prereg's
+gauntlet (§4/§5), which remains the only path by which a Mag-7 read gains authority.

@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/biocatalyst_transcript_context_bundle.v1.schema.json",
+  "title": "BioCatalyst Transcript Context Bundle v1",
+  "description": "The sole BioCatalyst consumable from the private earnings transcript seam. It atomically binds one self-consistent, receipt-bound transcript projection to bounded deterministic lexical review candidates, while explicitly carrying no independent source-authenticity attestation. It is not an identity, document-history, signal, queue, API, store, or writer contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "bundle_id", "span_read", "candidate_order", "candidate_count", "candidates", "integrity_scope", "authority", "hash_scope", "bundle_payload_sha256"],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_transcript_context_bundle.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "bundle_id": {"type": "string", "pattern": "^biocatalyst_transcript_context_bundle_[a-f0-9]{24}$"},
+    "span_read": {"$ref": "https://mastermind-x.com/contracts/biocatalyst/earnings_transcript_span_read.v1.schema.json"},
+    "candidate_order": {"const": "source_span_then_mention_class_ascending"},
+    "candidate_count": {"type": "integer", "minimum": 0, "maximum": 192},
+    "candidates": {"type": "array", "maxItems": 192, "items": {"$ref": "#/$defs/candidate"}},
+    "integrity_scope": {"$ref": "#/$defs/integrityScope"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "hash_scope": {"const": "canonical_payload_excluding_bundle_id_and_bundle_payload_sha256"},
+    "bundle_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"span_read": {"properties": {"available": {"const": false}}, "required": ["available"]}}, "required": ["span_read"]},
+      "then": {"properties": {"candidate_count": {"const": 0}, "candidates": {"maxItems": 0}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "candidate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["candidate_id", "source_read", "document_id", "document_revision_id", "source_span", "mention_class", "matched_terms", "extraction_method", "asserted", "review_required", "no_negative_conclusion", "source_fact", "authority", "hash_scope", "candidate_payload_sha256"],
+      "properties": {
+        "candidate_id": {"type": "string", "pattern": "^biocatalyst_transcript_mention_[a-f0-9]{24}$"},
+        "source_read": {
+          "type": "object", "additionalProperties": false, "required": ["read_id", "read_payload_sha256"],
+          "properties": {
+            "read_id": {"type": "string", "pattern": "^earnings_transcript_span_read_[A-Z0-9.\\-]{1,16}_[a-f0-9]{24}$"},
+            "read_payload_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "document_id": {"type": "string", "pattern": "^earnings_transcript_[a-f0-9]{24}$"},
+        "document_revision_id": {"type": "string", "pattern": "^earnings_transcript_revision_[a-f0-9]{24}$"},
+        "source_span": {
+          "type": "object", "additionalProperties": false, "required": ["span_id", "claim_id", "kind", "source_sha256", "text_sha256"],
+          "properties": {
+            "span_id": {"type": "string", "pattern": "^earnings_transcript_span_[a-f0-9]{24}$"},
+            "claim_id": {"type": "string", "minLength": 1, "maxLength": 64},
+            "kind": {"enum": ["quote", "numeric"]},
+            "source_sha256": {"$ref": "#/$defs/sha256"},
+            "text_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "mention_class": {"enum": ["clinical_trial_mention", "regulatory_mention", "partnering_mention", "financing_mention"]},
+        "matched_terms": {"type": "array", "minItems": 1, "maxItems": 9, "uniqueItems": true, "items": {"type": "string", "minLength": 2, "maxLength": 40, "pattern": "^[a-z0-9 ]+$"}},
+        "extraction_method": {"const": "deterministic_transcript_lexical_candidate.v1"},
+        "asserted": {"const": false},
+        "review_required": {"const": true},
+        "no_negative_conclusion": {"const": true},
+        "source_fact": {"const": false},
+        "authority": {"$ref": "#/$defs/candidateAuthority"},
+        "hash_scope": {"const": "canonical_payload_excluding_candidate_id_and_candidate_payload_sha256"},
+        "candidate_payload_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "candidateAuthority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["classification", "decision_authority", "maximum_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "classification": {"const": "semantic_candidate"},
+        "decision_authority": {"const": false},
+        "maximum_authority": {"const": "A1_EXPLAIN"},
+        "allowed_uses": {"const": ["display", "context", "explain"]},
+        "forbidden_uses": {"const": ["originate_signal", "issuer_resolution", "security_resolution", "sponsor_resolution", "trial_resolution", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "neural_web_authority", "all_prophet_uses", "raise_authority"]}
+      }
+    },
+    "integrityScope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["validation", "source_authenticity", "authorized_transport", "persistence_authorized"],
+      "properties": {
+        "validation": {"const": "self_consistent_receipt_bound_projection"},
+        "source_authenticity": {"const": "trusted_upstream_reader_required_not_independently_attested"},
+        "authorized_transport": {"const": "private_in_process_only"},
+        "persistence_authorized": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["classification", "decision_authority", "maximum_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "classification": {"const": "context_bundle"},
+        "decision_authority": {"const": false},
+        "maximum_authority": {"const": "A1_EXPLAIN"},
+        "allowed_uses": {"const": ["display", "context", "explain"]},
+        "forbidden_uses": {"const": ["originate_signal", "issuer_resolution", "security_resolution", "sponsor_resolution", "trial_resolution", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "neural_web_authority", "all_prophet_uses", "raise_authority"]}
+      }
+    }
+  }
+}

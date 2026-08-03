@@ -70,7 +70,10 @@ router = APIRouter()
 # still the gate, and this wall was only ever costing us the crawl — Googlebot
 # has no session, so it was being 302'd off the one desk with proven demand.
 #
-# /etfs.html joins them for W2 (same masterplan, spec Part B). It is the same
+# /etfs.html W2 flip TEMPORARILY REVERTED 2026-08-03: the boundary deployed ahead
+# of the free-shell bake (render lane superseded 3x) and the full board leaked
+# anonymously ~1h. Re-flip in a follow-up PR ONLY after the walled shell is
+# committed on main (masterplan gate 6b). It is the same
 # shape with one difference worth stating: the two desks above were ALREADY split
 # and W1a moved only their access class, whereas etfs.html was fully server-
 # rendered with every graded row in the markup, so the PR that opened it is also
@@ -90,7 +93,6 @@ PUBLIC_PATHS = {
     "/research_vault.html",
     "/special_situations.html",
     "/china_special_situations.html",
-    "/etfs.html",
     "/support.html",
     "/unsubscribe.html",
 }

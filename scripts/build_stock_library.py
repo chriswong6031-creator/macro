@@ -367,6 +367,24 @@ def _limited_rec(ticker: str, c: pd.Series, name: str, sector: str) -> dict:
     }
 
 
+def _collect_potential_calls(to_write) -> list[dict]:
+    """Assemble the name-score grader admission batch from the built recs: each
+    name's potential call + its as-of close (`level`) + its OWN last-bar date
+    (`bar_asof`). bar_asof is load-bearing: the grader refuses a call whose feed
+    is dead (> ~1 week behind the ledger stamp) so a frozen series can't accrue
+    fictional PIT rows — 11 names (SATS dead store, QCOM 24d stale, …) were
+    stamping daily echoes before this existed (see
+    research/ADJUDICATION_20260803_ORCL_NAME_SCORE_FLATLINE.md; pinned by
+    tests/test_name_score.py::test_us_emitter_passes_bar_asof)."""
+    calls: list[dict] = []
+    for _safe, _rec in to_write:
+        _pot = (_rec.get("conviction") or {}).get("potential")
+        if _pot and _pot.get("call"):
+            calls.append({**_pot["call"], "level": (_rec.get("tech") or {}).get("price"),
+                          "bar_asof": _rec.get("asof")})
+    return calls
+
+
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          name: str, sector: str, liquidity: str | None = None,
          macro_drag: float | None = None, macro_beta: float = 0.0,
@@ -3196,14 +3214,11 @@ def main() -> int:
             _c["notes"] = [n for n in _notes if n.get("kind") != "rank"] or None
     try:
         _asof = str(pd.Timestamp.utcnow().date())
-        _calls = []
-        for _safe, _rec in to_write:
-            _pot = (_rec.get("conviction") or {}).get("potential")
-            if _pot and _pot.get("call"):
-                _calls.append({**_pot["call"], "level": (_rec.get("tech") or {}).get("price")})
+        _calls = _collect_potential_calls(to_write)
         if _calls:
             _n = name_score_grader.append_name_calls(_calls, market="US", asof=_asof)
-            log.info("US name-score grader: logged %d calls for %s (ledger=%d)", len(_calls), _asof, _n)
+            log.info("US name-score grader: submitted %d calls for %s (ledger=%d; "
+                     "refused calls are warned by the grader)", len(_calls), _asof, _n)
     except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
         log.warning("US name-score grader append failed (%s)", e)
     # ---- B2 accrual (research/LABEL_FALTERING_PHASE0.md §2) — archive per-basket member-

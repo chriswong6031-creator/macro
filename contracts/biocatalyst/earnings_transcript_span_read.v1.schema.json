@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/earnings_transcript_span_read.v1.schema.json",
+  "title": "BioCatalyst Earnings Transcript Span Read v1",
+  "description": "A private in-process, transcript-only, self-consistent projection assembled from the trusted earnings reader. Its hashes and receipts bind the projection internally but do not independently attest source authenticity. It is not a corporate-document history reader, identity resolver, signal input, or store/API contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "read_id", "query", "available", "unavailable_reason", "coverage", "document", "generation", "span_count", "spans", "integrity_scope", "authority", "hash_scope", "read_payload_sha256"],
+  "properties": {
+    "contract_id": {"const": "earnings_transcript_span_read.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "read_id": {"type": "string", "pattern": "^earnings_transcript_span_read_(?:[A-Z0-9.\\-]{1,16}|unavailable)_[a-f0-9]{24}$"},
+    "query": {"$ref": "#/$defs/query"},
+    "available": {"type": "boolean"},
+    "unavailable_reason": {"type": ["string", "null"], "enum": ["invalid_ticker", "invalid_as_of", "ticker_not_covered", "no_evidence_known_at_as_of", "integrity_failure", null]},
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "document": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/document"}]},
+    "generation": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/generation"}]},
+    "span_count": {"type": "integer", "minimum": 0, "maximum": 48},
+    "spans": {"type": "array", "maxItems": 48, "uniqueItems": true, "items": {"$ref": "#/$defs/span"}},
+    "integrity_scope": {"$ref": "#/$defs/integrityScope"},
+    "authority": {"$ref": "#/$defs/authority"},
+    "hash_scope": {"const": "canonical_payload_excluding_read_id_and_read_payload_sha256"},
+    "read_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"available": {"const": true}}, "required": ["available"]},
+      "then": {"properties": {"unavailable_reason": {"const": null}, "document": {"$ref": "#/$defs/document"}, "generation": {"$ref": "#/$defs/generation"}, "span_count": {"minimum": 1}, "spans": {"minItems": 1}}}
+    },
+    {
+      "if": {"properties": {"available": {"const": false}}, "required": ["available"]},
+      "then": {"properties": {"unavailable_reason": {"type": "string"}, "document": {"type": "null"}, "generation": {"type": "null"}, "span_count": {"const": 0}, "spans": {"maxItems": 0}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "ticker": {"type": "string", "pattern": "^[A-Z0-9.\\-]{1,16}$"},
+    "query": {
+      "type": "object", "additionalProperties": false, "required": ["ticker", "as_of", "selection_scope"],
+      "properties": {
+        "ticker": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/ticker"}]},
+        "as_of": {"anyOf": [{"type": "null"}, {"type": "string", "format": "date"}, {"type": "string", "format": "date-time"}]},
+        "selection_scope": {"const": "latest_selected_context_packet_in_receipted_generation_only"}
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false, "required": ["document_classes", "history_scope", "absence_conclusion"],
+      "properties": {
+        "document_classes": {
+          "type": "object", "additionalProperties": false, "required": ["release", "filing", "transcript", "slides", "consensus"],
+          "properties": {
+            "release": {"enum": ["not_ingested", "unavailable"]},
+            "filing": {"enum": ["not_ingested", "unavailable"]},
+            "transcript": {"enum": ["present", "unavailable"]},
+            "slides": {"enum": ["not_ingested", "unavailable"]},
+            "consensus": {"enum": ["unlicensed_absent", "unavailable"]}
+          }
+        },
+        "history_scope": {"const": "latest_selected_context_packet_only"},
+        "absence_conclusion": {"const": false}
+      }
+    },
+    "document": {
+      "type": "object", "additionalProperties": false,
+      "required": ["document_id", "document_revision_id", "source_kind", "ticker", "transcript_id", "period", "event_date", "known_at", "correction_status", "source_sha256"],
+      "properties": {
+        "document_id": {"type": "string", "pattern": "^earnings_transcript_[a-f0-9]{24}$"},
+        "document_revision_id": {"type": "string", "pattern": "^earnings_transcript_revision_[a-f0-9]{24}$"},
+        "source_kind": {"const": "transcript"},
+        "ticker": {"$ref": "#/$defs/ticker"},
+        "transcript_id": {"type": "string", "pattern": "^[A-Za-z0-9_.\\-]{1,80}$"},
+        "period": {"type": "string", "minLength": 1, "maxLength": 120},
+        "event_date": {"type": "string", "format": "date"},
+        "known_at": {"type": "string", "format": "date-time"},
+        "correction_status": {"enum": ["current", "corrected"]},
+        "source_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "generation": {
+      "type": "object", "additionalProperties": false, "required": ["generation_id", "knowledge_cutoff", "context_id", "context_object_sha256"],
+      "properties": {
+        "generation_id": {"type": "string", "pattern": "^[A-Za-z0-9_.\\-]{1,160}$"},
+        "knowledge_cutoff": {"type": "string", "format": "date-time"},
+        "context_id": {"type": "string", "pattern": "^earnctx_[a-f0-9]{32}$"},
+        "context_object_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "receipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_sha256", "segment_sha256", "segment_index", "segment_bytes", "span_start_byte", "span_end_byte", "text_sha256"],
+      "properties": {
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "segment_sha256": {"$ref": "#/$defs/sha256"},
+        "segment_index": {"type": "integer", "minimum": 0},
+        "segment_bytes": {"type": "integer", "minimum": 1},
+        "span_start_byte": {"type": "integer", "minimum": 0},
+        "span_end_byte": {"type": "integer", "minimum": 1},
+        "text_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "span": {
+      "type": "object", "additionalProperties": false,
+      "required": ["span_id", "claim_id", "kind", "text", "text_sha256", "receipt"],
+      "properties": {
+        "span_id": {"type": "string", "pattern": "^earnings_transcript_span_[a-f0-9]{24}$"},
+        "claim_id": {"type": "string", "minLength": 1, "maxLength": 64},
+        "kind": {"enum": ["quote", "numeric"]},
+        "text": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "text_sha256": {"$ref": "#/$defs/sha256"},
+        "receipt": {"$ref": "#/$defs/receipt"}
+      }
+    },
+    "integrityScope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["validation", "source_authenticity", "authorized_transport", "persistence_authorized"],
+      "properties": {
+        "validation": {"const": "self_consistent_receipt_bound_projection"},
+        "source_authenticity": {"const": "trusted_upstream_reader_required_not_independently_attested"},
+        "authorized_transport": {"const": "private_in_process_only"},
+        "persistence_authorized": {"const": false}
+      }
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["classification", "decision_authority", "maximum_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "classification": {"const": "source_fact"},
+        "decision_authority": {"const": false},
+        "maximum_authority": {"const": "A1_EXPLAIN"},
+        "allowed_uses": {"const": ["display", "context", "explain"]},
+        "forbidden_uses": {"const": ["originate_signal", "issuer_resolution", "security_resolution", "sponsor_resolution", "trial_resolution", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "neural_web_authority", "all_prophet_uses", "raise_authority"]}
+      }
+    }
+  }
+}

@@ -29,6 +29,20 @@ EVENT SOURCES
     Dedup key: (kind="mtf_upturn_mag7", SYM, date).
     Fail-open: missing/malformed artifact does not affect sources (a)–(c).
 
+(f) Mag-7 washout-gate trigger (data/mag7_washout/triggers.jsonl) — MWR §7 W1b.
+    Bar-date-keyed point event; see _detect_mwr_trigger() for the full contract.
+
+(g) Mag-7 record-class member week (data/mag7_regime/latest.json events block)
+    Postmortem 2026-08-03 §6 F3.  Fires when the event lens tiers a member's
+    realized 5- or 21-session window as `historic` — a top-0.5% (or bottom-0.5%)
+    window of that member's OWN full trading history — and the artifact is fresh
+    (as_of within 5 calendar days).  Dedup key: (kind="m7_event",
+    f"{sym}|{window}|{as_of}") — once ever per member-window-day.
+    Copy is a plain tape fact: realized move + own-history receipt. No
+    direction, no forecast, no rank (DNR §2 Mag-7 row: plain data display).
+    Born from the week MSFT printed +21.8% in five sessions and no surface,
+    including this one, said anything.
+
 NOTE ON DEDUP SEMANTICS: all three detectors use state-day dedup — they fire
 once per calendar day per subject while the state is active, NOT only on the
 first transition into the state.  Masterplan §5 specifies "dedup per state-day".
@@ -101,6 +115,7 @@ _NOTIFY_STATE_PATH = Path(
 ) / "notify_state.json"
 _MTF_UPTURN_PATH = ROOT / "site" / "stockdata" / "mtf_upturn.json"
 _MWR_TRIGGERS_PATH = ROOT / "data" / "mag7_washout" / "triggers.jsonl"  # MWR §7 W1b (committed nightly)
+_MAG7_REGIME_PATH = ROOT / "data" / "mag7_regime" / "latest.json"  # F1 event lens (committed nightly)
 
 # ---------------------------------------------------------------------------
 # Copy constants (FT-R13 compliant)
@@ -779,11 +794,100 @@ def _detect_mwr_trigger(
     return results
 
 
+def _m7_event_message(entry: dict, as_of: str) -> str:
+    """Source (g) copy — a plain tape fact with its own-history receipt.
+
+    Glance tier (doctrine Laws 2/3): what the stock DID and how rare that is for
+    THIS stock, in words. No direction, no forecast, no rank, no internal state
+    names, no engine slugs. The percentile is the point of the alert — it is the
+    receipt that makes "rare" a fact rather than an adjective — so it is spelled
+    out in words rather than left as a bare number.
+    """
+    sym = str(entry.get("sym") or "").upper()
+    window = str(entry.get("window") or "")
+    sessions = "21" if window == "21d" else "5"
+    ret = float(entry.get("ret") or 0.0) * 100.0
+    pctile = float(entry.get("pctile") or 0.0)
+    years = entry.get("hist_years")
+    last_larger = entry.get("last_larger_date")
+
+    span = f"{float(years):.0f}-year" if isinstance(years, (int, float)) else "full"
+
+    if ret >= 0:
+        rarity = f"the {pctile:.1f}th percentile of its own {span} history"
+    else:
+        rarity = f"lower than all but {pctile:.1f}% of its own {span} history"
+
+    if last_larger:
+        prior = f"last {sessions}-session stretch this size: {last_larger}"
+    else:
+        prior = f"no {sessions}-session stretch this size in its recorded history"
+
+    msg = (
+        f"RARE MOVE — {sym} {ret:+.1f}% in {sessions} sessions "
+        f"· {rarity} "
+        f"· {prior} "
+        f"· as-of {as_of} "
+        f"· a plain tape fact — {_HEADS_UP_COPY}"
+    )
+    _assert_no_forbidden_words(msg)
+    return msg
+
+
+def _detect_m7_events(
+    notify_state: dict,
+    today_str: str,
+) -> list[tuple[str, str]]:
+    """Source (g): record-class Mag-7 member windows (postmortem 2026-08-03 F3).
+
+    Reads the `events.members` block of data/mag7_regime/latest.json (written
+    nightly by engine/mag7_regime.snapshot()). Fires only for `historic` tier —
+    a window in the top/bottom 0.5% of that member's own ≥15-year history — and
+    only while the artifact is FRESH (as_of within 5 calendar days of today,
+    covering weekend/nightly lag without replaying history on first run).
+
+    Dedup key: (kind="m7_event", f"{sym}|{window}|{as_of}") — a point event,
+    keyed by the artifact date, so it fires once ever per member-window-day.
+    Fail-open: any read/parse problem yields no events and no exception.
+    """
+    results: list[tuple[str, str]] = []
+    payload = _load_json(_MAG7_REGIME_PATH)
+    if not payload:
+        return results
+    try:
+        import datetime as _dt
+
+        events = payload.get("events") or {}
+        as_of = str(events.get("as_of") or payload.get("as_of") or "")[:10]
+        if not as_of:
+            return results
+        try:
+            age = (_dt.date.fromisoformat(today_str) - _dt.date.fromisoformat(as_of)).days
+        except Exception:  # noqa: BLE001
+            return results
+        if not (0 <= age <= 5):
+            return results
+
+        for entry in events.get("members") or []:
+            if not isinstance(entry, dict) or entry.get("tier") != "historic":
+                continue
+            sym, window = entry.get("sym"), entry.get("window")
+            if not sym or not window:
+                continue
+            subject = f"{sym}|{window}|{as_of}"
+            if _already_fired(notify_state, "m7_event", subject, as_of):
+                continue
+            results.append((subject, _m7_event_message(entry, as_of)))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("notify_turn_events: m7_event detection error: %s", exc)
+    return results
+
+
 def run(
     today_str: str | None = None,
     dry_run: bool = False,
 ) -> int:
-    """Evaluate all five event sources and dispatch alerts.
+    """Evaluate every event source (a)–(g) and dispatch alerts.
 
     Returns the count of messages sent (0 = dark/no events/already fired).
     Never raises — own try/except, exit-0 contract.
@@ -809,7 +913,8 @@ def run(
     mtf_upturn = _load_json(_MTF_UPTURN_PATH) or {}
 
     if (not turn_watch and not shock_state and not mtf_upturn
-            and not _MWR_TRIGGERS_PATH.exists()):
+            and not _MWR_TRIGGERS_PATH.exists()
+            and not _MAG7_REGIME_PATH.exists()):
         log.info("notify_turn_events: no event source data — nothing to evaluate")
         return 0
 
@@ -869,6 +974,17 @@ def run(
             _mark_fired(notify_state, "mwr_trigger", subject, date_key)
     except Exception as exc:  # noqa: BLE001
         log.warning("notify_turn_events: mwr_trigger source error (skipped): %s", exc)
+
+    # (g) Mag-7 record-class member window (postmortem 2026-08-03 F3) — fail-open,
+    # isolated. Dedup is artifact-date-keyed (point event, once per sym+window+day).
+    try:
+        for subject, msg in _detect_m7_events(notify_state, today_str):
+            if _send_discord(msg, dry_run=dry_run):
+                dispatched += 1
+            date_key = subject.rsplit("|", 1)[1] if "|" in subject else today_str
+            _mark_fired(notify_state, "m7_event", subject, date_key)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("notify_turn_events: m7_event source error (skipped): %s", exc)
 
     # Persist updated state (site-only write, FT-R5)
     if notify_state != original_state:

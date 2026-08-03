@@ -26,6 +26,16 @@ tier-preview pattern (`docs/TIER_PREVIEW_PATTERN.md`, PR #3471).*
    Googlebot-UA fetch byte-comparable to a normal UA.
 6. Render-lane law respected: pages that only bake on the render runner (e.g.
    special_situations) are never hand-baked locally; dispatch the scoped render.
+6b. **LEAK-WINDOW SEQUENCING (added 2026-08-03 after the etfs incident #4446).**
+   The boundary mirrors self-deploy in ~3 min via the VPS config cron; a page
+   bake rides the render lane, which can be superseded for hours. Therefore a
+   conversion PR may flip a page public ONLY IF the walled free shell is
+   committed in the SAME PR (permitted and preferred when the builder is not
+   runner-affine — bake it and commit site/<page>.html alongside the code), OR
+   the boundary flip ships as a SEPARATE follow-up PR merged only after the
+   walled shell is verified live. Never flip access in the same PR as an
+   unbaked shell. (etfs: #4426 flipped ahead of the bake; the full graded board
+   was anonymously public ~1h; closed by #4446. Re-flip pending per this gate.)
 7. NO edits to the tier catalog (collision: PRs #4176/#4185 "essential" tier
    migration in flight). Page classification uses existing classes only.
 

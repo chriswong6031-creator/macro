@@ -668,7 +668,6 @@ PUBLIC_EXACT = frozenset({
     # /premiumdata/etfs.json. Zero stock rows are free here — both boards are
     # best-first. What ships is the rotation backdrop, the 77-fund coverage
     # directory, the honest totals and a non-graded stance line.
-    "/etfs.html",
     "/support.html", "/unsubscribe.html",
     "/privacy.html", "/terms.html", "/disclaimer.html",
     "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png",
