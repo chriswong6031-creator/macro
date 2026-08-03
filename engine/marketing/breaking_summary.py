@@ -471,6 +471,31 @@ _DET_DASHES = ("—", "–", "―")     # em dash, en dash, horizontal bar
 _DET_WS_RE = re.compile(r"\s+")
 
 
+def _lead_completes_headline(lead: str, headline: str) -> bool:
+    """Is the headline a TRUNCATION of this lead — the same statement, cut short?
+
+    The X-relay feed builds ``headline = snippet[:120]`` — a raw slice that can
+    end mid-clause or mid-word — while the lead sentence is that same statement
+    complete. The near-verbatim guard exists because relaying an echo gains
+    nothing, but on this shape it INVERTED its own purpose: rejecting the lead
+    sent the fallback to the headline, i.e. it PREFERRED the truncated form over
+    the complete sentence already in the packet.
+
+    True when the headline (normalised exactly as the lead was — dashes to the
+    house double hyphen, whitespace collapsed) is a strict character prefix of
+    the lead AND the extension carries content beyond trailing punctuation. The
+    punctuation clause keeps "X." vs "X" a plain echo (headline relay, pinned in
+    tests/test_marketing_breaking.py) rather than a "completion" of one period.
+    """
+    norm_head = str(headline or "")
+    for dash in _DET_DASHES:
+        norm_head = norm_head.replace(dash, " -- ")
+    norm_head = _DET_WS_RE.sub(" ", norm_head).strip()
+    if not norm_head or not lead.startswith(norm_head):
+        return False
+    return bool(lead[len(norm_head):].strip(" .!?,;:"))
+
+
 def _det_lead_sentence(item: dict) -> str:
     """The source's own first body sentence when it ADDS to the headline, else "".
 
@@ -487,7 +512,11 @@ def _det_lead_sentence(item: dict) -> str:
     sentence is substantive (>= _DET_LEAD_MIN_WORDS words), short enough to fit
     the flash budget, and NOT a restatement of the headline (the same
     :func:`_is_near_verbatim` gate the LLM path answers to; a wire mirror whose
-    body_snippet simply repeats its own headline gains us nothing).
+    body_snippet simply repeats its own headline gains us nothing). ONE carve-out
+    (2026-08-02): when the headline is a TRUNCATION of the lead — the X-relay
+    ``snippet[:120]`` shape — the lead is the same statement completed, so it is
+    relayed rather than rejected (:func:`_lead_completes_headline`); falling back
+    to the headline there would prefer the cut-off form over the complete one.
 
     Em/en dashes are normalised to the house double hyphen. That is punctuation,
     not a fact: source prose is not written to our language law, and the
@@ -508,7 +537,8 @@ def _det_lead_sentence(item: dict) -> str:
     if len(lead) > _DET_LEAD_MAX_CHARS or len(lead.split()) < _DET_LEAD_MIN_WORDS:
         return ""
     headline = str(item.get("headline") or "").strip()
-    if headline and _is_near_verbatim(lead, headline):
+    if headline and _is_near_verbatim(lead, headline) \
+            and not _lead_completes_headline(lead, headline):
         return ""
     return lead
 
@@ -767,6 +797,33 @@ def summary_earns_the_card(headline: str, summary: str) -> bool:
     if not str(summary or "").strip():
         return False
     return restatement_score(headline, summary) < _RESTATE_THRESHOLD
+
+
+def headline_earns_its_line(headline: str, body: str) -> bool:
+    """Does the headline prefix tell the POST anything its body does not?
+
+    The post-text sibling of :func:`summary_earns_the_card`, asked by the X
+    clamp (``wire_format.clamp_for_x``) BEFORE it joins ``headline + blank line
+    + body``. For an X-relay item the deterministic body carries the same
+    statement the headline does (the feed builds ``headline = snippet[:120]``
+    and ``body_snippet`` = the same snippet), so the joined form printed one
+    sentence twice — and the W1.5 echo guard's own fallback
+    (``"{headline} -- {source}"``) IS the headline again, which made the guard
+    the producer of the very shape it was built to stop.
+
+    False = the headline says nothing the body does not; the post ships ONE
+    statement — the body, which keeps the opener, the corroboration credit and
+    the tape stamp, and is the exact string the news rail already displays for
+    an emitted item. An empty headline has no line to earn (False); an empty
+    body cannot absorb one (True). Same containment measure and threshold as
+    the card gates, so every restatement surface answers the same question the
+    same way.
+    """
+    if not str(headline or "").strip():
+        return False
+    if not str(body or "").strip():
+        return True
+    return restatement_score(headline, body) < _RESTATE_THRESHOLD
 
 
 def card_earns_attachment(
