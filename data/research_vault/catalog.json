@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T03:34:42.832915+00:00",
-  "count": 637,
+  "generated_at": "2026-08-03T03:49:29.460381+00:00",
+  "count": 638,
   "institutions": [
     "Amova",
     "Apollo",
@@ -446,6 +446,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-m29ihkzhpyr-e92c62",
+      "title": "UBS Equity Preference List Beneficiaries of Japan s inflation 2026 07 31",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:54:30Z",
+      "summary_points": [
+        "**Japan Inflation Catalyst**: Sustainable 30-yr high inflation drives corporate governance reforms, portfolio optimization, and preference for high ROE stocks with buyback potential (e.g., Kokusai Electric added, East Japan Railway removed).",
+        "**Semiconductor Equipment Leaders**: Advantest (70% SoC tester share, AI/ASIC demand), CKD (SPE leader, 40-50% revenue), and Kokusai Electric (50% global batch deposition) benefit from AI capex cycles; risks include semiconductor slowdown and yen volatility.",
+        "**BoJ Policy Tailwinds**: Rate hikes (50bps to 1.5%) boost bank ROE (Mitsubishi UFJ, Resona) via loan demand and net interest margins; key risk: BoJ rate hike shortfall or global slowdown.",
+        "**Defense Policy Catalyst**: Mitsubishi Heavy Industries gains from Takaichi administration’s defense spending rise (1.8%→2% GDP by 2027) and nuclear policy support; geopolitical tailwinds amid Middle East conflict.",
+        "**Yen Appreciation Risk**: Cross-cutting risk for all Japanese holdings (e.g., CKD, Daifuku, Murata), threatening margins and earnings despite inflation benefits."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
       "language": "en",
       "needs_metadata": false
     },
