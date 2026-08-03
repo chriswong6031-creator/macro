@@ -36,17 +36,36 @@ def test_artifact_contract_versions_semantic_lanes():
 def test_flat_overflow_spam_is_gone_and_depth_is_collapsed():
     assert "Also cleared today's screen" not in TEMPLATE
     assert "beyond the board's" not in TEMPLATE
-    assert 'class="cn-depth"' in TEMPLATE
+    assert 'class="cn-depth ' in TEMPLATE
     assert "<details" in TEMPLATE
-    assert "More live setups" in TEMPLATE
     assert "Early warnings — not confirmed" in TEMPLATE
     assert "Wait / unfillable / do not chase" in TEMPLATE
     assert "legacy early/T4/null-tier observations" in TEMPLATE
 
 
+def test_more_actionable_left_the_drawer_for_the_unified_grid():
+    """CONTRACT CHANGE (prophet board priority engine G0.2, 2026-08-02).
+
+    `more_actionable` used to be a collapsed "More live setups" depth drawer of compact
+    rows. It is now part of the ONE score-ordered grid of full prophet cards, so the
+    drawer — and the assertion that used to require it — are both gone. What replaced
+    the old guarantee is stronger: those rows are no longer a second-class list at all.
+    Pinned in full by tests/test_cn_board_unified_grid.py.
+    """
+    # Assert on the CALL SITE, not the bare phrase: the template keeps a comment naming
+    # the drawer it replaced, and a source-grep suite cannot tell documented history
+    # from live markup (memory `test-pins-a-string-inside-dead-code`).
+    assert "{{ t('More live setups'" not in TEMPLATE
+    assert "更多实时形态" not in TEMPLATE
+    assert "cn_depth_grid(_more)" not in TEMPLATE
+    assert '<details class="cn-depth" data-stf="entry">' not in TEMPLATE
+    # the rows still exist — they are merged into the live grid, in score order
+    assert "set _more_lane = setups.get('more_actionable') or []" in TEMPLATE
+    assert "_mrg.append({'r': _e.r, 'f': false})" in TEMPLATE
+
+
 def test_depth_rows_are_cards_not_one_wrapped_name_paragraph():
     assert 'class="cn-depth-card"' in TEMPLATE
-    assert "cn_depth_grid(_more)" in TEMPLATE
     assert "cn_depth_grid(_late)" in TEMPLATE
     assert "cn_depth_grid(_forming)" in TEMPLATE
     # Backward fallback data is still collapsed and formatted, never deleted.

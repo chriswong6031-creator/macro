@@ -81,6 +81,17 @@ Still required before the W3A lane is complete:
 
 **Purpose:** build auditable issuer state after identity resolution exists.
 
+Implemented substrate in this slice:
+
+- An authenticated, append-only v2 observation ledger for direct SEC Company
+  Facts outstanding-share and public-float concepts.
+- Exact source/receipt/generation/anchor/store/PIT bridge receipts, explicit
+  observed/deferred/ambiguous states, and correction-preserving snapshots.
+- Independently signed, crash-recoverable outer publication with no decision
+  authority. This is denominator evidence, not a selected denominator.
+
+Still required before W3B is complete:
+
 - Separate outstanding shares, float, authorized shares, registered shares,
   issuer-reported remaining ATM/shelf availability, exercise/convertible share
   potential, and resale registration. No shared “dilution” scalar.
@@ -183,14 +194,17 @@ trade, or Prophet authority.
 
 ## Immediate next build order
 
-1. Ship W3A candidate-term contract/compiler/tests (this slice).
-2. Write resolver and candidate-state contracts before implementing matching.
-3. Build a small fixture corpus containing renewals, amendments, similarly
+1. **Landed:** W3A candidate-term contract/compiler/tests.
+2. **Landed:** authenticated Company Facts intake and v2 direct share-observation
+   materializer/publication substrate.
+3. Write resolver and candidate-state contracts before implementing matching.
+4. Build a small fixture corpus containing renewals, amendments, similarly
    named classes, resales, and reverse-split cases; define false-join failure
    tests first.
-4. Add share-basis and capacity facts with no scenario math until all units and
+5. Add a current-share-basis selector, corporate-action ledger, and capacity
+   facts with no scenario math until all units and
    availability states are exact.
-5. Build the dossier API/UI around provenance and change chronology, then add
+6. Build the dossier API/UI around provenance and change chronology, then add
    optional UI refinements.
 
 ## Product direction

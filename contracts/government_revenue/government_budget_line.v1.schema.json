@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_budget_line.v1.schema.json",
+  "title": "Government Revenue DoD Budget Line v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "line_key", "line_family_key", "fiscal_year", "document_stage",
+    "exhibit", "component", "appropriation", "appropriation_code", "budget_activity",
+    "native_identifier", "program_name", "amounts", "quantities", "source", "provenance",
+    "line_state_sha256", "effective_at", "known_at", "first_seen_at"
+  ],
+  "properties": {
+    "contract": {"const": "government_budget_line.v1"},
+    "line_key": {"type": "string", "pattern": "^dod:[a-z0-9:_-]{12,600}$"},
+    "line_family_key": {"type": "string", "pattern": "^dod-family:[a-z0-9:_-]{8,500}$"},
+    "fiscal_year": {"type": "integer", "minimum": 2000, "maximum": 2100},
+    "document_stage": {"const": "president_budget_request"},
+    "exhibit": {"enum": ["p1", "r1"]},
+    "component": {"type": "string", "minLength": 1, "maxLength": 160},
+    "appropriation": {"type": "string", "minLength": 1, "maxLength": 320},
+    "appropriation_code": {"type": "string", "pattern": "^[A-Za-z0-9-]{2,32}$"},
+    "budget_activity": {"type": ["string", "null"], "maxLength": 200},
+    "native_identifier": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": {"enum": ["p1_line_item", "program_element"]},
+        "value": {"type": "string", "minLength": 1, "maxLength": 160}
+      }
+    },
+    "program_name": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "amounts": {
+      "type": "array", "minItems": 3, "maxItems": 5,
+      "items": {"$ref": "#/$defs/amount"}
+    },
+    "quantities": {
+      "type": "array", "minItems": 0, "maxItems": 5,
+      "items": {"$ref": "#/$defs/quantity"}
+    },
+    "source": {"$ref": "#/$defs/source"},
+    "provenance": {"$ref": "#/$defs/provenance"},
+    "line_state_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "effective_at": {"type": "string", "format": "date-time"},
+    "known_at": {"type": "string", "format": "date-time"},
+    "first_seen_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {
+    "amount": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fiscal_year", "semantic", "amount_usd"],
+      "properties": {
+        "fiscal_year": {"type": "integer", "minimum": 2000, "maximum": 2100},
+        "semantic": {
+          "enum": [
+            "historical_actual", "prior_year_enacted_reference", "discretionary_request",
+            "reconciliation_request", "president_budget_request_total"
+          ]
+        },
+        "amount_usd": {"type": ["number", "null"]}
+      }
+    },
+    "quantity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fiscal_year", "semantic", "quantity"],
+      "properties": {
+        "fiscal_year": {"type": "integer", "minimum": 2000, "maximum": 2100},
+        "semantic": {
+          "enum": [
+            "historical_actual", "prior_year_enacted_reference", "discretionary_request",
+            "reconciliation_request", "president_budget_request_total"
+          ]
+        },
+        "quantity": {"type": ["number", "null"]}
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["publisher", "source_url", "document_sha256", "receipt_id"],
+      "properties": {
+        "publisher": {"const": "Office of the Under Secretary of Defense (Comptroller)"},
+        "source_url": {"type": "string", "format": "uri", "maxLength": 2000},
+        "document_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "receipt_id": {"type": "string", "pattern": "^dod-budget:[a-f0-9]{64}$"}
+      }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["page_number", "page_text_sha256", "source_span", "parser_version"],
+      "properties": {
+        "page_number": {"type": "integer", "minimum": 1},
+        "page_text_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "source_span": {"type": "string", "minLength": 1, "maxLength": 400},
+        "parser_version": {"type": "string", "minLength": 1, "maxLength": 120}
+      }
+    }
+  }
+}

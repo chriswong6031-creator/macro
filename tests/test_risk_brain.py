@@ -135,3 +135,30 @@ def test_run_logs_thesis_when_elevated(tmp_path):
 def test_run_disabled_returns_none(tmp_path, monkeypatch):
     monkeypatch.setattr(rb, "_cfg", lambda: {**rb._DEFAULTS, "enabled": False})
     assert rb.run(force=False, root=tmp_path) is None
+
+
+def test_make_call_preserves_non_claude_provider_models(monkeypatch):
+    """Per-call model override touches ONLY oauth/anthropic providers (the
+    2026-08-03 outage fix — see the narrative_brain twin test)."""
+    from engine import llm_auth
+
+    built = [
+        {"name": "oauth", "env_var": "T", "cred": "x", "client": object(),
+         "model": "claude-opus-4-8"},
+        {"name": "deepseek", "env_var": "D", "cred": "x", "client": object(),
+         "model": "deepseek-v4-pro"},
+    ]
+    seen = {}
+
+    def fake_make_call(providers, call_fn, *, context=""):
+        seen["models"] = {p["name"]: p["model"] for p in providers}
+        return "ok", None, "deepseek"
+
+    monkeypatch.setattr(llm_auth, "build_providers", lambda cfg, **kw: built)
+    monkeypatch.setattr(llm_auth, "make_call", fake_make_call)
+
+    call = rb._make_call(dict(rb._DEFAULTS))
+    text, reason = call("claude-opus-4-8", "sys", "user")
+    assert text == "ok" and reason is None
+    assert seen["models"]["oauth"] == "claude-opus-4-8"
+    assert seen["models"]["deepseek"] == "deepseek-v4-pro"

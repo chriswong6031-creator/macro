@@ -78,6 +78,13 @@ on:
       # Crypto Cockpit governor: W0 lands warn-until-marked shelf checks; W1/W2 arm
       # exact S1-S6 / H1-H8 sets and the one-verdict law.
       - "scripts/check_crypto_shelves.py"
+      # Crypto Cockpit suites (unrun backfill 2026-08-03): cockpit contract,
+      # wave-2/wave-3 organs, house-style partial. Subjects covered by
+      # engine/** + collectors/** + scripts/*.py entries; test halves added.
+      - "tests/test_crypto_cockpit_contract.py"
+      - "tests/test_crypto_wave2.py"
+      - "tests/test_crypto_wave3.py"
+      - "tests/test_crypto_house_style.py"
       # GH-annotation guard: a "::warning" behind logging's level prefix never parses as
       # an annotation. NOTE: this only fires when ci.yml is already triggered — making it
       # fire on EVERY python change needs "scripts/**"/"engine/**" here, which is a
@@ -222,6 +229,18 @@ on:
       - "tests/test_narrative_brain.py"
       - "tests/test_demand_ledger.py"
       - "tests/test_policy_intent_desk.py"
+      # Honesty-register guards (unrun-suite backfill 2026-08-03): the falsifier
+      # vocabulary bans, chat plain-word projection, regime-label/sizing-pill
+      # disclosure parity, and forward cycle framing. Subjects live under
+      # engine/** and templates/** (broad globs); the register scan also reads
+      # the shipped policy intel artifact, which nothing else matches.
+      - "data/policy/intel.json"
+      - "tests/test_front_facing_register.py"
+      - "tests/test_policy_watch_register.py"
+      - "tests/test_chat_plain_words.py"
+      - "tests/test_regime_label_honesty.py"
+      - "tests/test_regime_sizing_disclosure_parity.py"
+      - "tests/test_cycle_forward_framing.py"
       # WRI W3: watchlist book-structure math + its node-shelled unit tests. templates/**
       # already covers risk_core.js/watchlist_risk.js; list the test file so a test-only
       # edit still triggers CI (ci-test-whitelist-rot guard).
@@ -434,6 +453,8 @@ on:
       - "app/requirements.txt"
       - "scripts/compile_capital_structure_events.py"
       - "scripts/compile_capital_structure_document_terms.py"
+      - "scripts/materialize_capital_structure_share_counts.py"
+      - "scripts/retain_capital_structure_share_counts.py"
       - "scripts/build_capital_structure_projection.py"
       - "scripts/build_capital_structure_page.py"
       - "contracts/capital_structure_*.schema.json"
@@ -445,6 +466,7 @@ on:
       - "tests/test_capital_structure_*.py"
       - "tests/test_build_capital_structure_projection.py"
       - "tests/test_sec_capital_structure.py"
+      - "tests/test_sec_capital_structure_companyfacts.py"
       - "tests/test_nwqs_c_dilution.py"
       - "tests/fixtures/capital_structure/**"
       # LHB-W2b 8-K item expansion: test-only edits must still trigger the job
@@ -476,6 +498,22 @@ on:
       - "tests/fixtures/china_omo/**"
       - "tests/fixtures/china_trade_detail/**"
       - "tests/fixtures/china_official_corpora/**"
+      # Government Revenue Foresight (unrun-suite backfill 2026-08-03): the
+      # builder/fence/UI suites and the federal-award collector suites, plus
+      # the one subject file no broad glob matches — engine/government_revenue/**
+      # and collectors/** are covered, app/ is enumerated per-file.
+      - "app/government_revenue.py"
+      - "tests/test_build_government_revenue.py"
+      - "tests/test_check_government_revenue_projection.py"
+      - "tests/test_government_revenue_dossiers.py"
+      - "tests/test_government_revenue_subaward_api.py"
+      - "tests/test_government_revenue_ui.py"
+      - "tests/test_government_revenue_dossier_ui.py"
+      - "tests/test_government_revenue_briefcase_ui.py"
+      - "tests/test_sam_gov_opportunities.py"
+      - "tests/test_usaspending_awards.py"
+      - "tests/test_usaspending_subawards.py"
+      - "tests/test_census_trade.py"
       # W3 CNH part B: the five native flash wires + the forward calendar organ.
       # engine/** is NOT a blanket trigger here, so each of these must be named or a
       # parser/aggregator edit merges with the suite unrun. test_cn_newswires.py was
@@ -569,10 +607,15 @@ on:
       - "templates/fundamental_forensics.js"
       - "tests/fixtures/fundamental_forensics/**"
       - "tests/test_fundamental_forensics_*.py"
-      # Wave 3B-B4A: the broad fundamental-forensics glob also matches this
-      # suite, but the explicit name documents the engine-render guard's
-      # provenance contract and protects test-only re-pins from future narrowing.
+      # Wave 3B-B4A/B4B/B4D-A: the broad fundamental-forensics glob also matches
+      # these suites, but the explicit names document the sealed-history reader,
+      # bounded serving, and pinned-source materializer contracts and protect
+      # test-only re-pins if the broad glob is ever narrowed.
       - "tests/test_fundamental_forensics_attested_query_snapshots.py"
+      - "tests/test_fundamental_forensics_attested_history_reader.py"
+      - "tests/test_fundamental_forensics_filing_package_materializer.py"
+      - "tests/test_fundamental_forensics_companyfacts_pinned_loader.py"
+      - "tests/test_fundamental_forensics_attested_history_materializer.py"
       - "tests/test_sec_document_spine.py"
       - "tests/test_forensics_api.py"
       - "tests/test_edgar_forensics_collector.py"
@@ -597,10 +640,18 @@ on:
       - "config/biocatalyst_sources.yml"
       - "config/biocatalyst_outcomes.yml"
       - "config/biocatalyst_launch_slo_manifest.yml"
+      # BC-D0a: finite design-reference corpus and non-authorizing product
+      # acceptance contract. These paths must reach the same contracts pack even
+      # when an edit changes only a PNG/hash/spec/test, otherwise a reference can
+      # drift while its integrity verifier never runs.
+      - "config/biocatalyst_product_acceptance.yml"
       - "config/sector_intelligence_ownership.yml"
       - "config/site_access.yml"
       - "contracts/biocatalyst/**"
       - "data/biocatalyst/fixtures/**"
+      - "mockups/refs/biocatalyst/**"
+      - "scripts/verify_biocatalyst_d0a_references.py"
+      - "research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md"
       - "templates/biocatalyst.*"
       - "templates/_navlinks.html.j2"
       - "templates/_site_nav.html.j2"
@@ -676,6 +727,21 @@ on:
       # needed: .github/workflows/** covers the lanes, these cover the policy itself.
       - "scripts/ci/push_retry.sh"
       - "tests/test_push_retry.py"
+      # Publish-ops / worker / live-plane guards (unrun backfill 2026-08-03):
+      # dead-asset refs, ticker links, autostash containment, checkout bound,
+      # admin research tools, earnings worker, china board watch lane, live
+      # session floor. ops/** is the earnings worker's launchd estate — the
+      # one subject tree no glob matched; other subjects ride existing
+      # entries (scripts/*, admin/**, site/**, .github/workflows/**).
+      - "ops/**"
+      - "tests/test_rendered_ticker_links.py"
+      - "tests/test_push_conflict_guard.py"
+      - "tests/test_render_checkout_bound.py"
+      - "tests/test_admin_research_tools.py"
+      - "tests/test_earnings_worker_terminal.py"
+      - "tests/test_earnings_worker_launchd.py"
+      - "tests/test_china_board_watch_lane.py"
+      - "tests/test_risk_state_live_session_floor.py"
       # Hosted-runner packing contract: changes to the orchestrator or its
       # fail-closed tests must exercise the workflow-yaml legacy job below.
       - "scripts/run_ci_pack.py"
@@ -1081,6 +1147,8 @@ on:
       - "engine/signal_gate.py"
       - "engine/confluence_tiers.py"
       - "scripts/build_prophet_live_pack.py"
+      # Unrun backfill 2026-08-03: the P1 user-facing surface suite's own half.
+      - "tests/test_prophet_live_surface.py"
       - "scripts/prophet_live_evaluator.py"
       - "scripts/reconcile_prophet_live.py"
       - ".github/workflows/prophet-live.yml"
@@ -1281,6 +1349,17 @@ on:
       # The design pin the page and the email base are ported FROM: a change to the pin
       # without a matching change to the implementation is exactly the drift to catch.
       - "mockups/support_email/**"
+      # X-growth desk suites (unrun backfill 2026-08-03): ad plane O, persona
+      # model, reply arming, and the two committed ad-campaign manifests. The
+      # mockups trees are the campaigns' source of truth and matched no glob;
+      # engine/marketing/** and the scripts entries cover the rest.
+      - "mockups/x-ads-2026-07/**"
+      - "mockups/x-mobile-ads-2026-07/**"
+      - "tests/test_marketing_ad_plane_o.py"
+      - "tests/test_marketing_persona_model.py"
+      - "tests/test_marketing_reply_arming.py"
+      - "tests/test_x_ad_campaign_assets.py"
+      - "tests/test_x_mobile_campaign_assets.py"
       # Support + Email estate (SEE W4): the marketing foundation. Same #3509 lesson —
       # every SOURCE by name, not only the tests. app/email_segments.py is listed first
       # because it is the shared one: BOTH the admin console's SQL and the sweeper's
@@ -1519,6 +1598,13 @@ on:
       - "tests/test_marketing_copy_yield.py"
       - "tests/test_marketing_news_arming.py"
       - "tests/test_marketing_breaking_card_geometry.py"
+      # The D08 age-ramp relaxation (operator 2026-08-03): the two tier
+      # boundaries became config keys (`sentinel.ramp.weeks_1_2_days` /
+      # `weeks_3_4_days`) and `graduate_after_days` stopped being clamped up to a
+      # hardcoded 28. Subject modules are engine/marketing/sentinel.py +
+      # config/marketing.yml (both matched above); the suite is named so a
+      # TEST-ONLY edit still reaches the lane that runs it.
+      - "tests/test_marketing_ramp_speedup.py"
       # X Growth W3 (XG-W3): the franchise register + slot scheduler, the
       # four-lane desk feed, the persona memory stores (promises/phrases/
       # relations) and the Gift-Grip-Proof value gate. Its subject modules are
@@ -1668,6 +1754,16 @@ on:
       - "tests/test_marketing_supply_feeds.py"
       - "tests/test_movers_source.py"
       - "tests/test_marketing_radar.py"
+      # TrendSpider hardening PR-C — the chart director + timeframe facts +
+      # attention selector (job: marketing-data). Same OTHER-half reason: a PR
+      # editing ONLY this suite must still reach the lane that runs it, because
+      # this file carries the program's four acceptance gates (claim-window
+      # refusal, forming-bar exclusion, in-frame caption gate, long-tail
+      # annotation) and a gate that runs nowhere is not a gate. The committed
+      # proof crops are inputs to the review, not to the suite, and are listed
+      # so a crop-only refresh still triggers the renderer lanes.
+      - "tests/test_chart_director.py"
+      - "mockups/refs/trendspider-hardening/**"
       # tier-gate serving/revenue boundary (job: tier-gate). Found 2026-07-25
       # shipping #3488: NONE of the boundary's enforcement files were listed, so a
       # PR that changes ONLY the site-access boundary (regwall, Caddy public list,
@@ -1979,6 +2075,22 @@ on:
       - "tests/test_template_items_footgun.py"
       - "tests/test_trading_journal_xlsx.py"
       - "tests/test_us_stocks_w8g_table.py"
+      # Nav-chrome guards (unrun-suite backfill 2026-08-03): the one-header
+      # law, nav prefix/hover/anchor geometry, landing IA, start-page voice +
+      # publish integrity, and the Terminal portal/entitlement contracts.
+      # Subjects all live under templates/**, site/**, and named scripts/*
+      # entries already present; only the test halves were missing.
+      - "tests/test_product_chrome.py"
+      - "tests/test_subdir_nav_prefix.py"
+      - "tests/test_nav_hover_bridge.py"
+      - "tests/test_nav_menu_mockup_hover.py"
+      - "tests/test_nav_wide_menu_anchor.py"
+      - "tests/test_landing_navigation.py"
+      - "tests/test_oip_w1_nav_regroup.py"
+      - "tests/test_hub_welcome_persona.py"
+      - "tests/test_start_publish_integrity.py"
+      - "tests/test_terminal_indicator_pricing.py"
+      - "tests/test_terminal_overlay_contract.py"
       - "scripts/build_ai_desk_page.py"
       - "scripts/build_chart_data.py"
       - "scripts/build_confluence_screener.py"
@@ -2100,6 +2212,23 @@ on:
       - "tests/test_wiki_pageviews.py"
       - "scripts/c4_cnh_basis.py"
       - "scripts/c4_reer_value.py"
+      # Page-guard suites (unrun-suite backfill 2026-08-03): rendered-estate
+      # regression guards — macro desk/typography/glance, action-board hover
+      # cards, cold-load budgets, stocktable bootstrap, logo adapter, globe
+      # overlays, radar boot, reports timeline, bilingual span scan. Their
+      # subjects were always covered by templates/** + site/**; only the test
+      # halves were missing.
+      - "tests/test_macro_desk_surface.py"
+      - "tests/test_macro_primary_typography.py"
+      - "tests/test_macro_what_to_do_glance.py"
+      - "tests/test_action_board_hover_cards.py"
+      - "tests/test_dashboard_cold_load_budget.py"
+      - "tests/test_stocktable_load_order.py"
+      - "tests/test_stock_logo_system.py"
+      - "tests/test_globe_tooltip_behavior.py"
+      - "tests/test_radar_page_boot.py"
+      - "tests/test_reports_timeline_ui.py"
+      - "tests/test_bilingual_span_leak.py"
       # unrun-release-forecast
       - "tests/test_content_stamp_freshness_sweep2.py"
       - "tests/test_cpi_postmortem_fixes.py"
@@ -2112,6 +2241,11 @@ on:
       - "tests/test_release_market_context.py"
       - "scripts/build_release_forecast.py"
       - "scripts/check_hazard_model_freshness.py"
+      # Unrun backfill 2026-08-03: CPI bridge, official-event live client,
+      # Release Radar date selection — the release estate's missing test halves.
+      - "tests/test_release_cpi_bridge.py"
+      - "tests/test_release_publications_live_client.py"
+      - "tests/test_release_radar_date_selection.py"
       # unrun-brain-desks
       - "tests/test_admin_brief_gate.py"
       - "tests/test_ai_desk_panel.py"
@@ -2144,7 +2278,9 @@ on:
       - "scripts/check_synapse_registry.py"
       # unrun-vector-baskets
       - "tests/test_basket_turn_watch.py"
+      - "tests/test_btc_deferred_legs.py"
       - "tests/test_btc_overrides.py"
+      - "tests/test_btc_reentry.py"
       - "tests/test_build_basket_pulse.py"
       - "tests/test_signal_surface_bugfixes.py"
       - "tests/test_spvector_page.py"
@@ -2200,20 +2336,28 @@ on:
       # refresh tests run in the publish-r2-client pack; list every source and
       # test half so a workflow-only/test-only edit cannot evade that proof.
       #
-      # The public product has two additional release surfaces: the bounded API
-      # + ticker dossier, and the deterministic earnings wire.  Name their
-      # subjects explicitly even where a broad engine/templates/site glob also
-      # matches them.  That keeps the release-audit reachability contract
-      # reviewable and prevents a future narrowing of those globs from making
-      # either product face ship without its focused pack.
+      # The product has three additional release surfaces: the bounded API +
+      # ticker dossier, the deterministic earnings wire, and the protected
+      # receipt-bound context projection consumed by Brain/Prophet. Name their
+      # subjects explicitly even where broad engine/templates globs also match.
+      # Their focused tests run in unrun-publish-ops and the Prophet pack below.
       - "app/company_intelligence.py"
+      - "app/earnings.py"
       - "tests/test_company_intelligence_api.py"
       - "site/assets/js/company-intelligence-dossier.js"
       - "templates/ticker.html.j2"
       - "engine/earnings_narrative/public_wire.py"
+      - "engine/earnings_narrative/context_packets.py"
+      - "engine/earnings_narrative/private_publication.py"
+      - "engine/neuralweb/earnings_context_reader.py"
+      - "engine/prophet_bridge.py"
       - "scripts/build_earnings_public_wire.py"
+      - "scripts/publish_earnings_private_store.py"
       - "templates/earnings_wire/**"
       - "tests/test_earnings_public_wire.py"
+      - "tests/test_earnings_api.py"
+      - "tests/test_earnings_private_store.py"
+      - "tests/test_prophet_bridge.py"
       - "engine/company_intelligence/**"
       - "engine/company_theme_exposure/**"
       - "engine/earnings_transcript_intake.py"
@@ -2337,6 +2481,13 @@ on:
       - "tests/test_positioning_persistence.py"
       - "tests/test_gex_state.py"
       - "tests/test_index_gex_history.py"
+      # Unrun backfill 2026-08-03, same two-halves law: the GEX board state
+      # merge, the gex.js IV-rank color guard, the session digest, and the
+      # flow desk. Subjects under scripts/*.py + site/** + engine/**.
+      - "tests/test_gex_board_state_merge.py"
+      - "tests/test_gex_js_iv_rank_color.py"
+      - "tests/test_session_digest.py"
+      - "tests/test_flow_desk.py"
       # MSC R2.4 level-grade scorecards (2026-08-01), wired into unrun-market-plumbing.
       # scripts/*.py is already path-covered; this entry is the OTHER half so a
       # suite-only edit still starts ci.yml (two-halves law). R2.4b (2026-08-02)
@@ -2381,6 +2532,8 @@ on:
       - "tests/test_seo_foundation.py"
       - "tests/test_signal_contracts_wiring.py"
       - "tests/test_signal_sanity.py"
+      - "tests/test_earnings_worker_launchd.py"
+      - "tests/test_earnings_worker_terminal.py"
       - "tests/test_ticker_dossier_render_lane.py"
       - "tests/test_ticker_pages.py"
       - "tests/test_ts_u1_session_date.py"
@@ -2390,6 +2543,9 @@ on:
       - "tests/test_world_state_migrations.py"
       - "scripts/backfill_qledger_us.py"
       - "scripts/build_impulse.py"
+      - "ops/bootstrap_earnings_worker.sh"
+      - "ops/launchd/com.mastermind.earnings-worker.plist"
+      - "ops/launchd/run_earnings_worker.sh"
       - "scripts/build_intelligence.py"
       - "scripts/build_radar_plus.py"
       - "scripts/build_sector_cycles.py"

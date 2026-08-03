@@ -48,6 +48,8 @@ _PAGE_RECEIPT_CONTRACT_ID = "source_page_receipt.v1"
 _TRIAL_SOURCE_SNAPSHOT_CONTRACT_ID = "trial_source_snapshot.v1"
 _TRIAL_OBSERVATION_CONTRACT_ID = "trial_snapshot_observation.v1"
 _TRIAL_SNAPSHOT_CONTRACT_ID = "trial_snapshot.v1"
+_TRIAL_PROTOCOL_PROJECTION_CONTRACT_ID = "trial_protocol_projection.v1"
+_TRIAL_PEER_SET_CONTRACT_ID = "trial_peer_set.v1"
 _TRIAL_DIFF_CONTRACT_ID = "trial_version_diff.v1"
 _TRIAL_COVERAGE_CONTRACT_ID = "trial_coverage_epoch.v1"
 _CTGOV_HISTORY_RECEIPT_CONTRACT_ID = "ctgov_history_receipt.v1"
@@ -56,8 +58,45 @@ _TRIAL_HISTORY_SOURCE_SNAPSHOT_CONTRACT_ID = "trial_history_source_snapshot.v1"
 _TRIAL_HISTORY_DIFF_CONTRACT_ID = "trial_history_exact_diff.v1"
 _TRIAL_REGISTRY_CHANGE_FACT_CONTRACT_ID = "trial_registry_change_fact.v1"
 _TRIAL_HISTORY_READ_MODEL_CONTRACT_ID = "trial_history_read_model.v1"
+_TRIAL_ENDPOINT_ALIGNMENT_CANDIDATE_CONTRACT_ID = (
+    "trial_endpoint_alignment_candidate.v1"
+)
+_TRIAL_ENDPOINT_ALIGNMENT_REVIEW_PROJECTION_CONTRACT_ID = (
+    "trial_endpoint_alignment_review_projection.v1"
+)
 _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID = (
     "biocatalyst_launch_slo_manifest.v1"
+)
+_BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID = (
+    "biocatalyst_product_acceptance_manifest.v1"
+)
+_BIOCATALYST_D0A_PROJECTION_GENERATION = "synthetic-d0a-v1"
+_BIOCATALYST_D0A_BROWSER_PROFILES = (
+    {
+        "name": "desktop", "viewport": "1440x900", "engine": "chromium",
+        "engine_version": "140.0.7339.41", "os": "macos-15.6-arm64",
+        "font_bundle": "sf-pro-20_pingfang-sc-20", "device_scale_factor": 1,
+        "network": "wired-100mbps-20ms",
+    },
+    {
+        "name": "tablet", "viewport": "820x1180", "engine": "webkit",
+        "engine_version": "620.1.16", "os": "macos-15.6-arm64",
+        "font_bundle": "sf-pro-20_pingfang-sc-20", "device_scale_factor": 2,
+        "network": "wifi-40mbps-40ms",
+    },
+    {
+        "name": "mobile", "viewport": "390x844", "engine": "webkit",
+        "engine_version": "620.1.16", "os": "macos-15.6-arm64",
+        "font_bundle": "sf-pro-20_pingfang-sc-20", "device_scale_factor": 3,
+        "network": "4g-10mbps-80ms",
+    },
+)
+_BIOCATALYST_D0A_RECEIPT_APPROVAL = "pending_fable_or_opus_design_owner"
+_BIOCATALYST_D0A_RECEIPT_BLOCKERS = (
+    "named_human_design_approval",
+    "production_shaped_browser_capture",
+    "D0b_state_harness",
+    "trusted_browser_verifier_successor_contract",
 )
 _SOURCE_RECORD_CONTRACT_ID = "source_record.v1"
 _EVIDENCE_CLAIM_CONTRACT_ID = "evidence_claim.v1"
@@ -2058,6 +2097,254 @@ def _trial_projection_issues(document: Mapping[str, Any]) -> list[ValidationIssu
     return issues
 
 
+def _trial_protocol_projection_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    """Keep a public protocol artifact tied to one immutable source cut."""
+
+    issues: list[ValidationIssue] = []
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="protocol_projection_sha256",
+        excluded_fields=frozenset(("protocol_projection_sha256",)),
+        code="trial_protocol_projection.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    nct_id = document.get("nct_id")
+    source_snapshot_ref = document.get("source_snapshot_ref")
+    canonical_sha = document.get("canonical_content_sha256")
+    if (
+        isinstance(nct_id, str)
+        and isinstance(source_snapshot_ref, str)
+        and isinstance(canonical_sha, str)
+    ):
+        expected_id = "trial_protocol_" + nct_id + "_" + canonical_json_sha256(
+            {
+                "nct_id": nct_id,
+                "source_snapshot_ref": source_snapshot_ref,
+                "canonical_content_sha256": canonical_sha,
+            }
+        )[:24]
+        if document.get("protocol_projection_id") != expected_id:
+            issues.append(
+                ValidationIssue(
+                    "$.protocol_projection_id",
+                    "trial_protocol_projection.identity",
+                    "protocol_projection_id must be bound to the source snapshot and canonical content hash",
+                )
+            )
+        expected_source_record_ref = f"src:ctgov:{nct_id}:sha256:{canonical_sha}"
+        if document.get("source_record_ref") != expected_source_record_ref:
+            issues.append(
+                ValidationIssue(
+                    "$.source_record_ref",
+                    "trial_protocol_projection.source_record",
+                    "source_record_ref must bind the wrapper NCT ID and canonical content hash",
+                )
+            )
+        attribution = document.get("source_attribution")
+        if (
+            isinstance(attribution, Mapping)
+            and attribution.get("source_uri") != f"https://clinicaltrials.gov/study/{nct_id}"
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.source_attribution.source_uri",
+                    "trial_protocol_projection.source_uri",
+                    "source_uri must bind the wrapper NCT ID",
+                )
+            )
+    first_seen = _parse_temporal(document.get("first_seen_at"))
+    retrieved = _parse_temporal(document.get("retrieved_at"))
+    cutoff = _parse_temporal(document.get("knowledge_cutoff"))
+    if first_seen is not None and retrieved is not None and first_seen > retrieved:
+        issues.append(
+            ValidationIssue(
+                "$.first_seen_at",
+                "trial_protocol_projection.chronology",
+                "first_seen_at must not be later than retrieved_at",
+            )
+        )
+    if retrieved is not None and cutoff is not None and retrieved != cutoff:
+        issues.append(
+            ValidationIssue(
+                "$.knowledge_cutoff",
+                "trial_protocol_projection.knowledge_cutoff",
+                "knowledge_cutoff must equal retrieved_at for a current protocol projection",
+            )
+        )
+    return issues
+
+
+def _trial_peer_set_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    """Enforce deterministic, explicit-cohort peer-set semantics."""
+
+    issues: list[ValidationIssue] = []
+    cohort = document.get("cohort_nct_ids")
+    uncovered = document.get("uncovered_nct_ids")
+    trials = document.get("trials")
+    coverage = document.get("coverage")
+    pagination = document.get("pagination")
+    if isinstance(cohort, list) and all(isinstance(item, str) for item in cohort):
+        if cohort != sorted(cohort):
+            issues.append(
+                ValidationIssue(
+                    "$.cohort_nct_ids",
+                    "trial_peer_set.cohort_order",
+                    "explicit cohort NCT IDs must be in lexical order",
+                )
+            )
+    if isinstance(uncovered, list) and all(isinstance(item, str) for item in uncovered):
+        if uncovered != sorted(uncovered):
+            issues.append(
+                ValidationIssue(
+                    "$.uncovered_nct_ids",
+                    "trial_peer_set.uncovered_order",
+                    "uncovered NCT IDs must be in lexical order",
+                )
+            )
+        if isinstance(cohort, list) and any(item not in cohort for item in uncovered):
+            issues.append(
+                ValidationIssue(
+                    "$.uncovered_nct_ids",
+                    "trial_peer_set.uncovered_scope",
+                    "uncovered NCT IDs must be members of the explicit cohort",
+                )
+            )
+    trial_ids: list[str] = []
+    if isinstance(trials, list):
+        trial_ids = [item.get("nct_id") for item in trials if isinstance(item, Mapping)]
+        if len(trial_ids) == len(trials) and all(isinstance(item, str) for item in trial_ids):
+            if trial_ids != sorted(trial_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.trials",
+                        "trial_peer_set.trial_order",
+                        "covered trials must be in lexical NCT order",
+                    )
+                )
+            if len(set(trial_ids)) != len(trial_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.trials",
+                        "trial_peer_set.trial_unique",
+                        "covered trial NCT IDs must be unique within a page",
+                    )
+                )
+            if isinstance(cohort, list) and any(item not in cohort for item in trial_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.trials",
+                        "trial_peer_set.trial_scope",
+                        "covered trials must be members of the explicit cohort",
+                    )
+                )
+            for index, trial in enumerate(trials):
+                if not isinstance(trial, Mapping):
+                    continue
+                row_nct_id = trial.get("nct_id")
+                evidence = trial.get("evidence")
+                if not isinstance(row_nct_id, str) or not isinstance(evidence, Mapping):
+                    continue
+                if evidence.get("record_id") != row_nct_id:
+                    issues.append(
+                        ValidationIssue(
+                            _json_path(("trials", index, "evidence", "record_id")),
+                            "trial_peer_set.evidence_record",
+                            "evidence.record_id must bind the row NCT ID",
+                        )
+                    )
+                if evidence.get("url") != f"https://clinicaltrials.gov/study/{row_nct_id}":
+                    issues.append(
+                        ValidationIssue(
+                            _json_path(("trials", index, "evidence", "url")),
+                            "trial_peer_set.evidence_url",
+                            "evidence.url must bind the row NCT ID",
+                        )
+                    )
+            if isinstance(uncovered, list) and any(item in uncovered for item in trial_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.trials",
+                        "trial_peer_set.coverage_overlap",
+                        "a trial cannot be both covered and uncovered",
+                    )
+                )
+    if isinstance(cohort, list) and isinstance(uncovered, list) and isinstance(coverage, Mapping):
+        expected_covered = len(cohort) - len(uncovered)
+        if coverage.get("requested_count") != len(cohort):
+            issues.append(
+                ValidationIssue(
+                    "$.coverage.requested_count",
+                    "trial_peer_set.requested_count",
+                    "requested_count must equal the explicit cohort size",
+                )
+            )
+        if coverage.get("uncovered_count") != len(uncovered):
+            issues.append(
+                ValidationIssue(
+                    "$.coverage.uncovered_count",
+                    "trial_peer_set.uncovered_count",
+                    "uncovered_count must equal uncovered_nct_ids length",
+                )
+            )
+        if coverage.get("covered_count") != expected_covered:
+            issues.append(
+                ValidationIssue(
+                    "$.coverage.covered_count",
+                    "trial_peer_set.covered_count",
+                    "covered_count must equal requested_count minus uncovered_count",
+                )
+            )
+        if isinstance(pagination, Mapping) and pagination.get("total") != expected_covered:
+            issues.append(
+                ValidationIssue(
+                    "$.pagination.total",
+                    "trial_peer_set.total",
+                    "pagination total must equal covered_count",
+                )
+            )
+    if isinstance(pagination, Mapping) and isinstance(trials, list):
+        limit = pagination.get("limit")
+        if isinstance(limit, int) and len(trials) > limit:
+            issues.append(
+                ValidationIssue(
+                    "$.trials",
+                    "trial_peer_set.page_bound",
+                    "returned trials may not exceed the declared page limit",
+                )
+            )
+    as_of = _parse_temporal(document.get("as_of"))
+    if isinstance(trials, list) and as_of is not None:
+        for index, trial in enumerate(trials):
+            if not isinstance(trial, Mapping):
+                continue
+            evidence = trial.get("evidence")
+            record_age = trial.get("record_age")
+            if not isinstance(evidence, Mapping) or not isinstance(record_age, Mapping):
+                continue
+            retrieved = _parse_temporal(evidence.get("retrieved_at"))
+            if retrieved is None:
+                continue
+            elapsed_seconds = (as_of - retrieved).total_seconds()
+            if elapsed_seconds < 0:
+                issues.append(
+                    ValidationIssue(
+                        _json_path(("trials", index, "record_age")),
+                        "trial_peer_set.record_age_chronology",
+                        "record age cannot be negative relative to response as_of",
+                    )
+                )
+            elif record_age.get("seconds") != int(elapsed_seconds):
+                issues.append(
+                    ValidationIssue(
+                        _json_path(("trials", index, "record_age", "seconds")),
+                        "trial_peer_set.record_age_binding",
+                        "record age seconds must equal the floored as_of minus retrieved_at interval",
+                    )
+                )
+    return issues
+
+
 def _trial_coverage_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     for first, second, code in (
@@ -2797,6 +3084,620 @@ def _fda_application_dossier_issues(document: Mapping[str, Any]) -> list[Validat
     return issues
 
 
+def _biocatalyst_product_repo_file(
+    repo_root: Path, relative_path: Any
+) -> Path | None:
+    """Resolve a manifest-owned file without accepting traversal or an external link."""
+
+    if not isinstance(relative_path, str) or not relative_path or "\\" in relative_path:
+        return None
+    unresolved = repo_root.resolve() / relative_path
+    try:
+        unresolved.relative_to(repo_root.resolve())
+    except ValueError:
+        return None
+    # A content-addressed acceptance artifact must name a repository file, not
+    # a symlink whose meaning can change outside the manifest review. Rejecting
+    # every symlink in the declared path is intentional and keeps this validator
+    # equally strict on developer machines and CI checkouts.
+    cursor = unresolved
+    while cursor != repo_root.resolve():
+        if cursor.is_symlink():
+            return None
+        cursor = cursor.parent
+    candidate = unresolved.resolve()
+    try:
+        candidate.relative_to(repo_root.resolve())
+    except ValueError:
+        return None
+    return candidate
+
+
+def _biocatalyst_product_file_binding_issues(
+    binding: Any,
+    *,
+    path: str,
+    repo_root: Path,
+) -> list[ValidationIssue]:
+    """Bind a committed design input to exact bytes, never a mutable label."""
+
+    if not isinstance(binding, Mapping):
+        return []  # JSON Schema owns the shape failure.
+    relative_path = binding.get("path")
+    target = _biocatalyst_product_repo_file(repo_root, relative_path)
+    if target is None or not target.is_file():
+        return [
+            ValidationIssue(
+                f"{path}.path",
+                "product_acceptance.file_unavailable",
+                "bound artifact must be a committed regular file below the repository root",
+            )
+        ]
+    expected = binding.get("sha256")
+    actual = hashlib.sha256(target.read_bytes()).hexdigest()
+    if isinstance(expected, str) and expected != actual:
+        return [
+            ValidationIssue(
+                f"{path}.sha256",
+                "product_acceptance.file_hash",
+                "bound artifact SHA-256 must match exact committed bytes",
+            )
+        ]
+    return []
+
+
+def _biocatalyst_product_acceptance_manifest_issues(
+    document: Mapping[str, Any], repo_root: Path
+) -> list[ValidationIssue]:
+    """Fail-closed validation for the D0a finite visual/performance contract.
+
+    The validator proves only that the *draft corpus* is immutable, finite, and
+    internally coherent. This v1 is draft-only and deliberately cannot confer product
+    release authority under any self-described manifest state or receipt combination.
+    """
+
+    issues: list[ValidationIssue] = []
+    payload = {
+        key: value
+        for key, value in document.items()
+        if key not in {"manifest_id", "content_sha256"}
+    }
+    try:
+        digest = canonical_json_sha256(payload)
+    except ContractError:
+        return [
+            ValidationIssue(
+                "$",
+                "product_acceptance.canonical_payload",
+                "product-acceptance manifests must be canonicalizable finite JSON",
+            )
+        ]
+    if document.get("content_sha256") != digest:
+        issues.append(
+            ValidationIssue(
+                "$.content_sha256",
+                "product_acceptance.hash",
+                "content_sha256 must bind canonical payload excluding manifest_id and content_sha256",
+            )
+        )
+    expected_id = f"biocatalyst_product_acceptance_{digest[:24]}"
+    if isinstance(document.get("manifest_id"), str) and document.get("manifest_id") != expected_id:
+        issues.append(
+            ValidationIssue(
+                "$.manifest_id",
+                "product_acceptance.identity",
+                "manifest_id must be derived from the canonical content SHA-256",
+            )
+        )
+    if document.get("state") != "draft_human_approval_pending":
+        issues.append(
+            ValidationIssue(
+                "$.state",
+                "product_acceptance.v1_draft_only",
+                "D0a v1 is a draft-only integrity contract and rejects every acceptance or superseded state",
+            )
+        )
+    if document.get("supersedes_manifest_id") is not None or document.get("supersedes_manifest_content_sha256") is not None:
+        issues.append(
+            ValidationIssue(
+                "$.supersedes_manifest_id",
+                "product_acceptance.v1_supersession_forbidden",
+                "D0a v1 has no predecessor; both supersession fields must remain null",
+            )
+        )
+
+    design_path = _biocatalyst_product_repo_file(repo_root, document.get("design_spec_ref"))
+    if design_path is None or not design_path.is_file():
+        issues.append(
+            ValidationIssue(
+                "$.design_spec_ref",
+                "product_acceptance.file_unavailable",
+                "design spec must be a committed regular file below the repository root",
+            )
+        )
+    elif document.get("design_spec_sha256") != hashlib.sha256(design_path.read_bytes()).hexdigest():
+        issues.append(
+            ValidationIssue(
+                "$.design_spec_sha256",
+                "product_acceptance.file_hash",
+                "design spec SHA-256 must match exact committed bytes",
+            )
+        )
+    expected_bound_paths = {
+        "reference_fixture": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
+        "benchmark_corpus": "data/biocatalyst/fixtures/biocatalyst_d0a_benchmark_corpus.v1.json",
+    }
+    for field, expected_path in expected_bound_paths.items():
+        binding = document.get(field)
+        if isinstance(binding, Mapping) and binding.get("path") != expected_path:
+            issues.append(
+                ValidationIssue(
+                    f"$.{field}.path",
+                    "product_acceptance.binding_path",
+                    "this manifest version must bind its declared D0a artifact kind, not another committed file",
+                )
+            )
+        issues.extend(
+            _biocatalyst_product_file_binding_issues(
+                binding, path=f"$.{field}", repo_root=repo_root
+            )
+        )
+
+    performance = document.get("performance")
+    if isinstance(performance, Mapping):
+        artifacts = performance.get("artifacts")
+        if isinstance(artifacts, list):
+            for index, artifact in enumerate(artifacts):
+                issues.extend(
+                    _biocatalyst_product_file_binding_issues(
+                        artifact,
+                        path=f"$.performance.artifacts[{index}]",
+                        repo_root=repo_root,
+                    )
+                )
+
+    visual = document.get("visual")
+    visual_receipt: Any = None
+    cells = visual.get("cells") if isinstance(visual, Mapping) else None
+    required_states = (
+        set(visual.get("required_state_codes", ()))
+        if isinstance(visual, Mapping) and isinstance(visual.get("required_state_codes"), list)
+        else set()
+    )
+    expected_combinations = {
+        (viewport, theme, language, motion)
+        for viewport in ("desktop", "tablet", "mobile")
+        for theme in ("dark", "light")
+        for language in ("en", "zh")
+        for motion in ("standard", "reduced")
+    }
+    actual_combinations: set[tuple[str, str, str, str]] = set()
+    actual_states: set[str] = set()
+    if isinstance(cells, list):
+        for index, cell in enumerate(cells):
+            if not isinstance(cell, Mapping):
+                continue
+            viewport = cell.get("viewport")
+            if not isinstance(viewport, Mapping):
+                continue
+            name = viewport.get("name")
+            theme = cell.get("theme")
+            language = cell.get("language")
+            motion = cell.get("motion")
+            if all(isinstance(value, str) for value in (name, theme, language, motion)):
+                combo = (name, theme, language, motion)
+                if combo in actual_combinations:
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}]",
+                            "product_acceptance.duplicate_visual_cell",
+                            "viewport/theme/language/motion combination must occur exactly once",
+                        )
+                    )
+                actual_combinations.add(combo)
+                if cell.get("id") != f"d0a_{name}_{theme}_{language}_{motion}":
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].id",
+                            "product_acceptance.visual_cell_identity",
+                            "visual cell ID must exactly derive from its finite matrix coordinates",
+                        )
+                    )
+            state = cell.get("ui_state")
+            if isinstance(state, str):
+                actual_states.add(state)
+            image_path = _biocatalyst_product_repo_file(
+                repo_root, cell.get("reference_png_path")
+            )
+            if image_path is None or not image_path.is_file():
+                issues.append(
+                    ValidationIssue(
+                        f"$.visual.cells[{index}].reference_png_path",
+                        "product_acceptance.reference_unavailable",
+                        "every visual cell needs a committed reference PNG",
+                    )
+                )
+            else:
+                image_bytes = image_path.read_bytes()
+                if cell.get("reference_png_sha256") != hashlib.sha256(image_bytes).hexdigest():
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].reference_png_sha256",
+                            "product_acceptance.reference_hash",
+                            "reference PNG SHA-256 must match exact committed image bytes",
+                        )
+                    )
+                if image_bytes[:8] != b"\x89PNG\r\n\x1a\n" or image_bytes[12:16] != b"IHDR":
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].reference_png_path",
+                            "product_acceptance.reference_png",
+                            "reference image must be a well-formed PNG with an IHDR header",
+                        )
+                    )
+                elif viewport.get("width") != int.from_bytes(image_bytes[16:20], "big") or viewport.get("height") != int.from_bytes(image_bytes[20:24], "big"):
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].viewport",
+                            "product_acceptance.reference_dimensions",
+                            "reference PNG dimensions must exactly match the frozen viewport",
+                        )
+                    )
+            fixture = document.get("reference_fixture")
+            if isinstance(fixture, Mapping):
+                if cell.get("fixture_path") != fixture.get("path") or cell.get("fixture_sha256") != fixture.get("sha256"):
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}]",
+                            "product_acceptance.fixture_binding",
+                            "each visual cell must bind the exact top-level synthetic fixture bytes",
+                        )
+                    )
+            for mask_index, mask in enumerate(cell.get("masks", ())):
+                if not isinstance(mask, Mapping):
+                    continue
+                values = tuple(mask.get(key) for key in ("x", "y", "width", "height"))
+                if not all(isinstance(value, int) and not isinstance(value, bool) for value in values):
+                    continue
+                mask_x, mask_y, mask_width, mask_height = values
+                viewport_width = viewport.get("width")
+                viewport_height = viewport.get("height")
+                if not isinstance(viewport_width, int) or not isinstance(viewport_height, int):
+                    continue
+                if (mask_x + mask_width > viewport_width or mask_y + mask_height > viewport_height or mask_width * mask_height > viewport_width * viewport_height * 0.08):
+                    issues.append(
+                        ValidationIssue(
+                            f"$.visual.cells[{index}].masks[{mask_index}]",
+                            "product_acceptance.unbounded_mask",
+                            "masks must be bounded inside the viewport and cover at most 8% of its area",
+                        )
+                    )
+        if actual_combinations != expected_combinations:
+            issues.append(
+                ValidationIssue(
+                    "$.visual.cells",
+                    "product_acceptance.visual_matrix",
+                    "visual corpus must contain exactly every desktop/tablet/mobile × dark/light × EN/ZH × motion/reduced cell",
+                )
+            )
+        if actual_states != required_states:
+            issues.append(
+                ValidationIssue(
+                    "$.visual.required_state_codes",
+                    "product_acceptance.state_atlas",
+                    "visual cells must cover exactly the finite required state atlas",
+                )
+            )
+    if isinstance(visual, Mapping):
+        renderer_source = visual.get("renderer_source")
+        expected_renderer_path = "mockups/refs/biocatalyst/d0a/render_reference.py"
+        if isinstance(renderer_source, Mapping) and renderer_source.get("path") != expected_renderer_path:
+            issues.append(
+                ValidationIssue(
+                    "$.visual.renderer_source.path",
+                    "product_acceptance.binding_path",
+                    "visual renderer must bind the exact committed D0a renderer source",
+                )
+            )
+        issues.extend(
+            _biocatalyst_product_file_binding_issues(
+                renderer_source, path="$.visual.renderer_source", repo_root=repo_root
+            )
+        )
+        artifact = visual.get("artifact")
+        if isinstance(artifact, Mapping) and artifact.get("path") != "mockups/refs/biocatalyst/d0a/artifacts/visual_capture_receipt.v1.json":
+            issues.append(
+                ValidationIssue(
+                    "$.visual.artifact.path",
+                    "product_acceptance.binding_path",
+                    "visual receipt must bind the D0a capture artifact, not another committed file",
+                )
+            )
+        issues.extend(
+            _biocatalyst_product_file_binding_issues(
+                artifact, path="$.visual.artifact", repo_root=repo_root
+            )
+        )
+        artifact_path = (
+            _biocatalyst_product_repo_file(repo_root, artifact.get("path"))
+            if isinstance(artifact, Mapping)
+            else None
+        )
+        if artifact_path is not None and artifact_path.is_file():
+            try:
+                visual_receipt = json.loads(artifact_path.read_text(encoding="utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                issues.append(
+                    ValidationIssue(
+                        "$.visual.artifact.path",
+                        "product_acceptance.visual_receipt_shape",
+                        "D0a visual receipt must be parseable JSON",
+                    )
+                )
+
+    # The benchmark corpus is a real content-addressed design input. Inspect it rather
+    # than trusting a prose label: a future measured pass must have all dimensions.
+    benchmark = document.get("benchmark_corpus")
+    benchmark_path = (
+        _biocatalyst_product_repo_file(repo_root, benchmark.get("path"))
+        if isinstance(benchmark, Mapping)
+        else None
+    )
+    corpus: Any = None
+    if benchmark_path is not None and benchmark_path.is_file():
+        try:
+            corpus = json.loads(benchmark_path.read_text(encoding="utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.path",
+                    "product_acceptance.benchmark_shape",
+                    "frozen benchmark corpus must be parseable JSON",
+                )
+            )
+    if isinstance(corpus, Mapping):
+        required_corpus_fields = {
+            "projection_generation", "projection_path", "projection_sha256",
+            "primary_endpoints", "search_scenarios", "entitlement_states", "tenant_mix",
+            "environment", "warmup", "browser_device_network_profiles",
+            "measurement_rules", "future_measurement_receipt",
+        }
+        missing_fields = sorted(field for field in required_corpus_fields if field not in corpus)
+        if missing_fields:
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus",
+                    "product_acceptance.benchmark_dimensions",
+                    "benchmark corpus lacks required dimensions: " + ", ".join(missing_fields),
+                )
+            )
+        projection_path = _biocatalyst_product_repo_file(repo_root, corpus.get("projection_path"))
+        projection: Any = None
+        if projection_path is None or not projection_path.is_file() or corpus.get("projection_sha256") != hashlib.sha256(projection_path.read_bytes()).hexdigest():
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus",
+                    "product_acceptance.projection_binding",
+                    "projection generation must name a committed synthetic/projection file and its exact SHA-256",
+                )
+            )
+        elif corpus.get("projection_path") != "data/biocatalyst/fixtures/biocatalyst_d0a_synthetic_projection.v1.json":
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.projection_path",
+                    "product_acceptance.projection_binding",
+                    "D0a benchmark must bind the exact synthetic projection path",
+                )
+            )
+        else:
+            try:
+                projection = json.loads(projection_path.read_text(encoding="utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                issues.append(
+                    ValidationIssue(
+                        "$.benchmark_corpus.projection_path",
+                        "product_acceptance.projection_shape",
+                        "bound synthetic projection must be parseable JSON",
+                    )
+                )
+        if (
+            corpus.get("projection_generation") != _BIOCATALYST_D0A_PROJECTION_GENERATION
+            or not isinstance(projection, Mapping)
+            or projection.get("synthetic_only") is not True
+            or projection.get("generation_id") != _BIOCATALYST_D0A_PROJECTION_GENERATION
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.projection_generation",
+                    "product_acceptance.projection_generation",
+                    "corpus projection_generation and bound projection generation_id must both equal literal synthetic-d0a-v1",
+                )
+            )
+        endpoints = corpus.get("primary_endpoints")
+        if not isinstance(endpoints, list) or not endpoints or any(
+            not isinstance(endpoint, Mapping)
+            or not all(isinstance(endpoint.get(field), str) and endpoint.get(field) for field in ("method", "path", "response_shape"))
+            or not all(isinstance(endpoint.get(field), int) and endpoint.get(field) > 0 for field in ("page_size", "result_cardinality"))
+            for endpoint in endpoints
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus",
+                    "product_acceptance.endpoint_corpus",
+                    "each primary endpoint needs method, path, page size, cardinality, and response shape",
+                )
+            )
+        has_peer_resolver = isinstance(endpoints, list) and any(
+            isinstance(endpoint, Mapping) and endpoint.get("path") == "/api/biocatalyst/v1/trial-peer-sets:resolve"
+            for endpoint in endpoints
+        )
+        if not has_peer_resolver:
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.primary_endpoints",
+                    "product_acceptance.peer_resolver_corpus",
+                    "first visible Trial Peer Matrix performance corpus must name the bounded peer resolver",
+                )
+            )
+        environment = corpus.get("environment")
+        required_environment = {"host_class", "runtime", "process_runtime", "worker_count", "storage_topology", "network_location"}
+        if not isinstance(environment, Mapping) or any(field not in environment for field in required_environment):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.environment",
+                    "product_acceptance.environment_dimensions",
+                    "benchmark must freeze host, process/runtime, worker count, storage topology, and network location",
+                )
+            )
+        profiles = corpus.get("browser_device_network_profiles")
+        if profiles != list(_BIOCATALYST_D0A_BROWSER_PROFILES):
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus.browser_device_network_profiles",
+                    "product_acceptance.browser_profiles",
+                    "browser/device/network profiles must equal the literal frozen D0a desktop, tablet, and mobile dictionaries",
+                )
+            )
+
+        if isinstance(visual_receipt, Mapping):
+            renderer_receipt = visual_receipt.get("renderer")
+            renderer_source = visual.get("renderer_source") if isinstance(visual, Mapping) else None
+            fixture_receipt = visual_receipt.get("fixture")
+            projection_receipt = visual_receipt.get("projection")
+            reference_fixture = document.get("reference_fixture")
+            receipt_mismatch = (
+                visual_receipt.get("state") != "reference_only_not_browser_verified"
+                or visual_receipt.get("reference_truth_class") != "draft_contract_state_plate"
+                or visual_receipt.get("portable_across_browser_or_font_environments") is not False
+                or visual_receipt.get("browser_engine") is not None
+                or visual_receipt.get("browser_version") is not None
+                or visual_receipt.get("reviewer") is not None
+                or visual_receipt.get("non_authorizing") is not True
+                or visual_receipt.get("approval") != _BIOCATALYST_D0A_RECEIPT_APPROVAL
+                or visual_receipt.get("blocked_by") != list(_BIOCATALYST_D0A_RECEIPT_BLOCKERS)
+                or not isinstance(renderer_receipt, Mapping)
+                or not isinstance(renderer_source, Mapping)
+                or renderer_receipt.get("entrypoint") != renderer_source.get("path")
+                or renderer_receipt.get("source_sha256") != renderer_source.get("sha256")
+                or not isinstance(fixture_receipt, Mapping)
+                or not isinstance(reference_fixture, Mapping)
+                or fixture_receipt.get("path") != reference_fixture.get("path")
+                or fixture_receipt.get("sha256") != reference_fixture.get("sha256")
+                or not isinstance(projection_receipt, Mapping)
+                or projection_receipt.get("path") != corpus.get("projection_path")
+                or projection_receipt.get("sha256") != corpus.get("projection_sha256")
+                or projection_receipt.get("generation_id") != _BIOCATALYST_D0A_PROJECTION_GENERATION
+                or projection_receipt.get("synthetic_only") is not True
+            )
+            if receipt_mismatch:
+                issues.append(
+                    ValidationIssue(
+                        "$.visual.artifact",
+                        "product_acceptance.visual_receipt_binding",
+                        "draft receipt must preserve literal non-browser, non-authorizing, pending-approval, blocker, renderer, fixture, and projection bindings",
+                    )
+                )
+        elif visual_receipt is not None:
+            issues.append(
+                ValidationIssue(
+                    "$.visual.artifact",
+                    "product_acceptance.visual_receipt_shape",
+                    "D0a visual receipt must be a JSON object",
+                )
+            )
+
+    approval = document.get("approval")
+    all_cells_approved = isinstance(cells, list) and all(
+        isinstance(cell, Mapping)
+        and cell.get("approval_status") == "approved"
+        and isinstance(cell.get("reviewer_name"), str)
+        and cell.get("browser_verification_state") == "passed"
+        for cell in cells
+    )
+    approval_complete = (
+        isinstance(approval, Mapping)
+        and approval.get("status") == "approved"
+        and isinstance(approval.get("named_reviewer"), str)
+        and isinstance(approval.get("recorded_at"), str)
+    )
+    if not approval_complete or not all_cells_approved:
+        issues.append(
+            ValidationIssue(
+                "$.approval",
+                "product_acceptance.human_approval_pending",
+                "all visual cells and the root manifest require named Fable/Opus design-owner approval",
+            )
+        )
+    if not isinstance(performance, Mapping) or performance.get("state") != "measured_passed":
+        issues.append(
+            ValidationIssue(
+                "$.performance.state",
+                "product_acceptance.performance_not_measured",
+                "a product-acceptance pass requires the frozen performance corpus to be measured",
+            )
+        )
+    if isinstance(corpus, Mapping):
+        receipt = corpus.get("future_measurement_receipt")
+        required_receipt_strings = (
+            "run_id", "started_at", "completed_at", "raw_samples_path",
+            "raw_samples_sha256", "summary_code_path", "summary_code_sha256",
+            "summary_code_version", "summary_sha256", "pass_fail_digest",
+        )
+        receipt_complete = (
+            isinstance(receipt, Mapping)
+            and receipt.get("state") == "completed"
+            and receipt.get("missing_reason") is None
+            and all(
+                isinstance(receipt.get(field), str) and receipt[field].strip()
+                for field in required_receipt_strings
+            )
+            and _parse_temporal(receipt.get("started_at")) is not None
+            and _parse_temporal(receipt.get("completed_at")) is not None
+        )
+        if not receipt_complete:
+            issues.append(
+                ValidationIssue(
+                    "$.benchmark_corpus",
+                    "product_acceptance.measurement_receipt_pending",
+                    "a product-acceptance pass requires valid timestamps plus nonempty byte-bound raw-sample and summary-code fields and result digests",
+                )
+            )
+        else:
+            raw_samples = _biocatalyst_product_repo_file(
+                repo_root, receipt.get("raw_samples_path")
+            )
+            summary_code = _biocatalyst_product_repo_file(
+                repo_root, receipt.get("summary_code_path")
+            )
+            if (
+                raw_samples is None
+                or not raw_samples.is_file()
+                or receipt.get("raw_samples_sha256") != hashlib.sha256(raw_samples.read_bytes()).hexdigest()
+                or summary_code is None
+                or not summary_code.is_file()
+                or receipt.get("summary_code_sha256") != hashlib.sha256(summary_code.read_bytes()).hexdigest()
+                or not isinstance(receipt.get("summary_sha256"), str)
+                or not re.fullmatch(r"[a-f0-9]{64}", receipt["summary_sha256"])
+                or not isinstance(receipt.get("pass_fail_digest"), str)
+                or not re.fullmatch(r"[a-f0-9]{64}", receipt["pass_fail_digest"])
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "$.benchmark_corpus",
+                        "product_acceptance.measurement_artifact_binding",
+                        "a measured pass requires byte-bound raw samples and summary code plus fixed summary and pass/fail digests",
+                    )
+                )
+    issues.append(
+        ValidationIssue(
+            "$.state",
+            "product_acceptance.trusted_browser_verifier_unavailable",
+            "D0a v1 generic validation is integrity-only and can never trust self-described acceptance; a successor contract with an independent verifier is required",
+        )
+    )
+    return issues
+
+
 def _contract_semantic_issues(
     contract_id: str, document: Mapping[str, Any], repo_root: Path
 ) -> list[ValidationIssue]:
@@ -2828,6 +3729,10 @@ def _contract_semantic_issues(
         return _ctgov_watermark_issues(document)
     if contract_id == _TRIAL_SNAPSHOT_CONTRACT_ID:
         return _trial_projection_issues(document)
+    if contract_id == _TRIAL_PROTOCOL_PROJECTION_CONTRACT_ID:
+        return _trial_protocol_projection_issues(document)
+    if contract_id == _TRIAL_PEER_SET_CONTRACT_ID:
+        return _trial_peer_set_issues(document)
     if contract_id == _TRIAL_COVERAGE_CONTRACT_ID:
         return _trial_coverage_issues(document)
     if contract_id == _CTGOV_HISTORY_RECEIPT_CONTRACT_ID:
@@ -2842,8 +3747,14 @@ def _contract_semantic_issues(
         return _history_change_fact_issues(document)
     if contract_id == _TRIAL_HISTORY_READ_MODEL_CONTRACT_ID:
         return _history_read_model_issues(document)
+    if contract_id == _TRIAL_ENDPOINT_ALIGNMENT_CANDIDATE_CONTRACT_ID:
+        return _endpoint_alignment_candidate_issues(document)
+    if contract_id == _TRIAL_ENDPOINT_ALIGNMENT_REVIEW_PROJECTION_CONTRACT_ID:
+        return _endpoint_alignment_review_projection_issues(document)
     if contract_id == _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID:
         return _biocatalyst_launch_slo_manifest_issues(document, repo_root)
+    if contract_id == _BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID:
+        return _biocatalyst_product_acceptance_manifest_issues(document, repo_root)
     if contract_id == _PAGE_RECEIPT_CONTRACT_ID:
         response = document.get("response")
         issues: list[ValidationIssue] = []
@@ -2969,12 +3880,29 @@ class ContractRegistry:
                     "contract documents must be finite acyclic JSON trees",
                 )
             ]
-        issues.extend(_interval_issues(document))
-        if requested == _PACKET_CONTRACT_ID and isinstance(document, Mapping):
-            issues.extend(_packet_authority_issues(document))
-        if isinstance(document, Mapping):
-            issues.extend(
-                _contract_semantic_issues(requested, document, self.repo_root)
+            # JSON Schema has already established that this is not a finite
+            # traversable document.  Do not hand the same hostile tree to the
+            # recursive interval or contract-semantic walkers below.
+            return tuple(issues)
+        try:
+            issues.extend(_interval_issues(document))
+            if requested == _PACKET_CONTRACT_ID and isinstance(document, Mapping):
+                issues.extend(_packet_authority_issues(document))
+            if isinstance(document, Mapping):
+                issues.extend(
+                    _contract_semantic_issues(requested, document, self.repo_root)
+                )
+        except (ContractError, OverflowError, RecursionError, ValueError):
+            # Some schemas intentionally do not descend into the value of an
+            # already-forbidden property.  The generic interval/semantic pass
+            # still must fail closed if that value is not a finite traversable
+            # canonical JSON tree.
+            return (
+                ValidationIssue(
+                    "$",
+                    "schema.invalid_in_memory_document",
+                    "contract documents must be finite acyclic JSON trees",
+                ),
             )
         return tuple(sorted(set(issues)))
 
@@ -3037,6 +3965,20 @@ def validate_biocatalyst_launch_slo_manifest(
 
     validate_contract(
         _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID,
+        manifest,
+        repo_root=repo_root,
+    )
+
+
+def validate_biocatalyst_product_acceptance_manifest(
+    manifest: Mapping[str, Any],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Validate the finite D0a acceptance manifest; pending drafts fail closed."""
+
+    validate_contract(
+        _BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID,
         manifest,
         repo_root=repo_root,
     )
@@ -5319,6 +6261,423 @@ def _history_read_model_issues(document: Mapping[str, Any]) -> list[ValidationIs
     return issues
 
 
+_ENDPOINT_ALIGNMENT_LIST_LOCATORS = {
+    "primary": "/protocolSection/outcomesModule/primaryOutcomes",
+    "secondary": "/protocolSection/outcomesModule/secondaryOutcomes",
+    "other": "/protocolSection/outcomesModule/otherOutcomes",
+}
+_ENDPOINT_ALIGNMENT_MAX_CANDIDATE_BYTES = 48 * 1024
+_ENDPOINT_ALIGNMENT_MAX_PROJECTION_BYTES = 512 * 1024
+
+
+def _bounded_canonical_json_size(
+    value: Any, *, limit: int
+) -> tuple[int | None, str | None]:
+    """Count exact canonical JSON bytes without rendering an over-cap value."""
+
+    def string_size(text: str, remaining: int) -> int | None:
+        total = 2
+        for character in text:
+            codepoint = ord(character)
+            if 0xD800 <= codepoint <= 0xDFFF:
+                return None
+            if character in {'"', "\\"} or character in {
+                "\b",
+                "\f",
+                "\n",
+                "\r",
+                "\t",
+            }:
+                total += 2
+            elif codepoint < 0x20:
+                total += 6
+            else:
+                total += (
+                    1
+                    if codepoint <= 0x7F
+                    else 2
+                    if codepoint <= 0x7FF
+                    else 3
+                    if codepoint <= 0xFFFF
+                    else 4
+                )
+            if total > remaining:
+                return total
+        return total
+
+    total = 0
+    active_container_ids: set[int] = set()
+    stack: list[tuple[bool, Any]] = [(False, value)]
+    while stack:
+        leaving, current = stack.pop()
+        if leaving:
+            active_container_ids.remove(id(current))
+            continue
+        current_type = type(current)
+        if isinstance(current, dict):
+            container_id = id(current)
+            if container_id in active_container_ids:
+                return None, "invalid"
+            active_container_ids.add(container_id)
+            item_count = len(current)
+            total += 2 + max(0, item_count - 1) + item_count
+            if total > limit:
+                return None, "limit"
+            try:
+                items = list(current.items())
+            except RuntimeError:
+                return None, "invalid"
+            if len(items) != item_count:
+                return None, "invalid"
+            if any(type(key) is not str for key, _child in items):
+                return None, "invalid"
+            items.sort(key=lambda item: item[0])
+            for key, _child in items:
+                rendered_size = string_size(key, limit - total)
+                if rendered_size is None:
+                    return None, "invalid"
+                total += rendered_size
+                if total > limit:
+                    return None, "limit"
+            stack.append((True, current))
+            stack.extend((False, child) for _key, child in reversed(items))
+        elif current_type is list:
+            container_id = id(current)
+            if container_id in active_container_ids:
+                return None, "invalid"
+            active_container_ids.add(container_id)
+            item_count = len(current)
+            total += 2 + max(0, item_count - 1)
+            if total > limit:
+                return None, "limit"
+            stack.append((True, current))
+            stack.extend((False, child) for child in reversed(current))
+        elif current_type is str:
+            rendered_size = string_size(current, limit - total)
+            if rendered_size is None:
+                return None, "invalid"
+            total += rendered_size
+        elif current is None:
+            total += 4
+        elif current_type is bool:
+            total += 4 if current else 5
+        elif current_type is int:
+            remaining = limit - total
+            if current.bit_length() > max(1, remaining) * 4:
+                return None, "limit"
+            try:
+                total += len(str(current))
+            except ValueError:
+                return None, "invalid"
+        elif current_type is float:
+            try:
+                total += len(
+                    json.dumps(current, allow_nan=False, separators=(",", ":"))
+                )
+            except (TypeError, ValueError):
+                return None, "invalid"
+        else:
+            return None, "invalid"
+        if total > limit:
+            return None, "limit"
+    return total, None
+
+
+def _endpoint_alignment_candidate_identity(document: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "semantic_method": document.get("semantic_method"),
+        "nct_id": document.get("nct_id"),
+        "diff_ref": document.get("diff_ref"),
+        "before": document.get("before"),
+        "after": document.get("after"),
+        "supporting_exact_op_sha256": document.get("supporting_exact_op_sha256"),
+    }
+
+
+def _endpoint_alignment_candidate_size_issue(
+    document: Mapping[str, Any], *, path: str = "$"
+) -> ValidationIssue | None:
+    _size, size_reason = _bounded_canonical_json_size(
+        document, limit=_ENDPOINT_ALIGNMENT_MAX_CANDIDATE_BYTES
+    )
+    if size_reason == "limit":
+        return ValidationIssue(
+            path,
+            "endpoint_alignment_candidate.byte_limit",
+            "candidate exceeds the fixed 48KiB private projection limit",
+        )
+    if size_reason is not None:
+        raise ContractError("candidate must be finite canonical JSON")
+    return None
+
+
+def _endpoint_alignment_candidate_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    size_issue = _endpoint_alignment_candidate_size_issue(document)
+    if size_issue is not None:
+        return [size_issue]
+    if (
+        document.get("persistence_state") != "projection_only"
+        or document.get("canonical_queue") is not False
+    ):
+        issues.append(
+            ValidationIssue(
+                "$",
+                "endpoint_alignment_candidate.noncanonical_projection",
+                "candidate must remain projection-only and outside every canonical queue",
+            )
+        )
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="candidate_payload_sha256",
+        excluded_fields=frozenset(("candidate_payload_sha256",)),
+        code="endpoint_alignment_candidate.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    identity = _endpoint_alignment_candidate_identity(document)
+    nct_id = document.get("nct_id")
+    if isinstance(nct_id, str):
+        expected_id = (
+            f"trial_endpoint_alignment_candidate_{nct_id}_"
+            f"{canonical_json_sha256(identity)[:24]}"
+        )
+        if document.get("candidate_id") != expected_id:
+            issues.append(
+                ValidationIssue(
+                    "$.candidate_id",
+                    "endpoint_alignment_candidate.deterministic_id",
+                    "candidate ID must be derived only from method and exact evidence bindings",
+                )
+            )
+    supporting = document.get("supporting_exact_op_sha256")
+    if isinstance(supporting, list) and supporting != sorted(supporting):
+        issues.append(
+            ValidationIssue(
+                "$.supporting_exact_op_sha256",
+                "endpoint_alignment_candidate.operation_order",
+                "supporting exact-operation hashes must be lexicographically ordered",
+            )
+        )
+    for side in ("before", "after"):
+        locator = document.get(side)
+        if not isinstance(locator, Mapping):
+            continue
+        endpoint = locator.get("endpoint")
+        endpoint_hash = locator.get("endpoint_sha256")
+        if isinstance(endpoint, Mapping) and isinstance(endpoint_hash, str):
+            actual_hash = canonical_json_sha256(endpoint)
+            if endpoint_hash != actual_hash:
+                issues.append(
+                    ValidationIssue(
+                        f"$.{side}.endpoint_sha256",
+                        "endpoint_alignment_candidate.endpoint_hash",
+                        "endpoint hash must bind the exact embedded endpoint object",
+                    )
+                )
+        role = locator.get("outcome_role")
+        expected_locator = _ENDPOINT_ALIGNMENT_LIST_LOCATORS.get(role)
+        if expected_locator is not None and locator.get("list_locator") != expected_locator:
+            issues.append(
+                ValidationIssue(
+                    f"$.{side}.list_locator",
+                    "endpoint_alignment_candidate.role_locator",
+                    "outcome role must use its registered exact outcomes-list locator",
+                )
+            )
+    return issues
+
+
+def _endpoint_alignment_projection_identity(document: Mapping[str, Any]) -> dict[str, Any]:
+    candidates = document.get("candidates")
+    candidate_ids = (
+        [candidate.get("candidate_id") for candidate in candidates if isinstance(candidate, Mapping)]
+        if isinstance(candidates, list)
+        else []
+    )
+    return {
+        "semantic_method": document.get("semantic_method"),
+        "nct_id": document.get("nct_id"),
+        "diff_ref": document.get("diff_ref"),
+        "before_source_snapshot_ref": document.get("before_source_snapshot_ref"),
+        "after_source_snapshot_ref": document.get("after_source_snapshot_ref"),
+        "available": document.get("available"),
+        "unavailable_reason": document.get("unavailable_reason"),
+        "candidate_ids": candidate_ids,
+    }
+
+
+def _endpoint_alignment_review_projection_issues(
+    document: Mapping[str, Any]
+) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    _size, size_reason = _bounded_canonical_json_size(
+        document, limit=_ENDPOINT_ALIGNMENT_MAX_PROJECTION_BYTES
+    )
+    if size_reason == "limit":
+        return [
+            ValidationIssue(
+                "$",
+                "endpoint_alignment_projection.byte_limit",
+                "projection exceeds the fixed 512KiB private projection limit",
+            )
+        ]
+    if size_reason is not None:
+        raise ContractError("projection must be finite canonical JSON")
+    candidates = document.get("candidates")
+    if isinstance(candidates, list):
+        candidate_size_issues: list[ValidationIssue] = []
+        for index, candidate in enumerate(candidates):
+            if not isinstance(candidate, Mapping):
+                continue
+            issue = _endpoint_alignment_candidate_size_issue(
+                candidate, path=f"$.candidates[{index}]"
+            )
+            if issue is not None:
+                candidate_size_issues.append(issue)
+        if candidate_size_issues:
+            return candidate_size_issues
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="projection_payload_sha256",
+        excluded_fields=frozenset(("projection_payload_sha256",)),
+        code="endpoint_alignment_projection.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    nct_id = document.get("nct_id")
+    if isinstance(nct_id, str):
+        expected_id = (
+            f"trial_endpoint_alignment_review_projection_{nct_id}_"
+            f"{canonical_json_sha256(_endpoint_alignment_projection_identity(document))[:24]}"
+        )
+        if document.get("projection_id") != expected_id:
+            issues.append(
+                ValidationIssue(
+                    "$.projection_id",
+                    "endpoint_alignment_projection.deterministic_id",
+                    "projection ID must be derived from method, exact version pair, state, and candidate IDs",
+                )
+            )
+    before_version = document.get("before_source_version")
+    after_version = document.get("after_source_version")
+    if (
+        isinstance(before_version, int)
+        and not isinstance(before_version, bool)
+        and isinstance(after_version, int)
+        and not isinstance(after_version, bool)
+        and after_version != before_version + 1
+    ):
+        issues.append(
+            ValidationIssue(
+                "$.after_source_version",
+                "endpoint_alignment_projection.version_sequence",
+                "a review projection can cover only one adjacent source-version pair",
+            )
+        )
+    candidate_count = document.get("candidate_count")
+    if isinstance(candidates, list):
+        if candidate_count != len(candidates):
+            issues.append(
+                ValidationIssue(
+                    "$.candidate_count",
+                    "endpoint_alignment_projection.candidate_count",
+                    "candidate_count must equal the complete candidate array length",
+                )
+            )
+        candidate_ids = [item.get("candidate_id") for item in candidates if isinstance(item, Mapping)]
+        if len(candidate_ids) != len(set(candidate_ids)):
+            issues.append(
+                ValidationIssue(
+                    "$.candidates",
+                    "endpoint_alignment_projection.candidate_identity",
+                    "candidate IDs must be unique within one projection",
+                )
+            )
+        order_keys: list[tuple[str, int, str, int, str]] = []
+        for index, item in enumerate(candidates):
+            if not isinstance(item, Mapping):
+                continue
+            try:
+                candidate_issues = _endpoint_alignment_candidate_issues(item)
+            except ContractError:
+                candidate_issues = [
+                    ValidationIssue(
+                        "$",
+                        "schema.invalid_in_memory_document",
+                        "contract documents must be finite canonical JSON trees",
+                    )
+                ]
+            for issue in candidate_issues:
+                suffix = issue.path[1:] if issue.path.startswith("$") else ""
+                issues.append(
+                    ValidationIssue(
+                        f"$.candidates[{index}]{suffix}",
+                        issue.code,
+                        issue.message,
+                    )
+                )
+            if (
+                item.get("persistence_state") != "projection_only"
+                or item.get("canonical_queue") is not False
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "$.candidates",
+                        "endpoint_alignment_projection.candidate_noncanonical",
+                        "every candidate must machine-encode projection-only nonqueue status",
+                    )
+                )
+            before = item.get("before")
+            after = item.get("after")
+            if not isinstance(before, Mapping) or not isinstance(after, Mapping):
+                continue
+            before_locator = before.get("list_locator")
+            after_locator = after.get("list_locator")
+            before_index = before.get("outcome_index")
+            after_index = after.get("outcome_index")
+            candidate_id = item.get("candidate_id")
+            if (
+                isinstance(before_locator, str)
+                and isinstance(after_locator, str)
+                and isinstance(before_index, int)
+                and not isinstance(before_index, bool)
+                and isinstance(after_index, int)
+                and not isinstance(after_index, bool)
+                and isinstance(candidate_id, str)
+            ):
+                order_keys.append(
+                    (before_locator, before_index, after_locator, after_index, candidate_id)
+                )
+            if item.get("nct_id") != document.get("nct_id"):
+                issues.append(
+                    ValidationIssue(
+                        "$.candidates",
+                        "endpoint_alignment_projection.nct_binding",
+                        "every candidate must retain the projection NCT identity",
+                    )
+                )
+        if order_keys != sorted(order_keys):
+            issues.append(
+                ValidationIssue(
+                    "$.candidates",
+                    "endpoint_alignment_projection.source_locator_order",
+                    "candidates must be in deterministic source-locator order, never a priority rank",
+                )
+            )
+    if document.get("available") is False and (
+        candidate_count != 0 or (isinstance(candidates, list) and candidates)
+    ):
+        issues.append(
+            ValidationIssue(
+                "$.candidates",
+                "endpoint_alignment_projection.unavailable_empty",
+                "any capacity-unavailable projection must expose zero candidates, never a truncation",
+            )
+        )
+    return issues
+
+
 def derive_trial_registry_change_descriptors(
     before_study: Mapping[str, Any], after_study: Mapping[str, Any]
 ) -> list[dict[str, Any]]:
@@ -6808,3 +8167,51 @@ def validate_trial_history_read_model(
         )
     if issues:
         raise ContractValidationError(_TRIAL_HISTORY_READ_MODEL_CONTRACT_ID, issues)
+
+
+def validate_trial_endpoint_alignment_candidate_against_history(
+    candidate: Mapping[str, Any],
+    before_snapshot: Mapping[str, Any],
+    after_snapshot: Mapping[str, Any],
+    diff: Mapping[str, Any],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Replay one T2a candidate without giving the contract layer a writer."""
+
+    # Kept lazy to preserve the contract registry's dependency direction: the
+    # registry owns schemas, while the Bio engine owns candidate derivation.
+    from engine.biocatalyst.endpoint_alignment import (
+        validate_trial_endpoint_alignment_candidate_against_history as _validate,
+    )
+
+    _validate(
+        candidate,
+        before_snapshot,
+        after_snapshot,
+        diff,
+        repo_root=str(repo_root) if repo_root is not None else None,
+    )
+
+
+def validate_trial_endpoint_alignment_review_projection_against_history(
+    projection: Mapping[str, Any],
+    before_snapshot: Mapping[str, Any],
+    after_snapshot: Mapping[str, Any],
+    diff: Mapping[str, Any],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Replay the complete private T2a projection without queue persistence."""
+
+    from engine.biocatalyst.endpoint_alignment import (
+        validate_trial_endpoint_alignment_review_projection_against_history as _validate,
+    )
+
+    _validate(
+        projection,
+        before_snapshot,
+        after_snapshot,
+        diff,
+        repo_root=str(repo_root) if repo_root is not None else None,
+    )
