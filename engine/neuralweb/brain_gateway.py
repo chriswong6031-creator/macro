@@ -1423,6 +1423,9 @@ def _compact_stage_context(symbol: str, root: Path) -> dict:
         rows = frame[frame["ticker"].astype(str).str.upper() == symbol]
         if rows.empty:
             return {}
+        # The parquet retains multiple as_of_date snapshots (nightly engine
+        # appends over the vendor seed) — take the newest, not the first.
+        rows = rows.sort_values("as_of_date", ascending=False, kind="stable")
         row = rows.iloc[0]
         flag = int(row["stage_flag"]) if not pd.isna(row["stage_flag"]) else None
         return {
@@ -2462,6 +2465,10 @@ def _tool_get_stage_peers(params: dict, root: Path) -> dict:
             edf = pd.read_parquet(stage_path)
             sub = edf[edf["ticker"] == symbol] if "ticker" in edf.columns else edf.iloc[0:0]
             if len(sub):
+                # Multiple as_of_date snapshots may coexist (nightly engine
+                # appends over the vendor seed) — take the newest, not the first.
+                if "as_of_date" in sub.columns:
+                    sub = sub.sort_values("as_of_date", ascending=False, kind="stable")
                 r = sub.iloc[0]
                 sflag = r.get("stage_flag")
                 try:

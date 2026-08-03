@@ -6,10 +6,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# US baskets + subsector_rotation became redirect stubs in the Sector Intelligence
-# consolidation (#4237) and no longer opt in; stub invariants live in
-# test_sector_intelligence_page.py. The merged sector_central page adopted the
-# baskets desk chrome, so it opts in as page-baskets (the China sibling did not merge).
+# Roster of pages that opt IN to macro-desk.css, with the variant class each declares.
+# Membership changed with the Sector Intelligence consolidation (#4237):
+#   • baskets / subsector_rotation LEFT the family — both are now redirect stubs with
+#     their own inline style block. They link no macro-desk.css and declare no body
+#     class, so they are off this roster (their China siblings keep their real pages).
+#   • sector_central STAYED but changed VARIANT: the merged page is descended from the
+#     baskets rvx layer, so it ships `page-baskets`, not `page-sector-central`.
+#     KNOWN GAP (pre-existing, recorded in the consolidation masterplan §4b): the merged
+#     page still carries scc-wrap / scc-cycle / cyc-stage / scc-section-h / scc-boardhead
+#     markup, and macro-desk.css scopes ~15 rules for exactly those classes under
+#     `body.macro-desk.page-sector-central` — dead on this page since the merge. Its
+#     China sibling still declares page-sector-central, so those rules stay live there.
+#     Reconciling the two is a styling call (cascade collision risk with the rvx layer),
+#     not a roster call; this pin records the shipped truth in the meantime.
+#   • Stub invariants for the two redirect stubs live in
+#     tests/test_sector_intelligence_page.py.
 PAGE_CLASSES = {
     "sector_central": "macro-desk page-baskets",
     "sector_central_china": "macro-desk page-sector-central",

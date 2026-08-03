@@ -1154,6 +1154,20 @@
   .ts-buy { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; white-space: nowrap; border: 1px solid var(--line); }
   .ts-buy.ok { color: var(--up); border-color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
   .ts-buy.soon { color: var(--up); border-color: color-mix(in srgb, var(--up) 55%, var(--line)); }
+  /* ── strip tables on phones (UX handoff §17: primary decisions never x-scroll) ──
+     Both prophet-panel strips (⚡ fresh triggers, 9 cols · 🏃 market leaders, 6 cols)
+     are wider than a 390px panel, so .tbl-scroll clipped their header mid-word and
+     hid whole columns behind an in-panel x-scroll. At the board's own 680px mobile
+     break the tertiary columns demote to the row's stock page (every row is a
+     tap-through); what stays — ticker+name, edge (α), and the stance column
+     (buy / entry) — keeps its visible header as its label. .tbl-scroll remains
+     underneath as the fail-safe if a future column outgrows the budget. */
+  @media (max-width: 680px){
+    .topsetups .ts-tbl .c-sector, .topsetups .ts-tbl .c-rank,
+    .topsetups .ts-tbl .c-cycle,  .topsetups .ts-tbl .c-trend,
+    .topsetups .ts-tbl .c-factor, .topsetups .ts-tbl .c-setup,
+    .topsetups .ts-tbl .c-offhigh, .topsetups .ts-tbl .c-state { display: none; }
+  }
   .ts-empty { margin-top: 9px; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
   /* major-index health (macro page hero) */
   .idx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
@@ -15727,27 +15741,31 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <a class="ts-more" href="discovery.html">{{ t('Top Picks', '精选股') }} →</a>
         </div>
         {% if _tsn.resid %}
+        {# Column classes (c-*) are the mobile contract: ≤680px hides the tertiary
+           set (see the .ts-tbl media block) — a th without a c-class silently
+           escapes that budget, so every column carries one (pinned by
+           tests/test_dashboard_template_render.py). #}
         <div class="tbl-scroll"><table class="ts-tbl">
           <thead><tr>
-            <th>{{ t('Stock', '个股') }}</th><th>{{ t('Sector', '板块') }}</th>
-            <th class="r" data-tip-en="Selection edge (α): sector-neutral residual momentum, market and sector beta stripped — how strongly this stock outruns its peers" data-tip-zh="选股优势（α）：行业中性残差动量（剥离大盘与行业beta）— 相对同行的领先强度">{{ t('edge (α)', '优势 (α)') }}</th><th class="r">{{ t('rank', '排名') }}</th>
-            <th data-tip-en="The validated MACD-2D × StochRSI-3D confluence buy gate (engine/signal_gate): Buy zone = both crossed within ~6 days, still constructive; About to cross = 3D StochRSI crossed, 2D MACD imminent. The board requires this." data-tip-zh="经验证的共振买入门控：买入区=两者约近6日内交叉且建设性；即将交叉=3日StochRSI已上穿、2日MACD即将交叉。榜单以此为准。">{{ t('buy', '买入') }}</th>
-            <th>{{ t('cycle', '周期') }}</th><th>{{ t('trend', '趋势') }}</th>
-            <th class="r" data-tip-en="Cross-sectional factor composite (value / quality / low-vol …) — a LIGHT quality tiebreaker (crowded, post-publication decayed), not a driver" data-tip-zh="横截面因子综合（价值/质量/低波…）— 轻量质量打破平局，非主导">{{ t('factor', '因子') }}</th>
-            <th class="r" data-tip-en="Entry-context blend (0.7·alpha-z + cycle/reversal timing). The board is ranked by α, not this — Phase-0 found the blend does not improve forward-return ranking (reports/setup-score-phase0.md)." data-tip-zh="入场情境混合分（0.7·alpha-z + 周期/反转择时）。榜单按 α 排序而非此分 — Phase-0 显示该混合不改善前瞻收益排序。">{{ t('setup', '布局分') }}</th>
+            <th class="c-stock">{{ t('Stock', '个股') }}</th><th class="c-sector">{{ t('Sector', '板块') }}</th>
+            <th class="r c-edge" data-tip-en="Selection edge (α): sector-neutral residual momentum, market and sector beta stripped — how strongly this stock outruns its peers" data-tip-zh="选股优势（α）：行业中性残差动量（剥离大盘与行业beta）— 相对同行的领先强度">{{ t('edge (α)', '优势 (α)') }}</th><th class="r c-rank">{{ t('rank', '排名') }}</th>
+            <th class="c-buy" data-tip-en="The validated MACD-2D × StochRSI-3D confluence buy gate (engine/signal_gate): Buy zone = both crossed within ~6 days, still constructive; About to cross = 3D StochRSI crossed, 2D MACD imminent. The board requires this." data-tip-zh="经验证的共振买入门控：买入区=两者约近6日内交叉且建设性；即将交叉=3日StochRSI已上穿、2日MACD即将交叉。榜单以此为准。">{{ t('buy', '买入') }}</th>
+            <th class="c-cycle">{{ t('cycle', '周期') }}</th><th class="c-trend">{{ t('trend', '趋势') }}</th>
+            <th class="r c-factor" data-tip-en="Cross-sectional factor composite (value / quality / low-vol …) — a LIGHT quality tiebreaker (crowded, post-publication decayed), not a driver" data-tip-zh="横截面因子综合（价值/质量/低波…）— 轻量质量打破平局，非主导">{{ t('factor', '因子') }}</th>
+            <th class="r c-setup" data-tip-en="Entry-context blend (0.7·alpha-z + cycle/reversal timing). The board is ranked by α, not this — Phase-0 found the blend does not improve forward-return ranking (reports/setup-score-phase0.md)." data-tip-zh="入场情境混合分（0.7·alpha-z + 周期/反转择时）。榜单按 α 排序而非此分 — Phase-0 显示该混合不改善前瞻收益排序。">{{ t('setup', '布局分') }}</th>
           </tr></thead>
           <tbody>
           {% for r in _tsn.resid[:10] %}
             <tr class="ts-row" onclick="location.href='stock.html#{{ r.ticker }}'">
-              <td><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" data-tip-en="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer" data-tip-zh="{{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}{% if r.sue_z %} <span class="ts-sue" data-tip-en="Earnings momentum: SUE z {{ '%+.1f'|format(r.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score" data-tip-zh="盈利动量：SUE z {{ '%+.1f'|format(r.sue_z) }}（相对标普1500）— 在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 {{ t('earnings beat', '盈利超预期') }}</span>{% endif %}</td>
-              <td class="muted">{{ td(r.sector) }}</td>
-              <td class="r {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
-              <td class="r muted">{% if r.sector_rank %}#{{ r.sector_rank }}/{{ r.sector_n }}{% endif %}</td>
-              <td>{% set sg = r.signal if (r.signal is defined) else none %}{% if sg and sg.tier_cascade == 'T1' %}<span class="ts-buy ok" data-tip-en="Confirmed: 2D MACD-RSI × 3D StochRSI crossed within ~6 days, still constructive" data-tip-zh="已确认：2日MACD-RSI×3日StochRSI约近6日内交叉、仍具建设性">{{ t('Buy zone', '买入区') }}</span>{% elif sg and sg.tier_cascade == 'T2' %}<span class="ts-buy ok" data-tip-en="Confirmed early tier (T2) — completed-bar cross that typically fills nearer the trough than the master signal." data-tip-zh="T2已确认的提前层——基于已完成K线的交叉，成交价通常比主信号更贴近低点。"><span class="l-en">Early buy</span><span class="l-zh">提前买点</span></span>{% elif sg and sg.tier_cascade == 'T3' %}<span class="ts-buy soon" data-tip-en="Anticipation: 3D StochRSI crossed, 2D MACD-RSI about to cross (next 1-2 bars){% if sg.provisional %}. PROVISIONAL — projected off the incomplete 2D bucket; a measured 9.4% of US T3 fresh fires repaint when it completes (post-N=2 persistence hardening; calibration/provisional_replay.json, W6 #22){% endif %}" data-tip-zh="预期：3日StochRSI已上穿、2日MACD-RSI即将交叉（未来1-2根K线）{% if sg.provisional %}。暂定 — 基于未完成的2日K线桶，经N=2修正后实测美股9.4%的T3新信号在桶完成后重绘{% endif %}">{{ t('About to cross', '即将交叉') }}</span>{% if sg.provisional %}<span class="prov-flag" data-tip-en="Provisional — may repaint. Measured: 9.4% of US T3 fresh fires vanish within 4 sessions of the 2D bucket completing (post-N=2 persistence hardening; calibration/provisional_replay.json, W6 #22)." data-tip-zh="暂定 — 可能重绘：经N=2修正后实测美股9.4%的T3新信号在K线桶完成后4个交易日内消失。"><span class="l-en">prov</span><span class="l-zh">暂定</span></span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
-              <td>{% if r.label %}{{ td(r.label) }}{% else %}<span class="muted">—</span>{% endif %}</td>
-              <td>{% if r.alpha_entry == 'pullback' %}<span class="ent-good">{{ t('pullback', '回调') }}</span>{% elif r.alpha_entry == 'extended' %}<span class="ent-warn">{{ t('extended', '过热') }}</span>{% else %}<span class="muted">{{ r.alpha_entry or '—' }}</span>{% endif %}</td>
-              <td class="r {{ 'az-up' if r.factor_z and r.factor_z > 0 else ('az-dn' if r.factor_z and r.factor_z < 0 else 'muted') }}">{% if r.factor_z is not none %}{{ '%+.1f'|format(r.factor_z) }}{% else %}—{% endif %}</td>
-              <td class="r"><b>{{ '%+.2f'|format(r.setup) }}</b></td>
+              <td class="c-stock"><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" data-tip-en="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer" data-tip-zh="{{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}{% if r.sue_z %} <span class="ts-sue" data-tip-en="Earnings momentum: SUE z {{ '%+.1f'|format(r.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score" data-tip-zh="盈利动量：SUE z {{ '%+.1f'|format(r.sue_z) }}（相对标普1500）— 在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 {{ t('earnings beat', '盈利超预期') }}</span>{% endif %}</td>
+              <td class="muted c-sector">{{ td(r.sector) }}</td>
+              <td class="r c-edge {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
+              <td class="r muted c-rank">{% if r.sector_rank %}#{{ r.sector_rank }}/{{ r.sector_n }}{% endif %}</td>
+              <td class="c-buy">{% set sg = r.signal if (r.signal is defined) else none %}{% if sg and sg.tier_cascade == 'T1' %}<span class="ts-buy ok" data-tip-en="Confirmed: 2D MACD-RSI × 3D StochRSI crossed within ~6 days, still constructive" data-tip-zh="已确认：2日MACD-RSI×3日StochRSI约近6日内交叉、仍具建设性">{{ t('Buy zone', '买入区') }}</span>{% elif sg and sg.tier_cascade == 'T2' %}<span class="ts-buy ok" data-tip-en="Confirmed early tier (T2) — completed-bar cross that typically fills nearer the trough than the master signal." data-tip-zh="T2已确认的提前层——基于已完成K线的交叉，成交价通常比主信号更贴近低点。"><span class="l-en">Early buy</span><span class="l-zh">提前买点</span></span>{% elif sg and sg.tier_cascade == 'T3' %}<span class="ts-buy soon" data-tip-en="Anticipation: 3D StochRSI crossed, 2D MACD-RSI about to cross (next 1-2 bars){% if sg.provisional %}. PROVISIONAL — projected off the incomplete 2D bucket; a measured 9.4% of US T3 fresh fires repaint when it completes (post-N=2 persistence hardening; calibration/provisional_replay.json, W6 #22){% endif %}" data-tip-zh="预期：3日StochRSI已上穿、2日MACD-RSI即将交叉（未来1-2根K线）{% if sg.provisional %}。暂定 — 基于未完成的2日K线桶，经N=2修正后实测美股9.4%的T3新信号在桶完成后重绘{% endif %}">{{ t('About to cross', '即将交叉') }}</span>{% if sg.provisional %}<span class="prov-flag" data-tip-en="Provisional — may repaint. Measured: 9.4% of US T3 fresh fires vanish within 4 sessions of the 2D bucket completing (post-N=2 persistence hardening; calibration/provisional_replay.json, W6 #22)." data-tip-zh="暂定 — 可能重绘：经N=2修正后实测美股9.4%的T3新信号在K线桶完成后4个交易日内消失。"><span class="l-en">prov</span><span class="l-zh">暂定</span></span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
+              <td class="c-cycle">{% if r.label %}{{ td(r.label) }}{% else %}<span class="muted">—</span>{% endif %}</td>
+              <td class="c-trend">{% if r.alpha_entry == 'pullback' %}<span class="ent-good">{{ t('pullback', '回调') }}</span>{% elif r.alpha_entry == 'extended' %}<span class="ent-warn">{{ t('extended', '过热') }}</span>{% else %}<span class="muted">{{ r.alpha_entry or '—' }}</span>{% endif %}</td>
+              <td class="r c-factor {{ 'az-up' if r.factor_z and r.factor_z > 0 else ('az-dn' if r.factor_z and r.factor_z < 0 else 'muted') }}">{% if r.factor_z is not none %}{{ '%+.1f'|format(r.factor_z) }}{% else %}—{% endif %}</td>
+              <td class="r c-setup"><b>{{ '%+.2f'|format(r.setup) }}</b></td>
             </tr>
           {% endfor %}
           </tbody>
@@ -15775,25 +15793,26 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="muted" style="font-size:11px">{{ t('Strongest runners by edge — no fresh entry signal; watch, don’t chase.', '按优势排名的最强领跑股 — 暂无新入场信号；观察，勿追高。') }}
             {{ help("Coverage of the market's strongest runners — the piece the entry-gated board above structurally cannot show. The board admits a name only on a fresh momentum cross; a leader that has been running for months rarely prints one (of the top-100 three-month runners on 2026-07-28, only 2 passed the gate). These names rank by edge (α — sector-neutral residual momentum, the one leg our measurements ranked positively) and must be in an intact uptrend (above the 200-day line, weekly structure bullish). The entry column is honest: none of these has a fresh trigger, so the stance is watch — buy pullbacks toward the zone, never chase. Forward results for this strip are graded nightly from its ship date; it is a research shortlist, not a buy list.", "覆盖市场上最强的领跑股 — 上方入场门控榜单在结构上无法展示的部分。榜单只在动量新交叉时收录个股；已连涨数月的领跑股很少出现新交叉（2026-07-28 实测：三个月涨幅前100名中仅2只通过门控）。此处按优势排名（α — 行业中性残差动量，我们测量中唯一正向排序的指标），并要求趋势完好（站上200日线、周线结构看多）。入场列如实标注：这些标的均无新触发，立场是观察 — 回调至买区分批买入，绝不追高。本栏前瞻成绩自上线之日起每晚评分；这是研究清单，而非买入清单。") }}</span>
         </div>
+        {# Same c-* mobile contract as the trigger table above. #}
         <div class="tbl-scroll"><table class="ts-tbl">
           <thead><tr>
-            <th>{{ t('Stock', '个股') }}</th><th>{{ t('Sector', '板块') }}</th>
-            <th class="r" data-tip-en="Selection edge (α): sector-neutral residual momentum, market and sector beta stripped — how strongly this stock outruns its peers" data-tip-zh="选股优势（α）：行业中性残差动量（剥离大盘与行业beta）— 相对同行的领先强度">{{ t('edge (α)', '优势 (α)') }}</th>
-            <th class="r" data-tip-en="Distance below the 52-week high — 0% means at the high" data-tip-zh="距52周高点的距离 — 0%代表正处高点">{{ t('off high', '距高点') }}</th>
-            <th>{{ t('state', '状态') }}</th>
-            <th data-tip-en="No fresh entry trigger on any of these — the honest read is wait for a pullback. Where the engine has a pullback buy zone, it is shown." data-tip-zh="这些标的均无新入场触发 — 诚实读法是等待回调。若引擎给出回调买区，则在此显示。">{{ t('entry', '入场') }}</th>
+            <th class="c-stock">{{ t('Stock', '个股') }}</th><th class="c-sector">{{ t('Sector', '板块') }}</th>
+            <th class="r c-edge" data-tip-en="Selection edge (α): sector-neutral residual momentum, market and sector beta stripped — how strongly this stock outruns its peers" data-tip-zh="选股优势（α）：行业中性残差动量（剥离大盘与行业beta）— 相对同行的领先强度">{{ t('edge (α)', '优势 (α)') }}</th>
+            <th class="r c-offhigh" data-tip-en="Distance below the 52-week high — 0% means at the high" data-tip-zh="距52周高点的距离 — 0%代表正处高点">{{ t('off high', '距高点') }}</th>
+            <th class="c-state">{{ t('state', '状态') }}</th>
+            <th class="c-entry" data-tip-en="No fresh entry trigger on any of these — the honest read is wait for a pullback. Where the engine has a pullback buy zone, it is shown." data-tip-zh="这些标的均无新入场触发 — 诚实读法是等待回调。若引擎给出回调买区，则在此显示。">{{ t('entry', '入场') }}</th>
           </tr></thead>
           <tbody>
           {% for r in _ldrs[:15] %}
             {% set _les = r.get('entry_signal') %}
             {% set _lbz = _les.buy_zone if _les else none %}
             <tr class="ts-row" onclick="location.href='stock.html#{{ r.ticker }}'">
-              <td><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span></td>
-              <td class="muted">{{ td(r.sector) }}</td>
-              <td class="r {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
-              <td class="r muted">{% if r.get('off_high') is not none %}{{ '%+.1f'|format(r.off_high) }}%{% else %}—{% endif %}</td>
-              <td>{% if r.label %}{{ td(r.label) }}{% else %}<span class="muted">—</span>{% endif %}</td>
-              <td>{% if _lbz and _lbz.low is not none and _lbz.high is not none %}<span class="ent-good">{{ t('pullback zone', '回调买区') }} ${{ '%.2f'|format(_lbz.low) }}–${{ '%.2f'|format(_lbz.high) }}</span>{% else %}<span class="ent-warn">{{ t('wait for pullback', '等待回调') }}</span>{% endif %}{% if r.get('ext_z') is not none and r.ext_z > 2.0 %} <span class="ent-warn" data-tip-en="Extended {{ '%.1f'|format(r.ext_z) }} standard deviations above trend — chase risk" data-tip-zh="高于趋势{{ '%.1f'|format(r.ext_z) }}个标准差 — 追高风险">{{ t('extended', '过热') }}</span>{% endif %}</td>
+              <td class="c-stock"><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span></td>
+              <td class="muted c-sector">{{ td(r.sector) }}</td>
+              <td class="r c-edge {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
+              <td class="r muted c-offhigh">{% if r.get('off_high') is not none %}{{ '%+.1f'|format(r.off_high) }}%{% else %}—{% endif %}</td>
+              <td class="c-state">{% if r.label %}{{ td(r.label) }}{% else %}<span class="muted">—</span>{% endif %}</td>
+              <td class="c-entry">{% if _lbz and _lbz.low is not none and _lbz.high is not none %}<span class="ent-good">{{ t('pullback zone', '回调买区') }} ${{ '%.2f'|format(_lbz.low) }}–${{ '%.2f'|format(_lbz.high) }}</span>{% else %}<span class="ent-warn">{{ t('wait for pullback', '等待回调') }}</span>{% endif %}{% if r.get('ext_z') is not none and r.ext_z > 2.0 %} <span class="ent-warn" data-tip-en="Extended {{ '%.1f'|format(r.ext_z) }} standard deviations above trend — chase risk" data-tip-zh="高于趋势{{ '%.1f'|format(r.ext_z) }}个标准差 — 追高风险">{{ t('extended', '过热') }}</span>{% endif %}</td>
             </tr>
           {% endfor %}
           </tbody>

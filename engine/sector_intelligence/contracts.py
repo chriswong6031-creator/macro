@@ -48,6 +48,8 @@ _PAGE_RECEIPT_CONTRACT_ID = "source_page_receipt.v1"
 _TRIAL_SOURCE_SNAPSHOT_CONTRACT_ID = "trial_source_snapshot.v1"
 _TRIAL_OBSERVATION_CONTRACT_ID = "trial_snapshot_observation.v1"
 _TRIAL_SNAPSHOT_CONTRACT_ID = "trial_snapshot.v1"
+_TRIAL_PROTOCOL_PROJECTION_CONTRACT_ID = "trial_protocol_projection.v1"
+_TRIAL_PEER_SET_CONTRACT_ID = "trial_peer_set.v1"
 _TRIAL_DIFF_CONTRACT_ID = "trial_version_diff.v1"
 _TRIAL_COVERAGE_CONTRACT_ID = "trial_coverage_epoch.v1"
 _CTGOV_HISTORY_RECEIPT_CONTRACT_ID = "ctgov_history_receipt.v1"
@@ -1236,24 +1238,11 @@ def _biocatalyst_launch_slo_manifest_issues(
             stage_successes = result.get("stage_successes")
             stage_counts_valid = isinstance(stage_successes, Mapping)
             if isinstance(stage_successes, Mapping):
+                prior_stage_count: int | None = None
                 for stage in stage_names:
                     count = stage_successes.get(stage)
                     valid_count = isinstance(count, int) and not isinstance(count, bool)
                     stage_counts_valid = stage_counts_valid and valid_count
-                    if (
-                        valid_count
-                        and isinstance(successful, int)
-                        and not isinstance(successful, bool)
-                        and count != successful
-                    ):
-                        stage_counts_valid = False
-                        issues.append(
-                            ValidationIssue(
-                                f"$.soak.source_results[{index}].stage_successes.{stage}",
-                                "launch_slo.stage_reconciliation",
-                                "every required stage success count must reconcile to the end-to-end successful opportunities",
-                            )
-                        )
                     if (
                         valid_count
                         and isinstance(denominator, int)
@@ -1268,6 +1257,37 @@ def _biocatalyst_launch_slo_manifest_issues(
                                 "a stage success count cannot exceed the opportunity denominator",
                             )
                         )
+                    if (
+                        valid_count
+                        and prior_stage_count is not None
+                        and count > prior_stage_count
+                    ):
+                        stage_counts_valid = False
+                        issues.append(
+                            ValidationIssue(
+                                f"$.soak.source_results[{index}].stage_successes.{stage}",
+                                "launch_slo.stage_reconciliation",
+                                "stage success counts must be non-increasing in pipeline order",
+                            )
+                        )
+                    if valid_count:
+                        prior_stage_count = count
+                terminal_count = stage_successes.get("watermark_or_pointer")
+                if (
+                    isinstance(terminal_count, int)
+                    and not isinstance(terminal_count, bool)
+                    and isinstance(successful, int)
+                    and not isinstance(successful, bool)
+                    and terminal_count != successful
+                ):
+                    stage_counts_valid = False
+                    issues.append(
+                        ValidationIssue(
+                            f"$.soak.source_results[{index}].stage_successes.watermark_or_pointer",
+                            "launch_slo.stage_reconciliation",
+                            "the terminal watermark-or-pointer count must equal end-to-end successful opportunities",
+                        )
+                    )
 
             max_misses_observed = result.get("maximum_consecutive_misses_observed")
             miss_run_valid = bool(
@@ -2037,6 +2057,254 @@ def _trial_projection_issues(document: Mapping[str, Any]) -> list[ValidationIssu
                 "source_published_at cannot be later than retrieved_at",
             )
         )
+    return issues
+
+
+def _trial_protocol_projection_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    """Keep a public protocol artifact tied to one immutable source cut."""
+
+    issues: list[ValidationIssue] = []
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="protocol_projection_sha256",
+        excluded_fields=frozenset(("protocol_projection_sha256",)),
+        code="trial_protocol_projection.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    nct_id = document.get("nct_id")
+    source_snapshot_ref = document.get("source_snapshot_ref")
+    canonical_sha = document.get("canonical_content_sha256")
+    if (
+        isinstance(nct_id, str)
+        and isinstance(source_snapshot_ref, str)
+        and isinstance(canonical_sha, str)
+    ):
+        expected_id = "trial_protocol_" + nct_id + "_" + canonical_json_sha256(
+            {
+                "nct_id": nct_id,
+                "source_snapshot_ref": source_snapshot_ref,
+                "canonical_content_sha256": canonical_sha,
+            }
+        )[:24]
+        if document.get("protocol_projection_id") != expected_id:
+            issues.append(
+                ValidationIssue(
+                    "$.protocol_projection_id",
+                    "trial_protocol_projection.identity",
+                    "protocol_projection_id must be bound to the source snapshot and canonical content hash",
+                )
+            )
+        expected_source_record_ref = f"src:ctgov:{nct_id}:sha256:{canonical_sha}"
+        if document.get("source_record_ref") != expected_source_record_ref:
+            issues.append(
+                ValidationIssue(
+                    "$.source_record_ref",
+                    "trial_protocol_projection.source_record",
+                    "source_record_ref must bind the wrapper NCT ID and canonical content hash",
+                )
+            )
+        attribution = document.get("source_attribution")
+        if (
+            isinstance(attribution, Mapping)
+            and attribution.get("source_uri") != f"https://clinicaltrials.gov/study/{nct_id}"
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.source_attribution.source_uri",
+                    "trial_protocol_projection.source_uri",
+                    "source_uri must bind the wrapper NCT ID",
+                )
+            )
+    first_seen = _parse_temporal(document.get("first_seen_at"))
+    retrieved = _parse_temporal(document.get("retrieved_at"))
+    cutoff = _parse_temporal(document.get("knowledge_cutoff"))
+    if first_seen is not None and retrieved is not None and first_seen > retrieved:
+        issues.append(
+            ValidationIssue(
+                "$.first_seen_at",
+                "trial_protocol_projection.chronology",
+                "first_seen_at must not be later than retrieved_at",
+            )
+        )
+    if retrieved is not None and cutoff is not None and retrieved != cutoff:
+        issues.append(
+            ValidationIssue(
+                "$.knowledge_cutoff",
+                "trial_protocol_projection.knowledge_cutoff",
+                "knowledge_cutoff must equal retrieved_at for a current protocol projection",
+            )
+        )
+    return issues
+
+
+def _trial_peer_set_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    """Enforce deterministic, explicit-cohort peer-set semantics."""
+
+    issues: list[ValidationIssue] = []
+    cohort = document.get("cohort_nct_ids")
+    uncovered = document.get("uncovered_nct_ids")
+    trials = document.get("trials")
+    coverage = document.get("coverage")
+    pagination = document.get("pagination")
+    if isinstance(cohort, list) and all(isinstance(item, str) for item in cohort):
+        if cohort != sorted(cohort):
+            issues.append(
+                ValidationIssue(
+                    "$.cohort_nct_ids",
+                    "trial_peer_set.cohort_order",
+                    "explicit cohort NCT IDs must be in lexical order",
+                )
+            )
+    if isinstance(uncovered, list) and all(isinstance(item, str) for item in uncovered):
+        if uncovered != sorted(uncovered):
+            issues.append(
+                ValidationIssue(
+                    "$.uncovered_nct_ids",
+                    "trial_peer_set.uncovered_order",
+                    "uncovered NCT IDs must be in lexical order",
+                )
+            )
+        if isinstance(cohort, list) and any(item not in cohort for item in uncovered):
+            issues.append(
+                ValidationIssue(
+                    "$.uncovered_nct_ids",
+                    "trial_peer_set.uncovered_scope",
+                    "uncovered NCT IDs must be members of the explicit cohort",
+                )
+            )
+    trial_ids: list[str] = []
+    if isinstance(trials, list):
+        trial_ids = [item.get("nct_id") for item in trials if isinstance(item, Mapping)]
+        if len(trial_ids) == len(trials) and all(isinstance(item, str) for item in trial_ids):
+            if trial_ids != sorted(trial_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.trials",
+                        "trial_peer_set.trial_order",
+                        "covered trials must be in lexical NCT order",
+                    )
+                )
+            if len(set(trial_ids)) != len(trial_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.trials",
+                        "trial_peer_set.trial_unique",
+                        "covered trial NCT IDs must be unique within a page",
+                    )
+                )
+            if isinstance(cohort, list) and any(item not in cohort for item in trial_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.trials",
+                        "trial_peer_set.trial_scope",
+                        "covered trials must be members of the explicit cohort",
+                    )
+                )
+            for index, trial in enumerate(trials):
+                if not isinstance(trial, Mapping):
+                    continue
+                row_nct_id = trial.get("nct_id")
+                evidence = trial.get("evidence")
+                if not isinstance(row_nct_id, str) or not isinstance(evidence, Mapping):
+                    continue
+                if evidence.get("record_id") != row_nct_id:
+                    issues.append(
+                        ValidationIssue(
+                            _json_path(("trials", index, "evidence", "record_id")),
+                            "trial_peer_set.evidence_record",
+                            "evidence.record_id must bind the row NCT ID",
+                        )
+                    )
+                if evidence.get("url") != f"https://clinicaltrials.gov/study/{row_nct_id}":
+                    issues.append(
+                        ValidationIssue(
+                            _json_path(("trials", index, "evidence", "url")),
+                            "trial_peer_set.evidence_url",
+                            "evidence.url must bind the row NCT ID",
+                        )
+                    )
+            if isinstance(uncovered, list) and any(item in uncovered for item in trial_ids):
+                issues.append(
+                    ValidationIssue(
+                        "$.trials",
+                        "trial_peer_set.coverage_overlap",
+                        "a trial cannot be both covered and uncovered",
+                    )
+                )
+    if isinstance(cohort, list) and isinstance(uncovered, list) and isinstance(coverage, Mapping):
+        expected_covered = len(cohort) - len(uncovered)
+        if coverage.get("requested_count") != len(cohort):
+            issues.append(
+                ValidationIssue(
+                    "$.coverage.requested_count",
+                    "trial_peer_set.requested_count",
+                    "requested_count must equal the explicit cohort size",
+                )
+            )
+        if coverage.get("uncovered_count") != len(uncovered):
+            issues.append(
+                ValidationIssue(
+                    "$.coverage.uncovered_count",
+                    "trial_peer_set.uncovered_count",
+                    "uncovered_count must equal uncovered_nct_ids length",
+                )
+            )
+        if coverage.get("covered_count") != expected_covered:
+            issues.append(
+                ValidationIssue(
+                    "$.coverage.covered_count",
+                    "trial_peer_set.covered_count",
+                    "covered_count must equal requested_count minus uncovered_count",
+                )
+            )
+        if isinstance(pagination, Mapping) and pagination.get("total") != expected_covered:
+            issues.append(
+                ValidationIssue(
+                    "$.pagination.total",
+                    "trial_peer_set.total",
+                    "pagination total must equal covered_count",
+                )
+            )
+    if isinstance(pagination, Mapping) and isinstance(trials, list):
+        limit = pagination.get("limit")
+        if isinstance(limit, int) and len(trials) > limit:
+            issues.append(
+                ValidationIssue(
+                    "$.trials",
+                    "trial_peer_set.page_bound",
+                    "returned trials may not exceed the declared page limit",
+                )
+            )
+    as_of = _parse_temporal(document.get("as_of"))
+    if isinstance(trials, list) and as_of is not None:
+        for index, trial in enumerate(trials):
+            if not isinstance(trial, Mapping):
+                continue
+            evidence = trial.get("evidence")
+            record_age = trial.get("record_age")
+            if not isinstance(evidence, Mapping) or not isinstance(record_age, Mapping):
+                continue
+            retrieved = _parse_temporal(evidence.get("retrieved_at"))
+            if retrieved is None:
+                continue
+            elapsed_seconds = (as_of - retrieved).total_seconds()
+            if elapsed_seconds < 0:
+                issues.append(
+                    ValidationIssue(
+                        _json_path(("trials", index, "record_age")),
+                        "trial_peer_set.record_age_chronology",
+                        "record age cannot be negative relative to response as_of",
+                    )
+                )
+            elif record_age.get("seconds") != int(elapsed_seconds):
+                issues.append(
+                    ValidationIssue(
+                        _json_path(("trials", index, "record_age", "seconds")),
+                        "trial_peer_set.record_age_binding",
+                        "record age seconds must equal the floored as_of minus retrieved_at interval",
+                    )
+                )
     return issues
 
 
@@ -2810,6 +3078,10 @@ def _contract_semantic_issues(
         return _ctgov_watermark_issues(document)
     if contract_id == _TRIAL_SNAPSHOT_CONTRACT_ID:
         return _trial_projection_issues(document)
+    if contract_id == _TRIAL_PROTOCOL_PROJECTION_CONTRACT_ID:
+        return _trial_protocol_projection_issues(document)
+    if contract_id == _TRIAL_PEER_SET_CONTRACT_ID:
+        return _trial_peer_set_issues(document)
     if contract_id == _TRIAL_COVERAGE_CONTRACT_ID:
         return _trial_coverage_issues(document)
     if contract_id == _CTGOV_HISTORY_RECEIPT_CONTRACT_ID:

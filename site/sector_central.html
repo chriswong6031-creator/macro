@@ -59,7 +59,7 @@
 <link rel="prefetch" href="sector_cycles_series_data.js?v=bb310169" as="script">
 <link rel="prefetch" href="sector_cycles_narr_data.js?v=0a9f953c" as="script">
 <link rel="prefetch" href="sector_cycles_dna_data.js?v=46b0879d" as="script">
-<link rel="preload" href="sector_central_data.js?v=338310d3" as="script">
+<link rel="preload" href="sector_central_data.js?v=c29c6597" as="script">
 <link rel="stylesheet" href="assets/css/aa819f7b.css?v=aa819f7b">
 <link rel="stylesheet" href="assets/css/a98ac5b6.css?v=a98ac5b6">
 <link rel="stylesheet" href="macro-desk.css?v=b4966394">
@@ -1020,7 +1020,7 @@
 
   <footer>
     <span class="l-en">Informational only, not investment advice. Baskets are equal-weighted and benchmarked to the S&amp;P 500. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list.</span><span class="l-zh">仅供参考，非投资建议。篮子等权重，并以标普 500 为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-08-03 02:04 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-08-03 04:01 UTC</span>.
   </footer>
 
 <script src="lightweight-charts.js?v=46fc6953" defer></script>
@@ -1236,7 +1236,17 @@ function renderStory(){
 
 // ── V1 Theme Rotation Desk fork removed (Sector Intelligence consolidation 2026-08).
 // The live twin serving the intl pages is templates/baskets_desk.js; US uses the rvx layer.
-function openTheme(id){ location.href='basket/'+encodeURIComponent(id)+'.html'; }
+// Inbound #theme-<id> deep links (alerts-board rows; legacy baskets.html bookmarks arrive
+// via that stub's hash forward) resolve to the theme's own page — this page renders no
+// #theme-<id> elements, so scrolling is not an option. replace() rather than href keeps
+// the redirect out of history: Back returns to the alert that sent the visitor here
+// instead of bouncing forward through the hash again (#4254 semantics, kept across #4237).
+function resolveThemeHash(){
+  let id=location.hash.slice(7);          // '#theme-'.length
+  try{ id=decodeURIComponent(id); }catch(e){}
+  if(!id||!themeById(id)) return;         // unknown id → stay put rather than 404
+  location.replace('basket/'+encodeURIComponent(id)+'.html');
+}
 
 // ---- Money flow: ETF style/risk tone + vol pill (Op 2) ----
 // Fetched once each; fail-silent on any error.
@@ -1556,7 +1566,7 @@ function boot(){
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; localStorage.setItem('fw-brange',String(n)); rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
   initChartDefaults();
   renderBTable(); renderChart();
-  if(location.hash.startsWith('#theme-')) setTimeout(()=>openTheme(location.hash.slice(7)),250);
+  if(location.hash.startsWith('#theme-')) resolveThemeHash();
   const rvxRerender=()=>{ try{ renderVerdictHero(); renderActBoard(); renderRotationMap(); renderRotBoard(); renderInternals(); }catch(e){} };
   document.addEventListener('langchange',()=>{ rvxRerender(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
   document.addEventListener('themechange',()=>{ renderRotationMap(); renderRotBoard(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
@@ -1601,7 +1611,7 @@ if(document.readyState!=='loading') __siBoot(); else document.addEventListener('
 </script>
 
 
-<script src="sector_central_data.js?v=338310d3" defer></script>
+<script src="sector_central_data.js?v=c29c6597" defer></script>
 <script>
 (function(){
   "use strict";
@@ -2006,6 +2016,5 @@ if(document.readyState!=='loading') __siBoot(); else document.addEventListener('
 })();
 </script>
 <script src="theme.js?v=402a51a2" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>
