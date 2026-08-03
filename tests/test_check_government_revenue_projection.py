@@ -287,9 +287,14 @@ def test_projection_fence_rejects_full_payload_or_missing_workspace_shell(
 ) -> None:
     _generation(tmp_path)
     html = tmp_path / "site" / "government_revenue.html"
-    html.write_text("<main>legacy</main>" + ("x" * 250_001), encoding="utf-8")
+    # Derive the oversize payload from the constant so the budget can move
+    # (2026-08-03 unwedge: 250_000 -> 262_144) without this test pinning a stale
+    # number — the contract under test is "over-budget is rejected", not the value.
+    from scripts.build_government_revenue import RAW_HTML_BUDGET_BYTES
 
-    with pytest.raises(ProjectionDriftError, match="exceeds 250000 bytes"):
+    html.write_text("<main>legacy</main>" + ("x" * RAW_HTML_BUDGET_BYTES), encoding="utf-8")
+
+    with pytest.raises(ProjectionDriftError, match=f"exceeds {RAW_HTML_BUDGET_BYTES} bytes"):
         validate_projection(tmp_path)
 
     html.write_text("<main>legacy</main>", encoding="utf-8")
