@@ -574,7 +574,22 @@ def _run_press_tick(*, dry_run: bool) -> dict:
     except Exception as exc:  # noqa: BLE001
         logger.error("[press] provider poll_all error (continuing): %s", exc)
 
-    all_items = list(wire_items) + list(press_items)
+    # 2b. XS push lane: drain the websocket spool. These arrived server-push
+    #     (engine/marketing/press_stream.py) already normalized to the REST
+    #     lane's FeedItem shape, so they enter the SAME pipeline below — the
+    #     seen-ledger, garbage gate, corroboration and desk treat a pushed
+    #     tweet exactly like a polled one. Skipped in --dry-run for the same
+    #     non-consuming reason as everything else: a drain is destructive, and
+    #     an inspection run must leave the items for the next live tick.
+    stream_items: list = []
+    if not dry_run:
+        try:
+            from engine.marketing import press_stream  # noqa: PLC0415
+            stream_items = press_stream.drain_spool(ROOT)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[press] x_stream drain error (continuing): %s", exc)
+
+    all_items = list(wire_items) + list(press_items) + list(stream_items)
 
     # 3. Run the tick. On cold-start we PRIME (emit nothing, seed seen/cursors).
     result = run_press_tick(
@@ -1583,6 +1598,27 @@ def main(argv: list[str] | None = None) -> int:
         "[fastlane_daemon] starting | lane=%s once=%s dry_run=%s armed=%s interval=%ds",
         args.lane, args.once, args.dry_run, armed, interval,
     )
+
+    # XS push lane: start the twitterapi.io websocket listener for a LOOPING
+    # press run. It only spools to data/marketing/press/ — every spooled item
+    # still enters through _run_press_tick's normal pipeline. Fail-soft: no
+    # key / no lib / config-dark all mean "no listener", never a dead daemon.
+    # Skipped for --once (one tick drains whatever spool exists; holding a
+    # socket for one tick is pointless) and --dry-run (non-consuming law).
+    _stream_listener = None
+    if args.lane in ("press", "all") and not args.once and not args.dry_run:
+        try:
+            from engine.marketing import press_stream  # noqa: PLC0415
+            _press_cfg_boot = _load_yaml(ROOT / "config" / "press_sources.yml")
+            _stream_listener = press_stream.start_listener(
+                _press_cfg_boot, ROOT,
+                satire_blocklist=list(_press_cfg_boot.get("satire_blocklist") or []),
+            )
+            if _stream_listener is not None:
+                logger.info("[press] x_stream listener started")
+        except Exception as exc:  # noqa: BLE001 — the wire must run without the stream
+            logger.warning("[press] x_stream listener failed to start (%s: %s) — "
+                           "free lanes carry the wire", type(exc).__name__, exc)
 
     while True:
         now = datetime.now(timezone.utc)
