@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T03:49:29.460381+00:00",
-  "count": 638,
+  "generated_at": "2026-08-03T04:04:31.945560+00:00",
+  "count": 639,
   "institutions": [
     "Amova",
     "Apollo",
@@ -467,6 +467,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hcxyltj8a9c-11397c",
+      "title": "What role can gold play in portfolios",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:54:10Z",
+      "summary_points": [
+        "**Structural Support Targets**: Near-term pressure from strong US data, higher real yields, and firmer USD offset by central bank demand and global diversification, supporting $4,600/oz end-year price target and $5,200/oz by June 2027.",
+        "**Strategic Entry Zone**: Pullbacks to $3,850–4,000/oz present undervalued entry points, leveraging gold’s diversification benefits during equity stress, geopolitical shocks, and weaker fiat currencies.",
+        "**Diversification Hedge**: Gold serves as critical portfolio hedge during equity market volatility and geopolitical risks, with near-term weakness viewed as a reset, not a broken trend.",
+        "**Long-Term Price Projection**: Structural demand fundamentals (central bank buying, diversification) underpin $5,200/oz target by mid-2027, reinforcing strategic allocation despite short-term headwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
