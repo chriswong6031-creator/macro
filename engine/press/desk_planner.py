@@ -674,11 +674,26 @@ def engine_stat_facts(root=None, *, as_of=None) -> list[dict]:
     return _pit_filter(out, edge, "engine artifacts") if edge else out
 
 
+#: Where a mover row came from → (artifact path, human source name). The board
+#: stopped being one file on 2026-08-02 (masterplan §3 PR-B.3): `top_movers` now
+#: also returns hot-tape-pack rows for liquid names the S&P heatmap does not
+#: carry. Citing those to the heatmap would point a reader at a file that does
+#: not contain the ticker, and dating them by the heatmap's stamp would be the
+#: mixed-asof claim movers_source exists to prevent — so the citation follows
+#: the ROW, exactly as its `asof` already does.
+_MOVER_SOURCES: dict[str, tuple[str, str]] = {
+    "sp500_heatmap": ("site/marketdata/sp500_heatmap.json",
+                      "Mastermind S&P 500 heatmap"),
+    "hot_tape_pack": ("data/marketing/hot_tape_pack.json",
+                      "Mastermind hot-tape pack"),
+}
+
+
 def mover_facts(root=None, *, n: int = 3, as_of=None) -> list[dict]:
     """Top gainers/losers from the committed heatmaps (first-party).
 
-    Same point-in-time law as engine_stat_facts: the heatmap is a snapshot, and
-    its `asof` is the date every fact it yields belongs to.
+    Same point-in-time law as engine_stat_facts: each source is a snapshot, and
+    the `asof` of the ROW's own source is the date that fact belongs to.
     """
     try:
         from engine.marketing import movers_source  # noqa: PLC0415
@@ -693,20 +708,28 @@ def mover_facts(root=None, *, n: int = 3, as_of=None) -> list[dict]:
     except Exception as exc:  # noqa: BLE001
         log.warning("press.desk_planner: movers load failed: %s", exc)
         return []
-    asof = (data or {}).get("asof") or ""
-    rel = "site/marketdata/sp500_heatmap.json"
+    payload_asof = (data or {}).get("asof") or ""
     out: list[dict] = []
     for side in ("gainers", "losers"):
         for m in (picks.get(side) or []):
             tk, pct = m.get("ticker"), m.get("pct")
             if not tk or pct is None:
                 continue
+            rel, source_name = _MOVER_SOURCES.get(
+                str(m.get("source") or "sp500_heatmap"),
+                _MOVER_SOURCES["sp500_heatmap"])
+            asof = str(m.get("asof") or payload_asof or "")
+            # The pack has no company names and only tags its index members with
+            # a sector, so build the parenthetical from what is actually known
+            # rather than printing "AAPL (AAPL, )".
+            bits = [str(b) for b in (m.get("name"), m.get("sector"))
+                    if b and str(b) != str(tk)]
+            label = f" ({', '.join(bits)})" if bits else ""
             fact = _fact(
                 f"mover_{side}_{tk}",
-                f"{tk} ({m.get('name')}, {m.get('sector')}) closed {pct}% "
-                f"on the session of {asof}.",
+                f"{tk}{label} closed {pct}% on the session of {asof}.",
                 ref=f"artifact:{rel}#{tk}", tier="first_party", dated=asof,
-                values=[pct], source_name="Mastermind S&P 500 heatmap",
+                values=[pct], source_name=source_name,
             )
             # A company name can collide with the house lexicon ("Vertical
             # Aerospace" trips _BANNED_SUBSTRINGS). Drop the fact rather than
