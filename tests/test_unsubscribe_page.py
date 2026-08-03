@@ -647,6 +647,11 @@ def test_unsubscribe_is_public_in_the_regwalls_own_mirror():
 # adding a line here is the review checkpoint, which is the whole point of pinning
 # the set rather than diffing against a moving branch.
 PUBLIC_EXACT = frozenset({
+    # /about.html — the entity page (SEO_SUPERCHARGE_MASTERPLAN §0.10). Reviewed
+    # public: it is prose about who we are, ships no signals, no customer data and
+    # no write surface, and a crawler that has never had a session is exactly the
+    # reader it exists for.
+    "/about.html",
     "/", "/index.html", "/plans.html", "/macro.html", "/start.html",
     "/us_stocks.html", "/confluence_screener.html", "/research_vault.html",
     "/research_vault_app.js", "/support.html", "/unsubscribe.html",
