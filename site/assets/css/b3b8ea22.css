@@ -1,0 +1,15 @@
+
+  /* ── SI shell: section rail + wrappers (W2) ── */
+  .si-rail { display:flex; gap:9px; flex-wrap:wrap; margin:6px 0 16px; position:sticky; top:0; z-index:30;
+    background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:blur(8px); padding:7px 0; }
+  .si-rail a { font-size:12.5px; border:1px solid var(--line); border-radius:9px; padding:7px 12px;
+    background:var(--panel2, var(--panel)); transition:border-color .15s; }
+  .si-rail a:hover { border-color: var(--muted); }
+  .si-sec { margin-top:30px; padding-top:20px; border-top:1px solid var(--line); }
+  .si-sec-h h2 { font-size:17px; font-weight:760; margin:0; }
+  .si-sec-h .si-sec-sub { font-size:12.5px; color:var(--muted); }
+  .sr-foot { color:var(--muted); font-size:11px; margin:16px 2px 0; line-height:1.6; }
+  .si-links { display:flex; gap:9px; flex-wrap:wrap; margin:16px 0 4px; }
+  .si-links a { font-size:12.5px; border:1px solid var(--line); border-radius:9px; padding:7px 12px;
+    background:var(--panel2, var(--panel)); }
+  .si-links a:hover { border-color: var(--muted); }

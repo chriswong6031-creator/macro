@@ -51,7 +51,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="theme.css?v=8d7800c8">
-<link rel="stylesheet" href="fundamental_forensics.css?v=16c23069">
+<link rel="stylesheet" href="fundamental_forensics.css?v=9525fa08">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 </head>
@@ -229,6 +229,7 @@
               <a class="mega-item nav-mega-item" href="foresight.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="item-desc d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
               <a class="mega-item nav-mega-item" href="state_of_themes.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="item-desc d"><span class="l-en">What’s strengthening and fading now</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
               <a class="mega-item nav-mega-item" href="radar.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="item-desc d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="stock_seasonality.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M10 14h32v28H10z"/><rect x="6" y="11" width="32" height="28" rx="3"/><path d="M6 19h32M15 7v8M29 7v8"/><path class="accent" d="m12 32 5-6 5 3 6-9 4 5"/><circle class="soft-fill" cx="28" cy="20" r="2.4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Stock Seasonality</span><span class="l-zh">个股季节性</span></span><span class="item-desc d"><span class="l-en">Which calendar windows actually repeat</span><span class="l-zh">哪些日历窗口真的会重演</span></span></span></a>
               <a class="mega-item nav-mega-item" href="confluence_screener.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="28" rx="3"/><path class="ghost" d="M11 13h26v18H11z"/><path class="accent" d="m12 27 6-7 5 4 7-9 6 4"/><circle class="soft-fill" cx="30" cy="15" r="2.4"/><path d="M18 41h12M24 36v5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="item-desc d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
             </div>
           </section>
@@ -388,7 +389,7 @@
         </button>
         <button class="ff-tab" id="ff-tab-trace" type="button" role="tab"
           aria-selected="false" aria-controls="ff-panel-trace" tabindex="-1" data-tab="trace">
-          <span class="ff-tab-index" aria-hidden="true">07</span><span class="l-en">Sources</span><span class="l-zh">来源</span>
+          <span class="ff-tab-index" aria-hidden="true">07</span><span class="l-en">Sources &amp; receipt</span><span class="l-zh">来源与凭据</span>
         </button>
       </div>
       <div class="ff-view-status" id="ff-view-status" role="status" aria-live="polite">
@@ -511,12 +512,27 @@
     <section class="ff-panel" id="ff-panel-trace" role="tabpanel" aria-labelledby="ff-tab-trace" tabindex="0" hidden>
       <header class="ff-panel-head">
         <div>
-          <p class="ff-kicker"><span class="l-en">Source map</span><span class="l-zh">来源映射</span></p>
-          <h2><span class="l-en">Coverage and evidence map</span><span class="l-zh">覆盖范围与证据映射</span></h2>
-          <p><span class="l-en">Inspect the projection basis, detector inputs, SEC endpoints, and known coverage limits.</span><span class="l-zh">查看投影口径、检测器输入、SEC 来源端点及已知覆盖局限。</span></p>
+          <p class="ff-kicker"><span class="l-en">Evidence &amp; receipt desk</span><span class="l-zh">证据与凭据台</span></p>
+          <h2><span class="l-en">Sources, scope, and the recorded trail</span><span class="l-zh">来源、范围与记录轨迹</span></h2>
+          <p><span class="l-en">Read the evidence map, then inspect a sealed publication receipt when one is available for this issuer.</span><span class="l-zh">先阅读证据映射；如该发行人有可用的密封发布凭据，再进行检查。</span></p>
         </div>
       </header>
-      <div id="ff-trace"></div>
+      <div class="ff-source-tabs" id="ff-source-tabs" role="tablist" aria-label="Sources and receipt views">
+        <button class="ff-source-tab is-active" id="ff-source-tab-map" type="button" role="tab"
+          aria-selected="true" aria-controls="ff-source-panel-map" tabindex="0" data-source-mode="map">
+          <span class="ff-source-tab-mark" aria-hidden="true">↗</span><span class="l-en">Evidence map</span><span class="l-zh">证据映射</span>
+        </button>
+        <button class="ff-source-tab" id="ff-source-tab-receipt" type="button" role="tab"
+          aria-selected="false" aria-controls="ff-source-panel-receipt" tabindex="-1" data-source-mode="receipt">
+          <span class="ff-source-tab-mark" aria-hidden="true">◇</span><span class="l-en">Sealed receipt</span><span class="l-zh">密封凭据</span>
+        </button>
+      </div>
+      <section id="ff-source-panel-map" role="tabpanel" aria-labelledby="ff-source-tab-map" tabindex="-1">
+        <div id="ff-trace"></div>
+      </section>
+      <section id="ff-source-panel-receipt" role="tabpanel" aria-labelledby="ff-source-tab-receipt" tabindex="-1" hidden>
+        <div class="ff-receipt-surface" id="ff-receipt" aria-live="polite"></div>
+      </section>
     </section>
   </main>
 
@@ -538,9 +554,27 @@
       </div>
     </div>
   </aside>
-</div>
 
-<div class="ff-scrim" id="ff-scrim" hidden></div>
+  <aside class="ff-receipt-inspector" id="ff-receipt-inspector" aria-labelledby="ff-receipt-inspector-title" tabindex="-1">
+    <header class="ff-evidence-head">
+      <div>
+        <p class="ff-kicker"><span class="l-en">Receipt waterfall</span><span class="l-zh">凭据瀑布</span></p>
+        <h2 id="ff-receipt-inspector-title"><span class="l-en">Select a receipt cell</span><span class="l-zh">选择一个凭据单元</span></h2>
+      </div>
+      <button class="ff-evidence-close" id="ff-receipt-inspector-close" type="button"
+        aria-label="Close receipt inspector" data-label-en="Close receipt inspector" data-label-zh="关闭凭据检查器">
+        <span aria-hidden="true">×</span>
+      </button>
+    </header>
+    <div class="ff-evidence-body" id="ff-receipt-inspector-body">
+      <div class="ff-evidence-empty">
+        <span class="ff-empty-mark" aria-hidden="true">◇</span>
+        <p><span class="l-en">Choose a receipt cell to inspect its recorded selected-leaf trail.</span><span class="l-zh">选择一个凭据单元，以检查其已记录的选定叶节点轨迹。</span></p>
+      </div>
+    </div>
+  </aside>
+  <div class="ff-scrim" id="ff-scrim" hidden></div>
+</div>
 
 <template id="ff-loading-template">
   <div class="ff-loading" role="status">
@@ -550,6 +584,6 @@
 </template>
 
 <script src="theme.js?v=402a51a2" defer></script>
-<script src="fundamental_forensics.js?v=7ee96450" defer></script>
+<script src="fundamental_forensics.js?v=eff6dfc5" defer></script>
 </body>
 </html>
