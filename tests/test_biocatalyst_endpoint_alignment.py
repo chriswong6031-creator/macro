@@ -1,0 +1,476 @@
+from __future__ import annotations
+
+from copy import deepcopy
+import json
+from pathlib import Path
+
+import pytest
+
+from engine.biocatalyst.endpoint_alignment import (
+    build_trial_endpoint_alignment_review_projection,
+)
+from engine.biocatalyst.history import build_history_exact_diff
+from engine.sector_intelligence import (
+    ContractValidationError,
+    canonical_json_bytes,
+    canonical_json_sha256,
+    validate_contract,
+    validate_trial_endpoint_alignment_candidate_against_history,
+    validate_trial_endpoint_alignment_review_projection_against_history,
+)
+from tests.test_biocatalyst_history import NCT_ID, _history_chain, _rehash, _study
+
+
+ROOT = Path(__file__).resolve().parents[1]
+FIXTURE = json.loads(
+    (
+        ROOT / "data" / "biocatalyst" / "fixtures" / "endpoint_alignment" / "endpoint_alignment_cases.v1.json"
+    ).read_text(encoding="utf-8")
+)["cases"]
+
+
+def _projection(before: dict, after: dict) -> tuple[list[dict], dict, dict]:
+    _run, _receipts, snapshots = _history_chain(before, after)
+    diff = build_history_exact_diff(
+        *snapshots, transaction_from=snapshots[1]["transaction_from"]
+    )
+    return snapshots, diff, build_trial_endpoint_alignment_review_projection(
+        snapshots[0], snapshots[1], diff
+    )
+
+
+def _candidate_projection() -> tuple[list[dict], dict, dict]:
+    spelling = FIXTURE["spelling_correction"]
+    return _projection(
+        _study(outcomes=[spelling["before"]]), _study(outcomes=[spelling["after"]])
+    )
+
+
+def _next_immutable_snapshot(prior: dict, corrected_study: dict) -> dict:
+    """A schema-valid synthetic successor for a T2 correction/replay proof.
+
+    T2 accepts prevalidated immutable snapshots; B2 raw-evidence replay remains
+    owned by its own tests. This helper models an already-receipted next version
+    without mutating the historical source input passed to the projection.
+    """
+
+    successor = deepcopy(prior)
+    version = prior["source_version"] + 1
+    content_hash = canonical_json_sha256(corrected_study)
+    successor["source_version"] = version
+    successor["display_version"] = version + 1
+    successor["canonical_study"] = corrected_study
+    successor["canonical_content_sha256"] = content_hash
+    successor["source_record_ref"] = (
+        f"src:ctgov-history:{NCT_ID}:version:{version}:sha256:{content_hash}"
+    )
+    successor["source_uri"] = (
+        f"https://clinicaltrials.gov/study/{NCT_ID}?a={version + 1}&tab=history"
+    )
+    seed = canonical_json_sha256(
+        {
+            "nct_id": NCT_ID,
+            "source_version": version,
+            "canonical_content_sha256": content_hash,
+            "run_ref": successor["run_ref"],
+        }
+    )
+    successor["source_snapshot_id"] = f"ctgov_history_snapshot_{NCT_ID}_{seed[:24]}"
+    successor["transaction_from"] = "2026-08-02T00:00:13Z"
+    _rehash(successor, "snapshot_payload_sha256")
+    return successor
+
+
+@pytest.mark.parametrize(
+    ("before_outcomes", "after_outcomes"),
+    [
+        (
+            [
+                {"measure": "Response rate", "timeFrame": "12 weeks", "description": "A"},
+                {"measure": "Duration of response", "timeFrame": "24 weeks", "description": "B"},
+            ],
+            [
+                {"measure": "Duration of response", "timeFrame": "24 weeks", "description": "B"},
+                {"measure": "Response rate", "timeFrame": "12 weeks", "description": "A"},
+            ],
+        ),
+        (
+            [FIXTURE["unicode_whitespace_equivalent"]["before"]],
+            [FIXTURE["unicode_whitespace_equivalent"]["after"]],
+        ),
+    ],
+)
+def test_reorder_or_unique_nfc_case_whitespace_equivalent_rows_emit_no_candidate(
+    before_outcomes: list[dict], after_outcomes: list[dict]
+) -> None:
+    _snapshots, _diff, projection = _projection(
+        _study(outcomes=before_outcomes), _study(outcomes=after_outcomes)
+    )
+
+    assert projection["available"] is True
+    assert projection["candidate_count"] == 0
+    assert projection["candidates"] == []
+
+
+def test_spelling_correction_is_a2_needs_review_candidate_only() -> None:
+    snapshots, diff, projection = _candidate_projection()
+
+    assert projection["available"] is True
+    assert projection["candidate_count"] == 1
+    candidate = projection["candidates"][0]
+    assert candidate["candidate_relation"] == "possible_same_registry_endpoint"
+    assert candidate["review_state"] == "needs_review"
+    assert candidate["source_fact"] is False
+    assert candidate["protocol_change_asserted"] is False
+    assert candidate["materiality_assessed"] is False
+    assert candidate["authority"] == {
+        "classification": "semantic_candidate",
+        "decision_authority": False,
+        "maximum_authority": "A2_ATTEND",
+        "allowed_uses": ["display", "context", "explain", "attend"],
+        "forbidden_uses": [
+            "originate_signal",
+            "issuer_resolution",
+            "security_resolution",
+            "rank_security",
+            "select_security",
+            "size_position",
+            "gate_decision",
+            "execute_trade",
+            "neural_web_authority",
+            "all_prophet_uses",
+            "raise_authority",
+        ],
+    }
+    assert candidate["before"]["endpoint"]["measure"] == "Tumor response rate"
+    assert candidate["after"]["endpoint"]["measure"] == "Tumour response rate"
+    assert candidate["supporting_exact_op_sha256"]
+    assert candidate["lexical_features"]["measure_similarity_bps"] >= 8000
+    validate_trial_endpoint_alignment_candidate_against_history(
+        candidate, snapshots[0], snapshots[1], diff
+    )
+
+
+def test_tied_residuals_emit_every_eligible_cross_pair_in_source_locator_order() -> None:
+    snapshots, diff, projection = _projection(
+        _study(outcomes=FIXTURE["tied_before"]),
+        _study(outcomes=FIXTURE["tied_after"]),
+    )
+
+    assert projection["available"] is True
+    assert projection["candidate_count"] == 4
+    assert [
+        (candidate["before"]["outcome_index"], candidate["after"]["outcome_index"])
+        for candidate in projection["candidates"]
+    ] == [(0, 0), (0, 1), (1, 0), (1, 1)]
+    assert "ranking" not in canonical_json_bytes(projection).decode("utf-8").casefold()
+    validate_trial_endpoint_alignment_review_projection_against_history(
+        projection, snapshots[0], snapshots[1], diff
+    )
+
+
+def test_replay_rejects_mutation_rehash_wrong_identity_nonadjacency_missing_op_and_unsupported_path() -> None:
+    snapshots, diff, projection = _candidate_projection()
+    candidate = projection["candidates"][0]
+
+    fabricated = deepcopy(candidate)
+    fabricated["before"]["endpoint"]["measure"] = "Fabricated endpoint"
+    fabricated["before"]["endpoint_sha256"] = canonical_json_sha256(
+        fabricated["before"]["endpoint"]
+    )
+    _rehash(fabricated, "candidate_payload_sha256")
+    with pytest.raises(ContractValidationError):
+        validate_trial_endpoint_alignment_candidate_against_history(
+            fabricated, snapshots[0], snapshots[1], diff
+        )
+
+    wrong_nct = deepcopy(candidate)
+    wrong_nct["nct_id"] = "NCT99999999"
+    _rehash(wrong_nct, "candidate_payload_sha256")
+    with pytest.raises(ContractValidationError):
+        validate_trial_endpoint_alignment_candidate_against_history(
+            wrong_nct, snapshots[0], snapshots[1], diff
+        )
+
+    unsupported_path = deepcopy(candidate)
+    unsupported_path["before"]["list_locator"] = "/protocolSection/outcomesModule/unsupported"
+    _rehash(unsupported_path, "candidate_payload_sha256")
+    with pytest.raises(ContractValidationError):
+        validate_contract(unsupported_path)
+
+    missing_operation = deepcopy(diff)
+    missing_operation["operations"] = []
+    _rehash(missing_operation, "diff_payload_sha256")
+    with pytest.raises(ContractValidationError):
+        build_trial_endpoint_alignment_review_projection(
+            snapshots[0], snapshots[1], missing_operation
+        )
+
+    nonadjacent = deepcopy(snapshots[1])
+    nonadjacent["source_version"] = 2
+    nonadjacent["display_version"] = 3
+    nonadjacent["source_record_ref"] = (
+        f"src:ctgov-history:{NCT_ID}:version:2:sha256:{nonadjacent['canonical_content_sha256']}"
+    )
+    nonadjacent["source_uri"] = f"https://clinicaltrials.gov/study/{NCT_ID}?a=3&tab=history"
+    seed = canonical_json_sha256(
+        {
+            "nct_id": NCT_ID,
+            "source_version": 2,
+            "canonical_content_sha256": nonadjacent["canonical_content_sha256"],
+            "run_ref": nonadjacent["run_ref"],
+        }
+    )
+    nonadjacent["source_snapshot_id"] = f"ctgov_history_snapshot_{NCT_ID}_{seed[:24]}"
+    _rehash(nonadjacent, "snapshot_payload_sha256")
+    with pytest.raises(ContractValidationError):
+        build_trial_endpoint_alignment_review_projection(snapshots[0], nonadjacent, diff)
+
+
+def test_inputs_stay_immutable_and_identical_replay_is_byte_identical() -> None:
+    spelling = FIXTURE["spelling_correction"]
+    _run, _receipts, snapshots = _history_chain(
+        _study(outcomes=[spelling["before"]]), _study(outcomes=[spelling["after"]])
+    )
+    diff = build_history_exact_diff(
+        *snapshots, transaction_from=snapshots[1]["transaction_from"]
+    )
+    originals = deepcopy((snapshots, diff))
+
+    first = build_trial_endpoint_alignment_review_projection(snapshots[0], snapshots[1], diff)
+    second = build_trial_endpoint_alignment_review_projection(snapshots[0], snapshots[1], diff)
+
+    assert (snapshots, diff) == originals
+    assert first == second
+    assert canonical_json_bytes(first) == canonical_json_bytes(second)
+
+
+def test_closed_schemas_forbid_decisions_identity_prophet_raw_store_and_extra_properties() -> None:
+    _snapshots, _diff, projection = _candidate_projection()
+    candidate = projection["candidates"][0]
+
+    for state in ("accepted", "rejected"):
+        altered = deepcopy(candidate)
+        altered["review_state"] = state
+        _rehash(altered, "candidate_payload_sha256")
+        with pytest.raises(ContractValidationError):
+            validate_contract(altered)
+
+    for forbidden in (
+        "issuer",
+        "ticker",
+        "security",
+        "ranking",
+        "Prophet",
+        "raw_store",
+        "extra_property",
+    ):
+        altered = deepcopy(candidate)
+        altered[forbidden] = "forbidden"
+        with pytest.raises(ContractValidationError):
+            validate_contract(altered)
+
+    projection_extra = deepcopy(projection)
+    projection_extra["canonical_review_queue"] = True
+    with pytest.raises(ContractValidationError):
+        validate_contract(projection_extra)
+
+
+def test_input_text_and_residual_capacity_breaches_are_explicit_and_fail_empty() -> None:
+    oversized = "x" * (16 * 1024 + 1)
+    _snapshots, _diff, text_limited = _projection(
+        _study(outcomes=[{"measure": oversized, "timeFrame": "12 weeks", "description": "A"}]),
+        _study(outcomes=[{"measure": oversized + " corrected", "timeFrame": "12 weeks", "description": "A"}]),
+    )
+    assert text_limited["available"] is False
+    assert text_limited["unavailable_reason"] == "endpoint_text_limit_exceeded"
+    assert text_limited["candidate_count"] == 0
+    assert text_limited["candidates"] == []
+
+    byte_wide_before = {
+        "measure": "Tumor response rate",
+        "timeFrame": "12 weeks",
+        "description": "A",
+        "note_one": "x" * 12500,
+        "note_two": "y" * 12500,
+    }
+    byte_wide_after = {**byte_wide_before, "measure": "Tumour response rate"}
+    _snapshots, _diff, byte_limited = _projection(
+        _study(outcomes=[byte_wide_before]), _study(outcomes=[byte_wide_after])
+    )
+    assert byte_limited["available"] is False
+    assert byte_limited["unavailable_reason"] == "endpoint_byte_limit_exceeded"
+    assert byte_limited["candidate_count"] == 0
+
+    complexity_before = {
+        "measure": "Tumor response rate",
+        "timeFrame": "12 weeks",
+        "description": "A",
+        **{f"field_{index}": "x" for index in range(512)},
+    }
+    complexity_after = {**complexity_before, "measure": "Tumour response rate"}
+    _snapshots, _diff, complexity_limited = _projection(
+        _study(outcomes=[complexity_before]), _study(outcomes=[complexity_after])
+    )
+    assert complexity_limited["available"] is False
+    assert complexity_limited["unavailable_reason"] == "endpoint_complexity_limit_exceeded"
+    assert complexity_limited["candidate_count"] == 0
+
+    nested_list_before = {
+        "measure": "Tumor response rate",
+        "timeFrame": "12 weeks",
+        "description": "A",
+        "nested": ["x"] * 1024,
+    }
+    nested_list_after = {**nested_list_before, "measure": "Tumour response rate"}
+    _snapshots, _diff, nested_list_limited = _projection(
+        _study(outcomes=[nested_list_before]), _study(outcomes=[nested_list_after])
+    )
+    assert nested_list_limited["available"] is False
+    assert nested_list_limited["unavailable_reason"] == "endpoint_complexity_limit_exceeded"
+    assert nested_list_limited["candidate_count"] == 0
+
+    nested_value: object = "x"
+    for _ in range(65):
+        nested_value = [nested_value]
+    nested_depth_before = {
+        "measure": "Tumor response rate",
+        "timeFrame": "12 weeks",
+        "description": "A",
+        "nested": nested_value,
+    }
+    nested_depth_after = {**nested_depth_before, "measure": "Tumour response rate"}
+    _snapshots, _diff, nested_depth_limited = _projection(
+        _study(outcomes=[nested_depth_before]), _study(outcomes=[nested_depth_after])
+    )
+    assert nested_depth_limited["available"] is False
+    assert nested_depth_limited["unavailable_reason"] == "endpoint_nesting_limit_exceeded"
+    assert nested_depth_limited["candidate_count"] == 0
+
+    residual_before = [
+        {"measure": f"Response rate before {index}", "timeFrame": "12 weeks", "description": "A"}
+        for index in range(65)
+    ]
+    residual_after = [
+        {"measure": f"Response rate after {index}", "timeFrame": "12 weeks", "description": "A"}
+        for index in range(65)
+    ]
+    _snapshots, _diff, residual_limited = _projection(
+        _study(outcomes=residual_before), _study(outcomes=residual_after)
+    )
+    assert residual_limited["available"] is False
+    assert residual_limited["unavailable_reason"] == "residual_before_limit_exceeded"
+    assert residual_limited["candidate_count"] == 0
+    assert residual_limited["candidates"] == []
+
+    raw_before = [
+        {"measure": f"Response rate {index}", "timeFrame": "12 weeks", "description": "A"}
+        for index in range(257)
+    ]
+    raw_after = [
+        {"measure": f"Response rates {index}", "timeFrame": "12 weeks", "description": "A"}
+        for index in range(257)
+    ]
+    _snapshots, _diff, source_limited = _projection(
+        _study(outcomes=raw_before), _study(outcomes=raw_after)
+    )
+    assert source_limited["available"] is False
+    assert source_limited["unavailable_reason"] == "source_before_row_limit_exceeded"
+    assert source_limited["capacity"]["source_before_count"] == 257
+    assert source_limited["candidate_count"] == 0
+    assert source_limited["candidates"] == []
+
+
+def test_more_than_64_eligible_pairs_short_circuits_to_a_fixed_empty_unavailable_state() -> None:
+    before = [
+        {"measure": f"Tumor response rate A{index}", "timeFrame": "12 weeks", "description": "A"}
+        for index in range(9)
+    ]
+    after = [
+        {"measure": f"Tumour response rate B{index}", "timeFrame": "12 weeks", "description": "A"}
+        for index in range(8)
+    ]
+    _snapshots, _diff, projection = _projection(_study(outcomes=before), _study(outcomes=after))
+
+    assert projection["available"] is False
+    assert projection["unavailable_reason"] == "candidate_limit_exceeded"
+    assert projection["capacity"]["comparison_count"] == 72
+    assert projection["candidate_count"] == 0
+    assert projection["candidates"] == []
+
+
+def test_candidate_and_projection_byte_caps_fail_empty_without_truncating() -> None:
+    candidate_wide_before = {
+        "measure": "Tumor response rate",
+        "timeFrame": "12 weeks",
+        "description": "A",
+        "note_one": "x" * 11800,
+        "note_two": "y" * 11800,
+    }
+    candidate_wide_after = {
+        **candidate_wide_before,
+        "measure": "Tumour response rate",
+    }
+    _snapshots, _diff, candidate_limited = _projection(
+        _study(outcomes=[candidate_wide_before]), _study(outcomes=[candidate_wide_after])
+    )
+    assert candidate_limited["available"] is False
+    assert candidate_limited["unavailable_reason"] == "candidate_byte_limit_exceeded"
+    assert candidate_limited["candidate_count"] == 0
+    assert candidate_limited["candidates"] == []
+
+    projection_before = [
+        {
+            "measure": f"Tumor response rate A{index}",
+            "timeFrame": "12 weeks",
+            "description": "A",
+            "note": "x" * 3500,
+        }
+        for index in range(8)
+    ]
+    projection_after = [
+        {
+            "measure": f"Tumour response rate B{index}",
+            "timeFrame": "12 weeks",
+            "description": "A",
+            "note": "x" * 3500,
+        }
+        for index in range(8)
+    ]
+    _snapshots, _diff, projection_limited = _projection(
+        _study(outcomes=projection_before), _study(outcomes=projection_after)
+    )
+    assert projection_limited["available"] is False
+    assert projection_limited["unavailable_reason"] == "projection_byte_limit_exceeded"
+    assert projection_limited["candidate_count"] == 0
+    assert projection_limited["candidates"] == []
+
+
+def test_corrected_next_version_has_a_distinct_candidate_identity() -> None:
+    spelling = FIXTURE["spelling_correction"]
+    snapshots, first_diff, first_projection = _projection(
+        _study(outcomes=[spelling["before"]]), _study(outcomes=[spelling["after"]])
+    )
+    corrected_study = _study(
+        outcomes=[
+            {
+                "measure": "Tumour response rates",
+                "timeFrame": "12 weeks",
+                "description": "Independent central review",
+            }
+        ]
+    )
+    corrected_snapshot = _next_immutable_snapshot(snapshots[1], corrected_study)
+    corrected_diff = build_history_exact_diff(
+        snapshots[1], corrected_snapshot, transaction_from=corrected_snapshot["transaction_from"]
+    )
+    corrected_projection = build_trial_endpoint_alignment_review_projection(
+        snapshots[1], corrected_snapshot, corrected_diff
+    )
+
+    assert first_projection["candidate_count"] == corrected_projection["candidate_count"] == 1
+    assert first_diff["diff_id"] != corrected_diff["diff_id"]
+    assert (
+        first_projection["candidates"][0]["candidate_id"]
+        != corrected_projection["candidates"][0]["candidate_id"]
+    )

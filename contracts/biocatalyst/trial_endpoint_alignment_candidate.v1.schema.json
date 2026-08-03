@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_endpoint_alignment_candidate.v1.schema.json",
+  "title": "BioCatalyst Trial Endpoint Alignment Candidate v1",
+  "description": "A private, review-only possible same-registry-endpoint candidate. It is not a canonical queue item, source fact, protocol assertion, identity resolution, or decision input.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "candidate_id", "nct_id", "diff_ref", "before", "after",
+    "supporting_exact_op_sha256", "lexical_features", "candidate_relation", "review_state",
+    "semantic_method", "source_fact", "protocol_change_asserted", "materiality_assessed", "authority", "hash_scope",
+    "candidate_payload_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_endpoint_alignment_candidate.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "candidate_id": {"type": "string", "pattern": "^trial_endpoint_alignment_candidate_NCT[0-9]{8}_[a-f0-9]{24}$"},
+    "nct_id": {"$ref": "#/$defs/nctId"},
+    "diff_ref": {"type": "string", "pattern": "^trial_history_diff_NCT[0-9]{8}_[a-f0-9]{24}$"},
+    "before": {"$ref": "#/$defs/endpointLocator"},
+    "after": {"$ref": "#/$defs/endpointLocator"},
+    "supporting_exact_op_sha256": {
+      "type": "array", "minItems": 1, "maxItems": 2, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sha256"}
+    },
+    "lexical_features": {"$ref": "#/$defs/lexicalFeatures"},
+    "candidate_relation": {"const": "possible_same_registry_endpoint"},
+    "review_state": {"const": "needs_review"},
+    "semantic_method": {"const": "deterministic_endpoint_alignment_candidate.v1"},
+    "source_fact": {"const": false},
+    "protocol_change_asserted": {"const": false},
+    "materiality_assessed": {"const": false},
+    "authority": {"$ref": "#/$defs/authority"},
+    "hash_scope": {"const": "canonical_payload_excluding_candidate_payload_sha256"},
+    "candidate_payload_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "nctId": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+    "endpointObject": {"type": "object"},
+    "endpointLocator": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "source_snapshot_ref", "source_version", "source_record_ref", "content_sha256",
+        "outcome_role", "outcome_index", "list_locator", "endpoint", "endpoint_sha256"
+      ],
+      "properties": {
+        "source_snapshot_ref": {"type": "string", "pattern": "^ctgov_history_snapshot_NCT[0-9]{8}_[a-f0-9]{24}$"},
+        "source_version": {"type": "integer", "minimum": 0},
+        "source_record_ref": {"type": "string", "pattern": "^src:ctgov-history:NCT[0-9]{8}:version:[0-9]+:sha256:[a-f0-9]{64}$"},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "outcome_role": {"enum": ["primary", "secondary", "other"]},
+        "outcome_index": {"type": "integer", "minimum": 0, "maximum": 1000000},
+        "list_locator": {
+          "enum": [
+            "/protocolSection/outcomesModule/primaryOutcomes",
+            "/protocolSection/outcomesModule/secondaryOutcomes",
+            "/protocolSection/outcomesModule/otherOutcomes"
+          ]
+        },
+        "endpoint": {"$ref": "#/$defs/endpointObject"},
+        "endpoint_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "lexicalFeatures": {
+      "type": "object", "additionalProperties": false,
+      "required": ["method", "measure_similarity_bps", "time_frame_similarity_bps", "description_similarity_bps"],
+      "properties": {
+        "method": {"const": "literal_unicode_bigram_dice.v1"},
+        "measure_similarity_bps": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "time_frame_similarity_bps": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "description_similarity_bps": {"type": "integer", "minimum": 0, "maximum": 10000}
+      }
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["classification", "decision_authority", "maximum_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "classification": {"const": "semantic_candidate"},
+        "decision_authority": {"const": false},
+        "maximum_authority": {"const": "A2_ATTEND"},
+        "allowed_uses": {"const": ["display", "context", "explain", "attend"]},
+        "forbidden_uses": {"const": ["originate_signal", "issuer_resolution", "security_resolution", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "neural_web_authority", "all_prophet_uses", "raise_authority"]}
+      }
+    }
+  }
+}
