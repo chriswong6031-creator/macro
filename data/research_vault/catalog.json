@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T05:04:43.703164+00:00",
-  "count": 642,
+  "generated_at": "2026-08-03T05:35:08.160974+00:00",
+  "count": 643,
   "institutions": [
     "Amova",
     "Apollo",
@@ -765,6 +765,26 @@
         "**Inflation Catalysts**: CPI to rise to 2.0% early 2025 post-energy suppression, driven by wage growth, energy volatility, AI boom, and persistent weak yen—key upside risks for portfolio inflation exposure.",
         "**Policy vs Market Gap**: Market prices 20bp tightening in Oct (vs BoJ’s slow 2.00% target in 2 years), but BoJ signals no urgency to accelerate, creating mispricing opportunity in JPY and JGBs.",
         "**Yen Intervention Reality**: US-backed guerrilla tactics curb USD/JPY but no policy support for yen/JGBs; negative real rates cap BoJ’s tightening impact, leaving JPY vulnerable despite intervention."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vjeanyljet5-62ac26",
+      "title": "ING Think taiwans double digit gdp growth continued in the second quarter",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T11:01:22Z",
+      "summary_points": [
+        "**GDP Beat & Demand Shift**: Q2 2026 GDP growth at 12.92% YoY (vs.",
+        "5% forecast), driven by domestic demand (gross capital formation +4.03ppt, private consumption), marking a structural shift from export-led growth.",
+        "**AI Infrastructure Anchor**: AI-driven semiconductor boom fuels 47.1% YoY export surge (tech inputs/energy prices), underpinning revised 2026 GDP forecast of 11.1% (up from 10.1%), with strong export orders and consumption wealth effects.",
+        "**Tech Capex Sustainability Risk**: Tech sell-off jitters threaten AI infrastructure momentum; base effects may dampen Q4 growth, though single 12.5bp rate hike unlikely to significantly impact trajectory."
       ],
       "tags": [],
       "tickers": [],
