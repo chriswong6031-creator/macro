@@ -3596,7 +3596,20 @@ jobs:
         #     it — the hot_tape_pack case above, not a repair.
         # All three need pandas+pyarrow, which this lane already installs, so
         # they provision no new environment.
-        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py tests/test_chart_facts.py tests/test_marketing_bare_cashtag.py tests/test_confluence_honesty.py tests/test_tech_confluence.py tests/test_news_translate_en.py tests/test_marketing_supply_feeds.py tests/test_movers_source.py tests/test_marketing_radar.py -q -rs
+        #
+        # ONE SUITE JOINS 2026-08-03 (TrendSpider hardening PR-C — the chart
+        # director, the timeframe fact layer and the attention selector).
+        # test_chart_director.py builds a real parquet store under tmp_path to
+        # exercise the claim-window law and the doctrine table, so like
+        # test_marketing_supply_feeds above it belongs in the FAT lane from
+        # birth: on the thin marketing-engine lane every one of those tests
+        # would importorskip and check_skip_only_suites.py would fail the build,
+        # which is the "green and weaker in the same commit" trade that guard
+        # refuses. It carries this program's four acceptance gates — the
+        # claim-window refusal, the forming-bar exclusion, the in-frame caption
+        # gate and the long-tail annotation — and a gate that runs nowhere is
+        # not a gate.
+        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py tests/test_chart_facts.py tests/test_marketing_bare_cashtag.py tests/test_confluence_honesty.py tests/test_tech_confluence.py tests/test_news_translate_en.py tests/test_marketing_supply_feeds.py tests/test_movers_source.py tests/test_marketing_radar.py tests/test_chart_director.py -q -rs
 
   publish-r2-client:
     if: ${{ false }}

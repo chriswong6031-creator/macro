@@ -480,12 +480,23 @@ def _annotations_for(
     out: dict[str, Any] = {}
 
     def _tag(price: object, colour: str = MA_INK) -> None:
+        """Add a right-axis tag, unless the last-price pill already prints it.
+
+        The renderer always draws a last-price pill. A level tag at the same
+        price stacks a second chip directly under it saying the same number,
+        which is what the first proof renders showed on the streak and record
+        charts (two "90.20" chips, two "101.41" chips). The in-frame inventory
+        is unaffected: the last close is on the picture either way.
+        """
         try:
             p = float(price)  # type: ignore[arg-type]
         except (TypeError, ValueError):
             return
-        if p > 0:
-            out.setdefault("level_tags", []).append({"price": p, "color": colour})
+        if p <= 0:
+            return
+        if c and abs(p - float(c[last])) < 0.01:
+            return
+        out.setdefault("level_tags", []).append({"price": p, "color": colour})
 
     if kind in ("level_touch", "stage_read"):
         ma = dict(fact.get("ma") or {})
