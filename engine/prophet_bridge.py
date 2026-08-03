@@ -259,10 +259,16 @@ def select_candidates(
 
         selected.append(b)
 
-    # Sort: score desc, then act_level desc
+    # Sort: score desc, then act_level desc, then ticker asc.
+    # The ticker leg is load-bearing, not cosmetic: without it a (score, act_level)
+    # tie is resolved by the ARTIFACT's incoming buy[] order, so the same board
+    # re-emitted in a different order would originate a different set of plans and
+    # the intake would not be provably deterministic. Ticker is the only stable
+    # per-row identity here, so it is the final key.
     selected.sort(key=lambda x: (
         -(x.get("conviction") or {}).get("score", 0),
         -((x.get("entry_signal") or {}).get("act_level") or 0),
+        str(x.get("ticker") or ""),
     ))
     return selected[:n]
 
