@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T15:51:08.297452+00:00",
-  "count": 673,
+  "generated_at": "2026-08-03T16:06:10.143045+00:00",
+  "count": 674,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -188,6 +188,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 118,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bmyyysehxfn-520f9a",
+      "title": "GS MORNING 1 JPY Intervention Zoom Today 2 JPY Update 3 Thoughts From The Floor 4 FX Trader Bullets and 5 Week Ahead Previews",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T10:31:09Z",
+      "summary_points": [
+        "**JPY Intervention Scale & Coordination**: $60bn intervention (vs prior $25bn), coordinated with US in EURJPY to avoid USD sell-off risk; no warning, level-dependent, unrelated to realized volatility.",
+        "**FX Options Flow Shift**: Flows skewed to fading JPY strength via leveraged topside (166 line), minimal appetite for continued JPY strength or buy options.",
+        "**JPY Technical & Policy Outlook**: Broken 2000 MA, target <158-160 USDJPY; short-term asymmetric downside risk if >158, medium-term bearish due to loose Japanese monetary/fiscal policy (unless rate hikes + inward FDI)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
