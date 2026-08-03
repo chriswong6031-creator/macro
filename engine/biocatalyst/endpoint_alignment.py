@@ -294,7 +294,7 @@ def _preflight_candidate(candidate: Any) -> dict[str, Any]:
 
 
 def _preflight_projection(projection: Any) -> dict[str, Any]:
-    return _preflight_validation_artifact(
+    frozen = _preflight_validation_artifact(
         projection,
         label="projection",
         max_canonical_bytes=_MAX_PROJECTION_BYTES,
@@ -302,6 +302,20 @@ def _preflight_projection(projection: Any) -> dict[str, Any]:
         max_nesting_depth=_MAX_PROJECTION_INPUT_NESTING_DEPTH,
         max_container_items=_MAX_PROJECTION_INPUT_CONTAINER_ITEMS,
     )
+    candidates = frozen.get("candidates")
+    if type(candidates) is list:
+        for index, candidate in enumerate(candidates):
+            try:
+                _preflight_candidate(candidate)
+            except EndpointAlignmentError as exc:
+                prefix = "endpoint_alignment_candidate_"
+                detail = str(exc)
+                if detail.startswith(prefix):
+                    detail = detail[len(prefix) :]
+                raise EndpointAlignmentError(
+                    f"endpoint_alignment_projection_candidate_{index}_{detail}"
+                ) from exc
+    return frozen
 
 
 def _preflight_history_inputs(
@@ -669,11 +683,19 @@ def _make_candidate(
         "authority": _json_copy(_AUTHORITY),
         "hash_scope": "canonical_payload_excluding_candidate_payload_sha256",
     }
-    seed = canonical_json_sha256(_candidate_identity(payload))
-    payload["candidate_id"] = f"trial_endpoint_alignment_candidate_{diff.get('nct_id')}_{seed[:24]}"
-    candidate = _with_hash(payload, "candidate_payload_sha256")
-    if len(canonical_json_bytes(candidate)) > _MAX_CANDIDATE_BYTES:
-        return None, True
+    candidate_id_prefix = f"trial_endpoint_alignment_candidate_{diff.get('nct_id')}_"
+    payload["candidate_id"] = candidate_id_prefix + ("0" * 24)
+    payload["candidate_payload_sha256"] = "0" * 64
+    try:
+        bounded_payload = _preflight_candidate(payload)
+    except EndpointAlignmentError as exc:
+        if str(exc) == "endpoint_alignment_candidate_canonical_byte_limit_exceeded":
+            return None, True
+        raise
+    bounded_payload.pop("candidate_payload_sha256")
+    seed = canonical_json_sha256(_candidate_identity(bounded_payload))
+    bounded_payload["candidate_id"] = candidate_id_prefix + seed[:24]
+    candidate = _with_hash(bounded_payload, "candidate_payload_sha256")
     return candidate, False
 
 
@@ -815,7 +837,9 @@ def _projection_payload(
         before_snapshot, after_snapshot, diff
     )
 
-    def make_payload(reason: str | None, rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    def make_payload(
+        reason: str | None, rows: Sequence[Mapping[str, Any]]
+    ) -> tuple[dict[str, Any] | None, bool]:
         available = reason is None
         payload: dict[str, Any] = {
             "contract_id": _PROJECTION_CONTRACT_ID,
@@ -846,16 +870,28 @@ def _projection_payload(
             "generated_at": after_snapshot.get("transaction_from"),
             "hash_scope": "canonical_payload_excluding_projection_payload_sha256",
         }
-        seed = canonical_json_sha256(_projection_identity(payload))
-        payload["projection_id"] = (
-            f"trial_endpoint_alignment_review_projection_{diff.get('nct_id')}_{seed[:24]}"
+        projection_id_prefix = (
+            f"trial_endpoint_alignment_review_projection_{diff.get('nct_id')}_"
         )
-        return _with_hash(payload, "projection_payload_sha256")
+        payload["projection_id"] = projection_id_prefix + ("0" * 24)
+        payload["projection_payload_sha256"] = "0" * 64
+        try:
+            bounded_payload = _preflight_projection(payload)
+        except EndpointAlignmentError as exc:
+            if str(exc) == "endpoint_alignment_projection_canonical_byte_limit_exceeded":
+                return None, True
+            raise
+        bounded_payload.pop("projection_payload_sha256")
+        seed = canonical_json_sha256(_projection_identity(bounded_payload))
+        bounded_payload["projection_id"] = projection_id_prefix + seed[:24]
+        return _with_hash(bounded_payload, "projection_payload_sha256"), False
 
-    projection = make_payload(unavailable_reason, candidates if unavailable_reason is None else [])
-    if unavailable_reason is None and len(canonical_json_bytes(projection)) > _MAX_PROJECTION_BYTES:
-        projection = make_payload("projection_byte_limit_exceeded", [])
-    if len(canonical_json_bytes(projection)) > _MAX_PROJECTION_BYTES:
+    projection, oversized = make_payload(
+        unavailable_reason, candidates if unavailable_reason is None else []
+    )
+    if oversized and unavailable_reason is None:
+        projection, oversized = make_payload("projection_byte_limit_exceeded", [])
+    if oversized or projection is None:
         raise EndpointAlignmentError("endpoint_alignment_unavailable_projection_too_large")
     return projection
 

@@ -3880,12 +3880,29 @@ class ContractRegistry:
                     "contract documents must be finite acyclic JSON trees",
                 )
             ]
-        issues.extend(_interval_issues(document))
-        if requested == _PACKET_CONTRACT_ID and isinstance(document, Mapping):
-            issues.extend(_packet_authority_issues(document))
-        if isinstance(document, Mapping):
-            issues.extend(
-                _contract_semantic_issues(requested, document, self.repo_root)
+            # JSON Schema has already established that this is not a finite
+            # traversable document.  Do not hand the same hostile tree to the
+            # recursive interval or contract-semantic walkers below.
+            return tuple(issues)
+        try:
+            issues.extend(_interval_issues(document))
+            if requested == _PACKET_CONTRACT_ID and isinstance(document, Mapping):
+                issues.extend(_packet_authority_issues(document))
+            if isinstance(document, Mapping):
+                issues.extend(
+                    _contract_semantic_issues(requested, document, self.repo_root)
+                )
+        except (ContractError, OverflowError, RecursionError, ValueError):
+            # Some schemas intentionally do not descend into the value of an
+            # already-forbidden property.  The generic interval/semantic pass
+            # still must fail closed if that value is not a finite traversable
+            # canonical JSON tree.
+            return (
+                ValidationIssue(
+                    "$",
+                    "schema.invalid_in_memory_document",
+                    "contract documents must be finite acyclic JSON trees",
+                ),
             )
         return tuple(sorted(set(issues)))
 
@@ -6253,6 +6270,119 @@ _ENDPOINT_ALIGNMENT_MAX_CANDIDATE_BYTES = 48 * 1024
 _ENDPOINT_ALIGNMENT_MAX_PROJECTION_BYTES = 512 * 1024
 
 
+def _bounded_canonical_json_size(
+    value: Any, *, limit: int
+) -> tuple[int | None, str | None]:
+    """Count exact canonical JSON bytes without rendering an over-cap value."""
+
+    def string_size(text: str, remaining: int) -> int | None:
+        total = 2
+        for character in text:
+            codepoint = ord(character)
+            if 0xD800 <= codepoint <= 0xDFFF:
+                return None
+            if character in {'"', "\\"} or character in {
+                "\b",
+                "\f",
+                "\n",
+                "\r",
+                "\t",
+            }:
+                total += 2
+            elif codepoint < 0x20:
+                total += 6
+            else:
+                total += (
+                    1
+                    if codepoint <= 0x7F
+                    else 2
+                    if codepoint <= 0x7FF
+                    else 3
+                    if codepoint <= 0xFFFF
+                    else 4
+                )
+            if total > remaining:
+                return total
+        return total
+
+    total = 0
+    active_container_ids: set[int] = set()
+    stack: list[tuple[bool, Any]] = [(False, value)]
+    while stack:
+        leaving, current = stack.pop()
+        if leaving:
+            active_container_ids.remove(id(current))
+            continue
+        current_type = type(current)
+        if isinstance(current, dict):
+            container_id = id(current)
+            if container_id in active_container_ids:
+                return None, "invalid"
+            active_container_ids.add(container_id)
+            item_count = len(current)
+            total += 2 + max(0, item_count - 1) + item_count
+            if total > limit:
+                return None, "limit"
+            try:
+                items = list(current.items())
+            except RuntimeError:
+                return None, "invalid"
+            if len(items) != item_count:
+                return None, "invalid"
+            if any(type(key) is not str for key, _child in items):
+                return None, "invalid"
+            items.sort(key=lambda item: item[0])
+            for key, _child in items:
+                rendered_size = string_size(key, limit - total)
+                if rendered_size is None:
+                    return None, "invalid"
+                total += rendered_size
+                if total > limit:
+                    return None, "limit"
+            stack.append((True, current))
+            stack.extend((False, child) for _key, child in reversed(items))
+        elif current_type is list:
+            container_id = id(current)
+            if container_id in active_container_ids:
+                return None, "invalid"
+            active_container_ids.add(container_id)
+            item_count = len(current)
+            total += 2 + max(0, item_count - 1)
+            if total > limit:
+                return None, "limit"
+            stack.append((True, current))
+            stack.extend((False, child) for child in reversed(current))
+        elif current_type is str:
+            rendered_size = string_size(current, limit - total)
+            if rendered_size is None:
+                return None, "invalid"
+            total += rendered_size
+        elif current is None:
+            total += 4
+        elif current_type is bool:
+            total += 4 if current else 5
+        elif current_type is int:
+            remaining = limit - total
+            if current.bit_length() > max(1, remaining) * 4:
+                return None, "limit"
+            try:
+                total += len(str(current))
+            except ValueError:
+                return None, "invalid"
+        elif current_type is float:
+            try:
+                total += len(
+                    json.dumps(current, allow_nan=False, separators=(",", ":"))
+                )
+            except (TypeError, ValueError):
+                return None, "invalid"
+        else:
+            return None, "invalid"
+        if total > limit:
+            return None, "limit"
+    return total, None
+
+
 def _endpoint_alignment_candidate_identity(document: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "semantic_method": document.get("semantic_method"),
@@ -6264,8 +6394,28 @@ def _endpoint_alignment_candidate_identity(document: Mapping[str, Any]) -> dict[
     }
 
 
+def _endpoint_alignment_candidate_size_issue(
+    document: Mapping[str, Any], *, path: str = "$"
+) -> ValidationIssue | None:
+    _size, size_reason = _bounded_canonical_json_size(
+        document, limit=_ENDPOINT_ALIGNMENT_MAX_CANDIDATE_BYTES
+    )
+    if size_reason == "limit":
+        return ValidationIssue(
+            path,
+            "endpoint_alignment_candidate.byte_limit",
+            "candidate exceeds the fixed 48KiB private projection limit",
+        )
+    if size_reason is not None:
+        raise ContractError("candidate must be finite canonical JSON")
+    return None
+
+
 def _endpoint_alignment_candidate_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
+    size_issue = _endpoint_alignment_candidate_size_issue(document)
+    if size_issue is not None:
+        return [size_issue]
     if (
         document.get("persistence_state") != "projection_only"
         or document.get("canonical_queue") is not False
@@ -6335,14 +6485,6 @@ def _endpoint_alignment_candidate_issues(document: Mapping[str, Any]) -> list[Va
                     "outcome role must use its registered exact outcomes-list locator",
                 )
             )
-    if len(canonical_json_bytes(document)) > _ENDPOINT_ALIGNMENT_MAX_CANDIDATE_BYTES:
-        issues.append(
-            ValidationIssue(
-                "$",
-                "endpoint_alignment_candidate.byte_limit",
-                "candidate exceeds the fixed 48KiB private projection limit",
-            )
-        )
     return issues
 
 
@@ -6369,6 +6511,32 @@ def _endpoint_alignment_review_projection_issues(
     document: Mapping[str, Any]
 ) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
+    _size, size_reason = _bounded_canonical_json_size(
+        document, limit=_ENDPOINT_ALIGNMENT_MAX_PROJECTION_BYTES
+    )
+    if size_reason == "limit":
+        return [
+            ValidationIssue(
+                "$",
+                "endpoint_alignment_projection.byte_limit",
+                "projection exceeds the fixed 512KiB private projection limit",
+            )
+        ]
+    if size_reason is not None:
+        raise ContractError("projection must be finite canonical JSON")
+    candidates = document.get("candidates")
+    if isinstance(candidates, list):
+        candidate_size_issues: list[ValidationIssue] = []
+        for index, candidate in enumerate(candidates):
+            if not isinstance(candidate, Mapping):
+                continue
+            issue = _endpoint_alignment_candidate_size_issue(
+                candidate, path=f"$.candidates[{index}]"
+            )
+            if issue is not None:
+                candidate_size_issues.append(issue)
+        if candidate_size_issues:
+            return candidate_size_issues
     hash_issue = _content_hash_issue(
         document,
         hash_field="projection_payload_sha256",
@@ -6407,7 +6575,6 @@ def _endpoint_alignment_review_projection_issues(
                 "a review projection can cover only one adjacent source-version pair",
             )
         )
-    candidates = document.get("candidates")
     candidate_count = document.get("candidate_count")
     if isinstance(candidates, list):
         if candidate_count != len(candidates):
@@ -6428,9 +6595,28 @@ def _endpoint_alignment_review_projection_issues(
                 )
             )
         order_keys: list[tuple[str, int, str, int, str]] = []
-        for item in candidates:
+        for index, item in enumerate(candidates):
             if not isinstance(item, Mapping):
                 continue
+            try:
+                candidate_issues = _endpoint_alignment_candidate_issues(item)
+            except ContractError:
+                candidate_issues = [
+                    ValidationIssue(
+                        "$",
+                        "schema.invalid_in_memory_document",
+                        "contract documents must be finite canonical JSON trees",
+                    )
+                ]
+            for issue in candidate_issues:
+                suffix = issue.path[1:] if issue.path.startswith("$") else ""
+                issues.append(
+                    ValidationIssue(
+                        f"$.candidates[{index}]{suffix}",
+                        issue.code,
+                        issue.message,
+                    )
+                )
             if (
                 item.get("persistence_state") != "projection_only"
                 or item.get("canonical_queue") is not False
@@ -6487,14 +6673,6 @@ def _endpoint_alignment_review_projection_issues(
                 "$.candidates",
                 "endpoint_alignment_projection.unavailable_empty",
                 "any capacity-unavailable projection must expose zero candidates, never a truncation",
-            )
-        )
-    if len(canonical_json_bytes(document)) > _ENDPOINT_ALIGNMENT_MAX_PROJECTION_BYTES:
-        issues.append(
-            ValidationIssue(
-                "$",
-                "endpoint_alignment_projection.byte_limit",
-                "projection exceeds the fixed 512KiB private projection limit",
             )
         )
     return issues

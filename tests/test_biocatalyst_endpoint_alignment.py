@@ -321,6 +321,201 @@ def test_closed_schemas_forbid_decisions_identity_prophet_raw_store_and_extra_pr
 
 
 @pytest.mark.parametrize(
+    ("corruption", "expected_path", "expected_code"),
+    [
+        (
+            "candidate_payload_sha256",
+            "$.candidates[0].candidate_payload_sha256",
+            "endpoint_alignment_candidate.hash",
+        ),
+        (
+            "endpoint_sha256",
+            "$.candidates[0].before.endpoint_sha256",
+            "endpoint_alignment_candidate.endpoint_hash",
+        ),
+    ],
+)
+def test_generic_projection_validation_applies_embedded_candidate_semantics(
+    corruption: str, expected_path: str, expected_code: str
+) -> None:
+    _snapshots, _diff, projection = _candidate_projection()
+    if corruption == "candidate_payload_sha256":
+        projection["candidates"][0]["candidate_payload_sha256"] = "0" * 64
+    else:
+        projection["candidates"][0]["before"]["endpoint_sha256"] = "0" * 64
+    _rehash(projection, "projection_payload_sha256")
+
+    with pytest.raises(ContractValidationError) as exc_info:
+        validate_contract(projection)
+
+    assert (expected_path, expected_code) in {
+        (issue.path, issue.code) for issue in exc_info.value.issues
+    }
+    assert not any(
+        issue.code == "endpoint_alignment_projection.hash"
+        for issue in exc_info.value.issues
+    )
+
+
+@pytest.mark.parametrize("artifact_kind", ["candidate", "projection"])
+def test_generic_validation_deep_artifact_is_a_deterministic_contract_error(
+    artifact_kind: str,
+) -> None:
+    _snapshots, _diff, projection = _candidate_projection()
+    artifact = (
+        projection["candidates"][0] if artifact_kind == "candidate" else projection
+    )
+    embedded_candidate = (
+        artifact if artifact_kind == "candidate" else artifact["candidates"][0]
+    )
+    nested: object = "leaf"
+    for _ in range(2_000):
+        nested = [nested]
+    embedded_candidate["before"]["endpoint"]["hostile_nested_value"] = nested
+
+    observed_issues: list[tuple] = []
+    for _ in range(2):
+        with pytest.raises(ContractValidationError) as exc_info:
+            validate_contract(artifact)
+        observed_issues.append(exc_info.value.issues)
+
+    assert observed_issues[0] == observed_issues[1]
+    assert [(issue.path, issue.code) for issue in observed_issues[0]] == [
+        ("$", "schema.invalid_in_memory_document")
+    ]
+
+
+@pytest.mark.parametrize(
+    ("artifact_kind", "padding_size", "expected_path", "expected_code"),
+    [
+        (
+            "candidate",
+            1024 * 1024,
+            "$",
+            "endpoint_alignment_candidate.byte_limit",
+        ),
+        (
+            "projection",
+            1024 * 1024,
+            "$",
+            "endpoint_alignment_projection.byte_limit",
+        ),
+        (
+            "projection",
+            50_000,
+            "$.candidates[0]",
+            "endpoint_alignment_candidate.byte_limit",
+        ),
+    ],
+)
+def test_generic_over_cap_artifact_refuses_before_canonicalization_or_hashing(
+    monkeypatch: pytest.MonkeyPatch,
+    artifact_kind: str,
+    padding_size: int,
+    expected_path: str,
+    expected_code: str,
+) -> None:
+    _snapshots, _diff, projection = _candidate_projection()
+    artifact = (
+        projection["candidates"][0] if artifact_kind == "candidate" else projection
+    )
+    embedded_candidate = (
+        artifact if artifact_kind == "candidate" else artifact["candidates"][0]
+    )
+    embedded_candidate["before"]["endpoint"]["hostile_padding"] = "x" * padding_size
+    reached = {"canonical": 0, "hash": 0, "identity": 0}
+
+    def forbidden(stage: str):
+        def fail(*_args: object, **_kwargs: object) -> None:
+            reached[stage] += 1
+            raise AssertionError(f"generic over-cap artifact reached {stage}")
+
+        return fail
+
+    monkeypatch.setattr(
+        sector_contracts, "canonical_json_bytes", forbidden("canonical")
+    )
+    monkeypatch.setattr(
+        sector_contracts, "canonical_json_sha256", forbidden("hash")
+    )
+    monkeypatch.setattr(
+        sector_contracts,
+        (
+            "_endpoint_alignment_candidate_identity"
+            if artifact_kind == "candidate"
+            else "_endpoint_alignment_projection_identity"
+        ),
+        forbidden("identity"),
+    )
+
+    with pytest.raises(ContractValidationError) as exc_info:
+        validate_contract(artifact)
+
+    assert (expected_path, expected_code) in {
+        (issue.path, issue.code) for issue in exc_info.value.issues
+    }
+    assert reached == {"canonical": 0, "hash": 0, "identity": 0}
+
+
+def test_generic_bounded_refusal_is_independent_of_mapping_insertion_order() -> None:
+    invalid_key = "\ud800"
+    oversized_key = "a" * (endpoint_alignment._MAX_CANDIDATE_BYTES + 1)
+    observed_issues: list[tuple] = []
+
+    for endpoint_items in (
+        ((invalid_key, None), (oversized_key, None)),
+        ((oversized_key, None), (invalid_key, None)),
+    ):
+        _snapshots, _diff, projection = _candidate_projection()
+        projection["candidates"][0]["before"]["endpoint"] = dict(endpoint_items)
+        with pytest.raises(ContractValidationError) as exc_info:
+            validate_contract(projection["candidates"][0])
+        observed_issues.append(exc_info.value.issues)
+
+    assert observed_issues[0] == observed_issues[1]
+    assert [(issue.path, issue.code) for issue in observed_issues[0]] == [
+        ("$", "endpoint_alignment_candidate.byte_limit")
+    ]
+
+
+@pytest.mark.parametrize(
+    ("artifact_kind", "limit"),
+    [
+        ("candidate", endpoint_alignment._MAX_CANDIDATE_BYTES),
+        ("projection", endpoint_alignment._MAX_PROJECTION_BYTES),
+    ],
+)
+def test_artifact_preflight_canonical_byte_caps_are_exact(
+    artifact_kind: str, limit: int
+) -> None:
+    preflight = (
+        endpoint_alignment._preflight_candidate
+        if artifact_kind == "candidate"
+        else endpoint_alignment._preflight_projection
+    )
+    empty_size = len(canonical_json_bytes({"padding": ""}))
+    exact = {"padding": "x" * (limit - empty_size)}
+    one_over = {"padding": exact["padding"] + "x"}
+
+    frozen = preflight(exact)
+    generic_size, generic_reason = sector_contracts._bounded_canonical_json_size(
+        exact, limit=limit
+    )
+    over_size, over_reason = sector_contracts._bounded_canonical_json_size(
+        one_over, limit=limit
+    )
+
+    assert len(canonical_json_bytes(frozen)) == limit
+    assert (generic_size, generic_reason) == (limit, None)
+    assert (over_size, over_reason) == (None, "limit")
+    with pytest.raises(
+        EndpointAlignmentError,
+        match=rf"^endpoint_alignment_{artifact_kind}_canonical_byte_limit_exceeded$",
+    ):
+        preflight(one_over)
+
+
+@pytest.mark.parametrize(
     ("target_index", "target_label"),
     [(0, "before_snapshot"), (1, "after_snapshot"), (2, "diff")],
 )
@@ -571,6 +766,68 @@ def test_replay_validator_oversized_artifact_refuses_before_any_canonicalization
     assert canonicalization_calls == 0
 
 
+@pytest.mark.parametrize(
+    "reason",
+    [
+        "canonical_byte_limit_exceeded",
+        "container_limit_exceeded",
+        "node_limit_exceeded",
+        "nesting_limit_exceeded",
+    ],
+)
+def test_projection_validator_preflights_each_embedded_candidate_envelope_first(
+    monkeypatch: pytest.MonkeyPatch, reason: str
+) -> None:
+    snapshots, diff, projection = _candidate_projection()
+    endpoint = projection["candidates"][0]["before"]["endpoint"]
+    if reason == "canonical_byte_limit_exceeded":
+        endpoint["hostile_value"] = "x" * 50_000
+    elif reason == "container_limit_exceeded":
+        endpoint["hostile_value"] = [None] * 2_049
+    elif reason == "node_limit_exceeded":
+        endpoint["hostile_value"] = [[None] * 2_048, [None] * 2_048]
+    else:
+        nested: object = "leaf"
+        for _ in range(100):
+            nested = [nested]
+        endpoint["hostile_value"] = nested
+    reached = {"canonical": 0, "replay": 0, "schema": 0}
+
+    def forbidden(stage: str):
+        def fail(*_args: object, **_kwargs: object) -> None:
+            reached[stage] += 1
+            raise AssertionError(
+                f"{stage} must not run before embedded-candidate preflight"
+            )
+
+        return fail
+
+    monkeypatch.setattr(
+        endpoint_alignment, "canonical_json_bytes", forbidden("canonical")
+    )
+    monkeypatch.setattr(
+        sector_contracts, "canonical_json_bytes", forbidden("canonical")
+    )
+    monkeypatch.setattr(
+        endpoint_alignment,
+        "validate_trial_history_diff_against_snapshots",
+        forbidden("replay"),
+    )
+    monkeypatch.setattr(
+        endpoint_alignment.ContractRegistry, "validate", forbidden("schema")
+    )
+
+    with pytest.raises(
+        EndpointAlignmentError,
+        match=rf"^endpoint_alignment_projection_candidate_0_{reason}$",
+    ):
+        validate_trial_endpoint_alignment_review_projection_against_history(
+            projection, snapshots[0], snapshots[1], diff
+        )
+
+    assert reached == {"canonical": 0, "replay": 0, "schema": 0}
+
+
 @pytest.mark.parametrize("validator_kind", ["candidate", "projection"])
 def test_replay_validator_uses_one_frozen_artifact_when_caller_mutates(
     monkeypatch: pytest.MonkeyPatch, validator_kind: str
@@ -790,6 +1047,99 @@ def test_candidate_and_projection_byte_caps_fail_empty_without_truncating() -> N
     assert projection_limited["unavailable_reason"] == "projection_byte_limit_exceeded"
     assert projection_limited["candidate_count"] == 0
     assert projection_limited["candidates"] == []
+
+
+def test_candidate_builder_preflights_before_candidate_identity_or_payload_hash(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    candidate_wide_before = {
+        "measure": "Tumor response rate",
+        "timeFrame": "12 weeks",
+        "description": "A",
+        "note_one": "x" * 11_800,
+        "note_two": "y" * 11_800,
+    }
+    candidate_wide_after = {
+        **candidate_wide_before,
+        "measure": "Tumour response rate",
+    }
+    original_with_hash = endpoint_alignment._with_hash
+
+    def forbidden_candidate_identity(_payload: object) -> None:
+        raise AssertionError("over-cap candidate identity must not be hashed")
+
+    def guarded_with_hash(payload: object, field: str) -> dict:
+        if field == "candidate_payload_sha256":
+            raise AssertionError("over-cap candidate payload must not be canonicalized or hashed")
+        return original_with_hash(payload, field)
+
+    monkeypatch.setattr(
+        endpoint_alignment, "_candidate_identity", forbidden_candidate_identity
+    )
+    monkeypatch.setattr(endpoint_alignment, "_with_hash", guarded_with_hash)
+
+    _snapshots, _diff, projection = _projection(
+        _study(outcomes=[candidate_wide_before]),
+        _study(outcomes=[candidate_wide_after]),
+    )
+
+    assert projection["available"] is False
+    assert projection["unavailable_reason"] == "candidate_byte_limit_exceeded"
+    assert projection["candidate_count"] == 0
+    assert projection["candidates"] == []
+
+
+def test_projection_builder_preflights_before_projection_identity_or_payload_hash(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    projection_before = [
+        {
+            "measure": f"Tumor response rate A{index}",
+            "timeFrame": "12 weeks",
+            "description": "A",
+            "note": "x" * 3_500,
+        }
+        for index in range(8)
+    ]
+    projection_after = [
+        {
+            "measure": f"Tumour response rate B{index}",
+            "timeFrame": "12 weeks",
+            "description": "A",
+            "note": "x" * 3_500,
+        }
+        for index in range(8)
+    ]
+    original_projection_identity = endpoint_alignment._projection_identity
+    original_with_hash = endpoint_alignment._with_hash
+
+    def guarded_projection_identity(payload: dict) -> dict:
+        if payload.get("available") is True:
+            raise AssertionError("over-cap projection identity must not be hashed")
+        return original_projection_identity(payload)
+
+    def guarded_with_hash(payload: object, field: str) -> dict:
+        if (
+            field == "projection_payload_sha256"
+            and isinstance(payload, dict)
+            and payload.get("available") is True
+        ):
+            raise AssertionError("over-cap projection must not be canonicalized or hashed")
+        return original_with_hash(payload, field)
+
+    monkeypatch.setattr(
+        endpoint_alignment, "_projection_identity", guarded_projection_identity
+    )
+    monkeypatch.setattr(endpoint_alignment, "_with_hash", guarded_with_hash)
+
+    _snapshots, _diff, projection = _projection(
+        _study(outcomes=projection_before), _study(outcomes=projection_after)
+    )
+
+    assert projection["available"] is False
+    assert projection["unavailable_reason"] == "projection_byte_limit_exceeded"
+    assert projection["candidate_count"] == 0
+    assert projection["candidates"] == []
 
 
 def test_corrected_next_version_has_a_distinct_candidate_identity() -> None:
