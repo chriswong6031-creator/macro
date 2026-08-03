@@ -3135,6 +3135,7 @@ jobs:
           python -m pytest
           tests/test_biocatalyst_history.py
           tests/test_biocatalyst_endpoint_alignment.py
+          tests/test_biocatalyst_change_classification.py
           tests/test_clinicaltrials_history.py -q
 
   biocatalyst-contracts:
