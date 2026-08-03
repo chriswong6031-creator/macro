@@ -27,12 +27,14 @@ _SHELL_RE = re.compile(
     r'<script id="gov-data" type="application/json">(.*?)</script>',
     re.DOTALL,
 )
-_REQUIRED_MARKERS = (
+_REQUIRED_SITE_MARKERS = (
     'id="gov-workspace"',
     'id="queueList"',
     'id="inspectorPane"',
     'id="evidenceDrawer"',
     'id="gov-data"',
+)
+_REQUIRED_CANDIDATE_MARKERS = (
     'data-mode="candidates"',
     'data-mode="companies"',
     'src="government-revenue-candidate-radar.js"',
@@ -89,6 +91,7 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
     canonical_dir = root / "data" / "government_revenue"
     public_dir = root / "site" / "government-revenue-data"
     html_path = root / "site" / "government_revenue.html"
+    template_path = root / "templates" / "government_revenue.html.j2"
 
     canonical_latest_raw, canonical_latest = _read_json(
         canonical_dir / "latest.json", "canonical latest"
@@ -252,7 +255,25 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         raise ProjectionDriftError(
             f"public HTML exceeds {_RAW_HTML_BUDGET_BYTES} bytes: {len(html_raw)}"
         )
-    missing = [marker for marker in _REQUIRED_MARKERS if marker not in html]
+    try:
+        template = template_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ProjectionDriftError(
+            f"Government Revenue template is unavailable or invalid: {template_path}"
+        ) from exc
+    missing_template = [
+        marker for marker in _REQUIRED_CANDIDATE_MARKERS if marker not in template
+    ]
+    if missing_template:
+        raise ProjectionDriftError(
+            "Government Revenue template is missing candidate markers: "
+            + ", ".join(missing_template)
+        )
+
+    required_site_markers = _REQUIRED_SITE_MARKERS
+    if candidate_projection.get("status") != "absent":
+        required_site_markers += _REQUIRED_CANDIDATE_MARKERS
+    missing = [marker for marker in required_site_markers if marker not in html]
     if missing:
         raise ProjectionDriftError(
             "public HTML is missing governed workspace markers: " + ", ".join(missing)

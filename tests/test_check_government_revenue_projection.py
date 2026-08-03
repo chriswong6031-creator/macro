@@ -159,7 +159,40 @@ def test_projection_fence_accepts_one_canonical_compact_generation(tmp_path: Pat
     assert result["dossier_content_id"].startswith("grd1-")
     assert result["subaward_dossier_content_id"].startswith("grsd1-")
     assert result["subaward_dossiers"] == 0
-    assert result["html_bytes"] < 275_000
+    assert result["html_bytes"] < build_government_revenue.RAW_HTML_BUDGET_BYTES
+
+
+def test_projection_fence_accepts_source_owned_candidate_ui_before_first_materialization(
+    tmp_path: Path,
+) -> None:
+    _generation(tmp_path)
+    html_path = tmp_path / "site" / "government_revenue.html"
+    html = html_path.read_text(encoding="utf-8")
+    for marker, replacement in {
+        'data-mode="candidates"': 'data-mode="staged-candidates"',
+        'data-mode="companies"': 'data-mode="staged-companies"',
+        'src="government-revenue-candidate-radar.js"': 'src="candidate-radar-pending.js"',
+    }.items():
+        html = html.replace(marker, replacement)
+    html_path.write_text(html, encoding="utf-8")
+
+    result = validate_projection(tmp_path)
+
+    assert result["candidate_content_id"] is None
+
+
+def test_projection_fence_requires_candidate_markers_in_the_canonical_template(
+    tmp_path: Path,
+) -> None:
+    _generation(tmp_path)
+    template_path = tmp_path / "templates" / "government_revenue.html.j2"
+    template = template_path.read_text(encoding="utf-8").replace(
+        'data-mode="candidates"', 'data-mode="pending"'
+    )
+    template_path.write_text(template, encoding="utf-8")
+
+    with pytest.raises(ProjectionDriftError, match="template is missing candidate markers"):
+        validate_projection(tmp_path)
 
 
 def test_projection_fence_rejects_stale_public_latest_twin(tmp_path: Path) -> None:
@@ -289,9 +322,16 @@ def test_projection_fence_rejects_full_payload_or_missing_workspace_shell(
 ) -> None:
     _generation(tmp_path)
     html = tmp_path / "site" / "government_revenue.html"
-    html.write_text("<main>legacy</main>" + ("x" * 275_001), encoding="utf-8")
+    html.write_text(
+        "<main>legacy</main>"
+        + ("x" * (build_government_revenue.RAW_HTML_BUDGET_BYTES + 1)),
+        encoding="utf-8",
+    )
 
-    with pytest.raises(ProjectionDriftError, match="exceeds 275000 bytes"):
+    with pytest.raises(
+        ProjectionDriftError,
+        match=rf"exceeds {build_government_revenue.RAW_HTML_BUDGET_BYTES} bytes",
+    ):
         validate_projection(tmp_path)
 
     html.write_text("<main>legacy</main>", encoding="utf-8")
