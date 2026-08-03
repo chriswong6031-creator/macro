@@ -10,21 +10,21 @@
   "entity_refs": ["port:SYN-P01", "vessel:SYN-V01", "shipping_lane:SYN-L01"],
   "security_refs": [],
   "portfolio_exposure": [],
-  "current_fact_refs": ["claim:shipping:SYN-L01:reported-delay"],
-  "material_change_event_refs": ["event:shipping:SYN-P01:reported-congestion-change"],
+  "current_fact_refs": ["claim:shipping:SYN-L01:reported-delay", "claim:shipping:SYN-P01:reported-status"],
+  "material_change_event_refs": [],
   "upcoming_event_refs": [],
   "contradictions": [
     {"claim_ref": "claim:shipping:SYN-L01:reported-delay", "contradicts_claim_ref": "claim:shipping:SYN-L01:carrier-estimate", "state": "open", "resolution_ref": null}
   ],
-  "freshness": {"state": "degraded", "oldest_required_source_at": "2026-08-01T09:30:00Z", "evaluated_at": "2026-08-01T10:00:00Z", "stale_source_ids": [], "unknown_source_ids": ["synthetic-carrier-feed"]},
-  "quality": {"state": "degraded", "completeness": 0.75, "point_in_time_safe": true, "warnings": ["Synthetic interoperability fixture; no real vessel, port, freight, or trade claim.", "Reported congestion does not establish causal impact on inventory, prices, or issuer margins."]},
+  "freshness": {"state": "degraded", "oldest_required_source_at": "2026-08-01T09:30:00Z", "evaluated_at": "2026-08-01T10:00:00Z", "stale_source_ids": [], "unknown_source_ids": ["synthetic_shipping_carrier_status_v1"]},
+  "quality": {"state": "degraded", "completeness": 0.75, "point_in_time_safe": true, "warnings": ["Synthetic interoperability fixture; no real vessel, port, freight, or trade claim.", "Reported congestion status does not establish causal impact on inventory, prices, or issuer margins."]},
   "feature_snapshot_refs": [],
   "prediction_refs": [],
-  "evidence_claim_refs": ["claim:shipping:SYN-L01:reported-delay", "claim:shipping:SYN-L01:carrier-estimate"],
+  "evidence_claim_refs": ["claim:shipping:SYN-L01:reported-delay", "claim:shipping:SYN-P01:reported-status", "claim:shipping:SYN-L01:carrier-estimate"],
   "source_record_refs": ["src:synthetic-port:SYN-P01", "src:synthetic-carrier:SYN-V01"],
   "lobe_run_ref": "run:synthetic-shipping:20260801T100000Z",
   "authority_manifest_ref": "authority:synthetic-shipping-display:v1",
   "authority_caps": {"max_authority": "A1_EXPLAIN", "allowed_actions": ["observe", "explain"], "forbidden_actions": ["originate_signal", "raise_authority_from_llm", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade"], "llm_may_originate_signals": false},
-  "packet_hash": "6e6ae4722c3446b70af22eb8c601a8663a1f4d6924cc042603f2481695db4e13",
+  "packet_hash": "7611085376a110ab7e080f38ff3dd7f2e9e4b1ce2c969c4ceff162553e84456b",
   "hash_scope": "canonical_payload_excluding_packet_hash"
 }

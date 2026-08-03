@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -36,10 +37,676 @@ from engine.sector_intelligence.contracts import (
 ROOT = Path(__file__).resolve().parents[1]
 GENERIC_FIXTURE_DIR = ROOT / "data" / "sector_intelligence" / "fixtures"
 BIOCATALYST_FIXTURE_DIR = ROOT / "data" / "biocatalyst" / "fixtures"
+SHIPPING_X1_FIXTURE_FILES = {
+    "port_source": "shipping_x1_port_source_record.v1.valid.json",
+    "carrier_source": "shipping_x1_carrier_source_record.v1.valid.json",
+    "port_claim": "shipping_x1_port_delay_claim.v1.valid.json",
+    "port_status_claim": "shipping_x1_port_status_claim.v1.valid.json",
+    "carrier_claim": "shipping_x1_carrier_estimate_claim.v1.valid.json",
+    "lane_link": "shipping_x1_lane_entity_link.v1.valid.json",
+    "congestion_event": "shipping_x1_congestion_event.v1.valid.json",
+    "packet": "shipping_sector_intelligence_packet.v1.valid.json",
+}
+SHIPPING_X1_EXPECTED_DOCUMENT_SHA256 = {
+    "port_source": "2ca365c3891eec8de7fa9c9c3a81662919871193501cd9234bb3c30a88b1aa80",
+    "carrier_source": "20bf5e69e5e12aa470f33a6c65634a7e2397abbab399e17583a2c524822105c0",
+    "port_claim": "7f8201370bb8cf0924cb27e3a30cdabce1ddfb82d84693f6ae34f407e09325a2",
+    "port_status_claim": "5d63a82da3d18fb2ecc41f459e69da2cd964e26de6cec0b16b2b74fc7284a1bd",
+    "carrier_claim": "4caf91fce0ec21249367d0fd1d103c633e5ce967d9ed5318861d2ae52e2f0817",
+    "lane_link": "41b49193335d2a2d3f1db9379980f2c0efeb72d64aecab96866045309e842b9e",
+    "congestion_event": "2fbe17219e6f72ac31b29886a1fa38175ea43480335153833984fd7b9d9163b9",
+    "packet": "c0e072bde576e1a6a086feca2ece627eb90f53a3d2c100b871a5328fbf33667b",
+}
+SHIPPING_X1_AUTHORITY_MANIFEST_REF = "authority:synthetic-shipping-display:v1"
+SHIPPING_X1_EXPECTED_PACKET_ID = "packet:shipping:synthetic-lane:20260801"
+SHIPPING_X1_EXPECTED_LOBE_RUN_REF = "run:synthetic-shipping:20260801T100000Z"
+SHIPPING_X1_SYNTHETIC_SOURCE_OBJECTS = {
+    "src:synthetic-port:SYN-P01": {
+        "fixture": "shipping_x1",
+        "lane_id": "SYN-L01",
+        "port_id": "SYN-P01",
+        "reported_at": "2026-08-01T09:30:00Z",
+        "reported_delay_hours": 18,
+        "status": "congested",
+    },
+    "src:synthetic-carrier:SYN-V01": {
+        "carrier_entity_id": "SYN-V01",
+        "delay_estimate_hours": 6,
+        "fixture": "shipping_x1",
+        "lane_id": "SYN-L01",
+        "reported_at": "2026-08-01T09:35:00Z",
+    },
+}
+SHIPPING_X1_SOURCE_EXPECTATIONS = {
+    "port_source": {
+        "claim_key": "port_claim",
+        "record_id": "src:synthetic-port:SYN-P01",
+        "source_system": "synthetic_shipping_port_status_v1",
+        "external_id": "SYN-P01",
+        "external_id_key": "port_id",
+        "source_uri": "urn:mastermind-x:synthetic-shipping-port:SYN-P01",
+        "value_key": "reported_delay_hours",
+        "predicate": "port.reported_delay_hours",
+        "source_locator": {
+            "json_path": "$.reported_delay_hours",
+            "span_start": None,
+            "span_end": None,
+            "quote_sha256": None,
+        },
+        "clocks": {
+            "source_published_at": "2026-08-01T09:30:00Z",
+            "source_effective_at": "2026-08-01T09:30:00Z",
+            "retrieved_at": "2026-08-01T09:40:00Z",
+            "first_seen_at": "2026-08-01T09:40:00Z",
+            "valid_from": "2026-08-01T09:30:00Z",
+            "valid_to": None,
+            "transaction_from": "2026-08-01T09:40:01Z",
+            "transaction_to": None,
+        },
+    },
+    "carrier_source": {
+        "claim_key": "carrier_claim",
+        "record_id": "src:synthetic-carrier:SYN-V01",
+        "source_system": "synthetic_shipping_carrier_status_v1",
+        "external_id": "SYN-V01",
+        "external_id_key": "carrier_entity_id",
+        "source_uri": "urn:mastermind-x:synthetic-shipping-carrier:SYN-V01",
+        "value_key": "delay_estimate_hours",
+        "predicate": "carrier.reported_delay_estimate_hours",
+        "source_locator": {
+            "json_path": "$.delay_estimate_hours",
+            "span_start": None,
+            "span_end": None,
+            "quote_sha256": None,
+        },
+        "clocks": {
+            "source_published_at": "2026-08-01T09:35:00Z",
+            "source_effective_at": "2026-08-01T09:35:00Z",
+            "retrieved_at": "2026-08-01T09:45:00Z",
+            "first_seen_at": "2026-08-01T09:45:00Z",
+            "valid_from": "2026-08-01T09:35:00Z",
+            "valid_to": None,
+            "transaction_from": "2026-08-01T09:45:01Z",
+            "transaction_to": None,
+        },
+    },
+}
+SHIPPING_X1_EXPECTED_PACKET_ENTITY_REFS = [
+    "port:SYN-P01",
+    "vessel:SYN-V01",
+    "shipping_lane:SYN-L01",
+]
+SHIPPING_X1_EXPECTED_SOURCE_IDS = [
+    "src:synthetic-port:SYN-P01",
+    "src:synthetic-carrier:SYN-V01",
+]
+SHIPPING_X1_PORT_DELAY_CLAIM_ID = "claim:shipping:SYN-L01:reported-delay"
+SHIPPING_X1_PORT_STATUS_CLAIM_ID = "claim:shipping:SYN-P01:reported-status"
+SHIPPING_X1_CARRIER_ESTIMATE_CLAIM_ID = (
+    "claim:shipping:SYN-L01:carrier-estimate"
+)
+SHIPPING_X1_EXPECTED_CLAIM_IDS = [
+    SHIPPING_X1_PORT_DELAY_CLAIM_ID,
+    SHIPPING_X1_PORT_STATUS_CLAIM_ID,
+    SHIPPING_X1_CARRIER_ESTIMATE_CLAIM_ID,
+]
+SHIPPING_X1_EXPECTED_LANE_LINK_CLAIM_IDS = [
+    SHIPPING_X1_PORT_DELAY_CLAIM_ID,
+    SHIPPING_X1_CARRIER_ESTIMATE_CLAIM_ID,
+]
+SHIPPING_X1_EXPECTED_EVENT = {
+    "event_id": "event:shipping:SYN-P01:reported-congestion-status",
+    "event_type": "port.reported_congestion_status",
+    "entity_refs": ["port:SYN-P01", "shipping_lane:SYN-L01"],
+    "state": "source_asserted",
+    "interpretation_status": "source_reported",
+}
+SHIPPING_X1_EXPECTED_QUALITY = {
+    "state": "degraded",
+    "completeness": 0.75,
+    "point_in_time_safe": True,
+    "warnings": [
+        "Synthetic interoperability fixture; no real vessel, port, freight, or trade claim.",
+        (
+            "Reported congestion status does not establish causal impact on inventory, "
+            "prices, or issuer margins."
+        ),
+    ],
+}
+SHIPPING_X1_FORBIDDEN_REFERENCE_PREFIXES = (
+    "asset-indication:",
+    "asset_indication:",
+    "biopharma:",
+    "endpoint:",
+    "fda:",
+    "feature:",
+    "issuer:",
+    "nct:",
+    "pdufa:",
+    "prediction:",
+    "security:",
+    "src:ctgov:",
+    "trial:",
+)
 
 
 def _load(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _load_shipping_x1_bundle() -> dict[str, dict]:
+    return {
+        name: _load(GENERIC_FIXTURE_DIR / filename)
+        for name, filename in SHIPPING_X1_FIXTURE_FILES.items()
+    }
+
+
+def _parse_shipping_x1_utc_instant(value: object) -> datetime:
+    if not isinstance(value, str):
+        raise ValueError("shipping timestamp must be a string")
+    normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
+    parsed = datetime.fromisoformat(normalized)
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError("shipping timestamp must include a UTC offset")
+    return parsed.astimezone(timezone.utc)
+
+
+def _rebind_shipping_x1_packet(packet: dict) -> None:
+    unsigned_packet = {
+        key: value for key, value in packet.items() if key != "packet_hash"
+    }
+    packet["packet_hash"] = canonical_json_sha256(unsigned_packet)
+
+
+def _shipping_x1_has_forbidden_domain_leakage(value: object) -> bool:
+    """Reject non-shipping namespaces no matter where a string is retained."""
+
+    forbidden_keys = {
+        "asset_indication_ref",
+        "endpoint",
+        "endpoint_ref",
+        "fda_application_number",
+        "issuer_ref",
+        "nct_id",
+        "security_ref",
+        "ticker",
+    }
+    stack = [value]
+    while stack:
+        current = stack.pop()
+        if isinstance(current, dict):
+            folded_keys = {str(key).casefold() for key in current}
+            if forbidden_keys.intersection(folded_keys) or any(
+                key.startswith(
+                    (
+                        "asset_indication",
+                        "endpoint",
+                        "fda_",
+                        "issuer_",
+                        "nct_",
+                        "pdufa",
+                        "ticker",
+                        "trial_",
+                    )
+                )
+                for key in folded_keys
+            ):
+                return True
+            stack.extend(current.values())
+        elif isinstance(current, list):
+            stack.extend(current)
+        elif isinstance(current, str):
+            folded = current.strip().casefold()
+            if (
+                any(
+                    prefix in folded
+                    for prefix in SHIPPING_X1_FORBIDDEN_REFERENCE_PREFIXES
+                )
+                or folded == "biopharma"
+                or folded.startswith("nct")
+                or "clinicaltrials" in folded
+                or "asset_indication" in folded
+                or "clinical.endpoint" in folded
+                or "pdufa" in folded
+            ):
+                return True
+    return False
+
+
+def _shipping_x1_binding_issues(bundle: dict[str, dict]) -> set[str]:
+    issues: set[str] = set()
+    if set(bundle) != set(SHIPPING_X1_EXPECTED_DOCUMENT_SHA256):
+        return {"shipping_x1.artifact_roster_binding"}
+    try:
+        if any(
+            canonical_json_sha256(bundle[artifact_key]) != expected_sha256
+            for artifact_key, expected_sha256 in (
+                SHIPPING_X1_EXPECTED_DOCUMENT_SHA256.items()
+            )
+        ):
+            issues.add("shipping_x1.artifact_hash_binding")
+    except (OverflowError, RecursionError, TypeError, ValueError):
+        issues.add("shipping_x1.artifact_hash_binding")
+
+    port_source = bundle["port_source"]
+    carrier_source = bundle["carrier_source"]
+    port_claim = bundle["port_claim"]
+    port_status_claim = bundle["port_status_claim"]
+    carrier_claim = bundle["carrier_claim"]
+    lane_link = bundle["lane_link"]
+    event = bundle["congestion_event"]
+    packet = bundle["packet"]
+    sources = [port_source, carrier_source]
+    claims = [port_claim, port_status_claim, carrier_claim]
+    sector_documents = [*claims, lane_link, event, packet]
+    if {document.get("sector") for document in sector_documents} != {
+        "shipping_trade"
+    }:
+        issues.add("shipping_x1.sector_boundary")
+    if _shipping_x1_has_forbidden_domain_leakage(bundle):
+        issues.add("shipping_x1.forbidden_namespace")
+
+    expected_packet_identity = {
+        "packet_id": SHIPPING_X1_EXPECTED_PACKET_ID,
+        "packet_version": 1,
+        "sector": "shipping_trade",
+        "lobe_run_ref": SHIPPING_X1_EXPECTED_LOBE_RUN_REF,
+        "authority_manifest_ref": SHIPPING_X1_AUTHORITY_MANIFEST_REF,
+        "producer": {
+            "service": "synthetic-shipping-pack",
+            "code_version": "fixture",
+            "owner": "shipping_trade",
+        },
+    }
+    if any(
+        packet.get(field) != expected
+        for field, expected in expected_packet_identity.items()
+    ):
+        issues.add("shipping_x1.packet_identity_binding")
+
+    authority_documents = [*claims, lane_link, event, packet]
+    if any(
+        document.get("authority_manifest_ref")
+        != SHIPPING_X1_AUTHORITY_MANIFEST_REF
+        for document in authority_documents
+    ):
+        issues.add("shipping_x1.authority_manifest_binding")
+
+    expected_claim_semantics = {
+        "assertion_scope": "source_says",
+        "evidence_class": "primary_source_observation",
+        "parser_or_model_version": "synthetic_shipping_fixture_parser.v1",
+        "license_class": "public_domain",
+        "confidence": {
+            "value": None,
+            "method": "not_scored_source_report",
+            "calibrated": False,
+        },
+        "analyst_review_state": "machine_checked",
+        "correction_of_claim_id": None,
+    }
+    if any(
+        any(
+            claim.get(field) != expected
+            for field, expected in expected_claim_semantics.items()
+        )
+        for claim in claims
+    ):
+        issues.add("shipping_x1.claim_semantics_binding")
+
+    if [source.get("record_id") for source in sources] != SHIPPING_X1_EXPECTED_SOURCE_IDS:
+        issues.add("shipping_x1.source_roster_binding")
+    if [claim.get("claim_id") for claim in claims] != SHIPPING_X1_EXPECTED_CLAIM_IDS:
+        issues.add("shipping_x1.claim_roster_binding")
+    if packet["source_record_refs"] != SHIPPING_X1_EXPECTED_SOURCE_IDS:
+        issues.add("shipping_x1.packet_source_binding")
+    if packet["evidence_claim_refs"] != SHIPPING_X1_EXPECTED_CLAIM_IDS:
+        issues.add("shipping_x1.packet_claim_binding")
+    port_object = SHIPPING_X1_SYNTHETIC_SOURCE_OBJECTS[
+        SHIPPING_X1_EXPECTED_SOURCE_IDS[0]
+    ]
+    carrier_object = SHIPPING_X1_SYNTHETIC_SOURCE_OBJECTS[
+        SHIPPING_X1_EXPECTED_SOURCE_IDS[1]
+    ]
+    expected_packet_entities_from_sources = [
+        f"port:{port_object['port_id']}",
+        f"vessel:{carrier_object['carrier_entity_id']}",
+        f"shipping_lane:{port_object['lane_id']}",
+    ]
+    if (
+        SHIPPING_X1_EXPECTED_PACKET_ENTITY_REFS
+        != expected_packet_entities_from_sources
+        or packet["entity_refs"] != SHIPPING_X1_EXPECTED_PACKET_ENTITY_REFS
+    ):
+        issues.add("shipping_x1.packet_entity_binding")
+    if packet["current_fact_refs"] != [
+        SHIPPING_X1_PORT_DELAY_CLAIM_ID,
+        SHIPPING_X1_PORT_STATUS_CLAIM_ID,
+    ]:
+        issues.add("shipping_x1.current_fact_binding")
+    claim_by_id = {claim["claim_id"]: claim for claim in claims}
+    if any(
+        claim_by_id.get(claim_ref, {}).get("assertion_scope") != "source_says"
+        or claim_by_id.get(claim_ref, {}).get("evidence_class")
+        != "primary_source_observation"
+        for claim_ref in packet["current_fact_refs"]
+    ):
+        issues.add("shipping_x1.current_fact_authority_binding")
+    if packet["material_change_event_refs"] or packet["upcoming_event_refs"]:
+        issues.add("shipping_x1.standalone_event_boundary")
+
+    expected_lane_ref = (
+        "shipping_lane:"
+        + SHIPPING_X1_SYNTHETIC_SOURCE_OBJECTS[SHIPPING_X1_EXPECTED_SOURCE_IDS[0]][
+            "lane_id"
+        ]
+    )
+    if lane_link["canonical_entity_ref"] != expected_lane_ref:
+        issues.add("shipping_x1.entity_packet_binding")
+    expected_lane_link_review = {
+        "link_id": "link:synthetic-shipping-lane:SYN-L01",
+        "sector": "shipping_trade",
+        "method": "exact_identifier",
+        "confidence": 1.0,
+        "valid_from": "2026-08-01T09:30:00Z",
+        "valid_to": None,
+        "transaction_from": "2026-08-01T09:45:02Z",
+        "transaction_to": None,
+        "reviewer_state": "machine_checked",
+        "reviewed_by": None,
+        "reviewed_at": None,
+        "is_authoritative": False,
+        "authority_manifest_ref": SHIPPING_X1_AUTHORITY_MANIFEST_REF,
+    }
+    if any(
+        lane_link.get(field) != expected
+        for field, expected in expected_lane_link_review.items()
+    ):
+        issues.add("shipping_x1.entity_review_binding")
+    if lane_link["source_entity"] != {
+        "namespace": "synthetic_shipping_lane",
+        "external_id": "SYN-L01",
+        "name": "Synthetic Shipping Lane L01",
+    }:
+        issues.add("shipping_x1.entity_source_binding")
+    if lane_link["evidence_claim_refs"] != SHIPPING_X1_EXPECTED_LANE_LINK_CLAIM_IDS:
+        issues.add("shipping_x1.entity_evidence_binding")
+
+    expected_event_timing = {
+        "kind": "exact",
+        "exact_at": port_object["reported_at"],
+        "earliest_at": None,
+        "latest_at": None,
+        "distribution_ref": None,
+        "source_date_precision": "instant",
+        "first_observed_at": SHIPPING_X1_SOURCE_EXPECTATIONS["port_source"][
+            "clocks"
+        ]["first_seen_at"],
+    }
+    if (
+        port_object["status"] != "congested"
+        or any(
+            event.get(field) != expected
+            for field, expected in SHIPPING_X1_EXPECTED_EVENT.items()
+        )
+        or event["timing"] != expected_event_timing
+        or event["valid_from"] != port_object["reported_at"]
+        or event["valid_to"] is not None
+        or event["transaction_from"] != "2026-08-01T09:40:02Z"
+        or event["transaction_to"] is not None
+    ):
+        issues.add("shipping_x1.event_status_binding")
+    if event["evidence_claim_refs"] != [SHIPPING_X1_PORT_STATUS_CLAIM_ID]:
+        issues.add("shipping_x1.event_claim_binding")
+    if event["source_record_refs"] != [SHIPPING_X1_EXPECTED_SOURCE_IDS[0]]:
+        issues.add("shipping_x1.event_source_binding")
+
+    expected_contradiction = {
+        "claim_ref": SHIPPING_X1_PORT_DELAY_CLAIM_ID,
+        "contradicts_claim_ref": SHIPPING_X1_CARRIER_ESTIMATE_CLAIM_ID,
+        "state": "open",
+        "resolution_ref": None,
+    }
+    if (
+        packet["contradictions"] != [expected_contradiction]
+        or port_claim["contradiction_state"] != "open"
+        or port_claim["contradicts_claim_ids"]
+        != [SHIPPING_X1_CARRIER_ESTIMATE_CLAIM_ID]
+        or carrier_claim["contradiction_state"] != "open"
+        or carrier_claim["contradicts_claim_ids"]
+        != [SHIPPING_X1_PORT_DELAY_CLAIM_ID]
+        or port_status_claim["contradiction_state"] != "none_known"
+        or port_status_claim["contradicts_claim_ids"]
+    ):
+        issues.add("shipping_x1.contradiction_binding")
+
+    for source_key, expectation in SHIPPING_X1_SOURCE_EXPECTATIONS.items():
+        source = bundle[source_key]
+        claim = bundle[expectation["claim_key"]]
+        source_id = expectation["record_id"]
+        synthetic_object = SHIPPING_X1_SYNTHETIC_SOURCE_OBJECTS[source_id]
+        expected_source_identity = {
+            "record_id": source_id,
+            "source_system": expectation["source_system"],
+            "external_id": expectation["external_id"],
+            "source_uri": expectation["source_uri"],
+        }
+        if any(
+            source.get(field) != expected
+            for field, expected in expected_source_identity.items()
+        ) or expectation["external_id"] != synthetic_object[
+            expectation["external_id_key"]
+        ]:
+            issues.add("shipping_x1.synthetic_source_identity")
+        expected_source_storage = {
+            "object_uri": None,
+            "media_type": "application/json",
+            "parser_version": "synthetic_shipping_fixture_parser.v1",
+            "source_schema_version": "shipping_x1_synthetic_source.v1",
+            "source_json_path": "$",
+            "source_span": None,
+        }
+        if any(
+            source.get(field) != expected
+            for field, expected in expected_source_storage.items()
+        ):
+            issues.add("shipping_x1.synthetic_source_storage_binding")
+        if {
+            field: source.get(field) for field in expectation["clocks"]
+        } != expectation["clocks"]:
+            issues.add("shipping_x1.source_clock_binding")
+        if source.get("content_sha256") != canonical_json_sha256(synthetic_object):
+            issues.add("shipping_x1.synthetic_content_binding")
+        rights_note = source.get("rights_note")
+        if (
+            source.get("license_class") != "public_domain"
+            or source.get("redistribution_allowed") is not True
+            or not isinstance(rights_note, str)
+            or "synthetic" not in rights_note.casefold()
+            or "no external source" not in rights_note.casefold()
+            or source.get("object_uri") is not None
+        ):
+            issues.add("shipping_x1.synthetic_rights_provenance")
+
+        expected_subject_ref = f"shipping_lane:{synthetic_object['lane_id']}"
+        expected_object = {
+            "kind": "number",
+            "value": synthetic_object[expectation["value_key"]],
+            "unit": "hours",
+            "vocabulary": expectation["source_system"],
+            "code": None,
+        }
+        if (
+            claim["subject_ref"] != expected_subject_ref
+            or claim["predicate"] != expectation["predicate"]
+            or claim["object"] != expected_object
+            or claim["source_record_refs"] != [source_id]
+            or claim["source_locator"] != expectation["source_locator"]
+            or claim["license_class"] != source["license_class"]
+        ):
+            issues.add("shipping_x1.source_claim_binding")
+        if {
+            field: claim.get(field) for field in expectation["clocks"]
+        } != expectation["clocks"]:
+            issues.add("shipping_x1.claim_clock_binding")
+        if (
+            source["source_published_at"] != synthetic_object["reported_at"]
+            or source["source_effective_at"] != synthetic_object["reported_at"]
+            or claim["source_published_at"] != synthetic_object["reported_at"]
+            or claim["source_effective_at"] != synthetic_object["reported_at"]
+        ):
+            issues.add("shipping_x1.source_object_time_binding")
+
+    port_source_expectation = SHIPPING_X1_SOURCE_EXPECTATIONS["port_source"]
+    expected_port_status_object = {
+        "kind": "string",
+        "value": port_object["status"],
+        "unit": None,
+        "vocabulary": port_source_expectation["source_system"],
+        "code": port_object["status"],
+    }
+    if (
+        port_status_claim["claim_id"] != SHIPPING_X1_PORT_STATUS_CLAIM_ID
+        or port_status_claim["subject_ref"] != f"port:{port_object['port_id']}"
+        or port_status_claim["predicate"] != "port.reported_congestion_status"
+        or port_status_claim["object"] != expected_port_status_object
+        or port_status_claim["source_record_refs"]
+        != [port_source_expectation["record_id"]]
+        or port_status_claim["source_locator"]
+        != {
+            "json_path": "$.status",
+            "span_start": None,
+            "span_end": None,
+            "quote_sha256": None,
+        }
+        or port_status_claim["license_class"] != port_source["license_class"]
+    ):
+        issues.add("shipping_x1.status_claim_binding")
+    if {
+        field: port_status_claim.get(field)
+        for field in port_source_expectation["clocks"]
+    } != port_source_expectation["clocks"]:
+        issues.add("shipping_x1.claim_clock_binding")
+
+    if packet["generated_at"] != "2026-08-01T10:00:00Z" or packet[
+        "knowledge_cutoff"
+    ] != "2026-08-01T09:55:00Z":
+        issues.add("shipping_x1.packet_clock_binding")
+    temporal_documents = [*sources, *claims, lane_link, event]
+    try:
+        knowledge_cutoff = _parse_shipping_x1_utc_instant(
+            packet["knowledge_cutoff"]
+        )
+        generated_at = _parse_shipping_x1_utc_instant(packet["generated_at"])
+        transaction_instants = [
+            _parse_shipping_x1_utc_instant(document["transaction_from"])
+            for document in temporal_documents
+        ]
+        if generated_at < knowledge_cutoff or any(
+            transaction_at > knowledge_cutoff
+            for transaction_at in transaction_instants
+        ):
+            issues.add("shipping_x1.point_in_time_binding")
+    except (OverflowError, TypeError, ValueError):
+        issues.add("shipping_x1.point_in_time_binding")
+
+    expected_source_systems = [
+        expectation["source_system"]
+        for expectation in SHIPPING_X1_SOURCE_EXPECTATIONS.values()
+    ]
+    expected_freshness = {
+        "state": "degraded",
+        "oldest_required_source_at": "2026-08-01T09:30:00Z",
+        "evaluated_at": "2026-08-01T10:00:00Z",
+        "stale_source_ids": [],
+        "unknown_source_ids": [
+            SHIPPING_X1_SOURCE_EXPECTATIONS["carrier_source"]["source_system"]
+        ],
+    }
+    if packet["freshness"] != expected_freshness:
+        issues.add("shipping_x1.freshness_binding")
+    if (
+        packet["freshness"]["unknown_source_ids"]
+        != [SHIPPING_X1_SOURCE_EXPECTATIONS["carrier_source"]["source_system"]]
+        or not set(packet["freshness"]["unknown_source_ids"]).issubset(
+            expected_source_systems
+        )
+    ):
+        issues.add("shipping_x1.freshness_source_roster")
+    if packet["quality"] != SHIPPING_X1_EXPECTED_QUALITY:
+        issues.add("shipping_x1.quality_binding")
+
+    expected_authority = {
+        "max_authority": "A1_EXPLAIN",
+        "allowed_actions": ["observe", "explain"],
+        "forbidden_actions": [
+            "originate_signal",
+            "raise_authority_from_llm",
+            "rank_security",
+            "select_security",
+            "size_position",
+            "gate_decision",
+            "execute_trade",
+        ],
+        "llm_may_originate_signals": False,
+    }
+    if packet["authority_caps"] != expected_authority:
+        issues.add("shipping_x1.authority_boundary")
+    if any(
+        packet[field]
+        for field in (
+            "security_refs",
+            "portfolio_exposure",
+            "feature_snapshot_refs",
+            "prediction_refs",
+        )
+    ):
+        issues.add("shipping_x1.no_security_feature_prediction_boundary")
+    if event["materiality"] != {
+        "status": "not_assessed",
+        "score": None,
+        "method": None,
+        "model_version": None,
+    }:
+        issues.add("shipping_x1.materiality_boundary")
+    if (
+        event["confidence"] is not None
+        or any(claim["confidence"]["value"] is not None for claim in claims)
+        or lane_link["is_authoritative"] is not False
+    ):
+        issues.add("shipping_x1.no_inference_boundary")
+
+    unsigned_packet = {
+        key: value for key, value in packet.items() if key != "packet_hash"
+    }
+    if packet["packet_hash"] != canonical_json_sha256(unsigned_packet):
+        issues.add("shipping_x1.packet_hash_binding")
+    return issues
+
+
+def _validate_shipping_x1_bundle(bundle: dict[str, dict]) -> None:
+    try:
+        for document in bundle.values():
+            validate_contract(document, repo_root=ROOT)
+    except (
+        ContractError,
+        OverflowError,
+        RecursionError,
+        ValueError,
+    ) as exc:
+        raise ValueError("shipping_x1.contract_validation") from exc
+    issues = _shipping_x1_binding_issues(bundle)
+    if issues:
+        raise ValueError(",".join(sorted(issues)))
+    validate_evidence_claim_against_source_records(
+        bundle["port_claim"], [bundle["port_source"]], repo_root=ROOT
+    )
+    validate_evidence_claim_against_source_records(
+        bundle["port_status_claim"], [bundle["port_source"]], repo_root=ROOT
+    )
+    validate_evidence_claim_against_source_records(
+        bundle["carrier_claim"], [bundle["carrier_source"]], repo_root=ROOT
+    )
 
 
 def _load_launch_slo_manifest() -> dict:
@@ -453,6 +1120,532 @@ def test_sector_packets_are_enforced_as_facts_only(mutation: dict, expected: str
         validate_contract(payload, repo_root=ROOT)
 
     assert expected in str(caught.value)
+
+
+def test_shipping_x1_generic_contracts_interoperate_as_one_fully_bound_bundle() -> None:
+    bundle = _load_shipping_x1_bundle()
+
+    _validate_shipping_x1_bundle(bundle)
+
+    assert not _shipping_x1_has_forbidden_domain_leakage(bundle)
+    assert "issuer margins" in bundle["packet"]["quality"]["warnings"][1]
+    assert {document["contract_id"] for document in bundle.values()} == {
+        "source_record.v1",
+        "evidence_claim.v1",
+        "entity_link.v1",
+        "sector_event.v1",
+        "sector_intelligence_packet.v1",
+    }
+    assert bundle["port_claim"]["assertion_scope"] == "source_says"
+    assert bundle["port_status_claim"]["assertion_scope"] == "source_says"
+    assert bundle["port_status_claim"]["subject_ref"] == "port:SYN-P01"
+    assert bundle["port_status_claim"]["source_locator"]["json_path"] == "$.status"
+    assert bundle["port_status_claim"]["object"]["value"] == "congested"
+    assert bundle["carrier_claim"]["assertion_scope"] == "source_says"
+    assert bundle["carrier_claim"]["predicate"] == (
+        "carrier.reported_delay_estimate_hours"
+    )
+    assert bundle["congestion_event"]["interpretation_status"] == "source_reported"
+    assert bundle["congestion_event"]["event_type"] == (
+        "port.reported_congestion_status"
+    )
+    assert bundle["congestion_event"]["evidence_claim_refs"] == [
+        SHIPPING_X1_PORT_STATUS_CLAIM_ID
+    ]
+    assert bundle["packet"]["material_change_event_refs"] == []
+    assert bundle["packet"]["upcoming_event_refs"] == []
+    assert bundle["packet"]["current_fact_refs"] == [
+        SHIPPING_X1_PORT_DELAY_CLAIM_ID,
+        SHIPPING_X1_PORT_STATUS_CLAIM_ID,
+    ]
+    assert bundle["lane_link"]["is_authoritative"] is False
+
+
+def test_shipping_x1_frozen_document_hash_roster_and_digests_are_exact() -> None:
+    bundle = _load_shipping_x1_bundle()
+
+    assert list(SHIPPING_X1_EXPECTED_DOCUMENT_SHA256) == list(
+        SHIPPING_X1_FIXTURE_FILES
+    )
+    assert SHIPPING_X1_EXPECTED_DOCUMENT_SHA256 == {
+        artifact_key: canonical_json_sha256(document)
+        for artifact_key, document in bundle.items()
+    }
+    assert all(
+        len(digest) == 64 and set(digest) <= set("0123456789abcdef")
+        for digest in SHIPPING_X1_EXPECTED_DOCUMENT_SHA256.values()
+    )
+
+
+def test_shipping_x1_frozen_hash_rejects_schema_valid_unreviewed_rewrite() -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["port_source"]["media_type"] = "application/vnd.synthetic-shipping+json"
+
+    validate_contract(bundle["port_source"], repo_root=ROOT)
+    with pytest.raises(ValueError, match=r"shipping_x1\.artifact_hash_binding"):
+        _validate_shipping_x1_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    "biopharma_only_field",
+    [
+        "asset_indication_ref",
+        "endpoint",
+        "fda_application_number",
+        "issuer_ref",
+        "nct_id",
+        "security_ref",
+        "ticker",
+    ],
+)
+def test_shipping_x1_closed_generic_claim_rejects_biopharma_or_issuer_field_leakage(
+    biopharma_only_field: str,
+) -> None:
+    claim = _load_shipping_x1_bundle()["port_claim"]
+    claim[biopharma_only_field] = "forbidden-cross-domain-value"
+
+    with pytest.raises(ContractValidationError, match="Additional properties"):
+        validate_contract(claim, repo_root=ROOT)
+
+
+def test_shipping_x1_bundle_rejects_cross_sector_and_biopharma_reference_contamination() -> None:
+    wrong_sector = _load_shipping_x1_bundle()
+    wrong_sector["carrier_claim"]["sector"] = "biopharma"
+    validate_contract(wrong_sector["carrier_claim"], repo_root=ROOT)
+    with pytest.raises(ValueError, match="shipping_x1.sector_boundary"):
+        _validate_shipping_x1_bundle(wrong_sector)
+
+    foreign_source = _load_shipping_x1_bundle()
+    foreign_source["packet"]["source_record_refs"][0] = (
+        "src:ctgov:NCT00000001:sha256:" + "a" * 64
+    )
+    _rebind_shipping_x1_packet(foreign_source["packet"])
+    validate_contract(foreign_source["packet"], repo_root=ROOT)
+    with pytest.raises(
+        ValueError,
+        match=r"shipping_x1\.(forbidden_namespace|packet_source_binding)",
+    ):
+        _validate_shipping_x1_bundle(foreign_source)
+
+    foreign_entity = _load_shipping_x1_bundle()
+    foreign_entity["lane_link"]["canonical_entity_ref"] = "trial:NCT00000001"
+    validate_contract(foreign_entity["lane_link"], repo_root=ROOT)
+    with pytest.raises(
+        ValueError,
+        match=r"shipping_x1\.(forbidden_namespace|entity_packet_binding)",
+    ):
+        _validate_shipping_x1_bundle(foreign_entity)
+
+    foreign_predicate = _load_shipping_x1_bundle()
+    foreign_predicate["port_claim"]["predicate"] = "clinical.endpoint"
+    validate_contract(foreign_predicate["port_claim"], repo_root=ROOT)
+    with pytest.raises(ValueError, match=r"shipping_x1\.forbidden_namespace"):
+        _validate_shipping_x1_bundle(foreign_predicate)
+
+
+@pytest.mark.parametrize(
+    "foreign_ref",
+    [
+        "asset-indication:SYN-A01",
+        "biopharma:SYN-B01",
+        "feature:SYN-F01",
+        "issuer:SYN-I01",
+        "prediction:SYN-P01",
+        "security:SYN-S01",
+        "trial:NCT00000001",
+    ],
+)
+def test_shipping_x1_packet_entity_set_rejects_every_foreign_namespace(
+    foreign_ref: str,
+) -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["packet"]["entity_refs"].append(foreign_ref)
+    _rebind_shipping_x1_packet(bundle["packet"])
+
+    validate_contract(bundle["packet"], repo_root=ROOT)
+    with pytest.raises(
+        ValueError,
+        match=r"shipping_x1\.(forbidden_namespace|packet_entity_binding)",
+    ):
+        _validate_shipping_x1_bundle(bundle)
+
+
+def test_shipping_x1_namespace_guard_scans_non_reference_string_positions() -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["carrier_source"]["rights_note"] += " Hidden issuer:SYN-I01 reference."
+
+    validate_contract(bundle["carrier_source"], repo_root=ROOT)
+    with pytest.raises(ValueError, match=r"shipping_x1\.forbidden_namespace"):
+        _validate_shipping_x1_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    ("claim_field", "mutated_value"),
+    [
+        ("assertion_scope", "model_inference"),
+        ("evidence_class", "model_output"),
+        ("parser_or_model_version", "synthetic_shipping_model.v1"),
+        (
+            "confidence",
+            {"value": 0.9, "method": "synthetic_model", "calibrated": False},
+        ),
+    ],
+)
+def test_shipping_x1_claims_reject_model_or_scored_semantics(
+    claim_field: str, mutated_value: object
+) -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["port_status_claim"][claim_field] = mutated_value
+
+    validate_contract(bundle["port_status_claim"], repo_root=ROOT)
+    issues = _shipping_x1_binding_issues(bundle)
+    assert "shipping_x1.claim_semantics_binding" in issues
+    if claim_field in {"assertion_scope", "evidence_class"}:
+        assert "shipping_x1.current_fact_authority_binding" in issues
+    with pytest.raises(ValueError, match=r"shipping_x1\.claim_semantics_binding"):
+        _validate_shipping_x1_bundle(bundle)
+
+
+def test_shipping_x1_claim_and_packet_contradictions_must_remain_mutually_open() -> None:
+    claim_mutation = _load_shipping_x1_bundle()
+    claim_mutation["carrier_claim"]["contradiction_state"] = "none_known"
+    claim_mutation["carrier_claim"]["contradicts_claim_ids"] = []
+    validate_contract(claim_mutation["carrier_claim"], repo_root=ROOT)
+    with pytest.raises(ValueError, match=r"shipping_x1\.contradiction_binding"):
+        _validate_shipping_x1_bundle(claim_mutation)
+
+    packet_mutation = _load_shipping_x1_bundle()
+    packet_mutation["packet"]["contradictions"][0]["state"] = "resolved"
+    _rebind_shipping_x1_packet(packet_mutation["packet"])
+    validate_contract(packet_mutation["packet"], repo_root=ROOT)
+    with pytest.raises(ValueError, match=r"shipping_x1\.contradiction_binding"):
+        _validate_shipping_x1_bundle(packet_mutation)
+
+
+@pytest.mark.parametrize(
+    ("packet_field", "mutated_value"),
+    [
+        ("packet_id", "packet:shipping:synthetic-lane:rewritten"),
+        ("lobe_run_ref", "run:synthetic-shipping:rewritten"),
+    ],
+)
+def test_shipping_x1_packet_and_run_ids_are_exactly_frozen(
+    packet_field: str, mutated_value: str
+) -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["packet"][packet_field] = mutated_value
+    _rebind_shipping_x1_packet(bundle["packet"])
+
+    validate_contract(bundle["packet"], repo_root=ROOT)
+    with pytest.raises(ValueError, match=r"shipping_x1\.packet_identity_binding"):
+        _validate_shipping_x1_bundle(bundle)
+
+
+def test_shipping_x1_all_authority_manifest_refs_must_be_shared() -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["port_claim"]["authority_manifest_ref"] = (
+        "authority:synthetic-shipping-other:v1"
+    )
+
+    validate_contract(bundle["port_claim"], repo_root=ROOT)
+    with pytest.raises(
+        ValueError,
+        match=r"shipping_x1\.authority_manifest_binding",
+    ):
+        _validate_shipping_x1_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    ("claim_key", "mutated_subject"),
+    [
+        ("port_claim", "shipping_lane:SYN-L99"),
+        ("port_status_claim", "port:SYN-P99"),
+        ("carrier_claim", "shipping_lane:SYN-L99"),
+    ],
+)
+def test_shipping_x1_claim_subjects_must_bind_to_frozen_source_entities(
+    claim_key: str, mutated_subject: str
+) -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle[claim_key]["subject_ref"] = mutated_subject
+
+    validate_contract(bundle[claim_key], repo_root=ROOT)
+    with pytest.raises(
+        ValueError,
+        match=r"shipping_x1\.(source_claim_binding|status_claim_binding)",
+    ):
+        _validate_shipping_x1_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    ("source_key", "identity_field", "mutated_value"),
+    [
+        ("port_source", "external_id", "SYN-P99"),
+        ("carrier_source", "source_system", "synthetic-carrier-feed"),
+    ],
+)
+def test_shipping_x1_source_identities_are_exactly_frozen(
+    source_key: str, identity_field: str, mutated_value: str
+) -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle[source_key][identity_field] = mutated_value
+
+    validate_contract(bundle[source_key], repo_root=ROOT)
+    with pytest.raises(ValueError, match=r"shipping_x1\.synthetic_source_identity"):
+        _validate_shipping_x1_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    ("storage_field", "mutated_value"),
+    [
+        ("source_json_path", "$.payload"),
+        ("object_uri", "urn:mastermind-x:synthetic-shipping-object:SYN-P01"),
+        (
+            "source_span",
+            {"start": 0, "end": 1, "quote_sha256": "a" * 64},
+        ),
+    ],
+)
+def test_shipping_x1_source_storage_locators_are_exactly_frozen(
+    storage_field: str, mutated_value: object
+) -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["port_source"][storage_field] = mutated_value
+
+    validate_contract(bundle["port_source"], repo_root=ROOT)
+    with pytest.raises(
+        ValueError,
+        match=r"shipping_x1\.synthetic_source_storage_binding",
+    ):
+        _validate_shipping_x1_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    ("claim_key", "mutated_json_path"),
+    [
+        ("port_claim", "$.status"),
+        ("port_status_claim", "$.reported_delay_hours"),
+        ("carrier_claim", "$.lane_id"),
+    ],
+)
+def test_shipping_x1_claim_locators_are_exactly_bound_to_source_fields(
+    claim_key: str, mutated_json_path: str
+) -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle[claim_key]["source_locator"]["json_path"] = mutated_json_path
+
+    validate_contract(bundle[claim_key], repo_root=ROOT)
+    with pytest.raises(
+        ValueError,
+        match=r"shipping_x1\.(source_claim_binding|status_claim_binding)",
+    ):
+        _validate_shipping_x1_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    ("link_field", "mutated_value"),
+    [
+        ("link_id", "link:synthetic-shipping-lane:SYN-L99"),
+        ("transaction_from", "2026-08-01T09:45:03Z"),
+        ("reviewed_by", "synthetic-reviewer"),
+    ],
+)
+def test_shipping_x1_lane_link_ids_clocks_and_review_state_are_exact(
+    link_field: str, mutated_value: object
+) -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["lane_link"][link_field] = mutated_value
+
+    validate_contract(bundle["lane_link"], repo_root=ROOT)
+    with pytest.raises(ValueError, match=r"shipping_x1\.entity_review_binding"):
+        _validate_shipping_x1_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    ("document_key", "clock_field", "mutated_clock"),
+    [
+        ("port_source", "source_published_at", "2026-08-01T09:31:00Z"),
+        ("carrier_source", "source_effective_at", "2026-08-01T09:36:00Z"),
+        ("port_source", "retrieved_at", "2026-08-01T09:40:00.500Z"),
+        ("carrier_source", "first_seen_at", "2026-08-01T09:44:59Z"),
+        ("port_source", "transaction_from", "2026-08-01T09:40:02Z"),
+        ("port_claim", "source_published_at", "2026-08-01T09:31:00Z"),
+        ("carrier_claim", "source_effective_at", "2026-08-01T09:36:00Z"),
+        ("port_status_claim", "retrieved_at", "2026-08-01T09:40:00.500Z"),
+        ("carrier_claim", "first_seen_at", "2026-08-01T09:44:59Z"),
+        ("port_claim", "transaction_from", "2026-08-01T09:40:02Z"),
+    ],
+)
+def test_shipping_x1_source_and_claim_clocks_are_exactly_frozen(
+    document_key: str, clock_field: str, mutated_clock: str
+) -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle[document_key][clock_field] = mutated_clock
+
+    validate_contract(bundle[document_key], repo_root=ROOT)
+    issues = _shipping_x1_binding_issues(bundle)
+    assert {
+        "shipping_x1.source_clock_binding",
+        "shipping_x1.claim_clock_binding",
+    }.intersection(issues)
+    with pytest.raises(
+        ValueError,
+        match=r"shipping_x1\.(source_clock_binding|claim_clock_binding)",
+    ):
+        _validate_shipping_x1_bundle(bundle)
+
+
+def test_shipping_x1_cutoff_comparison_normalizes_offsets_to_utc() -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["carrier_claim"]["transaction_from"] = "2026-08-01T09:00:00-01:00"
+
+    validate_contract(bundle["carrier_claim"], repo_root=ROOT)
+    assert _parse_shipping_x1_utc_instant(
+        bundle["carrier_claim"]["transaction_from"]
+    ) > _parse_shipping_x1_utc_instant(bundle["packet"]["knowledge_cutoff"])
+    with pytest.raises(ValueError, match=r"shipping_x1\.point_in_time_binding"):
+        _validate_shipping_x1_bundle(bundle)
+
+
+def test_shipping_x1_extreme_offset_overflow_fails_closed_as_point_in_time() -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["packet"]["knowledge_cutoff"] = "0001-01-01T00:00:00+23:59"
+    _rebind_shipping_x1_packet(bundle["packet"])
+
+    with pytest.raises(ValueError, match=r"^shipping_x1\.contract_validation$") as caught:
+        _validate_shipping_x1_bundle(bundle)
+
+    assert isinstance(caught.value.__cause__, OverflowError)
+
+
+def test_shipping_x1_schema_failure_is_wrapped_as_deterministic_bundle_error() -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["port_claim"]["issuer_ref"] = "issuer:SYN-I01"
+
+    with pytest.raises(ValueError, match=r"^shipping_x1\.contract_validation$") as caught:
+        _validate_shipping_x1_bundle(bundle)
+
+    assert isinstance(caught.value.__cause__, ContractValidationError)
+
+
+@pytest.mark.parametrize(
+    "generic_failure",
+    [
+        ContractError("synthetic contract error"),
+        OverflowError("synthetic timestamp overflow"),
+        RecursionError("synthetic hostile recursion"),
+        ValueError("synthetic value error"),
+    ],
+)
+def test_shipping_x1_generic_validator_failures_are_deterministically_wrapped(
+    monkeypatch: pytest.MonkeyPatch, generic_failure: Exception
+) -> None:
+    def _raise_generic_failure(*_args: object, **_kwargs: object) -> None:
+        raise generic_failure
+
+    monkeypatch.setitem(globals(), "validate_contract", _raise_generic_failure)
+
+    with pytest.raises(ValueError, match=r"^shipping_x1\.contract_validation$") as caught:
+        _validate_shipping_x1_bundle(_load_shipping_x1_bundle())
+
+    assert caught.value.__cause__ is generic_failure
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "mutated_value", "expected_issue"),
+    [
+        ("freshness", "state", "fresh", "freshness_binding"),
+        (
+            "freshness",
+            "oldest_required_source_at",
+            "2026-08-01T09:35:00Z",
+            "freshness_binding",
+        ),
+        (
+            "freshness",
+            "evaluated_at",
+            "2026-08-01T10:01:00Z",
+            "freshness_binding",
+        ),
+        (
+            "freshness",
+            "stale_source_ids",
+            ["synthetic_shipping_port_status_v1"],
+            "freshness_binding",
+        ),
+        (
+            "freshness",
+            "unknown_source_ids",
+            ["synthetic-carrier-feed"],
+            "freshness_source_roster",
+        ),
+        ("quality", "state", "complete", "quality_binding"),
+    ],
+)
+def test_shipping_x1_packet_freshness_and_quality_vectors_are_exact(
+    section: str, field: str, mutated_value: object, expected_issue: str
+) -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["packet"][section][field] = mutated_value
+    _rebind_shipping_x1_packet(bundle["packet"])
+
+    validate_contract(bundle["packet"], repo_root=ROOT)
+    with pytest.raises(ValueError, match=rf"shipping_x1\.{expected_issue}"):
+        _validate_shipping_x1_bundle(bundle)
+
+
+@pytest.mark.parametrize(
+    ("event_field", "mutated_value", "expected_issue"),
+    [
+        (
+            "event_type",
+            "port.reported_congestion_change",
+            "event_status_binding",
+        ),
+        (
+            "evidence_claim_refs",
+            [SHIPPING_X1_PORT_DELAY_CLAIM_ID],
+            "event_claim_binding",
+        ),
+        (
+            "entity_refs",
+            ["port:SYN-P99", "shipping_lane:SYN-L01"],
+            "event_status_binding",
+        ),
+    ],
+)
+def test_shipping_x1_status_event_rejects_change_language_or_delay_only_evidence(
+    event_field: str, mutated_value: object, expected_issue: str
+) -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["congestion_event"][event_field] = mutated_value
+
+    validate_contract(bundle["congestion_event"], repo_root=ROOT)
+    with pytest.raises(ValueError, match=rf"shipping_x1\.{expected_issue}"):
+        _validate_shipping_x1_bundle(bundle)
+
+
+def test_shipping_x1_status_event_time_must_bind_to_port_report() -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["congestion_event"]["timing"]["exact_at"] = (
+        "2026-08-01T09:35:00Z"
+    )
+
+    validate_contract(bundle["congestion_event"], repo_root=ROOT)
+    with pytest.raises(ValueError, match=r"shipping_x1\.event_status_binding"):
+        _validate_shipping_x1_bundle(bundle)
+
+
+def test_shipping_x1_unassessed_status_event_cannot_enter_packet_event_lanes() -> None:
+    bundle = _load_shipping_x1_bundle()
+    bundle["packet"]["material_change_event_refs"] = [
+        SHIPPING_X1_EXPECTED_EVENT["event_id"]
+    ]
+    _rebind_shipping_x1_packet(bundle["packet"])
+
+    validate_contract(bundle["packet"], repo_root=ROOT)
+    with pytest.raises(ValueError, match=r"shipping_x1\.standalone_event_boundary"):
+        _validate_shipping_x1_bundle(bundle)
 
 
 def test_llm_prediction_cannot_self_promote_or_gain_decision_authority() -> None:
