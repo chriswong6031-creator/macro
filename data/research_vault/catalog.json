@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T19:16:14.142076+00:00",
-  "count": 683,
+  "generated_at": "2026-08-03T19:36:38.597582+00:00",
+  "count": 684,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -211,6 +211,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-izxfoifrbes-acc3d5",
+      "title": "Eisai (4523)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:03:48Z",
+      "summary_points": [
+        "**Q1 Earnings Beat Catalyst**: Lenvima sales (front-loaded EMEA shipments) drove ¥24.7bn operating profit vs.",
+        "est.",
+        "¥20.6bn, triggering sales estimate revisions and 12m target hike to ¥4,400.",
+        "**AD Franchise Risk Dependency**: Neutral rating hinges on Leqembi (Alzheimer’s) global sales growth and Merck payment risks; DCF assumes 6% WACC and 0% terminal growth.",
+        "**Price Target Divergence**: Goldman Sachs’ ¥4,400 target below current price (¥4,656), reversing prior trend (targets > closing price), signaling potential downward revision or market overpricing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
