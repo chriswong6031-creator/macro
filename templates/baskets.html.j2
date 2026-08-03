@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {# Redirect stub — Thematic Baskets merged into Sector Intelligence (sector_central.html).
    Pattern: vector_allocation.html.j2 (noindex + meta refresh + canonical to the TARGET via
-   seo_path + location.replace). The 47 basket detail pages (site/basket/*) stay live. #}
+   seo_path + location.replace). The 47 basket detail pages (site/basket/*) stay live.
+   #theme-<id> hashes must FORWARD to the merged page, whose resolveThemeHash() routes them
+   to basket/<id>.html — alert rows live ~90d and bookmarks longer, so inbound
+   baskets.html#theme-<id> links outlast this page (tests/test_theme_hash_deeplink.py). #}
 {% set seo_title = "Thematic Baskets moved into Sector Intelligence — Mastermind" %}
 {% set seo_desc = "The 47 equal-weight theme baskets — action lanes, rotation map and performance — now live inside the US Sector Intelligence page." %}
 {% set seo_path = "sector_central.html" %}
@@ -39,6 +42,9 @@ if(location.hash.startsWith('#theme-'))resolveThemeHash();
 <p>The 47 equal-weight theme baskets — the action lanes, the rotation map and the performance explorer — merged into one page with the sector cycle map and the whole-market rotation desk.</p>
 <p><a href="sector_central.html#actnow-section">Open Sector Intelligence →</a></p>
 </main>
-<script>if(!window.__THEME_RESOLVED)location.replace("sector_central.html#actnow-section")</script>
+<script>
+if(location.hash&&location.hash.startsWith('#theme-')){location.replace('sector_central.html'+location.hash)}
+else{location.replace("sector_central.html#actnow-section")}
+</script>
 </body>
 </html>

@@ -782,13 +782,15 @@ def test_roster_renders_with_the_committed_specs():
     assert d["ok"] is True
     assert d["counts"]["total"] == 18
     assert d["counts"]["invalid"] == 0
-    # LIVE = flagship + founder + the four employee desks (enabled: true).
-    assert d["counts"]["live"] == 6
-    # CONFIGURED = the five planned W1 desks + the two wired-but-dark
-    # publication properties (news, research).  `configured` here is the roster's
-    # word for "has a desk_network entry but is not live"; mastermind_research
-    # additionally has no handle and no Buffer channel (W2R / XG-W8).
-    assert d["counts"]["configured"] == 7
+    # LIVE = flagship + founder + the four employee desks + mastermind_news,
+    # ARMED 2026-08-02 (masterplan §8.2 W4f — the publication wire's desk_network
+    # entry flipped to enabled: true with an explicit created: date).
+    assert d["counts"]["live"] == 7
+    # CONFIGURED = the five planned W1 desks + the one remaining wired-but-dark
+    # publication property (mastermind_research, which additionally has no handle
+    # and no Buffer channel — W2R / XG-W8).  `configured` here is the roster's
+    # word for "has a desk_network entry but is not live".
+    assert d["counts"]["configured"] == 6
     assert d["counts"]["planned"] == 5
 
     by_id = {r["id"]: r for r in d["personas"]}
@@ -802,8 +804,11 @@ def test_roster_renders_with_the_committed_specs():
     for spec_id in _EMPLOYEE_IDS:
         assert by_id[spec_id]["status"] == "LIVE"
         assert by_id[spec_id]["persona_kind"] == "employee"
-    # Channel bound, account dark until the XG-W2 cadence resolver.
-    assert by_id["mastermind_news"]["status"] == "CONFIGURED"
+    # Channel bound AND armed 2026-08-02 (W4f) — the XG-W2 cadence resolver it
+    # was waiting on armed 2026-07-28.  mastermind_research is the last
+    # wired-but-dark publication property (no handle, no channel).
+    assert by_id["mastermind_news"]["status"] == "LIVE"
+    assert by_id["mastermind_research"]["status"] == "CONFIGURED"
 
 
 def test_roster_cadence_and_isolation_labels():
