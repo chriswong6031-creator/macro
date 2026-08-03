@@ -75,8 +75,11 @@ from __future__ import annotations
 
 import json
 import zlib
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Union
+
+from engine.marketing import market_clock as _clock
 
 PathLike = Union[str, Path]
 
@@ -679,17 +682,44 @@ def theme_lists(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# The day word
+# ─────────────────────────────────────────────────────────────────────────────
+
+def session_phrase(now: datetime | None = None) -> str:
+    """The honest phrase for "the session this move happened in" — "today",
+    "on Friday", or "" when no word can be justified.
+
+    ONE call site for a word that was hardcoded in four places in this module
+    and two more in ``content_studio``. A mover's percent is by construction the
+    last COMPLETED session's, so that session is the fact's as_of and
+    :func:`market_clock.temporal_vocab` decides what it may be called at `now`.
+    """
+    now = now or datetime.now(timezone.utc)
+    return _clock.temporal_vocab(now, _clock.last_completed_session(now)).phrase
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # mover_facts
 # ─────────────────────────────────────────────────────────────────────────────
 
-def mover_facts(mover: dict, data: dict | None = None) -> dict:
+def mover_facts(mover: dict, data: dict | None = None, *,
+                now: datetime | None = None) -> dict:
     """Build {facts, numbers_whitelist} for a single mover.
 
     mover: a dict with {ticker, name, pct, sector} (from top_movers output).
     data: unused currently (reserved for future enrichment), kept for API symmetry.
+    now: the wall clock the temporal word is resolved against (UTC, defaults to
+        the real one). See the "today" note below.
 
     Returns the standard facts shape; every number used in fact text is whitelisted.
     No invented numbers — only values from the mover dict itself.
+
+    THE DAY WORD IS NOT A LITERAL (operator defect class B, 2026-08-02). This
+    function used to hardcode "today", and ``ob-2026-08-01-a83c188711`` is what
+    that costs: "$AMZN +15.3% today / AMZN surged +15.3% today", written at 17:49
+    ET on a SATURDAY about Friday's session. A mover's percent is always the last
+    completed session's, so the honest word comes from the clock — "today" while
+    that session is the one in progress, "on Friday" once it is not.
     """
     ticker = mover.get("ticker", "")
     pct = mover.get("pct")
@@ -712,12 +742,13 @@ def mover_facts(mover: dict, data: dict | None = None) -> dict:
     whitelist = [pct_str]
 
     # Primary fact: the day's move
+    when = session_phrase(now)
     direction_verb = "surged" if pct >= 3 else ("gained" if pct > 0 else ("crashed" if pct <= -5 else "fell"))
     sector_note = f" ({sector})" if sector else ""
-    text = f"{ticker} {direction_verb} {pct_str} today{sector_note}."
+    _lead = " ".join(p for p in (ticker, direction_verb, pct_str, when) if p)
     facts.append({
         "id": "mover_pct",
-        "text": text,
+        "text": f"{_lead}{sector_note}.",
         "salience": 10,
         "numbers": [pct_str],
     })
@@ -737,9 +768,15 @@ def mover_facts(mover: dict, data: dict | None = None) -> dict:
         scope = ("one of the biggest moves in the index"
                  if str(mover.get("source") or "sp500_heatmap") == "sp500_heatmap"
                  else "one of the biggest moves on the tape")
+        # ...and "on the day" was itself a today-class claim
+        # (market_clock._TODAY_WORDS), so it is replaced by the resolved word
+        # rather than left standing — same treatment as the lead fact above.
+        # The two defects are independent: one lies about WHEN, one about WHERE.
+        _mag = " ".join(
+            p for p in (f"{ticker} is {abs_pct_str} lower", when) if p)
         facts.append({
             "id": "mover_magnitude",
-            "text": f"{ticker} is {abs_pct_str} lower on the day, {scope}.",
+            "text": f"{_mag}, {scope}.",
             "salience": 8,
             "numbers": [abs_pct_str],
         })
@@ -752,7 +789,7 @@ def mover_facts(mover: dict, data: dict | None = None) -> dict:
 # theme_facts
 # ─────────────────────────────────────────────────────────────────────────────
 
-def theme_facts(theme_item: dict) -> dict:
+def theme_facts(theme_item: dict, *, now: datetime | None = None) -> dict:
     """Build {facts, numbers_whitelist} for a theme_list item.
 
     theme_item: a dict from theme_lists() output.
@@ -807,11 +844,11 @@ def theme_facts(theme_item: dict) -> dict:
     # Primary fact: the theme's aggregate move
     direction_word = "lower" if direction == "down" else "higher"
     n_members_str = str(len(members))
+    _when = session_phrase(now)
     if agg_pct_str:
-        text = (
-            f"{theme_name} is {agg_pct_str} on average today "
-            f"({n_members_str} names {direction_word})."
-        )
+        _avg = " ".join(
+            p for p in (f"{theme_name} is {agg_pct_str} on average", _when) if p)
+        text = f"{_avg} ({n_members_str} names {direction_word})."
         facts.append({
             "id": "theme_agg",
             "text": text,
@@ -820,7 +857,9 @@ def theme_facts(theme_item: dict) -> dict:
         })
         _add_wl(n_members_str)
     else:
-        text = f"{theme_name}: {n_members_str} names are moving today."
+        _moving = " ".join(
+            p for p in (f"{theme_name}: {n_members_str} names are moving", _when) if p)
+        text = f"{_moving}."
         facts.append({
             "id": "theme_agg",
             "text": text,

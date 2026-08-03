@@ -33,6 +33,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -283,6 +284,12 @@ def test_the_packet_carries_no_more_prints_than_the_writer_can_see():
 # 14-17. The fold: the packet's LEAD fact names a print
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: Friday 2026-07-31 23:51 ET — the wall clock of the real nightly run that
+#: produced the first weekend batch. A session day, after the close, so a
+#: breadth clause may honestly say "today".
+FRIDAY_NIGHT = datetime(2026, 8, 1, 3, 51, 26, tzinfo=timezone.utc)
+
+
 def _write(root: Path, rel: str, payload: dict) -> None:
     p = root / rel
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -324,14 +331,21 @@ def test_the_top_three_facts_the_writer_sees_all_carry_a_number(tmp_path):
 def test_an_artifact_with_no_prints_falls_back_to_the_breadth_clause(tmp_path):
     """The pre-2026-08-01 behaviour is the FALLBACK, not deleted: where the
     artifact has no named print, the fact still says the concrete observable it
-    does have."""
+    does have.
+
+    CLOCK PINNED (2026-08-02 temporal fix). The breadth clause is now
+    session-aware, so this fixture asserted a sentence whose truth depended on
+    the day the suite happened to run — green on a Wednesday, red every weekend.
+    The pin is the REAL generation moment of the shipped weekend batch: Friday
+    2026-07-31 23:51 ET, after the close, when "today" is honest.
+    """
     _write(tmp_path, "data/regime/latest.json",
            {"growth_score": -0.4, "inflation_score": 0.2})
     _write(tmp_path, "site/marketdata/sp500_heatmap.json", {"tiles": [
         {"t": "AAA", "name": "AAA", "sector": "Energy", "perf": {"1D": 1.1}},
         {"t": "BBB", "name": "BBB", "sector": "Utilities", "perf": {"1D": -1.3}},
     ]})
-    lead = mf.macro_facts(tmp_path)["facts"][0]
+    lead = mf.macro_facts(tmp_path, now=FRIDAY_NIGHT)["facts"][0]
     assert lead["id"] == "growth_inflation"
     assert "1 of 2 sectors closed green today." in lead["text"], lead
     assert lead["salience"] == 10, "unanchored lead must not claim the anchor rank"
