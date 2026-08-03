@@ -1496,6 +1496,24 @@ on:
       # still runs the guard.
       - "tests/test_marketing_cadence_ramp_coherence.py"
       - ".github/workflows/marketing-publish.yml"
+      # X Growth W4a/W4b/W4c (2026-08-02): the nightly ladder collapses to ONE
+      # day, the per-account rung count is sized to that desk's D08 ramp cap, a
+      # format the tier forbids gets zero allocation, and the cooldown drop
+      # counter reaches the plan artifact. Subject module is
+      # engine/marketing/content_studio.py (matched by engine/marketing/**
+      # above); the suite is named so a TEST-ONLY edit still reaches the lane
+      # that runs it — and so it is not a guard that never executes.
+      - "tests/test_marketing_ladder_collapse.py"
+      # The other four W4 suites, added 2026-08-02 for the same reason and in the
+      # same breath: W4d press-wire headroom (press_lane/hot_tape/wire_routing),
+      # W4e copy-lane yield (copywriter), W4f the mastermind_news arming
+      # (config/marketing.yml), W4g the breaking-card geometry (chart_render/
+      # breaking_summary). All four shipped their guards WITHOUT a lane entry —
+      # they ran green on the author's laptop and would never have executed here.
+      - "tests/test_marketing_wire_headroom.py"
+      - "tests/test_marketing_copy_yield.py"
+      - "tests/test_marketing_news_arming.py"
+      - "tests/test_marketing_breaking_card_geometry.py"
       # X Growth W3 (XG-W3): the franchise register + slot scheduler, the
       # four-lane desk feed, the persona memory stores (promises/phrases/
       # relations) and the Gift-Grip-Proof value gate. Its subject modules are
