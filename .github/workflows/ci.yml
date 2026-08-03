@@ -595,6 +595,8 @@ on:
       - "scripts/build_site.py"
       - "config/biocatalyst_sources.yml"
       - "config/biocatalyst_outcomes.yml"
+      - "config/biocatalyst_launch_slo_manifest.yml"
+      - "config/sector_intelligence_ownership.yml"
       - "config/site_access.yml"
       - "contracts/biocatalyst/**"
       - "data/biocatalyst/fixtures/**"
