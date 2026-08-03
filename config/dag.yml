@@ -2578,8 +2578,10 @@ lanes:
           fingerprint separates quiet heartbeat folds from alert-worthy evidence.
       - id: build_government_revenue
         module: scripts.build_government_revenue
+        args: [--live-materialization]
         note: >
-          Sole serialized SAM ledger and canonical projection owner. Runs after each
+          Sole serialized SAM and Government Revenue research-candidate ledger and
+          canonical projection owner. Runs after each
           complete SAM health/evidence fold, a synchronous daily reusable call, or a
           path-filtered main push carrying evidence/source changes, then re-renders
           after every rebase before pushing. The 30-minute schedule intentionally does
@@ -2589,7 +2591,11 @@ lanes:
           closed if that bundle is partial. Generic site-wide render lanes may repeat
           the deterministic build only when the canonical generation stays byte-clean,
           preventing an older embedded page from overwriting newer evidence. No
-          scoring, ranking, sizing, gating, or candidate origination is permitted.
+          Candidate observations remain all-false-authority research records produced
+          only from receipt-bound award changes plus exact reviewed issuer paths.
+          Generic builds and site-only renders may verify/mirror the current candidate
+          projection but cannot append, retime, or backfill its ledger. No trade-signal
+          scoring, ranking, sizing, gating, or escalation is permitted.
 
   # ── theta-ops launchd lane (NOT daily.yml / NOT any GHA workflow) ──────────
   # W2 SURFACE (RIC program): whole-market dealer-surface history.
@@ -3161,16 +3167,25 @@ modules:
       - data/government_revenue/opportunity_revisions.parquet
       - data/government_revenue/opportunity_documents.parquet
       - data/government_revenue/opportunity_ingest_status.json
+      - data/government_revenue/candidate_ledger.jsonl
+      - data/government_revenue/candidate_queue.json
+      - data/government_revenue/candidate_projection_state.json
+      - data/government_revenue/candidate_projection_status.json
     writes:
       - data/government_revenue/latest.json
       - data/government_revenue/workspace.json
       - data/government_revenue/dossiers.json
       - data/government_revenue/subaward_dossiers.json
       - data/government_revenue/recipient_resolution_coverage.json
+      - data/government_revenue/candidate_ledger.jsonl
+      - data/government_revenue/candidate_queue.json
+      - data/government_revenue/candidate_projection_state.json
+      - data/government_revenue/candidate_projection_status.json
       - site/government-revenue-data/latest.json
       - site/government-revenue-data/workspace.json
       - site/government-revenue-data/dossiers.json
       - site/government-revenue-data/subaward-dossiers.json
+      - site/government-revenue-data/candidates.json
       - site/government_revenue.html
     impure: false
     needs_secrets: false
@@ -3192,9 +3207,13 @@ modules:
       A sibling content-addressed subaward dossier rail consumes only its separately
       receipt-bound generation and exact prime generated-ID linkage; it never widens the
       prime dossier contract or adds reported subaward amounts to prime obligations.
-      The builder emits public-company exposure candidates
-      and procurement events with explicit provenance/limitations, never bidder odds,
-      revenue forecasts, an investment rank, sizing rule, gate, or new signal.
+      Only its explicit --live-materialization mode invokes the candidate writer,
+      preserving an append-only exact research ledger and content-addressed queue;
+      normal and site-only renders verify and mirror that generation without appending
+      or retiming it. Discovery-scope company rows remain a reason-coded mapping backlog.
+      The builder emits procurement research context with explicit provenance and
+      limitations, never bidder odds, revenue forecasts, an investment rank, sizing
+      rule, gate, or trade signal.
 
   - module: scripts.curate_government_revenue_recipient_graph
     reads: []

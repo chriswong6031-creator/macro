@@ -64,6 +64,8 @@ _TRIAL_ENDPOINT_ALIGNMENT_CANDIDATE_CONTRACT_ID = (
 _TRIAL_ENDPOINT_ALIGNMENT_REVIEW_PROJECTION_CONTRACT_ID = (
     "trial_endpoint_alignment_review_projection.v1"
 )
+_TRIAL_CHANGE_CLASSIFICATION_CONTRACT_ID = "trial_change_classification.v1"
+_TRIAL_CHANGE_ALERT_PROJECTION_CONTRACT_ID = "trial_change_alert_projection.v1"
 _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID = (
     "biocatalyst_launch_slo_manifest.v1"
 )
@@ -3751,6 +3753,10 @@ def _contract_semantic_issues(
         return _endpoint_alignment_candidate_issues(document)
     if contract_id == _TRIAL_ENDPOINT_ALIGNMENT_REVIEW_PROJECTION_CONTRACT_ID:
         return _endpoint_alignment_review_projection_issues(document)
+    if contract_id == _TRIAL_CHANGE_CLASSIFICATION_CONTRACT_ID:
+        return _trial_change_classification_issues(document)
+    if contract_id == _TRIAL_CHANGE_ALERT_PROJECTION_CONTRACT_ID:
+        return _trial_change_alert_projection_issues(document)
     if contract_id == _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID:
         return _biocatalyst_launch_slo_manifest_issues(document, repo_root)
     if contract_id == _BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID:
@@ -3860,6 +3866,13 @@ class ContractRegistry:
     def issues(self, contract_id: str, document: Any) -> tuple[ValidationIssue, ...]:
         requested = _validate_requested_id(contract_id)
         schema = self.schema_for(requested)
+        if requested in {
+            _TRIAL_CHANGE_CLASSIFICATION_CONTRACT_ID,
+            _TRIAL_CHANGE_ALERT_PROJECTION_CONTRACT_ID,
+        }:
+            envelope_issues = _trial_change_envelope_issues(requested, document)
+            if envelope_issues:
+                return tuple(envelope_issues)
         validator = Draft202012Validator(
             schema,
             registry=self._reference_registry,
@@ -3893,6 +3906,8 @@ class ContractRegistry:
                     _contract_semantic_issues(requested, document, self.repo_root)
                 )
         except (ContractError, OverflowError, RecursionError, ValueError):
+            # Hostile in-memory values must remain bounded for every contract,
+            # including sector packets consumed by cross-sector bundles.
             # Some schemas intentionally do not descend into the value of an
             # already-forbidden property.  The generic interval/semantic pass
             # still must fail closed if that value is not a finite traversable
@@ -3982,6 +3997,62 @@ def validate_biocatalyst_product_acceptance_manifest(
         manifest,
         repo_root=repo_root,
     )
+
+
+def validate_trial_change_classification(
+    classification: Mapping[str, Any],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Validate classification self-consistency, not upstream evidence replay.
+
+    Consumers that need source proof must use the Bio compiler's retrospective
+    or prospective replay validator with the exact parent evidence bundle.
+    """
+
+    validate_contract(
+        _TRIAL_CHANGE_CLASSIFICATION_CONTRACT_ID,
+        classification,
+        repo_root=repo_root,
+    )
+
+
+def validate_trial_change_alert_projection(
+    projection: Mapping[str, Any],
+    classification: Mapping[str, Any],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Validate the dark projection only when paired to its exact classification."""
+
+    registry = ContractRegistry(repo_root)
+    registry.validate(_TRIAL_CHANGE_ALERT_PROJECTION_CONTRACT_ID, projection)
+    registry.validate(_TRIAL_CHANGE_CLASSIFICATION_CONTRACT_ID, classification)
+    issues: list[ValidationIssue] = []
+    bindings = (
+        ("classification_ref", classification.get("classification_id")),
+        (
+            "classification_payload_sha256",
+            classification.get("classification_payload_sha256"),
+        ),
+        ("nct_id", classification.get("nct_id")),
+        ("source_clock", classification.get("source_clock")),
+        ("available", classification.get("available")),
+        ("unavailable_reason", classification.get("unavailable_reason")),
+        ("row_count", classification.get("row_count")),
+        ("rows", classification.get("rows")),
+    )
+    for field, expected in bindings:
+        if not _canonical_json_equal(projection.get(field), expected):
+            issues.append(
+                ValidationIssue(
+                    f"$.{field}",
+                    "trial_change_alert_projection.classification_binding",
+                    f"{field} must be the exact tenant-neutral projection of the validated classification",
+                )
+            )
+    if issues:
+        raise ContractValidationError(_TRIAL_CHANGE_ALERT_PROJECTION_CONTRACT_ID, issues)
 
 
 def validate_drugs_at_fda_release_receipt(
@@ -6383,6 +6454,158 @@ def _bounded_canonical_json_size(
     return total, None
 
 
+def _trial_change_envelope_issues(
+    contract_id: str, document: Any
+) -> list[ValidationIssue]:
+    """Preflight T2b artifacts before recursive schema or hash validation."""
+
+    code_prefix = (
+        "trial_change_classification"
+        if contract_id == _TRIAL_CHANGE_CLASSIFICATION_CONTRACT_ID
+        else "trial_change_alert_projection"
+    )
+    if type(document) is not dict:
+        return [
+            ValidationIssue(
+                "$",
+                f"{code_prefix}.invalid_json_tree",
+                "artifact must be a plain finite JSON object",
+            )
+        ]
+    max_nodes = 65_536
+    max_depth = 128
+    max_container_items = 16_384
+    nodes = 0
+    active_container_ids: set[int] = set()
+    stack: list[tuple[bool, Any, int]] = [(False, document, 0)]
+    while stack:
+        leaving, current, depth = stack.pop()
+        if leaving:
+            active_container_ids.remove(id(current))
+            continue
+        nodes += 1
+        if nodes > max_nodes:
+            return [
+                ValidationIssue(
+                    "$",
+                    f"{code_prefix}.node_limit",
+                    "artifact exceeds the fixed 65,536-node output envelope",
+                )
+            ]
+        if depth > max_depth:
+            return [
+                ValidationIssue(
+                    "$",
+                    f"{code_prefix}.nesting_limit",
+                    "artifact exceeds the fixed 128-level output envelope",
+                )
+            ]
+        current_type = type(current)
+        if current_type is dict:
+            container_id = id(current)
+            if container_id in active_container_ids:
+                return [
+                    ValidationIssue(
+                        "$",
+                        f"{code_prefix}.invalid_json_tree",
+                        "artifact must be an acyclic plain JSON tree",
+                    )
+                ]
+            item_count = len(current)
+            if item_count > max_container_items:
+                return [
+                    ValidationIssue(
+                        "$",
+                        f"{code_prefix}.container_limit",
+                        "artifact exceeds the fixed 16,384-item container envelope",
+                    )
+                ]
+            try:
+                items = list(current.items())
+            except RuntimeError:
+                return [
+                    ValidationIssue(
+                        "$",
+                        f"{code_prefix}.invalid_json_tree",
+                        "artifact mutated during bounded traversal",
+                    )
+                ]
+            if len(items) != item_count or any(
+                type(key) is not str for key, _child in items
+            ):
+                return [
+                    ValidationIssue(
+                        "$",
+                        f"{code_prefix}.invalid_json_tree",
+                        "artifact keys must be stable JSON strings",
+                    )
+                ]
+            nodes += item_count
+            if nodes > max_nodes:
+                return [
+                    ValidationIssue(
+                        "$",
+                        f"{code_prefix}.node_limit",
+                        "artifact exceeds the fixed 65,536-node output envelope",
+                    )
+                ]
+            active_container_ids.add(container_id)
+            stack.append((True, current, depth))
+            stack.extend(
+                (False, child, depth + 1) for _key, child in reversed(items)
+            )
+        elif current_type is list:
+            container_id = id(current)
+            if container_id in active_container_ids:
+                return [
+                    ValidationIssue(
+                        "$",
+                        f"{code_prefix}.invalid_json_tree",
+                        "artifact must be an acyclic plain JSON tree",
+                    )
+                ]
+            item_count = len(current)
+            if item_count > max_container_items:
+                return [
+                    ValidationIssue(
+                        "$",
+                        f"{code_prefix}.container_limit",
+                        "artifact exceeds the fixed 16,384-item container envelope",
+                    )
+                ]
+            active_container_ids.add(container_id)
+            stack.append((True, current, depth))
+            stack.extend(
+                (False, child, depth + 1) for child in reversed(current)
+            )
+        elif current_type not in (str, bool, int, float) and current is not None:
+            return [
+                ValidationIssue(
+                    "$",
+                    f"{code_prefix}.invalid_json_tree",
+                    "artifact contains a non-JSON or custom-container value",
+                )
+            ]
+    _size, size_reason = _bounded_canonical_json_size(document, limit=1024 * 1024)
+    if size_reason == "limit":
+        return [
+            ValidationIssue(
+                "$",
+                f"{code_prefix}.byte_limit",
+                "artifact exceeds the fixed 1MiB output envelope",
+            )
+        ]
+    if size_reason is not None:
+        return [
+            ValidationIssue(
+                "$",
+                f"{code_prefix}.invalid_json_tree",
+                "artifact must be finite canonical JSON",
+            )
+        ]
+    return []
+
+
 def _endpoint_alignment_candidate_identity(document: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "semantic_method": document.get("semantic_method"),
@@ -6675,6 +6898,501 @@ def _endpoint_alignment_review_projection_issues(
                 "any capacity-unavailable projection must expose zero candidates, never a truncation",
             )
         )
+    return issues
+
+
+def _trial_change_row_identity(document: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        key: document.get(key)
+        for key in (
+            "nct_id",
+            "field_class",
+            "review_state",
+            "semantic_resolution",
+            "diff_contract_id",
+            "diff_ref",
+            "diff_payload_sha256",
+            "exact_op_index",
+            "canonical_op_sha256",
+            "op",
+            "json_path",
+            "before_state",
+            "after_state",
+            "before_source_snapshot_ref",
+            "after_source_snapshot_ref",
+            "before_content_sha256",
+            "after_content_sha256",
+        )
+    }
+
+
+def _trial_change_field_class(json_path: object) -> str | None:
+    if not isinstance(json_path, str):
+        return None
+
+    def at_or_below(prefix: str) -> bool:
+        return json_path == prefix or json_path.startswith(prefix + "/")
+
+    if json_path == "/protocolSection/statusModule/overallStatus":
+        return "registry_status"
+    if at_or_below("/protocolSection/designModule/enrollmentInfo"):
+        return "enrollment"
+    if any(
+        at_or_below(f"/protocolSection/statusModule/{field}")
+        for field in (
+            "startDateStruct",
+            "primaryCompletionDateStruct",
+            "completionDateStruct",
+        )
+    ):
+        return "milestone_date_constraint"
+    if at_or_below("/protocolSection/contactsLocationsModule/locations"):
+        return "site_list"
+    if at_or_below("/protocolSection/armsInterventionsModule/interventions"):
+        return "intervention"
+    if any(
+        at_or_below(f"/protocolSection/outcomesModule/{field}")
+        for field in ("primaryOutcomes", "secondaryOutcomes", "otherOutcomes")
+    ):
+        return "endpoint_record_delta"
+    return None
+
+
+def _trial_change_row_issues(
+    row: Mapping[str, Any], *, path: str
+) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    hash_issue = _content_hash_issue(
+        row,
+        hash_field="row_payload_sha256",
+        excluded_fields=frozenset(("row_payload_sha256",)),
+        code="trial_change_row.hash",
+    )
+    if hash_issue is not None:
+        issues.append(
+            ValidationIssue(
+                f"{path}{hash_issue.path[1:]}", hash_issue.code, hash_issue.message
+            )
+        )
+    nct_id = row.get("nct_id")
+    if isinstance(nct_id, str):
+        expected_id = (
+            f"trial_change_row_{nct_id}_"
+            f"{canonical_json_sha256(_trial_change_row_identity(row))[:24]}"
+        )
+        if row.get("row_id") != expected_id:
+            issues.append(
+                ValidationIssue(
+                    f"{path}.row_id",
+                    "trial_change_row.deterministic_id",
+                    "row ID must be derived only from the exact operation, source bindings, and closed field class",
+                )
+            )
+    endpoint = row.get("field_class") == "endpoint_record_delta"
+    expected_review = "needs_review" if endpoint else "not_required"
+    expected_resolution = "unresolved" if endpoint else "registry_field_class_only"
+    if row.get("review_state") != expected_review or row.get(
+        "semantic_resolution"
+    ) != expected_resolution:
+        issues.append(
+            ValidationIssue(
+                path,
+                "trial_change_row.semantic_boundary",
+                "endpoint-record deltas remain needs-review and unresolved; other rows carry only deterministic registry-field class",
+            )
+        )
+    expected_class = _trial_change_field_class(row.get("json_path"))
+    if expected_class is None or row.get("field_class") != expected_class:
+        issues.append(
+            ValidationIssue(
+                f"{path}.field_class",
+                "trial_change_row.path_class",
+                "field class must equal the closed exact-segment class of the bound JSON path",
+            )
+        )
+    expected_states = {
+        "add": ("missing", "present"),
+        "remove": ("present", "missing"),
+        "replace": ("present", "present"),
+    }.get(row.get("op"))
+    if expected_states is not None and (
+        row.get("before_state"), row.get("after_state")
+    ) != expected_states:
+        issues.append(
+            ValidationIssue(
+                path,
+                "trial_change_row.operation_state",
+                f"{row.get('op')} requires before/after states {expected_states}",
+            )
+        )
+    return issues
+
+
+def _trial_change_classification_identity(
+    document: Mapping[str, Any]
+) -> dict[str, Any]:
+    rows = document.get("rows")
+    return {
+        "evidence_profile": document.get("evidence_profile"),
+        "nct_id": document.get("nct_id"),
+        "diff_contract_id": document.get("diff_contract_id"),
+        "diff_ref": document.get("diff_ref"),
+        "diff_payload_sha256": document.get("diff_payload_sha256"),
+        "prospective_activation_provenance": document.get(
+            "prospective_activation_provenance"
+        ),
+        "available": document.get("available"),
+        "unavailable_reason": document.get("unavailable_reason"),
+        "row_ids": [
+            row.get("row_id") for row in rows if isinstance(row, Mapping)
+        ]
+        if isinstance(rows, list)
+        else [],
+    }
+
+
+def _trial_change_classification_issues(
+    document: Mapping[str, Any]
+) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    _size, size_reason = _bounded_canonical_json_size(document, limit=1024 * 1024)
+    if size_reason == "limit":
+        return [
+            ValidationIssue(
+                "$",
+                "trial_change_classification.byte_limit",
+                "classification exceeds the fixed 1MiB output envelope",
+            )
+        ]
+    if size_reason is not None:
+        raise ContractError("classification must be finite canonical JSON")
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="classification_payload_sha256",
+        excluded_fields=frozenset(("classification_payload_sha256",)),
+        code="trial_change_classification.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    id_scope = document.get("nct_id") or "unavailable"
+    if isinstance(id_scope, str):
+        expected_id = (
+            f"trial_change_classification_{id_scope}_"
+            f"{canonical_json_sha256(_trial_change_classification_identity(document))[:24]}"
+        )
+        if document.get("classification_id") != expected_id:
+            issues.append(
+                ValidationIssue(
+                    "$.classification_id",
+                    "trial_change_classification.deterministic_id",
+                    "classification ID must be content-addressed by the evidence profile, exact diff, state, and complete ordered row set",
+                )
+            )
+    rows = document.get("rows")
+    if isinstance(rows, list):
+        row_count = document.get("row_count")
+        if row_count != len(rows) or document.get("eligible_operation_count") != len(rows):
+            issues.append(
+                ValidationIssue(
+                    "$.row_count",
+                    "trial_change_classification.row_count",
+                    "row and eligible-operation counts must equal the complete classification row array",
+                )
+            )
+        operation_count = document.get("input_operation_count")
+        if (
+            isinstance(operation_count, int)
+            and not isinstance(operation_count, bool)
+            and operation_count < len(rows)
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.input_operation_count",
+                    "trial_change_classification.operation_count",
+                    "input operation count cannot be smaller than the eligible row count",
+                )
+            )
+        row_ids: list[Any] = []
+        indexes: list[Any] = []
+        for index, row in enumerate(rows):
+            if not isinstance(row, Mapping):
+                continue
+            row_ids.append(row.get("row_id"))
+            indexes.append(row.get("exact_op_index"))
+            issues.extend(_trial_change_row_issues(row, path=f"$.rows[{index}]"))
+            for field in (
+                "nct_id",
+                "diff_contract_id",
+                "diff_payload_sha256",
+                "before_source_snapshot_ref",
+                "after_source_snapshot_ref",
+                "before_content_sha256",
+                "after_content_sha256",
+            ):
+                root_field = "diff_payload_sha256" if field == "diff_payload_sha256" else field
+                if row.get(field) != document.get(root_field):
+                    issues.append(
+                        ValidationIssue(
+                            f"$.rows[{index}].{field}",
+                            "trial_change_classification.row_binding",
+                            f"row {field} must equal the classification's exact evidence binding",
+                        )
+                    )
+            if row.get("diff_ref") != document.get("diff_ref"):
+                issues.append(
+                    ValidationIssue(
+                        f"$.rows[{index}].diff_ref",
+                        "trial_change_classification.row_binding",
+                        "row diff reference must equal the classification diff reference",
+                    )
+                )
+        if all(isinstance(row_id, str) for row_id in row_ids) and len(row_ids) != len(set(row_ids)):
+            issues.append(
+                ValidationIssue(
+                    "$.rows",
+                    "trial_change_classification.duplicate_row",
+                    "classification row IDs must be unique",
+                )
+            )
+        if all(type(index) is int for index in indexes) and indexes != sorted(indexes):
+            issues.append(
+                ValidationIssue(
+                    "$.rows",
+                    "trial_change_classification.row_order",
+                    "rows must remain in ascending exact-operation index order",
+                )
+            )
+        if all(type(index) is int for index in indexes) and len(indexes) != len(
+            set(indexes)
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.rows",
+                    "trial_change_classification.duplicate_operation",
+                    "each exact operation index may produce at most one closed classification row",
+                )
+            )
+    clock = document.get("source_clock")
+    if isinstance(clock, Mapping):
+        profile = clock.get("profile")
+        evidence_profile = document.get("evidence_profile")
+        expected_profile = {
+            "retrospective_record_history": (
+                "trial_history_exact_diff.v1",
+                "retrospective_source_versions",
+                "trial_history_diff_",
+            ),
+            "prospective_first_observed": (
+                "trial_version_diff.v1",
+                "prospective_first_observed_interval",
+                "trial_diff_",
+            ),
+            "unavailable": (None, "unavailable", None),
+        }.get(evidence_profile)
+        if expected_profile is not None:
+            expected_contract, expected_clock, expected_ref_prefix = expected_profile
+            diff_ref = document.get("diff_ref")
+            if (
+                document.get("diff_contract_id") != expected_contract
+                or profile != expected_clock
+                or (
+                    expected_ref_prefix is not None
+                    and (
+                        not isinstance(diff_ref, str)
+                        or not diff_ref.startswith(expected_ref_prefix)
+                    )
+                )
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "$",
+                        "trial_change_classification.evidence_profile",
+                        "evidence profile, parent diff contract/reference, and source-clock profile must agree exactly",
+                    )
+                )
+        if profile == "retrospective_source_versions":
+            before_version = clock.get("before_source_version")
+            after_version = clock.get("after_source_version")
+            if (
+                isinstance(before_version, int)
+                and not isinstance(before_version, bool)
+                and isinstance(after_version, int)
+                and not isinstance(after_version, bool)
+                and after_version != before_version + 1
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "$.source_clock.after_source_version",
+                        "trial_change_classification.version_sequence",
+                        "retrospective classifications bind one adjacent source-version pair",
+                    )
+                )
+            for first, second, code in (
+                ("before_retrieved_at", "after_retrieved_at", "retrieved_clock"),
+                ("before_transaction_from", "after_transaction_from", "transaction_clock"),
+            ):
+                first_time = _parse_temporal(clock.get(first))
+                second_time = _parse_temporal(clock.get(second))
+                if first_time is not None and second_time is not None and first_time > second_time:
+                    issues.append(
+                        ValidationIssue(
+                            f"$.source_clock.{second}",
+                            f"trial_change_classification.{code}",
+                            f"{second} cannot precede {first}",
+                        )
+                    )
+        elif profile == "prospective_first_observed_interval":
+            lower = _parse_temporal(clock.get("after"))
+            upper = _parse_temporal(clock.get("at_or_before"))
+            if lower is not None and upper is not None and lower >= upper:
+                issues.append(
+                    ValidationIssue(
+                        "$.source_clock.at_or_before",
+                        "trial_change_classification.observed_interval",
+                        "the first-observed upper bound must be later than its prior-poll lower bound",
+                    )
+                )
+    provenance = document.get("prospective_activation_provenance")
+    evidence_profile = document.get("evidence_profile")
+    if evidence_profile == "prospective_first_observed":
+        valid_pair = (
+            isinstance(provenance, list)
+            and len(provenance) == 2
+            and all(isinstance(entry, Mapping) for entry in provenance)
+            and [entry.get("side") for entry in provenance] == ["before", "after"]
+        )
+        if not valid_pair:
+            issues.append(
+                ValidationIssue(
+                    "$.prospective_activation_provenance",
+                    "trial_change_classification.activation_provenance",
+                    "prospective classifications require the exact ordered before/after activation proof pair",
+                )
+            )
+        else:
+            assert isinstance(provenance, list)
+            before_proof, after_proof = provenance
+            if before_proof.get("target_binding_sha256") != after_proof.get(
+                "target_binding_sha256"
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "$.prospective_activation_provenance",
+                        "trial_change_classification.activation_target_binding",
+                        "before and after activation proofs must bind the same collection target",
+                    )
+                )
+    elif provenance is not None:
+        issues.append(
+            ValidationIssue(
+                "$.prospective_activation_provenance",
+                "trial_change_classification.activation_provenance",
+                "retrospective and unavailable classifications cannot carry prospective activation proof provenance",
+            )
+        )
+    return issues
+
+
+def _trial_change_alert_projection_identity(
+    document: Mapping[str, Any]
+) -> dict[str, Any]:
+    rows = document.get("rows")
+    return {
+        "classification_ref": document.get("classification_ref"),
+        "classification_payload_sha256": document.get(
+            "classification_payload_sha256"
+        ),
+        "nct_id": document.get("nct_id"),
+        "source_clock": document.get("source_clock"),
+        "available": document.get("available"),
+        "unavailable_reason": document.get("unavailable_reason"),
+        "row_ids": [
+            row.get("row_id") for row in rows if isinstance(row, Mapping)
+        ]
+        if isinstance(rows, list)
+        else [],
+    }
+
+
+def _trial_change_alert_projection_issues(
+    document: Mapping[str, Any]
+) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    _size, size_reason = _bounded_canonical_json_size(document, limit=1024 * 1024)
+    if size_reason == "limit":
+        return [
+            ValidationIssue(
+                "$",
+                "trial_change_alert_projection.byte_limit",
+                "alert projection exceeds the fixed 1MiB output envelope",
+            )
+        ]
+    if size_reason is not None:
+        raise ContractError("alert projection must be finite canonical JSON")
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="projection_payload_sha256",
+        excluded_fields=frozenset(("projection_payload_sha256",)),
+        code="trial_change_alert_projection.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    id_scope = document.get("nct_id") or "unavailable"
+    if isinstance(id_scope, str):
+        expected_id = (
+            f"trial_change_alert_projection_{id_scope}_"
+            f"{canonical_json_sha256(_trial_change_alert_projection_identity(document))[:24]}"
+        )
+        if document.get("projection_id") != expected_id:
+            issues.append(
+                ValidationIssue(
+                    "$.projection_id",
+                    "trial_change_alert_projection.deterministic_id",
+                    "projection ID must be content-addressed by its classification, source clock, state, and complete ordered rows",
+                )
+            )
+    rows = document.get("rows")
+    if isinstance(rows, list):
+        if document.get("row_count") != len(rows):
+            issues.append(
+                ValidationIssue(
+                    "$.row_count",
+                    "trial_change_alert_projection.row_count",
+                    "row_count must equal the complete chronological row array",
+                )
+            )
+        indexes: list[Any] = []
+        for index, row in enumerate(rows):
+            if not isinstance(row, Mapping):
+                continue
+            indexes.append(row.get("exact_op_index"))
+            issues.extend(_trial_change_row_issues(row, path=f"$.rows[{index}]"))
+            if row.get("nct_id") != document.get("nct_id"):
+                issues.append(
+                    ValidationIssue(
+                        f"$.rows[{index}].nct_id",
+                        "trial_change_alert_projection.row_binding",
+                        "projection rows must preserve the tenant-neutral NCT evidence identity",
+                    )
+                )
+        if all(type(index) is int for index in indexes) and indexes != sorted(indexes):
+            issues.append(
+                ValidationIssue(
+                    "$.rows",
+                    "trial_change_alert_projection.chronology",
+                    "projection rows must preserve exact-operation chronology without priority ordering",
+                )
+            )
+        if all(type(index) is int for index in indexes) and len(indexes) != len(
+            set(indexes)
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.rows",
+                    "trial_change_alert_projection.duplicate_operation",
+                    "chronological projection rows cannot duplicate an exact operation index",
+                )
+            )
     return issues
 
 

@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOCKUP — china_heatmap.html anonymous tier-preview (W2)</title>
+<style>
+:root{
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC", sans-serif;
+  --font-num: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --bg:#0f1115; --panel:#181b21; --line:#2a2f3a;
+  --ink:#e8edf4; --text:#d7dce3; --muted:#8b93a1; --faint:#6b7280;
+  --link:#7aa7e0;
+  --up:#1FA971; --down:#e06464;
+  --surface: color-mix(in srgb, var(--panel) 80%, transparent);
+  --surface-brd: color-mix(in srgb, var(--text) 13%, transparent);
+  --surface-shadow: 0 20px 52px -22px rgba(3,7,18,.66), 0 6px 18px -10px rgba(3,7,18,.44),
+                    inset 0 1px 0 color-mix(in srgb,#fff 7%,transparent);
+}
+/* 红涨绿跌 — the Asian convention flip. theme.css:138 does this in production. */
+html[data-lang="zh"]{ --up:#e06464; --down:#1FA971; }
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.up{color:var(--up)} .dn{color:var(--down)}
+
+/* ── mockup chrome (not shipping) ── */
+.mockbar{max-width:1180px;margin:16px auto 22px;padding:11px 16px;border-radius:12px;display:flex;
+  align-items:center;justify-content:space-between;gap:14px;
+  background:color-mix(in srgb,#f0b429 9%,transparent);border:1px solid color-mix(in srgb,#f0b429 30%,transparent);
+  color:#f0b429;font-size:12px;font-weight:700;letter-spacing:.02em}
+.mockbar code{font-family:var(--font-num);font-size:11.5px}
+.langbtn{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:9px;
+  padding:6px 13px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+
+/* ── header ── */
+.hm-head{padding:6px 0 16px}
+h1{font-size:27px;font-weight:800;letter-spacing:-.02em;color:var(--ink);margin:0 0 7px}
+.sub{font-size:13.5px;color:var(--muted);margin:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.badge{font-size:10.5px;font-weight:700;letter-spacing:.03em;padding:3px 9px;border-radius:999px;
+  color:#f0b429;background:color-mix(in srgb,#f0b429 11%,transparent);
+  border:1px solid color-mix(in srgb,#f0b429 30%,transparent)}
+
+/* ── market pulse (SSR — the crawlable read) ── */
+.hx-pulse{margin:6px 0 12px;padding:13px 16px;border-radius:14px;background:var(--panel);
+  border:1px solid var(--line);border-left:3px solid var(--up)}
+.hx-pulse-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:7px}
+.hx-stance{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:var(--up)}
+.hx-stance .ic{width:7px;height:7px;border-radius:50%;background:var(--up);flex:none}
+.hx-pulse-lab{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--faint);text-transform:uppercase}
+.hx-pulse-when{margin-left:auto;font-size:11.5px;color:var(--faint);font-family:var(--font-num)}
+.hx-pulse-read{font-size:14px;color:var(--text);line-height:1.55}
+.hx-pulse-read b{color:var(--ink);font-weight:700}
+
+/* ── stat cards (SSR) ── */
+.hx-stats{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.hx-stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 15px}
+.hx-stat .k{font-size:9.5px;font-weight:800;letter-spacing:.09em;color:var(--faint);text-transform:uppercase;
+  margin-bottom:6px}
+.hx-stat .v{font-size:23px;font-weight:800;letter-spacing:-.02em;color:var(--ink);font-family:var(--font-num);
+  line-height:1.1}
+.hx-stat .m{font-size:11.5px;color:var(--muted);margin-top:4px}
+.hx-bar{height:6px;border-radius:99px;background:var(--down);overflow:hidden;margin:9px 0 6px}
+.hx-bar i{display:block;height:100%;background:var(--up)}
+.hx-counts{display:flex;justify-content:space-between;font-size:11px;font-family:var(--font-num)}
+
+/* ── controls ── */
+.hx-ctrls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:7px 9px;margin-bottom:9px}
+.tf{font-size:11.5px;padding:5px 10px;border-radius:8px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tf.on{background:color-mix(in srgb,var(--link) 18%,transparent);color:var(--ink);font-weight:700}
+.tf.dim{color:var(--faint);opacity:.5}
+.hx-sort{display:flex;gap:6px;align-items:center;margin-bottom:16px;font-size:11px}
+.hx-sort .lab{font-size:9.5px;font-weight:800;letter-spacing:.09em;color:var(--faint);margin-right:3px}
+.hx-sort span.s{padding:4px 11px;border-radius:8px;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+.hx-sort span.s.on{background:color-mix(in srgb,var(--link) 18%,transparent);color:var(--ink);font-weight:700;
+  border-color:transparent}
+
+/* ── treemap ── */
+.tmap{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#12151b;
+  height:330px;display:grid;grid-template-columns:2.1fr 1.4fr 1fr;grid-template-rows:1.35fr 1fr;gap:3px;padding:3px}
+.tsec{position:relative;background:#0d1015;border-radius:8px;padding:6px 7px;overflow:hidden;
+  display:flex;flex-direction:column}
+.tsec .th{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  display:flex;gap:7px;align-items:baseline;margin-bottom:5px;flex:none}
+.tsec .th em{font-style:normal;font-family:var(--font-num);font-weight:700}
+.tiles{flex:1;display:flex;flex-direction:column;gap:2px;min-height:0}
+.trow{display:flex;gap:2px;flex:1;min-height:0}
+.tile{border-radius:3px;color:#eef2f7;padding:3px 4px;line-height:1.15;overflow:hidden;min-width:0;
+  display:flex;flex-direction:column;justify-content:center}
+.tile b{font-weight:700;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile i{font-style:normal;font-family:var(--font-num);opacity:.9;font-size:8px}
+/* Tile fills paint from --up/--down, NEVER a hard-coded green/red — this is what makes
+   the 红涨绿跌 flip real under html[data-lang="zh"]. Three bins per direction. */
+.tile.u3{background:color-mix(in srgb,var(--up) 92%,#0d1015)}
+.tile.u2{background:color-mix(in srgb,var(--up) 64%,#0d1015)}
+.tile.u1{background:color-mix(in srgb,var(--up) 38%,#0d1015)}
+.tile.d3{background:color-mix(in srgb,var(--down) 78%,#0d1015)}
+.tile.d2{background:color-mix(in srgb,var(--down) 54%,#0d1015)}
+.tile.d1{background:color-mix(in srgb,var(--down) 34%,#0d1015)}
+
+/* ── the two-state hover card — THE signature of this spec ── */
+.cardpair{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0 4px}
+.cardcol{min-width:0}
+.cardcap{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin-bottom:8px;
+  display:flex;align-items:center;gap:7px}
+.cardcap.free{color:var(--muted)}
+.cardcap.mem{color:#8b5cf6}
+.cardcap .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.hm-c{width:100%;background:var(--surface);border:1px solid var(--surface-brd);border-radius:14px;padding:13px 15px;
+  box-shadow:var(--surface-shadow);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px)}
+.hm-c-hd{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px}
+.hm-c-sym{font-size:14px;font-weight:800;color:var(--ink);font-family:var(--font-num)}
+.hm-c-nm{font-size:11px;color:var(--muted);margin-top:2px}
+.hm-c-px{text-align:right}
+.hm-c-pxv{font-size:12.5px;color:var(--text);font-family:var(--font-num)}
+.hm-c-chg{font-size:15px;font-weight:800;font-family:var(--font-num);margin-top:1px}
+.hm-c-body{padding:9px 0;border-top:1px solid color-mix(in srgb,var(--text) 9%,transparent);
+  border-bottom:1px solid color-mix(in srgb,var(--text) 9%,transparent)}
+.hm-c-conv{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.hm-c-band{font-size:10.5px;font-weight:800;letter-spacing:.05em;padding:3px 9px;border-radius:999px;
+  color:#f0b429;background:color-mix(in srgb,#f0b429 14%,transparent);
+  border:1px solid color-mix(in srgb,#f0b429 34%,transparent)}
+.hm-c-score{font-size:17px;font-weight:800;color:var(--ink);font-family:var(--font-num)}
+.hm-c-score small{font-size:10px;color:var(--faint);font-weight:600}
+.hm-c-verdict{font-size:12.5px;color:var(--text)}
+.hm-c-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.hm-c-tag{font-size:10.5px;color:var(--muted);background:color-mix(in srgb,var(--text) 7%,transparent);
+  padding:3px 8px;border-radius:7px}
+.hm-c-tag b{font-family:var(--font-num);color:var(--text)}
+.hm-c-strip{display:flex;gap:14px;padding-top:9px}
+.hm-c-m{display:flex;flex-direction:column;gap:1px}
+.hm-c-m .k{font-size:9px;color:var(--faint);letter-spacing:.05em}
+.hm-c-m .v{font-size:11.5px;font-weight:700;font-family:var(--font-num)}
+.hm-c-foot{margin-top:9px;font-size:11px;color:var(--link)}
+/* the free card's locked slot — a micro-wall, never a blur over readable bytes */
+.hm-c-locked{display:flex;align-items:flex-start;gap:8px;font-size:12px;line-height:1.5;color:var(--muted)}
+.hm-c-locked svg{width:13px;height:13px;flex:none;margin-top:2px;color:#8b5cf6}
+.hm-c-locked a{color:var(--link);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent)}
+
+/* ── gate note (the ONE gate element on this page) ── */
+.gate-note{display:flex;align-items:flex-start;gap:8px;margin:20px 0 4px;padding:11px 14px;border-radius:12px;
+  font-size:12.5px;line-height:1.5;color:var(--muted);
+  background:color-mix(in srgb,#8b5cf6 7%,transparent);border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent)}
+.gate-note svg{width:14px;height:14px;flex:none;margin-top:2px;color:#8b5cf6}
+.gate-note a{color:var(--link);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent)}
+
+/* ── movers + sector ladder (SSR) ── */
+.lowgrid{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:12px;margin-top:20px}
+.lcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 15px}
+.lcard h3{font-size:12px;font-weight:800;color:var(--ink);margin:0 0 10px;display:flex;align-items:center;gap:6px}
+.lrow{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:12px;
+  border-bottom:1px solid color-mix(in srgb,var(--text) 6%,transparent)}
+.lrow:last-child{border-bottom:0}
+.lrow .code{font-family:var(--font-num);font-size:10.5px;color:var(--faint);width:52px;flex:none}
+.lrow .nm{color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .pc{font-family:var(--font-num);font-weight:700;font-size:11.5px}
+.sbar{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:12px}
+.sbar .nm{flex:1;color:var(--text)}
+.sbar .track{width:74px;height:5px;border-radius:99px;background:color-mix(in srgb,var(--text) 9%,transparent);
+  overflow:hidden;flex:none;display:flex}
+.sbar .track i{display:block;height:100%;border-radius:99px}
+.sbar .pc{font-family:var(--font-num);font-weight:700;font-size:11.5px;width:52px;text-align:right}
+
+/* ── foot ── */
+.hm-foot{margin-top:22px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint);
+  line-height:1.6}
+.cta-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px;padding:14px 16px;border-radius:14px;
+  background:var(--panel);border:1px solid var(--line)}
+.cta-txt{flex:1;min-width:220px;font-size:12.5px;color:var(--muted);line-height:1.5}
+.cta-txt b{color:var(--ink);font-weight:700}
+.tw-btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 22px;border-radius:12px;
+  text-decoration:none;font-size:13px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,var(--link),#8b5cf6);
+  box-shadow:0 8px 22px -10px color-mix(in srgb,#8b5cf6 70%,transparent)}
+.tw-note{font-size:11px;color:var(--faint)}
+@media(max-width:860px){
+  .hx-stats{grid-template-columns:1fr 1fr}
+  .cardpair{grid-template-columns:1fr}
+  .lowgrid{grid-template-columns:1fr}
+  .tmap{height:auto;display:block}
+  .tsec{margin-bottom:2px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="mockbar">
+  <span>MOCKUP — anonymous / open state of <code>china_heatmap.html</code> · W2 design spec reference · not shipping code</span>
+  <button class="langbtn" id="lang">中文</button>
+</div>
+
+<div class="wrap">
+
+  <!-- M1 header -->
+  <div class="hm-head">
+    <h1>🔥 <span class="l-en">China A-share Heatmap</span><span class="l-zh">A股市场热力图</span></h1>
+    <p class="sub">
+      <span class="l-en">Winners and losers at a glance — every name a tile, shaded by the move you pick.</span>
+      <span class="l-zh">涨跌一目了然 —— 每只个股一个方块，按所选周期着色。</span>
+      <span class="badge"><span class="l-en">Daily close · Shanghai + Shenzhen</span><span class="l-zh">每日收盘 · 沪深</span></span>
+    </p>
+  </div>
+
+  <!-- M2 market pulse — SSR, free, and the page's Law-1 stance line -->
+  <div class="hx-pulse">
+    <div class="hx-pulse-top">
+      <span class="hx-stance"><span class="ic"></span><span class="l-en">Broad advance</span><span class="l-zh">普涨</span></span>
+      <span class="hx-pulse-lab"><span class="l-en">Market pulse</span><span class="l-zh">市场脉搏</span></span>
+      <span class="hx-pulse-when">2026-07-31</span>
+    </div>
+    <div class="hx-pulse-read">
+      <span class="l-en"><b>85%</b> of names advancing · median <b>+2.03%</b>. Strength in Technology, Basic Materials — weakness in Financial Services, Real Estate.</span>
+      <span class="l-zh"><b>85%</b> 个股上涨 · 中位数 <b>+2.03%</b>。资金流向：信息技术、材料 走强，金融、房地产 走弱。</span>
+    </div>
+  </div>
+
+  <!-- M3 stat cards — SSR, free -->
+  <div class="hx-stats">
+    <div class="hx-stat">
+      <div class="k"><span class="l-en">Breadth · advancing vs declining</span><span class="l-zh">宽度 · 上涨与下跌</span></div>
+      <div class="v">85%<span style="font-size:12px;color:var(--muted);font-weight:600;font-family:var(--font-ui);margin-left:7px"><span class="l-en">advancing</span><span class="l-zh">上涨</span></span></div>
+      <div class="hx-bar"><i style="width:84.5%"></i></div>
+      <div class="hx-counts"><span class="up">▲ 4,394</span><span class="dn">695 ▼</span></div>
+      <div class="m"><span class="l-en">Shanghai + Shenzhen A-shares · 5,198 traded</span><span class="l-zh">沪深全市场 · 5,198 只成交</span></div>
+    </div>
+    <div class="hx-stat">
+      <div class="k"><span class="l-en">Median move</span><span class="l-zh">中位涨跌</span></div>
+      <div class="v up">+2.03%</div>
+      <div class="m"><span class="l-en">Tilted higher</span><span class="l-zh">偏强</span></div>
+    </div>
+    <div class="hx-stat">
+      <div class="k"><span class="l-en">Strongest sector</span><span class="l-zh">最强板块</span></div>
+      <div class="v up">+4.13%</div>
+      <div class="m"><span class="l-en">Technology</span><span class="l-zh">信息技术</span></div>
+    </div>
+    <div class="hx-stat">
+      <div class="k"><span class="l-en">Weakest sector</span><span class="l-zh">最弱板块</span></div>
+      <div class="v dn">&minus;1.25%</div>
+      <div class="m"><span class="l-en">Financial Services</span><span class="l-zh">金融</span></div>
+    </div>
+  </div>
+
+  <!-- M4/M5 controls — live, not inert: they only re-slice data the visitor already holds -->
+  <div class="hx-ctrls">
+    <span class="tf dim"><span class="l-en">5 min</span><span class="l-zh">5分钟</span></span>
+    <span class="tf dim"><span class="l-en">30 min</span><span class="l-zh">30分钟</span></span>
+    <span class="tf dim"><span class="l-en">1 hour</span><span class="l-zh">1小时</span></span>
+    <span class="tf on"><span class="l-en">1 day</span><span class="l-zh">1天</span></span>
+    <span class="tf"><span class="l-en">1 week</span><span class="l-zh">1周</span></span>
+    <span class="tf"><span class="l-en">Month to date</span><span class="l-zh">本月至今</span></span>
+    <span class="tf"><span class="l-en">1 month</span><span class="l-zh">1月</span></span>
+    <span class="tf"><span class="l-en">3 month</span><span class="l-zh">3月</span></span>
+    <span class="tf"><span class="l-en">6 month</span><span class="l-zh">6月</span></span>
+    <span class="tf"><span class="l-en">Year to date</span><span class="l-zh">年初至今</span></span>
+    <span class="tf"><span class="l-en">1 year</span><span class="l-zh">1年</span></span>
+  </div>
+  <div class="hx-sort">
+    <span class="lab"><span class="l-en">SORT</span><span class="l-zh">排序</span></span>
+    <span class="s on"><span class="l-en">Market cap</span><span class="l-zh">市值</span></span>
+    <span class="s"><span class="l-en">Biggest move</span><span class="l-zh">涨跌幅</span></span>
+    <span class="s">A–Z</span>
+  </div>
+
+  <!-- M6 treemap — free, hydrates client-side from the (now public) tile map -->
+  <div class="tmap">
+    <div class="tsec" style="grid-row:span 2">
+      <div class="th"><span class="l-en">Technology</span><span class="l-zh">信息技术</span> <em class="up">+4.13%</em></div>
+      <div class="tiles">
+        <div class="trow" style="flex:1.7">
+          <div class="tile u2" style="flex:2.4"><b>中芯国际</b><i>+5.2%</i></div>
+          <div class="tile u3" style="flex:1.7"><b>海光信息</b><i>+7.1%</i></div>
+          <div class="tile u2" style="flex:1.2"><b>寒武纪</b><i>+3.4%</i></div>
+        </div>
+        <div class="trow" style="flex:1.15">
+          <div class="tile u3" style="flex:1.5"><b>兆易创新</b><i>+8.0%</i></div>
+          <div class="tile u1" style="flex:1.3"><b>北方华创</b><i>+1.9%</i></div>
+          <div class="tile u2" style="flex:1.1"><b>紫光国微</b><i>+4.6%</i></div>
+          <div class="tile u2" style="flex:1"><b>韦尔股份</b><i>+3.1%</i></div>
+        </div>
+        <div class="trow">
+          <div class="tile u1" style="flex:1.2"><b>澜起科技</b><i>+2.2%</i></div>
+          <div class="tile u3" style="flex:1.05"><b>长电科技</b><i>+6.4%</i></div>
+          <div class="tile u2" style="flex:1"><b>士兰微</b><i>+3.8%</i></div>
+          <div class="tile u1" style="flex:.9"><b>三安光电</b><i>+2.0%</i></div>
+        </div>
+      </div>
+    </div>
+    <div class="tsec">
+      <div class="th"><span class="l-en">Financial Services</span><span class="l-zh">金融</span> <em class="dn">&minus;1.25%</em></div>
+      <div class="tiles">
+        <div class="trow" style="flex:1.5">
+          <div class="tile d3" style="flex:1.9"><b>工商银行</b><i>&minus;1.96%</i></div>
+          <div class="tile d2" style="flex:1.4"><b>建设银行</b><i>&minus;1.09%</i></div>
+        </div>
+        <div class="trow">
+          <div class="tile d3" style="flex:1.3"><b>农业银行</b><i>&minus;2.95%</i></div>
+          <div class="tile d2" style="flex:1.1"><b>中国银行</b><i>&minus;1.30%</i></div>
+          <div class="tile d1" style="flex:1"><b>中国人寿</b><i>&minus;0.55%</i></div>
+        </div>
+      </div>
+    </div>
+    <div class="tsec">
+      <div class="th"><span class="l-en">Basic Materials</span><span class="l-zh">材料</span> <em class="up">+1.02%</em></div>
+      <div class="tiles">
+        <div class="trow" style="flex:1.3">
+          <div class="tile u2" style="flex:1.6"><b>紫金矿业</b><i>+3.0%</i></div>
+          <div class="tile u1" style="flex:1.1"><b>万华化学</b><i>+1.4%</i></div>
+        </div>
+        <div class="trow">
+          <div class="tile u2" style="flex:1.2"><b>北方稀土</b><i>+4.2%</i></div>
+          <div class="tile u1" style="flex:1"><b>华友钴业</b><i>+1.8%</i></div>
+        </div>
+      </div>
+    </div>
+    <div class="tsec">
+      <div class="th"><span class="l-en">Consumer Defensive</span><span class="l-zh">必需消费</span> <em class="dn">&minus;0.58%</em></div>
+      <div class="tiles">
+        <div class="trow">
+          <div class="tile d2" style="flex:1.8"><b>贵州茅台</b><i>&minus;1.1%</i></div>
+          <div class="tile d1" style="flex:1.2"><b>五粮液</b><i>&minus;0.4%</i></div>
+          <div class="tile u1" style="flex:1"><b>伊利股份</b><i>+1.2%</i></div>
+        </div>
+      </div>
+    </div>
+    <div class="tsec">
+      <div class="th"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span> <em class="dn">&minus;0.59%</em></div>
+      <div class="tiles">
+        <div class="trow">
+          <div class="tile d2" style="flex:1.5"><b>保利发展</b><i>&minus;1.0%</i></div>
+          <div class="tile d1" style="flex:1"><b>万科A</b><i>&minus;0.3%</i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:11.5px;color:var(--faint);text-align:center;margin:9px 0 0">
+    <span class="l-en">Hover a sector header for its members · hover a tile for the name's read · click through to the analyzer</span>
+    <span class="l-zh">悬停板块标题查看成分股 · 悬停方块查看个股解读 · 点击进入分析器</span>
+  </p>
+
+  <!-- ══ THE SIGNATURE: the hover card in both states ══ -->
+  <div class="cardpair">
+    <div class="cardcol">
+      <div class="cardcap free"><span class="dot"></span><span class="l-en">Everyone sees this</span><span class="l-zh">所有人可见</span></div>
+      <div class="hm-c">
+        <div class="hm-c-hd">
+          <div><div class="hm-c-sym">601398.SS</div>
+            <div class="hm-c-nm"><span class="l-en">ICBC · Financial Services</span><span class="l-zh">工商银行 · 金融</span></div></div>
+          <div class="hm-c-px"><div class="hm-c-pxv">¥2.84<span class="l-en">T</span><span class="l-zh">万亿</span></div>
+            <div class="hm-c-chg dn">&minus;1.96%</div></div>
+        </div>
+        <div class="hm-c-body">
+          <div class="hm-c-locked">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>
+              <span class="l-en">Our nightly read on this name — where it sits and what we'd do — is member content. <a href="plans.html">See plans</a></span>
+              <span class="l-zh">我们对该股的每晚解读 —— 所处位置与应对方式 —— 为会员内容。<a href="plans.html">查看方案</a></span>
+            </span>
+          </div>
+        </div>
+        <div class="hm-c-strip">
+          <div class="hm-c-m"><span class="k">1D</span><span class="v dn">&minus;1.96%</span></div>
+          <div class="hm-c-m"><span class="k">1W</span><span class="v up">+0.84%</span></div>
+          <div class="hm-c-m"><span class="k">1M</span><span class="v up">+3.10%</span></div>
+          <div class="hm-c-m"><span class="k">YTD</span><span class="v up">+11.4%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cardcol">
+      <div class="cardcap mem"><span class="dot"></span><span class="l-en">Members also see</span><span class="l-zh">会员另可见</span></div>
+      <div class="hm-c">
+        <div class="hm-c-hd">
+          <div><div class="hm-c-sym">601398.SS</div>
+            <div class="hm-c-nm"><span class="l-en">ICBC · Financial Services</span><span class="l-zh">工商银行 · 金融</span></div></div>
+          <div class="hm-c-px"><div class="hm-c-pxv">¥7.96</div>
+            <div class="hm-c-chg dn">&minus;1.96%</div></div>
+        </div>
+        <div class="hm-c-body">
+          <div class="hm-c-conv">
+            <span class="hm-c-band"><span class="l-en">Watch</span><span class="l-zh">观察</span></span>
+            <span class="hm-c-score">36<small>/100</small></span>
+          </div>
+          <div class="hm-c-verdict"><span class="l-en">Buy zone — cycle turning up</span><span class="l-zh">买入区 — 周期上行</span></div>
+          <div class="hm-c-meta">
+            <span class="hm-c-tag"><span class="l-en">Mkt cap</span><span class="l-zh">市值</span> <b>¥2.84<span class="l-en">T</span><span class="l-zh">万亿</span></b></span>
+            <span class="hm-c-tag"><span class="l-en">vs 200d</span><span class="l-zh">相对200日</span> <b class="up">+8%</b></span>
+          </div>
+        </div>
+        <div class="hm-c-strip">
+          <div class="hm-c-m"><span class="k">1D</span><span class="v dn">&minus;1.96%</span></div>
+          <div class="hm-c-m"><span class="k">1W</span><span class="v up">+0.84%</span></div>
+          <div class="hm-c-m"><span class="k">1M</span><span class="v up">+3.10%</span></div>
+          <div class="hm-c-m"><span class="k">YTD</span><span class="v up">+11.4%</span></div>
+        </div>
+        <div class="hm-c-foot"><span class="l-en">View full analysis</span><span class="l-zh">查看完整分析</span> →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- the ONE gate element on this page -->
+  <div class="gate-note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <span>
+      <span class="l-en">The whole map is open — every tile, every timeframe, every sector. What members add is our read on each name: where it sits and what we'd do about it.</span>
+      <span class="l-zh">整张热力图完全开放 —— 每个方块、每个周期、每个板块。会员另可看到我们对每只个股的解读：所处位置与应对方式。</span>
+    </span>
+  </div>
+
+  <!-- M8/M9 movers + sector ladder — SSR, free, crawlable -->
+  <div class="lowgrid">
+    <div class="lcard">
+      <h3><span class="up">▲</span> <span class="l-en">Biggest gainers</span><span class="l-zh">涨幅榜</span></h3>
+      <div class="lrow"><span class="code">300418</span><span class="nm">昆仑万维</span><span class="pc up">+20.00%</span></div>
+      <div class="lrow"><span class="code">301396</span><span class="nm">宏景科技</span><span class="pc up">+20.00%</span></div>
+      <div class="lrow"><span class="code">301171</span><span class="nm">易点天下</span><span class="pc up">+19.99%</span></div>
+      <div class="lrow"><span class="code">300058</span><span class="nm">蓝色光标</span><span class="pc up">+19.98%</span></div>
+      <div class="lrow"><span class="code">300017</span><span class="nm">网宿科技</span><span class="pc up">+17.50%</span></div>
+    </div>
+    <div class="lcard">
+      <h3><span class="dn">▼</span> <span class="l-en">Biggest losers</span><span class="l-zh">跌幅榜</span></h3>
+      <div class="lrow"><span class="code">688146</span><span class="nm">中船特气</span><span class="pc dn">&minus;6.55%</span></div>
+      <div class="lrow"><span class="code">002536</span><span class="nm">飞龙股份</span><span class="pc dn">&minus;6.05%</span></div>
+      <div class="lrow"><span class="code">000786</span><span class="nm">北新建材</span><span class="pc dn">&minus;5.54%</span></div>
+      <div class="lrow"><span class="code">301583</span><span class="nm">托伦斯</span><span class="pc dn">&minus;5.36%</span></div>
+      <div class="lrow"><span class="code">688382</span><span class="nm">益方生物</span><span class="pc dn">&minus;5.13%</span></div>
+    </div>
+    <div class="lcard">
+      <h3><span class="l-en">Sector leaders &amp; laggards</span><span class="l-zh">板块强弱</span></h3>
+      <div class="sbar"><span class="nm"><span class="l-en">Technology</span><span class="l-zh">信息技术</span></span>
+        <span class="track"><i class="" style="width:100%;background:var(--up)"></i></span><span class="pc up">+4.13%</span></div>
+      <div class="sbar"><span class="nm"><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span></span>
+        <span class="track"><i style="width:58%;background:var(--up)"></i></span><span class="pc up">+2.40%</span></div>
+      <div class="sbar"><span class="nm"><span class="l-en">Basic Materials</span><span class="l-zh">材料</span></span>
+        <span class="track"><i style="width:25%;background:var(--up)"></i></span><span class="pc up">+1.02%</span></div>
+      <div class="sbar"><span class="nm"><span class="l-en">Consumer Defensive</span><span class="l-zh">必需消费</span></span>
+        <span class="track"><i style="width:14%;background:var(--down)"></i></span><span class="pc dn">&minus;0.58%</span></div>
+      <div class="sbar"><span class="nm"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
+        <span class="track"><i style="width:15%;background:var(--down)"></i></span><span class="pc dn">&minus;0.59%</span></div>
+      <div class="sbar"><span class="nm"><span class="l-en">Financial Services</span><span class="l-zh">金融</span></span>
+        <span class="track"><i style="width:30%;background:var(--down)"></i></span><span class="pc dn">&minus;1.25%</span></div>
+    </div>
+  </div>
+
+  <div class="cta-row">
+    <span class="cta-txt">
+      <span class="l-en"><b>The map is free, and stays free.</b> Members get our nightly read on all 1,519 names here — plus the same maps for Hong Kong and Canada.</span>
+      <span class="l-zh"><b>热力图免费，且将持续免费。</b>会员可获取我们对全部 1,519 只个股的每晚解读 —— 以及港股与加拿大的同款热力图。</span>
+    </span>
+    <a class="tw-btn" href="plans.html"><span class="l-en">See plans</span><span class="l-zh">查看方案</span></a>
+    <span class="tw-note"><span class="l-en">7-day Pro trial · cancel anytime</span><span class="l-zh">Pro 7 天试用 · 随时取消</span></span>
+  </div>
+
+  <div class="hm-foot">
+    <span class="l-en">Green = up, red = down (inverted in 中文). Tiles are sized by market cap and computed from adjusted closes. Our market read is research context — never a buy signal.</span>
+    <span class="l-zh">绿涨红跌（中文按亚洲习惯反转）。方块按市值大小排列，基于复权收盘价计算。市场研判仅供研究参考，绝非买入信号。</span>
+  </div>
+</div>
+
+<script>
+  // ?lang=zh renders the 中文 state directly — this is how the _zh reference PNG is shot.
+  if (new URLSearchParams(location.search).get('lang') === 'zh') {
+    document.documentElement.setAttribute('data-lang', 'zh');
+    document.getElementById('lang').textContent = 'EN';
+  }
+  document.getElementById('lang').addEventListener('click', function () {
+    var zh = document.documentElement.getAttribute('data-lang') === 'zh';
+    document.documentElement.setAttribute('data-lang', zh ? 'en' : 'zh');
+    this.textContent = zh ? '中文' : 'EN';
+  });
+</script>
+</body>
+</html>
