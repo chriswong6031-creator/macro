@@ -149,3 +149,49 @@ def test_alert_log_messages_are_register_clean():
         "data/alerts/alerts_log.parquet carries falsifier-register display "
         f"text in {len(bad)} row(s): {bad['rule'].tolist()[:5]}"
     )
+
+
+# ---------------------------------------------------------------------------
+# 5) AI-scout watch de-registration (#3821 follow-up).  thematic_desk's
+#    ``emerging_watch`` is LLM prose printed VERBATIM by two live panels — the
+#    Forming Narratives panel (baskets_*, via engine/narrative_emergence.py)
+#    and the thematic desk block on allocation*.html — and the scout prompt
+#    used to ask for a "kill-criterion", which shipped as a front-facing
+#    "Kill criterion: <condition>" line.  Pin all three legs: the prompt no
+#    longer asks for one, and neither panel prints the raw payload value.
+# ---------------------------------------------------------------------------
+KILL_REGISTER = ("kill-criterion", "kill criterion", "Kill criterion", "Kill:")
+
+
+def test_scout_prompt_does_not_ask_for_a_kill_criterion():
+    src = (ROOT / "engine" / "thematic_desk.py").read_text(encoding="utf-8")
+    for phrase in ("kill-criterion", "kill criterion"):
+        # the prohibition line quotes the banned wording; every other use is gone
+        uses = [ln for ln in src.splitlines()
+                if phrase in ln.lower() and "never write" not in ln]
+        assert not uses, (
+            f"engine/thematic_desk.py still asks the scout for a {phrase!r}: {uses[:2]}"
+        )
+    assert "never write 'kill criterion'" in src, (
+        "emerging_watch prompt lost its display-register prohibition"
+    )
+
+
+# (emitter, raw expression the panel must no longer render)
+WATCH_PANELS = {
+    "templates/forming_narratives.js": "esc(d.ai_watch.text)",
+    "templates/ai_desk_thematic.js": "esc(brief.emerging_watch)",
+}
+
+
+@pytest.mark.parametrize("rel", sorted(WATCH_PANELS))
+def test_watch_panels_normalize_the_scout_text(rel):
+    src = (ROOT / rel).read_text(encoding="utf-8")
+    assert WATCH_PANELS[rel] not in src, (
+        f"{rel} prints the scout's watch text raw ({WATCH_PANELS[rel]}) — a stale "
+        "brief would leak the falsifier register straight to a user-cycle surface"
+    )
+    # both halves of the normalizer must be present: the EN label swap and the
+    # zh label (the condition body stays EN — the payload carries no zh field).
+    assert "'Watching for: '" in src, f"{rel} lost the EN watching-register label"
+    assert "关注条件：" in src, f"{rel} lost the zh watching-register label"
