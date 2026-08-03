@@ -355,10 +355,13 @@ def test_client_is_never_handed_a_null_it_did_not_ship(entity):
 def test_lookback_without_a_matching_null_gets_no_verdict(entity):
     """family.null.n_years is the producer's statement of what the null was run
     on. A 10-year |t| against a 25-year null is exactly the quiet dishonesty this
-    page exists to avoid."""
+    page exists to avoid: a shorter lookback gets its OWN null from
+    family.null_by_lookback, and a lookback with neither gets no verdict."""
     fam = entity["family"]
     assert bss.null_for(fam, 25, entity["coverage"]) is fam["null"]
-    assert bss.null_for(fam, 10, entity["coverage"]) is None
+    assert bss.null_for(fam, 10, entity["coverage"]) is fam["null_by_lookback"]["10"]
+    assert bss.null_for(fam, 10, entity["coverage"])["n_years"] == 10
+    assert bss.null_for(fam, 20, entity["coverage"]) is None
     faked = {"null": dict(fam["null"]), "null_by_lookback": {"10": {"B": 1}}}
     assert bss.null_for(faked, 10, entity["coverage"]) == {"B": 1}
 
