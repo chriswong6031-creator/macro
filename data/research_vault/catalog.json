@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T22:21:43.265650+00:00",
-  "count": 692,
+  "generated_at": "2026-08-03T22:36:47.210056+00:00",
+  "count": 693,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -48,6 +48,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-n5xvtkuy8ik-6f9902",
+      "title": "GS FX JPY Intervention",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:14:18Z",
+      "summary_points": [
+        "**JPY Intervention Scale & Coordination**: Japan and US confirmed coordinated yen-buying intervention (8.45T yen), with Japan signaling readiness for further joint action; interventions now $60bn vs prior $25bn, targeting EURJPY 187.50 to avoid broader USD sell-off.",
+        "**Short-Term JPY Bearish Asymmetry**: Asymmetric downside risk with intervention likely if USDJPY >158; technicals target 152/153 (critical 152.00 if 155 breaks), breaking 200d MA and reflecting tighter JPY distribution.",
+        "**Policy Contradiction & Structural Risk**: Japan’s loose monetary/fiscal policy bears JPY long-term, but repatriation slow and reserve depletion could amplify weakness; BOJ hikes unlikely to sustain strength due to priced-in inflation risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-kymvavdcyqb-db21e5",
       "title": "SpaceX Aug 3",
