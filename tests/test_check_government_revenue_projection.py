@@ -157,7 +157,7 @@ def test_projection_fence_accepts_one_canonical_compact_generation(tmp_path: Pat
     assert result["dossier_content_id"].startswith("grd1-")
     assert result["subaward_dossier_content_id"].startswith("grsd1-")
     assert result["subaward_dossiers"] == 0
-    assert result["html_bytes"] < 250_000
+    assert result["html_bytes"] < build_government_revenue.RAW_HTML_BUDGET_BYTES
 
 
 def test_projection_fence_rejects_stale_public_latest_twin(tmp_path: Path) -> None:
@@ -287,9 +287,16 @@ def test_projection_fence_rejects_full_payload_or_missing_workspace_shell(
 ) -> None:
     _generation(tmp_path)
     html = tmp_path / "site" / "government_revenue.html"
-    html.write_text("<main>legacy</main>" + ("x" * 250_001), encoding="utf-8")
+    html.write_text(
+        "<main>legacy</main>"
+        + ("x" * (build_government_revenue.RAW_HTML_BUDGET_BYTES + 1)),
+        encoding="utf-8",
+    )
 
-    with pytest.raises(ProjectionDriftError, match="exceeds 250000 bytes"):
+    with pytest.raises(
+        ProjectionDriftError,
+        match=rf"exceeds {build_government_revenue.RAW_HTML_BUDGET_BYTES} bytes",
+    ):
         validate_projection(tmp_path)
 
     html.write_text("<main>legacy</main>", encoding="utf-8")
