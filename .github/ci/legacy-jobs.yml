@@ -4060,6 +4060,12 @@ jobs:
         run: python -m pytest tests/test_btc_vector_w1.py tests/test_deflated_sharpe.py -q
       - name: settled-close tape — the basket pulse the closing-bell lane publishes
         run: python -m pytest tests/test_settled_close_tape.py -q
+      # Crypto Cockpit (unrun backfill 2026-08-03): the cockpit contract on the
+      # vector page, the wave-2 market-state/universe organs, the wave-3
+      # BTC/ETH desks feeding master brain, and the house-style partial. This
+      # lane owns the vector estate the cockpit ships on.
+      - name: crypto cockpit — contract, market-state waves, house style
+        run: python -m pytest tests/test_crypto_cockpit_contract.py tests/test_crypto_wave2.py tests/test_crypto_wave3.py tests/test_crypto_house_style.py -q
 
   unrun-oracle-desk:
     # oracle nightly + its gauntlet promotion gates.
@@ -4375,6 +4381,11 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: the macro-release forecast producer — projections, benchmarks and the graded forward ledger
         run: python -m pytest tests/test_content_stamp_freshness_sweep2.py tests/test_cpi_postmortem_fixes.py tests/test_release_combined.py tests/test_release_forecast_producer.py tests/test_release_forecast_v2.py tests/test_release_integration_2a.py tests/test_release_integration_2b.py tests/test_release_integration_w11g.py tests/test_release_market_context.py -q
+      # Unrun backfill 2026-08-03: the CPI bridge (Track CB), the official-event
+      # progressive-enhancement client, and the date-scoped Release Radar
+      # selector join the producer lane that owns the release-forecast estate.
+      - name: CPI bridge + official-event live client + Release Radar date selection
+        run: python -m pytest tests/test_release_cpi_bridge.py tests/test_release_publications_live_client.py tests/test_release_radar_date_selection.py -q
 
   unrun-brain-desks:
     # master brain / AI desk / alt-data / risk brains behind the shipped desk verdicts.
@@ -4591,6 +4602,12 @@ jobs:
       # landed on main before this branch rebased. Nothing in the family is dark.
       - name: OIP E3 positioning persistence — oi_delta clusters, wall persistence, index-GEX rebuild routing
         run: python -m pytest tests/test_positioning_persistence.py tests/test_gex_state.py tests/test_index_gex_history.py -q
+      # Unrun backfill 2026-08-03: the GEX board's per-ticker state merge and
+      # the gex.js IV-rank band color law join the family this lane already
+      # owns; the OIP E1 session digest and the flow desk builder are the same
+      # market-plane plumbing (live_flow / etf_flows organs).
+      - name: gex board state merge + IV-rank band color + session digest + flow desk
+        run: python -m pytest tests/test_gex_board_state_merge.py tests/test_gex_js_iv_rank_color.py tests/test_session_digest.py tests/test_flow_desk.py -q
 
   unrun-publish-ops:
     # publish/transport, asset pipeline, ticker pages and the nightly ops tripwires.
