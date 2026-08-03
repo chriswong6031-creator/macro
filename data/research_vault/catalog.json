@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T14:50:59.486947+00:00",
-  "count": 670,
+  "generated_at": "2026-08-03T15:06:00.290939+00:00",
+  "count": 671,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -262,6 +262,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 1,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tno3tlkiasl-29caa3",
+      "title": "DB Investor Positioning and Flows Rotating On Cue Again",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T09:58:59Z",
+      "summary_points": [
+        "**Tech Rotation Timing & Positioning Mismatch**: Rotation out of Tech began 2 months ago; positioning rebounded to 62nd percentile while earnings growth slowed from 52% (Q2) to 20%, signaling potential mispricing and rotation risk.",
+        "**Hyperscalers at 3-Year Relative Performance Low**: Hyperscalers (MSFT/AMZN/GOOGL/META/ORCL) market cap-weighted performance at parity with S&P 500 (3-year low), with ratio near bottom of 3-year range, indicating critical technical reversal catalyst.",
+        "**Semiconductor Flows vs.",
+        "Broad Tech Imbalance**: Semis show surging inflows (cumulative $bn), while Software/Tech ex-Semis have flat/declining flows, creating overconcentration risk in Tech allocations.",
+        "**Tech Credit-Spread-Equity Correlation Risk**: Inverted Tech IG spreads strongly correlate with Nasdaq 100 performance; widening spreads directly signal deteriorating Tech equity performance, necessitating hedging."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 54,
       "language": "en",
       "needs_metadata": false
     },
