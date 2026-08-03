@@ -1,14 +1,14 @@
 {
   "contract_id": "biocatalyst_product_acceptance_manifest.v1",
   "schema_version": "1.0.0",
-  "manifest_id": "biocatalyst_product_acceptance_e13391e2ed44a8f5d7d5c71a",
+  "manifest_id": "biocatalyst_product_acceptance_506244f236be52f12a8eaa96",
   "state": "draft_human_approval_pending",
   "effective_at": "2026-08-02T16:00:00Z",
   "supersedes_manifest_id": null,
   "supersedes_manifest_content_sha256": null,
   "owner": "biocatalyst",
   "design_spec_ref": "research/BIOCATALYST_D0A_IA_STATE_CONTENT_CONTRACT.md",
-  "design_spec_sha256": "684bc741dae63c12f401e35f88d1e772ac0f157b4418446971d7b75a3e4f8a93",
+  "design_spec_sha256": "296efc9de0114eb23d591334844ab461ac2a8113362e7173287b9c85cac9a52c",
   "reference_fixture": {
     "path": "data/biocatalyst/fixtures/biocatalyst_d0a_reference_fixture.v1.json",
     "sha256": "750a388fd864dc5d30010d3428ab72d22b9692170d086b283e1541ccf6172a24",
@@ -982,5 +982,5 @@
     "authorizes_prophet_behavior": false
   },
   "hash_scope": "canonical_payload_excluding_manifest_id_and_content_sha256",
-  "content_sha256": "e13391e2ed44a8f5d7d5c71aaa6e1f727f79af5d5ea205de5b8be91753d3a670"
+  "content_sha256": "506244f236be52f12a8eaa968415988fb7989caa57c3683a9ecd76a3caf76198"
 }

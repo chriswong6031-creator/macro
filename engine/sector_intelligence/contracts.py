@@ -64,6 +64,34 @@ _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID = (
 _BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID = (
     "biocatalyst_product_acceptance_manifest.v1"
 )
+_BIOCATALYST_D0A_PROJECTION_GENERATION = "synthetic-d0a-v1"
+_BIOCATALYST_D0A_BROWSER_PROFILES = (
+    {
+        "name": "desktop", "viewport": "1440x900", "engine": "chromium",
+        "engine_version": "140.0.7339.41", "os": "macos-15.6-arm64",
+        "font_bundle": "sf-pro-20_pingfang-sc-20", "device_scale_factor": 1,
+        "network": "wired-100mbps-20ms",
+    },
+    {
+        "name": "tablet", "viewport": "820x1180", "engine": "webkit",
+        "engine_version": "620.1.16", "os": "macos-15.6-arm64",
+        "font_bundle": "sf-pro-20_pingfang-sc-20", "device_scale_factor": 2,
+        "network": "wifi-40mbps-40ms",
+    },
+    {
+        "name": "mobile", "viewport": "390x844", "engine": "webkit",
+        "engine_version": "620.1.16", "os": "macos-15.6-arm64",
+        "font_bundle": "sf-pro-20_pingfang-sc-20", "device_scale_factor": 3,
+        "network": "4g-10mbps-80ms",
+    },
+)
+_BIOCATALYST_D0A_RECEIPT_APPROVAL = "pending_fable_or_opus_design_owner"
+_BIOCATALYST_D0A_RECEIPT_BLOCKERS = (
+    "named_human_design_approval",
+    "production_shaped_browser_capture",
+    "D0b_state_harness",
+    "trusted_browser_verifier_successor_contract",
+)
 _SOURCE_RECORD_CONTRACT_ID = "source_record.v1"
 _EVIDENCE_CLAIM_CONTRACT_ID = "evidence_claim.v1"
 _FEATURE_SNAPSHOT_CONTRACT_ID = "feature_snapshot.v1"
@@ -3466,12 +3494,17 @@ def _biocatalyst_product_acceptance_manifest_issues(
                         "bound synthetic projection must be parseable JSON",
                     )
                 )
-        if not isinstance(projection, Mapping) or projection.get("synthetic_only") is not True or projection.get("generation_id") != corpus.get("projection_generation"):
+        if (
+            corpus.get("projection_generation") != _BIOCATALYST_D0A_PROJECTION_GENERATION
+            or not isinstance(projection, Mapping)
+            or projection.get("synthetic_only") is not True
+            or projection.get("generation_id") != _BIOCATALYST_D0A_PROJECTION_GENERATION
+        ):
             issues.append(
                 ValidationIssue(
                     "$.benchmark_corpus.projection_generation",
                     "product_acceptance.projection_generation",
-                    "projection_generation must exactly equal generation_id in the bound synthetic projection",
+                    "corpus projection_generation and bound projection generation_id must both equal literal synthetic-d0a-v1",
                 )
             )
         endpoints = corpus.get("primary_endpoints")
@@ -3511,37 +3544,12 @@ def _biocatalyst_product_acceptance_manifest_issues(
                 )
             )
         profiles = corpus.get("browser_device_network_profiles")
-        expected_profiles = {"desktop": "1440x900", "tablet": "820x1180", "mobile": "390x844"}
-        actual_profile_names = {
-            profile.get("name")
-            for profile in profiles
-            if isinstance(profile, Mapping) and isinstance(profile.get("name"), str)
-        } if isinstance(profiles, list) else set()
-        malformed_profile = not isinstance(profiles, list) or len(profiles) != 3
-        if isinstance(profiles, list):
-            for profile in profiles:
-                if not isinstance(profile, Mapping):
-                    malformed_profile = True
-                    continue
-                name = profile.get("name")
-                required_strings = ("engine", "engine_version", "os", "font_bundle", "network")
-                scale = profile.get("device_scale_factor")
-                if (
-                    name not in expected_profiles
-                    or profile.get("viewport") != expected_profiles.get(name)
-                    or any(not isinstance(profile.get(field), str) or not profile.get(field).strip() for field in required_strings)
-                    or isinstance(scale, bool)
-                    or not isinstance(scale, (int, float))
-                    or not math.isfinite(scale)
-                    or scale <= 0
-                ):
-                    malformed_profile = True
-        if actual_profile_names != set(expected_profiles) or malformed_profile:
+        if profiles != list(_BIOCATALYST_D0A_BROWSER_PROFILES):
             issues.append(
                 ValidationIssue(
                     "$.benchmark_corpus.browser_device_network_profiles",
                     "product_acceptance.browser_profiles",
-                    "benchmark must contain exactly one desktop, tablet, and mobile profile with exact viewport plus nonempty engine/version, OS, font bundle, positive scale, and network",
+                    "browser/device/network profiles must equal the literal frozen D0a desktop, tablet, and mobile dictionaries",
                 )
             )
 
@@ -3556,7 +3564,11 @@ def _biocatalyst_product_acceptance_manifest_issues(
                 or visual_receipt.get("reference_truth_class") != "draft_contract_state_plate"
                 or visual_receipt.get("portable_across_browser_or_font_environments") is not False
                 or visual_receipt.get("browser_engine") is not None
+                or visual_receipt.get("browser_version") is not None
                 or visual_receipt.get("reviewer") is not None
+                or visual_receipt.get("non_authorizing") is not True
+                or visual_receipt.get("approval") != _BIOCATALYST_D0A_RECEIPT_APPROVAL
+                or visual_receipt.get("blocked_by") != list(_BIOCATALYST_D0A_RECEIPT_BLOCKERS)
                 or not isinstance(renderer_receipt, Mapping)
                 or not isinstance(renderer_source, Mapping)
                 or renderer_receipt.get("entrypoint") != renderer_source.get("path")
@@ -3568,13 +3580,15 @@ def _biocatalyst_product_acceptance_manifest_issues(
                 or not isinstance(projection_receipt, Mapping)
                 or projection_receipt.get("path") != corpus.get("projection_path")
                 or projection_receipt.get("sha256") != corpus.get("projection_sha256")
+                or projection_receipt.get("generation_id") != _BIOCATALYST_D0A_PROJECTION_GENERATION
+                or projection_receipt.get("synthetic_only") is not True
             )
             if receipt_mismatch:
                 issues.append(
                     ValidationIssue(
                         "$.visual.artifact",
                         "product_acceptance.visual_receipt_binding",
-                        "draft receipt must remain non-browser/nonportable and bind exact renderer, fixture, and projection bytes",
+                        "draft receipt must preserve literal non-browser, non-authorizing, pending-approval, blocker, renderer, fixture, and projection bindings",
                     )
                 )
         elif visual_receipt is not None:

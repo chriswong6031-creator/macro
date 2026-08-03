@@ -19,9 +19,11 @@ content grammar, finite references, and acceptance contract. It deliberately doe
 masterplan paths. D0b must align to that five-view doctrine and consume the shared
 shell primitives when their implementation lands; it must not fork a Bio-only shell.
 
-No reference state is a release approval. The current manifest is intentionally
-`draft_human_approval_pending`: it fails generic acceptance until a named Fable or
-Opus design owner records an approval and a production-shaped browser run exists.
+No reference state is a release approval. This v1 manifest is an integrity-only draft
+and can **never** pass generic acceptance, regardless of any approval, browser, or
+performance fields written into it. Named design approval and independently verified
+browser/performance evidence may inform only a separately designed successor verifier
+and successor contract; they cannot promote, supersede, or convert this v1 into a pass.
 
 ## 1. Design thesis — an operator cockpit with an epistemic envelope
 
