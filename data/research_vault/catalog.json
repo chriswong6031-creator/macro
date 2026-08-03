@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T00:19:04.086910+00:00",
-  "count": 628,
+  "generated_at": "2026-08-03T00:49:05.695915+00:00",
+  "count": 629,
   "institutions": [
     "Amova",
     "Apollo",
@@ -693,6 +693,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-q6jzvhselya-a777ee",
+      "title": "Incap 202607300903 flash",
+      "institution": "Nordea",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:34:43Z",
+      "summary_points": [
+        "**Q2 Margin Miss**: Incap missed Q2 EBITA margin due to unfavorable sales mix and component issues, though full-year guidance remains unchanged.",
+        "**EBITA Guidance Below Consensus**: Full-year adjusted EBITA guidance (EUR 26-29m) trails Nordea's estimate (EUR 29.5m), signaling potential underperformance.",
+        "**Margin Contraction Outlook**: Projected EBITA margin decline to 9.83% in 2026E (vs.",
+        "0% in 2025) reflects deteriorating profitability fundamentals."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
