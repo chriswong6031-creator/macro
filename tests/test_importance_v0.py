@@ -175,6 +175,91 @@ def test_surprise_excluded_and_weights_sum_to_one():
 
 
 # --------------------------------------------------------------------------- #
+# StoreIndex fast path — pinned equivalent to the frame-scan paths.
+# score_store now builds a qbus.StoreIndex once per snapshot (the 2026-08 fix
+# for the O(store²) collect_tail blowups); these tests are the contract that
+# the index path and the per-call frame paths never diverge.
+# --------------------------------------------------------------------------- #
+def test_index_matches_frame_paths(store):
+    clean = iv.clean_df(store)
+    index = qbus.build_index(clean)
+    assert index is not None
+
+    subjects = {s for r in clean.to_dict("records")
+                for s in (qbus._split(r["entities"]) + qbus._split(r["themes"]))}
+    asofs = ["2026-06-01", "2026-06-15", "2026-06-29", "2026-06-30", "2026-07-05"]
+    for subject in sorted(subjects):
+        for asof in asofs:
+            for w in (7, 30):
+                assert (qbus.novelty_z(subject, asof, window_days=w, df=clean)
+                        == qbus.novelty_z(subject, asof, window_days=w,
+                                          df=clean, index=index)), \
+                    f"novelty_z diverged: {subject} {asof} w={w}"
+
+    keys = {str(k) for k in clean["event_key"].tolist() if str(k)}
+    for key in sorted(keys):
+        for asof in [None] + asofs:
+            assert (qbus.echo_stats(key, df=clean, asof=asof)
+                    == qbus.echo_stats(key, df=clean, asof=asof, index=index)), \
+                f"echo_stats diverged: {key} asof={asof}"
+    # absent key + empty key → None on both paths
+    assert qbus.echo_stats("ev_nope", df=clean, index=index) is None
+    assert qbus.echo_stats("", df=clean, index=index) is None
+
+
+def test_index_matches_frame_paths_on_raw_tz_mixed_store(store):
+    """The index must reproduce the frame paths on the RAW (tz-mixed, dateless-
+    row-bearing) store too — build_index is not allowed to assume clean_df ran."""
+    index = qbus.build_index(store)
+    assert index is not None
+    for subject in ("AAPL", "NVDA", "600519.SS", "tech", "misc", "GHOST"):
+        for asof in ("2026-06-15", "2026-06-30"):
+            assert (qbus.novelty_z(subject, asof, df=store)
+                    == qbus.novelty_z(subject, asof, df=store, index=index))
+    for key in ("evA0", "evN1", "evCN1", "evDead"):
+        for asof in (None, "2026-06-15", "2026-06-30"):
+            assert (qbus.echo_stats(key, df=store, asof=asof)
+                    == qbus.echo_stats(key, df=store, asof=asof, index=index))
+
+
+def test_index_edge_semantics_match_frame_paths():
+    """The two hairy corners, pinned on both paths:
+    * a subject listed in BOTH entities and themes counts the row ONCE
+      (_subject_daily_counts is an OR-match, not a sum);
+    * novelty days use seendate-fallback-_crawled_at while echo's PIT stamp uses
+      _crawled_at-fallback-seendate — the REVERSED precedence must survive."""
+    rows = [
+        # subject in both fields; seendate day differs from _crawled_at day
+        _row("both1", "en", "TSLA", "TSLA", "2026-06-10 08:00:00", 1, "evB"),
+        _row("both2", "en", "TSLA", "evs", "", 2, "evB"),   # dateless seendate
+    ]
+    rows[0]["_crawled_at"] = "2026-06-12T09:00:00+00:00"
+    rows[1]["_crawled_at"] = "2026-06-11T10:00:00+00:00"
+    frame = pd.DataFrame(rows, columns=list(qbus.COLUMNS))
+    index = qbus.build_index(frame)
+    assert index is not None
+    for asof in ("2026-06-10", "2026-06-11", "2026-06-12", "2026-06-13"):
+        assert (qbus.novelty_z("TSLA", asof, df=frame)
+                == qbus.novelty_z("TSLA", asof, df=frame, index=index))
+        assert (qbus.echo_stats("evB", df=frame, asof=asof)
+                == qbus.echo_stats("evB", df=frame, asof=asof, index=index))
+    # single-count check directly: both1 lists TSLA twice but is ONE row
+    today, _ = index.subject_daily_counts("TSLA", pd.Timestamp("2026-06-10").date(), 7)
+    assert today == 1.0
+
+
+def test_score_store_output_identical_with_and_without_index(store, monkeypatch):
+    """End-to-end pin: score_store (which builds the index internally) must
+    produce byte-identical component rows to a run where the index build is
+    disabled and every read falls back to the frame-scan paths."""
+    fast = iv.score_store(df=store)
+    monkeypatch.setattr(qbus, "build_index", lambda df: None)
+    slow = iv.score_store(df=store)
+    assert fast == slow
+    assert len(fast) > 0
+
+
+# --------------------------------------------------------------------------- #
 # lane routing
 # --------------------------------------------------------------------------- #
 def test_lane_routing():

@@ -67,7 +67,7 @@ if str(_ROOT) not in sys.path:
 
 from engine import importance_v0 as iv  # noqa: E402
 from engine import qbus  # noqa: E402
-from engine.qledger import make_claim, register  # noqa: E402
+from engine.qledger import make_claim, register_batch  # noqa: E402
 
 log = logging.getLogger("shadow_importance_v0_pit")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -101,12 +101,26 @@ def _has_price_cn(ticker: str, root: Path) -> bool:
     return (root / "data" / "china_stocks" / f"{ticker}.parquet").exists()
 
 
-def _covered_tickers(item: dict, lane: str, root: Path) -> list[str]:
+def _covered_tickers(item: dict, lane: str, root: Path,
+                     cache: dict | None = None) -> list[str]:
+    """Identical to shadow_importance_v0._covered_tickers, including the per-run
+    {(lane, ticker): bool} coverage memo (the US probe falls through to a slow
+    ai_desk price-series read for non-yahoo tickers)."""
     ents = qbus._split(item.get("entities"))
     check = _has_price_us if lane == "us" else _has_price_cn
     seen: list[str] = []
     for t in ents:
-        if t and t not in seen and check(t, root):
+        if not t or t in seen:
+            continue
+        if cache is None:
+            ok = check(t, root)
+        else:
+            key = (lane, t)
+            ok = cache.get(key)
+            if ok is None:
+                ok = check(t, root)
+                cache[key] = ok
+        if ok:
             seen.append(t)
     return seen
 
@@ -135,7 +149,8 @@ def _assign_bands(scored: list[dict], band_frac: float) -> dict[str, str]:
 # registration
 # --------------------------------------------------------------------------- #
 def _register_lane(lane: str, df, root: Path, band_frac: float,
-                   dry_run: bool, counters: dict) -> None:
+                   dry_run: bool, counters: dict,
+                   price_cache: dict | None = None) -> None:
     scored = iv.score_store(df=df, lane=lane)
     counters[f"{lane}_scored"] = len(scored)
     if not scored:
@@ -148,6 +163,12 @@ def _register_lane(lane: str, df, root: Path, band_frac: float,
     bench = _LANE_BENCH[lane]
     family = _LANE_FAMILY[lane]
 
+    # ONE register_batch call per lane — register()'s dedupe scan re-reads the
+    # whole claims file per call (qledger COST NOTE), and this loop re-attempts
+    # every banded pair nightly, which made the pass quadratic in ledger size.
+    pending: list[dict] = []
+    pending_ctx: list[tuple] = []   # (ticker, asof, horizon_d) per pending claim
+
     for item_id, band in bands.items():
         comp = by_id.get(item_id)
         item = id_to_item.get(item_id)
@@ -155,7 +176,7 @@ def _register_lane(lane: str, df, root: Path, band_frac: float,
             continue
         asof = comp["asof"]
         score = comp["importance_v0"]
-        covered = _covered_tickers(item, lane, root)
+        covered = _covered_tickers(item, lane, root, price_cache)
         if not covered:
             counters[f"{lane}_no_ticker"] += 1
             continue
@@ -196,13 +217,26 @@ def _register_lane(lane: str, df, root: Path, band_frac: float,
                 if dry_run:
                     counters[f"{lane}_registered"] += 1
                     continue
-                stored = register(claim, root=root)
-                if stored.get("status") == "rejected":
-                    counters[f"{lane}_rejected"] += 1
-                    log.warning("claim rejected: %s %s h=%d — %s", ticker, asof,
-                                horizon_d, stored.get("reject_reason"))
-                else:
-                    counters[f"{lane}_registered"] += 1
+                pending.append(claim)
+                pending_ctx.append((ticker, asof, horizon_d))
+
+    if not pending:
+        return
+    results = register_batch(pending, root=root)
+    for (ticker, asof, horizon_d), stored in zip(pending_ctx, results):
+        status = stored.get("status")
+        if status == "rejected":
+            counters[f"{lane}_rejected"] += 1
+            log.warning("claim rejected: %s %s h=%d — %s", ticker, asof,
+                        horizon_d, stored.get("reject_reason"))
+        elif status == "error":
+            # register() would have raised and sunk the lane; register_batch
+            # isolates the bad claim — count it with the rejects, loudly.
+            counters[f"{lane}_rejected"] += 1
+            log.warning("claim errored: %s %s h=%d — %s", ticker, asof,
+                        horizon_d, stored.get("error"))
+        else:
+            counters[f"{lane}_registered"] += 1
 
 
 def run(root: Path, dry_run: bool = False, band_frac: float = _BAND_FRAC_DEFAULT,
@@ -219,13 +253,14 @@ def run(root: Path, dry_run: bool = False, band_frac: float = _BAND_FRAC_DEFAULT
     counters: dict = {"n_items": int(len(df)), "band_frac": band_frac,
                       "pit_corrected": True}
     lanes = ("us", "cn") if lane == "all" else (lane,)
+    price_cache: dict = {}   # (lane, ticker) -> bool, shared across this run
     for ln in lanes:
         counters.setdefault(f"{ln}_scored", 0)
         counters.setdefault(f"{ln}_pairs", 0)
         counters.setdefault(f"{ln}_no_ticker", 0)
         counters.setdefault(f"{ln}_registered", 0)
         counters.setdefault(f"{ln}_rejected", 0)
-        _register_lane(ln, df, root, band_frac, dry_run, counters)
+        _register_lane(ln, df, root, band_frac, dry_run, counters, price_cache)
 
     log.info("shadow_importance_v0_pit done — %s",
              {k: v for k, v in counters.items() if k != "band_frac"})

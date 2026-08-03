@@ -195,8 +195,8 @@ def primary_subject(item: dict) -> str | None:
 # --------------------------------------------------------------------------- #
 # trailing crowding-z — same subject, trailing window, item VOLUME (not novelty)
 # --------------------------------------------------------------------------- #
-def _crowding_z(subject: str, asof, df, window_days: int = _CROWDING_WINDOW_DAYS
-                ) -> float | None:
+def _crowding_z(subject: str, asof, df, window_days: int = _CROWDING_WINDOW_DAYS,
+                index=None) -> float | None:
     """z-score of the subject's trailing-`window_days` mean daily volume vs its
     own longer novelty window — i.e. 'has this subject been unusually loud over
     the last week?'. Distinct from novelty_z (which compares TODAY to the
@@ -213,7 +213,10 @@ def _crowding_z(subject: str, asof, df, window_days: int = _CROWDING_WINDOW_DAYS
         a = qbus._asof_date(asof)
         if a is None:
             return None
-        _, series = qbus._subject_daily_counts(df, subject, a, _NOVELTY_WINDOW_DAYS)
+        if index is not None:
+            _, series = index.subject_daily_counts(subject, a, _NOVELTY_WINDOW_DAYS)
+        else:
+            _, series = qbus._subject_daily_counts(df, subject, a, _NOVELTY_WINDOW_DAYS)
         if not series or len(series) < window_days + 1:
             return None
         n = len(series)
@@ -274,7 +277,7 @@ def clean_df(df):
         return df
 
 
-def score_components(item: dict, asof, df=None) -> dict:
+def score_components(item: dict, asof, df=None, index=None) -> dict:
     """Return every feature contribution for ONE item (for the duel report /
     tests / audit), plus the final importance_v0 in [0, 1]. Deterministic — asof
     REQUIRED, df injectable. Never raises.
@@ -284,6 +287,10 @@ def score_components(item: dict, asof, df=None) -> dict:
 
     The df passed here is expected to be date-clean (see clean_df); score_store
     cleans once up-front so per-item scoring shares one clean snapshot.
+
+    `index` (optional, qbus.build_index over the SAME snapshot as df) makes the
+    novelty/echo/crowding reads O(window) instead of O(rows) — score_store
+    passes it so a full-store re-score is linear, not quadratic, in store size.
     """
     if df is None:
         df = clean_df(qbus.read_items())
@@ -291,14 +298,16 @@ def score_components(item: dict, asof, df=None) -> dict:
     subject = primary_subject(item)
     lane = lane_of(item)
 
-    nz = qbus.novelty_z(subject, asof, window_days=_NOVELTY_WINDOW_DAYS, df=df) \
+    nz = qbus.novelty_z(subject, asof, window_days=_NOVELTY_WINDOW_DAYS, df=df,
+                        index=index) \
         if subject else None
     novelty = _novelty_feature(nz)
 
     # Pass asof to echo_stats so corroboration is PIT-filtered: only items seen
     # on or before the scoring date count as corroborators (W4 bug-fix, see
     # qbus.echo_stats for the full explanation).
-    echo = qbus.echo_stats(str(item.get("event_key") or ""), df=df, asof=asof)
+    echo = qbus.echo_stats(str(item.get("event_key") or ""), df=df, asof=asof,
+                           index=index)
     breadth = _breadth_feature(echo)
     # (b) corroboration is novelty-GATED breadth: within-window echo of a LOW-novelty
     # subject (breadth high but novelty low) must NOT inflate the score. Multiply
@@ -307,7 +316,7 @@ def score_components(item: dict, asof, df=None) -> dict:
 
     tier = _tier_feature(item.get("source_tier"))
 
-    cz = _crowding_z(subject, asof, df) if subject else None
+    cz = _crowding_z(subject, asof, df, index=index) if subject else None
     penalty = _crowding_penalty(cz)
 
     raw = (
@@ -362,12 +371,19 @@ def score_store(df=None, lane: str | None = None) -> list[dict]:
     SAME df snapshot (so the score of a row uses only what the bus knew as of that
     row's day-of-store — the store is append-only keep-first, so this is a faithful
     replay). Deterministic. Never raises into the caller.
+
+    Builds a qbus.StoreIndex ONCE over the clean snapshot so per-item reads are
+    O(window)/O(cluster) instead of O(rows) — without it a full-store re-score is
+    quadratic in store size (the late-July-2026 collect_tail blowups: 40m →
+    61m/pass in five nights on organic accrual alone). Falls back to the frame
+    paths when the index cannot be built (identical semantics, just slower).
     """
     if df is None:
         df = qbus.read_items()
     df = clean_df(df)
     if df is None or len(df) == 0:
         return []
+    index = qbus.build_index(df)
 
     out: list[dict] = []
     for row in df.to_dict("records"):
@@ -377,7 +393,7 @@ def score_store(df=None, lane: str | None = None) -> list[dict]:
         asof = _item_asof(row)
         if asof is None:
             continue
-        comp = score_components(row, asof, df=df)
+        comp = score_components(row, asof, df=df, index=index)
         comp["item_id"] = str(row.get("item_id") or "")
         comp["event_key"] = str(row.get("event_key") or "")
         comp["asof"] = asof
