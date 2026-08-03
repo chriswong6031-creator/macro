@@ -9,19 +9,22 @@ packet binding, write its completed run/manifest, and then call
 attestation; it never fills in an authority or a reference on the caller's
 behalf.
 
-``compile_sector_packet`` consumes only the immutable, validated preparation
-object, so compilation itself has no filesystem, network, or wall-clock
-dependency.  The boundary validator uses the repository's existing contract
-registry before construction.  Current ``trial_snapshot.v1`` has a scalar
-contradiction state but no claim-pair/resolution references; any state other
-than ``none_known`` therefore fails closed rather than being flattened into an
-empty packet contradiction list.
+``compile_sector_packet`` consumes only immutable preparation bytes and
+revalidates both the generic packet contract and N0a's stricter facts-only
+carrier invariants.  The extra final check makes an imported private seal
+insufficient to smuggle a rehashed generic packet through compilation.  The
+boundary validator uses the repository's existing contract registry before
+construction.  Current ``trial_snapshot.v1`` has a scalar contradiction state
+but no claim-pair/resolution references; any state other than ``none_known``
+therefore fails closed rather than being flattened into an empty packet
+contradiction list.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
+import math
 import re
 from typing import Any, Mapping, Sequence
 
@@ -36,7 +39,38 @@ from engine.sector_intelligence import (
 _SECTOR = "biopharma"
 _SOURCE_ID = "clinicaltrials_gov_v2"
 _NCT_ID_RE = re.compile(r"^NCT[0-9]{8}$")
+_ENTITY_REF_RE = re.compile(r"^trial:(NCT[0-9]{8})$")
+_SOURCE_REF_RE = re.compile(r"^src:ctgov:(NCT[0-9]{8}):sha256:[a-f0-9]{64}$")
+_EVIDENCE_REF_RE = re.compile(
+    r"^claim:trial:(NCT[0-9]{8}):[A-Za-z0-9][A-Za-z0-9_.:-]{0,191}$"
+)
+_CTGOV_DATA_TIMESTAMP_RE = re.compile(
+    r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+    r"(?:Z|[+-][0-9]{2}:[0-9]{2})?$"
+)
 _RUN_ID_RE = re.compile(r"^ctgov_run_[A-Za-z0-9_-]+$")
+_PACKET_ID_RE = re.compile(r"^packet:biopharma:[a-f0-9]{24}$")
+_PRODUCER = {
+    "service": "biocatalyst-sector-packet",
+    "code_version": "bc-n0a.v1",
+    "owner": "biocatalyst",
+}
+_MAX_TRIAL_PROJECTIONS = 100
+_MAX_TRIAL_PROJECTION_BYTES = 256 * 1024
+_MAX_AGGREGATE_PROJECTION_BYTES = 1024 * 1024
+_MAX_EVIDENCE_REFS_PER_PROJECTION = 32
+_MAX_EVIDENCE_REFS = 1000
+_MAX_PACKET_BYTES = 1024 * 1024
+_MAX_OPERATIONAL_HEALTH_BYTES = 16 * 1024
+_MAX_GOVERNANCE_DOCUMENT_BYTES = 256 * 1024
+_MAX_JSON_NODES = 20_000
+_MAX_JSON_DEPTH = 32
+_MAX_JSON_CONTAINER_ITEMS = 4_096
+# The active ClinicalTrials.gov source row in
+# config/biocatalyst_launch_slo_manifest.yml pins maximum_seconds to 7200.
+# N0a treats the public health DTO's copy as an attestation to that frozen SLO,
+# never as caller-controlled freshness authority.
+_CTGOV_FRESHNESS_BUDGET_SECONDS = 7_200
 _REQUIRED_DENIALS = frozenset(
     {
         "originate_signal",
@@ -94,13 +128,67 @@ def _reject(code: str) -> None:
     raise SectorPacketError(code)
 
 
+def _preflight_json_object(value: Any, *, code: str, max_bytes: int) -> int:
+    """Bound a JSON-shaped injected object before canonical serialization.
+
+    The byte total is a conservative upper bound: every string character is
+    charged as a six-byte JSON escape.  It deliberately refuses some very
+    large-but-valid Unicode payloads rather than allocating a potentially
+    unbounded canonical serialization at this private boundary.
+    """
+
+    if not isinstance(value, Mapping):
+        _reject(code)
+    estimated_bytes = 0
+    node_count = 0
+    stack: list[tuple[Any, int]] = [(value, 0)]
+    while stack:
+        node, depth = stack.pop()
+        node_count += 1
+        if node_count > _MAX_JSON_NODES or depth > _MAX_JSON_DEPTH:
+            _reject(code)
+        if isinstance(node, Mapping):
+            if len(node) > _MAX_JSON_CONTAINER_ITEMS:
+                _reject(code)
+            estimated_bytes += 2 + max(0, len(node) - 1)
+            for key, child in node.items():
+                if not isinstance(key, str):
+                    _reject(code)
+                estimated_bytes += 3 + 6 * len(key)  # quoted key plus colon
+                stack.append((child, depth + 1))
+        elif isinstance(node, (list, tuple)):
+            if len(node) > _MAX_JSON_CONTAINER_ITEMS:
+                _reject(code)
+            estimated_bytes += 2 + max(0, len(node) - 1)
+            stack.extend((child, depth + 1) for child in node)
+        elif isinstance(node, str):
+            estimated_bytes += 2 + 6 * len(node)
+        elif node is None:
+            estimated_bytes += 4
+        elif isinstance(node, bool):
+            estimated_bytes += 5
+        elif isinstance(node, int):
+            try:
+                estimated_bytes += len(str(node))
+            except ValueError:
+                _reject(code)
+        elif isinstance(node, float):
+            if not math.isfinite(node):
+                _reject(code)
+            estimated_bytes += len(repr(node))
+        else:
+            _reject(code)
+        if estimated_bytes > max_bytes:
+            _reject(code)
+    return estimated_bytes
+
+
 def _ordered_actions(actions: Sequence[str]) -> tuple[str, ...]:
     return tuple(sorted(actions, key=_ACTION_ORDER.__getitem__))
 
 
-def _json_object(value: Any, *, code: str) -> dict[str, Any]:
-    if not isinstance(value, Mapping):
-        _reject(code)
+def _json_object(value: Any, *, code: str, max_bytes: int) -> dict[str, Any]:
+    _preflight_json_object(value, code=code, max_bytes=max_bytes)
     try:
         normalized = json.loads(canonical_json_bytes(value))
     except ContractError:
@@ -108,6 +196,20 @@ def _json_object(value: Any, *, code: str) -> dict[str, Any]:
     if not isinstance(normalized, dict):
         _reject(code)
     return normalized
+
+
+def _canonical_json_object_bytes(
+    value: Any, *, code: str, max_bytes: int
+) -> tuple[dict[str, Any], bytes, int]:
+    preflight_bytes = _preflight_json_object(value, code=code, max_bytes=max_bytes)
+    try:
+        payload = canonical_json_bytes(value)
+        normalized = json.loads(payload)
+    except (ContractError, TypeError, ValueError):
+        _reject(code)
+    if not isinstance(normalized, dict):
+        _reject(code)
+    return normalized, payload, preflight_bytes
 
 
 def _utc(value: Any, *, code: str) -> datetime:
@@ -128,8 +230,39 @@ def _canonical_utc(value: Any, *, code: str) -> str:
     return value
 
 
-def _validate_health(health: Mapping[str, Any], *, evaluated_at: datetime) -> dict[str, Any]:
-    normalized = _json_object(health, code="operational_health_unavailable")
+def _explicit_source_clock(value: Any, *, code: str) -> datetime | None:
+    """Return an explicit-offset ClinicalTrials version clock, or unknown.
+
+    CT.gov has historically emitted timestamps without a timezone.  Those are
+    intentionally not coerced to UTC: the caller may retain the fact but N0a
+    must expose freshness as unknown until a receipt supplies an explicit
+    offset or ``Z``.
+    """
+
+    # Keep this lexical contract exactly aligned with the shared
+    # ``ctgov-data-timestamp`` format checker.  Do not let
+    # ``datetime.fromisoformat`` broaden a representation into a supported
+    # source clock merely because Python happens to parse it.
+    if not isinstance(value, str) or not _CTGOV_DATA_TIMESTAMP_RE.fullmatch(value):
+        _reject(code)
+    normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        _reject(code)
+    if parsed.tzinfo is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
+def _validate_health(
+    health: Mapping[str, Any], *, evaluated_at: datetime, lobe_cutoff: datetime
+) -> dict[str, Any]:
+    normalized = _json_object(
+        health,
+        code="operational_health_unavailable",
+        max_bytes=_MAX_OPERATIONAL_HEALTH_BYTES,
+    )
     if set(normalized) != _HEALTH_KEYS:
         _reject("operational_health_unavailable")
     if normalized.get("schema_version") != "biocatalyst_operational_health.v1":
@@ -149,16 +282,28 @@ def _validate_health(health: Mapping[str, Any], *, evaluated_at: datetime) -> di
             _reject("operational_health_unavailable")
     if normalized["configured_nct_count"] < normalized["observed_nct_count"]:
         _reject("operational_health_unavailable")
+    if normalized["freshness_budget_seconds"] != _CTGOV_FRESHNESS_BUDGET_SECONDS:
+        _reject("operational_health_unavailable")
     last_attempt = _utc(normalized.get("last_attempt_at"), code="operational_health_unavailable")
     last_success_value = normalized.get("last_success_at")
     if not isinstance(last_success_value, str):
         _reject("operational_health_unavailable")
     last_success = _utc(last_success_value, code="operational_health_unavailable")
-    if last_success > last_attempt or last_attempt > evaluated_at:
-        _reject("evaluated_at_unavailable")
+    if (
+        last_success > last_attempt
+        or last_attempt > lobe_cutoff
+        or last_success > lobe_cutoff
+        or lobe_cutoff > evaluated_at
+    ):
+        _reject("knowledge_cutoff_unavailable")
     source_timestamp = normalized.get("source_dataset_timestamp_raw")
-    if not isinstance(source_timestamp, str) or not source_timestamp:
-        _reject("operational_health_unavailable")
+    source_clock = _explicit_source_clock(
+        source_timestamp, code="operational_health_unavailable"
+    )
+    if source_clock is not None and (
+        source_clock > lobe_cutoff or source_clock > evaluated_at
+    ):
+        _reject("knowledge_cutoff_unavailable")
     error_code = normalized.get("last_error_code")
     if error_code is not None and (
         not isinstance(error_code, str) or not re.fullmatch(r"[A-Z0-9_]{1,96}", error_code)
@@ -174,10 +319,27 @@ def _validate_trial_projections(
 ) -> tuple[dict[str, Any], ...]:
     if isinstance(projections, (str, bytes)) or not isinstance(projections, Sequence):
         _reject("trial_projection_unavailable")
+    if not projections or len(projections) > _MAX_TRIAL_PROJECTIONS:
+        _reject("trial_projection_unavailable")
     normalized: list[dict[str, Any]] = []
     nct_ids: set[str] = set()
+    aggregate_bytes = 0
+    aggregate_preflight_bytes = 0
+    aggregate_evidence_refs = 0
     for projection in projections:
-        payload = _json_object(projection, code="trial_projection_unavailable")
+        payload, projection_bytes, preflight_bytes = _canonical_json_object_bytes(
+            projection,
+            code="trial_projection_unavailable",
+            max_bytes=_MAX_TRIAL_PROJECTION_BYTES,
+        )
+        if len(projection_bytes) > _MAX_TRIAL_PROJECTION_BYTES:
+            _reject("trial_projection_unavailable")
+        aggregate_preflight_bytes += preflight_bytes
+        if aggregate_preflight_bytes > _MAX_AGGREGATE_PROJECTION_BYTES:
+            _reject("trial_projection_unavailable")
+        aggregate_bytes += len(projection_bytes)
+        if aggregate_bytes > _MAX_AGGREGATE_PROJECTION_BYTES:
+            _reject("trial_projection_unavailable")
         try:
             validate_contract("trial_snapshot.v1", payload)
         except (ContractError, TypeError, ValueError):
@@ -206,15 +368,21 @@ def _validate_trial_projections(
         evidence_refs = payload.get("evidence_claim_refs")
         if (
             not isinstance(evidence_refs, list)
+            or len(evidence_refs) > _MAX_EVIDENCE_REFS_PER_PROJECTION
             or any(not isinstance(ref, str) or not ref for ref in evidence_refs)
         ):
             _reject("trial_projection_unavailable")
+        aggregate_evidence_refs += len(evidence_refs)
+        if aggregate_evidence_refs > _MAX_EVIDENCE_REFS:
+            _reject("trial_projection_unavailable")
+        for evidence_ref in evidence_refs:
+            match = _EVIDENCE_REF_RE.fullmatch(evidence_ref)
+            if match is None or match.group(1) != nct_id:
+                _reject("trial_projection_unavailable")
         expected_source_ref = f"src:ctgov:{nct_id}:sha256:{payload.get('canonical_content_sha256')}"
         if payload.get("source_record_ref") != expected_source_ref:
             _reject("trial_projection_unavailable")
         normalized.append(payload)
-    if not normalized:
-        _reject("trial_projection_unavailable")
     return tuple(sorted(normalized, key=lambda item: item["nct_id"]))
 
 
@@ -224,8 +392,16 @@ def _validate_governance(
     *,
     evaluated_at: datetime,
 ) -> tuple[dict[str, Any], dict[str, Any], tuple[str, ...]]:
-    lobe = _json_object(lobe_run, code="governance_reference_unavailable")
-    manifest = _json_object(authority_manifest, code="governance_reference_unavailable")
+    lobe = _json_object(
+        lobe_run,
+        code="governance_reference_unavailable",
+        max_bytes=_MAX_GOVERNANCE_DOCUMENT_BYTES,
+    )
+    manifest = _json_object(
+        authority_manifest,
+        code="governance_reference_unavailable",
+        max_bytes=_MAX_GOVERNANCE_DOCUMENT_BYTES,
+    )
     try:
         validate_contract("lobe_run.v1", lobe)
         validate_contract("authority_manifest.v1", manifest)
@@ -283,23 +459,34 @@ def _validate_governance(
 
 
 def _freshness(health: Mapping[str, Any], *, evaluated_at: datetime) -> dict[str, Any]:
-    last_success = _utc(health["last_success_at"], code="operational_health_unavailable")
-    age_seconds = (evaluated_at - last_success).total_seconds()
-    if health["state"] == "fresh" and age_seconds <= health["freshness_budget_seconds"]:
+    source_clock = _explicit_source_clock(
+        health["source_dataset_timestamp_raw"], code="operational_health_unavailable"
+    )
+    if source_clock is None:
+        state = "unknown"
+        stale_source_ids: list[str] = []
+        unknown_source_ids: list[str] = [_SOURCE_ID]
+        oldest_required_source_at: str | None = None
+    elif health["state"] == "fresh" and (
+        evaluated_at - source_clock
+    ).total_seconds() <= health["freshness_budget_seconds"]:
         state = "fresh"
         stale_source_ids: list[str] = []
         unknown_source_ids: list[str] = []
+        oldest_required_source_at = health["source_dataset_timestamp_raw"]
     elif health["state"] in {"fresh", "stale"}:
         state = "stale"
         stale_source_ids = [_SOURCE_ID]
         unknown_source_ids = []
+        oldest_required_source_at = health["source_dataset_timestamp_raw"]
     else:
         state = "degraded"
         stale_source_ids = []
         unknown_source_ids = [_SOURCE_ID]
+        oldest_required_source_at = health["source_dataset_timestamp_raw"]
     return {
         "state": state,
-        "oldest_required_source_at": health["last_success_at"],
+        "oldest_required_source_at": oldest_required_source_at,
         "evaluated_at": evaluated_at.isoformat().replace("+00:00", "Z"),
         "stale_source_ids": stale_source_ids,
         "unknown_source_ids": unknown_source_ids,
@@ -340,22 +527,20 @@ def _packet_payload(
     )
     completeness = health["observed_nct_count"] / health["configured_nct_count"] if health["configured_nct_count"] else 0.0
     quality_state = "complete" if freshness["state"] == "fresh" and completeness == 1 else "degraded"
-    warnings = [
-        "Current-only ClinicalTrials.gov facts; complete prior history is not implied."
-    ]
+    warnings = ["Current-only ClinicalTrials.gov facts; complete prior history is not implied."]
+    if freshness["state"] == "unknown":
+        warnings.append(
+            "ClinicalTrials.gov source dataTimestamp has no declared timezone; freshness is unknown."
+        )
     if freshness["state"] != "fresh":
-        warnings.append("ClinicalTrials.gov operational health is not fresh.")
+        warnings.append("ClinicalTrials.gov source freshness is not confirmed.")
     return {
         "contract_id": "sector_intelligence_packet.v1",
         "schema_version": "1.0.0",
         "packet_id": packet_id,
         "packet_version": 1,
         "sector": _SECTOR,
-        "producer": {
-            "service": "biocatalyst-sector-packet",
-            "code_version": "bc-n0a.v1",
-            "owner": "biocatalyst",
-        },
+        "producer": dict(_PRODUCER),
         "generated_at": evaluated_at,
         "knowledge_cutoff": cutoff,
         "entity_refs": entity_refs,
@@ -391,6 +576,14 @@ def _packet_payload(
 def _binding_for_payload(payload: Mapping[str, Any], *, row_count: int) -> SectorPacketBinding:
     packet = dict(payload)
     packet["packet_hash"] = canonical_json_sha256(packet)
+    try:
+        packet_bytes = canonical_json_bytes(packet)
+    except (ContractError, TypeError, ValueError):
+        _reject("packet_contract_unavailable")
+    # Receipt planning and final preparation share this hard ceiling.  A lobe
+    # must never be asked to attest a packet that the compiler cannot emit.
+    if len(packet_bytes) > _MAX_PACKET_BYTES:
+        _reject("packet_size_unavailable")
     return SectorPacketBinding(
         packet_id=str(packet["packet_id"]),
         packet_hash=str(packet["packet_hash"]),
@@ -439,7 +632,11 @@ def _prepare(
     lobe, manifest, allowed_actions = _validate_governance(
         lobe_run, authority_manifest, evaluated_at=evaluated
     )
-    health = _validate_health(operational_health, evaluated_at=evaluated)
+    health = _validate_health(
+        operational_health,
+        evaluated_at=evaluated,
+        lobe_cutoff=_utc(lobe["knowledge_cutoff"], code="knowledge_cutoff_unavailable"),
+    )
     projections = _validate_trial_projections(
         trial_projections,
         lobe_cutoff=_utc(lobe["knowledge_cutoff"], code="knowledge_cutoff_unavailable"),
@@ -500,7 +697,9 @@ def plan_sector_packet_binding(
         or not set(allowed_actions).issubset(_ALLOWED_ACTIONS)
     ):
         _reject("governance_reference_unavailable")
-    health = _validate_health(operational_health, evaluated_at=evaluated)
+    health = _validate_health(
+        operational_health, evaluated_at=evaluated, lobe_cutoff=cutoff_dt
+    )
     projections = _validate_trial_projections(
         trial_projections, lobe_cutoff=cutoff_dt
     )
@@ -550,12 +749,192 @@ def prepare_sector_packet_inputs(
     )
 
 
+def _validated_ref_list(value: Any, *, pattern: re.Pattern[str], code: str) -> list[re.Match[str]]:
+    if not isinstance(value, list):
+        _reject(code)
+    matches: list[re.Match[str]] = []
+    for ref in value:
+        if not isinstance(ref, str):
+            _reject(code)
+        match = pattern.fullmatch(ref)
+        if match is None:
+            _reject(code)
+        matches.append(match)
+    return matches
+
+
+def _validate_compiled_packet(packet: Mapping[str, Any], *, packet_bytes: bytes) -> None:
+    """Recheck every N0a invariant on the final canonical carrier.
+
+    ``_PREPARATION_SEAL`` is deliberately only misuse friction: Python callers
+    can import private names.  The actual security boundary is this complete,
+    deterministic validation of a canonical carrier, including the generic
+    packet contract, before any result leaves the compiler.
+    """
+
+    code = "compiled_packet_unavailable"
+    if len(packet_bytes) > _MAX_PACKET_BYTES:
+        _reject(code)
+    try:
+        validate_contract("sector_intelligence_packet.v1", packet)
+    except (ContractError, TypeError, ValueError):
+        _reject(code)
+
+    if (
+        packet.get("contract_id") != "sector_intelligence_packet.v1"
+        or packet.get("schema_version") != "1.0.0"
+        or packet.get("packet_version") != 1
+        or packet.get("sector") != _SECTOR
+        or packet.get("producer") != _PRODUCER
+        or packet.get("hash_scope") != "canonical_payload_excluding_packet_hash"
+        or not isinstance(packet.get("packet_id"), str)
+        or _PACKET_ID_RE.fullmatch(packet["packet_id"]) is None
+    ):
+        _reject(code)
+
+    entity_matches = _validated_ref_list(
+        packet.get("entity_refs"), pattern=_ENTITY_REF_RE, code=code
+    )
+    entity_refs = packet["entity_refs"]
+    if not entity_refs or entity_refs != sorted(entity_refs):
+        _reject(code)
+    entity_ncts = {match.group(1) for match in entity_matches}
+    if len(entity_ncts) != len(entity_refs):
+        _reject(code)
+
+    source_matches = _validated_ref_list(
+        packet.get("source_record_refs"), pattern=_SOURCE_REF_RE, code=code
+    )
+    source_refs = packet["source_record_refs"]
+    if source_refs != sorted(source_refs) or len(source_refs) != len(entity_refs):
+        _reject(code)
+    if {match.group(1) for match in source_matches} != entity_ncts:
+        _reject(code)
+
+    evidence_matches = _validated_ref_list(
+        packet.get("evidence_claim_refs"), pattern=_EVIDENCE_REF_RE, code=code
+    )
+    evidence_refs = packet["evidence_claim_refs"]
+    if (
+        len(evidence_refs) > _MAX_EVIDENCE_REFS
+        or evidence_refs != sorted(evidence_refs)
+        or packet.get("current_fact_refs") != evidence_refs
+        or any(match.group(1) not in entity_ncts for match in evidence_matches)
+    ):
+        _reject(code)
+
+    for lane in (
+        "security_refs",
+        "portfolio_exposure",
+        "material_change_event_refs",
+        "upcoming_event_refs",
+        "contradictions",
+        "feature_snapshot_refs",
+        "prediction_refs",
+    ):
+        if packet.get(lane) != []:
+            _reject(code)
+
+    generated_at = _utc(packet.get("generated_at"), code=code)
+    knowledge_cutoff = _utc(packet.get("knowledge_cutoff"), code=code)
+    if knowledge_cutoff > generated_at:
+        _reject(code)
+    freshness = packet.get("freshness")
+    quality = packet.get("quality")
+    if not isinstance(freshness, Mapping) or not isinstance(quality, Mapping):
+        _reject(code)
+    if freshness.get("evaluated_at") != packet.get("generated_at"):
+        _reject(code)
+    _utc(freshness.get("evaluated_at"), code=code)
+    freshness_state = freshness.get("state")
+    oldest = freshness.get("oldest_required_source_at")
+    stale_sources = freshness.get("stale_source_ids")
+    unknown_sources = freshness.get("unknown_source_ids")
+    if freshness_state == "unknown":
+        if oldest is not None or stale_sources != [] or unknown_sources != [_SOURCE_ID]:
+            _reject(code)
+    elif freshness_state in {"fresh", "stale", "degraded"}:
+        source_clock = (
+            _explicit_source_clock(oldest, code=code)
+            if isinstance(oldest, str)
+            else None
+        )
+        if (
+            source_clock is None
+            or source_clock > knowledge_cutoff
+            or source_clock > generated_at
+        ):
+            _reject(code)
+        if freshness_state == "fresh" and (stale_sources != [] or unknown_sources != []):
+            _reject(code)
+        if freshness_state == "stale" and (
+            stale_sources != [_SOURCE_ID] or unknown_sources != []
+        ):
+            _reject(code)
+        if freshness_state == "degraded" and (
+            stale_sources != [] or unknown_sources != [_SOURCE_ID]
+        ):
+            _reject(code)
+    else:
+        _reject(code)
+
+    completeness = quality.get("completeness")
+    if (
+        isinstance(completeness, bool)
+        or not isinstance(completeness, (int, float))
+        or not 0 <= completeness <= 1
+        or quality.get("point_in_time_safe") is not True
+    ):
+        _reject(code)
+    expected_quality = (
+        "complete" if freshness_state == "fresh" and completeness == 1 else "degraded"
+    )
+    if quality.get("state") != expected_quality:
+        _reject(code)
+    warnings = quality.get("warnings")
+    expected_warnings = [
+        "Current-only ClinicalTrials.gov facts; complete prior history is not implied."
+    ]
+    if freshness_state == "unknown":
+        expected_warnings.append(
+            "ClinicalTrials.gov source dataTimestamp has no declared timezone; freshness is unknown."
+        )
+    if freshness_state != "fresh":
+        expected_warnings.append("ClinicalTrials.gov source freshness is not confirmed.")
+    if warnings != expected_warnings:
+        _reject(code)
+
+    caps = packet.get("authority_caps")
+    if not isinstance(caps, Mapping) or caps.get("max_authority") not in {
+        "A0_OBSERVE",
+        "A1_EXPLAIN",
+    }:
+        _reject(code)
+    actions = caps.get("allowed_actions")
+    if (
+        not isinstance(actions, list)
+        or actions != list(_ordered_actions(actions))
+        or not actions
+        or "observe" not in actions
+        or not set(actions).issubset(_ALLOWED_ACTIONS)
+        or (
+            caps["max_authority"] == "A0_OBSERVE"
+            and actions != ["observe"]
+        )
+        or caps.get("forbidden_actions") != sorted(_REQUIRED_DENIALS)
+        or caps.get("llm_may_originate_signals") is not False
+    ):
+        _reject(code)
+
+
 def compile_sector_packet(inputs: _ValidatedSectorPacketInputs) -> dict[str, Any]:
     """Materialize one deterministic packet with no external side effects."""
 
     if (
         not isinstance(inputs, _ValidatedSectorPacketInputs)
         or inputs._seal is not _PREPARATION_SEAL
+        or not isinstance(inputs.packet_bytes, bytes)
+        or len(inputs.packet_bytes) > _MAX_PACKET_BYTES
     ):
         _reject("validated_inputs_required")
     try:
@@ -564,10 +943,21 @@ def compile_sector_packet(inputs: _ValidatedSectorPacketInputs) -> dict[str, Any
         _reject("validated_inputs_required")
     if not isinstance(packet, dict):
         _reject("validated_inputs_required")
-    declared_hash = packet.pop("packet_hash", None)
-    if declared_hash != canonical_json_sha256(packet):
+    try:
+        if canonical_json_bytes(packet) != inputs.packet_bytes:
+            _reject("validated_inputs_required")
+    except (ContractError, TypeError, ValueError):
         _reject("validated_inputs_required")
-    packet["packet_hash"] = declared_hash
+    declared_hash = packet.get("packet_hash")
+    payload = dict(packet)
+    payload.pop("packet_hash", None)
+    try:
+        hash_matches = declared_hash == canonical_json_sha256(payload)
+    except (ContractError, TypeError, ValueError):
+        _reject("validated_inputs_required")
+    if not hash_matches:
+        _reject("validated_inputs_required")
+    _validate_compiled_packet(packet, packet_bytes=inputs.packet_bytes)
     return packet
 
 
