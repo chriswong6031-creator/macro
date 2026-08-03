@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T08:35:08.874638+00:00",
-  "count": 652,
+  "generated_at": "2026-08-03T08:59:27.027660+00:00",
+  "count": 653,
   "institutions": [
     "Alger",
     "Amova",
@@ -906,6 +906,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fxd90qbfbjq-485ae5",
+      "title": "ING Think italian confidence data point to a decent start for the third quarter",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:59:14Z",
+      "summary_points": [
+        "**Italian confidence data signals broad-based Q3 improvement (construction sector exception), lifting 2026 GDP growth forecast above 0.8% base case** - **Business confidence divergence: Manufacturing peaks, construction slumps amid Middle East war impact** - **GDP forecast upside risk: Q2 data shows service weakness vs manufacturing strength, geopolitical/energy pressures persist** - **Construction slump driven by EU recovery plan delays and Italian housing plan implementation lag**"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },

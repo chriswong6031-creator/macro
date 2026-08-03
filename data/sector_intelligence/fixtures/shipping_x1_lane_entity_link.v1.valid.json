@@ -1,0 +1,27 @@
+{
+  "contract_id": "entity_link.v1",
+  "schema_version": "1.0.0",
+  "link_id": "link:synthetic-shipping-lane:SYN-L01",
+  "sector": "shipping_trade",
+  "source_entity": {
+    "namespace": "synthetic_shipping_lane",
+    "external_id": "SYN-L01",
+    "name": "Synthetic Shipping Lane L01"
+  },
+  "canonical_entity_ref": "shipping_lane:SYN-L01",
+  "method": "exact_identifier",
+  "confidence": 1.0,
+  "valid_from": "2026-08-01T09:30:00Z",
+  "valid_to": null,
+  "transaction_from": "2026-08-01T09:45:02Z",
+  "transaction_to": null,
+  "evidence_claim_refs": [
+    "claim:shipping:SYN-L01:reported-delay",
+    "claim:shipping:SYN-L01:carrier-estimate"
+  ],
+  "reviewer_state": "machine_checked",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "is_authoritative": false,
+  "authority_manifest_ref": "authority:synthetic-shipping-display:v1"
+}

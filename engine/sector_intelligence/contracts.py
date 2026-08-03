@@ -58,6 +58,12 @@ _TRIAL_HISTORY_SOURCE_SNAPSHOT_CONTRACT_ID = "trial_history_source_snapshot.v1"
 _TRIAL_HISTORY_DIFF_CONTRACT_ID = "trial_history_exact_diff.v1"
 _TRIAL_REGISTRY_CHANGE_FACT_CONTRACT_ID = "trial_registry_change_fact.v1"
 _TRIAL_HISTORY_READ_MODEL_CONTRACT_ID = "trial_history_read_model.v1"
+_TRIAL_ENDPOINT_ALIGNMENT_CANDIDATE_CONTRACT_ID = (
+    "trial_endpoint_alignment_candidate.v1"
+)
+_TRIAL_ENDPOINT_ALIGNMENT_REVIEW_PROJECTION_CONTRACT_ID = (
+    "trial_endpoint_alignment_review_projection.v1"
+)
 _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID = (
     "biocatalyst_launch_slo_manifest.v1"
 )
@@ -3741,6 +3747,10 @@ def _contract_semantic_issues(
         return _history_change_fact_issues(document)
     if contract_id == _TRIAL_HISTORY_READ_MODEL_CONTRACT_ID:
         return _history_read_model_issues(document)
+    if contract_id == _TRIAL_ENDPOINT_ALIGNMENT_CANDIDATE_CONTRACT_ID:
+        return _endpoint_alignment_candidate_issues(document)
+    if contract_id == _TRIAL_ENDPOINT_ALIGNMENT_REVIEW_PROJECTION_CONTRACT_ID:
+        return _endpoint_alignment_review_projection_issues(document)
     if contract_id == _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID:
         return _biocatalyst_launch_slo_manifest_issues(document, repo_root)
     if contract_id == _BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID:
@@ -3870,12 +3880,29 @@ class ContractRegistry:
                     "contract documents must be finite acyclic JSON trees",
                 )
             ]
-        issues.extend(_interval_issues(document))
-        if requested == _PACKET_CONTRACT_ID and isinstance(document, Mapping):
-            issues.extend(_packet_authority_issues(document))
-        if isinstance(document, Mapping):
-            issues.extend(
-                _contract_semantic_issues(requested, document, self.repo_root)
+            # JSON Schema has already established that this is not a finite
+            # traversable document.  Do not hand the same hostile tree to the
+            # recursive interval or contract-semantic walkers below.
+            return tuple(issues)
+        try:
+            issues.extend(_interval_issues(document))
+            if requested == _PACKET_CONTRACT_ID and isinstance(document, Mapping):
+                issues.extend(_packet_authority_issues(document))
+            if isinstance(document, Mapping):
+                issues.extend(
+                    _contract_semantic_issues(requested, document, self.repo_root)
+                )
+        except (ContractError, OverflowError, RecursionError, ValueError):
+            # Some schemas intentionally do not descend into the value of an
+            # already-forbidden property.  The generic interval/semantic pass
+            # still must fail closed if that value is not a finite traversable
+            # canonical JSON tree.
+            return (
+                ValidationIssue(
+                    "$",
+                    "schema.invalid_in_memory_document",
+                    "contract documents must be finite acyclic JSON trees",
+                ),
             )
         return tuple(sorted(set(issues)))
 
@@ -6234,6 +6261,423 @@ def _history_read_model_issues(document: Mapping[str, Any]) -> list[ValidationIs
     return issues
 
 
+_ENDPOINT_ALIGNMENT_LIST_LOCATORS = {
+    "primary": "/protocolSection/outcomesModule/primaryOutcomes",
+    "secondary": "/protocolSection/outcomesModule/secondaryOutcomes",
+    "other": "/protocolSection/outcomesModule/otherOutcomes",
+}
+_ENDPOINT_ALIGNMENT_MAX_CANDIDATE_BYTES = 48 * 1024
+_ENDPOINT_ALIGNMENT_MAX_PROJECTION_BYTES = 512 * 1024
+
+
+def _bounded_canonical_json_size(
+    value: Any, *, limit: int
+) -> tuple[int | None, str | None]:
+    """Count exact canonical JSON bytes without rendering an over-cap value."""
+
+    def string_size(text: str, remaining: int) -> int | None:
+        total = 2
+        for character in text:
+            codepoint = ord(character)
+            if 0xD800 <= codepoint <= 0xDFFF:
+                return None
+            if character in {'"', "\\"} or character in {
+                "\b",
+                "\f",
+                "\n",
+                "\r",
+                "\t",
+            }:
+                total += 2
+            elif codepoint < 0x20:
+                total += 6
+            else:
+                total += (
+                    1
+                    if codepoint <= 0x7F
+                    else 2
+                    if codepoint <= 0x7FF
+                    else 3
+                    if codepoint <= 0xFFFF
+                    else 4
+                )
+            if total > remaining:
+                return total
+        return total
+
+    total = 0
+    active_container_ids: set[int] = set()
+    stack: list[tuple[bool, Any]] = [(False, value)]
+    while stack:
+        leaving, current = stack.pop()
+        if leaving:
+            active_container_ids.remove(id(current))
+            continue
+        current_type = type(current)
+        if isinstance(current, dict):
+            container_id = id(current)
+            if container_id in active_container_ids:
+                return None, "invalid"
+            active_container_ids.add(container_id)
+            item_count = len(current)
+            total += 2 + max(0, item_count - 1) + item_count
+            if total > limit:
+                return None, "limit"
+            try:
+                items = list(current.items())
+            except RuntimeError:
+                return None, "invalid"
+            if len(items) != item_count:
+                return None, "invalid"
+            if any(type(key) is not str for key, _child in items):
+                return None, "invalid"
+            items.sort(key=lambda item: item[0])
+            for key, _child in items:
+                rendered_size = string_size(key, limit - total)
+                if rendered_size is None:
+                    return None, "invalid"
+                total += rendered_size
+                if total > limit:
+                    return None, "limit"
+            stack.append((True, current))
+            stack.extend((False, child) for _key, child in reversed(items))
+        elif current_type is list:
+            container_id = id(current)
+            if container_id in active_container_ids:
+                return None, "invalid"
+            active_container_ids.add(container_id)
+            item_count = len(current)
+            total += 2 + max(0, item_count - 1)
+            if total > limit:
+                return None, "limit"
+            stack.append((True, current))
+            stack.extend((False, child) for child in reversed(current))
+        elif current_type is str:
+            rendered_size = string_size(current, limit - total)
+            if rendered_size is None:
+                return None, "invalid"
+            total += rendered_size
+        elif current is None:
+            total += 4
+        elif current_type is bool:
+            total += 4 if current else 5
+        elif current_type is int:
+            remaining = limit - total
+            if current.bit_length() > max(1, remaining) * 4:
+                return None, "limit"
+            try:
+                total += len(str(current))
+            except ValueError:
+                return None, "invalid"
+        elif current_type is float:
+            try:
+                total += len(
+                    json.dumps(current, allow_nan=False, separators=(",", ":"))
+                )
+            except (TypeError, ValueError):
+                return None, "invalid"
+        else:
+            return None, "invalid"
+        if total > limit:
+            return None, "limit"
+    return total, None
+
+
+def _endpoint_alignment_candidate_identity(document: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "semantic_method": document.get("semantic_method"),
+        "nct_id": document.get("nct_id"),
+        "diff_ref": document.get("diff_ref"),
+        "before": document.get("before"),
+        "after": document.get("after"),
+        "supporting_exact_op_sha256": document.get("supporting_exact_op_sha256"),
+    }
+
+
+def _endpoint_alignment_candidate_size_issue(
+    document: Mapping[str, Any], *, path: str = "$"
+) -> ValidationIssue | None:
+    _size, size_reason = _bounded_canonical_json_size(
+        document, limit=_ENDPOINT_ALIGNMENT_MAX_CANDIDATE_BYTES
+    )
+    if size_reason == "limit":
+        return ValidationIssue(
+            path,
+            "endpoint_alignment_candidate.byte_limit",
+            "candidate exceeds the fixed 48KiB private projection limit",
+        )
+    if size_reason is not None:
+        raise ContractError("candidate must be finite canonical JSON")
+    return None
+
+
+def _endpoint_alignment_candidate_issues(document: Mapping[str, Any]) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    size_issue = _endpoint_alignment_candidate_size_issue(document)
+    if size_issue is not None:
+        return [size_issue]
+    if (
+        document.get("persistence_state") != "projection_only"
+        or document.get("canonical_queue") is not False
+    ):
+        issues.append(
+            ValidationIssue(
+                "$",
+                "endpoint_alignment_candidate.noncanonical_projection",
+                "candidate must remain projection-only and outside every canonical queue",
+            )
+        )
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="candidate_payload_sha256",
+        excluded_fields=frozenset(("candidate_payload_sha256",)),
+        code="endpoint_alignment_candidate.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    identity = _endpoint_alignment_candidate_identity(document)
+    nct_id = document.get("nct_id")
+    if isinstance(nct_id, str):
+        expected_id = (
+            f"trial_endpoint_alignment_candidate_{nct_id}_"
+            f"{canonical_json_sha256(identity)[:24]}"
+        )
+        if document.get("candidate_id") != expected_id:
+            issues.append(
+                ValidationIssue(
+                    "$.candidate_id",
+                    "endpoint_alignment_candidate.deterministic_id",
+                    "candidate ID must be derived only from method and exact evidence bindings",
+                )
+            )
+    supporting = document.get("supporting_exact_op_sha256")
+    if isinstance(supporting, list) and supporting != sorted(supporting):
+        issues.append(
+            ValidationIssue(
+                "$.supporting_exact_op_sha256",
+                "endpoint_alignment_candidate.operation_order",
+                "supporting exact-operation hashes must be lexicographically ordered",
+            )
+        )
+    for side in ("before", "after"):
+        locator = document.get(side)
+        if not isinstance(locator, Mapping):
+            continue
+        endpoint = locator.get("endpoint")
+        endpoint_hash = locator.get("endpoint_sha256")
+        if isinstance(endpoint, Mapping) and isinstance(endpoint_hash, str):
+            actual_hash = canonical_json_sha256(endpoint)
+            if endpoint_hash != actual_hash:
+                issues.append(
+                    ValidationIssue(
+                        f"$.{side}.endpoint_sha256",
+                        "endpoint_alignment_candidate.endpoint_hash",
+                        "endpoint hash must bind the exact embedded endpoint object",
+                    )
+                )
+        role = locator.get("outcome_role")
+        expected_locator = _ENDPOINT_ALIGNMENT_LIST_LOCATORS.get(role)
+        if expected_locator is not None and locator.get("list_locator") != expected_locator:
+            issues.append(
+                ValidationIssue(
+                    f"$.{side}.list_locator",
+                    "endpoint_alignment_candidate.role_locator",
+                    "outcome role must use its registered exact outcomes-list locator",
+                )
+            )
+    return issues
+
+
+def _endpoint_alignment_projection_identity(document: Mapping[str, Any]) -> dict[str, Any]:
+    candidates = document.get("candidates")
+    candidate_ids = (
+        [candidate.get("candidate_id") for candidate in candidates if isinstance(candidate, Mapping)]
+        if isinstance(candidates, list)
+        else []
+    )
+    return {
+        "semantic_method": document.get("semantic_method"),
+        "nct_id": document.get("nct_id"),
+        "diff_ref": document.get("diff_ref"),
+        "before_source_snapshot_ref": document.get("before_source_snapshot_ref"),
+        "after_source_snapshot_ref": document.get("after_source_snapshot_ref"),
+        "available": document.get("available"),
+        "unavailable_reason": document.get("unavailable_reason"),
+        "candidate_ids": candidate_ids,
+    }
+
+
+def _endpoint_alignment_review_projection_issues(
+    document: Mapping[str, Any]
+) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    _size, size_reason = _bounded_canonical_json_size(
+        document, limit=_ENDPOINT_ALIGNMENT_MAX_PROJECTION_BYTES
+    )
+    if size_reason == "limit":
+        return [
+            ValidationIssue(
+                "$",
+                "endpoint_alignment_projection.byte_limit",
+                "projection exceeds the fixed 512KiB private projection limit",
+            )
+        ]
+    if size_reason is not None:
+        raise ContractError("projection must be finite canonical JSON")
+    candidates = document.get("candidates")
+    if isinstance(candidates, list):
+        candidate_size_issues: list[ValidationIssue] = []
+        for index, candidate in enumerate(candidates):
+            if not isinstance(candidate, Mapping):
+                continue
+            issue = _endpoint_alignment_candidate_size_issue(
+                candidate, path=f"$.candidates[{index}]"
+            )
+            if issue is not None:
+                candidate_size_issues.append(issue)
+        if candidate_size_issues:
+            return candidate_size_issues
+    hash_issue = _content_hash_issue(
+        document,
+        hash_field="projection_payload_sha256",
+        excluded_fields=frozenset(("projection_payload_sha256",)),
+        code="endpoint_alignment_projection.hash",
+    )
+    if hash_issue is not None:
+        issues.append(hash_issue)
+    nct_id = document.get("nct_id")
+    if isinstance(nct_id, str):
+        expected_id = (
+            f"trial_endpoint_alignment_review_projection_{nct_id}_"
+            f"{canonical_json_sha256(_endpoint_alignment_projection_identity(document))[:24]}"
+        )
+        if document.get("projection_id") != expected_id:
+            issues.append(
+                ValidationIssue(
+                    "$.projection_id",
+                    "endpoint_alignment_projection.deterministic_id",
+                    "projection ID must be derived from method, exact version pair, state, and candidate IDs",
+                )
+            )
+    before_version = document.get("before_source_version")
+    after_version = document.get("after_source_version")
+    if (
+        isinstance(before_version, int)
+        and not isinstance(before_version, bool)
+        and isinstance(after_version, int)
+        and not isinstance(after_version, bool)
+        and after_version != before_version + 1
+    ):
+        issues.append(
+            ValidationIssue(
+                "$.after_source_version",
+                "endpoint_alignment_projection.version_sequence",
+                "a review projection can cover only one adjacent source-version pair",
+            )
+        )
+    candidate_count = document.get("candidate_count")
+    if isinstance(candidates, list):
+        if candidate_count != len(candidates):
+            issues.append(
+                ValidationIssue(
+                    "$.candidate_count",
+                    "endpoint_alignment_projection.candidate_count",
+                    "candidate_count must equal the complete candidate array length",
+                )
+            )
+        candidate_ids = [item.get("candidate_id") for item in candidates if isinstance(item, Mapping)]
+        if len(candidate_ids) != len(set(candidate_ids)):
+            issues.append(
+                ValidationIssue(
+                    "$.candidates",
+                    "endpoint_alignment_projection.candidate_identity",
+                    "candidate IDs must be unique within one projection",
+                )
+            )
+        order_keys: list[tuple[str, int, str, int, str]] = []
+        for index, item in enumerate(candidates):
+            if not isinstance(item, Mapping):
+                continue
+            try:
+                candidate_issues = _endpoint_alignment_candidate_issues(item)
+            except ContractError:
+                candidate_issues = [
+                    ValidationIssue(
+                        "$",
+                        "schema.invalid_in_memory_document",
+                        "contract documents must be finite canonical JSON trees",
+                    )
+                ]
+            for issue in candidate_issues:
+                suffix = issue.path[1:] if issue.path.startswith("$") else ""
+                issues.append(
+                    ValidationIssue(
+                        f"$.candidates[{index}]{suffix}",
+                        issue.code,
+                        issue.message,
+                    )
+                )
+            if (
+                item.get("persistence_state") != "projection_only"
+                or item.get("canonical_queue") is not False
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "$.candidates",
+                        "endpoint_alignment_projection.candidate_noncanonical",
+                        "every candidate must machine-encode projection-only nonqueue status",
+                    )
+                )
+            before = item.get("before")
+            after = item.get("after")
+            if not isinstance(before, Mapping) or not isinstance(after, Mapping):
+                continue
+            before_locator = before.get("list_locator")
+            after_locator = after.get("list_locator")
+            before_index = before.get("outcome_index")
+            after_index = after.get("outcome_index")
+            candidate_id = item.get("candidate_id")
+            if (
+                isinstance(before_locator, str)
+                and isinstance(after_locator, str)
+                and isinstance(before_index, int)
+                and not isinstance(before_index, bool)
+                and isinstance(after_index, int)
+                and not isinstance(after_index, bool)
+                and isinstance(candidate_id, str)
+            ):
+                order_keys.append(
+                    (before_locator, before_index, after_locator, after_index, candidate_id)
+                )
+            if item.get("nct_id") != document.get("nct_id"):
+                issues.append(
+                    ValidationIssue(
+                        "$.candidates",
+                        "endpoint_alignment_projection.nct_binding",
+                        "every candidate must retain the projection NCT identity",
+                    )
+                )
+        if order_keys != sorted(order_keys):
+            issues.append(
+                ValidationIssue(
+                    "$.candidates",
+                    "endpoint_alignment_projection.source_locator_order",
+                    "candidates must be in deterministic source-locator order, never a priority rank",
+                )
+            )
+    if document.get("available") is False and (
+        candidate_count != 0 or (isinstance(candidates, list) and candidates)
+    ):
+        issues.append(
+            ValidationIssue(
+                "$.candidates",
+                "endpoint_alignment_projection.unavailable_empty",
+                "any capacity-unavailable projection must expose zero candidates, never a truncation",
+            )
+        )
+    return issues
+
+
 def derive_trial_registry_change_descriptors(
     before_study: Mapping[str, Any], after_study: Mapping[str, Any]
 ) -> list[dict[str, Any]]:
@@ -7723,3 +8167,51 @@ def validate_trial_history_read_model(
         )
     if issues:
         raise ContractValidationError(_TRIAL_HISTORY_READ_MODEL_CONTRACT_ID, issues)
+
+
+def validate_trial_endpoint_alignment_candidate_against_history(
+    candidate: Mapping[str, Any],
+    before_snapshot: Mapping[str, Any],
+    after_snapshot: Mapping[str, Any],
+    diff: Mapping[str, Any],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Replay one T2a candidate without giving the contract layer a writer."""
+
+    # Kept lazy to preserve the contract registry's dependency direction: the
+    # registry owns schemas, while the Bio engine owns candidate derivation.
+    from engine.biocatalyst.endpoint_alignment import (
+        validate_trial_endpoint_alignment_candidate_against_history as _validate,
+    )
+
+    _validate(
+        candidate,
+        before_snapshot,
+        after_snapshot,
+        diff,
+        repo_root=str(repo_root) if repo_root is not None else None,
+    )
+
+
+def validate_trial_endpoint_alignment_review_projection_against_history(
+    projection: Mapping[str, Any],
+    before_snapshot: Mapping[str, Any],
+    after_snapshot: Mapping[str, Any],
+    diff: Mapping[str, Any],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Replay the complete private T2a projection without queue persistence."""
+
+    from engine.biocatalyst.endpoint_alignment import (
+        validate_trial_endpoint_alignment_review_projection_against_history as _validate,
+    )
+
+    _validate(
+        projection,
+        before_snapshot,
+        after_snapshot,
+        diff,
+        repo_root=str(repo_root) if repo_root is not None else None,
+    )
