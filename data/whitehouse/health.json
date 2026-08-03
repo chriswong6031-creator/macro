@@ -1,23 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-03T21:30:16.628094+00:00",
+  "as_of": "2026-08-03T23:18:32.783804+00:00",
   "posts_seen": 7,
   "seen_total": 81,
-  "evaluated": 2,
-  "activated": 1,
+  "evaluated": 0,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-08-03-under-president-trump-u-s-factories-expand-at-fastest-clip-in-more-than-four-yea",
-      "importance": 5,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "tw-2026-07-13-tga-build",
-      "importance": 78,
-      "activated": true,
-      "degraded_reason": null
-    }
-  ]
+  "gate_scores": []
 }

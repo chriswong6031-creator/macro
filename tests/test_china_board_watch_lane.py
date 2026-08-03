@@ -20,14 +20,15 @@ def test_artifact_contract_versions_semantic_lanes():
         e for e in ARTIFACT_MANIFEST
         if e["artifact"] == "site/factordata/china_standouts.json"
     )
-    assert entry["schema_version"] == "2.0.0"
+    assert entry["schema_version"] == "2.1.0"
     required = set(entry["schema_fields"])
     assert {
         "schema_version", "actionable", "board_definition",
         "execution_coverage", "lane_counts", "ranking",
         "more_actionable", "late_or_unfillable", "forming", "track_ledger",
     } <= required
-    assert "watch" in (entry.get("optional_fields") or [])
+    optional = set(entry.get("optional_fields") or [])
+    assert {"reversal_ledger", "reversal_watch", "watch"} <= optional
     assert {"prophet", "lane", "lane_reasons", "microstructure", "adv_yi"} <= set(
         entry["schema_item_fields"]
     )

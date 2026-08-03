@@ -2,14 +2,14 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-31",
-  "generated_utc": "2026-08-03T21:12:30Z",
+  "generated_utc": "2026-08-03T22:48:26Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 8,
-    "n_eff": 2.52,
+    "n": 10,
+    "n_eff": 2.93,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 8 candidates \u2248 2.52 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 10 candidates \u2248 2.93 independent bets."
   },
   "same_thesis_groups": [
     {
@@ -25,7 +25,7 @@
       "label": "Industrials"
     }
   ],
-  "earnings_coverage_frac": 0.375,
+  "earnings_coverage_frac": 0.3,
   "by_ticker": {
     "PI": {
       "verdict": "duplicate",
@@ -381,6 +381,52 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as JBLU \u2014 Industrials (similarity 100%).",
       "why_zh": "\u4e0e JBLU \u62bc\u6ce8\u76f8\u540c \u2014 Industrials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "HEI": {
+      "verdict": "partial",
+      "max_similarity": 0.5,
+      "basis": "membership-only:no-beta",
+      "nearest": [
+        {
+          "ticker": "JBLU",
+          "combined": 0.5,
+          "membership_jaccard": 0.5,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:insufficient-factors",
+          "shared_groups": [
+            "sector:Industrials"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "TILE",
+          "combined": 0.5,
+          "membership_jaccard": 0.5,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:insufficient-factors",
+          "shared_groups": [
+            "sector:Industrials"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "PI",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.19<0.2",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Partial overlap with JBLU \u2014 Industrials (similarity 50%).",
+      "why_zh": "\u4e0e JBLU \u90e8\u5206\u91cd\u53e0 \u2014 Industrials\uff08\u76f8\u4f3c\u5ea6 50%\uff09\u3002"
     }
   },
   "pair_basis": {
@@ -435,6 +481,13 @@
       "factor_basis": "beta-read-thin:r2=0.19<0.2",
       "shared_groups": []
     },
+    "PI__HEI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": []
+    },
     "M__JBLU": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -479,6 +532,13 @@
       "factor_basis": "beta-read-thin:r2=0.20<0.2",
       "shared_groups": []
     },
+    "M__HEI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.20<0.2",
+      "shared_groups": []
+    },
     "JBLU__KWR": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.9874,
@@ -516,6 +576,22 @@
         "sector:Industrials"
       ]
     },
+    "JBLU__HEI": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": null,
+      "combined": 0.5,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": [
+        "sector:Industrials"
+      ]
+    },
+    "KWR__SFNC": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8213,
+      "combined": 0.8213,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
     "KWR__FHI": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.8753,
@@ -544,6 +620,50 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
+    "KWR__HEI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
+    "SFNC__FHI": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.9614,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Financials"
+      ]
+    },
+    "SFNC__ABNB": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.818,
+      "combined": 0.818,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "SFNC__BOX": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.08<0.2",
+      "shared_groups": []
+    },
+    "SFNC__TILE": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.6626,
+      "combined": 0.6626,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "SFNC__HEI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
     "FHI__ABNB": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.9304,
@@ -565,6 +685,13 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
+    "FHI__HEI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
     "ABNB__BOX": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -579,12 +706,35 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
+    "ABNB__HEI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": []
+    },
     "BOX__TILE": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.08<0.2",
       "shared_groups": []
+    },
+    "BOX__HEI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.08<0.2",
+      "shared_groups": []
+    },
+    "TILE__HEI": {
+      "membership_jaccard": 0.5,
+      "factor_cosine": null,
+      "combined": 0.5,
+      "factor_basis": "beta-read-thin:insufficient-factors",
+      "shared_groups": [
+        "sector:Industrials"
+      ]
     }
   },
   "verdicts": {
@@ -595,8 +745,8 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": 2.5,
-    "setting_up": 2.3
+    "entry_open": 2.2,
+    "setting_up": 3.0
   },
   "source_passport": {
     "factor_betas": {
