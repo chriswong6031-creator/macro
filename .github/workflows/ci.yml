@@ -479,6 +479,22 @@ on:
       - "tests/fixtures/china_omo/**"
       - "tests/fixtures/china_trade_detail/**"
       - "tests/fixtures/china_official_corpora/**"
+      # Government Revenue Foresight (unrun-suite backfill 2026-08-03): the
+      # builder/fence/UI suites and the federal-award collector suites, plus
+      # the one subject file no broad glob matches — engine/government_revenue/**
+      # and collectors/** are covered, app/ is enumerated per-file.
+      - "app/government_revenue.py"
+      - "tests/test_build_government_revenue.py"
+      - "tests/test_check_government_revenue_projection.py"
+      - "tests/test_government_revenue_dossiers.py"
+      - "tests/test_government_revenue_subaward_api.py"
+      - "tests/test_government_revenue_ui.py"
+      - "tests/test_government_revenue_dossier_ui.py"
+      - "tests/test_government_revenue_briefcase_ui.py"
+      - "tests/test_sam_gov_opportunities.py"
+      - "tests/test_usaspending_awards.py"
+      - "tests/test_usaspending_subawards.py"
+      - "tests/test_census_trade.py"
       # W3 CNH part B: the five native flash wires + the forward calendar organ.
       # engine/** is NOT a blanket trigger here, so each of these must be named or a
       # parser/aggregator edit merges with the suite unrun. test_cn_newswires.py was
