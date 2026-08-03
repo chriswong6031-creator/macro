@@ -41,9 +41,11 @@ def _generation(root: Path, *, recipient_activation: bool = False) -> tuple[Path
     template_dir = root / "templates"
     template_dir.mkdir(parents=True)
     template_dir.joinpath("government_revenue.html.j2").write_text(
-        """<main id="gov-workspace"><div id="queueList"></div><aside id="inspectorPane"></aside></main>
+        """<button data-mode="candidates">Candidate Radar</button><button data-mode="companies">Companies</button>
+<main id="gov-workspace"><div id="queueList"></div><aside id="inspectorPane"></aside></main>
 <aside id="evidenceDrawer"></aside>
 <script id="gov-data" type="application/json">{{ payload_json|safe }}</script>
+<script src="government-revenue-candidate-radar.js"></script>
 """,
         encoding="utf-8",
     )
@@ -157,7 +159,7 @@ def test_projection_fence_accepts_one_canonical_compact_generation(tmp_path: Pat
     assert result["dossier_content_id"].startswith("grd1-")
     assert result["subaward_dossier_content_id"].startswith("grsd1-")
     assert result["subaward_dossiers"] == 0
-    assert result["html_bytes"] < 250_000
+    assert result["html_bytes"] < 275_000
 
 
 def test_projection_fence_rejects_stale_public_latest_twin(tmp_path: Path) -> None:
@@ -287,9 +289,9 @@ def test_projection_fence_rejects_full_payload_or_missing_workspace_shell(
 ) -> None:
     _generation(tmp_path)
     html = tmp_path / "site" / "government_revenue.html"
-    html.write_text("<main>legacy</main>" + ("x" * 250_001), encoding="utf-8")
+    html.write_text("<main>legacy</main>" + ("x" * 275_001), encoding="utf-8")
 
-    with pytest.raises(ProjectionDriftError, match="exceeds 250000 bytes"):
+    with pytest.raises(ProjectionDriftError, match="exceeds 275000 bytes"):
         validate_projection(tmp_path)
 
     html.write_text("<main>legacy</main>", encoding="utf-8")

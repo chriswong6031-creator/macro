@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_revenue_candidate_queue.v1.schema.json",
+  "title": "Government Revenue Candidate Queue v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "as_of", "known_at", "generated_at", "content_id",
+    "candidates", "mapping_backlog", "recently_matured", "counts", "source_generation_ids", "source_content_ids",
+    "freshness", "coverage", "display_sort", "authority", "limitations"
+  ],
+  "properties": {
+    "contract": {"const": "government_revenue_candidate_queue.v1"}, "schema_version": {"const": "1.0.0"},
+    "as_of": {"type": "string", "format": "date-time"}, "known_at": {"type": "string", "format": "date-time"},
+    "generated_at": {"type": "string", "format": "date-time"}, "content_id": {"type": "string", "pattern": "^grcq1-[a-f0-9]{24}$"},
+    "candidates": {"type": "array", "maxItems": 250, "items": {"$ref": "https://mastermind-x.com/contracts/government_revenue/government_revenue_candidate.v1.schema.json"}},
+    "mapping_backlog": {"type": "array", "maxItems": 250, "items": {"$ref": "#/$defs/mappingBacklog"}},
+    "recently_matured": {"type": "array", "maxItems": 100, "items": {"$ref": "https://mastermind-x.com/contracts/government_revenue/government_revenue_candidate.v1.schema.json"}},
+    "counts": {"$ref": "#/$defs/counts"},
+    "source_generation_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "source_content_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 8}},
+    "freshness": {"$ref": "#/$defs/freshness"}, "coverage": {"$ref": "#/$defs/coverage"},
+    "display_sort": {"type": "object", "additionalProperties": false, "required": ["primary", "tie_breaker", "is_investment_rank"], "properties": {"primary": {"const": "known_at_desc"}, "tie_breaker": {"const": "candidate_id_asc"}, "is_investment_rank": {"const": false}}},
+    "authority": {"$ref": "#/$defs/authority"}, "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "authority": {"type": "object", "additionalProperties": false, "required": ["tier", "context_only", "can_rank", "can_size", "can_gate", "can_originate_signal", "can_add_candidates", "can_escalate"], "properties": {"tier": {"const": "display"}, "context_only": {"const": true}, "can_rank": {"const": false}, "can_size": {"const": false}, "can_gate": {"const": false}, "can_originate_signal": {"const": false}, "can_add_candidates": {"const": false}, "can_escalate": {"const": false}}},
+    "mappingBacklog": {
+      "type": "object", "additionalProperties": false,
+      "required": ["backlog_id", "ticker", "company_name", "mapping_state", "reason_codes", "source_association_method", "issuer_attribution", "known_at", "source_artifact_content_ids", "limitations"],
+      "properties": {
+        "backlog_id": {"type": "string", "pattern": "^grmb1-[a-f0-9]{24}$"}, "ticker": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{0,9}$"}, "company_name": {"type": "string", "minLength": 1},
+        "mapping_state": {"const": "mapping_needed"}, "reason_codes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["recipient_identifier_missing", "recipient_unresolved", "ownership_path_missing", "issuer_conflicted", "source_receipt_missing", "source_stale", "event_semantic_unsupported", "coverage_not_comparable", "program_bridge_unreviewed", "exact_identifier_mapping_required", "recipient_graph_no_reviewed_issuer"]}},
+        "source_association_method": {"type": ["string", "null"]}, "issuer_attribution": {"const": "not_asserted"}, "known_at": {"type": "string", "format": "date-time"},
+        "source_artifact_content_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 8}}, "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "counts": {"type": "object", "additionalProperties": false, "required": ["total", "exact_linked", "mapping_needed", "by_family", "by_state", "by_freshness", "by_exact_link_status"], "properties": {"total": {"type": "integer", "minimum": 0}, "exact_linked": {"type": "integer", "minimum": 0}, "mapping_needed": {"type": "integer", "minimum": 0}, "by_family": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}, "by_state": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}, "by_freshness": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}, "by_exact_link_status": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}}},
+    "freshness": {"type": "object", "additionalProperties": false, "required": ["status", "award_events_status", "recipient_graph_status", "exact_candidate_availability", "reason"], "properties": {"status": {"enum": ["ok", "degraded", "unavailable"]}, "award_events_status": {"type": "string"}, "recipient_graph_status": {"type": "string"}, "exact_candidate_availability": {"enum": ["available", "not_observed", "unavailable"]}, "reason": {"type": "string", "minLength": 1}}},
+    "coverage": {"type": "object", "additionalProperties": false, "required": ["company_coverage_count", "reviewed_issuer_company_count", "mapping_backlog_count", "award_change_events_visible", "is_complete"], "properties": {"company_coverage_count": {"type": "integer", "minimum": 0}, "reviewed_issuer_company_count": {"type": "integer", "minimum": 0}, "mapping_backlog_count": {"type": "integer", "minimum": 0}, "award_change_events_visible": {"type": "integer", "minimum": 0}, "is_complete": {"const": false}}}
+  }
+}
