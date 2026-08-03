@@ -19,7 +19,7 @@ import re
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Body, Depends, Header, HTTPException
 from fastapi.responses import JSONResponse
 
 router = APIRouter()
@@ -59,6 +59,10 @@ _CHANGE_CURSOR_PROCESS_KEY = os.urandom(32)
 _PROSPECTIVE_CURSOR_VERSION = "p1"
 _PROSPECTIVE_CURSOR_DOMAIN = b"macro-biocatalyst:trial-prospective-changes:cursor-key:v1"
 _PROSPECTIVE_CURSOR_PROCESS_KEY = os.urandom(32)
+_PEER_SET_CURSOR_VERSION = "t1"
+_PEER_SET_CURSOR_DOMAIN = b"macro-biocatalyst:trial-peer-sets:cursor-key:v1"
+_PEER_SET_CURSOR_PROCESS_KEY = os.urandom(32)
+_PEER_SET_DEFAULT_LIMIT = 50
 _PROSPECTIVE_ACCRUAL_STATES = frozenset(("baseline_established", "accruing"))
 _PROSPECTIVE_CHANGE_KINDS = frozenset(
     (
@@ -750,6 +754,155 @@ def _opaque_digest(value: Mapping[str, Any]) -> str:
     return sha256(
         json.dumps(value, ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode("ascii")
     ).hexdigest()
+
+
+def _peer_set_request(payload: Any) -> tuple[tuple[str, ...], int, str | None]:
+    """Parse one strict explicit-NCT cohort without deriving any membership."""
+
+    if not isinstance(payload, Mapping) or set(payload) - {"nct_ids", "limit", "cursor"}:
+        raise HTTPException(
+            status_code=400,
+            detail="invalid peer set request",
+            headers=_PRIVATE_HEADERS,
+        )
+    nct_ids = payload.get("nct_ids")
+    if (
+        not isinstance(nct_ids, list)
+        or not 2 <= len(nct_ids) <= 100
+        or any(not isinstance(nct_id, str) or not _NCT_ID.fullmatch(nct_id) for nct_id in nct_ids)
+        or len(set(nct_ids)) != len(nct_ids)
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="invalid NCT IDs",
+            headers=_PRIVATE_HEADERS,
+        )
+    raw_limit = payload.get("limit", _PEER_SET_DEFAULT_LIMIT)
+    if (
+        not isinstance(raw_limit, int)
+        or isinstance(raw_limit, bool)
+        or not 1 <= raw_limit <= 100
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="invalid limit",
+            headers=_PRIVATE_HEADERS,
+        )
+    cursor = payload.get("cursor")
+    if cursor is not None and not isinstance(cursor, str):
+        raise HTTPException(
+            status_code=400,
+            detail="invalid cursor",
+            headers=_PRIVATE_HEADERS,
+        )
+    return tuple(sorted(nct_ids)), raw_limit, cursor
+
+
+def _peer_set_caller_binding(user: Mapping[str, Any]) -> dict[str, str]:
+    """Bind cursors to the stable authenticated subject and paid tier only."""
+
+    user_id = _text(user.get("id"), maximum=256)
+    entitlement = _text(user.get("tier"), maximum=80)
+    if user_id is None or entitlement is None:
+        raise _unavailable()
+    return {"subject": user_id, "entitlement": entitlement}
+
+
+def _peer_set_query_binding(
+    *, cohort_nct_ids: Sequence[str], page_limit: int, user: Mapping[str, Any]
+) -> dict[str, Any]:
+    return {
+        "cohort_nct_ids": list(cohort_nct_ids),
+        "limit": page_limit,
+        "caller": _peer_set_caller_binding(user),
+    }
+
+
+def _peer_set_cursor_key() -> bytes:
+    """Use a domain-separated signing key for peer-matrix pagination."""
+
+    configured = os.environ.get("BIOCATALYST_CURSOR_SECRET")
+    if configured is None:
+        return _PEER_SET_CURSOR_PROCESS_KEY
+    try:
+        raw = configured.encode("utf-8")
+    except UnicodeEncodeError:
+        raise _unavailable() from None
+    if len(raw) < 32:
+        raise _unavailable()
+    return hmac.new(raw, _PEER_SET_CURSOR_DOMAIN, sha256).digest()
+
+
+def _peer_set_cursor_payload(
+    offset: int, *, generation_digest: str, query_digest: str
+) -> bytes:
+    return ":".join(
+        (
+            _PEER_SET_CURSOR_VERSION,
+            str(offset),
+            generation_digest,
+            query_digest,
+        )
+    ).encode("ascii")
+
+
+def _encode_peer_set_cursor(
+    offset: int,
+    *,
+    generation_id: str,
+    query_binding: Mapping[str, Any],
+    cursor_key: bytes | None = None,
+) -> str:
+    if not isinstance(offset, int) or isinstance(offset, bool) or offset < 0:
+        raise ValueError("offset must be a non-negative integer")
+    payload = _peer_set_cursor_payload(
+        offset,
+        generation_digest=_opaque_digest({"generation_id": generation_id}),
+        query_digest=_opaque_digest(dict(query_binding)),
+    )
+    key = cursor_key if cursor_key is not None else _peer_set_cursor_key()
+    signature = hmac.new(key, payload, sha256).hexdigest()
+    return base64.urlsafe_b64encode(payload + b":" + signature.encode("ascii")).decode(
+        "ascii"
+    ).rstrip("=")
+
+
+def _decode_peer_set_cursor(
+    cursor: str | None, *, cursor_key: bytes | None = None
+) -> tuple[int, str | None, str | None]:
+    """Verify cursor integrity before opening a public generation."""
+
+    if cursor is None or cursor == "":
+        return 0, None, None
+    if len(cursor) > 512 or not re.fullmatch(r"[A-Za-z0-9_-]+", cursor):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    try:
+        raw = base64.urlsafe_b64decode((cursor + "=" * (-len(cursor) % 4)).encode("ascii"))
+        version, offset_text, generation_digest, query_digest, signature = raw.decode(
+            "ascii"
+        ).split(":")
+        offset = int(offset_text)
+    except (ValueError, UnicodeError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS) from exc
+    if (
+        version != _PEER_SET_CURSOR_VERSION
+        or not re.fullmatch(r"[0-9]+", offset_text)
+        or offset < 0
+        or not re.fullmatch(r"[0-9a-f]{64}", generation_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", query_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", signature)
+    ):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    payload = _peer_set_cursor_payload(
+        offset,
+        generation_digest=generation_digest,
+        query_digest=query_digest,
+    )
+    key = cursor_key if cursor_key is not None else _peer_set_cursor_key()
+    expected_signature = hmac.new(key, payload, sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected_signature):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    return offset, generation_digest, query_digest
 
 
 def _milestone_cursor_key() -> bytes:
@@ -1873,6 +2026,95 @@ def trials(
             "trials": page,
         }
     )
+    return _response(payload)
+
+
+@router.post("/api/biocatalyst/v1/trial-peer-sets:resolve")
+def resolve_trial_peer_set(
+    request: Any = Body(...),
+    _user: dict = Depends(require_site_full_user),
+) -> JSONResponse:
+    """Resolve an explicit NCT cohort into a facts-only protocol matrix.
+
+    ``nct_ids`` are caller-supplied identifiers, not a retrieved, inferred, or
+    ranked cohort.  The route reads only pointer-bound protocol artifacts
+    written by the worker; it has no private-source or identity-plane access.
+    """
+
+    cohort_nct_ids, page_limit, cursor = _peer_set_request(request)
+    query_binding = _peer_set_query_binding(
+        cohort_nct_ids=cohort_nct_ids,
+        page_limit=page_limit,
+        user=_user,
+    )
+    offset, cursor_generation_digest, cursor_query_digest = _decode_peer_set_cursor(
+        cursor
+    )
+    expected_query_digest = _opaque_digest(query_binding)
+    if cursor_query_digest is not None and not hmac.compare_digest(
+        cursor_query_digest, expected_query_digest
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="cursor query mismatch",
+            headers=_PRIVATE_HEADERS,
+        )
+    projection, _operational = _read_bundle()
+    generation = getattr(projection, "generation", None)
+    generation_id = getattr(generation, "generation_id", None)
+    generation_schema = getattr(generation, "schema_version", None)
+    protocols_by_nct = getattr(projection, "protocols_by_nct", None)
+    history_models_by_nct = getattr(projection, "history_models_by_nct", None)
+    if (
+        not isinstance(generation_id, str)
+        or generation_schema not in {"1.4.0", "1.5.0"}
+        or not isinstance(protocols_by_nct, Mapping)
+        or not isinstance(history_models_by_nct, Mapping)
+    ):
+        raise _unavailable()
+    expected_generation_digest = _opaque_digest({"generation_id": generation_id})
+    if (
+        cursor_generation_digest is not None
+        and not hmac.compare_digest(
+            cursor_generation_digest, expected_generation_digest
+        )
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="trial data changed; restart pagination",
+            headers=_PRIVATE_HEADERS,
+        )
+    covered_count = sum(1 for nct_id in cohort_nct_ids if nct_id in protocols_by_nct)
+    next_offset = offset + min(page_limit, max(0, covered_count - offset))
+    next_cursor = (
+        _encode_peer_set_cursor(
+            next_offset,
+            generation_id=generation_id,
+            query_binding=query_binding,
+        )
+        if next_offset < covered_count
+        else None
+    )
+    try:
+        from engine.biocatalyst.peer_matrix import (  # noqa: PLC0415
+            TrialPeerSetError,
+            build_trial_peer_set,
+        )
+
+        payload = build_trial_peer_set(
+            cohort_nct_ids=cohort_nct_ids,
+            protocols_by_nct=protocols_by_nct,
+            history_models_by_nct=history_models_by_nct,
+            as_of=_generation_as_of_time(projection).isoformat(
+                timespec="microseconds"
+            ).replace("+00:00", "Z"),
+            page_limit=page_limit,
+            offset=offset,
+            next_cursor=next_cursor,
+        )
+    except TrialPeerSetError as exc:
+        log.warning("BioCatalyst protocol peer projection unavailable (%s)", exc)
+        raise _unavailable() from None
     return _response(payload)
 
 

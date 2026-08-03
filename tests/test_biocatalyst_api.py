@@ -133,8 +133,8 @@ def _unavailable_history_model(reason: str = "incomplete_chain") -> dict[str, An
     return model
 
 
-def _replace_v12_history_model(config: Any, model: dict[str, Any]) -> None:
-    """Replace one public B2 artifact to exercise request-time redactions."""
+def _replace_v14_history_model(config: Any, model: dict[str, Any]) -> None:
+    """Replace one public history artifact while retaining T1a protocols."""
 
     pointer_path = config.public_root / "current.json"
     pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
@@ -150,7 +150,7 @@ def _replace_v12_history_model(config: Any, model: dict[str, Any]) -> None:
         for artifact_path in prospective_root.iterdir():
             artifact_path.unlink()
         prospective_root.rmdir()
-    manifest["schema_version"] = "1.2.0"
+    manifest["schema_version"] = "1.4.0"
     manifest["artifacts"] = [
         artifact
         for artifact in manifest["artifacts"]
@@ -456,10 +456,10 @@ def _prospective_projection(
     )
 
 
-def _replace_v13_prospective_model(config: Any, model: dict[str, Any]) -> None:
-    """Add one pointer-bound prospective artifact to the real B2 fixture."""
+def _replace_v15_prospective_model(config: Any, model: dict[str, Any]) -> None:
+    """Add one pointer-bound prospective artifact to the T1a fixture."""
 
-    _replace_v12_history_model(config, _history_model())
+    _replace_v14_history_model(config, _history_model())
     pointer_path = config.public_root / "current.json"
     pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
     generation = config.public_root / "generations" / pointer["generation_id"]
@@ -469,7 +469,7 @@ def _replace_v13_prospective_model(config: Any, model: dict[str, Any]) -> None:
     prospective_path.parent.mkdir(exist_ok=True)
     prospective_bytes = canonical_json_bytes(model) + b"\n"
     prospective_path.write_bytes(prospective_bytes)
-    manifest["schema_version"] = "1.3.0"
+    manifest["schema_version"] = "1.5.0"
     manifest["artifacts"] = [
         artifact
         for artifact in manifest["artifacts"]
@@ -602,6 +602,102 @@ def test_list_filters_sorting_cursor_and_bounds_are_deterministic(entitled_clien
     # a paid, private data route and must not lose the response privacy policy.
     _assert_private_headers(invalid_sort)
     _assert_private_headers(invalid_limit)
+
+
+def test_explicit_trial_peer_set_reads_only_public_protocol_projection(entitled_client) -> None:
+    response = entitled_client.post(
+        "/api/biocatalyst/v1/trial-peer-sets:resolve",
+        json={"nct_ids": ["NCT99999999", "NCT00000001"], "limit": 25},
+    )
+
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    payload = response.json()
+    assert payload["contract_id"] == "trial_peer_set.v1"
+    assert payload["cohort_nct_ids"] == ["NCT00000001", "NCT99999999"]
+    assert payload["uncovered_nct_ids"] == ["NCT99999999"]
+    assert payload["coverage"] == {
+        "class": "current_only",
+        "selection_basis": "explicit_nct_id_cohort",
+        "requested_count": 2,
+        "covered_count": 1,
+        "uncovered_count": 1,
+    }
+    assert payload["pagination"] == {"limit": 25, "total": 1, "next_cursor": None}
+    assert payload["trials"][0]["nct_id"] == "NCT00000001"
+    assert payload["trials"][0]["arm_groups"] == []
+    assert payload["trials"][0]["history"] == {
+        "available": False,
+        "state": "unavailable",
+        "coverage": None,
+        "reason": "disabled",
+    }
+    for key in _walk_keys(payload):
+        lowered = key.casefold()
+        assert not any(fragment in lowered for fragment in _FORBIDDEN_KEY_FRAGMENTS), key
+
+
+def test_trial_peer_set_enforces_exact_uppercase_unique_nct_cohort_before_read(
+    entitled_client, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("invalid peer cohorts must fail before public disk read")
+        ),
+    )
+    for body, detail in (
+        ({"nct_ids": ["NCT00000001"]}, "invalid NCT IDs"),
+        ({"nct_ids": ["NCT00000001", "NCT00000001"]}, "invalid NCT IDs"),
+        ({"nct_ids": ["nct00000001", "NCT00000002"]}, "invalid NCT IDs"),
+        ({"nct_ids": ["NCT00000001", "NCT00000002"], "limit": 101}, "invalid limit"),
+        ({"nct_ids": ["NCT00000001", "NCT00000002"], "score": "yes"}, "invalid peer set request"),
+    ):
+        response = entitled_client.post("/api/biocatalyst/v1/trial-peer-sets:resolve", json=body)
+        assert response.status_code == 400
+        assert response.json() == {"detail": detail}
+        _assert_private_headers(response)
+
+
+def test_trial_peer_set_cursor_is_signed_and_binds_cohort_limit_caller_and_generation() -> None:
+    user = {"id": "paid-user", "tier": "pro"}
+    binding = biocatalyst_api._peer_set_query_binding(
+        cohort_nct_ids=("NCT00000001", "NCT00000002"),
+        page_limit=1,
+        user=user,
+    )
+    cursor_key = b"k" * 32
+    cursor = biocatalyst_api._encode_peer_set_cursor(
+        1,
+        generation_id="ctgov_run_20260802_peer_fixture",
+        query_binding=binding,
+        cursor_key=cursor_key,
+    )
+    offset, generation_digest, query_digest = biocatalyst_api._decode_peer_set_cursor(
+        cursor,
+        cursor_key=cursor_key,
+    )
+    assert offset == 1
+    assert generation_digest == biocatalyst_api._opaque_digest(
+        {"generation_id": "ctgov_run_20260802_peer_fixture"}
+    )
+    assert query_digest == biocatalyst_api._opaque_digest(binding)
+    assert "NCT00000001" not in cursor
+    assert biocatalyst_api._opaque_digest(
+        biocatalyst_api._peer_set_query_binding(
+            cohort_nct_ids=("NCT00000001", "NCT00000002"),
+            page_limit=2,
+            user=user,
+        )
+    ) != query_digest
+    assert biocatalyst_api._opaque_digest(
+        biocatalyst_api._peer_set_query_binding(
+            cohort_nct_ids=("NCT00000001", "NCT00000002"),
+            page_limit=1,
+            user={"id": "another-paid-user", "tier": "pro"},
+        )
+    ) != query_digest
 
 
 def test_registry_milestones_are_paid_private_and_generation_anchored(
@@ -991,7 +1087,7 @@ def test_registry_change_tape_reads_available_history_from_real_public_generatio
 ) -> None:
     """Exercise the route through the pointer/manifest/artifact reader, not a stub."""
 
-    _replace_v12_history_model(promoted_config, _history_model())
+    _replace_v14_history_model(promoted_config, _history_model())
 
     response = entitled_client.get("/api/biocatalyst/v1/trials/changes?window=all")
     assert response.status_code == 200
@@ -1623,7 +1719,7 @@ def test_registry_change_tape_fails_closed_for_future_or_mismatched_history_vers
 def test_prospective_change_tape_reads_one_real_pointer_bound_v13_artifact(
     entitled_client, promoted_config
 ) -> None:
-    _replace_v13_prospective_model(promoted_config, _prospective_model("NCT00000001"))
+    _replace_v15_prospective_model(promoted_config, _prospective_model("NCT00000001"))
 
     response = entitled_client.get(
         "/api/biocatalyst/v1/trials/prospective-changes?window=all"
@@ -1920,7 +2016,7 @@ def test_prospective_change_tape_baseline_and_legacy_generations_stay_empty(
 def test_prospective_change_tape_reports_real_b2_pointer_as_unavailable_not_history(
     entitled_client, promoted_config
 ) -> None:
-    _replace_v12_history_model(promoted_config, _history_model())
+    _replace_v14_history_model(promoted_config, _history_model())
 
     response = entitled_client.get(
         "/api/biocatalyst/v1/trials/prospective-changes?window=all"
@@ -2145,7 +2241,7 @@ def test_prospective_change_tape_rejects_nested_internal_provenance_but_allows_r
 def test_v12_detail_serves_only_the_pointer_bound_public_history_model(
     entitled_client, promoted_config
 ) -> None:
-    _replace_v12_history_model(promoted_config, _history_model())
+    _replace_v14_history_model(promoted_config, _history_model())
 
     detail = entitled_client.get("/api/biocatalyst/v1/trials/NCT00000001")
     assert detail.status_code == 200
@@ -2201,7 +2297,7 @@ def test_history_nested_provenance_is_rejected_even_after_the_public_tree_is_reh
             }
         ]
     )
-    _replace_v12_history_model(promoted_config, model)
+    _replace_v14_history_model(promoted_config, model)
 
     response = entitled_client.get("/api/biocatalyst/v1/trials/NCT00000001")
     assert response.status_code == 503
@@ -2212,7 +2308,7 @@ def test_history_nested_provenance_is_rejected_even_after_the_public_tree_is_reh
 def test_v12_explicit_unavailable_history_artifact_is_served_honestly(
     entitled_client, promoted_config
 ) -> None:
-    _replace_v12_history_model(
+    _replace_v14_history_model(
         promoted_config,
         _unavailable_history_model("incomplete_chain"),
     )
@@ -2243,12 +2339,18 @@ def test_v11_generation_remains_readable_with_an_explicit_history_unavailable_st
         for artifact_path in prospective.iterdir():
             artifact_path.unlink()
         prospective.rmdir()
+    protocols = generation / "protocols"
+    if protocols.exists():
+        for artifact_path in protocols.iterdir():
+            artifact_path.unlink()
+        protocols.rmdir()
     manifest["schema_version"] = "1.1.0"
     manifest["artifacts"] = [
         artifact
         for artifact in manifest["artifacts"]
         if not artifact["name"].startswith("history/")
         and not artifact["name"].startswith("prospective/")
+        and not artifact["name"].startswith("protocols/")
     ]
     manifest["manifest_sha256"] = canonical_json_sha256(
         {key: value for key, value in manifest.items() if key != "manifest_sha256"}
@@ -2288,6 +2390,10 @@ def test_unknown_canonical_id_is_private_404(entitled_client) -> None:
 
 
 def test_recursive_api_payload_has_no_private_provenance_or_integrity_keys(entitled_client) -> None:
+    peer_payload = entitled_client.post(
+        "/api/biocatalyst/v1/trial-peer-sets:resolve",
+        json={"nct_ids": ["NCT00000001", "NCT99999999"]},
+    ).json()
     payloads = [
         entitled_client.get("/api/biocatalyst/v1/health").json(),
         entitled_client.get("/api/biocatalyst/v1/trials").json(),
@@ -2304,6 +2410,30 @@ def test_recursive_api_payload_has_no_private_provenance_or_integrity_keys(entit
         assert "biocatalyst/raw/" not in encoded
         assert "biocatalyst/receipts/" not in encoded
         assert "biocatalyst/source_snapshots/" not in encoded
+    trial = peer_payload["trials"][0]
+    assert set(trial["field_evidence"]) == {
+        "title",
+        "brief_title",
+        "status",
+        "study_type",
+        "phases",
+        "sponsor",
+        "conditions",
+        "interventions",
+        "arm_groups",
+        "enrollment",
+        "endpoints",
+        "dates",
+        "site_count",
+        "countries",
+    }
+    for locator in trial["field_evidence"].values():
+        assert locator["source_json_paths"]
+        assert all(
+            path.startswith("/protocolSection/")
+            for path in locator["source_json_paths"]
+        )
+        assert locator["transform"]
 
 
 def test_missing_tampered_and_symlinked_public_state_returns_coarse_503(
@@ -2366,6 +2496,11 @@ def test_legacy_projection_is_not_silently_served(entitled_client, promoted_conf
         for artifact_path in prospective.iterdir():
             artifact_path.unlink()
         prospective.rmdir()
+    protocols = generation / "protocols"
+    if protocols.exists():
+        for artifact_path in protocols.iterdir():
+            artifact_path.unlink()
+        protocols.rmdir()
     manifest["schema_version"] = "1.0.0"
     manifest["artifacts"] = [
         artifact
@@ -2373,6 +2508,7 @@ def test_legacy_projection_is_not_silently_served(entitled_client, promoted_conf
         if not artifact["name"].startswith("trial_snapshots/")
         and not artifact["name"].startswith("history/")
         and not artifact["name"].startswith("prospective/")
+        and not artifact["name"].startswith("protocols/")
     ]
     manifest["manifest_sha256"] = canonical_json_sha256(
         {key: value for key, value in manifest.items() if key != "manifest_sha256"}
@@ -2395,6 +2531,7 @@ def test_route_declares_paid_dependency_and_production_openapi_mounts_all_routes
     for path in (
         "/api/biocatalyst/v1/health",
         "/api/biocatalyst/v1/trials",
+        "/api/biocatalyst/v1/trial-peer-sets:resolve",
         "/api/biocatalyst/v1/trials/milestones",
         "/api/biocatalyst/v1/trials/changes",
         "/api/biocatalyst/v1/trials/prospective-changes",
@@ -2408,6 +2545,7 @@ def test_route_declares_paid_dependency_and_production_openapi_mounts_all_routes
     assert {
         "/api/biocatalyst/v1/health",
         "/api/biocatalyst/v1/trials",
+        "/api/biocatalyst/v1/trial-peer-sets:resolve",
         "/api/biocatalyst/v1/trials/milestones",
         "/api/biocatalyst/v1/trials/changes",
         "/api/biocatalyst/v1/trials/prospective-changes",
@@ -2497,6 +2635,11 @@ def test_anonymous_and_free_users_are_denied_before_public_disk_read(monkeypatch
             "/api/biocatalyst/v1/trials/changes",
             headers={"Authorization": "Bearer free-token"},
         )
+        peer_denied = client.post(
+            "/api/biocatalyst/v1/trial-peer-sets:resolve",
+            json={"nct_ids": ["NCT00000001", "NCT00000002"]},
+            headers={"Authorization": "Bearer free-token"},
+        )
     assert denied.status_code == 402
     assert denied.json() == {"detail": "site_full required"}
     _assert_private_headers(denied)
@@ -2508,4 +2651,7 @@ def test_anonymous_and_free_users_are_denied_before_public_disk_read(monkeypatch
     assert changes_denied.status_code == 402
     assert changes_denied.json() == {"detail": "site_full required"}
     _assert_private_headers(changes_denied)
+    assert peer_denied.status_code == 402
+    assert peer_denied.json() == {"detail": "site_full required"}
+    _assert_private_headers(peer_denied)
     assert changes_denied.headers["retry-after"] == "60"

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_protocol_projection.v1.schema.json",
+  "title": "BioCatalyst Public Trial Protocol Projection v1",
+  "description": "A pointer-bound, facts-only ClinicalTrials.gov protocol projection. This artifact is produced at publication time; serving code reads only this public-safe projection.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "protocol_projection_id", "nct_id",
+    "source_snapshot_ref", "source_record_ref", "canonical_content_sha256",
+    "coverage_class", "source_attribution", "retrieved_at", "first_seen_at",
+    "knowledge_cutoff", "facts", "authority", "hash_scope",
+    "protocol_projection_sha256"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_protocol_projection.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "protocol_projection_id": {"type": "string", "pattern": "^trial_protocol_NCT[0-9]{8}_[a-f0-9]{24}$"},
+    "nct_id": {"$ref": "#/$defs/nctId"},
+    "source_snapshot_ref": {"type": "string", "pattern": "^ctgov_snapshot_[a-zA-Z0-9_-]+$"},
+    "source_record_ref": {"type": "string", "pattern": "^src:ctgov:NCT[0-9]{8}:sha256:[a-f0-9]{64}$"},
+    "canonical_content_sha256": {"$ref": "#/$defs/sha256"},
+    "coverage_class": {"const": "current_only"},
+    "source_attribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_name", "source_uri", "source_last_update_posted_at"],
+      "properties": {
+        "source_name": {"const": "ClinicalTrials.gov"},
+        "source_uri": {"type": "string", "format": "uri", "pattern": "^https://clinicaltrials\\.gov/study/NCT[0-9]{8}$"},
+        "source_last_update_posted_at": {"$ref": "#/$defs/nullableTemporal"}
+      }
+    },
+    "retrieved_at": {"type": "string", "format": "date-time"},
+    "first_seen_at": {"type": "string", "format": "date-time"},
+    "knowledge_cutoff": {"type": "string", "format": "date-time"},
+    "facts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "brief_title", "official_title", "overall_status", "study_type", "phases",
+        "sponsor", "enrollment", "start_date", "primary_completion_date",
+        "completion_date", "conditions", "interventions", "arm_groups",
+        "primary_outcomes", "secondary_outcomes", "locations"
+      ],
+      "properties": {
+        "brief_title": {"$ref": "#/$defs/briefTitleFact"},
+        "official_title": {"$ref": "#/$defs/officialTitleFact"},
+        "overall_status": {"$ref": "#/$defs/statusFact"},
+        "study_type": {"$ref": "#/$defs/studyTypeFact"},
+        "phases": {"$ref": "#/$defs/phasesFact"},
+        "sponsor": {"$ref": "#/$defs/sponsorFact"},
+        "enrollment": {"$ref": "#/$defs/enrollmentFact"},
+        "start_date": {"$ref": "#/$defs/startDateFact"},
+        "primary_completion_date": {"$ref": "#/$defs/primaryCompletionDateFact"},
+        "completion_date": {"$ref": "#/$defs/completionDateFact"},
+        "conditions": {"$ref": "#/$defs/conditionsFact"},
+        "interventions": {"$ref": "#/$defs/interventionsFact"},
+        "arm_groups": {"$ref": "#/$defs/armGroupsFact"},
+        "primary_outcomes": {"$ref": "#/$defs/primaryOutcomesFact"},
+        "secondary_outcomes": {"$ref": "#/$defs/secondaryOutcomesFact"},
+        "locations": {"$ref": "#/$defs/locationsFact"}
+      }
+    },
+    "authority": {"$ref": "#/$defs/authority"},
+    "hash_scope": {"const": "canonical_payload_excluding_protocol_projection_sha256"},
+    "protocol_projection_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "nctId": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "nullableTemporal": {"anyOf": [{"type": "null"}, {"type": "string", "format": "date"}, {"type": "string", "format": "date-time"}]},
+    "missingness": {"type": "string", "enum": ["observed", "source_null", "source_missing", "not_applicable", "parser_degraded", "license_restricted"]},
+    "jsonValue": {"oneOf": [{"type": "null"}, {"type": "boolean"}, {"type": "number"}, {"type": "string"}, {"type": "array", "items": {"$ref": "#/$defs/jsonValue"}}, {"$ref": "#/$defs/jsonObject"}]},
+    "jsonObject": {"type": "object", "additionalProperties": {"$ref": "#/$defs/jsonValue"}},
+    "sourceFact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "value", "source_json_path"],
+      "properties": {
+        "state": {"$ref": "#/$defs/missingness"},
+        "value": {"$ref": "#/$defs/jsonValue"},
+        "source_json_path": {"type": "string", "pattern": "^/protocolSection/"}
+      },
+      "allOf": [
+        {"if": {"properties": {"state": {"const": "observed"}}}, "then": {"properties": {"value": {"not": {"type": "null"}}}}, "else": {"properties": {"value": {"type": "null"}}}}
+      ]
+    },
+    "briefTitleFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/identificationModule/briefTitle"}}}]},
+    "officialTitleFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/identificationModule/officialTitle"}}}]},
+    "statusFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/statusModule/overallStatus"}}}]},
+    "studyTypeFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/designModule/studyType"}}}]},
+    "phasesFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/designModule/phases"}}}]},
+    "sponsorFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/sponsorCollaboratorsModule/leadSponsor"}}}]},
+    "enrollmentFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/designModule/enrollmentInfo"}}}]},
+    "startDateFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/statusModule/startDateStruct"}}}]},
+    "primaryCompletionDateFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/statusModule/primaryCompletionDateStruct"}}}]},
+    "completionDateFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/statusModule/completionDateStruct"}}}]},
+    "conditionsFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/conditionsModule/conditions"}}}]},
+    "interventionsFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/armsInterventionsModule/interventions"}}}]},
+    "armGroupsFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/armsInterventionsModule/armGroups"}}}]},
+    "primaryOutcomesFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/outcomesModule/primaryOutcomes"}}}]},
+    "secondaryOutcomesFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/outcomesModule/secondaryOutcomes"}}}]},
+    "locationsFact": {"allOf": [{"$ref": "#/$defs/sourceFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/contactsLocationsModule/locations"}}}]},
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["classification", "decision_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "classification": {"const": "source_fact"},
+        "decision_authority": {"const": false},
+        "allowed_uses": {"const": ["display", "context", "explain"]},
+        "forbidden_uses": {"const": ["originate_signal", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "raise_authority"]}
+      }
+    }
+  }
+}
