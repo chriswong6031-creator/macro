@@ -37,6 +37,14 @@ from .contracts import (
     validate_drugs_at_fda_release_receipt,
     validate_drugs_at_fda_table_manifest,
 )
+from .launch_slo_verifier import (
+    LAUNCH_SLO_EVIDENCE_ARTIFACT_CONTRACT_ID,
+    LAUNCH_SLO_RECOVERY_OBJECT_CONTRACT_ID,
+    LaunchSloEvidenceError,
+    LaunchSloEvidenceVerification,
+    LaunchSloSourceOutcome,
+    verify_biocatalyst_launch_slo_evidence,
+)
 
 __all__ = [
     "ContractError",
@@ -74,4 +82,10 @@ __all__ = [
     "validate_trial_projection_against_source",
     "validate_drugs_at_fda_release_receipt",
     "validate_drugs_at_fda_table_manifest",
+    "LaunchSloEvidenceError",
+    "LaunchSloEvidenceVerification",
+    "LaunchSloSourceOutcome",
+    "LAUNCH_SLO_EVIDENCE_ARTIFACT_CONTRACT_ID",
+    "LAUNCH_SLO_RECOVERY_OBJECT_CONTRACT_ID",
+    "verify_biocatalyst_launch_slo_evidence",
 ]

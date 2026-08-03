@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T04:04:31.945560+00:00",
-  "count": 639,
+  "generated_at": "2026-08-03T04:49:37.353716+00:00",
+  "count": 641,
   "institutions": [
     "Amova",
     "Apollo",
@@ -491,6 +491,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-wg00xnqlvcr-b959c6",
+      "title": "Blog",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:53:57Z",
+      "summary_points": [
+        "**Structural Inflation Breakpoint**: Quandt-Andrews test confirms Q4 2022 structural break in past inflation coefficient (p=0.0339), signaling persistent post-pandemic inflation dynamics with shocks now lasting longer.",
+        "**Food/Fuel Shock Persistence**: VAR analysis shows food/fuel price shocks generate more persistent core inflation effects (peaking at 4-5 quarters, upper CI 0.75 vs.",
+        "gas’s 0.40), indicating structural change in transmission.",
+        "**Monetary Policy Implications**: Slower shock dissipation requires prolonged restrictive policy (Selic likely 14% in Dec 2023), elevating policy uncertainty and delaying disinflation convergence to target."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-wknelafcr0l-441486",
       "title": "JPM PI Monthly Wrap Metrics 2026.07.31 1",
       "institution": "J.P. Morgan",
@@ -691,6 +711,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kfhixaxe4hz-62934b",
+      "title": "ING Think the commodities feed oil eases as more oil flows out the persian gulf",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T11:03:50Z",
+      "summary_points": [
+        "**Geopolitical Supply Recovery**: Persian Gulf crude flows rebound to 65% pre-war levels (13m b/d), strait transit resumed despite US-Iran tensions, easing oil prices below $90/bbl.",
+        "**SPR Policy Constraints**: US halted further strategic reserve releases (308m barrels SPR), operational minimum uncertainty (70m vs industry estimates) severely limits supply flexibility.",
+        "**Middle Distillate Tightening**: Russia diesel export ban extended to Sept 2025, Ukrainian refinery disruptions, ARA gasoil inventories at 2022 lows, ICE gasoil cracks >$70/bbl."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
