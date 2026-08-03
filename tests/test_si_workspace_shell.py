@@ -41,6 +41,19 @@ def _router() -> str:
     return ROUTER.read_text(encoding="utf-8")
 
 
+def _code(js: str) -> str:
+    """The router with comments stripped.
+
+    Every code-SHAPE assertion below must run against this, not the raw file. The
+    router documents its own traps in prose ("requestAnimationFrame never fires while
+    the tab is hidden…"), so a raw-text scan for a banned construct matches the warning
+    against it and reports a defect that is not there — or worse, passes a real one
+    because the prose satisfied a positive assertion.
+    """
+    js = re.sub(r"/\*.*?\*/", " ", js, flags=re.S)
+    return re.sub(r"(?m)^\s*//.*$", " ", js)
+
+
 def _view_body(src: str, view: str) -> str:
     parts = re.split(r'<section class="si-view[^"]*" data-view="([a-z]+)"', src)
     names, bodies = parts[1::2], parts[2::2]
@@ -53,8 +66,8 @@ def _view_body(src: str, view: str) -> str:
 def test_sidebar_present_with_five_view_buttons() -> None:
     s = _page()
     assert '<nav class="si-side"' in s, "the persistent rail is gone"
-    assert 'aria-label="{{ t(' in s.split('<nav class="si-side"', 1)[1][:200], \
-        "rail needs a bilingual aria-label"
+    assert '<nav class="si-side" aria-label="Sector Intelligence views">' in s, \
+        "rail lost its aria-label"
     btns = re.findall(r'class="si-view-btn[^"]*" data-view="([a-z]+)" href="#([a-z]+)"', s)
     assert [b[0] for b in btns] == VIEWS, f"sidebar buttons/order wrong: {btns}"
     assert all(v == h for v, h in btns), "each button's href must be its own view hash"
@@ -85,6 +98,32 @@ def test_shell_grid_and_stage() -> None:
     assert 'class="si-shell"' in s and 'class="si-stage"' in s
     assert "grid-template-columns:var(--si-rail-w, 200px)" in s, \
         "§1 pins the shell grid and the --si-rail-w custom property"
+
+
+def test_sticky_rail_containing_block_reaches_the_page_bottom() -> None:
+    """gate 1 says the sidebar is PERSISTENT, and it measurably was not.
+
+    The rail is `position:sticky` inside .si-shell at a full 100vh. A sticky element
+    can only stay pinned while its containing block has slack beneath it, so every
+    pixel left below the shell is a pixel the rail gets shoved up by at maximum scroll.
+    Measured in-browser: with the page <footer> outside the shell the rail rode up 103px
+    at the bottom of every view and clipped its own top buttons off screen — the sidebar
+    stopped being persistent exactly where a reader is deepest in a view and most likely
+    to switch. Two things fix it and both must hold: the footer lives inside the stage,
+    and the shell cancels body's bottom padding.
+    """
+    s = _page()
+    tail = s.split('{# /si-view explore #}', 1)[1]
+    assert tail.index("<footer>") < tail.index("{# /si-stage #}"), \
+        "the page footer escaped the stage — the sticky rail loses its bottom slack"
+    css = _shell_css(s)
+    assert "margin-bottom:-18px" in css, \
+        "shell must cancel body's bottom padding or the rail unpins at max scroll"
+    body_pad = re.search(r"body\s*\{[^}]*padding:\s*(\d+)px", s)
+    assert body_pad and body_pad.group(1) == "18", (
+        "body padding changed — the shell's negative bottom margin must match it "
+        f"(found {body_pad.group(1) if body_pad else '?'}px)"
+    )
 
 
 def test_mobile_switcher_is_not_a_hamburger() -> None:
@@ -264,9 +303,39 @@ def test_mount_happens_after_the_view_is_visible() -> None:
     router = _router()
     act = router.split("function activate(", 1)[1].split("\nfunction ", 1)[0]
     assert "classList.toggle('on'" in act
-    assert "requestAnimationFrame" in act
     assert act.index("classList.toggle('on'") < act.index("loadAssets(view)"), \
         "assets must load AFTER the view is switched on"
+    assert "void sec.offsetHeight" in act, \
+        "layout must be flushed before mounting, or clientWidth is still stale"
+
+
+def test_mounting_does_not_wait_for_a_frame() -> None:
+    """Caught in-browser: requestAnimationFrame never fires while the tab is hidden.
+    The rAF-gated version activated the view, set mounted[view]=true, and then never
+    loaded one organ — a permanently blank panel, no error, and the mounted flag means
+    revisiting the view does not retry. A background tab or a restored session hits it.
+    A forced reflow gives the same 'view is laid out first' guarantee unconditionally.
+    """
+    code = _code(_router())
+    act = code.split("function activate(", 1)[1].split("\nfunction ", 1)[0]
+    assert "requestAnimationFrame" not in act, \
+        "view activation must not depend on a frame callback — hidden tabs never get one"
+    assert "requestAnimationFrame" not in code, \
+        "no part of the router may gate work behind rAF"
+
+
+def test_map_read_uses_the_hoisted_quadrant_source() -> None:
+    """The router is a separate script and cannot see anything declared inside
+    __siInitPage. rvxData() is declared in there, so a bare `rvxData()` call from the
+    router resolves to undefined, the catch swallows it, and the map's read silently
+    stays hidden — indistinguishable from 'no data yet'. Both halves are pinned: the
+    page must hoist it, and the router must read the hoisted name."""
+    page, code = _page(), _code(_router())
+    assert "window.__siRvxData = rvxData;" in page, "page no longer hoists rvxData"
+    assert "window.__siRvxData()" in code, "router does not read the hoisted name"
+    read_map = code.split("function readMap(", 1)[1].split("\nfunction ", 1)[0]
+    assert not re.search(r"(?<![.\w])rvxData\s*\(", read_map), \
+        "readMap calls bare rvxData() — that name does not exist in this scope"
 
 
 # ───────────────────────────────────────────────────────────── view reads + chips
@@ -427,6 +496,39 @@ def test_page_renders_with_an_intact_head() -> None:
     # and the shell survived the render, not just the source
     assert 'class="si-shell"' in html and html.count('class="si-view-read"') == 5
     assert re.findall(r'<section class="si-view[^"]*" data-view="([a-z]+)"', html) == VIEWS
+
+
+def test_no_i18n_macro_inside_an_html_attribute() -> None:
+    """Caught on screen, not in a test: the rail shipped with
+    ``aria-label="{{ t('Sector Intelligence views', '行业智慧视图') }}"`` and rendered as
+
+        <nav class="si-side" aria-label="<span class="l-en">Sector Intelligence views…
+
+    t() returns a dual <span class="l-en">/<span class="l-zh"> pair, so the FIRST inner
+    class= closes the attribute and everything after it leaks into the page as visible
+    text — the words "Sector Intelligence views\">" sat above the buttons. Jinja does not
+    complain, the HTML still parses, and every structural pin passed. Only the rendered
+    page shows it, so this test reads the rendered page.
+    """
+    from jinja2 import Environment, FileSystemLoader
+
+    env = Environment(loader=FileSystemLoader(str(TPL)), autoescape=False)
+    # the REAL builder globals: t() emits the dual-span pair, which is the whole point
+    env.globals.update(
+        td=lambda en: en, tr=lambda en: en,
+        t=lambda en, zh="": f'<span class="l-en">{en}</span><span class="l-zh">{zh or en}</span>',
+    )
+    html = env.get_template("sector_central.html.j2").render(basket_member_syms=["SPY"])
+
+    for tag in re.findall(r"<[a-zA-Z][^>]*>", html):
+        for val in re.findall(r'=\s*"([^"]*)"', tag):
+            assert "<span" not in val, (
+                f"an i18n macro was expanded inside an HTML attribute — the tag breaks "
+                f"and the copy leaks as text:\n  {tag[:170]}"
+            )
+    # and the rail's own label survived as plain text
+    nav = re.search(r"<nav class=\"si-side\"[^>]*>", html)
+    assert nav and 'aria-label="Sector Intelligence views"' in nav.group(0), nav
 
 
 def test_router_asset_is_paired_into_site() -> None:

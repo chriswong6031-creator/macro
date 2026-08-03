@@ -823,7 +823,13 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
      from a theme.css var or a color-mix over one, so light mode is designed
      rather than inherited (gate 7).
      ══════════════════════════════════════════════════════════════════════════ */
-  .si-shell { display:grid; grid-template-columns:var(--si-rail-w, 200px) minmax(0,1fr); align-items:start; }
+  .si-shell { display:grid; grid-template-columns:var(--si-rail-w, 200px) minmax(0,1fr); align-items:start;
+    /* Cancels body's own 18px bottom padding (declared at the top of this file) so the
+       shell reaches the document bottom. The rail is sticky WITHIN the shell and is a
+       full 100vh tall, so any slack left below the shell is slack the rail gets pushed
+       up by at maximum scroll — which clips the top buttons off screen exactly when a
+       reader is deepest into a view and most likely to want to switch. */
+    margin-bottom:-18px; }
   .si-side { position:sticky; top:0; align-self:start; height:100vh; box-sizing:border-box; z-index:30;
     display:flex; flex-direction:column; gap:2px; padding:12px;
     background:var(--panel); border-right:1px solid var(--line); }
@@ -941,7 +947,10 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
      it. Glyphs are the retired rail's own — no new icon family.
      ══════════════════════════════════════════════════════════════════════════ #}
   <div class="si-shell">
-  <nav class="si-side" aria-label="{{ t('Sector Intelligence views', '行业智慧视图') }}">
+  {# aria-label stays plain English, like every other nav on the estate: t() returns a
+     dual <span class="l-en">/<span class="l-zh"> pair, so inside an attribute it closes
+     the quote at its own class= and the remainder leaks into the page as visible text. #}
+  <nav class="si-side" aria-label="Sector Intelligence views">
     <a class="si-view-btn on" data-view="overview" href="#overview" aria-current="page" data-tip-en="Overview" data-tip-zh="总览"><span class="si-vb-g" aria-hidden="true">🎯</span><span class="si-vb-l"><span class="l-en">Overview</span><span class="l-zh">总览</span></span></a>
     <a class="si-view-btn" data-view="map" href="#map" data-tip-en="The Map" data-tip-zh="全景图谱"><span class="si-vb-g" aria-hidden="true">🧭</span><span class="si-vb-l"><span class="l-en">The Map</span><span class="l-zh">全景图谱</span></span></a>
     <a class="si-view-btn" data-view="moving" href="#moving" data-tip-en="What&#39;s Moving" data-tip-zh="正在轮动"><span class="si-vb-g" aria-hidden="true">🌀</span><span class="si-vb-l"><span class="l-en">What&#39;s Moving</span><span class="l-zh">正在轮动</span></span></a>
@@ -1711,8 +1720,6 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   {% endif %}
 
   </section>{# /si-view explore #}
-  </div>{# /si-stage #}
-  </div>{# /si-shell #}
 
   <footer>
     {{ t(
@@ -1720,6 +1727,13 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
       '仅供参考，非投资建议。篮子等权重，并以标普 500 为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。') }}
     {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span>.
   </footer>
+  {# The page footer rides INSIDE the stage on purpose. The rail is sticky within
+     .si-shell, so anything left outside the shell shortens the rail's containing
+     block: with the footer outside, scrolling to the very bottom pushed the rail
+     up by exactly the footer's height and clipped the top button off screen —
+     a "persistent" sidebar that stops being persistent at the bottom of the page. #}
+  </div>{# /si-stage #}
+  </div>{# /si-shell #}
 
 <script src="lightweight-charts.js"></script>
 <script>
@@ -2271,6 +2285,12 @@ function boot(){
 }
 boot();
 try{ __siWireScope(); __siWireTrace(); }catch(e){ console.warn('si glue', e); }
+/* Hoisted for the workspace router, which is a SEPARATE script and therefore cannot
+   see anything declared inside this function. rvxData() is the one source of the
+   quadrant split, so the map's view read must read it here rather than recompute the
+   strength/velocity split itself — a second implementation would drift the moment
+   either one is tuned, and it would be originating a classification (A7). */
+window.__siRvxData = rvxData;
 /* the workspace view reads are composed from this payload (§1b) */
 try{ if(window.__siViewReads) window.__siViewReads(BASKETS); }catch(e){ console.warn('si reads', e); }
 }

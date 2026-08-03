@@ -134,8 +134,12 @@ function readOverview(el){
   return [en.join(' '), zh.join('')];
 }
 function readMap(){
+  /* __siRvxData is hoisted onto window by __siInitPage — rvxData() itself is declared
+     INSIDE that function, so this separate script cannot see the bare name. Reaching
+     for `rvxData` directly here fails silently (typeof → 'undefined', catch swallows,
+     read stays hidden) and looks exactly like "no data yet". */
   var d=null;
-  try{ d=(typeof rvxData==='function')?rvxData():null; }catch(e){}
+  try{ d=(typeof window.__siRvxData==='function')?window.__siRvxData():null; }catch(e){}
   if(!d||!d.length) return null;
   var lead=d.filter(function(x){ return x.q==='lead'; });   // strong AND still rising
   if(!lead.length) return ['No group is both strong and still rising right now.',
@@ -235,7 +239,7 @@ function openTrace(id){
   if(!row) return;
   pendingTrace=null;
   row.click();
-  requestAnimationFrame(function(){ try{ row.scrollIntoView({block:'center'}); }catch(e){ row.scrollIntoView(); } });
+  try{ row.scrollIntoView({block:'center'}); }catch(e){ row.scrollIntoView(); }
 }
 
 /* ── activation ──────────────────────────────────────────────────────────────── */
@@ -252,21 +256,24 @@ function activate(view,target){
   }
   try{ document.title=BASE_TITLE+' · '+TITLES[view][isZh()?1:0]; }catch(e){}
   current=view;
-  /* first activation mounts the heavy organs — after a frame, so the view we just
-     revealed has been laid out and the width-measuring renderers see a real box. */
+  /* First activation mounts the heavy organs. The view must be laid out first so the
+     width-measuring renderers see a real box — but do NOT wait for a frame to get
+     that: requestAnimationFrame never fires while the tab is hidden, so a background
+     tab (or a restored session) would activate the view, set mounted[view]=true, and
+     then never load a single organ — a permanently blank panel with no error anywhere.
+     Reading offsetHeight forces a synchronous reflow instead: deterministic, and it
+     does not care whether anyone is looking. */
   if(!mounted[view]){
     mounted[view]=true;
-    requestAnimationFrame(function(){
-      loadAssets(view);
-      try{ window.dispatchEvent(new Event('resize')); }catch(e){}   // nudge autoSize charts
-    });
+    var sec=document.querySelector('.si-view[data-view="'+view+'"]');
+    if(sec) void sec.offsetHeight;
+    loadAssets(view);
+    try{ window.dispatchEvent(new Event('resize')); }catch(e){}     // nudge autoSize charts
   }
   reads();
   if(target){
     var el=document.getElementById(target);
-    if(el) requestAnimationFrame(function(){
-      try{ el.scrollIntoView({block:'start'}); }catch(e){ el.scrollIntoView(); }
-    });
+    if(el){ try{ el.scrollIntoView({block:'start'}); }catch(e){ el.scrollIntoView(); } }
     else if(history.replaceState) history.replaceState(null,'','#'+view);
   }
 }
