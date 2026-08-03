@@ -27,7 +27,7 @@ import logging
 import math
 import os
 import tempfile
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -245,8 +245,58 @@ def _feed_earnings(root: Path, as_of_date: str | None = None) -> list[dict]:
         return []
 
 
+#: Sessions the stage snapshot may lag before the feed refuses it. Same law and
+#: config key as attention_source (supply.freshness.max_stale_sessions in
+#: config/marketing.yml) so ONE operator lever governs every stage consumer.
+_STAGE_MAX_STALE_SESSIONS = 3
+
+
+def _sessions_since(earlier: str | None, later: str | None) -> int | None:
+    """Mon–Fri sessions in (earlier, later] — how stale *earlier* is.
+
+    Mirrors attention_source.sessions_since (deliberately not an import — that
+    module lands in a sibling PR). No holiday calendar: counting a holiday as a
+    session only makes a source look older, so the gate trips sooner, never
+    later. None when unparseable (callers fail closed); 0 when later <= earlier.
+    """
+    try:
+        d0 = date.fromisoformat(str(earlier)[:10])
+        d1 = date.fromisoformat(str(later)[:10])
+    except (TypeError, ValueError):
+        return None
+    if d1 <= d0:
+        return 0
+    if (d1 - d0).days > 400:
+        return 9999
+    n = 0
+    cur = d0
+    while cur < d1:
+        cur += timedelta(days=1)
+        if cur.weekday() < 5:
+            n += 1
+    return n
+
+
+def _stage_stale_budget(root: Path) -> int:
+    """supply.freshness.max_stale_sessions from config/marketing.yml, else 3."""
+    try:
+        from engine.marketing.state import _load_cfg  # noqa: PLC0415
+        fresh = ((_load_cfg(root).get("supply") or {}).get("freshness") or {})
+        return max(0, int(fresh["max_stale_sessions"]))
+    except Exception:  # noqa: BLE001
+        return _STAGE_MAX_STALE_SESSIONS
+
+
 def _feed_stage(root: Path) -> list[dict]:
-    """Read equitydesk_overview.parquet → USA stage 2 names."""
+    """Read equitydesk_overview.parquet → USA stage 2 names, freshness-gated.
+
+    The parquet retains the immutable vendor seed plus nightly engine
+    snapshots (stage_analysis.append_stage_snapshot), so rows are filtered to
+    the NEWEST as_of_date only — mixing snapshots would resurrect stale names.
+    A snapshot more than the session budget behind today empties the feed with
+    ONE ::warning annotation: 15 Stage-2 names off a dead snapshot are not
+    evidence, and this feed spent 16 days proving it.
+    """
     try:
         import pandas as pd
         path = root / "data" / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
@@ -256,6 +306,18 @@ def _feed_stage(root: Path) -> list[dict]:
         df = pd.read_parquet(path, columns=cols)
         if df.empty:
             return []
+        snapshots = sorted({str(x)[:10] for x in df["as_of_date"].dropna()})
+        latest = snapshots[-1] if snapshots else None
+        n_lag = _sessions_since(latest, _today_str())
+        budget = _stage_stale_budget(root)
+        if n_lag is None or n_lag > budget:
+            # Bare print, line start, flushed — a logger's prefix would make
+            # GitHub drop the annotation silently.
+            print(f"::warning title=marketing-radar-stage::stage snapshot "
+                  f"{latest or 'unstamped'} is more than {budget} sessions behind "
+                  f"{_today_str()} — stage feed empty", flush=True)
+            return []
+        df = df[df["as_of_date"].astype(str).str[:10] == latest]
         df = df[(df["region"] == "USA") & (df["stage_flag"] == 2)].copy()
         df = df.sort_values(["sata_score", "ticker"], ascending=[False, True]).head(15)
         results: list[dict] = []
