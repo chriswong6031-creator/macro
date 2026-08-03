@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T14:20:54.550862+00:00",
-  "count": 669,
+  "generated_at": "2026-08-03T14:50:59.486947+00:00",
+  "count": 670,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -167,6 +167,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 39,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fyjx2gewdk6-4ab3e9",
+      "title": "MS Playing the AI Infrastructure Dip Where to Invest and Where We See Risk",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T11:02:58Z",
+      "summary_points": [
+        "**Compute demand to significantly exceed supply**: Highest conviction view; AI adoption drives sustained compute demand with no near-term supply constraints (Google 1,000x demand in 4-5 years, NVIDIA 14% CAGR).",
+        "**Tokenmaxxing debunked**: Enterprise token spend low ($<11/month) with $55 labor cost savings negating revenue concerns; developer margins (60% vs.",
+        "80-90%) offset token pricing risks.",
+        "**Chinese open-weight LLMs threaten US models**: Potential reduction in compute spend for training frontier US models, creating geopolitical risk and competitive imbalance.",
+        "**AI infrastructure bottlenecks**: Critical focus on labor shortages, power grid access (38GW shortfall by 2028), and energy storage; undervalued Chinese AI providers (e.g., Kimi K3) and hyperscalers (META, GOOGL, MSFT, AMZN) for scale ROI."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 118,
       "language": "en",
       "needs_metadata": false
     },
