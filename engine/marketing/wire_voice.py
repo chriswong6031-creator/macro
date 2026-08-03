@@ -385,9 +385,20 @@ def select_opener(
 
     Deterministic: the base index is hash(item id) % pool size, so the same item
     always maps to the same slot. The per-account NO-REPEAT window then walks
-    forward from that slot until it lands on an opener not equal to the account's
-    most recent one — so two consecutive posts on the same account never share a
-    hook, while selection stays a pure function of (id, recent_openers).
+    forward from that slot and takes the LEAST RECENTLY USED hook — so two
+    consecutive posts on the same account never share a hook, while selection
+    stays a pure function of (id, recent_openers).
+
+    BATCH VARIETY, NOT JUST ADJACENT VARIETY (2026-08-02). This used to compare
+    against `recent[-1]` ALONE — the whole window was recorded and only its last
+    entry was ever read (`_RECENT_OPENERS_KEEP = 3` with a comment saying "only
+    [-1] gates"). Avoiding one hook out of a five-hook pool lets a busy hour
+    alternate A, B, A, B and read as two templates taking turns, which is what a
+    reader of four posts inside one hour actually sees. The walk now scores every
+    candidate by how long ago the account last used it and takes the stalest,
+    which subsumes the old rule (the previous post's hook has age 0, the minimum,
+    so it can only win when the pool holds a single distinct entry) and spreads
+    the pool across a batch instead of ping-ponging across the top of it.
 
     Returns (opener, register). The caller records the returned opener into the
     account's recent list (see the daemon state) so the next call sees it.
@@ -409,18 +420,31 @@ def select_opener(
         # dateline the item cannot support.
         return "", register
 
-    recent = list(recent_openers or [])
-    last = recent[-1] if recent else None
-
+    recent = [str(o) for o in (recent_openers or [])]
     n = len(pool)
     start = _hash_index(str(item.get("id", "")), n)
-    # Walk forward from the hashed slot to the first opener != last. A pool with a
-    # single distinct entry cannot avoid a repeat — accept it (degenerate config).
+
+    # Walk the pool from the hashed slot and keep the STALEST hook: `age` is how
+    # many posts ago this account last used it, and a hook the window has never
+    # seen scores len(recent), the maximum. One pass covers both cases — an
+    # unused hook always beats a used one, and when the window has covered the
+    # whole pool the least-recently-used wins.
+    #
+    # Ties keep the hash-walk order (strict `>`), which is what preserves
+    # determinism: an empty window scores every candidate 0, so the first slot
+    # examined — pool[start] — is the answer, exactly as before. A pool with a
+    # single distinct entry cannot avoid a repeat; accept it (degenerate config).
+    best_cand = pool[start]
+    best_age = -1
     for step in range(n):
         cand = pool[(start + step) % n]
-        if cand != last:
-            return cand, register
-    return pool[start], register
+        seen_ago = next(
+            (i for i, prev in enumerate(reversed(recent)) if prev == cand), None
+        )
+        age = len(recent) if seen_ago is None else seen_ago
+        if age > best_age:
+            best_cand, best_age = cand, age
+    return best_cand, register
 
 
 # ─────────────────────────────────────────────────────────────────────────────
