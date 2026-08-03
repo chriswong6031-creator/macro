@@ -48,6 +48,7 @@ from pathlib import Path
 import pandas as pd
 
 from engine import catalyst_stock, master_brain
+from engine import desk_ledger as _ledger_law    # run-scoped ids + immutable appends
 from engine.catalyst_tone import _extract_json
 from lib import config, store
 
@@ -371,7 +372,12 @@ def _entry_levels(check: dict, asof) -> dict:
     return out
 
 
-def _build_note(note: dict, pick: dict, asof, cfg: dict, idx: int) -> dict | None:
+def _build_note(note: dict, pick: dict, asof, cfg: dict, idx: int,
+                run_token: str = "") -> dict | None:
+    """`run_token` scopes the id to THIS run. Without it a stale as_of re-briefed on a
+    later run day re-mints `{asof}-{ticker}-{i}` — the 2026-08-03 audit found 35 graded
+    ids re-appended under MUTATED lean/check_by, which un-pre-registers the falsifier
+    and broke desk_placebo's outcome pairing (engine.desk_ledger)."""
     t = note.get("ticker") or pick.get("ticker")
     if not t:
         return None
@@ -388,7 +394,7 @@ def _build_note(note: dict, pick: dict, asof, cfg: dict, idx: int) -> dict | Non
     if clamp:
         dissent = f"{dissent} ({clamp})" if dissent else clamp
     return {
-        "id": f"{asof}-{t}-{idx + 1}",
+        "id": f"{asof}-{t}-{run_token}-{idx + 1}" if run_token else f"{asof}-{t}-{idx + 1}",
         "ticker": t,
         "name": (pick.get("identity") or {}).get("name"),
         "lean": lean, "conviction": conv, "horizon_d": horizon,
@@ -413,10 +419,10 @@ def _ledger_path(root) -> Path:
 def _append_ledger(notes: list, asof, root) -> None:
     lp = _ledger_path(root)
     now = datetime.now(timezone.utc).isoformat()
-    lines = []
+    rows = []
     for nt in notes:
         check = (nt.get("falsifier") or {}).get("check") or {}
-        lines.append(json.dumps({
+        rows.append({
             "id": nt["id"], "logged_at": now, "state_asof": str(asof),
             "ticker": nt["ticker"], "lean": nt["lean"], "conviction": nt["conviction"],
             "horizon_d": nt["horizon_d"], "falsifier": nt.get("falsifier"),
@@ -424,10 +430,13 @@ def _append_ledger(notes: list, asof, root) -> None:
             "entry_levels": _entry_levels(check, asof),
             "engine_verdict": nt.get("engine_verdict"),
             "status": "open", "scored_at": None, "outcome": None, "realized": None,
-        }, default=str))
+        })
+    # Immutability gate: a logged lean is pre-registered — an id already in the ledger
+    # is refused loudly, never re-appended with a mutated lean/check_by (engine.desk_ledger).
+    rows = _ledger_law.reject_existing_ids(lp, rows, "stock_desk")
     with lp.open("a") as f:
-        for ln in lines:
-            f.write(ln + "\n")
+        for row in rows:
+            f.write(json.dumps(row, default=str) + "\n")
 
 
 # --------------------------------------------------------------------------- #
@@ -513,13 +522,19 @@ def _bucket(rows: list) -> dict:
             "dir_accuracy": round(dok / n, 3) if n else None}
 
 
-def _calibration_note(overall: dict) -> str:
+def _calibration_note(overall: dict, null_line: str = "") -> str:
     if overall["n"] == 0:
         return ("No stock leans scored yet — the track record begins once the first "
                 "check-by dates pass. Until then every lean is a provisional hypothesis, "
                 "and the honest prior is no exploitable cross-sectional edge.")
     parts = [f"{overall['n']} leans scored, hit-rate {overall['hit_rate']} "
              f"(directional accuracy {overall['dir_accuracy']})."]
+    if null_line:
+        # The measured no-skill base rate sits BESIDE the hit-rate: `hit` is a
+        # not-falsified endpoint whose null is far above one-half, and this note is
+        # injected into the next run's conviction-calibrating prompt via
+        # state["track_record"] (engine.desk_placebo).
+        parts.append(null_line)
     if overall["n"] < 20:
         parts.append("Small sample — treat conviction as provisional; the prior remains "
                      "no validated forward edge (this layer is accountability, not alpha).")
@@ -590,7 +605,8 @@ def score_ledger(root=None, today=None) -> dict | None:
             "by_lean": {ln: _bucket([s for s in dec if s.get("lean") == ln]) for ln in _LEANS},
             "by_conviction": {c: _bucket([s for s in dec if s.get("conviction") == c])
                               for c in _CONVICTIONS},
-            "calibration_note": _calibration_note(overall),
+            "calibration_note": _calibration_note(
+                overall, null_line=_ledger_law.placebo_lines(root, "stock_desk")[0]),
             "recent": [{k: s.get(k) for k in ("id", "ticker", "lean", "conviction",
                         "outcome", "realized", "check_by")}
                        for s in sorted(dec, key=lambda s: s.get("check_by") or "",
@@ -652,16 +668,18 @@ def run(persist: bool = True, root=None, force: bool = False, call=None) -> dict
 
     syn = synthesize(state, cfg, call=call)
     asof = state.get("as_of") or datetime.now(timezone.utc).date().isoformat()
+    generated_at = datetime.now(timezone.utc).isoformat()   # minted BEFORE note build — it
+    token = _ledger_law.run_token(generated_at)             # is the run identity in every id
     pick_by_t = {p.get("ticker"): p for p in state["picks"]}
     notes = []
     for i, nt in enumerate(syn.get("notes") or []):
         pick = pick_by_t.get(nt.get("ticker")) or {}
-        built = _build_note(nt, pick, asof, cfg, i)
+        built = _build_note(nt, pick, asof, cfg, i, run_token=token)
         if built:
             notes.append(built)
 
     out = {"schema": SCHEMA, "as_of": asof,
-           "generated_at": datetime.now(timezone.utc).isoformat(),
+           "generated_at": generated_at,
            "degraded": syn.get("degraded"), "notes": notes,
            "disclaimer": ("Accountable AI judgment on the deterministic top picks. The "
                           "cross-sectional rank has no validated forward edge; these leans "

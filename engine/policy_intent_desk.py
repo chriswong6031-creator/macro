@@ -32,6 +32,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 from lib import config
+from engine import desk_ledger as _ledger_law       # run-scoped ids + immutable appends
 from engine import master_brain as _mb              # reuse the DeepSeek/Anthropic client
 from engine import ai_desk as _desk                 # reuse _level_asof / _check_by
 from engine import ai_desk_scorer as _scorer        # reuse the predicate evaluators
@@ -320,8 +321,10 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
     conf = str(parsed.get("confidence") or "low").strip().lower()
     brief["confidence"] = conf if conf in _CONVICTIONS else "low"
     raw = parsed.get("theses") if isinstance(parsed.get("theses"), list) else []
-    # per-run token (HHMMSS from generated_at) so same-day re-runs can't collide ids
-    run_token = "".join(c for c in (brief.get("generated_at") or "") if c.isdigit())[8:14]
+    # per-run token (full YYYYMMDDHHMMSS from generated_at) so re-runs can't collide ids.
+    # The original HHMMSS slice still collided when two different run DAYS shared a stale
+    # state_asof and fired at the same wall-clock second (engine.desk_ledger).
+    run_token = _ledger_law.run_token(brief.get("generated_at"))
     theses = []
     for t in raw[: int(cfg.get("max_theses", 5))]:
         th = _build_thesis(t, len(theses), asof, cfg, run_token=run_token)
@@ -345,24 +348,30 @@ def _append_ledger(brief: dict, root) -> None:
         d.mkdir(parents=True, exist_ok=True)
         asof = brief.get("state_asof")
         regime = quad_label(root)
+        rows = []
+        for t in theses:
+            check = (t.get("falsifier") or {}).get("check") or {}
+            entry = {}
+            for key in ("subject_ticker", "vs"):
+                tk = check.get(key)
+                if tk:
+                    lv = _desk._level_asof(tk, root, asof)
+                    if lv is not None:
+                        entry[tk] = lv
+            rows.append({
+                "id": t["id"], "logged_at": brief["generated_at"], "state_asof": asof,
+                "actor": t.get("actor"), "subject": t["subject"], "lean": t["lean"],
+                "conviction": t["conviction"], "horizon_d": t["horizon_d"],
+                "falsifier": t["falsifier"], "check_by": t["check_by"],
+                "entry_levels": entry, "regime": regime,
+                "status": "open", "scored_at": None, "outcome": None, "realized": None,
+            })
+        # Immutability gate: a logged thesis is pre-registered — an id already in the
+        # ledger is refused loudly, never rewritten (engine.desk_ledger).
+        rows = _ledger_law.reject_existing_ids(d / "theses.jsonl", rows, "policy_intent")
         with open(d / "theses.jsonl", "a") as fh:
-            for t in theses:
-                check = (t.get("falsifier") or {}).get("check") or {}
-                entry = {}
-                for key in ("subject_ticker", "vs"):
-                    tk = check.get(key)
-                    if tk:
-                        lv = _desk._level_asof(tk, root, asof)
-                        if lv is not None:
-                            entry[tk] = lv
-                fh.write(json.dumps({
-                    "id": t["id"], "logged_at": brief["generated_at"], "state_asof": asof,
-                    "actor": t.get("actor"), "subject": t["subject"], "lean": t["lean"],
-                    "conviction": t["conviction"], "horizon_d": t["horizon_d"],
-                    "falsifier": t["falsifier"], "check_by": t["check_by"],
-                    "entry_levels": entry, "regime": regime,
-                    "status": "open", "scored_at": None, "outcome": None, "realized": None,
-                }, default=str) + "\n")
+            for row in rows:
+                fh.write(json.dumps(row, default=str) + "\n")
     except Exception as e:  # noqa: BLE001
         log.warning("policy_intent ledger append failed: %s", e)
 

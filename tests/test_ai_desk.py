@@ -126,7 +126,8 @@ def test_synthesize_validates_and_drops_bad_theses():
     subjects = [t["subject"] for t in brief["theses"]]
     assert "Energy" in subjects and "VIX" in subjects and "retail" in subjects
     ids = [t["id"] for t in brief["theses"]]
-    assert ids == [f"2026-06-16-{i}" for i in (1, 2, 3)]          # sequential, no gaps
+    tok = "".join(c for c in brief["generated_at"] if c.isdigit())[:14]
+    assert ids == [f"2026-06-16-{tok}-{i}" for i in (1, 2, 3)]    # run-scoped, sequential, no gaps
     for t in brief["theses"]:
         assert t["lean"] in d._THESIS_LEANS
         assert "check" in t["falsifier"] and t["check_by"]        # every thesis is falsifiable
