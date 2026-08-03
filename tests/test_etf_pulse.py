@@ -1,5 +1,6 @@
-"""Tests for engine.etf_pulse (ETF Pulse rotation strip, display-only)."""
+"""Tests for engine.etf_pulse (ETF Pulse rotation strip, display tier)."""
 import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -116,3 +117,33 @@ def test_compute_smoke_real_data():
         pytest.skip("no price caches present")
     assert "style" in out and "risk" in out and "sector" in out
     assert out.get("as_of")
+
+
+def test_rotation_disclaimer_carries_no_internal_tier_vocabulary():
+    """T-B2 (ruled, SEO Supercharge W2). This string used to read "Display-only
+    rotation context — …". It is rendered on etfs.html, which became
+    anonymous-public, so the sentence now lands in Google's index and in
+    AI-overview extractions — and "display-only" is internal tier vocabulary that
+    names OUR handling of the number rather than what the number is
+    (DESIGN_DOCTRINE Law 2).
+
+    Pinned at the EMITTER, and pinned on the CONSTANTS rather than on a computed
+    dict, because engine/etf_board.py renders the constants directly: the shipped
+    basketdata/etf_pulse.json is rebuilt under render scope `baskets` while the
+    page bakes under `macro`, so the file on disk can be a lane behind the code.
+    """
+    for text in (etf_pulse.ROTATION_DISCLAIMER_EN, etf_pulse.ROTATION_DISCLAIMER_ZH):
+        assert text
+        for banned in ("Display-only", "display-only", "display only",
+                       "仅供展示", "展示性", "validated"):
+            assert banned not in text, f"banned vocabulary in the disclaimer: {banned}"
+    # the honest half must survive the rewrite — this is not a deletion
+    assert "never a buy list" in etf_pulse.ROTATION_DISCLAIMER_EN
+    assert "非买入清单" in etf_pulse.ROTATION_DISCLAIMER_ZH
+    # and the emitter must actually ship them, not a stale literal beside them
+    out = {"disclaimer_en": etf_pulse.ROTATION_DISCLAIMER_EN,
+           "disclaimer_zh": etf_pulse.ROTATION_DISCLAIMER_ZH}
+    src = (Path(etf_pulse.__file__).read_text(encoding="utf-8"))
+    assert '"disclaimer_en": ROTATION_DISCLAIMER_EN' in src
+    assert '"disclaimer_zh": ROTATION_DISCLAIMER_ZH' in src
+    assert out["disclaimer_en"].startswith("Rotation context")

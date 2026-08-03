@@ -52,6 +52,20 @@ public:
     # the product statement we actually want a stranger to read.
     - /special_situations.html
     - /china_special_situations.html
+    # etfs.html — the fund-conviction desk, converted to a tier-preview shell and
+    # opened to anonymous visitors by SEO_SUPERCHARGE_MASTERPLAN W2 (spec:
+    # research/seo_supercharge/W2_HEATMAP_ETFS_PREVIEW_SPEC.md, Part B). Unlike
+    # the two shells above, this page was NOT already split: the same PR that
+    # opens it also moves every graded row off the URL. What ships free is the
+    # header, the honest totals, a non-graded stance line derived only from the
+    # rotation backdrop, that backdrop in full, the complete 77-fund coverage
+    # directory and the disclosure footer. What does NOT ship is the ranked
+    # consensus board, the fresh-conviction cards, every per-fund add and the
+    # trim shelf — all of it in /premiumdata/etfs.json, which the
+    # premium.enforced_early prefix below 403s for anonymous and Free alike.
+    # Zero stock rows are free here: both boards are best-first, and previewing a
+    # best-first board hands over its head, which is the part people pay for.
+    - /etfs.html
     # Support desk (SEE W2). Public by construction: the people who most need it
     # are the ones who cannot sign in, and a contact form behind a registration
     # wall is a contact form that never receives the account/billing tickets it

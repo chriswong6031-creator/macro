@@ -1793,6 +1793,11 @@ on:
       - "tests/test_api_paywall.py"
       - "tests/test_special_situations_gate.py"
       - "tests/test_china_special_situations_gate.py"
+      # etfs.html joined the tier-gate job in SEO Supercharge W2. Its subjects
+      # (templates/**, scripts/build_site.py, engine/**) already trigger above;
+      # this line is the half that test_site_access_boundary derives from the
+      # job's own `run:` steps, so a PR editing only this suite still runs it.
+      - "tests/test_etfs_gate.py"
       # OEU M-FIX wiring (2026-07-25): flow-leaders / market-structure /
       # options-screener suites + the neural-web support-map suite — previously
       # run by ZERO workflows (see the options-estate-guards job). Engine

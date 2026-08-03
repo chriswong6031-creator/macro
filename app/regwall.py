@@ -69,6 +69,15 @@ router = APIRouter()
 # regardless of PAYWALL_ENABLED. So opening the page opens no rows: the split is
 # still the gate, and this wall was only ever costing us the crawl — Googlebot
 # has no session, so it was being 302'd off the one desk with proven demand.
+#
+# /etfs.html joins them for W2 (same masterplan, spec Part B). It is the same
+# shape with one difference worth stating: the two desks above were ALREADY split
+# and W1a moved only their access class, whereas etfs.html was fully server-
+# rendered with every graded row in the markup, so the PR that opened it is also
+# the PR that took those rows off the URL. The free shell keeps the fund coverage
+# directory, the rotation backdrop and the honest totals; the consensus board,
+# fresh conviction, per-fund adds and trims live in /premiumdata/etfs.json, which
+# app/paywall.py enforces as Essential+ regardless of PAYWALL_ENABLED.
 PUBLIC_PATHS = {
     "/",
     "/index.html",
@@ -81,6 +90,7 @@ PUBLIC_PATHS = {
     "/research_vault.html",
     "/special_situations.html",
     "/china_special_situations.html",
+    "/etfs.html",
     "/support.html",
     "/unsubscribe.html",
 }

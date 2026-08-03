@@ -661,6 +661,14 @@ PUBLIC_EXACT = frozenset({
     # and the upgrade wall — every paid row stays in /premiumdata/* (plus the two raw
     # snapshots in premium.enforced_early), which 403 anonymous and Free alike.
     "/special_situations.html", "/china_special_situations.html",
+    # The fund-conviction desk, converted to the same shape by W2. Reviewed public
+    # on the same reasoning, with one difference: this page was NOT already split,
+    # so the PR that opened it also moved every graded row (consensus board, fresh
+    # conviction, per-fund adds, trims) out of the shell and into
+    # /premiumdata/etfs.json. Zero stock rows are free here — both boards are
+    # best-first. What ships is the rotation backdrop, the 77-fund coverage
+    # directory, the honest totals and a non-graded stance line.
+    "/etfs.html",
     "/support.html", "/unsubscribe.html",
     "/privacy.html", "/terms.html", "/disclaimer.html",
     "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png",

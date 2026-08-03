@@ -1,55 +1,20 @@
-{% macro t(en, zh='') -%}
-<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
-{%- endmacro %}
-{% macro b(d) -%}
-<span class="l-en">{{ d.en }}</span><span class="l-zh">{{ d.zh if d.zh else d.en }}</span>
-{%- endmacro %}
-{# ---- ? help tip — CSS-only bilingual Tier-2 popover (mechanics live here) ---- #}
-{% macro help(en, zh='') -%}
-<span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
-{%- endmacro %}
-{# ---- logo(ticker): eager company logo via the nvstly CDN; onerror reveals a
-       ticker-text fallback (heatmap.js pattern) ---- #}
-{% macro logo(ticker) -%}
-<span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/{{ ticker | upper }}.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">{{ ticker | upper | truncate(4, true, '') }}</span></span>
-{%- endmacro %}
-{# ---- spark(series): min–max normalized inline sparkline, up/down colored ---- #}
-{% macro spark(series) -%}
-{%- if series and (series | length) >= 2 -%}
-  {%- set lo = series | min -%}{%- set hi = series | max -%}
-  {%- set n = series | length -%}{%- set rng = (hi - lo) -%}
-  {%- set up = (series[-1] >= series[0]) -%}
-  <svg class="spark" viewBox="0 0 66 18" width="66" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="{{ 'var(--lift)' if up else 'var(--drag)' }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="
-  {%- for v in series -%}{{ "%.1f" | format(1.0 + (loop.index0 / (n - 1)) * 64.0) }},{{ "%.1f" | format(16.0 - (((v - lo) / rng) if rng > 0 else 0.5) * 14.0) }}{{ ' ' }}{%- endfor -%}
-  "/></svg>
-{%- else -%}<span class="faint">—</span>{%- endif -%}
-{%- endmacro %}
-{# ---- stance(s): the doctrine "so what do I do?" pill, tone-colored ---- #}
-{% macro stance(s) -%}
-{%- if s -%}<span class="stpill st-{{ s.tone }}"{% if s.why %} data-tip-en="{{ s.why.en }}" data-tip-zh="{{ s.why.zh }}"{% endif %}><span class="stdot"></span>{{ b(s) }}</span>{%- endif -%}
-{%- endmacro %}
-{# ---- breadth(na, nt): fund-agreement constellation — accumulating vs trimming ---- #}
-{% macro breadth(na, nt) -%}
-<span class="bdots" title="{{ na }} fund{{ 's' if na != 1 else '' }} accumulating{% if nt %}, {{ nt }} trimming{% endif %}">
-{%- for i in range([na, 6] | min) %}<i class="up"></i>{% endfor -%}
-{%- if na > 6 %}<i class="ov">+{{ na - 6 }}</i>{% endif -%}
-{%- if nt %}<i class="sep"></i>{% for i in range([nt, 4] | min) %}<i class="dn"></i>{% endfor %}{% endif -%}
-</span>
-{%- endmacro %}
-{# ---- presbar(net, scale): center-anchored net-conviction pressure bar ---- #}
-{% macro presbar(net, scale) -%}
-{%- set a = net if net >= 0 else -net -%}
-{%- set frac = (a / scale) if scale else 0 -%}
-{%- set w = (7 + 93 * frac) if a > 0.0001 else 0 -%}
-<span class="pbar"><span class="pb-mid"></span><span class="pb-fill {{ 'u' if net >= 0 else 'd' }}" style="width:{{ "%.0f" | format(w) }}%"></span></span>
-{%- endmacro %}
+{# Row-rendering macros now live in _etf_macros.html.j2 so the four row partials
+   (_etf_board_rows / _etf_fresh_cards / _etf_accumulation_rows / _etf_trim_rows)
+   render from the SAME source as this page — the tier-preview split's one-source
+   rule (docs/TIER_PREVIEW_PATTERN.md §checklist-1). Call sites are unchanged. #}
+{% from "_etf_macros.html.j2" import t, b, help, logo, spark, stance, breadth, presbar, hero_verdict, hero_tiles %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Real fund moves — where managers are building conviction</title>
-{% set seo_title = "Real Fund Moves — Mastermind" %}{% set seo_desc = "Which stocks real money managers are accumulating — cross-fund conviction ranked, with a plain-word stance and the rotation backdrop, updated each filing cycle." %}{% set seo_path = "etfs.html" %}
+{# SEO head, W2/T-B4 (ruled): the SERP line trades house voice for search intent.
+   "Real fund moves" is a phrase nobody types; "which stocks fund managers are
+   buying" is the question this page answers, in the searcher's own words. Brand
+   suffix kept, <title> and seo_title unified (they used to disagree), and the h1
+   is deliberately UNCHANGED — the voice stays on the page, only the SERP moves. #}
+<title>Which Stocks Fund Managers Are Buying — MastermindX</title>
+{% set seo_title = "Which Stocks Fund Managers Are Buying — MastermindX" %}{% set seo_desc = "Track which stocks 77 thematic and active ETFs are accumulating — cross-fund consensus, brand-new positions and the sector rotation backdrop, updated each filing cycle." %}{% set seo_path = "etfs.html" %}
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
@@ -58,10 +23,23 @@
 :root{--card:var(--panel);--grid:var(--line);--ink:#eef2f7;
   --faint:color-mix(in srgb,var(--muted) 72%,var(--bg));
   --amber:#fbbf24;--teal:#2dd4bf;--ch-a:#8b96f8;--ch-b:#2dd4bf;--ch-c:#fbbf24;
-  --lift:#54c39a;--drag:#e58a97;--accent:var(--ch-b)}
+  --lift:#54c39a;--drag:#e58a97;--accent:var(--ch-b);
+  /* glass surface tokens for the tier wall's floating card. special_situations
+     defines these locally too — theme.css ships no --surface family, so pasting
+     the wall CSS without them renders a transparent-but-working card, which is
+     exactly the failure mode a review misses (W2 spec §B3.2). Dark first: this
+     :root IS the dark default on this page. */
+  --surface: color-mix(in srgb, var(--card) 80%, transparent);
+  --surface-brd: color-mix(in srgb, var(--text) 13%, transparent);
+  --surface-shadow: 0 20px 52px -22px rgba(3,7,18,.66), 0 6px 18px -10px rgba(3,7,18,.44),
+                    inset 0 1px 0 color-mix(in srgb,#fff 7%,transparent)}
 html[data-theme="light"]{--ink:#141b26;--faint:color-mix(in srgb,var(--muted) 82%,var(--bg));
   --amber:#b45309;--teal:#0f766e;--ch-a:#4559dc;--ch-b:#0f766e;--ch-c:#b45309;
-  --lift:#2f9270;--drag:#c65b6e}
+  --lift:#2f9270;--drag:#c65b6e;
+  --surface: color-mix(in srgb, var(--card) 72%, transparent);
+  --surface-brd: color-mix(in srgb, var(--ink) 12%, transparent);
+  --surface-shadow: 0 14px 36px -20px rgba(20,32,64,.22), 0 4px 12px -6px rgba(20,32,64,.12),
+                    inset 0 1px 0 rgba(255,255,255,.72)}
 /* zh 红涨绿跌 (operator ruling): accumulate/trim are DIRECTION reads → swap. */
 html[data-lang="zh"]{--lift:#e58a97;--drag:#54c39a}
 html[data-theme="light"][data-lang="zh"]{--lift:#c65b6e;--drag:#2f9270}
@@ -81,6 +59,11 @@ a{color:var(--link);text-decoration:none}
 .eh-brand .tag{font-size:13px;color:var(--muted)}
 .eh-verdict{font-size:clamp(20px,3vw,28px);font-weight:800;color:var(--ink);letter-spacing:-.02em;line-height:1.3;margin:16px 0 8px;max-width:920px}
 .eh-verdict b{background:linear-gradient(94deg,var(--ch-a),var(--ch-b) 60%,var(--ch-c));-webkit-background-clip:text;background-clip:text;color:transparent}
+/* T5 stance line — the free build's Law-1 read, from rotation context only.
+   Its highlight IS directional (risk-on / risk-off), so it rides --lift/--drag
+   and flips correctly under 中文; the neutral case takes plain ink. */
+.stance-line{font-size:16px;line-height:1.5;color:var(--ink);font-weight:600;margin:16px 0 8px;max-width:760px}
+.stance-line .st.u{color:var(--lift)}.stance-line .st.d{color:var(--drag)}.stance-line .st.n{color:var(--ink)}
 .eh-asof{display:block;font-size:12.5px;color:var(--muted);line-height:1.7}
 .eh-asof .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--lift);animation:txBreathe 2.8s ease-in-out infinite;vertical-align:middle;margin-right:5px}
 /* hero tiles */
@@ -91,6 +74,9 @@ a{color:var(--link);text-decoration:none}
 .tile:nth-child(2){animation-delay:.06s}.tile:nth-child(3){animation-delay:.12s}
 .tile::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--tc,var(--accent))}
 .tile.t-lift{--tc:var(--lift)}.tile.t-drag{--tc:var(--drag)}.tile.t-accent{--tc:var(--ch-a)}.tile.t-neutral{--tc:var(--faint)}
+/* the free build's honest-total tile: a count is not a direction, so it takes
+   the brand link ink rather than an up/down one that 中文 would flip */
+.tile.t-link{--tc:var(--link)}
 .tile .tk{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .tile .tv{font-size:27px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.1;margin:5px 0 2px;font-variant-numeric:tabular-nums}
 .tile .tm{font-size:12px;color:var(--faint);line-height:1.4}
@@ -243,7 +229,13 @@ a{color:var(--link);text-decoration:none}
 .shelf details[open] summary .sh-caret{transform:rotate(90deg)}
 .shelf .sh-body{padding:4px 20px 20px;border-top:1px solid var(--grid)}
 .fdot{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin-right:6px}
-.fdot.fresh{background:var(--lift)}.fdot.aging{background:var(--amber)}.fdot.stale{background:var(--drag)}.fdot.none{background:var(--muted)}
+/* Freshness is a DATA-QUALITY status, not a market direction. It must NOT ride
+   --lift/--drag: those flip under html[data-lang="zh"] (红涨绿跌), which painted
+   "fresh" red and "stale" green in the first ZH render of the W2 mockup. Fixed
+   semantic inks, identical in both languages. Same rule for any pass/fail tint. */
+.fdot.fresh{background:#1FA971}.fdot.aging{background:#f0b429}.fdot.stale{background:#e06464}
+.fdot.none{background:var(--muted)}
+.fstale{color:#e06464}
 .tag3p{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10px;font-weight:700;background:color-mix(in srgb,var(--muted) 13%,var(--card));color:var(--muted);border:1px solid var(--grid)}
 
 /* ═══ disclosure ═══ */
@@ -268,6 +260,70 @@ a{color:var(--link);text-decoration:none}
   font-size:12px;font-weight:500;color:var(--text);line-height:1.5;text-transform:none;letter-spacing:0;text-align:left}
 .txq:hover .txq-tip,.txq:focus .txq-tip{display:block}
 
+/* ═══ tier gate (SEO Supercharge W2 — docs/TIER_PREVIEW_PATTERN.md) ═══
+   Transliterated from the shipped special_situations idiom into THIS page's
+   token vocabulary: --card / --grid are already aliased above, --blue becomes
+   --link, and the --surface family is defined in :root. #8b5cf6 (the lock
+   violet) stays a hard-coded hex, identical to the reference. The CTA gradient
+   is brand blue → violet, NEVER signal amber (terminal paywall lesson).
+   None of these elements carries directional colour: a gate is not a market
+   read, so the 红涨绿跌 flip must not touch it. */
+.gate-pill{margin-left:2px;padding:2px 8px;border-radius:999px;font-size:9.5px;font-weight:800;letter-spacing:.08em;
+  color:#8b5cf6;background:color-mix(in srgb,#8b5cf6 13%,transparent);
+  border:1px solid color-mix(in srgb,#8b5cf6 34%,transparent);text-transform:none}
+@keyframes ghPulse{0%,100%{opacity:.45}50%{opacity:.85}}
+.gh{border-radius:6px;background:linear-gradient(90deg,var(--grid),color-mix(in srgb,var(--grid) 45%,transparent));
+  animation:ghPulse 2.4s ease-in-out infinite}
+/* consensus-board skeletons — the walled board's shape, none of its content */
+.cb-ghosts{border:1px solid var(--grid);border-radius:14px;overflow:hidden;background:var(--card)}
+.cbg-hd,.cbg-row{display:grid;grid-template-columns:34px 1.7fr 1fr 1.5fr 1.05fr;gap:14px;align-items:center}
+.cbg-hd{padding:10px 16px;border-bottom:1px solid var(--grid);font-size:9.5px;font-weight:800;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint)}
+.cbg-row{padding:13px 16px;border-bottom:1px solid color-mix(in srgb,var(--text) 6%,transparent)}
+.cbg-row:last-child{border-bottom:0}
+.gh-rank{width:15px;height:12px}
+.gh-tkr{width:48px;height:12px;margin-bottom:6px}
+.gh-nm{width:78%;height:9px}
+.gh-dots{width:66px;height:10px}
+.gh-bar{width:100%;height:9px}
+.gh-pill{width:96px;height:20px;border-radius:999px}
+@media(max-width:720px){.cbg-hd{display:none}.cbg-row{grid-template-columns:26px 1fr;row-gap:9px}}
+/* gate note — it EXPLAINS, it never sells. No CTA button lives here. */
+.gate-note{display:flex;align-items:flex-start;gap:8px;margin:0 0 14px;padding:11px 14px;border-radius:12px;
+  font-size:12.5px;line-height:1.5;color:var(--muted);
+  background:color-mix(in srgb,#8b5cf6 7%,transparent);border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent)}
+.gate-note svg{width:14px;height:14px;flex:none;margin-top:2px;color:#8b5cf6}
+.gate-note a{color:var(--link)}
+/* the page's ONE tier wall, at "Every add, by fund" — after the free backdrop */
+.tier-wall{position:relative;margin:6px 0 4px;isolation:isolate}
+.tw-ghosts{display:flex;flex-direction:column;gap:10px;padding-top:4px}
+.tw-ghost{border:1px solid var(--grid);border-radius:14px;background:color-mix(in srgb,var(--card) 55%,transparent);
+  padding:18px 20px}
+.tw-ghost .gh-tkr{width:64px;height:14px;margin-bottom:11px}
+.tw-ghost .gh-line{width:70%;height:10px;margin-bottom:8px}
+.tw-ghost .gh-line.short{width:38%;margin-bottom:0}
+.tw-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,94%);text-align:center;
+  padding:30px 30px 26px;border-radius:20px;background:var(--surface);border:1px solid var(--surface-brd);
+  box-shadow:var(--surface-shadow);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px)}
+.tw-lock{width:28px;height:28px;color:#8b5cf6;margin-bottom:12px}
+.tw-h{font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.25;margin-bottom:9px}
+.tw-p{font-size:13px;line-height:1.6;color:var(--muted);max-width:450px;margin:0 auto 18px}
+.tw-acts{display:flex;flex-direction:column;align-items:center;gap:8px}
+.tw-btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 26px;border-radius:12px;
+  text-decoration:none;font-size:13.5px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,var(--link),#8b5cf6);
+  box-shadow:0 8px 22px -10px color-mix(in srgb,#8b5cf6 70%,transparent);transition:transform .18s,box-shadow .18s}
+.tw-btn:hover{transform:translateY(-1px);box-shadow:0 12px 28px -10px color-mix(in srgb,#8b5cf6 80%,transparent)}
+.tw-note{font-size:11px;color:var(--faint)}
+.tw-signed{margin-top:12px;font-size:12px}
+.tw-signed a{color:var(--link);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent)}
+@media(max-width:900px){
+  /* Below the ghost stack's usable width the absolute card overlaps the lede
+     above it; drop the ghosts and let the card flow. */
+  .tw-ghosts{display:none}
+  .tw-card{position:static;transform:none;width:100%;padding:26px 20px 22px}
+}
+
 /* ═══ motion ═══ */
 @keyframes txUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes txBreathe{0%,100%{opacity:.5;transform:scale(.82)}50%{opacity:1;transform:scale(1.12)}}
@@ -275,6 +331,10 @@ a{color:var(--link);text-decoration:none}
 @media (prefers-reduced-motion:reduce){
   .eh,.tile,.card,.rrc,.fc{animation:none}
   .pb-fill,.slad .sl .track i,.tug .tw .bar i,.eh-asof .dot,.stdot{animation:none}
+  /* the tier gate's skeleton shimmer is decorative — kill it by name, not by
+     hoping the wildcard below covers animations (it only covers transitions) */
+  .gh{animation:none}
+  .tw-btn{transition:none}
   *{transition:none!important}
 }
 </style>
@@ -291,9 +351,21 @@ a{color:var(--link);text-decoration:none}
       <h1>🐳 {{ t('Real fund moves', '基金真实动作') }}</h1>
       <span class="tag">{{ t('where thematic & active managers are building conviction', '主题与主动经理人积累信念之处') }}</span>
     </div>
-    {% if board and board.verdict %}
-    <div class="eh-verdict">{{ b(board.verdict) }}</div>
-    {% endif %}
+    {# Hero read. Entitled: the graded verdict line (which themes managers are
+       building into) — that is a summary of the walled board, so the free build
+       must not carry it. Free: the T5 stance line, derived from the rotation
+       backdrop ONLY (public ETF ratio momentum), which is on this page in full
+       and therefore checkable by the reader. Same mount either way so hydration
+       restores the entitled line without moving the DOM. #}
+    <div id="etf-hero-read">
+      {%- if gate %}
+      {%- if board and board.stance %}
+      <p class="stance-line"><span class="st {{ board.stance.tone }}">{{ b(board.stance.head) }}</span> — {{ b(board.stance.rest) }}</p>
+      {%- endif %}
+      {%- elif board and board.verdict %}
+      {{ hero_verdict(board.verdict) }}
+      {%- endif %}
+    </div>
     <div class="eh-asof"><span class="dot"></span>
       {% if board and board.coverage %}{{ t('Tracking', '追踪') }} <b>{{ board.coverage.funds }}</b>&nbsp;{{ t('curated & active funds', '精选与主动基金') }} · {% endif %}
       {{ t('updated each filing cycle', '每个申报周期更新') }} · {{ generated_utc }} UTC
@@ -301,92 +373,75 @@ a{color:var(--link);text-decoration:none}
       "范围 = 精选主题／行业基金（SPDR 板块、Global X、VanEck、First Trust、Sprott、Amplify、Defiance、Bitwise、Invesco、Roundhill）加主动管理基金（ARK）。宽基指数基金（SPY/QQQ）已排除——其动作是再平衡噪音而非精选解读。我们比对每只基金的每日持仓，剔除机械性申购／赎回资金流及价格变动，留下经理人对每只个股的真实信念，以投入的基金权重百分点衡量。现金与货币市场科目已排除。此为滞后的申报数据——仅供参考，非买入清单。") }}
     </div>
 
-    {% if board and board.tiles %}
-    <div class="eh-tiles">
-      {% for tl in board.tiles %}
-      <div class="tile t-{{ tl.tone }}">
-        <div class="tk">{{ b(tl.k) }}</div>
-        <div class="tv">{{ tl.v }}</div>
-        <div class="tm">{{ b(tl.m) }}</div>
-        {% if tl.stance %}<div class="tstance">{{ stance(tl.stance) }}</div>{% endif %}
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
+    {# Three honest tiles — no ghost ever opens this page (T-B1). On the gated
+       build the builder has already swapped tile 1 from the graded
+       "Strongest consensus / <ticker> / <stance>" for the deterministic,
+       non-graded total "On the board / {n} names"; tiles 2 and 3 are counts and
+       rotation context, free either way. #}
+    <div id="etf-hero-tiles">{% if board and board.tiles %}{{ hero_tiles(board.tiles) }}{% endif %}</div>
   </header>
 
 {# ═══════════════ CONSENSUS BOARD (signature) ═══════════════ #}
   <section class="sec" style="--sc:var(--ch-b)">
     <div class="sec-head"><span class="sh-dot"></span>
-      <h2>{{ t('The consensus board', '共识看板') }}</h2></div>
+      <h2>{{ t('The consensus board', '共识看板') }}</h2>
+      {% if gate and gate.total %}<span class="gate-pill">{{ t('Essential', 'Essential') }}</span>{% endif %}</div>
     <p class="sec-sub">{{ t('Stocks the most funds are accumulating at once — a name many managers back together is a far stronger read than one fund’s bet. Sorted by how broad the agreement is, then how much conviction sits behind it.', '被最多基金同时增持的个股——多位经理人共同押注，其信号远强于单只基金的下注。先按共识广度排序，再看背后的信念规模。') }}</p>
-    {% if favored %}
-    <div class="card" style="padding:16px 20px">
-      <div class="cb-head">
+    {# `gate.total` and not just `gate`: with a genuinely empty board there is
+       nothing withheld, so the honest "Building —" state below must still be
+       reachable on a gated build (B§9.11). #}
+    {% if gate and gate.total %}
+    {# It explains, it does not sell — the one ask lives at M5, after the reader
+       has had the whole rotation backdrop for free. #}
+    <div class="gate-note" id="etf-board-note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span>
+        <span class="l-en">{{ gate.total }} names sit on the board, ranked by how many funds are backing each one. Members see the names, the conviction behind them, and what we’d do about each. The rotation backdrop below is open to everyone.</span>
+        <span class="l-zh">看板上共有 {{ gate.total }} 只个股，按增持基金数量排名。会员可查看个股名称、背后的信念规模，以及我们对每只个股的应对建议。下方的轮动背景对所有人开放。</span>
+      </span>
+    </div>
+    {% endif %}
+    <div id="etf-board-mount">
+    {% if gate and gate.total %}
+    <div class="cb-ghosts" aria-hidden="true">
+      <div class="cbg-hd">
         <span>#</span>
         <span>{{ t('stock', '个股') }}</span>
         <span>{{ t('funds in', '参与基金') }}</span>
         <span>{{ t('net conviction', '净信念') }}</span>
         <span>{{ t('what to do', '如何应对') }}</span>
       </div>
-      {% for c in favored %}
-      {% set net = c.net_conviction_pp or 0 %}
-      <div class="cb-row">
-        <div class="cb-rank">{{ loop.index }}</div>
-        <div class="stock-cell">{{ logo(c.ticker) }}
-          <span class="st-txt"><a href="stock.html#{{ c.ticker }}"><b>{{ c.ticker }}</b></a>
-            <span class="nm">{{ clean_name(c.name) }}</span>
-            {% if c.sector %}<span class="themetag">{{ td(c.sector) }}</span>{% endif %}
-          </span>
-        </div>
-        <div class="cb-breadth">{{ breadth(c.n_accum or 0, c.n_trim or 0) }}
-          {% if c.funds %}<div class="cb-who"><span class="who-src">{{ t('who', '谁') }}</span>
-            <div class="who-pop">{% for f in c.funds[:6] %}<div class="wl"><b>{{ f.fund }}</b><span class="wv {{ 'u' if (f.conviction_pp or 0) >= 0 else 'd' }}">{% if f.conviction_pp is not none %}{{ "%+.1f" | format(f.conviction_pp) }}pp{% else %}—{% endif %}</span></div>{% endfor %}</div>
-          </div>{% endif %}
-        </div>
-        <div class="cb-pres">
-          <div class="cb-net"><span class="v {{ 'u' if net >= 0 else 'd' }}">{{ "%+.1f" | format(net) }}<span class="faint" style="font-weight:600">pp</span></span></div>
-          {{ presbar(net, board.scale.consensus_pp if board and board.scale else 1) }}
-          <div class="cb-flags">
-            {% if c.n_new %}<span class="mini new">{{ c.n_new }} {{ t('NEW', '新建') }}</span>{% endif %}
-            {% if c.n_exit %}<span class="mini exit">{{ c.n_exit }} {{ t('EXIT', '清仓') }}</span>{% endif %}
-            {% if c.contested %}<span class="mini contested">{{ t('SPLIT', '分歧') }}</span>{% endif %}
-            {% if c.is_active_any %}<span class="mini active">{{ t('ACTIVE MGR', '主动') }}</span>{% endif %}
-          </div>
-        </div>
-        <div class="cb-stance-cell">{{ stance(c.stance) }}</div>
-      </div>
+      {% for _ in range(5) %}
+      <div class="cbg-row"><div class="gh gh-rank"></div>
+        <div><div class="gh gh-tkr"></div><div class="gh gh-nm"></div></div>
+        <div class="gh gh-dots"></div><div class="gh gh-bar"></div><div class="gh gh-pill"></div></div>
       {% endfor %}
     </div>
+    {% elif favored %}
+    {% with rows = favored, scale = (board.scale.consensus_pp if board and board.scale else 1) %}{% include "_etf_board_rows.html.j2" %}{% endwith %}
     {% else %}
+    {# Reachable ONLY on an ungated build: the {% if gate %} arm above owns the
+       walled case. Left unguarded, this "Building —" line would print over 40
+       rows that exist and are simply not free — an outright lie to the visitor
+       we are asking to pay (docs/TIER_PREVIEW_PATTERN.md, empty-state trap). #}
     <div class="card"><p class="muted" style="margin:0">{{ t('Building — cross-fund consensus appears once at least two funds hold overlapping conviction on the same name.', '构建中 — 当至少两只基金对同一个股产生重叠信念后，跨基金共识即会显示。') }}</p></div>
     {% endif %}
+    </div>
   </section>
 
-{# ═══════════════ FRESH CONVICTION ═══════════════ #}
-  {% if board and board.fresh %}
-  <section class="sec" style="--sc:var(--lift)">
+{# ═══════════════ FRESH CONVICTION ═══════════════
+   Walled and OMITTED on the gated build — heading included. A second ghost
+   stack directly under the consensus board's would be nagging (Doctrine Law 4),
+   and a heading with nothing under it is worse than no heading. The section
+   still ships `hidden` so hydration can fill it and un-hide it in place,
+   keeping the entitled DOM order identical to today's. #}
+  {% if (board and board.fresh) or (gate and gate.has_fresh) %}
+  <section class="sec" style="--sc:var(--lift)" id="etf-fresh-sec"{% if gate %} hidden{% endif %}>
     <div class="sec-head"><span class="sh-dot"></span>
       <h2>{{ t('Fresh conviction', '全新建仓') }}</h2></div>
     <p class="sec-sub">{{ t('Brand-new positions managers just opened this cycle — a manager starting a fresh stake is a stronger tell than adding to an old one.', '经理人本轮刚刚开立的全新仓位——开一笔新仓比加码旧仓更能说明问题。') }}</p>
-    <div class="fc-grid">
-      {% for g in board.fresh %}
-      <div class="fc" style="animation-delay:{{ (loop.index0 * 0.04) | round(2) }}s">
-        <div class="fc-top">{{ logo(g.ticker) }}
-          <span class="st-txt"><a href="stock.html#{{ g.ticker }}"><b>{{ g.ticker }}</b></a>
-            <span class="nm">{{ clean_name(g.name) }}</span></span>
-        </div>
-        <div class="fc-mid">
-          <span class="fund-n"><b>{{ g.n_funds }}</b> {{ t('fund', '只基金') if g.n_funds == 1 else t('funds', '只基金') }} {{ t('opened it', '建仓') }}</span>
-          <span class="fc-conv">+{{ "%.1f" | format(g.conviction_pp) }}pp</span>
-        </div>
-        <div class="fc-funds">
-          {% for f in g.funds[:5] %}<span class="fchip {{ 'act' if f.is_active }}">{{ f.fund }}</span>{% endfor %}
-        </div>
-        <div class="fc-foot">{{ stance(g.stance) }}</div>
-      </div>
-      {% endfor %}
-    </div>
+    <div id="etf-fresh-mount">{% if not gate %}{% with rows = board.fresh %}{% include "_etf_fresh_cards.html.j2" %}{% endwith %}{% endif %}</div>
   </section>
   {% endif %}
 
@@ -442,86 +497,80 @@ a{color:var(--link);text-decoration:none}
         </div>
       </div>
     </div>
-    <p class="faint" style="font-size:11.5px;margin:11px 2px 0">{{ b({'en': (pulse.disclaimer_en if pulse else ''), 'zh': (pulse.disclaimer_zh if pulse else '')}) }}</p>
+    {# From ro.disclaimer (engine constants), NOT from the shipped pulse JSON —
+       that file is a render lane behind this page and used to carry internal
+       "Display-only" vocabulary this public page must never print. #}
+    <p class="faint" style="font-size:11.5px;margin:11px 2px 0">{{ b(ro.disclaimer) }}</p>
   </section>
   {% endif %}
 
 {# ═══════════════ BROWSE BY FUND — accumulation ═══════════════ #}
   <section class="sec" style="--sc:var(--accent)">
     <div class="sec-head"><span class="sh-dot"></span>
-      <h2>{{ t('Every add, by fund', '逐基金增持明细') }}</h2></div>
+      <h2>{{ t('Every add, by fund', '逐基金增持明细') }}</h2>
+      {% if gate and gate.n_buys %}<span class="gate-pill">{{ t('Essential', 'Essential') }}</span>{% endif %}</div>
     <p class="sec-sub">{{ t('The individual buys behind the board — each fund’s strongest add this cycle, highest conviction first. Conviction is the weight the manager actively committed, after stripping price and flows.', '看板背后的单笔买入——每只基金本轮最强增持，信念最高者优先。信念=剔除价格与资金流后经理人主动投入的权重。') }}</p>
-    {% if accumulation %}
-    <div class="card" style="padding:8px 14px">
-      <div class="atbl-wrap">
-      <table class="atbl">
-        <thead><tr>
-          <th>{{ t('stock', '个股') }}</th>
-          <th>{{ t('fund · theme', '基金 · 主题') }}</th>
-          <th class="r">{{ t('conviction', '信念') }}{{ help("The percentage POINTS of the fund's weight the manager actively committed to this name, after stripping out price moves and creation/redemption flow. We rank on this, not raw % change — a real add to a meaningful position beats a tiny position doubling.", '经理人在剔除价格变动与申购／赎回资金流后，主动投入该股的权重百分点。我们据此排序，而非原始百分比变化——对有意义仓位的真实增持胜过微小仓位的翻倍。') }}</th>
-          <th class="hide-sm">{{ t('trend', '走势') }}</th>
-          <th>{{ t('what to do', '如何应对') }}</th>
-        </tr></thead>
-        <tbody>
-        {% for r in accumulation %}
-        {% set cp = r.conviction_pp or 0 %}
-        <tr>
-          <td>
-            <div class="stock-cell">{{ logo(r.ticker) }}
-              <span class="st-txt"><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a>
-                <span class="nm">{{ clean_name(r.name) }}</span></span>
-            </div>
-          </td>
-          <td class="fundcell"><b>{{ r.etf }}</b>{% if r.is_active %} <span class="mini active">{{ t('ACTIVE', '主动') }}</span>{% endif %}<br><span class="themetag">{{ td(r.category) if r.category else (td(r.sector) if r.sector else '—') }}</span></td>
-          <td class="r">
-            <span class="conv {{ 'u' if cp >= 0 else 'd' }}">{{ "%+.2f" | format(cp) }}pp</span>
-            {% if r.is_new %} <span class="mini new">{{ t('NEW', '新建') }}</span>{% endif %}
-          </td>
-          <td class="hide-sm">{{ spark(r.weight_series) }}</td>
-          <td>{{ stance(r.stance) }}</td>
-        </tr>
+    <div id="etf-accum-mount">
+    {# `gate.n_buys` and not just `gate` — same empty-state guard as the board. #}
+    {% if gate and gate.n_buys %}
+    {# The page's ONE ask, placed here on purpose: by this point the reader has
+       had the entire rotation backdrop and the full fund directory for free. #}
+    <div class="tier-wall" id="etf-tier-wall">
+      <div class="tw-ghosts" aria-hidden="true">
+        {# FOUR ghosts, not three: with three the absolutely-positioned .tw-card
+           overflows the stack and overlaps the section lede above it. #}
+        {% for _ in range(4) %}
+        <div class="tw-ghost"><div class="gh gh-tkr"></div><div class="gh gh-line"></div><div class="gh gh-line short"></div></div>
         {% endfor %}
-        </tbody>
-      </table>
+      </div>
+      <div class="tw-card">
+        <svg class="tw-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <div class="tw-h">
+          <span class="l-en">{{ gate.n_buys }} individual buys, across {{ gate.n_funds }} funds, are open to members</span>
+          <span class="l-zh">来自 {{ gate.n_funds }} 只基金的 {{ gate.n_buys }} 笔买入向会员开放</span>
+        </div>
+        <div class="tw-p">
+          <span class="l-en">You’re reading which funds we track and the market they’re buying into. Members also get
+            every name on the consensus board, each fund’s strongest adds, what’s being trimmed, and what we’d do
+            about each one.</span>
+          <span class="l-zh">你正在查看我们追踪的基金以及它们所买入的市场。会员另可获取共识看板上的全部个股、
+            每只基金的最强增持、正在减持的仓位，以及我们对每一项的应对建议。</span>
+        </div>
+        <div class="tw-acts">
+          <a class="tw-btn" href="plans.html">{{ t('See plans', '查看方案') }}</a>
+          <span class="tw-note">{{ t('7-day Pro trial · cancel anytime', 'Pro 7 天试用 · 随时取消') }}</span>
+        </div>
+        <div class="tw-signed" id="etf-tw-signin" hidden>
+          <a href="#" data-act="signin">{{ t('Already a member? Sign in', '已是会员？登录') }}</a>
+        </div>
       </div>
     </div>
+    {% elif accumulation %}
+    {% with rows = accumulation %}{% include "_etf_accumulation_rows.html.j2" %}{% endwith %}
     {% else %}
+    {# Ungated only — same empty-state trap as the consensus board above. #}
     <div class="card"><p class="muted" style="margin:0">{{ t('Building — the collector writes one full-holdings snapshot per fund per day; conviction-ranked adds appear once each fund has at least two snapshots.', '构建中 — 采集器每天为每只基金写入一份完整持仓快照；当每只基金至少有两个快照后，按信念排序的增持即会显示。') }}</p></div>
     {% endif %}
+    </div>
   </section>
 
 {# ═══════════════ SHELF — trims + coverage ═══════════════ #}
   <section class="sec shelf" style="--accent:var(--drag)">
-    {% if trims %}
-    <details>
-      <summary><span class="sh-ic">🔻</span>{{ t('Being trimmed', '正在减持') }} <span class="sh-sub">— {{ t('positions managers are actively cutting (secondary signal)', '经理人正在主动削减的仓位（次要信号）') }}</span><span class="sh-caret">▶</span></summary>
-      <div class="sh-body">
-        <div class="atbl-wrap">
-        <table class="atbl">
-          <thead><tr>
-            <th>{{ t('stock', '个股') }}</th><th>{{ t('fund · theme', '基金 · 主题') }}</th>
-            <th class="r">{{ t('conviction cut', '信念削减') }}</th><th class="hide-sm">{{ t('trend', '走势') }}</th><th>{{ t('what to do', '如何应对') }}</th>
-          </tr></thead>
-          <tbody>
-          {% for r in trims %}
-          {% set cp = r.conviction_pp or 0 %}
-          <tr>
-            <td><div class="stock-cell">{{ logo(r.ticker) }}<span class="st-txt"><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a><span class="nm">{{ clean_name(r.name) }}</span></span></div></td>
-            <td class="fundcell"><b>{{ r.etf }}</b><br><span class="themetag">{{ td(r.category) if r.category else (td(r.sector) if r.sector else '—') }}</span></td>
-            <td class="r"><span class="conv d">{{ "%+.2f" | format(cp) }}pp</span>{% if r.is_exit %} <span class="mini exit">{{ t('EXITED', '清仓') }}</span>{% endif %}</td>
-            <td class="hide-sm">{{ spark(r.weight_series) }}</td>
-            <td>{{ stance(r.stance) }}</td>
-          </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-        </div>
-      </div>
-    </details>
-    {% endif %}
+    {# Trims are graded and explicitly secondary — walled and omitted, with the
+       mount kept so hydration restores the entitled shelf in place. #}
+    <div id="etf-trims-mount">{% if not gate and trims %}{% with rows = trims %}{% include "_etf_trim_rows.html.j2" %}{% endwith %}{% endif %}</div>
 
-    <details>
-      <summary><span class="sh-ic">📡</span>{{ t('Coverage & freshness', '覆盖范围与新鲜度') }} <span class="sh-sub">— {{ t('every tracked fund; any stale feed surfaces here', '所有已追踪基金；任何陈旧数据源都会在此暴露') }}</span><span class="sh-caret">▶</span></summary>
+    {# Coverage & freshness — the free tier's anchor, and the one block a crawler
+       most needs to see: 77 named funds, each with a theme, a snapshot count and
+       an honest freshness state. No score, no ranking, no call. It opens by
+       DEFAULT on both builds (T-B3 ruling): a collapsed <details> may never be
+       crawled, and unifying the state keeps the two builds structurally
+       identical rather than differing in a way a reader could notice. #}
+    <details open>
+      <summary><span class="sh-ic">📡</span>{{ t('Coverage & freshness', '覆盖范围与新鲜度') }} <span class="sh-sub">— {{ t('every tracked fund; any stale feed surfaces here', '所有已追踪基金；任何陈旧数据源都会在此暴露') }}{% if coverage %} · {{ t('all', '共显示') }} {{ coverage | length }} {{ t('shown', '只') }}{% endif %}</span><span class="sh-caret">▶</span></summary>
       <div class="sh-body">
         {% if coverage %}
         <div class="atbl-wrap">
@@ -543,7 +592,7 @@ a{color:var(--link);text-decoration:none}
               {% if c.n_snapshots == 0 %}<span class="fdot none"></span><span class="muted">{{ t('no data yet', '暂无数据') }}</span>
               {% elif c.stale_days is not none and c.stale_days <= 3 %}<span class="fdot fresh"></span><span class="muted">{{ t('fresh', '新鲜') }}</span>
               {% elif c.stale_days is not none and c.stale_days <= 10 %}<span class="fdot aging"></span><span class="muted">{{ t('aging', '渐旧') }}{% if c.stale_days %} · {{ c.stale_days }}{{ t('d', '天') }}{% endif %}</span>
-              {% else %}<span class="fdot stale"></span><span class="neg"><b>{{ t('stale', '陈旧') }}</b></span>{% if c.stale_days is not none %} <span class="muted">· {{ c.stale_days }}{{ t('d', '天') }}</span>{% endif %}{% endif %}
+              {% else %}<span class="fdot stale"></span><span class="fstale"><b>{{ t('stale', '陈旧') }}</b></span>{% if c.stale_days is not none %} <span class="muted">· {{ c.stale_days }}{{ t('d', '天') }}</span>{% endif %}{% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -556,15 +605,116 @@ a{color:var(--link);text-decoration:none}
   </section>
 
 {# ═══════════════ disclosure ═══════════════ #}
+  {# "DISPLAY context" / "展示性背景" was internal tier vocabulary on a page that
+     is now anonymous-public and indexed. Same Doctrine Law 2 fix as the rotation
+     disclaimer; the meaning ("not a timed buy signal") is unchanged. #}
   <p class="disc">{{ t(
-    "How to read this: fund managers accumulating a name is DISPLAY context on a lagged filing cadence — where curated & active money is going, not a timed buy signal. The stance answers “so what do I do?” in plain words; the honest default is “watch — don’t chase” until a name has both broad backing and a forming setup.",
-    "如何解读：基金经理人增持某只个股属于滞后申报节奏下的展示性背景——反映精选与主动资金的去向，而非择时买入信号。“如何应对”以平实用语回答“那我该怎么做”；在个股同时具备广泛支持与正在形成的形态之前，诚实的默认立场是“观望——勿追”。") }}
+    "How to read this: fund managers accumulating a name is context on a lagged filing cadence — where curated & active money is going, not a timed buy signal. The stance answers “so what do I do?” in plain words; the honest default is “watch — don’t chase” until a name has both broad backing and a forming setup.",
+    "如何解读：基金经理人增持某只个股属于滞后申报节奏下的背景信息——反映精选与主动资金的去向，而非择时买入信号。“如何应对”以平实用语回答“那我该怎么做”；在个股同时具备广泛支持与正在形成的形态之前，诚实的默认立场是“观望——勿追”。") }}
     {{ t("Coverage: SPDR, Global X, VanEck, First Trust, Sprott, Amplify, Defiance, Bitwise, ARK, Invesco and Roundhill are verified daily holdings feeds (with shares). iShares and Schwab are blocked at source but reachable via a labelled third-party feed; Vanguard publishes no free daily feed. A fund missing here failed today’s fetch and is skipped, never crashing the page.",
     "覆盖范围：SPDR、Global X、VanEck、First Trust、Sprott、Amplify、Defiance、Bitwise、ARK、Invesco 与 Roundhill 为已验证的每日持仓数据（含份额）。iShares 与嘉信在源头被屏蔽，但可通过带标注的第三方数据源触达；Vanguard 无免费每日数据。此处缺失的基金为今日抓取失败并被跳过，绝不会使页面崩溃。") }}</p>
 
 </div>
 
 <script src="theme.js"></script>
+{% if gate %}
+<script>
+(function(){
+  /* ══════════ tier gate — attempt-hydrate ══════════
+     On the gated build this document holds NO graded row: the consensus board,
+     the fresh-conviction cards, every per-fund add and the trim shelf live in
+     GATE.payload, which config/site_access.yml enforces as Essential+
+     (premium.enforced_early) whatever PAYWALL_ENABLED says. The SERVER decides
+     who sees them — nothing here is load-bearing. We ask; on 403 the wall stays
+     exactly as baked. See docs/TIER_PREVIEW_PATTERN.md.
+     Ported from special_situations.html.j2, including both traps it solves. */
+  var GATE = {{ (gate or None) | tojson }};
+  if(!GATE || !GATE.payload) return;
+
+  /* Session trampoline: the shared cookie carries a ~1h access token, so a
+     long-idle member can be signed in with a token the server will reject.
+     getSession() refreshes and rewrites the cookie before we ask. No-op when
+     signed out. */
+  function freshSession(){
+    try{
+      if(window.MDXAuth && window.MDXAuth.client && window.MDXAuth.hasSession && window.MDXAuth.hasSession()){
+        return window.MDXAuth.client()
+          .then(function(sb){ return sb.auth.getSession(); })
+          .catch(function(){});
+      }
+    }catch(e){}
+    return Promise.resolve();
+  }
+
+  /* theme.js may still be settling when this runs, so MDXAuth can be undefined.
+     Wait for its first auth broadcast, with a timeout so a missing or broken
+     auth layer still lets the request through (the server re-decides). */
+  function whenAuthSettled(){
+    return new Promise(function(resolve){
+      var done = false;
+      function go(){ if(done) return; done = true; resolve(); }
+      if(window.MDXAuth) { go(); return; }
+      window.addEventListener('mdx-auth', go);
+      setTimeout(go, 3000);
+    });
+  }
+
+  function fill(id, html){
+    var el = document.getElementById(id);
+    if(el && html) el.innerHTML = html;
+    return el;
+  }
+
+  function hydrate(p){
+    /* Same DOM order as the entitled build — nothing moves, blocks just fill. */
+    fill('etf-board-mount', p.board_html);
+    if(p.fresh_html){
+      fill('etf-fresh-mount', p.fresh_html);
+      var fs = document.getElementById('etf-fresh-sec');
+      if(fs) fs.hidden = false;
+    }
+    fill('etf-accum-mount', p.accumulation_html);   /* this removes the wall */
+    fill('etf-trims-mount', p.trims_html);
+    fill('etf-hero-read', p.verdict_html);
+    fill('etf-hero-tiles', p.tiles_html);
+    /* belt and braces: the wall and the gate note must not survive a payload
+       whose accumulation block came back empty */
+    var wall = document.getElementById('etf-tier-wall');
+    if(wall) wall.remove();
+    var note = document.getElementById('etf-board-note');
+    if(note) note.remove();
+    document.querySelectorAll('.gate-pill').forEach(function(el){ el.remove(); });
+    /* The ? tips and the .cb-who popovers need no re-wiring: the tips are the
+       site-wide LENS, which is delegated from document, and .cb-who opens on
+       CSS :hover. There are no <select>s or placeholders on this page, so there
+       is nothing for an i18n relabel pass to do either — the bilingual spans
+       are .l-en/.l-zh, which CSS switches. */
+  }
+
+  whenAuthSettled()
+    .then(freshSession)
+    .then(function(){ return fetch(GATE.payload, { credentials: 'same-origin', cache: 'no-store' }); })
+    .then(function(r){ if(!r || !r.ok) throw new Error('locked'); return r.json(); })
+    .then(hydrate)
+    .catch(function(){
+      /* Locked (or offline): the wall stays exactly as rendered. Offer sign-in
+         when there is no session at all — a member on a fresh browser would
+         otherwise only see an upgrade CTA. */
+      var si = document.getElementById('etf-tw-signin');
+      var signedIn = false;
+      try{ signedIn = !!(window.MDXAuth && window.MDXAuth.user && window.MDXAuth.user()); }catch(e){}
+      if(si && !signedIn){
+        si.hidden = false;
+        var a = si.querySelector('[data-act="signin"]');
+        if(a) a.addEventListener('click', function(ev){
+          ev.preventDefault();
+          try{ window.MDXAuth.open('signin'); }catch(e){ location.href = 'plans.html'; }
+        });
+      }
+    });
+})();
+</script>
+{% endif %}
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
