@@ -1,0 +1,87 @@
+
+  .si-lane-foot{margin-top:10px}
+  .si-kind{font-size:9.5px;font-weight:700;letter-spacing:.05em;border:1px solid var(--line);border-radius:5px;padding:1px 5px;margin-left:7px;color:var(--muted);vertical-align:1px}
+  .si-trace{grid-column:1/-1;margin:4px 0 10px;animation:rvxIn .25s ease}
+  .si-trace .card{margin:0}
+  .si-trace-foot{margin-top:6px;font-size:12px}
+  .si-trace-foot a{color:var(--link)}
+  .si-vocab{cursor:help;border:1px solid var(--line);border-radius:50%;width:18px;height:18px;display:inline-grid;place-items:center;font-size:11px;color:var(--muted)}
+  #si-map .cyc-stage{margin-top:14px}
+  #si-movement .sr-scope{margin-top:8px}
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     SI WORKSPACE V2 shell (§1/§1b) — persistent rail + five hash-routed views.
+     Var-native by law: not one literal colour in this block. Every tone comes
+     from a theme.css var or a color-mix over one, so light mode is designed
+     rather than inherited (gate 7).
+     ══════════════════════════════════════════════════════════════════════════ */
+  .si-shell { display:grid; grid-template-columns:var(--si-rail-w, 200px) minmax(0,1fr); align-items:start;
+    /* Cancels body's own 18px bottom padding (declared at the top of this file) so the
+       shell reaches the document bottom. The rail is sticky WITHIN the shell and is a
+       full 100vh tall, so any slack left below the shell is slack the rail gets pushed
+       up by at maximum scroll — which clips the top buttons off screen exactly when a
+       reader is deepest into a view and most likely to want to switch. */
+    margin-bottom:-18px; }
+  .si-side { position:sticky; top:0; align-self:start; height:100vh; box-sizing:border-box; z-index:30;
+    display:flex; flex-direction:column; gap:2px; padding:12px;
+    background:var(--panel); border-right:1px solid var(--line); }
+  .si-view-btn { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:9px;
+    border-left:3px solid transparent; text-decoration:none; line-height:1.25;
+    font-size:13px; font-weight:600; color:var(--muted); }
+  .si-vb-g { flex:none; font-size:18px; line-height:1; }
+  .si-view-btn:hover { color:var(--text); background:color-mix(in srgb, var(--link) 6%, transparent); }
+  .si-view-btn.on { color:var(--text); background:color-mix(in srgb, var(--link) 11%, var(--panel));
+    border-left-color:var(--link); }
+  .si-side-out { display:flex; align-items:center; gap:10px; margin-top:8px; padding:11px 10px 0;
+    border-top:1px solid var(--line); text-decoration:none;
+    font-size:12.5px; font-weight:600; color:var(--muted); }
+  .si-side-out:hover { color:var(--link); }
+  /* provenance lives with the navigation — visible from every view (§1b rail footer) */
+  .si-side-foot { margin-top:auto; padding-top:10px; border-top:1px solid var(--line);
+    display:flex; flex-direction:column; gap:3px;
+    font-size:10.5px; line-height:1.45; color:var(--muted); }
+  .si-stage { min-width:0; padding-left:20px; }
+  .si-view { display:none; }
+  .si-view.on { display:block; }
+
+  /* One plain-word line per view, with a ? receipt naming its inputs (§1b). */
+  .si-view-read { display:flex; align-items:flex-start; gap:9px; margin:0 0 16px; padding:9px 13px;
+    font-size:13.5px; line-height:1.5; color:var(--text);
+    background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--link);
+    border-radius:10px; }
+  .si-view-read[hidden] { display:none; }
+  .si-vr-g { flex:none; font-size:15px; line-height:1.4; }
+  .si-vr-t { flex:1 1 auto; min-width:0; }
+  .si-vr-q { flex:none; display:inline-flex; align-items:center; justify-content:center;
+    width:16px; height:16px; border:1px solid var(--line); border-radius:50%;
+    font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
+
+  /* What-changed strip — overview only, ≤3 chips, existing tc-chip idiom. */
+  .si-changed { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin:18px 0 0; }
+  .si-changed-l { font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); }
+
+  /* ≤1100px — rail narrows to a 56px icon rail; labels become data-tip tooltips. */
+  @media (max-width:1100px) {
+    .si-shell { --si-rail-w:56px; }
+    .si-view-btn { justify-content:center; gap:0; padding:9px 0; }
+    .si-view-btn .si-vb-l, .si-side-out .si-vb-l { display:none; }
+    .si-side-out { justify-content:center; padding:11px 0 0; }
+    .si-side-foot { display:none; }
+    .si-stage { padding-left:12px; }
+  }
+  /* <768px — the rail becomes a sticky TOP segmented switcher: five equal tabs,
+     icon over a 10.5px label, accent on border-bottom. Never a hamburger. */
+  @media (max-width:767px) {
+    .si-shell { display:block; }
+    .si-side { position:sticky; top:0; height:auto; flex-direction:row; gap:0; padding:0;
+      margin:0 -18px 14px; overflow-x:auto;
+      border-right:0; border-bottom:1px solid var(--line); }
+    .si-view-btn { flex:1 1 0; min-width:0; flex-direction:column; gap:3px; justify-content:center;
+      padding:8px 2px; text-align:center; border-radius:0;
+      border-left:0; border-bottom:3px solid transparent; }
+    .si-view-btn .si-vb-l { display:block; font-size:10.5px; font-weight:600; }
+    .si-view-btn.on { border-left:0; border-bottom-color:var(--link); }
+    .si-side-out { display:none; }
+    .si-stage { padding-left:0; }
+  }
