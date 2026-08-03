@@ -1,3 +1,5 @@
+> **SUPERSEDED AS A BUILD BRIEF (2026-08-03).** PR #4299 consolidated the target page into `sector_central_china.html`; the conversion rides the Sector Intelligence China V2 port (masterplan W1b-REDUX R1). The §8 commissioner rulings remain binding on that build.
+
 # W1b — `baskets_china.html` anonymous tier-preview: design spec
 
 *Design-spec-first deliverable for SEO Supercharge W1 (`research/SEO_SUPERCHARGE_MASTERPLAN_BY_FABLE.md`,
