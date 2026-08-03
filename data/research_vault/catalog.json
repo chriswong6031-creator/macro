@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T05:49:58.666434+00:00",
-  "count": 644,
+  "generated_at": "2026-08-03T07:04:55.440720+00:00",
+  "count": 648,
   "institutions": [
     "Amova",
     "Apollo",
@@ -40,6 +40,7 @@
     "The Punchline",
     "UBS",
     "Weekly Preview",
+    "William Blair",
     "ZKB",
     "Zero Hedge"
   ],
@@ -594,6 +595,23 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qcdztlqs9oe-a09eab",
+      "title": "Dailyspark 2026 08 01",
+      "institution": "Apollo",
+      "side": "buy",
+      "desk": "",
+      "published_at": "2026-08-02T14:44:01Z",
+      "summary_points": [
+        "Document Missing**: No source document provided for extraction"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-nffr9ga8rgt-e4fabf",
       "title": "MS Nick Savone Global Reflections Aug 1",
       "institution": "Morgan Stanley",
@@ -775,6 +793,23 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-kiuovgwwmcn-9fd6a4",
+      "title": "ING Think rates spark recalibrating rate assumptions",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T11:03:05Z",
+      "summary_points": [
+        "**USD/GBP Dovish Repricing**: Fed hold + benign PCE deflator → markets no longer expect Fed hikes twice next year → lower USD/GBP rates - **Eurozone Rate Outlook**: Robust GDP supports higher euro swap rates; ECB’s inflation focus → 10Y euro swap likely around 3.2% - **BoE Inflation Comfort**: BoE’s inflation data extends policy hold timeline (30% Sept hike probability)"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-amdunuthhkf-e33b3d",
       "title": "ING Think boj leaves rates at 100 with no surprises",
       "institution": "Ing Econ",
@@ -832,6 +867,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dbrvoev0a0n-4d73a4",
+      "title": "ING Think china pmi",
+      "institution": "Ing Econ",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:57:19Z",
+      "summary_points": [
+        "**Manufacturing Contraction**: Manufacturing PMI at 49.2 (5-month low, below 50 threshold), with all key subindices (production 49.6, new orders 48.5, export orders 49.6) contracting, signaling sustained economic slowdown.",
+        "**PPI Inflation Peak Confirmed**: Declining PMI (50.3→49.2) and ex-factory prices in contraction for 2nd month indicate PPI inflation peak has passed, heightening urgency for policy easing.",
+        "**Non-Manufacturing PMI at 43-Month Low**: Services sector PMI fell to 49.0 (43-month low), with new orders (44.4) and sales prices (47.9) at multi-month lows, confirming post-pandemic weakness.",
+        "**Fiscal Policy Shift Signal**: Politburo meeting signals incremental fiscal easing amid prolonged contraction, targeting support for growth amid geopolitical uncertainty and regulatory headwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -915,6 +970,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2n2sxcgdpvd-3707ca",
+      "title": "WilliamBlair Lev Fin Newsletter Q2 2026",
+      "institution": "William Blair",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T10:42:26Z",
+      "summary_points": [
+        "**M&A Resilience vs.",
+        "PE Weakness**: M&A activity surged to $94.1B YTD (+17% YoY), highest first-half since 2022, driven by sponsors in healthcare/aerospace; private equity deal value down 38% (Q1 $177.3B), lowest in 2 years.",
+        "**Lender Discipline Intensifies**: 31% of lenders made borrower-friendly concessions (mostly pricing), 76% maintained pricing stability, and 55% require >40% minimum equity in PE deals (up from 52% YoY).",
+        "**Geopolitical & AI Sector Risks**: Geopolitical volatility (Iran/U.S.",
+        "Strait of Hormuz) and AI disruption drive 87% lender caution in software/Tech, 46% reduced appetite for SaaS, and binary underwriting decisions in AI-adjacent sectors."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
