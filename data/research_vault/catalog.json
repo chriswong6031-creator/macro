@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T02:49:23.829381+00:00",
-  "count": 635,
+  "generated_at": "2026-08-03T03:04:25.104108+00:00",
+  "count": 636,
   "institutions": [
     "Amova",
     "Apollo",
@@ -404,6 +404,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wpjerysqtlm-ab261e",
+      "title": "Financial Capital Navigator",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:55:56Z",
+      "summary_points": [
+        "**Credit Concentration Risk**: 17/17 bonds rated BBB- (S&P) or BBB+ (Moody's), indicating near-investment grade exposure with elevated downgrade risk, particularly for perpetual structures.",
+        "**Perpetual Structure Dominance**: 100% of bonds are perpetual (T1/T2), amplifying interest rate sensitivity and duration risk, compounded by coupon deferrable features across all instruments.",
+        "**Coupon Deferral Prevalence**: 82% of bonds feature \"coupon deferrable: yes,\" with yield-to-call (5-7%) significantly exceeding yield-to-maturity (1.2-1.7%), signaling high call risk and deferred payment exposure.",
+        "**EUR/GBP Yield Disparity**: GBP bonds yield 5.8–7.1% vs.",
+        "EUR bonds' 0.7–5.2%, driven by currency risk and credit quality (BBB-rated bonds like La Mondiale command higher yields)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 80,
       "language": "en",
       "needs_metadata": false
     },
