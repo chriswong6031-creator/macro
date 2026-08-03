@@ -255,6 +255,69 @@ jobs:
           # is its sole serialized ledger owner. Two workflows must never merge and
           # overwrite the same revision/document Parquets concurrently.
           python -m scripts.collect --exclude-group asia --exclude sam_gov_opportunities --skip-shadow-importance
+      - name: materialize authenticated capital-structure share counts (context-only)
+        # PRE-PRODUCTION GATE: leave false until publication protocol v2 and the
+        # bounded full-generation retention lane pass their release audits. A
+        # skipped step receives no R2/HMAC secrets and performs no write.
+        if: ${{ vars.CAPITAL_STRUCTURE_SHARE_COUNT_PUBLICATION_ENABLED == 'true' }}
+        # Re-authenticates the selected Company Facts receipt/head and reads exact
+        # retained bytes through their manifest-bound R2 namespace. A separate
+        # signed share-count head makes this an all-or-nothing publication lane;
+        # missing trust, source mismatch, or partial progress blocks the checkpoint.
+        # This step observes direct SEC facts only. It cannot select a current share
+        # basis, calculate fully diluted supply, score risk, or influence Prophet.
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_CAPITAL_STRUCTURE_ENDPOINT: ${{ secrets.R2_CAPITAL_STRUCTURE_ENDPOINT }}
+          R2_CAPITAL_STRUCTURE_ACCESS_KEY_ID: ${{ secrets.R2_CAPITAL_STRUCTURE_ACCESS_KEY_ID }}
+          R2_CAPITAL_STRUCTURE_SECRET_ACCESS_KEY: ${{ secrets.R2_CAPITAL_STRUCTURE_SECRET_ACCESS_KEY }}
+          R2_CAPITAL_STRUCTURE_BUCKET: ${{ secrets.R2_CAPITAL_STRUCTURE_BUCKET }}
+          R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+          CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY: ${{ secrets.CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY }}
+          COMPANYFACTS_HEAD_GUARD_BUCKET: ${{ secrets.COMPANYFACTS_HEAD_GUARD_BUCKET }}
+          CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY: ${{ secrets.CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY }}
+          SHARE_COUNT_HEAD_GUARD_BUCKET: ${{ secrets.SHARE_COUNT_HEAD_GUARD_BUCKET }}
+        run: |
+          # The in-process bridge has one 15-minute monotonic deadline.  R2
+          # strict reads cannot accept that remaining budget, so Linux runners
+          # add a process-level GNU timeout with 30 seconds for the bridge to
+          # return its fail-closed result before TERM, then a 30-second KILL
+          # backstop for a blocking SDK call.  The Mac Studio has no GNU
+          # timeout; Perl alarm replaces itself with Python and supplies the
+          # equivalent 15m30s hard process ceiling there.
+          if command -v timeout >/dev/null 2>&1; then
+            timeout --signal=TERM --kill-after=30s 15m30s python -m scripts.materialize_capital_structure_share_counts
+          else
+            perl -e 'alarm 930; exec @ARGV or die' -- python -m scripts.materialize_capital_structure_share_counts
+          fi
+      - name: retain unselected share-count v2 generations (pre-production)
+        # HARD-DISABLED PRE-PRODUCTION SHELL. This step receives no R2 or HMAC
+        # secrets. Even if both visibility gates are flipped accidentally, the
+        # command fails before credential lookup or a remote call. Release needs
+        # provider-proven conditional delete, a shared publisher/retention fence,
+        # and a verifier-only capability that cannot write the publication head.
+        # A third variable separately requests apply mode; one retention-variable
+        # flip can never request deletion.
+        if: ${{ vars.CAPITAL_STRUCTURE_SHARE_COUNT_PUBLICATION_ENABLED == 'true' && vars.CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_ENABLED == 'true' }}
+        env:
+          CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_ENABLED: 'true'
+          CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_APPLY_ENABLED: ${{ vars.CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_APPLY_ENABLED }}
+        run: |
+          retention_args=()
+          if [ "$CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_APPLY_ENABLED" = "true" ]; then
+            retention_args+=(--apply)
+          fi
+          if command -v timeout >/dev/null 2>&1; then
+            timeout --signal=TERM --kill-after=30s 15m30s python -m scripts.retain_capital_structure_share_counts "${retention_args[@]}"
+          else
+            perl -e 'alarm 930; exec @ARGV or die' -- python -m scripts.retain_capital_structure_share_counts "${retention_args[@]}"
+          fi
       - name: compile capital-structure event spine (offline, context-only)
         # AFTER collection so today's verified SEC manifests are visible, and BEFORE
         # the data commit so immutable event versions/edges ride the same checkpoint.
