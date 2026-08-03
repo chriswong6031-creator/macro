@@ -33,6 +33,7 @@ from .trials import TrialProjectionError, validate_trial_snapshot
 
 
 CONTRACT_ID = "trial_screen_read_model.v1"
+FACETS_CONTRACT_ID = "trial_screen_facets_read_model.v1"
 MAX_INPUT_SNAPSHOTS = 10_000
 MAX_PAGE_LIMIT = 250
 MAX_TEXT_LENGTH = 2_000
@@ -43,6 +44,8 @@ MAX_ENROLLMENT = 100_000_000
 MAX_SANITIZED_ROW_BYTES = 128 * 1024
 MAX_SANITIZED_SCAN_BYTES = 32 * 1024 * 1024
 MAX_RESPONSE_BYTES = 1024 * 1024
+MAX_FACET_BUCKETS = 64
+MAX_FACETS_RESPONSE_BYTES = 256 * 1024
 
 _DATE_LITERAL = re.compile(r"^\d{4}(?:-\d{2}(?:-\d{2})?)?$")
 _SOURCE_CLOCK = re.compile(
@@ -63,6 +66,20 @@ _FILTER_FIELDS = (
 _TEXT_FILTER_FIELDS = frozenset(
     ("sponsor", "condition", "intervention", "phase", "status", "study_type")
 )
+_MISSINGNESS_STATES = (
+    "observed",
+    "source_null",
+    "source_missing",
+    "not_applicable",
+    "parser_degraded",
+    "license_restricted",
+)
+_FACET_DIMENSIONS = ("phase", "status", "study_type")
+_FACET_ADDITIVITY = {
+    "phase": "non_additive",
+    "status": "additive",
+    "study_type": "additive",
+}
 _AUTHORITY = {
     "classification": "source_fact_screen",
     "decision_authority": False,
@@ -95,6 +112,21 @@ _CAPACITY = {
     "max_response_bytes": MAX_RESPONSE_BYTES,
     "overflow_behavior": "reject_no_partial_screen",
 }
+_FACETS_CAPACITY = {
+    "max_input_snapshots": MAX_INPUT_SNAPSHOTS,
+    "max_sanitized_row_bytes": MAX_SANITIZED_ROW_BYTES,
+    "max_sanitized_scan_bytes": MAX_SANITIZED_SCAN_BYTES,
+    "max_buckets_per_dimension": MAX_FACET_BUCKETS,
+    "max_response_bytes": MAX_FACETS_RESPONSE_BYTES,
+    "overflow_behavior": "reject_no_partial_facets",
+}
+_FACET_SEMANTICS = {
+    "filter_composition": "literal_and_self_excluding_dimension",
+    "counting_unit": "unique_trial",
+    "selector_normalization": "whitespace_collapse_then_casefold",
+    "bucket_order": "normalized_token_ascending",
+    "partial_results": False,
+}
 
 
 class TrialScreenError(ValueError):
@@ -115,6 +147,18 @@ def _bounded_response_copy(value: Any) -> Any:
         raise TrialScreenError("trial_screen_response_not_canonical_json") from exc
     if len(encoded) > MAX_RESPONSE_BYTES:
         raise TrialScreenError("trial_screen_response_too_large")
+    return json.loads(encoded)
+
+
+def _bounded_facets_response_copy(value: Any) -> Any:
+    """Copy one atomic facets aggregate under its smaller serving ceiling."""
+
+    try:
+        encoded = canonical_json_bytes(value)
+    except (ContractError, TypeError, ValueError) as exc:
+        raise TrialScreenError("trial_screen_facets_response_not_canonical_json") from exc
+    if len(encoded) > MAX_FACETS_RESPONSE_BYTES:
+        raise TrialScreenError("trial_screen_facets_response_too_large")
     return json.loads(encoded)
 
 
@@ -561,6 +605,41 @@ def _validate_publication_binding(
             raise TrialScreenError("trial_screen_publication_clock_mismatch")
 
 
+def _validated_sanitized_rows(
+    *,
+    trial_snapshots: Sequence[Mapping[str, Any]],
+    publication_context: Mapping[str, Any],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Validate the one current pointer cut and sanitize it exactly once.
+
+    Both the paginated screen and the atomic facets aggregate consume this
+    bounded source-fact projection.  Keeping the reader here prevents an
+    aggregate-only path from drifting in validation, publication binding, or
+    scan ceilings.
+    """
+
+    snapshots = _validated_snapshots(trial_snapshots)
+    context = _normalize_publication_context(
+        publication_context, observed_count=len(snapshots)
+    )
+    _validate_publication_binding(snapshots, context)
+    rows: list[dict[str, Any]] = []
+    sanitized_scan_bytes = 0
+    for snapshot in snapshots:
+        row = _screen_row(snapshot)
+        try:
+            row_bytes = len(canonical_json_bytes(row))
+        except (ContractError, TypeError, ValueError) as exc:
+            raise TrialScreenError("trial_screen_row_not_canonical_json") from exc
+        if row_bytes > MAX_SANITIZED_ROW_BYTES:
+            raise TrialScreenError("trial_screen_row_too_large")
+        sanitized_scan_bytes += row_bytes
+        if sanitized_scan_bytes > MAX_SANITIZED_SCAN_BYTES:
+            raise TrialScreenError("trial_screen_sanitized_scan_too_large")
+        rows.append(row)
+    return rows, context
+
+
 def _build_model(
     *,
     trial_snapshots: Sequence[Mapping[str, Any]],
@@ -574,25 +653,13 @@ def _build_model(
         raise TrialScreenError("trial_screen_offset_invalid")
     if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= MAX_PAGE_LIMIT:
         raise TrialScreenError("trial_screen_limit_invalid")
-    snapshots = _validated_snapshots(trial_snapshots)
-    context = _normalize_publication_context(
-        publication_context, observed_count=len(snapshots)
+    rows, context = _validated_sanitized_rows(
+        trial_snapshots=trial_snapshots,
+        publication_context=publication_context,
     )
-    _validate_publication_binding(snapshots, context)
     query_filters = canonicalize_trial_screen_filters(filters)
     matched: list[dict[str, Any]] = []
-    sanitized_scan_bytes = 0
-    for snapshot in snapshots:
-        row = _screen_row(snapshot)
-        try:
-            row_bytes = len(canonical_json_bytes(row))
-        except (ContractError, TypeError, ValueError) as exc:
-            raise TrialScreenError("trial_screen_row_not_canonical_json") from exc
-        if row_bytes > MAX_SANITIZED_ROW_BYTES:
-            raise TrialScreenError("trial_screen_row_too_large")
-        sanitized_scan_bytes += row_bytes
-        if sanitized_scan_bytes > MAX_SANITIZED_SCAN_BYTES:
-            raise TrialScreenError("trial_screen_sanitized_scan_too_large")
+    for row in rows:
         if _matches(row, query_filters):
             matched.append(row)
     matched.sort(key=_row_order)
@@ -620,13 +687,7 @@ def _build_model(
         "contract_id": CONTRACT_ID,
         "schema_version": "1.0.0",
         "as_of": context["as_of"],
-        "query": {
-            **query_filters,
-            "filter_composition": "literal_and",
-            "lexical_matching": "sponsor_condition_intervention_name_or_other_names_normalized_substring",
-            "exact_matching": "phase_status_study_type_normalized_exact",
-            "primary_completion_matching": "full_interval_containment",
-        },
+        "query": _public_query(query_filters),
         "source": {
             "name": "ClinicalTrials.gov",
             "dataset_timestamp_raw": context["source_dataset_timestamp_raw"],
@@ -658,6 +719,229 @@ def _build_model(
     except (ContractError, TypeError, ValueError) as exc:
         raise TrialScreenError("trial_screen_response_not_canonical_json") from exc
     return payload
+
+
+def _public_query(query_filters: Mapping[str, str | None]) -> dict[str, str | None]:
+    """Attach the immutable matching semantics shared by both read models."""
+
+    return {
+        **query_filters,
+        "filter_composition": "literal_and",
+        "lexical_matching": (
+            "sponsor_condition_intervention_name_or_other_names_"
+            "normalized_substring"
+        ),
+        "exact_matching": "phase_status_study_type_normalized_exact",
+        "primary_completion_matching": "full_interval_containment",
+    }
+
+
+def _facet_selector_token(value: Any) -> str | None:
+    """Return the safe routing token, never a display label or free-text fact."""
+
+    if not isinstance(value, str):
+        raise TrialScreenError("trial_screen_facets_selector_invalid")
+    normalized = " ".join(value.split()).casefold()
+    if not normalized or len(normalized) > 80:
+        return None
+    return normalized
+
+
+def _facet_values(row: Mapping[str, Any], dimension: str) -> tuple[str, set[str]]:
+    """Classify one source fact without inventing a selectable value."""
+
+    if dimension == "phase":
+        fact = row.get("phases")
+        value_key = "values"
+    elif dimension == "status":
+        fact = row.get("overall_status")
+        value_key = "value"
+    elif dimension == "study_type":
+        fact = row.get("study_type")
+        value_key = "value"
+    else:  # Defensive: this function is only called from the fixed facet list.
+        raise TrialScreenError("trial_screen_facets_dimension_invalid")
+    if not isinstance(fact, Mapping):
+        raise TrialScreenError("trial_screen_facets_fact_missing")
+    state = fact.get("state")
+    if state not in _MISSINGNESS_STATES:
+        raise TrialScreenError("trial_screen_facets_fact_state_invalid")
+    if state != "observed":
+        return state, set()
+    raw_values = fact.get(value_key)
+    if dimension == "phase":
+        if not isinstance(raw_values, list):
+            raise TrialScreenError("trial_screen_facets_fact_invalid")
+        return state, {
+            token
+            for raw_value in raw_values
+            if (token := _facet_selector_token(raw_value)) is not None
+        }
+    return state, {
+        token
+        for raw_value in (raw_values,)
+        if (token := _facet_selector_token(raw_value)) is not None
+    }
+
+
+def _facet_for_dimension(
+    *,
+    dimension: str,
+    rows: Sequence[Mapping[str, Any]],
+    query_filters: Mapping[str, str | None],
+) -> dict[str, Any]:
+    """Aggregate one self-excluding dimension using unique NCT identities."""
+
+    self_excluding_filters = dict(query_filters)
+    self_excluding_filters[dimension] = None
+    base_rows = [row for row in rows if _matches(row, self_excluding_filters)]
+    missingness = {
+        "observed": 0,
+        "observed_selectable": 0,
+        "observed_unselectable": 0,
+        "source_null": 0,
+        "source_missing": 0,
+        "not_applicable": 0,
+        "parser_degraded": 0,
+        "license_restricted": 0,
+    }
+    bucket_nct_ids: dict[str, set[str]] = {}
+    for row in base_rows:
+        nct_id = row.get("nct_id")
+        if not isinstance(nct_id, str) or not _NCT_ID.fullmatch(nct_id):
+            raise TrialScreenError("trial_screen_facets_nct_id_invalid")
+        state, tokens = _facet_values(row, dimension)
+        if state != "observed":
+            missingness[state] += 1
+            continue
+        missingness["observed"] += 1
+        if not tokens:
+            missingness["observed_unselectable"] += 1
+            continue
+        missingness["observed_selectable"] += 1
+        for token in tokens:
+            bucket = bucket_nct_ids.get(token)
+            if bucket is None:
+                # Reject on the first excess token.  Waiting until the full
+                # scan ended would let a hostile high-cardinality source fact
+                # allocate an unbounded temporary bucket map before failing.
+                if len(bucket_nct_ids) >= MAX_FACET_BUCKETS:
+                    raise TrialScreenError("trial_screen_facets_bucket_limit_exceeded")
+                bucket = set()
+                bucket_nct_ids[token] = bucket
+            bucket.add(nct_id)
+    return {
+        "dimension": dimension,
+        "base_matched": len(base_rows),
+        "additivity": _FACET_ADDITIVITY[dimension],
+        "missingness": missingness,
+        "buckets": [
+            {"token": token, "count": len(bucket_nct_ids[token])}
+            for token in sorted(bucket_nct_ids)
+        ],
+    }
+
+
+def _build_facets_model(
+    *,
+    trial_snapshots: Sequence[Mapping[str, Any]],
+    publication_context: Mapping[str, Any],
+    filters: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    rows, context = _validated_sanitized_rows(
+        trial_snapshots=trial_snapshots,
+        publication_context=publication_context,
+    )
+    query_filters = canonicalize_trial_screen_filters(filters)
+    matched = sum(1 for row in rows if _matches(row, query_filters))
+    payload: dict[str, Any] = {
+        "contract_id": FACETS_CONTRACT_ID,
+        "schema_version": "1.0.0",
+        "scope": "current_configured_snapshot_generation",
+        "as_of": context["as_of"],
+        "query": _public_query(query_filters),
+        "source": {
+            "name": "ClinicalTrials.gov",
+            "dataset_timestamp_raw": context["source_dataset_timestamp_raw"],
+        },
+        "coverage": {
+            "class": "current_only",
+            "configured": context["configured_nct_count"],
+            "observed": context["observed_nct_count"],
+            "matched": matched,
+        },
+        "facet_semantics": _copy(_FACET_SEMANTICS),
+        "facets": [
+            _facet_for_dimension(
+                dimension=dimension,
+                rows=rows,
+                query_filters=query_filters,
+            )
+            for dimension in _FACET_DIMENSIONS
+        ],
+        "authority": _copy(_AUTHORITY),
+        "capacity": _copy(_FACETS_CAPACITY),
+    }
+    try:
+        if len(canonical_json_bytes(payload)) > MAX_FACETS_RESPONSE_BYTES:
+            raise TrialScreenError("trial_screen_facets_response_too_large")
+    except TrialScreenError:
+        raise
+    except (ContractError, TypeError, ValueError) as exc:
+        raise TrialScreenError("trial_screen_facets_response_not_canonical_json") from exc
+    return payload
+
+
+def build_trial_screen_facets_read_model(
+    *,
+    trial_snapshots: Sequence[Mapping[str, Any]],
+    publication_context: Mapping[str, Any],
+    filters: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build a bounded, atomic current-pointer aggregate for filter routing.
+
+    This deliberately emits only normalized selector tokens and aggregate
+    counts.  It exposes no NCT list, source prose, paging surface, or ranking.
+    """
+
+    payload = _build_facets_model(
+        trial_snapshots=trial_snapshots,
+        publication_context=publication_context,
+        filters=filters,
+    )
+    try:
+        validate_contract(FACETS_CONTRACT_ID, payload)
+    except ContractValidationError as exc:
+        raise TrialScreenError("invalid_trial_screen_facets_read_model") from exc
+    return _bounded_facets_response_copy(payload)
+
+
+def validate_trial_screen_facets_read_model(
+    model: Mapping[str, Any],
+    *,
+    trial_snapshots: Sequence[Mapping[str, Any]],
+    publication_context: Mapping[str, Any],
+    filters: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Validate facets structurally and replay their exact source-fact inputs."""
+
+    if not isinstance(model, Mapping):
+        raise TrialScreenError("trial_screen_facets_model_must_be_a_mapping")
+    normalized = _bounded_facets_response_copy(model)
+    if not isinstance(normalized, dict):
+        raise TrialScreenError("trial_screen_facets_model_must_be_an_object")
+    try:
+        validate_contract(FACETS_CONTRACT_ID, normalized)
+    except ContractValidationError as exc:
+        raise TrialScreenError("invalid_trial_screen_facets_read_model") from exc
+    expected = _build_facets_model(
+        trial_snapshots=trial_snapshots,
+        publication_context=publication_context,
+        filters=filters,
+    )
+    if normalized != expected:
+        raise TrialScreenError("trial_screen_facets_input_binding_mismatch")
+    return normalized
 
 
 def build_trial_screen_read_model(
@@ -932,16 +1216,309 @@ def trial_screen_contract_semantic_issues(
     return issues
 
 
+def trial_screen_facets_contract_semantic_issues(
+    document: Mapping[str, Any],
+) -> list[ValidationIssue]:
+    """Reject inconsistent facet aggregates without reopening raw inputs.
+
+    The exact validator below replays source inputs.  This generic callback is
+    intentionally independent of a reader so contract consumers can still
+    reject forged bucket ordering, counts, missingness, coverage, and capacity.
+    """
+
+    issues: list[ValidationIssue] = []
+    try:
+        if len(canonical_json_bytes(document)) > MAX_FACETS_RESPONSE_BYTES:
+            issues.append(
+                ValidationIssue(
+                    "$",
+                    "trial_screen_facets.response_bytes",
+                    "the complete canonical response exceeds the advertised byte ceiling",
+                )
+            )
+        _utc_z_datetime(document.get("as_of"), field="as_of")
+        source = document.get("source")
+        if isinstance(source, Mapping):
+            _source_clock(
+                source.get("dataset_timestamp_raw"),
+                field="source_dataset_timestamp_raw",
+            )
+        coverage = document.get("coverage")
+        observed: int | None = None
+        coverage_matched: int | None = None
+        if isinstance(coverage, Mapping):
+            configured = coverage.get("configured")
+            observed_candidate = coverage.get("observed")
+            matched = coverage.get("matched")
+            if all(
+                isinstance(value, int) and not isinstance(value, bool)
+                for value in (configured, observed_candidate, matched)
+            ):
+                observed = observed_candidate
+                coverage_matched = matched
+                if observed > configured:
+                    issues.append(
+                        ValidationIssue(
+                            "$.coverage.observed",
+                            "trial_screen_facets.coverage",
+                            "observed current snapshots cannot exceed configured coverage",
+                        )
+                    )
+                if matched > observed:
+                    issues.append(
+                        ValidationIssue(
+                            "$.coverage.matched",
+                            "trial_screen_facets.coverage",
+                            "matched current snapshots cannot exceed observed coverage",
+                        )
+                    )
+        query = document.get("query")
+        query_filters: dict[str, str | None] | None = None
+        if isinstance(query, Mapping):
+            supplied = {field: query.get(field) for field in _FILTER_FIELDS}
+            normalized = canonicalize_trial_screen_filters(supplied)
+            query_filters = normalized
+            if normalized != supplied:
+                issues.append(
+                    ValidationIssue(
+                        "$.query",
+                        "trial_screen_facets.query_normalization",
+                        "query text must be case-folded and whitespace-collapsed before matching",
+                    )
+                )
+        capacity = document.get("capacity")
+        if capacity != _FACETS_CAPACITY:
+            issues.append(
+                ValidationIssue(
+                    "$.capacity",
+                    "trial_screen_facets.capacity",
+                    "facets must advertise the fixed bounded aggregate capacity",
+                )
+            )
+        if document.get("facet_semantics") != _FACET_SEMANTICS:
+            issues.append(
+                ValidationIssue(
+                    "$.facet_semantics",
+                    "trial_screen_facets.semantics",
+                    "facets must declare the fixed self-excluding unique-trial counting semantics",
+                )
+            )
+        facets = document.get("facets")
+        if not isinstance(facets, list):
+            return issues
+        dimensions = [facet.get("dimension") for facet in facets if isinstance(facet, Mapping)]
+        if dimensions != list(_FACET_DIMENSIONS):
+            issues.append(
+                ValidationIssue(
+                    "$.facets",
+                    "trial_screen_facets.dimensions",
+                    "facets must be exactly phase, status, and study_type in fixed order",
+                )
+            )
+        for index, facet in enumerate(facets):
+            if not isinstance(facet, Mapping):
+                continue
+            dimension = facet.get("dimension")
+            if dimension not in _FACET_ADDITIVITY:
+                continue
+            expected_additivity = _FACET_ADDITIVITY[dimension]
+            if facet.get("additivity") != expected_additivity:
+                issues.append(
+                    ValidationIssue(
+                        f"$.facets[{index}].additivity",
+                        "trial_screen_facets.additivity",
+                        f"{dimension} must declare {expected_additivity} bucket semantics",
+                    )
+                )
+            base_matched = facet.get("base_matched")
+            if (
+                not isinstance(base_matched, int)
+                or isinstance(base_matched, bool)
+                or base_matched < 0
+            ):
+                continue
+            if observed is not None and base_matched > observed:
+                issues.append(
+                    ValidationIssue(
+                        f"$.facets[{index}].base_matched",
+                        "trial_screen_facets.coverage",
+                        "a self-excluding facet base cannot exceed observed current snapshots",
+                    )
+                )
+            if coverage_matched is not None and base_matched < coverage_matched:
+                issues.append(
+                    ValidationIssue(
+                        f"$.facets[{index}].base_matched",
+                        "trial_screen_facets.coverage",
+                        "removing one dimension filter cannot reduce the fully matched count",
+                    )
+                )
+            if (
+                coverage_matched is not None
+                and query_filters is not None
+                and query_filters.get(dimension) is None
+                and base_matched != coverage_matched
+            ):
+                issues.append(
+                    ValidationIssue(
+                        f"$.facets[{index}].base_matched",
+                        "trial_screen_facets.self_exclusion",
+                        "an unselected dimension must share the fully matched base",
+                    )
+                )
+            missingness = facet.get("missingness")
+            if not isinstance(missingness, Mapping):
+                continue
+            expected_missingness_keys = {
+                "observed",
+                "observed_selectable",
+                "observed_unselectable",
+                "source_null",
+                "source_missing",
+                "not_applicable",
+                "parser_degraded",
+                "license_restricted",
+            }
+            if set(missingness) != expected_missingness_keys:
+                issues.append(
+                    ValidationIssue(
+                        f"$.facets[{index}].missingness",
+                        "trial_screen_facets.missingness",
+                        "all source missingness states and both observed routing states are required",
+                    )
+                )
+                continue
+            counts = list(missingness.values())
+            if not all(
+                isinstance(count, int) and not isinstance(count, bool) and count >= 0
+                for count in counts
+            ):
+                continue
+            snapshot_state_total = sum(
+                missingness[state]
+                for state in _MISSINGNESS_STATES
+            )
+            if snapshot_state_total != base_matched:
+                issues.append(
+                    ValidationIssue(
+                        f"$.facets[{index}].missingness",
+                        "trial_screen_facets.missingness",
+                        "all trial snapshot missingness states must reconcile exactly to base_matched",
+                    )
+                )
+            if (
+                missingness["observed_selectable"]
+                + missingness["observed_unselectable"]
+                != missingness["observed"]
+            ):
+                issues.append(
+                    ValidationIssue(
+                        f"$.facets[{index}].missingness",
+                        "trial_screen_facets.missingness",
+                        "observed routing states must reconcile exactly to observed facts",
+                    )
+                )
+            buckets = facet.get("buckets")
+            if not isinstance(buckets, list):
+                continue
+            if len(buckets) > MAX_FACET_BUCKETS:
+                issues.append(
+                    ValidationIssue(
+                        f"$.facets[{index}].buckets",
+                        "trial_screen_facets.bucket_capacity",
+                        "a dimension cannot exceed the fixed bucket cap",
+                    )
+                )
+            tokens: list[str] = []
+            bucket_total = 0
+            valid_bucket_counts = True
+            selectable = missingness["observed_selectable"]
+            for bucket_index, bucket in enumerate(buckets):
+                if not isinstance(bucket, Mapping):
+                    valid_bucket_counts = False
+                    continue
+                token = bucket.get("token")
+                count = bucket.get("count")
+                try:
+                    if _facet_selector_token(token) != token:
+                        issues.append(
+                            ValidationIssue(
+                                f"$.facets[{index}].buckets[{bucket_index}].token",
+                                "trial_screen_facets.token_normalization",
+                                "selector tokens must be normalized, nonblank, and at most 80 characters",
+                            )
+                        )
+                    if not isinstance(token, str):
+                        valid_bucket_counts = False
+                    else:
+                        tokens.append(token)
+                    if (
+                        not isinstance(count, int)
+                        or isinstance(count, bool)
+                        or count < 1
+                        or count > base_matched
+                        or count > selectable
+                    ):
+                        valid_bucket_counts = False
+                        issues.append(
+                            ValidationIssue(
+                                f"$.facets[{index}].buckets[{bucket_index}].count",
+                                "trial_screen_facets.bucket_count",
+                                "a bucket count must be positive and cannot exceed observed_selectable or its self-excluding base",
+                            )
+                        )
+                    else:
+                        bucket_total += count
+                except TrialScreenError:
+                    valid_bucket_counts = False
+            if tokens != sorted(tokens) or len(tokens) != len(set(tokens)):
+                issues.append(
+                    ValidationIssue(
+                        f"$.facets[{index}].buckets",
+                        "trial_screen_facets.bucket_order",
+                        "selector buckets must be unique and lexicographically ordered by token",
+                    )
+                )
+            if valid_bucket_counts:
+                if expected_additivity == "additive" and bucket_total != selectable:
+                    issues.append(
+                        ValidationIssue(
+                            f"$.facets[{index}].buckets",
+                            "trial_screen_facets.additivity",
+                            "additive buckets must reconcile exactly to observed_selectable",
+                        )
+                    )
+                if expected_additivity == "non_additive" and bucket_total < selectable:
+                    issues.append(
+                        ValidationIssue(
+                            f"$.facets[{index}].buckets",
+                            "trial_screen_facets.non_additivity",
+                            "every observed-selectable trial must appear in at least one phase bucket",
+                        )
+                    )
+    except (TrialScreenError, ContractError, TypeError, ValueError):
+        # JSON Schema reports malformed paths.  The generic registry remains
+        # total over hostile in-memory documents and never opens a source.
+        pass
+    return issues
+
+
 __all__ = [
     "CONTRACT_ID",
+    "FACETS_CONTRACT_ID",
     "MAX_INPUT_SNAPSHOTS",
+    "MAX_FACET_BUCKETS",
+    "MAX_FACETS_RESPONSE_BYTES",
     "MAX_PAGE_LIMIT",
     "MAX_RESPONSE_BYTES",
     "MAX_SANITIZED_ROW_BYTES",
     "MAX_SANITIZED_SCAN_BYTES",
     "TrialScreenError",
+    "build_trial_screen_facets_read_model",
     "build_trial_screen_read_model",
     "canonicalize_trial_screen_filters",
+    "trial_screen_facets_contract_semantic_issues",
     "trial_screen_contract_semantic_issues",
+    "validate_trial_screen_facets_read_model",
     "validate_trial_screen_read_model",
 ]

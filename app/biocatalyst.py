@@ -198,11 +198,12 @@ def _publication_runtime() -> tuple[type[Exception], type[Any]]:
     return PublicationError, PublicGenerationPublisher
 
 
-def _trial_screen_runtime() -> tuple[type[Exception], Any, Any]:
+def _trial_screen_runtime() -> tuple[type[Exception], Any, Any, Any]:
     """Load the pure screen contract without adding a second data reader."""
 
     from engine.biocatalyst.trial_screen import (  # noqa: PLC0415
         TrialScreenError,
+        build_trial_screen_facets_read_model,
         build_trial_screen_read_model,
         canonicalize_trial_screen_filters,
     )
@@ -211,6 +212,7 @@ def _trial_screen_runtime() -> tuple[type[Exception], Any, Any]:
         TrialScreenError,
         canonicalize_trial_screen_filters,
         build_trial_screen_read_model,
+        build_trial_screen_facets_read_model,
     )
 
 
@@ -3523,7 +3525,7 @@ def trial_screen(
         parsed_to.isoformat() if parsed_to is not None else None
     )
     page_limit = _query_limit(limit)
-    TrialScreenError, canonicalize_filters, build_read_model = (
+    TrialScreenError, canonicalize_filters, build_read_model, _build_facets = (
         _trial_screen_runtime()
     )
     try:
@@ -3609,6 +3611,128 @@ def trial_screen(
         log.warning("BioCatalyst trial screen projection unavailable (%s)", exc)
         raise _unavailable() from None
     return _response(payload)
+
+
+@router.get("/api/biocatalyst/v1/trials:screen/facets")
+def trial_screen_facets(
+    request: Request,
+    sponsor: str | None = None,
+    intervention: str | None = None,
+    study_type: str | None = None,
+    phase: str | None = None,
+    status: str | None = None,
+    condition: str | None = None,
+    primary_completion_from: str | None = None,
+    primary_completion_to: str | None = None,
+    _user: dict = Depends(require_site_full_user),
+) -> JSONResponse:
+    """Return atomic source-fact facet counts for one committed trial cut.
+
+    This is deliberately unpaginated.  It has the same literal filter grammar
+    as Trial Screen, but no cursor, caller binding, or identity-bearing query
+    state: one request derives one aggregate from one committed projection.
+    """
+
+    del _user  # Authentication gates this private response; facets need no binding.
+    allowed_filters = {
+        "sponsor",
+        "intervention",
+        "study_type",
+        "phase",
+        "status",
+        "condition",
+        "primary_completion_from",
+        "primary_completion_to",
+    }
+    unknown = set(request.query_params) - allowed_filters
+    duplicated = {
+        name
+        for name in allowed_filters
+        if len(request.query_params.getlist(name)) > 1
+    }
+    if unknown or duplicated:
+        raise HTTPException(
+            status_code=400,
+            detail="invalid trial screen facets query",
+            headers=_PRIVATE_HEADERS,
+        )
+    raw_filters = {
+        "sponsor": _query_text(sponsor, name="sponsor", maximum=240),
+        "intervention": _query_text(
+            intervention, name="intervention", maximum=240
+        ),
+        "study_type": _query_text(study_type, name="study_type", maximum=80),
+        "phase": _query_text(phase, name="phase", maximum=80),
+        "status": _query_text(status, name="status", maximum=80),
+        "condition": _query_text(condition, name="condition", maximum=240),
+        "primary_completion_from": primary_completion_from,
+        "primary_completion_to": primary_completion_to,
+    }
+    parsed_from = _query_iso_date(
+        primary_completion_from,
+        name="primary_completion_from",
+    )
+    parsed_to = _query_iso_date(
+        primary_completion_to,
+        name="primary_completion_to",
+    )
+    if parsed_from is not None and parsed_to is not None and parsed_from > parsed_to:
+        raise HTTPException(
+            status_code=400,
+            detail="invalid primary completion range",
+            headers=_PRIVATE_HEADERS,
+        )
+    raw_filters["primary_completion_from"] = (
+        parsed_from.isoformat() if parsed_from is not None else None
+    )
+    raw_filters["primary_completion_to"] = (
+        parsed_to.isoformat() if parsed_to is not None else None
+    )
+    TrialScreenError, canonicalize_filters, _build_screen, build_facets = (
+        _trial_screen_runtime()
+    )
+    try:
+        filters = canonicalize_filters(raw_filters)
+    except TrialScreenError:
+        raise HTTPException(
+            status_code=400,
+            detail="invalid trial screen facets query",
+            headers=_PRIVATE_HEADERS,
+        ) from None
+
+    # Canonicalize the whole request before opening the pointer-bound public
+    # generation.  Unlike the page reader, this response is atomic and cannot
+    # be replayed against a later cut, so no cursor HMAC or caller binding exists.
+    projection, _operational = _read_bundle()
+    try:
+        generation = getattr(projection, "generation", None)
+        trials = getattr(projection, "trials", None)
+        if isinstance(trials, (str, bytes)) or not isinstance(trials, Sequence):
+            raise TrialScreenError("trial_screen_facets_projection_invalid")
+        publication_context = {
+            "as_of": getattr(generation, "last_success_at", None),
+            "last_success_at": getattr(generation, "last_success_at", None),
+            "source_dataset_timestamp_raw": getattr(
+                generation, "source_dataset_timestamp_raw", None
+            ),
+            "configured_nct_count": getattr(
+                generation, "configured_nct_count", None
+            ),
+            "observed_nct_count": getattr(generation, "observed_nct_count", None),
+        }
+        payload = build_facets(
+            trial_snapshots=trials,
+            publication_context=publication_context,
+            filters=filters,
+        )
+        if not isinstance(payload, Mapping):
+            raise TrialScreenError("trial_screen_facets_payload_invalid")
+        return _response(payload)
+    except Exception as exc:
+        log.warning(
+            "BioCatalyst trial screen facets unavailable (%s)", type(exc).__name__
+        )
+        raise _unavailable() from None
 
 
 @router.get("/api/biocatalyst/v1/trials/{nct_id}")

@@ -51,6 +51,7 @@ read_adapters:
       - /api/biocatalyst/v1/health
       - /api/biocatalyst/v1/trials
       - /api/biocatalyst/v1/trials:screen
+      - /api/biocatalyst/v1/trials:screen/facets
       - /api/biocatalyst/v1/trial-peer-sets:resolve
       - /api/biocatalyst/v1/trials/changes
       - /api/biocatalyst/v1/trials/change-tape
@@ -61,6 +62,7 @@ read_adapters:
     output_contracts:
       - trial_snapshot.v1
       - trial_screen_read_model.v1
+      - trial_screen_facets_read_model.v1
       - trial_protocol_projection.v1
       - trial_peer_set.v1
       - trial_history_read_model.v1
