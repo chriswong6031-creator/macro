@@ -67,6 +67,7 @@ EXPECTED_PUBLIC_RESEARCH_DESTINATIONS = {
     "intelligence_hub.html",
     "reports.html",
     "research_vault.html",
+    "stocks/earnings/index.html",
     "neural_web.html",
     "foresight.html",
     "state_of_themes.html",
@@ -165,8 +166,9 @@ def test_research_mega_menu_uses_complete_semantic_icon_set() -> None:
 
     assert "submenu-icon" not in research
     assert destinations == EXPECTED_PUBLIC_RESEARCH_DESTINATIONS
-    assert public_grid.count('class="icon-drawing nm-ic') == 14
-    assert public_grid.count('<svg viewBox="0 0 48 48">') == 14
+    assert public_grid.count('class="icon-drawing nm-ic') == 15
+    assert public_grid.count('<svg viewBox="0 0 48 48">') == 15
+    assert 'data-nav-file="earnings_wire"' in public_grid
     assert "research-icon" not in public_grid
     assert '<span class="nm-ic">' not in research
 
@@ -176,8 +178,8 @@ def test_jinja_nav_partial_preserves_research_icon_markup_on_rerender() -> None:
     research = _research_menu(partial)
     public_grid = research.split('<aside class="mega-rail', 1)[0]
 
-    assert public_grid.count('class="icon-drawing nm-ic') == 14
-    assert public_grid.count('<svg viewBox="0 0 48 48">') == 14
+    assert public_grid.count('class="icon-drawing nm-ic') == 15
+    assert public_grid.count('<svg viewBox="0 0 48 48">') == 15
     assert "research-icon" not in public_grid
     assert '<span class="nm-ic">' not in partial
 
