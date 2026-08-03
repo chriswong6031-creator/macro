@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T16:06:10.143045+00:00",
-  "count": 674,
+  "generated_at": "2026-08-03T16:36:11.989838+00:00",
+  "count": 675,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -48,6 +48,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-f3bliu8p1gc-1b7c0c",
+      "title": "US Weekly Kickstart Q2 2026 mid season earnings update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:06:55Z",
+      "summary_points": [
+        "**Mega-cap tech earnings dependency**: Q2 2026 GAAP net income from \"other income\" (investment gains) surged to 61% (vs.",
+        "9% Q1 2026), signaling unsustainable earnings reliance on unrealized gains, a critical valuation risk.",
+        "**Hyperscaler capex vs.",
+        "cash flow**: Hyperscaler capex to exceed cash flow from operations (2026–2028), with 2027 estimates at $1T+ (up 33% from $929B), pressuring free cash flow and necessitating $400B in IG debt funding.",
+        "**Earnings beat rate vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-zonnzrvd3vn-004fec",
       "title": "THIS AINT MARADONA CENTRAL BANKING",
