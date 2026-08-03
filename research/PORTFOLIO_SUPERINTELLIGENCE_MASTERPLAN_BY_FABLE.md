@@ -1,12 +1,21 @@
 # Portfolio Superintelligence (PSI) — completion & integration masterplan (by Fable)
 
-Date: 2026-08-03
+Date: 2026-08-03 (amended same day — operator round 2)
 Status: CHARTER + build contract — the **Codex execution handoff** for the operator's
 portfolio-risk-intelligence vision. Operator-directed (2026-08-03 session): "independent
 watchlist system … complete risk analysis of their portfolio … overallocation, cross
 correlation, rotation stage, technical risk, options analysis … risks conditioned on regime
 and market state … master intelligence tracking on every ticker they own … weakest links,
 strongest strengths … holistic score with breakdown scores."
+**Round-2 operator directives (2026-08-03, recorded verbatim in effect):** (a) **PRD-R2
+OVERRIDDEN** for this surface — "this isn't a live money portfolio, it's just for viewing
+by the user" → the holistic score SHIPS (§3.1 rewritten; PRD Amendment 2; DNR row
+amended); (b) the portfolio analyzer becomes the **public freebie lead-magnet** — anonymous
+instant analysis, free-account long-term tracking with **daily change emails**, a custom
+public landing/portal, onboarding integration (§19); (c) macro-side frontend must be
+**beautiful and web-app-like/live**, with per-ticker data on the page (§19.8); (d)
+integrate the just-shipped **Company Intelligence dossier data** (§19.7) and **per-ticker
+news intelligence** incl. a news.html ticker-feed build-out (§19.6).
 Parents (all still in force; this doc composes them, it does not re-litigate them):
 - `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md` (PRD) — lanes + role ladder + Amendment 1.
 - `UNIFIED_WATCHLIST_PORTFOLIO_MASTERPLAN_BY_FABLE.md` (UWP) — store + dashboard, UWP-R1..R7.
@@ -39,11 +48,14 @@ re-building what ships today and WITHOUT violating the standing rulings (§3). E
    surfaces (Terminal is dark-only but needs en + zh crops), desktop + 390px mobile,
    against the pinned design refs (§13). No first-pass self-merge of flagship UI waves:
    the commissioning session (or the operator) reviews crops before merge.
-3. **No fused composite risk number at any grain, anywhere** (PRD-R2, DNR row 45,
-   WRI-R2). Aggregates are printed lane counts, named ladder states, and single-construct
-   statistics with printed methods. CI-checkable: no element may render a number labeled
-   as an overall/composite/holistic risk score. The §12 research program is the ONLY path
-   to ever changing this, and it ships nothing user-facing.
+3. **The composite score ships under PRD Amendment 2's exact scope** (§3.1): display-tier
+   on user-facing portfolio surfaces + digests ONLY — transparent named legs, printed v0
+   weights, per-leg sub-scores, coverage-driven abstention, nightly forward grading. It
+   NEVER feeds boards, rankers, the Neural Web, sizing, alert escalation, or any scored
+   path (two-organisms + NWP-U18 + Signal Commons remain fully in force), and it never
+   claims authority ("validated" stays CI-banned; no accuracy claims without the §12
+   ledger evidence). A reviewer finding the score consumed ANYWHERE outside the
+   user-facing display/digest layer rejects the PR.
 4. **Descriptive, never prescriptive** — no imperative buy/sell/add/trim/hedge/rebalance
    copy anywhere; review language only ("Take-profit review", "Exit review"). All brief
    text passes the ask_brain advice filter by construction (asserted in tests, the
@@ -80,6 +92,18 @@ re-building what ships today and WITHOUT violating the standing rulings (§3). E
     390×844) for terminal waves. Ship loop per repo law: commit → push → PR → CI →
     same-day squash-merge → live verification. Cross-repo waves land the producer
     (macro) before the consumer (terminal) and verify the pair live.
+11. **Funnel honesty (round-2 waves)**: the anonymous flow delivers REAL analysis before
+    any prompt — no login wall, regwall, or email capture between "enter tickers" and the
+    full client-side read (§19.2). Signup prompts are value-framed and dismissible, never
+    modal-trapping. The landing page's demo widget runs the real math on real baked data
+    — never canned screenshots posing as live output.
+12. **Email compliance (digest waves)**: every digest goes through `app/mailer.py`
+    `send()` (ledger-first idempotency; `cls='marketing'` so suppression +
+    `email_prefs` opt-outs bind, fail-closed on lookup errors) with RFC 8058 one-click
+    unsubscribe headers (`app/unsubscribe.py` machinery). Digest opt-in is an explicit
+    labeled toggle at signup; a quiet day sends nothing (change-triggered, not
+    calendar-spam); no position VALUES in email-log rows or server logs (tickers +
+    state words only — PRD-R7 applies to the mail pipeline too).
 
 ---
 
@@ -93,7 +117,10 @@ the Terminal and the macro watchlist render, light the **options lane** (the WRI
 come-back, now due), widen the **tape context** (regime/breadth/concentration/dispersion/
 flow × your book), ship **weakest-links / working-for-you** ladders, and stand up the
 **outcome ledger + calibration loop** that makes every displayed construction forward-graded
-— all display-tier, no fused score, no advice, no new estimators without prereg.
+— plus (round 2) the **Portfolio Health Score** (operator-overridden PRD-R2, §3.1) and the
+**freebie funnel** (§19): anonymous instant analysis → free-account tracking with daily
+change emails → a public landing portal — all display-tier, no advice, no score authority,
+no new estimators without prereg.
 
 ## 2. What already exists — DO NOT REBUILD (the 70%)
 
@@ -113,6 +140,10 @@ flow × your book), ship **weakest-links / working-for-you** ladders, and stand 
 | Options data plane (OIP): EOD options suite R0–R3 — gex/dealer-gamma state + history index, IV-rank bands, OI suite (oi_time/max_pain/oi_change), exposure profiles, screener, options workspace page, session digests, weekend-run repair, dead-man anchors | ✅ shipping nightly (hardened through #4152/#4153/#4168/#4199/#4207/#4222/#4247/#4292) | OIP masterplan + those PRs; per-ticker + index artifacts |
 | Company Intelligence per-ticker dossiers; capital-structure/forensics/earnings evidence planes | ✅ shipping (adjacent context, link-out targets) | #4318/#4322 + capital-structure lanes |
 | Operator held-risk desk (Mastermind repo: lanes, alerts, Discord, outcome ledger) | ✅ separate organism — UNTOUCHED by PSI | PRD §5–§9 (placement ruling) |
+| Email estate: ledger-first sender (idempotent, suppression/opt-out law, queue+drain, mail-off mode) + RFC 8058 one-click unsubscribe | ✅ LIVE (the digest waves are just a new caller) | `app/mailer.py` (SEE program), `app/unsubscribe.py`, `email_log`/`email_prefs`/`email_suppression` tables |
+| Per-ticker news + alt-data bundle (`intelligence.by_ticker.v2`) | ✅ LIVE nightly (§19.6 surfaces it) | `engine/intelligence.py` → `site/intelligence/by_ticker.json`; `engine.financial_news` → `site/news/by_ticker.json` |
+| Company Intelligence public teaser endpoint (verified allowlisted projection, CDN-safe) + authenticated context contracts | ✅ LIVE (§19.7 consumes it) | `app/company_intelligence.py`; `engine/company_intelligence/` (`context_only` authority) |
+| Onboarding flow assets (landing signup estate) | ✅ LIVE (§19.4 adds a portfolio step) | `templates/onboard.js` / `onboard.css` (+ site copies; Caddy immutable list — ?v= restamp law applies) |
 
 **PR #170 disposition (operator asked):** it is exactly the consumer half of the shipped
 brief seam — KEEP it, land it FIRST (PSI-W1). It renders `portfolio_brief.v1` above the
@@ -125,9 +156,15 @@ unmodified after v2 lands; its sections simply grow (PSI-W3 extends the same com
 
 Inherited rulings, restated once (violating any of these is a rejected PR, not a debate):
 
-- **PRD-R2 / DNR row 45 — no fused composite risk number at any grain.** The holistic
-  read is the named-verdict + printed-count form (§7, §10). See §3.1 for the direct
-  answer to the operator's "holistic score" ask.
+- **PRD-R2 — AMENDED by operator override 2026-08-03 (PRD Amendment 2; DNR row 45
+  updated in this PR).** The user-facing display-tier composite portfolio score is now
+  ALLOWED on watchlist/portfolio surfaces and in digest emails, under the §3.1
+  construction law (transparent legs, printed weights, abstention, nightly grading).
+  What Amendment 2 does NOT strike: the score may not feed any scored path, board
+  ordering, ranker, Neural Web artifact, sizing, or alert-escalation authority; may
+  not be described as validated/proven; and the operator-desk clause (Mastermind repo)
+  is untouched. Fable dissent recorded in §3.1 — grading runs from day one so the
+  disagreement resolves on evidence.
 - **PRD-R7 / UWP-R1 — privacy**: nothing position-derived in any repo artifact or log.
 - **UWP-R2 / NWC-U4 — two-organisms**: user holdings NEVER feed the signal path, boards,
   rankers, Neural Web, alert triage, or any scored artifact. Per-user joins happen
@@ -164,38 +201,64 @@ Inherited rulings, restated once (violating any of these is a rejected PR, not a
   Codex's strongest lane); DESIGN_DOCTRINE + frontend-design skill loaded before any
   surface work; mockups-first for new surfaces.
 
-### 3.1 The "holistic score" adjudication (read carefully — this is the answer)
+### 3.1 The holistic score — SHIPS under operator override (PRD Amendment 2, 2026-08-03)
 
-The operator asked for "a holistic score for portfolio, with breakdown scores on different
-factors" — and, in the same breath, for "backtest and preliminary weighting research … so
-the weightings aren't garbage." Those two sentences are the whole case law of this repo in
-miniature: **every previous attempt to ship a fused multi-lane score without earned weights
-died** (FR-1 fused shield; WA-R1 fused 100-point sponsorship score; MSP-R2 composite regime
-scorecard; TOP3-E5 hazard; the PRD §2 autopsy). PRD-R2 exists because unearned weights ARE
-garbage, and a garbage number wearing a confident face is worse than no number.
+History, so nobody relitigates it: the first draft of this charter kept PRD-R2 (no fused
+number — every prior unearned-weights composite died: FR-1, WA-R1, MSP-R2, TOP3-E5, the
+PRD §2 autopsy). The operator overrode same-day: *"this isn't a live money portfolio,
+it's just for viewing by the user."* The override is recorded (PRD §13 Amendment 2 + the
+amended DNR row), and **the score ships** — display-tier, on the portfolio surfaces and
+in digests, as the freebie's headline read. **Fable dissent, on record:** display-tier or
+not, a confident number with unearned weights can mislead; the §3.1.2 construction law +
+day-one grading (§11) exist so the number stays honest and the weights EARN their next
+version. Precedent for the pattern: `engine/us_board_rank.py` (us_prophet_v1) — an
+explicit transparent 0–100 heuristic with named weighted legs, fail-closed coverage, and
+full component disclosure.
 
-So PSI ships the holistic read in the form that is both lawful and better product:
+#### 3.1.1 What ships (the product shape)
 
-1. **Book Posture** (Tier-1 hero, exists today as the WRI L2 verdict): a NAMED state —
-   Diversified / Tilted / Concentrated / One bet — plus the sentence that explains it
-   ("your 8 names are effectively ~2 bets; Growth/Tech drives 64% of your swing").
-2. **Condition counts** (new, §7): printed lane counts at book grain — "2 of 9 names in
-   Exit review · 4 of 11 book lanes elevated" — plus the weakest-links ladder (§10).
-3. **Breakdown "scores"** = the per-dimension single-construct measurements, each with its
-   own native scale, plain-word state, and Tier-2 receipt: concentration (top-weight %,
-   HHI/top-3, ENB), correlation (avg pairwise stress-ρ, tightest pair), market coupling
-   (book beta, R² to market), factor tilts (variance shares), volatility (book vol ratio
-   vs SPY), options posture (book-weighted IV rank band), event density (names reporting
-   ≤10d). Every one is a measurement PRD-R2 permits; none is a blend.
-4. **The single fused number is NOT built** — instead §12 charters the research program
-   that could EARN one: retrospective construction study + prospective forward ledger +
-   pre-registered gates + operator ruling amending PRD-R2. Until that ruling exists, any
-   PR that renders a fused score is auto-rejected, no matter how pretty.
+- **Portfolio Health Score, 0–100** (100 = structurally clean book), Tier-1 hero on the
+  portfolio surface, the landing widget, and the daily digest subject line ("Your book:
+  72 → 68"). One number, one plain-word state beside it (the WRI posture verdict), one
+  sentence naming the biggest detractor ("concentration is what's costing you points").
+- **Breakdown sub-scores (0–100 each)** — the operator's "breakdown scores on different
+  factors", one per dimension, each expandable to its receipts: **Structure**
+  (ENB vs book size, top-factor share), **Concentration** (top-name %, top-3 %, HHI),
+  **Correlation** (avg stress-ρ, twins share of book), **Market coupling** (beta
+  extremity, R² to market), **Volatility** (book vol ratio vs SPY), **Condition**
+  (share of names with clean lanes; ladder counts), **Event density** (share of book
+  reporting ≤10 sessions), **Options posture** (coverage-weighted IV-rank extremity —
+  abstains below coverage floor). Every sub-score is a monotone map of measurements the
+  packet already carries, with printed anchors.
+- **Book Posture verdict, condition counts, ladders, per-construct measurements** (§7,
+  §10) all remain — the score summarizes them; it never replaces them.
 
-This is not a compromise; it is the design. Institutional risk governance is lane grids
-and committee ladders, not one dial (WRI §3.5). The user gets MORE actionable information
-from "One bet — semis drive 64% of your swing, 3 names report inside 10 days" than from
-"Risk: 62/100".
+#### 3.1.2 Construction law (binding on every score PR)
+
+1. **Transparent legs only**: each sub-score is a printed monotone map of named packet
+   fields with printed anchors (v0 anchors = the WRI/PRD printed thresholds where they
+   exist, e.g. ENB ≥4 / 2.5–4 / 1.5–2.5 / <1.5). No hidden inputs, no fitted parameters,
+   no LLM anywhere in the loop (A7 is NOT overridden).
+2. **v0 weights = equal across legs with coverage, printed as "v0 · equal-weighted ·
+   graded nightly since <date>"** — renormalized over available legs. §12's Study-1 runs
+   BEFORE any non-equal weights ship ("preliminary weighting research so the weightings
+   aren't garbage" — the operator's own bar); weight changes are versioned PRs citing
+   ledger evidence (v0 → v1-measured), never silent (§11.4).
+3. **Coverage abstention**: a leg without data DROPS (renormalize + disclose "scored on
+   6 of 8 dimensions"); a book with >40% unmodeled dollars gets NO score — the honest
+   chip instead (gate 6). Never a fabricated 50.
+4. **Client/server parity**: the score computes CLIENT-SIDE from public baked JSON (so
+   the anonymous freebie gets it) and server-side in the composer (so digests/Terminal
+   get it) — same legs, same anchors, golden-pinned both ways (§5.3). The
+   server-enriched extras (realized corr) may ANNOTATE but never change the number —
+   anon and signed-in must see the same score for the same book.
+5. **Scope fence** (what Amendment 2 did not strike): the score never feeds board
+   ordering, rankers, NW, sizing, alerts-escalation, or any engine read; it never
+   appears on non-portfolio signal surfaces; "validated"/accuracy claims stay banned
+   until the §12 ledger says otherwise, and the Tier-2 receipt states its version,
+   weights, coverage, and grading status plainly.
+6. **zh parity**: score naming/copy bilingual; the ramp uses neutral tint tokens (never
+   --up/--down; gate 9).
 
 ## 4. Architecture of record
 
@@ -319,7 +382,15 @@ draw panels without re-deriving math:
     "tape":    { ...the §9 market block, verbatim states + which of the user's
                   sectors/themes each state touches... },
     "ladders": { "weakest": ["XYZ","NVDA", ...],   // role-ladder severity order (§10)
-                 "working": ["MSFT", ...] }        // clean-lanes order (§10)
+                 "working": ["MSFT", ...] },       // clean-lanes order (§10)
+    "score":   { "value": 68, "version": "v0-equal", "graded_since": "2026-08-…",
+                 "legs": {"structure": 61, "concentration": 44, "correlation": 58,
+                          "coupling": 72, "volatility": 66, "condition": 78,
+                          "events": 90, "options": null},   // null = abstained leg
+                 "covered_legs": 7, "detractor": "concentration" },   // §3.1 law
+    "news":    { "names": {"NVDA": [{"t": "...", "src": "...", "when": "...",
+                                     "url": "..."}]},        // intelligence.by_ticker.v2
+                 "book_count_7d": 12 }
   } }
 ```
 
@@ -505,9 +576,11 @@ The operator asked for weights that "self learn and adjust." The lawful, honest 
    seeking AUTHORITY (gating/alerts/ranking beyond the ladder) goes through WRI-R8
    prereg gates.
 
-## 12. The composite-score research program (earn it or it doesn't exist)
+## 12. The weighting research program (the score shipped — now its weights earn their keep)
 
-Chartered, NOT user-facing until an operator ruling amends PRD-R2:
+Amendment 2 shipped the score with printed v0-equal weights (§3.1.2). This program is the
+operator's "backtest and preliminary weighting research" — it now serves to (a) sanity-check
+the v0 construction BEFORE launch and (b) upgrade weights on evidence, versioned:
 
 - **PSI-Study-1 (retrospective construction study).** Question: does ANY fixed weighting
   of book-grain lane states order forward book outcomes (63d realized vol; MaxDD) better
@@ -520,12 +593,18 @@ Chartered, NOT user-facing until an operator ruling amends PRD-R2:
   horizon at the registered ruler (t+21/t+63 swing convention); no denominator
   conditioning on resolution; single-window episode symmetry rule;
   understanding-before-backtest memo first (why WOULD these weights generalize?).
-- **PSI-Study-2 (prospective).** IF Study-1 clears its pre-registered gates (written
-  BEFORE running, in `research/PSI_COMPOSITE_PREREG.md`; include the null "lane count is
-  not beaten"), freeze the construction and accrue ≥2 quarters on the §11 ledger with
-  zero interim reads (PSS-charter discipline). Only then: operator ruling on amending
-  PRD-R2, with the dissent recorded.
-- Failure is a fine outcome: the lane count stays, and it is already good product (§3.1).
+- **PSI-Study-1 launch read (W9 gate)**: before the score goes live, Study-1's FIRST
+  deliverable is a sanity memo on the v0 construction over the archetype corpus — does
+  a lower Health Score in fact precede worse forward realized vol/DD than a higher one,
+  monotonically enough to print? If v0-equal fails even that ordering test, the launch
+  legs/anchors are revised (still transparent, still printed) BEFORE any user sees the
+  number. This is the operator's own "not garbage at the start" bar.
+- **PSI-Study-2 (prospective, ongoing)**: the §11 ledger grades the shipped score
+  nightly (score-decile → forward outcome). Quarterly formal reads may promote
+  weight/anchor changes as versioned PRs (`v0-equal` → `v1-measured`, prereg'd in
+  `research/PSI_COMPOSITE_PREREG.md` with the null "equal weights are not beaten").
+  Accuracy CLAIMS on any surface unlock only from this ledger; until then the receipt
+  says "graded since <date>, no accuracy claim yet."
 
 ## 13. Design specification (both sides)
 
@@ -587,26 +666,37 @@ Numbers arrive with meaning (Law 3); receipts to LENS/Tier-2.
 | **W5 — tape context** | ctx `market` consumers: watchlist L3 strip widening + packet `tape` + brief sentences; per-read link-outs + LENS receipts. (macro) | No new classifier; every chip traces to a named artifact + asof; MSP-R2 audit note in PR |
 | **W6 — ladders + drawer depth** | Weakest-links / Working-for-you lists both surfaces; per-name drawer v2 rows; dossier link-outs; optional user conviction tag (supabase column + RLS in same PR — and commit the FULL `portfolio_positions` DDL as the schema-of-record while touching it: census found the CREATE TABLE was never version-controlled, only the RLS in `templates/uwp_supabase.sql`). (macro + terminal) | Ladder ordering = named rung + printed count ONLY (reviewer asserts no hidden scalar) |
 | **W7 — outcome ledger + Lab** | `data/psi_ledger/` nightly appender (universe + archetypes, budget-stamped, off render path) + Calibration Lab section. (macro) | Ledger rows carry construction versions; no user data (grep-gate in CI); Lab copy below-the-fold, falsifier-language law |
-| **W8 — composite prereg (docs-only)** | `research/PSI_COMPOSITE_PREREG.md` (§12 gates frozen) + Study-1 runner behind it. NO user-facing output. | Prereg committed BEFORE any study code runs; DNR §3 estimator fences cited inline |
-| Come-backs (tracked, not built now) | Foreign factor models (WRI §5-A: Asia-close collection lane first); realized-corr client-side bake; UWP W2.5 multi-list UI; alerts/sentinel symbol-only extension (B6 pattern); regime-conditioned thresholds study; tape-character read prereg | Each needs its own small charter/PR |
+| **W8 — weighting prereg + launch sanity memo (docs+study)** | `research/PSI_COMPOSITE_PREREG.md` (§12 gates frozen) + Study-1 runner + the §12 launch sanity read on the v0 construction. | Prereg committed BEFORE any study code runs; DNR §3 estimator fences cited inline; **W9 may not ship the score without the sanity memo** |
+| **W9 — Portfolio Health Score** | §3.1 score: client (`risk_core.js` extension) + server (composer `score` section) + goldens; hero UI both surfaces (design-first, crops); Tier-2 receipt (version/weights/coverage/grading status); §11 ledger grades it from day one. (macro + terminal) | §3.1.2 construction law asserted in review; anon and signed-in identical score on fixtures; scope-fence grep (score consumed nowhere outside display/digest) |
+| **W10 — Public portal + funnel** | §19.2 anon-flow polish + conversion moments; §19.3 landing page `portfolio_analyzer.html` (public-nav family, live demo widget, SEO/zh); §19.4 onboarding portfolio step; packet re-tier to free-account (§19.1). (macro; design-first, Luna) | Gate 11 (zero walls before value) e2e-verified anon→analysis→signup→fold-in→tracked; SEO collision check vs #4330/SEO-Supercharge recorded in-PR; onboarding degrade-to-skip proven |
+| **W11 — Daily digests** | §19.5: change-detection composer (brief-v2 builders reused), mailer integration (`cls='marketing'`, idem per user-day), prefs toggle + account UI, digest-cursor table (DDL+RLS in-PR), quiet-day suppression, weekly heartbeat default. (macro) | Gate 12 end-to-end: opt-in → change → ONE email → one-click unsub honored (live test); no position values in email_log/server logs (grep gate); mail-off mode degrades clean |
+| **W12 — Ticker news feeds** | §19.6: portfolio news panel + drawer rows (anon client-join; packet `news` for accounts); news.html per-ticker feed views + "your book" filter. (macro) | ACTIVE_BUILD_MAP re-check vs live news/x-growth lanes recorded in-PR; verbatim display only (no LLM re-summary — A7) |
+| **W13 — Live layer + web-app polish** | §19.8: `/api/pfolio/quotes` batch endpoint (quote-ladder wrap, rate-limited, delay-honest), visible-tab polling, optimistic-edit recompute, per-name expandable rows + `ilx` sparklines, Company-Intel drawer card (§19.7), Terminal deep links. (macro + tiny terminal link PR) | Quote labels carry the honest delay vocabulary; hidden-tab pause proven; reduced-motion honored; endpoint added to the restart regex + self-heal test |
+| Come-backs (tracked, not built now) | Foreign factor models (WRI §5-A: Asia-close collection lane first); realized-corr client-side bake; UWP W2.5 multi-list UI; alerts/sentinel symbol-only extension (B6 pattern); regime-conditioned thresholds study; tape-character read prereg; deterministic fundamentals score-leg from forensics planes (§19.7); macro-quotes Worker upgrade (billing) | Each needs its own small charter/PR |
 
 Sequencing: W1 → W2 → W3 form the critical path. W4/W5/W6 are parallelizable after W2
-(W4's terminal render rides W3). W7/W8 independent after W2. Every macro PR: label
-`merge-on-green` and let the sweeper land it; every terminal PR: the terminal repo's own
-definition-of-done (PR → CI → merge → `/opt/terminal/terminal-build.sh` deploy → live
-verify at app.mastermind-x.com).
+(W4's terminal render rides W3). W7/W8 independent after W2; **W9 requires W7 (ledger
+live) + W8 (sanity memo)**; W10 requires W9 (the score is the landing hook) and lands
+the packet re-tier with it; W11 requires W2+W3 (diff source + composer) and should
+follow W9 so digests carry the score; W12/W13 parallelizable after W2. Suggested order
+after the critical path: W7 → W8 → W9 → W10/W11 in parallel → W12/W13 → W4/W5/W6
+interleaved where idle. Every macro PR: label `merge-on-green` and let the sweeper land
+it; every terminal PR: the terminal repo's own definition-of-done (PR → CI → merge →
+`/opt/terminal/terminal-build.sh` deploy → live verify at app.mastermind-x.com).
 
 ## 15. Codex execution protocol (operator-directed)
 
 - **Subagents**: run this program with **Sol, Luna, and Terra** as standing lanes —
-  **Sol** = data/engine lanes (W2 ctx bake, W3 composer + goldens, W7 ledger: pure
-  functions, tests-first, budget stamps); **Luna** = design + UI lanes (the §13
-  design-spec-first waves: mockups → crops → exact markup/CSS pinned → then build;
-  Luna owns visual quality on BOTH idioms and never ships a surface without the crops);
-  **Terra** = verification/QA lanes (field-presence census, golden parity harness,
-  advice-filter/privacy grep gates, live verification passes, the §0 gate checklist on
-  every PR). The main Codex loop plans, adjudicates, reviews Luna's design against
-  §13, and owns merges.
+  **Sol** = data/engine lanes (W2 ctx bake, W3 composer + goldens, W7 ledger, W9 score
+  math, W11 digest engine, W13 quotes endpoint: pure functions, tests-first, budget
+  stamps); **Luna** = design + UI lanes (the §13/§19 design-spec-first waves: mockups →
+  crops → exact markup/CSS pinned → then build; Luna owns the score hero, the landing
+  page, the onboarding step, the web-app polish, and visual quality on BOTH idioms —
+  never ships a surface without the crops); **Terra** = verification/QA lanes
+  (field-presence census, golden parity harness, advice-filter/privacy/scope-fence grep
+  gates, email-compliance live tests, anon-funnel e2e, live verification passes, the §0
+  gate checklist on every PR). The main Codex loop plans, adjudicates, reviews Luna's
+  design against §13/§19, and owns merges.
 - **Efficient model use**: route mechanical sweeps (census, fixture regeneration, crop
   capture) to the cheapest capable tier; reserve the strongest tier for design choices,
   the composer/math code, and adversarial review of every wave (this repo's routing
@@ -655,20 +745,26 @@ verify at app.mastermind-x.com).
 
 ## 17. Non-goals (restated so nobody re-opens them)
 
-No fused composite score at any grain (until a §12 ruling); no sizing/allocation/
-optimizer/hedge suggestions; no VaR/ES; no short signals; no new estimators or
-classifiers (incl. any "market character" read) without prereg; no per-user compute on
-the render path; no engine reads of user holdings (two-organisms); no new collectors
-(foreign factor models stay chartered-not-built); no operator held-desk changes
-(Mastermind §5–9 untouched); no LLM-originated content in the brief; no "validated";
-no falsifier vocabulary on user surfaces.
+No score AUTHORITY — the Health Score never feeds boards/rankers/NW/sizing/alerts or any
+engine read, and never leaves the portfolio-display + digest layer (§3.1.2 fence); no
+sizing/allocation/optimizer/hedge suggestions; no VaR/ES; no short signals; no new
+estimators or classifiers (incl. any "market character" read) without prereg; no per-user
+compute on the render path; no engine reads of user holdings (two-organisms); no new
+collectors (foreign factor models stay chartered-not-built); no operator held-desk changes
+(Mastermind §5–9 untouched); no LLM-originated content in the brief, digests, or score
+(A7); no "validated"; no falsifier vocabulary on user surfaces; no dark-pattern signup
+walls in the freebie flow (gate 11).
 
 ## 18. Open items defaulted (operator may override; defaults chosen so Codex is never blocked)
 
-1. **Tier gating**: brief v2 `data` packet = Pro (matches the BRIEF charter's Pro
-   pillar); watchlist client-side WRI features keep their current (free-with-account)
-   tier; options-posture + realized-corr rows (packet-fed) render as Pro with the
-   in-place teaser for others. DEFAULT: as stated.
+1. **Tier gating (superseded by §19.1 round-2 directive)**: anon = full client-side
+   analysis incl. the Health Score; free account = tracking + daily digests + the server
+   `data` packet (realized corr, options posture, richer news); Pro = AI narrative brief
+   sections + Brain portfolio chat + deepest options + unlimited AI. DEFAULT: as stated;
+   the operator may re-slice which packet rows are free vs Pro without re-chartering.
+1b. **Digest cadence**: 1/day hard cap, change-triggered; weekly "all quiet" heartbeat ON
+   by default (operator may kill); send window = post-nightly morning ET. DEFAULT: as
+   stated.
 2. **ctx size overflow**: if v2 exceeds 2.5 MB → split sidecar `portfolio_ctx_x.json`
    (options/filings detail) lazy-fetched. DEFAULT: measure first, split only on breach.
 2b. **`psi_returns.v1` home**: R2 (options_hub publish pattern) with API-side TTL cache;
@@ -680,6 +776,151 @@ no falsifier vocabulary on user surfaces.
    Book. DEFAULT: as stated (Luna may re-order within the page with crops as evidence).
 
 ---
+
+## 19. The freebie funnel (operator directive 2026-08-03 round 2)
+
+The portfolio analyzer is the site's **lead magnet**: give real value FIRST, anonymously;
+convert to a free account for permanent tracking + daily emails; let the paid relationship
+grow from love of the free tier. This section charters the funnel infrastructure. The
+existing UWP logged-out mode + localStorage→Supabase fold-in (already built,
+`templates/watchstore.js`) is the funnel's spine — the anon→signup handoff costs ZERO new
+storage code.
+
+### 19.1 Tier ladder (DEFAULT — §18.1 governs overrides)
+
+| Tier | Gets | Mechanism |
+|---|---|---|
+| **Anonymous** (no account) | The FULL client-side analysis instantly: Health Score + sub-scores, Book Posture, lane chips + ladder, tape strip, per-ticker context joins (sector/theme/stage/earnings/news counts) — computed in-browser from public baked JSON; book kept in localStorage | Existing UWP local mode + WRI math + ctx/`by_ticker` public JSON; no server calls with holdings |
+| **Free account** | Everything anon has, PLUS: book synced + tracked forever (Supabase), **daily change-triggered digest emails**, the server risk packet (realized corr, options posture, richer news feed), score history over time | Signup → watchstore fold-in (built) → `/api/portfolio/brief` re-tiered to free-account (was Pro) |
+| **Pro** | The AI-composed prose brief ("through the desk's eyes" narrative sections), Mastermind/Brain portfolio chat, deepest options analytics, unlimited AI runs — the existing Pro pillar, now sitting ON TOP of a generous free layer | Existing entitlement machinery; endpoint splits `data` (free) from narrative `sections` (Pro) |
+
+Re-tiering note: the BRIEF charter made the brief Pro-only; the operator's round-2 funnel
+strategy supersedes that for the DATA packet. The endpoint keeps ONE route; tier resolution
+decides which parts render (packet → free account; narrative prose + Brain → Pro). Anon
+users never hit the endpoint at all (client math). Update `config/plans.yml` feature rows +
+the pricing matrix ONLY when the feature is live (BRIEF §5 discipline).
+
+### 19.2 Anonymous instant-analysis flow (zero walls — gate 11)
+
+Enter tickers (+ optional shares/cost) on the portfolio surface or the landing widget →
+full analysis renders in-browser in seconds. No login, no email capture, no regwall before
+the value. Conversion moments (dismissible, value-framed, Luna designs them): after first
+analysis ("keep this tracked — we'll watch it nightly and email you when something
+changes"), on return visit with a local book, on score change between visits (client can
+diff against the localStorage snapshot). The localStorage book survives; signup folds it
+into Supabase (existing code path — verify it in W10's e2e).
+
+### 19.3 Public landing/portal page (new, after the product is built)
+
+A dedicated marketing/SEO page — `templates/portfolio_analyzer.html` (public-nav family,
+`_public_nav.html.j2` + landing idiom `landing.css` conventions; the landing/products
+pages #3893/#3962 are the design benchmark) — with: hero + a LIVE demo widget (the real
+client-side analyzer seeded with an example book, "try your own" input), feature story
+(score → lanes → tape → emails), honest screenshots, CTA into the real surface. SEO: this
+page joins the sitemap + entity package estate; check `#4330` (SEO entity package) and the
+SEO Supercharge charter for collisions before building; hreflang/zh parity per house SEO
+law. The funnel law (spawn-handoff §7) applies: the EXPERIENCE lives where the users are
+— the landing page sells it, `watchlist.html` IS it.
+
+### 19.4 Onboarding integration
+
+The signup/onboarding flow (the landing `onboard.js`/`onboard.css` estate) gains a
+portfolio step: "add the stocks you own — we'll analyze and track them" (skippable, with
+the analyzer preview inline where feasible). If the user arrived FROM the analyzer with a
+local book, the step becomes a confirm ("we found your 8 names — track these?"). Careful:
+the onboarding estate shipped through the 2026-07-23 postmortem — read
+`spawn-handoff-quality-law` gates before touching it; crops required; the flow must
+degrade to skip cleanly.
+
+### 19.5 Daily digest emails (the retention engine)
+
+- **Pipeline**: a nightly post-ctx job (off render path, macro-api host or ops lane) that,
+  per opted-in free/Pro account: loads the user's book (Supabase), composes the DIFF vs
+  the previous ctx (role transitions per name, lanes newly elevated/cleared, score delta,
+  posture change, earnings entering the 10-day window, news items on holdings, tape-state
+  changes touching the book), renders a deterministic bilingual email (brief-v2 section
+  builders reused — same composer, email template skin), and sends via `app/mailer.py`
+  `send(cls='marketing', idem_key=f"psi_digest:{uid}:{asof}")` — idempotent per user-day,
+  suppression-honoring, one-click unsub (gate 12).
+- **Change-triggered**: a quiet day (no diffs) sends NOTHING. A weekly "still watching —
+  all quiet" heartbeat is a §18 default (ON weekly, operator may kill it).
+- **Privacy**: the job reads user books at send time and persists ONLY send-ledger
+  metadata (`email_log` row — no position values, no per-name states in the ledger).
+  Digest state cursor (last-sent asof + last state hash per user) lives in a new
+  Supabase table (RLS, DDL in-PR per UWP-R5) — NOT in repo artifacts.
+- **Consent**: explicit labeled toggle at signup + account page; `email_prefs` digest
+  field; transactional-class mail is NOT used for digests (they are recurring bulk).
+- **Ticker-status emails** ("changes in each ticker's status") ride the same digest —
+  per-name sections inside one daily email, never N separate emails per user per day
+  (frequency cap = 1 digest/day hard).
+
+### 19.6 Per-ticker news intelligence (surface + news.html build-out)
+
+The data plane EXISTS: `engine/intelligence.py` → `site/intelligence/by_ticker.json`
+(schema `intelligence.by_ticker.v2` — news flow from `engine.financial_news` →
+`site/news/by_ticker.json`, + alt-data signal side-by-side). PSI:
+- **Portfolio surface**: "News touching your book" panel + per-name drawer news rows
+  (headline, source, when, link), client-joined from the public JSON for anon, packet
+  `news` section for accounts (composer filters to holdings). Display-tier verbatim; no
+  LLM re-summarization in v1 (A7; the news system's own scored/calibrated fields render
+  as shipped).
+- **news.html ticker feeds**: build the per-ticker news view INTO the news estate —
+  `news.html?t=NVDA`-style filter or per-ticker anchor sections fed by `by_ticker.json`,
+  + a "your book" filter for signed-in users (client-side join of their symbols; no
+  server render). Check active x-growth/news lanes in ACTIVE_BUILD_MAP before this wave
+  (the news rail + wire lanes are hot).
+- **Digest reuse**: the packet `news` section is the digest's news block source.
+
+### 19.7 Company Intelligence context (the "insane" differentiator)
+
+The just-shipped Company Intelligence estate (per-ticker dossiers #4318/#4322, verified
+earnings evidence graph #4260-family, capital-structure/forensics planes, public teaser
+endpoint `app/company_intelligence.py` — allowlisted VERIFIED field projection,
+CDN-safe) joins the portfolio view:
+- **Per-name drawer**: a Company Intelligence card — the teaser projection for anon
+  (public endpoint), the fuller authenticated context for accounts — earnings-call
+  key facts, evidence-bound filing changes, dossier link-out. Fields render VERBATIM
+  from the contracts (`company_intelligence_context.v1` is `context_only` authority —
+  its own contract governs).
+- **Scoring boundary (binding)**: `context_only` artifacts and any LLM-derived
+  transcript features may NOT be score legs (A7 + the artifact's own authority tier —
+  Amendment 2 did not touch either). Deterministic receipt-bound numerics (XBRL-derived
+  fields from the forensics/capital-structure planes) MAY become a future
+  fundamentals leg via a versioned §12 PR once those planes expose a stable per-ticker
+  projection — tracked as a come-back, not built now.
+- **Digest**: verified company-intel EVENTS on holdings (new filing evidence, earnings
+  story updates) are digest-eligible diff items (facts with receipts, not narratives).
+
+### 19.8 The live, web-app-grade macro frontend
+
+The operator wants the macro side "beautiful and quite web-app like, since it should be a
+very live feature," showing ticker data in place. Architecture: KEEP the static-page +
+JS-island model (render-budget-free; UWP-R6 offline-degradable) and make the islands
+live:
+- **Live quotes layer**: a new thin macro-api endpoint `GET /api/pfolio/quotes?syms=…`
+  wrapping the EXISTING server quote ladder (brain_gateway `get_quote` legs: quote-hub
+  batch → VPS `quotes_full.json` snapshot — #4250) with the same honest delay vocabulary
+  ("≈15-min delayed" labels), rate-limited (view_ratelimit pattern), no auth required
+  for quotes (they're public data), batch-capped (≤60 syms). The portfolio page polls it
+  on a visible-tab interval (60s default, pause on hidden tab), updating last/chg cells
+  + book value with a subtle tick animation (reduced-motion honored). The dormant
+  `macro-quotes` Worker (UWP W4) remains the upgrade path if polling load demands it —
+  billing decision unchanged.
+- **Web-app feel** (Luna's design brief): instant-render skeletons; optimistic CRUD on
+  positions (watchstore already local-first); live score/posture recompute on every
+  edit (client math is pure — recompute is free); per-name expandable rows with
+  quote + day range + mini context (stage word, sector class, next earnings, news
+  count) and an `ilx` sparkline (SSR-safe, never Plotly); smooth section transitions;
+  the page never blocks on network (baked JSON first, live layers hydrate in).
+- **Per-ticker data in place**: the drawer (§13.1 ⑤ + §19.6/19.7 rows) is the "show
+  ticker data there" answer — quote, technical state, options context, news, company
+  intel, dossier/stock-page link-outs (`site/stocks/<T>.html` static dossiers exist for
+  ~1,595 names).
+- **Terminal linkage**: deep links both ways — each holding row links to the Terminal
+  chart (`app.mastermind-x.com` symbol route) and the Terminal Portfolio page links
+  back to the macro analyzer; the SAME Supabase book renders on both (already true);
+  brief v2 packet renders on both (W3). Live quotes on the Terminal side stay on ITS
+  quote hub (separate plane — do not cross the streams).
 
 ## App-A. Engine/artifact inventory (verified 2026-08-03 — grep before wiring, never from memory)
 
