@@ -86,6 +86,42 @@ mode + synthesis copy only.
   every organ panel under light; fix contrast at the SHELL level (scoped overrides)
   without forking organ CSS.
 
+## §1b Shell visual spec (Fable-pinned; builders implement EXACTLY — palette/type/layout
+choices are made here, not downstream)
+
+- **Rail geometry:** desktop ≥1100px: 200px fixed left rail, full viewport height, sticky;
+  `background: var(--panel); border-right: 1px solid var(--line);` 12px inner padding.
+  1100px→768px: collapses to 56px icon rail, labels become `data-tip` tooltips (existing
+  tooltip idiom). <768px: rail becomes a sticky TOP segmented switcher (five equal tabs,
+  icon over 10.5px label, `background:var(--panel); border-bottom:1px solid var(--line)`).
+- **Buttons:** `.si-view-btn` = glyph (18px, dashboard-icons family) + 13px/600 label,
+  9px radius, 8px vertical rhythm; default color `var(--muted)`; hover
+  `color:var(--text); background:color-mix(in srgb, var(--link) 6%, transparent)`.
+  Active `.on`: `color:var(--text); background:color-mix(in srgb, var(--link) 11%,
+  var(--panel)); border-left:3px solid var(--link)` (echoes the conviction-card accent
+  idiom; on the mobile switcher the accent moves to border-bottom). `aria-current="page"`.
+- **Rail footer** (desktop only): the as-of stamp + the self-grader chip in 10.5px muted —
+  the workspace's provenance lives with its navigation, visible from every view.
+- **View reads:** `<p class="si-view-read">` directly under each view's first heading:
+  13.5px/1.5, `color:var(--text)`, inside a hairline row `border:1px solid var(--line);
+  border-left:3px solid var(--link); border-radius:10px; background:var(--panel);
+  padding:9px 13px;` view glyph leading, `?` receipt trailing (data-tip names its inputs).
+  Composer `__siViewReads(payloads)` — plain-word EN/ZH, ≤18 words, fail-soft: any absent
+  input hides the line (never fabricate). Register examples (pinned copy shapes):
+  overview "Money is rotating — {from} is handing leadership to {to}. {n} names sit in the
+  Buy lane." · map "{n} groups lead top-right; {top} is furthest along." · moving quiet
+  form "A quiet tape — no live rotation events; {n} groups turned up this week." · money
+  from the flow-cluster regime key (display phrasing only) · explore "{n} baskets — every
+  member, every record."
+- **What-changed strip (overview):** ≤3 chips derived ONLY from payload-resident state:
+  the live handoff pair (story), days-in-state, freshly CONFIRMED turn states (turn_age ≤2).
+  Chip idiom = existing tc-chips; absent data renders nothing.
+- **Light mode:** shell is var-native (zero literal colors); every `color-mix` above was
+  chosen to hold contrast on both themes; the W3 designer pass owns organ-level light
+  fixes, the shell must not add any.
+- **Motion:** view switch = none (instant); keep the existing rvx-reveal on first mount
+  only; `prefers-reduced-motion` already governed by the page.
+
 ## §2 What does NOT change
 
 Engines, payloads, si_handoff, stubs, nav files, detail families, tests' epistemic
