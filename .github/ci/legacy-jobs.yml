@@ -4169,6 +4169,33 @@ jobs:
       - name: brain SSE keepalive + tape decode
         run: python -m pytest tests/test_brain_sse_keepalive.py tests/test_tape_decode.py -q
 
+  unrun-ops-workers:
+    # Publish-ops, worker plumbing and live-plane integrity: the dead-asset
+    # reference guard and ticker-link integrity over the shipped estate, the
+    # conflicted-autostash containment (P0 2026-08-01) and render-checkout
+    # bound over the self-hosted git planes, the admin Research Tools SPA
+    # directory, the earnings worker's terminal intake + launchd assets, the
+    # China board watch-lane artifact contract, and the live session-floor
+    # guard. None was named by any run: step before the 2026-08-03 backfill.
+    if: ${{ false }}
+    timeout-minutes: 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: dead-asset refs + rendered ticker links over the shipped estate
+        run: python -m pytest tests/test_check_site_asset_refs.py tests/test_rendered_ticker_links.py -q
+      - name: git-plane containment — conflicted-autostash guard + render checkout bound
+        run: python -m pytest tests/test_push_conflict_guard.py tests/test_render_checkout_bound.py -q
+      - name: admin research tools + earnings worker (terminal intake + launchd assets)
+        run: python -m pytest tests/test_admin_research_tools.py tests/test_earnings_worker_terminal.py tests/test_earnings_worker_launchd.py -q
+      - name: china board watch-lane artifact + live session-floor guard
+        run: python -m pytest tests/test_china_board_watch_lane.py tests/test_risk_state_live_session_floor.py -q
+
   unrun-builders-render:
     # page/render builders whose output ships to the site.
     if: ${{ false }}
