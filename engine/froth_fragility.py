@@ -51,6 +51,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config, nyse_calendar
 
 log = logging.getLogger(__name__)
@@ -340,11 +341,16 @@ def _parab_history(closes: pd.DataFrame, spy: pd.Series | None, asof: str | None
     if asof and today_val is not None:
         hist.loc[pd.Timestamp(asof)] = float(today_val)
         hist = hist[~hist.index.duplicated(keep="last")].sort_index()
-    try:
-        p.parent.mkdir(parents=True, exist_ok=True)
-        hist.rename("pct_parab").to_frame().to_parquet(p)
-    except Exception as e:  # noqa: BLE001
-        log.debug("froth_fragility: parab history write failed (%s)", e)
+    # PERSIST is nightly-only: this is a keep-last accruing cache under data/, and
+    # nightly is the sole advancer — an intraday/off-lane build after the nightly would
+    # overwrite the day's stamped value. The read + in-memory append above stay ungated
+    # so an off-lane snapshot renders the identical series.
+    if _ledger_advance_enabled():
+        try:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            hist.rename("pct_parab").to_frame().to_parquet(p)
+        except Exception as e:  # noqa: BLE001
+            log.debug("froth_fragility: parab history write failed (%s)", e)
     return hist
 
 
@@ -1166,7 +1172,14 @@ def _last(series_name: str) -> float | None:
 
 def append_log(snap: dict | None, latest: dict | None = None, path: str | Path | None = None) -> bool:
     """Append today's firing (realized fields filled later by resolve()). Idempotent per
-    asof. Bakes anchors + pre-registered EN/ZH HIT labels. Never raises."""
+    asof. Bakes anchors + pre-registered EN/ZH HIT labels. Never raises.
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of data/ forward
+    ledgers. The advancing caller is engine/run.py on daily.yml's engine job; the same
+    run.py executes on closing-bell and the re-render lanes, where the gauge renders
+    but must not append (idempotent-per-asof keep-first displaces permanently)."""
+    if not _ledger_advance_enabled():
+        return False
     try:
         if not snap or not snap.get("asof") or snap.get("headline") is None:
             return False
@@ -1228,7 +1241,12 @@ def resolve(qqq_closes: dict, smh_closes: dict | None = None, vix_highs: dict | 
     """Grade matured rows from {iso_date: value} maps. HIT per the pre-registered label:
     worse of QQQ/SMH max-drawdown <= -outcome_dd_pct OR VIX intraday-high >= anchor*mult,
     over (t+1..t+h]. Grades only once h42 matures. Idempotent (graded None->dict). Returns
-    # newly graded. Never raises."""
+    # newly graded. Never raises.
+
+    Gate: COLLECT_LANE=nightly — grading IS an advance of the forward ledger, so it is
+    bound by the same sole-advancer law as append_log."""
+    if not _ledger_advance_enabled():
+        return 0
     try:
         p = Path(path) if path else _log_path()
         rows = _read_log(p)
@@ -1286,7 +1304,12 @@ def resolve(qqq_closes: dict, smh_closes: dict | None = None, vix_highs: dict | 
 
 def resolve_from_store(path: str | Path | None = None) -> int:
     """Convenience: load QQQ/SMH closes + VIX intraday highs from the store and grade any
-    matured firings. Lets run.py accrue the forward log in one call. Never raises."""
+    matured firings. Lets run.py accrue the forward log in one call. Never raises.
+
+    Self-gated rather than relying on resolve(): the store reads below happen before
+    the delegation, so the gate must be the first statement here too."""
+    if not _ledger_advance_enabled():
+        return 0
     try:
         from lib import store
         qqq = store.read("yahoo", "QQQ")

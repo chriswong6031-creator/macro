@@ -3,7 +3,8 @@
 Covers:
   * compute_promotion_readiness: ready/approaching/projected_ready_date math
   * _load_qual_ladder_families: parses claim_family from qual_ladder.yml
-  * First-cross alert dedupe (fires once, not on re-run)
+  * First-cross alert dedupe (fires once, not on re-run; key released on
+    ready=False so an honest later re-cross alerts again)
   * Registry sync idempotency (_refresh_qledger_promotion hook)
   * Grader-quiet log accumulates and resets correctly
   * run_readiness_post_step: end-to-end non-fatal wrapper
@@ -241,6 +242,84 @@ class TestFirstCrossAlertDedupe:
              patch("scripts.notify.send_discord", return_value=True):
             grader.run_readiness_post_step(root, n_graded_today=5, n_open=100)
         assert not sent, "Unexpected alert for non-ready family"
+
+    # -- two-sided dedup: release on ready=False, re-fire on honest re-cross --
+
+    @staticmethod
+    def _readiness(ready: bool, ci_low: float) -> dict:
+        """Minimal compute_promotion_readiness() return for one family×horizon."""
+        return {
+            "altdata": {
+                "5": {
+                    "n_dates": 27, "needed": 25,
+                    "wilson_ci_low": ci_low, "hit_rate": 0.51,
+                    "excess_mean": -0.0026, "ready": ready,
+                    "approaching": not ready, "projected_ready_date": None,
+                    "reason": "test",
+                }
+            },
+            "_duel_context": {},
+        }
+
+    def test_stale_key_released_when_family_drops_ready(self, root):
+        """A fired key whose family×horizon reads ready=False is dropped (so a
+        later honest re-cross can alert); unrelated __grader_quiet keys survive."""
+        fired_path = root / "data" / "qledger" / "readiness_alerts_fired.json"
+        fired_path.write_text(json.dumps({
+            "altdata@5d": {"fired_at": "2026-07-28T00:37:16+00:00",
+                           "n_dates": 27, "wilson_ci_low": 0.339853},
+            "__grader_quiet_2026-07-28": {"fired_at": "2026-07-28T00:37:16+00:00",
+                                          "quiet_days": 2},
+        }), encoding="utf-8")
+        sent: list[str] = []
+        with patch("scripts.notify.send_telegram", side_effect=lambda m: sent.append(m) or True), \
+             patch("scripts.notify.send_discord", return_value=True), \
+             patch("scripts.grade_qledger.compute_promotion_readiness",
+                   return_value=self._readiness(ready=False, ci_low=0.34)):
+            grader.run_readiness_post_step(root, n_graded_today=5, n_open=100)
+        fired = json.loads(fired_path.read_text())
+        assert "altdata@5d" not in fired, "Stale dedup key not released on ready=False"
+        assert "__grader_quiet_2026-07-28" in fired, "Unrelated grader-quiet key dropped"
+        assert not sent, "No alert should fire while not ready"
+
+    def test_refires_after_release_on_honest_recross(self, root):
+        """The radar@5d trap: an entry fired under a since-withdrawn gate must not
+        suppress the alert when the family later honestly crosses the bar."""
+        fired_path = root / "data" / "qledger" / "readiness_alerts_fired.json"
+        fired_path.write_text(json.dumps({
+            "altdata@5d": {"fired_at": "2026-07-28T00:37:16+00:00",
+                           "n_dates": 27, "wilson_ci_low": 0.339853},
+        }), encoding="utf-8")
+        sent: list[str] = []
+        with patch("scripts.notify.send_telegram", side_effect=lambda m: sent.append(m) or True), \
+             patch("scripts.notify.send_discord", return_value=True):
+            with patch("scripts.grade_qledger.compute_promotion_readiness",
+                       return_value=self._readiness(ready=False, ci_low=0.34)):
+                grader.run_readiness_post_step(root, n_graded_today=5, n_open=100)
+            assert not sent, "No alert should fire on the release pass"
+            with patch("scripts.grade_qledger.compute_promotion_readiness",
+                       return_value=self._readiness(ready=True, ci_low=0.52)):
+                grader.run_readiness_post_step(root, n_graded_today=5, n_open=100)
+        assert any("W6 gate OPEN" in m for m in sent), \
+            "Alert did not re-fire after an honest re-cross"
+        fired = json.loads(fired_path.read_text())
+        assert fired.get("altdata@5d", {}).get("wilson_ci_low") == 0.52, \
+            "Re-fired entry should carry the new crossing's stats"
+
+    def test_dry_run_does_not_release_keys(self, root):
+        """dry_run must not mutate the fired file, including key releases."""
+        fired_path = root / "data" / "qledger" / "readiness_alerts_fired.json"
+        payload = {"altdata@5d": {"fired_at": "2026-07-28T00:37:16+00:00",
+                                  "n_dates": 27, "wilson_ci_low": 0.339853}}
+        fired_path.write_text(json.dumps(payload), encoding="utf-8")
+        with patch("scripts.notify.send_telegram", return_value=True), \
+             patch("scripts.notify.send_discord", return_value=True), \
+             patch("scripts.grade_qledger.compute_promotion_readiness",
+                   return_value=self._readiness(ready=False, ci_low=0.34)):
+            grader.run_readiness_post_step(root, n_graded_today=5, n_open=100,
+                                           dry_run=True)
+        assert json.loads(fired_path.read_text()) == payload, \
+            "dry_run mutated readiness_alerts_fired.json"
 
 
 # ──────────────────────────────────────────────────────────────────────────────

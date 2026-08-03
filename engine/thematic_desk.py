@@ -38,6 +38,7 @@ from pathlib import Path
 import pandas as pd
 
 from engine import ai_desk as _ad           # reuse _check_by / _extract_json / _cfg
+from engine import desk_ledger as _ledger_law    # run-scoped ids + immutable appends
 from engine import master_brain as _mb      # the LLM client (_call_model)
 from lib import config, store
 
@@ -212,7 +213,11 @@ def _derive_check(subject: str, lean: str, horizon: int, region: str,
             "op": op, "threshold": threshold, "horizon_d": horizon}
 
 
-def _build_thesis(t: dict, i: int, asof, region: str, ranks: list, cfg: dict) -> dict | None:
+def _build_thesis(t: dict, i: int, asof, region: str, ranks: list, cfg: dict,
+                  run_token: str = "") -> dict | None:
+    """`run_token` scopes the id to THIS run — a stale state_asof re-briefed on a later
+    run day would otherwise mint the same `{region}-{asof}-{i}` ids again, and the
+    append's first-wins gate would drop the fresh run invisibly (engine.desk_ledger)."""
     if not isinstance(t, dict):
         return None
     subject = str(t.get("subject") or "").strip()
@@ -227,7 +232,9 @@ def _build_thesis(t: dict, i: int, asof, region: str, ranks: list, cfg: dict) ->
     conv = str(t.get("conviction") or "low").strip().lower()
     conv = conv if conv in _CONVICTIONS else "low"
     return {
-        "id": f"{region}-{asof}-{i + 1}", "market": region, "subject": subject, "lean": lean,
+        "id": (f"{region}-{asof}-{run_token}-{i + 1}" if run_token
+               else f"{region}-{asof}-{i + 1}"),
+        "market": region, "subject": subject, "lean": lean,
         "conviction": conv, "horizon_d": horizon, "thesis": t.get("thesis"),
         "evidence": [str(e) for e in (t.get("evidence") or []) if e][:5],
         "dissent": t.get("dissent"),
@@ -471,8 +478,9 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
     brief["confidence"] = conf if conf in _CONVICTIONS else "low"
     raw = parsed.get("theses") if isinstance(parsed.get("theses"), list) else []
     theses = []
+    token = _ledger_law.run_token(brief["generated_at"])
     for t in raw[: int(cfg.get("max_theses", 3))]:
-        th = _build_thesis(t, len(theses), asof, region, ranks, cfg)
+        th = _build_thesis(t, len(theses), asof, region, ranks, cfg, run_token=token)
         if th is not None:
             theses.append(th)
     brief["theses"] = theses
@@ -504,21 +512,17 @@ def _append_ledger(brief: dict, root) -> None:
         d = Path(root).joinpath(*_LEDGER_DIR)
         d.mkdir(parents=True, exist_ok=True)
         asof = brief.get("state_asof")
-        seen = set()
         lp = d / "theses.jsonl"
-        if lp.exists():
-            for line in lp.read_text().splitlines():
-                try:
-                    seen.add(json.loads(line).get("id"))
-                except Exception:  # noqa: BLE001
-                    pass
+        rows = []
+        for th in theses:
+            check = (th.get("falsifier") or {}).get("check") or {}
+            rows.append({**th, "market": brief.get("market"), "logged_at": _now_iso(),
+                         "state_asof": asof, "entry_levels": _entry_levels(check, asof, root)})
+        # First-wins as before, but LOUD (engine.desk_ledger): with run-scoped ids a
+        # rejection here means id minting regressed, never a routine re-run.
+        rows = _ledger_law.reject_existing_ids(lp, rows, "thematic_desk")
         with open(lp, "a") as fh:
-            for th in theses:
-                if th["id"] in seen:
-                    continue
-                check = (th.get("falsifier") or {}).get("check") or {}
-                row = {**th, "market": brief.get("market"), "logged_at": _now_iso(),
-                       "state_asof": asof, "entry_levels": _entry_levels(check, asof, root)}
+            for row in rows:
                 fh.write(json.dumps(row, default=str) + "\n")
     except Exception as e:  # noqa: BLE001
         log.warning("thematic_desk ledger append failed: %s", e)
@@ -602,12 +606,17 @@ def _bucket(rows: list) -> dict:
             "dir_accuracy": round(dok / n, 3) if n else None}
 
 
-def _calibration_note(overall: dict) -> str:
+def _calibration_note(overall: dict, null_line: str = "") -> str:
     if overall["n"] == 0:
         return ("No thematic theses scored yet — the track record begins once the first "
                 "check-by dates pass. Until then every lean is a provisional hypothesis.")
     parts = [f"{overall['n']} scored, hit-rate {overall['hit_rate']} "
              f"(directional accuracy {overall['dir_accuracy']})."]
+    if null_line:
+        # The measured no-skill base rate sits BESIDE the hit-rate: `hit` is a
+        # not-falsified endpoint whose null is far above one-half, and this note feeds
+        # the next brief's conviction-calibrating prompt (engine.desk_placebo).
+        parts.append(null_line)
     if overall["n"] < 20:
         parts.append("Sample is small — treat conviction as provisional; the honest "
                      "expectation is no exploitable forward edge (display-only).")
@@ -696,7 +705,8 @@ def score_ledger(root=None, today=None) -> dict | None:
             "by_market": {m: _bucket([s for s in dec if s.get("market") == m]) for m in REGION},
             "by_conviction": {c: _bucket([s for s in dec if s.get("conviction") == c])
                               for c in _CONVICTIONS},
-            "calibration_note": _calibration_note(overall),
+            "calibration_note": _calibration_note(
+                overall, null_line=_ledger_law.placebo_lines(root, "thematic_desk")[0]),
             "recent": [{k: s.get(k) for k in ("id", "market", "subject", "lean",
                         "conviction", "outcome", "realized", "check_by")}
                        for s in sorted(dec, key=lambda s: s.get("check_by") or "",

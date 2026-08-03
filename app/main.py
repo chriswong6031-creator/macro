@@ -1816,6 +1816,16 @@ try:
 except ImportError:
     pass  # app/research.py not yet present — vault routes unavailable until RV W2
 
+# Earnings Wire member continuations are never static objects.  The public page
+# carries only its redacted preview; this authenticated route reads the complete
+# continuation from the existing private Research Vault bucket after enforcing
+# site_full at the API boundary.
+try:
+    from app.earnings import router as earnings_router  # noqa: E402
+    app.include_router(earnings_router)
+except ImportError:
+    pass  # additive paid route remains unavailable if its module is absent
+
 # Public per-ticker event context for the static dossier layer.  The router
 # delegates retrieval and immutable-receipt verification to the existing
 # context-only Company Intelligence reader; it is deliberately not a signal or

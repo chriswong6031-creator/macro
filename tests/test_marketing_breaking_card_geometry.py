@@ -101,24 +101,24 @@ def _live_iran_headline() -> str:
     return IRAN_HEADLINE
 
 
-_HERO_RE = re.compile(r'font-size="([0-9.]+)" font-weight="800"[^>]*>([^<]*)</text>')
+# The hero's own signature is its negative tracking — the one attribute no
+# other 800-weight text on the card carries. The old discriminator (excluding
+# the footer URL by its fixed 15px size) died with the 1080 square card: the
+# brand bar now scales with band_h, so the URL renders at ~27px and a size
+# filter cannot tell it from a stepped-down hero line.
+_HERO_RE = re.compile(
+    r'font-size="([0-9.]+)" font-weight="800" font-family="sans-serif" '
+    r'letter-spacing="-0.015em">([^<]*)</text>'
+)
 
 
 def _hero_lines(svg: str) -> list[str]:
-    """The headline <text> lines, in render order.
-
-    The brand-bar URL lockup shares font-weight 800, so it is excluded by its
-    fixed 15px size — the headline ladder never reaches down there.
-    """
-    return [m.group(2) for m in _HERO_RE.finditer(svg) if m.group(1) != "15"]
+    """The headline <text> lines, in render order."""
+    return [m.group(2) for m in _HERO_RE.finditer(svg)]
 
 
 def _hero_size(svg: str) -> float:
-    sizes = [
-        float(m.group(1))
-        for m in re.finditer(r'font-size="([0-9.]+)" font-weight="800"', svg)
-        if m.group(1) != "15"
-    ]
+    sizes = [float(m.group(1)) for m in _HERO_RE.finditer(svg)]
     assert sizes, "no headline text found"
     return sizes[0]
 
@@ -266,7 +266,9 @@ def test_sparse_card_fills_the_column_instead_of_centring_a_void():
     body_ys = [float(m.group(1)) for m in re.finditer(
         r'<text x="[0-9.]+" y="([0-9.]+)" fill="#C8D4EA"', svg)]
     assert body_ys, "no body baselines found"
-    box_top, box_bottom = 148.0, 560.0 - 46.0 - 16.0
+    # The 1080 square card's copy box: below the masthead+rule+eyebrow
+    # chrome (253) and above the provenance-slug/footer reservation (826).
+    box_top, box_bottom = 253.0, 826.0
     reach = (max(body_ys) - box_top) / (box_bottom - box_top)
     assert reach >= 0.68, f"content only reaches {reach:.0%} of the text column"
     # And the sparse card must answer its slack with size, not silence.
@@ -282,7 +284,9 @@ def test_dense_card_fills_the_column():
     )
     body_ys = [float(m.group(1)) for m in re.finditer(
         r'<text x="[0-9.]+" y="([0-9.]+)" fill="#C8D4EA"', svg)]
-    box_top, box_bottom = 148.0, 560.0 - 46.0 - 16.0
+    # The 1080 square card's copy box: below the masthead+rule+eyebrow
+    # chrome (253) and above the provenance-slug/footer reservation (826).
+    box_top, box_bottom = 253.0, 826.0
     reach = (max(body_ys) - box_top) / (box_bottom - box_top)
     assert reach >= 0.90, f"content only reaches {reach:.0%} of the text column"
 
@@ -318,12 +322,13 @@ def test_no_rendered_line_overflows_its_column(headline, summary):
     hero_size = _hero_size(svg)
     for ln in _hero_lines(svg):
         w = _break_text_w(_unescape(ln), hero_size, bold=True, tracking_em=-0.01)
-        assert w <= 908.0, f"headline line overflows ({w:.0f}px > 908): {ln!r}"
+        # 936 = the 1080 column; x1.03 absorbs estimator skew vs _bc_text_w.
+        assert w <= 936.0 * 1.03, f"headline line overflows ({w:.0f}px > 964): {ln!r}"
     if summary:
         body_size = _body_size(svg)
         for ln in _body_lines(svg):
             w = _break_text_w(_unescape(ln), body_size)
-            assert w <= 888.0, f"body line overflows ({w:.0f}px > 888): {ln!r}"
+            assert w <= 906.0 * 1.03, f"body line overflows ({w:.0f}px > 933): {ln!r}"
 
 
 def test_hero_uses_the_full_text_column_width():
@@ -336,9 +341,9 @@ def test_hero_uses_the_full_text_column_width():
     size = _hero_size(svg)
     widths = [_break_text_w(_unescape(ln), size, bold=True, tracking_em=-0.01)
               for ln in _hero_lines(svg)]
-    # Every line except the last must fill most of the 908px column.
+    # Every line except the last must fill most of the 936px column.
     assert len(widths) >= 2
-    assert min(widths[:-1]) >= 908 * 0.80, widths
+    assert min(widths[:-1]) >= 936 * 0.80, widths
 
 
 # ─────────────────────────────────────────────────────────────────────────────

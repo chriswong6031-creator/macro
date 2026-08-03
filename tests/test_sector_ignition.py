@@ -5,7 +5,9 @@ Covers:
                                    (resource-only), missing-leg renormalization, state map.
   engine/ignition_audit.py      — snapshot idempotency + grading POWER (synthetic matured
                                    entry graded true/false-positive; the positive control).
-  engine/basket_levels_persist.py — persist/read round-trip + idempotent merge.
+  engine/basket_levels_persist.py — persist/read round-trip + idempotent merge + the
+                                   window-trim validity contract (no cross-vintage seam
+                                   reachable via the public API; PR #4373's sibling).
 """
 from __future__ import annotations
 
@@ -212,15 +214,116 @@ def test_persist_and_read_roundtrip(tmp_path, monkeypatch):
     assert df is not None and "b1__level" in df.columns and "__bench" in df.columns
     s = blp.level_series("hk", "b1")
     assert s is not None and len(s) == 40 and s.iloc[-1] > s.iloc[0]
-    # 20d rel stamped on the as-of row only
-    assert abs(df["b1__rel20"].dropna().iloc[-1] - 0.05) < 1e-9
+    # retired schema: the payload perf block must NOT become __rel20 columns
+    assert not [c for c in df.columns if c.endswith("__rel20")]
     assert blp.bench_series("hk") is not None
+
+
+def test_persist_drops_legacy_rel20_columns(tmp_path, monkeypatch):
+    """A prior store carrying retired __rel20 columns is healed on the next write: the
+    legacy columns must not survive via the carried-columns path (they are missing from
+    the fresh frame, so without the explicit drop they would be carried forever)."""
+    monkeypatch.setattr(blp.config, "data_dir", lambda: tmp_path)
+    blp.persist(_payload(), "hk")
+    p = tmp_path / blp.DOMAIN_DIR / "hk_levels.parquet"
+    old = pd.read_parquet(p)
+    old["b1__rel20"] = np.nan
+    old.loc[old.index[-1], "b1__rel20"] = 0.05     # the as-of stamp the legacy writer left
+    old.to_parquet(p)
+    res = blp.persist(_payload(), "hk")
+    assert res["wrote"]
+    df = blp.read_levels("hk")
+    assert not [c for c in df.columns if c.endswith("__rel20")]
+    assert "b1__level" in df.columns and "__bench" in df.columns
 
 
 def test_persist_idempotent_merge(tmp_path, monkeypatch):
     monkeypatch.setattr(blp.config, "data_dir", lambda: tmp_path)
     blp.persist(_payload(), "ca")
     r2 = blp.persist(_payload(), "ca")            # second write must not error or duplicate dates
-    assert r2["wrote"]
+    assert r2["wrote"] and r2["n_trimmed"] == 0   # identical window: nothing behind the front
     df = blp.read_levels("ca")
     assert not df.index.duplicated().any()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# validity contract — the moving-base seam must be unreachable via the public API
+# (the frozen-store sibling of this defect was measured + chain-linked in PR #4373)
+# ──────────────────────────────────────────────────────────────────────────────
+
+_MOVES = [1.10, 0.95, 1.02, 1.03, 0.98, 1.04, 1.01, 0.99, 1.05, 1.02, 1.03, 0.97]
+
+
+def _seam_prices():
+    idx = pd.bdate_range("2026-01-05", periods=len(_MOVES))
+    return pd.Series(np.cumprod(_MOVES), index=idx)
+
+
+def _windowed_payload(prices, start, end, bids=("b1", "b2")):
+    """A baskets payload whose chart window is prices[start:end], each level rebased at the
+    window's own first row — exactly how engine.baskets_region recomputes nightly, which is
+    what makes two renders' series sit on different bases once the front advances.
+    b1 tracks the price path; b2 tracks its square (a distinct but rebase-consistent path)."""
+    win = prices.iloc[start:end]
+    lvl = win / win.iloc[0]
+    return {
+        "chart": {"dates": [d.strftime("%Y-%m-%d") for d in win.index],
+                  "bench": list(lvl.values),
+                  "baskets": {b: list((lvl ** (i + 1)).values) for i, b in enumerate(bids)}},
+        "baskets": [{"id": b, "perf": {"20d": {"rel": 0.01}}} for b in bids],
+    }
+
+
+def test_trim_forbids_cross_seam_ratios_after_window_advance(tmp_path, monkeypatch):
+    """Two renders with the window front advanced two sessions: rows behind the new front
+    must be gone, and EVERY cross-date ratio obtainable from the store must equal the true
+    consistent-base return. The pre-fix append-merge kept D0/D1 on night-1's base, so the
+    D0→D11 ratio read P(D11)/P(D2) instead of P(D11)/P(D0) — this test fails against that
+    writer on both the trim assertion and the ratio sweep."""
+    monkeypatch.setattr(blp.config, "data_dir", lambda: tmp_path)
+    prices = _seam_prices()
+    idx = prices.index
+    assert blp.persist(_windowed_payload(prices, 0, 10), "hk")["wrote"]
+    r2 = blp.persist(_windowed_payload(prices, 2, 12), "hk")
+    assert r2["wrote"] and r2["n_trimmed"] == 2
+
+    df = blp.read_levels("hk")
+    assert df.index.min() == idx[2] and len(df) == 10   # D0/D1 unreachable: no seam exists
+    for bid, power in (("b1", 1), ("b2", 2)):
+        s = blp.level_series("hk", bid)
+        assert list(s.index) == list(idx[2:12])
+        for a in range(len(s)):
+            for b in range(a + 1, len(s)):
+                true_ret = float(prices.iloc[2 + b] / prices.iloc[2 + a]) ** power
+                assert abs(s.iloc[b] / s.iloc[a] - true_ret) < 1e-9
+    bench = blp.bench_series("hk")
+    assert bench.index.min() == idx[2] and len(bench) == 10
+
+
+def test_trim_carries_dropped_basket_single_vintage(tmp_path, monkeypatch):
+    """A basket absent from tonight's payload keeps its column at tonight's dates only.
+    Those cells were last written whole by one render (one base), so ratios inside the
+    surviving span are still true returns; its rows behind the new front are gone."""
+    monkeypatch.setattr(blp.config, "data_dir", lambda: tmp_path)
+    prices = _seam_prices()
+    idx = prices.index
+    blp.persist(_windowed_payload(prices, 0, 10, bids=("b1", "b2")), "ca")
+    blp.persist(_windowed_payload(prices, 2, 12, bids=("b1",)), "ca")   # b2 dropped tonight
+    s2 = blp.level_series("ca", "b2")
+    assert list(s2.index) == list(idx[2:10])            # night-1 vintage ∩ tonight's window
+    true_ret = float(prices.iloc[9] / prices.iloc[2]) ** 2
+    assert abs(s2.iloc[-1] / s2.iloc[0] - true_ret) < 1e-9
+
+
+def test_trim_shrinks_with_a_truncated_window_and_heals(tmp_path, monkeypatch):
+    """A truncated chart night shrinks the store to the (still consistent-base) short window
+    rather than merging a seam; the next full-window render fully restores it — the store is
+    a nightly-recomputed cache, so the shrink is self-healing by construction."""
+    monkeypatch.setattr(blp.config, "data_dir", lambda: tmp_path)
+    prices = _seam_prices()
+    blp.persist(_windowed_payload(prices, 0, 12), "hk")
+    r_short = blp.persist(_windowed_payload(prices, 8, 12), "hk")
+    assert r_short["wrote"] and r_short["n_trimmed"] == 8
+    assert len(blp.read_levels("hk")) == 4
+    blp.persist(_windowed_payload(prices, 0, 12), "hk")
+    assert len(blp.read_levels("hk")) == 12

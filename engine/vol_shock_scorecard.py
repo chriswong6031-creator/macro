@@ -39,6 +39,8 @@ import logging
 from datetime import date
 from pathlib import Path
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
+
 log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
@@ -752,7 +754,15 @@ def append_log(snap: dict | None, latest: dict | None = None,
                path: str | Path | None = None) -> bool:
     """Append today's firing (realized fields filled later by resolve()). Idempotent
     per date. Stores the as-of VIX level as the anchor for the VIX-jump outcome.
-    Returns True if a row was added. Never raises."""
+    Returns True if a row was added. Never raises.
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of data/ forward
+    ledgers. The advancing caller is engine/run.py on daily.yml's engine job; run.py
+    also executes on closing-bell and the engine-render/render re-render lanes, where
+    the gauge still renders but the log must not advance (idempotent-per-date
+    keep-first: an off-lane row would displace the nightly one permanently)."""
+    if not _ledger_advance_enabled():
+        return False
     try:
         if not snap or snap.get("score") is None or not snap.get("asof"):
             return False
@@ -785,7 +795,12 @@ def resolve(spy_closes: dict, vix_highs: dict | None = None,
     `vix_highs` are {iso_date: value} maps that MUST include the firing date (the
     anchor) and ≥ horizon forward trading days. HIT per the pre-registered label:
     SPY drawdown ≤ −outcome_spy_move_pct OR VIX intraday-high ≥ vix_ref×mult over
-    (t+1..t+N]. Returns # newly resolved. Never raises."""
+    (t+1..t+N]. Returns # newly resolved. Never raises.
+
+    Gate: COLLECT_LANE=nightly — grading IS an advance of the forward ledger, so it
+    is bound by the same sole-advancer law as append_log."""
+    if not _ledger_advance_enabled():
+        return 0
     try:
         cfg = cfg or _cfg()
         horizon = int(cfg["outcome_horizon_d"])
@@ -835,7 +850,12 @@ def resolve(spy_closes: dict, vix_highs: dict | None = None,
 def resolve_from_store(path: str | Path | None = None) -> int:
     """Convenience: load SPY closes + VIX intraday highs from the parquet store and
     resolve any matured firings. Lets run.py accrue the forward log in one call.
-    Never raises."""
+    Never raises.
+
+    Self-gated rather than relying on resolve(): the store reads below happen before
+    the delegation, so the gate must be the first statement here too."""
+    if not _ledger_advance_enabled():
+        return 0
     try:
         from lib import store
         spy = store.read("yahoo", "SPY")

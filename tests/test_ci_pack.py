@@ -182,13 +182,27 @@ def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
     paths = set(triggers["pull_request"]["paths"])
     required_paths = {
         "app/company_intelligence.py",
+        "app/earnings.py",
         "tests/test_company_intelligence_api.py",
         "site/assets/js/company-intelligence-dossier.js",
         "templates/ticker.html.j2",
         "engine/earnings_narrative/public_wire.py",
+        "engine/earnings_narrative/context_packets.py",
+        "engine/earnings_narrative/private_publication.py",
+        "engine/neuralweb/earnings_context_reader.py",
+        "engine/prophet_bridge.py",
         "scripts/build_earnings_public_wire.py",
+        "scripts/publish_earnings_private_store.py",
         "templates/earnings_wire/**",
         "tests/test_earnings_public_wire.py",
+        "tests/test_earnings_api.py",
+        "tests/test_earnings_private_store.py",
+        "tests/test_prophet_bridge.py",
+        "tests/test_earnings_worker_launchd.py",
+        "tests/test_earnings_worker_terminal.py",
+        "ops/bootstrap_earnings_worker.sh",
+        "ops/launchd/com.mastermind.earnings-worker.plist",
+        "ops/launchd/run_earnings_worker.sh",
         "tests/test_ticker_dossier_render_lane.py",
     }
     assert required_paths <= paths
@@ -207,6 +221,10 @@ def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
     )
     publish_ops = job_commands("unrun-publish-ops")
     assert "tests/test_earnings_public_wire.py" in publish_ops
+    assert "tests/test_earnings_api.py" in publish_ops
+    assert "tests/test_earnings_private_store.py" in publish_ops
+    assert "tests/test_earnings_worker_launchd.py" in publish_ops
+    assert "tests/test_earnings_worker_terminal.py" in publish_ops
     assert "tests/test_ticker_dossier_render_lane.py" in publish_ops
     assert "tests/test_ticker_pages.py" in publish_ops
 

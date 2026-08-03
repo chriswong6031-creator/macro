@@ -50,23 +50,28 @@
       </section>
 
       <section class="ewa-facts" aria-label="Verified excerpts">
-        {% for fact in article.facts %}
-        <article class="ewa-fact">
-          <div class="ewa-fact-meta"><div class="ew-tags">{% for category in fact.categories %}<span>{{ category }}</span>{% endfor %}</div><span class="mono">{{ fact.quote.receipt.segment_index }}</span></div>
-          <blockquote lang="en">“{{ fact.quote.text }}”</blockquote>
-          <div class="ewa-attribution"><span>{{ fact.speaker or t('Management', '管理层') }}{% if fact.role %} · {{ fact.role }}{% endif %}</span><code>{{ fact.claim_id }}</code></div>
-          {% if fact.numeric %}
-          <div class="ewa-numerics"><span>{{ t('Exact numeric spans', '精确数值片段') }}</span>{% for numeric in fact.numeric %}<code title="{{ numeric.claim_id }}">{{ numeric.text }}</code>{% endfor %}</div>
-          {% endif %}
-        </article>
-        {% endfor %}
+        {% with facts=article.public_facts %}{% include "earnings_wire/_facts.html.j2" %}{% endwith %}
       </section>
+
+      {% if article.gate %}
+      <section class="ewa-member-gate" id="earnings-member-gate" aria-labelledby="earnings-member-gate-title">
+        <div class="ewa-gate-ghosts" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="ewa-gate-card">
+          <div class="ewa-gate-lock" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+          <span class="ewa-gate-kicker">{{ t('Member evidence layer', '会员证据层') }}</span>
+          <h2 id="earnings-member-gate-title">{{ article.locked_fact_count }} {{ t('more verified excerpts continue below.', '条更多已核验摘录在下方继续。') }}</h2>
+          <p>{{ t('You have the public source preview. Essential and Pro unlock the complete call record, every remaining numeric receipt, and the full audit table—without replacing source language with generated opinion.', '你正在阅读公开来源预览。Essential 与 Pro 可解锁完整电话会记录、全部剩余数值回执和完整审计表——不会用生成式观点替代来源原文。') }}</p>
+          <div class="ewa-gate-actions"><a href="../../plans.html">{{ t('Unlock full company intelligence', '解锁完整公司情报') }} <span aria-hidden="true">→</span></a><button type="button" data-earnings-signin hidden>{{ t('Already a member? Sign in', '已是会员？登录') }}</button></div>
+          <div class="ewa-gate-proof"><span><b>{{ article.public_fact_count }}</b>{{ t(' public excerpts', ' 条公开摘录') }}</span><span><b>{{ article.locked_fact_count }}</b>{{ t(' member excerpts', ' 条会员摘录') }}</span><span><b>{{ article.numeric_count }}</b>{{ t(' total numeric receipts', ' 个数值回执') }}</span></div>
+        </div>
+      </section>
+      {% endif %}
 
       <details class="ewa-receipts">
         <summary><span>{{ t('Inspect the source receipts', '检查来源回执') }}</span><b>{{ article.fact_count + article.numeric_count }} {{ t('bound spans', '个已绑定片段') }}</b></summary>
-        <div class="ewa-receipt-note">{{ t('Each row identifies the source body, transcript segment and byte span used to verify the visible text.', '每行标识用于核验可见文本的来源正文、电话会片段和字节范围。') }}</div>
+        <div class="ewa-receipt-note">{{ t('Each available row identifies the source body, transcript segment and byte span used to verify the visible text.', '每个可用行都标识用于核验可见文本的来源正文、电话会片段和字节范围。') }}</div>
         <div class="ewa-table-wrap"><table><thead><tr><th>{{ t('Claim', '主张') }}</th><th>{{ t('Kind', '类型') }}</th><th>{{ t('Segment', '片段') }}</th><th>{{ t('Byte span', '字节范围') }}</th><th>{{ t('Text hash', '文本哈希') }}</th></tr></thead><tbody>
-          {% for span in article.spans %}<tr><td><code>{{ span.claim_id }}</code></td><td>{{ span.kind }}</td><td class="mono">{{ span.receipt.segment_index }}</td><td class="mono">{{ span.receipt.span_start_byte }}–{{ span.receipt.span_end_byte }}</td><td><code>{{ span.receipt.text_sha256[:14] }}…</code></td></tr>{% endfor %}
+          {% with spans=article.public_spans %}{% include "earnings_wire/_receipt_rows.html.j2" %}{% endwith %}
         </tbody></table></div>
       </details>
 
@@ -74,4 +79,9 @@
     </div>
   </div>
 </article>
+{% endblock %}
+
+{% block body_scripts %}
+{% if article.gate %}<script type="application/json" id="earnings-gate-state">{{ article.gate|tojson }}</script>{% endif %}
+<script src="assets/earnings-wire.js" defer></script>
 {% endblock %}

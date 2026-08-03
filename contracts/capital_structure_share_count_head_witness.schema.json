@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_share_count_head_witness.schema.json",
+  "title": "Authenticated share-count publication head witness",
+  "description": "The mutable HMAC-authenticated v2 R2 compare-and-swap selector for one immutable share-count receipt and ledger generation. It grants no analytical or decision authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "key_id",
+    "sequence",
+    "receipt_id",
+    "receipt_sha256",
+    "receipt_byte_length",
+    "receipt_object_key",
+    "generation_id",
+    "ledger_sha256",
+    "ledger_byte_length",
+    "ledger_object_key",
+    "published_at",
+    "previous_receipt",
+    "signature"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.share_count_head_witness/v2"},
+    "key_id": {"type": "string", "minLength": 1},
+    "sequence": {"type": "integer", "minimum": 1, "maximum": 18446744073709551616},
+    "receipt_id": {"type": "string", "pattern": "^receipt:cs-share-count-materialization-v2:[a-f0-9]{64}$"},
+    "receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "receipt_byte_length": {"type": "integer", "minimum": 1, "maximum": 4194304},
+    "receipt_object_key": {"type": "string", "pattern": "^capital_structure/share_counts/v2/receipts/[a-f0-9]{64}\\.json$"},
+    "generation_id": {"type": "string", "pattern": "^generation:cs-share-count-materialization-v2:[a-f0-9]{64}$"},
+    "ledger_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "ledger_byte_length": {"type": "integer", "minimum": 1, "maximum": 134217728},
+    "ledger_object_key": {"type": "string", "pattern": "^capital_structure/share_counts/v2/generations/[a-f0-9]{64}/ledger\\.json$"},
+    "published_at": {"type": "string", "format": "date-time"},
+    "previous_receipt": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/receipt_ref"}
+      ]
+    },
+    "signature": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "receipt_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "receipt_id", "receipt_sha256", "receipt_byte_length"],
+      "properties": {
+        "sequence": {"type": "integer", "minimum": 1, "maximum": 18446744073709551616},
+        "receipt_id": {"type": "string", "pattern": "^receipt:cs-share-count-materialization-v2:[a-f0-9]{64}$"},
+        "receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "receipt_byte_length": {"type": "integer", "minimum": 1, "maximum": 4194304}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"sequence": {"const": 1}},
+        "required": ["sequence"]
+      },
+      "then": {"properties": {"previous_receipt": {"type": "null"}}},
+      "else": {"properties": {"previous_receipt": {"type": "object"}}}
+    }
+  ]
+}

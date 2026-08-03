@@ -77,7 +77,7 @@ def test_plist_is_tcc_safe_secretless_and_has_two_retry_windows():
     assert payload["WorkingDirectory"] == "/Users/chriswong/earnings-ops-wt"
     assert payload["ProgramArguments"] == [
         "/Users/chriswong/earnings-ops-wt/ops/launchd/run_with_env.sh",
-        "/Users/chriswong/flow-ops-wt/.env",
+        "/Users/chriswong/hub-ops-wt/.env",
         "/Users/chriswong/earnings-ops-wt/ops/launchd/run_earnings_worker.sh",
     ]
     assert payload["StartCalendarInterval"] == [
@@ -85,7 +85,15 @@ def test_plist_is_tcc_safe_secretless_and_has_two_retry_windows():
         {"Hour": 20, "Minute": 45},
         {"Hour": 23, "Minute": 45},
     ]
-    assert "EnvironmentVariables" not in payload
+    assert payload["EnvironmentVariables"] == {
+        "EARNINGS_LLM_BASE_URL": "http://127.0.0.1:11435/v1",
+        "EARNINGS_LLM_MODEL": "qwen3:14b",
+    }
+    assert not any(
+        marker in key.upper()
+        for key in payload["EnvironmentVariables"]
+        for marker in ("KEY", "TOKEN", "PASSWORD", "SECRET")
+    )
     assert "/Documents/" not in " ".join(payload["ProgramArguments"])
     assert "/Documents/" not in payload["WorkingDirectory"]
 
@@ -109,6 +117,19 @@ def test_env_check_reports_names_only_and_respects_local_qwen_override():
     result = _run(RUNNER, "--check-env", env=env)
     assert result.returncode == 0, result.stderr
     assert "DEEPSEEK_API_KEY" not in result.stdout
+
+    # A reachable local endpoint promotes Qwen automatically while retaining
+    # the cheap cloud fallback. A half-configured endpoint fails closed.
+    env.pop("EARNINGS_PROVIDER_ORDER")
+    env["EARNINGS_LLM_BASE_URL"] = "http://192.0.2.10:11434/v1"
+    result = _run(RUNNER, "--check-env", env=env)
+    assert result.returncode != 0
+    assert "must be configured together" in result.stderr
+    env["EARNINGS_LLM_MODEL"] = "qwen3:14b"
+    env["DEEPSEEK_API_KEY"] = "fixture-deepseek"
+    result = _run(RUNNER, "--check-env", env=env)
+    assert result.returncode == 0, result.stderr
+    assert "DEEPSEEK_API_KEY" in result.stdout
 
     env["EARNINGS_PROVIDER_ORDER"] = "codex"
     result = _run(RUNNER, "--check-env", env=env)
@@ -214,6 +235,18 @@ def test_runner_ff_updates_and_invokes_forward_only_deepseek(tmp_path: Path):
         capture_output=True,
         check=True,
     ).stdout == ""
+
+    # Once an explicit reachable endpoint/model pair is provisioned, the same
+    # worker switches to Qwen-first without changing source or its scheduler.
+    capture.unlink()
+    local_env = dict(env)
+    local_env["EARNINGS_LLM_BASE_URL"] = "http://192.0.2.10:11434/v1"
+    local_env["EARNINGS_LLM_MODEL"] = "qwen3:14b"
+    result = _run(runner_dest, env=local_env)
+    assert result.returncode == 0, result.stdout + result.stderr
+    local_argv = capture.read_text(encoding="utf-8").splitlines()
+    provider_index = local_argv.index("--provider-order")
+    assert local_argv[provider_index + 1] == "openai_compat,deepseek"
 
     # Catch-up is opt-in and is forwarded exactly once after the update exec.
     capture.unlink()

@@ -25,6 +25,17 @@ from __future__ import annotations
 # Event classes that are "political/geopolitical" for the never-instant rule.
 _POLITICAL_CLASSES = frozenset({"policy", "geopolitical"})
 
+# THE CREDIT IS GENERIC (operator law 2026-08-02). This used to be
+# f"{source_name} reporting", which on an X relay item rendered
+# "-- @FirstSquawk reporting" straight into a live post: a source tag on the
+# account we relayed. We reword and republish; we never brand the original
+# account. The ADMISSION survives — the wire charter's admission-not-editorial
+# rule wants the reader told this is a relayed report, not who relayed it — so
+# the attributed and digest paths still carry a credit clause, just an unnamed
+# one. The direct-quote path is a VENUE ("on Truth Social"), not an account, and
+# is unchanged.
+_WIRE_CREDIT = "wire reports"
+
 
 def corroboration_decision(
     item: dict,
@@ -43,7 +54,6 @@ def corroboration_decision(
     source_tier = str(item.get("source_tier", "aggregator"))
     event_class = str(item.get("event_class", "none"))
     strict = bool(item.get("strict_corroboration", False))
-    source_name = str(item.get("source_name", item.get("source", "")))
 
     # ── direct-quote: mirror-verified own post — single primary source OK ──────
     if corr_class == "direct-quote" and source_tier == "mirror":
@@ -70,7 +80,7 @@ def corroboration_decision(
                 f"single-source uncorroborated {event_class} political claim — "
                 "next-morning digest (never instant)"
             ),
-            "attribution": f"{source_name} reporting",
+            "attribution": _WIRE_CREDIT,
         }
 
     # A strict-corroboration handle (BRICSinfo / rawsalerts) with no corroboration
@@ -79,12 +89,12 @@ def corroboration_decision(
         return {
             "gate": "digest",
             "reason": "strict-corroboration source with no independent confirmation",
-            "attribution": f"{source_name} reporting",
+            "attribution": _WIRE_CREDIT,
         }
 
     # Other single-source hearsay -> attributed phrasing (may post, must attribute).
     return {
         "gate": "attributed",
         "reason": "single-source hearsay — attributed phrasing required",
-        "attribution": f"{source_name} reporting",
+        "attribution": _WIRE_CREDIT,
     }

@@ -1157,9 +1157,166 @@ def _extract_number_tokens(text: str) -> list[str]:
     return _NUMBER_RE.findall(text)
 
 
-def banned_language(text: str) -> list[str]:
-    """Language-only screen: dash tells, banned vocabulary/substrings, and the
-    v3 cheese list. [] = clean.
+# ─────────────────────────────────────────────────────────────────────────────
+# SOURCE-HANDLE SCREEN (operator law 2026-08-02)
+#
+# We reword and republish news; we NEVER tag or brand the original account. On
+# 2026-08-02/03 the flagship shipped "-- @FirstSquawk reporting",
+# "-- @financialjuice reporting" and a "@BRICSinfo · AGGREGATOR" card chip. The
+# generating lanes are fixed at the source (press_providers de-handles at
+# ingestion, press_corroboration credits "wire reports"), but THE QUEUE IS A
+# BYPASS AROUND EVERY GENERATION LAW — copy enqueued under an older vintage
+# fires days later where no generation-time validator can reach it. This screen
+# lives in `banned_language`, which the publisher runs as its last gate on every
+# due item, so a de-handling fix cannot be outrun by an already-queued post.
+#
+# OUR OWN handles are allowlisted: a post naming our own desk is branding, not a
+# source tag.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: An @mention. The negative lookbehind is what keeps an EMAIL ADDRESS out of it
+#: — in "foo@bar.com" the character before the "@" is a word character, so the
+#: match never starts. Cashtags ("$AAPL") carry no "@" at all. The {2,} floor
+#: skips a bare "@" and single-letter noise.
+_HANDLE_MENTION_RE = re.compile(r"(?<![A-Za-z0-9_])@([A-Za-z0-9_]{2,})")
+
+#: Memo for the roster read. The publisher calls `banned_language` once per due
+#: item; re-parsing config/marketing.yml per call would be a config read per
+#: post. None means "not resolved yet" (an empty frozenset is a real answer:
+#: "asked, no handles on the roster").
+_OWN_HANDLES_CACHE: "frozenset[str] | None" = None
+
+
+def _reset_own_handles_cache() -> None:
+    """Drop the memoized own-handle roster (tests; a config reload)."""
+    global _OWN_HANDLES_CACHE
+    _OWN_HANDLES_CACHE = None
+
+
+def _own_handles_cached() -> "frozenset[str]":
+    """`own_account_handles()` behind the module memo."""
+    global _OWN_HANDLES_CACHE
+    if _OWN_HANDLES_CACHE is None:
+        _OWN_HANDLES_CACHE = own_account_handles()
+    return _OWN_HANDLES_CACHE
+
+
+def own_account_handles(cfg: dict | None = None, root=None) -> "frozenset[str]":
+    """Lower-cased handles of OUR OWN accounts (no leading @). Fail-soft: {} on any error.
+
+    Reads the desk-network roster through `accounts.effective_accounts`, which is
+    the single reader of "which desks exist" (config intent + the operator
+    override file). `cfg` is the already-parsed config/marketing.yml when the
+    caller has one; None reads it off `root`.
+
+    NEVER RAISES. This resolves inside the publisher's last language gate, and a
+    yaml/IO error there must not be able to stop a dispatch. The failure
+    direction is a WIDER screen, not a stopped one: an unreadable roster yields
+    an empty allowlist, so our own handle would be flagged as foreign — loud and
+    fixable, rather than a silent hole that lets a source tag through.
+    """
+    try:
+        from engine.marketing.accounts import effective_accounts  # noqa: PLC0415
+
+        if cfg is None:
+            import yaml  # noqa: PLC0415
+            from pathlib import Path  # noqa: PLC0415
+
+            base = Path(root) if root is not None else Path(__file__).resolve().parents[2]
+            with (base / "config" / "marketing.yml").open(encoding="utf-8") as fh:
+                cfg = yaml.safe_load(fh) or {}
+
+        out: set[str] = set()
+        for acct in effective_accounts(cfg, root):
+            handle = str(acct.get("handle") or "").strip().lstrip("@").lower()
+            if handle:
+                out.add(handle)
+        return frozenset(out)
+    except Exception:  # noqa: BLE001 — a screen must never break the publisher
+        return frozenset()
+
+
+def foreign_handle_mentions(text: str, own_handles=None) -> list[str]:
+    """@mentions in *text* that are not ours. Returns the offending handles,
+    lower-cased, de-duplicated, order-stable.
+
+    `own_handles` is any iterable of handles (with or without the leading "@");
+    None resolves the memoized desk roster.
+    """
+    own = {
+        str(h).strip().lstrip("@").lower()
+        for h in (_own_handles_cached() if own_handles is None else own_handles)
+        if str(h).strip()
+    }
+    out: list[str] = []
+    seen: set[str] = set()
+    for match in _HANDLE_MENTION_RE.finditer(str(text or "")):
+        handle = match.group(1).lower()
+        if handle in own or handle in seen:
+            continue
+        seen.add(handle)
+        out.append(handle)
+    return out
+
+
+#: Recursion ceiling for `card_input_violations`' flatten. Card inputs are
+#: shallow (strings, ticker rows, a fact dict); a bound keeps a cyclic or
+#: pathological structure from turning a screen into a hang.
+_CARD_FLATTEN_MAX_DEPTH = 6
+
+
+def _flatten_card_strings(value, depth: int = 0) -> list[str]:
+    """Every string inside a card-input value (strings, lists, dict VALUES)."""
+    if isinstance(value, str):
+        return [value]
+    if depth >= _CARD_FLATTEN_MAX_DEPTH:
+        return []
+    if isinstance(value, dict):
+        # Values only. Keys are our own field names, set by the renderer, never
+        # copy — screening them would report the schema, not the content.
+        out: list[str] = []
+        for item in value.values():
+            out.extend(_flatten_card_strings(item, depth + 1))
+        return out
+    if isinstance(value, (list, tuple, set, frozenset)):
+        out = []
+        for item in value:
+            out.extend(_flatten_card_strings(item, depth + 1))
+        return out
+    return []
+
+
+def card_input_violations(**params) -> list[str]:
+    """Screen every string card-input param for foreign @mentions. [] = clean.
+
+    The operator law covers post text AND card-input params: the 2026-08-02
+    defect also rendered a "@BRICSinfo · AGGREGATOR" chip onto a card, which is
+    the same source tag on a surface `banned_language` never sees (the card is
+    built from params, not from the post body). Violations name the param so a
+    caller can say WHICH input carried it::
+
+        "card param 'summary': source handle mention: '@FirstSquawk'"
+
+    Strings nested in list/dict values (ticker rows, fact dicts) are screened
+    too. De-duplicated and order-stable.
+    """
+    own = _own_handles_cached()
+    out: list[str] = []
+    seen: set[str] = set()
+    for name, value in params.items():
+        for text in _flatten_card_strings(value):
+            for handle in foreign_handle_mentions(text, own):
+                violation = f"card param '{name}': source handle mention: '@{handle}'"
+                if violation in seen:
+                    continue
+                seen.add(violation)
+                out.append(violation)
+    return out
+
+
+def banned_language(text: str, *, own_handles=None) -> list[str]:
+    """Language-only screen: dash tells, banned vocabulary/substrings, the
+    v3 cheese list, and foreign source @mentions. [] = clean.
 
     Two callers, one bar: validate_copy (generation time) and the publisher's
     post-time gate. The 2026-07-27 $AVGO "POC held" post proved the queue is a
@@ -1167,6 +1324,10 @@ def banned_language(text: str) -> list[str]:
     study-name bans existed, then fired days later where no generation-time
     validator could reach it. The publisher screens every due item with this
     exact function, so copy from any lane or vintage meets the same bar.
+
+    `own_handles` (keyword-only, optional) overrides the desk roster the
+    @mention screen allowlists; None resolves it from config. Every existing
+    POSITIONAL caller is unchanged.
     """
     violations: list[str] = []
 
@@ -1205,6 +1366,10 @@ def banned_language(text: str) -> list[str]:
         pattern = r"\b" + re.escape(word) + r"\b"
         if re.search(pattern, text, re.IGNORECASE):
             violations.append(f"cheese: '{word}'")
+
+    # Source-account tags (operator law 2026-08-02). Our OWN handles are fine.
+    for handle in foreign_handle_mentions(text, own_handles):
+        violations.append(f"source handle mention: '@{handle}'")
 
     return violations
 
@@ -1504,6 +1669,154 @@ SHAPE_CONTRACT: dict[str, str] = {
         f"{_SHAPE_NUMBER_BUDGET['caption']} numbers, and usually one."
     ),
 }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHART-FAMILY COPY SHAPES (TrendSpider hardening PR-C §4)
+# ─────────────────────────────────────────────────────────────────────────────
+# These are SHAPES UNDER the existing voice law, not a new voice. "Every post is
+# a fact plus a reaction that costs you something" is unchanged; what changes is
+# the FORM a chart post's fact-plus-reaction takes, and the budget it takes it in.
+#
+# The numbers are the corpus's, measured over 396 posts: the chart family is
+# 40.7% of output, its median caption is 11 words / 61 chars, only 25% carry a
+# hard number at all, and %-bearing captions UNDERPERFORM (5.3% top-decile).
+# Interjection openers are the strongest hook in the family (41.7% top-decile).
+# The picture is doing the talking; the caption says the one thing it cannot.
+
+#: Kinds whose posts ship with a chart and therefore take these shapes.
+CHART_FAMILY_KINDS: frozenset[str] = frozenset({
+    "signal", "chart", "watchlist", "receipt", "mover",
+})
+
+#: Target word band and the hard character cap for a chart-family CAPTION —
+#: the single-line forms, which are the ones that function as captions. The
+#: multi-line shapes (stack/list/two_part) are arguments, not captions, and keep
+#: their own budgets: capping a three-line stack at 100 characters would delete
+#: the shape rather than tighten it.
+CHART_CAPTION_WORDS = (7, 12)
+CHART_CAPTION_MAX_CHARS = 100
+
+#: Shapes that ARE captions for the purpose of the cap above.
+_CAPTION_SHAPES: frozenset[str] = frozenset({"caption", "one_liner"})
+
+#: Terminal stance glyphs the chart family may end on. Emoji is TERMINAL
+#: PUNCTUATION in the corpus (53% inside the last 14 characters) and the tension
+#: register out-reaches the celebration register — 😬🌶️🩸 beat 🔥. The set is
+#: allow-list, not suggestion: a glyph outside it is either the alarm register
+#: (🚨, which belongs to the wire lanes) or the ledger register (🟢🔴, which
+#: belongs to receipts), and the three registers never mix.
+CHART_STANCE_GLYPHS: tuple[str, ...] = ("👀", "🔥", "🩸", "🌶️", "😬", "✅", "❔", "📌")
+
+#: The four chart-family copy shapes, kept as data so the prompt and any
+#: validator read the same text.
+CHART_COPY_SHAPES: dict[str, str] = {
+    "interjection": (
+        "INTERJECTION OPENER: start on the reaction, then the fact. One word or "
+        "two, then what the chart shows. Strongest hook in this family (41.7% "
+        "of its top decile). The interjection has to be earned by the picture: "
+        "an opener over a boring chart reads as noise."
+    ),
+    "enumerate_and_circle": (
+        "ENUMERATE AND CIRCLE: the caption lines map one to one onto the "
+        "circles on the chart, in the same order, each line two or three words "
+        "with a check or a question mark on it. The last one is the question "
+        "mark, because it is the one happening now. Never enumerate more "
+        "instances than the chart actually draws."
+    ),
+    "superlative": (
+        "SUPERLATIVE: say the record, scoped to the window the chart shows. The "
+        "scope is not optional and it is not yours to choose. It comes from the "
+        "fact, and the chart draws exactly that window. Never say ever, never "
+        "say in history."
+    ),
+    "question_delegation": (
+        "QUESTION DELEGATION: end on a real question a trader would ask, or "
+        "hand the read to somebody else. This is how a directional lean gets "
+        "said without you making the call. A rhetorical question that sets up "
+        "your own answer is NOT this shape."
+    ),
+}
+
+
+def chart_copy_block() -> str:
+    """The chart-family shape guidance, for the system prompt.
+
+    NO DASH TELLS IN HERE. The prompt is checked against its own validators
+    (tests/test_marketing_copy_v2.py::test_no_prompt_the_model_reads_contains_a
+    _dash_tell): a paragraph that uses an em dash while banning em dashes is an
+    instruction whose compliance is a rejection, which is the self-cancelling
+    failure that whole test class exists to catch.
+    """
+    lines = [
+        "CHART-FAMILY COPY (kinds: " + ", ".join(sorted(CHART_FAMILY_KINDS)) + ").",
+        "A picture is attached and it is doing the talking. Say the one thing "
+        "it cannot.",
+        f"- Budget: aim for {CHART_CAPTION_WORDS[0]} to "
+        f"{CHART_CAPTION_WORDS[1]} words. Hard cap {CHART_CAPTION_MAX_CHARS} "
+        "characters on the single-line shapes. The real corpus median for this "
+        "family is 11 words, 61 characters.",
+        "- The horizon is printed in the chart header (TICKER WEEKLY). Never "
+        "spend caption words restating it.",
+        "- Numbers live in the IMAGE. Only a quarter of these captions carry a "
+        "hard number at all, and the percent-bearing ones underperform. If you "
+        "do print a number, the chart has to restate it in frame already. A "
+        "validator checks that and drops the post when it does not.",
+        "- One terminal stance glyph is allowed, at the END, from this set: "
+        + " ".join(CHART_STANCE_GLYPHS)
+        + ". Tension reads better than celebration here. No alarm glyph and no "
+          "ledger glyph in this family; those belong to other lanes.",
+        "- Chart labels may name indicators. YOUR TEXT MAY NOT. The picture "
+        "showing the average is exactly why you never have to write its name.",
+        "- Stage language in plain words: base building, marking up, stalling "
+        "out, under distribution. The numbered form is a chart label, never a "
+        "caption.",
+        "Four shapes, and your item's angle usually implies one:",
+    ]
+    lines.extend(f"- {v}" for v in CHART_COPY_SHAPES.values())
+    return "\n".join(lines)
+
+
+def chart_caption_violations(text: str, ctx: dict | None) -> list[str]:
+    """Chart-family caption budget + glyph-register conformance. [] = clean.
+
+    Scoped to the single-line shapes on chart-family kinds — see
+    :data:`_CAPTION_SHAPES` for why a stack is not a caption. Returns
+    VIOLATIONS, which the v2 writer answers with its repair turn; this is not a
+    drop path. The one hard drop in this program is the in-frame restatement
+    gate, which lives in ``chart_director`` because only the director knows what
+    the picture actually restates.
+    """
+    if not isinstance(ctx, dict):
+        return []
+    kind = str(ctx.get("type") or "")
+    shape = str(ctx.get("shape") or DEFAULT_SHAPE)
+    if kind not in CHART_FAMILY_KINDS or shape not in _CAPTION_SHAPES:
+        return []
+    raw = str(text or "").strip()
+    if not raw:
+        return []
+    out: list[str] = []
+    if len(raw) > CHART_CAPTION_MAX_CHARS:
+        out.append(
+            f"chart caption: {len(raw)} chars (max {CHART_CAPTION_MAX_CHARS}); "
+            f"the corpus median for this family is 61")
+    # Glyph register. A celebration/alarm/ledger glyph in a chart caption is a
+    # register collision, not a taste call — the three never mix (§1.2).
+    for ch in raw:
+        if not _is_emoji(ch):
+            continue
+        if ch not in "".join(CHART_STANCE_GLYPHS):
+            out.append(f"chart caption: glyph {ch!r} is outside the stance set "
+                       f"({' '.join(CHART_STANCE_GLYPHS)})")
+            break
+    return out
+
+
+def _is_emoji(ch: str) -> bool:
+    """Rough emoji test — the pictographic and symbol blocks. No dependency."""
+    cp = ord(ch)
+    return (0x1F300 <= cp <= 0x1FAFF) or (0x2600 <= cp <= 0x27BF)
 
 
 def split_shaped_text(text: str, shape: str) -> tuple[str, str]:
@@ -3054,6 +3367,10 @@ def validate_copy_v2(
         )
 
     violations.extend(shape_violations(text, shape))
+    # TrendSpider PR-C §4: the chart family's own caption budget and glyph
+    # register. Additive — it can only ADD violations, never license a post the
+    # existing gates would have refused.
+    violations.extend(chart_caption_violations(text, ctx))
     violations.extend(validate_copy(headline, body, ctx, recent=recent))
     violations.extend(fake_precision_violations(text))
     violations.extend(orphan_hedge_violations(text))
@@ -5779,8 +6096,13 @@ _V2_SYSTEM_PROMPT_BASE = (
     "where), group_read (the name as a read on its group), precedent (what "
     "this shape did before), process (the rule you are following), "
     "receipt_frame (the outcome, posted flat), macro_read (what the data "
-    "plainly shows), event_read (what just happened and what it changes). "
+    "plainly shows), event_read (what just happened and what it changes), "
+    "long_term_structure (where the name sits on a multi-year picture, not "
+    "this week's tape), stage_read (what phase the name is in, in plain words: "
+    "base building, marking up, stalling out, under distribution). "
     "Write that job. Do not write a general post that happens to mention it.\n\n"
+
+    + chart_copy_block() + "\n\n"
 
     "DIVERGENCE. If your item lists `sibling_texts`, another desk already "
     "posted about this same fact today. Yours must share NO six-word run with "

@@ -652,6 +652,10 @@ def main(argv: list[str] | None = None) -> int:
         oc_override["base_url"] = os.environ["EARNINGS_LLM_BASE_URL"]
     if not args.model and os.environ.get("EARNINGS_LLM_MODEL"):
         oc_override["model"] = os.environ["EARNINGS_LLM_MODEL"]
+    if os.environ.get("EARNINGS_LLM_CONNECT_TIMEOUT_S"):
+        oc_override["connect_timeout_s"] = float(
+            os.environ["EARNINGS_LLM_CONNECT_TIMEOUT_S"]
+        )
     provider_cfg: dict = {}
     if oc_override:
         provider_cfg["openai_compat"] = oc_override

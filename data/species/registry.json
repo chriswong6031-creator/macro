@@ -1044,9 +1044,11 @@
         "flip_criteria": "Primary: (failed2 × COILED) vs COILED alone on OOS basket panel, episode-clustered p-value, BH-FDR q≤0.10, n≥300 per side, both halves sign-stable. Secondary: standalone inversion. Clean kill is acceptable and closes the graveyard row properly."
       },
       "gating": {
-        "come_back_on": "2026-08-01",
+        "come_back_on": "2026-09-01",
         "cadence": "monthly",
-        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S6_REPORT.md): PASSED both variants — failed2×COILED clean8_21 spread +4.29pp (m2d_s3d, q=0.032) / +3.79pp (base3d, q=0.080), n floors met, both halves positive, per-name majority 52-53%; failed2 side ALSO stops out less within COILED (−4.9pp m2d_s3d). Standalone form buys liftoff with WORSE stop-outs — interaction only, as registered. OOS came in stronger than in-sample. CONSTRAINT: spreads below the ≥5pp §1.2 promotion floor → DISPLAY-CHIP CANDIDACY ONLY; monthly review decides chip wiring; near-miss ledger accrues the forward read."
+        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S6_REPORT.md): PASSED both variants — failed2×COILED clean8_21 spread +4.29pp (m2d_s3d, q=0.032) / +3.79pp (base3d, q=0.080), n floors met, both halves positive, per-name majority 52-53%; failed2 side ALSO stops out less within COILED (−4.9pp m2d_s3d). Standalone form buys liftoff with WORSE stop-outs — interaction only, as registered. OOS came in stronger than in-sample. CONSTRAINT: spreads below the ≥5pp §1.2 promotion floor → DISPLAY-CHIP CANDIDACY ONLY; monthly review decides chip wiring; near-miss ledger accrues the forward read.",
+        "last_review": "2026-08-02",
+        "last_review_note": "Monthly review EXECUTED 2026-08-02 (experiments audit): NO ADVANCE, NO KILL, display-chip decision DEFERRED. Forward accrual since 2026-07-04 is ZERO and structurally so — the bound ledger's REJECTION_TAXONOMY has no failed2/COILED code, so near-miss capture cannot store an S6 row (73 near_miss rows, 0 with species_id). Fix the capture path before the next review; if still absent 2026-09-01, convert cadence to event-driven on the first non-zero S6 forward row. Phase-0 headline not reproducible from tracked state (/tmp fire dir gone). Carry the caveat: base3d bootstrap CI [-0.47,+7.68] touches zero although BH q=0.080 passes."
       },
       "trial_count": 2
     },
@@ -1738,9 +1740,11 @@
         "flip_criteria": "Safety-net axes (stop-out, dead-money, cushion incidence at rotational horizons) PLUS sleeve-level excess-vs-SPY (CN-2 pattern). Pre-registered kill criteria: modern-era decay + mega-cap sign flip. assert_no_gate() must remain enforced."
       },
       "gating": {
-        "come_back_on": "2026-08-01",
+        "come_back_on": "2026-09-01",
         "cadence": "monthly",
-        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S13_REPORT.md): PASSED as the 3M-formation construction (PIT-era +0.49%/mo excess, DSR 0.991 SURVIVES; modern era +0.34%/mo DSR 0.908 marginal); 1M variant CLOSED (modern DSR 0.760 fails). K2 TRIGGERED: mega-cap flip measured (2024–26 −11.8%/yr) → REGIME-SCOPED, hostile cell live — no surface may imply current tradability. K3 clean (top name 3.1%), K4 sign sanity passed (IC −0.011). Survivorship bound: 69.4% member-price coverage — positives are optimistic; re-confirm on the massive-store panel before promotion past display. Monthly review re-reads the regime cell."
+        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S13_REPORT.md): PASSED as the 3M-formation construction (PIT-era +0.49%/mo excess, DSR 0.991 SURVIVES; modern era +0.34%/mo DSR 0.908 marginal); 1M variant CLOSED (modern DSR 0.760 fails). K2 TRIGGERED: mega-cap flip measured (2024–26 −11.8%/yr) → REGIME-SCOPED, hostile cell live — no surface may imply current tradability. K3 clean (top name 3.1%), K4 sign sanity passed (IC −0.011). Survivorship bound: 69.4% member-price coverage — positives are optimistic; re-confirm on the massive-store panel before promotion past display. Monthly review re-reads the regime cell.",
+        "last_review": "2026-08-02",
+        "last_review_note": "Monthly review EXECUTED 2026-08-02 (experiments audit): NO ADVANCE, NO KILL. Regime cell NOT re-readable from repo state (deep-panel parquets gitignored+absent); hostile mega-cap cell stands unrefreshed at its 2026-07-04 measurement. Survivorship re-confirmation still outstanding. No-tradability surface law VERIFIED CLEAN. assert_no_gate() found vacuous (called on a dict literal, private copy, zero S13 test coverage) — repair before any promotion. Trial-count divergence: registry 3 vs trial_ledger 2 (DSR m=2) — resolve; if 3 is right, DSR 0.991/0.908 are under-deflated."
       },
       "trial_count": 3
     },

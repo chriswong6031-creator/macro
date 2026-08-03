@@ -551,6 +551,14 @@ def _aggressiveness(rec: dict) -> float:
     return _clip01(agg)
 
 
+def _risk_vetoed(rec: dict, risk_stress: float) -> bool:
+    """Stressed macro tape vetoing an AGGRESSIVE (chase-shaped) entry. Single source
+    of truth for verdict()'s caution AND the profile's structural ``risk.veto`` flag —
+    stock_dossier maps that flag to the ``risk_veto`` no-buy code; it must never be
+    re-derived from caution prose, which is display copy and free to change (#4297)."""
+    return risk_stress >= _RISK_VETO_STRESS and _aggressiveness(rec) >= 0.5
+
+
 def _macro_stress(overlay: dict | None) -> float:
     return _clip01(_f((overlay or {}).get("stress")))
 
@@ -989,17 +997,19 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
     if valuation and valuation.get("watch"):
         _cau(f"Richly valued: {valuation.get('note')}.",
              f"估值偏高：{valuation.get('note_zh') or valuation.get('note')}。")
-    _risk_veto = (risk_stress >= _RISK_VETO_STRESS and _aggressiveness(rec) >= 0.5)
+    _risk_veto = _risk_vetoed(rec, risk_stress)
     if _risk_veto:
         _cau("The broad tape is under stress. Size down, or wait for confirmation.",
              "大盘承压。减小仓位，或等待信号确认。")
     _ed = _f(rec.get("earnings_days"))
     _earn_imminent = _ed is not None and 0 <= _ed <= 8
     if _earn_imminent:
-        _cau(f"Earnings in {int(_ed)} days. The result can override the setup, so size down."
+        _edi = int(_ed)
+        _cau(f"Earnings in {_edi} {'day' if _edi == 1 else 'days'}. "
+             "The result can override the setup, so size down."
              if _ed >= 1 else
              "Earnings are due. The result can override the setup, so size down.",
-             f"{int(_ed)} 天后公布财报。业绩结果可能压过技术形态，宜减小仓位。"
+             f"{_edi} 天后公布财报。业绩结果可能压过技术形态，宜减小仓位。"
              if _ed >= 1 else "财报即将公布。业绩结果可能压过技术形态，宜减小仓位。")
     if cycle_blocked:
         _lbl = lad.get("label") or state or "weak tape"
@@ -1346,6 +1356,11 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
                  "macro_stress": round(stress, 2) if stress > 0 else None,
                  "macro_tax": round(rtax, 3) if rtax > 0 else None,
                  "idio_tax": round(idio_tax, 3) if idio_tax > 0 else None,
+                 # structural veto flag — the ONLY thing stock_dossier's
+                 # 'risk_veto' no-buy code may key on (caution prose is
+                 # display copy; #4297 rewrote it and silently killed a
+                 # substring-matching consumer).
+                 "veto": True if _risk_vetoed(rec, stress) else None,
                  "drivers": overlay.get("drivers") if stress > 0 else None},
         "size": _suggested_size(
             risk_total, blocked=blocked, market=m,
