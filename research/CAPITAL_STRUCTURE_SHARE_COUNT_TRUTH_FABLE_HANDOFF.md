@@ -8,6 +8,12 @@ I/O until the deletion/fencing/capability release gates pass. No issuer or marke
 is claimed until that gate is deliberately enabled and the lane publishes its
 first externally witnessed receipt from retained Company Facts bytes.
 
+Wave 4 adds the external head fence only. The reader now accepts authenticated
+v2 and scope-bound v3 heads at the same key; a default-off, migration-only CAS can
+rewrite one exact v2 head to v3 without changing sequence or any of its eleven
+selection fields. It does not add v3 genesis, v3 successor publication, a
+single-record local journal, retention authority, coverage, UI, or Prophet use.
+
 ## 0. Acceptance boundary
 
 This wave is a deterministic, point-in-time evidence plane for three SEC Company
@@ -50,6 +56,8 @@ The operational v2 implementation files are:
 - `contracts/capital_structure_share_count_materialization_receipt.schema.json`
 - `contracts/capital_structure_share_count_current_pointer.schema.json`
 - `contracts/capital_structure_share_count_head_witness.schema.json`
+- `contracts/capital_structure_share_count_head_guard_scope.schema.json`
+- `contracts/capital_structure_share_count_head_witness_v3.schema.json`
 - `contracts/capital_structure_share_count_retention_receipt.schema.json`
 - `tests/test_capital_structure_companyfacts_authenticated_read.py`
 - `tests/test_capital_structure_share_count_materializer_model.py`
@@ -175,6 +183,13 @@ The v2 path closes the previously missing source seam without weakening it:
    by one selected external ledger fetch and an exact local install readback.
    Bounded restart tests cover death after the recovery capsule, after durable
    CAS intent but before the storage call, and between the two cleanup unlinks.
+   Capsule-only recovery now follows one strict matrix: `H==E` validates E and
+   clears; `H==C` or an authenticated descendant of C proves C before converging
+   and clearing; every sibling, equal-sequence fork, rollback, malformed proof,
+   or missing proof rejects and retains the exact capsule/pointer before any
+   ledger read. A v3 head plus any legacy marker/capsule bytes rejects unchanged,
+   even when those legacy bytes are malformed. Legacy bytes seen at lease entry
+   prevent migration later in that same invocation.
 6. One inner ledger receipt covers the entire bounded source batch and carries
    only appended IDs plus four domain-separated rolling prefix commitments. The
    outer signed receipt repeats that constant-size tail binding; neither layer
@@ -185,6 +200,16 @@ The v2 path closes the previously missing source seam without weakening it:
    crash-recovery mirror, so the nightly broad data checkpoint cannot commit
    cumulative ledgers to Git. A propagated 15-minute budget plus a process-level
    workflow timeout bounds the production command.
+   The head key is now dual-read. A one-time v2-to-v3 migration keeps the exact
+   v2 selection and sequence, adds signed scope
+   `{backend:r2, account_id, bucket, head_key}`, binds the exact canonical v2
+   bytes including their newline, and signs through a distinct v3 HMAC method
+   and domain. The CAS uses the exact v2 token at the same key, then requires a
+   fresh byte-identical v3 readback; an identical concurrent winner is accepted,
+   while every newer or different head aborts. An old v2-only binary rejects v3
+   before PUT. The strict migration variable defaults false and gates only the
+   rewrite: v3 clean recovery and exact no-op remain available when false, but
+   genesis and every v3 successor publication remain blocked.
 8. The publisher never deletes. A bounded retention planner can identify only
    old, quarantined, unselected full ledger generations and emit an all-false
    operational receipt in injected tests. Its production command is hard-blocked:
@@ -201,8 +226,14 @@ materializer is bounded by the upstream 512-source-publication checkpoint.
 
 The production trust domains are intentionally separate:
 `CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY` authorizes the source selection;
-`CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY` authorizes only the v2
-materialization selector. Neither key grants fact, instrument, capacity, risk,
+`CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY` authorizes only the v2/v3
+materialization selector domains. `SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID` completes
+the exact signed R2 scope; the bucket and fixed head key are also authenticated.
+It remains optional for migration-false v2 operation, but is mandatory before
+migration and whenever a v3 head is authenticated. If configured, it must match
+the exact resolved Cloudflare R2 global/EU/FedRAMP endpoint before client
+construction; the endpoint is deliberately not part of signed scope.
+Neither key grants fact, instrument, capacity, risk,
 ranking, sizing, entry, trade, or Prophet authority.
 
 ### Existing-ledger trust boundary
@@ -277,15 +308,19 @@ the correction chain.
    crash-recoverable publication, a bounded retention planner/receipt contract,
    selector/receipt-first high-water proof before any ledger load, default-off
    daily execution, DAG/Synapse declarations, CI coverage, and
-   explicit zero-source unavailability. The retention production shell is a
+   explicit zero-source unavailability. The dual-read v3 head fence, exact
+   same-selection migration, old-writer rejection, and strict capsule-only
+   reconciliation matrix are also implemented. The retention production shell is a
    deliberate fail-closed release block, not an operational compactor.
 3. **Still required before activation:** replace the two-record local recovery
    journal with one signed journal (or an equivalently unambiguous cleanup
    protocol). The selector/receipt-versus-ledger split is now implemented and
-   adversarially pinned; that closure does not enable the lane. The frozen
-   default-off audit passed, but it correctly refused an
-   activation-grade rollback claim when the local pointer and marker are both
-   lost and only the signed capsule remains. Separately prove R2 atomic
+   adversarially pinned, and the v3 head fence prevents an old writer from
+   advancing while v3 remains selected; neither closure enables the lane. Keep
+   `CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED=false` until every
+   intended publisher has dual-read support and the operator schedules the
+   one-time migration with the exact account/bucket scope provisioned.
+   Separately prove R2 atomic
    conditional delete on an isolated object, add a shared external publish/delete
    fence and exact race test, mint a verifier-only capability that cannot write
    the signed head/receipts, add an end-to-end retention deadline, and re-audit
@@ -332,6 +367,9 @@ exact receipt/source/anchor binding, bounded append and replay, semantic
 re-derivation, all-false authority, strict store identity, separate HMAC/R2
 publication, concurrent CAS conflict, pre/post-CAS crash recovery, lagging
 runner convergence, replayable bounded CAS intent, capsule-only recovery,
+scope-bound v3 dual-read/migration, exact v2-byte migration binding, distinct
+v3 signature domain, both old-v2-writer race orders, concurrent identical
+migration, strict capsule sibling rejection, and legacy/v3 coexistence refusal,
 logarithmic high-water ancestry proof before ledger access, zero ledger reads on
 rollback/fork/divergent-proof rejection, exactly one selected external ledger
 fetch after a successful proof, bounded local install readback, clean-run

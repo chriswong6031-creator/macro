@@ -29,6 +29,7 @@ import secrets
 import stat
 import time
 from typing import Any, Callable, Iterator, Mapping, Protocol, Sequence
+from urllib.parse import urlsplit
 
 
 MAX_LEDGER_BYTES = 128 * 1024 * 1024
@@ -50,7 +51,10 @@ LEASE_TIMEOUT_SECONDS = PUBLICATION_TIMEOUT_SECONDS
 
 RECEIPT_SCHEMA = "capital_structure.share_count_materialization_receipt/v2"
 POINTER_SCHEMA = "capital_structure.share_count_current_pointer/v2"
-WITNESS_SCHEMA = "capital_structure.share_count_head_witness/v2"
+WITNESS_V2_SCHEMA = "capital_structure.share_count_head_witness/v2"
+WITNESS_V3_SCHEMA = "capital_structure.share_count_head_witness/v3"
+WITNESS_SCHEMA = WITNESS_V2_SCHEMA
+HEAD_GUARD_SCOPE_SCHEMA = "capital_structure.share_count_head_guard_scope/v1"
 PENDING_SCHEMA = "capital_structure.share_count_publish_pending/v2"
 RECOVERY_SCHEMA = "capital_structure.share_count_publish_recovery/v2"
 AUTH_SCHEME = "hmac-sha256/v1"
@@ -61,6 +65,7 @@ POINTER_NAME = "current_receipt.json"
 LOCK_NAME = ".share_count_publish.lock"
 
 _HEX64 = re.compile(r"^[a-f0-9]{64}$")
+_HEX32 = re.compile(r"^[a-f0-9]{32}$")
 _RECEIPT_PREFIX = "receipt:cs-share-count-materialization-v2:"
 _GENERATION_PREFIX = "generation:cs-share-count-materialization-v2:"
 _POINTER_PREFIX = "pointer:cs-share-count-materialization-v2:"
@@ -69,6 +74,19 @@ _INPUT_BINDING_FIELDS = {
     "materialized_at", "prefixes",
 }
 _PREFIX_LABELS = {"observations", "source_snapshots", "bridges", "source_manifests"}
+_HEAD_SELECTION_FIELDS = {
+    "sequence",
+    "receipt_id",
+    "receipt_sha256",
+    "receipt_byte_length",
+    "receipt_object_key",
+    "generation_id",
+    "ledger_sha256",
+    "ledger_byte_length",
+    "ledger_object_key",
+    "published_at",
+    "previous_receipt",
+}
 
 
 class ShareCountPublicationError(RuntimeError):
@@ -99,11 +117,16 @@ class ShareCountSigner(Protocol):
 
     def verify(self, payload: bytes, signature: str, *, key_id: str) -> bool: ...
 
+    def sign_head_v3(self, payload: bytes) -> str: ...
+
+    def verify_head_v3(self, payload: bytes, signature: str, *, key_id: str) -> bool: ...
+
 
 class HmacShareCountSigner:
     """Domain-separated HMAC signer for this publication lane only."""
 
     _DOMAIN = b"capital-structure-share-count-publication-head-v2\0"
+    _HEAD_V3_DOMAIN = b"capital-structure-share-count-publication-head-v3\0"
 
     def __init__(self, secret: str | bytes, *, key_id: str) -> None:
         raw = secret.encode("utf-8") if isinstance(secret, str) else secret
@@ -126,14 +149,30 @@ class HmacShareCountSigner:
             self.sign(payload), signature,
         )
 
+    def sign_head_v3(self, payload: bytes) -> str:
+        return hmac.new(self._secret, self._HEAD_V3_DOMAIN + payload, sha256).hexdigest()
+
+    def verify_head_v3(self, payload: bytes, signature: str, *, key_id: str) -> bool:
+        return key_id == self.key_id and isinstance(signature, str) and hmac.compare_digest(
+            self.sign_head_v3(payload), signature,
+        )
+
 
 class ShareCountHeadGuard(Protocol):
     """Durable CAS witness plus immutable external artifact recovery store."""
 
     def read(self) -> tuple[dict[str, Any] | None, str | None]: ...
 
+    @property
+    def guard_scope(self) -> Mapping[str, Any]: ...
+
     def advance(
         self, *, expected: Mapping[str, Any] | None, expected_token: str | None,
+        candidate: Mapping[str, Any],
+    ) -> None: ...
+
+    def migrate_v2_to_v3(
+        self, *, expected: Mapping[str, Any], expected_token: str,
         candidate: Mapping[str, Any],
     ) -> None: ...
 
@@ -145,16 +184,35 @@ class ShareCountHeadGuard(Protocol):
 class InMemoryShareCountHeadGuard:
     """Deterministic test-only CAS and external immutable-object witness."""
 
-    def __init__(self, signer: ShareCountSigner) -> None:
+    def __init__(
+        self,
+        signer: ShareCountSigner,
+        *,
+        account_id: str = "0" * 32,
+        bucket: str = "in-memory-share-count-test",
+    ) -> None:
         self._signer = signer
+        self._guard_scope = _head_guard_scope(
+            account_id=account_id,
+            bucket=bucket,
+            head_key=HEAD_GUARD_KEY,
+        )
         self._witness: dict[str, Any] | None = None
         self._version = 0
         self._artifacts: dict[str, bytes] = {}
 
+    @property
+    def guard_scope(self) -> Mapping[str, Any]:
+        return dict(self._guard_scope)
+
     def read(self) -> tuple[dict[str, Any] | None, str | None]:
         if self._witness is None:
             return None, None
-        _validate_head_witness(self._witness, signer=self._signer)
+        _validate_any_head_witness(
+            self._witness,
+            signer=self._signer,
+            expected_scope=self._guard_scope,
+        )
         return dict(self._witness), str(self._version)
 
     def advance(
@@ -163,6 +221,10 @@ class InMemoryShareCountHeadGuard:
     ) -> None:
         observed, token = self.read()
         normalized = dict(expected) if expected is not None else None
+        if observed is not None and observed.get("schema") == WITNESS_V3_SCHEMA:
+            raise ShareCountPublicationError(
+                "share-count v3 external head is a migration fence; publication is disabled",
+            )
         if observed != normalized or token != expected_token:
             raise ShareCountPublicationConflict("share-count external head compare-and-swap conflict")
         _validate_head_transition(previous=observed, candidate=candidate, signer=self._signer)
@@ -171,6 +233,32 @@ class InMemoryShareCountHeadGuard:
         confirmed, _ = self.read()
         if confirmed != dict(candidate):
             raise ShareCountPublicationError("share-count external head read-back mismatch")
+
+    def migrate_v2_to_v3(
+        self,
+        *,
+        expected: Mapping[str, Any],
+        expected_token: str,
+        candidate: Mapping[str, Any],
+    ) -> None:
+        observed, token = self.read()
+        if observed != dict(expected) or token != expected_token:
+            raise ShareCountPublicationConflict(
+                "share-count external head v3 migration compare-and-swap conflict",
+            )
+        _validate_head_migration(
+            previous=expected,
+            candidate=candidate,
+            signer=self._signer,
+            expected_scope=self._guard_scope,
+        )
+        self._witness = dict(candidate)
+        self._version += 1
+        confirmed, _ = self.read()
+        if confirmed != dict(candidate):
+            raise ShareCountPublicationError(
+                "share-count external head v3 migration read-back mismatch",
+            )
 
     def seal_artifact(self, *, key: str, body: bytes, max_bytes: int) -> None:
         _validate_external_artifact_key(key)
@@ -197,11 +285,34 @@ class InMemoryShareCountHeadGuard:
 class R2ShareCountHeadGuard:
     """R2-backed strict HEAD/GET/CAS witness and immutable recovery namespace."""
 
-    def __init__(self, *, client: Any, bucket: str, signer: ShareCountSigner, key: str = HEAD_GUARD_KEY) -> None:
+    def __init__(
+        self,
+        *,
+        client: Any,
+        bucket: str,
+        signer: ShareCountSigner,
+        account_id: str | None = None,
+        key: str = HEAD_GUARD_KEY,
+    ) -> None:
         if not bucket:
             raise ValueError("share-count head-guard bucket is required")
+        if key != HEAD_GUARD_KEY:
+            raise ValueError("share-count head-guard key must use the fixed publication selector")
         self._client, self._bucket, self._signer, self._key = client, bucket, signer, key
+        self._guard_scope = (
+            None
+            if account_id is None
+            else _head_guard_scope(account_id=account_id, bucket=bucket, head_key=key)
+        )
         self._deadline_state: tuple[float, Callable[[], float]] | None = None
+
+    @property
+    def guard_scope(self) -> Mapping[str, Any]:
+        if self._guard_scope is None:
+            raise ShareCountPublicationError(
+                "share-count v3 head guard requires SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID",
+            )
+        return dict(self._guard_scope)
 
     @contextlib.contextmanager
     def _bind_deadline(self, operation: Any) -> Iterator[None]:
@@ -234,7 +345,11 @@ class R2ShareCountHeadGuard:
         body, etag = self._bounded_get_from_head(head, key=self._key, max_bytes=MAX_HEAD_WITNESS_BYTES)
         try:
             parsed = _parse_canonical_json(body, label="external head witness")
-            _validate_head_witness(parsed, signer=self._signer)
+            _validate_any_head_witness(
+                parsed,
+                signer=self._signer,
+                expected_scope=self._guard_scope,
+            )
             return dict(parsed), etag
         except ShareCountPublicationError:
             raise
@@ -253,6 +368,10 @@ class R2ShareCountHeadGuard:
                 "share-count external head CAS was not invoked",
             ) from exc
         normalized = dict(expected) if expected is not None else None
+        if observed is not None and observed.get("schema") == WITNESS_V3_SCHEMA:
+            raise _ShareCountPreCasFailure(
+                "share-count v3 external head is a migration fence; publication CAS was not invoked",
+            )
         if observed != normalized or token != expected_token:
             raise ShareCountPublicationConflict("share-count external head compare-and-swap conflict")
         _validate_head_transition(previous=observed, candidate=candidate, signer=self._signer)
@@ -286,6 +405,74 @@ class R2ShareCountHeadGuard:
         confirmed, _ = self.read()
         if confirmed != dict(candidate):
             raise ShareCountPublicationError("share-count external head read-back mismatch")
+
+    def migrate_v2_to_v3(
+        self,
+        *,
+        expected: Mapping[str, Any],
+        expected_token: str,
+        candidate: Mapping[str, Any],
+    ) -> None:
+        scope = self.guard_scope
+        try:
+            self._check_deadline("external head v3 migration preflight")
+            observed, token = self.read()
+        except ShareCountPublicationError as exc:
+            raise _ShareCountPreCasFailure(
+                "share-count external head v3 migration CAS was not invoked",
+            ) from exc
+        if observed != dict(expected) or token != expected_token:
+            raise ShareCountPublicationConflict(
+                "share-count external head v3 migration compare-and-swap conflict",
+            )
+        _validate_head_migration(
+            previous=expected,
+            candidate=candidate,
+            signer=self._signer,
+            expected_scope=scope,
+        )
+        body = _canonical_bytes(dict(candidate)) + b"\n"
+        if len(body) > MAX_HEAD_WITNESS_BYTES:
+            raise ShareCountPublicationTooLarge(
+                "share-count external head v3 witness exceeds byte cap",
+            )
+        arguments = {
+            "Bucket": self._bucket,
+            "Key": self._key,
+            "Body": body,
+            "ContentType": "application/json",
+            "IfMatch": expected_token,
+        }
+        try:
+            self._check_deadline("external head v3 migration conditional PUT")
+        except ShareCountPublicationError as exc:
+            raise _ShareCountPreCasFailure(
+                "share-count external head v3 migration CAS was not invoked",
+            ) from exc
+        try:
+            self._client.put_object(**arguments)
+            self._check_deadline("external head v3 migration conditional PUT")
+        except Exception as exc:  # noqa: BLE001
+            if _is_conditional_write_conflict(exc):
+                raise ShareCountPublicationConflict(
+                    "share-count external head v3 migration compare-and-swap conflict",
+                ) from exc
+            try:
+                confirmed, _ = self.read()
+            except Exception as read_exc:  # noqa: BLE001
+                raise ShareCountPublishIndeterminate(
+                    "share-count external head v3 migration outcome is indeterminate",
+                ) from read_exc
+            if confirmed != dict(candidate):
+                raise ShareCountPublishIndeterminate(
+                    "share-count external head v3 migration outcome is indeterminate",
+                ) from exc
+            return
+        confirmed, _ = self.read()
+        if confirmed != dict(candidate):
+            raise ShareCountPublicationError(
+                "share-count external head v3 migration read-back mismatch",
+            )
 
     def seal_artifact(self, *, key: str, body: bytes, max_bytes: int) -> None:
         _validate_external_artifact_key(key)
@@ -410,6 +597,53 @@ def _is_hex64(value: object) -> bool:
     return isinstance(value, str) and bool(_HEX64.fullmatch(value))
 
 
+def _head_guard_scope(
+    *,
+    account_id: str,
+    bucket: str,
+    head_key: str,
+) -> dict[str, str]:
+    record = {
+        "schema": HEAD_GUARD_SCOPE_SCHEMA,
+        "backend": "r2",
+        "account_id": account_id,
+        "bucket": bucket,
+        "head_key": head_key,
+    }
+    return _validate_head_guard_scope(record)
+
+
+def _validate_head_guard_scope(
+    record: Mapping[str, Any],
+    *,
+    expected: Mapping[str, Any] | None = None,
+) -> dict[str, str]:
+    required = {"schema", "backend", "account_id", "bucket", "head_key"}
+    if (
+        not isinstance(record, Mapping)
+        or set(record) != required
+        or record.get("schema") != HEAD_GUARD_SCOPE_SCHEMA
+        or record.get("backend") != "r2"
+        or not isinstance(record.get("account_id"), str)
+        or not _HEX32.fullmatch(record["account_id"])
+        or not isinstance(record.get("bucket"), str)
+        or not record["bucket"]
+        or record.get("head_key") != HEAD_GUARD_KEY
+    ):
+        raise ShareCountPublicationError("share-count v3 head guard scope is invalid")
+    _validate_contract(
+        record,
+        "capital_structure_share_count_head_guard_scope.schema.json",
+        label="v3 head guard scope",
+    )
+    normalized = dict(record)
+    if expected is not None and normalized != dict(expected):
+        raise ShareCountPublicationError(
+            "share-count v3 head guard scope does not match the configured R2 authority",
+        )
+    return normalized  # type: ignore[return-value]
+
+
 def _id_digest(value: object, *, prefix: str, label: str) -> str:
     if not isinstance(value, str) or not value.startswith(prefix) or not _is_hex64(value[len(prefix):]):
         raise ShareCountPublicationError(f"share-count {label} identity is invalid")
@@ -510,7 +744,12 @@ def _pointer_id(record: Mapping[str, Any]) -> str:
 
 def _head_payload(record: Mapping[str, Any]) -> bytes:
     material = dict(record); material.pop("signature", None)
-    return _canonical_bytes({"domain": WITNESS_SCHEMA, "witness": material})
+    return _canonical_bytes({"domain": WITNESS_V2_SCHEMA, "witness": material})
+
+
+def _head_v3_payload(record: Mapping[str, Any]) -> bytes:
+    material = dict(record); material.pop("signature", None)
+    return _canonical_bytes({"domain": WITNESS_V3_SCHEMA, "witness": material})
 
 
 def _pending_payload(record: Mapping[str, Any]) -> bytes:
@@ -731,18 +970,21 @@ def _head_witness(*, receipt: Mapping[str, Any], receipt_body: bytes, signer: Sh
 
 
 def _validate_head_witness(record: Mapping[str, Any], *, signer: ShareCountSigner) -> dict[str, Any]:
-    required = {
-        "schema", "key_id", "sequence", "receipt_id", "receipt_sha256", "receipt_byte_length",
-        "receipt_object_key", "generation_id", "ledger_sha256", "ledger_byte_length", "ledger_object_key",
-        "published_at", "previous_receipt", "signature",
-    }
-    if not isinstance(record, Mapping) or set(record) != required or record.get("schema") != WITNESS_SCHEMA:
+    required = {"schema", "key_id", "signature"} | _HEAD_SELECTION_FIELDS
+    if not isinstance(record, Mapping) or set(record) != required or record.get("schema") != WITNESS_V2_SCHEMA:
         raise ShareCountPublicationError("share-count external head witness shape is invalid")
     _validate_contract(
         record,
         "capital_structure_share_count_head_witness.schema.json",
         label="share-count head witness",
     )
+    _validate_head_selection(record)
+    if not isinstance(record.get("key_id"), str) or not signer.verify(_head_payload(record), record.get("signature"), key_id=record["key_id"]):
+        raise ShareCountPublicationError("share-count external head witness authentication mismatch")
+    return dict(record)
+
+
+def _validate_head_selection(record: Mapping[str, Any]) -> None:
     if (
         not isinstance(record.get("sequence"), int)
         or isinstance(record["sequence"], bool)
@@ -772,9 +1014,140 @@ def _validate_head_witness(record: Mapping[str, Any], *, signer: ShareCountSigne
             label="head predecessor",
             expected_sequence=record["sequence"] - 1,
         )
-    if not isinstance(record.get("key_id"), str) or not signer.verify(_head_payload(record), record.get("signature"), key_id=record["key_id"]):
-        raise ShareCountPublicationError("share-count external head witness authentication mismatch")
+
+
+def _validate_head_witness_v3(
+    record: Mapping[str, Any],
+    *,
+    signer: ShareCountSigner,
+    expected_scope: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    required = {
+        "schema", "key_id", "guard_scope", "migration", "signature",
+    } | _HEAD_SELECTION_FIELDS
+    if (
+        not isinstance(record, Mapping)
+        or set(record) != required
+        or record.get("schema") != WITNESS_V3_SCHEMA
+    ):
+        raise ShareCountPublicationError("share-count v3 external head witness shape is invalid")
+    _validate_contract(
+        record,
+        "capital_structure_share_count_head_witness_v3.schema.json",
+        label="share-count v3 head witness",
+    )
+    _validate_head_selection(record)
+    scope = record.get("guard_scope")
+    if not isinstance(scope, Mapping):
+        raise ShareCountPublicationError("share-count v3 head guard scope is invalid")
+    _validate_head_guard_scope(scope, expected=expected_scope)
+    migration = record.get("migration")
+    if (
+        not isinstance(migration, Mapping)
+        or set(migration) != {"from_schema", "from_witness_sha256"}
+        or migration.get("from_schema") != WITNESS_V2_SCHEMA
+        or not _is_hex64(migration.get("from_witness_sha256"))
+    ):
+        raise ShareCountPublicationError("share-count v3 head migration binding is invalid")
+    verify = getattr(signer, "verify_head_v3", None)
+    if (
+        not isinstance(record.get("key_id"), str)
+        or not callable(verify)
+        or not verify(
+            _head_v3_payload(record),
+            record.get("signature"),
+            key_id=record["key_id"],
+        )
+    ):
+        raise ShareCountPublicationError(
+            "share-count v3 external head witness authentication mismatch",
+        )
     return dict(record)
+
+
+def _validate_any_head_witness(
+    record: Mapping[str, Any],
+    *,
+    signer: ShareCountSigner,
+    expected_scope: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    if not isinstance(record, Mapping):
+        raise ShareCountPublicationError("share-count external head witness shape is invalid")
+    if record.get("schema") == WITNESS_V2_SCHEMA:
+        return _validate_head_witness(record, signer=signer)
+    if record.get("schema") == WITNESS_V3_SCHEMA:
+        if expected_scope is None:
+            raise ShareCountPublicationError(
+                "share-count v3 head guard requires an explicit configured scope",
+            )
+        return _validate_head_witness_v3(
+            record,
+            signer=signer,
+            expected_scope=expected_scope,
+        )
+    raise ShareCountPublicationError("share-count external head witness schema is unsupported")
+
+
+def _head_selection(record: Mapping[str, Any]) -> dict[str, Any]:
+    return {field: record[field] for field in sorted(_HEAD_SELECTION_FIELDS)}
+
+
+def _migrated_head_witness_v3(
+    previous: Mapping[str, Any],
+    *,
+    signer: ShareCountSigner,
+    guard_scope: Mapping[str, Any],
+) -> dict[str, Any]:
+    previous = _validate_head_witness(previous, signer=signer)
+    scope = _validate_head_guard_scope(guard_scope)
+    previous_body = _canonical_bytes(previous) + b"\n"
+    candidate: dict[str, Any] = {
+        "schema": WITNESS_V3_SCHEMA,
+        "key_id": signer.key_id,
+        **_head_selection(previous),
+        "guard_scope": scope,
+        "migration": {
+            "from_schema": WITNESS_V2_SCHEMA,
+            "from_witness_sha256": _sha(previous_body),
+        },
+        "signature": "",
+    }
+    sign = getattr(signer, "sign_head_v3", None)
+    if not callable(sign):
+        raise ShareCountPublicationError("share-count v3 head signer is unavailable")
+    candidate["signature"] = sign(_head_v3_payload(candidate))
+    return _validate_head_witness_v3(
+        candidate,
+        signer=signer,
+        expected_scope=scope,
+    )
+
+
+def _validate_head_migration(
+    *,
+    previous: Mapping[str, Any],
+    candidate: Mapping[str, Any],
+    signer: ShareCountSigner,
+    expected_scope: Mapping[str, Any],
+) -> None:
+    previous = _validate_head_witness(previous, signer=signer)
+    candidate = _validate_head_witness_v3(
+        candidate,
+        signer=signer,
+        expected_scope=expected_scope,
+    )
+    if _head_selection(candidate) != _head_selection(previous):
+        raise ShareCountPublicationError(
+            "share-count v3 head migration changed the selected generation",
+        )
+    expected_migration = {
+        "from_schema": WITNESS_V2_SCHEMA,
+        "from_witness_sha256": _sha(_canonical_bytes(previous) + b"\n"),
+    }
+    if candidate["migration"] != expected_migration:
+        raise ShareCountPublicationError(
+            "share-count v3 head migration is detached from exact v2 witness bytes",
+        )
 
 
 def _validate_head_transition(*, previous: Mapping[str, Any] | None, candidate: Mapping[str, Any], signer: ShareCountSigner) -> None:
@@ -1001,6 +1374,14 @@ class _LocalReceiptSelection:
     @property
     def sequence(self) -> int:
         return int(self.receipt["sequence"])
+
+
+@dataclass
+class _RecoveryTrace:
+    """Entry-state facts that must survive legacy cleanup during one lease."""
+
+    legacy_seen_at_entry: bool = False
+    selected_head: Mapping[str, Any] | None = None
 
 
 def _storage_root() -> Path:
@@ -1975,7 +2356,11 @@ def _read_selected_external_receipt(
     signer: ShareCountSigner,
 ) -> tuple[dict[str, Any], bytes]:
     """Authenticate the externally selected receipt without opening its ledger."""
-    _validate_head_witness(head, signer=signer)
+    _validate_any_head_witness(
+        head,
+        signer=signer,
+        expected_scope=(guard.guard_scope if head.get("schema") == WITNESS_V3_SCHEMA else None),
+    )
     lane.operation.check("external head validation")
     body = _guard_call(
         lane,
@@ -2007,7 +2392,11 @@ def _read_selected_external_ledger(
     signer: ShareCountSigner,
 ) -> bytes:
     """Read the selected external ledger after all selector proofs have passed."""
-    head = _validate_head_witness(head, signer=signer)
+    head = _validate_any_head_witness(
+        head,
+        signer=signer,
+        expected_scope=(guard.guard_scope if head.get("schema") == WITNESS_V3_SCHEMA else None),
+    )
     receipt = _validate_receipt(receipt, signer=signer)
     if receipt_body != _canonical_bytes(dict(receipt)) + b"\n":
         raise ShareCountPublicationError("share-count selected external receipt body is detached")
@@ -2464,6 +2853,16 @@ def _read_signed_record(
     )
     if body is None:
         return None
+    return _decode_signed_record(body, max_bytes=max_bytes, label=label, lane=lane)
+
+
+def _decode_signed_record(
+    body: bytes,
+    *,
+    max_bytes: int,
+    label: str,
+    lane: _PublicationLane,
+) -> tuple[dict[str, Any], bytes]:
     parsed = _parse_canonical_json(body, label=label, max_bytes=max_bytes)
     lane.operation.check(f"{label} decoding")
     return parsed, body
@@ -2479,9 +2878,121 @@ def _read_authenticated_head(
     """Read the mutable selector once, preserving the guard's CAS token."""
     head, token = _guard_call(lane, label=label, call=guard.read)
     if head is not None:
-        head = _validate_head_witness(head, signer=signer)
+        expected_scope = None
+        if head.get("schema") == WITNESS_V3_SCHEMA:
+            expected_scope = guard.guard_scope
+        head = _validate_any_head_witness(
+            head,
+            signer=signer,
+            expected_scope=expected_scope,
+        )
         lane.operation.check(f"{label} validation")
     return head, token
+
+
+def _maybe_migrate_head_v3(
+    lane: _PublicationLane,
+    *,
+    current: ShareCountPublicationResult | None,
+    trace: _RecoveryTrace,
+    guard: ShareCountHeadGuard,
+    signer: ShareCountSigner,
+    enabled: bool,
+) -> Mapping[str, Any] | None:
+    """Replace one clean v2 selector with a scope-bound same-selection v3 fence."""
+    entry_head = trace.selected_head
+    if not enabled or trace.legacy_seen_at_entry:
+        return entry_head
+    if entry_head is None:
+        if current is not None:
+            raise ShareCountPublicationError(
+                "share-count v3 migration found local state without an external head",
+            )
+        return None
+    if entry_head.get("schema") == WITNESS_V3_SCHEMA:
+        if current is None or not _pointer_matches_witness(current.pointer, entry_head):
+            raise ShareCountPublicationError(
+                "share-count v3 head is detached from the recovered local selector",
+            )
+        return entry_head
+    entry_head = _validate_head_witness(entry_head, signer=signer)
+    marker_after_recovery = _bounded_read_at(
+        lane.base_fd,
+        PENDING_NAME,
+        max_bytes=MAX_PENDING_MARKER_BYTES,
+        label="post-recovery pending marker",
+        operation=lane.operation,
+        missing_ok=True,
+    )
+    capsule_after_recovery = _bounded_read_at(
+        lane.base_fd,
+        RECOVERY_NAME,
+        max_bytes=MAX_RECOVERY_CAPSULE_BYTES,
+        label="post-recovery recovery capsule",
+        operation=lane.operation,
+        missing_ok=True,
+    )
+    if marker_after_recovery is not None or capsule_after_recovery is not None:
+        raise ShareCountPublishIndeterminate(
+            "share-count v3 migration requires exact post-recovery legacy-record absence",
+        )
+    if current is None or not _pointer_matches_witness(current.pointer, entry_head):
+        raise ShareCountPublicationError(
+            "share-count v3 migration requires an exact recovered local selector",
+        )
+    current_receipt_body = _canonical_bytes(dict(current.receipt)) + b"\n"
+    _verify_receipt_matches_witness(current.receipt, current_receipt_body, entry_head)
+    scope = guard.guard_scope
+    candidate = _migrated_head_witness_v3(
+        entry_head,
+        signer=signer,
+        guard_scope=scope,
+    )
+    fresh, token = _read_authenticated_head(
+        lane,
+        guard=guard,
+        signer=signer,
+        label="v3 migration fresh v2 head read",
+    )
+    if fresh == candidate:
+        trace.selected_head = dict(candidate)
+        return candidate
+    if fresh != entry_head or not isinstance(token, str) or not token:
+        raise ShareCountPublicationConflict(
+            "share-count v3 migration lost the fresh v2 selector race",
+        )
+    lane.assert_bound(label="before v3 head migration CAS")
+    try:
+        owner = getattr(guard.migrate_v2_to_v3, "__self__", None)
+        bind_deadline = getattr(owner, "_bind_deadline", None)
+        deadline_context = (
+            bind_deadline(lane.operation)
+            if callable(bind_deadline)
+            else contextlib.nullcontext()
+        )
+        with deadline_context:
+            guard.migrate_v2_to_v3(
+                expected=entry_head,
+                expected_token=token,
+                candidate=candidate,
+            )
+    except ShareCountPublicationConflict:
+        # A concurrent byte-identical migration is success; every newer or
+        # differently scoped/authenticated selector is an abort.
+        pass
+    lane.assert_bound(label="after v3 head migration CAS", check_deadline=False)
+    confirmed, _ = _read_authenticated_head(
+        lane,
+        guard=guard,
+        signer=signer,
+        label="v3 migration confirmation head read",
+    )
+    if confirmed != candidate:
+        raise ShareCountPublicationConflict(
+            "share-count v3 migration confirmation selected a different head",
+        )
+    trace.selected_head = dict(candidate)
+    return candidate
 
 
 def _replay_cas_started_transition(
@@ -2612,6 +3123,7 @@ def _recover_locked(
     *,
     signer: ShareCountSigner,
     guard: ShareCountHeadGuard,
+    trace: _RecoveryTrace | None = None,
 ) -> ShareCountPublicationResult | None:
     head, _ = _read_authenticated_head(
         lane,
@@ -2619,17 +3131,65 @@ def _recover_locked(
         signer=signer,
         label="external head read",
     )
+    if trace is not None:
+        trace.selected_head = None if head is None else dict(head)
     # Read and authenticate the retained selector before processing any marker
     # that could install external bytes.  This selector and its signed receipt
     # form the local high-water; a replayed signed head may not erase it.
     local = _read_local_selector(lane, signer=signer, witness=None)
     _assert_local_high_water(local, head)
     expected_pointer = None if local is None else _canonical_bytes(dict(local.pointer)) + b"\n"
-    marker_loaded = _read_signed_record(
-        lane, PENDING_NAME, max_bytes=MAX_PENDING_MARKER_BYTES, label="pending marker",
+    marker_body_at_entry = _bounded_read_at(
+        lane.base_fd,
+        PENDING_NAME,
+        max_bytes=MAX_PENDING_MARKER_BYTES,
+        label="pending marker",
+        operation=lane.operation,
+        missing_ok=True,
     )
-    capsule_loaded = _read_signed_record(
-        lane, RECOVERY_NAME, max_bytes=MAX_RECOVERY_CAPSULE_BYTES, label="recovery capsule",
+    capsule_body_at_entry = _bounded_read_at(
+        lane.base_fd,
+        RECOVERY_NAME,
+        max_bytes=MAX_RECOVERY_CAPSULE_BYTES,
+        label="recovery capsule",
+        operation=lane.operation,
+        missing_ok=True,
+    )
+    legacy_seen_at_entry = (
+        marker_body_at_entry is not None or capsule_body_at_entry is not None
+    )
+    if trace is not None:
+        trace.legacy_seen_at_entry = legacy_seen_at_entry
+    if (
+        head is not None
+        and head.get("schema") == WITNESS_V3_SCHEMA
+        and legacy_seen_at_entry
+    ):
+        # Even malformed legacy bytes remain exact operator evidence.  A v3
+        # downgrade fence and any v2 recovery artifact may never be reconciled
+        # in one invocation.
+        raise ShareCountPublishIndeterminate(
+            "share-count v3 head cannot coexist with legacy recovery records",
+        )
+    marker_loaded = (
+        None
+        if marker_body_at_entry is None
+        else _decode_signed_record(
+            marker_body_at_entry,
+            max_bytes=MAX_PENDING_MARKER_BYTES,
+            label="pending marker",
+            lane=lane,
+        )
+    )
+    capsule_loaded = (
+        None
+        if capsule_body_at_entry is None
+        else _decode_signed_record(
+            capsule_body_at_entry,
+            max_bytes=MAX_RECOVERY_CAPSULE_BYTES,
+            label="recovery capsule",
+            lane=lane,
+        )
     )
     capsule_expected_high_water: Mapping[str, Any] | None = None
     capsule_required_high_water: Mapping[str, Any] | None = None
@@ -2668,6 +3228,8 @@ def _recover_locked(
                 guard=guard,
                 signer=signer,
             )
+            if trace is not None:
+                trace.selected_head = None if head is None else dict(head)
             if head == expected:
                 raise ShareCountPublishIndeterminate(
                     "share-count pending CAS recovery did not advance expected head",
@@ -2733,14 +3295,24 @@ def _recover_locked(
         # crash after marker deletion recoverable rather than terminal.
         capsule = _validate_capsule(capsule, signer=signer)
         capsule_expected_high_water = capsule["expected_witness"]
-        # Capsule-only state has two valid origins: a crash before marker
-        # creation, or the historical marker-first post-commit cleanup gap.
-        # Its candidate was not durably selected by a marker, so promoting it
-        # to high-water would reject a legitimate competing E -> C' successor
-        # after the former origin.  The signed expected witness is the only
-        # common proof anchor.  A lost/replayed local selector cannot resolve
-        # a credential-level fork beyond that documented clean-run boundary.
-        capsule_required_high_water = capsule_expected_high_water
+        candidate = capsule["candidate_witness"]
+        # Strict legacy matrix.  H==E is a provable pre-marker crash and may
+        # clear after E's selected bundle validates.  H==C or a descendant of C
+        # is the historical marker-first cleanup gap and must prove C as its
+        # high-water.  Every sibling, equal-sequence fork, or rollback is
+        # rejected while preserving the exact capsule and pointer bytes.
+        if head == capsule_expected_high_water:
+            capsule_required_high_water = capsule_expected_high_water
+        elif head == candidate:
+            capsule_required_high_water = candidate
+        elif head is None:
+            capsule_required_high_water = candidate
+        elif head["sequence"] <= candidate["sequence"]:
+            raise ShareCountPublicationError(
+                "share-count orphan recovery capsule conflicts with the selected external head",
+            )
+        else:
+            capsule_required_high_water = candidate
         orphan_capsule_body = capsule_body
         lane.operation.check("orphan recovery capsule validation")
     if head is None:
@@ -2844,7 +3416,44 @@ def _recover_locked(
     return result
 
 
-def _production_trust() -> tuple[ShareCountSigner, ShareCountHeadGuard]:
+def _validate_r2_account_endpoint_binding(*, account_id: str, endpoint: str) -> None:
+    if not _HEX32.fullmatch(account_id):
+        raise ShareCountPublicationError(
+            "SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID must be exactly 32 lowercase hexadecimal characters",
+        )
+    try:
+        parsed = urlsplit(endpoint)
+        port = parsed.port
+    except (TypeError, ValueError) as exc:
+        raise ShareCountPublicationError(
+            "share-count head-guard R2 endpoint is invalid",
+        ) from exc
+    hostname = parsed.hostname
+    allowed_hosts = {
+        f"{account_id}.r2.cloudflarestorage.com",
+        f"{account_id}.eu.r2.cloudflarestorage.com",
+        f"{account_id}.fedramp.r2.cloudflarestorage.com",
+    }
+    if (
+        parsed.scheme != "https"
+        or parsed.username is not None
+        or parsed.password is not None
+        or port is not None
+        or parsed.path != ""
+        or parsed.query != ""
+        or parsed.fragment != ""
+        or hostname not in allowed_hosts
+        or parsed.netloc != hostname
+    ):
+        raise ShareCountPublicationError(
+            "share-count head-guard account does not match the exact Cloudflare R2 endpoint",
+        )
+
+
+def _production_trust(
+    *,
+    migration_enabled: bool = False,
+) -> tuple[ShareCountSigner, ShareCountHeadGuard]:
     secret = os.environ.get("CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY", "")
     key_id = (
         os.environ.get("SHARE_COUNT_HEAD_GUARD_KEY_ID")
@@ -2852,9 +3461,28 @@ def _production_trust() -> tuple[ShareCountSigner, ShareCountHeadGuard]:
         or "share-count-head-v2"
     )
     bucket = os.environ.get("SHARE_COUNT_HEAD_GUARD_BUCKET") or os.environ.get("R2_CAPITAL_STRUCTURE_BUCKET") or os.environ.get("R2_BUCKET")
+    account_id = os.environ.get("SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID", "")
     if not secret or not bucket:
         raise ShareCountPublicationError(
             "share-count production trust is unconfigured: require CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY and a head-guard R2 bucket",
+        )
+    if migration_enabled and not account_id:
+        raise ShareCountPublicationError(
+            "share-count v3 migration requires SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID",
+        )
+    if account_id:
+        endpoint = (
+            os.environ.get("R2_CAPITAL_STRUCTURE_ENDPOINT")
+            or os.environ.get("R2_ENDPOINT")
+            or ""
+        )
+        if not endpoint:
+            raise ShareCountPublicationError(
+                "share-count v3 head guard requires an explicit Cloudflare R2 endpoint",
+            )
+        _validate_r2_account_endpoint_binding(
+            account_id=account_id,
+            endpoint=endpoint,
         )
     try:
         from engine.capital_structure.source_store import _capital_structure_r2_client
@@ -2862,7 +3490,12 @@ def _production_trust() -> tuple[ShareCountSigner, ShareCountHeadGuard]:
         if client is None:
             raise ShareCountPublicationError("share-count external head R2 client is unavailable")
         signer = HmacShareCountSigner(secret, key_id=key_id)
-        return signer, R2ShareCountHeadGuard(client=client, bucket=bucket, signer=signer)
+        return signer, R2ShareCountHeadGuard(
+            client=client,
+            bucket=bucket,
+            signer=signer,
+            account_id=account_id or None,
+        )
     except ShareCountPublicationError:
         raise
     except Exception as exc:  # noqa: BLE001
@@ -2905,6 +3538,18 @@ def _operation_budget(max_operation_seconds: float | None) -> float:
     return min(seconds, PUBLICATION_TIMEOUT_SECONDS)
 
 
+def _head_v3_migration_enabled() -> bool:
+    raw = os.environ.get(
+        "CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED",
+        "false",
+    )
+    if raw not in {"true", "false"}:
+        raise ShareCountPublicationError(
+            "CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED must be exactly true or false",
+        )
+    return raw == "true"
+
+
 def _validate_production_ledger(ledger_bytes: bytes, input_binding: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     ledger = _parse_canonical_json(ledger_bytes, label="candidate ledger", max_bytes=MAX_LEDGER_BYTES)
     try:
@@ -2941,6 +3586,7 @@ def _publish_share_count_materialization_for_test(
     *, root: Path, canonical_ledger_bytes: bytes, input_binding: Mapping[str, Any],
     signer: ShareCountSigner, head_guard: ShareCountHeadGuard, now: datetime | None = None,
     fault: Callable[[str], None] | None = None, validate_ledger: bool = True,
+    migrate_head_v3: bool = False,
     deadline: float | None = None, monotonic: Callable[[], float] = time.monotonic,
 ) -> ShareCountPublicationResult:
     """Injected test seam; production callers must use the public entry point."""
@@ -2950,7 +3596,21 @@ def _publish_share_count_materialization_for_test(
     _require_deadline(start_deadline, monotonic, label="trust and lease acquisition")
     with _publication_lease(root, deadline=start_deadline, monotonic=monotonic) as lane:
         lane.operation.check("recovery")
-        current = _recover_locked(lane, signer=signer, guard=head_guard)
+        trace = _RecoveryTrace()
+        current = _recover_locked(
+            lane,
+            signer=signer,
+            guard=head_guard,
+            trace=trace,
+        )
+        active_head = _maybe_migrate_head_v3(
+            lane,
+            current=current,
+            trace=trace,
+            guard=head_guard,
+            signer=signer,
+            enabled=migrate_head_v3,
+        )
         lane.operation.check("candidate validation")
         candidate_ledger = _parse_canonical_json(canonical_ledger_bytes, label="candidate ledger", max_bytes=MAX_LEDGER_BYTES)
         if validate_ledger:
@@ -2972,12 +3632,28 @@ def _publish_share_count_materialization_for_test(
         ):
             lane.assert_bound(label="no-op publication completion")
             return current
-        expected_head, expected_token = _guard_call(
-            lane, label="pre-publication external head read", call=head_guard.read,
+        expected_head, expected_token = _read_authenticated_head(
+            lane,
+            guard=head_guard,
+            signer=signer,
+            label="pre-publication external head read",
         )
-        if expected_head is not None:
-            expected_head = _validate_head_witness(expected_head, signer=signer)
-            lane.operation.check("pre-publication external head validation")
+        if expected_head is not None and expected_head.get("schema") == WITNESS_V3_SCHEMA:
+            raise ShareCountPublicationError(
+                "share-count v3 external head is a migration fence; new publication is disabled",
+            )
+        if migrate_head_v3:
+            if trace.legacy_seen_at_entry:
+                raise ShareCountPublicationError(
+                    "share-count v3 migration is deferred after legacy recovery",
+                )
+            if active_head is None:
+                raise ShareCountPublicationError(
+                    "share-count v3 migration mode cannot create a genesis publication",
+                )
+            raise ShareCountPublicationError(
+                "share-count v3 migration mode cannot publish a successor",
+            )
         if (current is None) != (expected_head is None):
             raise ShareCountPublicationError("share-count local and external selector disagree before publish")
         if current is not None and not _pointer_matches_witness(current.pointer, expected_head):
@@ -3231,13 +3907,28 @@ def _publish_share_count_materialization_for_test(
 
 def _recover_share_count_materialization_for_test(
     *, root: Path, signer: ShareCountSigner, head_guard: ShareCountHeadGuard,
+    migrate_head_v3: bool = False,
     deadline: float | None = None, monotonic: Callable[[], float] = time.monotonic,
 ) -> ShareCountPublicationResult | None:
     start_deadline = deadline if deadline is not None else monotonic() + LEASE_TIMEOUT_SECONDS
     _require_deadline(start_deadline, monotonic, label="trust and lease acquisition")
     with _publication_lease(root, deadline=start_deadline, monotonic=monotonic) as lane:
         lane.operation.check("recovery")
-        result = _recover_locked(lane, signer=signer, guard=head_guard)
+        trace = _RecoveryTrace()
+        result = _recover_locked(
+            lane,
+            signer=signer,
+            guard=head_guard,
+            trace=trace,
+        )
+        _maybe_migrate_head_v3(
+            lane,
+            current=result,
+            trace=trace,
+            guard=head_guard,
+            signer=signer,
+            enabled=migrate_head_v3,
+        )
         lane.operation.check("recovery completion")
         lane.assert_bound(label="recovery completion")
         return result
@@ -3257,7 +3948,8 @@ def _publish_share_count_materialization_with_production_trust(
     """
     monotonic = time.monotonic
     deadline = monotonic() + _operation_budget(max_operation_seconds)
-    signer, guard = _production_trust()
+    migrate_head_v3 = _head_v3_migration_enabled()
+    signer, guard = _production_trust(migration_enabled=migrate_head_v3)
     _require_deadline(deadline, monotonic, label="production trust")
     # Defense in depth at the storage boundary. Semantic validation does not
     # replace the orchestrator's authenticated raw-byte recompilation.
@@ -3265,7 +3957,7 @@ def _publish_share_count_materialization_with_production_trust(
     return _publish_share_count_materialization_for_test(
         root=_storage_root(), canonical_ledger_bytes=canonical_ledger_bytes, input_binding=input_binding,
         signer=signer, head_guard=guard, now=datetime.now(timezone.utc), deadline=deadline,
-        monotonic=monotonic,
+        monotonic=monotonic, migrate_head_v3=migrate_head_v3,
     )
 
 
@@ -3275,10 +3967,12 @@ def recover_share_count_materialization(
     """Restore a selected generation from the external signed head when needed."""
     monotonic = time.monotonic
     deadline = monotonic() + _operation_budget(max_operation_seconds)
-    signer, guard = _production_trust()
+    migrate_head_v3 = _head_v3_migration_enabled()
+    signer, guard = _production_trust(migration_enabled=migrate_head_v3)
     _require_deadline(deadline, monotonic, label="production trust")
     return _recover_share_count_materialization_for_test(
-        root=_storage_root(), signer=signer, head_guard=guard, deadline=deadline, monotonic=monotonic,
+        root=_storage_root(), signer=signer, head_guard=guard, deadline=deadline,
+        monotonic=monotonic, migrate_head_v3=migrate_head_v3,
     )
 
 
