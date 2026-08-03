@@ -77,8 +77,8 @@ _SIG_ZH = "显著"
 # --------------------------------------------------------------------------- #
 # 1. the shape that actually shipped must resolve to "measuring"
 # --------------------------------------------------------------------------- #
-def test_ten_ic_days_over_twelve_calendar_days_cannot_claim_significance(tmp_path, monkeypatch):
-    """The 2026-08-03 artifact shape, reproduced: ~10 daily IC-days back to back.
+def test_ten_back_to_back_ic_days_cannot_claim_significance(tmp_path, monkeypatch):
+    """The 2026-08-03 artifact shape, reproduced: 10 daily IC-days back to back.
 
     Every OTHER gate condition is satisfied on purpose — thousands of matured rows, a large
     positive IC, a t far above 2 — so this test fails for exactly one reason if the floor is
@@ -96,11 +96,12 @@ def test_ten_ic_days_over_twelve_calendar_days_cannot_claim_significance(tmp_pat
     assert h21["indep_windows"] < S._MIN_INDEP_WINDOWS
 
     assert tr["verdict"] == "measuring", (
-        f"10 IC-days over 12 calendar days is one episode, not evidence. "
+        f"ten readings of one stretch of market is one episode, not evidence. "
         f"indep_windows={h21['indep_windows']} < {S._MIN_INDEP_WINDOWS}")
     assert not any(tr["proven"].values())
     assert tr["lead_time_d"] is None
-    assert _SIG_EN not in tr["note"] or "no horizon clears" in tr["note"]
+    # "significance" (the negated measuring copy) is not "significant" (the claim)
+    assert _SIG_EN not in tr["note"] and _SIG_ZH not in tr["note_zh"].replace("显著性检验", "")
     assert tr["note"] == S._NOTES["measuring"][0]
     assert tr["note_zh"] == S._NOTES["measuring"][1]
     assert S.note_violation(tr) is None
