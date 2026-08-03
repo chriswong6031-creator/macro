@@ -384,33 +384,9 @@ def verify_public_wire_article(payload: object) -> None:
         raise PublicWireContractError("public wire admission state invalid")
 
     facts = article.get("facts")
-    if not isinstance(facts, list) or not facts:
-        raise PublicWireContractError("public wire needs at least one exact fact")
-    claims: set[str] = set()
-    numeric_values: set[tuple[str, str]] = set()
-    for index, raw_fact in enumerate(facts):
-        fact = _mapping(raw_fact, name=f"public wire fact {index}")
-        _closed_keys(fact, _FACT_KEYS, name=f"public wire fact {index}")
-        quote = _mapping(fact.get("quote"), name=f"public wire fact {index} quote")
-        _closed_keys(quote, _SPAN_KEYS, name=f"public wire fact {index} quote")
-        if quote.get("kind") != "quote" or quote.get("claim_id") != fact.get("claim_id"):
-            raise PublicWireContractError("public wire quote binding invalid")
-        _verify_wire_span(quote, source_sha=source_sha, claims=claims, numeric_values=numeric_values)
-        for key in ("speaker", "role", "chapter"):
-            if not isinstance(fact.get(key), str) or len(fact[key]) > 400:
-                raise PublicWireContractError(f"public wire fact {key} invalid")
-        categories = fact.get("categories")
-        if not isinstance(categories, list) or not categories or any(not isinstance(item, str) for item in categories):
-            raise PublicWireContractError("public wire fact categories invalid")
-        numeric = fact.get("numeric")
-        if not isinstance(numeric, list):
-            raise PublicWireContractError("public wire fact numeric invalid")
-        for raw_span in numeric:
-            span = _mapping(raw_span, name="public wire numeric span")
-            _closed_keys(span, _SPAN_KEYS, name="public wire numeric span")
-            if span.get("kind") != "numeric":
-                raise PublicWireContractError("public wire numeric span kind invalid")
-            _verify_wire_span(span, source_sha=source_sha, claims=claims, numeric_values=numeric_values)
+    claims, numeric_values = verify_public_wire_fact_projection(
+        facts, source_sha256=source_sha,
+    )
     if len(claims) < 2:
         raise PublicWireContractError("public wire has too little approved evidence")
     if len(numeric_values) < article_receipt_floor(str(admission["tier"])):
@@ -448,6 +424,56 @@ def _verify_wire_span(
         raise PublicWireContractError("public wire span receipt range invalid")
     if span.get("kind") == "numeric":
         numeric_values.add((text, str(receipt["text_sha256"])))
+
+
+def verify_public_wire_fact_projection(
+    payload: object, *, source_sha256: str, max_facts: int | None = None,
+) -> tuple[set[str], set[tuple[str, str]]]:
+    """Validate a receipt-bound subset of an admitted wire article's facts.
+
+    Context and weekly projections intentionally carry only a bounded subset of
+    the full article.  Reusing this validator prevents those downstream
+    contracts from treating a list-shaped but semantically forged value as
+    exact evidence.  The caller still owns the subset bound and surrounding
+    identity contract.
+    """
+    source_sha = _sha(source_sha256, name="public wire fact projection source sha256")
+    if (
+        not isinstance(payload, list)
+        or not payload
+        or (max_facts is not None and len(payload) > max_facts)
+    ):
+        raise PublicWireContractError("public wire fact projection must be bounded and non-empty")
+    claims: set[str] = set()
+    numeric_values: set[tuple[str, str]] = set()
+    for index, raw_fact in enumerate(payload):
+        fact = _mapping(raw_fact, name=f"public wire fact {index}")
+        _closed_keys(fact, _FACT_KEYS, name=f"public wire fact {index}")
+        quote = _mapping(fact.get("quote"), name=f"public wire fact {index} quote")
+        _closed_keys(quote, _SPAN_KEYS, name=f"public wire fact {index} quote")
+        if quote.get("kind") != "quote" or quote.get("claim_id") != fact.get("claim_id"):
+            raise PublicWireContractError("public wire quote binding invalid")
+        _verify_wire_span(quote, source_sha=source_sha, claims=claims, numeric_values=numeric_values)
+        for key in ("speaker", "role", "chapter"):
+            if not isinstance(fact.get(key), str) or len(fact[key]) > 400:
+                raise PublicWireContractError(f"public wire fact {key} invalid")
+        categories = fact.get("categories")
+        if (
+            not isinstance(categories, list)
+            or not categories
+            or any(not isinstance(item, str) or not item or len(item) > 120 for item in categories)
+        ):
+            raise PublicWireContractError("public wire fact categories invalid")
+        numeric = fact.get("numeric")
+        if not isinstance(numeric, list):
+            raise PublicWireContractError("public wire fact numeric invalid")
+        for raw_span in numeric:
+            span = _mapping(raw_span, name="public wire numeric span")
+            _closed_keys(span, _SPAN_KEYS, name="public wire numeric span")
+            if span.get("kind") != "numeric":
+                raise PublicWireContractError("public wire numeric span kind invalid")
+            _verify_wire_span(span, source_sha=source_sha, claims=claims, numeric_values=numeric_values)
+    return claims, numeric_values
 
 
 def build_public_wire_manifest(

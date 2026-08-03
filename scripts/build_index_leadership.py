@@ -360,9 +360,20 @@ def build(site: Path | None = None, generated_utc: str | None = None) -> int:
     try:
         payload = compute(site)
     except Exception as e:  # noqa: BLE001
-        log.error("index_leadership compute failed: %s", e)
+        # Bare print, never the logger — the prefixing log format makes GitHub drop the
+        # annotation silently (tests/test_gh_annotation_line_start.py).
+        print(f"::warning title=index_leadership::compute crashed ({e}) — kept last committed "
+              "index_leadership.json; forward ledger not advanced", flush=True)
+        log.error("index_leadership compute failed: %s", e, exc_info=True)
         return 0
     if not payload:
+        # This exact skip ran silent for 18 nightlies (snapshots.jsonl frozen at its
+        # 2026-06-30 seed): the subsectorohlc* sidecars are gitignored/R2-hosted, so a
+        # checkout without the R2 restore has none and compute() finds zero tabs.
+        print("::warning title=index_leadership::no readable inputs — subsector_confluence*/"
+              "basket_confluence boards or site/subsectorohlc*/ sidecars absent (fresh checkout "
+              "without the R2 restore?); kept last committed index_leadership.json; forward "
+              "ledger not advanced", flush=True)
         log.warning("index_leadership: no confluence boards found — skipped")
         return 0
 
@@ -382,7 +393,9 @@ def build(site: Path | None = None, generated_utc: str | None = None) -> int:
         log.info("index_leadership track: +%d snapshots, %d days, verdict=%s", n_log,
                  payload["track_record"].get("n_days"), payload["track_record"].get("verdict"))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("index_leadership track record failed: %s", e)
+        print(f"::warning title=index_leadership::track-record leg failed ({e}) — board written "
+              "WITHOUT track_record; snapshots.jsonl not advanced this run", flush=True)
+        log.warning("index_leadership track record failed: %s", e, exc_info=True)
 
     out = site / OUT_JSON
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -394,10 +407,18 @@ def build(site: Path | None = None, generated_utc: str | None = None) -> int:
 
 
 def main() -> dict:
+    """Nightly entrypoint (daily.yml run_py). A no-payload skip HERE is a real fault — the
+    engine job restores the R2 sidecars before this runs — so it must exit non-zero: run_py
+    only alerts on rc != 0 (the step runs `set +e`, so the job never aborts), and this
+    builder's skip path shipped 18 silent nightlies before the 2026-08-03 audit caught it.
+    The render lane calls build() directly and keeps its degrade-quietly contract."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     n = build()
+    if not n:
+        print("::error title=index_leadership::nightly produced no payload — see the ::warning "
+              "above for the missing input; snapshots.jsonl NOT advanced", flush=True)
     return {"ok": bool(n)}
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(0 if main()["ok"] else 1)

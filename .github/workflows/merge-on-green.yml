@@ -18,16 +18,23 @@ name: merge-on-green
 # discipline is unchanged — nothing merges until every check has CONCLUDED clean
 # (the known-spurious `Workers Builds: macro` X excluded). A genuine red or a
 # conflict gets the `merge-blocked` label plus one explanatory comment instead.
+#
+# The original ten-minute schedule routinely arrived 1-3 HOURS late under this
+# repository's workflow load. `workflow_run` is now the primary trigger: the
+# sweeper wakes as soon as either proof workflow or the main-baseline workflow
+# concludes. The cron remains only as a recovery net for third-party checks and
+# missed events.
 on:
+  workflow_run:
+    workflows: [ci, fences, integration-baseline]
+    types: [completed]
   schedule:
-    # Every 10 minutes: fast enough that an armed PR merges within one CI-tail of
-    # its last check concluding, cheap enough to stay far inside the hosted-runner
-    # budget. GitHub may delay scheduled runs under load; a late sweep merges the
-    # same PRs, so lateness costs latency and nothing else.
+    # Recovery net only. Completed proof workflows provide the normal wake-up.
     - cron: "*/10 * * * *"
   workflow_dispatch:
 
 permissions:
+  actions: read          # read integration-baseline workflow-run state
   contents: write        # squash-merge, delete the merged head ref, and merge
                          # main into a clean-but-stale head (update-branch)
   pull-requests: write   # add/remove merge-blocked, post the explanatory comment
@@ -49,10 +56,14 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      # The sweeper script is tracked in this repo, so the checkout IS the
-      # deployment: editing scripts/merge_on_green.py on main changes the next
-      # sweep with no separate release step.
+      # The sweeper needs one tracked Python file, not the repository's ~53k-file
+      # working tree. The old full checkout took ~100 seconds before the first
+      # API call and made a two-minute control-plane action a four-minute one.
       - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: scripts/merge_on_green.py
+          sparse-checkout-cone-mode: false
 
       - name: sweep merge-on-green pull requests
         env:

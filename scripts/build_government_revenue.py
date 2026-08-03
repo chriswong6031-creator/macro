@@ -12,6 +12,7 @@ modification, and recompete fields unavailable.
 Usage::
 
     python -m scripts.build_government_revenue
+    python -m scripts.build_government_revenue --live-materialization
     python -m scripts.build_government_revenue --site-only
     python -m scripts.build_government_revenue --root /path/to/repo
 """
@@ -81,7 +82,11 @@ log = logging.getLogger("build_government_revenue")
 # governed workspace immediately after paint.
 SHELL_EVENT_LIMIT = 12
 SHELL_JSON_BUDGET_BYTES = 100_000
-RAW_HTML_BUDGET_BYTES = 250_000
+# Candidate Radar and the restored always-visible company navigation add a
+# bounded amount of premium cockpit markup.  Keep a hard raw-page fence while
+# preserving the stricter 100 KB embedded-data cap; the radar runtime itself is
+# still an external, cacheable asset.
+RAW_HTML_BUDGET_BYTES = 275_000
 SHELL_COMPANY_METRICS = (
     "ttm_obligations",
     "award_velocity_yoy_pct",
@@ -890,7 +895,40 @@ def _write_site_projection(
     return html_path, json_path
 
 
-def build(root: Path, *, as_of: str | None = None) -> tuple[Path, Path, Path]:
+def _candidate_projection(
+    root: Path,
+    *,
+    live_materialization: bool,
+    generated_at: str | None = None,
+) -> dict:
+    """Advance candidates only in the serialized live lane; otherwise verify.
+
+    The import is deliberately lazy because the sole candidate writer imports
+    this module's canonical workspace validators.  Generic and site-only
+    renders can repair the public twin only after the ledger/state/status and
+    current source bindings pass; they never construct or append observations.
+    """
+    from scripts import build_government_revenue_candidates
+
+    if live_materialization:
+        if not isinstance(generated_at, str) or not generated_at:
+            raise ValueError("live candidate materialization requires one frozen generated_at clock")
+        return build_government_revenue_candidates.project_candidate_artifacts(
+            root,
+            generated_at=generated_at,
+        )
+    return build_government_revenue_candidates.verify_candidate_artifacts(
+        root,
+        mirror_public=True,
+    )
+
+
+def build(
+    root: Path,
+    *,
+    as_of: str | None = None,
+    live_materialization: bool = False,
+) -> tuple[Path, Path, Path]:
     """Build canonical JSON, its site twin, and the HTML page."""
     root = root.resolve()
     payload = _validate_payload(build_payload(root=root, as_of=as_of))
@@ -953,6 +991,11 @@ def build(root: Path, *, as_of: str | None = None) -> tuple[Path, Path, Path]:
         preserved_graph = _load_optional_canonical_budget_graph(root, dossier)
         if preserved_graph is not None:
             _write_budget_program_graph_twins(root, preserved_graph[0])
+    candidate_projection = _candidate_projection(
+        root,
+        live_materialization=live_materialization,
+        generated_at=payload.get("generated_at"),
+    )
     html_path, json_path = _write_site_projection(
         root,
         payload,
@@ -960,11 +1003,12 @@ def build(root: Path, *, as_of: str | None = None) -> tuple[Path, Path, Path]:
         workspace_raw=workspace_raw,
     )
     log.info(
-        "wrote %s, %s and %s (%d companies)",
+        "wrote %s, %s and %s (%d companies; candidate projection %s)",
         html_path,
         canonical_path,
         json_path,
         len(payload.get("companies") or []),
+        candidate_projection.get("status"),
     )
     return html_path, canonical_path, json_path
 
@@ -1045,6 +1089,10 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
         raise ValueError("canonical subaward dossier exists without a prime dossier")
     elif any((canonical_dir / name).exists() for name in ("idv_dossiers.json", "budget_program_graph.json")):
         raise ValueError("canonical optional Government Revenue rail exists without a prime dossier")
+    candidate_projection = _candidate_projection(
+        root,
+        live_materialization=False,
+    )
     html_path, json_path = _write_site_projection(
         root,
         payload,
@@ -1052,9 +1100,10 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
         workspace_raw=workspace_raw,
     )
     log.info(
-        "re-rendered %s from canonical Government Revenue generation %s",
+        "re-rendered %s from canonical Government Revenue generation %s (candidate projection %s)",
         html_path,
         bundle_id,
+        candidate_projection.get("status"),
     )
     return html_path, canonical_path, json_path
 
@@ -1069,14 +1118,25 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="re-render public twins and HTML from the committed canonical generation",
     )
+    parser.add_argument(
+        "--live-materialization",
+        action="store_true",
+        help="advance the append-only candidate ledger in the serialized live lane",
+    )
     args = parser.parse_args(argv)
     try:
         if args.site_only:
-            if args.as_of is not None:
-                parser.error("--as-of cannot be combined with --site-only")
+            if args.as_of is not None or args.live_materialization:
+                parser.error("--site-only cannot be combined with --as-of or --live-materialization")
             build_site_only(Path(args.root))
         else:
-            build(Path(args.root), as_of=args.as_of)
+            if args.live_materialization and args.as_of is not None:
+                parser.error("--live-materialization cannot be combined with --as-of")
+            build(
+                Path(args.root),
+                as_of=args.as_of,
+                live_materialization=args.live_materialization,
+            )
     except Exception as exc:  # noqa: BLE001
         log.error("government revenue build failed: %s", exc, exc_info=True)
         return 1

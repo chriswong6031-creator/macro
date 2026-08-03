@@ -143,6 +143,7 @@ _READ_TOOLS = frozenset({
     "read_stage_analysis",
     # Verified public R2 earnings/event context (no local fallback)
     "read_company_intelligence",
+    "read_earnings_evidence",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -1007,6 +1008,12 @@ def _tool_read_company_intelligence_cx(root: Path, params: dict) -> dict:
     return read_company_intelligence(params)
 
 
+def _tool_read_earnings_evidence_cx(root: Path, params: dict) -> dict:
+    """Read exact, receipt-bound transcript evidence from the member context plane."""
+    from engine.neuralweb.earnings_context_reader import read_earnings_evidence  # noqa: PLC0415
+    return read_earnings_evidence(params, root=root)
+
+
 def _tool_read_china_decision_packet_cx(root: Path, params: dict) -> dict:
     """Read the China decision packet summary (delegates to ask_brain)."""
     from engine.neuralweb.ask_brain import _tool_read_china_decision_packet as _f  # noqa: PLC0415
@@ -1615,6 +1622,9 @@ def dispatch_tool(
     elif tool_name == "read_company_intelligence":
         # Immutable public earnings/event reader (context-only, no local fallback)
         return _tool_read_company_intelligence_cx(root, tool_params)
+    elif tool_name == "read_earnings_evidence":
+        # Exact transcript facts + claim receipts (context-only, local fail-closed)
+        return _tool_read_earnings_evidence_cx(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -2206,6 +2216,29 @@ def _tool_schemas() -> list[dict]:
             },
         },
         {
+            "name": "read_earnings_evidence",
+            "description": (
+                "Read one ticker's latest exact transcript evidence from the governed "
+                "earnings evidence spine. Returns at most two verbatim facts with claim "
+                "IDs, speakers, exact numeric spans, byte-range/hash receipts, source "
+                "completeness, correction state, and links to the call record, dossier, "
+                "and Terminal. Required: ticker. This is stronger citation evidence than "
+                "the qualitative Company Intelligence summary, but remains CONTEXT-ONLY: "
+                "it cannot add, rank, size, gate, escalate, or change a Prophet signal. "
+                "Fails soft with available=False on absence or any integrity failure."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "ticker": {
+                        "type": "string",
+                        "description": "Ticker symbol, for example NVDA or AAPL",
+                    },
+                },
+                "required": ["ticker"],
+            },
+        },
+        {
             "name": "flag_attention",
             "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
             "input_schema": {
@@ -2325,7 +2358,8 @@ READ ({len(_READ_TOOLS)}): read_world_state, query_spine, read_kernel, read_grap
            read_theme_asymmetry, read_theme_options_witness,
            read_theme_clinical, read_theme_trade_flows,
            read_master_brain_theses, read_master_brain_brief,
-           read_special_situations, read_stage_analysis, read_company_intelligence
+           read_special_situations, read_stage_analysis, read_company_intelligence,
+           read_earnings_evidence
 WRITE ({len(_WRITE_TOOLS)}, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 
 CAUSAL CANDIDATES (CHF W5): read_causal_candidates returns inert CHF mechanism cards

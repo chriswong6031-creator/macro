@@ -42,6 +42,7 @@ THREE CHECKS
       engine/neuralweb/cortex.py
       engine/neuralweb/ask_brain.py
       engine/sector_intelligence/contracts.py      (enforcement-only validator)
+      engine/biocatalyst/sector_packet.py          (facts-only packet state builder)
       docs/research/                                 (research docs; prefix match)
       scripts/check_factor_boundaries.py             (this file — for selftest)
 
@@ -133,6 +134,10 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
     # to reject grants above the declared authority cap. It never uses the field
     # as a runtime behavior switch.
     "engine/sector_intelligence/contracts.py",
+    # BC-N0a facts-only sector-packet compiler: validates the closed governance
+    # action vocabulary and emits the same values as a descriptive authority
+    # mirror. It cannot originate, rank, gate, size, or execute behavior.
+    "engine/biocatalyst/sector_packet.py",
     # R-ORTH rail state builder: emits allowed_actions/forbidden_actions as a
     # descriptive mirror only (RUL-ORTH-11; same RUL-NW9 category as the factor
     # state builder). It never reads the field to switch behavior.
@@ -313,7 +318,9 @@ def _is_state_builder(rel_path: str) -> bool:
 def _is_allowlisted_for_allowed_actions(rel_path: str) -> bool:
     """Return True if the file is allowed to reference 'allowed_actions'."""
     for prefix in _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES:
-        if rel_path.startswith(prefix) or rel_path == prefix.rstrip("/"):
+        if prefix.endswith("/") and rel_path.startswith(prefix):
+            return True
+        if not prefix.endswith("/") and rel_path == prefix:
             return True
     return False
 
