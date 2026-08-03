@@ -64,6 +64,7 @@ from engine.marketing.copywriter import headline_fragments as _headline_fragment
 from engine.marketing.copywriter import queued_voice_violations as _queued_voice_violations  # noqa: E402
 from engine.marketing.copywriter import batch_body_duplicate_violations as _batch_body_duplicate_violations  # noqa: E402
 from engine.marketing.copywriter import repeated_sentence_violations as _repeated_sentence_violations  # noqa: E402
+from engine.marketing import market_clock as _clock  # noqa: E402
 
 log = logging.getLogger("marketing_publisher")
 
@@ -427,6 +428,147 @@ _MEDIA_DEFER_MAX_AGE_DAYS = 3
 #: `source.ticker`: the posts the bare-cashtag gate catches carry their tickers
 #: ONLY in the text.
 _CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}(?:\.[A-Z])?\b")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Publish-time clock gate (operator defect report 2026-08-02)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# THE QUEUE IS A BYPASS AROUND EVERY GENERATION LAW. That is a standing house
+# law, and the weekend of 2026-08-01/02 is its most expensive demonstration:
+# every one of the three defect classes was written by copy that was HONEST at
+# the moment it was written and became false while it sat in the queue.
+#
+#   * ob-2026-08-02-7fb823aecd was generated 03:50Z Sunday and POSTED 20:16Z
+#     Sunday — "While New York slept" on a weekend, and "earnings land July 29"
+#     four days after July 29.
+#   * ob-2026-08-01-a83c188711 was generated 21:49Z Saturday saying "$AMZN
+#     +15.3% today" about Friday's tape.
+#   * six posts anchored on one Friday breadth read fanned across four desks and
+#     two runs; the sentinel caught four, TWO RODE THROUGH QUEUED.
+#
+# So the clock-aware generators in engine/marketing are necessary and not
+# sufficient. This is the gate that re-asks the question at the moment of
+# posting, against the corpus that has actually shipped.
+#
+#: How far back the fact-anchor duplicate check looks (operator brief: trailing
+#: 5 days, over items POSTED **or** QUEUED — a duplicate that has not gone out
+#: yet is still a duplicate).
+_FACT_ANCHOR_WINDOW_DAYS = 5
+
+#: Folded statuses whose text counts as "already spoken for" by a fact anchor.
+#: Dead statuses are excluded for the same reason outbox drops them from the
+#: text corpus: a quarantined post is not competing for the slot.
+_LIVE_STATUSES: frozenset[str] = frozenset(
+    {"queued", "approved", "posting", "posted"})
+
+
+def _item_fact_day(it: dict) -> object:
+    """The day whose session this item's facts belong to.
+
+    ``as_of`` FIRST — it is the field that says what day the content is FOR, and
+    :func:`market_clock.temporal_vocab` walks it back to a session itself, so a
+    nightly plan stamped "2026-08-01" (the UTC date at 23:51 ET Friday) resolves
+    to FRIDAY's session, which is exactly right.
+
+    ``created_at`` IS THE FALLBACK, NOT THE LEAD, and the reason is worth
+    keeping. It is the more precise field in production — it would also catch a
+    Thursday-23:45-ET build whose `as_of` reads Friday — but it DEFAULTS TO THE
+    REAL WALL CLOCK in ``outbox.make_item``. Leading with it would have made
+    every publisher fixture's verdict depend on which day of the week the suite
+    happened to run, which is the fixture-plus-wall-clock gate bomb: green all
+    week, red every weekend, for reasons no one would look for in this file.
+    Leading with `as_of` is deterministic, and where the two disagree it errs
+    PERMISSIVE — the safe direction, since this gate's quarantine is terminal.
+    """
+    for key in ("as_of", "created_at"):
+        raw = str(it.get(key) or "").strip()
+        if not raw:
+            continue
+        try:
+            if len(raw) > 10:
+                ts = datetime.strptime(raw, _TS_FMT).replace(tzinfo=timezone.utc)
+                return _clock.et_date(ts)
+            return date.fromisoformat(raw[:10])
+        except (ValueError, TypeError):
+            continue
+    return None
+
+
+def _clock_violations(it: dict, text: str, now: datetime) -> list[str]:
+    """Temporal-vocabulary and dead-date reasons this item must not post NOW.
+
+    (a) and (b) of the publish-time gate. Fail-SOFT: any internal error returns
+    no violations, because a broken clock must never wedge the whole queue — the
+    generators and the sentinel are still upstream of this.
+    """
+    try:
+        reasons = _clock.temporal_violations(
+            text, now=now, fact_asof=_item_fact_day(it))
+        reasons += _clock.dead_date_future_tense(text, now=now)
+        return reasons
+    except Exception as exc:  # noqa: BLE001
+        log.warning("clock gate unavailable for %s (%s) — passing",
+                    it.get("id"), exc)
+        return []
+
+
+#: Rank for deciding WHICH item owns a shared fact anchor. A post that already
+#: shipped cannot be unshipped, so it always keeps the fact; among items that
+#: have not, the lowest id wins — an arbitrary but STABLE choice.
+_ANCHOR_OWNER_RANK: dict[str, int] = {
+    "posted": 0, "posting": 1, "approved": 2, "queued": 3}
+
+
+def _fact_anchor_owners(state: dict, now: datetime,
+                        days: int = _FACT_ANCHOR_WINDOW_DAYS
+                        ) -> dict[str, str]:
+    """anchor key -> the ONE item id entitled to it, over the trailing window.
+
+    POSTED **AND QUEUED**, per the operator brief: the six-post family was caught
+    at four by the sentinel and TWO RODE THROUGH QUEUED, so a corpus of only what
+    shipped would have let that pair through here too.
+
+    OWNERSHIP IS RESOLVED UP FRONT, NOT BY EVALUATION ORDER (this is the part
+    that is easy to get wrong). A naive "does any live sibling share my anchor?"
+    test makes six siblings annihilate each other — the first item sees the
+    second and dies, the second sees the third and dies, and the fact ends up
+    with ZERO posts instead of one. The brief says "quarantine all but one", so
+    exactly one id is named the owner before the loop starts and every other
+    holder of that anchor is refused, whatever order they are visited in.
+
+    OPERATOR-HELD ITEMS OWN NOTHING. A `hold` decision keeps an item queued but
+    it will never dispatch, so letting it hold a fact would silently freeze that
+    fact for the whole window — and the seven survivors of the 2026-08-01
+    breadth family are held RIGHT NOW, which would have blocked every breadth
+    post for five days on the first run of this gate. Same reasoning as the dead
+    statuses: not competing for the slot, not entitled to the fact.
+    """
+    cutoff = _clock.et_date(now) - timedelta(days=days)
+    statuses = state.get("status") or {}
+    held = state.get("held") or set()
+    rows: list[tuple[int, str, str, str]] = []
+    for iid, it in (state.get("items") or {}).items():
+        st = str(statuses.get(iid, "queued"))
+        if st not in _LIVE_STATUSES or iid in held:
+            continue
+        try:
+            when = date.fromisoformat(str(it.get("as_of") or "")[:10])
+        except (ValueError, TypeError):
+            continue
+        if when < cutoff:
+            continue
+        rows.append((_ANCHOR_OWNER_RANK.get(st, 9), str(iid),
+                     str(it.get("text") or ""), str(it.get("kind") or "")))
+    owners: dict[str, str] = {}
+    for _rank, iid, text, kind in sorted(rows, key=lambda r: (r[0], r[1])):
+        try:
+            keys = _clock.fact_anchor_keys(text, kind)
+        except Exception:  # noqa: BLE001
+            continue
+        for key in keys:
+            owners.setdefault(key, iid)
+    return owners
 
 
 def _item_age_days(it: dict, now: datetime) -> int:
@@ -1827,6 +1969,18 @@ def main(argv: list[str] | None = None) -> int:
     # 0.7 on purpose — see outbox.cross_account_threshold).
     _xa_threshold = _outbox.cross_account_threshold(cfg)
 
+    # ── Publish-time clock + fact-fan-out gates (operator brief 2026-08-02) ───
+    # See the block comment above _FACT_ANCHOR_WINDOW_DAYS. `_fact_owners` is
+    # resolved ONCE, before the loop, so ownership of a shared fact cannot
+    # depend on which item this sweep happens to reach first.
+    _fact_owners = _fact_anchor_owners(state, now)
+    quarantined_clock = 0
+    quarantined_fact_fanout = 0
+    log.info("publish-time clock gate | session_day=%s pre_open=%s | "
+             "%d fact anchors held over the trailing %dd",
+             _clock.current_session(now) is not None, _clock.is_pre_open(now),
+             len(_fact_owners), _FACT_ANCHOR_WINDOW_DAYS)
+
     # ── Per-account cadence resolver (XG-W2) ─────────────────────────────────
     # config/marketing.yml keeps sentinel.max_posts_per_account_per_day: -1 as
     # the GLOBAL backstop the operator chose on 2026-07-24. The per-account law
@@ -2094,6 +2248,85 @@ def main(argv: list[str] | None = None) -> int:
                 quarantined += 1
                 quarantined_frame += 1
                 continue
+
+        # -- clock gate: the queue is not a bypass around the CALENDAR ---------
+        # (a) and (b) of the publish-time gate. Same argument as the language and
+        # voice gates BELOW, applied to time: copy that was true when it was
+        # written goes false while it waits, and nothing between the writer and
+        # the network ever re-asked. See _clock_violations for the three shipped
+        # posts this exists for. Quarantine is terminal and correct — unlike a
+        # missing chart there is nothing to wait for, the day cannot un-pass.
+        #
+        # AHEAD OF THE LANGUAGE AND VOICE GATES ON PURPOSE: falsity outranks
+        # style. All three shipped defects ALSO trip a copy gate — POST_A is
+        # number soup, the breadth family is anchorless macro — so with the
+        # copy gates first the ledger would report "reads machine-written" for a
+        # post whose actual sin is that it named a session that did not happen.
+        # The operator reads these reasons; the reason should be the defect.
+        _clock_bad = _clock_violations(it, text, now)
+        if _clock_bad:
+            reason = "clock: " + "; ".join(_clock_bad[:3])
+            print(f"::warning title=marketing-clock-gate::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — {_clock_bad[0]}; "
+                  f"copy claims a session that is not the posting session",
+                  flush=True)
+            log.warning("item %s (%s) QUARANTINED by clock gate: %s",
+                        iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher",
+                                   root=root, note=reason)
+            quarantined += 1
+            quarantined_clock += 1
+            continue
+
+        # -- fact fan-out gate: one source fact wears one post ----------------
+        # (c) of the publish-time gate, the leg no word-similarity gate can
+        # cover. The six-post "4 of 11 sectors green" family survived all three
+        # Jaccard gates above because the posts genuinely differ as TEXT — they
+        # are one FACT in six outfits. Compares fact anchors against everything
+        # posted or queued in the trailing 5 days and lets the OWNER through.
+        #
+        # FIRST-CLAIM IS NOT FOREVER. The owner claims here, ahead of the copy
+        # gates, so an owner those gates then quarantine takes its fact down for
+        # THIS sweep. That is not a lost fact: the next sweep rebuilds ownership
+        # from the folded state, a quarantined item is no longer live, and the
+        # sibling inherits (pinned by
+        # test_a_quarantined_owner_hands_the_fact_to_the_next_sweep).
+        _anchor_hit = None
+        try:
+            _my_keys = sorted(_clock.fact_anchor_keys(
+                text, str(it.get("kind") or "")))
+            # DECIDE OVER ALL KEYS BEFORE CLAIMING ANY. Claiming as we go would
+            # leave a refused post holding the anchors it passed, silently
+            # blocking a later sibling on a fact this one never carried.
+            for _akey in _my_keys:
+                _owner = _fact_owners.get(_akey)
+                if _owner and _owner != iid:
+                    _anchor_hit = (_owner, _akey)
+                    break
+            if _anchor_hit is None:
+                # Anchors nothing has claimed yet (a publish-time-generated item
+                # is not in the folded snapshot) belong to this post.
+                for _akey in _my_keys:
+                    _fact_owners.setdefault(_akey, iid)
+        except Exception as _fa_exc:  # noqa: BLE001
+            log.warning("fact-anchor gate unavailable for %s (%s) — passing",
+                        iid, _fa_exc)
+        if _anchor_hit is not None:
+            _oid, _akey = _anchor_hit
+            reason = (f"fact fan-out: {_akey} already anchors {_oid} in the "
+                      f"trailing {_FACT_ANCHOR_WINDOW_DAYS} days")
+            print(f"::warning title=marketing-fact-fanout::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — same source fact "
+                  f"({_akey}) as {_oid}; one fact, one post", flush=True)
+            log.warning("item %s (%s) QUARANTINED by fact fan-out gate: %s",
+                        iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher",
+                                   root=root, note=reason)
+            quarantined += 1
+            quarantined_fact_fanout += 1
+            continue
 
         # -- language gate: the queue is not a bypass around the copy bar ----
         # Generation-time validators cannot reach copy already sitting in the
@@ -2739,6 +2972,8 @@ def main(argv: list[str] | None = None) -> int:
         "reads machine-written": quarantined_voice_laws,
         "repeats a post already sent": quarantined_run_duplicate,
         "same skeleton as a recent post": quarantined_frame,
+        "claimed a session that was not the posting session": quarantined_clock,
+        "repeats a fact another post already carries": quarantined_fact_fanout,
         "over the desk's daily cap": skipped_cap,
         "too soon after the last post": skipped_cadence,
         "no channel wired": skipped_channel,
@@ -2800,7 +3035,7 @@ def main(argv: list[str] | None = None) -> int:
         "quarantined_bare_cashtag=%d quarantined_unknown_cashtag=%d "
         "quarantined_voice_laws=%d quarantined_run_duplicate=%d "
         "quarantined_frame=%d skipped_filler=%d quarantined_substance=%d "
-        "substance_shadow=%d "
+        "substance_shadow=%d quarantined_clock=%d quarantined_fact_fanout=%d "
         "skipped_no_channel=%d skipped_halt=%d parked_dark=%d "
         "expired_wire=%d desk_approved=%d desk_quarantined=%d desk_held=%d "
         "desk_capped=%d desk_expired=%d desk_disabled=%d "
@@ -2812,6 +3047,7 @@ def main(argv: list[str] | None = None) -> int:
         quarantined_bare_cashtag, quarantined_unknown_cashtag,
         quarantined_voice_laws, quarantined_run_duplicate,
         quarantined_frame, skipped_filler, quarantined_substance, shadow_substance,
+        quarantined_clock, quarantined_fact_fanout,
         skipped_channel,
         skipped_halt, parked_dark,
         expired_wire,
@@ -2849,6 +3085,8 @@ def main(argv: list[str] | None = None) -> int:
             "skipped_filler": skipped_filler,
             "quarantined_substance": quarantined_substance,
             "substance_shadow": shadow_substance,
+            "quarantined_clock": quarantined_clock,
+            "quarantined_fact_fanout": quarantined_fact_fanout,
             "skipped_no_channel": skipped_channel,
             "skipped_halt": skipped_halt,
             "halted_accounts": sorted(_halts),

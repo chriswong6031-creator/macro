@@ -27,6 +27,9 @@ Public API:
     flash_budget(cfg=None) -> tuple[int, int]        # (max_chars, max_sentences)
     deep_budget(cfg=None) -> tuple[int, int]         # (min_chars, max_chars)
     validate_length(text, fmt, *, cfg=None) -> list[str]
+    restatement_verdict(headline, body, ...) -> dict  # NO LINE MAY RESTATE ANOTHER
+    wire_post_shape(headline, body, ...) -> dict      # additive | short_form
+    clamp_for_x(headline, body, ...) -> dict
 """
 from __future__ import annotations
 
@@ -154,6 +157,343 @@ def validate_length(text: str, fmt: str, *, cfg: dict | None = None) -> list[str
             violations.append(f"flash {sc} sentences > max {max_sentences}")
 
     return violations
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NO LINE MAY RESTATE ANOTHER — the restatement gate (D2, live defect 2026-08-02)
+#
+# THE DEFECT THIS CLOSES. A wire post ships as ``headline + blank line + body``
+# (``outbox.compose_text``), and the body was a summary OF THAT HEADLINE by
+# construction: an opener drawn from ``wire_voice._OPENERS_*`` plus a restatement
+# of line 1. A wire item carries no information beyond its headline, so line 2
+# could only ever re-say line 1 — and on the keyless/deterministic path it did so
+# LITERALLY, because ``breaking_summary._deterministic_summary`` falls back to
+# ``{headline} -- {source_name}`` whenever the packet has no usable
+# ``body_snippet``. Four such posts shipped to the brand account inside one hour
+# on 2026-08-02, the first of them:
+#
+#     Fed's Williams: central bank very committed to returning inflation to 2%
+#
+#     On the tape: Fed's Williams: central bank very committed to returning
+#     inflation to 2%
+#
+# Two lines, one fact, the second one verbatim. Engagement: 2 views.
+#
+# WHY A NEW INSTRUMENT AND NOT ``breaking_summary._is_near_verbatim``. That gate
+# is deliberately built to PASS a rephrase — its own docstring: "a genuine
+# restatement (extra framing words, re-sentenced structure) breaks the adjacency
+# gate and passes", because it ANDs a token Jaccard with a bigram-adjacency
+# Jaccard. And ``validate_summary`` skips it outright on the deterministic
+# fallback (``is_deterministic_fallback=True``), which is the exact path the
+# verbatim post came down. It answers "did the model COPY the headline", a
+# question about the summarizer. This asks "do these two lines carry one fact
+# between them", a question about the POST — and a rephrase must FAIL it, because
+# posts 2, 3 and 4 of that hour were rephrases and the operator counted them as
+# duplicates all the same.
+#
+# THE MEASURE is asymmetric containment, not symmetric similarity: what fraction
+# of line 1's CONTENT words does line 2 say again. A padded rephrase still covers
+# the headline (that is what makes it a rephrase); a genuinely additive line —
+# the prior print, the consensus it missed, the tape's reaction — does not. The
+# second leg catches the mirror-image shape a coverage test alone waves through:
+# a line 2 that is a short FRAGMENT of line 1 scores low coverage and still adds
+# nothing.
+#
+# A FAILED VERDICT REJECTS THE TWO-LINE POST — it does not warn, and it does not
+# rephrase. ``wire_post_shape`` returns the SHORT FORM (the headline plus the
+# citation clause a relay owes its source, on ONE line), which is what a real
+# wire desk posts and is unconditionally compliant: one line cannot restate
+# another. Manufacturing a second line to satisfy the gate is the one repair that
+# must never happen here — a wire desk is stance-free by charter, so the only
+# lawful line 2 is DATA the packet already holds, and when it holds none the
+# honest post is shorter, not padded.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Function words that are furniture in a headline and in a summary alike. They
+#: are dropped before the comparison so coverage measures CONTENT: "Fed's
+#: Williams: rate policy still well positioned to reach 2% inflation" against
+#: "...current rate policy remains well positioned to achieve the 2% inflation
+#: target" must read as the restatement it is, rather than being diluted by the
+#: "to"s and "the"s both lines happen to contain.
+#:
+#: DIRECTION WORDS ARE NOT IN HERE ON PURPOSE — "up", "down", "more", "new",
+#: "beat", "miss" are content on a finance wire ("inflation coming down" is the
+#: claim), and stopwording them would make two opposite prints look alike.
+_RESTATE_STOPWORDS: frozenset[str] = frozenset({
+    "a", "an", "the", "of", "to", "in", "on", "for", "and", "or", "at", "by",
+    "with", "as", "is", "are", "was", "were", "be", "been", "being", "that",
+    "this", "it", "its", "from", "into", "than", "then", "but", "has", "have",
+    "had", "will", "would", "could", "should", "may", "says", "said", "say",
+    "amid", "vs", "per", "about", "who", "which", "there", "their", "they",
+})
+
+#: Line 2 may re-say at most this fraction of line 1's content words.
+#:
+#: MEASURED, not guessed. The four live 2026-08-02 Williams posts score 1.00
+#: (verbatim), 0.70, 0.60 and 0.40; the additive fixtures score 0.20, 0.14 and
+#: 0.00. The cut sits at 0.40 rather than in the middle of that gap because the
+#: NEW-DATUM ESCAPE below removes the reason to be timid: a line 2 that brings a
+#: number line 1 does not have is additive at ANY coverage, so tightening this
+#: leg can no longer reject a genuine prior-print or consensus line.
+#:
+#: HONEST LIMIT, so nobody trusts this further than it goes: the fourth Williams
+#: post lands EXACTLY on the boundary, and it is a pure SEMANTIC paraphrase
+#: ("Fed's Williams: ... action is appropriate" -> "Federal Reserve officials
+#: will take action ..."), which shares few words while saying the same thing. No
+#: lexical instrument separates that from a real addition without also rejecting
+#: real additions. Four headlines off ONE Williams appearance is a CLUSTERING
+#: defect and belongs to the story-key lane; this gate owns the two-lines-one-
+#: fact SHAPE, and it is that lane, not this threshold, that must stop post 4.
+_RESTATE_COVERAGE_MAX = 0.40
+
+#: ...and line 2 must bring at least this many content words of its own. An
+#: ABSOLUTE count, not a ratio: the shape this leg exists for is a SHORT line 2
+#: ("Rate policy well positioned."), where a ratio flatters a fragment that says
+#: nothing new at all.
+_RESTATE_MIN_NEW_TOKENS = 3
+
+#: SUBSTANCE ESCAPE — line 2 may echo line 1 freely once it brings this many
+#: times the headline's own content in new material.
+#:
+#: A restatement is not "a line that repeats the headline"; it is a line that
+#: repeats the headline INSTEAD OF saying something else. The ``wire_deep``
+#: format is built to do the first without the second: two paragraphs, 400-700
+#: characters, opening on a lead that necessarily re-states the event before the
+#: context arrives. Coverage alone cannot tell that apart from a rephrase — the
+#: Hormuz deep body covers 64% of its headline, right between the 70% and 60% of
+#: the two Williams rephrases — and without this escape the gate degraded the
+#: richest format on the lane to a headline, which is the M1 defect (a format
+#: composed, queued and never posted) wearing a different hat.
+#:
+#: Measured on the same corpus: the deep body brings 3.18x its headline's content
+#: in new words; the four live restatements bring 0.11, 0.80, 0.70 and 1.00. The
+#: cut sits at 2.0 — clear of both clusters, and readable as a rule: a line that
+#: adds twice what it repeats is a body with a lead, not a headline said twice.
+_RESTATE_SUBSTANCE_RATIO = 2.0
+
+
+def _new_datum_tokens(head_tokens: set[str], line2_tokens: set[str]) -> set[str]:
+    """Digit-bearing tokens line 2 has and line 1 does not — the ADDITIVE test.
+
+    "Additive" on a stance-free wire desk means DATA: the prior print, the
+    consensus a number beat or missed, the tape's reaction. Those are numbers,
+    and a number line 1 never said is the one thing that cannot be a restatement
+    of it however many words the two lines share.
+
+    THIS IS AN ESCAPE, NOT A REQUIREMENT, and the asymmetry is deliberate in both
+    directions. As an escape it fixes the coverage leg's real false-positive: a
+    short entity-heavy headline ("Switzerland core CPI 0.8% YoY in July") is
+    mostly its own subject, so ANY line naming that subject covers most of it —
+    "prior print was 0.7%" would score 0.67 and be thrown away with the datum
+    still in it. Made a REQUIREMENT instead, it would throw away the honest
+    narrative addition a rich geopolitical body carries (rerouting tankers,
+    doubled war-risk premiums), which adds plenty and counts nothing.
+
+    Fabrication is not a risk here: ``breaking_summary.validate_summary`` rule 1
+    already requires every digit-bearing token in a summary to appear verbatim in
+    the source headline + body_snippet, so a number that reaches line 2 came out
+    of the packet. Our own furniture is stripped before this runs, which is what
+    keeps the tape clause ("WTI -2.3%") from escaping a restatement using a
+    number the LANE added rather than one the SOURCE carried.
+    """
+    return {t for t in line2_tokens - head_tokens if any(c.isdigit() for c in t)}
+
+
+def _restate_tokens(text: str) -> list[str]:
+    """Content tokens for the restatement comparison.
+
+    The TOKENIZER is ``breaking_summary._content_tokens`` — imported, never
+    forked. A second lowercase-alphanumeric splitter in this repo would drift the
+    day someone teaches one of them about cashtags or percent signs, and the two
+    gates would then disagree about what a word is. What is layered on top is the
+    CONTENT filter the near-verbatim gate has no use for: function words, and
+    bare single letters (the "s" that "Fed's" splits into), are furniture, and
+    leaving them in inflates a restatement's denominator toward a pass.
+
+    The fallback path is byte-equivalent to the imported tokenizer, so a broken
+    import costs nothing and CANNOT loosen the gate — which is the only failure
+    mode that matters in a check whose job is to reject.
+    """
+    try:
+        from engine.marketing.breaking_summary import _content_tokens  # noqa: PLC0415
+        raw = _content_tokens(text)
+    except Exception:  # noqa: BLE001
+        raw = re.findall(r"[a-z0-9]+", str(text or "").lower())
+    return [
+        t for t in raw
+        if t not in _RESTATE_STOPWORDS and not (len(t) == 1 and t.isalpha())
+    ]
+
+
+def _line_two_residue(
+    body: str,
+    *,
+    opener: str = "",
+    attribution: str = "",
+    tape_stamp: str = "",
+) -> str:
+    """``body`` with OUR OWN furniture removed — what line 2 actually SAYS.
+
+    The opener, the citation clause and the tape clause are things this lane
+    ADDS to a line; none of them is line 2's own content, and none may be allowed
+    to disguise a restatement as an additive line. Stripping them is what makes
+    "line 2 carries nothing of its own" a decidable question.
+
+    The generic opener sweep (every hook in every ``wire_voice`` pool, longest
+    first) runs even when the caller passes ``opener=""``, and that is
+    deliberate: this is a REJECT gate, and a gate that only works when its caller
+    remembers to pass an argument is a gate that goes dark the first time a new
+    call site forgets one.
+    """
+    text = str(body or "").strip()
+
+    stamp = str(tape_stamp or "").strip()
+    if stamp and text.endswith(f" · {stamp}"):
+        text = text[: -len(f" · {stamp}")].rstrip()
+
+    attrib = str(attribution or "").strip()
+    if attrib:
+        # Every join form is checked, not just the one we emit: an older-vintage
+        # body still carries the em dash this lane used before B1.
+        for dash in ("--", "—", "–"):
+            clause = f" {dash} {attrib}"
+            if text.endswith(clause):
+                text = text[: -len(clause)].rstrip()
+                break
+
+    hooks = {str(opener or "").strip()}
+    try:
+        from engine.marketing.wire_voice import _REGISTER_POOLS  # noqa: PLC0415
+        hooks |= {o for pool in _REGISTER_POOLS.values() for o in pool}
+    except Exception:  # noqa: BLE001
+        pass
+    for hook in sorted((h for h in hooks if h), key=len, reverse=True):
+        if text.lower().startswith(hook.lower()):
+            text = text[len(hook):].lstrip()
+            break
+
+    return text.strip()
+
+
+def restatement_verdict(
+    headline: str,
+    body: str,
+    *,
+    opener: str = "",
+    attribution: str = "",
+    tape_stamp: str = "",
+) -> dict:
+    """Does line 2 restate line 1?
+
+    Returns ``{"restates", "reason", "coverage", "new_tokens", "new_data",
+    "residue"}``. ``restates=True`` means the two-line post carries ONE fact and
+    must not ship as two lines — see ``wire_post_shape`` for what ships instead.
+
+    Two escapes, then two rejections, in that order:
+      * DATUM — line 2 carries a number line 1 does not: additive, full stop
+        (``_new_datum_tokens`` explains why this outranks both legs);
+      * SUBSTANCE — line 2 brings >= ``_RESTATE_SUBSTANCE_RATIO`` times the
+        headline's own content in new words (the ``wire_deep`` shape: a lead that
+        echoes, followed by a paragraph that does not);
+      * ECHO — line 2 re-says >= ``_RESTATE_COVERAGE_MAX`` of line 1's content;
+      * EMPTY — line 2 brings < ``_RESTATE_MIN_NEW_TOKENS`` content words of its
+        own (which also covers a line 2 that is nothing but our furniture).
+    """
+    residue = _line_two_residue(
+        body, opener=opener, attribution=attribution, tape_stamp=tape_stamp
+    )
+    head_set = set(_restate_tokens(headline))
+    line2_set = set(_restate_tokens(residue))
+
+    if not line2_set:
+        if not head_set:
+            # NEITHER line says anything. There is no line 1 to fall back to, so
+            # calling this a restatement would send `wire_post_shape` to compose a
+            # short form out of an empty headline and emit a bald "-- Reuters
+            # reporting". An empty emission is upstream validation's business
+            # (make_item / validate_item), not this gate's.
+            return {"restates": False, "coverage": 0.0, "new_tokens": 0,
+                    "new_data": (), "residue": residue, "reason": ""}
+        return {"restates": True, "coverage": 1.0, "new_tokens": 0,
+                "new_data": (), "residue": residue,
+                "reason": "line 2 carries no content of its own"}
+    if not head_set:
+        # Nothing on line 1 to restate (a headline-less emission). One line
+        # cannot restate another, so this is not the gate's business.
+        return {"restates": False, "coverage": 0.0, "new_tokens": len(line2_set),
+                "new_data": (), "residue": residue, "reason": ""}
+
+    coverage = len(head_set & line2_set) / len(head_set)
+    new_tokens = len(line2_set - head_set)
+    new_data = _new_datum_tokens(head_set, line2_set)
+
+    if new_data:
+        return {"restates": False, "coverage": coverage, "new_tokens": new_tokens,
+                "new_data": tuple(sorted(new_data)), "residue": residue,
+                "reason": ""}
+    if new_tokens >= _RESTATE_SUBSTANCE_RATIO * len(head_set):
+        # A body with a lead, not a headline said twice — see the constant.
+        return {"restates": False, "coverage": coverage, "new_tokens": new_tokens,
+                "new_data": (), "residue": residue, "reason": ""}
+    if coverage >= _RESTATE_COVERAGE_MAX:
+        return {"restates": True, "coverage": coverage, "new_tokens": new_tokens,
+                "new_data": (), "residue": residue,
+                "reason": (f"line 2 re-says {coverage:.0%} of line 1 and adds no "
+                           f"number of its own (max {_RESTATE_COVERAGE_MAX:.0%})")}
+    if new_tokens < _RESTATE_MIN_NEW_TOKENS:
+        return {"restates": True, "coverage": coverage, "new_tokens": new_tokens,
+                "new_data": (), "residue": residue,
+                "reason": (f"line 2 adds {new_tokens} content word(s) line 1 does "
+                           f"not have (min {_RESTATE_MIN_NEW_TOKENS})")}
+
+    return {"restates": False, "coverage": coverage, "new_tokens": new_tokens,
+            "new_data": (), "residue": residue, "reason": ""}
+
+
+def wire_post_shape(
+    headline: str,
+    body: str,
+    *,
+    opener: str = "",
+    attribution: str = "",
+    tape_stamp: str = "",
+) -> dict:
+    """The lines this wire item may honestly post.
+
+    Returns ``{"shape", "headline", "body", "reason", "coverage"}`` where
+    ``headline`` and ``body`` are the pair to hand ``clamp_for_x``:
+
+      ``additive``    ``("<headline>", "<line 2>")`` — two lines, two facts. The
+                      second line survived ``restatement_verdict``, so it carries
+                      a datum line 1 does not: the source's own prose beyond the
+                      headline (a prior print, a consensus, a detail), or the
+                      tape's reaction.
+      ``short_form``  ``("", "<headline -- citation · tape>")`` — ONE line.
+
+    THE SHORT FORM RETURNS AN EMPTY HEADLINE ON PURPOSE. ``clamp_for_x`` joins
+    the non-empty parts with a blank line, so handing the headline back is
+    precisely how the duplicate got out; the headline travels INSIDE the single
+    line instead, keeping the citation clause a relay owes its source and the
+    tape clause when the tape actually moved. The two halves are never both
+    present, so no join can reconstruct the restatement.
+    """
+    verdict = restatement_verdict(
+        headline, body, opener=opener, attribution=attribution,
+        tape_stamp=tape_stamp,
+    )
+    if not verdict["restates"]:
+        return {"shape": "additive", "headline": str(headline or "").strip(),
+                "body": str(body or "").strip(), "reason": "",
+                "coverage": verdict["coverage"]}
+
+    # The single line is composed through wire_voice.compose_post so the join
+    # forms stay single-sourced — the double hyphen (never U+2014, which the
+    # publisher's last gate quarantines) and the mid-dot tape clause.
+    from engine.marketing.wire_voice import compose_post  # noqa: PLC0415
+    single = compose_post(opener="", summary=str(headline or ""),
+                          attribution=attribution, tape_stamp=tape_stamp)
+    return {"shape": "short_form", "headline": "", "body": single,
+            "reason": verdict["reason"], "coverage": verdict["coverage"]}
 
 
 # ─────────────────────────────────────────────────────────────────────────────

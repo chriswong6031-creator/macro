@@ -241,30 +241,28 @@ ARTIFACT_MANIFEST = [
     # object, so it adds no top-level or item-level key).
     {"artifact": "site/factordata/us_standouts.json",
      "kind": "board",
-     "schema_version": "1.5.0",
+     "schema_version": "1.6.0",
      "schema_fields": [
-         "as_of", "buy", "concentration", "delta", "dispersion_regime", "donor",
-         "earnings_blackout_note", "eligible", "gate_go", "laggards", "lane_counts",
-         "leaders", "pending_expired_count", "rank_by", "staleness", "universe",
+         # 1.6.0 GRADUATION (2026-08-03): board_definition / ran / ranking /
+         # themes_in_favour moved up from optional_fields after the first committed
+         # us_prophet_v1 render (engine-render on main, as_of 2026-07-31,
+         # rank_by=us_prophet_v1) proved the builder emits all four unconditionally
+         # — the same order china_standouts reached 2.0.0 in.
+         "as_of", "board_definition", "buy", "concentration", "delta",
+         "dispersion_regime", "donor", "earnings_blackout_note", "eligible",
+         "gate_go", "laggards", "lane_counts", "leaders", "pending_expired_count",
+         "ran", "rank_by", "ranking", "staleness", "themes_in_favour", "universe",
          "watch",
      ],
      "optional_fields": [
-         # The four us_prophet_v1 top-level keys. The BUILDER emits all four
-         # unconditionally, so they are required in steady state — but the contract
-         # lands one render BEFORE the artifact that carries them, and a required
-         # field the artifact has not been rebuilt with yet reads as `removed`
-         # (breaking) drift. They sit here for exactly that transition window and
-         # GRADUATE TO schema_fields (minor bump) once the first us_prophet_v1
-         # render is committed — the same order china_standouts reached 2.0.0 in.
-         #
-         # `anchor` is the odd one out and deliberately so: it is a ran[] ITEM key,
-         # registered here as well as in schema_item_fields because it is the
-         # contract's may-be-absent register and `anchor` is emitted only on ran
-         # rows (buy rows carry no cross anchor). check_contract_drift compares
-         # TOP-LEVEL keys only, so listing an item key here exempts nothing that
-         # would otherwise be caught — it documents conditionality for consumers.
+         # `anchor` is a ran[] ITEM key, registered here as well as in
+         # schema_item_fields because it is the contract's may-be-absent register
+         # and `anchor` is emitted only on ran rows (buy rows carry no cross
+         # anchor). check_contract_drift compares TOP-LEVEL keys only, so listing
+         # an item key here exempts nothing that would otherwise be caught — it
+         # documents conditionality for consumers.
          # (List order is alphabetical — test_contract_drift asserts it sorted.)
-         "anchor", "board_definition", "ran", "ranking", "themes_in_favour",
+         "anchor",
      ],
      "schema_item_fields": [
          "above_trend", "adv_dollar_20d_median", "adv_dollar_21d", "align_tier", "alpha",

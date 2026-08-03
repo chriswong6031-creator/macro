@@ -59,6 +59,10 @@ _CHANGE_CURSOR_PROCESS_KEY = os.urandom(32)
 _PROSPECTIVE_CURSOR_VERSION = "p1"
 _PROSPECTIVE_CURSOR_DOMAIN = b"macro-biocatalyst:trial-prospective-changes:cursor-key:v1"
 _PROSPECTIVE_CURSOR_PROCESS_KEY = os.urandom(32)
+_CHANGE_TAPE_CURSOR_VERSION = "ct1"
+_CHANGE_TAPE_CURSOR_DOMAIN = b"macro-biocatalyst:trial-change-tape:cursor-key:v1"
+_CHANGE_TAPE_CURSOR_PROCESS_KEY = os.urandom(32)
+_CHANGE_TAPE_MAX_CURSOR_OFFSET = 5_120_000
 _PEER_SET_CURSOR_VERSION = "t1"
 _PEER_SET_CURSOR_DOMAIN = b"macro-biocatalyst:trial-peer-sets:cursor-key:v1"
 _PEER_SET_CURSOR_PROCESS_KEY = os.urandom(32)
@@ -79,6 +83,41 @@ _PROSPECTIVE_CHANGE_KINDS = frozenset(
     )
 )
 _PROSPECTIVE_OBSERVATION_BASIS = "first_observed_between_successful_polls"
+_CHANGE_TAPE_FIELD_CLASSES = frozenset(
+    (
+        "registry_status",
+        "enrollment",
+        "milestone_date_constraint",
+        "site_list",
+        "intervention",
+        "endpoint_record_delta",
+    )
+)
+_CHANGE_TAPE_REVIEW_STATES = frozenset(("not_required", "needs_review"))
+_CHANGE_TAPE_AUTHORITY = {
+    "classification": "deterministic_registry_change_read_model",
+    "decision_authority": False,
+    "maximum_authority": "A1_EXPLAIN",
+    "allowed_uses": ["display", "context", "explain"],
+    "forbidden_uses": [
+        "originate_signal",
+        "issuer_resolution",
+        "security_resolution",
+        "asset_resolution",
+        "rank_security",
+        "select_security",
+        "size_position",
+        "gate_decision",
+        "execute_trade",
+        "neural_web_authority",
+        "all_prophet_uses",
+        "assess_materiality",
+        "assert_protocol_change",
+        "assess_correction",
+        "deliver_alert",
+        "raise_authority",
+    ],
+}
 _PUBLIC_ROOT = Path(
     os.environ.get("BIOCATALYST_PUBLIC_ROOT", "/var/lib/macro-biocatalyst/public")
 )
@@ -1183,6 +1222,117 @@ def _decode_change_cursor(
     return offset, generation_digest, query_digest
 
 
+def _change_tape_query_binding(
+    *,
+    nct_id: str | None,
+    field_class: str,
+    review_state: str,
+    limit: int,
+) -> dict[str, Any]:
+    """Return the normalized, endpoint-local tape selection for pagination."""
+
+    return {
+        "nct_id": nct_id,
+        "field_class": field_class,
+        "review_state": review_state,
+        "limit": limit,
+    }
+
+
+def _change_tape_cursor_key() -> bytes:
+    """Return a domain-separated HMAC key for classified change-tape cursors."""
+
+    configured = os.environ.get("BIOCATALYST_CURSOR_SECRET")
+    if configured is None:
+        return _CHANGE_TAPE_CURSOR_PROCESS_KEY
+    try:
+        raw = configured.encode("utf-8")
+    except UnicodeEncodeError:
+        raise _unavailable() from None
+    if len(raw) < 32:
+        raise _unavailable()
+    return hmac.new(raw, _CHANGE_TAPE_CURSOR_DOMAIN, sha256).digest()
+
+
+def _change_tape_cursor_payload(
+    offset: int,
+    *,
+    generation_digest: str,
+    query_digest: str,
+) -> bytes:
+    return ":".join(
+        (
+            _CHANGE_TAPE_CURSOR_VERSION,
+            str(offset),
+            generation_digest,
+            query_digest,
+        )
+    ).encode("ascii")
+
+
+def _encode_change_tape_cursor(
+    offset: int,
+    *,
+    generation_id: str,
+    query_binding: Mapping[str, Any],
+    cursor_key: bytes | None = None,
+) -> str:
+    """Encode a signed cursor that contains no query or generation plaintext."""
+
+    if not isinstance(offset, int) or isinstance(offset, bool) or offset < 0:
+        raise ValueError("offset must be a non-negative integer")
+    payload = _change_tape_cursor_payload(
+        offset,
+        generation_digest=_opaque_digest({"generation_id": generation_id}),
+        query_digest=_opaque_digest(dict(query_binding)),
+    )
+    key = cursor_key if cursor_key is not None else _change_tape_cursor_key()
+    signature = hmac.new(key, payload, sha256).hexdigest()
+    raw = payload + b":" + signature.encode("ascii")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def _decode_change_tape_cursor(
+    cursor: str | None,
+    *,
+    cursor_key: bytes | None = None,
+) -> tuple[int, str | None, str | None]:
+    """Authenticate a tape cursor before the pointer-bound projection is read."""
+
+    if not cursor:
+        return 0, None, None
+    if len(cursor) > 384 or not re.fullmatch(r"[A-Za-z0-9_-]+", cursor):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    try:
+        raw = base64.urlsafe_b64decode((cursor + "=" * (-len(cursor) % 4)).encode("ascii"))
+        version, offset_text, generation_digest, query_digest, signature = raw.decode(
+            "ascii"
+        ).split(":")
+        offset = int(offset_text)
+    except (ValueError, UnicodeError, binascii.Error) as exc:
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS) from exc
+    if (
+        version != _CHANGE_TAPE_CURSOR_VERSION
+        or not re.fullmatch(r"[0-9]+", offset_text)
+        or offset < 0
+        or offset > _CHANGE_TAPE_MAX_CURSOR_OFFSET
+        or not re.fullmatch(r"[0-9a-f]{64}", generation_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", query_digest)
+        or not re.fullmatch(r"[0-9a-f]{64}", signature)
+    ):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    payload = _change_tape_cursor_payload(
+        offset,
+        generation_digest=generation_digest,
+        query_digest=query_digest,
+    )
+    key = cursor_key if cursor_key is not None else _change_tape_cursor_key()
+    expected_signature = hmac.new(key, payload, sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected_signature):
+        raise HTTPException(status_code=400, detail="invalid cursor", headers=_PRIVATE_HEADERS)
+    return offset, generation_digest, query_digest
+
+
 def _prospective_query_binding(
     *,
     change_kind: str,
@@ -2116,7 +2266,7 @@ def _resolve_trial_peer_set_payload(
     history_models_by_nct = getattr(projection, "history_models_by_nct", None)
     if (
         not isinstance(generation_id, str)
-        or generation_schema not in {"1.4.0", "1.5.0"}
+        or generation_schema not in {"1.4.0", "1.5.0", "1.6.0", "1.7.0"}
         or not isinstance(protocols_by_nct, Mapping)
         or not isinstance(history_models_by_nct, Mapping)
     ):
@@ -2583,6 +2733,324 @@ def trial_registry_changes(
                 ),
             },
             "changes": page,
+        }
+    )
+    return _response(payload)
+
+
+def _change_tape_model_rows(
+    model: Mapping[str, Any],
+    *,
+    nct_id: str,
+) -> tuple[str, str | None, list[dict[str, Any]]]:
+    """Return a closed DTO row set without exposing a tape's integrity layer."""
+
+    if model == {"available": False, "unavailable_reason": "not_materialized"}:
+        return "unavailable", "not_materialized", []
+    if (
+        model.get("contract_id") != "trial_change_tape_read_model.v1"
+        or model.get("schema_version") != "1.0.0"
+        or model.get("nct_id") != nct_id
+        or model.get("chronology_order")
+        != "source_version_then_exact_operation_order"
+        or model.get("interpretation") != "registry_record_changed"
+        or model.get("protocol_change_asserted") is not False
+        or model.get("materiality_assessed") is not False
+        or model.get("correction_assessed") is not False
+        or model.get("authority") != _CHANGE_TAPE_AUTHORITY
+    ):
+        raise _unavailable()
+    history = model.get("history")
+    prospective = model.get("prospective")
+    if not isinstance(history, Mapping) or not isinstance(prospective, Mapping):
+        raise _unavailable()
+    history_available = history.get("available")
+    history_reason = history.get("unavailable_reason")
+    history_rows = history.get("rows")
+    history_count = history.get("row_count")
+    classification_count = history.get("classification_count")
+    if (
+        not isinstance(history_available, bool)
+        or not isinstance(history_rows, Sequence)
+        or isinstance(history_rows, (str, bytes))
+        or not isinstance(history_count, int)
+        or isinstance(history_count, bool)
+        or not isinstance(classification_count, int)
+        or isinstance(classification_count, bool)
+        or not 0 <= history_count <= 512
+        or not 0 <= classification_count <= 128
+        or history_count != len(history_rows)
+    ):
+        raise _unavailable()
+    # The prospective part of this model is deliberately a capability-state
+    # disclosure only.  No T2b prospective row may be served until two exact
+    # activation proofs are retained and replayed at publication.
+    if (
+        prospective.get("available") is not False
+        or prospective.get("classification_count") != 0
+        or prospective.get("row_count") != 0
+        or prospective.get("rows") != []
+        or not isinstance(prospective.get("unavailable_reason"), str)
+    ):
+        raise _unavailable()
+    if history_available is False:
+        if history_rows or history_count != 0 or classification_count != 0 or not isinstance(history_reason, str):
+            raise _unavailable()
+        return "unavailable", history_reason, []
+    if history_available is not True or history_reason is not None:
+        raise _unavailable()
+    rendered: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    previous_pair: tuple[int, int] | None = None
+    previous_index: int | None = None
+    previous_observed_time: datetime | None = None
+    pair_observed_literal: str | None = None
+    expected_states = {
+        "add": ("missing", "present"),
+        "remove": ("present", "missing"),
+        "replace": ("present", "present"),
+    }
+    for row in history_rows:
+        if not isinstance(row, Mapping) or set(row) != {
+            "field_class", "review_state", "semantic_resolution", "op", "before_state",
+            "after_state", "protocol_change_asserted", "materiality_assessed",
+            "correction_assessed", "source_versions", "observed_at", "exact_operation_index",
+        }:
+            raise _unavailable()
+        field_class = row.get("field_class")
+        review_state = row.get("review_state")
+        op = row.get("op")
+        exact_operation_index = row.get("exact_operation_index")
+        versions = row.get("source_versions")
+        observed_at = row.get("observed_at")
+        if (
+            field_class not in _CHANGE_TAPE_FIELD_CLASSES
+            or review_state not in _CHANGE_TAPE_REVIEW_STATES
+            or expected_states.get(op) != (row.get("before_state"), row.get("after_state"))
+            or not isinstance(versions, Mapping)
+            or set(versions) != {"before", "after"}
+            or not isinstance(versions.get("before"), int)
+            or isinstance(versions.get("before"), bool)
+            or not isinstance(versions.get("after"), int)
+            or isinstance(versions.get("after"), bool)
+            or versions["before"] < 1
+            or versions["after"] != versions["before"] + 1
+            or not isinstance(exact_operation_index, int)
+            or isinstance(exact_operation_index, bool)
+            or not 0 <= exact_operation_index < 4_096
+            or row.get("protocol_change_asserted") is not False
+            or row.get("materiality_assessed") is not False
+            or row.get("correction_assessed") is not False
+        ):
+            raise _unavailable()
+        observed_time, observed_literal = _prospective_utc_time(observed_at)
+        pair = (versions["before"], versions["after"])
+        if previous_pair is not None and pair < previous_pair:
+            raise _unavailable()
+        same_pair = pair == previous_pair
+        if same_pair and (
+            previous_index is None or exact_operation_index <= previous_index
+        ):
+            raise _unavailable()
+        if same_pair and pair_observed_literal is not None and observed_literal != pair_observed_literal:
+            raise _unavailable()
+        if not same_pair and previous_observed_time is not None and observed_time < previous_observed_time:
+            raise _unavailable()
+        previous_pair = pair
+        previous_index = exact_operation_index
+        previous_observed_time = observed_time
+        pair_observed_literal = observed_literal
+        if field_class == "endpoint_record_delta":
+            if row.get("semantic_resolution") != "unresolved" or review_state != "needs_review":
+                raise _unavailable()
+        elif (
+            row.get("semantic_resolution") != "registry_field_class_only"
+            or review_state != "not_required"
+        ):
+            raise _unavailable()
+        public_row = {
+            "field_class": field_class,
+            "exact_operation_index": exact_operation_index,
+            "review_state": review_state,
+            "semantic_resolution": row["semantic_resolution"],
+            "op": op,
+            "before_state": row["before_state"],
+            "after_state": row["after_state"],
+            "source_versions": {"before": versions["before"], "after": versions["after"]},
+            "observed_at": observed_literal,
+            "protocol_change_asserted": False,
+            "materiality_assessed": False,
+            "correction_assessed": False,
+        }
+        serialized = json.dumps(
+            public_row,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        if serialized in seen:
+            raise _unavailable()
+        seen.add(serialized)
+        public_row["_observed_time"] = observed_time
+        rendered.append(public_row)
+    if len(
+        {
+            (item["source_versions"]["before"], item["source_versions"]["after"])
+            for item in rendered
+        }
+    ) != classification_count:
+        raise _unavailable()
+    return "available", None, rendered
+
+
+@router.get("/api/biocatalyst/v1/trials/change-tape")
+def trial_change_tape(
+    nct_id: str | None = None,
+    field_class: str = "all",
+    review_state: str = "all",
+    cursor: str | None = None,
+    limit: str = "50",
+    _user: dict = Depends(require_site_full_user),
+) -> JSONResponse:
+    """List replay-verified registry field classes from the immutable B2 tape.
+
+    This is not an alert, catalyst, protocol-amendment, materiality, issuer,
+    security, or market conclusion.  It serves only the exact T2b
+    retrospective classification after its raw/private evidence has been
+    replayed during worker publication.
+    """
+
+    if nct_id is not None and _NCT_ID.fullmatch(nct_id) is None:
+        raise HTTPException(status_code=400, detail="invalid NCT ID", headers=_PRIVATE_HEADERS)
+    if field_class != "all" and field_class not in _CHANGE_TAPE_FIELD_CLASSES:
+        raise HTTPException(status_code=400, detail="invalid field_class", headers=_PRIVATE_HEADERS)
+    if review_state != "all" and review_state not in _CHANGE_TAPE_REVIEW_STATES:
+        raise HTTPException(status_code=400, detail="invalid review_state", headers=_PRIVATE_HEADERS)
+    page_limit = _query_limit(limit)
+    query_binding = _change_tape_query_binding(
+        nct_id=nct_id,
+        field_class=field_class,
+        review_state=review_state,
+        limit=page_limit,
+    )
+    cursor_key = _change_tape_cursor_key()
+    offset, cursor_generation_digest, cursor_query_digest = _decode_change_tape_cursor(
+        cursor,
+        cursor_key=cursor_key,
+    )
+    expected_query_digest = _opaque_digest(query_binding)
+    if cursor_query_digest is not None and not hmac.compare_digest(
+        cursor_query_digest, expected_query_digest
+    ):
+        raise HTTPException(status_code=400, detail="cursor query mismatch", headers=_PRIVATE_HEADERS)
+    projection, operational = _read_bundle()
+    generation_id = getattr(projection.generation, "generation_id", None)
+    if not isinstance(generation_id, str) or not generation_id:
+        raise _unavailable()
+    if cursor_generation_digest is not None and not hmac.compare_digest(
+        cursor_generation_digest,
+        _opaque_digest({"generation_id": generation_id}),
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="trial data changed; restart pagination",
+            headers=_PRIVATE_HEADERS,
+        )
+    trials = getattr(projection, "trials", None)
+    tapes = getattr(projection, "change_tapes_by_nct", None)
+    if not isinstance(trials, Sequence) or not isinstance(tapes, Mapping):
+        raise _unavailable()
+    rows: list[dict[str, Any]] = []
+    available_trials = 0
+    unavailable_trials = 0
+    unavailable_reasons: dict[str, int] = {}
+    seen_nct_ids: set[str] = set()
+    for snapshot in trials:
+        if not isinstance(snapshot, Mapping):
+            raise _unavailable()
+        current_nct = snapshot.get("nct_id")
+        if not isinstance(current_nct, str) or _NCT_ID.fullmatch(current_nct) is None or current_nct in seen_nct_ids:
+            raise _unavailable()
+        seen_nct_ids.add(current_nct)
+        if nct_id is not None and current_nct != nct_id:
+            continue
+        tape = tapes.get(current_nct)
+        if not isinstance(tape, Mapping):
+            raise _unavailable()
+        state, reason, tape_rows = _change_tape_model_rows(tape, nct_id=current_nct)
+        if state != "available":
+            unavailable_trials += 1
+            if not isinstance(reason, str) or len(reason) > 96:
+                raise _unavailable()
+            unavailable_reasons[reason] = unavailable_reasons.get(reason, 0) + 1
+            continue
+        available_trials += 1
+        trial = _public_trial(snapshot, detail=False)
+        for row in tape_rows:
+            if field_class != "all" and row["field_class"] != field_class:
+                continue
+            if review_state != "all" and row["review_state"] != review_state:
+                continue
+            rendered = {
+                "trial": trial,
+                "change": {key: value for key, value in row.items() if key != "_observed_time"},
+                "authority": dict(_CHANGE_TAPE_AUTHORITY),
+                "_sort": (
+                    -row["_observed_time"].toordinal(),
+                    -(
+                        row["_observed_time"].hour * 3_600_000_000
+                        + row["_observed_time"].minute * 60_000_000
+                        + row["_observed_time"].second * 1_000_000
+                        + row["_observed_time"].microsecond
+                    ),
+                    current_nct,
+                    row["source_versions"]["after"],
+                    row["exact_operation_index"],
+                    row["field_class"],
+                    row["op"],
+                ),
+            }
+            rows.append(rendered)
+    if set(tapes) != seen_nct_ids:
+        raise _unavailable()
+    rows.sort(key=lambda item: item["_sort"])
+    total = len(rows)
+    page = rows[offset : offset + page_limit]
+    for item in page:
+        item.pop("_sort", None)
+    next_offset = offset + len(page)
+    payload = _meta(projection, operational)
+    payload.update(
+        {
+            "query": {
+                "nct_id": nct_id,
+                "field_class": field_class,
+                "review_state": review_state,
+            },
+            "change_tape_coverage": {
+                "class": "replay_verified_record_history",
+                "selection_basis": "committed_trial_record",
+                "available_trials": available_trials,
+                "unavailable_trials": unavailable_trials,
+                "unavailable_reasons": dict(sorted(unavailable_reasons.items())),
+                "prospective_state": "unavailable_without_retained_activation_proofs",
+            },
+            "pagination": {
+                "limit": page_limit,
+                "total": total,
+                "next_cursor": (
+                    _encode_change_tape_cursor(
+                        next_offset,
+                        generation_id=generation_id,
+                        query_binding=query_binding,
+                        cursor_key=cursor_key,
+                    )
+                    if next_offset < total
+                    else None
+                ),
+            },
+            "change_tape": page,
         }
     )
     return _response(payload)

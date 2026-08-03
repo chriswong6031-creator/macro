@@ -19,14 +19,17 @@ Covers:
   5. Counted drops: an exhausted pool increments a PERSISTED census and prints
      its ::warning at LINE START.
   6. The ramp cap is the stricter half of a desk's budget.
-  7. hot_tape.live_account: a dark routing target is rescued to a live desk and
-     the rescue announces itself at LINE START (the `account_disabled` class —
-     29 quarantines on 2026-07-30/31, all mastermind_news, all hot_tape lane).
+  7. hot_tape.live_account: a dark routing target PARKS on its own desk and the
+     park announces itself at LINE START. AMENDED BY W5 (2026-08-03) — this
+     section used to pin the opposite ("is RESCUED to a live desk"), and that
+     rescue is what made the brand account inherit the tape firehose. See
+     tests/test_marketing_wire_volume.py for the full round-two rationale.
   8. The committed config resolves every wire target to a live desk.
 """
 from __future__ import annotations
 
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -43,6 +46,12 @@ def _worktree_root() -> Path:
 
 
 ROOT = _worktree_root()
+
+#: A root with no outbox. `live_account` and `spill_pool` weigh the
+#: per-account rolling kind=breaking ceiling since W5 and default to the
+#: REPO root, so a rootless call reads the committed queue and makes a
+#: liveness assertion depend on how much the wire posted today.
+_EMPTY = Path(tempfile.mkdtemp(prefix="wire-headroom-empty-"))
 sys.path.insert(0, str(ROOT))
 
 from engine.marketing import hot_tape as HT  # noqa: E402
@@ -80,9 +89,20 @@ def _item(iid: str, headline: str) -> dict:
     }
 
 
-def _items(*, policy: int = 0, company: int = 0) -> list[dict]:
-    out = [_item(f"pol{n}", _POLICY.format(n=n + 1)) for n in range(policy)]
-    out += [_item(f"com{n}", _COMPANY.format(n=n + 1)) for n in range(company)]
+def _items(*, policy: int = 0, company: int = 0, start: int = 0) -> list[dict]:
+    """`start` OFFSETS THE EVENT, NOT JUST THE ID (D1, 2026-08-02).
+
+    A second tick that re-sends the same headline is no longer a second budget
+    decision: press_lane's story ledger recognises it as an event that already
+    posted and collapses it before routing, which is the whole point of the
+    one-event-one-post gate. A multi-tick budget test therefore has to carry
+    genuinely different stories on the later tick — otherwise it is asserting
+    that the wire double-posts, which is the defect.
+    """
+    out = [_item(f"pol{n}", _POLICY.format(n=n + 1))
+           for n in range(start, start + policy)]
+    out += [_item(f"com{n}", _COMPANY.format(n=n + 1))
+            for n in range(start, start + company)]
     return out
 
 
@@ -416,7 +436,9 @@ class TestCountedDrops:
         _tick(_items(policy=4), cfg, _press_cfg(2), tmp_path, state=state)
         assert state["wire_headroom"]["exhausted"] == 2
         # A second tick on the same day keeps the budget spent AND keeps counting.
-        _tick(_items(policy=2), cfg, _press_cfg(2), tmp_path, state=state)
+        # NEW stories, deliberately (see _items): re-sending the same two
+        # headlines is now a story collapse, not a headroom drop.
+        _tick(_items(policy=2, start=4), cfg, _press_cfg(2), tmp_path, state=state)
         assert state["wire_headroom"]["exhausted"] == 4
         assert state["wire_day_counts"]["counts"]["flagship"] == 2
 
@@ -457,46 +479,66 @@ class TestCountedDrops:
 # 6. hot_tape.live_account — the account_disabled class
 # ─────────────────────────────────────────────────────────────────────────────
 
-class TestLiveAccountRescue:
-    """29 items on 2026-07-30/31 were rendered, phrased, uploaded, enqueued and
-    then quarantined at dispatch with reason `account_disabled` — every one of
-    them hot_tape lane, every one addressed to mastermind_news. `live_account`
-    is the fix; these pin it against a config where the target is dark, so the
-    guard keeps meaning something after the desk is armed.
+class TestLiveAccountPark:
+    """ROUND ONE: 29 items on 2026-07-30/31 were rendered, phrased, uploaded,
+    enqueued and then quarantined at dispatch with reason `account_disabled` —
+    every one hot_tape lane, every one addressed to mastermind_news.
+    `live_account` rescued them onto the first armed desk.
+
+    ROUND TWO (W5): the only desk with room for a rescued firehose is the
+    flagship, so that rescue silently made the brand account the tape's
+    destination — 11 kind=breaking items there in one day. The default is now to
+    PARK on the owning desk; the redirect is an explicit config choice. These
+    tests are inverted accordingly and pin the property that survives both
+    rounds: whatever happens, it is ANNOUNCED at line start and it is not a
+    silent donation.
     """
 
-    def _dark_cfg(self):
+    def _dark_cfg(self, *, policy: str | None = None):
+        routing = {"default": "flagship"}
+        if policy:
+            routing["dark_desk"] = {"policy": policy}
         return {"desk_network": {"accounts": [
             _desk("flagship"), _desk("wire_desk", enabled=False)]},
-            "wire_routing": {"default": "flagship"}}
+            "wire_routing": routing}
 
-    def test_dark_target_is_rescued_to_a_live_desk(self):
+    def test_dark_target_parks_rather_than_donating_to_the_flagship(self):
         got = HT.live_account("wire_desk", marketing_cfg=self._dark_cfg(),
-                              fallbacks=("flagship", "wire_desk"))
-        assert got == "flagship"
+                              root=_EMPTY, fallbacks=("flagship", "wire_desk"))
+        assert got == "wire_desk", (
+            "the brand desk inherited a dark wire desk's volume — the exact "
+            "shape the operator rejected on 2026-08-02")
 
-    def test_rescue_announces_itself_at_line_start(self, capsys):
+    def test_park_announces_itself_at_line_start(self, capsys):
         HT.live_account("wire_desk", marketing_cfg=self._dark_cfg(),
-                        fallbacks=("flagship", "wire_desk"))
+                        root=_EMPTY, fallbacks=("flagship", "wire_desk"))
         lines = [ln for ln in capsys.readouterr().out.splitlines()
-                 if "hot-tape-dark-account" in ln]
-        assert lines, "a lane posting as a different desk than its config names"
-        assert all(ln.startswith("::warning title=hot-tape-dark-account::")
+                 if "wire-routing-parked" in ln]
+        assert lines, "a lane holding items back must never do it silently"
+        assert all(ln.startswith("::warning title=wire-routing-parked::")
                    for ln in lines)
         assert "account_disabled" in lines[0], (
-            "the annotation must name the quarantine reason it prevents, or the "
-            "operator cannot connect it to the graves in the ledger")
+            "the annotation must name the quarantine reason the parked items "
+            "will carry, or the operator cannot find them in the ledger")
+
+    def test_the_park_is_counted(self, capsys):
+        for _ in range(4):
+            HT.live_account("wire_desk", marketing_cfg=self._dark_cfg(),
+                            root=_EMPTY, fallbacks=("flagship",))
+        assert WR.park_census() == {"wire_desk": 4}
 
     def test_a_live_target_is_returned_untouched_and_silently(self, capsys):
-        assert HT.live_account("flagship", marketing_cfg=self._dark_cfg()) == "flagship"
-        assert "hot-tape-dark-account" not in capsys.readouterr().out
+        assert HT.live_account("flagship", marketing_cfg=self._dark_cfg(),
+                               root=_EMPTY) == "flagship"
+        assert "wire-routing-parked" not in capsys.readouterr().out
 
-    def test_rescue_never_lands_on_another_dark_desk(self):
+    def test_the_opt_in_redirect_never_lands_on_another_dark_desk(self):
         cfg = {"desk_network": {"accounts": [
             _desk("flagship"), _desk("dark_a", enabled=False),
             _desk("dark_b", enabled=False)]},
-            "wire_routing": {"default": "dark_b"}}
-        got = HT.live_account("dark_a", marketing_cfg=cfg,
+            "wire_routing": {"default": "dark_b",
+                             "dark_desk": {"policy": "redirect"}}}
+        got = HT.live_account("dark_a", marketing_cfg=cfg, root=_EMPTY,
                               fallbacks=("dark_b", "dark_a"))
         assert got == "flagship", "every fallback rung must be liveness-checked"
 
@@ -530,7 +572,10 @@ class TestLiveAccountRescue:
 class TestCommittedConfig:
     def test_every_wire_class_owner_is_live_and_spill_eligible(self):
         mcfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
-        pool = WR.spill_pool(mcfg, root=ROOT)
+        # _EMPTY, not ROOT: since W5 `spill_pool` also drops a desk that has
+        # spent its rolling kind=breaking ceiling, and this test asks who is
+        # ELIGIBLE, not who has headroom at the moment CI happens to run.
+        pool = WR.spill_pool(mcfg, root=_EMPTY)
         assert pool, "the committed config resolves no live wire desk at all"
         table = WR.routing_table(mcfg, root=ROOT)
         for klass, acct in table.items():

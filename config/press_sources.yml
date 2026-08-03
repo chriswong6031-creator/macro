@@ -542,6 +542,50 @@ wire:
   # arrive within this window for a hearsay item to clear to instant-publish.
   corroboration_window_s: 1800
 
+  # ── ONE EVENT, ONE POST (D1 story clustering) ─────────────────────────────
+  # Read by engine/marketing/wire_story.py; every key here has an in-code
+  # default in that module's _DEFAULTS, so a config-less checkout still
+  # collapses. Deleting this block changes nothing; setting `enabled: false`
+  # restores the 2026-08-02 behaviour, which was four posts off one Fed
+  # appearance and two off one Switzerland CPI release.
+  #
+  # THESE ARE THE ONLY KNOBS THAT DECIDE HOW MUCH IS COLLAPSED. They are not
+  # quality gates: which item survives a collapse is decided by the salience
+  # sort that already ran, and whether it may post at all is decided by
+  # flagship_salience_floor above and the gates after it. Nothing here can
+  # promote an item.
+  story:
+    enabled: true
+    # An official's appearance is one event with a tail of snap headlines. The
+    # incident's four Williams lines spanned under an hour; 90 minutes leaves
+    # headroom over that without reaching into the next session.
+    speaker_window_min: 90
+    # One release session. Sub-prints of a single print (core/headline, YoY/MoM,
+    # national/EU-harmonized) land within minutes; the next same-country
+    # same-family release is a month out and the nearest possible collision is a
+    # next-day revision ~24h away, so anything in [1h, 12h] behaves identically
+    # on real data. 6h is the middle of that plateau, not an edge of it.
+    indicator_window_min: 360
+    # Identity, not similarity: the SAME sentence re-broadcast (the CAPS vs
+    # title-case pair). Matched to the indicator window to keep this legible.
+    text_window_min: 360
+    # State bounds. This ledger is a TRACKED-FILE cost: save_cursors writes it
+    # into cursors.json, whole, 288 times a day, under a 256 KB ceiling whose
+    # trim can only drop the scoring stores — never a correctness key like this
+    # one — so the bound has to hold on its own. 300 is ~65 KB worst case and
+    # far above real occupancy (the longest window is 6h; the wire clears ~100
+    # candidates in a whole day).
+    max_stories: 300
+    max_tally_keys: 200
+    # Per-key ::warning lines per tick before the rest roll up into one. An
+    # alarm that prints forty times is an alarm nobody reads.
+    max_warn_keys: 6
+    # Additive operator extension points (never replace the built-in lists):
+    # institutions whose possessive names a speaker ("Fed's Williams"), and
+    # leading words that are wire furniture rather than a person.
+    extra_institutions: []
+    extra_lead_stopwords: []
+
   # ── B4a live-wire rail (news.html retention surface) ──────────────────────
   # The rail shows EVERYTHING above this LOWER floor (incl. digest-class items X
   # never posts); X gets only the flagship top-K. Rail payload = last N items.
@@ -612,6 +656,14 @@ wire:
     active_h: 48
     max_stories: 1500
     snapshot_max_items: 80
+    # Bounded confirmed group (2026-08-03, same recalibration as the 4.5
+    # floors): at the new admission volume the 48 h window carries 80+
+    # confirmed stories — Truth-mirror direct-quotes alone can fill the whole
+    # snapshot — and unbounded stage priority evicted every developing story
+    # from the served payload. 44 leaves at least 36 of the 80 slots for the
+    # live developing tail (more when confirmed runs thinner); high_impact is
+    # never capped. 0 disables the bound (the historical shape).
+    snapshot_confirmed_max: 44
     db_paths:
       - "/var/lib/macro-live/state/intelligence/intelligence.db"
       - "data/marketing/press/intelligence.db"

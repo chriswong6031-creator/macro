@@ -225,6 +225,8 @@ _SAFE_ERROR_CODES = frozenset(
         "SOURCE_TIMESTAMP_REGRESSION",
         "TRIAL_PROJECTION_BINDING_MISMATCH",
         "TRIAL_PROJECTION_INVALID",
+        "TRIAL_CHANGE_TAPE_PROJECTION_BINDING_MISMATCH",
+        "TRIAL_CHANGE_TAPE_PROJECTION_INVALID",
         "TRIAL_PROSPECTIVE_EVIDENCE_BINDING_MISMATCH",
         "TRIAL_PROSPECTIVE_EVIDENCE_INVALID",
         "TRIAL_PROSPECTIVE_PROJECTION_BINDING_MISMATCH",
@@ -1325,7 +1327,7 @@ _PRIOR_PRIVATE_EXTRA_ROOTS = (
     "biocatalyst/derived/clinicaltrials/history",
     "biocatalyst/derived/clinicaltrials/prospective",
 )
-_PROSPECTIVE_GENERATION_SCHEMAS = frozenset(("1.3.0", "1.5.0"))
+_PROSPECTIVE_GENERATION_SCHEMAS = frozenset(("1.3.0", "1.5.0", "1.7.0"))
 
 
 def _write_private_prospective_immutable(

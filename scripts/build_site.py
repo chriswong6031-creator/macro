@@ -2922,12 +2922,105 @@ def _load_etf_pulse(site: Path) -> dict:
     return {}
 
 
+ETF_PAYLOAD_DIR = "premiumdata"
+ETF_PAYLOAD_NAME = "etfs.json"
+ETF_PAYLOAD_URL = f"/{ETF_PAYLOAD_DIR}/{ETF_PAYLOAD_NAME}"
+
+
+def _etf_gated() -> bool:
+    """The etfs desk's tier-gate switch, from config.yml (`etf_holdings.gated`)."""
+    try:
+        return bool((config.load().get("etf_holdings") or {}).get("gated", False))
+    except Exception:  # noqa: BLE001 — a config read must never fail the render
+        return False
+
+
+def _etf_free_tile(total: int) -> dict:
+    """The free build's replacement for hero tile 1.
+
+    The shipped tile is "Strongest consensus / <top ticker> / <stance pill>" —
+    a ticker plus a graded call, i.e. the head of the ranked board, which is the
+    part people pay for. T-B1 ruled the replacement must be NON-GRADED and
+    DETERMINISTIC; this is the honest total, which is both (it is a count of the
+    board, computed from the board, with no ordering exposed) and it opens the
+    page on a real number rather than on a grey skeleton.
+    """
+    return {"k": {"en": "On the board", "zh": "上榜个股"},
+            "v": str(total),
+            "m": {"en": "names at least two funds are building at once",
+                  "zh": "至少两只基金同时增持的个股"},
+            "tone": "link"}
+
+
+def _write_etf_payload(env, site: Path, gate: dict | None, *, favored: list[dict],
+                       fresh: list[dict], accumulation: list[dict],
+                       trims: list[dict], verdict: dict | None,
+                       tiles: list[dict] | None, scale: float,
+                       built: str) -> None:
+    """Render the paid remainder of the ETF desk into site/premiumdata/etfs.json.
+
+    Written on EVERY build — including the ungated one, where it is an empty
+    payload — so flipping `gated` off never strands a readable full board at a
+    path the page has stopped asking for.
+
+    Every block is rendered from the SAME partial the entitled shell includes,
+    so the hydrated page and the server-rendered one cannot drift apart.
+    """
+    path = site / ETF_PAYLOAD_DIR / ETF_PAYLOAD_NAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if gate is None:
+        payload = {"schema": "tier_payload.v1", "page": "etfs", "gated": False,
+                   "built": built, "board_html": "", "fresh_html": "",
+                   "accumulation_html": "", "trims_html": "",
+                   "verdict_html": "", "tiles_html": ""}
+    else:
+        macros = env.get_template("_etf_macros.html.j2").module
+        payload = {
+            "schema": "tier_payload.v1",
+            "page": "etfs",
+            "gated": True,
+            "required_tier": gate["tier"],
+            "built": built,
+            "total": gate["total"],
+            # No preview slice: both boards are best-first, and the ratified
+            # pattern forbids previewing those — the head IS the product.
+            "preview": gate["preview"],
+            "locked": gate["locked"],
+            "n_funds": gate["n_funds"],
+            "n_buys": gate["n_buys"],
+            "n_fresh": gate["n_fresh"],
+            "board_html": env.get_template("_etf_board_rows.html.j2").render(
+                rows=favored, scale=scale),
+            "fresh_html": (env.get_template("_etf_fresh_cards.html.j2").render(rows=fresh)
+                           if fresh else ""),
+            "accumulation_html": (env.get_template("_etf_accumulation_rows.html.j2")
+                                  .render(rows=accumulation) if accumulation else ""),
+            "trims_html": (env.get_template("_etf_trim_rows.html.j2").render(rows=trims)
+                           if trims else ""),
+            "verdict_html": str(macros.hero_verdict(verdict)) if verdict else "",
+            "tiles_html": str(macros.hero_tiles(tiles)) if tiles else "",
+        }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    log.info("etfs: premium payload %s (%d board rows, %d adds, %d trims)",
+             ETF_PAYLOAD_URL, len(favored), len(accumulation), len(trims))
+
+
 def build_etf_page(env: Environment, site: Path, generated: str,
                    rows: list[dict] | None = None) -> None:
     """Render etfs.html — the "real fund moves" board: conviction-ranked,
     accumulation-first holding decisions across the curated thematic/active ETF
     universe. Also writes site/stockdata/fund_flows.json so each stock page can
-    show which funds bought/sold it. See engine/holdings_signals."""
+    show which funds bought/sold it. See engine/holdings_signals.
+
+    Tier-preview split (SEO Supercharge W2, docs/TIER_PREVIEW_PATTERN.md): when
+    `etf_holdings.gated` is on, the SHELL ships the free half — header, honest
+    totals, the non-graded stance line, the rotation backdrop in full, the whole
+    fund coverage directory and the disclosure footer — and every graded row
+    (consensus board, fresh conviction, per-fund adds, trims) goes into
+    /premiumdata/etfs.json instead. The shell literally does not contain them, so
+    there is nothing for a Free viewer to un-hide in devtools; the split IS the
+    gate, and the page attempt-hydrates for an entitled member.
+    """
     from engine.holdings_signals import all_etf_signals, split_by_conviction
     from engine.etf_board import drop_cash, board_context, clean_name
     if rows is None:
@@ -2958,11 +3051,58 @@ def build_etf_page(env: Environment, site: Path, generated: str,
     except Exception as e:  # noqa: BLE001 — synthesis is additive, never fatal
         log.error("etf board synthesis failed: %s", e)
     env.globals["clean_name"] = clean_name
+
+    accumulation, trims = split["accumulation"], split["trims"]
+    fresh = list((board or {}).get("fresh") or [])
+    verdict = (board or {}).get("verdict")
+    tiles = list((board or {}).get("tiles") or [])
+    scale = ((board or {}).get("scale") or {}).get("consensus_pp") or 1.0
+
+    # ---- tier gate (docs/TIER_PREVIEW_PATTERN.md) -----------------------------
+    gate = None
+    v_favored, v_accum, v_trims = favored, accumulation, trims
+    if _etf_gated():
+        gate = {
+            "tier": "essential",
+            "payload": ETF_PAYLOAD_URL,
+            "total": len(favored),
+            "preview": 0,              # best-first boards get no preview slice
+            "locked": len(favored),
+            # The wall headline describes exactly what the PAYLOAD carries, so
+            # both numbers are counted off the withheld adds themselves — not off
+            # the tracked-fund total, which would over-claim the moment the top
+            # adds come from a subset of the universe.
+            "n_buys": len(accumulation),
+            "n_funds": len({r.get("etf") for r in accumulation if r.get("etf")}),
+            "n_fresh": len({r.get("ticker") for r in accumulation if r.get("is_new")}),
+            # Whether the fresh-conviction section has anything to restore, so
+            # the shell does not ship a hidden section that hydration can only
+            # ever un-hide onto nothing.
+            "has_fresh": bool(fresh),
+        }
+        # The shell renders NONE of the graded rows.
+        v_favored, v_accum, v_trims = [], [], []
+        if board is not None:
+            # Hero: the graded verdict line and the graded first tile are the
+            # board's summary and its head — both are replaced, not hidden.
+            board = dict(board)
+            board["verdict"] = None
+            board["fresh"] = []
+            # tiles[0] is the graded "Strongest consensus" tile ONLY when there
+            # is a board to head; with no consensus rows board_context emits
+            # just [fresh, backdrop], and slicing [1:] there would silently eat
+            # the fresh-conviction tile instead of the graded one.
+            if tiles and favored:
+                board["tiles"] = [_etf_free_tile(len(favored))] + tiles[1:]
+
     html = env.get_template("etfs.html.j2").render(
-        accumulation=split["accumulation"], trims=split["trims"],
-        favored=favored, coverage=coverage, pulse=pulse, board=board,
-        generated_utc=generated)
+        accumulation=v_accum, trims=v_trims,
+        favored=v_favored, coverage=coverage, pulse=pulse, board=board,
+        gate=gate, generated_utc=generated)
     write_page(site / "etfs.html", html)
+    _write_etf_payload(env, site, gate, favored=favored, fresh=fresh,
+                       accumulation=accumulation, trims=trims, verdict=verdict,
+                       tiles=tiles, scale=scale, built=generated)
     # per-stock feed (built before the stock library so it can be attached there)
     outdir = site / "stockdata"
     outdir.mkdir(parents=True, exist_ok=True)

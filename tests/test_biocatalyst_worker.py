@@ -584,6 +584,10 @@ def _rewrite_current_generation_as_v13(cfg: worker.WorkerConfig) -> None:
     assert protocol_path.is_file()
     protocol_path.unlink()
     protocol_path.parent.rmdir()
+    change_tape_path = generation / "change_tapes" / "NCT00000001.json"
+    assert change_tape_path.is_file()
+    change_tape_path.unlink()
+    change_tape_path.parent.rmdir()
 
     manifest_path = generation / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -591,7 +595,7 @@ def _rewrite_current_generation_as_v13(cfg: worker.WorkerConfig) -> None:
     manifest["artifacts"] = [
         artifact
         for artifact in manifest["artifacts"]
-        if not artifact["name"].startswith("protocols/")
+        if not artifact["name"].startswith(("protocols/", "change_tapes/"))
     ]
     manifest.pop("manifest_sha256")
     manifest["manifest_sha256"] = canonical_json_sha256(manifest)
@@ -635,6 +639,7 @@ def test_success_mirrors_every_private_artifact_then_promotes_one_sanitized_gene
         "protocols/NCT00000001.json",
         "history/NCT00000001.json",
         "prospective/NCT00000001.json",
+        "change_tapes/NCT00000001.json",
     }
     projection = publisher.read_trial_projection()
     assert projection is not None
@@ -703,7 +708,7 @@ def test_prospective_first_success_is_a_private_baseline_with_zero_public_change
         assert forbidden not in public_text
 
 
-def test_prospective_default_off_publishes_v14_without_private_or_public_ledger(tmp_path):
+def test_prospective_default_off_publishes_v16_history_tape_without_private_ledger(tmp_path):
     cfg = config(tmp_path, prospective_enabled=False)
     store = MemoryStore()
 
@@ -718,9 +723,10 @@ def test_prospective_default_off_publishes_v14_without_private_or_public_ledger(
     publisher = PublicGenerationPublisher(cfg.public_root)
     committed = publisher.read_committed()
     assert committed is not None
-    assert committed.schema_version == "1.4.0"
+    assert committed.schema_version == "1.6.0"
     generation = cfg.public_root / "generations" / committed.generation_id
     assert not (generation / "prospective").exists()
+    assert (generation / "change_tapes" / "NCT00000001.json").is_file()
     projection = publisher.read_trial_projection()
     assert projection is not None
     assert projection.prospective_models_by_nct["NCT00000001"] == {
@@ -828,7 +834,7 @@ def test_v13_prior_prospective_generation_replays_into_v15_accrual(tmp_path):
     assert second.status == "success", second
     projection = PublicGenerationPublisher(cfg.public_root).read_trial_projection()
     assert projection is not None
-    assert projection.generation.schema_version == "1.5.0"
+    assert projection.generation.schema_version == "1.7.0"
     model = projection.prospective_models_by_nct["NCT00000001"]
     assert model["coverage_epoch_id"] == first_model["coverage_epoch_id"]
     assert model["observation_count"] == 2

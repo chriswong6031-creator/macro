@@ -97,7 +97,20 @@ concurrency:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest    # OFF the render path — never the macstudio pool
+    # SELF-HOSTED (operator ruling 2026-08-03, autonomous mandate). This ran on
+    # ubuntu-latest to stay off the render path, and that was right until the
+    # HOSTED pool became the outage: on 2026-08-03 a manually dispatched sweep
+    # sat QUEUED 27 minutes while the account posted nothing, the scheduled
+    # sweeps had already skipped 11:00/11:30/12:00/12:30/13:00, and the last
+    # real sweep was 10:30Z. Five consecutive days ended with no posts. The mac
+    # pool was idle the whole time.
+    #
+    # `macstudio-light` — NOT `macstudio`: the light lane exists precisely so a
+    # short, time-critical job never queues behind the heavy render pool, which
+    # is the same reason commodity-sentinel uses it. Publishing is API calls plus
+    # an occasional card raster; it is light work with a hard deadline, which is
+    # exactly that lane's purpose.
+    runs-on: [self-hosted, macstudio-light]
     # 25m is plenty NOW THAT THE CHECKOUT IS SHALLOW (see fetch-depth below).
     # It was not before: on 2026-07-28 the full-history checkout ran the entire
     # 25m and was CANCELLED mid-clone, so `run publisher` never executed and the
@@ -127,10 +140,17 @@ jobs:
           fetch-depth: 1
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: setup python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        # NOT actions/setup-python: on this Studio a setup-python 3.12 exec dies
+        # with SIGKILL (known trap), and a self-hosted runner has no hosted
+        # tool-cache to fall back on. Same venv-per-runner pattern the
+        # commodity-sentinel light lane already uses, so the two lanes cannot
+        # drift apart on interpreter setup.
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
 
       - name: install deps
         # pyyaml: config/marketing.yml load. pandas+pyarrow: the tape gate's
@@ -276,13 +296,38 @@ jobs:
           fi
 
       - name: poll post metrics (dark until BUFFER_TOKEN is set)
+        # ONCE A DAY, NOT ONCE A SWEEP (2026-08-03). This ran on all ~30 sweeps
+        # against ~54 targets — ~1,600 Buffer calls a day for telemetry, on the
+        # SAME token and the SAME 24h quota the publisher posts with. On
+        # 2026-08-03 it exhausted the allowance (Retry-After: 20696) and the
+        # next sweep's approved, due, human-audited post was refused with
+        # `rate_limited=1`. Five consecutive days had ended with nothing posted.
+        #
+        # Metrics refresh ~daily, so 30 polls a day of the same post bought
+        # nothing and cost the product. The 13:00Z slot is after the US open so
+        # the prior session's posts have had time to accrue numbers. A manual
+        # dispatch always polls, so the console is never more than a click from
+        # current. The script ALSO stops on the first 429 and caps its own run —
+        # belt and braces, because a workflow condition is one edit away from
+        # being loosened by someone who does not know what it cost.
+        #
+        # The gate is a CLOCK CHECK, not `github.event.schedule`: this workflow
+        # declares ONE cron expression covering every slot, so that context value
+        # is the same literal on all 30 sweeps and could never single out an hour.
+        # A manual dispatch always polls.
         # Reads back per-post analytics (impressions/likes/reposts/… + the x.com
         # permalink) for items posted in the last 7 days and appends them to
         # data/marketing/post_metrics.jsonl. Metrics refresh ~daily, so this runs
         # every slot to keep the console current. Fully independent of the
         # kill-switch: with BUFFER_TOKEN unset it prints one line and exits 0
         # (no network, no write) — so it is harmless while the publisher is dark.
-        run: python -m scripts.marketing_metrics_poll
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%H)" != "13" ]; then
+            echo "metrics poll: skipped — once-daily at 13:00Z, now $(date -u +%H:%M)Z."
+            echo "The publisher shares this token; telemetry does not outbid posting."
+            exit 0
+          fi
+          python -m scripts.marketing_metrics_poll
 
       - name: commit changed outbox ledgers (no-op when nothing changed)
         # Only persist ledger state when ARMED. While dark the dry-run writes a
