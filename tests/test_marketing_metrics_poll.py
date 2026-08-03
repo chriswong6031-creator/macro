@@ -232,8 +232,11 @@ def test_happy_path_row_shape_and_empty_note(tmp_path):
         "buf-999": _metrics_ok("https://x.com/mastermindx001/status/999", {}, raw=[], updated=None),
     })
     s = poller.poll(tmp_path, now=_NOW, dry_run=False, publisher=stub)
+    # `stopped` joined the summary on 2026-08-03: a short `polled` count now has
+    # to say WHY it is short (rate_limited / max_calls) so a throttled run can
+    # never be misread as "there was nothing to poll". None = ran to completion.
     assert s == {"targets": 2, "polled": 2, "ok": 2, "empty": 1, "failed": 0,
-                 "dry_run": False, "dark": False}
+                 "dry_run": False, "dark": False, "stopped": None}
     rows = {r["remote_id"]: r for r in _read_metrics_rows(tmp_path)}
 
     full = rows["buf-777"]

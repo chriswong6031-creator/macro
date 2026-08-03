@@ -667,9 +667,17 @@ class TestFlagshipBudgetIsChargedOnTheRoutingDecision:
         had already refused — driving the counter negative.
 
     Both tests watch the CANDIDATE handed to `live_account`, which is the
-    routing decision itself. The desks the items finally land on are unchanged
-    by this fix (the rescue still runs, and it must) — what changes is which
-    events get to ask for a mirror.
+    routing decision itself — and that half is what this class is about: which
+    events get to ask for a mirror. The candidate lists below are unchanged by
+    W5.
+
+    THE LANDING DESKS DID MOVE (W5, 2026-08-03). `live_account` no longer
+    rescues a dark desk's item onto a live one by default; it PARKS, because the
+    only desk with room to take a rescued firehose is the flagship and that made
+    the brand account the tape's destination (11 kind=breaking items there in a
+    day, four from one Fed appearance inside an hour). The `accounts` assertions
+    are updated to the park; the budget property they ride on is untouched, which
+    is the point of watching the candidate rather than the landing.
     """
 
     @staticmethod
@@ -726,8 +734,10 @@ class TestFlagshipBudgetIsChargedOnTheRoutingDecision:
         # item off the flagship desk, the decrement read the rescued account,
         # and the budget was never spent.
         assert candidates == ["flagship", "mastermind_news", "mastermind_news"], candidates
-        # The rescue itself is untouched: nothing is enqueued to a dark desk.
-        assert accounts == ["mastermind_news"] * 3, accounts
+        # W5: the dark flagship KEEPS its one intended mirror (it parks there and
+        # quarantines at dispatch, counted) instead of donating it to the wire
+        # desk. The two budget-exhausted events were already the wire desk's.
+        assert accounts == ["flagship", "mastermind_news", "mastermind_news"], accounts
 
     def test_a_rescue_off_the_dark_wire_desk_does_not_eat_the_mirror_budget(
             self, tmp_path, monkeypatch):
@@ -748,7 +758,11 @@ class TestFlagshipBudgetIsChargedOnTheRoutingDecision:
         # burned the budget, so the big event found it empty and was routed to
         # the wire desk (from which the same rescue then bounced it back).
         assert candidates == ["mastermind_news", "flagship"], candidates
-        assert accounts == ["flagship", "flagship"], accounts
+        # W5: the sub-85 event parks on the dark wire desk rather than being
+        # rescued onto the flagship. That rescue is precisely how "most of the
+        # lane's volume" became brand-account volume; the 90-severity event that
+        # genuinely earned a mirror still gets one.
+        assert accounts == ["mastermind_news", "flagship"], accounts
 
 
 class TestDemoBlastRadius:

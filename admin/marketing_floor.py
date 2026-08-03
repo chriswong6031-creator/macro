@@ -113,6 +113,15 @@ _ACTIVITY_WORDS: dict[str, str] = {
     "quarantined_unknown_cashtag": "pulled — named a ticker no price store knows",
     "quarantined_voice_laws": "pulled — reads machine-written",
     "quarantined_run_duplicate": "pulled — repeats a post already sent today",
+    # The 2026-08-02 clock gates. Both name the DEFECT the operator reported,
+    # not the check: he wrote down "Friday's move called today on a Saturday"
+    # and "six posts off one stale breadth read", so those are the words. A
+    # count here means the queue is holding copy that went stale while it
+    # waited, which is a scheduling fault; a count in the fan-out row means the
+    # plan is fanning one fact across desks, which is a supply fault. Different
+    # rows because they get fixed in different places.
+    "quarantined_clock": "pulled — claimed a session that was not the posting session",
+    "quarantined_fact_fanout": "pulled — same fact another post already carries",
     # The wire reaper (2026-07-31). Says WHY in the operator's terms — the copy
     # was fine, the queue never moved — because a recurring count here is a
     # DISPATCH fault, not a writing fault, and the two get fixed in different
@@ -145,6 +154,10 @@ _LOSS_COUNTERS = frozenset({
     "failed", "quarantined", "skipped_no_channel", "skipped_halt",
     "skipped_cap", "skipped_cadence", "skipped_floor", "skipped_filler",
     "quarantined_frame", "quarantined_substance", "deferred_no_media",
+    # Both are posts the desk wrote and nobody will ever send. Console must
+    # surface the leak: without these rows the six-post breadth family would
+    # shrink to one on the Floor with no line saying where the other five went.
+    "quarantined_clock", "quarantined_fact_fanout",
     "deferred_immediate", "deferred_cross_account", "tape_quarantined",
     "tape_skipped", "pt_dropped", "stuck_posting",
     # A post the desk wrote and nobody sent is a loss like any other — it is

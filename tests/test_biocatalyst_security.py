@@ -219,11 +219,16 @@ def _install_rehashed_v14_history_artifact(
         for prospective_artifact in prospective_dir.iterdir():
             prospective_artifact.unlink()
         prospective_dir.rmdir()
+    change_tape_dir = generation / "change_tapes"
+    if change_tape_dir.exists():
+        for change_tape_artifact in change_tape_dir.iterdir():
+            change_tape_artifact.unlink()
+        change_tape_dir.rmdir()
     manifest["schema_version"] = "1.4.0"
     manifest["artifacts"] = [
         item
         for item in manifest["artifacts"]
-        if not item["name"].startswith("prospective/")
+        if not item["name"].startswith(("prospective/", "change_tapes/"))
     ]
     artifact_entry = {
         "name": "history/NCT00000001.json",
