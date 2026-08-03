@@ -1,0 +1,10 @@
+{
+  "fiscal_year": 2026,
+  "exhibit": "r1",
+  "source_url": "https://comptroller.defense.gov/Portals/45/Documents/defbudget/FY2026/FY2026_r1.pdf",
+  "final_url": "https://comptroller.war.gov/Portals/45/Documents/defbudget/FY2026/FY2026_r1.pdf",
+  "pages": [
+    "RDT&E PROGRAMS (R-1)\nDepartment of Defense Budget\nFiscal Year 2026\nOffice of the Under Secretary of Defense (Comptroller)",
+    "R-1 fixture detail\nline|component=Department of Air Force|appropriation=Research Development Test and Evaluation Air Force|appropriation_code=3600F|activity=06.7 Operational Systems Development|pe=0604800A|name=F-35 Continuous Capability Development|actual_quantity=|enacted_quantity=|disc_request_quantity=|recon_request_quantity=|total_request_quantity=|actual=100000|enacted=120000|disc_request=150000|recon_request=|total_request=150000\ntotal|appropriation_code=3600F|activity=06.7 Operational Systems Development|actual=100000|enacted=120000|disc_request=150000|recon_request=|total_request=150000"
+  ]
+}

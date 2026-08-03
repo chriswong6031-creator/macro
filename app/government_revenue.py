@@ -30,6 +30,15 @@ from engine.government_revenue.subaward_dossiers import (
     is_valid_subaward_dossier_payload,
     subaward_dossier_content_id,
 )
+from engine.government_revenue.budget_program import (
+    BUDGET_PROGRAM_GRAPH_CONTRACT,
+    is_valid_budget_program_graph,
+)
+from engine.government_revenue.idv_dossiers import (
+    IDV_DOSSIER_CONTRACT,
+    idv_dossier_content_id,
+    is_valid_idv_dossier_payload,
+)
 from engine.government_revenue.workspace import is_valid_procurement_workspace
 
 router = APIRouter()
@@ -47,14 +56,27 @@ _SUBAWARD_DOSSIER_PATHS = (
     _REPO / "data" / "government_revenue" / "subaward_dossiers.json",
     _REPO / "site" / "government-revenue-data" / "subaward-dossiers.json",
 )
+_BUDGET_PROGRAM_PATHS = (
+    _REPO / "data" / "government_revenue" / "budget_program_graph.json",
+    _REPO / "site" / "government-revenue-data" / "budget-program.json",
+)
+_IDV_DOSSIER_PATHS = (
+    _REPO / "data" / "government_revenue" / "idv_dossiers.json",
+    _REPO / "site" / "government-revenue-data" / "idv-dossiers.json",
+)
 _TICKER = re.compile(r"^[A-Z][A-Z0-9.-]{0,9}$")
 _NOTICE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _AWARD_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:|+-]{0,599}$")
 _SUBAWARD_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:|+-]{0,599}$")
+_BUDGET_LINE_KEY = re.compile(r"^dod:[a-z0-9:_-]{8,600}$")
+_BUDGET_PROGRAM_KEY = re.compile(r"^dod-program:[a-z0-9:_-]{8,600}$")
 _LOCK = threading.RLock()
 _CACHE: dict = {"path": None, "mtime_ns": None, "payload": None}
 _DOSSIER_CACHE: dict = {"state": None, "payload": None}
 _SUBAWARD_DOSSIER_CACHE: dict = {"state": None, "payload": None}
+_BUDGET_PROGRAM_CACHE: dict = {"state": None, "payload": None}
+_IDV_DOSSIER_CACHE: dict = {"state": None, "payload": None}
+_DOD_BUDGET_SOURCE_HOSTS = {"comptroller.defense.gov", "comptroller.war.gov"}
 _SENSITIVE_KEY = re.compile(
     r"(?:^private|api[_-]?key|authorization|(?:^|_)(?:secret|token|password|credential)s?(?:$|_)|"
     r"raw_(?:body|payload|receipt|request|response)|(?:request|response)_headers)",
@@ -97,7 +119,20 @@ def _scrub_public(value: object) -> object:
         return {
             str(key): _scrub_public(item)
             for key, item in value.items()
-            if not _SENSITIVE_KEY.search(str(key))
+            # A ``source_coverage.authorization`` rail is public semantic
+            # metadata (status + reason), not an HTTP Authorization header.
+            # Preserve only that exact bounded object; all header/token-shaped
+            # authorization keys remain redacted by the general rule.
+            if (
+                not _SENSITIVE_KEY.search(str(key))
+                or (
+                    str(key) == "authorization"
+                    and isinstance(item, dict)
+                    and set(item).issubset({"status", "reason"})
+                    and isinstance(item.get("status"), str)
+                    and isinstance(item.get("reason"), str)
+                )
+            )
         }
     if isinstance(value, (list, tuple)):
         return [_scrub_public(item) for item in value]
@@ -122,6 +157,30 @@ def _dossier_source_url(value: object) -> str | None:
     except ValueError:
         return None
     return safe if host and host.lower() in _DOSSIER_SOURCE_HOSTS else None
+
+
+def _dod_budget_source_url(value: object) -> str | None:
+    """Expose only stable, credential-free official Comptroller document URLs."""
+    safe = _public_url(value)
+    if safe is None:
+        return None
+    try:
+        parsed = urlsplit(safe)
+        port = parsed.port
+    except ValueError:
+        return None
+    if (
+        parsed.scheme.lower() != "https"
+        or not parsed.hostname
+        or parsed.hostname.lower() not in _DOD_BUDGET_SOURCE_HOSTS
+        or parsed.username
+        or parsed.password
+        or port not in {None, 443}
+        or parsed.query
+        or parsed.fragment
+    ):
+        return None
+    return safe
 
 
 def _load_dossiers() -> dict:
@@ -284,6 +343,128 @@ def _load_subaward_dossiers() -> dict:
         return payload
 
 
+def _validate_budget_program_award_bindings(payload: dict, prime_payload: dict) -> None:
+    """Keep reviewed documentary award links exact and non-attributional."""
+    exact_award_keys = set(_prime_award_key_by_generated_id(prime_payload).values())
+    for edge in payload.get("edges") or []:
+        if not isinstance(edge, dict):
+            raise HTTPException(status_code=503, detail="government revenue budget/program graph schema mismatch")
+        if edge.get("to_type") == "award" and edge.get("to_id") not in exact_award_keys:
+            raise HTTPException(status_code=503, detail="government revenue budget/program graph award binding unresolved")
+
+
+def _load_budget_program_graph() -> dict:
+    """Load one exact, precomputed DoD request-evidence graph or fail closed.
+
+    This route family never reads PDFs, recomputes budget values, or creates a
+    company/issuer conclusion.  An absent graph is an explicit unavailable
+    optional rail; a one-sided/stale static twin is a 503.
+    """
+    prime_payload = _load_dossiers()
+    canonical, site = _BUDGET_PROGRAM_PATHS
+    try:
+        canonical_state = canonical.stat()
+        site_state = site.stat()
+    except OSError as exc:
+        raise HTTPException(status_code=503, detail="government revenue DoD budget/program graph unavailable") from exc
+    state = (
+        canonical_state.st_mtime_ns,
+        canonical_state.st_size,
+        site_state.st_mtime_ns,
+        site_state.st_size,
+        prime_payload.get("content_id"),
+    )
+    with _LOCK:
+        if _BUDGET_PROGRAM_CACHE["payload"] is not None and _BUDGET_PROGRAM_CACHE["state"] == state:
+            return _BUDGET_PROGRAM_CACHE["payload"]
+        try:
+            canonical_bytes = canonical.read_bytes()
+            site_bytes = site.read_bytes()
+            payload = json.loads(canonical_bytes)
+        except (OSError, ValueError, TypeError) as exc:
+            raise HTTPException(status_code=503, detail="government revenue DoD budget/program graph unreadable") from exc
+        if canonical_bytes != site_bytes:
+            raise HTTPException(status_code=503, detail="government revenue DoD budget/program graph twin mismatch")
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != BUDGET_PROGRAM_GRAPH_CONTRACT
+            or not is_valid_budget_program_graph(payload)
+        ):
+            raise HTTPException(status_code=503, detail="government revenue DoD budget/program graph schema mismatch")
+        _validate_budget_program_award_bindings(payload, prime_payload)
+        _BUDGET_PROGRAM_CACHE.update(state=state, payload=payload)
+        return payload
+
+
+def _validate_idv_dossier_bindings(payload: dict, prime_payload: dict) -> None:
+    """Require the stored child bridge to match this exact prime generation."""
+    prime_by_generated = _prime_award_key_by_generated_id(prime_payload)
+    for parent in payload.get("idvs") or []:
+        if (
+            not isinstance(parent, dict)
+            or not str(parent.get("idv_generated_award_id") or "").startswith("CONT_IDV_")
+            or "award_key" in parent
+            or "parent_award_key" in parent
+        ):
+            raise HTTPException(status_code=503, detail="government revenue IDV parent binding invalid")
+    for relationship in payload.get("relationships") or []:
+        identity = relationship.get("identity") if isinstance(relationship, dict) else None
+        if not isinstance(identity, dict):
+            raise HTTPException(status_code=503, detail="government revenue IDV relationship identity invalid")
+        parent = identity.get("idv_generated_award_id")
+        child = identity.get("child_generated_award_id")
+        if (
+            not isinstance(parent, str)
+            or not parent.startswith("CONT_IDV_")
+            or not isinstance(child, str)
+            or not child.startswith("CONT_AWD_")
+        ):
+            raise HTTPException(status_code=503, detail="government revenue IDV relationship identity invalid")
+        if relationship.get("child_award_key") != prime_by_generated.get(child):
+            raise HTTPException(status_code=503, detail="government revenue IDV child bridge unresolved")
+        if "parent_award_key" in relationship:
+            raise HTTPException(status_code=503, detail="government revenue IDV parent bridge invalid")
+
+
+def _load_idv_dossiers() -> dict:
+    """Load one independent source-native IDV generation or fail closed."""
+    prime_payload = _load_dossiers()
+    canonical, site = _IDV_DOSSIER_PATHS
+    try:
+        canonical_state = canonical.stat()
+        site_state = site.stat()
+    except OSError as exc:
+        raise HTTPException(status_code=503, detail="government revenue IDV dossier unavailable") from exc
+    state = (
+        canonical_state.st_mtime_ns,
+        canonical_state.st_size,
+        site_state.st_mtime_ns,
+        site_state.st_size,
+        prime_payload.get("content_id"),
+    )
+    with _LOCK:
+        if _IDV_DOSSIER_CACHE["payload"] is not None and _IDV_DOSSIER_CACHE["state"] == state:
+            return _IDV_DOSSIER_CACHE["payload"]
+        try:
+            canonical_bytes = canonical.read_bytes()
+            site_bytes = site.read_bytes()
+            payload = json.loads(canonical_bytes)
+        except (OSError, ValueError, TypeError) as exc:
+            raise HTTPException(status_code=503, detail="government revenue IDV dossier unreadable") from exc
+        if canonical_bytes != site_bytes:
+            raise HTTPException(status_code=503, detail="government revenue IDV dossier twin mismatch")
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != IDV_DOSSIER_CONTRACT
+            or not is_valid_idv_dossier_payload(payload)
+            or idv_dossier_content_id(payload) != payload.get("content_id")
+        ):
+            raise HTTPException(status_code=503, detail="government revenue IDV dossier schema mismatch")
+        _validate_idv_dossier_bindings(payload, prime_payload)
+        _IDV_DOSSIER_CACHE.update(state=state, payload=payload)
+        return payload
+
+
 def _load() -> dict:
     path = _artifact_path()
     if path is None:
@@ -428,6 +609,18 @@ def _validated_award_key(value: str) -> str:
 def _validated_subaward_key(value: str) -> str:
     if not _SUBAWARD_KEY.fullmatch(value):
         raise HTTPException(status_code=400, detail="invalid subaward key")
+    return value
+
+
+def _validated_budget_line_key(value: str) -> str:
+    if not _BUDGET_LINE_KEY.fullmatch(value):
+        raise HTTPException(status_code=400, detail="invalid budget line key")
+    return value
+
+
+def _validated_budget_program_key(value: str) -> str:
+    if not _BUDGET_PROGRAM_KEY.fullmatch(value):
+        raise HTTPException(status_code=400, detail="invalid budget program key")
     return value
 
 
@@ -623,6 +816,87 @@ def _public_subaward(row: dict) -> dict:
     return _scrub_public(out)
 
 
+def _public_budget_graph_envelope(payload: dict) -> dict:
+    """Expose stored DoD request evidence without a funding or issuer claim."""
+    documents = []
+    for raw in payload.get("documents") or []:
+        if not isinstance(raw, dict):
+            continue
+        document = {
+            key: raw[key]
+            for key in (
+                "receipt_id", "fiscal_year", "exhibit", "content_sha256", "page_count",
+                "page_text_sha256s", "extraction_semantic_sha256", "extractor_version",
+                "parser_version", "observed_at",
+            )
+            if key in raw
+        }
+        document["source_url"] = _dod_budget_source_url(raw.get("source_url"))
+        documents.append(document)
+    return _scrub_public({
+        "contract": payload.get("contract"),
+        "schema_version": payload.get("schema_version"),
+        "content_id": payload.get("content_id"),
+        "as_of": payload.get("as_of"),
+        "known_at": payload.get("known_at"),
+        "authority": payload.get("authority"),
+        "source_coverage": payload.get("source_coverage"),
+        "documents": documents,
+        "limitations": payload.get("limitations"),
+    })
+
+
+def _public_budget_line(row: dict) -> dict:
+    """Return a retained source line exactly as precomputed by the graph rail."""
+    allowed = {
+        "contract", "line_key", "line_family_key", "fiscal_year", "document_stage",
+        "exhibit", "component", "appropriation", "appropriation_code",
+        "budget_activity", "native_identifier", "program_name", "amounts", "quantities",
+        "source", "provenance", "line_state_sha256", "effective_at", "known_at",
+        "first_seen_at",
+    }
+    out = {key: row[key] for key in allowed if key in row}
+    source = row.get("source")
+    if isinstance(source, dict):
+        out["source"] = {
+            "publisher": "Office of the Under Secretary of Defense (Comptroller)",
+            "source_url": _dod_budget_source_url(source.get("source_url")),
+            "document_sha256": source.get("document_sha256"),
+            "receipt_id": source.get("receipt_id"),
+        }
+    return _scrub_public(out)
+
+
+def _public_budget_program(row: dict) -> dict:
+    allowed = {"program_key", "kind", "native_identifier", "name", "line_keys"}
+    return _scrub_public({key: row[key] for key in allowed if key in row})
+
+
+def _public_budget_edge(row: dict) -> dict:
+    allowed = {
+        "contract", "edge_id", "from_type", "from_id", "to_type", "to_id",
+        "edge_type", "review_state", "economic_weight", "effective_at", "known_at",
+        "evidence",
+    }
+    return _scrub_public({key: row[key] for key in allowed if key in row})
+
+
+def _public_idv_relationship(row: dict) -> dict:
+    """Expose an official relationship observation, never an issuer assertion."""
+    allowed = {
+        "relationship_key", "child_award_key", "identity", "recipient_name", "agency",
+        "dates", "amounts", "source", "provenance",
+    }
+    out = {key: row[key] for key in allowed if key in row}
+    source = row.get("source")
+    if isinstance(source, dict):
+        out["source"] = {
+            "publisher": "USAspending.gov",
+            "activity_url": _dossier_source_url(source.get("activity_url")),
+        }
+    return _scrub_public(out)
+
+
 def _dossier_envelope(payload: dict, *, results: list[dict], next_cursor: str | None, total: int) -> dict:
     return _scrub_public({
         "schema_version": payload.get("schema_version"),
@@ -730,6 +1004,75 @@ def company(ticker: str) -> dict:
         "known_at": payload.get("known_at"),
         "authority": payload.get("authority"),
         "company": _public_company(row),
+    }
+
+
+@router.get("/api/government-revenue/budget-programs")
+def budget_programs() -> dict:
+    """List precomputed DoD request-evidence program nodes.
+
+    P-1/R-1 evidence is kept separate from authorization, enacted
+    appropriation, execution, award value, and issuer conclusions; the stored
+    source-coverage rails make that boundary explicit in every response.
+    """
+    payload = _load_budget_program_graph()
+    return _public_budget_graph_envelope(payload) | {
+        "programs": [_public_budget_program(row) for row in payload.get("programs") or []],
+        "total": len(payload.get("programs") or []),
+    }
+
+
+@router.get("/api/government-revenue/budget-line/{line_key}")
+def budget_line(line_key: str) -> dict:
+    """Return one receipt-bound budget line and its source-native program edge."""
+    line_key = _validated_budget_line_key(line_key)
+    payload = _load_budget_program_graph()
+    line = next(
+        (row for row in payload.get("lines") or [] if isinstance(row, dict) and row.get("line_key") == line_key),
+        None,
+    )
+    if line is None:
+        raise HTTPException(status_code=404, detail="budget line not covered")
+    edges = [
+        _public_budget_edge(row)
+        for row in payload.get("edges") or []
+        if isinstance(row, dict) and row.get("from_type") == "budget_line" and row.get("from_id") == line_key
+    ]
+    return _public_budget_graph_envelope(payload) | {
+        "line": _public_budget_line(line),
+        "source_native_edges": edges,
+    }
+
+
+@router.get("/api/government-revenue/program/{program_key}")
+def budget_program(program_key: str) -> dict:
+    """Return one program node with exact stored lines and documentary edges."""
+    program_key = _validated_budget_program_key(program_key)
+    payload = _load_budget_program_graph()
+    program = next(
+        (row for row in payload.get("programs") or [] if isinstance(row, dict) and row.get("program_key") == program_key),
+        None,
+    )
+    if program is None:
+        raise HTTPException(status_code=404, detail="budget program not covered")
+    line_keys = set(program.get("line_keys") or [])
+    lines = [
+        _public_budget_line(row)
+        for row in payload.get("lines") or []
+        if isinstance(row, dict) and row.get("line_key") in line_keys
+    ]
+    edges = [
+        _public_budget_edge(row)
+        for row in payload.get("edges") or []
+        if isinstance(row, dict) and (
+            (row.get("from_type") == "program" and row.get("from_id") == program_key)
+            or (row.get("to_type") == "program" and row.get("to_id") == program_key)
+        )
+    ]
+    return _public_budget_graph_envelope(payload) | {
+        "program": _public_budget_program(program),
+        "lines": lines,
+        "documentary_edges": edges,
     }
 
 
@@ -883,6 +1226,70 @@ def award_actions(
         ),
         total=len(filtered),
     )
+
+
+@router.get("/api/government-revenue/award/{award_key}/idv-relationships")
+def award_idv_relationships(award_key: str) -> dict:
+    """Return exact source-native IDV parents bridged to one definitive award.
+
+    This is a relationship lookup, not vehicle participation, seat, utilization,
+    award-value, or issuer-attribution analysis.  Direct and grandchild depth
+    remain explicitly stored on every returned observation.
+    """
+    award_key = _validated_award_key(award_key)
+    prime_payload = _load_dossiers()
+    if award_key not in _dossier_award_map(prime_payload):
+        raise HTTPException(status_code=404, detail="award not covered")
+    payload = _load_idv_dossiers()
+    relationships = [
+        _public_idv_relationship(row)
+        for row in payload.get("relationships") or []
+        if isinstance(row, dict) and row.get("child_award_key") == award_key
+    ]
+    relationships.sort(key=lambda row: str(row.get("relationship_key") or ""))
+    selection = payload.get("selection_provenance")
+    source_coverage = payload.get("source_coverage")
+    selection = selection if isinstance(selection, dict) else {}
+    source_coverage = source_coverage if isinstance(source_coverage, dict) else {}
+    if source_coverage.get("status") != "ok" or selection.get("status") != "verified":
+        award_coverage = {
+            "status": "unavailable",
+            "exhaustive": False,
+            "exact_relationship_count": 0,
+            "selected_parent_count": 0,
+            "selection_manifest_id": None,
+            "reason": "No publication-eligible bounded IDV selection is active; no relationship conclusion was inferred.",
+        }
+    else:
+        observed = bool(relationships)
+        selected_count = selection.get("selected_parent_count")
+        award_coverage = {
+            "status": "observed" if observed else "not_observed",
+            "exhaustive": False,
+            "exact_relationship_count": len(relationships),
+            "selected_parent_count": selected_count,
+            "selection_manifest_id": selection.get("selection_manifest_id"),
+            "reason": (
+                "Published exact generated-ID relationship observations for this award in the bounded active IDV cut."
+                if observed
+                else f"No exact generated-ID bridge was observed for this award in the bounded {selected_count}-parent IDV cut; absence is not evidence that no IDV relationship exists."
+            ),
+        }
+    return _scrub_public({
+        "schema_version": payload.get("schema_version"),
+        "content_id": payload.get("content_id"),
+        "as_of": payload.get("as_of"),
+        "known_at": payload.get("known_at"),
+        "authority": payload.get("authority"),
+        "source_coverage": payload.get("source_coverage"),
+        "freshness": payload.get("freshness"),
+        "selection_provenance": payload.get("selection_provenance"),
+        "award_coverage": award_coverage,
+        "limitations": payload.get("limitations"),
+        "award_key": award_key,
+        "relationships": relationships,
+        "total": len(relationships),
+    })
 
 
 def _subaward_action_date(row: dict) -> str | None:

@@ -45,6 +45,19 @@ from engine.government_revenue.subaward_dossiers import (  # noqa: E402
     is_valid_subaward_dossier_payload,
     subaward_dossier_content_id,
 )
+from collectors.dod_budget import DOD_BUDGET_PRODUCTION_ACTIVATION_ENABLED  # noqa: E402
+from engine.government_revenue.budget_program import (  # noqa: E402
+    BUDGET_PROGRAM_GRAPH_CONTRACT,
+    build_budget_program_graph,
+    is_valid_budget_program_graph,
+    load_reviewed_edges,
+)
+from engine.government_revenue.idv_dossiers import (  # noqa: E402
+    IDV_DOSSIER_CONTRACT,
+    build_idv_dossier_payload,
+    idv_dossier_content_id,
+    is_valid_idv_dossier_payload,
+)
 from engine.government_revenue.entity_resolution import (  # noqa: E402
     is_valid_recipient_resolution_coverage,
     load_recipient_entity_graph,
@@ -77,6 +90,16 @@ SHELL_COMPANY_METRICS = (
     "positive_award_action_flow_90d",
     # Kept only while older generated templates remain backward compatible.
     "modification_impulse_90d",
+)
+
+# These are collector-owned, immutable source inputs.  The graph projector
+# accepts no partial bundle and this page builder never attempts PDF parsing or
+# source acquisition.  A later source adapter may replace the fixture-only DoD
+# foundation, but it must keep this complete evidence boundary intact.
+_BUDGET_SOURCE_FILENAMES = (
+    "dod_budget_line_snapshots.jsonl",
+    "dod_budget_collection_receipts.jsonl",
+    "dod_budget_projection_state.json",
 )
 
 
@@ -529,6 +552,146 @@ def _validate_subaward_dossier_payload(payload: object) -> dict:
     return payload
 
 
+def _validate_budget_program_graph_payload(payload: object) -> dict:
+    """Admit only the immutable, display-tier DoD budget graph contract."""
+    if (
+        not isinstance(payload, dict)
+        or payload.get("contract") != BUDGET_PROGRAM_GRAPH_CONTRACT
+        or not is_valid_budget_program_graph(payload)
+    ):
+        raise ValueError("government revenue budget/program graph returned an invalid schema")
+    return payload
+
+
+def _validate_idv_dossier_payload(payload: object) -> dict:
+    """Admit only a content-addressed, source-native IDV relationship rail."""
+    if (
+        not isinstance(payload, dict)
+        or payload.get("contract") != IDV_DOSSIER_CONTRACT
+        or not is_valid_idv_dossier_payload(payload)
+        or idv_dossier_content_id(payload) != payload.get("content_id")
+    ):
+        raise ValueError("government revenue IDV dossier returned an invalid schema")
+    return payload
+
+
+def _validate_budget_program_award_bindings(graph: dict, dossier: dict) -> None:
+    """Require every documentary graph edge to name one exact prime award key.
+
+    The DoD graph intentionally has no issuer mapping or economic weight.  A
+    reviewed documentary edge may point to a source-backed award observation,
+    but only when that path-safe key is present in the same prime dossier
+    generation; it may never fall back to a PIID, program name, or recipient
+    string.
+    """
+    exact_award_keys = set(_prime_award_key_by_generated_id(dossier).values())
+    for edge in graph.get("edges") or []:
+        if not isinstance(edge, dict):
+            raise ValueError("government revenue budget/program graph has an invalid edge")
+        if edge.get("to_type") == "award" and edge.get("to_id") not in exact_award_keys:
+            raise ValueError("government revenue budget/program graph award edge is unresolved")
+
+
+def _validate_idv_dossier_bindings(idv_dossier: dict, dossier: dict) -> None:
+    """Bind child relationships to the prime dossier only by generated ID.
+
+    IDV parents deliberately remain standalone source entities.  A child gets
+    a public ``award_key`` solely when its exact USAspending generated natural
+    ID maps to a row in the current prime dossier.  No entity/ticker/PIID
+    matching participates in this check.
+    """
+    prime_by_generated = _prime_award_key_by_generated_id(dossier)
+    for parent in idv_dossier.get("idvs") or []:
+        if not isinstance(parent, dict) or not str(parent.get("idv_generated_award_id") or "").startswith("CONT_IDV_"):
+            raise ValueError("government revenue IDV dossier has an invalid source-native parent")
+        if "award_key" in parent or "parent_award_key" in parent:
+            raise ValueError("government revenue IDV dossier incorrectly collapses a parent into a prime award")
+    for row in idv_dossier.get("relationships") or []:
+        identity = row.get("identity") if isinstance(row, dict) else None
+        if not isinstance(identity, dict):
+            raise ValueError("government revenue IDV dossier has an invalid relationship")
+        parent = identity.get("idv_generated_award_id")
+        child = identity.get("child_generated_award_id")
+        if (
+            not isinstance(parent, str)
+            or not parent.startswith("CONT_IDV_")
+            or not isinstance(child, str)
+            or not child.startswith("CONT_AWD_")
+        ):
+            raise ValueError("government revenue IDV dossier relationship identity is invalid")
+        if row.get("child_award_key") != prime_by_generated.get(child):
+            raise ValueError("government revenue IDV dossier child bridge is unresolved or stale")
+        if "parent_award_key" in row:
+            raise ValueError("government revenue IDV dossier incorrectly derives a parent award bridge")
+
+
+def _read_jsonl_objects(path: Path, *, label: str) -> list[dict]:
+    """Read a canonical JSONL source ledger without accepting blank or scalar rows."""
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise ValueError(f"{label} is unavailable") from exc
+    rows: list[dict] = []
+    for number, raw in enumerate(lines, start=1):
+        if not raw.strip():
+            raise ValueError(f"{label} contains a blank row")
+        try:
+            value = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"{label} row {number} is invalid JSON") from exc
+        if not isinstance(value, dict):
+            raise ValueError(f"{label} row {number} is not an object")
+        rows.append(value)
+    if not rows:
+        raise ValueError(f"{label} is empty")
+    return rows
+
+
+def _build_budget_program_graph_if_ready(
+    root: Path,
+    *,
+    as_of: str | None,
+    dossier: dict,
+) -> dict | None:
+    """Project one complete DoD source bundle, or retain an absent rail as absent.
+
+    There is intentionally no empty synthetic graph: an all-absent source
+    bundle leaves the optional rail unavailable.  Any mixed presence is a hard
+    failure so a reader can never mistake a partial document/import for a
+    governed graph.
+    """
+    data_dir = root / "data" / "government_revenue"
+    paths = [data_dir / filename for filename in _BUDGET_SOURCE_FILENAMES]
+    present = [path.exists() for path in paths]
+    if not any(present):
+        return None
+    if not all(present):
+        raise ValueError("DoD budget source bundle is partial; all immutable ledger members are required")
+    if not DOD_BUDGET_PRODUCTION_ACTIVATION_ENABLED:
+        raise ValueError(
+            "DoD budget publication is hard-disabled while acquisition, storage-write proof, "
+            "and PDF extraction remain fixture-only"
+        )
+    lines = _read_jsonl_objects(paths[0], label="DoD budget line ledger")
+    receipts = _read_jsonl_objects(paths[1], label="DoD budget receipt ledger")
+    try:
+        projection_state = json.loads(paths[2].read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("DoD budget projection state is unavailable or invalid") from exc
+    if not isinstance(projection_state, dict):
+        raise ValueError("DoD budget projection state is not an object")
+    graph = _validate_budget_program_graph_payload(build_budget_program_graph(
+        lines=lines,
+        receipts=receipts,
+        projection_state=projection_state,
+        as_of=as_of or "1970-01-01",
+        reviewed_edge_set=load_reviewed_edges(root),
+        award_keys=set(_prime_award_key_by_generated_id(dossier).values()),
+    ))
+    _validate_budget_program_award_bindings(graph, dossier)
+    return graph
+
+
 def _recipient_activation_required(root: Path) -> bool:
     """Return whether this checkout has entered the exact-recipient lane.
 
@@ -631,6 +794,62 @@ def _write_subaward_dossier_twins(root: Path, dossier_raw: str) -> tuple[Path, P
     return canonical, site
 
 
+def _write_budget_program_graph_twins(root: Path, graph_raw: str) -> tuple[Path, Path]:
+    """Publish one exact DoD budget graph to canonical and static locations."""
+    canonical = root / "data" / "government_revenue" / "budget_program_graph.json"
+    site = root / "site" / "government-revenue-data" / "budget-program.json"
+    _atomic_write_text(canonical, graph_raw)
+    _atomic_write_text(site, graph_raw)
+    return canonical, site
+
+
+def _write_idv_dossier_twins(root: Path, dossier_raw: str) -> tuple[Path, Path]:
+    """Publish one exact, independently content-addressed IDV relationship rail."""
+    canonical = root / "data" / "government_revenue" / "idv_dossiers.json"
+    site = root / "site" / "government-revenue-data" / "idv-dossiers.json"
+    _atomic_write_text(canonical, dossier_raw)
+    _atomic_write_text(site, dossier_raw)
+    return canonical, site
+
+
+def _load_optional_canonical_budget_graph(root: Path, dossier: dict) -> tuple[str, dict] | None:
+    """Read a precomputed optional graph without reconstructing raw sources."""
+    canonical = root / "data" / "government_revenue" / "budget_program_graph.json"
+    site = root / "site" / "government-revenue-data" / "budget-program.json"
+    if not canonical.exists():
+        if site.exists():
+            raise ValueError("public DoD budget/program graph exists without canonical bytes")
+        return None
+    try:
+        raw = canonical.read_text(encoding="utf-8")
+        graph = _validate_budget_program_graph_payload(json.loads(raw))
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("canonical DoD budget/program graph is invalid") from exc
+    if _canonical_json(graph) != raw:
+        raise ValueError("canonical DoD budget/program graph bytes are non-canonical")
+    _validate_budget_program_award_bindings(graph, dossier)
+    return raw, graph
+
+
+def _load_optional_canonical_idv_dossier(root: Path, dossier: dict) -> tuple[str, dict] | None:
+    """Read one committed IDV rail without recalculating a source generation."""
+    canonical = root / "data" / "government_revenue" / "idv_dossiers.json"
+    site = root / "site" / "government-revenue-data" / "idv-dossiers.json"
+    if not canonical.exists():
+        if site.exists():
+            raise ValueError("public IDV dossier exists without canonical bytes")
+        return None
+    try:
+        raw = canonical.read_text(encoding="utf-8")
+        payload = _validate_idv_dossier_payload(json.loads(raw))
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("canonical government revenue IDV dossier is invalid") from exc
+    if _canonical_json(payload) != raw:
+        raise ValueError("canonical government revenue IDV dossier bytes are non-canonical")
+    _validate_idv_dossier_bindings(payload, dossier)
+    return raw, payload
+
+
 def _write_site_projection(
     root: Path,
     payload: dict,
@@ -689,6 +908,22 @@ def build(root: Path, *, as_of: str | None = None) -> tuple[Path, Path, Path]:
             prime_award_key_by_generated_id=_prime_award_key_by_generated_id(dossier),
         )
     )
+    # The IDV rail owns only source-native vehicle-to-child observations.  It
+    # produces an explicit unavailable envelope before the receipt bundle is
+    # initialized, and fails rather than publishing a partial bundle.
+    idv_dossier = _validate_idv_dossier_payload(
+        build_idv_dossier_payload(
+            root=root,
+            as_of=payload.get("as_of"),
+            prime_award_key_by_generated_id=_prime_award_key_by_generated_id(dossier),
+        )
+    )
+    _validate_idv_dossier_bindings(idv_dossier, dossier)
+    budget_graph = _build_budget_program_graph_if_ready(
+        root,
+        as_of=payload.get("as_of"),
+        dossier=dossier,
+    )
 
     canonical_dir = root / "data" / "government_revenue"
     canonical_dir.mkdir(parents=True, exist_ok=True)
@@ -707,6 +942,17 @@ def build(root: Path, *, as_of: str | None = None) -> tuple[Path, Path, Path]:
     dossier_raw = _canonical_json(dossier)
     _write_dossier_twins(root, dossier_raw)
     _write_subaward_dossier_twins(root, _canonical_json(subaward_dossier))
+    _write_idv_dossier_twins(root, _canonical_json(idv_dossier))
+    if budget_graph is not None:
+        _write_budget_program_graph_twins(root, _canonical_json(budget_graph))
+    else:
+        # A canonical graph may legitimately outlive a generic local checkout
+        # that lacks the collector-owned source bundle.  Mirror only its exact
+        # verified bytes; do not synthesize an empty graph or silently reuse a
+        # public-only static copy.
+        preserved_graph = _load_optional_canonical_budget_graph(root, dossier)
+        if preserved_graph is not None:
+            _write_budget_program_graph_twins(root, preserved_graph[0])
     html_path, json_path = _write_site_projection(
         root,
         payload,
@@ -789,8 +1035,16 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
         if _canonical_json(subaward) != subaward_raw:
             raise ValueError("canonical government revenue subaward dossier bytes are non-canonical")
         _write_subaward_dossier_twins(root, subaward_raw)
+        optional_idv = _load_optional_canonical_idv_dossier(root, dossier)
+        if optional_idv is not None:
+            _write_idv_dossier_twins(root, optional_idv[0])
+        optional_budget_graph = _load_optional_canonical_budget_graph(root, dossier)
+        if optional_budget_graph is not None:
+            _write_budget_program_graph_twins(root, optional_budget_graph[0])
     elif (canonical_dir / "subaward_dossiers.json").exists():
         raise ValueError("canonical subaward dossier exists without a prime dossier")
+    elif any((canonical_dir / name).exists() for name in ("idv_dossiers.json", "budget_program_graph.json")):
+        raise ValueError("canonical optional Government Revenue rail exists without a prime dossier")
     html_path, json_path = _write_site_projection(
         root,
         payload,

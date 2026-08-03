@@ -244,6 +244,28 @@ def test_projection_fence_rejects_stale_public_subaward_dossier_twin(tmp_path: P
         validate_projection(tmp_path)
 
 
+@pytest.mark.parametrize(
+    "canonical_name, public_name, label",
+    (
+        ("budget_program_graph.json", "budget-program.json", "DoD budget/program graph"),
+        ("idv_dossiers.json", "idv-dossiers.json", "IDV dossier"),
+    ),
+)
+def test_projection_fence_rejects_one_sided_optional_wave8_rail(
+    tmp_path: Path,
+    canonical_name: str,
+    public_name: str,
+    label: str,
+) -> None:
+    _generation(tmp_path)
+    assert not (tmp_path / "site" / "government-revenue-data" / public_name).exists()
+    path = tmp_path / "data" / "government_revenue" / canonical_name
+    path.write_text("{}", encoding="utf-8")
+
+    with pytest.raises(ProjectionDriftError, match=rf"{label} canonical/public pair is incomplete"):
+        validate_projection(tmp_path)
+
+
 def test_projection_fence_rejects_matching_twins_with_invalid_schema(
     tmp_path: Path,
 ) -> None:
@@ -343,6 +365,8 @@ def test_render_lanes_refuse_to_push_an_uncommitted_projection(lane: Path) -> No
     assert "site/government-revenue-data/latest.json" in post_rebase[head_gate:final_guard]
     assert "site/government-revenue-data/workspace.json" in post_rebase[head_gate:final_guard]
     assert "site/government-revenue-data/dossiers.json" in post_rebase[head_gate:final_guard]
+    assert "site/government-revenue-data/idv-dossiers.json" in post_rebase[head_gate:final_guard]
+    assert "site/government-revenue-data/budget-program.json" in post_rebase[head_gate:final_guard]
 
 
 def test_render_metadata_replay_blocks_newer_procurement_truth_or_builder() -> None:

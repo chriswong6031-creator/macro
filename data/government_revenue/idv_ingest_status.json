@@ -1,0 +1,40 @@
+{
+  "bounded": true,
+  "bounds": {
+    "max_detail_rows_per_idv": 500,
+    "max_detail_rows_per_run": 2000,
+    "max_idvs": 80,
+    "max_pages_per_idv": 5,
+    "page_size": 100,
+    "public_downstream_row_cap": 2000,
+    "selected_idv_limit": 24
+  },
+  "collection_complete": true,
+  "contract": "government_revenue.idv_ingest_status.v1",
+  "daily_lane": true,
+  "detail_idvs_collected": 15,
+  "detail_rows_seen": 452,
+  "errors": [],
+  "high_count_idvs": 0,
+  "idvs_counted": 24,
+  "idvs_selected": 24,
+  "last_successful_observed_at": "2026-08-03T03:05:20.603011+00:00",
+  "observed_at": "2026-08-03T03:05:20.603011+00:00",
+  "partial": false,
+  "projection_eligible": true,
+  "projection_generation_id": "idv-b5f27bb4a2bf27186550effa",
+  "receipts_this_run": 26,
+  "relationship_semantics": "official USAspending IDV activity only; not a vehicle seat, utilization, conversion, revenue, or investment authority",
+  "run_cap_count_only_idvs": 0,
+  "run_id": "usaspending-idv-cc89c05d2a5d99c9b81c60b5",
+  "schema_version": "1.0.0",
+  "selection_manifest_semantic_sha256": "bc569d99d161a98b96fa14fa9a17200a15875d6917a583bc42ddbae49e3fba13",
+  "selection_source": "official_usaspending_idv_discovery",
+  "snapshot_versions_total": 452,
+  "source_only": true,
+  "source_urls": [
+    "https://api.usaspending.gov/api/v2/idvs/activity/",
+    "https://api.usaspending.gov/api/v2/search/spending_by_award/"
+  ],
+  "status": "ok"
+}

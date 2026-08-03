@@ -65,6 +65,14 @@ on:
       - "data/government_revenue/subaward_projection_state.json"
       - "data/government_revenue/subaward_ingest_status.json"
       - "data/government_revenue/subaward_collector_heartbeat.parquet"
+      - "data/government_revenue/idv_relationship_snapshots.parquet"
+      - "data/government_revenue/idv_collection_receipts.jsonl"
+      - "data/government_revenue/idv_projection_state.json"
+      - "data/government_revenue/idv_ingest_status.json"
+      - "data/government_revenue/idv_collector_heartbeat.parquet"
+      - "data/government_revenue/dod_budget_line_snapshots.jsonl"
+      - "data/government_revenue/dod_budget_collection_receipts.jsonl"
+      - "data/government_revenue/dod_budget_projection_state.json"
       - "data/government_revenue/opportunities.parquet"
       - "data/government_revenue/opportunity_revisions.parquet"
       - "data/government_revenue/opportunity_documents.parquet"
@@ -75,7 +83,12 @@ on:
       - "collectors/sam_gov.py"
       - "collectors/usaspending_awards.py"
       - "collectors/usaspending_subawards.py"
+      - "collectors/usaspending_idv_graph.py"
+      - "collectors/dod_budget.py"
       - "engine/government_revenue/**"
+      - "contracts/government_revenue/**"
+      - "config/government_revenue/budget_program_reviewed_edges.v1.json"
+      - "config/government_revenue/idv_discovery.v1.json"
       - "lib/pages.py"
       - "scripts/build_government_revenue.py"
       - "scripts/collect.py"
@@ -371,6 +384,18 @@ jobs:
             data/government_revenue/subaward_ingest_status.json
           )
           subaward_heartbeat_path=data/government_revenue/subaward_collector_heartbeat.parquet
+          idv_bundle_paths=(
+            data/government_revenue/idv_relationship_snapshots.parquet
+            data/government_revenue/idv_collection_receipts.jsonl
+            data/government_revenue/idv_projection_state.json
+            data/government_revenue/idv_ingest_status.json
+          )
+          idv_heartbeat_path=data/government_revenue/idv_collector_heartbeat.parquet
+          dod_budget_bundle_paths=(
+            data/government_revenue/dod_budget_line_snapshots.jsonl
+            data/government_revenue/dod_budget_collection_receipts.jsonl
+            data/government_revenue/dod_budget_projection_state.json
+          )
           recipient_graph_path=data/government_revenue/recipient_entity_graph.json
 
           assert_award_event_bundle() {
@@ -579,6 +604,136 @@ jobs:
             fi
           }
 
+          assert_idv_bundle() {
+            local present=0 tracked=0 path
+            for path in "${idv_bundle_paths[@]}"; do
+              [ -f "$path" ] && present=$((present + 1))
+              git ls-files --error-unmatch -- "$path" >/dev/null 2>&1 && tracked=$((tracked + 1))
+            done
+            if [ "$present" -eq 0 ]; then
+              if [ "$tracked" -ne 0 ]; then
+                echo "::error title=idv bundle missing::tracked receipt-bound IDV artifacts disappeared from the checkout; refusing a partial projection"
+                return 1
+              fi
+              echo "receipt-bound IDV bundle not initialized yet; publishing an unavailable relationship dossier"
+              return 0
+            fi
+            if [ "$present" -ne "${#idv_bundle_paths[@]}" ] || [ "$tracked" -ne "${#idv_bundle_paths[@]}" ]; then
+              echo "::error title=idv bundle incomplete::IDV snapshots, receipts, activation state, and ingest status must arrive as one committed bundle"
+              return 1
+            fi
+            python - \
+              data/government_revenue/idv_projection_state.json \
+              data/government_revenue/idv_relationship_snapshots.parquet <<'PY'
+          from __future__ import annotations
+
+          import json
+          import sys
+          from pathlib import Path
+
+          import pandas as pd
+
+          from collectors.usaspending_idv_graph import idv_projection_generation_matches
+
+          try:
+              state = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+              snapshots = pd.read_parquet(Path(sys.argv[2]))
+          except Exception as exc:
+              raise SystemExit("IDV source generation could not be read") from exc
+          if not isinstance(state, dict) or not idv_projection_generation_matches(state, snapshots):
+              raise SystemExit("IDV source snapshot does not match its activation generation")
+          PY
+          }
+
+          assert_idv_source_clean() {
+            if ! git diff --quiet -- "${idv_bundle_paths[@]}" "$idv_heartbeat_path"; then
+              echo "::error title=idv source mutation::the SAM fast path cannot publish a locally changed USAspending IDV source bundle"
+              return 1
+            fi
+            if ! git diff --cached --quiet -- "${idv_bundle_paths[@]}" "$idv_heartbeat_path"; then
+              echo "::error title=idv source staged::the SAM fast path cannot stage a USAspending IDV source mutation"
+              return 1
+            fi
+          }
+
+          assert_dod_budget_bundle() {
+            local present=0 tracked=0 path
+            for path in "${dod_budget_bundle_paths[@]}"; do
+              [ -f "$path" ] && present=$((present + 1))
+              git ls-files --error-unmatch -- "$path" >/dev/null 2>&1 && tracked=$((tracked + 1))
+            done
+            if [ "$present" -eq 0 ]; then
+              if [ "$tracked" -ne 0 ]; then
+                echo "::error title=dod-budget bundle missing::tracked DoD budget source artifacts disappeared from the checkout; refusing a partial graph"
+                return 1
+              fi
+              echo "DoD budget source bundle not initialized yet; keeping the optional graph unavailable"
+              return 0
+            fi
+            if [ "$present" -ne "${#dod_budget_bundle_paths[@]}" ] || [ "$tracked" -ne "${#dod_budget_bundle_paths[@]}" ]; then
+              echo "::error title=dod-budget bundle incomplete::DoD budget lines, receipts, and projection state must arrive as one committed bundle"
+              return 1
+            fi
+            python - "${dod_budget_bundle_paths[@]}" <<'PY'
+          from __future__ import annotations
+
+          import json
+          import sys
+          from pathlib import Path
+
+          from collectors.dod_budget import projection_state_matches
+
+          try:
+              lines = [json.loads(row) for row in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines()]
+              receipts = [json.loads(row) for row in Path(sys.argv[2]).read_text(encoding="utf-8").splitlines()]
+              state = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
+          except Exception as exc:
+              raise SystemExit("DoD budget source generation could not be read") from exc
+          if not lines or not receipts or not isinstance(state, dict) or not projection_state_matches(state, lines, receipts):
+              raise SystemExit("DoD budget source ledgers do not match their projection generation")
+          PY
+          }
+
+          assert_dod_budget_source_clean() {
+            if ! git diff --quiet -- "${dod_budget_bundle_paths[@]}"; then
+              echo "::error title=dod-budget source mutation::the SAM fast path cannot publish a locally changed DoD budget source bundle"
+              return 1
+            fi
+            if ! git diff --cached --quiet -- "${dod_budget_bundle_paths[@]}"; then
+              echo "::error title=dod-budget source staged::the SAM fast path cannot stage a DoD budget source mutation"
+              return 1
+            fi
+          }
+
+          assert_idv_dossier_twins() {
+            local canonical=data/government_revenue/idv_dossiers.json
+            local public=site/government-revenue-data/idv-dossiers.json
+            if [ ! -f "$canonical" ] || [ ! -f "$public" ]; then
+              echo "::error title=idv dossier twin missing::the build must publish both canonical and public IDV dossier bytes"
+              return 1
+            fi
+            if ! cmp -s "$canonical" "$public"; then
+              echo "::error title=idv dossier twin mismatch::canonical and public IDV dossier bytes differ"
+              return 1
+            fi
+          }
+
+          assert_optional_budget_graph_twins() {
+            local canonical=data/government_revenue/budget_program_graph.json
+            local public=site/government-revenue-data/budget-program.json
+            if [ ! -e "$canonical" ] && [ ! -e "$public" ]; then
+              return 0
+            fi
+            if [ ! -f "$canonical" ] || [ ! -f "$public" ]; then
+              echo "::error title=budget graph twin incomplete::DoD budget graph must be absent or present as exact canonical/public twins"
+              return 1
+            fi
+            if ! cmp -s "$canonical" "$public"; then
+              echo "::error title=budget graph twin mismatch::canonical and public DoD budget graph bytes differ"
+              return 1
+            fi
+          }
+
           assert_recipient_graph_source_clean() {
             # Recipient attribution is a separately reviewed exact-ID input.
             # Neither the SAM collector nor the projection builder may curate,
@@ -597,7 +752,13 @@ jobs:
           assert_award_event_source_clean
           assert_subaward_bundle
           assert_subaward_source_clean
+          assert_idv_bundle
+          assert_idv_source_clean
+          assert_dod_budget_bundle
+          assert_dod_budget_source_clean
           assert_recipient_graph_source_clean
+          assert_idv_dossier_twins
+          assert_optional_budget_graph_twins
 
           # Stage only the first-seen SAM evidence, its runner heartbeat, the protected
           # complete event bundle, and rebuilt context/display twins (including the
@@ -619,11 +780,15 @@ jobs:
             data/government_revenue/workspace.json
             data/government_revenue/dossiers.json
             data/government_revenue/subaward_dossiers.json
+            data/government_revenue/idv_dossiers.json
+            data/government_revenue/budget_program_graph.json
             data/government_revenue/recipient_resolution_coverage.json
             site/government-revenue-data/latest.json
             site/government-revenue-data/workspace.json
             site/government-revenue-data/dossiers.json
             site/government-revenue-data/subaward-dossiers.json
+            site/government-revenue-data/idv-dossiers.json
+            site/government-revenue-data/budget-program.json
             site/government_revenue.html
           )
           if [ "$AWARD_EVENT_BUNDLE_PRESENT" = true ]; then
@@ -653,11 +818,15 @@ jobs:
             data/government_revenue/workspace.json \
             data/government_revenue/dossiers.json \
             data/government_revenue/subaward_dossiers.json \
+            data/government_revenue/idv_dossiers.json \
+            data/government_revenue/budget_program_graph.json \
             data/government_revenue/recipient_resolution_coverage.json \
             site/government-revenue-data/latest.json \
             site/government-revenue-data/workspace.json \
             site/government-revenue-data/dossiers.json \
             site/government-revenue-data/subaward-dossiers.json \
+            site/government-revenue-data/idv-dossiers.json \
+            site/government-revenue-data/budget-program.json \
             site/government_revenue.html
           git commit -m "govrev: SAM opportunity evidence $(date -u +%FT%H:%MZ)"
 
@@ -686,19 +855,32 @@ jobs:
               assert_award_event_source_clean
               assert_subaward_bundle
               assert_subaward_source_clean
+              assert_idv_bundle
+              assert_idv_source_clean
+              assert_dod_budget_bundle
+              assert_dod_budget_source_clean
               assert_recipient_graph_source_clean
               python -m scripts.build_government_revenue
+              assert_idv_dossier_twins
+              assert_optional_budget_graph_twins
               git add \
                 data/government_revenue/latest.json \
                 data/government_revenue/workspace.json \
                 data/government_revenue/dossiers.json \
                 data/government_revenue/subaward_dossiers.json \
+                data/government_revenue/idv_dossiers.json \
                 data/government_revenue/recipient_resolution_coverage.json \
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
                 site/government-revenue-data/dossiers.json \
                 site/government-revenue-data/subaward-dossiers.json \
+                site/government-revenue-data/idv-dossiers.json \
                 site/government_revenue.html
+              if [ -f data/government_revenue/budget_program_graph.json ]; then
+                git add -- \
+                  data/government_revenue/budget_program_graph.json \
+                  site/government-revenue-data/budget-program.json
+              fi
               push_staged_clean \
                 data/government_revenue/award_event_snapshots.parquet \
                 data/government_revenue/award_action_versions.parquet \
@@ -707,11 +889,15 @@ jobs:
                 data/government_revenue/workspace.json \
                 data/government_revenue/dossiers.json \
                 data/government_revenue/subaward_dossiers.json \
+                data/government_revenue/idv_dossiers.json \
+                data/government_revenue/budget_program_graph.json \
                 data/government_revenue/recipient_resolution_coverage.json \
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
                 site/government-revenue-data/dossiers.json \
                 site/government-revenue-data/subaward-dossiers.json \
+                site/government-revenue-data/idv-dossiers.json \
+                site/government-revenue-data/budget-program.json \
                 site/government_revenue.html
               if ! git diff --cached --quiet; then
                 git commit --amend --no-edit

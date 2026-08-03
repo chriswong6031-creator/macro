@@ -781,7 +781,9 @@ jobs:
             data/government_revenue/latest.json \
             data/government_revenue/workspace.json \
             data/government_revenue/dossiers.json \
-            data/government_revenue/subaward_dossiers.json; then
+            data/government_revenue/subaward_dossiers.json \
+            data/government_revenue/idv_dossiers.json \
+            data/government_revenue/budget_program_graph.json; then
             echo "::error title=government-revenue projection drift::engine-render would publish non-canonical procurement site twins"
             exit 1
           fi
@@ -890,7 +892,9 @@ jobs:
                 data/government_revenue/latest.json \
                 data/government_revenue/workspace.json \
                 data/government_revenue/dossiers.json \
-                data/government_revenue/subaward_dossiers.json; then
+                data/government_revenue/subaward_dossiers.json \
+                data/government_revenue/idv_dossiers.json \
+                data/government_revenue/budget_program_graph.json; then
                 echo "::error title=government-revenue projection drift::post-rebase canonical and rebuilt procurement bundles differ"
                 exit 1
               fi
@@ -949,7 +953,9 @@ jobs:
                 site/government-revenue-data/latest.json \
                 site/government-revenue-data/workspace.json \
                 site/government-revenue-data/dossiers.json \
-                site/government-revenue-data/subaward-dossiers.json; then
+                site/government-revenue-data/subaward-dossiers.json \
+                site/government-revenue-data/idv-dossiers.json \
+                site/government-revenue-data/budget-program.json; then
                 echo "::error title=government-revenue projection uncommitted::refusing to push a HEAD older than the validated procurement projection"
                 exit 1
               fi

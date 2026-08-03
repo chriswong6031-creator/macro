@@ -9,6 +9,8 @@ import pytest
 
 from engine.government_revenue.workspace import build_procurement_workspace
 from engine.government_revenue.subaward_dossiers import is_valid_subaward_dossier_payload
+from engine.government_revenue.idv_dossiers import is_valid_idv_dossier_payload
+from collectors import dod_budget
 from engine.government_revenue.entity_resolution import (
     build_recipient_resolution_coverage,
     load_recipient_entity_graph,
@@ -79,6 +81,50 @@ def _activate_recipient_graph(root: Path, payload: dict) -> dict:
     return coverage
 
 
+def _write_dod_budget_source_bundle(root: Path) -> None:
+    """Write a complete fixture-only source bundle through the collector contract."""
+    fixture_dir = Path(__file__).parent / "fixtures" / "dod_budget"
+    lines: list[dict] = []
+    receipts: list[dict] = []
+    for name in ("fy2026_p1.json", "fy2026_r1.json"):
+        fixture = json.loads((fixture_dir / name).read_text(encoding="utf-8"))
+        pdf_bytes = b"%PDF-1.4\nbuilder-" + name.encode("ascii")
+        digest = dod_budget._sha256(pdf_bytes)
+        receipt = dod_budget.build_document_receipt(
+            source_url=fixture["source_url"],
+            final_url=fixture["final_url"],
+            pdf_bytes=pdf_bytes,
+            pages=fixture["pages"],
+            fiscal_year=fixture["fiscal_year"],
+            exhibit=fixture["exhibit"],
+            observed_at="2026-08-02T12:00:00+00:00",
+            immutable_object_key=f"{dod_budget.IMMUTABLE_R2_PREFIX}{digest}.pdf",
+        )
+        parsed, _ = dod_budget.parse_budget_document(fixture["pages"], receipt)
+        lines.extend(parsed)
+        receipts.append(receipt)
+    data = root / "data" / "government_revenue"
+    data.mkdir(parents=True, exist_ok=True)
+    data.joinpath("dod_budget_line_snapshots.jsonl").write_text(
+        "\n".join(json.dumps(row, sort_keys=True, separators=(",", ":")) for row in lines) + "\n",
+        encoding="utf-8",
+    )
+    data.joinpath("dod_budget_collection_receipts.jsonl").write_text(
+        "\n".join(json.dumps(row, sort_keys=True, separators=(",", ":")) for row in receipts) + "\n",
+        encoding="utf-8",
+    )
+    data.joinpath("dod_budget_projection_state.json").write_text(
+        json.dumps(dod_budget.budget_projection_state(lines, receipts), sort_keys=True, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    config = root / "config" / "government_revenue"
+    config.mkdir(parents=True)
+    config.joinpath("budget_program_reviewed_edges.v1.json").write_text(
+        json.dumps({"contract": "government_budget_reviewed_edges.v1", "schema_version": "1.0.0", "edges": []}),
+        encoding="utf-8",
+    )
+
+
 def test_builder_writes_canonical_site_twin_and_page(tmp_path: Path, monkeypatch) -> None:
     templates = tmp_path / "templates"
     templates.mkdir()
@@ -104,6 +150,11 @@ def test_builder_writes_canonical_site_twin_and_page(tmp_path: Path, monkeypatch
     subaward_site = tmp_path / "site" / "government-revenue-data" / "subaward-dossiers.json"
     assert subaward.exists() and subaward.read_bytes() == subaward_site.read_bytes()
     assert is_valid_subaward_dossier_payload(json.loads(subaward.read_text()))
+    idv = tmp_path / "data" / "government_revenue" / "idv_dossiers.json"
+    idv_site = tmp_path / "site" / "government-revenue-data" / "idv-dossiers.json"
+    assert idv.exists() and idv.read_bytes() == idv_site.read_bytes()
+    assert is_valid_idv_dossier_payload(json.loads(idv.read_text()))
+    assert json.loads(idv.read_text())["source_coverage"]["status"] == "unavailable"
     assert "Government Revenue" in html.read_text()
 
 
@@ -135,9 +186,11 @@ def test_site_only_rebuild_uses_canonical_bytes_without_recalculation(
     canonical = tmp_path / "data" / "government_revenue" / "latest.json"
     workspace = tmp_path / "data" / "government_revenue" / "workspace.json"
     subaward = tmp_path / "data" / "government_revenue" / "subaward_dossiers.json"
+    idv = tmp_path / "data" / "government_revenue" / "idv_dossiers.json"
     canonical_before = canonical.read_bytes()
     workspace_before = workspace.read_bytes()
     subaward_before = subaward.read_bytes()
+    idv_before = idv.read_bytes()
     template.write_text("<main>v2 {{ payload_json|safe }}</main>", encoding="utf-8")
     monkeypatch.setattr(
         build_government_revenue,
@@ -157,7 +210,35 @@ def test_site_only_rebuild_uses_canonical_bytes_without_recalculation(
     assert (
         tmp_path / "site" / "government-revenue-data" / "subaward-dossiers.json"
     ).read_bytes() == subaward_before
+    assert idv.read_bytes() == idv_before
+    assert (
+        tmp_path / "site" / "government-revenue-data" / "idv-dossiers.json"
+    ).read_bytes() == idv_before
     assert "<main>v2 " in html.read_text(encoding="utf-8")
+
+
+def test_builder_refuses_fixture_only_dod_bundle_activation(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    templates.joinpath("government_revenue.html.j2").write_text(
+        "<main>{{ payload_json|safe }}</main>", encoding="utf-8"
+    )
+    _write_dod_budget_source_bundle(tmp_path)
+    monkeypatch.setattr(build_government_revenue, "build_payload", lambda **_kwargs: _payload())
+
+    canonical = tmp_path / "data" / "government_revenue" / "budget_program_graph.json"
+    public = tmp_path / "site" / "government-revenue-data" / "budget-program.json"
+    with pytest.raises(ValueError, match="publication is hard-disabled"):
+        build_government_revenue.build(tmp_path)
+    assert not canonical.exists()
+    assert not public.exists()
+
+    (tmp_path / "data" / "government_revenue" / "dod_budget_projection_state.json").unlink()
+    with pytest.raises(ValueError, match="DoD budget source bundle is partial"):
+        build_government_revenue.build(tmp_path)
 
 
 def test_site_only_rebuild_fails_closed_on_generation_mismatch(
@@ -194,6 +275,35 @@ def test_site_only_requires_the_committed_subaward_twin_when_prime_dossier_exist
     (tmp_path / "data" / "government_revenue" / "subaward_dossiers.json").unlink()
 
     with pytest.raises(ValueError, match="subaward dossier"):
+        build_government_revenue.build_site_only(tmp_path)
+
+
+def test_builder_rejects_partial_idv_source_bundle(tmp_path: Path, monkeypatch) -> None:
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    templates.joinpath("government_revenue.html.j2").write_text(
+        "<main>{{ payload_json|safe }}</main>", encoding="utf-8"
+    )
+    data = tmp_path / "data" / "government_revenue"
+    data.mkdir(parents=True)
+    data.joinpath("idv_projection_state.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(build_government_revenue, "build_payload", lambda **_kwargs: _payload())
+
+    with pytest.raises(ValueError, match="IDV source bundle is partial"):
+        build_government_revenue.build(tmp_path)
+
+
+def test_site_only_rejects_public_only_idv_dossier(tmp_path: Path, monkeypatch) -> None:
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    templates.joinpath("government_revenue.html.j2").write_text(
+        "<main>{{ payload_json|safe }}</main>", encoding="utf-8"
+    )
+    monkeypatch.setattr(build_government_revenue, "build_payload", lambda **_kwargs: _payload())
+    build_government_revenue.build(tmp_path)
+    (tmp_path / "data" / "government_revenue" / "idv_dossiers.json").unlink()
+
+    with pytest.raises(ValueError, match="public IDV dossier exists without canonical bytes"):
         build_government_revenue.build_site_only(tmp_path)
 
 

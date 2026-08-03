@@ -600,8 +600,12 @@ class TestLiveConformance:
             "data/government_revenue/award_event_projection_state.json",
             "data/government_revenue/recipient_resolution_coverage.json",
             "data/government_revenue/subaward_dossiers.json",
+            "data/government_revenue/idv_dossiers.json",
+            "data/government_revenue/budget_program_graph.json",
             "data/government_revenue/workspace.json",
             "site/government-revenue-data/subaward-dossiers.json",
+            "site/government-revenue-data/idv-dossiers.json",
+            "site/government-revenue-data/budget-program.json",
             "site/government-revenue-data/workspace.json",
         ):
             assert path in commit["run"]
@@ -609,6 +613,12 @@ class TestLiveConformance:
         assert "assert_award_event_source_clean" in commit["run"]
         assert "assert_subaward_bundle" in commit["run"]
         assert "assert_subaward_source_clean" in commit["run"]
+        assert "assert_idv_bundle" in commit["run"]
+        assert "assert_idv_source_clean" in commit["run"]
+        assert "assert_dod_budget_bundle" in commit["run"]
+        assert "assert_dod_budget_source_clean" in commit["run"]
+        assert "assert_idv_dossier_twins" in commit["run"]
+        assert "assert_optional_budget_graph_twins" in commit["run"]
         assert "assert_recipient_graph_source_clean" in commit["run"]
         assert "collectors and projection builders cannot write or stage" in commit["run"]
         assert "receipt-bound award artifacts must arrive as one committed bundle" in commit["run"]
@@ -627,8 +637,16 @@ class TestLiveConformance:
         assert "subaward source snapshot does not match its activation generation" in commit["run"]
         assert commit["run"].count("data/government_revenue/subaward_dossiers.json") >= 3
         assert commit["run"].count("site/government-revenue-data/subaward-dossiers.json") >= 3
+        assert commit["run"].count("data/government_revenue/idv_dossiers.json") >= 3
+        assert commit["run"].count("site/government-revenue-data/idv-dossiers.json") >= 3
+        assert commit["run"].count("data/government_revenue/budget_program_graph.json") >= 3
+        assert commit["run"].count("site/government-revenue-data/budget-program.json") >= 3
         assert "data/government_revenue/subaward_dossiers.json" not in push_trigger["paths"]
         assert "site/government-revenue-data/subaward-dossiers.json" not in push_trigger["paths"]
+        assert "data/government_revenue/idv_dossiers.json" not in push_trigger["paths"]
+        assert "site/government-revenue-data/idv-dossiers.json" not in push_trigger["paths"]
+        assert "data/government_revenue/budget_program_graph.json" not in push_trigger["paths"]
+        assert "site/government-revenue-data/budget-program.json" not in push_trigger["paths"]
         assert "scripts/ci/push_retry.sh" in commit["run"]
         assert "push_autostash_ok" in commit["run"]
         assert "Rebuild AFTER every successful rebase" in commit["run"]
@@ -666,6 +684,10 @@ class TestLiveConformance:
             assert "post-rebase canonical and rebuilt procurement bundles differ" in lane_text
             assert lane_text.count("data/government_revenue/subaward_dossiers.json") >= 2
             assert "site/government-revenue-data/subaward-dossiers.json" in lane_text
+            assert lane_text.count("data/government_revenue/idv_dossiers.json") >= 2
+            assert "site/government-revenue-data/idv-dossiers.json" in lane_text
+            assert lane_text.count("data/government_revenue/budget_program_graph.json") >= 2
+            assert "site/government-revenue-data/budget-program.json" in lane_text
 
         daily_text = (REPO_ROOT / ".github" / "workflows" / "daily.yml").read_text(
             encoding="utf-8"

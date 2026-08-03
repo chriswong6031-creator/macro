@@ -55,6 +55,30 @@ def _read_json(path: Path, label: str) -> tuple[bytes, dict[str, Any]]:
     return raw, _object(parsed, label)
 
 
+def _read_optional_exact_twin(
+    canonical: Path,
+    public: Path,
+    *,
+    label: str,
+) -> tuple[bytes, dict[str, Any]] | None:
+    """Read an optional precomputed rail, refusing one-sided publication.
+
+    Optional means the whole rail can be absent before its source collector is
+    initialized.  It never means that a canonical/public half, a malformed
+    document, or a non-canonical serialization may be served best-effort.
+    """
+    canonical_exists, public_exists = canonical.exists(), public.exists()
+    if not canonical_exists and not public_exists:
+        return None
+    if canonical_exists != public_exists:
+        raise ProjectionDriftError(f"{label} canonical/public pair is incomplete")
+    canonical_raw, payload = _read_json(canonical, f"canonical {label}")
+    public_raw, _public_payload = _read_json(public, f"public {label} twin")
+    if canonical_raw != public_raw:
+        raise ProjectionDriftError(f"public {label} twin differs from canonical {label} bytes")
+    return canonical_raw, payload
+
+
 def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
     """Validate canonical/public twins and the compact first-paint shell."""
 
@@ -86,6 +110,16 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
     )
     public_subaward_raw, _public_subaward = _read_json(
         public_dir / "subaward-dossiers.json", "public subaward dossier twin"
+    )
+    optional_budget_graph = _read_optional_exact_twin(
+        canonical_dir / "budget_program_graph.json",
+        public_dir / "budget-program.json",
+        label="DoD budget/program graph",
+    )
+    optional_idv_dossier = _read_optional_exact_twin(
+        canonical_dir / "idv_dossiers.json",
+        public_dir / "idv-dossiers.json",
+        label="IDV dossier",
     )
 
     try:
@@ -151,6 +185,30 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         canonical_subaward_raw
     ):
         raise ProjectionDriftError("canonical subaward dossier bytes are non-canonical")
+    budget_graph = None
+    if optional_budget_graph is not None:
+        budget_graph_raw, budget_graph = optional_budget_graph
+        try:
+            build_government_revenue._validate_budget_program_graph_payload(budget_graph)
+            build_government_revenue._validate_budget_program_award_bindings(
+                budget_graph, canonical_dossier,
+            )
+        except ValueError as exc:
+            raise ProjectionDriftError("canonical DoD budget/program graph is invalid") from exc
+        if build_government_revenue._canonical_json(budget_graph).encode("utf-8") != budget_graph_raw:
+            raise ProjectionDriftError("canonical DoD budget/program graph bytes are non-canonical")
+    idv_dossier = None
+    if optional_idv_dossier is not None:
+        idv_dossier_raw, idv_dossier = optional_idv_dossier
+        try:
+            build_government_revenue._validate_idv_dossier_payload(idv_dossier)
+            build_government_revenue._validate_idv_dossier_bindings(
+                idv_dossier, canonical_dossier,
+            )
+        except ValueError as exc:
+            raise ProjectionDriftError("canonical IDV dossier is invalid") from exc
+        if build_government_revenue._canonical_json(idv_dossier).encode("utf-8") != idv_dossier_raw:
+            raise ProjectionDriftError("canonical IDV dossier bytes are non-canonical")
 
     embedded_workspace = _object(
         canonical_latest.get("procurement_workspace"),
@@ -225,6 +283,14 @@ def validate_projection(root: Path = _ROOT) -> dict[str, Any]:
         "dossier_awards": len(canonical_dossier.get("awards") or []),
         "subaward_dossier_content_id": canonical_subaward.get("content_id"),
         "subaward_dossiers": len(canonical_subaward.get("subawards") or []),
+        "budget_program_graph_content_id": (
+            budget_graph.get("content_id") if budget_graph is not None else None
+        ),
+        "budget_programs": len(budget_graph.get("programs") or []) if budget_graph is not None else 0,
+        "idv_dossier_content_id": (
+            idv_dossier.get("content_id") if idv_dossier is not None else None
+        ),
+        "idv_relationships": len(idv_dossier.get("relationships") or []) if idv_dossier is not None else 0,
         "recipient_graph_id": (
             recipient_coverage.get("resolution_graph", {}).get("graph_id")
             if recipient_coverage is not None
@@ -250,7 +316,11 @@ def main(argv: list[str] | None = None) -> int:
         f"events={result['events']} dossier={result['dossier_content_id']} "
         f"awards={result['dossier_awards']} "
         f"subaward_dossier={result['subaward_dossier_content_id']} "
-        f"subawards={result['subaward_dossiers']}"
+        f"subawards={result['subaward_dossiers']} "
+        f"budget_graph={result['budget_program_graph_content_id']} "
+        f"programs={result['budget_programs']} "
+        f"idv_dossier={result['idv_dossier_content_id']} "
+        f"idv_relationships={result['idv_relationships']}"
     )
     return 0
 
