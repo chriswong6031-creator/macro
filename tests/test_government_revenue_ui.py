@@ -10,6 +10,8 @@ from pathlib import Path
 
 import pytest
 
+from scripts import build_government_revenue
+
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = (ROOT / "templates" / "government_revenue.html.j2").read_text(encoding="utf-8")
@@ -112,6 +114,8 @@ def test_delta_first_three_pane_contract_and_modes_are_explicit() -> None:
     assert 'data-mode="awards"' in TEMPLATE
     assert 'data-mode="opportunities"' in TEMPLATE
     assert 'data-mode="recompetes"' in TEMPLATE
+    assert 'data-mode="budget"' in TEMPLATE
+    assert 'id="countBudget"' in TEMPLATE
     assert "state.mode='companies'" in TEMPLATE
     assert "payload.opportunity_intelligence" not in TEMPLATE  # JSON is accessed as DATA.
     assert "DATA.opportunity_intelligence" in TEMPLATE
@@ -121,6 +125,11 @@ def test_delta_first_three_pane_contract_and_modes_are_explicit() -> None:
     assert "WORKSPACE_EVENTS.map" in TEMPLATE
     assert "workspaceEvent:e" in TEMPLATE
     assert "governed display order" in TEMPLATE
+    assert "Budget & programs" in TEMPLATE
+    assert "createGovernmentRevenueBudget" in (ROOT / "templates" / "government-revenue-dossiers.js").read_text(encoding="utf-8")
+    assert "Funding-stage firewall" in (ROOT / "templates" / "government-revenue-dossiers.js").read_text(encoding="utf-8")
+    assert "Request evidence is upstream—not funded revenue" in (ROOT / "templates" / "government-revenue-dossiers.js").read_text(encoding="utf-8")
+    assert "No budget source observation timestamp is available." in TEMPLATE
 
 
 def test_truth_layers_and_investor_inspector_do_not_overclaim() -> None:
@@ -267,7 +276,7 @@ def test_generated_shell_and_workspace_share_a_fail_closed_bundle_id() -> None:
 
 
 def test_generated_html_stays_inside_the_raw_edge_budget() -> None:
-    assert SITE_PATH.stat().st_size <= 250_000
+    assert SITE_PATH.stat().st_size <= build_government_revenue.RAW_HTML_BUDGET_BYTES
 
 
 @needs_node

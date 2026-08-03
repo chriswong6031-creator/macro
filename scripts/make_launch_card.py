@@ -265,7 +265,7 @@ def build_svg(font_css: str) -> str:
     bb_defs, bb = _brand_bar(
         W, H, uid,
         tagline="AI stock signals",
-        button_label="Start free 14-day trial",
+        button_label="Try Pro free for 7 days",
         band_h=FOOTER_H,
     )
     defs.append(bb_defs)

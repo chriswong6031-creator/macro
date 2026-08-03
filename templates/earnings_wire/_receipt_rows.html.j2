@@ -1,0 +1,1 @@
+{% for span in spans %}<tr><td><code>{{ span.claim_id }}</code></td><td>{{ span.kind }}</td><td class="mono">{{ span.receipt.segment_index }}</td><td class="mono">{{ span.receipt.span_start_byte }}–{{ span.receipt.span_end_byte }}</td><td><code>{{ span.receipt.text_sha256[:14] }}…</code></td></tr>{% endfor %}

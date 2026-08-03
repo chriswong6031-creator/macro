@@ -172,18 +172,34 @@ def test_enforced_early_anon_payload_locks(monkeypatch):
     assert _check("/premiumdata/special_situations.json", "asset").status_code == 403
 
 
-def test_tier_preview_shell_is_free_but_its_payload_is_not(monkeypatch):
-    """The pattern's two halves: free shell at the page URL, gated payload."""
+def test_tier_preview_shell_is_open_but_its_payload_is_not(monkeypatch):
+    """The pattern's two halves: open shell at the page URL, gated payload.
+
+    The shells were promoted free_registered → public by SEO_SUPERCHARGE_MASTERPLAN
+    W1a (2026-08-02), so the classification moved but the BOUNDARY did not: the
+    payload is what carries the paid rows and it is still enforced_early. The
+    free-tier control below keeps classify_path's `free` branch under test, so this
+    promotion cannot quietly become "everything reads as public".
+    """
     _arm(monkeypatch)
     monkeypatch.setattr(
         paywall,
         "_store_entitlement",
         lambda uid: ({"tier": "free", "status": "none", "features": []}, True),
     )
-    assert paywall.classify_path("/special_situations.html") == "free"
-    assert _check("/special_situations.html", "document").status_code == 204
-    assert paywall.enforced_early("/premiumdata/special_situations.json") is True
-    assert _check("/premiumdata/special_situations.json", "asset").status_code == 403
+    for shell in ("/special_situations.html", "/china_special_situations.html"):
+        assert paywall.classify_path(shell) == "public"
+        assert _check(shell, "document").status_code == 204
+    assert paywall.classify_path("/biocatalyst.html") == "free", (
+        "control: a registered-preview shell must still classify free"
+    )
+    for payload in (
+        "/premiumdata/special_situations.json",
+        "/allocationdata/special_situations.json",
+        "/chinaspecialdata/special.json",
+    ):
+        assert paywall.enforced_early(payload) is True, payload
+        assert _check(payload, "asset").status_code == 403, payload
 
 
 def test_malformed_enforced_early_policy_denies(monkeypatch):

@@ -1,6 +1,7 @@
 """Offline contract tests for the accession-level SEC document source spine."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 import gzip
 import hashlib
 
@@ -16,11 +17,17 @@ from collectors.sec_document_spine import (
     HARD_MAX_HTTP_METADATA_BYTES,
     SecFilingArchiveCollector,
     archive_receipt_from_json_bytes,
+    missing_document_receipt,
+    missing_receipt_from_json_bytes,
+    missing_receipt_json_bytes,
+    missing_receipt_storage_key,
     persist_archive_document,
     persist_filing_manifest,
+    persist_missing_document_receipt,
     read_archive_document,
     read_archive_object_bytes,
     read_filing_manifest,
+    read_missing_document_receipt,
     read_primary_document,
     receipt_storage_key,
 )
@@ -343,6 +350,64 @@ def test_source_readback_helpers_validate_receipt_sidecar_before_bounded_inflate
         read_archive_object_bytes(gzip.compress(content + b"x", mtime=0), restored)
 
 
+def test_missing_receipt_sidecar_is_canonical_content_addressed_and_repairs_tampering(tmp_path):
+    document = _by_accession()["0000000001-26-000001"]["documents"][0]
+    receipt = missing_document_receipt(document, retrieved_at=RECORDED_AT)
+    key = missing_receipt_storage_key(receipt)
+
+    first = persist_missing_document_receipt(tmp_path, receipt)
+    content = (tmp_path / key).read_bytes()
+    digest = hashlib.sha256(content).hexdigest()
+    assert first == receipt
+    assert key == f"missing-receipts/sha256/{digest[:2]}/{digest}.json"
+    assert missing_receipt_json_bytes(receipt) == content
+    assert missing_receipt_from_json_bytes(content) == receipt
+    assert read_missing_document_receipt(tmp_path, receipt) == receipt
+    assert persist_missing_document_receipt(tmp_path, receipt) == receipt
+    assert not list(tmp_path.rglob("*.gz"))
+
+    (tmp_path / key).write_bytes(b'{"status":"missing"}')
+    with pytest.raises(ArchiveStoreError, match="shape is invalid"):
+        read_missing_document_receipt(tmp_path, receipt)
+    assert persist_missing_document_receipt(tmp_path, receipt) == receipt
+    assert (tmp_path / key).read_bytes() == content
+
+    with pytest.raises(ArchiveStoreError, match="observed SEC 404"):
+        missing_receipt_storage_key({**receipt, "http_status": 500})
+    with pytest.raises(ArchiveStoreError, match="canonically encoded"):
+        missing_receipt_from_json_bytes(b" " + content)
+
+
+class _InfiniteMissingReceiptMapping(Mapping[str, object]):
+    def __init__(self, receipt: dict[str, object]) -> None:
+        self.receipt = receipt
+        self.items_seen = 0
+
+    def __getitem__(self, key: str) -> object:
+        return self.receipt[key]
+
+    def __iter__(self):
+        return iter(self.receipt)
+
+    def __len__(self) -> int:
+        return len(self.receipt)
+
+    def items(self):
+        while True:
+            self.items_seen += 1
+            yield ("extra", "untrusted")
+
+
+def test_missing_receipt_sidecar_bounds_hostile_mapping_before_canonicalization():
+    document = _by_accession()["0000000001-26-000001"]["documents"][0]
+    receipt = missing_document_receipt(document, retrieved_at=RECORDED_AT)
+    hostile = _InfiniteMissingReceiptMapping(receipt)
+
+    with pytest.raises(ArchiveStoreError, match="shape is invalid"):
+        missing_receipt_json_bytes(hostile)
+    assert hostile.items_seen == 1
+
+
 def test_bad_checksum_and_checksum_corruption_fail_closed(tmp_path):
     document = _by_accession()["0000000001-26-000001"]["documents"][0]
     content = b"original bytes"
@@ -570,6 +635,13 @@ def test_collector_persists_exact_primary_url_and_missing_docs_are_explicit(tmp_
     assert missing_doc["availability"] == "missing"
     assert missing_doc["retrieval"]["status"] == "missing"
     assert missing_doc["source_spans"] == []
+    assert (
+        read_missing_document_receipt(tmp_path / "missing", missing_doc["retrieval"])
+        == missing_doc["retrieval"]
+    )
+    assert (
+        tmp_path / "missing" / missing_receipt_storage_key(missing_doc["retrieval"])
+    ).is_file()
     assert not list((tmp_path / "missing").rglob("*.gz"))
 
 
@@ -670,6 +742,24 @@ def test_collector_rejects_oversized_response_metadata_before_persistence(tmp_pa
         ).fetch_document(manifest["documents"][0], retrieved_at=RECORDED_AT)
     assert response.close_calls == 1
     assert not [path for path in tmp_path.rglob("*") if path.is_file()]
+
+
+def test_collector_ignores_unretained_transport_metadata_for_missing_receipt(tmp_path):
+    manifest = _by_accession()["0000000001-26-000001"]
+    response = _Response(
+        404,
+        headers={"ETag": "x" * (HARD_MAX_HTTP_METADATA_BYTES + 1)},
+    )
+    receipt = SecFilingArchiveCollector(
+        tmp_path,
+        user_agent="MastermindX research@example.com",
+        session=_Session([response]),
+        max_attempts=1,
+    ).fetch_document(manifest["documents"][0], retrieved_at=RECORDED_AT)
+
+    assert receipt["status"] == "missing"
+    assert response.close_calls == 1
+    assert read_missing_document_receipt(tmp_path, receipt) == receipt
 
 
 def test_collector_stream_cap_rejects_an_oversized_body_without_content_length(tmp_path):

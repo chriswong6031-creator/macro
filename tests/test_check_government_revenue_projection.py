@@ -157,7 +157,7 @@ def test_projection_fence_accepts_one_canonical_compact_generation(tmp_path: Pat
     assert result["dossier_content_id"].startswith("grd1-")
     assert result["subaward_dossier_content_id"].startswith("grsd1-")
     assert result["subaward_dossiers"] == 0
-    assert result["html_bytes"] < 250_000
+    assert result["html_bytes"] < build_government_revenue.RAW_HTML_BUDGET_BYTES
 
 
 def test_projection_fence_rejects_stale_public_latest_twin(tmp_path: Path) -> None:
@@ -244,6 +244,28 @@ def test_projection_fence_rejects_stale_public_subaward_dossier_twin(tmp_path: P
         validate_projection(tmp_path)
 
 
+@pytest.mark.parametrize(
+    "canonical_name, public_name, label",
+    (
+        ("budget_program_graph.json", "budget-program.json", "DoD budget/program graph"),
+        ("idv_dossiers.json", "idv-dossiers.json", "IDV dossier"),
+    ),
+)
+def test_projection_fence_rejects_one_sided_optional_wave8_rail(
+    tmp_path: Path,
+    canonical_name: str,
+    public_name: str,
+    label: str,
+) -> None:
+    _generation(tmp_path)
+    assert not (tmp_path / "site" / "government-revenue-data" / public_name).exists()
+    path = tmp_path / "data" / "government_revenue" / canonical_name
+    path.write_text("{}", encoding="utf-8")
+
+    with pytest.raises(ProjectionDriftError, match=rf"{label} canonical/public pair is incomplete"):
+        validate_projection(tmp_path)
+
+
 def test_projection_fence_rejects_matching_twins_with_invalid_schema(
     tmp_path: Path,
 ) -> None:
@@ -265,9 +287,16 @@ def test_projection_fence_rejects_full_payload_or_missing_workspace_shell(
 ) -> None:
     _generation(tmp_path)
     html = tmp_path / "site" / "government_revenue.html"
-    html.write_text("<main>legacy</main>" + ("x" * 250_001), encoding="utf-8")
+    html.write_text(
+        "<main>legacy</main>"
+        + ("x" * (build_government_revenue.RAW_HTML_BUDGET_BYTES + 1)),
+        encoding="utf-8",
+    )
 
-    with pytest.raises(ProjectionDriftError, match="exceeds 250000 bytes"):
+    with pytest.raises(
+        ProjectionDriftError,
+        match=rf"exceeds {build_government_revenue.RAW_HTML_BUDGET_BYTES} bytes",
+    ):
         validate_projection(tmp_path)
 
     html.write_text("<main>legacy</main>", encoding="utf-8")
@@ -343,6 +372,8 @@ def test_render_lanes_refuse_to_push_an_uncommitted_projection(lane: Path) -> No
     assert "site/government-revenue-data/latest.json" in post_rebase[head_gate:final_guard]
     assert "site/government-revenue-data/workspace.json" in post_rebase[head_gate:final_guard]
     assert "site/government-revenue-data/dossiers.json" in post_rebase[head_gate:final_guard]
+    assert "site/government-revenue-data/idv-dossiers.json" in post_rebase[head_gate:final_guard]
+    assert "site/government-revenue-data/budget-program.json" in post_rebase[head_gate:final_guard]
 
 
 def test_render_metadata_replay_blocks_newer_procurement_truth_or_builder() -> None:

@@ -148,6 +148,9 @@ def test_grader_roundtrip(tmp_path, monkeypatch):
     data = cc.compute()                              # real data dir — needs the price plane
     assert data
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)   # redirect only the log write/read
+    # append_central_log gates on the ASIA lane (asia-close.yml sets CN_LANE=asia and no
+    # COLLECT_LANE), so conftest's session-wide COLLECT_LANE=nightly does not arm it.
+    monkeypatch.setenv("CN_LANE", "asia")
     n = cg.append_central_log(data)
     assert n == data["meta"]["n_sectors"] + data["meta"]["n_baskets"]
     gr = cg.grade()

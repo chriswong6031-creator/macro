@@ -5,12 +5,13 @@ Covers:
   T1 -- template render: rederive block present when stats JSON available (CONFIRM verdict)
   T2 -- template render: rederive block omitted gracefully when stats JSON absent
   T3 -- template render: noindex meta tag ABSENT (page is now linked)
-  T4 -- template render: link to cn_reversal_sleeve.html present in baskets_china
+  T4 -- template render: link to cn_reversal_sleeve.html present on the merged
+        China Sector Intelligence page (was baskets_china before the 2026-08 merge)
   T5 -- template render: dual-span (l-en / l-zh) in rederive block
   T6 -- builder: rederive_stats key present in compute() payload; None when file absent
   T7 -- builder: _load_rederive_stats returns None gracefully on corrupt JSON
   T8 -- check_title_i18n passes on cn_reversal_sleeve.html.j2 (no CJK in title= attrs)
-  T9 -- check_title_i18n passes on baskets_china.html.j2
+  T9 -- check_title_i18n passes on sector_central_china.html.j2
   T10 -- sleeve build end-to-end smoke: build() completes without exception (sibling build intact)
   T11 -- ASCII attribute delimiters: no Chinese characters inside HTML attribute values
          in the edited portion of cn_reversal_sleeve.html.j2 (data-*-zh bilingual
@@ -33,7 +34,10 @@ from lib import config  # noqa: E402
 
 TEMPLATES = config.ROOT / "templates"
 SLEEVE_TEMPLATE = TEMPLATES / "cn_reversal_sleeve.html.j2"
-BASKETS_CHINA_TEMPLATE = TEMPLATES / "baskets_china.html.j2"
+# 2026-08 China Sector Intelligence consolidation: baskets_china.html.j2 is a redirect
+# stub; the reversal-sleeve card and the page's title= attributes moved to the merged
+# page. T4/T9 retarget there — same assertions, new home.
+BASKETS_CHINA_TEMPLATE = TEMPLATES / "sector_central_china.html.j2"
 REDERIVE_STATS = config.ROOT / "research" / "china_alpha" / "w5" / "w5a_rederive_stats.json"
 
 # --------------------------------------------------------------------------- #
@@ -130,7 +134,7 @@ def test_noindex_absent_from_sleeve_template():
 
 
 # --------------------------------------------------------------------------- #
-#  T4 — cn_reversal_sleeve.html linked from baskets_china template             #
+#  T4 — cn_reversal_sleeve.html linked from the merged China SI page           #
 # --------------------------------------------------------------------------- #
 def test_sleeve_linked_from_baskets_china_template():
     src = BASKETS_CHINA_TEMPLATE.read_text()
@@ -213,12 +217,12 @@ def test_check_title_i18n_sleeve_template():
 
 
 # --------------------------------------------------------------------------- #
-#  T9 — check_title_i18n passes on baskets_china template                      #
+#  T9 — check_title_i18n passes on the merged China SI page                    #
 # --------------------------------------------------------------------------- #
 def test_check_title_i18n_baskets_china_template():
     from scripts.check_title_i18n import find_violations
     violations = find_violations([str(BASKETS_CHINA_TEMPLATE)])
-    assert violations == [], f"title= i18n violations in baskets_china template: {violations}"
+    assert violations == [], f"title= i18n violations in the merged China SI template: {violations}"
 
 
 # --------------------------------------------------------------------------- #
@@ -304,5 +308,5 @@ def test_committed_rederive_stats_has_required_keys():
 #  T14 — RETIRED (was: china.html.j2 links to cn_reversal_sleeve.html)         #
 #  PR #1337 "Simplify dashboard copy and footers" deliberately condensed the   #
 #  long board caveat that carried the sleeve deep-link; the sleeve page stays  #
-#  linked (page not orphaned) via baskets_china.html.j2 — guarded by T4.       #
+#  linked (page not orphaned) via sector_central_china.html.j2 — guarded by T4. #
 # --------------------------------------------------------------------------- #

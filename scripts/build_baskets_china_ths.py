@@ -158,7 +158,9 @@ def main() -> int:
 
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
-    html = env.get_template("baskets_china.html.j2").render(
+    # China SI consolidation (2026-08): baskets_china.html.j2 became a redirect stub; the
+    # full FactorWatch template was extracted byte-identically to this name for the THS page.
+    html = env.get_template("baskets_china_factorwatch.html.j2").render(
         baskets_json=json.dumps(slim_data, separators=(",", ":"), ensure_ascii=False),
         chart_json=json.dumps(slim_chart, separators=(",", ":")),
         lite=True, basket_base="",

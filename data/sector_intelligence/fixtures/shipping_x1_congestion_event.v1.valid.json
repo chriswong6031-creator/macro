@@ -1,0 +1,41 @@
+{
+  "contract_id": "sector_event.v1",
+  "schema_version": "1.0.0",
+  "event_id": "event:shipping:SYN-P01:reported-congestion-status",
+  "sector": "shipping_trade",
+  "event_type": "port.reported_congestion_status",
+  "entity_refs": [
+    "port:SYN-P01",
+    "shipping_lane:SYN-L01"
+  ],
+  "state": "source_asserted",
+  "interpretation_status": "source_reported",
+  "timing": {
+    "kind": "exact",
+    "exact_at": "2026-08-01T09:30:00Z",
+    "earliest_at": null,
+    "latest_at": null,
+    "distribution_ref": null,
+    "source_date_precision": "instant",
+    "first_observed_at": "2026-08-01T09:40:00Z"
+  },
+  "evidence_claim_refs": [
+    "claim:shipping:SYN-P01:reported-status"
+  ],
+  "source_record_refs": [
+    "src:synthetic-port:SYN-P01"
+  ],
+  "materiality": {
+    "status": "not_assessed",
+    "score": null,
+    "method": null,
+    "model_version": null
+  },
+  "confidence": null,
+  "valid_from": "2026-08-01T09:30:00Z",
+  "valid_to": null,
+  "transaction_from": "2026-08-01T09:40:02Z",
+  "transaction_to": null,
+  "authority_manifest_ref": "authority:synthetic-shipping-display:v1",
+  "supersedes_event_id": null
+}
