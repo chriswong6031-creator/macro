@@ -1157,9 +1157,166 @@ def _extract_number_tokens(text: str) -> list[str]:
     return _NUMBER_RE.findall(text)
 
 
-def banned_language(text: str) -> list[str]:
-    """Language-only screen: dash tells, banned vocabulary/substrings, and the
-    v3 cheese list. [] = clean.
+# ─────────────────────────────────────────────────────────────────────────────
+# SOURCE-HANDLE SCREEN (operator law 2026-08-02)
+#
+# We reword and republish news; we NEVER tag or brand the original account. On
+# 2026-08-02/03 the flagship shipped "-- @FirstSquawk reporting",
+# "-- @financialjuice reporting" and a "@BRICSinfo · AGGREGATOR" card chip. The
+# generating lanes are fixed at the source (press_providers de-handles at
+# ingestion, press_corroboration credits "wire reports"), but THE QUEUE IS A
+# BYPASS AROUND EVERY GENERATION LAW — copy enqueued under an older vintage
+# fires days later where no generation-time validator can reach it. This screen
+# lives in `banned_language`, which the publisher runs as its last gate on every
+# due item, so a de-handling fix cannot be outrun by an already-queued post.
+#
+# OUR OWN handles are allowlisted: a post naming our own desk is branding, not a
+# source tag.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: An @mention. The negative lookbehind is what keeps an EMAIL ADDRESS out of it
+#: — in "foo@bar.com" the character before the "@" is a word character, so the
+#: match never starts. Cashtags ("$AAPL") carry no "@" at all. The {2,} floor
+#: skips a bare "@" and single-letter noise.
+_HANDLE_MENTION_RE = re.compile(r"(?<![A-Za-z0-9_])@([A-Za-z0-9_]{2,})")
+
+#: Memo for the roster read. The publisher calls `banned_language` once per due
+#: item; re-parsing config/marketing.yml per call would be a config read per
+#: post. None means "not resolved yet" (an empty frozenset is a real answer:
+#: "asked, no handles on the roster").
+_OWN_HANDLES_CACHE: "frozenset[str] | None" = None
+
+
+def _reset_own_handles_cache() -> None:
+    """Drop the memoized own-handle roster (tests; a config reload)."""
+    global _OWN_HANDLES_CACHE
+    _OWN_HANDLES_CACHE = None
+
+
+def _own_handles_cached() -> "frozenset[str]":
+    """`own_account_handles()` behind the module memo."""
+    global _OWN_HANDLES_CACHE
+    if _OWN_HANDLES_CACHE is None:
+        _OWN_HANDLES_CACHE = own_account_handles()
+    return _OWN_HANDLES_CACHE
+
+
+def own_account_handles(cfg: dict | None = None, root=None) -> "frozenset[str]":
+    """Lower-cased handles of OUR OWN accounts (no leading @). Fail-soft: {} on any error.
+
+    Reads the desk-network roster through `accounts.effective_accounts`, which is
+    the single reader of "which desks exist" (config intent + the operator
+    override file). `cfg` is the already-parsed config/marketing.yml when the
+    caller has one; None reads it off `root`.
+
+    NEVER RAISES. This resolves inside the publisher's last language gate, and a
+    yaml/IO error there must not be able to stop a dispatch. The failure
+    direction is a WIDER screen, not a stopped one: an unreadable roster yields
+    an empty allowlist, so our own handle would be flagged as foreign — loud and
+    fixable, rather than a silent hole that lets a source tag through.
+    """
+    try:
+        from engine.marketing.accounts import effective_accounts  # noqa: PLC0415
+
+        if cfg is None:
+            import yaml  # noqa: PLC0415
+            from pathlib import Path  # noqa: PLC0415
+
+            base = Path(root) if root is not None else Path(__file__).resolve().parents[2]
+            with (base / "config" / "marketing.yml").open(encoding="utf-8") as fh:
+                cfg = yaml.safe_load(fh) or {}
+
+        out: set[str] = set()
+        for acct in effective_accounts(cfg, root):
+            handle = str(acct.get("handle") or "").strip().lstrip("@").lower()
+            if handle:
+                out.add(handle)
+        return frozenset(out)
+    except Exception:  # noqa: BLE001 — a screen must never break the publisher
+        return frozenset()
+
+
+def foreign_handle_mentions(text: str, own_handles=None) -> list[str]:
+    """@mentions in *text* that are not ours. Returns the offending handles,
+    lower-cased, de-duplicated, order-stable.
+
+    `own_handles` is any iterable of handles (with or without the leading "@");
+    None resolves the memoized desk roster.
+    """
+    own = {
+        str(h).strip().lstrip("@").lower()
+        for h in (_own_handles_cached() if own_handles is None else own_handles)
+        if str(h).strip()
+    }
+    out: list[str] = []
+    seen: set[str] = set()
+    for match in _HANDLE_MENTION_RE.finditer(str(text or "")):
+        handle = match.group(1).lower()
+        if handle in own or handle in seen:
+            continue
+        seen.add(handle)
+        out.append(handle)
+    return out
+
+
+#: Recursion ceiling for `card_input_violations`' flatten. Card inputs are
+#: shallow (strings, ticker rows, a fact dict); a bound keeps a cyclic or
+#: pathological structure from turning a screen into a hang.
+_CARD_FLATTEN_MAX_DEPTH = 6
+
+
+def _flatten_card_strings(value, depth: int = 0) -> list[str]:
+    """Every string inside a card-input value (strings, lists, dict VALUES)."""
+    if isinstance(value, str):
+        return [value]
+    if depth >= _CARD_FLATTEN_MAX_DEPTH:
+        return []
+    if isinstance(value, dict):
+        # Values only. Keys are our own field names, set by the renderer, never
+        # copy — screening them would report the schema, not the content.
+        out: list[str] = []
+        for item in value.values():
+            out.extend(_flatten_card_strings(item, depth + 1))
+        return out
+    if isinstance(value, (list, tuple, set, frozenset)):
+        out = []
+        for item in value:
+            out.extend(_flatten_card_strings(item, depth + 1))
+        return out
+    return []
+
+
+def card_input_violations(**params) -> list[str]:
+    """Screen every string card-input param for foreign @mentions. [] = clean.
+
+    The operator law covers post text AND card-input params: the 2026-08-02
+    defect also rendered a "@BRICSinfo · AGGREGATOR" chip onto a card, which is
+    the same source tag on a surface `banned_language` never sees (the card is
+    built from params, not from the post body). Violations name the param so a
+    caller can say WHICH input carried it::
+
+        "card param 'summary': source handle mention: '@FirstSquawk'"
+
+    Strings nested in list/dict values (ticker rows, fact dicts) are screened
+    too. De-duplicated and order-stable.
+    """
+    own = _own_handles_cached()
+    out: list[str] = []
+    seen: set[str] = set()
+    for name, value in params.items():
+        for text in _flatten_card_strings(value):
+            for handle in foreign_handle_mentions(text, own):
+                violation = f"card param '{name}': source handle mention: '@{handle}'"
+                if violation in seen:
+                    continue
+                seen.add(violation)
+                out.append(violation)
+    return out
+
+
+def banned_language(text: str, *, own_handles=None) -> list[str]:
+    """Language-only screen: dash tells, banned vocabulary/substrings, the
+    v3 cheese list, and foreign source @mentions. [] = clean.
 
     Two callers, one bar: validate_copy (generation time) and the publisher's
     post-time gate. The 2026-07-27 $AVGO "POC held" post proved the queue is a
@@ -1167,6 +1324,10 @@ def banned_language(text: str) -> list[str]:
     study-name bans existed, then fired days later where no generation-time
     validator could reach it. The publisher screens every due item with this
     exact function, so copy from any lane or vintage meets the same bar.
+
+    `own_handles` (keyword-only, optional) overrides the desk roster the
+    @mention screen allowlists; None resolves it from config. Every existing
+    POSITIONAL caller is unchanged.
     """
     violations: list[str] = []
 
@@ -1205,6 +1366,10 @@ def banned_language(text: str) -> list[str]:
         pattern = r"\b" + re.escape(word) + r"\b"
         if re.search(pattern, text, re.IGNORECASE):
             violations.append(f"cheese: '{word}'")
+
+    # Source-account tags (operator law 2026-08-02). Our OWN handles are fine.
+    for handle in foreign_handle_mentions(text, own_handles):
+        violations.append(f"source handle mention: '@{handle}'")
 
     return violations
 
