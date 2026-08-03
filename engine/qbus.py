@@ -285,6 +285,109 @@ def read_items():
 
 
 # --------------------------------------------------------------------------- #
+# StoreIndex — precomputed read index over ONE store snapshot for batch scoring
+# --------------------------------------------------------------------------- #
+class StoreIndex:
+    """Precomputed lookup index over ONE store snapshot, for callers that read
+    novelty/echo/crowding for MANY items against the SAME frame (the
+    importance_v0.score_store batch path).
+
+    WHY: _subject_daily_counts re-parses the full seendate/_crawled_at columns
+    (format="mixed" to_datetime) and python-scans every row's entities/themes
+    PER CALL, and echo_stats full-column-filters per call. score_store makes
+    2-3 such calls per item, so a full-store re-score is O(rows²) — measured
+    ~30ms/call × 2 × 16.5k items ≈ 16min/pass on the 2026-08-01 store, growing
+    quadratically with accrual (the collect_tail blowups of late July 2026).
+    This index parses dates and splits subjects ONCE (O(rows)), making each
+    read O(window) / O(cluster).
+
+    Semantics are pinned equivalent to the frame-scan paths by
+    tests/test_importance_v0.py::test_index_matches_frame_paths — any change
+    here must change _subject_daily_counts / echo_stats identically.
+    """
+
+    def __init__(self, subject_daily: dict, events: dict):
+        self._subject_daily = subject_daily   # subject -> {date: count}
+        self._events = events                 # event_key -> [(stamp_date, source, desk, crawled, seen)]
+
+    # mirrors _subject_daily_counts(df, subject, asof, window_days)
+    def subject_daily_counts(self, subject: str, asof: date,
+                             window_days: int) -> tuple[float, list[float]]:
+        counts = self._subject_daily.get(subject) or {}
+        today = float(counts.get(asof, 0))
+        lo = asof - timedelta(days=window_days)
+        series = [float(counts.get(lo + timedelta(days=k), 0))
+                  for k in range(window_days)]
+        return today, series
+
+    # mirrors echo_stats(event_key, df=..., asof=...)
+    def echo_stats(self, event_key: str, asof=None) -> dict | None:
+        if not event_key:
+            return None
+        rows = self._events.get(event_key)
+        if not rows:
+            return None
+        if asof is not None:
+            a = _asof_date(asof)
+            if a is not None:
+                rows = [r for r in rows if r[0] is not None and r[0] <= a]
+        if not rows:
+            return None
+        sources = {r[1] for r in rows if r[1]}
+        desks = {r[2] for r in rows if r[2]}
+        stamps = [r[3] for r in rows if r[3]] + [r[4] for r in rows if r[4]]
+        return {
+            "n_sources": len(sources),
+            "n_desks": len(desks),
+            "n_items": len(rows),
+            "first_seen": min(stamps) if stamps else "",
+            "breadth": len(desks),
+        }
+
+
+def build_index(df) -> StoreIndex | None:
+    """Build a StoreIndex over `df` in ONE pass (two vectorized date parses +
+    one python row scan). Returns None on any failure so callers can fall back
+    to the per-call frame-scan paths. Never raises.
+
+    Date semantics (identical to the frame paths):
+      * subject day  = seendate  (fallback _crawled_at)  — _subject_daily_counts
+      * echo stamp   = _crawled_at (fallback seendate)   — echo_stats PIT filter
+    A row whose subject appears in BOTH entities and themes counts ONCE
+    (matching _subject_daily_counts' OR-match)."""
+    try:
+        import pandas as pd
+        if df is None or len(df) == 0:
+            return None
+        seen = pd.to_datetime(df["seendate"], errors="coerce", format="mixed", utc=True)
+        crawl = pd.to_datetime(df["_crawled_at"], errors="coerce", format="mixed", utc=True)
+        subj_day = seen.fillna(crawl).map(lambda ts: ts.date() if pd.notna(ts) else None)
+        echo_day = crawl.fillna(seen).map(lambda ts: ts.date() if pd.notna(ts) else None)
+
+        subject_daily: dict[str, dict[date, int]] = {}
+        events: dict[str, list[tuple]] = {}
+        cols = zip(subj_day.tolist(), echo_day.tolist(),
+                   df["entities"].tolist(), df["themes"].tolist(),
+                   df["event_key"].tolist(), df["source"].tolist(),
+                   df["desk"].tolist(), df["_crawled_at"].tolist(),
+                   df["seendate"].tolist())
+        for sday, eday, ents, thms, ekey, source, desk, crawled, seendate in cols:
+            if sday is not None:
+                for subject in set(_split(ents)) | set(_split(thms)):
+                    d = subject_daily.setdefault(subject, {})
+                    d[sday] = d.get(sday, 0) + 1
+            ekey = str(ekey or "")
+            if ekey:
+                events.setdefault(ekey, []).append(
+                    (eday, str(source or ""), str(desk or ""),
+                     str(crawled or ""), str(seendate or "")))
+        return StoreIndex(subject_daily, events)
+    except Exception as e:  # noqa: BLE001
+        log.error("qbus.build_index failed (%s)", e)
+        return None
+
+
+# --------------------------------------------------------------------------- #
 # novelty — z-score of a subject's item volume vs its trailing window
 # --------------------------------------------------------------------------- #
 def _asof_date(asof) -> date | None:
@@ -340,13 +443,17 @@ def _subject_daily_counts(df, subject: str, asof: date,
 
 
 def novelty_z(entity_or_theme: str, asof, window_days: int = 30,
-              df=None) -> float | None:
+              df=None, index: "StoreIndex | None" = None) -> float | None:
     """z-score of today's (asof) item volume for a subject vs its trailing
     `window_days` daily volume. High z = attention is unusually elevated.
 
     Deterministic: `asof` is REQUIRED (no clock). Returns None when there is no
     store or the trailing window has no variance to standardize against. PURE-ish
     (reads the parquet unless a df is injected for testing). Never raises.
+
+    `index` (optional, from build_index over the SAME snapshot as `df`) replaces
+    the per-call frame scan with an O(window) lookup — the batch-scoring fast
+    path. Semantics are identical (test-pinned).
 
     Return semantics for the flat-window branch (sd <= 1e-9):
       today > mean  (spike over flat baseline)  → 3.0  (maximally novel)
@@ -356,14 +463,17 @@ def novelty_z(entity_or_theme: str, asof, window_days: int = 30,
         None as "—" via the fmt_nov macro, which is the honest display.)
     """
     try:
-        if df is None:
-            df = read_items()
-        if df is None or len(df) == 0:
-            return None
         a = _asof_date(asof)
         if a is None:
             return None
-        today, series = _subject_daily_counts(df, entity_or_theme, a, window_days)
+        if index is not None:
+            today, series = index.subject_daily_counts(entity_or_theme, a, window_days)
+        else:
+            if df is None:
+                df = read_items()
+            if df is None or len(df) == 0:
+                return None
+            today, series = _subject_daily_counts(df, entity_or_theme, a, window_days)
         if not series:
             return None
         n = len(series)
@@ -389,7 +499,8 @@ def novelty_z(entity_or_theme: str, asof, window_days: int = 30,
 # --------------------------------------------------------------------------- #
 # echo — cross-desk corroboration for one event_key
 # --------------------------------------------------------------------------- #
-def echo_stats(event_key: str, df=None, asof=None) -> dict | None:
+def echo_stats(event_key: str, df=None, asof=None,
+               index: StoreIndex | None = None) -> dict | None:
     """Cross-source/desk corroboration for one event_key:
       {n_sources, n_desks, n_items, first_seen, breadth}
     where breadth = distinct desks that carried the event (the "many independent
@@ -402,8 +513,14 @@ def echo_stats(event_key: str, df=None, asof=None) -> dict | None:
     PIT discipline fix: the W3 backfill ran echo_stats WITHOUT an asof filter, so
     future corroboration items (crawled AFTER the item's own seendate) could
     inflate the breadth score.  Callers should always pass the item's own asof.
+
+    `index` (optional, from build_index over the SAME snapshot as `df`) replaces
+    the per-call full-column filter with a dict lookup — the batch-scoring fast
+    path. Semantics are identical (test-pinned).
     """
     try:
+        if index is not None:
+            return index.echo_stats(event_key, asof=asof)
         if df is None:
             df = read_items()
         if df is None or len(df) == 0 or not event_key:

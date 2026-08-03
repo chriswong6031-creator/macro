@@ -492,6 +492,18 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'ClinicalTrials.gov Phase-3 START (`first_post`) as a lead-time-carrying SCORED catalyst leg (convergence weight)'
+    verdict: 'KILLED (construction-scoped) — two independent event studies return null: house run 2026-07-19 (`data/special_situations/event_priors/clinicaltrials.json` — hac_t −0.78/−0.42/+0.60 at h5/h20/h60, DSR ≤0.21, BH q=0.6614 reject=false, split-half sign unstable at ALL horizons) and 2026-08-03 exploratory replication (n=1,156 ticker-date cells: day-0 abnormal return −0.9bp t=−0.17 — a public posting with no same-day reaction is not information; CAR[0,20] vs SPY +0.07% t=0.28; calendar-time NW-t 0.86; random-date placebo reproduces ~70% of the apparent XLV-benchmark effect, empirical p=0.186; 36% of CAAR accrues pre-event). Feed keeps accruing display/context-tier (START as display catalyst chip stays lawful); the HALT caution channel stays OPEN, blocked on ClinicalTrials.gov Record History for a halt-onset date (BioCatalyst lane, #4218 — extend, never parallel-path). Any re-test requires collector pagination first (current store is top-100-per-sponsor by last-update, look-ahead-selected pre-2019) AND a prereg (none exists). Do not re-propose a scored Phase-3-START weight on this store.'
+    source: '2026-08-03 experiments audit; `data/experiments/clinicaltrials_phase3_event_study_results.json`; corroborates `scripts/backtest_event_priors.py` run 2026-07-19'
+    section: 2
+    section_name: killed_signal_families
+
+  - topic: 'Bottom-radar PRIMED tier as a DIRECTIONAL durable-bottom gate for starter size (raw score + expansion/veto gates, deep universe, 42d/+8% target, close-only stops, half-target timeout)'
+    verdict: 'KILLED phase-0 (construction-scoped) — first-ever calibration run 2026-08-02, NO-GO on all three pre-registered legs (75,722 events, 233 names, 2012-07-18..2026-05-29): calib_ok FALSE (decile durable rate FLAT 47.4–50.2% across raw 29.9→58.7, top-minus-bottom +2.3pp vs +5pp bar); deadcat_ok FALSE (veto separation wrong sign, ticker-block CI [−1.25,+0.38]pp vs +5pp bar); primed_beats_base FALSE (primed E[R] +0.142 vs watch +0.235; primed−watch −0.093, 95% ticker-block CI [−0.156,−0.034] ENTIRELY NEGATIVE — PRIMED significantly worse than its base arm). Every stage has E[R]>0 (blocked +0.205) = survivor-universe drift; the weaker "expectancy>0 net of stop" criterion would have shipped a FALSE GO and is retired as a gate. Biases all favored the signal (survivor mega-cap universe, close-only stops, half-target timeout) and it still failed. Closes THIS construction only: the DRAWDOWN/cone leg stays validated separately (`bottom_confidence_calibration.json` held% 36.8→74.8 monotone), PRIMED stays lawful as display-only watchlist ordering, and a revival needs a materially different registered construction (breadth/smallcap universe, intraday-low stops, single success bar) + fresh prereg.'
+    source: '2026-08-03 experiments audit (first run of `scripts/calibrate_bottom_radar.py` gate, universe=deep); registry entry `bottom-radar-calibration` (closed_no_go)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Ticker-cluster bootstrap CIs without time control'
     verdict: 'FORBIDDEN estimator — anti-conservative, effective N = months'
     source: 'DT-R14; `TIME_CONFOUND_EXPOSURE_AUDIT` (#1755)'

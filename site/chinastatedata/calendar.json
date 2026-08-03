@@ -1,69 +1,9 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-07-31",
-  "generated_at_utc": "2026-08-02T09:59:26.639152+00:00",
+  "asof": "2026-08-03",
+  "generated_at_utc": "2026-08-03T11:18:35.860289+00:00",
   "horizon_days": 45,
   "entries": [
-    {
-      "date": "2026-07-20",
-      "window_end": "2026-07-31",
-      "etype": "politburo_econ",
-      "label_en": "Politburo economic meeting window (late July)",
-      "label_zh": "中央政治局会议（经济）窗口（7月下旬）",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "static",
-      "source": "china_calendar.political_windows",
-      "approx": true
-    },
-    {
-      "date": "2026-07-31",
-      "window_end": null,
-      "etype": "PMI",
-      "label_en": "NBS PMI (mfg + non-mfg)",
-      "label_zh": "国家统计局 PMI（制造业＋非制造业）",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "rule",
-      "source": "engine.china_event_calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-07-31",
-      "window_end": null,
-      "etype": "omo_reverse_repo_preannounce",
-      "label_en": "PBoC reverse repo (pre-announced) — 隔夜, RMB 600bn",
-      "label_zh": "央行逆回购操作（预告）：隔夜，6,000亿元",
-      "region": "cn",
-      "impact": "medium",
-      "source_class": "feed",
-      "source": "china_omo.operations",
-      "approx": false
-    },
-    {
-      "date": "2026-07-31",
-      "window_end": null,
-      "etype": "HK_RETAIL",
-      "label_en": "HK retail sales",
-      "label_zh": "香港零售业销货",
-      "region": "hk",
-      "impact": "medium",
-      "source_class": "static",
-      "source": "engine.hk_event_calendar",
-      "approx": true
-    },
-    {
-      "date": "2026-08-01",
-      "window_end": "2026-08-31",
-      "etype": "earnings_season",
-      "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
-      "label_zh": "A股中报密集披露期：2026年8月约99%的覆盖名单披露",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "feed",
-      "source": "china_earnings.calendar",
-      "approx": false
-    },
     {
       "date": "2026-08-03",
       "window_end": null,
@@ -74,6 +14,18 @@
       "impact": "medium",
       "source_class": "rule",
       "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-08-03",
+      "window_end": "2026-08-31",
+      "etype": "earnings_season",
+      "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
+      "label_zh": "A股中报密集披露期：2026年8月约99%的覆盖名单披露",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "feed",
+      "source": "china_earnings.calendar",
       "approx": false
     },
     {
@@ -420,6 +372,66 @@
       "label_zh": "美国 CPI",
       "region": "hk",
       "impact": "high",
+      "source_class": "static",
+      "source": "engine.hk_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-09-15",
+      "window_end": null,
+      "etype": "ACTIVITY",
+      "label_en": "IP, FAI & retail sales",
+      "label_zh": "工业增加值、固投与社零",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-09-15",
+      "window_end": null,
+      "etype": "MLF",
+      "label_en": "MLF operation (PBoC)",
+      "label_zh": "MLF 操作（央行中期借贷便利）",
+      "region": "cn",
+      "impact": "medium",
+      "source_class": "rule",
+      "source": "engine.china_event_calendar",
+      "approx": true
+    },
+    {
+      "date": "2026-09-16",
+      "window_end": null,
+      "etype": "FOMC",
+      "label_en": "US FOMC decision",
+      "label_zh": "美联储 FOMC 决议",
+      "region": "hk",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.hk_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-09-17",
+      "window_end": null,
+      "etype": "HKMA_RATE",
+      "label_en": "HKMA base rate (post-FOMC)",
+      "label_zh": "金管局基本利率（FOMC 次日）",
+      "region": "hk",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.hk_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-09-17",
+      "window_end": null,
+      "etype": "HK_UNEMP",
+      "label_en": "HK unemployment",
+      "label_zh": "香港失业率",
+      "region": "hk",
+      "impact": "medium",
       "source_class": "static",
       "source": "engine.hk_event_calendar",
       "approx": false

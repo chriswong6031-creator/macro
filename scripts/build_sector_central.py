@@ -193,7 +193,9 @@ def main() -> int:
                   "time_machine.js",
                   # _forming_narratives.html.j2 (end of MOVEMENT) loads this; the panel
                   # self-hides when basketdata/narrative_emergence.json is absent.
-                  "forming_narratives.js"):
+                  "forming_narratives.js",
+                  # SI Workspace V2 shell: hash router, per-view lazy mount, view reads.
+                  "si_workspace.js"):
         src = root / "templates" / asset
         if src.exists():
             shutil.copy2(src, site / asset)

@@ -1069,12 +1069,34 @@ entries:
   - id: BL-G082
     match:
       any_of:
+        - 'clinicaltrials.{0,30}phase.{0,30}start'
+    reason: >
+      KILLED (construction-scoped) — two independent event studies
+      return null: house run 2026-07-19
+      (`data/special_situations/event_priors/clinicaltrials.json` —
+      hac_t −0.78/−0.42/+0.60 at h5/h20/h60, DSR
+    source: '2026-08-03 experiments audit; `data/experiments/clinicaltrials_phase3_event_study_results.json`; corroborates `scripts/backtest_event_priors.py` run 2026-07-19'
+
+  - id: BL-G083
+    match:
+      any_of:
+        - 'bottom.{0,30}radar.{0,30}primed'
+    reason: >
+      KILLED phase-0 (construction-scoped) — first-ever calibration run
+      2026-08-02, NO-GO on all three pre-registered legs (75,722
+      events, 233 names, 2012-07-18..2026-05-29): calib_ok FALSE
+      (decile durable
+    source: '2026-08-03 experiments audit (first run of `scripts/calibrate_bottom_radar.py` gate, universe=deep); registry entry `bottom-radar-calibration` (closed_no_go)'
+
+  - id: BL-G084
+    match:
+      any_of:
         - 'ticker.{0,30}cluster.{0,30}bootstrap'
     reason: >
       FORBIDDEN estimator — anti-conservative, effective N = months
     source: 'DT-R14; `TIME_CONFOUND_EXPOSURE_AUDIT` (#1755)'
 
-  - id: BL-G083
+  - id: BL-G085
     match:
       any_of:
         - 'factor.{0,30}apparatus.{0,30}applied'
@@ -1083,7 +1105,7 @@ entries:
       absolute)
     source: 'Oracle reversion metric reframe (#1458)'
 
-  - id: BL-G084
+  - id: BL-G086
     match:
       any_of:
         - 'pooled.{0,30}inference.{0,30}across'
@@ -1091,7 +1113,7 @@ entries:
       FORBIDDEN without era split
     source: 'DT-R16 era-split law (#1751)'
 
-  - id: BL-G085
+  - id: BL-G087
     match:
       any_of:
         - 'closing.{0,30}factor.{0,30}family'
@@ -1099,7 +1121,7 @@ entries:
       INCOMPLETE — diagnose mechanism + pre-registered pairlets first
     source: 'Factor-kill interaction feedback law'
 
-  - id: BL-G086
+  - id: BL-G088
     match:
       any_of:
         - 'estimator.{0,30}shortcuts'
@@ -1107,7 +1129,7 @@ entries:
       Constrained per R1-M estimator law
     source: 'Nontech-bottom program'
 
-  - id: BL-G087
+  - id: BL-G089
     match:
       any_of:
         - 'exact.{0,30}label.{0,30}adverse'
@@ -1118,7 +1140,7 @@ entries:
       exact configuration
     source: '`research/PSS_RH1_RELIEF_HAZARD_PROSPECTIVE_CHARTER.md`; `data/personality_timing/relief_hazard_manifest_v1.json` (family `pss_rh1_relief_hazard_prospective`, frozen 2026-07-27)'
 
-  - id: BL-G088
+  - id: BL-G090
     match:
       any_of:
         - 'first.{0,30}real.{0,30}sector'
@@ -1129,7 +1151,7 @@ entries:
       +0.50-ATR re
     source: '`research/PSS_CR1_CHALLENGE_RESILIENCE_PROSPECTIVE_CHARTER.md`; `data/personality_timing/challenge_resilience_manifest_v1.json` (family `pss_cr1_challenge_resilience_prospective`, frozen 2026-07-27)'
 
-  - id: BL-G089
+  - id: BL-G091
     match:
       any_of:
         - 'correlation.{0,30}dispersion.{0,30}overlay'
@@ -1140,7 +1162,7 @@ entries:
       thresholds. Joint
     source: '`research/PSS_CD1_CORRELATION_DISPERSION_PROSPECTIVE_CHARTER.md`; `data/personality_timing/crowding_hazard_manifest_v1.json` (family `pss_cd1_correlation_dispersion_prospective`, frozen 2026-07-27)'
 
-  - id: BL-G090
+  - id: BL-G092
     match:
       any_of:
         - 'finra.{0,30}short.{0,30}marked'
@@ -1151,7 +1173,7 @@ entries:
       rolling-three-session q75,
     source: '`research/PSS_AF1_FINRA_ABSORPTION_PROSPECTIVE_CHARTER.md`; `data/personality_timing/flow_absorption_manifest_v1.json` (family `pss_af1_finra_absorption_witness_prospective`, frozen 2026-07-27)'
 
-  - id: BL-G091
+  - id: BL-G093
     match:
       any_of:
         - 'ontology.{0,30}acceptance'
@@ -1159,7 +1181,7 @@ entries:
       HOLD — peak gate IQR 48.8 > 25
     source: 'Open PR #1639 (do not accidentally revive)'
 
-  - id: BL-G092
+  - id: BL-G094
     match:
       any_of:
         - 'theta.{0,30}tape'
@@ -1167,7 +1189,7 @@ entries:
       SUSPENDED
     source: 'Final3-lobes program (2026-07-06)'
 
-  - id: BL-G093
+  - id: BL-G095
     match:
       any_of:
         - 'disp.{0,30}gate'
@@ -1175,7 +1197,7 @@ entries:
       DEFER ×2-replicated
     source: 'Final3-lobes program (#1696)'
 
-  - id: BL-G094
+  - id: BL-G096
     match:
       any_of:
         - 'price.{0,30}memory.{0,30}trials'
@@ -1184,7 +1206,7 @@ entries:
       60% floor at execution)
     source: 'PM0 prereg (#1761) + EI-PM0 run (2026-07-10)'
 
-  - id: BL-G095
+  - id: BL-G097
     match:
       any_of:
         - 'g1'
@@ -1192,7 +1214,7 @@ entries:
       DEFERRED
     source: 'Long-hold thesis program (#1507/#1588)'
 
-  - id: BL-G096
+  - id: BL-G098
     match:
       any_of:
         - 'options'
@@ -1200,7 +1222,7 @@ entries:
       PARKED until preconditions (1)+(2)
     source: 'Options→NW masterplan'
 
-  - id: BL-G097
+  - id: BL-G099
     match:
       any_of:
         - 'codeowners.{0,30}branch.{0,30}protection'
@@ -1208,7 +1230,7 @@ entries:
       DEFERRED to RF codegen lane scope
     source: 'ABM-R3; `RF_CODEGEN_LANE_FOR_FABLE.md`'
 
-  - id: BL-G098
+  - id: BL-G100
     match:
       any_of:
         - 'ticker.{0,30}multi.{0,30}label'
@@ -1217,7 +1239,7 @@ entries:
       revenue-geography ingestion + own adjudication
     source: 'TI-R2, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
 
-  - id: BL-G099
+  - id: BL-G101
     match:
       any_of:
         - 'public.{0,30}breakaway.{0,30}desk'
@@ -1226,7 +1248,7 @@ entries:
       its own wave
     source: '`WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` §8'
 
-  - id: BL-G100
+  - id: BL-G102
     match:
       any_of:
         - 'winner.{0,30}autopsy.{0,30}short'
@@ -1235,7 +1257,7 @@ entries:
       settlement date)
     source: 'WA-R (docket adjudication), aligns NEXTL-U19'
 
-  - id: BL-G101
+  - id: BL-G103
     match:
       any_of:
         - 'full.{0,30}graph.{0,30}causal'
@@ -1245,7 +1267,7 @@ entries:
       clock
     source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G102
+  - id: BL-G104
     match:
       any_of:
         - 'dedicated.{0,30}machine.{0,30}registration'
@@ -1255,7 +1277,7 @@ entries:
       stands (QS-U2)
     source: 'CHF-R2, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G103
+  - id: BL-G105
     match:
       any_of:
         - 'ignition.{0,30}radar.{0,30}user'

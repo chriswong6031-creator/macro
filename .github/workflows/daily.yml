@@ -992,6 +992,26 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.fetch_r2 --dirs odds_ohlcv || echo "::warning::odds_ohlcv R2 restore failed (non-fatal — build_odds cold-backfills)"
+      - name: restore subsector OHLC sidecars from R2 (index_leadership reads them)
+        # build_index_leadership (engine step below) computes per-group closes from
+        # site/subsectorohlc{,_nasdaq,_russell}/*.json — gitignored + R2-hosted (published
+        # back at the end of this job), so a fresh checkout holds NONE of them, compute()
+        # found zero tabs, and the builder skipped silently EVERY nightly: index_leadership
+        # .json + the data/index_leadership/snapshots.jsonl forward ledger froze at their
+        # 2026-06-30 seed for 18 nightlies (experiments audit 2026-08-03). The sidecar
+        # producer (build_subsector_confluence main/main_index — only the heavy entrypoints
+        # emit them) runs in the parallel band AFTER the engine step, so restore LAST
+        # NIGHT's generation here — the same generation as the committed
+        # subsector_confluence*.json boards it is read against (the builder is a decoupled
+        # post-pass over committed artifacts by design, and stays ordered BEFORE its
+        # consumer build_stock_board_v2). Non-fatal: on restore failure the builder now
+        # skips LOUDLY (::warning from build(), ::error + rc!=0 from its nightly main).
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs subsectorohlc,subsectorohlc_nasdaq,subsectorohlc_russell || echo "::warning::subsectorohlc R2 restore failed (non-fatal — index_leadership skips loudly and keeps the last committed board)"
       - name: restore breadth close cache (stock search library needs constituent closes)
         uses: actions/cache@v4
         with:
@@ -1254,12 +1274,21 @@ jobs:
           # Index Leadership rotation board — DEAD-WIRE FIX 2026-07-16: this builder had NO
           # workflow caller since its 2026-07-01 hand-run, so site/marketdata/index_leadership.json
           # (subsectors.html client fetch + group_context's 0.10-weight rotation source + the
-          # tolerant readers in build_stock_board_v2 below) froze 15 days stale. Runs AFTER
-          # build_site (inputs: subsector_confluence*.json + subsectorohlc sidecars +
-          # regime_timeline.json are written by build_site's render pass) and BEFORE
-          # build_stock_board_v2 (consumer). Reads committed artifacts only — no APIs, no keys.
+          # tolerant readers in build_stock_board_v2 below) froze 15 days stale. SIDECAR FIX
+          # 2026-08-03: the 07-16 wiring was STILL dead — this comment used to claim the
+          # subsectorohlc sidecars "are written by build_site's render pass", which is false
+          # (only build_subsector_confluence's heavy main/main_index entrypoints in the
+          # parallel band BELOW emit them; the render-lane build/build_nasdaq/build_russell
+          # never do), so on this job's fresh checkout the gitignored sidecar dirs were empty,
+          # compute() found zero tabs, and the builder skipped silently for 18 more nightlies
+          # (snapshots.jsonl frozen at its 2026-06-30 seed). Its inputs are the PREVIOUS
+          # night's generation: subsector_confluence*.json + regime_timeline.json (committed)
+          # and the subsectorohlc* sidecars (restored from R2 by the "restore subsector OHLC
+          # sidecars" step above). Runs AFTER build_site and BEFORE build_stock_board_v2
+          # (consumer). Reads committed/restored artifacts only — no APIs, no keys.
           # COLLECT_LANE=nightly arms its snapshots.jsonl forward-ledger append (the writer
           # self-gates per house law; provisional lanes leave the env unset and no-op).
+          # A skip now exits rc=1 -> run_py raises ::error + a step-summary row.
           COLLECT_LANE=nightly run_py "index leadership rotation board (build_index_leadership)" scripts.build_index_leadership
           # Buy Board 2.0 — SHADOW (W6-US, us_standouts_v2). AFTER build_site: it REUSES the
           # freshly-written factordata/us_standouts.json + setups.json (no recompute, ~0.4s) and
@@ -2062,6 +2091,11 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Metered last resort: the OAuth pool can be fully rate-limited at
+          # nightly time (all six keys 429'd 2026-08-03) and ANTHROPIC_API_KEY
+          # is not a configured repo secret — without DeepSeek this lane has no
+          # working rung and the ledger never accrues.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           python -m engine.narrative_brain > "$RUNNER_TEMP/nbrain.log" 2>&1; rc=$?
@@ -2086,6 +2120,8 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Metered last resort — same rationale as the Narrative Brain step.
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           python -m engine.risk_brain > "$RUNNER_TEMP/rbrain.log" 2>&1; rc=$?
@@ -2317,6 +2353,10 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Metered last resort — same rationale as the Narrative Brain step.
+          # Without it this gated re-run OVERWRITES a DeepSeek-served brain.json
+          # from the build_alt_data step with a degraded one (2026-08-03).
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
           python -m engine.altdata_brain > "$RUNNER_TEMP/altbrain.log" 2>&1; rc=$?

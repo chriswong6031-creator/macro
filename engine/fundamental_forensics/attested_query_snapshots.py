@@ -20,7 +20,11 @@ from threading import Event, RLock
 from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 
-from engine.research_vault.r2_store import StrictBoundedReadStore
+from engine.research_vault.r2_store import (
+    StrictBoundedReadStore,
+    StrictConditionalWriteStore,
+    VersionedBytes,
+)
 
 from .companyfacts_ledger import (
     CompanyFactsLedgerConversion,
@@ -2060,7 +2064,80 @@ def _decode_pointer(payload: bytes) -> AttestedQuerySnapshotPointer:
     return pointer
 
 
-def _publish_pointer(store: StrictBoundedReadStore, snapshot: AttestedQuerySnapshot) -> None:
+def _read_versioned_pointer(store: StrictConditionalWriteStore) -> VersionedBytes:
+    """Read latest with the opaque version required for an exact CAS.
+
+    Missing is represented only by ``(None, None)``.  Keeping the validation in
+    this layer prevents a structurally compatible but lossy adapter from
+    turning an unavailable or unversioned latest object into CAS authority.
+    """
+
+    try:
+        observed = store.get_bytes_strict_bounded_versioned(_latest_key(), 16 * 1024)
+    except Exception as exc:  # noqa: BLE001 - a pointer read is fail-closed
+        raise AttestedQuerySnapshotError(
+            "attested snapshot latest pointer versioned read failed"
+        ) from exc
+    if type(observed) is not VersionedBytes:
+        raise AttestedQuerySnapshotError(
+            "attested snapshot latest pointer versioned read is invalid"
+        )
+    if observed.data is None:
+        if observed.version is not None:
+            raise AttestedQuerySnapshotError(
+                "missing attested snapshot latest pointer has a version"
+            )
+    elif (
+        type(observed.data) is not bytes
+        or not isinstance(observed.version, str)
+        or not observed.version
+    ):
+        raise AttestedQuerySnapshotError(
+            "present attested snapshot latest pointer lacks an opaque version"
+        )
+    return observed
+
+
+def _pointer_after_failed_cas(
+    store: StrictConditionalWriteStore,
+    *,
+    pointer: AttestedQuerySnapshotPointer,
+    payload: bytes,
+    cause: BaseException | None,
+) -> None:
+    """Reconcile a conflict or an ambiguous conditional-write outcome.
+
+    Exact bytes prove idempotent completion.  Any other state remains a hard
+    failure: in particular, a newer concurrent winner is preserved rather than
+    being overwritten or "repaired" with our predecessor.
+    """
+
+    observed = _read_versioned_pointer(store)
+    if observed.data == payload:
+        return
+    if observed.data is not None:
+        current = _decode_pointer(observed.data)
+        if current.snapshot_id == pointer.snapshot_id:
+            raise AttestedQuerySnapshotError(
+                "attested snapshot latest pointer disagrees with immutable snapshot"
+            ) from cause
+        if pointer.published_at <= current.published_at:
+            error = AttestedQuerySnapshotError(
+                "stale attested snapshot cannot rewind independent latest pointer"
+            )
+            if cause is not None:
+                raise error from cause
+            raise error
+    if cause is not None:
+        raise AttestedQuerySnapshotError(
+            "attested snapshot latest pointer conditional write outcome could not be reconciled"
+        ) from cause
+    raise AttestedQuerySnapshotError(
+        "attested snapshot latest pointer compare-and-swap conflict"
+    )
+
+
+def _publish_pointer(store: StrictConditionalWriteStore, snapshot: AttestedQuerySnapshot) -> None:
     pointer = AttestedQuerySnapshotPointer(
         snapshot_id=snapshot.snapshot_id,
         manifest_key=snapshot.manifest_key,
@@ -2068,29 +2145,80 @@ def _publish_pointer(store: StrictBoundedReadStore, snapshot: AttestedQuerySnaps
         published_at=snapshot.published_at,
     )
     payload = pointer.to_json_bytes()
-    prior = _read_optional(store, _latest_key(), maximum=16 * 1024)
-    if prior is not None:
-        old = _decode_pointer(prior)
+    prior = _read_versioned_pointer(store)
+    if prior.data is not None:
+        old = _decode_pointer(prior.data)
         if old.snapshot_id == pointer.snapshot_id:
-            if prior != payload:
+            if prior.data != payload:
                 raise AttestedQuerySnapshotError("attested snapshot latest pointer disagrees with immutable snapshot")
             return
         if pointer.published_at <= old.published_at:
             raise AttestedQuerySnapshotError("stale attested snapshot cannot rewind independent latest pointer")
     try:
-        written = store.put_bytes(_latest_key(), payload, content_type="application/json")
+        written = store.put_bytes_strict_conditional(
+            _latest_key(),
+            payload,
+            expected_version=prior.version,
+            content_type="application/json",
+        )
     except Exception as exc:  # noqa: BLE001
-        raise AttestedQuerySnapshotError("attested snapshot latest pointer write failed") from exc
-    if written is not True:
-        raise AttestedQuerySnapshotError("attested snapshot latest pointer write failed")
-    echoed = _read_optional(store, _latest_key(), maximum=16 * 1024)
-    if echoed == payload:
+        # A timeout or transport failure may have happened after the service
+        # committed the CAS.  Re-read by version and accept only exact bytes;
+        # never issue an unconditional compensating write.
+        _pointer_after_failed_cas(
+            store,
+            pointer=pointer,
+            payload=payload,
+            cause=exc,
+        )
         return
-    if prior is not None:
+    if written is not True:
+        _pointer_after_failed_cas(
+            store,
+            pointer=pointer,
+            payload=payload,
+            cause=None,
+        )
+        return
+    echoed = _read_versioned_pointer(store)
+    if echoed.data == payload:
+        return
+    # A successful CAS is the linearization point.  Another compliant writer
+    # may advance from our new version before our read-back.  Accept only a
+    # canonical strictly newer successor; every malformed, missing, equal-clock,
+    # or older result is an integrity failure.  There is deliberately no
+    # rollback because it could clobber that successor.
+    try:
+        successor = _decode_pointer(echoed.data) if echoed.data is not None else None
+    except AttestedQuerySnapshotError as exc:
+        raise AttestedQuerySnapshotError(
+            "attested snapshot latest pointer read-back mismatch"
+        ) from exc
+    if (
+        successor is not None
+        and successor.snapshot_id != pointer.snapshot_id
+        and successor.published_at > pointer.published_at
+    ):
+        # Canonical pointer bytes alone are not successor authority.  Resolve
+        # the complete immutable overlay and require every pointer projection
+        # to bind it before accepting the acknowledged-CAS-then-overtaken
+        # schedule as successful.
         try:
-            store.put_bytes(_latest_key(), prior, content_type="application/json")
-        except Exception:
-            pass
+            resolved = _snapshot_from_manifest(store, snapshot_id=successor.snapshot_id)
+        except Exception as exc:  # noqa: BLE001 - successor resolution is fail-closed
+            raise AttestedQuerySnapshotError(
+                "attested snapshot latest pointer read-back successor is unresolved"
+            ) from exc
+        if (
+            resolved.snapshot_id != successor.snapshot_id
+            or resolved.manifest_key != successor.manifest_key
+            or resolved.base_snapshot_id != successor.base_snapshot_id
+            or resolved.published_at != successor.published_at
+        ):
+            raise AttestedQuerySnapshotError(
+                "attested snapshot latest pointer read-back successor does not bind manifest"
+            )
+        return
     raise AttestedQuerySnapshotError("attested snapshot latest pointer read-back mismatch")
 
 
@@ -2281,6 +2409,19 @@ def publish_attested_query_snapshot(
     writes even an orphaned content-addressed object.
     """
     store = _require_store(store)
+    # Reject legacy/read-only adapters before source replay or any immutable
+    # object write.  The process-local lock is only load shedding; exact-
+    # predecessor conditional write is the distributed monotonicity boundary.
+    if not isinstance(store, StrictConditionalWriteStore):
+        raise AttestedQuerySnapshotError(
+            "attested query snapshot publication requires a strict conditional-write store"
+        )
+    try:
+        store.validate_strict_conditional_write_capability()
+    except Exception as exc:  # noqa: BLE001 - capability must be proven pre-write
+        raise AttestedQuerySnapshotError(
+            "attested query snapshot conditional-write capability validation failed"
+        ) from exc
     manifest, artifacts, payloads, manifest_payload = _validate_prepared(prepared)
     snapshot_id = manifest["snapshot_id"]
     manifest_key = _manifest_key(snapshot_id)

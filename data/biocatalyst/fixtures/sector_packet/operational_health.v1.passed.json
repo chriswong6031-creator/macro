@@ -1,0 +1,14 @@
+{
+  "schema_version": "biocatalyst_operational_health.v1",
+  "state": "fresh",
+  "enabled": true,
+  "generation_id": "ctgov_run_20260801T150004000000Z_abcdef123456",
+  "configured_nct_count": 1,
+  "observed_nct_count": 1,
+  "last_attempt_at": "2026-08-01T15:00:04Z",
+  "last_success_at": "2026-08-01T15:00:04Z",
+  "source_dataset_timestamp_raw": "2026-08-01T15:00:00Z",
+  "freshness_budget_seconds": 7200,
+  "coverage_class": "current_only",
+  "last_error_code": null
+}

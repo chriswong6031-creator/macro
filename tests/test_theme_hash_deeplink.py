@@ -46,11 +46,22 @@ US_STUB = TEMPLATES / "baskets.html.j2"
 US_MERGED = TEMPLATES / "sector_central.html.j2"
 TRIAGE = REPO / "engine" / "alert_triage.py"
 DESK_JS = TEMPLATES / "baskets_desk.js"
+# China moved (2026-08 China Sector Intelligence consolidation): baskets_china.html.j2
+# is now a redirect stub and sector_central_china.html.j2 is where the theme desk
+# renders and where the `#theme-` boot handler calls openTheme(). Same assertion,
+# new home — the receiving side is still guarded, just at the merged page. The stub
+# half is covered by test_absorbed_china_stub_forwards_the_theme_hash below.
 REGIONAL_TEMPLATES = [
-    TEMPLATES / "baskets_china.html.j2",
+    TEMPLATES / "sector_central_china.html.j2",
     TEMPLATES / "baskets_hk.html.j2",
     TEMPLATES / "baskets_canada.html.j2",
     TEMPLATES / "baskets_intl.html.j2",
+]
+# The two China pages absorbed by the merge, with the anchor a hash-less visit
+# falls back to. Their forwarding is what keeps inbound #theme-<id> links alive.
+ABSORBED_CHINA_STUBS = [
+    (TEMPLATES / "baskets_china.html.j2", "#si-explore"),
+    (TEMPLATES / "subsector_rotation_china.html.j2", "#si-movement"),
 ]
 
 # '#theme-' is 7 characters; the handler slices the hash at that offset.
@@ -203,4 +214,24 @@ class TestRegionalPagesKeepOpenTheme:
         assert "openTheme" in handler.group(1), (
             f"{template.name} renders .tcard id=\"theme-<id>\" elements and must "
             "keep routing the hash through openTheme()"
+        )
+
+    @pytest.mark.parametrize(
+        "template,anchor", ABSORBED_CHINA_STUBS, ids=lambda v: str(v).split(".")[0]
+    )
+    def test_absorbed_china_stub_forwards_the_theme_hash(self, template: Path, anchor: str):
+        """The stubs must carry the inbound hash across to the merged page.
+
+        A plain `location.replace('sector_central_china.html')` would strip
+        `#theme-<id>` on the way, so every alert row and dashboard chip pointing at
+        the old URL would land on the merged page and silently do nothing -- the
+        exact regression this file was written for, just moved one hop upstream.
+        """
+        src = _src(template)
+        forward = (
+            "location.replace('sector_central_china.html'"
+            f"+(location.hash?location.hash:'{anchor}'))"
+        )
+        assert forward in src, (
+            f"{template.name} does not forward the inbound hash to the merged page"
         )

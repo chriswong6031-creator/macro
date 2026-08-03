@@ -9,7 +9,9 @@ Public API:
                                       # annotations for ramp config defects
     run_gate(root, *, plan, cfg, ...) -> report        # loads, gates, writes
     resolve_ramp(cfg, as_of, *, root, announce) -> ramp report (tiers + caps)
-    resolve_ramp_tier(created, as_of, *, graduate_after_days) -> tier name
+    resolve_ramp_tier(created, as_of, *, graduate_after_days,
+                      weeks_1_2_days, weeks_3_4_days) -> tier name
+    resolve_ramp_boundaries(ramp_cfg, *, announce) -> (weeks_1_2, weeks_3_4) days
     receipts_context(root, cfg=None) -> (age_days, graded_window)
     load_exceptions(root) -> {item_id: row}
     publish_enabled() -> bool                          # global kill-switch
@@ -270,7 +272,19 @@ _TIER_GRADUATED = "graduated"
 _RAMP_TIER_ORDER: tuple[str, ...] = (_TIER_WEEKS_1_2, _TIER_WEEKS_3_4, _TIER_WEEK_5_PLUS)
 
 # Tier boundaries in days of account age (as_of - created), half-open on the left:
-# age 13 is still weeks_1_2, age 14 is weeks_3_4.
+# on the DEFAULT schedule age 13 is still weeks_1_2 and age 14 is weeks_3_4.
+#
+# These are CODE DEFAULTS ONLY as of 2026-08-03 — `sentinel.ramp.weeks_1_2_days`
+# and `sentinel.ramp.weeks_3_4_days` override them (resolve_ramp_boundaries). The
+# ramp is a PLATFORM-RISK throttle (a days-old account must not post like a
+# spambot), not a content-quality gate, so how fast a new desk walks it is an
+# operator lever and belongs in config. It was hardcoded here, which is why
+# "speed up the ramp" was a code change: a desk created six days ago sat on the
+# week-1 tier with theme_list banned until day 28, and kelly's only at-bat of her
+# entire life was a theme_list her tier forbade.
+#
+# An absent, junk, or incoherent config resolves back to exactly these numbers,
+# so a config that never mentions the keys behaves byte-identically to before.
 _RAMP_WEEKS_1_2_MAX_DAYS = 14
 _RAMP_WEEKS_3_4_MAX_DAYS = 28
 _DEFAULT_GRADUATE_AFTER_DAYS = 56
@@ -622,21 +636,78 @@ def _parse_iso_date(raw: Any) -> "date | None":
         return None
 
 
-def effective_graduate_after_days(raw: Any) -> int:
-    """``graduate_after_days``, CLAMPED to at least the weeks_3_4 boundary (28).
+def _ramp_days(raw: Any, default: int) -> int:
+    """One tier-boundary knob → int, DEFENSIVELY.
 
-    Below 28 the knob is inert rather than strict: the ``age < 14`` and
-    ``age < 28`` branches fire first, so a configured 20 would never graduate
-    anyone at 20 — it would only delete the week_5_plus window while accounts
-    kept ramping to 28 anyway. Clamping makes the number mean what it says at
-    every value it can take; the resolved value is printed in the gate report so
-    a clamped config is visible rather than silently reinterpreted.
+    Missing, ``None``, junk, a float string, a bool — all resolve to the code
+    default. This block is an operator lever for how fast a new desk walks the
+    ramp; it must never become a load-bearing dependency that can break the gate.
+    ``bool`` is rejected explicitly because ``int(True) == 1`` would otherwise
+    read a stray ``weeks_1_2_days: true`` as a one-day tier.
+    """
+    if isinstance(raw, bool):
+        return default
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+def _coherent_boundaries(weeks_1_2_days: Any, weeks_3_4_days: Any, *,
+                         announce: bool = False) -> "tuple[int, int]":
+    """Validate the two tier boundaries; fall back to BOTH defaults if incoherent.
+
+    The ladder is only meaningful while ``0 < weeks_1_2_days < weeks_3_4_days``.
+    Anything else (a negative, a zero, an inverted pair, an equal pair that
+    deletes weeks_3_4 entirely) is a config typo, and half-applying it would hand
+    a brand-new account a tier it has not earned — so BOTH values revert to the
+    shipped defaults together rather than one of them being silently repaired.
+    """
+    w12 = _ramp_days(weeks_1_2_days, _RAMP_WEEKS_1_2_MAX_DAYS)
+    w34 = _ramp_days(weeks_3_4_days, _RAMP_WEEKS_3_4_MAX_DAYS)
+    if not (0 < w12 < w34):
+        if announce:
+            _ramp_boundaries_annotation(weeks_1_2_days, weeks_3_4_days)
+        return _RAMP_WEEKS_1_2_MAX_DAYS, _RAMP_WEEKS_3_4_MAX_DAYS
+    return w12, w34
+
+
+def resolve_ramp_boundaries(ramp_cfg: Any, *,
+                            announce: bool = True) -> "tuple[int, int]":
+    """``(weeks_1_2_days, weeks_3_4_days)`` from a ``sentinel.ramp`` block.
+
+    Both keys are optional; absent ⇒ the shipped 14/28 schedule, which is what
+    keeps every config written before 2026-08-03 behaving byte-identically.
+    """
+    block = ramp_cfg if isinstance(ramp_cfg, dict) else {}
+    return _coherent_boundaries(block.get("weeks_1_2_days"),
+                                block.get("weeks_3_4_days"), announce=announce)
+
+
+def effective_graduate_after_days(
+    raw: Any,
+    *,
+    weeks_3_4_days: int = _RAMP_WEEKS_3_4_MAX_DAYS,
+) -> int:
+    """``graduate_after_days``, CLAMPED to at least the weeks_3_4 boundary.
+
+    Below that boundary the knob is inert rather than strict: the ``age <
+    weeks_1_2_days`` and ``age < weeks_3_4_days`` branches fire first, so a
+    configured 20 under the default 14/28 schedule would never graduate anyone at
+    20 — it would only delete the week_5_plus window while accounts kept ramping
+    to 28 anyway. Clamping makes the number mean what it says at every value it
+    can take; the resolved value is printed in the gate report so a clamped
+    config is visible rather than silently reinterpreted.
+
+    The clamp floor is the CONFIGURED boundary, not the module constant: on the
+    2026-08-03 fast schedule (5/10) a ``graduate_after_days: 21`` is a real
+    21-day graduation, where the old code silently clamped it up to 28.
     """
     try:
         val = int(raw)
     except (TypeError, ValueError):
-        return _DEFAULT_GRADUATE_AFTER_DAYS
-    return max(_RAMP_WEEKS_3_4_MAX_DAYS, val)
+        return max(int(weeks_3_4_days), _DEFAULT_GRADUATE_AFTER_DAYS)
+    return max(int(weeks_3_4_days), val)
 
 
 def resolve_ramp_tier(
@@ -644,6 +715,8 @@ def resolve_ramp_tier(
     as_of: Any,
     *,
     graduate_after_days: int = _DEFAULT_GRADUATE_AFTER_DAYS,
+    weeks_1_2_days: int = _RAMP_WEEKS_1_2_MAX_DAYS,
+    weeks_3_4_days: int = _RAMP_WEEKS_3_4_MAX_DAYS,
 ) -> str:
     """The D08 ramp tier for an account, from account age in days.
 
@@ -652,18 +725,24 @@ def resolve_ramp_tier(
     a gate that reads ``datetime.now()`` here would be a determinism bug, not a
     convenience.
 
-        age <  14                    -> weeks_1_2
-        age <  28                    -> weeks_3_4
+        age <  weeks_1_2_days        -> weeks_1_2
+        age <  weeks_3_4_days        -> weeks_3_4
         age <  graduate_after_days   -> week_5_plus
         age >= graduate_after_days   -> graduated  (base caps only)
 
-    ``graduate_after_days`` is clamped to >= 28 (see
+    The two boundaries default to the shipped 14/28 and are overridden by
+    ``sentinel.ramp.weeks_1_2_days`` / ``weeks_3_4_days`` (resolve_ramp threads
+    them through). An incoherent pair reverts to the defaults — see
+    _coherent_boundaries; the config-level call is the one that annotates.
+
+    ``graduate_after_days`` is clamped to >= ``weeks_3_4_days`` (see
     effective_graduate_after_days) because below that it is inert.
 
     FAILS CLOSED to weeks_1_2 (the strictest tier) when either date is missing or
     unparseable, and when ``created`` is in the future relative to ``as_of``
     (corrupt data must not read as an aged account).
     """
+    w12, w34 = _coherent_boundaries(weeks_1_2_days, weeks_3_4_days)
     c = _parse_iso_date(created)
     a = _parse_iso_date(as_of)
     if c is None or a is None:
@@ -671,11 +750,12 @@ def resolve_ramp_tier(
     age = (a - c).days
     if age < 0:
         return _TIER_WEEKS_1_2
-    if age < _RAMP_WEEKS_1_2_MAX_DAYS:
+    if age < w12:
         return _TIER_WEEKS_1_2
-    if age < _RAMP_WEEKS_3_4_MAX_DAYS:
+    if age < w34:
         return _TIER_WEEKS_3_4
-    if age < effective_graduate_after_days(graduate_after_days):
+    if age < effective_graduate_after_days(graduate_after_days,
+                                           weeks_3_4_days=w34):
         return _TIER_WEEK_5_PLUS
     return _TIER_GRADUATED
 
@@ -869,6 +949,28 @@ def _tier_value_annotation(tier_name: str, key: str, raw: Any) -> None:
     )
 
 
+def _ramp_boundaries_annotation(weeks_1_2_days: Any, weeks_3_4_days: Any) -> None:
+    """An incoherent tier-boundary pair — BOTH revert to the 14/28 defaults.
+
+    Silence here would be the worst of the three failure directions: the ramp
+    would keep resolving tiers with numbers nobody wrote, and a "we sped the ramp
+    up" config edit would read as applied while every desk stayed on the old
+    schedule.
+    """
+    _announce_once(
+        "ramp_boundaries",
+        f"::warning title=sentinel-ramp-boundaries-incoherent::sentinel.ramp "
+        f"weeks_1_2_days={weeks_1_2_days!r} / weeks_3_4_days={weeks_3_4_days!r} "
+        f"is not a usable ladder (need 0 < weeks_1_2_days < weeks_3_4_days) — BOTH "
+        f"boundaries fall back to the code defaults "
+        f"({_RAMP_WEEKS_1_2_MAX_DAYS}/{_RAMP_WEEKS_3_4_MAX_DAYS}). Fix the values "
+        f"in config/marketing.yml.",
+        "sentinel: ramp boundaries weeks_1_2_days=%r weeks_3_4_days=%r incoherent "
+        "— falling back to %d/%d", weeks_1_2_days, weeks_3_4_days,
+        _RAMP_WEEKS_1_2_MAX_DAYS, _RAMP_WEEKS_3_4_MAX_DAYS,
+    )
+
+
 def resolve_ramp(
     cfg: dict,
     as_of: Any,
@@ -886,6 +988,8 @@ def resolve_ramp(
 
         {"enforced": bool,               # False when sentinel.ramp is absent/empty
          "graduate_after_days": int,
+         "weeks_1_2_days": int,          # resolved tier-1 boundary (default 14)
+         "weeks_3_4_days": int,          # resolved tier-2 boundary (default 28)
          "as_of": str,
          "base": {...caps...},           # the un-ramped contract
          "fallback": {...caps...},       # caps for an account not in desk_network
@@ -898,9 +1002,10 @@ def resolve_ramp(
     and the whole feature is a no-op, which is what keeps configs written before
     2026-07-27 behaving byte-identically.
 
-    NOT PURE: prints ``::warning`` annotations for the three config defects that
+    NOT PURE: prints ``::warning`` annotations for the four config defects that
     would otherwise degrade the network silently (missing ``created:``, missing
-    ``as_of``, an unparseable tier value). Each is emitted at most ONCE per
+    ``as_of``, an unparseable tier value, an incoherent boundary pair). Each is
+    emitted at most ONCE per
     process — see _announce_once. ``announce=False`` silences them for callers
     that only want the numbers (admin reads, repeated cap lookups).
     """
@@ -910,8 +1015,14 @@ def resolve_ramp(
     tier_rows = {t: ramp_cfg.get(t) for t in _RAMP_TIER_ORDER
                  if isinstance(ramp_cfg.get(t), dict)}
     enforced = bool(tier_rows)
+    # The tier ladder's own geometry, config-driven since 2026-08-03. Resolved
+    # ONCE here and threaded down, so every account in one report is judged on
+    # the same schedule and an incoherent pair is announced once, not per account.
+    weeks_1_2_days, weeks_3_4_days = resolve_ramp_boundaries(
+        ramp_cfg, announce=announce and enforced)
     graduate_after = effective_graduate_after_days(
-        _get(ramp_cfg, "graduate_after_days", _DEFAULT_GRADUATE_AFTER_DAYS))
+        _get(ramp_cfg, "graduate_after_days", _DEFAULT_GRADUATE_AFTER_DAYS),
+        weeks_3_4_days=weeks_3_4_days)
 
     as_of_s = str(as_of or "")
     as_of_d = _parse_iso_date(as_of_s)
@@ -946,7 +1057,9 @@ def resolve_ramp(
                 _ramp_annotation(acc_id)
 
         tier = (resolve_ramp_tier(created_raw, as_of_s,
-                                  graduate_after_days=graduate_after)
+                                  graduate_after_days=graduate_after,
+                                  weeks_1_2_days=weeks_1_2_days,
+                                  weeks_3_4_days=weeks_3_4_days)
                 if enforced else _TIER_GRADUATED)
         caps = dict(merged_tiers.get(tier) or base)
 
@@ -1019,6 +1132,11 @@ def resolve_ramp(
     return {
         "enforced": enforced,
         "graduate_after_days": graduate_after,
+        # The RESOLVED ladder geometry (config, or the code defaults when the
+        # config is absent/incoherent) — the same visibility contract as the
+        # clamped graduate_after_days above.
+        "weeks_1_2_days": weeks_1_2_days,
+        "weeks_3_4_days": weeks_3_4_days,
         "as_of": as_of_s,
         "as_of_usable": as_of_usable,
         "base": base,
@@ -1743,9 +1861,15 @@ def gate_plan(
             },
             "ramp": {
                 "enforced": ramp["enforced"],
-                # The RESOLVED value — clamped to >= 28, which is what actually
-                # governed, not necessarily the number written in config.
+                # The RESOLVED value — clamped to >= the resolved weeks_3_4
+                # boundary, which is what actually governed, not necessarily the
+                # number written in config.
                 "graduate_after_days": ramp["graduate_after_days"],
+                # The resolved ladder geometry. Same reason: a config that named
+                # an incoherent pair fell back to 14/28, and the report has to
+                # say which schedule actually ran.
+                "weeks_1_2_days": ramp["weeks_1_2_days"],
+                "weeks_3_4_days": ramp["weeks_3_4_days"],
                 "as_of": ramp["as_of"],
                 # False ⇒ account age was uncomputable and EVERY account fell
                 # closed to weeks_1_2. Without this the report is indistinguishable

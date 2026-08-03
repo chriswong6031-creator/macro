@@ -4429,6 +4429,8 @@ narrative_brain:
   enabled: true                  # MASTER SWITCH (no-op anyway without a token)
   oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # Claude-Code OAuth (Bearer + oauth beta header)
   api_key_env: ANTHROPIC_API_KEY             # fallback if no OAuth token
+  deepseek_key_env: DEEPSEEK_API_KEY         # metered last resort when the OAuth pool is drained
+  deepseek_model: deepseek-v4-pro            # served with ITS OWN id — never the Claude ids below
   models:
     durability: claude-sonnet-4-6   # per-theme durability/continuity (medium reasoning)
     rotation: claude-opus-4-8       # one cross-theme rotation synthesis (deep)
@@ -4447,6 +4449,8 @@ risk_brain:
   enabled: true                  # MASTER SWITCH (no-op anyway without a token)
   oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # Claude-Code OAuth (Bearer + oauth beta header)
   api_key_env: ANTHROPIC_API_KEY             # fallback if no OAuth token
+  deepseek_key_env: DEEPSEEK_API_KEY         # metered last resort when the OAuth pool is drained
+  deepseek_model: deepseek-v4-pro            # served with ITS OWN id — never the Claude id below
   model: claude-opus-4-8         # deep daily risk reasoning
   interval_days: 1
   max_tokens: 5000
@@ -4510,6 +4514,8 @@ altdata_brain:
   enabled: true                  # MASTER SWITCH (no-op anyway without a token)
   oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # Claude-Code OAuth (Bearer + oauth beta header)
   api_key_env: ANTHROPIC_API_KEY             # fallback if no OAuth token
+  deepseek_key_env: DEEPSEEK_API_KEY         # metered last resort when the OAuth pool is drained
+  deepseek_model: deepseek-v4-pro            # served with ITS OWN id — never the Claude ids below
   models:
     reasoning: claude-opus-4-8      # the cross-signal convergence reasoning (deep)
     tagging: claude-haiku-4-5-20251001   # cheap high-volume tagging (influence extractor)
