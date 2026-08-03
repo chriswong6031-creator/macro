@@ -105,10 +105,10 @@ jobs:
         # a locally signed 30-minute Get/Head child scoped to the single
         # fundamental_forensics/ prefix.
         env:
-          FF_ATTESTED_R2_READONLY_ENDPOINT: ${{ secrets.R2_RESEARCH_READONLY_ENDPOINT }}
-          FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_READONLY_ACCESS_KEY_ID }}
-          FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_READONLY_SECRET_ACCESS_KEY }}
-          FF_ATTESTED_R2_READONLY_BUCKET: ${{ secrets.R2_RESEARCH_READONLY_BUCKET }}
+          FF_ATTESTED_R2_READONLY_ENDPOINT: ${{ secrets.R2_ATTESTED_HISTORY_ENDPOINT }}
+          FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID: ${{ secrets.R2_ATTESTED_HISTORY_READONLY_ACCESS_KEY_ID }}
+          FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY: ${{ secrets.R2_ATTESTED_HISTORY_READONLY_SECRET_ACCESS_KEY }}
+          FF_ATTESTED_R2_READONLY_BUCKET: ${{ secrets.R2_ATTESTED_HISTORY_BUCKET }}
         run: |
           set -euo pipefail
           suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"

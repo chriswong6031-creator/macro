@@ -9,17 +9,21 @@ canonically in
 
 Current truth, deliberately narrow:
 
-- The dedicated-bucket read-only repository-secret names were verified:
-  `R2_RESEARCH_READONLY_ENDPOINT`, `R2_RESEARCH_READONLY_ACCESS_KEY_ID`,
-  `R2_RESEARCH_READONLY_SECRET_ACCESS_KEY`, and
-  `R2_RESEARCH_READONLY_BUCKET`. This confirms only that the names are present;
-  it is not a read/write capability claim or a seed receipt.
-- The B4F code lane is implemented locally and remains unmerged while its real
-  AAPL run is validated. The protected `attested-history-seed` environment now
-  exists with one required reviewer and a custom `main`-only deployment policy.
-  Its two environment-scoped writer secrets, a live R2 seed, a reviewed
-  non-confidential Actions bundle, and a committed canonical issuer packet are
-  still pending.
+- The operator created a dedicated normal-access R2 bucket. B4F now requires
+  its own repository bindings: `R2_ATTESTED_HISTORY_ENDPOINT`,
+  `R2_ATTESTED_HISTORY_BUCKET`,
+  `R2_ATTESTED_HISTORY_READONLY_ACCESS_KEY_ID`, and
+  `R2_ATTESTED_HISTORY_READONLY_SECRET_ACCESS_KEY`. Existing
+  `R2_RESEARCH_*` secrets are out of scope and must not be repointed.
+- The B4F code lane merged as `59478c96de6a52d44937dc15f79d0f6d7b00788f`
+  after a real AAPL local run; production health later reported descendant
+  `8bd108d3084`. The protected `attested-history-seed` environment has one
+  required reviewer and a custom `main`-only deployment policy. Its two
+  environment-scoped writer secrets
+  (`R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID` and
+  `R2_ATTESTED_HISTORY_SEED_SECRET_ACCESS_KEY`), the four dedicated repository
+  bindings, a live R2 seed, a reviewed non-confidential Actions bundle, and a
+  committed canonical issuer packet are still pending.
 - There is no cron, public product surface, Neural Web/Prophet authority,
   score, alert, or full-Calcbench-parity claim in this lane.
 

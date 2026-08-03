@@ -2,17 +2,19 @@
 
 **Canonical implementation handoff**
 
-**Status:** foundation only. Dedicated-bucket read-only repository-secret names
-have been verified, but there is no production issuer packet, enabled schedule,
-live R2 preflight, publication path, or authority promotion. Presence of secret
-names is not proof that any object has been read or written.
+**Status:** foundation only. A dedicated normal-access bucket exists, but its
+dedicated GitHub secret bindings are not provisioned. There is no production
+issuer packet, enabled schedule, live R2 preflight, publication path, or
+authority promotion. Bucket creation is not proof that any object has been read
+or written.
 
-The verified read-only names are `R2_RESEARCH_READONLY_ENDPOINT`,
-`R2_RESEARCH_READONLY_ACCESS_KEY_ID`,
-`R2_RESEARCH_READONLY_SECRET_ACCESS_KEY`, and
-`R2_RESEARCH_READONLY_BUCKET`. They are used only as the read-only side of the
-controlled B4F activation; the seed writer never falls back to broad Research
-Vault credentials.
+The dedicated read-only names are `R2_ATTESTED_HISTORY_ENDPOINT`,
+`R2_ATTESTED_HISTORY_BUCKET`,
+`R2_ATTESTED_HISTORY_READONLY_ACCESS_KEY_ID`, and
+`R2_ATTESTED_HISTORY_READONLY_SECRET_ACCESS_KEY`. They are used only by the
+controlled B4F activation. Both workflows reject the existing
+`R2_RESEARCH_*` namespace, so neither reader nor writer can silently fall back
+to Research Vault's bucket or credentials.
 
 ## Outcome
 
@@ -106,8 +108,8 @@ dispatch (`enable_readonly_preflight=false` by default), `contents: read`, and
 review-only artifact upload. Because the repository is public, those Actions
 artifacts are not confidential or canonical publication. There is deliberately
 no `schedule:` trigger. The job can run only on `refs/heads/main`, so its R2
-secrets are never exposed to a manually selected branch ref. It maps the verified repository
-`R2_RESEARCH_READONLY_*` secret names only to
+secrets are never exposed to a manually selected branch ref. It maps the
+dedicated repository `R2_ATTESTED_HISTORY_*` read-only secret names only to
 `FF_ATTESTED_R2_READONLY_*` runtime variables. It does not fall back to the
 broad existing Research R2 credentials. No R2 write capability is used by this
 operator.
@@ -124,8 +126,9 @@ include List under its dashboard Object Read/Object Read & Write roles. The
 workflows locally mint at-most-30-minute children scoped to the single
 `fundamental_forensics/` prefix; the writer child has exactly Get/Head/Put and
 the reader child exactly Get/Head, with no List/Delete. The seed preflight must
-use the separately issued `R2_RESEARCH_READONLY_*` parent against the same bucket
-and prove conditional-write/readback behavior before SEC acquisition begins.
+use the separately issued `R2_ATTESTED_HISTORY_READONLY_*` parent against the
+same bucket and prove conditional-write/readback behavior before SEC
+acquisition begins.
 
 ## Validation
 
@@ -147,9 +150,10 @@ and binding correctness tests.
 1. Merge the B4F code and CI wiring; do not dispatch from a branch or treat a
    local run as the production seed.
 2. Confirm the existing protected `attested-history-seed` GitHub environment's
-   reviewer and exact `main` branch policy, then add only the two
-   environment-scoped writer secrets named above. Keep the already verified
-   `R2_RESEARCH_READONLY_*` repository secrets read-only and separate.
+   reviewer and exact `main` branch policy. Add the four dedicated
+   endpoint/bucket/read-only secrets at repository scope and only the two
+   environment-scoped writer secrets named above. Do not reuse or alter
+   `R2_RESEARCH_*`.
 3. Dispatch the manual AAPL seed on `main`. Its storage-control probe must
    prove absent-create conflict rejection, exact-version CAS, stale-CAS
    rejection, and separate read-only final-byte readback before it contacts the

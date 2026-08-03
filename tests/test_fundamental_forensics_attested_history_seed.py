@@ -749,15 +749,15 @@ def test_manual_seed_workflow_has_no_schedule_and_keeps_writer_and_reader_creden
     assert "environment: attested-history-seed" in workflow
     assert "required-reviewer protection" in workflow
     assert "FF_ATTESTED_R2_SEED_ENDPOINT" in workflow
-    assert "FF_ATTESTED_R2_SEED_ENDPOINT: ${{ secrets.R2_RESEARCH_READONLY_ENDPOINT }}" in workflow
-    assert "R2_ATTESTED_HISTORY_SEED_ENDPOINT" not in workflow
+    assert "FF_ATTESTED_R2_SEED_ENDPOINT: ${{ secrets.R2_ATTESTED_HISTORY_ENDPOINT }}" in workflow
     assert "R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID" in workflow
     assert "R2_ATTESTED_HISTORY_SEED_SECRET_ACCESS_KEY" in workflow
     assert "FF_ATTESTED_R2_READONLY_ENDPOINT" in workflow
-    assert "R2_RESEARCH_READONLY_ENDPOINT" in workflow
-    assert "FF_ATTESTED_R2_SEED_BUCKET: ${{ secrets.R2_RESEARCH_READONLY_BUCKET }}" in workflow
-    assert "FF_ATTESTED_R2_READONLY_BUCKET: ${{ secrets.R2_RESEARCH_READONLY_BUCKET }}" in workflow
-    assert "R2_RESEARCH_ENDPOINT" not in workflow
+    assert "R2_ATTESTED_HISTORY_READONLY_ACCESS_KEY_ID" in workflow
+    assert "R2_ATTESTED_HISTORY_READONLY_SECRET_ACCESS_KEY" in workflow
+    assert "FF_ATTESTED_R2_SEED_BUCKET: ${{ secrets.R2_ATTESTED_HISTORY_BUCKET }}" in workflow
+    assert "FF_ATTESTED_R2_READONLY_BUCKET: ${{ secrets.R2_ATTESTED_HISTORY_BUCKET }}" in workflow
+    assert "R2_RESEARCH_" not in workflow
     assert "fundamental_forensics/" in workflow
     assert "Distinct parents do not" in workflow
     assert "actions/checkout@11d5960a326750d5838078e36cf38b85af677262" in workflow
