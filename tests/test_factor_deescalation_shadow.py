@@ -463,6 +463,34 @@ class TestCheckB:
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
         assert not any(v.check == "b" for v in viols)
 
+    def test_biocatalyst_sector_packet_allowlisted_as_descriptive_builder(self) -> None:
+        synthetic = {
+            "engine/biocatalyst/sector_packet.py": (
+                "actions = manifest.get('allowed_actions')\n"
+                "packet = {'allowed_actions': list(actions)}\n"
+            ),
+        }
+        viols = _check_b(REPO_ROOT, extra_files=synthetic)
+        assert not any(v.check == "b" for v in viols)
+
+    @pytest.mark.parametrize(
+        "adjacent_path",
+        [
+            "engine/biocatalyst/sector_packet.py.backdoor.py",
+            "engine/biocatalyst/sector_packet.pyx.py",
+        ],
+    )
+    def test_biocatalyst_sector_packet_allowlist_does_not_match_suffix_paths(
+        self, adjacent_path: str
+    ) -> None:
+        synthetic = {
+            adjacent_path: "actions = payload.get('allowed_actions')\n",
+        }
+        viols = _check_b(REPO_ROOT, extra_files=synthetic)
+        assert len(viols) == 1
+        assert viols[0].check == "b"
+        assert viols[0].module == adjacent_path
+
     def test_no_token_no_violation(self) -> None:
         synthetic = {
             "engine/alert_triage.py": "# nothing here\nprint('hi')\n",

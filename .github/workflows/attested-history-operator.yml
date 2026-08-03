@@ -1,0 +1,70 @@
+name: attested-history-operator
+
+# Inert by default: no cron is enabled until (1) an operator has committed one
+# real sealed packet and (2) the dedicated R2 read-only role exists. This
+# workflow never publishes a B4 overlay or changes a pointer.
+on:
+  workflow_dispatch:
+    inputs:
+      enable_readonly_preflight:
+        description: "Explicitly run the read-only preflight after a sealed packet is introduced"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: attested-history-readonly-preflight
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    # Secrets must never be exposed to an arbitrary manually selected ref.
+    # This repository currently has only the github-pages deployment
+    # environment, which is not an appropriate R2-credential boundary; do not
+    # invent or repurpose an environment in this inert foundation lane.
+    if: ${{ inputs.enable_readonly_preflight == true && github.ref == 'refs/heads/main' }}
+    runs-on: [self-hosted, macstudio-light]
+    timeout-minutes: 20
+    env:
+      # These must be provisioned as GET-only credentials before this job is enabled.
+      FF_ATTESTED_R2_READONLY_ENDPOINT: ${{ secrets.R2_RESEARCH_READONLY_ENDPOINT }}
+      FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_READONLY_ACCESS_KEY_ID }}
+      FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_READONLY_SECRET_ACCESS_KEY }}
+      FF_ATTESTED_R2_READONLY_BUCKET: ${{ secrets.R2_RESEARCH_READONLY_BUCKET }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: python 3.12
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      # B2 uses the strict SEC parser (lxml/BeautifulSoup) in addition to the
+      # bounded-store and parquet dependencies. Keep this equal to the tested
+      # project dependency set instead of relying on runner-global packages.
+      - run: pip install --quiet -r requirements.txt
+      - name: sealed read-only preflight
+        run: |
+          set -euo pipefail
+          packet='config/fundamental_forensics/attested_history_operator.v1.json'
+          observed_at="$(python -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"))')"
+          # The CLI creates a redacted failed receipt when the packet is absent
+          # or malformed, so a deliberately unseeded foundation still leaves
+          # an operator-visible audit artifact on an explicit manual run.
+          python -m scripts.run_fundamental_forensics_attested_history \
+            --config "$packet" \
+            --output-dir attested-history-preflight-artifact \
+            --operator-verification-observed-at "$observed_at"
+      - name: upload private diagnostic receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: attested-history-readonly-preflight
+          path: attested-history-preflight-artifact/attested_history_preflight_receipt.json
+          if-no-files-found: warn
+          retention-days: 7

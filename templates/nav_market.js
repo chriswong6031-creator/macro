@@ -245,9 +245,9 @@
           ['China Intelligence', 'Signals, policy and narratives', 'china_intel.html', 'intelligence']
         ]],
         ['Themes & rotation', [
-          ['Sector Central', 'Cycles, heat and gated reads', 'sector_central_china.html', 'sectors'],
-          ['Theme Baskets', 'Tonghuashun concepts compared', 'baskets_china.html', 'baskets'],
-          ['Subsector Rotation', 'Catch concepts gaining velocity', 'subsector_rotation_china.html', 'rotation', null, null, 'cyan'],
+          // 2026-08 China SI consolidation: the three sector/theme/rotation pages are one now
+          // (baskets_china.html / subsector_rotation_china.html are redirect stubs).
+          ['Sector Intelligence', 'Gated board, cycle map and rotation in one', 'sector_central_china.html', 'sectors'],
           ['Narrative Radar', 'See which stories are running', 'narrative_radar.html', 'narrative', null, null, '']
         ]],
         ['Flows & policy', [
@@ -523,9 +523,50 @@
      same exact component emitted by _navlinks.html.j2.  This is a compatibility
      bridge only: it adds the approved classes and replaces the old mask glyphs
      with the mockup's inline drawings; it does not maintain a second design. */
+  function ensureEarningsWireCard(menu) {
+    // The shared runtime can reach production before every page is re-rendered.
+    // Keep older Research menus useful until their static navigation catches up.
+    if (menu.querySelector('[data-nav-file="earnings_wire"]')) return;
+
+    var main = menu.querySelector(':scope > .nav-mega-main');
+    if (!main) return;
+    var sections = main.querySelectorAll(':scope > .nav-mega-section');
+    var grid = null;
+    for (var i = 0; i < sections.length; i++) {
+      var heading = sections[i].querySelector(':scope > .nav-mega-h');
+      if (!heading || !/(?:Core Research|核心研究)/.test(heading.textContent || '')) continue;
+      grid = sections[i].querySelector(':scope > .nav-mega-item-grid');
+      if (grid) break;
+    }
+    if (!grid) return;
+
+    var dropdown = menu.closest ? menu.closest('.nav-dd') : null;
+    var item = document.createElement('a');
+    item.className = 'mega-item nm-feat';
+    item.setAttribute('data-nav-file', 'earnings_wire');
+    item.href = (dropdown ? prefixOf(dropdown) : '') + 'stocks/earnings/index.html';
+    item.innerHTML = '<span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48">' +
+      MOCKUP_ICON_PATHS.earnings_wire +
+      '</svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Earnings Wire</span><span class="l-zh">财报情报线</span></span>' +
+      '<span class="item-desc d"><span class="l-en">Verified calls, weekly intelligence and company context</span>' +
+      '<span class="l-zh">已核验电话会、每周情报与公司语境</span></span></span>';
+
+    var next = null;
+    var cards = grid.querySelectorAll(':scope > a');
+    for (var j = 0; j < cards.length; j++) {
+      if (fileOf(cards[j]) === 'fundamental_forensics.html') {
+        next = cards[j];
+        break;
+      }
+    }
+    grid.insertBefore(item, next);
+  }
+
   function enhanceResearchMenu(links) {
     var menu = links && links.querySelector('.nav-dd-menu.nav-mega');
-    if (!menu || menu.getAttribute('data-mockup-exact') === '1') return;
+    if (!menu) return;
+    ensureEarningsWireCard(menu);
+    if (menu.getAttribute('data-mockup-exact') === '1') return;
     menu.setAttribute('data-mockup-exact', '1');
     menu.classList.add('mega-menu');
 

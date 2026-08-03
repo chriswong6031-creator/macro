@@ -1301,7 +1301,8 @@
    "match": "'VALIDATED EDGE','已验证优势'",
    "backing": "Reversal Sleeve strategy-card tag (template t() form) — the validated A-share within-sector 3M reversal edge: +0.56%/mo, Sharpe 0.58, 388 rebalances (research/CHINA_HK_STOCK_SIGNALS.md; ENGINE_FIX_MASTERPLAN.md §Selection); productized per W5-A/W5-B CONFIRM-ON-AVAILABLE-PLANE verdict, both time-halves positive (research/china_alpha/w5/W5B_INTEGRATION.md, 2026-07-03). No-gate invariant enforced (#823); card copy itself carries the high-variance/small-size caveat.",
    "surfaces": [
-    "baskets_china",
+    "sector_central_china",
+    "baskets_china_factorwatch",
     "cn_reversal_sleeve"
    ]
   },
@@ -1309,7 +1310,8 @@
    "match": "validated edge</span><span class=\"l-zh\">已验证优势",
    "backing": "same Reversal Sleeve tag, rendered dual-span form (research/CHINA_HK_STOCK_SIGNALS.md within-sector 3M reversal + research/china_alpha/w5/W5B_INTEGRATION.md CONFIRM verdict).",
    "surfaces": [
-    "baskets_china",
+    "sector_central_china",
+    "baskets_china_factorwatch",
     "cn_reversal_sleeve"
    ]
   },
