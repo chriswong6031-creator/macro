@@ -190,10 +190,15 @@ def test_tier_preview_shell_is_open_but_its_payload_is_not(monkeypatch):
         "_store_entitlement",
         lambda uid: ({"tier": "free", "status": "none", "features": []}, True),
     )
-    for shell in ("/special_situations.html", "/china_special_situations.html",
-                  "/etfs.html"):
+    # /etfs.html TEMPORARILY absent (2026-08-03, #4446): its public flip deployed
+    # ahead of the free-shell bake and leaked the full board anonymously, so the
+    # boundary was reverted. The gate-6b re-flip PR restores it to this tuple.
+    for shell in ("/special_situations.html", "/china_special_situations.html"):
         assert paywall.classify_path(shell) == "public"
         assert _check(shell, "document").status_code == 204
+    assert paywall.classify_path("/etfs.html") == "premium", (
+        "etfs stays gated until the gate-6b re-flip lands with the baked shell"
+    )
     assert paywall.classify_path("/biocatalyst.html") == "free", (
         "control: a registered-preview shell must still classify free"
     )
