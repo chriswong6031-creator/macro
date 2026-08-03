@@ -1131,23 +1131,43 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   .si-view-btn.on { border-left-width:3px; }
   .si-side-out { white-space:nowrap; }
   .si-side-out .si-vb-l { white-space:nowrap; }
-  html[data-theme="light"] .si-side {
-    background:color-mix(in srgb, var(--panel) 72%, var(--bg));
-    border-right:1px solid var(--desk-hair-strong, var(--line)); }
+  /* rail: translucent over the aurora (the estate's sticky-rail idiom), never a
+     flat fill that seams against the gradient */
+  .si-side { background:color-mix(in srgb, var(--bg) 55%, transparent);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-right:1px solid color-mix(in srgb, var(--line) 38%, transparent); }
 
-  /* — surfaces: the macro.html panel recipe on the workspace organs — */
+  /* — surfaces: the macro.html container recipe — drop shadow does the definition,
+       borders stay TRANSPARENT (layout-stable, invisible), and the stage itself stays
+       transparent so the aurora gradient runs unbroken beneath every panel. A flat
+       stage fill painted over the gradient is exactly the hard-seam defect the
+       operator flagged — never reintroduce one. — */
+  .si-stage { background:transparent; }
   .rvx-hero, .rvx-lane, .rvx-hocard, .si-view-read {
     background:var(--desk-tile, var(--panel));
-    border:1px solid var(--desk-hair-strong, var(--line));
+    border:1px solid transparent;
     border-radius:var(--desk-r-lg, 14px);
-    box-shadow:var(--card-shadow, none); }
-  html[data-theme="light"] .si-stage { background:color-mix(in srgb, var(--bg) 86%, var(--line)); }
+    box-shadow:var(--card-shadow,
+      0 1px 2px color-mix(in srgb, var(--text) 6%, transparent)); }
   html[data-theme="light"] .rvx-hero,
   html[data-theme="light"] .rvx-lane,
   html[data-theme="light"] .si-view-read {
     background:var(--panel);
     box-shadow:0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
-               0 12px 32px -14px color-mix(in srgb, var(--text) 10%, transparent); }
+               0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent); }
+  /* the session tape floats as a container too — its old edge-to-edge flat band was
+     the worst of the gradient cutoffs */
+  .ftr-tape-strip.visible, .ftr-tape-full.open .ftr-tape-band {
+    border-radius:var(--desk-r-lg, 14px);
+    border:1px solid transparent;
+    background:var(--panel);
+    box-shadow:var(--card-shadow,
+      0 1px 2px color-mix(in srgb, var(--text) 6%, transparent)); }
+  html[data-theme="light"] .ftr-tape-strip.visible,
+  html[data-theme="light"] .ftr-tape-full.open .ftr-tape-band {
+    box-shadow:0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+               0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent); }
+  .ftr-tape-strip { margin-bottom:10px; }
 
   /* — the macro h2 rail-tick on every workspace section head — */
   .rvx-sec-h h2 { display:flex; align-items:center; gap:11px; }
@@ -1269,13 +1289,13 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
        dashboard-icons masked spans, same set the nav mega-menus use) — never raw
        emoji next to the wordmark. Masked with background:currentColor, so the
        rail's .on tint flows into the drawing. #}
-    <a class="si-view-btn on" data-view="overview" href="#overview" aria-current="page" data-tip-en="Overview" data-tip-zh="总览"><span class="si-vb-g dash-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Overview</span><span class="l-zh">总览</span></span></a>
-    <a class="si-view-btn" data-view="map" href="#map" data-tip-en="The Map" data-tip-zh="全景图谱"><span class="si-vb-g dash-icon dash-icon-compass" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">The Map</span><span class="l-zh">全景图谱</span></span></a>
-    <a class="si-view-btn" data-view="moving" href="#moving" data-tip-en="What&#39;s Moving" data-tip-zh="正在轮动"><span class="si-vb-g dash-icon submenu-icon-rotation" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">What&#39;s Moving</span><span class="l-zh">正在轮动</span></span></a>
-    <a class="si-view-btn" data-view="money" href="#money" data-tip-en="Money &amp; Breadth" data-tip-zh="资金与广度"><span class="si-vb-g dash-icon submenu-icon-flow" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Money &amp; Breadth</span><span class="l-zh">资金与广度</span></span></a>
-    <a class="si-view-btn" data-view="explore" href="#explore" data-tip-en="Explore" data-tip-zh="深入探索"><span class="si-vb-g dash-icon dash-icon-search" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Explore</span><span class="l-zh">深入探索</span></span></a>
+    <a class="si-view-btn on" data-view="overview" href="#overview" aria-current="page"><span class="si-vb-g dash-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Overview</span><span class="l-zh">总览</span></span></a>
+    <a class="si-view-btn" data-view="map" href="#map"><span class="si-vb-g dash-icon dash-icon-compass" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">The Map</span><span class="l-zh">全景图谱</span></span></a>
+    <a class="si-view-btn" data-view="moving" href="#moving"><span class="si-vb-g dash-icon submenu-icon-rotation" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">What&#39;s Moving</span><span class="l-zh">正在轮动</span></span></a>
+    <a class="si-view-btn" data-view="money" href="#money"><span class="si-vb-g dash-icon submenu-icon-flow" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Money &amp; Breadth</span><span class="l-zh">资金与广度</span></span></a>
+    <a class="si-view-btn" data-view="explore" href="#explore"><span class="si-vb-g dash-icon dash-icon-search" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Explore</span><span class="l-zh">深入探索</span></span></a>
     {# the funnel exit the retired rail carried — a link, never a sixth view #}
-    <a class="si-side-out" href="subsectors.html" data-tip-en="Stock entry funnel" data-tip-zh="选股漏斗"><span class="si-vb-g dash-icon submenu-icon-confluence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Stock entry funnel →</span><span class="l-zh">选股漏斗 →</span></span></a>
+    <a class="si-side-out" href="subsectors.html"><span class="si-vb-g dash-icon submenu-icon-confluence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Stock entry funnel →</span><span class="l-zh">选股漏斗 →</span></span></a>
     <div class="si-side-foot">
       <span id="si-side-asof"></span>
       <span id="si-side-grade"></span>
