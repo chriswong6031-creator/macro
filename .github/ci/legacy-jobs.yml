@@ -4124,6 +4124,33 @@ jobs:
       - name: polygon universe/intraday + dead-name prices + finviz archival + thetadata sessions
         run: python -m pytest tests/test_build_polygon_universe.py tests/test_polygon_intraday.py tests/test_fetch_dead_name_prices_polygon.py tests/test_finviz_archival.py tests/test_thetadata_tape_sessions.py -q
 
+  unrun-government-revenue:
+    # Government Revenue Foresight — builder envelope, publication fence,
+    # workspace/dossier/briefcase UI contracts, and the federal-award
+    # collectors (SAM.gov, USAspending, Census trade) feeding the program.
+    # jsonschema and fastapi ride on top of the shared unrun-* install because
+    # engine/government_revenue/workspace.py's contract validator fails CLOSED
+    # without jsonschema (every payload reads invalid, which presented as 20
+    # assertion failures in the 2026-08-03 staging pass) and the dossier /
+    # subaward rails import fastapi at module scope. Like unrun-brain-gateway
+    # this buys one extra venv in whichever pack it lands.
+    if: ${{ false }}
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps plus the schema/API wheels
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
+      - name: builder envelope + publication fence + dossier/subaward rails
+        run: python -m pytest tests/test_build_government_revenue.py tests/test_check_government_revenue_projection.py tests/test_government_revenue_dossiers.py tests/test_government_revenue_subaward_api.py -q
+      - name: workspace / dossier / briefcase UI contracts
+        run: python -m pytest tests/test_government_revenue_ui.py tests/test_government_revenue_dossier_ui.py tests/test_government_revenue_briefcase_ui.py -q
+      - name: federal-award collectors — SAM.gov, USAspending awards + subawards, Census trade
+        run: python -m pytest tests/test_sam_gov_opportunities.py tests/test_usaspending_awards.py tests/test_usaspending_subawards.py tests/test_census_trade.py -q
+
   unrun-factor-research:
     # factor registry + measurement disclosure + the study lanes behind them.
     if: ${{ false }}
