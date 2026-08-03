@@ -16058,7 +16058,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers: [engine/neuralweb/mastermind_context.py, engine/prophet_bridge.py, app/government_revenue.py]
-    external_consumers: [mastermind:context]
+    external_consumers: ["mastermind:context"]
     notes: >
       Canonical company-level Government Revenue Foresight projection. It combines the
       existing USAspending monthly aggregate with bounded award/action detail to expose
@@ -16210,6 +16210,116 @@ artifacts:
       object is embedded in award-event freshness; every rank, size, gate, signal-origin,
       candidate-add, and escalation authority is false.
 
+  government-revenue-candidate-ledger:
+    path: data/government_revenue/candidate_ledger.jsonl
+    format: jsonl
+    producer: scripts/build_government_revenue_candidates.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: known_at
+    freshness_sla_hours: 36
+    schema: government_revenue_candidate.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [scripts/build_government_revenue_candidates.py, app/government_revenue.py]
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Append-only observations in the Government Revenue research namespace. The sole
+      legal writer runs inside the serialized government-revenue-live lane with one
+      frozen clock. A row requires a receipt-bound official award change plus an exact,
+      time-valid, reviewed recipient-to-public-company ownership path. Discovery-scope
+      company names and fuzzy matches cannot enter. These are research records, not
+      Neural Web trade candidates, and every authority field is false.
+
+  government-revenue-candidate-queue:
+    path: data/government_revenue/candidate_queue.json
+    format: json
+    producer: scripts/build_government_revenue_candidates.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: government_revenue_candidate_queue.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [app/government_revenue.py, scripts/build_government_revenue.py]
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Content-addressed current projection over the append-only research ledger plus a
+      reason-coded mapping backlog. Sort is known_at descending then candidate_id;
+      recency is navigation, never investment rank. The current strict empty issuer
+      graph correctly yields zero exact candidates and 21 mapping-needed coverage rows.
+      The API and page require the byte-identical public twin and fail closed on a
+      one-sided, stale, malformed, or mixed generation.
+
+  government-revenue-candidate-projection-state:
+    path: data/government_revenue/candidate_projection_state.json
+    format: json
+    producer: scripts/build_government_revenue_candidates.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 36
+    schema: government_revenue.candidate_projection_state.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [scripts/build_government_revenue_candidates.py, scripts/check_government_revenue_projection.py]
+    external_consumers: []
+    notes: >
+      Prefix receipt binding ledger bytes/line count, prior prefix, the complete
+      candidate-relevant latest semantic hash, workspace bundle, reviewed graph digest,
+      queue content id, and the frozen writer clock. Render and replay lanes cannot
+      advance it.
+
+  government-revenue-candidate-projection-status:
+    path: data/government_revenue/candidate_projection_status.json
+    format: json
+    producer: scripts/build_government_revenue_candidates.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 36
+    schema: government_revenue.candidate_projection_status.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [app/government_revenue.py, scripts/check_government_revenue_projection.py]
+    external_consumers: []
+    notes: >
+      Publication health and exact binding for the candidate ledger and queue twins.
+      It repeats the latest, workspace, and graph identities needed to reject mixed
+      source generations. A valid zero-candidate generation is status ok; unavailable
+      or corrupt evidence fails closed and is never represented as an empty success.
+
   site-government-revenue-latest:
     path: site/government-revenue-data/latest.json
     format: json
@@ -16230,6 +16340,36 @@ artifacts:
       Public twin of government-revenue-latest for the premium vertical workbench and
       read-only API fallback. Byte-identical to the canonical payload at build time;
       display/context only with the same all-false authority contract.
+
+  site-government-revenue-candidates:
+    path: site/government-revenue-data/candidates.json
+    format: json
+    producer: scripts/build_government_revenue_candidates.py
+    known_extra_writers:
+      - "scripts/build_government_revenue.py --site-only — verifies the canonical generation and mirrors exact bytes without advancing the ledger"
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: government_revenue_candidate_queue.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [site/government_revenue.html, app/government_revenue.py]
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Public byte-identical twin of government-revenue-candidate-queue. Candidate Radar
+      treats a valid zero-row generation differently from an unavailable pair and never
+      falls back to fuzzy company coverage.
 
   site-government-revenue-workspace:
     path: site/government-revenue-data/workspace.json
