@@ -626,22 +626,27 @@ def test_lease_deadline_includes_a_held_cross_process_lock(tmp_path: Path) -> No
 
 def test_slow_external_head_read_cannot_return_success_after_deadline(tmp_path: Path) -> None:
     signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    clock = [0.0]
 
     class SlowGuard(publication.InMemoryShareCountHeadGuard):
         def read(self):
-            time.sleep(0.35)
+            # Advance a deterministic operation clock instead of relying on a
+            # sub-second wall-clock sleep.  Shared CI runners may wake a sleep
+            # early, but the contract under test is that an external read
+            # which consumes the remaining budget cannot return success.
+            clock[0] += 0.35
             return super().read()
 
     guard = SlowGuard(signer)
-    started = time.monotonic()
     with pytest.raises(publication.ShareCountPublicationError, match="deadline exceeded"):
         publication._recover_share_count_materialization_for_test(
             root=tmp_path / "slow-workspace",
             signer=signer,
             head_guard=guard,
-            deadline=time.monotonic() + 0.1,
+            deadline=0.1,
+            monotonic=lambda: clock[0],
         )
-    assert time.monotonic() - started >= 0.35
+    assert clock[0] == pytest.approx(0.35)
 
 
 def test_same_head_new_token_conflict_clears_cas_started_recovery_state(tmp_path: Path) -> None:
