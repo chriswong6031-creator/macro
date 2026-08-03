@@ -1922,6 +1922,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - scripts/intl_phase0.py — appends family='intl_bridge' entries
 
+### us-board-ledger-retro-grades
+
+- **path:** `data/us_board_ledger/retro_grades.parquet`
+- **declared producer:** `scripts/grade_us_board.py`
+- **extra writers:**
+  - scripts/stamp_options_state.py — nightly options-state + tape-flow stamp pass (runs after grade_us_board in daily.yml): schema-unions and fills the nullable opt_* columns from engine/options_stamp.STAMP_COLS (incl. W-OVC keys opt_vanna_relief, opt_front7_charm_share, opt_root_class; registered 2026-08-02 after the six-week silent-null repair) + engine/tape_flow_stamp.TAPE_FLOW_STAMP_COLS; no-overwrite per family, never touches grading columns (A9)
+
 ### world-state
 
 - **path:** `data/neuralweb/world_state.json`
