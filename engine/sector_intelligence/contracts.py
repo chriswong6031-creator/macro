@@ -66,6 +66,10 @@ _TRIAL_ENDPOINT_ALIGNMENT_REVIEW_PROJECTION_CONTRACT_ID = (
 )
 _TRIAL_CHANGE_CLASSIFICATION_CONTRACT_ID = "trial_change_classification.v1"
 _TRIAL_CHANGE_ALERT_PROJECTION_CONTRACT_ID = "trial_change_alert_projection.v1"
+_EARNINGS_TRANSCRIPT_SPAN_READ_CONTRACT_ID = "earnings_transcript_span_read.v1"
+_BIOCATALYST_TRANSCRIPT_CONTEXT_BUNDLE_CONTRACT_ID = (
+    "biocatalyst_transcript_context_bundle.v1"
+)
 _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID = (
     "biocatalyst_launch_slo_manifest.v1"
 )
@@ -3757,6 +3761,17 @@ def _contract_semantic_issues(
         return _trial_change_classification_issues(document)
     if contract_id == _TRIAL_CHANGE_ALERT_PROJECTION_CONTRACT_ID:
         return _trial_change_alert_projection_issues(document)
+    if contract_id in {
+        _EARNINGS_TRANSCRIPT_SPAN_READ_CONTRACT_ID,
+        _BIOCATALYST_TRANSCRIPT_CONTEXT_BUNDLE_CONTRACT_ID,
+    }:
+        # The owner module contains the exact receipt/span replay.  Keep this
+        # lazy so the registry never opens a private store or creates a writer.
+        from engine.earnings_narrative.biocatalyst_transcript_adapter import (
+            transcript_contract_semantic_issues,
+        )
+
+        return transcript_contract_semantic_issues(contract_id, document)
     if contract_id == _BIOCATALYST_LAUNCH_SLO_MANIFEST_CONTRACT_ID:
         return _biocatalyst_launch_slo_manifest_issues(document, repo_root)
     if contract_id == _BIOCATALYST_PRODUCT_ACCEPTANCE_MANIFEST_CONTRACT_ID:

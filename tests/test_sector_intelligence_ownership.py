@@ -134,7 +134,7 @@ def test_ownership_policy_is_one_writer_and_fail_closed() -> None:
     assert registry["schema"] == "sector_intelligence_ownership.v1"
     assert registry["status"] == "f0_reconciled_partial_freeze"
     assert registry["reconciled_against_commit"] == (
-        "c2d466f2f568cc4c730d68ced758fafde0c6257a"
+        "8bd108d3084825ec03e18a620095da2ac1d192f9"
     )
     policy = registry["policy"]
     assert policy["one_writer_required"] is True
@@ -241,7 +241,7 @@ def test_shared_company_document_and_capital_lanes_are_not_faked() -> None:
     }
 
 
-def test_f0_read_adapter_slots_are_exact_and_only_trial_facts_are_eligible() -> None:
+def test_f0_read_adapter_slots_are_exact_and_only_declared_facts_readers_are_eligible() -> None:
     registry = _registry()
     adapters = registry["read_adapters"]
     fixture = json.loads(ADAPTER_FIXTURE.read_text(encoding="utf-8"))
@@ -253,7 +253,10 @@ def test_f0_read_adapter_slots_are_exact_and_only_trial_facts_are_eligible() -> 
     assert fixture["adapters"] == _normalized_read_adapter_projection(adapters)
     assert {
         name for name, adapter in adapters.items() if adapter["biocatalyst_eligible"]
-    } == {"biocatalyst_trial_read_api.v1"}
+    } == {
+        "biocatalyst_trial_read_api.v1",
+        "biocatalyst_earnings_transcript_span_adapter.v1",
+    }
 
     trial = adapters["biocatalyst_trial_read_api.v1"]
     assert trial["compatibility_fixture"] == _FIXTURE_PATH
@@ -274,6 +277,32 @@ def test_f0_read_adapter_slots_are_exact_and_only_trial_facts_are_eligible() -> 
     runtime_trial_paths = {route.path for route in trial_router.routes}
     assert runtime_trial_paths == set(trial["routes"])
     assert all(path.startswith(f"{trial['route_prefix']}/") for path in runtime_trial_paths)
+
+    transcript = adapters["biocatalyst_earnings_transcript_span_adapter.v1"]
+    assert transcript["canonical_owner"] == "earnings_narrative"
+    assert transcript["route_prefix"] is None
+    assert transcript["routes"] == []
+    assert transcript["transport"] == "private_in_process_receipted_context_only_no_store"
+    assert transcript["available_dependency"] is None
+    assert transcript["blocker"] is None
+    assert transcript["output_contracts"] == ["biocatalyst_transcript_context_bundle.v1"]
+    contract_ids = set(ContractRegistry(ROOT).contract_ids)
+    assert set(transcript["output_contracts"]) <= contract_ids
+    assert "earnings_transcript_span_read.v1" in contract_ids
+    assert "biocatalyst_transcript_mention_candidate.v1" not in contract_ids
+    assert {
+        "transcript_only",
+        "latest_selected_context_packet_only",
+        "explicit_caller_ticker_only",
+        "no_issuer_security_sponsor_or_trial_linkage",
+        "no_document_history_or_absence_conclusion",
+        "no_independent_source_authenticity_attestation",
+        "no_model_or_signal_authority",
+    } <= set(transcript["limitations"])
+    assert transcript["callable"] in _declared_functions(transcript["module"])
+    module_text = ROOT.joinpath(*transcript["module"].split(".")).with_suffix(".py").read_text(encoding="utf-8")
+    assert "APIRouter" not in module_text
+    assert "@router." not in module_text
 
     company = adapters["biocatalyst_company_identity_pit_adapter.v1"]
     company_dependency = company["available_dependency"]
