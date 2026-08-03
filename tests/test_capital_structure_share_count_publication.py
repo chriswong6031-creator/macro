@@ -49,10 +49,46 @@ class _CountingGuard(publication.InMemoryShareCountHeadGuard):
     def __init__(self, signer) -> None:
         super().__init__(signer)
         self.artifact_reads = 0
+        self.artifact_read_keys: list[str] = []
+        self.reject_ledger_reads = False
 
     def read_artifact(self, *, key: str, max_bytes: int) -> bytes:
         self.artifact_reads += 1
+        self.artifact_read_keys.append(key)
+        if self.reject_ledger_reads and key.endswith("/ledger.json"):
+            raise AssertionError("selected external ledger opened before selector proofs completed")
         return super().read_artifact(key=key, max_bytes=max_bytes)
+
+    def reset_artifact_reads(self, *, reject_ledgers: bool = False) -> None:
+        self.artifact_reads = 0
+        self.artifact_read_keys.clear()
+        self.reject_ledger_reads = reject_ledgers
+
+
+def _forbid_local_ledger_reads(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_read = publication._bounded_read_at
+
+    def ordered_read(
+        directory_fd,
+        name,
+        *,
+        max_bytes,
+        label,
+        operation,
+        missing_ok=False,
+    ):
+        if name == "ledger.json":
+            raise AssertionError("local ledger opened before selector proofs completed")
+        return original_read(
+            directory_fd,
+            name,
+            max_bytes=max_bytes,
+            label=label,
+            operation=operation,
+            missing_ok=missing_ok,
+        )
+
+    monkeypatch.setattr(publication, "_bounded_read_at", ordered_read)
 
 
 def _dummy_ref(sequence: int, *, salt: str) -> dict:
@@ -217,8 +253,13 @@ def test_lagging_valid_local_pointer_converges_to_newer_external_head(tmp_path: 
     assert converged.ledger_bytes == b'{"generation":2}\n'
 
 
-def test_replayed_signed_older_head_cannot_roll_back_authenticated_local_high_water(tmp_path: Path) -> None:
-    signer, guard, root = _publisher(tmp_path)
+def test_replayed_signed_older_head_cannot_roll_back_authenticated_local_high_water(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
     first = _publish(root, signer, guard)
     replayed_head = copy.deepcopy(guard.read()[0])
     second = _publish(root, signer, guard, b'{"generation":2}\n', suffix="b")
@@ -227,6 +268,8 @@ def test_replayed_signed_older_head_cannot_roll_back_authenticated_local_high_wa
     # This is a captured, correctly signed sequence-1 body, not malformed data.
     guard._witness = replayed_head
     guard._version += 1
+    guard.reset_artifact_reads(reject_ledgers=True)
+    _forbid_local_ledger_reads(monkeypatch)
     with pytest.raises(publication.ShareCountPublicationError, match="local high-water"):
         publication._recover_share_count_materialization_for_test(
             root=root, signer=signer, head_guard=guard,
@@ -235,10 +278,16 @@ def test_replayed_signed_older_head_cannot_roll_back_authenticated_local_high_wa
     pointer = (root / "data/capital_structure/share_counts/v2/current_receipt.json").read_text()
     assert second.receipt_id in pointer
     assert first.receipt_id not in pointer
+    assert guard.artifact_read_keys == []
 
 
-def test_signed_external_fork_cannot_replace_authenticated_local_chain(tmp_path: Path) -> None:
-    signer, guard, root = _publisher(tmp_path)
+def test_signed_external_fork_cannot_replace_authenticated_local_chain(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
     local = _publish(root, signer, guard)
     fork_guard = publication.InMemoryShareCountHeadGuard(signer)
     fork = _publish(tmp_path / "fork-writer", signer, fork_guard, b'{"fork":true}\n', suffix="b")
@@ -247,10 +296,13 @@ def test_signed_external_fork_cannot_replace_authenticated_local_chain(tmp_path:
     guard._artifacts.update(fork_guard._artifacts)
     guard._version += 1
 
+    guard.reset_artifact_reads(reject_ledgers=True)
+    _forbid_local_ledger_reads(monkeypatch)
     with pytest.raises(publication.ShareCountPublicationError, match="forks authenticated local high-water"):
         publication._recover_share_count_materialization_for_test(
             root=root, signer=signer, head_guard=guard,
         )
+    assert guard.artifact_read_keys == []
 
 
 @pytest.mark.parametrize("sequence", [513, 10_000])
@@ -263,7 +315,7 @@ def test_clean_recovery_reads_only_selected_receipt_and_ledger_at_large_sequence
     ledger = publication._canonical_bytes({"synthetic_sequence": sequence}) + b"\n"
     receipt, body = _synthetic_receipt(signer, sequence, ledger=ledger)
     _select_external_head(guard, signer, receipt, body, ledger)
-    guard.artifact_reads = 0
+    guard.reset_artifact_reads()
 
     recovered = publication._recover_share_count_materialization_for_test(
         root=tmp_path / f"clean-{sequence}", signer=signer, head_guard=guard,
@@ -271,6 +323,12 @@ def test_clean_recovery_reads_only_selected_receipt_and_ledger_at_large_sequence
 
     assert recovered is not None and recovered.sequence == sequence
     assert guard.artifact_reads == 2
+    head, _ = guard.read()
+    assert head is not None
+    assert guard.artifact_read_keys == [
+        head["receipt_object_key"],
+        head["ledger_object_key"],
+    ]
     receipts = list(
         (tmp_path / f"clean-{sequence}/data/capital_structure/share_counts/v2/receipts").iterdir(),
     )
@@ -300,6 +358,7 @@ def test_sequence_bound_refuses_the_next_sequence_before_seal_or_cas(
 def test_surviving_local_high_water_uses_logarithmic_authenticated_skip_proof(
     tmp_path: Path,
     top_sequence: int,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
     guard = _CountingGuard(signer)
@@ -319,7 +378,12 @@ def test_surviving_local_high_water_uses_logarithmic_authenticated_skip_proof(
         _store_receipt(guard, receipt, body)
     top_receipt, top_body = built[top_sequence]
     _select_external_head(guard, signer, top_receipt, top_body, ledger)
-    guard.artifact_reads = 0
+    guard.reset_artifact_reads()
+
+    def reject_old_local_ledger(*args, **kwargs):
+        raise AssertionError("superseded local ledger opened during external convergence")
+
+    monkeypatch.setattr(publication, "_load_local_result", reject_old_local_ledger)
 
     recovered = publication._recover_share_count_materialization_for_test(
         root=root, signer=signer, head_guard=guard,
@@ -328,6 +392,13 @@ def test_surviving_local_high_water_uses_logarithmic_authenticated_skip_proof(
     assert recovered is not None and recovered.sequence == top_sequence
     assert guard.artifact_reads == len(path)
     assert guard.artifact_reads <= 2 + (top_sequence - 1).bit_length()
+    head, _ = guard.read()
+    assert head is not None
+    assert guard.artifact_read_keys[-1] == head["ledger_object_key"]
+    assert sum(key.endswith("/ledger.json") for key in guard.artifact_read_keys) == 1
+    assert all(
+        "/receipts/" in key for key in guard.artifact_read_keys[:-1]
+    )
 
 
 def test_binary_lifting_publication_derives_exact_authenticated_ancestors(
@@ -385,8 +456,13 @@ def test_head_transition_requires_the_full_exact_predecessor_reference(
         )
 
 
-def test_divergent_signed_skip_reference_cannot_cross_local_high_water(tmp_path: Path) -> None:
-    signer, guard, root = _publisher(tmp_path)
+def test_divergent_signed_skip_reference_cannot_cross_local_high_water(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
     local = _publish(root, signer, guard)
     sequence = 513
     ledger = b'{"divergent":true}\n'
@@ -394,10 +470,15 @@ def test_divergent_signed_skip_reference_cannot_cross_local_high_water(tmp_path:
     assert receipt["ancestor_refs"][-1]["sequence"] == local.sequence
     _select_external_head(guard, signer, receipt, body, ledger)
 
+    guard.reset_artifact_reads(reject_ledgers=True)
+    _forbid_local_ledger_reads(monkeypatch)
     with pytest.raises(publication.ShareCountPublicationError, match="ancestry diverges"):
         publication._recover_share_count_materialization_for_test(
             root=root, signer=signer, head_guard=guard,
         )
+    assert guard.artifact_read_keys == [
+        publication._receipt_external_key(receipt["receipt_id"]),
+    ]
 
 
 def test_signed_malformed_binary_lifting_table_is_rejected(tmp_path: Path) -> None:
@@ -468,11 +549,66 @@ def test_tampered_remote_artifact_and_oversized_object_fail_closed(tmp_path: Pat
         publication._recover_share_count_materialization_for_test(
             root=tmp_path / "clean", signer=signer, head_guard=guard,
         )
+    assert not (
+        tmp_path
+        / "clean/data/capital_structure/share_counts/v2"
+        / publication.POINTER_NAME
+    ).exists()
     with pytest.raises(publication.ShareCountPublicationTooLarge):
         guard.seal_artifact(
             key="capital_structure/share_counts/v2/receipts/" + "f" * 64 + ".json",
             body=b"x", max_bytes=0,
         )
+
+
+@pytest.mark.parametrize(
+    ("hostile_kind", "error"),
+    [
+        ("receipt_length", "external receipt bytes mismatch"),
+        ("ledger_digest_length", "external ledger bytes mismatch"),
+        ("noncanonical_ledger", "external ledger is not canonical"),
+        ("artifact_path", "ledger_object_key"),
+    ],
+)
+def test_selected_external_validation_fails_before_pointer_install(
+    tmp_path: Path,
+    hostile_kind: str,
+    error: str,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    ledger = (
+        b'{"z":1,"a":2}\n'
+        if hostile_kind == "noncanonical_ledger"
+        else b'{"selected":true}\n'
+    )
+    receipt, body = _synthetic_receipt(signer, 1, ledger=ledger)
+    _select_external_head(guard, signer, receipt, body, ledger)
+
+    assert guard._witness is not None
+    if hostile_kind == "receipt_length":
+        guard._witness["receipt_byte_length"] += 1
+        guard._witness["signature"] = signer.sign(
+            publication._head_payload(guard._witness),
+        )
+    elif hostile_kind == "ledger_digest_length":
+        guard._artifacts[guard._witness["ledger_object_key"]] = ledger + b"x"
+    elif hostile_kind == "artifact_path":
+        guard._witness["ledger_object_key"] = "capital_structure/share_counts/v2/ledger.json"
+        guard._witness["signature"] = signer.sign(
+            publication._head_payload(guard._witness),
+        )
+
+    root = tmp_path / hostile_kind
+    with pytest.raises(publication.ShareCountPublicationError, match=error):
+        publication._recover_share_count_materialization_for_test(
+            root=root,
+            signer=signer,
+            head_guard=guard,
+        )
+
+    base = root / "data/capital_structure/share_counts/v2"
+    assert not (base / publication.POINTER_NAME).exists()
 
 
 def test_missing_production_environment_is_a_hard_stop(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -845,10 +981,62 @@ def test_marker_first_cleanup_crash_leaves_capsule_only_and_recovers(
     assert not (base / publication.RECOVERY_NAME).exists()
 
 
-def test_pending_expected_witness_is_temporary_high_water_when_pointer_is_lost(
+def test_prepared_records_survive_delayed_selected_local_ledger_failure(
     tmp_path: Path,
 ) -> None:
     signer, guard, root = _publisher(tmp_path)
+    selected = _publish(root, signer, guard)
+
+    def crash_with_prepared_records(stage: str) -> None:
+        if stage == "before_cas":
+            raise SystemExit("crash with prepared records")
+
+    with pytest.raises(SystemExit, match="prepared records"):
+        _publish(
+            root,
+            signer,
+            guard,
+            b'{"candidate":true}\n',
+            suffix="b",
+            fault=crash_with_prepared_records,
+        )
+
+    base = root / "data/capital_structure/share_counts/v2"
+    marker_path = base / publication.PENDING_NAME
+    capsule_path = base / publication.RECOVERY_NAME
+    marker_body = marker_path.read_bytes()
+    capsule_body = capsule_path.read_bytes()
+
+    selected.ledger_path.unlink()
+    with pytest.raises(publication.ShareCountPublicationError, match="immutable ledger is missing"):
+        publication._recover_share_count_materialization_for_test(
+            root=root,
+            signer=signer,
+            head_guard=guard,
+        )
+
+    assert marker_path.read_bytes() == marker_body
+    assert capsule_path.read_bytes() == capsule_body
+
+    selected.ledger_path.write_bytes(selected.ledger_bytes)
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+    )
+    assert recovered is not None and recovered.receipt_id == selected.receipt_id
+    assert recovered.ledger_bytes == selected.ledger_bytes
+    assert not marker_path.exists()
+    assert not capsule_path.exists()
+
+
+def test_pending_expected_witness_is_temporary_high_water_when_pointer_is_lost(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
     first = _publish(root, signer, guard)
 
     def crash_before_cas(stage: str) -> None:
@@ -871,6 +1059,8 @@ def test_pending_expected_witness_is_temporary_high_water_when_pointer_is_lost(
     fork_receipt, fork_body = _synthetic_receipt(signer, 2, ledger=fork_ledger)
     _select_external_head(guard, signer, fork_receipt, fork_body, fork_ledger)
 
+    guard.reset_artifact_reads(reject_ledgers=True)
+    _forbid_local_ledger_reads(monkeypatch)
     with pytest.raises(
         publication.ShareCountPublicationError,
         match="(?:forks|diverges from) pending expected high-water",
@@ -881,12 +1071,18 @@ def test_pending_expected_witness_is_temporary_high_water_when_pointer_is_lost(
             head_guard=guard,
         )
     assert guard.read()[0] is not None and guard.read()[0]["receipt_id"] != first.receipt_id
+    assert guard.artifact_read_keys == [
+        publication._receipt_external_key(fork_receipt["receipt_id"]),
+    ]
 
 
 def test_pending_expected_high_water_beats_replayed_older_local_pointer(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    signer, guard, root = _publisher(tmp_path)
+    signer = publication.HmacShareCountSigner(b"s" * 32, key_id="test-share-count")
+    guard = _CountingGuard(signer)
+    root = tmp_path / "workspace"
     first = _publish(root, signer, guard)
     pointer_path = root / "data/capital_structure/share_counts/v2/current_receipt.json"
     first_pointer = pointer_path.read_bytes()
@@ -918,6 +1114,8 @@ def test_pending_expected_high_water_beats_replayed_older_local_pointer(
     )
     _select_external_head(guard, signer, fork_receipt, fork_body, fork_ledger)
 
+    guard.reset_artifact_reads(reject_ledgers=True)
+    _forbid_local_ledger_reads(monkeypatch)
     with pytest.raises(
         publication.ShareCountPublicationError,
         match="forks pending expected high-water",
@@ -927,6 +1125,9 @@ def test_pending_expected_high_water_beats_replayed_older_local_pointer(
             signer=signer,
             head_guard=guard,
         )
+    assert guard.artifact_read_keys == [
+        publication._receipt_external_key(fork_receipt["receipt_id"]),
+    ]
 
 
 def test_orphan_capsule_before_marker_converges_competing_successor(

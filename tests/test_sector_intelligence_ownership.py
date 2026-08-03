@@ -286,6 +286,7 @@ def test_f0_read_adapter_slots_are_exact_and_only_declared_facts_readers_are_eli
     assert "no_model_or_signal_authority" in trial["limitations"]
     assert {
         "trial_screen_read_model.v1",
+        "trial_screen_facets_read_model.v1",
         "trial_protocol_projection.v1",
         "trial_peer_set.v1",
     } <= set(trial["output_contracts"])
