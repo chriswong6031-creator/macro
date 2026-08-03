@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T17:39:53.331206+00:00",
-  "count": 678,
+  "generated_at": "2026-08-03T17:51:25.184152+00:00",
+  "count": 679,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -107,6 +107,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-grqideeruji-216b2a",
+      "title": "Japan Economic Flash First Coordinated US Japan Intervention in 15 Years Sends a Strong Signal Against Yen Depreciation",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:05:08Z",
+      "summary_points": [
+        "**Coordinated US-Japan FX Intervention (July 30-31)**: First in 15 years targeting ¥164/USD (40-yr low), with ¥7-8tn intervention + statement, signaling unprecedented policy commitment against yen depreciation despite inflation below 2% threshold.",
+        "**FIMA Repo Facility Shift**: Japan now leverages US Fed’s FIMA Repo to borrow USD against Treasuries for JPY-buying interventions, avoiding direct Treasury sales and preserving $1.3tn foreign reserves—critical for sustainable FX management.",
+        "**BOJ Policy Flexibility & Timeline**: Intervention eases immediate BOJ rate hike pressure; next hike expected Jan 2026 with gradual 6-month intervals, contingent on inflation exceeding 2% (current probability low).",
+        "**Historical Rarity & Policy Signal**: Only second coordinated intervention since 2011 (after 2000 Euro crisis), underscoring authorities’ recognition of high yen volatility risk post-2000s and divergence from Fed’s QE-driven yen appreciation trend.",
+        "**Intervention Limitations**: FX actions delay but cannot reverse yen depreciation without resolving underlying fiscal fragility, Middle East oil dependency, and structural inflation risks—foreign reserves (85% in securities) cap immediate market impact."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
