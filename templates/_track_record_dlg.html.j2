@@ -237,6 +237,9 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
 .trd-rail{ position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;
   padding:10px 0 12px;margin-bottom:6px;border-bottom:1px solid var(--trd-line);
   background:color-mix(in srgb,var(--trd-panel1) 92%,#05070d); }
+/* The US ledger has a dense, wrapping filter rail. Keep it in normal document
+   flow so it scrolls with the ledger instead of dropping over the rows below. */
+.trd-dlg[data-market="us"] .trd-rail{ position:static;top:auto;z-index:auto; }
 [data-theme="light"] .trd-rail{ background:#ffffff; }
 .trd-chips{ display:inline-flex;flex-wrap:wrap;gap:6px; }
 .trd-chip{ font:600 11.5px/1 var(--font-ui,inherit);padding:6px 11px;border-radius:999px;cursor:pointer;

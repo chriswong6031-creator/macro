@@ -13,7 +13,15 @@ var VIEWS=['overview','map','moving','money','explore'];
 var TITLES={overview:['Overview','总览'],map:['The Map','全景图谱'],
   moving:["What's Moving",'正在轮动'],money:['Money & Breadth','资金与广度'],
   explore:['Explore','深入探索']};
-var GLYPH={overview:'🎯',map:'🧭',moving:'🌀',money:'💸',explore:'🔎'};
+/* View glyphs = the estate's hand-drawn masked-icon family (product-nav-icons /
+   dashboard-icons — the same set the nav mega-menus draw), tinted via currentColor.
+   Never raw emoji beside the wordmark. */
+var GLYPH={
+  overview:'dash-icon submenu-icon-intelligence',
+  map:'dash-icon dash-icon-compass',
+  moving:'dash-icon submenu-icon-rotation',
+  money:'dash-icon submenu-icon-flow',
+  explore:'dash-icon dash-icon-search'};
 
 /* ── LEGACY_ANCHORS (§2b) ───────────────────────────────────────────────────────
    Every pre-V2 deep link on the estate — the two redirect stubs, chat citations,
@@ -195,7 +203,7 @@ function paint(view,pair){
   var el=document.getElementById('si-read-'+view); if(!el) return;
   if(!pair){ el.hidden=true; el.innerHTML=''; return; }
   var r=RECEIPTS[view]||['',''];
-  el.innerHTML='<span class="si-vr-g" aria-hidden="true">'+GLYPH[view]+'</span>'
+  el.innerHTML='<span class="si-vr-g '+GLYPH[view]+'" aria-hidden="true"></span>'
     +'<span class="si-vr-t">'+L(pair[0],pair[1])+'</span>'
     +'<span class="si-vr-q" data-tip-en="'+esc(r[0])+'" data-tip-zh="'+esc(r[1])+'">?</span>';
   el.hidden=false;
