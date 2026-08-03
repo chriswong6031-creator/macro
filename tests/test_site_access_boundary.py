@@ -386,6 +386,20 @@ def test_generated_data_is_not_accidentally_public():
         "/seasonalitydata/index.json",
         "/seasonalitydata/entities/SPY.json",
         "/factordata/tech_lab.json",
+        # The China A-share tile map (SEO_SUPERCHARGE W2, spec §A2.4 / T-A1).
+        # It is what china_heatmap.html renders and it cannot be withheld without
+        # leaving that page blank for the anonymous visitors the conversion is
+        # for. Contents: ticker, name, sector, market cap, per-window returns, and
+        # the two market facts the hover card shows (last close, distance from the
+        # 200-day average). No score, no rank, no verdict, no board membership —
+        # the graded per-name read lives in <market>stockdata/<T>.json, which is
+        # deliberately absent from this list and keeps its default-deny class.
+        #
+        # This IS a give: a clean daily-close A-share returns dataset, trivially
+        # scrapable. Same class as the public quote planes above (market context,
+        # daily cadence, delay disclosed) and accepted as such — registered here
+        # rather than assumed, which is the whole point of this test.
+        "/marketdata/china_heatmap.json",
         # Static Natural Earth geometry required by the public start-page globe.
         "/world-110m.json",
     }

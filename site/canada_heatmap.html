@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
   var B = window.DATA_BASE;
@@ -29,30 +30,89 @@
     return orig.call(this, u, o);
   };
 })();</script>
-<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Canada · TSX Heatmap — Market Intelligence</title>
 
-<meta name="description" content="TSX stocks at a glance — today&#39;s winners and losers sized by market cap. Updated nightly.">
+<title>Canada TSX Heatmap — Sector Map — MastermindX</title>
+<meta name="description" content="Every liquid TSX listing as one sector treemap — today&#39;s winners, losers and sector breadth, sized by market cap, updated nightly.">
 <link rel="canonical" href="https://www.mastermind-x.com/canada_heatmap.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MastermindX">
-<meta property="og:title" content="Canada TSX Heatmap — Mastermind">
-<meta property="og:description" content="TSX stocks at a glance — today&#39;s winners and losers sized by market cap. Updated nightly.">
+<meta property="og:title" content="Canada TSX Heatmap — Sector Map — MastermindX">
+<meta property="og:description" content="Every liquid TSX listing as one sector treemap — today&#39;s winners, losers and sector breadth, sized by market cap, updated nightly.">
 <meta property="og:url" content="https://www.mastermind-x.com/canada_heatmap.html">
 <meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Canada TSX Heatmap — Mastermind">
-<meta name="twitter:description" content="TSX stocks at a glance — today&#39;s winners and losers sized by market cap. Updated nightly.">
+<meta name="twitter:title" content="Canada TSX Heatmap — Sector Map — MastermindX">
+<meta name="twitter:description" content="Every liquid TSX listing as one sector treemap — today&#39;s winners, losers and sector breadth, sized by market cap, updated nightly.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=8798caae">
-<link rel="stylesheet" href="assets/css/154b41d5.css?v=154b41d5">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 'Inter',-apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:24px 0 28px; }
+  a { text-decoration:none; }
+  .wrap { padding:16px; }
+  @media (min-width:1100px){ .wrap{ padding:18px max(28px,calc((100vw - 1680px)/2)); } }
+  .hm-head { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 22px; margin:10px 2px 16px; }
+  .hm-head h1 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.015em; }
+  .hm-head .sub { color:var(--muted); font-size:12.5px; margin-top:5px; max-width:74ch; line-height:1.5; }
+  .hm-foot { color:var(--muted); font-size:11px; margin:14px 2px 0; line-height:1.6; }
+  /* Live-feed badge: populated by live.js when LIVE_FEED_LABEL is set.
+     Hidden (no layout footprint) when the span is empty (no live feed). */
+  .hm-live-badge { display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; color:var(--muted); font-weight:600;
+    background:color-mix(in srgb,#d97706 14%,transparent);
+    border:1px solid color-mix(in srgb,#d97706 35%,transparent);
+    color:#b45309; border-radius:7px; padding:3px 9px; margin-top:6px;
+    white-space:nowrap; align-self:flex-end; }
+  .hm-live-badge:empty { display:none; }
+  /* Hidden live-chg spans that live.js writes to (observer then recolors the tile) */
+  .hm-live-chg { display:none !important; }
+
+  /* ── the server-rendered summary layer (W2 spec §A2.3) ────────────────────
+     Deliberately class-compatible with heatmap.js's own dashboard chrome: the
+     renderer injects the .hx-* stylesheet at boot, so the SSR blocks and the
+     live blocks are the same pixels rather than a second, drifting copy. Only
+     the two rules below are SSR-specific. heatmap.js removes #hm-ssr the moment
+     the live map draws — and LEAVES it standing when the fetch fails, so a
+     visitor who never gets the tile map still keeps the breadth read. */
+  #hm-ssr { margin-bottom:2px; }
+  #hm-ssr .hx-boards { margin-top:14px; }
+
+  /* ── gate elements ────────────────────────────────────────────────────────
+     Transliterated from templates/special_situations.html.j2 (the shipped
+     reference) into THIS page's token vocabulary. That page defines --card /
+     --grid / --ink / --faint / --blue locally; this one has no local token
+     block at all and inherits theme.css, where the same roles are --panel /
+     --line / --text / --muted / --link. Pasting the reference verbatim would
+     resolve every colour to nothing — a note that renders transparent and
+     still "works", which is exactly the failure a review misses.
+
+     #8b5cf6 (the lock violet) stays a hard-coded hex, identical to the
+     reference mockup. The CTA gradient is brand blue → violet and never signal
+     amber (terminal-paywall lesson). The gate elements carry NO directional
+     colour: under html[data-lang="zh"] theme.css swaps --up/--down, and a wall
+     tinted by state would invert its meaning with the language. */
+  .gate-note { display:flex; align-items:flex-start; gap:8px; margin:20px 0 4px;
+    padding:11px 14px; border-radius:12px; font-size:12.5px; line-height:1.5; color:var(--muted);
+    background:color-mix(in srgb,#8b5cf6 7%,transparent);
+    border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent); }
+  .gate-note svg { width:14px; height:14px; flex:none; margin-top:2px; color:#8b5cf6; }
+  .gate-note a { color:var(--link); border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); }
+  .cta-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:16px;
+    padding:14px 16px; border-radius:14px; background:var(--panel); border:1px solid var(--line); }
+  .cta-txt { flex:1; min-width:220px; font-size:12.5px; color:var(--muted); line-height:1.5; }
+  .cta-txt b { color:var(--text); font-weight:700; }
+  .tw-btn { display:inline-flex; align-items:center; justify-content:center; padding:10px 22px;
+    border-radius:12px; font-size:13px; font-weight:700; color:#fff;
+    background:linear-gradient(135deg,var(--link),#8b5cf6);
+    box-shadow:0 8px 22px -10px color-mix(in srgb,#8b5cf6 70%,transparent); }
+  .tw-note { font-size:11px; color:var(--muted); }
+</style>
 </head>
 <body>
 
@@ -61,7 +121,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -96,6 +156,8 @@
         <a href="us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
         
         <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+        
+        <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Live session board — volume, tape and stance lanes · ≈15-min delayed</span><span class="l-zh">盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         
         <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
@@ -105,11 +167,9 @@
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">Workspace · desk · flow tracker · dark pool</span><span class="l-zh">工作台 · 期权台 · 资金流追踪 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Market Structure</span><span class="l-zh">期权与市场结构</span><span class="d"><span class="l-en">Workspace · dark pool · index regime</span><span class="l-zh">工作台 · 暗池 · 指数结构</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 筛选 · 个股 · 领头股</span></span></a>
-            <a href="gex.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">Instrument bench — charts, walls, vol surface</span><span class="l-zh">工具台 — 图表、墙位、波动率曲面</span></span></a>
-            <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Flow · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 资金流 · 筛选 · 个股 · 领头股</span></span></a>
             <a href="darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
             <a href="market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
           </div>
@@ -268,10 +328,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -302,7 +362,73 @@
     
     <span class="hm-live-badge" data-live-label></span>
   </div>
+  <div id="hm-ssr">
+    <div class="hx-pulse down">
+      <div class="hx-pulse-top">
+        <span class="hx-stance"><span class="ic"></span><span class="l-en">Broad decline</span><span class="l-zh">普跌</span></span>
+        <span class="hx-pulse-lab"><span class="l-en">Market pulse</span><span class="l-zh">市场脉搏</span></span>
+        <span class="hx-pulse-when">2026-07-31</span>
+      </div><div class="hx-pulse-read">
+        <span class="l-en"><b>37%</b> of names advancing · median <b>−0.41%</b>. Strength in <b>Health Care</b>, <b>Industrials</b> — weakness in <b>Communication</b>, <b>Information Technology</b>.</span>
+        <span class="l-zh"><b>37%</b> 个股上涨 · 中位数 <b>−0.41%</b>。资金流向：<b>医疗保健</b>、<b>工业</b> 走强，<b>通信</b>、<b>信息技术</b> 走弱。</span>
+      </div>
+    </div>
 
+    <div class="hx-stats">
+      <div class="hx-stat hx-stat-br">
+        <div class="k"><span class="l-en">Breadth · advancing vs declining</span><span class="l-zh">市场广度 · 涨跌家数</span></div>
+        <div class="v">37% <span class="u"><span class="l-en">advancing</span><span class="l-zh">上涨</span></span></div>
+        <div class="hx-bbar"><i class="adv" style="width:37.16%"></i><i class="flt" style="width:2.29%"></i><i class="dec" style="width:60.55%"></i></div>
+        <div class="hx-bleg"><span class="hx-up">▲ 81</span><span class="hx-dn">132 ▼</span></div>
+      </div>
+      <div class="hx-stat">
+        <div class="k"><span class="l-en">Median move</span><span class="l-zh">涨跌中位数</span></div>
+        <div class="v down">−0.41%</div>
+        <div class="m"><span class="l-en">Tilted lower</span><span class="l-zh">偏弱</span></div>
+      </div>
+      <div class="hx-stat">
+        <div class="k"><span class="l-en">Strongest sector</span><span class="l-zh">最强板块</span></div>
+        <div class="v up">+1.13%</div>
+        <div class="m"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></div>
+      </div>
+      <div class="hx-stat">
+        <div class="k"><span class="l-en">Weakest sector</span><span class="l-zh">最弱板块</span></div>
+        <div class="v down">−3.27%</div>
+        <div class="m"><span class="l-en">Communication</span><span class="l-zh">通信</span></div>
+      </div>
+    </div>
+
+    <div class="hx-boards">
+      <div class="hx-board"><h3><span class="tag up">▲</span><span class="l-en">Biggest gainers</span><span class="l-zh">涨幅榜</span></h3>
+        <div class="hx-row"><span class="tk">BHC</span><span class="nm"><span class="l-en">Bausch Health Companies Inc</span><span class="l-zh">Bausch Health Companies Inc</span></span><span class="pc hx-up">+14.5%</span><span class="bar"><i style="width:100%;background:var(--up)"></i></span></div>
+        <div class="hx-row"><span class="tk">BTE</span><span class="nm"><span class="l-en">Baytex Energy Corp</span><span class="l-zh">Baytex Energy Corp</span></span><span class="pc hx-up">+6.50%</span><span class="bar"><i style="width:45%;background:var(--up)"></i></span></div>
+        <div class="hx-row"><span class="tk">GIL</span><span class="nm"><span class="l-en">Gildan Activewear Inc</span><span class="l-zh">Gildan Activewear Inc</span></span><span class="pc hx-up">+5.77%</span><span class="bar"><i style="width:40%;background:var(--up)"></i></span></div>
+        <div class="hx-row"><span class="tk">LSPD</span><span class="nm"><span class="l-en">Lightspeed Commerce Inc</span><span class="l-zh">Lightspeed Commerce Inc</span></span><span class="pc hx-up">+4.82%</span><span class="bar"><i style="width:33%;background:var(--up)"></i></span></div>
+        <div class="hx-row"><span class="tk">BDGI</span><span class="nm"><span class="l-en">Badger Infrastructure Solutions Lt</span><span class="l-zh">Badger Infrastructure Solutions Lt</span></span><span class="pc hx-up">+4.43%</span><span class="bar"><i style="width:31%;background:var(--up)"></i></span></div>
+      </div>
+      <div class="hx-board"><h3><span class="tag dn">▼</span><span class="l-en">Biggest losers</span><span class="l-zh">跌幅榜</span></h3>
+        <div class="hx-row"><span class="tk">T</span><span class="nm"><span class="l-en">Telus</span><span class="l-zh">Telus</span></span><span class="pc hx-dn">−11.3%</span><span class="bar"><i style="width:100%;background:var(--down)"></i></span></div>
+        <div class="hx-row"><span class="tk">TVK</span><span class="nm"><span class="l-en">Terravest Industries Inc</span><span class="l-zh">Terravest Industries Inc</span></span><span class="pc hx-dn">−7.92%</span><span class="bar"><i style="width:70%;background:var(--down)"></i></span></div>
+        <div class="hx-row"><span class="tk">ELD</span><span class="nm"><span class="l-en">Eldorado Gold Corp</span><span class="l-zh">Eldorado Gold Corp</span></span><span class="pc hx-dn">−7.80%</span><span class="bar"><i style="width:69%;background:var(--down)"></i></span></div>
+        <div class="hx-row"><span class="tk">SXGC</span><span class="nm"><span class="l-en">Southern Cross Gold Consolidated L</span><span class="l-zh">Southern Cross Gold Consolidated L</span></span><span class="pc hx-dn">−7.50%</span><span class="bar"><i style="width:67%;background:var(--down)"></i></span></div>
+        <div class="hx-row"><span class="tk">ARIS</span><span class="nm"><span class="l-en">Aris Mining Corp</span><span class="l-zh">Aris Mining Corp</span></span><span class="pc hx-dn">−6.16%</span><span class="bar"><i style="width:55%;background:var(--down)"></i></span></div>
+      </div>
+      <div class="hx-board hx-board-sec"><h3><span class="l-en">Sector leaders &amp; laggards</span><span class="l-zh">板块强弱</span></h3>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span><span class="track"><i style="width:35%;background:var(--up)"></i></span><span class="pc hx-up">+1.13%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></span><span class="track"><i style="width:11%;background:var(--up)"></i></span><span class="pc hx-up">+0.36%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Financials</span><span class="l-zh">金融</span></span><span class="track"><i style="width:8%;background:var(--up)"></i></span><span class="pc hx-up">+0.26%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span><span class="track"><i style="width:4%;background:var(--up)"></i></span><span class="pc hx-up">+0.14%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">非必需消费</span></span><span class="track"><i style="width:4%;background:var(--down)"></i></span><span class="pc hx-dn">−0.04%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span><span class="track"><i style="width:8%;background:var(--down)"></i></span><span class="pc hx-dn">−0.26%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Energy</span><span class="l-zh">能源</span></span><span class="track"><i style="width:13%;background:var(--down)"></i></span><span class="pc hx-dn">−0.42%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span><span class="track"><i style="width:16%;background:var(--down)"></i></span><span class="pc hx-dn">−0.54%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Materials</span><span class="l-zh">材料</span></span><span class="track"><i style="width:91%;background:var(--down)"></i></span><span class="pc hx-dn">−2.97%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Other</span><span class="l-zh">Other</span></span><span class="track"><i style="width:95%;background:var(--down)"></i></span><span class="pc hx-dn">−3.09%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></span><span class="track"><i style="width:100%;background:var(--down)"></i></span><span class="pc hx-dn">−3.26%</span></div>
+        <div class="hx-sec"><span class="nm"><span class="l-en">Communication</span><span class="l-zh">通信</span></span><span class="track"><i style="width:100%;background:var(--down)"></i></span><span class="pc hx-dn">−3.27%</span></div>
+      </div>
+    </div>
+  </div>
   <div id="heatmap-full" data-hm-maps='[{"key":"canada","icon":"🔥","label_en":"Canada · TSX","label_zh":"加拿大 · TSX","url":"marketdata/canada_heatmap.json"}]'></div>
 
   <div class="hm-foot">
@@ -314,7 +440,7 @@
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
 
-<script src="theme.js?v=3d2163fc" defer></script>
-<script src="heatmap.js?v=7bc5b4d6" defer></script>
+<script src="theme.js"></script>
+<script src="heatmap.js"></script>
 </body>
 </html>

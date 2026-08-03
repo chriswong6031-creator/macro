@@ -463,12 +463,38 @@
   var CARD_TFS = ['1D', '1W', '1M', 'YTD', '1Y'];
   var CARD_TF_LAB = { '1D': ['1D', '1日'], '1W': ['1W', '1周'], '1M': ['1M', '1月'],
                       'YTD': ['YTD', '年初至今'], '1Y': ['1Y', '1年'] };
+  // Market FACTS for the card's meta row: the size (market cap / avg turnover)
+  // and where the name sits against its own 200-day average. Both used to reach
+  // the card only inside the per-ticker file that ALSO carries our graded read,
+  // so a card without that file lost two honest numbers to protect a third thing
+  // entirely. The tile now carries them (engine/market_heatmap._market_facts), and
+  // this one function serves both the base card and the enriched one so the two
+  // can never print different meta. `tech` is the per-ticker fallback for maps
+  // whose tiles do not carry the facts (the US map).
+  function metaHtml(data, t, tech) {
+    tech = tech || {};
+    var meta = '';
+    // Label the size value (e.g. "Mkt cap ¥2.54万亿", or "Avg turnover HK$14.8B"
+    // for the HK map) so the number is never mistaken for something it isn't.
+    var szLab = data.size_basis === 'equal' ? '' : lz(data.size_label_en, data.size_label_zh);
+    var szVal = realSize(data) ? fmtCap(t.size, data.currency) : '';
+    if (szLab && szVal) meta += '<span class="hm-c-tag">' + esc(szLab) + ' <b>' + szVal + '</b></span>';
+    var p2 = t.p200 != null ? t.p200 : tech.pct_vs_200dma;
+    if (p2 != null) {
+      p2 = +p2;
+      meta += '<span class="hm-c-tag">' + L('vs 200d', '相对200日') + ' '
+        + '<b class="' + (p2 >= 0 ? 'up' : 'dn') + '">' + (p2 > 0 ? '+' : '') + p2.toFixed(0) + '%</b></span>';
+    }
+    return meta ? '<div class="hm-c-meta">' + meta + '</div>' : '';
+  }
   function cardBaseHtml(data, t) {
     var labs = sectorLabels(data);
     var lab = labs[t.sector] || { en: t.sector, zh: t.sector };
     var cur = t.perf[data._tf];
     var cls = cur == null ? '' : (cur >= 0 ? 'up' : 'dn');
     var cap = realSize(data) ? fmtCap(t.size, data.currency) : '';
+    var px = t.px != null ? (CUR_SYM[data.currency] || '$')
+      + (t.px >= 100 ? Math.round(t.px).toLocaleString() : (+t.px).toFixed(2)) : '';
     var nm = (isZh() && t.name_zh) ? t.name_zh : t.name;
     var strip = '';
     (data.timeframes || []).forEach(function (tf) {
@@ -483,18 +509,38 @@
       + '<div class="hm-c-hd">'
       +   '<div class="hm-c-id"><div class="hm-c-sym">' + esc(dispT(t.t)) + '</div>'
       +     '<div class="hm-c-nm">' + esc(nm) + ' · ' + L(lab.en, lab.zh) + '</div></div>'
-      +   '<div class="hm-c-px"><div class="hm-c-pxv" data-px>' + (cap || '—') + '</div>'
+      +   '<div class="hm-c-px"><div class="hm-c-pxv" data-px>' + (px || cap || '—') + '</div>'
       +     '<div class="hm-c-chg ' + cls + '">' + fmtPc(cur) + '</div></div>'
       + '</div>'
       + '<div class="hm-c-body" data-body><div class="hm-c-load"><span></span><span></span><span></span></div></div>'
+      + '<div data-meta>' + metaHtml(data, t, null) + '</div>'
       + '<div class="hm-c-strip">' + strip + '</div>'
       + '<div class="hm-c-foot">' + L('View full analysis', '查看完整分析') + ' →</div>';
   }
-  function enrichCard(el, data, t, rec) {
+  // `rec === null` has TWO causes and they are NOT the same sentence:
+  //   (a) genuinely no nightly read for this ticker  -> the stub, unchanged
+  //   (b) the read exists but the viewer may not have it -> the locked slot
+  // Shipping one sentence for both is the defect: on a walled build "no nightly
+  // read for this name yet" is a lie about why the space is empty, and Doctrine
+  // Law 5 (honesty survives translation) forbids it. `locked` is decided by the
+  // build's gate state AND the wall's own answer — never inferred from the fetch
+  // result alone, or a flaky network would read as a paywall.
+  function enrichCard(el, data, t, rec, locked) {
     el._w = 0;                         // card grows with the enriched body → re-measure
     var pxEl = el.querySelector('[data-px]');
     var body = el.querySelector('[data-body]');
     if (!body) return;
+    if (locked) {
+      body.innerHTML = '<div class="hm-c-locked">'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+        +   'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        +   '<rect x="3" y="11" width="18" height="11" rx="2"/>'
+        +   '<path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+        + '<span>' + L('Our nightly read on this name — where it sits and what we\'d do — is member content. <a href="plans.html">See plans</a>',
+                       '我们对该股的每晚解读 —— 所处位置与应对方式 —— 为会员内容。<a href="plans.html">查看方案</a>') + '</span>'
+        + '</div>';
+      return;
+    }
     if (!rec) {
       body.innerHTML = '<div class="hm-c-stub">'
         + L('No nightly read for this name yet — open the analyzer for the full breakdown.',
@@ -505,11 +551,13 @@
     // (size, vs 200d). Everything else lives one click away in the analyzer —
     // a hover card that needs reading isn't a hover card.
     var tech = rec.tech || {}, conv = rec.conviction || {};
-    if (pxEl && tech.price != null) {
+    if (pxEl && t.px == null && tech.price != null) {
       var pxSym = CUR_SYM[data.currency] || '$';
       pxEl.textContent = pxSym + (tech.price >= 100 ? Math.round(tech.price).toLocaleString()
         : (+tech.price).toFixed(2));
     }
+    var metaEl = el.querySelector('[data-meta]');
+    if (metaEl) metaEl.innerHTML = metaHtml(data, t, tech);
     var h = '';
     if (conv.verdict || conv.score != null) {
       var verdict = lz(conv.verdict, conv.verdict_zh);
@@ -523,20 +571,48 @@
       h += '</div>';
       if (verdict) h += '<div class="hm-c-verdict">' + esc(verdict) + '</div>';
     }
-    var meta = '';
-    // Label the size value (e.g. "Mkt cap ¥2.54万亿", or "Avg turnover HK$14.8B"
-    // for the HK map) so the number is never mistaken for something it isn't.
-    var szLab = data.size_basis === 'equal' ? '' : lz(data.size_label_en, data.size_label_zh);
-    var szVal = realSize(data) ? fmtCap(t.size, data.currency) : '';
-    if (szLab && szVal) meta += '<span class="hm-c-tag">' + esc(szLab) + ' <b>' + szVal + '</b></span>';
-    if (tech.pct_vs_200dma != null) {
-      var p2 = +tech.pct_vs_200dma;
-      meta += '<span class="hm-c-tag">' + L('vs 200d', '相对200日') + ' '
-        + '<b class="' + (p2 >= 0 ? 'up' : 'dn') + '">' + (p2 > 0 ? '+' : '') + p2.toFixed(0) + '%</b></span>';
-    }
-    if (meta) h += '<div class="hm-c-meta">' + meta + '</div>';
-
     body.innerHTML = h || '<div class="hm-c-stub">' + L('Open the analyzer for the full read.', '打开分析器查看完整解读。') + '</div>';
+  }
+  /* ── the walled half of a tier-preview map ────────────────────────────────
+     A gated build (#heatmap-full[data-hm-gated]) is an anonymous-public page:
+     the map opens in FULL — every tile, every timeframe, every sector — and the
+     one thing it withholds is our graded read on a single name (band, 0-100
+     score, verdict), which lives in a separate per-ticker file.
+
+     Whether a viewer may read that file is the SERVER's answer, so we ask the
+     registration wall once per page and keep the locked slot until it says yes.
+     Nothing here is load-bearing as a gate: a hostile client can only ask the
+     origin the same question and get the same answer. What it IS load-bearing
+     for is honesty. The per-ticker stores are mirrored to a public R2 bucket and
+     an estate-wide shim rewrites these fetches there — an already-adjudicated
+     exposure class awaiting its own fix (research/PAYWALL_GIT_MIRROR_EXPOSURE_
+     ADJUDICATION.md, #4099), which W2 must not widen and does not resolve. A
+     card that branched on "did the fetch return anything" would therefore show
+     an anonymous visitor exactly the graded read this page's own copy calls
+     member content. Asking the wall keeps the card correct under either
+     resolution of #4099, and stops being a client decision the moment that
+     bucket closes. */
+  var _tierProbe = null;
+  function mapIsGated() {
+    var f = document.getElementById('heatmap-full');
+    return !!(f && f.getAttribute('data-hm-gated'));
+  }
+  function tierAllows(path) {
+    if (_tierProbe) return _tierProbe;
+    try {
+      _tierProbe = fetch('/api/regwall/check', {
+        credentials: 'same-origin', cache: 'no-store',
+        headers: { 'X-Original-Uri': path, 'X-Original-Kind': 'asset' }
+      }).then(function (r) { return !!r && r.status === 204; })
+        .catch(function () { return false; });   // an unreachable wall keeps the lock
+    } catch (e) {
+      // Every page in the estate wraps window.fetch (the R2 data-base shim), so
+      // a THROW here is a real shape, not a hypothetical — and an exception that
+      // escapes this function kills the enrich callback entirely, leaving the
+      // card stuck on its loading dots with no state at all. Fail closed.
+      _tierProbe = Promise.resolve(false);
+    }
+    return _tierProbe;
   }
   function showCard(data, t, cx, cy) {
     hideMembers();
@@ -550,9 +626,17 @@
       clearTimeout(_cardTimer);
       var want = t.t;
       _cardTimer = setTimeout(function () {
-        fetchTicker(t.t, data.stockdata_dir).then(function (rec) {
+        var dir = data.stockdata_dir || 'stockdata';
+        var safe = String(t.t).replace(/[=^]/g, '_');
+        var gated = mapIsGated();
+        // Resolve BOTH before painting. Enriching on whichever lands first would
+        // flash the graded block at a viewer the wall has not cleared yet.
+        Promise.all([
+          fetchTicker(t.t, dir),
+          gated ? tierAllows('/' + dir + '/' + safe + '.json') : true
+        ]).then(function (res) {
           if (_cardFor !== want) return;
-          enrichCard(el, data, t, rec);
+          enrichCard(el, data, t, res[0], gated && !res[1]);
           // re-anchor off the latest pointer position (the card grew), not the
           // stale coords captured when the hover began.
           positionFloat(el, _ptrX != null ? _ptrX : cx, _ptrY != null ? _ptrY : cy);
@@ -744,6 +828,17 @@
     // the standalone full pages; the expand overlay stays a pure edge-to-edge map.
     var IN_OV = !!(root.closest && root.closest('.hm-ov'));
     var SHOW_DASH = !IN_OV;
+    // The standalone market pages server-render the pulse / breadth / movers /
+    // sector-ladder summary into #hm-ssr so the page carries real content before
+    // any JS runs (a client-fetched treemap is a thin-content 200 to a crawler).
+    // The live chrome below computes the SAME four blocks from the SAME payload,
+    // so hand over the moment real data draws — and ONLY then: a failed fetch
+    // leaves #hm-ssr standing, which is why a visitor who never gets the tile map
+    // still keeps the breadth read instead of "Could not load heatmap data."
+    if (SHOW_DASH) {
+      var _ssr = document.getElementById('hm-ssr');
+      if (_ssr && _ssr.parentNode) _ssr.parentNode.removeChild(_ssr);
+    }
     root.innerHTML = ''
       + (SHOW_DASH ? '<div class="hx-pulse" aria-live="polite"></div><div class="hx-stats"></div>' : '')
       + '<div class="hm-bar">'
@@ -1971,6 +2066,13 @@
       + '.hm-c-meta{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:9px;font-size:11px;color:var(--muted);align-items:center;}'
       + '.hm-c-tag{display:inline-flex;align-items:center;gap:4px;} .hm-c-tag b{font-variant-numeric:tabular-nums;color:var(--text);}'
       + '.hm-c-stub{font-size:11.5px;color:var(--muted);line-height:1.5;}'
+      /* the free card's locked slot — a micro-wall, never a blur over readable
+         bytes. Violet + neutral by construction: theme.css swaps --up/--down
+         under html[data-lang="zh"], so a gate element tinted by market direction
+         would invert its meaning with the language. */
+      + '.hm-c-locked{display:flex;align-items:flex-start;gap:8px;font-size:12px;line-height:1.5;color:var(--muted);}'
+      + '.hm-c-locked svg{width:13px;height:13px;flex:none;margin-top:2px;color:#8b5cf6;}'
+      + '.hm-c-locked a{color:var(--link);border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent);}'
       // five evenly-spread windows — room to breathe, never a 12-column cram
       + '.hm-c-strip{display:flex;justify-content:space-between;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);}'
       + '.hm-c-m{flex:1;text-align:center;min-width:0;} .hm-c-m .k{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;} .hm-c-m .v{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;}'

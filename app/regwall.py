@@ -70,6 +70,20 @@ router = APIRouter()
 # still the gate, and this wall was only ever costing us the crawl — Googlebot
 # has no session, so it was being 302'd off the one desk with proven demand.
 #
+# /china_heatmap.html is the W2 heatmap conversion (spec:
+# research/seo_supercharge/W2_HEATMAP_ETFS_PREVIEW_SPEC.md Part A). It is a THIRD
+# shape: the shells above were already split, but this page shipped zero content —
+# every tile, stat and mover was built in the browser — so opening the boundary
+# alone would have given Googlebot a thin-content 200 instead of the 302 it gets
+# today, which is a worse outcome because Google keeps it. The same PR
+# server-renders the breadth/movers/sector summary so the page is worth the crawl.
+# Nearly all of it is free by construction: a heatmap of market performance is
+# market context. The one graded surface — our per-name read — arrives from
+# <market>stockdata/<T>.json, which stays OUT of the public list above and
+# therefore keeps 401ing anonymous asset requests here; the hover card renders a
+# locked slot in its place. hk_heatmap/canada_heatmap run the same builder and
+# join by adding one line each, here and in the other two mirrors.
+#
 # /etfs.html W2 flip TEMPORARILY REVERTED 2026-08-03: the boundary deployed ahead
 # of the free-shell bake (render lane superseded 3x) and the full board leaked
 # anonymously ~1h. Re-flip in a follow-up PR ONLY after the walled shell is
@@ -93,6 +107,7 @@ PUBLIC_PATHS = {
     "/research_vault.html",
     "/special_situations.html",
     "/china_special_situations.html",
+    "/china_heatmap.html",
     "/support.html",
     "/unsubscribe.html",
 }

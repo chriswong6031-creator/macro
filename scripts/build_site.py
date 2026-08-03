@@ -5698,12 +5698,38 @@ def main() -> int:
     try:
         from scripts.build_market_heatmap import build_all as build_market_heatmaps
         from engine.market_heatmap import PAGE_META as _HM_MK
-        build_market_heatmaps(site, generated_utc=generated)
+        from engine.market_heatmap import page_summary as _hm_summary
+        from engine.market_heatmap import sibling_markets as _hm_siblings
+        from lib.seo import is_public_path as _is_public
+        _hm_payloads = build_market_heatmaps(site, generated_utc=generated)
         _hm_tmpl = env.get_template("market_heatmap.html.j2")
         for _m, _mk in _HM_MK.items():
             out_mh = site / f"{_m}_heatmap.html"
-            write_page(out_mh, _hm_tmpl.render(mk=_mk))
-            log.info("wrote %s (%.0f KB)", out_mh, out_mh.stat().st_size / 1024)
+            # Read the tile map back off disk rather than trusting the in-memory
+            # return: build_all() swallows a single market's failure so one dead
+            # feed cannot take the site down, and on that path the committed JSON
+            # from the last good run is what the browser will actually fetch — so
+            # it is what the server-rendered summary must describe.
+            _pay = _hm_payloads.get(_m)
+            if not _pay:
+                try:
+                    _pay = json.loads((site / "marketdata" / f"{_m}_heatmap.json")
+                                      .read_text(encoding="utf-8"))
+                except Exception:  # noqa: BLE001 — no map, no summary; the shell still ships
+                    _pay = None
+            # The wall shows exactly when the page is anonymous-public. One source
+            # of truth (config/site_access.yml) means a sibling market adopts the
+            # tier preview by moving one line of policy — no template edit, no
+            # second flag that can disagree with the boundary.
+            _gated = _is_public(f"/{_m}_heatmap.html")
+            _sum = _hm_summary(_pay)
+            write_page(out_mh, _hm_tmpl.render(
+                mk=_mk, summary=_sum, gated=_gated,
+                n_tiles=(_sum or {}).get("n_tiles") or (_pay or {}).get("n_tiles") or 0,
+                siblings=_hm_siblings(_m),
+            ))
+            log.info("wrote %s (%.0f KB, ssr=%s, gated=%s)", out_mh,
+                     out_mh.stat().st_size / 1024, bool(_sum), _gated)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("market heatmaps (cn/hk/ca) failed: %s", e)
 

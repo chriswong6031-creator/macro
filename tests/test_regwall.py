@@ -98,7 +98,8 @@ def test_public_dashboard_previews_allow_without_session(path):
 
 
 @pytest.mark.parametrize(
-    "path", ["/special_situations.html", "/china_special_situations.html"])
+    "path",
+    ["/special_situations.html", "/china_special_situations.html", "/china_heatmap.html"])
 def test_tier_preview_shells_allow_without_session(path):
     """W1a/W2 (SEO_SUPERCHARGE_MASTERPLAN): the tier-preview SHELLS were promoted
     free_registered → public, so an anonymous visitor — and Googlebot, which never
@@ -112,6 +113,16 @@ def test_tier_preview_shells_allow_without_session(path):
     was fully server-rendered with every graded row in the markup, so the same PR
     that opened it also moved the consensus board, the fresh-conviction cards,
     every per-fund add and the trim shelf into /premiumdata/etfs.json.
+
+    /china_heatmap.html is a THIRD shape. It shipped zero content — a 76-line
+    shell that built every tile, stat and mover in the browser — so opening the
+    boundary alone would have swapped a 302 for a thin-content 200, which is the
+    worse outcome (Google keeps it and rates it thin). Its PR therefore
+    server-renders the breadth/movers/sector summary too. Almost all of that page
+    is free by construction, because a heatmap of market performance IS market
+    context; the single walled surface is our per-name graded read, which arrives
+    from <market>stockdata/<T>.json — absent from PUBLIC_PATHS, so
+    test_per_ticker_graded_reads_stay_gated below still 401s it.
     """
     r = _check(orig=path)
     assert r.status_code == 204, f"{path} must be public (no session needed)"
@@ -138,6 +149,35 @@ def test_opening_the_shells_did_not_open_their_payloads(path):
     r = client.get("/api/regwall/check",
                    headers={"X-Original-Uri": path, "X-Original-Kind": "asset"})
     assert r.status_code == 401, f"{path} must stay gated after the shell opened"
+    assert r.json()["locked"] is True
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/chinastockdata/601398.SS.json",
+        "/hkstockdata/0700.HK.json",
+        "/canadastockdata/RY.TO.json",
+        "/stockdata/AAPL.json",
+    ],
+)
+def test_per_ticker_graded_reads_stay_gated(path):
+    """The other half of the W2 heatmap conversion, and the half worth a guard.
+
+    Opening china_heatmap.html opened the MAP — returns, breadth, sector strength,
+    every tile. The one thing it did not open is our graded read on a single name
+    (band, 0-100 score, verdict), which reaches the hover card only from these
+    per-ticker files. They carry no public classification, so an anonymous asset
+    request must die at the registration wall, and the card renders its locked
+    slot instead. A 204 here would mean the conversion leaked the read.
+
+    This is the inverse of the test above: that one proves the shells opened, this
+    one proves nothing rode along. A promotion that widened a prefix instead of a
+    path would pass the first and fail this.
+    """
+    r = client.get("/api/regwall/check",
+                   headers={"X-Original-Uri": path, "X-Original-Kind": "asset"})
+    assert r.status_code == 401, f"{path} must stay gated after the map opened"
     assert r.json()["locked"] is True
 
 
