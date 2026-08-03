@@ -163,9 +163,14 @@ Two traps that fall out of gating a multi-panel page:
   `planes` list naming only the planes that actually have withheld rows in this
   build, and let the honest empty state stand everywhere else.
 
-The two Special Situations pages sit **behind the registration wall** — "Free"
-there means a signed-in free account. The US Stocks and Research Vault shells are
-public acquisition surfaces; their full/detail data remains separately gated.
+The two Special Situations shells are **anonymous-public** as of 2026-08-03
+(PR #4337, SEO Supercharge W1a — `research/SEO_SUPERCHARGE_MASTERPLAN_BY_FABLE.md`):
+the preview shell serves 200 to signed-out visitors and crawlers, while every
+paid payload stays `premium.enforced_early` (verified live: 403 `x-paywall: deny`
+anonymous). The US Stocks and Research Vault shells are likewise public
+acquisition surfaces; their full/detail data remains separately gated. For the
+SEO estate, new tier-preview conversions default to anonymous-public shells per
+masterplan adjudication A1.
 
 ## Reference implementation
 
