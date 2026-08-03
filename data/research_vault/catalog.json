@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T13:51:10.184008+00:00",
-  "count": 667,
+  "generated_at": "2026-08-03T14:05:52.251764+00:00",
+  "count": 668,
   "institutions": [
     "Alger",
     "Amova",
@@ -47,6 +47,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-zonnzrvd3vn-004fec",
+      "title": "THIS AINT MARADONA CENTRAL BANKING",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T12:14:09Z",
+      "summary_points": [
+        "**Fed's Guidance Contradiction**: Warsh's \"market as signal\" stance clashes with Fed's \"Maradona central banking\" (no action), risking market substitution of policy and undermining credibility as rising yields signal hikes but Fed holds steady.",
+        "**Dotplot-Driven Expectation Gap**: Persistent divergence between market-implied (blue) and realized (red) 2-year rates since Dotplot's 2013 introduction, with implied rates now consistently higher, signaling markets price forward guidance beyond historical outcomes.",
+        "**Market Policy Substitution Risk**: Rising yields push for rate hikes, yet Fed's no-change decision implies market is doing Fed's work; contradiction threatens policy coherence and increases volatility as market summarizes collective bets on Fed's *will* do, not *should* do."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-z1i4guo3cne-b3896e",
       "title": "EMR July 2026 Performance Review",
