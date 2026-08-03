@@ -7,6 +7,7 @@
   var DATA_URL = IS_LOOPBACK
     ? '/data/fundamental_forensics/private/state.json.gz'
     : '/api/forensics/state';
+  var ATTESTED_HISTORY_URL = '/api/forensics/v1/attested-history';
   var DESKTOP_QUERY = '(min-width: 1100px)';
   var state = {
     payload: null,
@@ -25,7 +26,21 @@
     searchIndex: -1,
     loadToken: 0,
     lastFocus: null,
-    unknownRequestedSymbol: ''
+    unknownRequestedSymbol: '',
+    sourceMode: 'map',
+    receipt: {
+      phase: 'idle',
+      requestToken: 0,
+      latest: null,
+      ownerCik: '',
+      page: null,
+      pageCursors: [null],
+      pageIndex: 0,
+      rootCellId: '',
+      detail: null,
+      detailPhase: 'idle',
+      lastFocus: null
+    }
   };
 
   var ui = {};
@@ -117,10 +132,18 @@
     ui.priorPeriod = byId('ff-prior-period');
     ui.compareGrid = byId('ff-compare-grid');
     ui.trace = byId('ff-trace');
+    ui.sourceTabs = Array.prototype.slice.call(document.querySelectorAll('.ff-source-tab'));
+    ui.sourceMapPanel = byId('ff-source-panel-map');
+    ui.receiptPanel = byId('ff-source-panel-receipt');
+    ui.receipt = byId('ff-receipt');
     ui.evidence = byId('ff-evidence');
     ui.evidenceTitle = byId('ff-evidence-title');
     ui.evidenceBody = byId('ff-evidence-body');
     ui.evidenceClose = byId('ff-evidence-close');
+    ui.receiptInspector = byId('ff-receipt-inspector');
+    ui.receiptInspectorTitle = byId('ff-receipt-inspector-title');
+    ui.receiptInspectorBody = byId('ff-receipt-inspector-body');
+    ui.receiptInspectorClose = byId('ff-receipt-inspector-close');
     ui.scrim = byId('ff-scrim');
     ui.siteNav = document.querySelector('.site-nav');
   }
@@ -680,6 +703,7 @@
     state.disclosureFindingId = '';
     state.redlineId = '';
     state.evidenceKind = 'finding';
+    resetReceiptState();
     ui.search.value = resolved;
     ui.searchClear.hidden = false;
     closeSearch();
@@ -691,6 +715,7 @@
       state.unknownRequestedSymbol = '';
     }
     renderCompany();
+    if (state.sourceMode === 'receipt') ensureReceiptForCompany();
   }
 
   function renderAll() {
@@ -1368,6 +1393,819 @@
       '<div class="ff-trace-findings">' + traceFindings + '</div></div>';
   }
 
+  // The sealed history surface is deliberately a reading layer. It never
+  // replays source material, produces a score, or turns a receipt into a
+  // broader issuer conclusion. Keep all request-time data bounded to one root
+  // page plus the one waterfall the analyst has explicitly opened.
+  function normalizedCik(value) {
+    var digits = String(value == null ? '' : value).trim();
+    return /^\d{1,10}$/.test(digits) ? digits.padStart(10, '0') : '';
+  }
+
+  function isSnapshotId(value) {
+    return /^ffqsv2_[a-f0-9]{64}$/.test(String(value || ''));
+  }
+
+  function isBaseSnapshotId(value) {
+    return /^ffqs_[a-f0-9]{64}$/.test(String(value || ''));
+  }
+
+  function isRootCellId(value) {
+    return /^metric_cell_[a-f0-9]{64}$/.test(String(value || ''));
+  }
+
+  function isReceiptObject(value) {
+    return Object.prototype.toString.call(value) === '[object Object]';
+  }
+
+  function hasExactReceiptKeys(value, keys) {
+    if (!isReceiptObject(value)) return false;
+    var actual = Object.keys(value).sort();
+    var expected = keys.slice().sort();
+    return actual.length === expected.length && actual.every(function (key, index) {
+      return key === expected[index];
+    });
+  }
+
+  function isSafeReceiptInteger(value) {
+    return Number.isSafeInteger(value) && value >= 0;
+  }
+
+  function isBoundedReceiptText(value, maximum) {
+    return typeof value === 'string' && value.length > 0 && value.length <= maximum;
+  }
+
+  function receiptUtcOrderKey(value) {
+    if (typeof value !== 'string' || value.length > 64) return null;
+    var match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{6}))?Z$/.exec(value);
+    if (!match) return null;
+    var year = Number(match[1]);
+    var month = Number(match[2]);
+    var day = Number(match[3]);
+    var hour = Number(match[4]);
+    var minute = Number(match[5]);
+    var second = Number(match[6]);
+    if (year < 1 || month < 1 || month > 12 || day < 1 || day > 31 ||
+        hour > 23 || minute > 59 || second > 59) return null;
+    var calendar = new Date(0);
+    calendar.setUTCHours(0, 0, 0, 0);
+    calendar.setUTCFullYear(year, month - 1, day);
+    calendar.setUTCHours(hour, minute, second, 0);
+    if (calendar.getUTCFullYear() !== year || calendar.getUTCMonth() !== month - 1 ||
+        calendar.getUTCDate() !== day || calendar.getUTCHours() !== hour ||
+        calendar.getUTCMinutes() !== minute || calendar.getUTCSeconds() !== second) return null;
+    return match.slice(1, 7).join('') + (match[7] || '000000');
+  }
+
+  function isReceiptDate(value, nullable) {
+    if (value === null && nullable) return true;
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    var parts = value.split('-').map(Number);
+    if (parts[0] < 1 || parts[1] < 1 || parts[1] > 12 || parts[2] < 1 || parts[2] > 31) return false;
+    var parsed = new Date(0);
+    parsed.setUTCHours(0, 0, 0, 0);
+    parsed.setUTCFullYear(parts[0], parts[1] - 1, parts[2]);
+    return parsed.getUTCFullYear() === parts[0] && parsed.getUTCMonth() === parts[1] - 1 &&
+      parsed.getUTCDate() === parts[2];
+  }
+
+  function receiptArraysEqual(left, right) {
+    return Array.isArray(left) && Array.isArray(right) && left.length === right.length &&
+      left.every(function (value, index) { return value === right[index]; });
+  }
+
+  function receiptStringList(value, pattern) {
+    if (!Array.isArray(value) || value.length > 1024) return null;
+    var previous = null;
+    for (var index = 0; index < value.length; index += 1) {
+      var current = value[index];
+      if (typeof current !== 'string' || !pattern.test(current) ||
+          (previous !== null && current <= previous)) return null;
+      previous = current;
+    }
+    return value.slice();
+  }
+
+  function receiptSubset(subset, superset) {
+    var allowed = new Set(superset);
+    return subset.every(function (value) { return allowed.has(value); });
+  }
+
+  function validatedReceiptRoot(value) {
+    if (!hasExactReceiptKeys(value, [
+      'root_cell_id', 'selected_leaf_occurrence_ids', 'eligible_leaf_occurrence_ids',
+      'attested_occurrence_ids', 'status'
+    ]) || !isRootCellId(value.root_cell_id)) return null;
+    var occurrencePattern = /^rawfact_[a-f0-9]{64}$/;
+    var selected = receiptStringList(value.selected_leaf_occurrence_ids, occurrencePattern);
+    var eligible = receiptStringList(value.eligible_leaf_occurrence_ids, occurrencePattern);
+    var attested = receiptStringList(value.attested_occurrence_ids, occurrencePattern);
+    if (!selected || !eligible || !attested || selected.length + eligible.length + attested.length > 3072 ||
+        !receiptSubset(eligible, selected) || !receiptSubset(attested, eligible)) return null;
+    var expectedStatus;
+    if (!selected.length || !eligible.length) expectedStatus = 'not_evaluable';
+    else if (eligible.length === selected.length && attested.length === selected.length) expectedStatus = 'all_leaves_attested';
+    else if (attested.length) expectedStatus = 'partially_attested';
+    else expectedStatus = 'not_attested';
+    if (value.status !== expectedStatus) return null;
+    return {
+      root_cell_id: value.root_cell_id,
+      selected_leaf_occurrence_ids: selected,
+      eligible_leaf_occurrence_ids: eligible,
+      attested_occurrence_ids: attested,
+      status: expectedStatus
+    };
+  }
+
+  function validatedReceiptAuthority(value) {
+    if (!hasExactReceiptKeys(value, [
+      'positive_claim', 'coverage_scope', 'claim_basis', 'source_reverified_at_read',
+      'match_body_replayed_at_read', 'nonclaims'
+    ]) || value.positive_claim !== 'B3_selected_member_companyfacts_row_correspondence_only' ||
+        value.coverage_scope !== 'selected_raw_fact_leaves_only' ||
+        value.claim_basis !== 'sealed_publication_receipt' ||
+        value.source_reverified_at_read !== false || value.match_body_replayed_at_read !== false ||
+        !isReceiptObject(value.nonclaims)) return null;
+    var nonclaimKeys = Object.keys(value.nonclaims);
+    if (!nonclaimKeys.length || nonclaimKeys.some(function (key) { return value.nonclaims[key] !== false; }) ||
+        value.nonclaims.filing_complete !== false || value.nonclaims.trading_authority !== false ||
+        value.nonclaims.neural_web_authority !== false) return null;
+    return value;
+  }
+
+  function sameReceiptAuthority(left, right) {
+    var leftAuthority = validatedReceiptAuthority(left);
+    var rightAuthority = validatedReceiptAuthority(right);
+    if (!leftAuthority || !rightAuthority) return false;
+    var leftKeys = Object.keys(leftAuthority.nonclaims).sort();
+    var rightKeys = Object.keys(rightAuthority.nonclaims).sort();
+    return receiptArraysEqual(leftKeys, rightKeys);
+  }
+
+  function validatedReceiptIdentity(value) {
+    if (!isReceiptObject(value) || !isSnapshotId(value.snapshot_id) ||
+        !isBaseSnapshotId(value.base_snapshot_id) || !/^[a-f0-9]{64}$/.test(String(value.query_hash || '')) ||
+        receiptUtcOrderKey(value.published_at) === null) return null;
+    return {
+      snapshot_id: value.snapshot_id,
+      base_snapshot_id: value.base_snapshot_id,
+      query_hash: value.query_hash,
+      published_at: value.published_at
+    };
+  }
+
+  function sameReceiptIdentity(value, expected) {
+    var actual = validatedReceiptIdentity(value);
+    var wanted = validatedReceiptIdentity(expected);
+    return !!actual && !!wanted && actual.snapshot_id === wanted.snapshot_id &&
+      actual.base_snapshot_id === wanted.base_snapshot_id && actual.query_hash === wanted.query_hash &&
+      actual.published_at === wanted.published_at;
+  }
+
+  function validatedSnapshotClocks(value, publishedAt) {
+    var keys = [
+      'query_source_snapshot_at', 'query_recorded_at', 'query_computed_at', 'query_published_at',
+      'operator_verification_observed_at', 'published_at'
+    ];
+    if (!hasExactReceiptKeys(value, keys) || value.published_at !== publishedAt) return null;
+    var clocks = {};
+    for (var index = 0; index < keys.length; index += 1) {
+      clocks[keys[index]] = receiptUtcOrderKey(value[keys[index]]);
+      if (clocks[keys[index]] === null) return null;
+    }
+    var latestInput = clocks.query_source_snapshot_at > clocks.query_recorded_at ?
+      clocks.query_source_snapshot_at : clocks.query_recorded_at;
+    if (clocks.query_computed_at < latestInput ||
+        clocks.query_published_at < clocks.query_computed_at ||
+        clocks.operator_verification_observed_at < clocks.query_published_at ||
+        clocks.published_at < clocks.operator_verification_observed_at) return null;
+    return value;
+  }
+
+  function validatedCoverageSummary(value) {
+    var countKeys = ['root_cell_count', 'all_leaves_attested', 'partially_attested', 'not_attested', 'not_evaluable'];
+    if (!hasExactReceiptKeys(value, ['coverage_scope', 'positive_label'].concat(countKeys)) ||
+        value.coverage_scope !== 'selected_raw_fact_leaves_only' ||
+        value.positive_label !== 'B3_selected_member_companyfacts_row_correspondence_only' ||
+        countKeys.some(function (key) { return !isSafeReceiptInteger(value[key]); })) return null;
+    var statusTotal = value.all_leaves_attested + value.partially_attested + value.not_attested + value.not_evaluable;
+    return value.root_cell_count === statusTotal && value.root_cell_count <= 100000 ? value : null;
+  }
+
+  function validatedConversionReceipt(value) {
+    var keys = [
+      'receipt_id', 'schema', 'adapter_version', 'capture_id', 'manifest_id', 'cik', 'clocks',
+      'availability', 'occurrence_count', 'output_occurrence_count', 'pit_eligible_count'
+    ];
+    var clockKeys = [
+      'acquisition_started_at', 'captured_at', 'recorded_at', 'source_snapshot_at', 'submissions_recorded_at'
+    ];
+    if (!hasExactReceiptKeys(value, keys) || !/^cffledger_[a-f0-9]{64}$/.test(String(value.receipt_id || '')) ||
+        value.schema !== 'fundamental_forensics.companyfacts_ledger_receipt/v2' ||
+        !isBoundedReceiptText(value.adapter_version, 128) ||
+        !/^ffseccfc_[a-f0-9]{64}$/.test(String(value.capture_id || '')) ||
+        !/^ffseccfm_[a-f0-9]{64}$/.test(String(value.manifest_id || '')) ||
+        !/^\d{10}$/.test(String(value.cik || '')) ||
+        !hasExactReceiptKeys(value.clocks, clockKeys) ||
+        clockKeys.some(function (key) { return receiptUtcOrderKey(value.clocks[key]) === null; }) ||
+        ['available', 'partial'].indexOf(value.availability) === -1 ||
+        !isSafeReceiptInteger(value.occurrence_count) || !isSafeReceiptInteger(value.output_occurrence_count) ||
+        !isSafeReceiptInteger(value.pit_eligible_count) || value.occurrence_count !== value.output_occurrence_count ||
+        value.pit_eligible_count > value.output_occurrence_count) return null;
+    return value;
+  }
+
+  function validatedLatestReceipt(value) {
+    var keys = [
+      'snapshot_id', 'base_snapshot_id', 'query_hash', 'published_at', 'policy', 'clocks',
+      'coverage_summary', 'companyfacts_conversion_receipt', 'authority'
+    ];
+    var identity = validatedReceiptIdentity(value);
+    if (!hasExactReceiptKeys(value, keys) || !identity ||
+        !hasExactReceiptKeys(value.policy, ['version', 'fingerprint']) ||
+        value.policy.version !== 'ffqsv2_exact_join/v1' ||
+        value.policy.fingerprint !== '6e4ba04cf9c775ac280ba1426985246ffbdf730222b4521c4b26a41f5623871a' ||
+        !validatedSnapshotClocks(value.clocks, value.published_at) ||
+        !validatedCoverageSummary(value.coverage_summary) ||
+        !validatedConversionReceipt(value.companyfacts_conversion_receipt) ||
+        !validatedReceiptAuthority(value.authority)) return null;
+    return value;
+  }
+
+  function shortTraceId(value) {
+    var text = String(value || '');
+    if (text.length <= 22) return text || '—';
+    return text.slice(0, 14) + '…' + text.slice(-6);
+  }
+
+  function selectedReceiptRootButton() {
+    var wanted = String(state.receipt.rootCellId || '');
+    return Array.prototype.find.call(document.querySelectorAll('[data-root-cell-id]'), function (candidate) {
+      return candidate.getAttribute('data-root-cell-id') === wanted;
+    }) || null;
+  }
+
+  function receiptStatusInfo(status) {
+    var known = {
+      all_leaves_attested: {
+        key: 'all',
+        en: 'All selected leaves have correspondence',
+        zh: '所有选定叶节点均有对应记录'
+      },
+      partially_attested: {
+        key: 'partial',
+        en: 'Some selected leaves have correspondence',
+        zh: '部分选定叶节点有对应记录'
+      },
+      not_attested: {
+        key: 'none',
+        en: 'No selected leaf correspondence recorded',
+        zh: '未记录选定叶节点对应关系'
+      },
+      not_evaluable: {
+        key: 'not-evaluable',
+        en: 'No eligible selected leaf',
+        zh: '没有符合条件的选定叶节点'
+      }
+    };
+    return known[String(status || '')] || {
+      key: 'unknown',
+      en: 'Receipt state unavailable',
+      zh: '凭据状态不可用'
+    };
+  }
+
+  function receiptCount(value) {
+    return Array.isArray(value) ? value.length : 0;
+  }
+
+  function compactReceiptRoot(value) {
+    var root = validatedReceiptRoot(value);
+    if (!root) return null;
+    return {
+      root_cell_id: root.root_cell_id,
+      status: root.status,
+      selected: root.selected_leaf_occurrence_ids.length,
+      eligible: root.eligible_leaf_occurrence_ids.length,
+      attested: root.attested_occurrence_ids.length,
+      selected_leaf_occurrence_ids: root.selected_leaf_occurrence_ids,
+      eligible_leaf_occurrence_ids: root.eligible_leaf_occurrence_ids,
+      attested_occurrence_ids: root.attested_occurrence_ids
+    };
+  }
+
+  function receiptReadyPayload(value) {
+    return !!validatedLatestReceipt(value);
+  }
+
+  function validatedReceiptPagePayload(value, latest, requestedCursor, pageIndex, previousTotal) {
+    var keys = [
+      'snapshot_id', 'base_snapshot_id', 'query_hash', 'published_at', 'authority', 'page', 'roots'
+    ];
+    var pageKeys = ['cursor', 'next_cursor', 'limit', 'returned', 'total'];
+    var expectedCursor = requestedCursor || null;
+    if (!hasExactReceiptKeys(value, keys) || !sameReceiptIdentity(value, latest) ||
+        !sameReceiptAuthority(value.authority, latest.authority) ||
+        !hasExactReceiptKeys(value.page, pageKeys) || !Array.isArray(value.roots) ||
+        value.page.cursor !== expectedCursor || value.page.limit !== 25 ||
+        !isSafeReceiptInteger(value.page.returned) || !isSafeReceiptInteger(value.page.total) ||
+        value.page.returned !== value.roots.length || value.page.returned > value.page.limit ||
+        value.page.total !== latest.coverage_summary.root_cell_count ||
+        (previousTotal !== null && previousTotal !== value.page.total) ||
+        (pageIndex === 0 && expectedCursor !== null) || (pageIndex > 0 && !isRootCellId(expectedCursor))) return null;
+    var roots = [];
+    var leafReferences = 0;
+    var previousRootId = expectedCursor;
+    for (var index = 0; index < value.roots.length; index += 1) {
+      var root = validatedReceiptRoot(value.roots[index]);
+      if (!root || (previousRootId !== null && root.root_cell_id <= previousRootId)) return null;
+      leafReferences += root.selected_leaf_occurrence_ids.length + root.eligible_leaf_occurrence_ids.length +
+        root.attested_occurrence_ids.length;
+      if (leafReferences > 12288) return null;
+      roots.push(compactReceiptRoot(root));
+      previousRootId = root.root_cell_id;
+    }
+    var nextCursor = value.page.next_cursor;
+    if (nextCursor !== null && (!isRootCellId(nextCursor) || !roots.length ||
+        nextCursor !== roots[roots.length - 1].root_cell_id || roots.length !== value.page.limit)) return null;
+    if (!roots.length && nextCursor !== null) return null;
+    var consumed = pageIndex * value.page.limit + roots.length;
+    if (consumed > value.page.total || (nextCursor === null && consumed !== value.page.total) ||
+        (nextCursor !== null && consumed >= value.page.total)) return null;
+    return {
+      cursor: value.page.cursor,
+      nextCursor: nextCursor,
+      returned: value.page.returned,
+      total: value.page.total,
+      rows: roots
+    };
+  }
+
+  function receiptDecimalText(value) {
+    return typeof value === 'string' && value.length <= 4096 && value !== '-0' &&
+      /^-?(?:0|[1-9]\d*)(?:\.\d*[1-9])?$/.test(value);
+  }
+
+  function validatedReceiptWaterfallRow(value, occurrenceId, eligible, attested, latest) {
+    if (!isReceiptObject(value) || value.occurrence_id !== occurrenceId ||
+        value.eligible !== eligible || value.attested !== attested) return null;
+    if (!attested) {
+      return hasExactReceiptKeys(value, ['occurrence_id', 'eligible', 'attested']) ? value : null;
+    }
+    var keys = [
+      'occurrence_id', 'eligible', 'attested', 'attestation_id', 'match_id', 'companyfacts',
+      'stored_b3_projection'
+    ];
+    var companyfactsKeys = ['cik', 'accession', 'taxonomy', 'concept', 'unit', 'period', 'value'];
+    var projectionKeys = [
+      'attestation_id', 'authority_snapshot_id', 'package_id', 'extraction_id', 'cik', 'accession',
+      'companyfacts_capture_id', 'companyfacts_manifest_id', 'companyfacts_response_sha256',
+      'companyfacts_match_count', 'attested_at'
+    ];
+    var companyfacts = value.companyfacts;
+    var projection = value.stored_b3_projection;
+    var conversion = latest.companyfacts_conversion_receipt;
+    if (!eligible || !hasExactReceiptKeys(value, keys) ||
+        !/^ffatt_[a-f0-9]{64}$/.test(String(value.attestation_id || '')) ||
+        !/^ffatt_match_[a-f0-9]{64}$/.test(String(value.match_id || '')) ||
+        !hasExactReceiptKeys(companyfacts, companyfactsKeys) ||
+        !hasExactReceiptKeys(companyfacts.period, ['start', 'end']) ||
+        companyfacts.cik !== conversion.cik || !/^\d{10}-\d{2}-\d{6}$/.test(String(companyfacts.accession || '')) ||
+        !isBoundedReceiptText(companyfacts.taxonomy, 256) || !isBoundedReceiptText(companyfacts.concept, 256) ||
+        !isBoundedReceiptText(companyfacts.unit, 256) || !isReceiptDate(companyfacts.period.start, true) ||
+        !isReceiptDate(companyfacts.period.end, false) || !receiptDecimalText(companyfacts.value) ||
+        !hasExactReceiptKeys(projection, projectionKeys) || projection.attestation_id !== value.attestation_id ||
+        !/^ffsecsrc_[a-f0-9]{64}$/.test(String(projection.authority_snapshot_id || '')) ||
+        !/^ffpkg_[a-f0-9]{64}$/.test(String(projection.package_id || '')) ||
+        !/^ffxbrl_[a-f0-9]{64}$/.test(String(projection.extraction_id || '')) ||
+        projection.cik !== companyfacts.cik || projection.accession !== companyfacts.accession ||
+        projection.companyfacts_capture_id !== conversion.capture_id ||
+        projection.companyfacts_manifest_id !== conversion.manifest_id ||
+        !/^[a-f0-9]{64}$/.test(String(projection.companyfacts_response_sha256 || '')) ||
+        !Number.isSafeInteger(projection.companyfacts_match_count) || projection.companyfacts_match_count <= 0 ||
+        receiptUtcOrderKey(projection.attested_at) === null) return null;
+    return value;
+  }
+
+  function validatedReceiptDetailPayload(value, latest, rootCellId, cachedRoot) {
+    var keys = [
+      'snapshot_id', 'base_snapshot_id', 'query_hash', 'published_at', 'authority', 'root', 'waterfall'
+    ];
+    if (!hasExactReceiptKeys(value, keys) || !sameReceiptIdentity(value, latest) ||
+        !sameReceiptAuthority(value.authority, latest.authority) || !Array.isArray(value.waterfall) ||
+        value.waterfall.length > 1024) return null;
+    var root = validatedReceiptRoot(value.root);
+    if (!root || root.root_cell_id !== rootCellId || !cachedRoot ||
+        root.status !== cachedRoot.status ||
+        !receiptArraysEqual(root.selected_leaf_occurrence_ids, cachedRoot.selected_leaf_occurrence_ids) ||
+        !receiptArraysEqual(root.eligible_leaf_occurrence_ids, cachedRoot.eligible_leaf_occurrence_ids) ||
+        !receiptArraysEqual(root.attested_occurrence_ids, cachedRoot.attested_occurrence_ids) ||
+        value.waterfall.length !== root.selected_leaf_occurrence_ids.length) return null;
+    var eligible = new Set(root.eligible_leaf_occurrence_ids);
+    var attested = new Set(root.attested_occurrence_ids);
+    var recordedPairs = new Set();
+    var waterfall = [];
+    for (var index = 0; index < root.selected_leaf_occurrence_ids.length; index += 1) {
+      var occurrenceId = root.selected_leaf_occurrence_ids[index];
+      var row = validatedReceiptWaterfallRow(
+        value.waterfall[index], occurrenceId, eligible.has(occurrenceId), attested.has(occurrenceId), latest
+      );
+      if (!row) return null;
+      if (row.attested) {
+        var pairKey = row.attestation_id + ':' + row.match_id;
+        if (recordedPairs.has(pairKey)) return null;
+        recordedPairs.add(pairKey);
+      }
+      waterfall.push(row);
+    }
+    return {root: compactReceiptRoot(root), waterfall: waterfall};
+  }
+
+  function resetReceiptState() {
+    var token = state.receipt.requestToken + 1;
+    state.receipt = {
+      phase: 'idle',
+      requestToken: token,
+      latest: null,
+      ownerCik: '',
+      page: null,
+      pageCursors: [null],
+      pageIndex: 0,
+      rootCellId: '',
+      detail: null,
+      detailPhase: 'idle',
+      lastFocus: null
+    };
+    closeReceiptInspector(false);
+  }
+
+  function historyRequest(path) {
+    return withAuth({ Accept: 'application/json' })
+      .then(function (headers) {
+        return fetch(ATTESTED_HISTORY_URL + path, {
+          headers: headers,
+          credentials: 'same-origin',
+          cache: 'no-store'
+        });
+      })
+      .then(function (response) {
+        if (!response.ok) {
+          var failure = new Error('History request failed');
+          failure.status = response.status;
+          throw failure;
+        }
+        return response.json();
+      });
+  }
+
+  function receiptOwnerMatches(target, receipt) {
+    var selected = normalizedCik(target && target.cik);
+    var conversion = receipt && receipt.companyfacts_conversion_receipt;
+    return !!selected && !!conversion && selected === normalizedCik(conversion.cik);
+  }
+
+  function setSourceMode(mode, focusPanel) {
+    var next = mode === 'receipt' ? 'receipt' : 'map';
+    state.sourceMode = next;
+    ui.workspace.setAttribute('data-source-mode', next);
+    ui.sourceTabs.forEach(function (button) {
+      var active = button.getAttribute('data-source-mode') === next;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+      button.tabIndex = active ? 0 : -1;
+    });
+    ui.sourceMapPanel.hidden = next !== 'map';
+    ui.receiptPanel.hidden = next !== 'receipt';
+    // Do not retain or resume an in-flight private receipt read after the
+    // analyst has returned to the public evidence map. A later receipt open
+    // starts a fresh, CIK-gated request instead of stranding the UI in loading.
+    if (next === 'receipt') {
+      closeReceiptInspector(false);
+      ensureReceiptForCompany();
+    } else {
+      resetReceiptState();
+      renderReceiptInspector();
+    }
+    if (focusPanel) {
+      (next === 'receipt' ? ui.receiptPanel : ui.sourceMapPanel).focus({ preventScroll: true });
+    }
+  }
+
+  function receiptFailurePhase(error) {
+    return error && (error.status === 401 || error.status === 403) ? 'access' : 'unavailable';
+  }
+
+  function ensureReceiptForCompany() {
+    var target = company();
+    if (!target || state.sourceMode !== 'receipt') return;
+    var cik = normalizedCik(target.cik);
+    if (!cik) {
+      state.receipt.phase = 'mismatch';
+      state.receipt.ownerCik = '';
+      renderReceipt();
+      return;
+    }
+    if (state.receipt.ownerCik === cik && (
+      state.receipt.phase === 'loading' || state.receipt.phase === 'ready' || state.receipt.phase === 'mismatch'
+    )) {
+      renderReceipt();
+      return;
+    }
+    resetReceiptState();
+    state.receipt.ownerCik = cik;
+    state.receipt.phase = 'loading';
+    var token = state.receipt.requestToken + 1;
+    state.receipt.requestToken = token;
+    renderReceipt();
+    historyRequest('/latest')
+      .then(function (payload) {
+        if (token !== state.receipt.requestToken || state.sourceMode !== 'receipt') return;
+        if (!receiptReadyPayload(payload)) throw new Error('Receipt identity is malformed');
+        if (!receiptOwnerMatches(company(), payload)) {
+          state.receipt.latest = payload;
+          state.receipt.phase = 'mismatch';
+          renderReceipt();
+          return;
+        }
+        state.receipt.latest = payload;
+        loadReceiptRoots(null, 0);
+      })
+      .catch(function (error) {
+        if (token !== state.receipt.requestToken || state.sourceMode !== 'receipt') return;
+        state.receipt.phase = receiptFailurePhase(error);
+        renderReceipt();
+      });
+  }
+
+  function loadReceiptRoots(cursor, pageIndex) {
+    var receipt = state.receipt;
+    var latest = receipt.latest;
+    if (!latest || !isSnapshotId(latest.snapshot_id) || state.sourceMode !== 'receipt') return;
+    var previousTotal = receipt.page ? receipt.page.total : null;
+    var token = receipt.requestToken + 1;
+    receipt.requestToken = token;
+    receipt.phase = 'loading';
+    receipt.detail = null;
+    receipt.rootCellId = '';
+    receipt.detailPhase = 'idle';
+    closeReceiptInspector(false);
+    renderReceipt();
+    var suffix = '/snapshots/' + encodeURIComponent(latest.snapshot_id) + '/roots?limit=25';
+    if (cursor) suffix += '&cursor=' + encodeURIComponent(cursor);
+    historyRequest(suffix)
+      .then(function (payload) {
+        if (token !== state.receipt.requestToken || state.sourceMode !== 'receipt') return;
+        var page = validatedReceiptPagePayload(payload, latest, cursor || null, pageIndex, previousTotal);
+        if (!page) throw new Error('Receipt page is malformed');
+        receipt.page = page;
+        receipt.pageIndex = pageIndex;
+        receipt.phase = 'ready';
+        renderReceipt();
+      })
+      .catch(function (error) {
+        if (token !== state.receipt.requestToken || state.sourceMode !== 'receipt') return;
+        receipt.phase = receiptFailurePhase(error);
+        renderReceipt();
+      });
+  }
+
+  function receiptPageNext() {
+    var receipt = state.receipt;
+    if (!receipt.page || !receipt.page.nextCursor) return;
+    receipt.pageCursors = receipt.pageCursors.slice(0, receipt.pageIndex + 1);
+    receipt.pageCursors.push(receipt.page.nextCursor);
+    loadReceiptRoots(receipt.page.nextCursor, receipt.pageIndex + 1);
+  }
+
+  function receiptPagePrevious() {
+    var receipt = state.receipt;
+    if (receipt.pageIndex < 1) return;
+    loadReceiptRoots(receipt.pageCursors[receipt.pageIndex - 1], receipt.pageIndex - 1);
+  }
+
+  function requestReceiptRoot(rootCellId, trigger) {
+    var receipt = state.receipt;
+    var latest = receipt.latest;
+    if (!latest || !isSnapshotId(latest.snapshot_id) || !isRootCellId(rootCellId)) return;
+    var cachedRoot = receipt.page && receipt.page.rows.find(function (row) {
+      return row.root_cell_id === rootCellId;
+    });
+    if (!cachedRoot) return;
+    receipt.rootCellId = rootCellId;
+    receipt.detail = null;
+    receipt.detailPhase = 'loading';
+    receipt.lastFocus = trigger || document.activeElement;
+    var token = receipt.requestToken + 1;
+    receipt.requestToken = token;
+    renderReceipt();
+    receipt.lastFocus = selectedReceiptRootButton() || trigger || document.activeElement;
+    renderReceiptInspector();
+    openReceiptInspector();
+    historyRequest('/snapshots/' + encodeURIComponent(latest.snapshot_id) + '/roots/' + encodeURIComponent(rootCellId))
+      .then(function (payload) {
+        if (token !== state.receipt.requestToken || state.sourceMode !== 'receipt') return;
+        var detail = validatedReceiptDetailPayload(payload, latest, rootCellId, cachedRoot);
+        if (!detail) throw new Error('Receipt detail is malformed');
+        receipt.detail = detail;
+        receipt.detailPhase = 'ready';
+        renderReceiptInspector();
+      })
+      .catch(function () {
+        if (token !== state.receipt.requestToken || state.sourceMode !== 'receipt') return;
+        receipt.detail = null;
+        receipt.detailPhase = 'unavailable';
+        renderReceiptInspector();
+      });
+  }
+
+  function receiptStatusBadge(status) {
+    var info = receiptStatusInfo(status);
+    return '<span class="ff-receipt-status is-' + esc(info.key) + '">' + pair(info.en, info.zh) + '</span>';
+  }
+
+  function receiptStat(labelEn, labelZh, value) {
+    return '<div class="ff-receipt-stat"><small>' + pair(labelEn, labelZh) + '</small><strong>' + esc(value == null ? '—' : value) + '</strong></div>';
+  }
+
+  function receiptEmpty(titleEn, titleZh, bodyEn, bodyZh, action) {
+    return '<div class="ff-receipt-empty"><span class="ff-empty-mark" aria-hidden="true">◇</span><div><h3>' + pair(titleEn, titleZh) + '</h3><p>' + pair(bodyEn, bodyZh) + '</p>' + (action || '') + '</div></div>';
+  }
+
+  function renderReceipt() {
+    if (!ui.receipt) return;
+    var receipt = state.receipt;
+    if (receipt.phase === 'idle') {
+      ui.receipt.innerHTML = receiptEmpty(
+        'Receipt on demand', '按需读取凭据',
+        'Open the sealed receipt to inspect the published correspondence record for this issuer.',
+        '打开密封凭据，以检查该发行人已发布的对应记录。'
+      );
+      renderReceiptInspector();
+      return;
+    }
+    if (receipt.phase === 'loading') {
+      ui.receipt.innerHTML = '<div class="ff-loading" role="status"><span class="ff-loading-dot" aria-hidden="true"></span>' +
+        pair('Loading sealed receipt…', '正在载入密封凭据…') + '</div>';
+      renderReceiptInspector();
+      return;
+    }
+    if (receipt.phase === 'mismatch') {
+      var mismatchEn = receipt.ownerCik ?
+        'The available receipt belongs to a different issuer, so no coverage rows were requested.' :
+        'The selected company has no CIK available for an issuer match, so no coverage rows were requested.';
+      var mismatchZh = receipt.ownerCik ?
+        '可用凭据属于另一发行人，因此未请求任何覆盖行。' :
+        '选定公司没有可用于发行人匹配的 CIK，因此未请求任何覆盖行。';
+      ui.receipt.innerHTML = receiptEmpty(
+        'No published receipt for this selected issuer', '该选定发行人暂无已发布凭据',
+        mismatchEn, mismatchZh
+      );
+      renderReceiptInspector();
+      return;
+    }
+    if (receipt.phase === 'access') {
+      ui.receipt.innerHTML = receiptEmpty(
+        'Receipt access is unavailable for this session', '当前会话无法访问凭据',
+        'The evidence map remains available. Sign in again, then retry this private read.',
+        '证据映射仍可使用。请重新登录后重试此私有读取。',
+        '<button class="ff-receipt-retry" type="button" data-receipt-action="retry">' + pair('Retry', '重试') + '</button>'
+      );
+      renderReceiptInspector();
+      return;
+    }
+    if (receipt.phase !== 'ready' || !receipt.latest || !receipt.page) {
+      ui.receipt.innerHTML = receiptEmpty(
+        'Receipt temporarily unavailable', '凭据暂时不可用',
+        'The evidence map remains available. This view does not infer coverage without a sealed response.',
+        '证据映射仍可使用。缺少密封响应时，此视图不会推断覆盖范围。',
+        '<button class="ff-receipt-retry" type="button" data-receipt-action="retry">' + pair('Retry', '重试') + '</button>'
+      );
+      renderReceiptInspector();
+      return;
+    }
+
+    var latest = receipt.latest;
+    var coverage = latest.coverage_summary || {};
+    var authority = latest.authority || {};
+    var conversion = latest.companyfacts_conversion_receipt || {};
+    var clocks = conversion.clocks || {};
+    var policy = latest.policy || {};
+    var rows = receipt.page.rows;
+    var rootRows = rows.length ? rows.map(function (root) {
+      var selected = receipt.rootCellId === root.root_cell_id;
+      return '<button class="ff-receipt-root' + (selected ? ' is-selected' : '') + '" type="button" data-root-cell-id="' + esc(root.root_cell_id) + '"' +
+        ' aria-controls="ff-receipt-inspector" aria-current="' + (selected ? 'true' : 'false') + '"><span class="ff-receipt-root-id"><code title="' + esc(root.root_cell_id) + '">' +
+        esc(shortTraceId(root.root_cell_id)) + '</code><small>' + pair(root.selected + ' selected · ' + root.eligible + ' eligible · ' + root.attested + ' recorded', root.selected + ' 个选定 · ' + root.eligible + ' 个符合条件 · ' + root.attested + ' 个已记录') +
+        '</small></span>' + receiptStatusBadge(root.status) + '<span class="ff-receipt-root-arrow" aria-hidden="true">›</span></button>';
+    }).join('') : receiptEmpty(
+      'No root coverage rows', '没有根覆盖行',
+      'The sealed receipt contains no root coverage rows.',
+      '该密封凭据不包含根覆盖行。'
+    );
+    var previousDisabled = receipt.pageIndex < 1 ? ' disabled' : '';
+    var nextDisabled = !receipt.page.nextCursor ? ' disabled' : '';
+    var nonclaims = authority.nonclaims || {};
+    var limits = [];
+    if (nonclaims.filing_complete === false) limits.push(pair('Does not establish filing completeness.', '不证明申报文件完整性。'));
+    if (nonclaims.trading_authority === false) limits.push(pair('Does not grant trading authority.', '不授予交易决策权限。'));
+    if (nonclaims.neural_web_authority === false) limits.push(pair('Does not grant Neural Web authority.', '不授予 Neural Web 权限。'));
+
+    ui.receipt.innerHTML = '<div class="ff-receipt-intro"><div><p class="ff-kicker">' + pair('Sealed publication receipt', '密封发布凭据') +
+      '</p><h3>' + pair('Recorded correspondence, read at its stated scope', '在声明范围内读取已记录的对应关系') + '</h3><p>' + pair(
+        'This view reads a stored receipt. Source material is not reread while you inspect it.',
+        '此视图读取存储的凭据；检查期间不会重新读取来源材料。'
+      ) + '</p></div><span class="ff-receipt-live-mark" aria-hidden="true">◇</span></div>' +
+      '<div class="ff-receipt-identity"><div class="ff-receipt-identity-main"><span>' + pair('Receipt snapshot', '凭据快照') + '</span><code title="' + esc(latest.snapshot_id) + '">' + esc(shortTraceId(latest.snapshot_id)) + '</code></div>' +
+      '<div>' + receiptStat('Published', '发布时间', formatDate(latest.published_at)) + '</div>' +
+      '<div>' + receiptStat('Issuer CIK', '发行人 CIK', normalizedCik(conversion.cik)) + '</div>' +
+      '<div>' + receiptStat('Policy', '策略', policy.version || '—') + '</div></div>' +
+      '<section class="ff-receipt-card ff-receipt-authority"><div class="ff-receipt-card-head"><div><p class="ff-kicker">' + pair('Scope', '范围') + '</p><h3>' + pair('What this receipt records', '此凭据记录的内容') + '</h3></div>' +
+      '<span class="ff-receipt-scope-mark">' + pair('Scoped', '限定范围') + '</span></div><p>' + pair(
+        'Selected Company Facts row correspondence only. The receipt is a sealed publication record, not a source reread.',
+        '仅限选定的 Company Facts 行对应关系。该凭据是密封的发布记录，并非来源重读。'
+      ) + '</p><ul class="ff-receipt-limits">' + (limits.join('') || '<li>' + pair('No broader authority is supplied.', '未提供更广泛的权限。') + '</li>') + '</ul></section>' +
+      '<section class="ff-receipt-card"><div class="ff-receipt-card-head"><div><p class="ff-kicker">' + pair('Coverage control room', '覆盖控制室') + '</p><h3>' + pair('Selected-leaf correspondence states', '选定叶节点对应状态') + '</h3></div><span class="ff-receipt-micro">' + pair('Root cells ' + (coverage.root_cell_count == null ? receipt.page.total : coverage.root_cell_count), '根单元 ' + (coverage.root_cell_count == null ? receipt.page.total : coverage.root_cell_count)) + '</span></div>' +
+      '<div class="ff-receipt-status-grid">' +
+        '<div>' + receiptStatusBadge('all_leaves_attested') + '<strong>' + esc(coverage.all_leaves_attested == null ? '—' : coverage.all_leaves_attested) + '</strong></div>' +
+        '<div>' + receiptStatusBadge('partially_attested') + '<strong>' + esc(coverage.partially_attested == null ? '—' : coverage.partially_attested) + '</strong></div>' +
+        '<div>' + receiptStatusBadge('not_attested') + '<strong>' + esc(coverage.not_attested == null ? '—' : coverage.not_attested) + '</strong></div>' +
+        '<div>' + receiptStatusBadge('not_evaluable') + '<strong>' + esc(coverage.not_evaluable == null ? '—' : coverage.not_evaluable) + '</strong></div></div></section>' +
+      '<section class="ff-receipt-card"><div class="ff-receipt-card-head"><div><p class="ff-kicker">' + pair('Company Facts conversion', 'Company Facts 转换') + '</p><h3>' + pair('Recorded input window', '已记录的输入窗口') + '</h3></div><span class="ff-receipt-micro">' + esc(conversion.availability || '—') + '</span></div><div class="ff-receipt-stats">' +
+        receiptStat('Occurrences', '事实条目', conversion.occurrence_count) + receiptStat('Output rows', '输出行', conversion.output_occurrence_count) + receiptStat('PIT eligible', 'PIT 符合条件', conversion.pit_eligible_count) + '</div>' +
+        '<dl class="ff-receipt-clocks"><div><dt>' + pair('Captured', '捕获时间') + '</dt><dd>' + esc(formatDate(clocks.captured_at)) + '</dd></div><div><dt>' + pair('Source snapshot', '来源快照') + '</dt><dd>' + esc(formatDate(clocks.source_snapshot_at)) + '</dd></div><div><dt>' + pair('Recorded', '记录时间') + '</dt><dd>' + esc(formatDate(clocks.recorded_at)) + '</dd></div></dl></section>' +
+      '<section class="ff-receipt-card ff-receipt-root-card"><div class="ff-receipt-card-head"><div><p class="ff-kicker">' + pair('Receipt cells', '凭据单元') + '</p><h3>' + pair('Open one recorded waterfall', '打开一个已记录的瀑布') + '</h3></div><span class="ff-receipt-micro">' + pair('Page ' + (receipt.pageIndex + 1), '第 ' + (receipt.pageIndex + 1) + ' 页') + '</span></div><p class="ff-receipt-root-note">' + pair(
+        'Cell identifiers are trace keys. A user-facing metric label is not inferred where the receipt does not provide one.',
+        '单元标识符是追踪键。凭据未提供时不会推断面向用户的指标标签。'
+      ) + '</p><div class="ff-receipt-root-list" role="list">' + rootRows + '</div><div class="ff-receipt-pager"><button type="button" data-receipt-action="previous"' + previousDisabled + '>' + pair('Previous', '上一页') + '</button><span>' + pair(receipt.page.returned + ' of ' + receipt.page.total + ' cells', receipt.page.returned + ' / ' + receipt.page.total + ' 个单元') + '</span><button type="button" data-receipt-action="next"' + nextDisabled + '>' + pair('Next', '下一页') + '</button></div></section>';
+    renderReceiptInspector();
+  }
+
+  function receiptDetailValue(labelEn, labelZh, value) {
+    return '<div><dt>' + pair(labelEn, labelZh) + '</dt><dd><code>' + esc(value == null || value === '' ? '—' : value) + '</code></dd></div>';
+  }
+
+  function receiptWaterfallRow(row, index) {
+    var item = row && typeof row === 'object' ? row : {};
+    var attested = item.attested === true;
+    var companyfacts = attested && item.companyfacts && typeof item.companyfacts === 'object' ? item.companyfacts : null;
+    var trail = attested && item.stored_b3_projection && typeof item.stored_b3_projection === 'object' ? item.stored_b3_projection : null;
+    var heading = attested ? pair('Recorded correspondence', '已记录的对应关系') : pair('No recorded correspondence', '没有已记录的对应关系');
+    var contents = attested && companyfacts ? '<dl class="ff-receipt-waterfall-fields">' +
+      receiptDetailValue('Concept', '概念', [companyfacts.taxonomy, companyfacts.concept].filter(Boolean).join(': ')) +
+      receiptDetailValue('Period', '期间', companyfacts.period && [companyfacts.period.start, companyfacts.period.end].filter(Boolean).join(' → ')) +
+      receiptDetailValue('Unit', '单位', companyfacts.unit) + receiptDetailValue('Exact value', '精确数值', companyfacts.value) +
+      receiptDetailValue('Accession', '文件编号', companyfacts.accession) + '</dl>' +
+      '<details class="ff-receipt-projection"><summary>' + pair('Stored provenance projection', '存储的溯源投影') + '</summary><dl class="ff-receipt-waterfall-fields">' +
+      receiptDetailValue('Attestation ID', '证明 ID', item.attestation_id) + receiptDetailValue('Match ID', '匹配 ID', item.match_id) +
+      receiptDetailValue('Package ID', '包 ID', trail && trail.package_id) + receiptDetailValue('Extraction ID', '提取 ID', trail && trail.extraction_id) +
+      receiptDetailValue('Recorded at', '记录时间', trail && trail.attested_at) + '</dl></details>' :
+      '<p class="ff-receipt-unmatched">' + pair(
+        item.eligible === false ? 'No eligible selected leaf is recorded for this row.' : 'No selected correspondence is recorded in this receipt.',
+        item.eligible === false ? '该行未记录符合条件的选定叶节点。' : '该凭据未记录选定对应关系。'
+      ) + '</p>';
+    return '<article class="ff-receipt-waterfall-row' + (attested ? ' is-recorded' : ' is-open') + '"><div class="ff-receipt-waterfall-head"><span class="ff-receipt-waterfall-index" aria-hidden="true">' + (index + 1) + '</span><div><strong>' + heading + '</strong><code title="' + esc(item.occurrence_id || '') + '">' + esc(shortTraceId(item.occurrence_id)) + '</code></div><span class="ff-receipt-leaf-state">' + pair(item.eligible === false ? 'Not eligible' : 'Eligible', item.eligible === false ? '不符合条件' : '符合条件') + '</span></div>' + contents + '</article>';
+  }
+
+  function renderReceiptInspector() {
+    if (!ui.receiptInspectorBody) return;
+    var receipt = state.receipt;
+    if (!receipt.rootCellId) {
+      ui.receiptInspectorTitle.innerHTML = pair('Select a receipt cell', '选择一个凭据单元');
+      ui.receiptInspectorBody.innerHTML = '<div class="ff-evidence-empty"><span class="ff-empty-mark" aria-hidden="true">◇</span><p>' + pair(
+        'Choose a receipt cell to inspect its recorded selected-leaf trail.',
+        '选择一个凭据单元，以检查其已记录的选定叶节点轨迹。'
+      ) + '</p></div>';
+      return;
+    }
+    ui.receiptInspectorTitle.innerHTML = pair('Receipt cell', '凭据单元') + '<code class="ff-receipt-inspector-id" title="' + esc(receipt.rootCellId) + '">' + esc(shortTraceId(receipt.rootCellId)) + '</code>';
+    if (receipt.detailPhase === 'loading') {
+      ui.receiptInspectorBody.innerHTML = '<div class="ff-loading" role="status"><span class="ff-loading-dot" aria-hidden="true"></span>' + pair('Loading recorded trail…', '正在载入已记录轨迹…') + '</div>';
+      return;
+    }
+    if (receipt.detailPhase !== 'ready' || !receipt.detail) {
+      ui.receiptInspectorBody.innerHTML = receiptEmpty(
+        'Receipt cell temporarily unavailable', '凭据单元暂时不可用',
+        'No waterfall is inferred when its sealed detail cannot be read.',
+        '无法读取其密封详情时，不会推断瀑布内容。',
+        '<button class="ff-receipt-retry" type="button" data-receipt-detail-retry="true">' + pair('Retry', '重试') + '</button>'
+      );
+      return;
+    }
+    var detail = receipt.detail;
+    var root = detail.root;
+    var waterfall = detail.waterfall;
+    var summary = root.attested + ' of ' + root.selected + ' selected leaves have recorded correspondence';
+    var waterfallHtml = waterfall.length ? waterfall.map(receiptWaterfallRow).join('') : receiptEmpty(
+      'No selected leaves supplied', '未提供选定叶节点',
+      'This receipt cell has no selected leaf rows to display.',
+      '该凭据单元没有可显示的选定叶节点行。'
+    );
+    ui.receiptInspectorBody.innerHTML = '<div class="ff-receipt-inspector-summary">' + receiptStatusBadge(root.status) + '<p>' + pair(summary, root.attested + ' / ' + root.selected + ' 个选定叶节点有已记录的对应关系') + '</p><p class="ff-receipt-boundary">' + pair(
+      'This waterfall preserves unmatched leaves and does not reread source material.',
+      '此瀑布保留未匹配叶节点，且不重新读取来源材料。'
+    ) + '</p></div><div class="ff-receipt-waterfall">' + waterfallHtml + '</div>';
+  }
+
   function receiptUrl(receipt) {
     return safeUrl(receipt && (receipt.source_url || receipt.url || receipt.filing_url));
   }
@@ -1619,7 +2457,11 @@
       var panel = byId(button.getAttribute('aria-controls'));
       if (panel) panel.hidden = !active;
     });
-    if (previousTab !== tab) closeEvidence(false);
+    if (previousTab !== tab) {
+      closeEvidence(false);
+      closeReceiptInspector(false);
+      if (previousTab === 'trace' && tab !== 'trace') resetReceiptState();
+    }
     if (tab === 'radar') {
       state.evidenceKind = 'finding';
       renderEvidence(selectedFinding());
@@ -1633,6 +2475,8 @@
         state.evidenceKind = 'view';
         renderTabEvidenceEmpty(tab);
       }
+    } else if (tab === 'trace') {
+      setSourceMode(state.sourceMode, false);
     }
     updateViewStatus();
     if (focusPanel) {
@@ -1675,6 +2519,15 @@
         filingCount + ' filing' + (filingCount === 1 ? '' : 's') + ' in the source trail',
         '来源轨迹中有 ' + filingCount + ' 份财报'
       );
+    } else if (state.sourceMode === 'receipt') {
+      var receipt = state.receipt;
+      if (receipt.phase === 'ready' && receipt.page) {
+        ui.viewStatus.innerHTML = pair(receipt.page.total + ' receipt cells', receipt.page.total + ' 个凭据单元');
+      } else if (receipt.phase === 'mismatch') {
+        ui.viewStatus.innerHTML = pair('No issuer receipt', '无该发行人凭据');
+      } else {
+        ui.viewStatus.innerHTML = pair('Receipt on demand', '按需读取凭据');
+      }
     } else {
       ui.viewStatus.innerHTML = pair(evidenceCount + ' source links', evidenceCount + ' 条来源链接');
     }
@@ -1767,6 +2620,35 @@
     }
   }
 
+  function openReceiptInspector() {
+    if (desktopMedia.matches || !state.receipt.rootCellId) return;
+    ui.receiptInspector.classList.add('is-open');
+    ui.receiptInspector.setAttribute('role', 'dialog');
+    ui.receiptInspector.setAttribute('aria-modal', 'true');
+    ui.scrim.hidden = false;
+    document.body.classList.add('ff-modal-open');
+    setInert(ui.main, true);
+    setInert(ui.siteNav, true);
+    window.requestAnimationFrame(function () { ui.receiptInspectorClose.focus(); });
+  }
+
+  function closeReceiptInspector(restoreFocus) {
+    if (!ui.receiptInspector) return;
+    var wasOpen = ui.receiptInspector.classList.contains('is-open');
+    ui.receiptInspector.classList.remove('is-open');
+    ui.receiptInspector.removeAttribute('role');
+    ui.receiptInspector.removeAttribute('aria-modal');
+    if (!ui.evidence.classList.contains('is-open')) {
+      ui.scrim.hidden = true;
+      document.body.classList.remove('ff-modal-open');
+      setInert(ui.main, false);
+      setInert(ui.siteNav, false);
+    }
+    if (wasOpen && restoreFocus !== false && state.receipt.lastFocus && typeof state.receipt.lastFocus.focus === 'function') {
+      state.receipt.lastFocus.focus({ preventScroll: true });
+    }
+  }
+
   function setInert(element, inert) {
     if (!element) return;
     if (inert) {
@@ -1780,6 +2662,12 @@
 
   function focusableInEvidence() {
     return Array.prototype.slice.call(ui.evidence.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(function (node) { return node.offsetParent !== null; });
+  }
+
+  function focusableInReceiptInspector() {
+    return Array.prototype.slice.call(ui.receiptInspector.querySelectorAll(
       'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
     )).filter(function (node) { return node.offsetParent !== null; });
   }
@@ -1809,8 +2697,36 @@
     }
   }
 
+  function handleReceiptInspectorKeydown(event) {
+    if (!ui.receiptInspector.classList.contains('is-open')) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeReceiptInspector(true);
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    var focusable = focusableInReceiptInspector();
+    if (!focusable.length) {
+      event.preventDefault();
+      ui.receiptInspector.focus();
+      return;
+    }
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   function handleViewportChange() {
-    if (desktopMedia.matches) closeEvidence(false);
+    if (desktopMedia.matches) {
+      closeEvidence(false);
+      closeReceiptInspector(false);
+    }
   }
 
   function updateLocalizedAttributes() {
@@ -1830,6 +2746,8 @@
       renderCompare(company());
       renderRunMeta();
       renderCurrentEvidence();
+      renderReceipt();
+      renderReceiptInspector();
     }
   }
 
@@ -1846,6 +2764,25 @@
         event.preventDefault();
         ui.tabs[next].focus();
         setTab(ui.tabs[next].getAttribute('data-tab'), false);
+      });
+    });
+
+    ui.sourceTabs.forEach(function (button, index) {
+      button.addEventListener('click', function () {
+        setSourceMode(button.getAttribute('data-source-mode'), false);
+        updateViewStatus();
+      });
+      button.addEventListener('keydown', function (event) {
+        var next = index;
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % ui.sourceTabs.length;
+        else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index - 1 + ui.sourceTabs.length) % ui.sourceTabs.length;
+        else if (event.key === 'Home') next = 0;
+        else if (event.key === 'End') next = ui.sourceTabs.length - 1;
+        else return;
+        event.preventDefault();
+        ui.sourceTabs[next].focus();
+        setSourceMode(ui.sourceTabs[next].getAttribute('data-source-mode'), false);
+        updateViewStatus();
       });
     });
 
@@ -1918,6 +2855,26 @@
       }
     });
 
+    ui.receipt.addEventListener('click', function (event) {
+      var root = event.target.closest('[data-root-cell-id]');
+      if (root) {
+        requestReceiptRoot(root.getAttribute('data-root-cell-id'), root);
+        return;
+      }
+      var action = event.target.closest('[data-receipt-action]');
+      if (action) {
+        var name = action.getAttribute('data-receipt-action');
+        if (name === 'retry') ensureReceiptForCompany();
+        else if (name === 'next') receiptPageNext();
+        else if (name === 'previous') receiptPagePrevious();
+      }
+    });
+
+    ui.receiptInspectorBody.addEventListener('click', function (event) {
+      if (!event.target.closest('[data-receipt-detail-retry]') || !state.receipt.rootCellId) return;
+      requestReceiptRoot(state.receipt.rootCellId, state.receipt.lastFocus);
+    });
+
     ui.currentPeriod.addEventListener('change', function () {
       state.currentPeriod = Number(ui.currentPeriod.value) || 0;
       renderCompare(company());
@@ -1972,8 +2929,13 @@
       if (event.target.closest('#ff-retry')) loadData();
     });
     ui.evidenceClose.addEventListener('click', function () { closeEvidence(true); });
-    ui.scrim.addEventListener('click', function () { closeEvidence(true); });
+    ui.receiptInspectorClose.addEventListener('click', function () { closeReceiptInspector(true); });
+    ui.scrim.addEventListener('click', function () {
+      if (ui.receiptInspector.classList.contains('is-open')) closeReceiptInspector(true);
+      else closeEvidence(true);
+    });
     ui.evidence.addEventListener('keydown', handleEvidenceKeydown);
+    ui.receiptInspector.addEventListener('keydown', handleReceiptInspectorKeydown);
 
     if (desktopMedia.addEventListener) desktopMedia.addEventListener('change', handleViewportChange);
     else desktopMedia.addListener(handleViewportChange);
@@ -2001,6 +2963,19 @@
       else window.addEventListener('load', bindAuth, { once: true });
     }
     loadData();
+  }
+
+  // A deliberately opt-in pure-function seam for the dependency-free Node
+  // contract suite. Production never sets this sentinel and receives no test
+  // surface; the browser runtime still consumes the exact same validators.
+  if (window.__FF_RECEIPT_CONTRACT_TEST__ === true) {
+    window.__FF_RECEIPT_CONTRACT_TEST__ = Object.freeze({
+      normalizedCik: normalizedCik,
+      validatedLatestReceipt: validatedLatestReceipt,
+      validatedReceiptRoot: validatedReceiptRoot,
+      validatedReceiptPagePayload: validatedReceiptPagePayload,
+      validatedReceiptDetailPayload: validatedReceiptDetailPayload
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
