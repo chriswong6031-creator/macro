@@ -11,6 +11,10 @@
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
+{# dashboard-icons.css = the estate's hand-drawn masked-icon consumer (.dash-icon ::before
+   draws --dash-icon-mask/--submenu-icon-mask in currentColor) — the workspace rail and
+   view reads use those classes; without this sheet the glyph spans render empty. #}
+<link rel="stylesheet" href="dashboard-icons.css">
 <link rel="stylesheet" href="cycle.css?v=4">
 <link rel="stylesheet" href="sector_cycles.css">
 {# Preload the embedded cycle map's critical path (core data + engine + orchestrator) so the
@@ -1099,6 +1103,132 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     border-color: color-mix(in srgb, var(--warn) 52%, var(--line));
   }
 </style>
+<style>
+  /* ══════════════════════════════════════════════════════════════════════════
+     V2.1 — VISUAL LANGUAGE (Fable, operator redesign order 2026-08-03).
+     Reference = macro.html's panel system (operator-named): the estate's
+     hand-drawn icon family, panel tokens (--desk-tile/--desk-hair-strong/
+     --card-shadow/--desk-r-lg from macro-desk.css, already loaded here), and
+     the macro h2 rail-tick idiom. Three moves:
+       1. SURFACES — macro-idiom panels (tile bg + hair-strong border + card
+          shadow); light additionally gets a deeper canvas so the white cards
+          actually lift. Chips lose their boxes; ink carries state.
+       2. SIGNATURE — the handoff card: full names, losing→taking tinted wash.
+       3. RAIL — drawn icons (masked, currentColor), no wrap, no dead void.
+     Composition only: var()/color-mix, zero literal colours (shell pin). */
+
+  /* — drawn-glyph sizing (masked spans need an explicit box) — */
+  .si-vb-g { width:19px; height:19px; flex:none; }
+  .si-vr-g { width:16px; height:16px; flex:none; margin-top:1px; }
+  .si-view-btn .si-vb-g { color:var(--muted); }
+  .si-view-btn.on .si-vb-g, .si-view-btn:hover .si-vb-g { color:var(--link); }
+  .si-vr-g { color:var(--link); }
+  .si-side-out .si-vb-g { color:var(--muted); }
+
+  /* — rail: macro-desk composure — */
+  .si-side { padding:14px 11px; }
+  .si-view-btn { font-size:13px; padding:8.5px 11px; }
+  .si-view-btn.on { border-left-width:3px; }
+  .si-side-out { white-space:nowrap; }
+  .si-side-out .si-vb-l { white-space:nowrap; }
+  /* rail: dark = translucent over the aurora (the estate's sticky idiom); light =
+     COMPLETELY open — no fill, no border. On a near-white canvas any column fill
+     reads as a flat cut with a drawn edge (operator crop, 2026-08-03); the active
+     pill and the content cards' shadows do all the structuring light needs. */
+  .si-side { background:color-mix(in srgb, var(--bg) 55%, transparent);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-right:1px solid color-mix(in srgb, var(--line) 38%, transparent); }
+  html[data-theme="light"] .si-side { background:transparent; border-right:0;
+    backdrop-filter:none; -webkit-backdrop-filter:none; }
+
+  /* — surfaces: the macro.html container recipe — drop shadow does the definition,
+       borders stay TRANSPARENT (layout-stable, invisible), and the stage itself stays
+       transparent so the aurora gradient runs unbroken beneath every panel. A flat
+       stage fill painted over the gradient is exactly the hard-seam defect the
+       operator flagged — never reintroduce one. — */
+  .si-stage { background:transparent; }
+  .rvx-hero, .rvx-lane, .rvx-hocard, .si-view-read {
+    background:var(--desk-tile, var(--panel));
+    border:1px solid transparent;
+    border-radius:var(--desk-r-lg, 14px);
+    box-shadow:var(--card-shadow,
+      0 1px 2px color-mix(in srgb, var(--text) 6%, transparent)); }
+  html[data-theme="light"] .rvx-hero,
+  html[data-theme="light"] .rvx-lane,
+  html[data-theme="light"] .si-view-read {
+    background:var(--panel);
+    box-shadow:0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+               0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent); }
+  /* the session tape floats as a container too — its old edge-to-edge flat band was
+     the worst of the gradient cutoffs */
+  .ftr-tape-strip.visible, .ftr-tape-full.open .ftr-tape-band {
+    border-radius:var(--desk-r-lg, 14px);
+    border:1px solid transparent;
+    background:var(--panel);
+    box-shadow:var(--card-shadow,
+      0 1px 2px color-mix(in srgb, var(--text) 6%, transparent)); }
+  html[data-theme="light"] .ftr-tape-strip.visible,
+  html[data-theme="light"] .ftr-tape-full.open .ftr-tape-band {
+    box-shadow:0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+               0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent); }
+  .ftr-tape-strip { margin-bottom:10px; }
+
+  /* — the macro h2 rail-tick on every workspace section head — */
+  .rvx-sec-h h2 { display:flex; align-items:center; gap:11px; }
+  .rvx-sec-h h2::before { content:""; flex:none; width:3px; height:18px; border-radius:2px;
+    background:linear-gradient(180deg, var(--link), color-mix(in srgb, var(--link) 35%, transparent)); }
+
+  /* — hero: committed verdict ink, chips demoted to a quiet context line — */
+  .rvx-vword { letter-spacing:-.028em; }
+  html[data-theme="light"] .rvx-hero .rvx-vword .ac {
+    background:linear-gradient(94deg, var(--si-ink-up, var(--up)),
+      color-mix(in srgb, var(--si-ink-up, var(--up)) 52%, var(--link)));
+    -webkit-background-clip:text; background-clip:text; }
+  html[data-theme="light"] .rvx-hero.strain .rvx-vword .ac {
+    background:linear-gradient(94deg, var(--si-ink-warn, var(--warn)), var(--si-ink-down, var(--down)));
+    -webkit-background-clip:text; background-clip:text; }
+  .rvx-chips { gap:4px 15px; margin-top:12px; }
+  .rvx-chip { border-color:transparent; background:transparent; padding:2px 0;
+    color:var(--muted); gap:5px; }
+  .rvx-chip + .rvx-chip::before { content:'·';
+    color:color-mix(in srgb, var(--muted) 50%, transparent); margin-right:10px; }
+  .rvx-chip.sz { border-color:transparent; background:transparent; color:var(--warn); }
+  html[data-theme="light"] .rvx-chip.sz { color:var(--si-ink-warn, var(--warn)); }
+  a.rvx-chip { color:var(--link); }
+
+  /* — the signature: this week's handoff — */
+  .rvx-hocol .nm { white-space:normal; overflow:visible; text-overflow:clip;
+    font-size:16px; line-height:1.28; letter-spacing:-.012em; }
+  .rvx-hocol { padding:13px 16px; }
+  .rvx-hocard .cap { letter-spacing:.09em; padding:10px 16px 0; }
+  .rvx-hoarrow { width:54px; } .rvx-hoarrow svg { width:54px; }
+  html[data-theme="light"] .rvx-hocard {
+    background:linear-gradient(100deg,
+      color-mix(in srgb, var(--si-ink-warn, var(--warn)) 6%, var(--panel)) 0%,
+      var(--panel) 46%,
+      color-mix(in srgb, var(--si-ink-up, var(--up)) 8%, var(--panel)) 100%);
+    box-shadow:0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+               0 12px 32px -14px color-mix(in srgb, var(--text) 10%, transparent); }
+  html[data-theme="light"] .rvx-hocol.out .nm { color:var(--si-ink-warn, var(--warn)); }
+  html[data-theme="light"] .rvx-hocol.in .nm  { color:var(--si-ink-up, var(--up)); }
+
+  /* — lanes as decision cards — */
+  .rvx-lanes { align-items:start; }
+  .rvx-lane { padding:14px 15px 10px; }
+  .rvx-lane.buy   { border-left:3px solid color-mix(in srgb, var(--rvx-lead) 55%, transparent); }
+  .rvx-lane.wait  { border-left:3px solid color-mix(in srgb, var(--rvx-improve) 55%, transparent); }
+  .rvx-lane.trim  { border-left:3px solid color-mix(in srgb, var(--rvx-weak) 55%, transparent); }
+  .rvx-lane.avoid { border-left:3px solid color-mix(in srgb, var(--rvx-lag) 45%, transparent); }
+  .rvx-lane-desc { min-height:0; margin-bottom:8px; }
+  .rvx-trow .tnm .rsn { color:color-mix(in srgb, var(--muted) 80%, transparent); }
+  .rvx-trow .tick { display:none; }  /* the figure's colour already says it */
+  .rvx-trow .tnm .mlcchip { border-color:transparent; border-radius:6px; padding:1px 6px;
+    background:color-mix(in srgb, var(--warn) 13%, transparent); opacity:1; }
+  html[data-theme="light"] .rvx-trow .tnm .mlcchip { color:var(--si-ink-warn, var(--warn)); }
+
+  /* — overview: the hero IS the read; no echo line beneath it — */
+  .si-view[data-view="overview"] .si-view-read { display:none; }
+</style>
 </head>
 <body class="macro-desk page-baskets">
 <div class="rvx-aurora" aria-hidden="true"><b class="a1"></b><b class="a2"></b><b class="a3"></b></div>
@@ -1159,13 +1289,17 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
      dual <span class="l-en">/<span class="l-zh"> pair, so inside an attribute it closes
      the quote at its own class= and the remainder leaks into the page as visible text. #}
   <nav class="si-side" aria-label="Sector Intelligence views">
-    <a class="si-view-btn on" data-view="overview" href="#overview" aria-current="page" data-tip-en="Overview" data-tip-zh="总览"><span class="si-vb-g" aria-hidden="true">🎯</span><span class="si-vb-l"><span class="l-en">Overview</span><span class="l-zh">总览</span></span></a>
-    <a class="si-view-btn" data-view="map" href="#map" data-tip-en="The Map" data-tip-zh="全景图谱"><span class="si-vb-g" aria-hidden="true">🧭</span><span class="si-vb-l"><span class="l-en">The Map</span><span class="l-zh">全景图谱</span></span></a>
-    <a class="si-view-btn" data-view="moving" href="#moving" data-tip-en="What&#39;s Moving" data-tip-zh="正在轮动"><span class="si-vb-g" aria-hidden="true">🌀</span><span class="si-vb-l"><span class="l-en">What&#39;s Moving</span><span class="l-zh">正在轮动</span></span></a>
-    <a class="si-view-btn" data-view="money" href="#money" data-tip-en="Money &amp; Breadth" data-tip-zh="资金与广度"><span class="si-vb-g" aria-hidden="true">💸</span><span class="si-vb-l"><span class="l-en">Money &amp; Breadth</span><span class="l-zh">资金与广度</span></span></a>
-    <a class="si-view-btn" data-view="explore" href="#explore" data-tip-en="Explore" data-tip-zh="深入探索"><span class="si-vb-g" aria-hidden="true">🔎</span><span class="si-vb-l"><span class="l-en">Explore</span><span class="l-zh">深入探索</span></span></a>
+    {# View glyphs: the estate's hand-drawn icon family (product-nav-icons /
+       dashboard-icons masked spans, same set the nav mega-menus use) — never raw
+       emoji next to the wordmark. Masked with background:currentColor, so the
+       rail's .on tint flows into the drawing. #}
+    <a class="si-view-btn on" data-view="overview" href="#overview" aria-current="page"><span class="si-vb-g dash-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Overview</span><span class="l-zh">总览</span></span></a>
+    <a class="si-view-btn" data-view="map" href="#map"><span class="si-vb-g dash-icon dash-icon-compass" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">The Map</span><span class="l-zh">全景图谱</span></span></a>
+    <a class="si-view-btn" data-view="moving" href="#moving"><span class="si-vb-g dash-icon submenu-icon-rotation" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">What&#39;s Moving</span><span class="l-zh">正在轮动</span></span></a>
+    <a class="si-view-btn" data-view="money" href="#money"><span class="si-vb-g dash-icon submenu-icon-flow" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Money &amp; Breadth</span><span class="l-zh">资金与广度</span></span></a>
+    <a class="si-view-btn" data-view="explore" href="#explore"><span class="si-vb-g dash-icon dash-icon-search" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Explore</span><span class="l-zh">深入探索</span></span></a>
     {# the funnel exit the retired rail carried — a link, never a sixth view #}
-    <a class="si-side-out" href="subsectors.html" data-tip-en="Stock entry funnel" data-tip-zh="选股漏斗"><span class="si-vb-g" aria-hidden="true">💫</span><span class="si-vb-l"><span class="l-en">Stock entry funnel</span><span class="l-zh">选股漏斗</span> →</span></a>
+    <a class="si-side-out" href="subsectors.html"><span class="si-vb-g dash-icon submenu-icon-confluence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Stock entry funnel →</span><span class="l-zh">选股漏斗 →</span></span></a>
     <div class="si-side-foot">
       <span id="si-side-asof"></span>
       <span id="si-side-grade"></span>
