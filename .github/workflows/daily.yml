@@ -1275,7 +1275,11 @@ jobs:
           run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders
           # L3 dispersion regime lens — NW Rails W2 PR-4 (§5). Emits data/dispersion/regime.json
           # from the breadth close caches (same panel as build_stock_library). Display-only;
-          # gross_mult_live clamped 1.0. Seconds; never fatal.
+          # gross_mult_live clamped 1.0. Seconds. build() never raises, but a DEGRADED emit
+          # (state=null — it overwrites the committed regime.json that leader radar reads
+          # same-night) now exits rc=1 -> run_py raises ::error + a step-summary row, plus
+          # bare-print ::warning at each quiet degrade site (the logger-only warnings here
+          # were invisible to Actions — same silent-skip shape as index_leadership, #4363).
           # ORDERING NOTE: moved BEFORE build_leader_radar (LR PR-A Item 8) so that
           # regime.json is same-night data when build_leader_radar reads it.
           # build_dispersion_regime reads only breadth close caches (no dependency on
@@ -1333,7 +1337,11 @@ jobs:
           run_py "impulse tracker (build_impulse)" scripts.build_impulse
           # DT-NW-1: aggregate per-ticker dt_contra chip state into data/neuralweb/dt_contra_state.json.
           # AFTER build_site (which calls build_stock_library to write site/stockdata/*.json).
-          # Display-only NW artifact; degrades gracefully if stockdata absent. Seconds; never fatal.
+          # Display-only NW artifact. Seconds. build() never raises, but an absent/empty
+          # stockdata dir HERE is a real fault (build_site just wrote it, and the degraded
+          # JSON empties the committed census) — that now exits rc=1 -> run_py raises
+          # ::error + a step-summary row, plus bare-print ::warning at each quiet degrade
+          # site (logger-only warnings are invisible to Actions — #4363 sibling sweep).
           run_py "DT-NW-1 dt_contra state aggregator (build_dt_contra_state)" scripts.build_dt_contra_state
           # Congressional / politician disclosed-trades desk — AFTER build_alt_data (refreshes
           # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
