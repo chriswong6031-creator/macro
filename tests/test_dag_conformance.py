@@ -610,6 +610,7 @@ class TestLiveConformance:
         ):
             assert path in commit["run"]
         assert "assert_award_event_bundle" in commit["run"]
+        assert "scripts/ci/validate_government_revenue_award_event_bundle.py" in commit["run"]
         assert "assert_award_event_source_clean" in commit["run"]
         assert "assert_subaward_bundle" in commit["run"]
         assert "assert_subaward_source_clean" in commit["run"]

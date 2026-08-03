@@ -51,6 +51,8 @@ Canonical build and operating handoff for Wave 8. The implementation and local r
 - Generic render lanes copy canonical bytes only and fail on one-sided or stale twins.
 - Government Revenue live workflow owns projection publication and protects collector-owned source bundles from mutation.
 - IDV config/contracts now trigger the serialized Government Revenue projection lane.
+- The award-event bundle preflight lives in `scripts/ci/validate_government_revenue_award_event_bundle.py`, keeping the workflow `run:` scalar safely below GitHub's registration ceiling without weakening manifest, clock, or ledger-binding checks.
+- VPS deployment self-heal now restarts `macro-api` when either new Wave 8 serving module changes; otherwise Python import caching could leave merged budget/IDV code dead until an unrelated restart.
 
 ### Premium UI
 
@@ -64,6 +66,7 @@ Canonical build and operating handoff for Wave 8. The implementation and local r
 ## Validation completed
 
 - Complete Government Revenue / USAspending / DoD matrix: `367 passed` with a real zero exit after the final truth-labeling patches.
+- Deployment/workflow hardening: `179` API self-heal tests and a `214`-test workflow/DAG/self-heal slice passed; the largest Government Revenue workflow scalar is `17,912` characters versus the `20,500` CI ceiling.
 - Focused Wave 8 hardening matrix: `117 passed`; the final IDV source/artifact/API slice: `26 passed`.
 - An additional repository-wide smoke run reached `1,283 passed` with no failures before it was intentionally stopped at 2%; the entire repository matrix is too large and unrelated to serve as this vertical's release gate.
 - Template/site synchronization: `79/79` pairs.
