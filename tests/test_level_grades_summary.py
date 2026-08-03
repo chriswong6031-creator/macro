@@ -146,8 +146,11 @@ def test_null_fields_ride_the_card():
     cw = card["roles"]["call_wall"]
     ne = cw["null_equidistant"]
     assert ne["scored"] == 24 and ne["p_hold"] == pytest.approx(0.5)
-    # real 18/24 (Wilson lo ≈ .551) clears a 0.5 null
-    assert cw["beats_equidistant_null"] is True
+    assert len(ne["ci95"]) == 2 and ne["ci95"][0] < 0.5 < ne["ci95"][1]
+    # real 18/24 (Wilson lo ≈ .551) does NOT clear a 12/24 null's Wilson UPPER
+    # (≈ .695) — at this n the two records are statistically indistinguishable,
+    # and the interval-separation gate says so
+    assert cw["beats_equidistant_null"] is False
     assert cw["median_pierce_pct"] == pytest.approx(0.8)
     b = card["boards"]
     assert b["wall_range_contained"] == {"rate": 0.0, "n": 40}
@@ -157,13 +160,49 @@ def test_null_fields_ride_the_card():
     assert "low_held" not in pdv  # all-None column → absent, never a fake 0%
 
 
-def test_beats_equidistant_null_respects_a_strong_null():
-    # real 18/24 ≈ .75 with Wilson lo ≈ .551 — a null holding at 80% must NOT be beaten
+def test_beats_equidistant_null_is_interval_separation():
+    # The gate must ignore neither side's sampling error: a lucky SMALL null
+    # sample must never hand out an edge (anti-conservative failure), while a
+    # genuinely separated pair of records must still earn one.
+    lo_real, _ = wilson_ci(18, 24)            # ≈ .551
+    _, hi_small_null = wilson_ci(5, 20)       # 25% null but upper ≈ .455
+    assert lo_real > hi_small_null            # sanity: separation CAN happen at small n
+
+    # real 18/24 vs null 1/5: raw null rate .2 < real lo .551, but the null's
+    # upper (≈ .624) straddles — the old raw-rate gate said True, this one must not
     df = _frame_r24b()
-    df.loc[df["null_held"].notna(), "null_held"] = [i % 5 != 0 for i in range(24)]
+    idx = df.index[df["null_held"].notna()]
+    df.loc[idx, "null_held"] = None
+    df.loc[idx[:5], "null_held"] = [True, False, False, False, False]
     cw = summarize(df, "AMD")["roles"]["call_wall"]
-    assert cw["null_equidistant"]["p_hold"] == pytest.approx(0.7917, abs=1e-3)
+    assert cw["null_equidistant"]["p_hold"] == pytest.approx(0.2)
     assert cw["beats_equidistant_null"] is False
+
+    # and a null holding at 80% must obviously not be beaten either
+    df2 = _frame_r24b()
+    df2.loc[df2["null_held"].notna(), "null_held"] = [i % 5 != 0 for i in range(24)]
+    cw2 = summarize(df2, "AMD")["roles"]["call_wall"]
+    assert cw2["beats_equidistant_null"] is False
+
+
+def test_beats_equidistant_null_true_when_records_truly_separate():
+    # production-scale n: real 700/1000 (Wilson lo ≈ .671) vs null 500/1000
+    # (upper ≈ .531) — separated intervals, the edge is earned
+    rows = []
+    for i in range(1000):
+        rows.append({
+            "board_id": f"b{i:04d}", "root": "AMD",
+            "session_date": f"2026-{(i % 6) + 1:02d}-{(i % 28) + 1:02d}",
+            "role": "call_wall", "level_id": f"n{i:04d}", "strike": 100.0,
+            "touched": True, "held": i < 700, "broke": i >= 700,
+            "post_touch_move_pct": None, "wall_contained": True, "band_contained": True,
+            "null_touched": True, "null_held": i < 500, "pierce_pct": None,
+        })
+    card = summarize(pd.DataFrame(rows), "AMD")
+    cw = card["roles"]["call_wall"]
+    assert cw["p_hold"] == pytest.approx(0.7)
+    assert cw["null_equidistant"]["p_hold"] == pytest.approx(0.5)
+    assert cw["beats_equidistant_null"] is True
 
 
 def test_pre_r24b_parquet_degrades_to_the_v1_card():
