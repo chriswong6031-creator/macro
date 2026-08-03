@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T03:04:25.104108+00:00",
-  "count": 636,
+  "generated_at": "2026-08-03T03:34:42.832915+00:00",
+  "count": 637,
   "institutions": [
     "Amova",
     "Apollo",
@@ -425,6 +425,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 80,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pcoxbejte46-10d8d1",
+      "title": "UBS Equity Preference List European Automobiles 2026 07 31",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-02T14:54:58Z",
+      "summary_points": [
+        "**Concentration Risk**: 35% Ferrari + 45% German automakers/suppliers (BMW, Porsche, Mercedes, Continental) creates severe single-stock/region exposure; France (Michelin, Valeo) adds minimal diversification.",
+        "**Geopolitical Tariff Impact**: US-EU 15% levy on EU auto imports (10% US export exemption) = 10% profit hit for US-exposed firms; EU \"Made in EU\" Act intensifies China competition.",
+        "**Valuation Discount**: Sector at 0.5x PB (vs 15-yr avg 0.9x); Ferrari at 7x 2027 P/E, Continental at 10x 2027 P/E—undemanding vs peers amid restructuring.",
+        "**Ferrari's Pricing Power**: Unique supply tightness and brand strength sustain margins; EV roadmap (40% hybrids by 2030) leverages high plug-in demand (42% FY25).",
+        "**EU Policy Shift**: \"Made in EU\" Act and CO₂ regulations accelerate EV adoption (Europe); US policy delays (incentives expire Sept 2025) risk electrification timeline."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
