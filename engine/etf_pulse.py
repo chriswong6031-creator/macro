@@ -211,6 +211,27 @@ def _sector_leg() -> dict | None:
             "laggards": [x["ticker"] for x in rows[-3:]]}
 
 
+# Rotation-backdrop disclaimer, in the visitor's words.
+#
+# This used to read "Display-only rotation context — …". "Display-only" is
+# internal tier vocabulary (DESIGN_DOCTRINE Law 2: no internal state names in
+# glance-tier copy) and it told a reader nothing — it names OUR handling of the
+# number, not what the number is. Rewritten at the emitter for SEO Supercharge
+# W2, because etfs.html — the one page that renders this string — became
+# anonymous-public, which puts the sentence into Google's index and into
+# AI-overview extractions. The honest content ("descriptive, never a buy list")
+# is unchanged; only the jargon left.
+#
+# Exported as constants so engine/etf_board.py can render the CURRENT copy even
+# when the shipped basketdata/etf_pulse.json is a lane behind: the pulse file is
+# written under render scope `baskets` while this page bakes under `macro`, so a
+# macro-only render would otherwise reprint whatever wording the last baskets
+# run happened to leave on disk. Pinned by tests/test_etf_pulse.py.
+ROTATION_DISCLAIMER_EN = ("Rotation context — how style, risk and sector ETFs have been "
+                          "trading. Descriptive, never a buy list.")
+ROTATION_DISCLAIMER_ZH = ("轮动背景 —— 风格、风险与行业 ETF 的近期走势。描述性，非买入清单。")
+
+
 def compute_etf_pulse() -> dict | None:
     """Style + risk + sector rotation context. None if nothing computed."""
     style = _style_leg()
@@ -223,10 +244,8 @@ def compute_etf_pulse() -> dict | None:
              (sector or {}).get("as_of"))
     return {
         "as_of": as_of,
-        "disclaimer_en": ("Display-only rotation context — trailing ratio momentum across "
-                          "style, risk and sector ETFs. Descriptive, never a buy list."),
-        "disclaimer_zh": ("仅供展示的轮动背景 — 风格/风险/行业 ETF 的滞后比值动量。"
-                          "描述性，非买入清单。"),
+        "disclaimer_en": ROTATION_DISCLAIMER_EN,
+        "disclaimer_zh": ROTATION_DISCLAIMER_ZH,
         "horizons": list(_HORIZONS),
         "style": style, "risk": risk, "sector": sector,
     }

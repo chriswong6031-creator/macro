@@ -1,0 +1,76 @@
+{# ── etfs.html row-rendering macros — ONE source for both sides of the tier wall ──
+   Lifted verbatim out of etfs.html.j2 (2026-08-03, SEO Supercharge W2) so the
+   free shell and the /premiumdata/etfs.json payload render their rows from the
+   SAME markup. docs/TIER_PREVIEW_PATTERN.md §checklist-1: a partial that carries
+   no tier logic is the only way the two sides can never drift apart.
+
+   Import with `{% from "_etf_macros.html.j2" import t, b, ... %}` — call sites
+   stay identical to the in-file definitions they replaced. Jinja passes env
+   globals (td, clean_name) to imported templates, so `logo()`/the row partials
+   keep working without `with context`. #}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro b(d) -%}
+<span class="l-en">{{ d.en }}</span><span class="l-zh">{{ d.zh if d.zh else d.en }}</span>
+{%- endmacro %}
+{# ---- ? help tip — CSS-only bilingual Tier-2 popover (mechanics live here) ---- #}
+{% macro help(en, zh='') -%}
+<span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{# ---- logo(ticker): eager company logo via the nvstly CDN; onerror reveals a
+       ticker-text fallback (heatmap.js pattern) ---- #}
+{% macro logo(ticker) -%}
+<span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/{{ ticker | upper }}.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">{{ ticker | upper | truncate(4, true, '') }}</span></span>
+{%- endmacro %}
+{# ---- spark(series): min–max normalized inline sparkline, up/down colored ---- #}
+{% macro spark(series) -%}
+{%- if series and (series | length) >= 2 -%}
+  {%- set lo = series | min -%}{%- set hi = series | max -%}
+  {%- set n = series | length -%}{%- set rng = (hi - lo) -%}
+  {%- set up = (series[-1] >= series[0]) -%}
+  <svg class="spark" viewBox="0 0 66 18" width="66" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="{{ 'var(--lift)' if up else 'var(--drag)' }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="
+  {%- for v in series -%}{{ "%.1f" | format(1.0 + (loop.index0 / (n - 1)) * 64.0) }},{{ "%.1f" | format(16.0 - (((v - lo) / rng) if rng > 0 else 0.5) * 14.0) }}{{ ' ' }}{%- endfor -%}
+  "/></svg>
+{%- else -%}<span class="faint">—</span>{%- endif -%}
+{%- endmacro %}
+{# ---- stance(s): the doctrine "so what do I do?" pill, tone-colored ---- #}
+{% macro stance(s) -%}
+{%- if s -%}<span class="stpill st-{{ s.tone }}"{% if s.why %} data-tip-en="{{ s.why.en }}" data-tip-zh="{{ s.why.zh }}"{% endif %}><span class="stdot"></span>{{ b(s) }}</span>{%- endif -%}
+{%- endmacro %}
+{# ---- breadth(na, nt): fund-agreement constellation — accumulating vs trimming ---- #}
+{% macro breadth(na, nt) -%}
+<span class="bdots" title="{{ na }} fund{{ 's' if na != 1 else '' }} accumulating{% if nt %}, {{ nt }} trimming{% endif %}">
+{%- for i in range([na, 6] | min) %}<i class="up"></i>{% endfor -%}
+{%- if na > 6 %}<i class="ov">+{{ na - 6 }}</i>{% endif -%}
+{%- if nt %}<i class="sep"></i>{% for i in range([nt, 4] | min) %}<i class="dn"></i>{% endfor %}{% endif -%}
+</span>
+{%- endmacro %}
+{# ---- hero_verdict(v) / hero_tiles(tiles) ----------------------------------
+   The two hero blocks the tier gate swaps. Macros rather than {% include %}d
+   files so the builder can render them straight out of this template's module
+   into the payload (`env.get_template(...).module.hero_verdict(...)`) — the
+   hydrated hero is then byte-identical to the entitled build's, with no markup
+   duplicated into JavaScript. #}
+{% macro hero_verdict(v) -%}
+<div class="eh-verdict">{{ b(v) }}</div>
+{%- endmacro %}
+{% macro hero_tiles(tiles) -%}
+<div class="eh-tiles">
+  {% for tl in tiles %}
+  <div class="tile t-{{ tl.tone }}">
+    <div class="tk">{{ b(tl.k) }}</div>
+    <div class="tv">{{ tl.v }}</div>
+    <div class="tm">{{ b(tl.m) }}</div>
+    {% if tl.stance %}<div class="tstance">{{ stance(tl.stance) }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{%- endmacro %}
+{# ---- presbar(net, scale): center-anchored net-conviction pressure bar ---- #}
+{% macro presbar(net, scale) -%}
+{%- set a = net if net >= 0 else -net -%}
+{%- set frac = (a / scale) if scale else 0 -%}
+{%- set w = (7 + 93 * frac) if a > 0.0001 else 0 -%}
+<span class="pbar"><span class="pb-mid"></span><span class="pb-fill {{ 'u' if net >= 0 else 'd' }}" style="width:{{ "%.0f" | format(w) }}%"></span></span>
+{%- endmacro %}

@@ -1,0 +1,32 @@
+{# ── M6a "Being trimmed" — the secondary graded shelf ────────────────────────
+   Renders the whole <details> block, because on the gated build the shelf does
+   not exist at all (nothing free to head it) and hydration has to put back the
+   entitled build's exact markup — summary included.
+
+   Params: `rows` (trims). No tier logic. #}
+{% from "_etf_macros.html.j2" import t, logo, spark, stance %}
+<details>
+  <summary><span class="sh-ic">🔻</span>{{ t('Being trimmed', '正在减持') }} <span class="sh-sub">— {{ t('positions managers are actively cutting (secondary signal)', '经理人正在主动削减的仓位（次要信号）') }}</span><span class="sh-caret">▶</span></summary>
+  <div class="sh-body">
+    <div class="atbl-wrap">
+    <table class="atbl">
+      <thead><tr>
+        <th>{{ t('stock', '个股') }}</th><th>{{ t('fund · theme', '基金 · 主题') }}</th>
+        <th class="r">{{ t('conviction cut', '信念削减') }}</th><th class="hide-sm">{{ t('trend', '走势') }}</th><th>{{ t('what to do', '如何应对') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for r in rows %}
+      {% set cp = r.conviction_pp or 0 %}
+      <tr>
+        <td><div class="stock-cell">{{ logo(r.ticker) }}<span class="st-txt"><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a><span class="nm">{{ clean_name(r.name) }}</span></span></div></td>
+        <td class="fundcell"><b>{{ r.etf }}</b><br><span class="themetag">{{ td(r.category) if r.category else (td(r.sector) if r.sector else '—') }}</span></td>
+        <td class="r"><span class="conv d">{{ "%+.2f" | format(cp) }}pp</span>{% if r.is_exit %} <span class="mini exit">{{ t('EXITED', '清仓') }}</span>{% endif %}</td>
+        <td class="hide-sm">{{ spark(r.weight_series) }}</td>
+        <td>{{ stance(r.stance) }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</details>

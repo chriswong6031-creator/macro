@@ -1,0 +1,25 @@
+{# ── M3 "Fresh conviction" — brand-new positions opened this cycle ───────────
+   The replaceable block is the .fc-grid; its section heading and lede stay in
+   etfs.html.j2 (hidden on the gated build, un-hidden on hydrate) so the walled
+   page ships no orphan heading over content it does not have.
+
+   Params: `rows` (board.fresh). No tier logic. #}
+{% from "_etf_macros.html.j2" import t, logo, stance %}
+<div class="fc-grid">
+  {% for g in rows %}
+  <div class="fc" style="animation-delay:{{ (loop.index0 * 0.04) | round(2) }}s">
+    <div class="fc-top">{{ logo(g.ticker) }}
+      <span class="st-txt"><a href="stock.html#{{ g.ticker }}"><b>{{ g.ticker }}</b></a>
+        <span class="nm">{{ clean_name(g.name) }}</span></span>
+    </div>
+    <div class="fc-mid">
+      <span class="fund-n"><b>{{ g.n_funds }}</b> {{ t('fund', '只基金') if g.n_funds == 1 else t('funds', '只基金') }} {{ t('opened it', '建仓') }}</span>
+      <span class="fc-conv">+{{ "%.1f" | format(g.conviction_pp) }}pp</span>
+    </div>
+    <div class="fc-funds">
+      {% for f in g.funds[:5] %}<span class="fchip {{ 'act' if f.is_active }}">{{ f.fund }}</span>{% endfor %}
+    </div>
+    <div class="fc-foot">{{ stance(g.stance) }}</div>
+  </div>
+  {% endfor %}
+</div>

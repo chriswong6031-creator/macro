@@ -98,14 +98,21 @@ def test_public_dashboard_previews_allow_without_session(path):
 
 
 @pytest.mark.parametrize(
-    "path", ["/special_situations.html", "/china_special_situations.html"])
+    "path", ["/special_situations.html", "/china_special_situations.html",
+             "/etfs.html"])
 def test_tier_preview_shells_allow_without_session(path):
-    """W1a (SEO_SUPERCHARGE_MASTERPLAN): the two tier-preview SHELLS were promoted
+    """W1a/W2 (SEO_SUPERCHARGE_MASTERPLAN): the tier-preview SHELLS were promoted
     free_registered → public, so an anonymous visitor — and Googlebot, which never
     has a session — must get the preview + upgrade wall instead of a 302 to
     /?signin=1. This module is the ONLY guard on regwall.PUBLIC_PATHS: the boundary
     suite diffs Caddy against site_access.yml and never imports this mirror, so a
     promotion that lands in two of the three mirrors passes everything else.
+
+    /etfs.html joined in W2. It differs from the first two in a way worth naming:
+    they were already split and only their access class moved, whereas etfs.html
+    was fully server-rendered with every graded row in the markup, so the same PR
+    that opened it also moved the consensus board, the fresh-conviction cards,
+    every per-fund add and the trim shelf into /premiumdata/etfs.json.
     """
     r = _check(orig=path)
     assert r.status_code == 204, f"{path} must be public (no session needed)"
@@ -117,12 +124,13 @@ def test_tier_preview_shells_allow_without_session(path):
     [
         "/premiumdata/special_situations.json",
         "/premiumdata/china_special_situations.json",
+        "/premiumdata/etfs.json",
         "/allocationdata/special_situations.json",
         "/chinaspecialdata/special.json",
     ],
 )
 def test_opening_the_shells_did_not_open_their_payloads(path):
-    """The other half of W1a, and the half that would be expensive to get wrong.
+    """The other half of W1a/W2, and the half that would be expensive to get wrong.
     The split IS the gate: the shell holds the preview slice, every paid row ships
     in these payloads. They are asset requests, so an anonymous fetch must die at
     the registration wall's 401 long before app/paywall.py's enforced_early check
