@@ -68,6 +68,8 @@ _MAX_JSON_NODES = 20_000
 _MAX_JSON_DEPTH = 32
 _MAX_JSON_CONTAINER_ITEMS = 4_096
 _MAX_TIMESTAMP_CHARS = 64
+_MAX_GOVERNANCE_REFERENCE_CHARS = 256
+_MAX_GOVERNANCE_REFERENCE_BYTES = 512
 # The active ClinicalTrials.gov source row in
 # config/biocatalyst_launch_slo_manifest.yml pins maximum_seconds to 7200.
 # N0a treats the public health DTO's copy as an attestation to that frozen SLO,
@@ -271,6 +273,55 @@ def _ordered_actions(actions: Sequence[str]) -> tuple[str, ...]:
     return tuple(sorted(actions, key=_ACTION_ORDER.__getitem__))
 
 
+def _governance_reference(value: Any) -> str:
+    """Return one small plain-string governance reference before any hashing."""
+
+    if (
+        type(value) is not str
+        or not value
+        or len(value) > _MAX_GOVERNANCE_REFERENCE_CHARS
+    ):
+        _reject("governance_reference_unavailable")
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeEncodeError:
+        _reject("governance_reference_unavailable")
+    if len(encoded) > _MAX_GOVERNANCE_REFERENCE_BYTES:
+        _reject("governance_reference_unavailable")
+    return value
+
+
+def _planned_actions(max_authority: Any, actions: Any) -> tuple[str, ...]:
+    """Close and bound the non-authorizing planner's authority request."""
+
+    if (
+        type(max_authority) is not str
+        or max_authority not in {"A0_OBSERVE", "A1_EXPLAIN"}
+    ):
+        _reject("governance_reference_unavailable")
+    if isinstance(actions, (str, bytes)) or not isinstance(actions, Sequence):
+        _reject("governance_reference_unavailable")
+    try:
+        action_count = len(actions)
+    except (TypeError, ValueError, OverflowError):
+        _reject("governance_reference_unavailable")
+    if action_count < 1 or action_count > len(_ALLOWED_ACTIONS):
+        _reject("governance_reference_unavailable")
+    try:
+        normalized = tuple(actions[index] for index in range(action_count))
+    except (IndexError, KeyError, TypeError, ValueError):
+        _reject("governance_reference_unavailable")
+    if (
+        any(type(action) is not str for action in normalized)
+        or len(set(normalized)) != len(normalized)
+        or "observe" not in normalized
+        or not set(normalized).issubset(_ALLOWED_ACTIONS)
+        or (max_authority == "A0_OBSERVE" and normalized != ("observe",))
+    ):
+        _reject("governance_reference_unavailable")
+    return _ordered_actions(normalized)
+
+
 def _json_object(value: Any, *, code: str, max_bytes: int) -> dict[str, Any]:
     _preflight_json_object(value, code=code, max_bytes=max_bytes)
     try:
@@ -313,9 +364,17 @@ def _utc(value: Any, *, code: str) -> datetime:
 
 
 def _canonical_utc(value: Any, *, code: str) -> str:
-    _utc(value, code=code)
-    assert isinstance(value, str)
-    return value
+    return _format_utc(_utc(value, code=code))
+
+
+def _format_utc(value: datetime) -> str:
+    rendered = (
+        f"{value.year:04d}-{value.month:02d}-{value.day:02d}T"
+        f"{value.hour:02d}:{value.minute:02d}:{value.second:02d}"
+    )
+    if value.microsecond:
+        rendered += "." + f"{value.microsecond:06d}".rstrip("0")
+    return rendered + "Z"
 
 
 def _explicit_source_clock(value: Any, *, code: str) -> datetime | None:
@@ -507,23 +566,20 @@ def _validate_governance(
     # health), but it may not backdate a packet into an incomplete run.
     if not (lobe_cutoff <= started <= finished <= evaluated_at):
         _reject("evaluated_at_unavailable")
-    manifest_id = manifest.get("manifest_id")
-    if not isinstance(manifest_id, str) or lobe.get("authority_manifest_ref") != manifest_id:
+    _governance_reference(lobe.get("run_id"))
+    manifest_id = _governance_reference(manifest.get("manifest_id"))
+    authority_manifest_ref = _governance_reference(
+        lobe.get("authority_manifest_ref")
+    )
+    if authority_manifest_ref != manifest_id:
         _reject("governance_reference_unavailable")
     if manifest.get("artifact_type") != "sector_intelligence_packet.v1":
         _reject("governance_reference_unavailable")
     if manifest.get("publication_tier") != "DISPLAY":
         _reject("governance_reference_unavailable")
     max_authority = manifest.get("max_authority")
-    if max_authority not in {"A0_OBSERVE", "A1_EXPLAIN"}:
-        _reject("governance_reference_unavailable")
     allowed_actions = manifest.get("allowed_actions")
-    if (
-        not isinstance(allowed_actions, list)
-        or "observe" not in allowed_actions
-        or not set(allowed_actions).issubset(_ALLOWED_ACTIONS)
-    ):
-        _reject("governance_reference_unavailable")
+    normalized_actions = _planned_actions(max_authority, allowed_actions)
     denials = manifest.get("denied_actions")
     if not isinstance(denials, list) or set(denials) != _REQUIRED_DENIALS:
         _reject("governance_reference_unavailable")
@@ -543,7 +599,7 @@ def _validate_governance(
             _reject("governance_reference_unavailable")
         if value is not None and _utc(value, code="governance_reference_unavailable") < evaluated_at:
             _reject("governance_reference_unavailable")
-    return lobe, manifest, _ordered_actions(allowed_actions)
+    return lobe, manifest, normalized_actions
 
 
 def _freshness(health: Mapping[str, Any], *, evaluated_at: datetime) -> dict[str, Any]:
@@ -575,7 +631,7 @@ def _freshness(health: Mapping[str, Any], *, evaluated_at: datetime) -> dict[str
     return {
         "state": state,
         "oldest_required_source_at": oldest_required_source_at,
-        "evaluated_at": evaluated_at.isoformat().replace("+00:00", "Z"),
+        "evaluated_at": _format_utc(evaluated_at),
         "stale_source_ids": stale_source_ids,
         "unknown_source_ids": unknown_source_ids,
     }
@@ -586,11 +642,11 @@ def _packet_payload(
     projections: Sequence[Mapping[str, Any]],
     health: Mapping[str, Any],
     evaluated_at: str,
+    evaluated: datetime,
     lobe: Mapping[str, Any],
     manifest: Mapping[str, Any],
     allowed_actions: Sequence[str],
 ) -> dict[str, Any]:
-    evaluated = _utc(evaluated_at, code="evaluated_at_unavailable")
     cutoff = _canonical_utc(lobe["knowledge_cutoff"], code="knowledge_cutoff_unavailable")
     freshness = _freshness(health, evaluated_at=evaluated)
     trial_hashes = sorted(str(projection["projection_sha256"]) for projection in projections)
@@ -714,6 +770,7 @@ def _prepare(
     require_binding: bool,
 ) -> _PreparedSectorPacketMaterial:
     evaluated = _utc(evaluated_at, code="evaluated_at_unavailable")
+    canonical_evaluated_at = _format_utc(evaluated)
     lobe, manifest, allowed_actions = _validate_governance(
         lobe_run, authority_manifest, evaluated_at=evaluated
     )
@@ -731,7 +788,8 @@ def _prepare(
     payload = _packet_payload(
         projections=projections,
         health=health,
-        evaluated_at=evaluated_at,
+        evaluated_at=canonical_evaluated_at,
+        evaluated=evaluated,
         lobe=lobe,
         manifest=manifest,
         allowed_actions=allowed_actions,
@@ -761,7 +819,7 @@ def _prepare(
         operational_health_bytes=health_bytes,
         lobe_run_bytes=lobe_bytes,
         authority_manifest_bytes=manifest_bytes,
-        evaluated_at=evaluated_at,
+        evaluated_at=canonical_evaluated_at,
     )
 
 
@@ -787,23 +845,14 @@ def plan_sector_packet_binding(
     """
 
     evaluated = _utc(evaluated_at, code="evaluated_at_unavailable")
-    if not isinstance(lobe_run_ref, str) or not lobe_run_ref:
-        _reject("governance_reference_unavailable")
-    if not isinstance(authority_manifest_ref, str) or not authority_manifest_ref:
-        _reject("governance_reference_unavailable")
+    canonical_evaluated_at = _format_utc(evaluated)
+    bounded_lobe_run_ref = _governance_reference(lobe_run_ref)
+    bounded_authority_manifest_ref = _governance_reference(authority_manifest_ref)
     cutoff = _canonical_utc(lobe_knowledge_cutoff, code="knowledge_cutoff_unavailable")
     cutoff_dt = _utc(cutoff, code="knowledge_cutoff_unavailable")
     if cutoff_dt > evaluated:
         _reject("evaluated_at_unavailable")
-    if max_authority not in {"A0_OBSERVE", "A1_EXPLAIN"}:
-        _reject("governance_reference_unavailable")
-    if (
-        isinstance(allowed_actions, (str, bytes))
-        or not isinstance(allowed_actions, Sequence)
-        or "observe" not in allowed_actions
-        or not set(allowed_actions).issubset(_ALLOWED_ACTIONS)
-    ):
-        _reject("governance_reference_unavailable")
+    planned_actions = _planned_actions(max_authority, allowed_actions)
     health = _validate_health(
         operational_health, evaluated_at=evaluated, lobe_cutoff=cutoff_dt
     )
@@ -815,13 +864,14 @@ def plan_sector_packet_binding(
     payload = _packet_payload(
         projections=projections,
         health=health,
-        evaluated_at=evaluated_at,
-        lobe={"run_id": lobe_run_ref, "knowledge_cutoff": cutoff},
+        evaluated_at=canonical_evaluated_at,
+        evaluated=evaluated,
+        lobe={"run_id": bounded_lobe_run_ref, "knowledge_cutoff": cutoff},
         manifest={
-            "manifest_id": authority_manifest_ref,
+            "manifest_id": bounded_authority_manifest_ref,
             "max_authority": max_authority,
         },
-        allowed_actions=_ordered_actions(allowed_actions),
+        allowed_actions=planned_actions,
     )
     return _binding_for_payload(payload, row_count=len(projections))
 

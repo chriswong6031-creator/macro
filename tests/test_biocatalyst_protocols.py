@@ -856,6 +856,140 @@ def test_n0a_sector_packet_planning_is_not_a_publishable_authority_or_placeholde
         )
 
 
+def test_n0a_sector_packet_planner_rejects_oversized_refs_before_identity_hash(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    projection = build_trial_snapshot(_source())
+    health = _sector_health(count=1)
+    oversized = "x" * (2 * 1024 * 1024 + 1)
+    real_hash = sector_packet_module.canonical_json_sha256
+    identity_hash_calls = 0
+
+    def guarded_hash(value: object) -> str:
+        nonlocal identity_hash_calls
+        if isinstance(value, dict) and "lobe_run_ref" in value:
+            identity_hash_calls += 1
+            raise AssertionError("oversized governance refs reached packet identity hashing")
+        return real_hash(value)
+
+    monkeypatch.setattr(sector_packet_module, "canonical_json_sha256", guarded_hash)
+    for changed in (
+        {"lobe_run_ref": oversized},
+        {"authority_manifest_ref": oversized},
+    ):
+        arguments = {
+            "trial_projections": [projection],
+            "operational_health": health,
+            "evaluated_at": "2026-08-01T15:01:00Z",
+            "lobe_run_ref": "run:biocatalyst:n0a:20260801T150100Z",
+            "lobe_knowledge_cutoff": "2026-08-01T15:00:05Z",
+            "authority_manifest_ref": "authority:biocatalyst:n0a-display:v1",
+            "max_authority": "A1_EXPLAIN",
+            "allowed_actions": ["observe", "explain"],
+            **changed,
+        }
+        with pytest.raises(SectorPacketError, match="governance_reference_unavailable"):
+            plan_sector_packet_binding(**arguments)
+
+    assert identity_hash_calls == 0
+
+
+def test_n0a_sector_packet_planner_closes_malformed_actions_and_a0_explain() -> None:
+    projection = build_trial_snapshot(_source())
+    health = _sector_health(count=1)
+    arguments = {
+        "trial_projections": [projection],
+        "operational_health": health,
+        "evaluated_at": "2026-08-01T15:01:00Z",
+        "lobe_run_ref": "run:biocatalyst:n0a:20260801T150100Z",
+        "lobe_knowledge_cutoff": "2026-08-01T15:00:05Z",
+        "authority_manifest_ref": "authority:biocatalyst:n0a-display:v1",
+        "max_authority": "A1_EXPLAIN",
+    }
+
+    with pytest.raises(SectorPacketError, match="governance_reference_unavailable"):
+        plan_sector_packet_binding(
+            **arguments,
+            allowed_actions=["observe", []],  # type: ignore[list-item]
+        )
+    with pytest.raises(SectorPacketError, match="governance_reference_unavailable"):
+        plan_sector_packet_binding(
+            **{**arguments, "max_authority": []},  # type: ignore[arg-type]
+            allowed_actions=["observe"],
+        )
+    with pytest.raises(SectorPacketError, match="governance_reference_unavailable"):
+        plan_sector_packet_binding(
+            **{**arguments, "max_authority": "A0_OBSERVE"},
+            allowed_actions=["observe", "explain"],
+        )
+
+    binding = plan_sector_packet_binding(
+        **{**arguments, "max_authority": "A0_OBSERVE"},
+        allowed_actions=["observe"],
+    )
+    assert binding.row_count == 1
+
+
+@pytest.mark.parametrize(
+    ("evaluated_at", "equivalent", "canonical"),
+    (
+        (
+            "2026-08-01T15:01:00.000Z",
+            "2026-08-01T15:01:00Z",
+            "2026-08-01T15:01:00Z",
+        ),
+        (
+            "2026-08-01T15:01:00.123Z",
+            "2026-08-01T15:01:00.123000Z",
+            "2026-08-01T15:01:00.123Z",
+        ),
+    ),
+)
+def test_n0a_sector_packet_canonicalizes_fractional_evaluation_once_and_roundtrips(
+    evaluated_at: str, equivalent: str, canonical: str
+) -> None:
+    projections = [
+        build_trial_snapshot(_source("NCT00000001")),
+        build_trial_snapshot(_source("NCT00000002")),
+    ]
+    health = _sector_health(count=2)
+    lobe, manifest = _sector_governance(
+        projections, health, evaluated_at=evaluated_at
+    )
+    prepared = prepare_sector_packet_inputs(
+        trial_projections=projections,
+        operational_health=health,
+        evaluated_at=evaluated_at,
+        lobe_run=lobe,
+        authority_manifest=manifest,
+    )
+    packet = compile_sector_packet(prepared)
+
+    reversed_projections = list(reversed(projections))
+    reverse_lobe, reverse_manifest = _sector_governance(
+        reversed_projections, health, evaluated_at=equivalent
+    )
+    reverse_packet = compile_sector_packet(
+        prepare_sector_packet_inputs(
+            trial_projections=reversed_projections,
+            operational_health=health,
+            evaluated_at=equivalent,
+            lobe_run=reverse_lobe,
+            authority_manifest=reverse_manifest,
+        )
+    )
+
+    assert prepared.evaluated_at == canonical
+    assert packet["generated_at"] == canonical
+    assert packet["freshness"]["evaluated_at"] == canonical
+    assert packet["packet_id"] == manifest["artifact_ref"]
+    assert packet["packet_hash"] == lobe["output_artifacts"][0]["content_sha256"]
+    assert packet["packet_hash"] == canonical_json_sha256(
+        {key: value for key, value in packet.items() if key != "packet_hash"}
+    )
+    assert canonical_json_bytes(packet) == canonical_json_bytes(reverse_packet)
+
+
 def test_n0a_sector_packet_derives_staleness_from_passed_health_and_evaluated_at() -> None:
     projection = build_trial_snapshot(_source())
     evaluated_at = "2026-08-01T17:01:00Z"
