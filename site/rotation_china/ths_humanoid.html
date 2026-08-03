@@ -3,6 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
   var B = window.DATA_BASE;
@@ -30,7 +31,6 @@
     return orig.call(this, u, o);
   };
 })();</script>
-<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Humanoid Robots — Robotics &amp; Automation · Subsector Rotation</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
@@ -81,6 +81,8 @@
         <a href="../us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
         
         <a href="../movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+        
+        <a href="../intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Live session board — volume, tape and stance lanes · ≈15-min delayed</span><span class="l-zh">盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟</span></span></a>
         <a href="../stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         
         <a href="../sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
@@ -90,11 +92,9 @@
         <a href="../alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="../options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">Workspace · desk · flow tracker · dark pool</span><span class="l-zh">工作台 · 期权台 · 资金流追踪 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="../options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Market Structure</span><span class="l-zh">期权与市场结构</span><span class="d"><span class="l-en">Workspace · dark pool · index regime</span><span class="l-zh">工作台 · 暗池 · 指数结构</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="../options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 筛选 · 个股 · 领头股</span></span></a>
-            <a href="../gex.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">Instrument bench — charts, walls, vol surface</span><span class="l-zh">工具台 — 图表、墙位、波动率曲面</span></span></a>
-            <a href="../intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="../options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Flow · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 资金流 · 筛选 · 个股 · 领头股</span></span></a>
             <a href="../darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
             <a href="../market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
           </div>
@@ -285,32 +285,32 @@
     <div>
       <h1><span class="l-en">Humanoid Robots</span><span class="l-zh">人形机器人</span></h1>
       <div class="sd-theme"><span class="l-en">Theme</span><span class="l-zh">主题</span>: <b><span class="l-en">Robotics & Automation</span><span class="l-zh">机器人与自动化</span></b> · 22 <span class="l-en">stocks</span><span class="l-zh">只成分股</span>
-        · <span class="l-en">heat rank</span><span class="l-zh">热度排名</span> #130 / 233</div>
+        · <span class="l-en">heat rank</span><span class="l-zh">热度排名</span> #134 / 233</div>
     </div>
     <span class="sd-q q-lag"><span class="l-en">Lagging</span><span class="l-zh">落后</span> · <span class="l-en">weak & falling</span><span class="l-zh">弱且下行</span></span>
   </div>
 
-  <div class="sd-lede"><span class="l-en">Humanoid Robots is lagging — weaker than the median subsector and its relative strength is still falling. Acceleration is negative, so the pace is fading.</span><span class="l-zh">人形机器人 处于落后——弱于中位数子行业，且相对强度仍在下行。加速度为负，动能正在减弱。</span></div>
+  <div class="sd-lede"><span class="l-en">Humanoid Robots is lagging — weaker than the median subsector and its relative strength is still falling. Acceleration is positive, so the move is picking up pace.</span><span class="l-zh">人形机器人 处于落后——弱于中位数子行业，且相对强度仍在下行。加速度为正，动能正在加快。</span></div>
 
   <div class="sd-grid">
     <div class="sd-card">
       <div class="lab"><span class="l-en">Strength vs. market</span><span class="l-zh">相对大盘强度</span></div>
-      <div class="val dn">-0.26</div>
+      <div class="val dn">-0.27</div>
       <div class="sub"><span class="l-en">positive = stronger than the median subsector</span><span class="l-zh">正值 = 强于中位数子行业</span></div>
     </div>
     <div class="sd-card">
       <div class="lab"><span class="l-en">Trend (velocity)</span><span class="l-zh">趋势（速度）</span></div>
-      <div class="val dn">-0.47</div>
+      <div class="val dn">-0.65</div>
       <div class="sub"><span class="l-en">rate of change of relative strength — heating (+) or cooling (−)</span><span class="l-zh">相对强度的变化速度 — 升温 (+) 或降温 (−)</span></div>
     </div>
     <div class="sd-card">
       <div class="lab"><span class="l-en">Acceleration</span><span class="l-zh">加速度</span></div>
-      <div class="val dn">-0.3</div>
+      <div class="val up">+2.5</div>
       <div class="sub"><span class="l-en">latest weekly pace vs the 3-month pace</span><span class="l-zh">最近一周节奏 vs 三个月节奏</span></div>
     </div>
     <div class="sd-card">
       <div class="lab"><span class="l-en">Heat score</span><span class="l-zh">热度评分</span></div>
-      <div class="val dn">-0.20</div>
+      <div class="val dn">-0.33</div>
       <div class="sub"><span class="l-en">velocity + acceleration + recent strength, blended</span><span class="l-zh">速度 + 加速度 + 近期强度的综合</span></div>
     </div>
   </div>
@@ -320,25 +320,25 @@
     <div class="sd-perf">
       
       
-      <div class="sp"><i><span class="l-en">1D</span><span class="l-zh">1天</span></i><b class="up">+0.8%</b></div>
+      <div class="sp"><i><span class="l-en">1D</span><span class="l-zh">1天</span></i><b class="up">+7.1%</b></div>
       
       
-      <div class="sp"><i><span class="l-en">1W</span><span class="l-zh">1周</span></i><b class="dn">−1.4%</b></div>
+      <div class="sp"><i><span class="l-en">1W</span><span class="l-zh">1周</span></i><b class="up">+1.6%</b></div>
       
       
-      <div class="sp"><i><span class="l-en">1M</span><span class="l-zh">1月</span></i><b class="dn">−24.1%</b></div>
+      <div class="sp"><i><span class="l-en">1M</span><span class="l-zh">1月</span></i><b class="dn">−28.4%</b></div>
       
       
-      <div class="sp"><i><span class="l-en">3M</span><span class="l-zh">3月</span></i><b class="dn">−13.4%</b></div>
+      <div class="sp"><i><span class="l-en">3M</span><span class="l-zh">3月</span></i><b class="dn">−10.8%</b></div>
       
       
-      <div class="sp"><i><span class="l-en">6M</span><span class="l-zh">6月</span></i><b class="dn">−5.5%</b></div>
+      <div class="sp"><i><span class="l-en">6M</span><span class="l-zh">6月</span></i><b class="dn">−6.2%</b></div>
       
       
-      <div class="sp"><i><span class="l-en">1Y</span><span class="l-zh">1年</span></i><b class="up">+35.9%</b></div>
+      <div class="sp"><i><span class="l-en">1Y</span><span class="l-zh">1年</span></i><b class="up">+35.3%</b></div>
       
       
-      <div class="sp"><i><span class="l-en">YTD</span><span class="l-zh">年初至今</span></i><b class="dn">−0.1%</b></div>
+      <div class="sp"><i><span class="l-en">YTD</span><span class="l-zh">年初至今</span></i><b class="dn">−0.9%</b></div>
       
     </div>
   </div>
@@ -348,13 +348,6 @@
     <h2><span class="l-en">Member stocks</span><span class="l-zh">成分股</span> <span style="color:var(--muted);font-weight:600;font-size:12px">(<span class="l-en">by 1-month return</span><span class="l-zh">按1月涨跌</span>)</span></h2>
     <div class="sd-mem">
       
-      <a class="sd-chip" href="../china_lookup.html#002036.SZ">
-        <span class="tk">联创电子</span>
-        <span class="pc">
-          <span class="dn"><i>1M</i>−1.6%</span>
-        </span>
-      </a>
-      
       <a class="sd-chip" href="../china_lookup.html#688400.SS">
         <span class="tk">凌云光</span>
         <span class="pc">
@@ -362,45 +355,52 @@
         </span>
       </a>
       
-      <a class="sd-chip" href="../china_lookup.html#688306.SS">
-        <span class="tk">均普智能</span>
+      <a class="sd-chip" href="../china_lookup.html#002036.SZ">
+        <span class="tk">联创电子</span>
         <span class="pc">
-          <span class="dn"><i>1M</i>−5.4%</span>
+          <span class="dn"><i>1M</i>−8.5%</span>
         </span>
       </a>
       
       <a class="sd-chip" href="../china_lookup.html#688585.SS">
         <span class="tk">上纬新材</span>
         <span class="pc">
-          <span class="dn"><i>1M</i>−7.6%</span>
+          <span class="dn"><i>1M</i>−9.2%</span>
+        </span>
+      </a>
+      
+      <a class="sd-chip" href="../china_lookup.html#688306.SS">
+        <span class="tk">均普智能</span>
+        <span class="pc">
+          <span class="dn"><i>1M</i>−11.3%</span>
         </span>
       </a>
       
       <a class="sd-chip" href="../china_lookup.html#603236.SS">
         <span class="tk">移远通信</span>
         <span class="pc">
-          <span class="dn"><i>1M</i>−8.0%</span>
-        </span>
-      </a>
-      
-      <a class="sd-chip" href="../china_lookup.html#300007.SZ">
-        <span class="tk">汉威科技</span>
-        <span class="pc">
-          <span class="dn"><i>1M</i>−16.6%</span>
+          <span class="dn"><i>1M</i>−12.6%</span>
         </span>
       </a>
       
       <a class="sd-chip" href="../china_lookup.html#300166.SZ">
         <span class="tk">东方国信</span>
         <span class="pc">
-          <span class="dn"><i>1M</i>−17.0%</span>
+          <span class="dn"><i>1M</i>−21.9%</span>
         </span>
       </a>
       
-      <a class="sd-chip" href="../china_lookup.html#301696.SZ">
-        <span class="tk">三瑞智能</span>
+      <a class="sd-chip" href="../china_lookup.html#300083.SZ">
+        <span class="tk">劲胜精密</span>
         <span class="pc">
-          <span class="dn"><i>1M</i>−19.7%</span>
+          <span class="dn"><i>1M</i>−23.8%</span>
+        </span>
+      </a>
+      
+      <a class="sd-chip" href="../china_lookup.html#300007.SZ">
+        <span class="tk">汉威科技</span>
+        <span class="pc">
+          <span class="dn"><i>1M</i>−24.0%</span>
         </span>
       </a>
       

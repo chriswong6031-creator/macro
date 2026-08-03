@@ -22,7 +22,7 @@
 <meta name="twitter:image" content="https://www.mastermind-x.com/og/stocks/TSLA.png">
 <link rel="dns-prefetch" href="https://app.mastermind-x.com">
 <link rel="preconnect" href="https://app.mastermind-x.com" crossorigin>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "ProfilePage", "@id": "https://www.mastermind-x.com/stocks/TSLA.html#profile", "name": "TSLA — Tesla, Inc. company dossier", "datePublished": "2026-08-03", "dateModified": "2026-08-03", "publisher": {"@type": "Organization", "name": "MastermindX"}, "mainEntity": {"@type": "Corporation", "@id": "https://www.mastermind-x.com/stocks/TSLA.html#company", "name": "Tesla, Inc.", "tickerSymbol": "TSLA", "url": "https://www.mastermind-x.com/stocks/TSLA.html", "industry": "Consumer Discretionary", "description": "Tesla, Inc. is an American multinational automotive and clean energy company."}, "url": "https://www.mastermind-x.com/stocks/TSLA.html"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "ProfilePage", "@id": "https://www.mastermind-x.com/stocks/TSLA.html#profile", "name": "TSLA — Tesla, Inc. company dossier", "datePublished": "2026-08-04", "dateModified": "2026-08-04", "publisher": {"@type": "Organization", "name": "MastermindX"}, "mainEntity": {"@type": "Corporation", "@id": "https://www.mastermind-x.com/stocks/TSLA.html#company", "name": "Tesla, Inc.", "tickerSymbol": "TSLA", "url": "https://www.mastermind-x.com/stocks/TSLA.html", "industry": "Consumer Discretionary", "description": "Tesla, Inc. is an American multinational automotive and clean energy company."}, "url": "https://www.mastermind-x.com/stocks/TSLA.html"}</script>
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
   var B = window.DATA_BASE;
@@ -101,6 +101,8 @@
         <a href="../us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
         
         <a href="../movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+        
+        <a href="../intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Live session board — volume, tape and stance lanes · ≈15-min delayed</span><span class="l-zh">盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟</span></span></a>
         <a href="../stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         
         <a href="../sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
@@ -110,11 +112,9 @@
         <a href="../alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="../options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">Workspace · desk · flow tracker · dark pool</span><span class="l-zh">工作台 · 期权台 · 资金流追踪 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="../options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Market Structure</span><span class="l-zh">期权与市场结构</span><span class="d"><span class="l-en">Workspace · dark pool · index regime</span><span class="l-zh">工作台 · 暗池 · 指数结构</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="../options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 筛选 · 个股 · 领头股</span></span></a>
-            <a href="../gex.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">Instrument bench — charts, walls, vol surface</span><span class="l-zh">工具台 — 图表、墙位、波动率曲面</span></span></a>
-            <a href="../intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="../options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Flow · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 资金流 · 筛选 · 个股 · 领头股</span></span></a>
             <a href="../darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
             <a href="../market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
           </div>
@@ -372,7 +372,7 @@
     
     <span class="stance-line"><span class="l-en">Downtrend — stand aside until a new cycle low forms and confirms.</span><span class="l-zh">下跌趋势——观望，直至新的周期低点形成并确认。</span></span>
     
-    <span class="asof"><span class="l-en">Engine read</span><span class="l-zh">引擎解读</span> · 2026-08-03</span>
+    <span class="asof"><span class="l-en">Engine read</span><span class="l-zh">引擎解读</span> · 2026-08-04</span>
   </div>
   
 </header>
@@ -479,7 +479,7 @@
 
   
   <section class="mod rv" id="technicals">
-    <div class="mod-hd"><h2><span class="l-en">Technicals</span><span class="l-zh">技术面</span></h2><span class="hint"><span class="l-en">daily bars</span><span class="l-zh">日线数据</span> · 2026-08-03 <button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-technicals')"><span class="l-en">Full detail</span><span class="l-zh">完整数据</span></button></span></div>
+    <div class="mod-hd"><h2><span class="l-en">Technicals</span><span class="l-zh">技术面</span></h2><span class="hint"><span class="l-en">daily bars</span><span class="l-zh">日线数据</span> · 2026-08-04 <button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-technicals')"><span class="l-en">Full detail</span><span class="l-zh">完整数据</span></button></span></div>
     <div class="sigchips"><span class="okx q">MA Buy (7)</span></div>
     
     <div class="trow">
@@ -995,23 +995,23 @@
     <div class="mod-hd"><h2><span class="l-en">Recent news</span><span class="l-zh">最新动态</span></h2></div>
     
     <div class="nrow">
-      <a href="https://news.google.com/rss/articles/CBMipAFBVV95cUxPeWxJSEY0SjVMclVLZnJ3WHluV0Q5cHJrNU1qamJYVl9vc0pyQnlfYUpsb1JmdlRIY1k4QzZhUXFyYlhTbXJHUVdYSTlIclhRU3ZyQUhYRlVrNWc1SnNZMl9QWEJXR21iUHFFREF1QTNEX0pmOG51el9tSUoxckRGR2l0MFBCZ2IwREpoTkdYXzdwWlNlc3FhckEzcUdTVkxaQUhOZw?oc=5" rel="noopener noreferrer" target="_blank">Tesla Stock Goes For 3 Gains in a Row as It Shrugs Off Safety Inquiry</a>
+      <a href="https://news.google.com/rss/articles/CBMihwFBVV95cUxQRHBORERDd0ZZbW1WdnZtWkJ2MGdlYmZPQkJ4LWRKUTRCS0dtSkRIRGpabUVtb0VZNGtjVUlOTmJ4bm1UTVp5U244STlPQ2Y0VWNDcGVKTUNKUUZ3bXYzRHdhTTJvU0hjd3pCdEFjLXVNazQ3LTZFOS1wd2VFOUtUOHR2Z1BOYm8?oc=5" rel="noopener noreferrer" target="_blank">Tesla Stock Goes for 3 Gains in a Row as It Shrugs Off Safety Inquiry</a>
       <span class="nm">Barron&#39;s · 2026-08-03</span>
     </div>
     
     <div class="nrow">
-      <a href="https://news.google.com/rss/articles/CBMijAFBVV95cUxNRzR0S1hXZUp1UHlVQV9kcGxzemlDQVdsdXg5dlYzQmZzc0g2Sk9qSG1ER1B3dVoyNUZTMV91MnFYRjlDVkNnd2ktck1EZTdQdGJheVU2ZlVHYm1Ub0V4eVh3YnRSVXljdkd5bFA2Tkl3Umd0T3dOUjZ3RUZBS19wUmNETXRqWHIzZkx0aA?oc=5" rel="noopener noreferrer" target="_blank">Tesla Rival BYD Ramping Up Sales On Overseas Demand, Flash Charging</a>
-      <span class="nm">Investor&#39;s Business Daily · 2026-08-02</span>
+      <a href="https://news.google.com/rss/articles/CBMikwFBVV95cUxQTnE2eWRTczYtR3Nzd1ZFRE5mdTFQQ0hmc3FPRzVoLUtXbDlNUmotZ190T0taRjZpczl5WEljanl6Szk3THpOSHVZb3JxcDJiUmw5dkozMFZ4LVozNDhWbTVlcXpvNThEbWdfS2RHZVFLa0ZwcUdCejI1bHJST3BMTUp3d2V4R0gySi1Ra0gxZ2pvZlE?oc=5" rel="noopener noreferrer" target="_blank">Tesla stock surges as super bull turns slightly more bearish</a>
+      <span class="nm">thestreet.com · 2026-08-03</span>
     </div>
     
     <div class="nrow">
-      <a href="https://news.google.com/rss/articles/CBMickFVX3lxTFBzVDBmYkJ2cWh6bG41eEdvRnJnTTlWRWl0ZmdJdS1IV09hamZZX1VkZUYyN2ZpMGJ3LVhSNVFKT096Q1FsTlBCZ0JhVDZpVGh5Z0wzdWFKdHdmcGVuMTFYSzNUMzFUck9BSDZ2ZVZhX2ZxZw?oc=5" rel="noopener noreferrer" target="_blank">Tesla and SpaceX Merger Speculation Heats Up and Elon Musk Tries to Cool It Off</a>
-      <span class="nm">Barron&#39;s · 2026-07-31</span>
+      <a href="https://news.google.com/rss/articles/CBMigAFBVV95cUxQUEdWaHJKSFlrRzVWV25FOE93SktHQ1dDaHBsLTczN19CRDZUY3BXeUs5aGVaWjBLYmRjMTVlS0JsNzduMEpXaWxQcS1TNmh4Q1hHTWs1RE9oWEJaNC12RW8yZ05Rbm1PZ0gteEFMNkVTR3QwRlBJaFgzS3g0VEtzYQ?oc=5" rel="noopener noreferrer" target="_blank">Tesla Stock Climbs, Brushing Off Safety Probe And Class Action Settlement</a>
+      <span class="nm">Investor&#39;s Business Daily · 2026-08-03</span>
     </div>
     
     <div class="nrow">
-      <a href="https://news.google.com/rss/articles/CBMikAFBVV95cUxOSHlIaW1OTzBCbzFMZW9vSXpHQndBSzRtTmxqbEFqZm1fR3RSTWRxSWpjby1Ybk02aFY2R0E4X09WSzkwckR5QVBjOWdnMWttYVVsNTFZbmI2SHpCOENRZGhrWkwwY0RvcGRsVkJQd2VxU0NTbzRJN1hTaXctdzI2VGZsTzlOY01HTkY1cWNvc1A?oc=5" rel="noopener noreferrer" target="_blank">Elon Musk’s fortune slumps to pre-SpaceX IPO levels after rout</a>
-      <span class="nm">Fortune · 2026-08-01</span>
+      <a href="https://news.google.com/rss/articles/CBMiowFBVV95cUxOTzY0YVNjdEVRTExZbXdBUmx2ZmhScG5SZUo3RE9xSGJBc2EwREhWeVhSNlNhU0otTG1fNkhUOHk5NUs5cHBISUIzSFNTX3ZxYmtqdGw1VmR6SWQwakZET0FHUTFlZEoxa1VQbk9RZWd1c0NGNTV4VXZWdDl1WkhfbFNXUkItQ3JSdEc4ZGFTRC1yaWU4WVRYdkQtbWdYY2R5WWZF?oc=5" rel="noopener noreferrer" target="_blank">Rivian Tesla rival trims spending plans despite revenue beat | RIVN</a>
+      <span class="nm">thestreet.com · 2026-08-03</span>
     </div>
     
   </section>
@@ -1245,7 +1245,7 @@
 
 <footer class="site-footer6">
   <p><span class="l-en">Research context only — not investment advice. Past patterns do not guarantee future results.</span><span class="l-zh">仅供研究参考，不构成投资建议。历史规律不代表未来表现。</span></p>
-  <p><span class="l-en">Data through</span><span class="l-zh">数据截至</span> 2026-08-03 · <span class="l-en">regenerated nightly</span><span class="l-zh">每晚更新</span> · <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-03 11:34 UTC · <a href="index.html"><span class="l-en">All coverage</span><span class="l-zh">所有股票</span></a> · <a href="../stock.html"><span class="l-en">Analyzer</span><span class="l-zh">分析器</span></a></p>
+  <p><span class="l-en">Data through</span><span class="l-zh">数据截至</span> 2026-08-04 · <span class="l-en">regenerated nightly</span><span class="l-zh">每晚更新</span> · <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-03 22:06 UTC · <a href="index.html"><span class="l-en">All coverage</span><span class="l-zh">所有股票</span></a> · <a href="../stock.html"><span class="l-en">Analyzer</span><span class="l-zh">分析器</span></a></p>
 </footer>
 
 </div><!-- /page-wrap -->

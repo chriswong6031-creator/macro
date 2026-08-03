@@ -22,11 +22,21 @@
 
   .badge { display: inline-block; padding: 3px 12px; border-radius: 14px;
            font-weight: 600; font-size: 13px; }
-  /* quad badge keeps its solid vivid colour; text contrast set per badge */
-  .quad-Q1, .quad-Q3, .quad-Q4 { color: #fff; }
-  .quad-Q2 { color: #1a1a1a; }
+  /* quad badge keeps its solid vivid colour; ink + fill tuned per quad so this
+     13px size clears 4.5:1 in BOTH themes (hero badges pass at the 3:1 large-text
+     bar elsewhere). Mid-luminance hues carry near-black ink (gold, green) or a
+     slightly deepened fill (blue, light green); zh swaps q1/q3 hues at the token
+     level, so the ink/fill choices swap with them in the zh rules below (kept
+     after the light rules — the tie resolves in source order). */
+  .quad-Q3, .quad-Q4 { color: #fff; }
+  .quad-Q1, .quad-Q2 { color: #1a1a1a; }
   .quad-Q1 { background: var(--q1); } .quad-Q2 { background: var(--q2); }
   .quad-Q3 { background: var(--q3); } .quad-Q4 { background: var(--q4); }
+  html:not([data-theme="light"]) .quad-Q4 { background: color-mix(in srgb, var(--q4) 88%, var(--bg)); }
+  html[data-theme="light"] .quad-Q1 { background: color-mix(in srgb, var(--q1) 90%, var(--text)); color: #fff; }
+  html[data-lang="zh"] .quad-Q1 { background: var(--q1); color: #fff; }
+  html[data-lang="zh"] .quad-Q3 { color: #1a1a1a; }
+  html[data-theme="light"][data-lang="zh"] .quad-Q3 { background: color-mix(in srgb, var(--q3) 90%, var(--text)); color: #fff; }
 
   .kv { color: var(--muted); } .kv b { color: var(--text); font-weight: 600; }
 
@@ -573,11 +583,14 @@
   .actcol { background: var(--panel); border: 1px solid var(--line); min-width: 0;
             border-radius: 14px; padding: 0; overflow: hidden;
             display: flex; flex-direction: column; --act-accent: var(--muted); }
-  .act-buy  { --act-accent: var(--up); }
-  .act-soon { --act-accent: var(--info); }
-  .act-run  { --act-accent: #8b5cf6; }   /* neutral violet — NOT green/buy */
-  .act-trim { --act-accent: var(--warn); }
-  .act-hold { --act-accent: var(--muted); }
+  /* --act-accent stays fill-grade for the lane bar; --act-accent-ink is the
+     text-grade twin for .acth-name (violet measured 4.19:1 dark / 3.89 light). */
+  .act-buy  { --act-accent: var(--up); --act-accent-ink: var(--ink-up, var(--up)); }
+  .act-soon { --act-accent: var(--info); --act-accent-ink: var(--ink-info, var(--info)); }
+  .act-run  { --act-accent: #8b5cf6; --act-accent-ink: color-mix(in srgb, #8b5cf6 80%, var(--text)); }   /* neutral violet — NOT green/buy */
+  .act-trim { --act-accent: var(--warn); --act-accent-ink: var(--ink-warn, var(--warn)); }
+  .act-hold { --act-accent: var(--muted); --act-accent-ink: var(--muted); }
+  html[data-theme="light"] .act-run { --act-accent-ink: color-mix(in srgb, #8b5cf6 72%, var(--text)); }
   /* Lane header — accent top bar via ::before (anv2-lane-hd idiom) */
   .acth { padding: 10px 13px 8px; border-bottom: 1px solid var(--line); position: relative; }
   .acth::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
@@ -585,7 +598,7 @@
   .acth-title-row { display: flex; align-items: center; gap: 5px; }
   .acth-emoji { font-size: 13px; line-height: 1; flex: none; }
   .acth-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
-               color: var(--act-accent); flex: 0 1 auto; min-width: 0;
+               color: var(--act-accent-ink, var(--act-accent)); flex: 0 1 auto; min-width: 0;
                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .acth-count { flex: none; font-size: 11px; font-weight: 400; color: var(--muted); }
   .acth-count::before { content: "("; } .acth-count::after { content: ")"; }
@@ -608,28 +621,28 @@
   /* theme composite score — anv2-score idiom (big number, right of the name) */
   .act-row-score { flex: none; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums;
                    white-space: nowrap; }
-  .act-score-hi  { color: var(--up); }
-  .act-score-mid { color: var(--warn); }
-  .act-score-lo  { color: var(--down); }
+  .act-score-hi  { color: var(--ink-up, var(--up)); }
+  .act-score-mid { color: var(--ink-warn, var(--warn)); }
+  .act-score-lo  { color: var(--ink-down, var(--down)); }
   /* V2 stat line — last line of the row; muted label, china-anv2-style colored value
      (var(--up)/var(--down) so the zh red/green flip rides along); hidden on mobile */
   .act-row-stat { display: block; font-size: 10.5px; color: var(--muted); line-height: 1.35; margin-top: 3px;
                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .act-row-stat .up { color: var(--up); font-weight: 600; }
-  .act-row-stat .dn { color: var(--down); font-weight: 600; }
+  .act-row-stat .up { color: var(--ink-up, var(--up)); font-weight: 600; }
+  .act-row-stat .dn { color: var(--ink-down, var(--down)); font-weight: 600; }
   @media (max-width: 560px) { .act-row-stat { display: none; } }
   .act-row-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 4px; }
   /* V2 action chip — anv2-chip idiom (uppercase 10px, 4px radius) */
   .ab-chip { font-size: 10px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
              padding: 2px 6px; border-radius: 4px; line-height: 15px; white-space: nowrap; flex: none; }
   .ab-chip--warn { background: color-mix(in srgb, var(--warn) 14%, transparent);
-                   color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 28%, transparent); }
+                   color: var(--ink-warn, var(--warn)); border: 1px solid color-mix(in srgb, var(--ink-warn, var(--warn)) 28%, transparent); }
   .ab-chip--pos  { background: color-mix(in srgb, var(--up) 14%, transparent);
-                   color: var(--up); border: 1px solid color-mix(in srgb, var(--up) 28%, transparent); }
+                   color: var(--ink-up, var(--up)); border: 1px solid color-mix(in srgb, var(--ink-up, var(--up)) 28%, transparent); }
   .ab-chip--neg  { background: color-mix(in srgb, var(--down) 14%, transparent);
-                   color: var(--down); border: 1px solid color-mix(in srgb, var(--down) 28%, transparent); }
+                   color: var(--ink-down, var(--down)); border: 1px solid color-mix(in srgb, var(--ink-down, var(--down)) 28%, transparent); }
   .ab-chip--info { background: color-mix(in srgb, var(--info) 14%, transparent);
-                   color: var(--info); border: 1px solid color-mix(in srgb, var(--info) 28%, transparent); }
+                   color: var(--ink-info, var(--info)); border: 1px solid color-mix(in srgb, var(--ink-info, var(--info)) 28%, transparent); }
   .ab-chip--muted { background: color-mix(in srgb, var(--muted) 12%, transparent);
                     color: var(--muted); border: 1px solid color-mix(in srgb, var(--muted) 22%, transparent); }
   /* gate-override ✓ pill */
@@ -1026,8 +1039,8 @@
      and there is no bare .az-up rule to inherit, so this one is required or the move
      since the signal renders colourless.  --up/--down (NOT --pv-*) is correct here:
      this IS a directional figure, so it must flip red/green under html[data-lang="zh"]. */
-  .pbr-m .az-up { color: var(--up); font-weight: 700; }
-  .pbr-m .az-dn { color: var(--down); font-weight: 700; }
+  .pbr-m .az-up { color: var(--ink-up, var(--up)); font-weight: 700; }
+  .pbr-m .az-dn { color: var(--ink-down, var(--down)); font-weight: 700; }
   /* theme_confirmed: the name's own signal is old but its THEME only just turned.
      A touch of warmth — an amber wash and one amber line — deliberately a quieter
      register than the featured aura, which stays the board's only green glow. */
@@ -1135,8 +1148,8 @@
   .nb-az { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
            padding: 0 5px; border-radius: 7px; background: var(--panel);
            border: 1px solid var(--line); color: var(--muted); }
-  .nb-az.az-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line)); }
-  .nb-az.az-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line)); }
+  .nb-az.az-up { color: var(--ink-up, var(--up)); border-color: color-mix(in srgb, var(--ink-up, var(--up)) 38%, var(--line)); }
+  .nb-az.az-dn { color: var(--ink-down, var(--down)); border-color: color-mix(in srgb, var(--ink-down, var(--down)) 38%, var(--line)); }
   .nb-rk { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .nb-comp { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
              padding: 0 5px; border-radius: 7px; background: var(--panel);
@@ -1164,8 +1177,12 @@
                            background: color-mix(in srgb, var(--warn, #c79a2e) 7%, var(--panel)); }
   .nb-disp.disp-lean_out b { color: var(--warn, #c79a2e); }
   .nb-ent { font-weight: 700; padding: 0 5px; border-radius: 7px; }
-  .ent-good { color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
-  .ent-warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); }
+  .ent-good { color: var(--ink-up, var(--up)); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
+  /* dark-zh: 红涨绿跌 makes this a red-on-red-tint pair, which lands at 4.41:1 on
+     the 14% tint (green clears easily; red sits lower in the dark). Thinning the
+     tint to 8% is the W3 lever — the ink stays vivid, dark-EN is untouched. */
+  html[data-lang="zh"]:not([data-theme="light"]) .ent-good { background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
+  .ent-warn { color: var(--ink-warn, var(--warn)); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); }
   /* insider Form-4 buy-cluster confirmer chip */
   .nb-ins { font-weight: 800; padding: 0 5px; border-radius: 7px; color: var(--up);
             background: color-mix(in srgb, var(--up) 13%, var(--panel)); white-space: nowrap; }
@@ -1368,8 +1385,8 @@
   .nb-donor.donor-cracking{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--panel2))}
   .nb-donor.donor-intact{border-color:color-mix(in srgb,var(--up) 35%,var(--line));background:color-mix(in srgb,var(--up) 6%,var(--panel2))}
   .nb-donor .donor-ic{font-size:12px;flex:none}
-  .nb-donor.donor-cracking .donor-ic{color:var(--warn)}
-  .nb-donor.donor-intact .donor-ic{color:var(--up)}
+  .nb-donor.donor-cracking .donor-ic{color:var(--ink-warn,var(--warn))}
+  .nb-donor.donor-intact .donor-ic{color:var(--ink-up,var(--up))}
   /* COILED wave-2-validated cohort-washout ranking bonus chip (display-only, US standouts) */
   .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
   .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
@@ -1400,8 +1417,8 @@
   .oc-dot.running{background:var(--up)}
   .oc-dot.stopped{background:var(--down)}
   .oc-dot.flat{background:var(--muted)}
-  .oc-pct.az-up{color:var(--up);font-weight:700}
-  .oc-pct.az-dn{color:var(--down);font-weight:700}
+  .oc-pct.az-up{color:var(--ink-up,var(--up));font-weight:700}
+  .oc-pct.az-dn{color:var(--ink-down,var(--down));font-weight:700}
   /* P2.4 board contract v2: lane chips (display-only, US standouts) */
   .nb-lane{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap}
   /* v2 lane taxonomy (bottoming/continuation/watch) + legacy names (trend/recovery) for backward compat */
@@ -1472,6 +1489,13 @@
   .ts-tbl th { text-align: left; font-weight: 700; color: var(--muted); font-size: 10px;
                text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px;
                border-bottom: 1px solid var(--line); }
+  /* The α headers are SYMBOLS, and uppercase folds α to Greek capital Alpha — which
+     renders as a plain Latin "A", so "edge (α)" and "α (tiebreak)" ship as
+     "EDGE (A)" / "A (TIEBREAK)" and stop naming the thing they hold. A wrong label
+     is a wrong number wearing words. Only this header opts out of the case
+     transform; the rest of the row keeps the uppercase idiom. Caught on the HK port
+     of this table (templates/hk.html.j2), which carries the same one-line fix. */
+  .ts-tbl th.c-edge { text-transform: none; }
   /* left by default to sit under the left-aligned headers (else the page-global th,td{right}
      right-shifts the text columns); .r columns stay right on both header + body (rule below). */
   .ts-tbl td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
@@ -1480,8 +1504,8 @@
   .ts-row:hover { background: var(--panel2); }
   .ts-tk { font-weight: 800; color: var(--text); }
   .ts-nm { font-size: 10px; color: var(--muted); }
-  .ts-tbl td.az-up { color: var(--up); font-weight: 700; }
-  .ts-tbl td.az-dn { color: var(--down); font-weight: 700; }
+  .ts-tbl td.az-up { color: var(--ink-up, var(--up)); font-weight: 700; }
+  .ts-tbl td.az-dn { color: var(--ink-down, var(--down)); font-weight: 700; }
   /* confluence buy-signal chip (the hard gate the board now requires) */
   .ts-buy { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; white-space: nowrap; border: 1px solid var(--line); }
   .ts-buy.ok { color: var(--up); border-color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
@@ -1520,7 +1544,7 @@
   .idx-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .idx-tkr { font-size: 10px; font-weight: 600; letter-spacing: .04em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 5px; }
   .idx-chg { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; white-space: nowrap; }
-  .idx-grid .pos { color: var(--up); } .idx-grid .neg { color: var(--down); } .idx-grid .warn { color: var(--warn); }
+  .idx-grid .pos { color: var(--ink-up, var(--up)); } .idx-grid .neg { color: var(--ink-down, var(--down)); } .idx-grid .warn { color: var(--ink-warn, var(--warn)); }
   .idx-risk { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   @media (max-width: 900px) { .idx-risk { grid-template-columns: 1fr; } }
   .idx-gauge, .idx-alloc { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; }
@@ -2032,7 +2056,7 @@
   .dash-mtf-badge.watch { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 30%,transparent); color:var(--info,var(--link)); }
   .dash-mtf-badge.none { background:color-mix(in srgb,var(--muted) 8%,transparent); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); color:var(--muted); }
   .dash-mtf-leg { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; font-size:9px; font-weight:700; }
-  .dash-mtf-leg.on { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 30%,transparent); }
+  .dash-mtf-leg.on { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--ink-up,var(--up)); border:1px solid color-mix(in srgb,var(--ink-up,var(--up)) 30%,transparent); }
   .dash-mtf-leg.off { background:color-mix(in srgb,var(--muted) 8%,transparent); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 18%,transparent); }
   .dash-mtf-leg.partial { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
   /* U7: ring state — running trend (histogram positive, no recent cross; does not count toward K) */

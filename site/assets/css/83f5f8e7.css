@@ -308,7 +308,7 @@ body.page-macro.mx4-grid .mx5-flipctx-pop .mxfs{border:none;background:transpare
 /* affordance: pill cursor + info icon */
 body.page-macro.mx4-grid .mx5-regime-pill{cursor:help;}
 body.page-macro.mx4-grid .mx5-pill-info{
-  font-size:10px;opacity:.6;margin-left:3px;flex-shrink:0;
+  font-size:10px;margin-left:3px;flex-shrink:0;
 }
 /* mobile: pop is static and initially hidden; toggled by JS tap */
 @media(max-width:700px){

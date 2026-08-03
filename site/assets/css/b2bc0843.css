@@ -1,0 +1,13 @@
+
+  /* zh 红涨绿跌 for the Fear & Greed gauge: Greed=bullish→red, Fear=bearish→green (neutral amber).
+     --fg-col routes through --up/--warn/--down so it auto-flips in zh; SVG marks + zone word read it. */
+  .fg-greed{--fg-col:var(--up);--fg-ink:var(--ink-up,var(--up))} .fg-fear{--fg-col:var(--down);--fg-ink:var(--ink-down,var(--down))} .fg-neutral{--fg-col:var(--warn);--fg-ink:var(--ink-warn,var(--warn))}
+  #sx-v5-sentiment .fg-mark-s{stroke:var(--fg-col)} #sx-v5-sentiment .fg-mark-f{fill:var(--fg-col)}
+  #sx-v5-sentiment .fg-lab-panic{fill:var(--down)} #sx-v5-sentiment .fg-lab-euph{fill:var(--up)}
+  /* zh 红涨绿跌: the arc gradient is baked hex (panic-red → euphoria-green Western);
+     mirror it so the greed end reads red and the fear end green, matching the
+     already-flipping 恐慌/亢奋 labels and the needle (both paint from --up/--down). */
+  html[data-lang="zh"] #sentGrad5 stop:nth-of-type(1){stop-color:#22d97a}
+  html[data-lang="zh"] #sentGrad5 stop:nth-of-type(3){stop-color:#ef4444}
+  html[data-lang="zh"] #sentGrad5 stop:nth-of-type(4){stop-color:#ef4444}
+  
