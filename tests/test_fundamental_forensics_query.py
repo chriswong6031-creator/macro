@@ -122,6 +122,13 @@ def _fact(
     )
 
 
+def test_period_request_preserves_same_day_xbrl_duration_semantics() -> None:
+    period = PeriodRequest.duration("2016-08-30", "2016-08-30")
+    assert period.normalized.duration_days == 1
+    with pytest.raises(QueryValidationError, match="must not follow"):
+        PeriodRequest.duration("2016-08-31", "2016-08-30")
+
+
 def _engine(*facts, bounds: QueryBounds | None = None, registry=None, **kwargs):
     entities = kwargs.pop("entities", {"AAA": ENTITY_A, "BBB": ENTITY_B})
     if "filing_metadata" not in kwargs:

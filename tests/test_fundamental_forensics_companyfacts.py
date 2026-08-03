@@ -58,11 +58,13 @@ class _Response:
         headers: dict[str, str] | None = None,
         chunks: list[bytes] | None = None,
         reject_content_property: bool = False,
+        url: str | None = None,
     ) -> None:
         self._body = body
         self._chunks = chunks
         self._reject_content_property = reject_content_property
         self.status_code = status_code
+        self.url = url
         self.headers = headers or {
             "ETag": '"fixture"',
             "Last-Modified": "Sat, 01 Aug 2026 12:00:00 GMT",
@@ -101,16 +103,24 @@ class _Fetcher:
         self.bodies = bodies
         self.response_headers = response_headers
         self.response_factory = response_factory
-        self.calls: list[tuple[str, dict[str, str], float, bool]] = []
+        self.calls: list[tuple[str, dict[str, str], float, bool, bool]] = []
         self.responses: list[_Response] = []
 
-    def __call__(self, url: str, *, headers: dict[str, str], timeout: float, stream: bool):
-        self.calls.append((url, dict(headers), timeout, stream))
+    def __call__(
+        self,
+        url: str,
+        *,
+        headers: dict[str, str],
+        timeout: float,
+        stream: bool,
+        allow_redirects: bool,
+    ):
+        self.calls.append((url, dict(headers), timeout, stream, allow_redirects))
         body = self.bodies[url] if isinstance(self.bodies, dict) else self.bodies
         response = (
             self.response_factory(body, url)
             if self.response_factory is not None
-            else _Response(body, headers=self.response_headers)
+            else _Response(body, headers=self.response_headers, url=url)
         )
         self.responses.append(response)
         return response
@@ -321,6 +331,7 @@ def test_acquires_current_byte_faithful_snapshot_with_verified_pointer(tmp_path:
             {"User-Agent": USER_AGENT, "Accept-Encoding": "gzip, deflate"},
             30.0,
             True,
+            False,
         )
     ]
 
@@ -604,10 +615,11 @@ def test_streaming_cap_never_reads_content_property_or_persists_oversize_body(tm
     body = _body(_payload())
     fetcher = _Fetcher(
         body,
-        response_factory=lambda returned_body, _url: _Response(
+        response_factory=lambda returned_body, url: _Response(
             returned_body,
             chunks=[returned_body],
             reject_content_property=True,
+            url=url,
         ),
     )
     run = _run_receipt(
@@ -629,6 +641,69 @@ def test_streaming_cap_never_reads_content_property_or_persists_oversize_body(tm
     assert response.stream_chunk_sizes == [64 * 1024]
     assert response.closed is True
     assert fetcher.calls[0][3] is True
+    assert not list((tmp_path / "raw").rglob("*.json.gz"))
+
+
+def test_default_companyfacts_fetcher_explicitly_disables_redirects(monkeypatch):
+    observed: dict[str, object] = {}
+    sentinel = object()
+
+    def fake_get(url: str, **kwargs):
+        observed["url"] = url
+        observed.update(kwargs)
+        return sentinel
+
+    monkeypatch.setattr(companyfacts.requests, "get", fake_get)
+    result = companyfacts._default_fetcher(
+        companyfacts_url(1),
+        headers={"User-Agent": USER_AGENT},
+        timeout=12.5,
+        stream=True,
+        allow_redirects=False,
+    )
+
+    assert result is sentinel
+    assert observed["url"] == companyfacts_url(1)
+    assert observed["stream"] is True
+    assert observed["allow_redirects"] is False
+
+
+def test_companyfacts_rejects_redirect_before_streaming_or_persistence(tmp_path: Path):
+    fetcher = _Fetcher(
+        _body(_payload()),
+        response_factory=lambda body, url: _Response(body, status_code=302, url=url),
+    )
+    run = _run_receipt(_run(tmp_path, fetcher))
+
+    receipt = run["ticker_receipts"][0]
+    assert run["status"] == "partial"
+    assert receipt["status"] == "failed"
+    assert "redirects are refused" in receipt["failures"][0]["message"]
+    assert fetcher.calls[0][3:] == (True, False)
+    assert fetcher.responses[0].stream_chunk_sizes == []
+    assert fetcher.responses[0].closed is True
+    assert not list((tmp_path / "raw").rglob("*.json.gz"))
+
+
+def test_companyfacts_requires_exact_response_url_before_streaming_or_persistence(
+    tmp_path: Path,
+):
+    fetcher = _Fetcher(
+        _body(_payload()),
+        response_factory=lambda body, _url: _Response(
+            body,
+            url="https://www.sec.gov/api/xbrl/companyfacts/CIK0000000001.json",
+        ),
+    )
+    run = _run_receipt(_run(tmp_path, fetcher))
+
+    receipt = run["ticker_receipts"][0]
+    assert run["status"] == "partial"
+    assert receipt["status"] == "failed"
+    assert "URL does not match" in receipt["failures"][0]["message"]
+    assert fetcher.calls[0][3:] == (True, False)
+    assert fetcher.responses[0].stream_chunk_sizes == []
+    assert fetcher.responses[0].closed is True
     assert not list((tmp_path / "raw").rglob("*.json.gz"))
 
 

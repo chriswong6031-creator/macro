@@ -24,7 +24,11 @@ from threading import RLock
 from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 
-from engine.research_vault.r2_store import StrictReadStore
+from engine.research_vault.r2_store import (
+    StrictConditionalWriteStore,
+    StrictReadStore,
+    VersionedBytes,
+)
 
 from .query import (
     BitemporalPolicy,
@@ -818,10 +822,6 @@ def _validate_manifest_matrix_binding(manifest: Mapping[str, Any], matrix: Metri
         raise QuerySnapshotError("query snapshot manifest input scope is unsupported")
 
 
-def _pointer_bytes(snapshot: QuerySnapshot) -> bytes:
-    return QuerySnapshotPointer.from_snapshot(snapshot).to_json_bytes()
-
-
 def _decode_pointer(payload: bytes) -> QuerySnapshotPointer:
     _bounded_bytes(payload, maximum=16 * 1024, field="query snapshot pointer")
     try:
@@ -848,62 +848,241 @@ def _read_required(store: StrictReadStore, key: str) -> bytes:
     return payload
 
 
-def _put_verified_immutable(store: StrictReadStore, artifact: QuerySnapshotArtifact, payload: bytes) -> None:
-    existing = _read_optional(store, artifact.object_key)
-    if existing is not None:
-        if existing != payload:
-            raise QuerySnapshotError("immutable snapshot object collision")
-    else:
-        try:
-            written = store.put_bytes(artifact.object_key, payload, content_type=artifact.content_type)
-        except Exception as exc:  # noqa: BLE001 - normalize store failures.
-            raise QuerySnapshotError(f"private snapshot write failed for {artifact.object_key}") from exc
-        if written is not True:
-            raise QuerySnapshotError(f"private snapshot write failed for {artifact.object_key}")
-    echoed = _read_required(store, artifact.object_key)
-    if echoed != payload or sha256(echoed).hexdigest() != artifact.sha256:
-        raise QuerySnapshotError("private snapshot object read-back mismatch")
-
-
-def _read_optional(store: StrictReadStore, key: str) -> bytes | None:
+def _read_bounded_optional(
+    store: StrictConditionalWriteStore,
+    key: str,
+    *,
+    maximum: int,
+) -> bytes | None:
+    """Read bounded publication bytes without treating failure as absence."""
     _validate_key(key)
+    if isinstance(maximum, bool) or not isinstance(maximum, int) or maximum < 0:
+        raise QuerySnapshotError("query snapshot bounded read maximum is invalid")
     try:
-        payload = store.get_bytes_strict(key)
-    except Exception as exc:  # noqa: BLE001 - normalize store failures.
-        raise QuerySnapshotError(f"private snapshot read failed for {key}") from exc
+        payload = store.get_bytes_strict_bounded(key, maximum)
+    except Exception as exc:  # noqa: BLE001 - transport errors are never misses.
+        raise QuerySnapshotError(f"private snapshot bounded read failed for {key}") from exc
     if payload is not None and not isinstance(payload, bytes):
         raise QuerySnapshotError("private snapshot store returned non-bytes")
+    if payload is not None and len(payload) > maximum:
+        raise QuerySnapshotError("private snapshot store ignored bounded read limit")
     return payload
 
 
-def _publish_pointer(store: StrictReadStore, snapshot: QuerySnapshot) -> None:
-    pointer_key = _latest_key()
-    prior = _read_optional(store, pointer_key)
-    payload = _pointer_bytes(snapshot)
-    if prior is not None:
-        prior_pointer = _decode_pointer(prior)
-        if prior_pointer.snapshot_id == snapshot.snapshot_id:
-            if prior != payload:
+def _readback_immutable_create(
+    store: StrictConditionalWriteStore,
+    *,
+    key: str,
+    payload: bytes,
+    maximum: int,
+    expected_sha256: str | None,
+    write_error: str,
+    collision_error: str,
+    readback_error: str,
+    cause: BaseException | None,
+) -> None:
+    """Reconcile create-only conflict/ambiguity by an exact bounded readback."""
+    try:
+        echoed = _read_bounded_optional(store, key, maximum=maximum)
+    except QuerySnapshotError as exc:
+        error = QuerySnapshotError(write_error)
+        if cause is not None:
+            raise error from cause
+        raise error from exc
+    if echoed != payload:
+        error = QuerySnapshotError(collision_error if echoed is not None else readback_error)
+        if cause is not None:
+            raise error from cause
+        raise error
+    if expected_sha256 is not None and sha256(echoed).hexdigest() != expected_sha256:
+        raise QuerySnapshotError(readback_error)
+
+
+def _create_immutable(
+    store: StrictConditionalWriteStore,
+    *,
+    key: str,
+    payload: bytes,
+    maximum: int,
+    content_type: str,
+    expected_sha256: str | None,
+    write_error: str,
+    collision_error: str,
+    readback_error: str,
+) -> None:
+    """Create one immutable object without a probe/write race or legacy put."""
+    _validate_key(key)
+    if type(payload) is not bytes:
+        raise QuerySnapshotError("immutable snapshot payload must be exact bytes")
+    if len(payload) > maximum:
+        raise QuerySnapshotError("immutable snapshot payload exceeds bounded read limit")
+    try:
+        written = store.put_bytes_strict_conditional(
+            key,
+            payload,
+            expected_version=None,
+            content_type=content_type,
+        )
+    except Exception as exc:  # noqa: BLE001 - the service may have committed before loss.
+        _readback_immutable_create(
+            store,
+            key=key,
+            payload=payload,
+            maximum=maximum,
+            expected_sha256=expected_sha256,
+            write_error=write_error,
+            collision_error=collision_error,
+            readback_error=readback_error,
+            cause=exc,
+        )
+        return
+    if written is True:
+        echoed = _read_bounded_optional(store, key, maximum=maximum)
+        if echoed != payload or (
+            expected_sha256 is not None and sha256(echoed).hexdigest() != expected_sha256
+        ):
+            raise QuerySnapshotError(readback_error)
+        return
+    if written is False:
+        _readback_immutable_create(
+            store,
+            key=key,
+            payload=payload,
+            maximum=maximum,
+            expected_sha256=expected_sha256,
+            write_error=write_error,
+            collision_error=collision_error,
+            readback_error=readback_error,
+            cause=None,
+        )
+        return
+    raise QuerySnapshotError(write_error)
+
+
+def _put_verified_immutable(
+    store: StrictConditionalWriteStore,
+    artifact: QuerySnapshotArtifact,
+    payload: bytes,
+) -> None:
+    _create_immutable(
+        store,
+        key=artifact.object_key,
+        payload=payload,
+        maximum=_ROLE_BYTE_LIMITS[artifact.role],
+        content_type=artifact.content_type,
+        expected_sha256=artifact.sha256,
+        write_error=f"private snapshot write failed for {artifact.object_key}",
+        collision_error="immutable snapshot object collision",
+        readback_error="private snapshot object read-back mismatch",
+    )
+
+
+def _read_versioned_pointer(store: StrictConditionalWriteStore) -> VersionedBytes:
+    """Read latest together with the opaque exact predecessor token."""
+    try:
+        observed = store.get_bytes_strict_bounded_versioned(_latest_key(), 16 * 1024)
+    except Exception as exc:  # noqa: BLE001 - latest is publication authority.
+        raise QuerySnapshotError("query snapshot latest pointer versioned read failed") from exc
+    if type(observed) is not VersionedBytes:
+        raise QuerySnapshotError("query snapshot latest pointer versioned read is invalid")
+    if observed.data is None:
+        if observed.version is not None:
+            raise QuerySnapshotError("missing query snapshot latest pointer has a version")
+    elif type(observed.data) is not bytes or not isinstance(observed.version, str) or not observed.version:
+        raise QuerySnapshotError("present query snapshot latest pointer lacks an opaque version")
+    return observed
+
+
+def _pointer_binds_snapshot(
+    store: StrictConditionalWriteStore,
+    pointer: QuerySnapshotPointer,
+) -> QuerySnapshot:
+    """Resolve an immutable snapshot before trusting its mutable projection."""
+    try:
+        snapshot = _snapshot_from_manifest(store, snapshot_id=pointer.snapshot_id)
+    except Exception as exc:  # noqa: BLE001 - pointer state must be complete.
+        raise QuerySnapshotError("query snapshot latest pointer does not bind manifest") from exc
+    if (
+        snapshot.manifest_key != pointer.manifest_key
+        or snapshot.query_hash != pointer.query_hash
+        or snapshot.published_at != pointer.published_at
+    ):
+        raise QuerySnapshotError("query snapshot latest pointer does not bind manifest")
+    return snapshot
+
+
+def _pointer_after_failed_cas(
+    store: StrictConditionalWriteStore,
+    *,
+    pointer: QuerySnapshotPointer,
+    payload: bytes,
+    cause: BaseException | None,
+) -> None:
+    """Accept only exact idempotent completion; preserve all other winners."""
+    observed = _read_versioned_pointer(store)
+    if observed.data == payload:
+        return
+    if observed.data is not None:
+        current = _decode_pointer(observed.data)
+        _pointer_binds_snapshot(store, current)
+        if current.snapshot_id == pointer.snapshot_id:
+            raise QuerySnapshotError("latest pointer disagrees with immutable snapshot") from cause
+        if pointer.published_at <= current.published_at:
+            error = QuerySnapshotError("stale snapshot cannot rewind latest pointer")
+            if cause is not None:
+                raise error from cause
+            raise error
+    if cause is not None:
+        raise QuerySnapshotError(
+            "private snapshot latest pointer conditional write outcome could not be reconciled"
+        ) from cause
+    raise QuerySnapshotError("private snapshot latest pointer compare-and-swap conflict")
+
+
+def _publish_pointer(store: StrictConditionalWriteStore, snapshot: QuerySnapshot) -> None:
+    pointer = QuerySnapshotPointer.from_snapshot(snapshot)
+    payload = pointer.to_json_bytes()
+    prior = _read_versioned_pointer(store)
+    if prior.data is not None:
+        old = _decode_pointer(prior.data)
+        _pointer_binds_snapshot(store, old)
+        if old.snapshot_id == pointer.snapshot_id:
+            if prior.data != payload:
                 raise QuerySnapshotError("latest pointer disagrees with immutable snapshot")
             return
-        if snapshot.published_at <= prior_pointer.published_at:
+        if pointer.published_at <= old.published_at:
             raise QuerySnapshotError("stale snapshot cannot rewind latest pointer")
     try:
-        written = store.put_bytes(pointer_key, payload, content_type="application/json")
-    except Exception as exc:  # noqa: BLE001
-        raise QuerySnapshotError("private snapshot latest pointer write failed") from exc
-    if written is not True:
-        raise QuerySnapshotError("private snapshot latest pointer write failed")
-    echoed = _read_optional(store, pointer_key)
-    if echoed == payload:
+        written = store.put_bytes_strict_conditional(
+            _latest_key(),
+            payload,
+            expected_version=prior.version,
+            content_type="application/json",
+        )
+    except Exception as exc:  # noqa: BLE001 - the service may have committed the CAS.
+        _pointer_after_failed_cas(store, pointer=pointer, payload=payload, cause=exc)
         return
-    # Best-effort rollback is safe in the single-writer operator lane.  If it
-    # fails, callers still receive an error and must treat latest as uncertain.
-    if prior is not None:
-        try:
-            store.put_bytes(pointer_key, prior, content_type="application/json")
-        except Exception:  # pragma: no cover - failure remains surfaced below.
-            pass
+    if written is not True:
+        _pointer_after_failed_cas(store, pointer=pointer, payload=payload, cause=None)
+        return
+    echoed = _read_versioned_pointer(store)
+    if echoed.data == payload:
+        return
+    # An acknowledged CAS can be overtaken by a verified newer successor.  It
+    # is never safe to restore ``prior`` because that compensating put can
+    # overwrite the winner.
+    try:
+        successor = _decode_pointer(echoed.data) if echoed.data is not None else None
+        if successor is not None:
+            _pointer_binds_snapshot(store, successor)
+    except QuerySnapshotError as exc:
+        raise QuerySnapshotError("private snapshot latest pointer read-back mismatch") from exc
+    if (
+        successor is not None
+        and successor.snapshot_id != pointer.snapshot_id
+        and successor.published_at > pointer.published_at
+    ):
+        return
     raise QuerySnapshotError("private snapshot latest pointer read-back mismatch")
 
 
@@ -1087,43 +1266,55 @@ def _snapshot_from_manifest(store: StrictReadStore, *, snapshot_id: str) -> Quer
     )
 
 
-def publish_query_snapshot(store: StrictReadStore, prepared: PreparedQuerySnapshot) -> QuerySnapshot:
-    """Publish verified objects under the single-writer operator contract.
+def publish_query_snapshot(
+    store: StrictConditionalWriteStore,
+    prepared: PreparedQuerySnapshot,
+    *,
+    publish_latest: bool = True,
+) -> QuerySnapshot:
+    """Create immutable inputs then CAS-advance the one mutable latest pointer.
 
-    Publication is serialized only within this Python process.  A scheduled or
-    multi-process R2 writer must hold an external lease/CAS before entering;
-    the generic strict-read store API cannot provide distributed monotonicity.
+    The process lock remains useful local load-shedding, but correctness comes
+    from the store's exact-predecessor conditional-write primitive.  A legacy
+    ``put_bytes`` adapter is intentionally rejected before any snapshot bytes
+    are created, so a distributed writer cannot recreate the former probe/
+    overwrite race.
     """
     if not isinstance(prepared, PreparedQuerySnapshot):
         raise TypeError("prepared must be PreparedQuerySnapshot")
-    if not isinstance(store, StrictReadStore):
-        raise QuerySnapshotError("query snapshot publication requires a StrictReadStore adapter")
+    if type(publish_latest) is not bool:
+        raise QuerySnapshotError("publish_latest must be a boolean")
+    if not isinstance(store, StrictConditionalWriteStore):
+        raise QuerySnapshotError(
+            "query snapshot publication requires a StrictConditionalWriteStore adapter"
+        )
+    try:
+        store.validate_strict_conditional_write_capability()
+    except Exception as exc:  # noqa: BLE001 - prove capability before mutable work.
+        raise QuerySnapshotError(
+            "query snapshot conditional-write capability validation failed"
+        ) from exc
     with _PUBLISH_LOCK:
         for artifact in prepared.artifacts:
             _put_verified_immutable(store, artifact, prepared.payloads[artifact.role])
         manifest_payload = _manifest_bytes(prepared.manifest)
-        # The manifest is not a role-bearing data artifact, but it uses the same
-        # private immutable readback discipline.  Its key is intentionally bound
-        # to snapshot identity rather than its own hash.
-        existing = _read_optional(store, prepared.manifest_key)
-        if existing is not None:
-            if existing != manifest_payload:
-                raise QuerySnapshotError("immutable query snapshot manifest collision")
-        else:
-            try:
-                written = store.put_bytes(
-                    prepared.manifest_key,
-                    manifest_payload,
-                    content_type="application/json",
-                )
-            except Exception as exc:  # noqa: BLE001
-                raise QuerySnapshotError("private query snapshot manifest write failed") from exc
-            if written is not True:
-                raise QuerySnapshotError("private query snapshot manifest write failed")
-        if _read_required(store, prepared.manifest_key) != manifest_payload:
-            raise QuerySnapshotError("private query snapshot manifest read-back mismatch")
+        # The manifest is not role-bearing, but it has the same immutable
+        # contract. Its key is bound to snapshot identity rather than a second
+        # digest, so any different concurrent bytes are a terminal collision.
+        _create_immutable(
+            store,
+            key=prepared.manifest_key,
+            payload=manifest_payload,
+            maximum=HARD_MAX_SNAPSHOT_MANIFEST_BYTES,
+            content_type="application/json",
+            expected_sha256=None,
+            write_error="private query snapshot manifest write failed",
+            collision_error="immutable query snapshot manifest collision",
+            readback_error="private query snapshot manifest read-back mismatch",
+        )
         snapshot = verify_query_snapshot(store, snapshot_id=prepared.snapshot_id)
-        _publish_pointer(store, snapshot)
+        if publish_latest:
+            _publish_pointer(store, snapshot)
         return snapshot
 
 

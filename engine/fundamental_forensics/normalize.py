@@ -135,7 +135,11 @@ def _duration_days(start: str | None, end: str) -> int | None:
     if not start:
         return None
     try:
-        return (date.fromisoformat(end) - date.fromisoformat(start)).days
+        start_date = date.fromisoformat(start)
+        end_date = date.fromisoformat(end)
+        if start_date > end_date:
+            return None
+        return (end_date - start_date).days + 1
     except ValueError:
         return None
 

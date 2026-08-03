@@ -61,12 +61,22 @@ def _attestation(*, helper, monkeypatch, package, extraction, authority, paths):
     )
 
 
-def _material(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+def _material(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    *,
+    companyfacts_response: bytes | None = None,
+    submissions: dict | None = None,
+):
     helper = _b3_helpers()
     package, manifest, index_content = helper._package()
     extraction = helper._numeric_extraction(package, monkeypatch)
     state: dict = {}
-    response = helper._companyfacts_body()
+    response = (
+        helper._companyfacts_body()
+        if companyfacts_response is None
+        else companyfacts_response
+    )
     authority = helper._authority(
         tmp_path,
         package,
@@ -87,7 +97,7 @@ def _material(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     companyfacts_capture_from_json_bytes(capture_bytes)
     companyfacts = json.loads(response)
     capture_manifest = json.loads(manifest_bytes)
-    submissions = {
+    submissions = submissions if submissions is not None else {
         "cik": "0000000001",
         "filings": {
             "recent": {
@@ -564,6 +574,8 @@ class _BoundedProxy:
         self.corrupt_pointer_readback = corrupt_pointer_readback
         self.reject_conditional_capability = reject_conditional_capability
         self.strict_calls = 0
+        self.conditional_calls: list[tuple[str, bytes, str | None, str]] = []
+        self.unconditional_put_calls = 0
 
     def get_bytes(self, key):
         return self.inner.get_bytes(key)
@@ -591,6 +603,9 @@ class _BoundedProxy:
         expected_version,
         content_type="application/octet-stream",
     ):
+        self.conditional_calls.append((key, data, expected_version, content_type))
+        if self.reject_manifest and "/manifests/ffqsv2_" in key:
+            return False
         if self.reject_pointer and key == attested_snapshots._latest_key():
             return False
         result = self.inner.put_bytes_strict_conditional(
@@ -610,8 +625,7 @@ class _BoundedProxy:
         return result
 
     def put_bytes(self, key, data, content_type="application/octet-stream"):
-        if self.reject_manifest and "/manifests/ffqsv2_" in key:
-            return False
+        self.unconditional_put_calls += 1
         return self.inner.put_bytes(key, data, content_type)
 
     def list_prefix(self, prefix):
@@ -653,6 +667,164 @@ class _ReadOnlyBoundedProxy:
 
     def upload_time(self, key):
         return self.inner.upload_time(key)
+
+
+class _AmbiguousImmutableCreateProxy(_BoundedProxy):
+    """Commit one immutable create, then lose its response to the caller."""
+
+    def __init__(self, inner, *, target_key: str, result: bool | Exception):
+        super().__init__(inner)
+        self.target_key = target_key
+        self.result = result
+        self.triggered = False
+
+    def put_bytes_strict_conditional(
+        self,
+        key,
+        data,
+        *,
+        expected_version,
+        content_type="application/octet-stream",
+    ):
+        self.conditional_calls.append((key, data, expected_version, content_type))
+        if key == self.target_key and not self.triggered:
+            assert expected_version is None
+            assert self.inner.put_bytes_strict_conditional(
+                key,
+                data,
+                expected_version=expected_version,
+                content_type=content_type,
+            ) is True
+            self.triggered = True
+            if isinstance(self.result, Exception):
+                raise self.result
+            return self.result
+        return self.inner.put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=expected_version,
+            content_type=content_type,
+        )
+
+
+def _immutable_calls(proxy: _BoundedProxy):
+    return [
+        call for call in proxy.conditional_calls
+        if call[0] != attested_snapshots._latest_key()
+    ]
+
+
+def test_immutable_artifacts_and_manifest_are_create_only_and_never_use_legacy_put(
+    monkeypatch, tmp_path,
+):
+    store, _base, material, conversion, _binding, prepared = _prepared(monkeypatch, tmp_path)
+    proxy = _BoundedProxy(store)
+    snapshot = publish_attested_query_snapshot(
+        proxy,
+        prepared,
+        attestation_materials=(material,),
+        companyfacts_conversion=conversion,
+    )
+    expected_keys = [item.object_key for item in prepared.artifacts] + [prepared.manifest_key]
+    calls = _immutable_calls(proxy)
+    assert [key for key, _data, _version, _type in calls] == expected_keys
+    assert all(version is None for _key, _data, version, _type in calls)
+    assert [(data, content_type) for _key, data, _version, content_type in calls[:-1]] == [
+        (prepared.payloads[item.role], item.content_type) for item in prepared.artifacts
+    ]
+    manifest_bytes = store.get_bytes_strict(snapshot.manifest_key)
+    assert manifest_bytes is not None
+    assert calls[-1] == (
+        snapshot.manifest_key,
+        manifest_bytes,
+        None,
+        "application/json",
+    )
+    assert proxy.unconditional_put_calls == 0
+
+
+def test_immutable_create_accepts_exact_existing_bytes_without_legacy_put(
+    monkeypatch, tmp_path,
+):
+    store, _base, material, conversion, _binding, prepared = _prepared(monkeypatch, tmp_path)
+    proxy = _BoundedProxy(store)
+    first = publish_attested_query_snapshot(
+        proxy,
+        prepared,
+        attestation_materials=(material,),
+        companyfacts_conversion=conversion,
+    )
+    first_call_count = len(proxy.conditional_calls)
+    assert publish_attested_query_snapshot(
+        proxy,
+        prepared,
+        attestation_materials=(material,),
+        companyfacts_conversion=conversion,
+    ).snapshot_id == first.snapshot_id
+    repeat_calls = [
+        call for call in proxy.conditional_calls[first_call_count:]
+        if call[0] != attested_snapshots._latest_key()
+    ]
+    assert [key for key, _data, _version, _type in repeat_calls] == [
+        item.object_key for item in prepared.artifacts
+    ] + [prepared.manifest_key]
+    assert all(version is None for _key, _data, version, _type in repeat_calls)
+    assert proxy.unconditional_put_calls == 0
+
+
+@pytest.mark.parametrize("target", ("artifact", "manifest"))
+def test_immutable_create_rejects_a_different_concurrent_winner(
+    monkeypatch, tmp_path, target,
+):
+    store, _base, material, conversion, _binding, prepared = _prepared(monkeypatch, tmp_path)
+    if target == "artifact":
+        key = prepared.artifacts[0].object_key
+        error = "immutable object collision"
+    else:
+        key = prepared.manifest_key
+        error = "immutable manifest collision"
+    assert store.put_bytes_strict_conditional(
+        key,
+        b"a concurrent winner with different bytes",
+        expected_version=None,
+        content_type="application/json",
+    ) is True
+    proxy = _BoundedProxy(store)
+    with pytest.raises(AttestedQuerySnapshotError, match=error):
+        publish_attested_query_snapshot(
+            proxy,
+            prepared,
+            attestation_materials=(material,),
+            companyfacts_conversion=conversion,
+        )
+    assert proxy.unconditional_put_calls == 0
+    assert store.get_bytes_strict(attested_snapshots._latest_key()) is None
+
+
+@pytest.mark.parametrize(
+    ("target", "outcome"),
+    (
+        ("artifact", False),
+        ("manifest", TimeoutError("conditional create response lost")),
+    ),
+)
+def test_immutable_create_reconciles_race_false_and_ambiguous_commit_by_exact_readback(
+    monkeypatch, tmp_path, target, outcome,
+):
+    store, _base, material, conversion, _binding, prepared = _prepared(monkeypatch, tmp_path)
+    key = prepared.artifacts[0].object_key if target == "artifact" else prepared.manifest_key
+    proxy = _AmbiguousImmutableCreateProxy(store, target_key=key, result=outcome)
+    snapshot = publish_attested_query_snapshot(
+        proxy,
+        prepared,
+        attestation_materials=(material,),
+        companyfacts_conversion=conversion,
+    )
+    assert proxy.triggered
+    assert load_attested_query_snapshot(store, snapshot_id=snapshot.snapshot_id).snapshot_id == snapshot.snapshot_id
+    call = next(item for item in _immutable_calls(proxy) if item[0] == key)
+    assert call[2] is None
+    assert proxy.unconditional_put_calls == 0
 
 
 def _pointer_only_snapshot(digit: str, published_at: str):

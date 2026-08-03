@@ -29,6 +29,23 @@ CORE_V1_CATALOG_ID = "fundamental_forensics_core_gaap_metrics"
 CORE_V1_METRIC_COUNT = 50
 CORE_V1_DIRECT_METRIC_COUNT = 40
 CORE_V1_FORMULA_METRIC_COUNT = 10
+ATTESTED_OCCURRENCE_METRIC_ID = "attested_occurrence"
+ATTESTED_OCCURRENCE_CATALOG_ID = (
+    "fundamental_forensics_attested_occurrence_catalog"
+)
+ATTESTED_OCCURRENCE_MAPPING_PACK_ID = (
+    "fundamental_forensics_attested_occurrence_mappings"
+)
+ATTESTED_OCCURRENCE_DIMENSIONAL_MODE = "dimensions_unknown_only"
+ATTESTED_OCCURRENCE_AVAILABLE_AT = "2026-08-03T00:00:00Z"
+ATTESTED_OCCURRENCE_ALLOWED_FORMS = ("10-K", "10-K/A", "10-Q", "10-Q/A")
+ATTESTED_OCCURRENCE_NO_RESULT_CODES = (
+    "missing_standard_fact",
+    "outside_period_constraint",
+    "disallowed_dimension",
+    "unexpected_unit",
+    "ambiguous_source_occurrence",
+)
 ALLOWED_CONFIDENCE = frozenset({"A", "B", "C", "D"})
 ALLOWED_UNITS = frozenset({"USD", "shares", "USD/shares", "ratio"})
 ALLOWED_PERIOD_KINDS = frozenset({"duration", "instant"})
@@ -634,7 +651,12 @@ def _period_constraints(value: Any, *, field: str) -> PeriodConstraints:
     return PeriodConstraints(kind=kind, allowed_forms=forms, min_duration_days=minimum, max_duration_days=maximum)
 
 
-def _dimensional_profile(value: Any, *, field: str) -> DimensionalProfile:
+def _dimensional_profile(
+    value: Any,
+    *,
+    field: str,
+    allow_attested_occurrence_profile: bool = False,
+) -> DimensionalProfile:
     raw = _require_mapping(value, field=field)
     mode = _text(raw.get("mode"), field=f"{field}.mode")
     axes = tuple(_text(item, field=f"{field}.allowed_axes") for item in _require_list(
@@ -642,9 +664,13 @@ def _dimensional_profile(value: Any, *, field: str) -> DimensionalProfile:
     ))
     required = raw.get("require_dimensions")
     member_selection = raw.get("allow_member_selection")
-    if mode != "consolidated_only" or axes or required is not False or member_selection is not False:
+    supported_mode = mode == "consolidated_only" or (
+        allow_attested_occurrence_profile
+        and mode == ATTESTED_OCCURRENCE_DIMENSIONAL_MODE
+    )
+    if not supported_mode or axes or required is not False or member_selection is not False:
         raise ValueError(
-            f"{field} only supports explicit consolidated-only, dimensionless contracts in v1"
+            f"{field} has an unsupported dimensional profile"
         )
     return DimensionalProfile(mode, axes, required, member_selection)
 
@@ -908,7 +934,11 @@ def _metric_contract_from_payload(value: Mapping[str, Any], *, field: str) -> Me
         rule=_rule(raw["rule"], field=f"{field}.rule"),
         units=_units(raw["units"], field=f"{field}.units"),
         period_constraints=_period_constraints(raw["period_constraints"], field=f"{field}.period_constraints"),
-        dimensional_profile=_dimensional_profile(raw["dimensional_profile"], field=f"{field}.dimensional_profile"),
+        dimensional_profile=_dimensional_profile(
+            raw["dimensional_profile"],
+            field=f"{field}.dimensional_profile",
+            allow_attested_occurrence_profile=True,
+        ),
         presentation_constraints=_presentation(raw["presentation_constraints"], field=f"{field}.presentation_constraints"),
         review=_review(raw["review"], field=f"{field}.review"),
         no_result=_no_result(raw["no_result"], field=f"{field}.no_result"),
@@ -1052,6 +1082,105 @@ def _validate_governance_bundle_contracts(bundle: GovernanceBundle) -> None:
         )
         if frozen_base != replace(contract, mappings=(), formula=None):
             raise ValueError(f"governance bundle metric contract is not canonical: {contract.metric_id}")
+        if contract.dimensional_profile.mode == ATTESTED_OCCURRENCE_DIMENSIONAL_MODE:
+            alias = (
+                contract.mappings[0].taxonomy_concept_aliases[0]
+                if len(contract.mappings) == 1
+                and len(contract.mappings[0].taxonomy_concept_aliases) == 1
+                else None
+            )
+            known = (
+                KNOWN_CONCEPT_ALLOWLIST.get((alias.taxonomy, alias.concept))
+                if alias is not None
+                else None
+            )
+            expected_period = (
+                PeriodConstraints(
+                    kind="duration",
+                    allowed_forms=ATTESTED_OCCURRENCE_ALLOWED_FORMS,
+                    min_duration_days=1,
+                    max_duration_days=400,
+                )
+                if known is not None and known.period_kind == "duration"
+                else PeriodConstraints(
+                    kind="instant",
+                    allowed_forms=ATTESTED_OCCURRENCE_ALLOWED_FORMS,
+                    min_duration_days=None,
+                    max_duration_days=None,
+                )
+            )
+            expected_available = parse_utc(
+                ATTESTED_OCCURRENCE_AVAILABLE_AT,
+                field="attested_occurrence_available_at",
+            )
+            if (
+                bundle.catalog is None
+                or bundle.catalog.identifier != ATTESTED_OCCURRENCE_CATALOG_ID
+                or bundle.catalog.version != "1.0.0"
+                or bundle.catalog.available_at != expected_available
+                or bundle.mapping_pack is None
+                or bundle.mapping_pack.identifier
+                != ATTESTED_OCCURRENCE_MAPPING_PACK_ID
+                or bundle.mapping_pack.version != "1.0.0"
+                or bundle.mapping_pack.available_at != expected_available
+                or bundle.formula_pack is not None
+                or bundle.contracts != (contract,)
+                or contract.metric_id != ATTESTED_OCCURRENCE_METRIC_ID
+                or contract.label != "Attested SEC source occurrence"
+                or contract.category != "evidence_bridge"
+                or contract.rule.rule_id != "metric.attested_occurrence/v1"
+                or contract.rule.version != "1.0.0"
+                or contract.rule.available_at != expected_available
+                or contract.rule.confidence != "D"
+                or known is None
+                or contract.units != known.contract_units
+                or contract.period_constraints != expected_period
+                or contract.dimensional_profile
+                != DimensionalProfile(
+                    mode=ATTESTED_OCCURRENCE_DIMENSIONAL_MODE,
+                    allowed_axes=(),
+                    require_dimensions=False,
+                    allow_member_selection=False,
+                )
+                or contract.presentation_constraints
+                != PresentationConstraints(
+                    statement="derived",
+                    sign_convention="as_reported",
+                    display_scale="native",
+                    comparability="same_unit_same_period",
+                )
+                or contract.review
+                != ReviewPolicy(
+                    required=True,
+                    triggers=(
+                        "unknown_dimension_scope",
+                        "source_correspondence_only",
+                    ),
+                )
+                or contract.no_result
+                != NoResultPolicy(
+                    mode="withhold",
+                    codes=ATTESTED_OCCURRENCE_NO_RESULT_CODES,
+                )
+                or contract.declared_formula_dependencies
+                or contract.formula is not None
+                or len(contract.mappings) != 1
+                or contract.mappings[0].metric_id
+                != ATTESTED_OCCURRENCE_METRIC_ID
+                or contract.mappings[0].rule.rule_id
+                != "mapping.attested_occurrence/v1"
+                or contract.mappings[0].rule.version != "1.0.0"
+                or contract.mappings[0].rule.available_at != expected_available
+                or contract.mappings[0].rule.confidence != "D"
+                or alias is None
+                or alias.priority != 1
+                or alias.taxonomy_version_start != known.taxonomy_version_start
+                or alias.taxonomy_version_end != known.taxonomy_version_end
+            ):
+                raise ValueError(
+                    "dimensions-unknown facts are restricted to the isolated "
+                    "attested-occurrence evidence contract"
+                )
         if contract.metric_id in metric_ids:
             raise ValueError(f"duplicate metric in governance bundle: {contract.metric_id}")
         if contract.rule.available_at > bundle.recorded_at:

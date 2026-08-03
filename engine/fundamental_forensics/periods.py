@@ -205,7 +205,10 @@ def _canonical_dimensions(
 
 
 def _duration_days(start: date, end: date) -> int:
-    return (end - start).days
+    # SEC/XBRL date-only duration endpoints are inclusive: an endDate denotes
+    # midnight at the *end* of the reported date.  Keep the retained lexical
+    # dates stable while calculating the corresponding calendar-day span.
+    return (end - start).days + 1
 
 
 def _approx_weeks(start: date, end: date) -> int:
@@ -232,9 +235,10 @@ def _semantics_for(kind: PeriodKind, calendar_kind: CalendarKind) -> tuple[str, 
 class TypedPeriod:
     """A period with a single primary role and explicit fiscal semantics.
 
-    Dates use XBRL-style interval semantics: ``start`` is inclusive and ``end``
-    is the reported period-end date.  The duration is therefore ``end-start``;
-    this matches SEC facts such as 2024-01-01 through 2025-01-01 = 366 days.
+    Dates use XBRL date-only interval semantics: ``start`` is the beginning of
+    the reported start date and ``end`` is the end of the reported end date.
+    Both displayed dates are therefore included: 2024-01-01 through
+    2025-01-01 is 367 calendar days, and equal endpoints express one day.
     """
 
     kind: PeriodKind | str
@@ -257,8 +261,8 @@ class TypedPeriod:
                 raise ValueError("instant period cannot have start")
         elif start is None:
             raise ValueError(f"{kind.value} period requires start")
-        if start is not None and start >= end:
-            raise ValueError("period start must precede end")
+        if start is not None and start > end:
+            raise ValueError("period start must not follow end")
         if self.fiscal_year is not None and (
             type(self.fiscal_year) is not int or self.fiscal_year < 1
         ):

@@ -22,49 +22,183 @@ concurrency:
 jobs:
   preflight:
     # Secrets must never be exposed to an arbitrary manually selected ref.
-    # This repository currently has only the github-pages deployment
-    # environment, which is not an appropriate R2-credential boundary; do not
-    # invent or repurpose an environment in this inert foundation lane.
+    # This read-only operator does not use the protected writer deployment gate;
+    # it receives only the dedicated repository-scoped read-only parent
+    # credential and the main-ref guard below. The CLI narrows that parent to a
+    # short-lived single-prefix Get/Head child. The separate seed workflow owns the reviewed
+    # attested-history-seed environment and its narrowly scoped writer role.
     if: ${{ inputs.enable_readonly_preflight == true && github.ref == 'refs/heads/main' }}
     runs-on: [self-hosted, macstudio-light]
     timeout-minutes: 20
-    env:
-      # These must be provisioned as GET-only credentials before this job is enabled.
-      FF_ATTESTED_R2_READONLY_ENDPOINT: ${{ secrets.R2_RESEARCH_READONLY_ENDPOINT }}
-      FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_READONLY_ACCESS_KEY_ID }}
-      FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_READONLY_SECRET_ACCESS_KEY }}
-      FF_ATTESTED_R2_READONLY_BUCKET: ${{ secrets.R2_RESEARCH_READONLY_BUCKET }}
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout v4.4.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 1
+          persist-credentials: false
       - name: python 3.12
         run: |
-          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
-          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          VENV="$RUNNER_TEMP/attested-history-readonly-${suffix}-venv"
+          OUTPUT="$RUNNER_TEMP/attested-history-readonly-${suffix}-artifact"
+          LOCK_COPY="$RUNNER_TEMP/attested-history-readonly-${suffix}.lock"
+          SOURCE_ARCHIVE="$RUNNER_TEMP/attested-history-readonly-${suffix}-source.tar"
+          EXEC_ROOT="$RUNNER_TEMP/attested-history-readonly-${suffix}-source"
+          test ! -e "$VENV"
+          test ! -e "$OUTPUT"
+          test ! -e "$LOCK_COPY"
+          test ! -e "$SOURCE_ARCHIVE"
+          test ! -e "$EXEC_ROOT"
+          /opt/homebrew/bin/python3.12 -m venv "$VENV"
           echo "$VENV/bin" >> "$GITHUB_PATH"
-          "$VENV/bin/python" -m pip install --quiet --upgrade pip
-      # B2 uses the strict SEC parser (lxml/BeautifulSoup) in addition to the
-      # bounded-store and parquet dependencies. Keep this equal to the tested
-      # project dependency set instead of relying on runner-global packages.
-      - run: pip install --quiet -r requirements.txt
-      - name: sealed read-only preflight
+      - name: install exact attested-history dependency lock
+        id: dependency-lock
         run: |
           set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          VENV="$RUNNER_TEMP/attested-history-readonly-${suffix}-venv"
+          LOCK_COPY="$RUNNER_TEMP/attested-history-readonly-${suffix}.lock"
+          test ! -e "$LOCK_COPY"
+          git show "$GITHUB_SHA:requirements/attested-history-macos-arm64-py312.lock" > "$LOCK_COPY"
+          digest="$(shasum -a 256 "$LOCK_COPY" | awk '{print $1}')"
+          echo "sha256=$digest" >> "$GITHUB_OUTPUT"
+          "$VENV/bin/python" -m pip install \
+            --disable-pip-version-check \
+            --only-binary=:all: \
+            --require-hashes \
+            -r "$LOCK_COPY"
+      - name: verify exact reviewed execution tree
+        id: reviewed-source
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --quiet "$GITHUB_SHA" -- .
+          git diff --cached --quiet "$GITHUB_SHA" -- .
+          test -z "$(git ls-files --others --exclude-standard -- .)"
+          test -z "$(git ls-files --others --ignored --exclude-standard -- .)"
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          SOURCE_ARCHIVE="$RUNNER_TEMP/attested-history-readonly-${suffix}-source.tar"
+          test ! -e "$SOURCE_ARCHIVE"
+          execution_paths=(
+            collectors/__init__.py
+            collectors/edgar_forensics.py
+            collectors/fundamental_forensics_acquisition.py
+            collectors/fundamental_forensics_companyfacts.py
+            collectors/sec_document_spine.py
+            collectors/sec_filing_parser.py
+            config.yml
+            config/fundamental_forensics
+            engine/__init__.py
+            engine/fundamental_forensics
+            engine/research_vault/__init__.py
+            engine/research_vault/r2_store.py
+            lib/__init__.py
+            lib/config.py
+            scripts/run_fundamental_forensics_attested_history.py
+          )
+          git archive --format=tar --output "$SOURCE_ARCHIVE" "$GITHUB_SHA" -- "${execution_paths[@]}"
+          digest="$(shasum -a 256 "$SOURCE_ARCHIVE" | awk '{print $1}')"
+          echo "archive_sha256=$digest" >> "$GITHUB_OUTPUT"
+      - name: sealed read-only preflight
+        # The parent dashboard role may include List. The CLI gives boto only
+        # a locally signed 30-minute Get/Head child scoped to the single
+        # fundamental_forensics/ prefix.
+        env:
+          FF_ATTESTED_R2_READONLY_ENDPOINT: ${{ secrets.R2_RESEARCH_READONLY_ENDPOINT }}
+          FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_READONLY_ACCESS_KEY_ID }}
+          FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_READONLY_SECRET_ACCESS_KEY }}
+          FF_ATTESTED_R2_READONLY_BUCKET: ${{ secrets.R2_RESEARCH_READONLY_BUCKET }}
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          VENV="$RUNNER_TEMP/attested-history-readonly-${suffix}-venv"
+          OUTPUT="$RUNNER_TEMP/attested-history-readonly-${suffix}-artifact"
+          SOURCE_ARCHIVE="$RUNNER_TEMP/attested-history-readonly-${suffix}-source.tar"
+          EXEC_ROOT="$RUNNER_TEMP/attested-history-readonly-${suffix}-source"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git diff --quiet "$GITHUB_SHA" -- .
+          git diff --cached --quiet "$GITHUB_SHA" -- .
+          test -z "$(git ls-files --others --exclude-standard -- .)"
+          test -z "$(git ls-files --others --ignored --exclude-standard -- .)"
+          test "$(shasum -a 256 "$SOURCE_ARCHIVE" | awk '{print $1}')" = "${{ steps.reviewed-source.outputs.archive_sha256 }}"
+          test ! -e "$EXEC_ROOT"
+          mkdir "$EXEC_ROOT"
+          tar -xf "$SOURCE_ARCHIVE" -C "$EXEC_ROOT"
+          test ! -e "$OUTPUT"
+          cd "$EXEC_ROOT"
           packet='config/fundamental_forensics/attested_history_operator.v1.json'
-          observed_at="$(python -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"))')"
+          observed_at="$("$VENV/bin/python" -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"))')"
           # The CLI creates a redacted failed receipt when the packet is absent
           # or malformed, so a deliberately unseeded foundation still leaves
           # an operator-visible audit artifact on an explicit manual run.
-          python -m scripts.run_fundamental_forensics_attested_history \
+          "$VENV/bin/python" -m scripts.run_fundamental_forensics_attested_history \
             --config "$packet" \
-            --output-dir attested-history-preflight-artifact \
+            --output-dir "$OUTPUT" \
             --operator-verification-observed-at "$observed_at"
-      - name: upload private diagnostic receipt
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: assemble review-only preflight bundle manifest
+        if: ${{ always() }}
+        env:
+          FF_ATTESTED_DEPENDENCY_LOCK_SHA256: ${{ steps.dependency-lock.outputs.sha256 }}
+          FF_ATTESTED_GITHUB_REPOSITORY: ${{ github.repository }}
+          FF_ATTESTED_GITHUB_SHA: ${{ github.sha }}
+          FF_ATTESTED_GITHUB_REF: ${{ github.ref }}
+          FF_ATTESTED_GITHUB_RUN_ID: ${{ github.run_id }}
+          FF_ATTESTED_GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          suffix="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          VENV="$RUNNER_TEMP/attested-history-readonly-${suffix}-venv"
+          OUTPUT="$RUNNER_TEMP/attested-history-readonly-${suffix}-artifact"
+          receipt="$OUTPUT/attested_history_preflight_receipt.json"
+          if [[ ! -f "$receipt" ]]; then
+            exit 0
+          fi
+          "$VENV/bin/python" - "$OUTPUT" <<'PY'
+          from hashlib import sha256
+          import json
+          import os
+          from pathlib import Path
+          import sys
+          output = Path(sys.argv[1])
+          receipt = output / "attested_history_preflight_receipt.json"
+          content = receipt.read_bytes()
+          manifest = {
+              "schema": "fundamental_forensics.attested_history_preflight_review_bundle/v1",
+              "status": "review_only",
+              "dependency_lock_sha256": os.environ["FF_ATTESTED_DEPENDENCY_LOCK_SHA256"],
+              "receipt": {"filename": receipt.name, "bytes": len(content), "sha256": sha256(content).hexdigest()},
+              "run_provenance": {
+                  "repository": os.environ["FF_ATTESTED_GITHUB_REPOSITORY"],
+                  "sha": os.environ["FF_ATTESTED_GITHUB_SHA"],
+                  "ref": os.environ["FF_ATTESTED_GITHUB_REF"],
+                  "run_id": int(os.environ["FF_ATTESTED_GITHUB_RUN_ID"]),
+                  "run_attempt": int(os.environ["FF_ATTESTED_GITHUB_RUN_ATTEMPT"]),
+              },
+              "nonclaims": ["review_artifact_not_canonical_publication"],
+          }
+          (output / "attested_history_preflight_bundle_receipt.json").write_text(
+              json.dumps(manifest, sort_keys=True, separators=(",", ":")), encoding="utf-8"
+          )
+          PY
+      - name: upload review-only successful preflight receipt
+        # actions/upload-artifact v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: attested-history-readonly-preflight
-          path: attested-history-preflight-artifact/attested_history_preflight_receipt.json
+          name: attested-history-readonly-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/attested-history-readonly-${{ github.run_id }}-${{ github.run_attempt }}-artifact/attested_history_preflight_receipt.json
+            ${{ runner.temp }}/attested-history-readonly-${{ github.run_id }}-${{ github.run_attempt }}-artifact/attested_history_preflight_bundle_receipt.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: upload review-only failed preflight receipt when available
+        if: ${{ failure() }}
+        # actions/upload-artifact v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: attested-history-readonly-preflight-failed-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/attested-history-readonly-${{ github.run_id }}-${{ github.run_attempt }}-artifact/attested_history_preflight_receipt.json
+            ${{ runner.temp }}/attested-history-readonly-${{ github.run_id }}-${{ github.run_attempt }}-artifact/attested_history_preflight_bundle_receipt.json
           if-no-files-found: warn
           retention-days: 7

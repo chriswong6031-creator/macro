@@ -2,13 +2,22 @@
 
 **Canonical implementation handoff**
 
-**Status:** foundation only. It has no production issuer packet, no enabled
-schedule, no dedicated R2 read-only credential, and no publication path.
+**Status:** foundation only. Dedicated-bucket read-only repository-secret names
+have been verified, but there is no production issuer packet, enabled schedule,
+live R2 preflight, publication path, or authority promotion. Presence of secret
+names is not proof that any object has been read or written.
+
+The verified read-only names are `R2_RESEARCH_READONLY_ENDPOINT`,
+`R2_RESEARCH_READONLY_ACCESS_KEY_ID`,
+`R2_RESEARCH_READONLY_SECRET_ACCESS_KEY`, and
+`R2_RESEARCH_READONLY_BUCKET`. They are used only as the read-only side of the
+controlled B4F activation; the seed writer never falls back to broad Research
+Vault credentials.
 
 ## Outcome
 
 `scripts/run_fundamental_forensics_attested_history.py` is the first operating
-surface above B4D. It is intentionally a private, read-only candidate factory:
+surface above B4D. It is intentionally an internal, read-only candidate factory:
 
 ```text
 sealed ffqs_ + ffsecsrc_ packet
@@ -94,14 +103,29 @@ non-sensitive B4D materializer codes: `not_sec_companyfacts`,
 
 `.github/workflows/attested-history-operator.yml` has only guarded manual
 dispatch (`enable_readonly_preflight=false` by default), `contents: read`, and
-private artifact upload. There is deliberately no `schedule:` trigger. The job
-can run only on `refs/heads/main`, so its R2 secrets are never exposed to a
-manually selected branch ref. It is ready to receive separate GitHub
-`R2_RESEARCH_READONLY_*` secrets, mapped only to the
+review-only artifact upload. Because the repository is public, those Actions
+artifacts are not confidential or canonical publication. There is deliberately
+no `schedule:` trigger. The job can run only on `refs/heads/main`, so its R2
+secrets are never exposed to a manually selected branch ref. It maps the verified repository
+`R2_RESEARCH_READONLY_*` secret names only to
 `FF_ATTESTED_R2_READONLY_*` runtime variables. It does not fall back to the
-broad existing Research R2 credentials. The only existing protected environment
-is the unrelated GitHub Pages deployment environment, so this inert lane does
-not repurpose it as a credential boundary.
+broad existing Research R2 credentials. No R2 write capability is used by this
+operator.
+
+The separate `.github/workflows/attested-history-aapl-seed.yml` workflow is the
+only proposed bootstrap writer. It remains manual-only and main-only, has no
+`schedule:`, and requires the protected `attested-history-seed` environment
+before any dispatch. That environment now exists with one required reviewer
+and a custom `main`-only deployment policy. It still lacks the only two new
+writer secrets:
+`R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID` and
+`R2_ATTESTED_HISTORY_SEED_SECRET_ACCESS_KEY`. Cloudflare's parent tokens may
+include List under its dashboard Object Read/Object Read & Write roles. The
+workflows locally mint at-most-30-minute children scoped to the single
+`fundamental_forensics/` prefix; the writer child has exactly Get/Head/Put and
+the reader child exactly Get/Head, with no List/Delete. The seed preflight must
+use the separately issued `R2_RESEARCH_READONLY_*` parent against the same bucket
+and prove conditional-write/readback behavior before SEC acquisition begins.
 
 ## Validation
 
@@ -120,10 +144,23 @@ and binding correctness tests.
 
 ## Activation prerequisites
 
-1. Create a separate R2 role restricted to exact GET/HEAD on the required
-   private prefixes; deny put/delete/list.
-2. Seal, review, and commit one real issuer packet with every listed source
-   object and older-Submissions member.
-3. Run manual preflight against that packet and inspect the private receipt.
-4. Only then add a schedule trigger. Keep publication separate until its
-   credential/lease/fencing policy is independently designed and tested.
+1. Merge the B4F code and CI wiring; do not dispatch from a branch or treat a
+   local run as the production seed.
+2. Confirm the existing protected `attested-history-seed` GitHub environment's
+   reviewer and exact `main` branch policy, then add only the two
+   environment-scoped writer secrets named above. Keep the already verified
+   `R2_RESEARCH_READONLY_*` repository secrets read-only and separate.
+3. Dispatch the manual AAPL seed on `main`. Its storage-control probe must
+   prove absent-create conflict rejection, exact-version CAS, stale-CAS
+   rejection, and separate read-only final-byte readback before it contacts the
+   SEC.
+4. Review the four non-confidential, review-only Actions files: seed receipt,
+   zero-write preflight receipt, candidate operator packet, and bundle receipt
+   binding their hashes to the exact GitHub run and dependency lock. A failure
+   or an incomplete receipt stops here; no canonical/public serving state is
+   permitted.
+5. Review and commit one real issuer packet in a separate change, then run the
+   existing manual read-only operator preflight against that committed packet.
+6. Keep cron, API/UI exposure, Neural Web/Prophet authority, scores, and
+   alerts disabled. Each would require its own policy, test, and promotion
+   review; none follows automatically from a first issuer receipt.

@@ -775,8 +775,12 @@ class FactContext:
             raise ValueError("context must be either instant or duration, never both")
         if instant is None and (start is None or end is None):
             raise ValueError("duration context requires both start and end")
-        if start is not None and end is not None and start >= end:
-            raise ValueError("context start must precede end")
+        # XBRL lexical dates are inclusive at both ends: ``startDate`` is the
+        # beginning of its date and ``endDate`` is the end of its date.  A
+        # matching pair is thus a valid one-day duration, whereas a reversed
+        # range remains structurally invalid.
+        if start is not None and end is not None and start > end:
+            raise ValueError("context start must not follow end")
         explicit = _canonical_pairs(self.explicit_dimensions, field_name="explicit_dimensions")
         typed = _canonical_pairs(self.typed_dimensions, field_name="typed_dimensions")
         overlap = {axis for axis, _ in explicit}.intersection(axis for axis, _ in typed)

@@ -599,6 +599,13 @@ on:
       - "scripts/build_fundamental_forensics_disclosures.py"
       - "scripts/run_fundamental_forensics_wave2.py"
       - "scripts/run_fundamental_forensics_attested_history.py"
+      # B4F is a controlled, one-shot AAPL bootstrap. Its runner and workflow
+      # are both production-control surfaces: a test-only edit is covered by
+      # the broad suite glob below, while an edit to the runner/workflow itself
+      # must also start the pack that executes its no-network safety contracts.
+      - "scripts/seed_fundamental_forensics_attested_history.py"
+      - ".github/workflows/attested-history-aapl-seed.yml"
+      - "requirements/attested-history-macos-arm64-py312.lock"
       - "config/fundamental_forensics.yml"
       - "config/fundamental_forensics/**"
       - "config/fundamental_forensics_disclosure_diff.v1.json"
@@ -611,9 +618,10 @@ on:
       - "templates/fundamental_forensics.js"
       - "tests/fixtures/fundamental_forensics/**"
       - "tests/test_fundamental_forensics_*.py"
-      # Wave 3B-B4A/B4B/B4D-A: the broad fundamental-forensics glob also matches
-      # these suites, but the explicit names document the sealed-history reader,
-      # bounded serving, and pinned-source materializer contracts and protect
+      # Wave 3B-B4A/B4B/B4D-A/B4F: the broad fundamental-forensics glob also
+      # matches these suites, but the explicit names document the sealed-history
+      # reader, bounded serving, pinned-source materializer, one-shot seed, and
+      # dimensions-unknown evidence-bridge contracts. They also protect
       # test-only re-pins if the broad glob is ever narrowed.
       - "tests/test_fundamental_forensics_attested_query_snapshots.py"
       - "tests/test_fundamental_forensics_attested_history_reader.py"
@@ -621,6 +629,9 @@ on:
       - "tests/test_fundamental_forensics_companyfacts_pinned_loader.py"
       - "tests/test_fundamental_forensics_attested_history_materializer.py"
       - "tests/test_fundamental_forensics_attested_history_operator.py"
+      - "tests/test_fundamental_forensics_attested_history_pilot.py"
+      - "tests/test_fundamental_forensics_attested_history_seed.py"
+      - "tests/test_fundamental_forensics_attested_occurrence_governance.py"
       - "tests/test_sec_document_spine.py"
       - "tests/test_forensics_api.py"
       - "tests/test_edgar_forensics_collector.py"
