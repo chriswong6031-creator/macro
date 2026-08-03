@@ -273,6 +273,11 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4
+      # The import-light tier-gate runs the shell/boundary cases, while the two
+      # builder assertions intentionally require pandas + plotly. Pair the suite
+      # with this fat lane so those assertions execute instead of skip everywhere.
+      - name: ETF tier-preview builder assertions (full page stack)
+        run: python -m pytest tests/test_etfs_gate.py -q
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest

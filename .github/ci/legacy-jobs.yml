@@ -606,6 +606,11 @@ jobs:
         # beautifulsoup4: test_china_news_engine.py patches bs4.BeautifulSoup on the
         # official-pages fetch path, and patch() imports the module.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4 fastapi httpx jsonschema
+      # The import-light tier-gate runs the shell/boundary cases, while the two
+      # builder assertions intentionally require pandas + plotly. Pair the suite
+      # with this fat lane so those assertions execute instead of skip everywhere.
+      - name: ETF tier-preview builder assertions (full page stack)
+        run: python -m pytest tests/test_etfs_gate.py -q
       # Wired 2026-07-26: test_group_flow.py was named by NO job in ANY workflow
       # (`grep -rn test_group_flow .github/` returned nothing), so its baskets.html.j2
       # render guard sat RED on main from 2026-07-24 — #3282's Rotation Map revamp
