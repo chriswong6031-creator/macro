@@ -654,7 +654,7 @@ def _context_projection(context: Mapping[str, Any], *, cik: str) -> tuple[str | 
         return (None, end) if end is not None else None
     if kind == "duration":
         start, end = checked(period.get("start_date")), checked(period.get("end_date"))
-        if start is not None and end is not None and start < end:
+        if start is not None and end is not None and start <= end:
             return start, end
     return None
 
@@ -678,7 +678,7 @@ def _source_cf_rows(payload: Mapping[str, Any], *, cik: str, accession: str) -> 
             start_date = date.fromisoformat(start) if isinstance(start, str) else None
         except ValueError:
             continue
-        if value is None or end_date is None or end_date.isoformat() != end or (start is not None and (start_date is None or start_date.isoformat() != start or start_date >= end_date)):
+        if value is None or end_date is None or end_date.isoformat() != end or (start is not None and (start_date is None or start_date.isoformat() != start or start_date > end_date)):
             continue
         taxonomy = row.get("taxonomy")
         concept = row.get("concept")
@@ -1001,7 +1001,7 @@ def _normalise_record(value: Mapping[str, Any]) -> dict[str, Any]:
             end_date = date.fromisoformat(projection["end"]) if isinstance(projection["end"], str) else None
         except ValueError as exc:
             raise FilingAttestationError("filing attestation Company Facts match period is invalid") from exc
-        if (projection["start"] is not None and (start_date is None or start_date.isoformat() != projection["start"])) or end_date is None or end_date.isoformat() != projection["end"] or (start_date is not None and start_date >= end_date):
+        if (projection["start"] is not None and (start_date is None or start_date.isoformat() != projection["start"])) or end_date is None or end_date.isoformat() != projection["end"] or (start_date is not None and start_date > end_date):
             raise FilingAttestationError("filing attestation Company Facts match period is invalid")
     coverage = _strict_mapping(copied["coverage"], field="filing attestation coverage", required=frozenset({"selected_member_source_read", "archive_index_source_read", "selected_member_parser_replayed", "companyfacts_projection_matches", "filing_complete", "taxonomy_validation_complete", "relationship_validation_complete", "calculation_validation_complete", "companyfacts_completeness"}))
     clocks = _strict_mapping(copied["clocks"], field="filing attestation clocks", required=frozenset({"source_snapshot_at", "filing_manifest_recorded_at", "package_assembled_at", "extraction_computed_at", "attested_at"}))

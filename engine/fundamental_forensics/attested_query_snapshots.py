@@ -2028,24 +2028,125 @@ def prepare_attested_query_snapshot(
     )
 
 
-def _read_optional(store: StrictBoundedReadStore, key: str, *, maximum: int) -> bytes | None:
-    return _read_bounded(store, key, maximum=maximum, required=False)
+def _read_back_immutable_create(
+    store: StrictBoundedReadStore,
+    *,
+    key: str,
+    payload: bytes,
+    maximum: int,
+    expected_sha256: str | None,
+    write_error: str,
+    collision_error: str,
+    readback_error: str,
+    cause: BaseException | None,
+) -> None:
+    """Resolve a create-only outcome without ever attempting an overwrite.
+
+    A conditional create can be ambiguous when the remote service commits it
+    but the client loses the response.  ``False`` likewise only establishes
+    that *some* writer consumed the absent predecessor.  In both cases the
+    sole recovery authority is one bounded exact-byte readback: our bytes are
+    idempotent completion; different bytes are a collision; absent or unread
+    bytes are a failed publication.  Retrying as an overwrite would turn a
+    content-addressed object into mutable state.
+    """
+    try:
+        echoed = _read_bounded(store, key, maximum=maximum)
+    except AttestedQuerySnapshotError as exc:
+        error = AttestedQuerySnapshotError(write_error)
+        if cause is not None:
+            raise error from cause
+        raise error from exc
+    if echoed != payload:
+        error = AttestedQuerySnapshotError(collision_error)
+        if cause is not None:
+            raise error from cause
+        raise error
+    if expected_sha256 is not None and sha256(echoed).hexdigest() != expected_sha256:
+        raise AttestedQuerySnapshotError(readback_error)
 
 
-def _put_immutable(store: StrictBoundedReadStore, artifact: AttestedQuerySnapshotArtifact, payload: bytes) -> None:
-    existing = _read_optional(store, artifact.object_key, maximum=_ROLE_LIMITS[artifact.role])
-    if existing is None:
+def _create_immutable(
+    store: StrictConditionalWriteStore,
+    *,
+    key: str,
+    payload: bytes,
+    maximum: int,
+    content_type: str,
+    expected_sha256: str | None,
+    write_error: str,
+    collision_error: str,
+    readback_error: str,
+) -> None:
+    """Create one v2 immutable object at an absent key, then prove its bytes.
+
+    This deliberately does not pre-read to decide whether to write: that
+    check/create gap is exactly the race a strict ``If-None-Match: *`` create
+    closes.  A ``False`` or exceptional response receives bounded readback
+    reconciliation only; it never falls through to ``put_bytes``.
+    """
+    try:
+        written = store.put_bytes_strict_conditional(
+            key,
+            payload,
+            expected_version=None,
+            content_type=content_type,
+        )
+    except Exception as exc:  # noqa: BLE001 - commit may have succeeded remotely.
+        _read_back_immutable_create(
+            store,
+            key=key,
+            payload=payload,
+            maximum=maximum,
+            expected_sha256=expected_sha256,
+            write_error=write_error,
+            collision_error=collision_error,
+            readback_error=readback_error,
+            cause=exc,
+        )
+        return
+    if written is True:
         try:
-            written = store.put_bytes(artifact.object_key, payload, content_type=artifact.content_type)
-        except Exception as exc:  # noqa: BLE001
-            raise AttestedQuerySnapshotError(f"private attested snapshot write failed for {artifact.object_key}") from exc
-        if written is not True:
-            raise AttestedQuerySnapshotError("private attested snapshot immutable write failed")
-    elif existing != payload:
-        raise AttestedQuerySnapshotError("attested snapshot immutable object collision")
-    echoed = _read_bounded(store, artifact.object_key, maximum=_ROLE_LIMITS[artifact.role])
-    if echoed != payload or sha256(echoed).hexdigest() != artifact.sha256:
-        raise AttestedQuerySnapshotError("attested snapshot immutable object read-back mismatch")
+            echoed = _read_bounded(store, key, maximum=maximum)
+        except AttestedQuerySnapshotError as exc:
+            raise AttestedQuerySnapshotError(readback_error) from exc
+        if echoed != payload or (
+            expected_sha256 is not None and sha256(echoed).hexdigest() != expected_sha256
+        ):
+            raise AttestedQuerySnapshotError(readback_error)
+        return
+    if written is False:
+        _read_back_immutable_create(
+            store,
+            key=key,
+            payload=payload,
+            maximum=maximum,
+            expected_sha256=expected_sha256,
+            write_error=write_error,
+            collision_error=collision_error,
+            readback_error=readback_error,
+            cause=None,
+        )
+        return
+    raise AttestedQuerySnapshotError(write_error)
+
+
+def _put_immutable(
+    store: StrictConditionalWriteStore,
+    artifact: AttestedQuerySnapshotArtifact,
+    payload: bytes,
+) -> None:
+    _create_immutable(
+        store,
+        key=artifact.object_key,
+        payload=payload,
+        maximum=_ROLE_LIMITS[artifact.role],
+        content_type=artifact.content_type,
+        expected_sha256=artifact.sha256,
+        write_error=f"private attested snapshot write failed for {artifact.object_key}",
+        collision_error="attested snapshot immutable object collision",
+        readback_error="attested snapshot immutable object read-back mismatch",
+    )
 
 
 def _pointer_from_dict(value: Mapping[str, Any]) -> AttestedQuerySnapshotPointer:
@@ -2435,18 +2536,17 @@ def publish_attested_query_snapshot(
     with _PUBLISH_LOCK:
         for artifact in artifacts:
             _put_immutable(store, artifact, payloads[artifact.role])
-        existing = _read_optional(store, manifest_key, maximum=HARD_MAX_ATTESTED_SNAPSHOT_MANIFEST_BYTES)
-        if existing is None:
-            try:
-                written = store.put_bytes(manifest_key, manifest_payload, content_type="application/json")
-            except Exception as exc:  # noqa: BLE001
-                raise AttestedQuerySnapshotError("attested snapshot manifest write failed") from exc
-            if written is not True:
-                raise AttestedQuerySnapshotError("attested snapshot manifest write failed")
-        elif existing != manifest_payload:
-            raise AttestedQuerySnapshotError("attested snapshot immutable manifest collision")
-        if _read_bounded(store, manifest_key, maximum=HARD_MAX_ATTESTED_SNAPSHOT_MANIFEST_BYTES) != manifest_payload:
-            raise AttestedQuerySnapshotError("attested snapshot manifest read-back mismatch")
+        _create_immutable(
+            store,
+            key=manifest_key,
+            payload=manifest_payload,
+            maximum=HARD_MAX_ATTESTED_SNAPSHOT_MANIFEST_BYTES,
+            content_type="application/json",
+            expected_sha256=None,
+            write_error="attested snapshot manifest write failed",
+            collision_error="attested snapshot immutable manifest collision",
+            readback_error="attested snapshot manifest read-back mismatch",
+        )
         snapshot = _snapshot_from_manifest(store, snapshot_id=snapshot_id)
         _publish_pointer(store, snapshot)
         return snapshot

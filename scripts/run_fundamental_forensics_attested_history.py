@@ -12,8 +12,11 @@ only after an operator has sealed every source path and reviewed its inventory.
 from __future__ import annotations
 
 import argparse
+import base64
 from dataclasses import dataclass
 from datetime import datetime
+from hashlib import sha256
+import hmac
 import json
 import os
 from pathlib import Path
@@ -21,7 +24,9 @@ import re
 import stat
 import subprocess
 import tempfile
+import time
 from typing import Any, Callable, Mapping, Sequence
+from urllib.parse import urlsplit
 
 from engine.fundamental_forensics.attested_history_materializer import (
     B4D_REJECTION_REASON_CODES,
@@ -93,6 +98,20 @@ _CIK_RE = re.compile(r"^[0-9]{10}$")
 _ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
 _MANIFEST_RE = re.compile(r"^ffsec_manifest_[a-f0-9]{64}$")
 _PATH_FORBIDDEN_RE = re.compile(r"(^|/)(?:latest(?:\.json)?)(?:/|$)", re.IGNORECASE)
+R2_TEMPORARY_CREDENTIAL_MAX_TTL_SECONDS = 30 * 60
+R2_ATTESTED_HISTORY_PREFIX = "fundamental_forensics/"
+_R2_ENDPOINT_HOST_RE = re.compile(
+    r"^(?P<account_id>[a-f0-9]{32})\.r2\.cloudflarestorage\.com$"
+)
+_R2_ACCESS_KEY_RE = re.compile(r"^[A-Za-z0-9]{16,128}$")
+_R2_BUCKET_RE = re.compile(r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$")
+_R2_TEMPORARY_ACTIONS = frozenset(
+    {
+        "GetObject",
+        "HeadObject",
+        "PutObject",
+    }
+)
 
 
 class OperatorPreflightError(RuntimeError):
@@ -105,6 +124,158 @@ class ReadOnlyWriteAttempt(OperatorPreflightError):
     def __init__(self, message: str, *, write_attempts: int) -> None:
         super().__init__(message)
         self.write_attempts = write_attempts
+
+
+class R2TemporaryCredentialError(ValueError):
+    """A parent R2 credential cannot be narrowed into an admitted child."""
+
+
+@dataclass(frozen=True)
+class R2TemporaryCredentials:
+    """Short-lived R2 S3 credential derived without calling Cloudflare APIs."""
+
+    access_key_id: str
+    secret_access_key: str
+    session_token: str
+    expires_at: int
+
+
+def _base64url(value: bytes) -> str:
+    return base64.urlsafe_b64encode(value).rstrip(b"=").decode("ascii")
+
+
+def _canonical_r2_endpoint(endpoint: str) -> tuple[str, str, str]:
+    """Return the exact endpoint, host, and account ID admitted for local signing."""
+    if not isinstance(endpoint, str) or len(endpoint) > 256:
+        raise R2TemporaryCredentialError("R2 endpoint is invalid")
+    try:
+        parsed = urlsplit(endpoint)
+        port = parsed.port
+    except ValueError as exc:
+        raise R2TemporaryCredentialError("R2 endpoint is invalid") from exc
+    host = parsed.hostname
+    if (
+        parsed.scheme != "https"
+        or parsed.username is not None
+        or parsed.password is not None
+        or port is not None
+        or parsed.path not in {"", "/"}
+        or parsed.query
+        or parsed.fragment
+        or host is None
+        or endpoint not in {f"https://{host}", f"https://{host}/"}
+    ):
+        raise R2TemporaryCredentialError("R2 endpoint is invalid")
+    match = _R2_ENDPOINT_HOST_RE.fullmatch(host)
+    if match is None:
+        raise R2TemporaryCredentialError("R2 endpoint host is invalid")
+    return f"https://{host}", host, match.group("account_id")
+
+
+def mint_r2_temporary_credentials(
+    *,
+    endpoint: str,
+    parent_access_key_id: str,
+    parent_secret_access_key: str,
+    bucket: str,
+    scope: str,
+    actions: Sequence[str],
+    ttl_seconds: int = R2_TEMPORARY_CREDENTIAL_MAX_TTL_SECONDS,
+    prefix: str = R2_ATTESTED_HISTORY_PREFIX,
+    issued_at: int | None = None,
+) -> R2TemporaryCredentials:
+    """Mint one Cloudflare-documented HS256 child credential locally.
+
+    The long-lived parent may include List permission.  The session JWT is the
+    enforceable child boundary: it carries an exact action set, one bucket,
+    the single Fundamental Forensics prefix, and a maximum 30-minute lifetime.
+    Credential separation alone is not evidence that either parent has the
+    intended Cloudflare IAM policy.
+    """
+    _endpoint, host, account_id = _canonical_r2_endpoint(endpoint)
+    if not isinstance(parent_access_key_id, str) or _R2_ACCESS_KEY_RE.fullmatch(
+        parent_access_key_id
+    ) is None:
+        raise R2TemporaryCredentialError("R2 parent access key ID is invalid")
+    if (
+        not isinstance(parent_secret_access_key, str)
+        or not parent_secret_access_key
+        or len(parent_secret_access_key.encode("utf-8")) > 512
+    ):
+        raise R2TemporaryCredentialError("R2 parent secret access key is invalid")
+    if (
+        not isinstance(bucket, str)
+        or _R2_BUCKET_RE.fullmatch(bucket) is None
+        or ".." in bucket
+    ):
+        raise R2TemporaryCredentialError("R2 bucket is invalid")
+    if scope not in {"object-read-only", "object-read-write"}:
+        raise R2TemporaryCredentialError("R2 child scope is invalid")
+    if isinstance(actions, (str, bytes)):
+        raise R2TemporaryCredentialError("R2 child actions are invalid")
+    action_list = list(actions)
+    if (
+        not action_list
+        or len(action_list) != len(set(action_list))
+        or any(action not in _R2_TEMPORARY_ACTIONS for action in action_list)
+        or action_list != sorted(action_list)
+    ):
+        raise R2TemporaryCredentialError("R2 child actions are invalid")
+    allowed = (
+        ["GetObject", "HeadObject"]
+        if scope == "object-read-only"
+        else ["GetObject", "HeadObject", "PutObject"]
+    )
+    if action_list != allowed:
+        raise R2TemporaryCredentialError("R2 child actions exceed the exact role")
+    if prefix != R2_ATTESTED_HISTORY_PREFIX:
+        raise R2TemporaryCredentialError("R2 child prefix is invalid")
+    if (
+        isinstance(ttl_seconds, bool)
+        or not isinstance(ttl_seconds, int)
+        or not 60 <= ttl_seconds <= R2_TEMPORARY_CREDENTIAL_MAX_TTL_SECONDS
+    ):
+        raise R2TemporaryCredentialError("R2 child TTL is invalid")
+    observed = int(time.time()) if issued_at is None else issued_at
+    if isinstance(observed, bool) or not isinstance(observed, int) or observed < 1:
+        raise R2TemporaryCredentialError("R2 child issue clock is invalid")
+
+    header = {"alg": "HS256", "typ": "JWT"}
+    payload = {
+        "actions": action_list,
+        "aud": host,
+        "bucket": bucket,
+        "exp": observed + ttl_seconds,
+        "iat": observed,
+        "iss": parent_access_key_id,
+        "paths": {"objectPaths": [], "prefixPaths": [prefix]},
+        "scope": scope,
+        "sub": account_id,
+    }
+    unsigned = ".".join(
+        _base64url(
+            json.dumps(
+                item,
+                ensure_ascii=True,
+                allow_nan=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("utf-8")
+        )
+        for item in (header, payload)
+    )
+    signature = hmac.digest(
+        parent_secret_access_key.encode("utf-8"), unsigned.encode("ascii"), "sha256"
+    )
+    signed_jwt = f"{unsigned}.{_base64url(signature)}"
+    return R2TemporaryCredentials(
+        access_key_id=parent_access_key_id,
+        secret_access_key=sha256(signed_jwt.encode("ascii")).hexdigest(),
+        session_token=base64.b64encode(f"jwt/{signed_jwt}".encode("ascii")).decode(
+            "ascii"
+        ),
+        expires_at=observed + ttl_seconds,
+    )
 
 
 @dataclass(frozen=True)
@@ -182,6 +353,21 @@ class ReadOnlyStrictStore:
             write_attempts=self.write_attempts,
         )
 
+    def put_bytes_strict_conditional(
+        self,
+        key: str,
+        data: bytes,
+        *,
+        expected_version: str | None,
+        content_type: str = "application/octet-stream",
+    ) -> bool:
+        del key, data, expected_version, content_type
+        self.write_attempts += 1
+        raise ReadOnlyWriteAttempt(
+            "read-only preflight attempted a conditional storage write",
+            write_attempts=self.write_attempts,
+        )
+
     def list_prefix(self, prefix: str) -> list[str]:
         del prefix
         raise OperatorPreflightError("read-only preflight forbids storage discovery")
@@ -193,6 +379,14 @@ class ReadOnlyStrictStore:
     def upload_time(self, key: str) -> str | None:
         del key
         raise OperatorPreflightError("read-only preflight forbids storage discovery")
+
+    def delete(self, key: str) -> None:
+        del key
+        self.write_attempts += 1
+        raise ReadOnlyWriteAttempt(
+            "read-only preflight attempted a storage delete",
+            write_attempts=self.write_attempts,
+        )
 
 
 def _object(value: Any, *, field: str, required: frozenset[str]) -> dict[str, Any]:
@@ -646,6 +840,11 @@ def _operator_spec_from_bytes(content: bytes) -> OperatorSpec:
     return spec_from_dict(raw)
 
 
+def operator_spec_from_bytes(content: bytes) -> OperatorSpec:
+    """Admit canonical packet bytes through the production 2 MiB boundary."""
+    return _operator_spec_from_bytes(content)
+
+
 def load_operator_spec(path: str | Path) -> OperatorSpec:
     """Load an arbitrary hermetic-test packet through the fd-safe reader."""
     return _operator_spec_from_bytes(
@@ -691,6 +890,29 @@ def build_readonly_operator_store(*, local_dir: str | Path | None = None) -> Str
     if any(not value for value in values.values()):
         raise OperatorPreflightError("dedicated read-only R2 credential is unavailable")
     try:
+        temporary = mint_r2_temporary_credentials(
+            endpoint=values["FF_ATTESTED_R2_READONLY_ENDPOINT"],
+            parent_access_key_id=values["FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID"],
+            parent_secret_access_key=values[
+                "FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY"
+            ],
+            bucket=values["FF_ATTESTED_R2_READONLY_BUCKET"],
+            scope="object-read-only",
+            actions=("GetObject", "HeadObject"),
+        )
+    except R2TemporaryCredentialError as exc:
+        raise OperatorPreflightError(
+            "dedicated read-only R2 parent credential cannot mint a scoped child"
+        ) from exc
+    finally:
+        # The workflow already scopes parent secrets to this process step. Drop
+        # the in-process copies immediately after local signing as defense in
+        # depth; the boto client receives only the short-lived child values.
+        os.environ.pop("FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID", None)
+        os.environ.pop("FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY", None)
+        values["FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID"] = ""
+        values["FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY"] = ""
+    try:
         import boto3
         from botocore.config import Config
 
@@ -720,8 +942,9 @@ def build_readonly_operator_store(*, local_dir: str | Path | None = None) -> Str
     client = boto3.client(
         "s3",
         endpoint_url=values["FF_ATTESTED_R2_READONLY_ENDPOINT"],
-        aws_access_key_id=values["FF_ATTESTED_R2_READONLY_ACCESS_KEY_ID"],
-        aws_secret_access_key=values["FF_ATTESTED_R2_READONLY_SECRET_ACCESS_KEY"],
+        aws_access_key_id=temporary.access_key_id,
+        aws_secret_access_key=temporary.secret_access_key,
+        aws_session_token=temporary.session_token,
         config=config,
     )
     store = R2Store(values["FF_ATTESTED_R2_READONLY_BUCKET"], client=client)
@@ -1033,7 +1256,11 @@ def write_private_receipt(output_dir: str | Path, receipt: Mapping[str, Any]) ->
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True, help="sealed JSON operator packet")
-    parser.add_argument("--output-dir", required=True, help="local private artifact directory")
+    parser.add_argument(
+        "--output-dir",
+        required=True,
+        help="local review-only, noncanonical artifact directory",
+    )
     parser.add_argument(
         "--operator-verification-observed-at",
         required=True,
@@ -1105,7 +1332,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     del receipt
     print(
-        "::notice title=fundamental_forensics_attested_history::read-only preflight completed; retrieve the private receipt artifact",
+        "::notice title=fundamental_forensics_attested_history::read-only preflight completed; retrieve the review-only receipt artifact",
         flush=True,
     )
     return 0

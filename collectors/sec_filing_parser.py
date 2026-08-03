@@ -18,6 +18,7 @@ import re
 import sys
 from types import MappingProxyType
 from typing import Any, Mapping
+from urllib.parse import urlsplit
 from xml.parsers import expat
 
 
@@ -27,7 +28,7 @@ SEC_FILING_PARSER_VERSION = "1"
 # Stable semantic compatibility authority.  It changes only when the
 # deterministic grammar/value algorithms change; runtime library versions are
 # observed provenance and must not invalidate retained evidence on replay.
-SEC_FILING_PARSER_ALGORITHM_FINGERPRINT = "91bcf478ce54131677929138732113f24bba04a88ef7ccb37d4f299b5df38b52"
+SEC_FILING_PARSER_ALGORITHM_FINGERPRINT = "95f7e4b7ff20c7bdae2070b0d910d2f539f21366e75415bedcbf07e7af538d92"
 
 XBRLI = "http://www.xbrl.org/2003/instance"
 XBRLDI = "http://xbrl.org/2006/xbrldi"
@@ -166,6 +167,7 @@ class _Node:
     self_closing: bool
     parent: "_Node | None"
     children: list["_Node"] = field(default_factory=list)
+    end_tag_start: int | None = None
     end: int | None = None
 
     @property
@@ -421,6 +423,7 @@ class _TreeBuilder:
         if not self.stack:
             raise SecFilingParseError("XML element stack underflow")
         node = self.stack.pop()
+        node.end_tag_start = node.start_tag_end if node.self_closing else index
         node.end = index if node.self_closing else _tag_end(self.content, index)
 
     def text(self, value: str) -> None:
@@ -500,6 +503,82 @@ def _events_for(node: _Node, events: list[_TextEvent], *, excluded: bool) -> lis
 
 def _event_spans(events: list[_TextEvent]) -> list[dict[str, int]]:
     return [_span(event.start, int(event.end)) for event in events]
+
+
+_URI_BEARING_MARKUP_ATTRIBUTES = frozenset(
+    {
+        "action",
+        "archive",
+        "background",
+        "cite",
+        "classid",
+        "codebase",
+        "data",
+        "formaction",
+        "href",
+        "icon",
+        "longdesc",
+        "manifest",
+        "poster",
+        "profile",
+        "src",
+        "usemap",
+    }
+)
+
+
+def _escaped_nonnumeric_markup(
+    node: _Node, content: bytes, limits: Mapping[str, int]
+) -> str:
+    """Retain relevant markup for ``ix:nonNumeric escape=\"true\"``.
+
+    Inline XBRL replaces nested Inline XBRL tags with their child content and
+    omits ``ix:exclude`` subtrees.  Ordinary markup is retained as the exact
+    lexical XHTML fragment from the sealed member; that string is the value
+    which the target XBRL serializer escapes.  Relative URI resolution needs
+    a document base URI, which this offline single-member profile deliberately
+    does not possess, so such markup is rejected rather than silently emitted
+    with the wrong target value.
+    """
+    chunks: list[bytes] = []
+
+    def append_relevant(parent: _Node) -> None:
+        if parent.end_tag_start is None or parent.end is None:
+            raise SecFilingParseError("escaped nonNumeric source boundaries are incomplete")
+        cursor = parent.start_tag_end
+        for child in parent.children:
+            if child.end is None:
+                raise SecFilingParseError("escaped nonNumeric child boundary is incomplete")
+            if child.start < cursor or child.end > parent.end_tag_start:
+                raise SecFilingParseError("escaped nonNumeric child is outside its parent")
+            chunks.append(content[cursor:child.start])
+            if child.namespace in IX_NAMESPACES:
+                if child.local != "exclude":
+                    append_relevant(child)
+            else:
+                for name, value in child.attrs.items():
+                    _namespace, local = _split_qname(name)
+                    if local in _URI_BEARING_MARKUP_ATTRIBUTES and not urlsplit(value).scheme:
+                        raise SecFilingParseError(
+                            "escaped ix:nonNumeric relative URI markup is unsupported in the offline profile"
+                        )
+                if child.end_tag_start is None:
+                    raise SecFilingParseError("escaped nonNumeric markup boundary is incomplete")
+                chunks.append(content[child.start:child.start_tag_end])
+                append_relevant(child)
+                chunks.append(content[child.end_tag_start:child.end])
+            cursor = child.end
+        chunks.append(content[cursor:parent.end_tag_start])
+
+    append_relevant(node)
+    try:
+        return _node_text_bytes(
+            b"".join(chunks).decode("utf-8", "strict"),
+            limits,
+            field_name="escaped nonNumeric",
+        )
+    except UnicodeError as exc:  # The parent parser already enforces UTF-8; retain a stable failure.
+        raise SecFilingParseError("escaped nonNumeric markup is not UTF-8") from exc
 
 
 def _text_value(node: _Node, events: list[_TextEvent], *, include_excluded: bool = False) -> str:
@@ -700,6 +779,23 @@ def _date_or_datetime(value: str, *, field_name: str) -> tuple[str, date | datet
     raise SecFilingParseError(f"{field_name} is not a valid XBRL date/dateTime")
 
 
+def _valid_xbrl_duration_bounds(
+    start: date | datetime, end: date | datetime
+) -> bool:
+    """Validate XBRL 2.1 duration chronology without erasing date semantics.
+
+    In XBRL, a lexical ``date`` in ``startDate`` means midnight at the start
+    of that date, while the same lexical ``date`` in ``endDate`` means
+    midnight at the end of that date (the next midnight).  Equal date-only
+    values therefore express a valid one-day duration.  Equal ``dateTime``
+    values still express a zero-length interval and remain invalid.  Mixed
+    lexical types stay outside this parser's intentionally narrow profile.
+    """
+    if type(start) is not type(end) or start > end:
+        return False
+    return start != end or type(start) is date
+
+
 def _dimension_records(
     container: _Node | None,
     events: list[_TextEvent],
@@ -822,8 +918,8 @@ def _context_record(
         _require_no_elements(end_node, field_name="context endDate")
         start_text, start_value = _date_or_datetime(_text_value(start_node, events), field_name="context startDate")
         end_text, end_value = _date_or_datetime(_text_value(end_node, events), field_name="context endDate")
-        if type(start_value) is not type(end_value) or start_value >= end_value:
-            raise SecFilingParseError("context duration startDate must precede endDate with matching type")
+        if not _valid_xbrl_duration_bounds(start_value, end_value):
+            raise SecFilingParseError("context duration dates do not form a valid XBRL interval")
         period = {"kind": "duration", "instant_date": None, "start_date": start_text, "end_date": end_text, "source_span": _span(period_node.start, int(period_node.end))}
     else:
         raise SecFilingParseError(f"context {context_id} has an invalid direct period shape")
@@ -1101,9 +1197,11 @@ def _fact_record(
     events: list[_TextEvent],
     continuation_chain: list[str],
     continuation_records: Mapping[str, Mapping[str, Any]],
+    continuation_nodes: Mapping[str, _Node],
     context_ids: set[str],
     unit_ids: set[str],
     limits: Mapping[str, int],
+    content: bytes,
     *,
     inline: bool,
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
@@ -1142,7 +1240,7 @@ def _fact_record(
         if kind == "numeric":
             _assert_allowed_attrs(node, common | {"unitRef", "decimals", "precision", "format", "sign", "scale"}, field_name="ix:nonFraction")
         elif kind == "nonnumeric":
-            _assert_allowed_attrs(node, common | {"format", "continuedAt"}, field_name="ix:nonNumeric")
+            _assert_allowed_attrs(node, common | {"format", "continuedAt", "escape"}, field_name="ix:nonNumeric")
         else:
             _assert_allowed_attrs(node, common | {"unitRef"}, field_name="ix:fraction")
     else:
@@ -1155,13 +1253,24 @@ def _fact_record(
     continued_at = _attr(node, "continuedAt")
     if continued_at is not None and (not inline or kind != "nonnumeric"):
         raise SecFilingParseError("continuedAt is permitted only on ix:nonNumeric facts")
-    local_events = _events_for(node, events, excluded=False)
-    excluded_events = _events_for(node, events, excluded=True)
+    escape = _parse_bool(_attr(node, "escape"), field_name="ix:nonNumeric escape")
+    lexical_node = _inline_nonfraction_lexical_leaf(node) if inline and kind == "numeric" else node
+    local_events = _events_for(lexical_node, events, excluded=False)
+    excluded_events = _events_for(lexical_node, events, excluded=True)
     all_events = list(local_events)
-    raw_parts = ["".join(event.value for event in local_events)]
+    raw_parts = [
+        _escaped_nonnumeric_markup(node, content, limits)
+        if inline and kind == "nonnumeric" and escape
+        else "".join(event.value for event in local_events)
+    ]
     for continuation_id in continuation_chain:
         continuation = continuation_records[continuation_id]
-        raw_parts.append(str(continuation["raw_value"]))
+        continuation_node = continuation_nodes[continuation_id]
+        raw_parts.append(
+            _escaped_nonnumeric_markup(continuation_node, content, limits)
+            if escape
+            else str(continuation["raw_value"])
+        )
         all_events.extend(
             _TextEvent(span["start"], "", (), None, span["end"])
             for span in continuation["text_spans"]
@@ -1243,6 +1352,7 @@ def _fact_record(
             "format": format_qname,
             "sign": sign,
             "scale": scale,
+            "escape": escape,
             "hidden": inline and _has_ancestor(node.parent, IX11, "hidden"),
             "fraction": fraction,
             "text_spans": _event_spans(all_events),
@@ -1370,6 +1480,64 @@ def _validate_inline_ids(nodes: list[_Node]) -> None:
         seen.add(identifier)
 
 
+def _validate_inline_nonfraction_wrapper(node: _Node, events: list[_TextEvent]) -> None:
+    """Admit the one Workiva numeric-wrapper shape, and nothing broader."""
+    if not node.children:
+        return
+    if (
+        len(node.children) != 1
+        or node.children[0].namespace != IX11
+        or node.children[0].local != "nonFraction"
+        or _direct_text(node, events).strip()
+    ):
+        raise SecFilingParseError(
+            "ix:nonFraction child elements must be exactly one ix:nonFraction wrapper "
+            "with no direct non-whitespace text"
+        )
+
+
+def _inline_nonfraction_lexical_leaf(node: _Node) -> _Node:
+    """Return the leaf which owns the shared lexical text of a wrapper chain."""
+    while node.children:
+        node = node.children[0]
+    return node
+
+
+def _validate_inline_numeric_nesting(candidates: list[_Node], events: list[_TextEvent]) -> None:
+    """Admit real text-block descendants while keeping numeric math closed.
+
+    SEC filings commonly retain numeric facts inside an ``ix:nonNumeric``
+    text-block fact or one of that fact's continuations. Their lexical spans
+    remain owned by the nested numeric element, while the surrounding text
+    block deliberately includes the same rendered text. Numeric facts remain
+    forbidden inside fractions, numerator/denominator nodes, and exclusions;
+    nonFraction-in-nonFraction is separately limited to the exact Workiva
+    one-child wrapper chain above.
+    """
+    forbidden_numeric_owners = {
+        "fraction",
+        "numerator",
+        "denominator",
+        "exclude",
+    }
+    for fact in candidates:
+        if fact.local == "nonFraction":
+            _validate_inline_nonfraction_wrapper(fact, events)
+            for ancestor in _ancestor_nodes(fact.parent):
+                if (
+                    ancestor.namespace == IX11
+                    and ancestor.local in forbidden_numeric_owners
+                ):
+                    raise SecFilingParseError(
+                        "nested Inline XBRL numeric facts are unsupported outside an exact ix:nonFraction wrapper chain"
+                    )
+        if fact.local == "fraction" and any(
+            descendant.namespace == IX11 and descendant.local in {"nonFraction", "fraction"}
+            for descendant in _descendants(fact)
+        ):
+            raise SecFilingParseError("nested Inline XBRL numeric facts are unsupported in this parser profile")
+
+
 def _validate_document_structure(
     root: _Node, nodes: list[_Node], events: list[_TextEvent], document_kind: str
 ) -> tuple[list[_Node], list[_Node], list[_Node]]:
@@ -1461,14 +1629,7 @@ def _validate_document_structure(
             if owner is None or owner.local not in {"continuation", "nonNumeric"}:
                 raise SecFilingParseError("ix:exclude must be owned by ix:nonNumeric or ix:continuation")
     candidates = _fact_nodes(nodes, document_kind)
-    for fact in candidates:
-        if fact.local == "nonFraction" and fact.children:
-            raise SecFilingParseError("ix:nonFraction child elements are unsupported in this parser profile")
-        if fact.local in {"nonFraction", "fraction"} and any(
-            descendant.namespace == IX11 and descendant.local in {"nonFraction", "fraction"}
-            for descendant in _descendants(fact)
-        ):
-            raise SecFilingParseError("nested Inline XBRL numeric facts are unsupported in this parser profile")
+    _validate_inline_numeric_nesting(candidates, events)
     for fact in candidates:
         if _inline_ancestor(fact.parent, "resources"):
             raise SecFilingParseError("Inline XBRL fact cannot appear in ix:resources")
@@ -1507,8 +1668,16 @@ def parse_sec_filing_document(content: bytes, *, document_name: str) -> dict[str
     declaration = _XML_DECL_RE.match(content)
     if declaration is not None:
         encoding = _ENCODING_RE.search(declaration.group(1))
-        if encoding is not None and encoding.group(2).lower() not in {b"utf-8", b"utf8"}:
-            raise SecFilingParseError("XML declaration is not UTF-8")
+        if encoding is not None:
+            declared_encoding = encoding.group(2).lower()
+            if declared_encoding not in {b"utf-8", b"utf8", b"ascii", b"us-ascii"}:
+                raise SecFilingParseError("XML declaration is not UTF-8 or ASCII")
+            # The Expat instance below is deliberately pinned to UTF-8.  ASCII
+            # is compatible because it is a strict UTF-8 subset, but accepting
+            # UTF-8 multibyte bytes under an ASCII declaration would make this
+            # admission policy silently contradict the source declaration.
+            if declared_encoding in {b"ascii", b"us-ascii"} and any(byte > 0x7F for byte in content):
+                raise SecFilingParseError("XML declaration ASCII contradicts non-ASCII content")
 
     root, nodes, events = _TreeBuilder(content, limits).build()
     if any(
@@ -1553,9 +1722,11 @@ def parse_sec_filing_document(content: bytes, *, document_name: str) -> dict[str
             events,
             chains.get(node.start, []),
             continuation_by_id,
+            continuation_nodes,
             set(context_ids),
             set(unit_ids),
             limits,
+            content,
             inline=document_kind == "inline_xbrl",
         )
         facts.append(fact)
@@ -1913,7 +2084,7 @@ def validate_sec_filing_parse_result(
             assert start_text is not None and end_text is not None
             _start_raw, start_value = _date_or_datetime(start_text, field_name="start_date")
             _end_raw, end_value = _date_or_datetime(end_text, field_name="end_date")
-            if type(start_value) is not type(end_value) or start_value >= end_value:
+            if not _valid_xbrl_duration_bounds(start_value, end_value):
                 raise SecFilingParseError("duration context period ordering is invalid")
             if period["instant_date"] is not None:
                 raise SecFilingParseError("duration context period shape is invalid")
@@ -2048,7 +2219,7 @@ def validate_sec_filing_parse_result(
     for index, raw in enumerate(facts):
         item = _exact_dict(
             raw,
-            {"fact_id", "concept_qname", "kind", "context_ref", "unit_ref", "continuation_chain", "raw_value", "transformed_value", "normalized_value", "status", "nil", "lang", "decimals", "precision", "format", "sign", "scale", "hidden", "fraction", "text_spans", "excluded_text_spans", "source_span"},
+            {"fact_id", "concept_qname", "kind", "context_ref", "unit_ref", "continuation_chain", "raw_value", "transformed_value", "normalized_value", "status", "nil", "lang", "decimals", "precision", "format", "sign", "scale", "escape", "hidden", "fraction", "text_spans", "excluded_text_spans", "source_span"},
             field_name=f"facts[{index}]",
         )
         fact_id = _text(item["fact_id"], field_name="fact_id", nullable=True)
@@ -2101,8 +2272,12 @@ def validate_sec_filing_parse_result(
             raise SecFilingParseError("fact.raw_value must be text")
         _nullable_string(item["transformed_value"], field_name="fact.transformed_value")
         _nullable_string(item["normalized_value"], field_name="fact.normalized_value")
-        if type(item["nil"]) is not bool or type(item["hidden"]) is not bool:
-            raise SecFilingParseError("fact nil/hidden flags must be boolean")
+        if (
+            type(item["nil"]) is not bool
+            or type(item["escape"]) is not bool
+            or type(item["hidden"]) is not bool
+        ):
+            raise SecFilingParseError("fact nil/escape/hidden flags must be boolean")
         for field_name in ("lang", "decimals", "precision", "format", "sign"):
             _nullable_string(item[field_name], field_name=f"fact.{field_name}")
         _validate_accuracy_lexicals(item["decimals"], item["precision"])
@@ -2121,6 +2296,8 @@ def validate_sec_filing_parse_result(
             raise SecFilingParseError("non-numeric/fraction fact carries numeric attributes")
         if item["kind"] == "fraction" and item["format"] is not None:
             raise SecFilingParseError("fraction carries a format")
+        if item["escape"] and (not inline or item["kind"] != "nonnumeric"):
+            raise SecFilingParseError("escape is permitted only on Inline XBRL nonNumeric facts")
         if not inline and any(item[field] is not None for field in ("format", "sign", "scale")):
             raise SecFilingParseError("native fact carries Inline XBRL attributes")
         if not inline and item["hidden"]:
@@ -2144,7 +2321,10 @@ def validate_sec_filing_parse_result(
         continuation_excluded_suffix = [
             span for target in chain for span in continuation_by_id[target]["excluded_text_spans"]
         ]
-        if chain and not raw_value.endswith(continuation_raw_suffix):
+        # Escaped nonNumeric facts retain markup that continuation records do
+        # not carry.  Their exact reconstruction is therefore established by
+        # source-byte replay; plain facts retain the local standalone check.
+        if chain and not item["escape"] and not raw_value.endswith(continuation_raw_suffix):
             raise SecFilingParseError("fact continuation text witnesses are not derived in logical order")
         if chain and continuation_text_suffix and fact_text_spans[-len(continuation_text_suffix):] != continuation_text_suffix:
             raise SecFilingParseError("fact continuation text witnesses are not derived in logical order")

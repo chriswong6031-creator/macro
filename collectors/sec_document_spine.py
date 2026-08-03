@@ -202,7 +202,9 @@ class ArchiveReceipt:
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    # Preserve the observation instant; truncation would backdate a completed
+    # response to the beginning of its wall-clock second.
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _utc_text(value: str | datetime, *, field: str) -> str:
@@ -803,6 +805,7 @@ class SecFilingArchiveCollector:
         session: Any | None = None,
         sleeper: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
+        utc_now: Callable[[], str] = _utc_now,
     ) -> None:
         if "@" not in user_agent:
             raise ValueError("SEC user agent must identify an application and contact email")
@@ -817,6 +820,7 @@ class SecFilingArchiveCollector:
         self.session = session or requests.Session()
         self._sleep = sleeper
         self._monotonic = monotonic
+        self._utc_now = utc_now
         self._last_request_at = 0.0
 
     def _pace(self) -> None:
@@ -836,7 +840,11 @@ class SecFilingArchiveCollector:
         url = document.get("archive_url")
         if not isinstance(url, str) or not url.startswith("https://www.sec.gov/Archives/"):
             raise ArchiveStoreError("document must carry an exact SEC archive URL")
-        stamp = _utc_text(retrieved_at or _utc_now(), field="retrieved_at")
+        supplied_stamp = (
+            _utc_text(retrieved_at, field="retrieved_at")
+            if retrieved_at is not None
+            else None
+        )
         limit = self.max_document_bytes
         if max_document_bytes is not None:
             limit = _byte_limit(max_document_bytes, field="max_document_bytes")
@@ -873,9 +881,7 @@ class SecFilingArchiveCollector:
                     if 300 <= status < 400:
                         raise ArchiveStoreError("SEC archive redirects are refused")
                     if status == 404:
-                        missing = missing_document_receipt(
-                            document, retrieved_at=stamp, http_status=status
-                        )
+                        missing_status = status
                         content = None
                         etag = None
                         last_modified = None
@@ -885,7 +891,7 @@ class SecFilingArchiveCollector:
                         response.raise_for_status()
                         _reject_declared_oversize(response.headers, limit, url=url)
                         content = _stream_response_bytes(response, limit, url=url)
-                        missing = None
+                        missing_status = None
                         etag = _response_header(response.headers, "ETag")
                         last_modified = _response_header(response.headers, "Last-Modified")
                 except BaseException:
@@ -897,7 +903,17 @@ class SecFilingArchiveCollector:
                 close_error = _close_response(response)
                 if close_error is not None:
                     raise close_error
-                if missing is not None:
+                # A default retrieval clock is evidence of a completed HTTP
+                # observation, so sample it only after the bounded response
+                # has been consumed and closed.  Explicit clocks remain for
+                # deterministic replay/tests and are validated before I/O.
+                stamp = supplied_stamp or _utc_text(
+                    self._utc_now(), field="retrieved_at"
+                )
+                if missing_status is not None:
+                    missing = missing_document_receipt(
+                        document, retrieved_at=stamp, http_status=missing_status
+                    )
                     return persist_missing_document_receipt(self.cache_root, missing)
                 if content is None:  # pragma: no cover - status branches are exhaustive
                     raise ArchiveStoreError("SEC archive response has no body")

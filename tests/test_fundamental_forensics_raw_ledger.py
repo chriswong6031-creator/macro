@@ -346,6 +346,25 @@ def test_context_validation_refuses_ambiguous_period_and_dimension_identity() ->
         )
 
 
+def test_context_retains_same_day_xbrl_date_duration_and_rejects_reversed_range() -> None:
+    context = FactContext(
+        "one-day",
+        "scheme",
+        "entity",
+        start="2016-08-30",
+        end="2016-08-30",
+    )
+    assert context.start == context.end == date(2016, 8, 30)
+    with pytest.raises(ValueError, match="must not follow"):
+        FactContext(
+            "reversed",
+            "scheme",
+            "entity",
+            start="2016-08-31",
+            end="2016-08-30",
+        )
+
+
 def test_clock_validation_rejects_naive_and_impossible_system_order() -> None:
     with pytest.raises(ValueError, match="timezone"):
         TemporalClocks(recorded_at="2025-02-02T12:00:00")

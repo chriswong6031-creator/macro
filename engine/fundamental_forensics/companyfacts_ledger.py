@@ -169,6 +169,32 @@ class CompanyFactsLedgerConversionConfig:
 
 
 @dataclass(frozen=True)
+class _VerifiedCompanyFactsLegacyWitness:
+    """Internal bridge between a byte-verified response and its exact projection.
+
+    Company Facts v2 manifests predate exact-number parsing, so their logical
+    and occurrence digests bind the collector's ordinary ``json.loads`` tree.
+    The pinned loader separately derives a Decimal-preserving projection from
+    the *same response bytes*.  This witness carries both bindings across the
+    pure conversion boundary without pretending that the Decimal tree should
+    reproduce the legacy float digest.
+
+    It is deliberately private: public conversion callers still have to pass a
+    decoded payload whose own canonical digest matches the manifest.
+    """
+
+    manifest_id: str
+    response_sha256: str
+    logical_sha256: str
+    logical_bytes: int
+    fact_occurrence_count: int
+    fact_occurrence_sha256: str
+    exact_projection_sha256: str
+    exact_projection_bytes: int
+    exact_occurrence_sha256: str
+
+
+@dataclass(frozen=True)
 class PinnedSubmissionsSource:
     """One named immutable SEC Submissions receipt/object pair.
 
@@ -593,11 +619,11 @@ class CompanyFactsLedgerReceipt:
         ):
             raise TypeError("receipt accession partitions must be immutable tuples")
         mapped = tuple(
-            _accession(value, field="receipt.mapped_accessions", expected_cik=self.cik)
+            _accession(value, field="receipt.mapped_accessions")
             for value in self.mapped_accessions
         )
         unmapped = tuple(
-            _accession(value, field="receipt.unmapped_accessions", expected_cik=self.cik)
+            _accession(value, field="receipt.unmapped_accessions")
             for value in self.unmapped_accessions
         )
         if mapped != tuple(sorted(set(mapped))) or unmapped != tuple(sorted(set(unmapped))):
@@ -847,12 +873,10 @@ def _cik(value: Any, *, field: str) -> str:
     return normalized
 
 
-def _accession(value: Any, *, field: str, expected_cik: str | None = None) -> str:
+def _accession(value: Any, *, field: str) -> str:
     text = _required_text(value, field=field)
     if not _ACCESSION_RE.fullmatch(text):
         raise CompanyFactsLedgerError(f"invalid {field}: {value!r}")
-    if expected_cik is not None and text[:10] != expected_cik:
-        raise CompanyFactsLedgerError(f"{field} CIK prefix does not match capture CIK")
     return text
 
 
@@ -1048,6 +1072,7 @@ def _manifest_contract(
     *,
     max_payload_bytes: int,
     max_occurrences: int,
+    verified_legacy_witness: _VerifiedCompanyFactsLegacyWitness | None = None,
 ) -> tuple[dict[str, Any], str, bytes, list[dict[str, Any]]]:
     """Validate manifest identity/clocks and bind it to this decoded payload."""
     if not isinstance(capture_manifest, Mapping):
@@ -1077,10 +1102,6 @@ def _manifest_contract(
         maximum=max_payload_bytes,
         canonicalizer=source_canonical_json,
     )
-    source = manifest["source"]
-    if _sha256(payload_bytes) != source["logical_sha256"] or len(payload_bytes) != source["logical_bytes"]:
-        raise CompanyFactsLedgerError("Company Facts payload logical digest/length does not match manifest")
-
     occurrence_digest = sha256()
     occurrence_rows: list[dict[str, Any]] = []
     try:
@@ -1093,12 +1114,130 @@ def _manifest_contract(
         raise
     except (CompanyFactsAcquisitionError, TypeError, ValueError) as exc:
         raise CompanyFactsLedgerError(f"malformed Company Facts occurrence payload: {exc}") from exc
-    if (
-        len(occurrence_rows) != source["fact_occurrence_count"]
-        or occurrence_digest.hexdigest() != source["fact_occurrence_sha256"]
-    ):
-        raise CompanyFactsLedgerError("Company Facts occurrence inventory does not match manifest")
+    source = manifest["source"]
+    if verified_legacy_witness is None:
+        if (
+            _sha256(payload_bytes) != source["logical_sha256"]
+            or len(payload_bytes) != source["logical_bytes"]
+        ):
+            raise CompanyFactsLedgerError(
+                "Company Facts payload logical digest/length does not match manifest"
+            )
+        if (
+            len(occurrence_rows) != source["fact_occurrence_count"]
+            or occurrence_digest.hexdigest() != source["fact_occurrence_sha256"]
+        ):
+            raise CompanyFactsLedgerError(
+                "Company Facts occurrence inventory does not match manifest"
+            )
+    else:
+        if type(verified_legacy_witness) is not _VerifiedCompanyFactsLegacyWitness:
+            raise CompanyFactsLedgerError(
+                "verified Company Facts legacy witness has an invalid type"
+            )
+        witness = verified_legacy_witness
+        legacy_binding = (
+            witness.manifest_id,
+            witness.response_sha256,
+            witness.logical_sha256,
+            witness.logical_bytes,
+            witness.fact_occurrence_count,
+            witness.fact_occurrence_sha256,
+        )
+        manifest_binding = (
+            manifest["manifest_id"],
+            source["response_sha256"],
+            source["logical_sha256"],
+            source["logical_bytes"],
+            source["fact_occurrence_count"],
+            source["fact_occurrence_sha256"],
+        )
+        if legacy_binding != manifest_binding:
+            raise CompanyFactsLedgerError(
+                "verified Company Facts legacy witness does not bind manifest"
+            )
+        if (
+            _sha256(payload_bytes) != witness.exact_projection_sha256
+            or len(payload_bytes) != witness.exact_projection_bytes
+            or len(occurrence_rows) != witness.fact_occurrence_count
+            or occurrence_digest.hexdigest() != witness.exact_occurrence_sha256
+        ):
+            raise CompanyFactsLedgerError(
+                "exact Company Facts projection does not bind verified source witness"
+            )
     return manifest, cik, payload_bytes, occurrence_rows
+
+
+def _verified_legacy_witness_from_response(
+    *,
+    manifest: Mapping[str, Any],
+    response_content: bytes,
+    logical_content: bytes,
+    occurrence_count: int,
+    occurrence_sha256: str,
+    exact_companyfacts: Mapping[str, Any],
+    max_payload_bytes: int,
+    max_occurrences: int,
+) -> _VerifiedCompanyFactsLegacyWitness:
+    """Seal the two projections proven by one already-bounded response read."""
+    source = manifest["source"]
+    if (
+        _sha256(response_content) != source["response_sha256"]
+        or len(response_content) != source["response_bytes"]
+        or _sha256(logical_content) != source["logical_sha256"]
+        or len(logical_content) != source["logical_bytes"]
+        or occurrence_count != source["fact_occurrence_count"]
+        or occurrence_sha256 != source["fact_occurrence_sha256"]
+    ):
+        raise CompanyFactsLedgerError(
+            "verified Company Facts response does not reproduce manifest source bindings"
+        )
+    _preflight_source_canonical_decimals(
+        exact_companyfacts,
+        label="exact Company Facts projection",
+    )
+    exact_bytes = _canonical_bytes(
+        exact_companyfacts,
+        label="exact Company Facts projection",
+        maximum=max_payload_bytes,
+        canonicalizer=source_canonical_json,
+    )
+    exact_occurrence_digest = sha256()
+    exact_occurrence_count = 0
+    try:
+        for occurrence in iter_companyfacts_occurrences(exact_companyfacts):
+            exact_occurrence_count += 1
+            if exact_occurrence_count > max_occurrences:
+                raise CompanyFactsLedgerInputTooLarge(
+                    "Company Facts occurrence count exceeds bounded limit"
+                )
+            exact_occurrence_digest.update(
+                source_canonical_json(occurrence).encode("utf-8")
+            )
+    except CompanyFactsLedgerInputTooLarge:
+        raise
+    except (CompanyFactsAcquisitionError, TypeError, ValueError) as exc:
+        raise CompanyFactsLedgerError(
+            f"malformed exact Company Facts occurrence payload: {exc}"
+        ) from exc
+    # Exact-number parsing changes values, never the admitted occurrence
+    # topology.  A count change means these are not two projections of one
+    # source document.
+    if exact_occurrence_count != occurrence_count:
+        raise CompanyFactsLedgerError(
+            "exact Company Facts projection changes verified occurrence count"
+        )
+    return _VerifiedCompanyFactsLegacyWitness(
+        manifest_id=manifest["manifest_id"],
+        response_sha256=source["response_sha256"],
+        logical_sha256=source["logical_sha256"],
+        logical_bytes=source["logical_bytes"],
+        fact_occurrence_count=source["fact_occurrence_count"],
+        fact_occurrence_sha256=source["fact_occurrence_sha256"],
+        exact_projection_sha256=_sha256(exact_bytes),
+        exact_projection_bytes=len(exact_bytes),
+        exact_occurrence_sha256=exact_occurrence_digest.hexdigest(),
+    )
 
 
 def _submission_columns(payload: Mapping[str, Any], *, label: str) -> Mapping[str, Any]:
@@ -1278,10 +1417,12 @@ def _submission_rows(
         if total_rows > max_submission_rows:
             raise CompanyFactsLedgerInputTooLarge("Submissions row count exceeds bounded limit")
         for offset, raw_accession in enumerate(accessions):
+            # The accession prefix identifies the submitting entity or filing
+            # agent, not necessarily this issuer.  Issuer authority is the
+            # already-validated Submissions payload/receipt CIK binding.
             accession = _accession(
                 raw_accession,
                 field=f"{label}.accessionNumber[{offset}]",
-                expected_cik=cik,
             )
             accepted_value = accepted[offset] if accepted is not None else None
             try:
@@ -1306,7 +1447,6 @@ def _revision_evidence(
     | Iterable[RevisionEvidence | Mapping[str, Any]]
     | None,
     *,
-    expected_cik: str,
     maximum: int,
     max_bytes: int,
 ) -> tuple[dict[str, RevisionEvidence], bytes]:
@@ -1343,7 +1483,6 @@ def _revision_evidence(
             mapping_key = _accession(
                 mapping_key,
                 field="revision evidence mapping key",
-                expected_cik=expected_cik,
             )
         else:
             mapping_key, raw = None, item
@@ -1367,12 +1506,10 @@ def _revision_evidence(
         _accession(
             evidence.child_accession,
             field="revision evidence child_accession",
-            expected_cik=expected_cik,
         )
         _accession(
             evidence.parent_accession,
             field="revision evidence parent_accession",
-            expected_cik=expected_cik,
         )
         out[evidence.child_accession] = evidence
         record = evidence.to_dict()
@@ -1443,9 +1580,9 @@ def _draft_occurrences(
         sec_fact = source_row.get("sec_fact")
         if not isinstance(sec_fact, Mapping):
             raise CompanyFactsLedgerError("Company Facts occurrence sec_fact must be an object")
-        accession = _accession(
-            sec_fact.get("accn"), field="Company Facts accn", expected_cik=cik
-        )
+        # Company Facts is issuer-bound by its verified endpoint payload and
+        # manifest.  Historical accession prefixes often name a filing agent.
+        accession = _accession(sec_fact.get("accn"), field="Company Facts accn")
         start = _date_text(sec_fact.get("start"), field="Company Facts start")
         end = _date_text(sec_fact.get("end"), field="Company Facts end", required=True)
         context = _context(cik=cik, start=start, end=end or "")
@@ -1652,7 +1789,7 @@ def _output_sha256(ledger: RawFactLedger, occurrences: Sequence[CompanyFactsLedg
     return _sha256(raw_ledger_canonical_json(payload).encode("utf-8"))
 
 
-def convert_companyfacts_to_raw_ledger(
+def _convert_companyfacts_to_raw_ledger(
     *,
     companyfacts: Mapping[str, Any],
     capture_manifest: Mapping[str, Any],
@@ -1671,6 +1808,7 @@ def convert_companyfacts_to_raw_ledger(
     max_older_submissions_files: int = DEFAULT_MAX_OLDER_SUBMISSIONS_FILES,
     max_revision_evidence: int = DEFAULT_MAX_REVISION_EVIDENCE,
     max_revision_evidence_bytes: int = DEFAULT_MAX_REVISION_EVIDENCE_BYTES,
+    _verified_legacy_witness: _VerifiedCompanyFactsLegacyWitness | None = None,
 ) -> CompanyFactsLedgerConversion:
     """Convert one verified capture and bounded Submissions inventory.
 
@@ -1718,6 +1856,7 @@ def convert_companyfacts_to_raw_ledger(
         companyfacts,
         max_payload_bytes=payload_limit,
         max_occurrences=occurrence_limit,
+        verified_legacy_witness=_verified_legacy_witness,
     )
     if not isinstance(submissions, Mapping):
         raise CompanyFactsLedgerError("submissions must be an object")
@@ -1738,7 +1877,6 @@ def convert_companyfacts_to_raw_ledger(
     )
     evidence, evidence_bytes = _revision_evidence(
         revision_evidence,
-        expected_cik=cik,
         maximum=evidence_limit,
         max_bytes=evidence_byte_limit,
     )
@@ -1910,7 +2048,10 @@ def convert_companyfacts_to_raw_ledger(
         "clocks": dict(clocks),
         "submissions_clock_scope": SUBMISSIONS_CLOCK_SCOPE,
         "input_sha256": input_hash,
-        "companyfacts_sha256": _sha256(companyfacts_bytes),
+        # This field remains the collector-manifest logical witness.  The
+        # content-addressed input/output hashes separately bind the exact
+        # Decimal projection used for semantic conversion.
+        "companyfacts_sha256": manifest["source"]["logical_sha256"],
         "submissions_sha256": submission_hash,
         "output_sha256": output_hash,
         "submission_sources": [
@@ -1948,6 +2089,50 @@ def convert_companyfacts_to_raw_ledger(
         occurrences=tuple(companion),
         submission_sources=submission_sources,
         receipt=receipt,
+    )
+
+
+def convert_companyfacts_to_raw_ledger(
+    *,
+    companyfacts: Mapping[str, Any],
+    capture_manifest: Mapping[str, Any],
+    submissions: Mapping[str, Any],
+    submissions_recorded_at: datetime | str,
+    older_submissions_files: Mapping[str, Mapping[str, Any]]
+    | Iterable[tuple[str, Mapping[str, Any]]]
+    | None = None,
+    revision_evidence: Mapping[str, Mapping[str, Any] | RevisionEvidence]
+    | Iterable[RevisionEvidence | Mapping[str, Any]]
+    | None = None,
+    max_occurrences: int = DEFAULT_MAX_OCCURRENCES,
+    max_payload_bytes: int = DEFAULT_MAX_PAYLOAD_BYTES,
+    max_total_input_bytes: int = DEFAULT_MAX_TOTAL_INPUT_BYTES,
+    max_submission_rows: int = DEFAULT_MAX_SUBMISSION_ROWS,
+    max_older_submissions_files: int = DEFAULT_MAX_OLDER_SUBMISSIONS_FILES,
+    max_revision_evidence: int = DEFAULT_MAX_REVISION_EVIDENCE,
+    max_revision_evidence_bytes: int = DEFAULT_MAX_REVISION_EVIDENCE_BYTES,
+) -> CompanyFactsLedgerConversion:
+    """Convert a caller-supplied decoded capture under the original strict API.
+
+    Unlike the pinned-source loader, this public pure boundary has no exact
+    response bytes from which to establish a second numeric projection.  Its
+    decoded payload must therefore continue to reproduce the manifest's
+    logical and occurrence digests directly.
+    """
+    return _convert_companyfacts_to_raw_ledger(
+        companyfacts=companyfacts,
+        capture_manifest=capture_manifest,
+        submissions=submissions,
+        submissions_recorded_at=submissions_recorded_at,
+        older_submissions_files=older_submissions_files,
+        revision_evidence=revision_evidence,
+        max_occurrences=max_occurrences,
+        max_payload_bytes=max_payload_bytes,
+        max_total_input_bytes=max_total_input_bytes,
+        max_submission_rows=max_submission_rows,
+        max_older_submissions_files=max_older_submissions_files,
+        max_revision_evidence=max_revision_evidence,
+        max_revision_evidence_bytes=max_revision_evidence_bytes,
     )
 
 
@@ -2474,6 +2659,16 @@ def load_companyfacts_ledger_from_pinned_source(
             raise CompanyFactsLedgerError(
                 "Company Facts exact-number projection is invalid"
             ) from exc
+        legacy_witness = _verified_legacy_witness_from_response(
+            manifest=manifest,
+            response_content=response_content,
+            logical_content=logical,
+            occurrence_count=occurrence_count,
+            occurrence_sha256=occurrence_sha,
+            exact_companyfacts=companyfacts,
+            max_payload_bytes=config.max_payload_bytes,
+            max_occurrences=config.max_occurrences,
+        )
 
         submissions = _load_pinned_submissions_source(
             sealed_authority,
@@ -2513,13 +2708,14 @@ def load_companyfacts_ledger_from_pinned_source(
         raise CompanyFactsLedgerError(
             "pinned Company Facts conversion inputs are invalid"
         ) from exc
-    return convert_companyfacts_to_raw_ledger(
+    return _convert_companyfacts_to_raw_ledger(
         companyfacts=companyfacts,
         capture_manifest=manifest,
         submissions=submissions,
         submissions_recorded_at=submissions_recorded_at,
         older_submissions_files=older_payloads,
         revision_evidence=revision_evidence,
+        _verified_legacy_witness=legacy_witness,
         **config.conversion_kwargs(),
     )
 

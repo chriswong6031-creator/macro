@@ -1,5 +1,32 @@
 # Calcbench parity continuation handoff — 2026-08-02
 
+## 2026-08-03 B4F continuation note
+
+Wave 3A remains the accepted receipt-kernel baseline described below. The
+current follow-on is **B4F: one controlled AAPL first-issuer pilot**, documented
+canonically in
+`research/CALCBENCH_PARITY_WAVE_3B_B4F_FIRST_SEALED_ISSUER_PILOT_2026-08-03.md`.
+
+Current truth, deliberately narrow:
+
+- The dedicated-bucket read-only repository-secret names were verified:
+  `R2_RESEARCH_READONLY_ENDPOINT`, `R2_RESEARCH_READONLY_ACCESS_KEY_ID`,
+  `R2_RESEARCH_READONLY_SECRET_ACCESS_KEY`, and
+  `R2_RESEARCH_READONLY_BUCKET`. This confirms only that the names are present;
+  it is not a read/write capability claim or a seed receipt.
+- The B4F code lane is implemented locally and remains unmerged while its real
+  AAPL run is validated. The protected `attested-history-seed` environment now
+  exists with one required reviewer and a custom `main`-only deployment policy.
+  Its two environment-scoped writer secrets, a live R2 seed, a reviewed
+  non-confidential Actions bundle, and a committed canonical issuer packet are
+  still pending.
+- There is no cron, public product surface, Neural Web/Prophet authority,
+  score, alert, or full-Calcbench-parity claim in this lane.
+
+Resume B4F from its dedicated docket; do not infer that an earlier Wave 3A
+test count, a local SEC sample, or the presence of a read-only secret proves
+publication or issuer coverage.
+
 ## Current stop point
 
 The Wave 3A receipt-acceptance baseline is complete. This memo is not deployment
@@ -84,11 +111,12 @@ layer. Keep that boundary explicit in API and UI work.
 
 ## Wave 3B next lane (do not mix into Wave 3A)
 
-Build filing-package acquisition and immutable query snapshots: bounded streamed
-filing indexes; safe no-network/no-DTD iXBRL/XML parsing; strict Company Facts
-attestation by CIK + accession + taxonomy + concept + canonical value + period +
-unit; and separate private `ffqs_*` Parquet snapshots with complete governance
-bundles, readback verification, and latest-pointer-last publication. Keep
-API/UI/Excel and scheduling out of the first Wave 3B PR.
+The B4F pilot builds on the Wave 3B foundation: bounded streamed filing indexes;
+safe no-network/no-DTD iXBRL/XML parsing; strict Company Facts attestation by
+CIK + accession + taxonomy + concept + canonical value + period + unit; and
+separate private `ffqs_*` snapshots with complete governance bundles, readback
+verification, and latest-pointer-last publication. The first controlled issuer
+run remains manual and receipt-first. Keep API/UI/Excel expansion and all
+scheduling out of this activation.
 
 No credentials or private tokens are required to resume this local checkpoint.

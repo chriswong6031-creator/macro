@@ -4963,16 +4963,25 @@ class BitemporalMetricQueryEngine:
 
     @staticmethod
     def _fact_dimensions_allowed(fact: RawFactOccurrence, contract: MetricContract) -> bool:
-        # Registry v1 admits only explicit consolidated-only contracts.  Keep
-        # this branch declarative so a later governed dimensional profile can
-        # extend it rather than accidentally falling through to a raw fact.
-        if contract.dimensional_profile.mode != "consolidated_only":
-            return False
-        return (
-            fact.dimensions_known
-            and not fact.context.explicit_dimensions
-            and not fact.context.typed_dimensions
-        )
+        # The ordinary registry remains consolidated-only.  The sole separate
+        # evidence bridge admits *only* Company Facts rows whose dimensional
+        # scope is explicitly unknown; it does not infer that an empty context
+        # means consolidated.
+        mode = contract.dimensional_profile.mode
+        if mode == "consolidated_only":
+            return (
+                fact.dimensions_known
+                and not fact.context.explicit_dimensions
+                and not fact.context.typed_dimensions
+            )
+        if mode == "dimensions_unknown_only":
+            return (
+                fact.source.source == "sec-companyfacts"
+                and fact.dimensions_known is False
+                and not fact.context.explicit_dimensions
+                and not fact.context.typed_dimensions
+            )
+        return False
 
     @staticmethod
     def _fact_unit_allowed(fact: RawFactOccurrence, contract: MetricContract) -> bool:
@@ -5395,7 +5404,12 @@ class BitemporalMetricQueryEngine:
                 # indistinguishable from absent and cannot block a lower one.
                 continue
             unknown_dimension_scope = tuple(
-                item for item in period_events if not item.dimensions_known
+                item
+                for item in period_events
+                if (
+                    contract.dimensional_profile.mode == "consolidated_only"
+                    and not item.dimensions_known
+                )
             )
             disallowed_dimensions = tuple(
                 item for item in period_events if not self._fact_dimensions_allowed(item, contract)

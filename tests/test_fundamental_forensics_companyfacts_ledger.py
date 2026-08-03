@@ -415,6 +415,37 @@ def test_binary_float_value_is_rejected_before_a_raw_fact_is_created() -> None:
         )
 
 
+def test_public_converter_cannot_bypass_legacy_manifest_with_exact_projection() -> None:
+    accession = "0000000001-25-000001"
+    legacy_payload = _companyfacts([_entry(accession, 9007199254740993.0)])
+    exact_payload = _companyfacts(
+        [_entry(accession, Decimal("9007199254740993.0"))]
+    )
+    manifest = _manifest(legacy_payload)
+
+    with pytest.raises(
+        CompanyFactsLedgerError,
+        match="logical digest/length does not match manifest",
+    ):
+        convert_companyfacts_to_raw_ledger(
+            companyfacts=exact_payload,
+            capture_manifest=manifest,
+            submissions=_submissions(
+                [(accession, "2025-02-15T16:00:00.000Z")]
+            ),
+            submissions_recorded_at="2025-04-01T12:00:02Z",
+        )
+
+    with pytest.raises(TypeError, match="unexpected keyword"):
+        convert_companyfacts_to_raw_ledger(
+            companyfacts=exact_payload,
+            capture_manifest=manifest,
+            submissions=_submissions([]),
+            submissions_recorded_at="2025-04-01T12:00:02Z",
+            _verified_legacy_witness=None,
+        )
+
+
 def test_companyfacts_decimal_expansion_is_bounded_before_source_serialization() -> None:
     accession = "0000000001-25-000001"
     payload = _companyfacts([_entry(accession, 1)])
@@ -775,39 +806,59 @@ def test_submission_source_witness_is_strict_and_immutable() -> None:
         )
 
 
-def test_every_fact_submission_evidence_and_older_filename_must_match_capture_cik() -> None:
+def test_issuer_binding_uses_verified_payloads_not_accession_prefixes() -> None:
     accession = "0000000001-25-000001"
-    other_cik_accession = "0000000002-25-000001"
-    with pytest.raises(CompanyFactsLedgerError, match="CIK prefix"):
-        _convert(
-            _companyfacts([_entry(other_cik_accession, 1)]),
-            _submissions([]),
-        )
-    with pytest.raises(CompanyFactsLedgerError, match="CIK prefix"):
+    # Section 16 reports in issuer Submissions commonly use the filing
+    # agent's accession prefix (for example 0001140361), not the issuer CIK.
+    agent_accession = "0001140361-25-000001"
+    conversion = _convert(
+        _companyfacts([_entry(accession, 1)]),
+        _submissions(
+            [
+                (agent_accession, "2025-02-14T16:00:00Z"),
+                (accession, "2025-02-15T16:00:00Z"),
+            ]
+        ),
+    )
+    assert conversion.receipt.submission_row_count == 2
+    assert conversion.receipt.mapped_accessions == (accession,)
+
+    with pytest.raises(CompanyFactsLedgerError, match="CIK"):
         _convert(
             _companyfacts([_entry(accession, 1)]),
-            _submissions([(other_cik_accession, "2025-02-15T16:00:00Z")]),
+            _submissions(
+                [(agent_accession, "2025-02-14T16:00:00Z")], cik="2"
+            ),
         )
+
     wrong_name = "CIK0000000002-submissions-001.json"
     with pytest.raises(CompanyFactsLedgerError, match="filename CIK"):
         _convert(
             _companyfacts([_entry(accession, 1)]),
             _submissions([], files=[{"name": wrong_name}]),
         )
-    with pytest.raises(CompanyFactsLedgerError, match="parent_accession CIK prefix"):
-        _convert(
-            _companyfacts([_entry(accession, 1)]),
-            _submissions([(accession, "2025-02-15T16:00:00Z")]),
-            evidence=[
-                RevisionEvidence(
-                    accession,
-                    other_cik_accession,
-                    FactEventType.AMENDMENT,
-                    "spine:wrong-cik",
-                    "2025-04-01T12:00:03Z",
-                )
-            ],
-        )
+
+    cross_prefix_revision = _convert(
+        _companyfacts(
+            [_entry(agent_accession, 1), _entry(accession, 2, form="10-K/A")]
+        ),
+        _submissions(
+            [
+                (agent_accession, "2025-02-14T16:00:00Z"),
+                (accession, "2025-02-15T16:00:00Z"),
+            ]
+        ),
+        evidence=[
+            RevisionEvidence(
+                accession,
+                agent_accession,
+                FactEventType.AMENDMENT,
+                "spine:agent-prefix-parent",
+                "2025-04-01T12:00:03Z",
+            )
+        ],
+    )
+    assert cross_prefix_revision.receipt.typed_revision_count == 1
 
 
 def test_sec_identifiers_reject_non_ascii_digits() -> None:
