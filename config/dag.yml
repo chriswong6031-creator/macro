@@ -863,6 +863,14 @@ lanes:
       - id: grade_us_board
         module: scripts.grade_us_board
         args: [--nightly]
+      - id: emit_prophet_doors
+        module: scripts.emit_prophet_doors
+        args: [--nightly]
+        note: "Prophet US trend-intelligence W3 — shadow Doors T (theme-relay) + R (re-arm) candidate emitters. Prospective-only accrual to data/prophet_doors/flags.jsonl (nightly sole advancer; caps 25/door with disclosed overflow; dedupe 21 sessions per ticker per door) + status.json disclosures (stale/absent subsector_rotation => Door T emits nothing, disclosed). ZERO authority — no board/plan/rank/gate consumer (tests/test_prophet_doors.py pins the fence); promotion only via research/PROPHET_DOORS_PREREG.md gates."
+      - id: grade_prophet_doors
+        module: scripts.grade_prophet_doors
+        args: [--nightly]
+        note: "Prophet US trend-intelligence W3 — forward grader for door flags at H=10/21 sessions excess-vs-SPY (H=21 primary per prereg), policy-free fixed-horizon marks to data/prophet_doors/grades.jsonl (nightly sole advancer, idempotent). Comparator frozen at registration (retro_grades buy-lane H=21). Display/shadow tier; zero authority."
       - id: grade_bottom_calls
         module: scripts.grade_bottom_calls
         args: [--nightly]
