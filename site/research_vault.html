@@ -46,8 +46,10 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png"><script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}document.documentElement.classList.add('rv-awaiting-live');window.__rvShellTimer=setTimeout(function(){var r=document.documentElement;r.classList.remove('rv-awaiting-live');var en=document.getElementById('rv-status-en'),zh=document.getElementById('rv-status-zh'),ven=document.getElementById('v-en-lead'),vzh=document.getElementById('v-zh-lead'),sh=document.getElementById('feed-shell');if(en)en.textContent='Saved snapshot · live refresh delayed';if(zh)zh.textContent='已保存快照 · 实时更新延迟';if(ven)ven.textContent='Showing the latest saved institutional reports.';if(vzh)vzh.textContent='正在显示最近保存的机构研报。';if(sh)sh.setAttribute('aria-busy','false');},15000);</script>
-<link rel="stylesheet" href="theme.css">
-<link rel="stylesheet" href="onboard.css">
+<link rel="stylesheet" href="theme.css?v=8798caae">
+<link rel="stylesheet" href="onboard.css?v=39e30a38">
+<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
+<link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
    RESEARCH VAULT — flagship page, ported from site/_mockup_research_vault.html.
@@ -639,7 +641,7 @@ html[data-theme="light"] .btn.upgrade{ color:#fff; }
 </head>
 <body>
 <nav class="site-nav">
-    <link rel="stylesheet" href="navigation-refresh.css">
+    <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
     <div class="nav-links">
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
       <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -833,10 +835,10 @@ html[data-theme="light"] .btn.upgrade{ color:#fff; }
       </div>
     </div>
   </div>
-  <script src="logo_config.js"></script>
-  <script src="stock-logos.js"></script>
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>  <div class="nav-search">
+  <script src="logo_config.js?v=b37d33d3" defer></script>
+  <script src="stock-logos.js?v=cc29be53" defer></script>
+  <script src="live_config.js?v=52943e92" defer></script>
+  <script src="live.js?v=e19f6af3" defer></script>  <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
       placeholder="Search any stock — US, China, HK, Canada &amp; more…"
@@ -1100,8 +1102,8 @@ html[data-theme="light"] .btn.upgrade{ color:#fff; }
      fallback if GET /api/research/catalog fails. The interactive first paint waits
      for the live endpoint so an old page bake is never presented as current data. -->
 <script id="rv-catalog" type="application/json">{"schema": "research_vault.catalog.v1", "generated_at": "2026-08-04T00:37:02.225120+00:00", "count": 699, "institutions": ["Academy Securities", "Alger", "Amova", "Apollo", "BTIG", "Bank of America", "Blackrock", "Cantor", "Citi", "Danske", "Deutsche Bank", "Franklin", "Goldman Sachs", "ING", "Ing Econ", "J.P. Morgan", "MUFG", "Mizuho", "Morgan Stanley", "Natixis", "Nordea", "Nuveen", "Other", "Prime", "RBC", "Rabobank", "Raymond James", "Royal London on Private Credit", "S&T", "SG Prime", "Safra", "Scotiabank", "Societe Generale", "Std Chartered", "TS Lombard", "The Market Ear", "The Punchline", "UBS", "Week Ahead", "Weekly Preview", "William Blair", "ZKB", "Zero Hedge"], "items": [{"id": "marketdesk-hoobnuhrzwi-24b087", "title": "mom", "institution": "Other", "side": "independent", "desk": "", "published_at": "2026-08-03T23:02:44Z", "summary_points": ["**S&P 500 FCF Margin Divergence**: FCF margins (green) show sectoral divergence vs.", "resilient operating margins (blue), signaling cash flow sustainability as critical financial health metric amid inflation and AI-driven capital spending.", "**Sector Rotation & Credit Stress**: S&P 500 IT down -7.76% (vs.", "Banks +33.81% earnings growth) signals leadership shift to Energy/Financials; hyperscalers’ CDS spreads at record levels highlight credit risk in tech, pressuring valuations amid rising rates.", "**Bank FCF Resilience & Performance**: Banks maintain higher free cash flow margins than AI-heavy tech firms; 84% of banks reported positive earnings surprises, driving sector-wide expected growth to ~20% (vs."], "tags": [], "tickers": [], "top_pick": false, "pages": 7, "language": "en", "needs_metadata": false, "slug": "mom-24b087"}, {"id": "marketdesk-wktopv06ueh-3ff2bc", "title": "VON32623269", "institution": "Other", "side": "independent", "desk": "", "published_at": "2026-08-03T22:59:08Z", "summary_points": ["**Holcim Philippines Divestment**: Margin-accretive sale of 99% stake (total USD 807m) to Huaxin Building Materials; low EBIT margin (<5%) and mid/high-teens EV/EBITDA vs Holcim’s 13x justify transaction, enabling portfolio focus and European M&A funding.", "**Sandoz Litigation Resolution**: Settlement with 43 states ($400m over 7yrs from 2027) and resellers ($28.5m) eliminates class actions; increased provisions impact near-term EBITDA margin (17.7% in 2025E) but removes major legal risk.", "**Clariant 1H26 Results & Target**: Hold rating confirmed; sales exceeded expectations with cost savings improving margins; Shell’s ethylene claim dismissal lifts sentiment, new CHF 9.40 target (up from CHF 8.20).", "**Earnings Event Density**: Late August 2026 features 15+ companies reporting 1H26/2Q26 results across healthcare (Sandoz, Galenica), insurance (Swiss Re, Zurich), and industrials—critical for tactical positioning."], "tags": [], "tickers": [], "top_pick": false, "pages": 7, "language": "en", "needs_metadata": false, "slug": "von32623269-3ff2bc"}, {"id": "marketdesk-ovegn6rwo5n-3ac8f3", "title": "Daily US", "institution": "UBS", "side": "sell", "desk": "", "published_at": "2026-08-03T22:44:20Z", "summary_points": ["**Earnings/Disinflation Catalyst**: Megacap tech earnings (cloud revenue acceleration, hyperscaler spending) and moderating inflation support Fed rate hold; US-Iran tensions drive oil volatility but energy flows recovery expected.", "**Global Earnings Momentum**: S&P 500 Q2 earnings growth estimate at 20% YoY, Europe Stoxx 600 upgrades, Asia profits rising 72%—fundamentals drive broad equity rally.", "**Yen Vulnerability**: Japan’s coordinated yen-buying (USDJPY 156.7) caps near-term upside but underlying drivers (BoJ normalization, negative real rates) persist; geopolitics and policy flows keep yen weak."], "tags": [], "tickers": [], "top_pick": true, "pages": 6, "language": "en", "needs_metadata": false, "slug": "daily-us-3ac8f3"}], "preview": true, "summary": {"total": 699, "new_this_week": 484, "desks_this_week": 41, "highlighted": 13, "most_covered_theme": "", "institutions": [{"name": "Goldman Sachs", "count": 291}, {"name": "J.P. Morgan", "count": 58}, {"name": "Other", "count": 53}, {"name": "UBS", "count": 43}, {"name": "Deutsche Bank", "count": 39}, {"name": "S&T", "count": 27}, {"name": "Bank of America", "count": 22}, {"name": "Morgan Stanley", "count": 19}, {"name": "Zero Hedge", "count": 16}, {"name": "The Market Ear", "count": 15}, {"name": "TS Lombard", "count": 12}, {"name": "Ing Econ", "count": 10}, {"name": "MUFG", "count": 10}, {"name": "Rabobank", "count": 9}, {"name": "Scotiabank", "count": 9}, {"name": "ING", "count": 7}, {"name": "RBC", "count": 7}, {"name": "Citi", "count": 5}, {"name": "Nordea", "count": 5}, {"name": "Natixis", "count": 4}, {"name": "Apollo", "count": 3}, {"name": "Prime", "count": 3}, {"name": "Societe Generale", "count": 3}, {"name": "Weekly Preview", "count": 3}, {"name": "ZKB", "count": 3}, {"name": "BTIG", "count": 2}, {"name": "Franklin", "count": 2}, {"name": "Nuveen", "count": 2}, {"name": "Safra", "count": 2}, {"name": "Week Ahead", "count": 2}, {"name": "Academy Securities", "count": 1}, {"name": "Alger", "count": 1}, {"name": "Amova", "count": 1}, {"name": "Blackrock", "count": 1}, {"name": "Cantor", "count": 1}, {"name": "Danske", "count": 1}, {"name": "Mizuho", "count": 1}, {"name": "Raymond James", "count": 1}, {"name": "Royal London on Private Credit", "count": 1}, {"name": "SG Prime", "count": 1}, {"name": "Std Chartered", "count": 1}, {"name": "The Punchline", "count": 1}, {"name": "William Blair", "count": 1}]}}</script>
-<script src="theme.js" defer></script>
-<script src="onboard.js" defer></script>
-<script src="research_vault_app.js" defer></script>
+<script src="theme.js?v=55773325" defer></script>
+<script src="onboard.js?v=923aa5a2" defer></script>
+<script src="research_vault_app.js?v=94131deb" defer></script>
 </body>
 </html>
