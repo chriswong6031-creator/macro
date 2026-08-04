@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-03T10:28:12.640968+00:00",
-  "as_of": "2026-08-03",
+  "generated_at": "2026-08-04T12:27:17.590085+00:00",
+  "as_of": "2026-08-04",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 415,
@@ -349,7 +349,7 @@
       "cond_hit_share": 0.8206,
       "readiness_forecast": {
         "forecast": "date",
-        "forecast_date": "2026-08-03",
+        "forecast_date": "2026-08-04",
         "basis": "n_cond=27/30 needed; post-W-C cadence=9.688/day \u00d7 cond_hit_share=1.000 \u2192 0 days",
         "post_wc_fires": 155,
         "post_wc_span_days": 16
@@ -373,7 +373,7 @@
       "cond_hit_share": 0.9809,
       "readiness_forecast": {
         "forecast": "date",
-        "forecast_date": "2026-08-06",
+        "forecast_date": "2026-08-07",
         "basis": "n_cond=0/30 needed; post-W-C cadence=9.688/day \u00d7 cond_hit_share=0.994 \u2192 3 days",
         "post_wc_fires": 155,
         "post_wc_span_days": 16
@@ -402,9 +402,9 @@
     },
     {
       "family": "S-FRONT-CHARM",
-      "status": "building_history",
-      "n_cond": 0,
-      "n_base": 0,
+      "status": "no_effect",
+      "n_cond": 109,
+      "n_base": 128,
       "target_n_cond": 30,
       "weekly_fires": {
         "2026-W25": 6,
@@ -417,10 +417,8 @@
       "n_stamped_cond": 0,
       "cond_hit_share": 0.0,
       "readiness_forecast": {
-        "forecast": "unknown",
-        "reason": "zero cadence or zero cond_hit_share in post-W-C window",
-        "post_wc_fires": 155,
-        "post_wc_span_days": 16
+        "forecast": "already_ready",
+        "n_cond": 109
       }
     }
   ],
@@ -442,7 +440,7 @@
       "null_share": 1.0,
       "root_cause": "by-design opex_days<=5 gate \u2014 opt_pin_risk requires opex_days<=5 AND gamma='long' AND min_wall_dist<=2%. Gate only fires in the final week before monthly OPEX.",
       "pin_risk_gate_condition": "opex_days<=5 AND gamma_regime='long' AND min(|wall_dist_up_pct|, |wall_dist_down_pct|)<=2.0",
-      "current_opex_days": 14,
+      "current_opex_days": 13,
       "next_opex_date": "2026-08-21",
       "note": "pin_risk will be non-null only in the 5 trading days before each monthly OPEX. Current build date has opex_days>5 \u2014 no fires expected."
     },
@@ -470,29 +468,29 @@
         {
           "source": "options_entry/state.parquet",
           "latest_as_of": "2026-07-31",
-          "age_days_from_today": 3,
+          "age_days_from_today": 4,
           "status": "STALE"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-08-03 02:56 UTC",
+          "latest_as_of": "2026-08-04 04:12 UTC",
           "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
           "latest_as_of": "2026-07-21",
-          "age_days_from_today": 13,
+          "age_days_from_today": 14,
           "status": "STALE"
         }
       ]
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-03T10:28:12.570590+00:00",
+      "generated_at": "2026-08-04T12:27:17.546129+00:00",
       "ok": false,
       "fail_reasons": [
-        "CHAINS STALE: latest chain file is 2026-07-31 (3 trading day(s) behind last_td=2026-08-03); threshold=1d \u2014 OI snapshot may have been missed"
+        "CHAINS STALE: latest chain file is 2026-07-31 (4 trading day(s) behind last_td=2026-08-04); threshold=1d \u2014 OI snapshot may have been missed"
       ],
       "warnings": [
         "OPTIONS FLOW CREDS ABSENT: MASSIVE_S3_ACCESS_KEY_ID / MASSIVE_S3_SECRET_ACCESS_KEY / MASSIVE_S3_ENDPOINT not set \u2014 build_options_flow will no-op silently (F1 from masterplan \u00a71)"
@@ -501,8 +499,8 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-03T10:28:12.640960+00:00",
-    "as_of": "2026-08-03",
+    "generated_at_utc": "2026-08-04T12:27:17.590077+00:00",
+    "as_of": "2026-08-04",
     "absent_stores": []
   }
 }
