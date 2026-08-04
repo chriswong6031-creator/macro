@@ -3755,8 +3755,17 @@
            Priority path only: on a pre-v1 artifact there is no `stage`, so no row
            is known to be blocked and the popover is unchanged. #}
       {% if _hsg.any and n.get('stage') == 'blocked' %}
+      {# `failed reclaim-and-hold` and `failed next-bar hold` are ONE fact wearing two
+         engine names: both are returned by branches of _buy_filter that test
+         `held = close[i+1] > close[i]` on the 3D frame and NEVER evaluate a 200-day
+         reclaim. The old copy here promised entries would reopen "once it reclaims
+         the 200-day line" — a condition this branch does not test, on a name that may
+         never have been near that line. `failed next-bar hold` is what
+         reclaim_veto=False (hk_prophet_v2) emits, and with no entry it fell through
+         to the generic sentence with the raw engine slug appended. #}
       {% set _HK_BLOCK = {
-           'failed reclaim-and-hold': ['Price has not reclaimed its 200-day line and held there, so entries stay shut until it does.', '价格尚未重新站上200日均线并守住，在此之前入场保持关闭。'],
+           'failed reclaim-and-hold': ['The 3-day bar after the signal closed lower, so the follow-through check never cleared.', '信号后的下一根 3 日K线收低，跟进确认未能通过。'],
+           'failed next-bar hold': ['The 3-day bar after the signal closed lower, so the follow-through check never cleared.', '信号后的下一根 3 日K线收低，跟进确认未能通过。'],
            'counter-trend, no 200-reclaim/hold': ['This would be a bounce against the bigger downtrend, and price is still under its 200-day line.', '这属于逆着更大级别下跌趋势的反弹，且价格仍在200日均线下方。'],
            'pending confirmation': ['The signal fired but the follow-through check has not cleared yet.', '信号已触发，但确认检查尚未通过。'] } %}
       {% set _blr = ((n.get('signal') or {}).get('last') or {}).get('reason') %}
