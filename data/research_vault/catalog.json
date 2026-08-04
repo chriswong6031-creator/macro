@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T03:07:22.550859+00:00",
-  "count": 706,
+  "generated_at": "2026-08-04T03:52:27.905162+00:00",
+  "count": 708,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -296,6 +296,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-gfuvp63hnci-c0603e",
+      "title": "Americas Transportation Railroads Weekly Rail Carload Snapshot — Week 30",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:34Z",
+      "summary_points": [
+        "**US Rail Carload Deceleration**: US Class I rail carloads growth slowed to +2.4% YoY (week 30) from +3.6% (week 29), driven by intermodal deceleration to +4.6% YoY (from +5.3%) and ex-intermodal slowing to +0.3% YoY (from +2.0%), signaling weakening logistics demand fundamentals.",
+        "**Canadian Rail Divergence**: CN intermodal growth improved to -4.2% YoY (from -17%) but CPKC surged to +8.1% YoY, while total Canadian carloads remained stagnant at +0.1% YoY, highlighting sector-specific operational risks and recovery disparities.",
+        "**Goldman NR Impact**: \"Not Rated\" (NR) status directly affects portfolio construction due to suspended recommendations (e.g., mergers, regulatory issues), creating allocation uncertainty for PMs managing coverage universe exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-n1exk7qbd2r-ecc7aa",
       "title": "Japan Banks August mortgage deposit rates Online banks raise floating rates",
       "institution": "Goldman Sachs",
@@ -312,6 +331,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-o8keeai6j0r-15dc59",
+      "title": "Americas Retail Takeaways from IR management",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:28Z",
+      "summary_points": [
+        "**BBWI Tariff Headwind**: $80m tariff risk persists from prior year, critical downside factor amid strategic shifts (Fruit Fusion franchise, Amazon/Ultra 3P distribution).",
+        "**ORLY Repurchase Momentum**: $3.1bn YTD share repurchases (opportunistic/programmatic) with 1–2% 2H ticket growth above inflation, signaling capital allocation discipline.",
+        "**EYE Valuation Gap**: Revised EBITDA estimates ($228.1mn/$259.1mn/$306.2mn) and target price ($16.00) above closing ($15.28), indicating bullish technical signal.",
+        "**ORLY Target vs.",
+        "Close**: Target price ($53.00) below closing ($57.57), reflecting bearish sentiment despite strong repurchase program and ticket growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },

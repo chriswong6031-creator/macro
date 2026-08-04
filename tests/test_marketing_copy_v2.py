@@ -3436,3 +3436,157 @@ def test_a_hard_failure_of_every_rung_is_named_as_a_transport_fault(monkeypatch)
 
     assert posts[0]["stage"] == "provider"
     assert posts[0]["reasons"] == ["provider_error:ConnectionError"], posts[0]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Trend-context mover copy (FSLR postmortem, 2026-08-03)
+#
+# The flagship posted "Real strength or real damage, either way I'd let it
+# settle first" on a name printing +10.3% the first session after a two-month,
+# washed-out slide. Every mover variant was the same context-blind caution.
+# These tests pin the fix end to end: the deterministic bucket, the fail-closed
+# tag gate, and the selection preference that makes a bucketed line OUTRANK the
+# generic caution whenever the tape has a strong read.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _closes_washout(n_pre: int = 70) -> list[float]:
+    """A two-month grind from 320 down to ~200, then the +10% move day."""
+    down = [320.0 - i * (120.0 / (n_pre - 1)) for i in range(n_pre)]
+    return down + [down[-1] * 1.103]
+
+
+def _closes_uptrend(n_pre: int = 70) -> list[float]:
+    """A steady run from 100 to ~160 ending at the highs, then the move day."""
+    up = [100.0 + i * (60.0 / (n_pre - 1)) for i in range(n_pre)]
+    return up + [up[-1] * 1.05]
+
+
+class TestTrendContextBuckets:
+    def test_washout_bounce_is_the_fslr_shape(self):
+        from engine.marketing.movers_source import trend_context
+        assert trend_context(_closes_washout(), 10.3) == "washout_bounce"
+
+    def test_breakout_at_the_highs(self):
+        from engine.marketing.movers_source import trend_context
+        assert trend_context(_closes_uptrend(), 5.0) == "breakout"
+
+    def test_crack_from_highs_on_a_down_day_in_an_uptrend(self):
+        from engine.marketing.movers_source import trend_context
+        closes = _closes_uptrend()[:-1] + [_closes_uptrend()[-2] * 0.92]
+        assert trend_context(closes, -8.0) == "crack_from_highs"
+
+    def test_capitulation_deep_in_a_decline(self):
+        from engine.marketing.movers_source import trend_context
+        closes = _closes_washout()[:-1] + [_closes_washout()[-2] * 0.94]
+        assert trend_context(closes, -6.0) == "capitulation"
+
+    def test_short_or_flat_series_reads_plain(self):
+        from engine.marketing.movers_source import trend_context
+        assert trend_context([100.0] * 10, 8.0) == "plain"
+        assert trend_context([100.0] * 80, 8.0) == "plain"   # zero range
+        assert trend_context([], 8.0) == "plain"
+        assert trend_context(None, 8.0) == "plain"           # type: ignore[arg-type]
+
+    def test_vocabulary_is_closed(self):
+        from engine.marketing.movers_source import TREND_CONTEXTS, trend_context
+        for closes, pct in ((_closes_washout(), 10.0), (_closes_uptrend(), 4.0),
+                            (_closes_uptrend(), -9.0), (list(range(1, 200)), 2.0)):
+            assert trend_context(closes, pct) in TREND_CONTEXTS
+
+
+class TestMoverContextGate:
+    WASHOUT_VARIANT = ("{cashtag} x", "{top_fact} washout line", ("washout_only",))
+
+    def test_bucket_line_is_fail_closed_without_its_context(self):
+        from engine.marketing.copywriter import _variant_allowed
+        base = {"type": "mover", "ticker": "FSLR", "mover_pct": "+10.3%"}
+        assert not _variant_allowed(self.WASHOUT_VARIANT, dict(base))
+        assert not _variant_allowed(self.WASHOUT_VARIANT,
+                                    dict(base, mover_context="breakout"))
+        assert _variant_allowed(self.WASHOUT_VARIANT,
+                                dict(base, mover_context="washout_bounce"))
+
+
+def _mover_ctx(voice: str, *, pct: float, trend: str | None,
+               ticker: str = "FSLR") -> dict:
+    from engine.marketing.copywriter import build_context
+    pct_str = f"{pct:+.1f}%"
+    mover_data = {"ticker": ticker, "pct": pct, "sector": "Technology"}
+    if trend is not None:
+        mover_data["trend_context"] = trend
+    verb = "surged" if pct >= 3 else "fell"
+    facts = {
+        "facts": [{"id": "mover_pct",
+                   "text": f"{ticker} {verb} {pct_str} today (Technology).",
+                   "salience": 10, "numbers": [pct_str]}],
+        "numbers_whitelist": [pct_str],
+    }
+    item = {"ticker": ticker, "type": "mover", "account": "flagship",
+            "_mover_data": mover_data, "_mover_facts": facts}
+    ctx = build_context(item, persona={"name": "Desk", "voice_notes": "terse",
+                                       "example_lines": []}, facts=facts)
+    ctx["voice"] = voice
+    ctx["slot"] = "D1-S1"
+    ctx["has_chart"] = True
+    return ctx
+
+
+_MOVER_VOICES = ("authoritative desk", "dry, receipts-forward", "specialist",
+                 "educational", "fast, reactive", "pattern/history")
+
+_WASHOUT_MARKS = ("months of selling", "long slide", "washed-out", "washed out",
+                  "bounce or bottom", "dead-cat", "dead cats", "woke up",
+                  "seen this shape", "off the lows")
+
+
+def test_washed_out_mover_never_says_let_it_settle():
+    """The FSLR regression, through the real composer, in every voice."""
+    from engine.marketing.copywriter import write_posts_deterministic
+    contexts = [_mover_ctx(v, pct=10.3, trend="washout_bounce")
+                for v in _MOVER_VOICES]
+    for r in write_posts_deterministic(contexts):
+        text = (r["headline"] + " " + r["body"]).lower()
+        assert "settle" not in text, text
+        assert "not paying this price" not in text, text
+        assert any(m in text for m in _WASHOUT_MARKS), (
+            f"washout context did not select a washout line: {text[:140]}")
+
+
+def test_first_crack_never_reads_as_bottom_watch():
+    from engine.marketing.copywriter import write_posts_deterministic
+    contexts = [_mover_ctx(v, pct=-9.1, trend="crack_from_highs")
+                for v in _MOVER_VOICES]
+    for r in write_posts_deterministic(contexts):
+        text = (r["headline"] + " " + r["body"]).lower()
+        assert "bottom setup" not in text, text
+        assert ("crack" in text or "first dent" in text
+                or "change of character" in text or "blip or turn" in text
+                or "the first hit" in text or "turns have started" in text), (
+            f"crack context did not select a crack line: {text[:140]}")
+
+
+def test_plain_context_keeps_the_generic_bank_reachable_only():
+    """No trend read -> the bucket lines must be unreachable (fail-closed) and
+    the historical generic bank must carry the post, exactly as before."""
+    from engine.marketing.copywriter import write_posts_deterministic
+    contexts = [_mover_ctx(v, pct=10.3, trend=None, ticker=f"T{i}")
+                for i, v in enumerate(_MOVER_VOICES)]
+    for r in write_posts_deterministic(contexts):
+        text = (r["headline"] + " " + r["body"]).lower()
+        assert not any(m in text for m in _WASHOUT_MARKS), (
+            f"bucket line leaked without its context: {text[:140]}")
+
+
+def test_every_bucket_line_renders_clean_in_every_voice():
+    """All four buckets x all six voices through the composer: the selected
+    line must be the bucket's own and must carry no validator violations —
+    a bucket line that trips the whitelist or format laws would quarantine
+    exactly the posts this fix exists to improve."""
+    from engine.marketing.copywriter import write_posts_deterministic
+    cases = (("washout_bounce", 10.3), ("breakout", 6.2),
+             ("crack_from_highs", -8.4), ("capitulation", -7.7))
+    for trend, pct in cases:
+        contexts = [_mover_ctx(v, pct=pct, trend=trend) for v in _MOVER_VOICES]
+        for r in write_posts_deterministic(contexts):
+            assert r["violations"] == [], (trend, r["violations"],
+                                           r["headline"], r["body"])

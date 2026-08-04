@@ -688,9 +688,15 @@ def test_variant_pool_fallback_never_empty():
 
 
 def test_nightly_path_selection_unchanged_by_tags():
-    """A ctx WITHOUT direction/has_chart info (the nightly D-slot shape) filters
-    nothing — the pool is the full bank, so nightly selection is unchanged."""
-    from engine.marketing.copywriter import _TEMPLATES, _variant_allowed
+    """A ctx WITHOUT direction/has_chart info (the nightly D-slot shape) selects
+    exactly the PRE-BUCKET bank: direction/chart tags filter nothing, and the
+    trend-context lines (FSLR postmortem 2026-08-03) are fail-closed, so with
+    no trend read the pool is byte-identical to the bank as it stood before
+    they were added — which is also what keeps the hash-based variant
+    assignments for every existing post from moving."""
+    from engine.marketing.copywriter import (
+        _MOVER_CONTEXT_TAG_SET, _TEMPLATES, _variant_allowed,
+    )
     for key in (("mover", "authoritative desk"), ("theme_list", "fast, reactive")):
         bank = _TEMPLATES[key]
         # No mover_pct / theme_direction / has_chart. "ticker" IS set, because
@@ -698,7 +704,11 @@ def test_nightly_path_selection_unchanged_by_tags():
         # also drives the ticker-dependency partition; a mover bank is entirely
         # cashtag-bearing, so a ticker-less ctx would legitimately select none.
         ctx = {"type": key[0], "ticker": "AAPL"}
-        assert [v for v in bank if _variant_allowed(v, ctx)] == list(bank)
+        pre_bucket_bank = [
+            v for v in bank
+            if not (len(v) > 2 and _MOVER_CONTEXT_TAG_SET & set(v[2] or ()))
+        ]
+        assert [v for v in bank if _variant_allowed(v, ctx)] == pre_bucket_bank
 
 
 def test_flat_tape_belt_skips_closed_market(tmp_path):
@@ -1548,3 +1558,47 @@ def test_resolve_card_never_arms_the_legacy_png_fallback(tmp_path, monkeypatch):
         "justification comment in .github/workflows/marketing-publish.yml is "
         "stale again"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Trend-context enrichment (FSLR postmortem, 2026-08-03): _build_candidates
+# stamps _mover_data.trend_context from the same local daily bars the mover
+# card renders, so the copywriter's bucket lines can fire. Fail-soft: a store
+# with no bars (or a loader crash) must leave the candidate exactly as before.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _washout_closes(n: int = 70) -> tuple[list[str], list[float]]:
+    closes = [320.0 - i * (120.0 / (n - 1)) for i in range(n)] + [220.6]
+    return ([f"d{i}" for i in range(len(closes))], closes)
+
+
+def test_build_candidates_stamps_trend_context(monkeypatch, tmp_path):
+    import engine.marketing.chart_render as chart_render
+
+    monkeypatch.setattr(chart_render, "load_closes",
+                        lambda tkr, root, n=90: _washout_closes())
+    overlaid = {"sp500_tiles": [_tile("FSLR", 10.3)], "theme_tiles": [],
+                "asof": "2026-08-03"}
+    cfg = _cfg()
+    cands = pt._build_candidates(
+        overlaid, tmp_path, cfg, cfg["publish"]["publish_time_movers"])
+    movers = [c for c in cands if c.get("type") == "mover"]
+    assert movers, "fixture mover should survive min_abs"
+    assert movers[0]["_mover_data"]["trend_context"] == "washout_bounce"
+
+
+def test_build_candidates_survives_a_closes_loader_crash(monkeypatch, tmp_path):
+    import engine.marketing.chart_render as chart_render
+
+    def _boom(tkr, root, n=90):
+        raise RuntimeError("no store on this host")
+
+    monkeypatch.setattr(chart_render, "load_closes", _boom)
+    overlaid = {"sp500_tiles": [_tile("FSLR", 10.3)], "theme_tiles": [],
+                "asof": "2026-08-03"}
+    cfg = _cfg()
+    cands = pt._build_candidates(
+        overlaid, tmp_path, cfg, cfg["publish"]["publish_time_movers"])
+    movers = [c for c in cands if c.get("type") == "mover"]
+    assert movers, "a context failure must never cost the post itself"
+    assert "trend_context" not in movers[0]["_mover_data"]

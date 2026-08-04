@@ -180,7 +180,8 @@ It cannot establish:
 - provider-wide security, durability, or availability;
 - credential authenticity or least privilege;
 - production head publication or global rollback resistance;
-- concurrent-writer linearizability or production adaptive-retry safety;
+- concurrent-writer linearizability, production head-client retry
+  configuration, or the separately tested exception-reconciliation behavior;
 - share-count facts, issuer coverage, or freshness;
 - conditional delete, retention, or safe compaction;
 - UI/API readiness, Prophet integration, risk, rank, sizing, entry, or trade
@@ -192,13 +193,17 @@ verifier/retention capability cannot write the signed head or receipts, deadline
 and race tests pass, and the complete lane is independently re-audited. This
 create/CAS/readback probe deliberately cannot satisfy that gate.
 
-Publication activation also remains blocked until the production CAS client is
-shown to issue one conditional attempt with hidden SDK retries disabled, or to
-perform exact candidate reconciliation after every ambiguous/retried outcome,
-and until an independent concurrent-writer race probe passes. A sequential
-provider receipt cannot close either requirement.
+The production guard's exact-frozen-candidate reconciliation is a separate,
+unit-tested code property: exact authenticated canonical read-back is success;
+an unchanged, absent, unreadable, or otherwise ambiguous result is
+indeterminate; and only a recognized conditional-write failure plus a different
+authenticated head is a conflict. A sequential provider receipt neither proves
+nor activates that code property. The correction closes only the post-PUT
+retry-classification prerequisite. Publication activation remains blocked on an
+independent concurrent-writer race proof and the other release gates, which a
+sequential provider receipt cannot close.
 
-## 7. Next steps (implementation first; operator provisioning remains deferred)
+## 7. Next steps (provider provisioning remains deferred)
 
 Obtain a final independent code re-audit of the exact merged bytes. Only after
 that gate passes may an operator provision the protected Environment and
@@ -207,4 +212,4 @@ dedicated disposable R2 bucket/credential, review the exact `main` commit, and e
 download and schema-validate the receipt, inspect every step witness, and record
 an activation ruling separately. A passing run does not itself toggle any
 publication or migration variable, and it is insufficient without the
-production-retry/reconciliation and concurrent-writer proofs above.
+independent concurrent-writer proof and the separate activation ruling above.

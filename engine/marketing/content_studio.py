@@ -4401,6 +4401,21 @@ def content_plan(
                 if not _mv_ticker or _mv_ticker in _mover_tickers_used:
                     continue
                 _mover_tickers_used.add(_mv_ticker)
+                # Trend context (FSLR postmortem 2026-08-03): read the same
+                # daily closes the mover chart renders and bucket where this
+                # move LANDED, so the stance can't contradict the chart. Any
+                # failure degrades to "plain" = the generic pools below.
+                _mv_trend = "plain"
+                try:
+                    from engine.marketing.chart_render import load_closes as _lc  # noqa: PLC0415
+                    from engine.marketing.movers_source import trend_context as _tc  # noqa: PLC0415
+                    _mv_closes = _lc(_mv_ticker, _ohlcv_root_mv, n=70)
+                    if _mv_closes:
+                        _mv_trend = _tc(_mv_closes[1], _mv.get("pct"))
+                        _mv = dict(_mv)
+                        _mv["trend_context"] = _mv_trend
+                except Exception:  # noqa: BLE001 — context is optional
+                    pass
                 _mv_facts = _mover_facts_fn(_mv, _movers_data, now=_plan_now)
                 _mv_top_fact = _mv_facts["facts"][0]["text"] if _mv_facts["facts"] else ""
                 _mv_pct_str = f"{_mv['pct']:+.1f}%"
@@ -4414,22 +4429,55 @@ def content_plan(
                 # chasing here." (retired as boilerplate 2026-07-30). Rotate on a
                 # crc32 of the ticker: deterministic — the same name reads the same
                 # way twice — but the batch no longer speaks in one voice.
-                _mv_rot = zlib.crc32(str(_mv_ticker or "").encode("utf-8")) % 4
+                # Trend-bucketed pools first (FSLR postmortem): a washed-out
+                # name swinging off the lows must not draw "I'm not paying this
+                # price", and a first crack from the highs must not draw
+                # bottom-watch copy. "plain" keeps the original four-line pools
+                # byte-identical. No em dashes: rendered copy law.
+                _mv_rot = zlib.crc32(str(_mv_ticker or "").encode("utf-8"))
                 if (_mv.get("pct") or 0) < 0:
-                    _mv_body = f"{_mv_top_fact} " + (
+                    _mv_pool = {
+                        "crack_from_highs": (
+                            "First real crack after a long run. One red day isn't "
+                            "a top, but every top starts with one.",
+                            "Air pocket in a strong name. Watching whether the "
+                            "buyers who chased it show up now.",
+                        ),
+                        "capitulation": (
+                            "A flush this deep into a decline is capitulation "
+                            "territory. Watching the close, not guessing the bottom.",
+                            "Selling this hard, this late, is either a low forming "
+                            "or the story breaking. The reclaim decides.",
+                        ),
+                    }.get(_mv_trend, (
                         "The dip buyers get to find out who was early. Watching how "
                         "it holds.",
                         "I'd rather be late here than early. Levels are on the chart.",
                         "No rush to be a hero on this one. Watching where it settles.",
                         "Nothing to do until it stops going down. Chart's below.",
-                    )[_mv_rot]
+                    ))
                 else:
-                    _mv_body = f"{_mv_top_fact} " + (
+                    _mv_pool = {
+                        "washout_bounce": (
+                            "First green that means anything after months of "
+                            "selling. Bottoms and dead-cat bounces start "
+                            "identically. The next few closes decide which.",
+                            "That's a washed-out name finally swinging, not a dip "
+                            "getting bought. Now it has to hold it.",
+                        ),
+                        "breakout": (
+                            "Strength at the highs is a different animal than a "
+                            "bounce. Leaders look like this while it lasts.",
+                            "New-high tape. Good for anyone already in. Late "
+                            "entries pay the toll.",
+                        ),
+                    }.get(_mv_trend, (
                         "Good for anyone already in. I'm not paying this price.",
                         "Respect the move, don't pay for it. Levels are on the chart.",
                         "Nice if you were early. Late entries here get punished.",
                         "This is what leadership looks like while it lasts. Chart's below.",
-                    )[_mv_rot]
+                    ))
+                _mv_body = f"{_mv_top_fact} " + _mv_pool[_mv_rot % len(_mv_pool)]
                 _mover_item_dict = {
                     "id": f"post-mover-{_mover_item_counter:03d}",
                     "type": "mover",
