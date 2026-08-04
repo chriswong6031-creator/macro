@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T13:08:40.758963+00:00",
-  "count": 735,
+  "generated_at": "2026-08-04T13:23:54.202868+00:00",
+  "count": 736,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -127,6 +127,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gfky3horodp-30eedc",
+      "title": "JPM US Treasury Market",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T10:38:00Z",
+      "summary_points": [
+        "**Treasury Financing Gap**: $127bn higher net borrowing than baseline (Jul-Sep $739bn, Oct-Dec $628bn), concentrated Q4, posing upside risk to FY27 deficit ($1.96tn) despite potential political guidance unchanged.",
+        "**Foreign Holdings Liquidity Risk**: 66% of foreign official Treasury holdings mature in ≤5 years (WAM 5.3y vs private 7.4y), signaling urgent need for short-end liquidity to raise USD, likely driving sales amid yield curve dynamics.",
+        "**10-Year Note Technicals**: Testing 4.715-4.805% support zone with momentum divergence; bulls require clearing 4.58-4.60% resistance to gain traction, critical for near-term yield trajectory."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
