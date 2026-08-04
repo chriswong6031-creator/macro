@@ -169,8 +169,12 @@ STAGE_LABEL: dict[str, str | None] = {
     "UNKNOWN": None,
 }
 
+# "loading up", not "loading": on a web page a small grey chip reading "loading"
+# is a spinner, and beside a LIST of names the whole list reads as still
+# arriving. The particle costs one word and removes the reading entirely. The
+# Chinese carries no such collision, so 蓄势 is unchanged.
 FORESIGHT_LABELS: dict[str, tuple[str, str]] = {
-    "loading": ("loading", "蓄势"),
+    "loading": ("loading up", "蓄势"),
     "re_rating": ("re-rating", "重估"),
 }
 
@@ -204,13 +208,20 @@ _UNCONFIRMED_STAGES = frozenset({
 # target does not raise, it just never joins, which is the failure mode that
 # would ship a dead feature looking alive.
 #
-# A desk theme may be NARROWER than its rotation target (three semiconductor
-# themes share one target). That is deliberate: the tape row is the rotation
-# theme, so the chip means "the desk stages part of this theme", and the row's
-# hover names WHICH part. Where two mapped desk themes disagree about the word,
-# the chip is dropped — see `_foresight_index`.
+# THE ADMISSION TEST — composition, not resemblance.
+# Several desk themes may share one target, but only when they JOINTLY COMPOSE
+# it: AI semis + memory + equipment together substantially ARE the rotation
+# theme "Semiconductors", so a chip on that row is a statement about the row.
+# Resemblance is not enough. A desk theme that is a narrow slice of a much
+# broader row fails the test and is left unmapped, because a row-level chip
+# would overstate the slice — the reader sees one word against a hundred-member
+# theme and has no way to know it was about three of them. The slice still
+# reaches them, by name, on the shelf. (Ruling 2026-08-04; the three healthcare
+# desk themes were mapped here in the first pass and cut for exactly this.)
+# Where two mapped desk themes disagree about the word, the chip is dropped —
+# see `_foresight_index`.
 THEME_MAP: dict[str, str] = {
-    # semiconductors — the three desk themes together are the rotation theme
+    # composition — the three desk themes together are the rotation theme
     "ai_semiconductors": "Semiconductors",
     "memory_storage": "Semiconductors",
     "semicap_equipment": "Semiconductors",
@@ -220,20 +231,29 @@ THEME_MAP: dict[str, str] = {
     "cybersecurity": "Cybersecurity",
     "space_satellite": "Space Tech",
     "robotics_automation": "Robotics",
-    # dominant-constituent identity
+    # dominant constituent — the desk theme drives the rotation theme
     "solar": "Energy Renewable",
     "rare_earth_critical_min": "Commodities Metals",
     "copper_steel_electrify": "Commodities Metals",
-    # narrower than the target; the row hover names the slice that is loading
-    "glp1_obesity": "Healthcare & Biotech",
-    "medical_devices": "Healthcare & Biotech",
-    "diagnostics_lifesci": "Healthcare & Biotech",
 }
 
 # Deliberately unpaired, with the reason. These themes still reach the reader —
 # they appear on the off-heat shelf under their own name — they simply cannot be
 # attached to a tape row, because no rotation theme means the same thing.
 THEME_UNMAPPED: dict[str, str] = {
+    # failed the composition test (2026-08-04). Each is a narrow slice of
+    # "Healthcare & Biotech", and unlike the semiconductor trio they do not add
+    # up to it — pharma, managed care and hospitals are most of that row. A chip
+    # there would say "loading up" about a theme where three slices are.
+    "glp1_obesity":
+        "a narrow slice of Healthcare & Biotech, not a constituent that "
+        "composes it — a row-level word would overstate the slice",
+    "medical_devices":
+        "a narrow slice of Healthcare & Biotech, not a constituent that "
+        "composes it — a row-level word would overstate the slice",
+    "diagnostics_lifesci":
+        "a narrow slice of Healthcare & Biotech, not a constituent that "
+        "composes it — a row-level word would overstate the slice",
     "nuclear_power":
         "no rotation counterpart; the SMR thesis is neither Energy Traditional "
         "nor Energy Renewable and choosing either would misstate it",
@@ -503,9 +523,9 @@ def _foresight_index(staged: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
             "label": label,
             "label_en": FORESIGHT_LABELS[label][0],
             "label_zh": FORESIGHT_LABELS[label][1],
-            # Named because the desk theme is often NARROWER than the tape row it
-            # sits on: "Healthcare & Biotech · loading" is only honest if the
-            # hover says which part of it the desk is actually reading.
+            # Named because a target can be composed of several desk themes:
+            # "Semiconductors · loading up" is more useful when the hover says
+            # it is the memory and equipment legs the desk is reading.
             "sources_en": " · ".join(s["name"] for s in sources),
             "sources_zh": " · ".join(s["name_zh"] for s in sources),
             "tip_en": FORESIGHT_TIP[label][0],

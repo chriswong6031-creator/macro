@@ -543,6 +543,26 @@ def test_every_desk_theme_has_a_chinese_name():
         assert THEME_NAME_ZH.get(key), f"{key} would print English in zh"
 
 
+def test_a_narrow_slice_of_a_broad_row_stays_unmapped():
+    """The composition test (ruling 2026-08-04).
+
+    Desk themes may share a target only when they JOINTLY COMPOSE it. The three
+    healthcare themes are narrow slices of a much broader row — pharma, managed
+    care and hospitals are most of "Healthcare & Biotech" — so a row-level word
+    would overstate the slice. They keep their shelf presence under their own
+    names, which is where they already sit on live data.
+    """
+    for key in ("glp1_obesity", "medical_devices", "diagnostics_lifesci"):
+        assert key not in THEME_MAP, (
+            f"{key} is a slice of Healthcare & Biotech, not a constituent that "
+            "composes it — a row-level chip would overstate it")
+        assert "Healthcare & Biotech" in THEME_UNMAPPED[key]
+    # the trio that DOES compose its row keeps the many-to-one mapping
+    assert {k for k, v in THEME_MAP.items() if v == "Semiconductors"} == {
+        "ai_semiconductors", "memory_storage", "semicap_equipment"}
+    assert "Healthcare & Biotech" not in set(THEME_MAP.values())
+
+
 def test_the_whole_stage_enum_has_a_decision():
     """Every value the desk can emit maps to a word, or explicitly to nothing."""
     from engine.foresight_cascade import _STAGE_RANK
@@ -572,9 +592,9 @@ def test_a_covered_hot_row_carries_the_word_and_names_its_source():
         foresight=_desk(_theme("ai_semiconductors", "PRECIPICE",
                                name="AI Semiconductors")))
     chip = tape["rows"][0]["foresight"]
-    assert chip["label_en"] == "loading" and chip["label_zh"] == "蓄势"
-    # the desk theme is narrower than the row it sits on, so the hover has to say
-    # WHICH part of the theme is loading
+    assert chip["label_en"] == "loading up" and chip["label_zh"] == "蓄势"
+    # a target can be composed of several desk themes, so the hover names the
+    # ones the word actually came from
     assert chip["sources_en"] == "AI Semiconductors"
     assert chip["tip_en"] and chip["tip_zh"]
 
@@ -790,10 +810,19 @@ def _joined():
 def test_the_word_and_the_shelf_render_in_both_languages():
     html = _render(_joined())
     assert 'class="tt-fs"' in html and 'class="tt-shelf"' in html
-    for token in ("loading", "蓄势", "re-rating", "重估",
+    for token in ("loading up", "蓄势", "re-rating", "重估",
                   "Off the heat list", "不在热度榜上",
                   "Nuclear &amp; SMR Power", "核电与小型堆"):
         assert token in html, token
+
+
+def test_the_english_word_does_not_read_as_a_progress_state():
+    """"loading" beside a list of names reads as a list still arriving.
+
+    The particle is the whole fix and it is one word long, so it is easy to lose
+    to a well-meaning tidy-up. 蓄势 carries no such collision and is untouched.
+    """
+    assert FORESIGHT_LABELS["loading"] == ("loading up", "蓄势")
 
 
 def test_no_stage_enum_value_ever_reaches_the_reader():
