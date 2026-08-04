@@ -256,6 +256,50 @@
     el.innerHTML=html;
   }
 
+  /* ── leg display names for the closures strip ──────────────────────────────
+     Closure rows carry their OWN names (from_name_en/zh + to_name_en/zh, written by
+     engine/rotation_events.py) because a closed pair has left active[] — there is
+     nothing left in the payload to look a name up from. Rows written before that
+     landed, or a stale cached payload, fall through a ladder so the strip never
+     prints a machine slug (DESIGN_DOCTRINE Law 2):
+       1. names stored on the row
+       2. harvest from an active event in the SAME payload (matched on leg key)
+       3. prettified slug — last resort, never blocks the render
+     Step 3 has no translation to offer, so zh shows the prettified English. ── */
+  var LEGNAMES={};
+  function harvestLegNames(ev){
+    LEGNAMES={};
+    ((ev&&ev.active)||[]).forEach(function(e){
+      [e.from_leg,e.to_leg,e.donor,e.receiver].forEach(function(leg){
+        if(leg&&typeof leg==='object'&&leg.key&&(leg.name_en||leg.name_zh)){
+          LEGNAMES[leg.key]={en:leg.name_en||leg.name_zh,zh:leg.name_zh||leg.name_en};
+        }
+      });
+    });
+  }
+  var LEG_ACRONYMS={ai:'AI',etf:'ETF',reit:'REIT',ipo:'IPO',us:'US',hk:'HK',esg:'ESG'};
+  function prettifySlug(k){
+    var parts=String(k==null?'':k).split(/[_\-]+/).filter(Boolean);
+    if(!parts.length) return '';
+    return parts.map(function(w,i){
+      var a=LEG_ACRONYMS[w.toLowerCase()];
+      if(a) return a;
+      return i===0?w.charAt(0).toUpperCase()+w.slice(1):w;
+    }).join(' ');
+  }
+  function legName(row,side){
+    var stored=isZh()?(row[side+'_name_zh']||row[side+'_name_en'])
+                     :(row[side+'_name_en']||row[side+'_name_zh']);
+    if(stored) return stored;
+    var key=side==='from'?(row.from_leg||row.from_sector||row.donor)
+                         :(row.to_leg||row.to_sector||row.receiver);
+    if(key&&typeof key==='object') key=key.key;   // defensive: a nested leg object
+    if(!key) return '—';
+    var h=LEGNAMES[key];
+    if(h) return isZh()?h.zh:h.en;
+    return prettifySlug(key);
+  }
+
   /* ── Part 5A: renderClosures — builds the #rc-closures strip ── */
   function renderClosures(ev){
     var el=document.getElementById('rc-closures');
@@ -268,11 +312,12 @@
       conditions_lapsed  :{en:'signals faded',    zh:'信号消退'},
       ttl                :{en:'ran its course',    zh:'自然结束'}
     };
+    harvestLegNames(ev);
     var N=closures.length;
     var listHtml='';
     closures.forEach(function(c){
-      var donor=esc(c.from_leg||c.from_sector||c.donor||'—');
-      var recv=esc(c.to_leg||c.to_sector||c.receiver||'—');
+      var donor=esc(legName(c,'from'));
+      var recv=esc(legName(c,'to'));
       var rkey=c.reason||c.close_reason||'';
       var rmap=REASON[rkey]||{en:esc(rkey),zh:esc(rkey)};
       var reasonPlain=isZh()?rmap.zh:rmap.en;
