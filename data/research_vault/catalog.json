@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T11:24:07.968613+00:00",
-  "count": 730,
+  "generated_at": "2026-08-04T11:38:30.775932+00:00",
+  "count": 731,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -49,6 +49,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-c6ihzscvcr3-118996",
+      "title": "USA GS Economic Indicators Update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T10:38:03Z",
+      "summary_points": [
+        "**GS Financial Conditions Tightening**: Nominal FCI shows tightening (10-yr TSY +4.5bp, SPX -4.0bp, BBB spread -0.8bp), signaling rising rates, equity stress, and credit market pressure.",
+        "**Negative GDP Growth Impulse**: Real US GDP growth impulse remains negative (below zero), indicating financial conditions actively restraining economic expansion as of Jul 30.",
+        "**Inflation Trajectory Validation**: Core PCE and GS Core Inflation Tracker both trended from >5% (2022) toward 2% FOMC target, validating data reliability for anticipating Fed policy shifts.",
+        "**Current Activity Indicator Expansion**: July CAI at 3.9% (vs 3.1% June), driven by manufacturing, signaling broad-based economic growth and supporting Q3 GDP forecast (2.4%).",
+        "**Wage Growth Acceleration**: GS Wage Tracker shows persistent acceleration since 2020 (adjusted for labor composition), signaling tight labor markets and elevated inflation risks for portfolio positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-dl5skzx2imd-1c66ff",
       "title": "Snap Inc. (SNAP) Q2'26 Review Improved Advertising Performance & Operating Margin Leverage Drove Solid Results",
