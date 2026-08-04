@@ -316,6 +316,22 @@ def _mm_verify_uid_cached(token: str) -> str | None:
     Secretless (GET /auth/v1/user with the public anon key, same idiom as require_user),
     cached by token. Invalid/expired tokens cache as None so bad tokens aren't re-checked.
     Never raises.
+
+    ONLY AN ANSWER IS CACHED (2026-08-03 logout bug). The old code caught every
+    exception into one `uid = None` and cached it for the full 10-minute TTL, so a
+    4-second timeout, a DNS blip or a Supabase 5xx was recorded as "this token is
+    invalid" — indistinguishable from Supabase actually saying 401. That is what
+    logged people out mid-session: app/regwall.py is fail-closed, so one blip during
+    a gated navigation 302'd the visitor to /?signin=1&ret=…, and because the verdict
+    was CACHED against their token, the landing's silent refresh could not clear it
+    either — every retry for the next 10 minutes hit the poisoned entry, the client's
+    45s wall-hop loop guard (templates/onboard.js) gave up, and a signed-in user with
+    a perfectly renewable session got a credentials prompt.
+
+    So: an HTTP answer that rejects the token is a VERDICT and is cached; a transport
+    failure teaches us nothing about the token and must not be remembered. Both still
+    DENY this request — fail-closed is unchanged, and no caller gets a session it
+    didn't prove. The only thing that changes is how long a non-answer haunts a user.
     """
     now = time.monotonic()
     with _MM_UID_CACHE_LOCK:
@@ -323,6 +339,7 @@ def _mm_verify_uid_cached(token: str) -> str | None:
         if hit and hit[1] > now:
             return hit[0]
     uid = None
+    remember = True
     try:
         req = urllib.request.Request(
             f"{SUPABASE_URL}/auth/v1/user",
@@ -337,12 +354,18 @@ def _mm_verify_uid_cached(token: str) -> str | None:
                 uid = u
             except (ValueError, TypeError):
                 uid = None
-    except Exception:  # noqa: BLE001 — invalid/expired token or upstream down; stay anonymous
-        uid = None
-    with _MM_UID_CACHE_LOCK:
-        if len(_MM_UID_CACHE) > 5000:   # coarse cap; never unbounded
-            _MM_UID_CACHE.clear()
-        _MM_UID_CACHE[token] = (uid, now + _MM_UID_CACHE_TTL)
+    except urllib.error.HTTPError as exc:
+        # Supabase ANSWERED. 400/401/403 is its verdict on this token (expired,
+        # revoked, malformed) — authoritative, cache it. A 5xx/429 is the service
+        # failing, not a ruling on the token, so it gets the transport treatment.
+        remember = exc.code in (400, 401, 403)
+    except Exception:  # noqa: BLE001 — timeout/DNS/TLS/reset/bad body: no verdict learned
+        remember = False
+    if remember:
+        with _MM_UID_CACHE_LOCK:
+            if len(_MM_UID_CACHE) > 5000:   # coarse cap; never unbounded
+                _MM_UID_CACHE.clear()
+            _MM_UID_CACHE[token] = (uid, now + _MM_UID_CACHE_TTL)
     return uid
 
 
