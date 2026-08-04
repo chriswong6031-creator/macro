@@ -6,6 +6,7 @@ import email.message
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -249,9 +250,16 @@ def test_github_slug_accepts_https_and_ssh(monkeypatch, tmp_path):
     assert GUARD._github_slug(repo) == ("acme", "widgets")
 
 
-def test_find_commit_handles_nested_health_payload():
-    payload = {"ok": True, "deployment": {"revision": "a" * 40}}
-    assert GUARD._find_commit(payload) == "a" * 40
+def test_the_health_payload_is_never_sniffed_for_a_sha():
+    """The recursive sha-sniffer the live gate used to read is gone, not spare.
+
+    It returned whichever plausible key the payload yielded first, which made the
+    gate read `commit` for every merge — see
+    test_a_pull_only_merge_is_proven_live_by_the_checkout_field for what that cost.
+    `_health_sha` reads one NAMED field; nothing may reintroduce a walker beside it.
+    """
+    assert not hasattr(GUARD, "_find_commit")
+    assert GUARD._health_sha({"ok": True, "deployment": {"revision": "a" * 40}}, "commit") == ""
 
 
 def _commit(repo: Path, rel: str, body: str, message: str) -> str:
@@ -681,6 +689,220 @@ def test_needs_public_render_matches_the_real_merge_it_was_written_for():
     ).returncode:
         pytest.skip("7fe17018 not present (shallow clone)")
     assert GUARD._required_render_lanes(ROOT, "7fe17018", "HEAD", "HEAD") == {"public-render"}
+
+
+# ── The live gate: which /api/health field proves THIS merge live ──────────────
+# `commit` is the sha the running macro-api process imported; `checkout` is
+# /opt/macro's tree. Reading `commit` for every merge was unsatisfiable for the
+# merges that restart nothing — the two tests below pin BOTH halves, because a
+# fix that only unblocks them would be an escape hatch, not a gate.
+
+
+def _deploy_repo(tmp_path: Path) -> Path:
+    """A repo carrying THE REAL ``app/deploy/update.sh``.
+
+    Copied, never stubbed: the predicate under test is that script's own restart
+    regex, and a hand-written stand-in would pin the test's idea of the deploy
+    rather than the VPS's.
+    """
+    repo = _repo(tmp_path)
+    (repo / "app" / "deploy").mkdir(parents=True)
+    shutil.copy(ROOT / "app" / "deploy" / "update.sh", repo / "app" / "deploy" / "update.sh")
+    _git(repo, "add", "app/deploy/update.sh")
+    _git(repo, "commit", "-m", "deploy: install update.sh")
+    return repo
+
+
+def test_a_pull_only_merge_is_proven_live_by_the_checkout_field(tmp_path):
+    """A merge that restarts nothing is live the moment the pull loop has it.
+
+    Observed 2026-08-04 on PR #4499 (tests + fixtures only, merge 1995a987): the
+    gate read `commit`, which sat 70 commits and ~14 hours behind because nothing
+    in that window touched API code, and blocked `live_stale` on a merge that had
+    been serving for hours. Nothing the session could do would ever satisfy it —
+    restarting production to bless a test-only merge is the wrong action, so the
+    session was pinned until an unrelated later PR happened to change app/.
+    """
+    repo = _deploy_repo(tmp_path)
+    base = _git(repo, "rev-parse", "HEAD")
+    tests_only = _commit(repo, "tests/test_hk_board_ui.py", "def test_x():\n    pass\n", "test: freeze")
+
+    # Production as it actually was: the API never restarted, the pull loop is current.
+    payload = {"status": "ok", "commit": base, "checkout": tests_only}
+    assert GUARD._needs_api_restart(repo, tests_only, base, tests_only) is False
+    ok, detail = GUARD._live_gate(repo, tests_only, base, tests_only, payload)
+    assert ok, detail
+    assert "checkout" in detail
+
+    # And the block was real before the field choice, not an artefact of the fixture.
+    assert not GUARD._is_ancestor(repo, tests_only, base)
+
+
+def test_an_api_code_merge_is_not_proven_live_by_the_checkout_field(tmp_path):
+    """The other half: `checkout` must never stand in for an API DEPLOY.
+
+    A merge that changes code macro-api imported is on disk the moment the pull
+    loop runs and still NOT live — the process keeps serving its old import until
+    update.sh restarts it. If `checkout` could satisfy this merge the fix would be
+    a general escape hatch rather than a lane selector.
+    """
+    repo = _deploy_repo(tmp_path)
+    base = _git(repo, "rev-parse", "HEAD")
+    api_code = _commit(repo, "app/main.py", "PORT = 8000\n", "feat(api): port")
+
+    payload = {"status": "ok", "commit": base, "checkout": api_code}
+    assert GUARD._needs_api_restart(repo, api_code, base, api_code) is True
+    assert GUARD._live_health_fields(repo, api_code, base, api_code) == ("commit",)
+    ok, detail = GUARD._live_gate(repo, api_code, base, api_code, payload)
+    assert not ok, "an unrestarted API must not be blessed by its own checkout"
+    assert "RESTARTED" in detail
+
+    # The checkout genuinely carries it — the False comes from the field choice,
+    # not from the merge being absent everywhere.
+    assert GUARD._health_sha(payload, "checkout") == api_code
+
+    # Once the API restarts into it, the same merge clears.
+    restarted = {"status": "ok", "commit": api_code, "checkout": api_code}
+    assert GUARD._live_gate(repo, api_code, base, api_code, restarted)[0]
+
+
+def test_one_production_payload_answers_the_two_merges_differently(tmp_path):
+    """Both halves against a SINGLE health reading, which is how `_stop` sees it."""
+    repo = _deploy_repo(tmp_path)
+    base = _git(repo, "rev-parse", "HEAD")
+    pull_only = _commit(repo, "docs/NOTES.md", "hello\n", "docs: note")
+    api_code = _commit(repo, "app/main.py", "PORT = 8000\n", "feat(api): port")
+
+    payload = {"status": "ok", "commit": base, "checkout": api_code}
+    assert GUARD._live_gate(repo, pull_only, base, api_code, payload)[0] is True
+    assert GUARD._live_gate(repo, api_code, base, api_code, payload)[0] is False
+
+
+def test_the_restart_predicate_is_the_deploy_scripts_own_regex(tmp_path):
+    """Parsed from update.sh at runtime — never a second copy that drifts.
+
+    That list names ~120 modules and grows most weeks as new engine code enters
+    the API's sys.modules; transcribing it here would be wrong within days.
+    """
+    pattern = GUARD._api_restart_filter(ROOT)
+    assert pattern.startswith("^(app/.*\\.py|"), pattern[:60]
+    compiled = re.compile(pattern)
+    for restarts in (
+        "app/main.py",
+        "app/requirements.txt",
+        "config/site_access.yml",
+        "engine/neuralweb/brain_gateway.py",
+        "lib/config.py",
+    ):
+        assert compiled.search(restarts), f"{restarts} restarts macro-api"
+    for pulls in (
+        "tests/test_hk_board_ui.py",
+        "docs/DESIGN_DOCTRINE.md",
+        "templates/index.html",
+        "site/index.html",
+        "engine/hk_board.py",
+        "scripts/build_thing.py",
+        "app/deploy/update.sh",
+    ):
+        assert not compiled.search(pulls), f"{pulls} does not restart macro-api"
+
+    # `$API_UNIT_UPDATED` is what distinguishes the macro-api guard from the dozen
+    # other `grep -qE` restart blocks in that script (admin, press feeds,
+    # biocatalyst, the live timers). Exactly one line may match.
+    lines = (ROOT / "app" / "deploy" / "update.sh").read_text(encoding="utf-8").splitlines()
+    matched = [n for n, line in enumerate(lines, 1) if GUARD._API_RESTART_GUARD.search(line)]
+    assert len(matched) == 1, f"ambiguous macro-api restart guard on lines {matched}"
+    assert "systemctl restart macro-api" in "\n".join(lines[matched[0] : matched[0] + 25])
+
+
+def test_an_unreadable_deploy_script_demands_the_restarted_field(tmp_path):
+    """Not knowing whether the API restarts means demanding the field that shows it."""
+    repo = _repo(tmp_path)  # no app/deploy/update.sh at all
+    base = _git(repo, "rev-parse", "HEAD")
+    tests_only = _commit(repo, "tests/test_x.py", "pass\n", "test: x")
+    assert GUARD._api_restart_filter(repo) == ""
+    assert GUARD._needs_api_restart(repo, tests_only, base, tests_only) is True
+
+    payload = {"status": "ok", "commit": base, "checkout": tests_only}
+    assert not GUARD._live_gate(repo, tests_only, base, tests_only, payload)[0]
+
+    # A script whose guard was renamed reads the same way — silence, not permission.
+    (tmp_path / "renamed").mkdir()
+    renamed = _deploy_repo(tmp_path / "renamed")
+    script = renamed / "app" / "deploy" / "update.sh"
+    script.write_text(
+        script.read_text(encoding="utf-8").replace("API_UNIT_UPDATED", "API_SVC_CHANGED"),
+        encoding="utf-8",
+    )
+    assert GUARD._api_restart_filter(renamed) == ""
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"status": "ok", "commit": "deadbee"},  # older build, no `checkout` key
+        {"status": "ok", "commit": "deadbee", "checkout": None},
+        {"status": "ok", "commit": "deadbee", "checkout": "not-a-sha"},
+        {"status": "ok", "commit": "deadbee", "checkout": "0" * 40},  # unknown here
+        {},
+        "ok",
+    ],
+)
+def test_an_unusable_health_field_blocks_rather_than_passes(tmp_path, payload):
+    """Absent, non-string, sha-less, or unknown to this checkout — all no evidence."""
+    repo = _deploy_repo(tmp_path)
+    base = _git(repo, "rev-parse", "HEAD")
+    tests_only = _commit(repo, "tests/test_x.py", "pass\n", "test: x")
+    assert not GUARD._live_gate(repo, tests_only, base, tests_only, payload)[0]
+
+
+def test_an_unreachable_health_endpoint_shares_the_stale_deploys_escape_class():
+    """A network blip and a stale deploy are different faults, both external.
+
+    The fetch failure now reports `live_unreachable` instead of borrowing
+    `live_stale`, so the operator reads the real cause. Both must stay EXTERNAL:
+    the internal ladder only releases at 10 consecutive blocks, and neither fault
+    is anything the session can fix.
+    """
+    assert {"live_unreachable", "live_stale"} <= GUARD.EXTERNAL_BLOCKERS
+
+
+def test_the_health_field_is_read_by_name_not_sniffed(tmp_path):
+    """`commit` and `checkout` answer different questions in the same payload.
+
+    So the reader takes the field the gate decided on and never the payload's
+    first plausible sha — the two live side by side and both look like one.
+    """
+    payload = {"status": "ok", "commit": "a" * 11, "checkout": "b" * 11}
+    assert GUARD._health_sha(payload, "checkout") == "b" * 11
+    assert GUARD._health_sha(payload, "commit") == "a" * 11
+    assert GUARD._health_sha(payload, "absent") == ""
+
+
+def test_the_live_gate_replays_the_merge_it_was_written_for():
+    """Replayed against this repo's own history and the payload measured that day.
+
+    1995a987 = #4499 (tests/test_hk_board_{ui,rank}.py + two fixtures) — the merge
+    that returned `live_stale` forever while it was serving in production. The two
+    shas are the real 2026-08-04T07:13Z reading of /api/health.
+    """
+    if subprocess.run(
+        ("git", "cat-file", "-e", "1995a987^{commit}"), cwd=ROOT, check=False
+    ).returncode:
+        pytest.skip("1995a987 not present (shallow clone)")
+    measured = {"status": "ok", "commit": "33b81f82ef4", "checkout": "96ebe5cc903"}
+    if subprocess.run(
+        ("git", "cat-file", "-e", "96ebe5cc903^{commit}"), cwd=ROOT, check=False
+    ).returncode:
+        pytest.skip("the measured production shas are not in this checkout")
+
+    assert GUARD._needs_api_restart(ROOT, "1995a987", "HEAD", "HEAD") is False
+    ok, detail = GUARD._live_gate(ROOT, "1995a987", "HEAD", "HEAD", measured)
+    assert ok, detail
+
+    # And the field it used to read really did not carry the merge — the block was
+    # honest about its evidence and wrong about its question.
+    assert not GUARD._is_ancestor(ROOT, "1995a987", "33b81f82ef4")
 
 
 @pytest.fixture(autouse=True)
