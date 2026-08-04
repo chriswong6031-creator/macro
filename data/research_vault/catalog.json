@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T12:23:45.785117+00:00",
-  "count": 733,
+  "generated_at": "2026-08-04T12:53:52.489486+00:00",
+  "count": 734,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -66,6 +66,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h74uifgurhn-6ad927",
+      "title": "DB Research, Europe",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T10:51:16Z",
+      "summary_points": [
+        "**SABADELL: Post-BBVA Recovery Catalyst** Post-BBVA disruption recovery confirmed; NII growth driven by volume, structural ALCO tailwinds, and customer margins project FY26 NII beat (>1% growth) and 2027-28 RoTE >16%.",
+        "**RAIFFEISEN BANK INTL: Q2 Beat & ROE Upside** Q2 core business beat (4% pre-provision profit), 91% loan loss provisions beat, ROE target reduced to 9.5% (from 10.5%), driving target price increase to EUR46 despite legal costs.",
+        "**TAYLOR WIMPEY: UK Housing Sector Downgrade** Downgraded to 4% ROE forecast due to UK housebuilding challenges (pricing weakness, rising costs), reduced distributions, and fading premium over peers; target price cut to 82p.",
+        "**EU Climate Sentiment Shift** European climate alarm rate spiked to 51% (from 42%) amid heatwaves/wildfires, signaling heightened climate risk and policy urgency vs.",
+        "post-Trump re-election decline."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
