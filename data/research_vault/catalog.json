@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T18:40:02.746167+00:00",
-  "count": 751,
+  "generated_at": "2026-08-04T18:55:05.212828+00:00",
+  "count": 752,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -226,6 +226,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-byscwjvmzzm-55f3af",
+      "title": "Navigating China Internet AI models Focuses on harness & model performance vs",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:21:17Z",
+      "summary_points": [
+        "**Chinese AI ARR Growth Catalyst**: Zhipu and MiniMax ARR projected to reach $2.5B/$1B by 2026 (up 35%/63% YoY), driven by H3 model launch (open-weight, 30-50% pricing discount) and multi-modal capabilities, with potential $400M+ ARR by mid-2026.",
+        "**Market Share Structural Shift**: Chinese AI models dominate 69% of OpenRouter token consumption (vs.",
+        "31% US), rising from 17% in May 2023, signaling accelerated domestic adoption and competitive edge over US rivals.",
+        "**Hyperscaler Infrastructure Investment**: China’s hyperscalers (Alibaba, Tencent, ByteDance) drive $11B aggregate ARR by 2026 with 20-30% API gross margins; 31% of CSP capex allocated to GPU/HBM for domestic chip reliance.",
+        "**Regulatory & Geopolitical Risk**: Chinese regulators considering restrictions on foreign model weight downloads and training data transfers, intensifying competitive dynamics and creating market fragmentation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 41,
       "language": "en",
       "needs_metadata": false
     },
