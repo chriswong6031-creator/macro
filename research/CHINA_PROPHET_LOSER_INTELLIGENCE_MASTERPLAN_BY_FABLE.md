@@ -412,11 +412,21 @@ featured, rolling 60 matured.
 - Both doors' promotion to population authority stays gauntleted (≥100 matured,
   ≥60td, G0.7 table) — surfacing now, authority by evidence.
 
-**R5 — Exits: decided by the CN exit study (W-E), not by default.** The day-3
-tell (70% loser at ≤−3%) sizes a real salvage; if the study's day-3-review
-family beats the incumbent in-sample at acceptable winner cost, ship it as the
-pick-management line on cards ("3 sessions in: thesis failing — read updated")
-+ propose the graded-exit prereg; never silently change the record basis.
+**R5 — Exits: DECIDED by the CN exit study (W-E, PR #4507; 0/11 challengers
+beat the incumbent's headline stats).** The record basis stays the H=10 forced
+verdict — the US "nothing beats the incumbent" result now holds MEASURED in CN.
+The day-3 review family is refuted for exits (the tell is not sharper at bar 3
+than bar 1: 0.71→0.68; one flagged name in three is a forfeited winner). What
+survives: (a) the day-3 pulse ships as an honest STATUS line only ("under
+review"), never implying an exit rule; (b) the hard-stop family's
+tail-compression finding — S10 improves 54 losers per 6 winners degraded
+(9:1), MAE p10 −16.9→−12.0, mean excess +0.64 [0.17, 1.15] blocked-CI —
+becomes a DISPLAY-tier "risk line" candidate on pick cards for real-money
+holders, quoted with its execution bound (stops filled a weighted −2.39pp
+below trigger; 43/406 exits fired on limit-locked sessions where selling was
+unreliable — the printed line is guidance, never a guaranteed fill); any
+graded form needs its own prereg. (c) The winners-run/extension family is
+CENSORED (103/141 rows marked, not realized) — re-run as caches mature.
 
 ### Build waves (all Opus builders; specs above are binding)
 
@@ -441,8 +451,10 @@ promotion; member-slot drift measured at 7.7%/8 days. Any member-level
 ignition door must beat the §2.12 measured null (member fresh-prints after
 theme upgrade −1.46pp), not just show a positive cell.
 
-### W-E — CN exit-policy study (RUNNING, research PR)
-Day-3 review / stops / winner-extension families vs H=10; feeds R5.
+### W-E — CN exit-policy study (DONE — PR #4507; verdict in R5)
+0/11 challengers beat the incumbent's win rate or median; day-3 review refuted;
+stop-family tail compression → display-tier risk-line candidate with execution
+bound; extension family censored, re-run on maturity.
 
 ### W0 — CN loser+miss telemetry engine (ops-telemetry; RUNNING — now also the
 R-slate tripwire host: v3-vs-v2-shadow race, theme_timing strata, chase-branch
