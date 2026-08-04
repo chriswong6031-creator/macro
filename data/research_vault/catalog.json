@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T13:23:54.202868+00:00",
-  "count": 736,
+  "generated_at": "2026-08-04T13:42:53.302470+00:00",
+  "count": 737,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -66,6 +66,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bboqedfwzv2-4abd6c",
+      "title": "JPM Delta One Flows",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T10:53:38Z",
+      "summary_points": [
+        "**Korea ETF Inflows & Semis Surge**: Record $2Bn Korea ETF inflows (2nd-largest ever) and $10.9Bn in Semis (SMH/SOXX/SOXL), signaling strong risk-on sentiment in tech and Asian equities.",
+        "**JPY Intervention & Geopolitical Shifts**: Japan/US joint intervention triggered JPY short covers; BOE announcement drove GBP short covers, altering FX positioning.",
+        "**Fixed Income Bearish Dominance**: 14/16 fixed income instruments show \"Short\" CTA signals (e.g., US 10y UST net flow -0.7), with negative 4w returns indicating widespread bearishness.",
+        "**S&P 500 Commercial Short Dominance**: Commercial traders net short S&P 500 (95,929 vs.",
+        "non-commercial long 12,196), signaling institutional bearishness and heightened equity volatility risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
       "language": "en",
       "needs_metadata": false
     },
