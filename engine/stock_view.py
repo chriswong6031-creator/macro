@@ -91,9 +91,12 @@ _VERDICT_GLOSS: dict[str, tuple[str, str]] = {
     "Leader · weak fundamentals — higher-risk":
         ("Strong price, soft fundamentals — higher-risk buy.",
          "价格强但基本面偏弱——风险偏高的买入。"),
-    "Extended — don't chase; wait for a pullback":
+    "Extended — wait for a pullback":
         ("Ran too far, too fast — don't chase; wait for a dip.",
          "涨得太快太远——勿追高；等待回撤。"),
+    "Turn in progress — evidence building; watch, don't chase":
+        ("Starting to turn up, not proven yet — watch, don't chase.",
+         "已开始转向但尚未确认——观察，勿追高。"),
     "Strong name · wrong tape — wait for a base":
         ("Good company, bad trend — wait for it to bottom.",
          "好公司但趋势不利——等待筑底。"),
