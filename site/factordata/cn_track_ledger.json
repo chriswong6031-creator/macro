@@ -13,7 +13,7 @@
   "horizon": 10,
   "n_matured": 0,
   "n_inflight": 12,
-  "n_skipped_no_price": 21,
+  "n_skipped_no_price": 0,
   "n_board_days": 0,
   "win_pct": null,
   "expectancy_pct": null,
@@ -29,6 +29,8 @@
   "capture": null,
   "n_logged": 12,
   "n_locked_excluded": 0,
+  "n_skipped_awaiting_t1": 21,
+  "n_skipped_total": 21,
   "board_definition": "cn_prophet_v2"
  },
  "rows": [
@@ -45,7 +47,7 @@
    "dy": 1,
    "st": "early",
    "m": false,
-   "rk": 4,
+   "rk": 3,
    "tr": "T2",
    "fl": [],
    "xr": null
@@ -135,7 +137,7 @@
    "dy": 2,
    "st": "early",
    "m": false,
-   "rk": 20,
+   "rk": 7,
    "tr": "T1",
    "fl": [],
    "xr": null
@@ -189,7 +191,7 @@
    "dy": 2,
    "st": "early",
    "m": false,
-   "rk": 1,
+   "rk": 2,
    "tr": "T2",
    "fl": [],
    "xr": null
@@ -225,7 +227,7 @@
    "dy": 2,
    "st": "early",
    "m": false,
-   "rk": 6,
+   "rk": 1,
    "tr": "T2",
    "fl": [],
    "xr": null
@@ -243,8 +245,8 @@
    "dy": 2,
    "st": "early",
    "m": false,
-   "rk": 11,
-   "tr": "T2",
+   "rk": 6,
+   "tr": "T1",
    "fl": [],
    "xr": null
   }
@@ -255,8 +257,10 @@
   "grain": "episode",
   "survivorship": {
    "n_locked_excluded": 0,
-   "n_skipped_no_price": 21,
-   "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats"
+   "n_skipped_no_price": 0,
+   "n_skipped_awaiting_t1": 21,
+   "n_skipped_total": 21,
+   "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
   },
   "board_definition": "cn_prophet_v2",
   "exit_rule": "10-session forced verdict · T+1 open fill · no oscillator target (3D thresholds not yet refit for A-shares)"
@@ -292,6 +296,8 @@
    "mae_p10_pct": -16.88,
    "n_logged": 584,
    "n_locked_excluded": 1,
+   "n_skipped_awaiting_t1": 0,
+   "n_skipped_total": 0,
    "board_definition": "cn_standout_v1"
   },
   "rows": [
@@ -686,7 +692,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 59,
+    "rk": 57,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -704,7 +710,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 31,
+    "rk": 26,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -722,7 +728,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 54,
+    "rk": 56,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -830,8 +836,8 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 28,
-    "tr": "T1",
+    "rk": 20,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -848,7 +854,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 53,
+    "rk": 24,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -866,7 +872,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 56,
+    "rk": 59,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -902,7 +908,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 15,
+    "rk": 11,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -920,7 +926,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 30,
+    "rk": 25,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -938,7 +944,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 6,
+    "rk": 4,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -974,7 +980,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 57,
+    "rk": 55,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -992,7 +998,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 51,
+    "rk": 53,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1064,7 +1070,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 23,
+    "rk": 19,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1100,7 +1106,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 40,
+    "rk": 34,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -1136,7 +1142,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 41,
+    "rk": 40,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1154,7 +1160,7 @@
     "dy": 4,
     "st": "early",
     "m": false,
-    "rk": 50,
+    "rk": 52,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1190,8 +1196,8 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 5,
-    "tr": "T1",
+    "rk": 1,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -1208,8 +1214,8 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 49,
-    "tr": "T1",
+    "rk": 57,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -1226,7 +1232,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 1,
+    "rk": 2,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -1280,7 +1286,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 14,
+    "rk": 3,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -1298,7 +1304,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 17,
+    "rk": 54,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1316,7 +1322,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 37,
+    "rk": 35,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1334,7 +1340,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 49,
+    "rk": 58,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -1388,7 +1394,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 10,
+    "rk": 13,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -1424,7 +1430,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 18,
+    "rk": 53,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -1442,7 +1448,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 25,
+    "rk": 30,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1478,7 +1484,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 10,
+    "rk": 15,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1496,7 +1502,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 47,
+    "rk": 19,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1514,8 +1520,8 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 34,
-    "tr": "T1",
+    "rk": 16,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -1550,8 +1556,8 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 21,
-    "tr": "T1",
+    "rk": 24,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -1568,8 +1574,8 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 22,
-    "tr": "T1",
+    "rk": 27,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -1586,8 +1592,8 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 52,
-    "tr": "T1",
+    "rk": 60,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -1604,7 +1610,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 42,
+    "rk": 44,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -1640,7 +1646,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 46,
+    "rk": 43,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1676,7 +1682,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 3,
+    "rk": 50,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1712,7 +1718,7 @@
     "dy": 5,
     "st": "early",
     "m": false,
-    "rk": 19,
+    "rk": 26,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1730,7 +1736,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 45,
+    "rk": 50,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -1766,7 +1772,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 54,
+    "rk": 14,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1784,7 +1790,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 9,
+    "rk": 53,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1802,7 +1808,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 23,
+    "rk": 17,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1820,7 +1826,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 38,
+    "rk": 31,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1856,7 +1862,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 29,
+    "rk": 19,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1892,7 +1898,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 14,
+    "rk": 28,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -1946,7 +1952,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 18,
+    "rk": 57,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -1982,7 +1988,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 7,
+    "rk": 4,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -2000,7 +2006,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 39,
+    "rk": 32,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2018,8 +2024,8 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 48,
-    "tr": "T1",
+    "rk": 7,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -2054,7 +2060,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 17,
+    "rk": 58,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2126,7 +2132,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 27,
+    "rk": 12,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2180,7 +2186,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 39,
+    "rk": 40,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2198,7 +2204,7 @@
     "dy": 6,
     "st": "early",
     "m": false,
-    "rk": 27,
+    "rk": 11,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2234,8 +2240,8 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 22,
-    "tr": "T2",
+    "rk": 6,
+    "tr": "T1",
     "fl": [],
     "xr": null
    },
@@ -2270,7 +2276,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 9,
+    "rk": 18,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2306,8 +2312,8 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 11,
-    "tr": "T1",
+    "rk": 34,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -2324,7 +2330,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 23,
+    "rk": 58,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2396,7 +2402,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 6,
+    "rk": 14,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2432,8 +2438,8 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 33,
-    "tr": "T2",
+    "rk": 35,
+    "tr": "T4",
     "fl": [],
     "xr": null
    },
@@ -2450,7 +2456,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 27,
+    "rk": 37,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2468,7 +2474,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 10,
+    "rk": 27,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -2504,7 +2510,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 25,
+    "rk": 20,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2522,8 +2528,8 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 28,
-    "tr": "T1",
+    "rk": 31,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -2540,7 +2546,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 36,
+    "rk": 55,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2559,7 +2565,7 @@
     "st": "early",
     "m": false,
     "rk": 16,
-    "tr": "T1",
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -2576,8 +2582,8 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 12,
-    "tr": "T2",
+    "rk": 17,
+    "tr": "T1",
     "fl": [],
     "xr": null
    },
@@ -2612,7 +2618,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 43,
+    "rk": 42,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2630,7 +2636,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 38,
+    "rk": 39,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2648,8 +2654,8 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 22,
-    "tr": "T1",
+    "rk": 24,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -2684,7 +2690,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 47,
+    "rk": 51,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2720,7 +2726,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 48,
+    "rk": 44,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2738,7 +2744,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 20,
+    "rk": 29,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2756,7 +2762,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 23,
+    "rk": 54,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -2792,7 +2798,7 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 15,
+    "rk": 32,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -2810,8 +2816,8 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 11,
-    "tr": "T1",
+    "rk": 12,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -2828,8 +2834,8 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 24,
-    "tr": "T2",
+    "rk": 5,
+    "tr": "T3",
     "fl": [],
     "xr": null
    },
@@ -2846,8 +2852,8 @@
     "dy": 7,
     "st": "early",
     "m": false,
-    "rk": 19,
-    "tr": "T1",
+    "rk": 23,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -2918,8 +2924,8 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 2,
-    "tr": "T1",
+    "rk": 3,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -2990,8 +2996,8 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 5,
-    "tr": "T1",
+    "rk": 55,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -3008,7 +3014,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 2,
+    "rk": 16,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -3044,8 +3050,8 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 40,
-    "tr": "T1",
+    "rk": 44,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -3062,7 +3068,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 29,
+    "rk": 30,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -3080,7 +3086,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 42,
+    "rk": 47,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -3098,7 +3104,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 4,
+    "rk": 19,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -3134,7 +3140,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 6,
+    "rk": 17,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -3152,7 +3158,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 34,
+    "rk": 53,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -3170,7 +3176,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 36,
+    "rk": 38,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -3206,7 +3212,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 2,
+    "rk": 9,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -3242,7 +3248,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 10,
+    "rk": 33,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -3260,7 +3266,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 26,
+    "rk": 40,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -3332,7 +3338,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 38,
+    "rk": 42,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -3386,8 +3392,8 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 2,
-    "tr": "T1",
+    "rk": 8,
+    "tr": "T2",
     "fl": [],
     "xr": null
    },
@@ -3404,7 +3410,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 10,
+    "rk": 13,
     "tr": "T2",
     "fl": [],
     "xr": null
@@ -3422,7 +3428,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 33,
+    "rk": 26,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -3440,7 +3446,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 23,
+    "rk": 43,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -3458,7 +3464,7 @@
     "dy": 9,
     "st": "early",
     "m": false,
-    "rk": 52,
+    "rk": 59,
     "tr": "T1",
     "fl": [],
     "xr": null
@@ -3476,7 +3482,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 34,
+    "rk": 29,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -3530,7 +3536,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 15,
+    "rk": 18,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -3566,7 +3572,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 54,
+    "rk": 34,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -3602,7 +3608,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 2,
+    "rk": 22,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -3620,7 +3626,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 18,
+    "rk": 44,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -3638,7 +3644,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 22,
+    "rk": 35,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -3710,7 +3716,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 24,
+    "rk": 36,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -3746,8 +3752,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 8,
-    "tr": "T1",
+    "rk": 1,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -3908,7 +3914,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 49,
+    "rk": 59,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -3944,7 +3950,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 51,
+    "rk": 25,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -3962,8 +3968,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 21,
-    "tr": "T1",
+    "rk": 28,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -3980,8 +3986,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 58,
-    "tr": "T1",
+    "rk": 60,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -3998,7 +4004,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 43,
+    "rk": 5,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -4034,7 +4040,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 50,
+    "rk": 22,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4070,7 +4076,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 35,
+    "rk": 39,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -4088,8 +4094,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 6,
-    "tr": "T1",
+    "rk": 32,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -4124,7 +4130,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 42,
+    "rk": 49,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4142,8 +4148,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 34,
-    "tr": "T1",
+    "rk": 56,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -4160,7 +4166,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 22,
+    "rk": 27,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4196,7 +4202,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 24,
+    "rk": 10,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4214,7 +4220,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 54,
+    "rk": 9,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4232,7 +4238,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 28,
+    "rk": 33,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -4250,7 +4256,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 5,
+    "rk": 54,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4268,8 +4274,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 30,
-    "tr": "T1",
+    "rk": 19,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -4286,8 +4292,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 57,
-    "tr": "T1",
+    "rk": 59,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -4304,7 +4310,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 48,
+    "rk": 52,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4340,7 +4346,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 47,
+    "rk": 44,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4358,7 +4364,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 23,
+    "rk": 12,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4394,7 +4400,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 38,
+    "rk": 18,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -4430,7 +4436,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 4,
+    "rk": 35,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4466,7 +4472,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 16,
+    "rk": 30,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4484,7 +4490,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 13,
+    "rk": 24,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -4502,8 +4508,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 12,
-    "tr": "T1",
+    "rk": 58,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -4538,7 +4544,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 2,
+    "rk": 5,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4592,8 +4598,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 15,
-    "tr": "T1",
+    "rk": 41,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -4610,7 +4616,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 45,
+    "rk": 30,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4628,7 +4634,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 41,
+    "rk": 29,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -4646,7 +4652,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 40,
+    "rk": 29,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4664,7 +4670,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 39,
+    "rk": 11,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -4682,7 +4688,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 29,
+    "rk": 23,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4700,7 +4706,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 20,
+    "rk": 39,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4736,7 +4742,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 2,
+    "rk": 13,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4754,7 +4760,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 57,
+    "rk": 56,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -4790,7 +4796,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 46,
+    "rk": 51,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4808,7 +4814,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 39,
+    "rk": 52,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -4826,8 +4832,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 60,
-    "tr": "T1",
+    "rk": 54,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -4844,8 +4850,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 53,
-    "tr": "T1",
+    "rk": 58,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -4862,8 +4868,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 6,
-    "tr": "T1",
+    "rk": 7,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -4880,7 +4886,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 13,
+    "rk": 18,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -4934,7 +4940,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 26,
+    "rk": 14,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -4970,7 +4976,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 7,
+    "rk": 60,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5024,7 +5030,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 40,
+    "rk": 36,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5042,7 +5048,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 10,
+    "rk": 48,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5060,8 +5066,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 46,
-    "tr": "T1",
+    "rk": 29,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5078,7 +5084,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 23,
+    "rk": 25,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5096,7 +5102,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 3,
+    "rk": 5,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -5114,8 +5120,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 33,
-    "tr": "T1",
+    "rk": 44,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5150,8 +5156,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 25,
-    "tr": "T1",
+    "rk": 39,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5168,8 +5174,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 22,
-    "tr": "T1",
+    "rk": 41,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5186,7 +5192,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 25,
+    "rk": 28,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -5204,7 +5210,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 24,
+    "rk": 14,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5222,7 +5228,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 54,
+    "rk": 56,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5240,8 +5246,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 29,
-    "tr": "T1",
+    "rk": 16,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5258,7 +5264,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 44,
+    "rk": 37,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -5276,8 +5282,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 8,
-    "tr": "T1",
+    "rk": 6,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5294,7 +5300,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 14,
+    "rk": 26,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5330,7 +5336,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 32,
+    "rk": 38,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5348,8 +5354,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 25,
-    "tr": "T1",
+    "rk": 4,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5366,7 +5372,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 38,
+    "rk": 30,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -5384,7 +5390,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 8,
+    "rk": 33,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5402,7 +5408,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 56,
+    "rk": 46,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5420,7 +5426,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 14,
+    "rk": 18,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5438,8 +5444,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 7,
-    "tr": "T2",
+    "rk": 10,
+    "tr": "T1",
     "fl": [],
     "xr": "horizon"
    },
@@ -5456,7 +5462,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 7,
+    "rk": 57,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5474,8 +5480,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 51,
-    "tr": "T1",
+    "rk": 19,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5510,7 +5516,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 17,
+    "rk": 4,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5546,8 +5552,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 2,
-    "tr": "T1",
+    "rk": 29,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5564,7 +5570,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 19,
+    "rk": 27,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5672,7 +5678,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 26,
+    "rk": 41,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5708,8 +5714,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 21,
-    "tr": "T1",
+    "rk": 11,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5726,7 +5732,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 50,
+    "rk": 30,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5744,7 +5750,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 6,
+    "rk": 15,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -5780,8 +5786,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 5,
-    "tr": "T1",
+    "rk": 12,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5816,8 +5822,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 51,
-    "tr": "T1",
+    "rk": 56,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5852,7 +5858,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 9,
+    "rk": 19,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5870,7 +5876,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 48,
+    "rk": 45,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -5888,8 +5894,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 47,
-    "tr": "T1",
+    "rk": 54,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -5906,7 +5912,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 22,
+    "rk": 16,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -5942,7 +5948,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 10,
+    "rk": 26,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -5960,7 +5966,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 23,
+    "rk": 21,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -5978,8 +5984,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 1,
-    "tr": "T2",
+    "rk": 32,
+    "tr": "T1",
     "fl": [],
     "xr": "horizon"
    },
@@ -6032,7 +6038,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 36,
+    "rk": 39,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6050,7 +6056,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 45,
+    "rk": 44,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6104,8 +6110,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 58,
-    "tr": "T2",
+    "rk": 47,
+    "tr": "T1",
     "fl": [],
     "xr": "horizon"
    },
@@ -6140,7 +6146,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 22,
+    "rk": 37,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6176,8 +6182,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 32,
-    "tr": "T1",
+    "rk": 29,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -6194,7 +6200,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 43,
+    "rk": 48,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -6230,7 +6236,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 55,
+    "rk": 41,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6248,7 +6254,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 59,
+    "rk": 31,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6266,7 +6272,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 9,
+    "rk": 12,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -6302,8 +6308,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 11,
-    "tr": "T1",
+    "rk": 7,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -6320,7 +6326,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 58,
+    "rk": 54,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -6338,7 +6344,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 2,
+    "rk": 19,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6356,7 +6362,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 25,
+    "rk": 27,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -6392,7 +6398,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 40,
+    "rk": 33,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6410,7 +6416,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 43,
+    "rk": 34,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6428,7 +6434,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 57,
+    "rk": 10,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6446,7 +6452,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 27,
+    "rk": 30,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6464,8 +6470,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 10,
-    "tr": "T1",
+    "rk": 50,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -6500,7 +6506,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 50,
+    "rk": 55,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -6518,7 +6524,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 55,
+    "rk": 52,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -6554,8 +6560,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 20,
-    "tr": "T1",
+    "rk": 39,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -6572,8 +6578,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 3,
-    "tr": "T2",
+    "rk": 2,
+    "tr": "T1",
     "fl": [],
     "xr": "horizon"
    },
@@ -6608,7 +6614,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 31,
+    "rk": 22,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6644,7 +6650,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 13,
+    "rk": 17,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6662,7 +6668,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 43,
+    "rk": 45,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6680,8 +6686,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 3,
-    "tr": "T1",
+    "rk": 6,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -6716,8 +6722,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 26,
-    "tr": "T2",
+    "rk": 14,
+    "tr": "T1",
     "fl": [],
     "xr": "horizon"
    },
@@ -6734,8 +6740,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 51,
-    "tr": "T1",
+    "rk": 18,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -6752,7 +6758,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 24,
+    "rk": 20,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -6770,7 +6776,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 55,
+    "rk": 51,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -6896,8 +6902,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 13,
-    "tr": "T1",
+    "rk": 15,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -6932,8 +6938,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 25,
-    "tr": "T1",
+    "rk": 17,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -6950,8 +6956,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 54,
-    "tr": "T1",
+    "rk": 60,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -7004,8 +7010,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 7,
-    "tr": "T1",
+    "rk": 34,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -7040,8 +7046,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 5,
-    "tr": "T1",
+    "rk": 21,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -7076,8 +7082,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 37,
-    "tr": "T1",
+    "rk": 28,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -7094,7 +7100,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 48,
+    "rk": 45,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -7112,7 +7118,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 48,
+    "rk": 29,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -7130,7 +7136,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 22,
+    "rk": 40,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7148,8 +7154,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 32,
-    "tr": "T1",
+    "rk": 56,
+    "tr": null,
     "fl": [],
     "xr": "horizon"
    },
@@ -7184,7 +7190,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 17,
+    "rk": 1,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7202,7 +7208,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 44,
+    "rk": 39,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7256,8 +7262,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 27,
-    "tr": "T1",
+    "rk": 58,
+    "tr": null,
     "fl": [],
     "xr": "horizon"
    },
@@ -7292,7 +7298,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 53,
+    "rk": 47,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7328,7 +7334,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 9,
+    "rk": 11,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7364,7 +7370,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 59,
+    "rk": 55,
     "tr": null,
     "fl": [],
     "xr": "horizon"
@@ -7382,8 +7388,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 35,
-    "tr": "T1",
+    "rk": 36,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -7420,7 +7426,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 53,
+    "rk": 47,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7438,7 +7444,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 14,
+    "rk": 26,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7492,7 +7498,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 33,
+    "rk": 25,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7528,7 +7534,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 9,
+    "rk": 15,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7564,7 +7570,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 32,
+    "rk": 27,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7636,8 +7642,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 3,
-    "tr": "T1",
+    "rk": 28,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -7654,7 +7660,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 43,
+    "rk": 48,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -7672,7 +7678,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 3,
+    "rk": 2,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7690,8 +7696,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 26,
-    "tr": "T1",
+    "rk": 34,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -7708,8 +7714,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 22,
-    "tr": "T2",
+    "rk": 35,
+    "tr": "T3",
     "fl": [],
     "xr": "horizon"
    },
@@ -7726,7 +7732,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 48,
+    "rk": 45,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -7762,8 +7768,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 24,
-    "tr": "T1",
+    "rk": 20,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -7798,8 +7804,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 57,
-    "tr": "T1",
+    "rk": 51,
+    "tr": null,
     "fl": [],
     "xr": "horizon"
    },
@@ -7816,8 +7822,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 26,
-    "tr": "T1",
+    "rk": 24,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -7834,8 +7840,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 11,
-    "tr": "T1",
+    "rk": 22,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -7852,7 +7858,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 8,
+    "rk": 41,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7870,7 +7876,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 8,
+    "rk": 11,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -7888,8 +7894,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 20,
-    "tr": "T1",
+    "rk": 32,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -7924,7 +7930,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 5,
+    "rk": 7,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7942,7 +7948,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 1,
+    "rk": 40,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -7960,8 +7966,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 18,
-    "tr": "T1",
+    "rk": 30,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -7996,7 +8002,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 35,
+    "rk": 19,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -8050,7 +8056,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 8,
+    "rk": 13,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -8104,7 +8110,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 6,
+    "rk": 10,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -8122,8 +8128,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 22,
-    "tr": "T2",
+    "rk": 42,
+    "tr": "T1",
     "fl": [],
     "xr": "horizon"
    },
@@ -8140,8 +8146,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 45,
-    "tr": "T2",
+    "rk": 21,
+    "tr": "T1",
     "fl": [],
     "xr": "horizon"
    },
@@ -8158,8 +8164,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 31,
-    "tr": "T1",
+    "rk": 50,
+    "tr": null,
     "fl": [],
     "xr": "horizon"
    },
@@ -8194,7 +8200,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 22,
+    "rk": 31,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -8266,7 +8272,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 23,
+    "rk": 34,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -8338,8 +8344,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 26,
-    "tr": "T1",
+    "rk": 46,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -8356,8 +8362,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 50,
-    "tr": "T1",
+    "rk": 18,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -8410,8 +8416,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 54,
-    "tr": "T1",
+    "rk": 13,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -8428,8 +8434,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 41,
-    "tr": "T1",
+    "rk": 53,
+    "tr": null,
     "fl": [],
     "xr": "horizon"
    },
@@ -8446,7 +8452,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 57,
+    "rk": 52,
     "tr": null,
     "fl": [],
     "xr": "horizon"
@@ -8482,7 +8488,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 33,
+    "rk": 20,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -8554,7 +8560,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 27,
+    "rk": 33,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -8572,7 +8578,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 21,
+    "rk": 19,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -8590,8 +8596,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 56,
-    "tr": "T1",
+    "rk": 51,
+    "tr": null,
     "fl": [],
     "xr": "horizon"
    },
@@ -8608,8 +8614,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 36,
-    "tr": "T1",
+    "rk": 49,
+    "tr": null,
     "fl": [],
     "xr": "horizon"
    },
@@ -8644,7 +8650,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 12,
+    "rk": 14,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -8698,7 +8704,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 13,
+    "rk": 43,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -8752,7 +8758,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 54,
+    "rk": 44,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -8770,7 +8776,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 7,
+    "rk": 8,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -8842,7 +8848,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 7,
+    "rk": 13,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -8914,8 +8920,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 44,
-    "tr": "T1",
+    "rk": 40,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -8932,7 +8938,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 36,
+    "rk": 26,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -8950,8 +8956,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 8,
-    "tr": "T1",
+    "rk": 34,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -8968,7 +8974,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 56,
+    "rk": 51,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -8986,7 +8992,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 40,
+    "rk": 39,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9004,7 +9010,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 59,
+    "rk": 18,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9040,7 +9046,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 56,
+    "rk": 12,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9058,7 +9064,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 53,
+    "rk": 47,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9076,7 +9082,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 5,
+    "rk": 37,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9094,7 +9100,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 11,
+    "rk": 28,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9184,7 +9190,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 8,
+    "rk": 56,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9202,8 +9208,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 57,
-    "tr": "T1",
+    "rk": 59,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -9220,7 +9226,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 27,
+    "rk": 38,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9238,8 +9244,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 31,
-    "tr": "T1",
+    "rk": 18,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -9256,7 +9262,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 45,
+    "rk": 36,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9274,8 +9280,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 10,
-    "tr": "T1",
+    "rk": 48,
+    "tr": null,
     "fl": [],
     "xr": "horizon"
    },
@@ -9292,7 +9298,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 22,
+    "rk": 26,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9328,7 +9334,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 33,
+    "rk": 42,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9346,7 +9352,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 8,
+    "rk": 25,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9364,8 +9370,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 35,
-    "tr": "T2",
+    "rk": 52,
+    "tr": "T3",
     "fl": [],
     "xr": "horizon"
    },
@@ -9382,7 +9388,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 18,
+    "rk": 39,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9400,7 +9406,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 41,
+    "rk": 60,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9418,7 +9424,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 33,
+    "rk": 20,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9436,7 +9442,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 45,
+    "rk": 43,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9454,7 +9460,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 25,
+    "rk": 34,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9472,7 +9478,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 54,
+    "rk": 56,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9508,7 +9514,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 59,
+    "rk": 58,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9526,7 +9532,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 15,
+    "rk": 31,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9544,7 +9550,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 25,
+    "rk": 37,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9580,7 +9586,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 52,
+    "rk": 24,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9616,7 +9622,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 11,
+    "rk": 57,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9634,8 +9640,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 42,
-    "tr": "T2",
+    "rk": 22,
+    "tr": "T1",
     "fl": [],
     "xr": "horizon"
    },
@@ -9652,8 +9658,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 21,
-    "tr": "T1",
+    "rk": 47,
+    "tr": null,
     "fl": [],
     "xr": "horizon"
    },
@@ -9670,7 +9676,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 24,
+    "rk": 35,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9706,7 +9712,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 53,
+    "rk": 51,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9742,7 +9748,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 22,
+    "rk": 53,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9760,7 +9766,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 23,
+    "rk": 34,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -9796,7 +9802,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 44,
+    "rk": 41,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9814,7 +9820,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 45,
+    "rk": 43,
     "tr": null,
     "fl": [],
     "xr": "horizon"
@@ -9832,8 +9838,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 30,
-    "tr": "T2",
+    "rk": 44,
+    "tr": null,
     "fl": [],
     "xr": "horizon"
    },
@@ -9850,7 +9856,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 50,
+    "rk": 48,
     "tr": null,
     "fl": [],
     "xr": "horizon"
@@ -9886,8 +9892,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 44,
-    "tr": "T1",
+    "rk": 18,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -9922,7 +9928,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 57,
+    "rk": 56,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -9958,8 +9964,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 32,
-    "tr": "T1",
+    "rk": 47,
+    "tr": null,
     "fl": [],
     "xr": "horizon"
    },
@@ -9976,7 +9982,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 57,
+    "rk": 45,
     "tr": null,
     "fl": [],
     "xr": "horizon"
@@ -9994,7 +10000,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 30,
+    "rk": 25,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10012,7 +10018,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 22,
+    "rk": 20,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -10030,7 +10036,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 41,
+    "rk": 36,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -10066,7 +10072,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 5,
+    "rk": 4,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10120,8 +10126,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 4,
-    "tr": "T1",
+    "rk": 30,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -10138,7 +10144,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 6,
+    "rk": 28,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10156,7 +10162,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 22,
+    "rk": 33,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10174,7 +10180,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 28,
+    "rk": 29,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10228,8 +10234,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 14,
-    "tr": "T1",
+    "rk": 7,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -10246,7 +10252,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 21,
+    "rk": 55,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10264,7 +10270,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 1,
+    "rk": 2,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -10282,7 +10288,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 7,
+    "rk": 19,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -10300,8 +10306,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 10,
-    "tr": "T1",
+    "rk": 37,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -10318,7 +10324,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 17,
+    "rk": 58,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10354,7 +10360,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 26,
+    "rk": 13,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10372,7 +10378,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 7,
+    "rk": 14,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10408,8 +10414,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 1,
-    "tr": "T1",
+    "rk": 57,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -10426,8 +10432,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 12,
-    "tr": "T2",
+    "rk": 54,
+    "tr": "T1",
     "fl": [],
     "xr": "horizon"
    },
@@ -10516,7 +10522,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 15,
+    "rk": 27,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10534,8 +10540,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 38,
-    "tr": "T1",
+    "rk": 26,
+    "tr": "T2",
     "fl": [],
     "xr": "horizon"
    },
@@ -10552,7 +10558,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 50,
+    "rk": 42,
     "tr": null,
     "fl": [],
     "xr": "horizon"
@@ -10570,7 +10576,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 2,
+    "rk": 1,
     "tr": "T1",
     "fl": [],
     "xr": "horizon"
@@ -10606,7 +10612,7 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 53,
+    "rk": 21,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10642,8 +10648,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 12,
-    "tr": "T2",
+    "rk": 49,
+    "tr": "T3",
     "fl": [],
     "xr": "horizon"
    },
@@ -10660,8 +10666,8 @@
     "dy": 10,
     "st": "beat",
     "m": true,
-    "rk": 13,
-    "tr": "T2",
+    "rk": 51,
+    "tr": "T3",
     "fl": [],
     "xr": "horizon"
    },
@@ -10696,8 +10702,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 28,
-    "tr": "T2",
+    "rk": 39,
+    "tr": "T1",
     "fl": [],
     "xr": "horizon"
    },
@@ -10714,7 +10720,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 3,
+    "rk": 5,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10786,8 +10792,8 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 41,
-    "tr": "T1",
+    "rk": 46,
+    "tr": null,
     "fl": [],
     "xr": "horizon"
    },
@@ -10804,7 +10810,7 @@
     "dy": 10,
     "st": "lag",
     "m": true,
-    "rk": 45,
+    "rk": 52,
     "tr": "T2",
     "fl": [],
     "xr": "horizon"
@@ -10818,7 +10824,9 @@
    "survivorship": {
     "n_locked_excluded": 1,
     "n_skipped_no_price": 0,
-    "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats"
+    "n_skipped_awaiting_t1": 0,
+    "n_skipped_total": 0,
+    "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
    },
    "exit_rule": "10-session forced verdict · T+1 open fill · no oscillator target (3D thresholds not yet refit for A-shares)",
    "pooling_note_en": "Graded with the same scorer, horizon and exit rule as the current record, and reported separately. Each era selected its board by a different rule, so these records must never be added together.",
