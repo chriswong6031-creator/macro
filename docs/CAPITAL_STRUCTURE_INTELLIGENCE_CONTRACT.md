@@ -299,15 +299,20 @@ exact `Error.Code=PreconditionFailed` for these deliberately false conditions.
 Every 409, unrelated provider error, successful stale request, or untyped
 look-alike exception is inconclusive and cannot produce a passing receipt.
 
-Even with that sequential contract correctly enforced, this is one fresh-key trace. It
-launches no competing writer and
-does not prove concurrent linearizability, race safety across independent
-clients, or the production publisher's retry behavior. The probe client itself
-limits SDK attempts, but that does not attest the separately configured
-production head client. Before activation, the production CAS path must prove
-that conditional writes have no hidden adaptive retry, or must perform and test
-exact candidate reconciliation after every ambiguous/retried result; a real
-concurrent-writer race proof remains separate.
+Even with that sequential contract correctly enforced, this is one fresh-key
+trace. It launches no competing writer and does not prove concurrent
+linearizability, race safety across independent clients, or the separately
+configured production head client. The production guard now reconciles every
+exception caught by the conditional head-PUT block, including a terminal
+409/412 surfaced after an SDK retry. An authenticated bounded read-back proves
+success only when its canonical bytes equal the exact frozen submitted
+candidate; an absent, unchanged, unreadable, or otherwise ambiguous result is
+indeterminate, while a recognized conditional-write failure plus a different
+authenticated head is a conflict. Regression tests cover v2 genesis/successor,
+v2-to-v3, v2/v3-to-v4, v4 genesis/successor, transport failure, and outage recovery. This
+closes only the post-PUT retry-classification code prerequisite. An independent
+concurrent-writer race proof remains separate, and neither this correction nor a
+passing sequential receipt activates publication.
 
 Every ambiguous transport outcome, deadline, malformed response, unexpected
 status, body/metadata/range mismatch, or stream-close failure is non-passing.
