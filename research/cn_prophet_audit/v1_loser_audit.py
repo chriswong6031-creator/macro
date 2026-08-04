@@ -10,7 +10,9 @@ What it does
    engine.track_scoring.build_episodes over data/china_standout_track/board.parquet
    legacy rows, T+1 fill via engine.china_standout_track._t1_fill, H=10 forced
    verdict, CSI300-relative) and asserts it reproduces the shipped headline
-   (n_matured 407, win 68.6%) before any new number is printed.
+   (n_matured 407, win 68.6%) before any new number is printed.  Every price
+   series is truncated at GRADE_ASOF first (frozen replay — the stores accrue
+   a bar nightly; ungated, the reproduction target evaporates within a day).
 2. Enriches every matured episode with admission-day board fields (rank/tier/
    setup/extension/washout/coiled/entry_status/ab_tier/narrative) and
    admission-day price character (trailing returns, drawdown-from-high, MA
@@ -44,6 +46,20 @@ from engine import track_scoring as ts  # noqa: E402
 
 H = 10  # the shipped CN horizon (forced verdict)
 OUT = Path(__file__).parent / "v1_loser_audit_results.json"
+
+# ── frozen-replay pin ─────────────────────────────────────────────────────────
+# Every price series is TRUNCATED here before anything is graded.  Without this
+# the instrument is not reproducible for a single day: the price stores under
+# data/china_stocks/ + data/china/ accrue a bar every night, each new bar lets
+# more V1 episodes clear the H=10 maturity gate, and the shipped 407 / 68.6%
+# headline the P0 gate asserts silently stops existing (measured 2026-08-04:
+# the same frozen board frame graded 441 matured / 70.52% win once the
+# 2026-08-04 bar landed).  The board frame itself is frozen (1,082 legacy rows,
+# 18 dates), so episodes=584 is stable — only the maturity-gated numbers drift.
+# Same pattern as v3_era_retro.py's GRADE_ASOF (PR #4521), whose P1 cross-check
+# asserts against this instrument's committed JSON.
+# 2026-08-03 is the era snapshot the shipped headline was measured at.
+GRADE_ASOF = pd.Timestamp("2026-08-03")
 
 # A-share daily price-limit thresholds by listing board (approx, non-ST):
 #   688* (STAR) and 300* (ChiNext): ±20%  → detect at |ret| ≥ 0.185
@@ -164,6 +180,8 @@ def build_sector_rel(look: dict[str, dict], bench: pd.Series | None) -> dict[str
         cols = []
         for tk in tks:
             pdf = cst._price_frame(tk)  # noqa: SLF001
+            if pdf is not None:
+                pdf = pdf[pdf.index <= GRADE_ASOF]
             if pdf is None or "close" not in pdf:
                 continue
             c = pd.to_numeric(pdf["close"], errors="coerce").dropna()
@@ -180,6 +198,8 @@ def main() -> None:
     board = load_board()
     look = sector_lookup()
     bench = cst._bench_close()  # noqa: SLF001
+    if bench is not None:
+        bench = bench[bench.index <= GRADE_ASOF]
     sector_rel = build_sector_rel(look, bench)
 
     board_days: dict[str, set[str]] = defaultdict(set)
@@ -195,6 +215,8 @@ def main() -> None:
         tk, d0s = ep["ticker"], ep["entry_date"]
         d0 = pd.Timestamp(d0s)
         pdf = cst._price_frame(tk)  # noqa: SLF001
+        if pdf is not None:
+            pdf = pdf[pdf.index <= GRADE_ASOF]
         if pdf is None or "close" not in pdf:
             n_skipped += 1
             continue
