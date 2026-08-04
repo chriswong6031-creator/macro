@@ -360,22 +360,23 @@ class TestTheQueueIsNotABypass:
 
     def test_the_live_post_is_caught_at_post_time_too(self):
         from engine.marketing.copywriter import queued_relay_violations
-        v = queued_relay_violations(f"{LIVE_POINTER} -- wire reports")
+        v = queued_relay_violations(f"{LIVE_POINTER} -- wire reports", "press_lane")
         assert v and "lead_pointer" in v[0]
 
     def test_a_queue_vintage_handle_is_caught(self):
         """The five that were still sitting in the queue on 2026-08-04."""
         from engine.marketing.copywriter import queued_relay_violations
         v = queued_relay_violations(
-            "GOLD ROSE 0.6% TO $4,070 -- @FirstSquawk reporting")
+            "GOLD ROSE 0.6% TO $4,070 -- @FirstSquawk reporting", "press_lane")
         assert v and "foreign handle" in v[0]
 
     def test_a_clean_wire_post_passes(self):
         from engine.marketing.copywriter import queued_relay_violations
         assert queued_relay_violations(
-            "US ISM Manufacturing PMI for July 55.6 versus 54.0 estimate") == []
+            "US ISM Manufacturing PMI for July 55.6 versus 54.0 estimate",
+            "press_lane") == []
 
-    def test_the_screen_is_scoped_to_relayed_lanes_only(self):
+    def test_the_screen_cannot_reach_our_own_voice(self):
         """THE MOST DANGEROUS PROPERTY OF THIS CHANGE, pinned.
 
         Our own desks write in the first person deliberately — "I'd rather wait"
@@ -385,26 +386,38 @@ class TestTheQueueIsNotABypass:
         else's page. Pointed at content_studio or weekend_levels this screen
         would quarantine the marketing voice wholesale.
 
-        So the allowlist is the safety property, and an unknown provenance is
-        NOT screened. Both halves are asserted: the house voice DOES trip the
-        raw rule (which is why scoping is required, not optional), and the
-        publisher's allowlist does not contain the lanes that write it.
+        THE SCOPING LIVES WITH THE RULES, not with the caller — an allowlist the
+        publisher owned would put the whole voice one forgotten argument away
+        from a terminal quarantine. Three properties are asserted together, and
+        the first is what stops the other two from being vacuous:
+
+          1. the house voice DOES trip the raw rule (so scoping is load-bearing);
+          2. ...and is nevertheless returned clean when its own lane is passed;
+          3. an unknown / empty provenance is never screened.
         """
         from engine.marketing.copywriter import queued_relay_violations
         house = ("$AAPL into the week\n\nUp at 52-week highs. Nothing broken "
                  "here, and I'd rather wait.")
-        assert queued_relay_violations(house), \
-            "if this ever passes, the scoping test below is measuring nothing"
 
-        src = (ROOT / "scripts" / "marketing_publisher.py").read_text(encoding="utf-8")
-        import re as _re
-        block = _re.search(r"_RELAYED_PROVENANCES:[^=]*=\s*frozenset\(\{(.*?)\}\)",
-                           src, _re.S)
-        assert block, "the publisher's relay-lane allowlist went missing"
-        allow = block.group(1)
+        assert rh.body_defects(house.split("\n\n")[1]), (
+            "the raw rule no longer fires on the house voice — the scoping "
+            "assertions below would be measuring nothing")
+
         for own_lane in ("content_studio", "weekend_levels", "claude_rewrite",
-                         "publisher_live_movers"):
-            assert own_lane not in allow, (
-                f"{own_lane} writes in the house voice and must never be "
-                "screened by the relay rules")
-        assert "press_lane" in allow
+                         "publisher_live_movers", "", "something_new"):
+            assert queued_relay_violations(house, own_lane) == [], own_lane
+            assert not rh.lane_is_relayed(own_lane), own_lane
+
+        assert rh.lane_is_relayed("press_lane")
+
+    def test_the_publisher_does_not_keep_its_own_copy_of_the_allowlist(self):
+        """One list, one home. A second copy in the caller is how the two drift
+        and a house lane quietly becomes screenable."""
+        import re as _re
+        src = (ROOT / "scripts" / "marketing_publisher.py").read_text(encoding="utf-8")
+        assert "_RELAYED_PROVENANCES" not in src
+        call = _re.search(r"_queued_relay_violations\(([^)]*)\)", src)
+        assert call, "the publisher stopped calling the relay screen"
+        assert "provenance" in call.group(1), (
+            "the screen must be handed the item's provenance — called without "
+            "one it returns [] and the gate is silently dark")

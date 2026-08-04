@@ -2765,7 +2765,7 @@ def queued_voice_violations(text: str, kind: str = "",
     return out
 
 
-def queued_relay_violations(text: str) -> list[str]:
+def queued_relay_violations(text: str, provenance: str = "") -> list[str]:
     """The RELAY hygiene laws, runnable against copy already in the queue.
 
     Same argument as :func:`queued_voice_violations`, one lane over. The relay
@@ -2777,12 +2777,17 @@ def queued_relay_violations(text: str) -> list[str]:
     tomorrow; only a last gate fixes the queue, and the queue is what reaches
     the timeline.
 
-    CALLERS MUST SCOPE THIS TO RELAYED LANES. Our own desks write in the first
+    SCOPED TO RELAYED LANES, INSIDE THE SCREEN. Our own desks write in the first
     person deliberately ("I'm not fighting this one" — the house voice the
     operator approved on 2026-07-30, 46 queued items at the time). These rules
     ask "was this sentence written for a reader on somebody else's page", which
-    is only a defect when the sentence came from somebody else's page. Applied
-    to the marketing desks it would quarantine the voice wholesale.
+    is only a defect when the sentence came from somebody else's page. Applied to
+    the marketing desks they would quarantine the voice wholesale.
+
+    That check is made HERE, from ``relay_hygiene._RELAYED_PROVENANCES``, and not
+    by the caller: an allowlist the caller owns puts the whole marketing voice one
+    forgotten argument away from a terminal quarantine. An empty or unrecognised
+    ``provenance`` returns [] — an unknown lane is never screened.
 
     Fail-SOFT on an import error: post-time quarantine is terminal, so a screen
     that cannot evaluate must let the item through, never kill it.
@@ -2790,6 +2795,14 @@ def queued_relay_violations(text: str) -> list[str]:
     body = str(text or "")
     if not body.strip():
         return []
+
+    try:
+        from engine.marketing import relay_hygiene as _rh  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return []
+    if not _rh.lane_is_relayed(provenance):
+        return []
+
     out: list[str] = []
 
     # The de-handling law's own backstop, applied to queue vintage. A foreign
@@ -2798,11 +2811,6 @@ def queued_relay_violations(text: str) -> list[str]:
     for handle in foreign_handle_mentions(body):
         out.append(f"foreign handle '@{handle}': we reword and republish, "
                    "we never brand the original account")
-
-    try:
-        from engine.marketing import relay_hygiene as _rh  # noqa: PLC0415
-    except Exception:  # noqa: BLE001
-        return out
 
     # The post text is `headline\n\nbody`; both halves are screened, because the
     # live defect lived in the HEADLINE half and the first-person one lived in

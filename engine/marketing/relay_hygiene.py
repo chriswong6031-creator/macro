@@ -214,6 +214,36 @@ _MARKET_FIGURE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# ─────────────────────────────────────────────────────────────────────────────
+# WHOSE COPY THESE RULES MAY JUDGE
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The lanes whose copy RELAYS someone else's words — and the ONLY lanes any
+#: rule in this module may be applied to.
+#:
+#: THIS IS THE SAFETY PROPERTY OF THE WHOLE MODULE, so it lives with the rules
+#: rather than with the caller. Our own desks write in the first person on
+#: purpose: "I'd rather wait" is the house voice the operator approved on
+#: 2026-07-30, and 46 items in the queue were carrying it the day these rules
+#: were written. Every rule here asks "was this sentence written for a reader on
+#: somebody else's page", which is only a defect when the sentence CAME from
+#: somebody else's page — pointed at content_studio or weekend_levels the same
+#: rules would quarantine the marketing voice wholesale.
+#:
+#: Keeping the allowlist in the caller made that catastrophe one forgotten
+#: argument away. Here, a caller cannot forget: :func:`lane_is_relayed` is
+#: consulted inside the screen, and an UNKNOWN provenance is not screened.
+_RELAYED_PROVENANCES: frozenset[str] = frozenset({
+    "press_lane", "press_research_lane", "earnings_call_lane",
+    "hot_tape",
+})
+
+
+def lane_is_relayed(provenance: object) -> bool:
+    """May this lane's copy be judged by the relay rules? Unknown => no."""
+    return str(provenance or "").strip() in _RELAYED_PROVENANCES
+
+
 _WS_RE = re.compile(r"\s+")
 
 

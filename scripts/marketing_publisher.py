@@ -236,21 +236,6 @@ def _queued_headline(kind: str | None, text: str) -> str | None:
     return head
 
 
-#: Lanes whose copy RELAYS someone else's words, and therefore the only lanes
-#: the relay-hygiene screen may judge.
-#:
-#: Our own desks write in the first person on purpose — "I'm not fighting this
-#: one", the house voice the operator approved on 2026-07-30, and 46 items in
-#: the queue were carrying it when this screen was written. The relay rules ask
-#: "was this sentence written for a reader on somebody else's page", which is
-#: only a defect when the sentence CAME from somebody else's page. Pointed at
-#: content_studio or weekend_levels it would quarantine the voice wholesale, so
-#: the allowlist is explicit and an unknown provenance is NOT screened.
-_RELAYED_PROVENANCES: frozenset[str] = frozenset({
-    "press_lane", "press_research_lane", "hot_tape", "earnings_call_lane",
-})
-
-
 _PUBLICATIONS_REL = Path("data/marketing/publications.jsonl")
 
 
@@ -2408,29 +2393,31 @@ def main(argv: list[str] | None = None) -> int:
         # Fixing the generator fixes tomorrow's posts; only a last gate fixes
         # the queue, and the queue is what actually reaches the timeline.
         #
-        # SCOPED TO RELAYED LANES. Our OWN desks write in the first person on
-        # purpose ("I'm not fighting this one" — 46 queued items, house voice,
-        # operator-approved 2026-07-30), so a first-person screen aimed at a
-        # source author would quarantine the marketing voice wholesale. This
-        # runs on the lanes that relay someone else's words and nowhere else.
+        # SCOPED TO RELAYED LANES, INSIDE THE SCREEN. Our OWN desks write in the
+        # first person on purpose ("I'm not fighting this one" — 46 queued items,
+        # house voice, operator-approved 2026-07-30), so these rules applied to
+        # the marketing desks would quarantine the voice wholesale. The lane
+        # allowlist lives with the rules (relay_hygiene._RELAYED_PROVENANCES),
+        # not here: an allowlist this file owned would put the whole voice one
+        # forgotten argument away from a terminal quarantine. Passing an unknown
+        # provenance returns [] — an unrecognised lane is never screened.
         #
         # Fail-SAFE, like every screen on this terminal path: a hygiene module
         # that cannot be imported leaves the item unscreened rather than dead.
-        if str(it.get("provenance") or "") in _RELAYED_PROVENANCES:
-            _relay = _queued_relay_violations(text)
-            if _relay:
-                reason = "relay hygiene (queue vintage): " + "; ".join(_relay[:2])
-                print(f"::warning title=marketing-relay-gate::item {iid} "
-                      f"({account}/{it.get('kind')}) quarantined — {_relay[0][:110]}",
-                      flush=True)
-                log.warning("item %s (%s) QUARANTINED by relay gate: %s",
-                            iid, account, reason)
-                if live:
-                    _outbox.transition(iid, "quarantined", actor="publisher",
-                                       root=root, note=reason)
-                quarantined += 1
-                quarantined_relay_hygiene += 1
-                continue
+        _relay = _queued_relay_violations(text, str(it.get("provenance") or ""))
+        if _relay:
+            reason = "relay hygiene (queue vintage): " + "; ".join(_relay[:2])
+            print(f"::warning title=marketing-relay-gate::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — {_relay[0][:110]}",
+                  flush=True)
+            log.warning("item %s (%s) QUARANTINED by relay gate: %s",
+                        iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher",
+                                   root=root, note=reason)
+            quarantined += 1
+            quarantined_relay_hygiene += 1
+            continue
 
         # -- run dedup: the queue is not a bypass around "don't repeat yourself"
         # The FIRST of a near-duplicate pair posts; the clones do not. Terminal
