@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T04:37:48.887177+00:00",
-  "count": 710,
+  "generated_at": "2026-08-04T04:52:36.588117+00:00",
+  "count": 711,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -128,6 +128,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7ontnhc5q5u-5e9f69",
+      "title": "Weekly Commentary 030826 report 03Aug26 1",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T22:49:53Z",
+      "summary_points": [
+        "**NZ Unemployment Rate Rise**: Expected to climb to 5.4% as working-age population growth outpaces job creation, signaling labor market weakness and aligning with cycle highs.",
+        "**RBNZ Policy Tightening**: OCR raised to 2.5% with 25bp hikes expected in Sept/Dec, driving fixed-term mortgage rates above 5% and flattening yield curve (71bp 2-10yr swap).",
+        "**Middle East Geopolitical Risk**: Sustained US-Iran conflict volatility keeps Brent crude near $90/bbl, elevates second-round inflation risks, and pressures RBNZ/Fed policy decisions.",
+        "**Critical Data Releases**: NZ Q2 employment (Wed), US July payrolls (Fri), and Australia CPI are pivotal for NZD/USD direction and RBNZ/Fed policy trajectories."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
