@@ -715,7 +715,22 @@ publish:
   # scoped lane (see auto_approve_kinds), and lets the live tape gate re-verify.
   # Text-only (no media → never touches the media cap).
   publish_time_movers:
-    enabled: true
+    # PAUSED 2026-08-03 by Fable, autonomously, mid-incident. This lane
+    # auto-approves and posts with no human in the loop, and the two posts it
+    # put on the flagship today carried four defects the operator caught:
+    #   * EIGHT cashtags in one post — the spam fingerprint X flags. The lane
+    #     exempted theme_list from the per-account cashtag cap on the theory
+    #     that the text must name every row the card shows.
+    #   * three different session claims in one post ("today" in line 1, "on
+    #     Friday" in the body, a Monday date on the card).
+    #   * white logos rendered on the card's light rows — invisible.
+    #   * "I'd let it settle first" on a name that had just crossed MACD up out
+    #     of a two-month washout — a canned directional call the lane never
+    #     computed, and backwards for the setup.
+    # Every 30-minute sweep would have shipped more of the same. Volume is not
+    # worth an account strike or a reputation for not reading our own charts.
+    # RE-ARM once the four fixes land and one clean batch has been eyeballed.
+    enabled: false
     max_per_run: 2           # network-wide new items per slot run
     min_abs_mover_pct: 3.0   # floor for a single-name move claim
     min_abs_theme_pct: 1.0   # floor for a theme-average claim

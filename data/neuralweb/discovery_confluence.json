@@ -1,7 +1,7 @@
 {
   "schema": "discovery_confluence.v1",
-  "as_of": "2026-07-27",
-  "generated_at": "2026-07-28T01:34:40.645406+00:00",
+  "as_of": "2026-08-03",
+  "generated_at": "2026-08-04T01:38:09.058304+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -27,16 +27,48 @@
       "adoption_positive": false,
       "top_phrases": [
         {
-          "phrase": "unable to meet demand",
-          "recent_count": 2,
-          "prior_count": 1,
-          "recent_filers": 2,
-          "prior_filers": 1,
+          "phrase": "record backlog",
+          "recent_count": 8,
+          "prior_count": 4,
+          "recent_filers": 8,
+          "prior_filers": 4,
           "velocity_z": 1.0,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "supply constrained",
+          "recent_count": 7,
+          "prior_count": 4,
+          "recent_filers": 6,
+          "prior_filers": 4,
+          "velocity_z": 0.75,
           "is_affinity_phrase": false
         }
       ],
       "basket_z_scores": {},
+      "confidence": "phrase_only"
+    },
+    {
+      "theme_id": "defense_aerospace",
+      "baskets": [
+        "defense"
+      ],
+      "phrase_accelerating": true,
+      "adoption_positive": false,
+      "top_phrases": [
+        {
+          "phrase": "record backlog",
+          "recent_count": 2,
+          "prior_count": 0,
+          "recent_filers": 2,
+          "prior_filers": 0,
+          "velocity_z": 2.0,
+          "is_affinity_phrase": true
+        }
+      ],
+      "basket_z_scores": {
+        "defense": null
+      },
       "confidence": "phrase_only"
     },
     {
@@ -46,13 +78,22 @@
       "adoption_positive": false,
       "top_phrases": [
         {
-          "phrase": "unable to meet demand",
-          "recent_count": 2,
-          "prior_count": 1,
-          "recent_filers": 2,
-          "prior_filers": 1,
+          "phrase": "record backlog",
+          "recent_count": 8,
+          "prior_count": 4,
+          "recent_filers": 8,
+          "prior_filers": 4,
           "velocity_z": 1.0,
           "is_affinity_phrase": false
+        },
+        {
+          "phrase": "supply constrained",
+          "recent_count": 7,
+          "prior_count": 4,
+          "recent_filers": 6,
+          "prior_filers": 4,
+          "velocity_z": 0.75,
+          "is_affinity_phrase": true
         }
       ],
       "basket_z_scores": {},
@@ -65,12 +106,21 @@
       "adoption_positive": false,
       "top_phrases": [
         {
-          "phrase": "unable to meet demand",
-          "recent_count": 2,
-          "prior_count": 1,
-          "recent_filers": 2,
-          "prior_filers": 1,
+          "phrase": "record backlog",
+          "recent_count": 8,
+          "prior_count": 4,
+          "recent_filers": 8,
+          "prior_filers": 4,
           "velocity_z": 1.0,
+          "is_affinity_phrase": false
+        },
+        {
+          "phrase": "supply constrained",
+          "recent_count": 7,
+          "prior_count": 4,
+          "recent_filers": 6,
+          "prior_filers": 4,
+          "velocity_z": 0.75,
           "is_affinity_phrase": false
         }
       ],
@@ -89,8 +139,8 @@
       "adoption_positive": true,
       "top_phrases": [],
       "basket_z_scores": {
-        "ai_semiconductors": 1.363,
-        "ai_infra": 1.363
+        "ai_semiconductors": 0.863,
+        "ai_infra": 0.863
       },
       "confidence": "adoption_only"
     },
@@ -103,29 +153,39 @@
       "adoption_positive": true,
       "top_phrases": [],
       "basket_z_scores": {
-        "cybersecurity": 4.753
+        "cybersecurity": 2.707
       },
       "confidence": "adoption_only"
     }
   ],
   "novel_phrase_clusters": [
     {
-      "phrase": "unable to meet demand",
-      "recent_count": 2,
-      "prior_count": 1,
-      "recent_filers": 2,
-      "prior_filers": 1,
-      "velocity_z": 1.0,
+      "phrase": "supply constrained",
+      "recent_count": 7,
+      "prior_count": 4,
+      "recent_filers": 6,
+      "prior_filers": 4,
+      "velocity_z": 0.75,
+      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
+      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
+    },
+    {
+      "phrase": "record backlog",
+      "recent_count": 6,
+      "prior_count": 4,
+      "recent_filers": 6,
+      "prior_filers": 4,
+      "velocity_z": 0.5,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     }
   ],
   "summary": {
     "both_legs_count": 0,
-    "single_leg_phrase_count": 3,
+    "single_leg_phrase_count": 4,
     "single_leg_adoption_count": 2,
-    "novel_phrase_count": 1,
+    "novel_phrase_count": 2,
     "themes_evaluated": 18,
-    "note": "0 themes show confluence (both legs accelerating). 3 show phrase-only acceleration. 2 show adoption-only positive. 1 novel phrase clusters with no theme home."
+    "note": "0 themes show confluence (both legs accelerating). 4 show phrase-only acceleration. 2 show adoption-only positive. 2 novel phrase clusters with no theme home."
   }
 }

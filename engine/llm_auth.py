@@ -308,7 +308,7 @@ def _cool_pool_key(p: dict, kind: str) -> None:
 # provider descriptor (what each brain passes in)
 # --------------------------------------------------------------------------- #
 # A provider descriptor is a plain dict with keys:
-#   name      (str)  — "oauth" | "codex" | "anthropic" | "deepseek" (logging)
+#   name      (str)  — "oauth" | "codex" | "anthropic" | "deepseek" | "ollama"
 #   env_var   (str)  — the env-var name whose presence enables this provider
 #   cred      (str)  — the actual credential value (NOT logged)
 #   client    (Any)  — a pre-built anthropic.Anthropic client for this provider
@@ -341,7 +341,8 @@ def make_call(
     (text, degraded_reason, provider_used)
         text:           the model reply, or None on failure.
         degraded_reason: None on success; one of the reason strings above.
-        provider_used:   provider name string ("oauth" / "anthropic" / "deepseek"),
+        provider_used:   provider name string (for example "oauth", "codex",
+                         "anthropic", "deepseek", or "ollama"),
                          or None when no provider could serve.
     """
     last_auth_reason: str | None = None
@@ -846,6 +847,11 @@ def build_providers(
     Handles the standard provider waterfall:
         oauth pool → attached Codex account → anthropic → deepseek
 
+    An Ollama rung is never inserted implicitly. A lane must explicitly include
+    ``ollama`` in ``provider_order`` and configure ``OLLAMA_BASE_URL`` (or the
+    equivalent cfg key), keeping smaller local models out of authority-sensitive
+    lanes unless the operator deliberately opts them in.
+
     When a lane has no OAuth rung (for example DeepSeek-first brain-fast),
     Codex is appended as the final fallback.  A host without the Codex CLI and
     an attached login omits that rung without affecting existing providers.
@@ -866,6 +872,10 @@ def build_providers(
           deepseek_model    (str)        — model id for deepseek provider
           codex_source_model (str)       — model id for attached Codex provider
           codex_reasoning_effort (str)   — Codex reasoning effort (e.g. high)
+          ollama_base_url   (str)        — private native Ollama endpoint
+          ollama_model      (str)        — local model id (default qwen3.5:9b)
+          ollama_timeout_s  (float)      — local request timeout
+          ollama_num_ctx    (int)        — requested Ollama context window
           client_max_retries (int|None)  — SDK max_retries for every client built
                                            here; absent → SDK default (2)
           client_timeout_s  (float|None) — per-request timeout in seconds;
@@ -1198,6 +1208,42 @@ def build_providers(
                              "cap_id": "deepseek_api_key"})
             except Exception as e:  # noqa: BLE001
                 log.warning("llm_auth: deepseek client init failed (%s)", e)
+
+        elif p == "ollama":
+            env = str(cfg.get("ollama_base_url_env") or "OLLAMA_BASE_URL")
+            base_url = str(cfg.get("ollama_base_url") or os.environ.get(env, "")).strip()
+            if not base_url:
+                continue
+            model = str(
+                cfg.get("ollama_model")
+                or os.environ.get("OLLAMA_MODEL", "")
+                or "qwen3.5:9b"
+            ).strip()
+            try:
+                from engine.ollama_provider import OllamaClient  # noqa: PLC0415
+
+                timeout = float(
+                    cfg.get("ollama_timeout_s")
+                    or cfg.get("client_timeout_s")
+                    or 120
+                )
+                client = OllamaClient(
+                    base_url=base_url,
+                    timeout_s=timeout,
+                    num_ctx=int(cfg.get("ollama_num_ctx") or 16384),
+                    keep_alive=str(cfg.get("ollama_keep_alive") or "5m"),
+                )
+                out.append({
+                    "name": "ollama",
+                    "env_var": env,
+                    "cred": "private-endpoint",
+                    "client": client,
+                    "model": model,
+                })
+            except Exception as e:  # noqa: BLE001
+                log.warning(
+                    "llm_auth: ollama client init failed for env=%s (%s)", env, e
+                )
 
     # Cross-process cooldown: keep every configured provider as a last resort,
     # but move a key that another process recently rate-limited/auth-failed

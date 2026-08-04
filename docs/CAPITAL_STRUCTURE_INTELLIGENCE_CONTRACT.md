@@ -1,9 +1,11 @@
 # Capital Structure Intelligence — Wave 0–2A plus authenticated share observations
 
 Status: implemented evidence spine and observed-filing-state projection; authenticated
-Company Facts share-observation code is pre-production/default-off; all context-only
+Company Facts share-observation code is pre-production/default-off; the manual isolated
+R2 CAS conformance harness is unprovisioned and has never run; all context-only
 Owner: `capital-structure-intelligence`
 Canonical build docket: `research/CAPITAL_STRUCTURE_INTELLIGENCE_COMPETITIVE_TEARDOWN_AND_BUILD_DOCKET_2026-08-01.md`
+R2 conformance operator handoff: `research/CAPITAL_STRUCTURE_SHARE_COUNT_R2_CONFORMANCE_HANDOFF.md`
 
 ## Ruling
 
@@ -61,8 +63,9 @@ flowchart LR
 | `data/capital_structure/companyfacts/generations/<sha256>/*` | `collectors/sec_capital_structure_companyfacts.py` | Immutable Company Facts manifest/coverage generation selected by a signed receipt and external head |
 | R2 `capital_structure/share_counts/v2/generations/<sha256>/ledger.json` | `scripts/materialize_capital_structure_share_counts.py` | Immutable v2 direct share/public-float observations bound to authenticated Company Facts bytes |
 | R2 `capital_structure/share_counts/v2/receipts/<sha256>.json` | same | HMAC-authenticated exact-predecessor publication receipt with constant-size rolling-prefix binding, bounded skip refs, and all-false authority |
-| R2 `capital_structure/share_counts/v2/current_head.json` | same | Mutable HMAC-authenticated compare-and-swap selector for exactly one immutable receipt/generation; dual-read v2/v3, with v3 a scope-bound same-selection migration fence rather than a new publisher |
+| R2 `capital_structure/share_counts/v2/current_head.json` | same | Mutable selector cataloged by a closed v2/v3/v4 witness union; runtime authenticates all three, supports exact structural migration/recovery, and keeps native v4 genesis/successor production publication unavailable |
 | ignored local `data/capital_structure/share_counts/v2/current_receipt.json` | same | Runner-local recovery/high-water cache; never an independent selector and never staged by the nightly broad `git add data/` |
+| GitHub Actions review artifact `capital_structure_share_count_r2_conformance_receipt.json` | `scripts/probe_capital_structure_share_count_r2.py` | Expiring, local-only record of one explicitly dispatched isolated-key conditional-write probe; not a Synapse artifact, R2 receipt, publication selector, coverage record, or authority source |
 | `data/edgar/dilution_events.parquet` | `collectors/edgar_dilution.py` | Existing legacy feed; unchanged in Wave 1 |
 
 The collector runs inside the serial SEC host group. The compiler runs immediately after
@@ -113,23 +116,30 @@ missing source, oversize input, split-brain, or an indeterminate post-CAS result
 fails closed. A clean runner has no independent monotonic witness and therefore
 cannot detect credential-level restoration of an older, otherwise valid signed
 head; global rollback protection requires a separate durable witness
-or signer domain. New publications use exactly one absent-only, signed
-`capital_structure.share_count_publish_journal/v1` commit-intent record. Its
-dedicated HMAC domain binds only exact v2 predecessor/candidate witnesses and
-their canonical local pointer bytes: no phase, CAS token, timestamp, or
-duplicated receipt metadata exists. The publisher fully seals and exact-reads
-both external immutable objects, reasserts the held descriptor-relative lane,
-then durably creates the journal before CAS. Once durable, every caught failure
-retains or restores the exact journal. Restart re-authenticates the candidate
-receipt and ledger before replaying `E -> C`, uses a fresh token, and permits at
-most two conditional conflicts. `H == C`, an authenticated descendant of `E`
-(including a competing direct child), or a genesis winner converges after the
-same logarithmic ancestry proof; rollback and divergent ancestry retain the
+or signer domain. Publication uses exactly one absent-only, signed local
+`.share_count_publish_journal.json`; the reader dispatches by the record's exact
+schema and rejects mixed or unknown shapes. Legacy
+`capital_structure.share_count_publish_journal/v1` binds only exact v2
+predecessor/candidate witnesses and their canonical local pointer bytes in its
+dedicated HMAC domain and remains fully drainable. Native-v4
+`capital_structure.share_count_publish_journal/v2` has its own HMAC domain and
+admits only null expected witness to v4 genesis, or exact v4 expected witness to
+v4 successor. Neither journal carries phase, CAS token, timestamp, or duplicated
+receipt metadata.
+
+The publisher fully seals and exact-reads both external immutable objects,
+reasserts the held descriptor-relative lane, then durably creates the selected
+journal schema before CAS. Once durable, every caught failure retains or
+restores the exact journal. Restart re-authenticates the candidate receipt and
+ledger before replaying `E -> C`, uses a fresh token, and permits at most two
+conditional conflicts. `H == C`, a protocol-valid authenticated descendant, or
+an authenticated genesis winner under the null-expected rule converges after
+the required receipt-ancestry proof; rollback and divergent ancestry retain the
 journal and fail closed. Any recovery state observed at publisher entry makes
-that invocation recovery-only, so migration and new candidate validation need
-a second clean lease. A scope-valid v3 same-selection migration of virtual v2
-`E`, `C`, or a proven descendant can be drained; wrong scope or migration digest
-fails before external artifact or ledger reads. Native v3 publication remains
+that invocation recovery-only, so migration and new candidate validation need a
+second clean lease. Legacy v1 recovery remains compatible with v3/v4 only under
+the explicit matrix below; wrong scope, migration anchor, or ancestry fails
+before selected artifact or ledger reads. Native v3 publication remains
 impossible.
 
 Capsule-only legacy recovery remains deliberately asymmetric:
@@ -138,8 +148,8 @@ bundle and clears; a head equal to, or an authenticated descendant of, the
 capsule candidate must prove the candidate as high-water before clearing; a
 sibling, equal-sequence fork, rollback, malformed proof, or missing proof fails
 closed and retains the exact capsule and pointer without opening a ledger. Any
-legacy recovery bytes beside a v3 head fail unchanged, and legacy state observed
-at lease entry prevents migration in that invocation. Legacy marker/capsule
+legacy recovery bytes beside a v3 or v4 head fail unchanged, and legacy state
+observed at lease entry prevents migration in that invocation. Legacy marker/capsule
 readers remain only to drain old crash state; the normal publisher never writes
 them. A journal beside either legacy name is terminal ambiguity before remote
 I/O, with every exact local byte preserved.
@@ -164,8 +174,8 @@ They do not remove the upstream dependency: the Company Facts source selector
 still authenticates a v1 predecessor chain capped at 512 receipts and will block
 at that checkpoint until its own authenticated migration lands.
 
-The immutable v2 receipts/generations and the dual-read v2/v3 R2 head are the
-publication data plane. A one-time, default-off migration may replace an exact
+The immutable v2 receipts/generations and closed v2/v3/v4 R2 head are the
+publication data plane. A one-time, default-off v3 migration may replace an exact
 canonical v2 head at the same key and CAS token with
 `capital_structure.share_count_head_witness/v3`. The v3 witness keeps all eleven
 selection fields and the sequence unchanged, signs an exact R2 scope
@@ -174,25 +184,207 @@ domain, and commits to the exact canonical v2 witness bytes including their
 newline. It cannot create genesis, advance v3, or publish a new generation.
 While present at the same key, v3 makes an old v2-only writer reject the schema
 before conditional PUT. The migration flag gates only that v2-to-v3 rewrite;
-dual-read v3 recovery and exact no-op behavior remain active when the flag is
+v3 recovery and exact no-op behavior remain active when the flag is
 false, while every v3 successor publication remains blocked.
+
+### Wave 6 v4 head-transition runtime (pre-production)
+
+Wave 6 adds a closed Draft 2020-12 contract for
+`capital_structure.share_count_head_witness/v4` and a closed external-head
+catalog union referencing only v2, v3, and v4. The engine and test seam now
+authenticate and sign v4, structurally migrate exact v2 or v3 heads to v4, and
+recover both legacy-v1 and native-v2 journal outcomes. Production native v4
+genesis/successor publication remains unavailable: the production wrapper never
+enables the injected native-publish seam, and no workflow schedules it.
+
+The v4 witness repeats the exact eleven existing selection fields, signs the
+same exact R2 guard scope, and carries one closed transition object. The runtime
+enforces this state matrix before any selected ledger is opened:
+
+| Transition | Required witness state | Required external proof | v1-journal compatibility |
+| --- | --- | --- | --- |
+| `genesis` | `sequence=1`, `previous_receipt=null` | The expected remote head/pointer is null; no overwrite or non-null expected state is a genesis | A v1 recovery journal may converge only when its expected witness is null and the selected v4 artifacts authenticate; every non-null expected state fails closed. |
+| `migration` from v2 | Exact existing selection and scope | `from_witness_sha256` is the exact v2 witness bytes; `v2_anchor_sha256` is that same canonical virtual-v2 anchor | A v1 recovery journal may recognize this only when the migration proves the exact virtual-v2 anchor for its v2 `E` or `C`. |
+| `migration` from v3 | Exact existing selection and scope | `from_witness_sha256` authenticates the v3 witness and `v2_anchor_sha256` authenticates the v3 witness's exact virtual-v2 anchor | The same exact virtual-v2-anchor rule applies; a v3 wrapper never substitutes for the v1 journal's v2 evidence. |
+| `successor` | `sequence>=2`, non-null `previous_receipt`, and `previous_witness_sha256` | Authenticated signed exact-scope v4 receipt ancestry proves continuity from the named preceding v4 witness; a matching sequence alone is insufficient | A v1 recovery journal may converge only when that ancestry proves its v2 `E` or `C` outcome; otherwise it retains exact evidence and fails closed. |
+
+`from_schema` is closed to v2 or v3, and all migration digests plus a successor's
+`previous_witness_sha256` are fixed lowercase SHA-256 values. The v4 schema
+does not by itself establish a global rollback witness: a clean runner still
+needs a separately durable monotonic witness or signer domain to detect
+credential-level restoration of an older otherwise valid head. No activation,
+retention, UI/API exposure, Prophet ingestion, ranking, sizing, entry, trade,
+or analytical authority follows from cataloging this contract.
+
+Native-v4 intent uses the same local journal filename with exact schema dispatch:
+
+| Journal schema | Allowed durable intent | Current release state |
+| --- | --- | --- |
+| `capital_structure.share_count_publish_journal/v1` | Exact v2 `E -> C`; remains drainable through the v1/v4 compatibility matrix above | Implemented legacy path |
+| `capital_structure.share_count_publish_journal/v2` | Null `E` to v4 `genesis`, or exact v4 `E` to v4 `successor`; no structural migration intent | Implemented engine/test seam; unavailable from the production publisher |
+
+The strict lowercase
+`CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED` and
+`CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V4_MIGRATION_ENABLED` flags both default to
+false and are mutually exclusive. A structural v4 migration is migration-only;
+it cannot share an invocation with native publication. None of these code paths
+provides schedule, activation, retention, UI, or Prophet authority.
+
+### Manual isolated R2 CAS conformance harness (implemented, unprovisioned, never run)
+
+The repository contains a separate operator harness for one narrow provider
+question: on one fresh object in a disposable isolated bucket, does Cloudflare
+R2 enforce the conditional create/update/readback behavior the share-count head
+protocol expects? The harness is not part of `daily.yml`, the materializer, the
+publisher, or the retention planner. Its workflow
+`.github/workflows/capital-share-count-r2-conformance.yml` has only a
+`workflow_dispatch` trigger, requires the boolean `run_conformance=true`, rejects
+non-`main` refs, targets the unprovisioned
+`capital-share-count-r2-conformance` Environment, has read-only repository
+permissions, and caps the job at five minutes. Before any run, that Environment
+must be restricted to `main`, require independent review, and preferably prevent
+self-review; the ref expression alone is not source approval. The probe itself
+has a fixed 90-second monotonic deadline plus a later 95-second process-alarm
+backstop for a stuck SDK call; the later alarm cannot preempt normal stream
+ownership transfer at the logical deadline.
+
+The workflow builds a minimal clean `git archive` from its exact `GITHUB_SHA`,
+checks that archive again before extraction, smoke-loads the reviewed core
+without executing the broad Capital Structure package initializer, and installs
+the narrow hash-locked Python 3.12 boto runtime from
+`requirements/capital-share-r2-conformance-macos-arm64-py312.lock`. Pip runs in
+isolated/no-input mode and Python runs with `-E -s`. The receipt binds the exact
+source-archive and dependency-lock SHA-256 values alongside the exact GitHub
+repository/workflow/main-ref/run/commit provenance. This is reviewed-source and
+dependency attestation, not a process-security or runner-integrity proof.
+
+The Environment must be provisioned with exactly these dedicated values:
+
+- `R2_SHARE_COUNT_CONFORMANCE_ENDPOINT`;
+- `R2_SHARE_COUNT_CONFORMANCE_ACCOUNT_ID`;
+- `R2_SHARE_COUNT_CONFORMANCE_BUCKET`;
+- `R2_SHARE_COUNT_CONFORMANCE_ACCESS_KEY_ID`; and
+- `R2_SHARE_COUNT_CONFORMANCE_SECRET_ACCESS_KEY`.
+
+There is no fallback to `R2_CAPITAL_STRUCTURE_*`, `R2_RESEARCH_*`, generic
+`R2_*`, or production publication credentials. The endpoint must be the exact
+HTTPS Cloudflare R2 global, EU, or FedRAMP account root bound to the supplied
+32-hex account ID. The credential and bucket must be dedicated to this
+disposable conformance plane; they are not configured by this code wave.
+
+For each admitted dispatch the wrapper generates exactly one fresh key under
+`capital_structure/share_counts/conformance/v1/<32-lowercase-hex>.json`. Its
+adapter guards the reviewed path to exact-bucket/exact-key `HeadObject`,
+`GetObject`, and `PutObject`, and the reviewed core contains no List, Delete,
+copy, multipart, HMAC, share-count publication, selector, receipt, or retention
+call. This is a reviewed-code guard, not a process sandbox: the wrapped boto
+client and signer remain same-process implementation details. Dedicated
+bucket-scoped credentials, the protected Environment, and exact-source review
+are therefore load-bearing blast-radius controls. The intended passing contract
+requires this complete sequence:
+
+1. conditionally create payload A with `If-None-Match: *`;
+2. HEAD A and exact bounded ranged-GET A with A's `If-Match` ETag;
+3. prove a duplicate absent-only create returns exact HTTP 412
+   `PreconditionFailed`, then
+   HEAD and exact-read A again to prove the conflict did not mutate it;
+4. conditionally replace A with payload B using A's exact ETag in `If-Match`;
+5. HEAD B and require a different opaque ETag;
+6. prove a ranged GET and PUT using stale ETag A each return exact HTTP 412
+   `PreconditionFailed`; and
+7. exact bounded ranged-GET B with B's ETag and verify the expected bytes.
+
+The conflict classifier accepts only a botocore `ClientError` with HTTP 412 and
+exact `Error.Code=PreconditionFailed` for these deliberately false conditions.
+Every 409, unrelated provider error, successful stale request, or untyped
+look-alike exception is inconclusive and cannot produce a passing receipt.
+
+Even with that sequential contract correctly enforced, this is one fresh-key trace. It
+launches no competing writer and
+does not prove concurrent linearizability, race safety across independent
+clients, or the production publisher's retry behavior. The probe client itself
+limits SDK attempts, but that does not attest the separately configured
+production head client. Before activation, the production CAS path must prove
+that conditional writes have no hidden adaptive retry, or must perform and test
+exact candidate reconciliation after every ambiguous/retried result; a real
+concurrent-writer race proof remains separate.
+
+Every ambiguous transport outcome, deadline, malformed response, unexpected
+status, body/metadata/range mismatch, or stream-close failure is non-passing.
+The closed
+`capital_structure.share_count_r2_conformance_receipt/v1` contract admits
+`passed`, `failed`, or `inconclusive`; only `passed` carries all eleven step
+witnesses. Non-pass receipts carry only a closed failure stage/category and an
+ordered completed-step prefix. For core failures that prefix contains only
+proven witnesses; wrapper-only failures may conservatively report an empty
+prefix. The wrapper preserves structured core evidence instead of flattening
+it. It attempts to close every owned response body on deadline, malformed
+metadata, unexpected success, readback failure, and normal success paths, and
+any close failure is non-passing. An admitted scope reduces bucket/key names and
+ETags to SHA-256 commitments and binds the endpoint host. A failure before
+configuration admission instead records `admitted=false`, null endpoint/bucket
+identity, and the fresh-key commitment rather than fabricating scope. Every
+receipt binds GitHub and reviewed-execution provenance and all-false output
+authority. JSON Schema provides the closed structural contract; the Python
+semantic validator is normative for cross-field relationships, body constants,
+metadata equality, ordered-prefix meaning, and receipt self-hash validation.
+
+The canonical receipt is written only to the runner's temporary artifact
+directory and uploaded as
+`capital-share-count-r2-conformance-<run_id>-<attempt>` for 90-day review. It is
+never written to R2, Git, the public site, or the production share-count
+namespace. The disposable R2 witness object intentionally remains because the
+reviewed harness never calls Delete; that residue is why the bucket must be
+isolated and must not be treated as a product store. Receipt upload uses
+`always()` with `if-no-files-found: warn`: it is best-effort after the probe has
+created output, not a guarantee for failures during checkout, environment setup,
+dependency installation, archive verification, timeout, or cancellation. A
+failed run with no artifact remains an explicit non-pass and must not be read as
+an empty or successful receipt.
+
+No live claim follows from the code existing. As of this contract update, the
+protected Environment, dedicated bucket, and credentials have not been
+provisioned; the workflow has not been dispatched; no receipt exists; and R2
+conditional create/CAS/readback has not been proven. The conflict classifier and
+failure/stream/archive hardening are implemented and locally regression-tested,
+but an operator must still provision and independently approve the isolated
+Environment before a dispatch can produce evidence. A future `passed` receipt
+would prove only that exact fresh-key sequence at that run's time and scope. It
+would not prove provider security, durability, availability, credential
+authenticity, global rollback resistance, share-count publication, or any
+issuer coverage.
+
+#### Synapse non-registration ruling
+
+The review receipt is intentionally absent from `config/synapse.yml`. It has no
+consumer, expires as a GitHub Actions artifact, and is neither Git-, runner-, nor
+R2-canonical state. The current Synapse storage vocabulary has no exact GitHub
+review-artifact locus; labeling it `gitignored-local` or `r2` would misstate its
+authority and persistence. The JSON Schema is code, not a runtime artifact. A
+later durable receipt plane or consumer must receive its own reviewed storage,
+cadence, retention, and Synapse contract before use; this expiring artifact may
+not be silently promoted.
 
 Local generation, receipt, pointer, journal, legacy pending/recovery, and lease files
 are crash-recovery mirrors and are excluded by `.gitignore`; this lane never turns
 a cumulative ledger into a Git object or public site payload. The publisher never
 deletes, and ancestry receipts remain retained. A bounded retention planner and
 receipt contract exist, but the production compactor is hard-disabled before
-credential lookup or remote I/O. Release requires all three of: a live isolated
-proof that the provider offers atomic conditional delete, a shared external fence
-covering publisher staging through head CAS and each retention delete, and a
+credential lookup or remote I/O. The manual CAS harness above never calls Delete
+and its receipt explicitly disclaims retention/deletion proof, so even a future
+`passed` receipt cannot release retention. Release requires all three of: a live
+isolated proof that the provider offers atomic conditional delete, a shared
+external fence covering publisher staging through head CAS and each retention
+delete, and a
 verifier-only/minted capability that can never write the signed head or receipts.
-The selector/receipt-only high-water split and single-journal recovery protocol
-are implemented and CI-pinned; they do not activate publication. Activation
-still requires isolated live-provider proof and an explicit operator decision.
-The migration additionally requires exact
-`SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID` configuration and a strict lowercase
-`CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED=true`; the default is
-false, and migration-false v2 operation does not require the account ID. Any
+The selector/receipt-only high-water split and schema-dispatched single-file
+journal recovery protocol and the unrun manual provider harness are implemented
+and CI-pinned; they do not activate publication. Activation still requires a
+real isolated-provider `passed` receipt, review of its exact run evidence, and an
+explicit operator decision.
+Migration additionally requires exact `SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID`
+configuration. Both strict lowercase migration flags default false and cannot
+be true together; migration-false v2 operation does not require the account ID. Any
 configured account ID is bound before client construction to the exact resolved
 Cloudflare R2 endpoint (`R2_CAPITAL_STRUCTURE_ENDPOINT`, then `R2_ENDPOINT`):
 HTTPS only, no URL credentials/port/path/query/fragment, and only the account's
@@ -383,9 +575,9 @@ falsifier histories.
 
 ## Authority firewall
 
-The event, issuer-context, compiler-telemetry, share-count v2 publication, and
-retention-receipt contracts hard-code context-only, rank=false, sizing=false,
-entry=false, and Prophet=false authority. A share-count ledger is observed
+The event, issuer-context, compiler-telemetry, share-count v2 publication,
+retention-receipt, and R2 conformance-receipt contracts hard-code context-only,
+rank=false, sizing=false, entry=false, and Prophet=false authority. A share-count ledger is observed
 denominator evidence, not a selected current denominator. Source manifests and
 term observations contain evidence and provenance rather than an authority object;
 their closed schemas reject undeclared authority fields, and canonical extraction

@@ -1,4 +1,4 @@
-"""Rendered-HTML contract for the HK board priority display layer (hk_prophet_v1).
+"""Rendered-HTML contract for the HK board priority display layer (hk_prophet_v2 — era bumped 2026-08-03 with the reclaim-veto removal).
 
 Program: research/HK_BOARD_RESURRECTION_MASTERPLAN_BY_FABLE.md
 Gates covered here: G1 (the seven witnesses are visible), G2 (leaders lane),
@@ -445,7 +445,7 @@ def shapes_fixture() -> dict:
         "vetoed_lane": len(su["vetoed"]),
     }
     su["ranking"] = {
-        "version": "hk_prophet_v1",
+        "version": "hk_prophet_v2",
         "weights": {"signal": 0.30, "entry": 0.25, "edge": 0.25,
                     "runway": 0.10, "quality": 0.10},
         "component_coverage": {"runway": {"nonzero": 0, "n": len(su["buy"])},
@@ -1108,7 +1108,7 @@ def test_footnote_states_the_weights_read_from_the_artifact(prio_html):
     assert "Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%." in prio_html
     assert "优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。" in prio_html
     assert "it is not a win probability" in prio_html
-    assert "The hk_prophet_v1 forward record is accruing separately." in prio_html
+    assert "The hk_prophet_v2 forward record is accruing separately." in prio_html
 
 
 def test_footnote_follows_the_artifact_when_the_engine_changes_a_weight(prio_html):
@@ -1273,10 +1273,33 @@ def test_legacy_render_is_tag_stream_identical_to_the_base_branch():
             continue
     if not base:
         pytest.skip("base ref templates/hk.html.j2 unavailable in this checkout")
-    art = committed_artifact()
+    # The committed artifact is now a PRIORITY-ERA board (it carries
+    # board_definition), so comparing it whole stopped testing what this test is
+    # named for and started asserting the priority layer never changes — which the
+    # hk_prophet_v2 admission disclosure legitimately does.  Strip the era stamps to
+    # get a genuinely LEGACY artifact: that is the fail-soft contract, and it must
+    # stay byte-for-byte identical across the change.
+    art = dict(committed_artifact())
+    art.pop("board_definition", None)
+    art.pop("rank_by", None)
     mine, theirs = _tags(_render(art)), _tags(_render_source(base, art))
     assert mine == theirs, "legacy render changed shape vs the base branch (%d vs %d tags)" % (
         len(mine), len(theirs))
+
+
+def test_the_priority_era_render_gains_exactly_the_admission_disclosure():
+    """The other half of the pair above: on a PRIORITY-era artifact the render is NOT
+    unchanged — hk_prophet_v2 owes the reader the admission change in plain words.  Pin
+    that it is present and that it names the cost, so a later edit cannot quietly drop
+    the disclosure while keeping the wider board."""
+    # Collapse whitespace: the copy wraps across template lines, so a raw substring
+    # match would pin the indentation rather than the sentence.
+    flat = re.sub(r"\s+", " ", _render(committed_artifact()))
+    assert "until 3 Aug this board also" in flat
+    assert "close back above that average within two sessions" in flat
+    assert "roughly a third more names here, and deeper drawdowns" in flat, (
+        "the disclosure must state the cost, not just the loosening")
+    assert "8月3日之前" in flat and "回撤会更深" in flat
 
 
 # --------------------------------------------------------------------------- #
@@ -1305,7 +1328,7 @@ def test_no_raw_stage_slug_reaches_the_glance_tier(prio_html):
     """`setting_up` may live in data-stage / data-stagepick attributes; it must never
     be the words a reader sees."""
     for text in re.findall(r'<span class="(?:sh-l|sh-s)">(.*?)</span></?', prio_html):
-        assert "setting_up" not in text and "hk_prophet_v1" not in text
+        assert "setting_up" not in text and "hk_prophet_v" not in text
     assert ">setting_up<" not in prio_html
 
 
@@ -1434,14 +1457,14 @@ def test_the_watch_lane_is_never_promoted_into_the_buy_lane():
 
 def test_the_production_board_stamps_the_keys_the_page_reads():
     su = production_fixture()
-    assert su["board_definition"] == "hk_prophet_v1"
-    assert su["rank_by"] == "hk_prophet_v1"
+    assert su["board_definition"] == "hk_prophet_v2"
+    assert su["rank_by"] == "hk_prophet_v2"
     assert isinstance(su["universe_excluded"], int)
     assert isinstance(su["universe_source_rows"], int)
     weights = su["ranking"]["weights"]
     assert sum(weights.values()) == pytest.approx(100.0), (
         "the artifact carries POINTS, not fractions — the footnote scales from the sum")
-    assert su["ranking"]["definition"] == "hk_prophet_v1"
+    assert su["ranking"]["definition"] == "hk_prophet_v2"
 
 
 def test_the_vetoed_section_on_the_production_board_has_real_rows(prod_html):

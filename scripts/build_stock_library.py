@@ -506,13 +506,25 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
         cache = config.data_dir() / grp / "_closes_cache.parquet"
         cons = config.data_dir() / grp / "constituents.parquet"
         if not (cache.exists() and cons.exists()):
-            log.warning("%s close cache missing — those constituents skipped", grp)
+            # A missing source group silently shrinks the emitted universe by O(1000)
+            # names, and the downstream name-score ledger stamp is keep-FIRST PIT — the
+            # hole is permanent (2026-07-25: the weekly lane, which restored no russell
+            # cache, stamped 1,704 US names between 2,966-name nightly stamps). Loud
+            # line-start annotation, never a logger call: GitHub drops logger-prefixed
+            # ::warning lines silently (repo annotation law).
+            print(f"::warning title=stock-library universe source missing::{grp} close "
+                  "cache/constituents absent — its constituents are missing from this "
+                  "build's universe (and from any name-score stamp this lane writes)",
+                  flush=True)
             continue
         try:
             closes = pd.read_parquet(cache)
             meta = pd.read_parquet(cons)
         except Exception as e:  # noqa: BLE001 — corrupt restored cache must not crash build_site
-            log.warning("%s cache unreadable (%s) — those constituents skipped", grp, e)
+            print(f"::warning title=stock-library universe source unreadable::{grp} "
+                  f"cache unreadable ({e}) — its constituents are missing from this "
+                  "build's universe (and from any name-score stamp this lane writes)",
+                  flush=True)
             continue
         added = 0
         for t in closes.columns:
