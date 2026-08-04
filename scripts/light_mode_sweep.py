@@ -25,12 +25,12 @@ import signal
 import socketserver
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
 
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-TMP_PREFIX = "_lm_sweep_tmp_"
 
 
 def serve(site_dir: Path) -> tuple[socketserver.TCPServer, int]:
@@ -90,10 +90,13 @@ def main() -> int:
     pages = [p.strip().removesuffix(".html") for p in args.pages.split(",") if p.strip()]
     tag = f"_{args.tag}" if args.tag else ""
 
-    tmp_files: list[Path] = []
     httpd, port = serve(site)
     failures: list[str] = []
-    try:
+    # Forced-light copies are throwaway Chrome feed, never shipped pages — they
+    # live in a TemporaryDirectory under site/ (so the local server can reach
+    # them) and each gets <base href="/"> so relative assets still resolve.
+    with tempfile.TemporaryDirectory(dir=site, prefix="_lm_sweep_") as td:
+        tdname = Path(td).name
         for page in pages:
             src = site / f"{page}.html"
             if not src.exists():
@@ -102,7 +105,7 @@ def main() -> int:
                 continue
             for theme in themes:
                 if theme == "light":
-                    tmp = site / f"{TMP_PREFIX}{page}.html"
+                    tmp = Path(td) / f"{page}.html"
                     html = src.read_text(encoding="utf-8")
                     stamped = html.replace('<html lang="en">',
                                            '<html lang="en" data-theme="light">', 1)
@@ -112,15 +115,15 @@ def main() -> int:
                     # Seed localStorage BEFORE any boot script runs: some pages
                     # (hub) set data-theme unconditionally from storage/auto-hour
                     # and would override the attribute stamp above.
-                    seed = ("<script>try{localStorage.setItem('theme','light');"
+                    seed = ('<base href="/">'
+                            "<script>try{localStorage.setItem('theme','light');"
                             "localStorage.removeItem('themeAuto');}catch(e){}</script>")
                     if "<head>" in stamped:
                         stamped = stamped.replace("<head>", "<head>" + seed, 1)
                     else:
                         stamped = stamped.replace("</title>", "</title>" + seed, 1)
                     tmp.write_text(stamped, encoding="utf-8")
-                    tmp_files.append(tmp)
-                    url = f"http://127.0.0.1:{port}/{tmp.name}"
+                    url = f"http://127.0.0.1:{port}/{tdname}/{page}.html"
                 else:
                     url = f"http://127.0.0.1:{port}/{page}.html"
                 png = out / f"{page}_{theme}{tag}.png"
@@ -141,10 +144,7 @@ def main() -> int:
                     combo.save(out / f"{page}_pair{tag}.png")
                 except Exception as e:  # noqa: BLE001 — pairs are a convenience
                     print(f"pair skipped for {page}: {e}", flush=True)
-    finally:
-        for tmp in tmp_files:
-            tmp.unlink(missing_ok=True)
-        httpd.shutdown()
+    httpd.shutdown()
 
     if failures:
         print(f"::warning title=light-mode-sweep::{len(failures)} capture(s) failed: "
