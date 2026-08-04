@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T18:55:05.212828+00:00",
-  "count": 752,
+  "generated_at": "2026-08-04T19:10:07.531613+00:00",
+  "count": 753,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -20,6 +20,7 @@
     "ING",
     "Ing Econ",
     "J.P. Morgan",
+    "Jefferies",
     "MUFG",
     "Mizuho",
     "Morgan Stanley",
@@ -310,6 +311,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0wdrkyfsdy6-c306e0",
+      "title": "China Mobile Remains Committed",
+      "institution": "Jefferies",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T13:49:43Z",
+      "summary_points": [
+        "**China Mobile's Strategic Commitment & Earnings Growth**: 2Q26 net profit forecast at Bt6.77bn (+23% YoY), core earnings +61% YoY driven by service revenue growth and cost savings, reaffirming no full divestment and strategic partnership.",
+        "**Valuation Upside & Growth Catalyst**: Target price 16.00 THB (15% upside from 13.90), supported by 184.3% EPS growth in 2025 (P/E 21.0x), driven by digital services expansion and strong earnings trajectory.",
+        "**ESG & Governance Strength**: Expanded ESG disclosures (GHG Scopes 1-3, energy use, governance metrics) reduce regulatory risk exposure under SEC/EU rules, while 58% female workforce, 8% turnover, and 91% board meeting attendance signal robust long-term risk management."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
