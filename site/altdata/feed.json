@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-08-03T23:51:22.065734+00:00",
-  "as_of": "2026-08-03",
+  "generated_utc": "2026-08-04T00:29:58.360092+00:00",
+  "as_of": "2026-08-04",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6080,12 +6080,12 @@
         },
         {
           "ticker": "GOOGL",
-          "net": -11,
+          "net": -10,
           "buys": 2,
-          "sells": 13,
-          "members": 5,
+          "sells": 12,
+          "members": 4,
           "est_usd": 16001.0,
-          "parties": "R/Republican"
+          "parties": "R"
         },
         {
           "ticker": "WAB",
@@ -6238,14 +6238,6 @@
         "top_agency": "Department of the Interior"
       },
       {
-        "ticker": "ACN",
-        "total_usd": 19109051.0,
-        "contracts": 3,
-        "agencies": 2,
-        "accel_x": 1.86,
-        "top_agency": "Department of the Treasury"
-      },
-      {
         "ticker": "PSN",
         "total_usd": 15860543.0,
         "contracts": 3,
@@ -6270,14 +6262,6 @@
         "top_agency": "Department of Homeland Security"
       },
       {
-        "ticker": "F",
-        "total_usd": 12062517.0,
-        "contracts": 235,
-        "agencies": 1,
-        "accel_x": 1.28,
-        "top_agency": "General Services Administration"
-      },
-      {
         "ticker": "ACM",
         "total_usd": 11867828.0,
         "contracts": 7,
@@ -6286,11 +6270,19 @@
         "top_agency": "Department of Homeland Security"
       },
       {
-        "ticker": "GM",
-        "total_usd": 7016605.0,
-        "contracts": 144,
+        "ticker": "F",
+        "total_usd": 11698585.0,
+        "contracts": 227,
         "agencies": 1,
-        "accel_x": 1.17,
+        "accel_x": 1.2,
+        "top_agency": "General Services Administration"
+      },
+      {
+        "ticker": "GM",
+        "total_usd": 6682769.0,
+        "contracts": 137,
+        "agencies": 1,
+        "accel_x": 1.06,
         "top_agency": "General Services Administration"
       },
       {
@@ -6308,6 +6300,14 @@
         "agencies": 1,
         "accel_x": null,
         "top_agency": "Department of the Interior"
+      },
+      {
+        "ticker": "BAH",
+        "total_usd": 4758876.0,
+        "contracts": 5,
+        "agencies": 3,
+        "accel_x": 1.17,
+        "top_agency": "Department of Homeland Security"
       }
     ],
     "gov_grants": [
@@ -25742,9 +25742,9 @@
         "top_issue": "Telecommunications"
       },
       {
-        "ticker": "T",
-        "spend_usd": 3495000.0,
-        "filings": 20,
+        "ticker": "CHTR",
+        "spend_usd": 3512500.0,
+        "filings": 23,
         "spike_x": null,
         "top_issue": "Telecommunications"
       }
@@ -28831,765 +28831,667 @@
     ],
     "earnings": [
       {
-        "ticker": "ACM",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": 1.54,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "AXON",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": 0.34,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "BWXT",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": 1.02,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "FANG",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": 5.73,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "IDXX",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": 3.95,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "OKE",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": 1.43,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "OTTR",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": 1.56,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "PLTR",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": 0.27,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "SBAC",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": 2.76,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "SPG",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": 3.17,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "TGTX",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": 0.42,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "WMB",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": 0.53,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "HIMS",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": null,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "L",
-        "next_date": "2026-08-03",
-        "days_to": 0,
-        "eps_forecast": null,
-        "last_surprise_pct": null
-      },
-      {
         "ticker": "ACGL",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 2.46,
         "last_surprise_pct": null
       },
       {
         "ticker": "ACLS",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.69,
         "last_surprise_pct": null
       },
       {
         "ticker": "AFL",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.78,
         "last_surprise_pct": null
       },
       {
         "ticker": "AKR",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.28,
         "last_surprise_pct": null
       },
       {
         "ticker": "AMD",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.35,
         "last_surprise_pct": null
       },
       {
         "ticker": "AMGN",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 5.55,
         "last_surprise_pct": null
       },
       {
         "ticker": "BKNG",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 2.48,
         "last_surprise_pct": null
       },
       {
         "ticker": "CARR",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.82,
         "last_surprise_pct": null
       },
       {
         "ticker": "CAT",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 6.19,
         "last_surprise_pct": null
       },
       {
         "ticker": "DD",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.75,
         "last_surprise_pct": null
       },
       {
         "ticker": "EXE",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.17,
         "last_surprise_pct": null
       },
       {
         "ticker": "FOUR",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.98,
         "last_surprise_pct": null
       },
       {
         "ticker": "GLW",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.76,
         "last_surprise_pct": null
       },
       {
         "ticker": "HALO",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.73,
         "last_surprise_pct": null
       },
       {
         "ticker": "HSIC",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.2,
         "last_surprise_pct": null
       },
       {
         "ticker": "HUBB",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 5.31,
         "last_surprise_pct": null
       },
       {
         "ticker": "IFF",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.14,
         "last_surprise_pct": null
       },
       {
         "ticker": "JCI",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.31,
         "last_surprise_pct": null
       },
       {
         "ticker": "MDLZ",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.69,
         "last_surprise_pct": null
       },
       {
         "ticker": "MRK",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 2.1,
         "last_surprise_pct": null
       },
       {
         "ticker": "NWS",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.15,
         "last_surprise_pct": null
       },
       {
         "ticker": "NXT",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.8,
         "last_surprise_pct": null
       },
       {
         "ticker": "PCRX",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.27,
         "last_surprise_pct": null
       },
       {
         "ticker": "PFE",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.68,
         "last_surprise_pct": null
       },
       {
         "ticker": "PG",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.44,
         "last_surprise_pct": null
       },
       {
         "ticker": "POWL",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.49,
         "last_surprise_pct": null
       },
       {
         "ticker": "PYPL",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.28,
         "last_surprise_pct": null
       },
       {
         "ticker": "QLYS",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.27,
         "last_surprise_pct": null
       },
       {
         "ticker": "REZI",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.69,
         "last_surprise_pct": null
       },
       {
         "ticker": "RSG",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.81,
         "last_surprise_pct": null
       },
       {
         "ticker": "SBH",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.53,
         "last_surprise_pct": null
       },
       {
         "ticker": "SBUX",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.65,
         "last_surprise_pct": null
       },
       {
         "ticker": "SMCI",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 0.59,
         "last_surprise_pct": null
       },
       {
         "ticker": "TDG",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 9.66,
         "last_surprise_pct": null
       },
       {
         "ticker": "UPS",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 1.67,
         "last_surprise_pct": null
       },
       {
         "ticker": "V",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 3.21,
         "last_surprise_pct": null
       },
       {
         "ticker": "ZBRA",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 3.49,
         "last_surprise_pct": null
       },
       {
         "ticker": "BA",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "JBGS",
         "next_date": "2026-08-04",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "ABNB",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 1.19,
         "last_surprise_pct": null
       },
       {
         "ticker": "AIG",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 1.93,
         "last_surprise_pct": null
       },
       {
         "ticker": "CDW",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 2.62,
         "last_surprise_pct": null
       },
       {
         "ticker": "DIS",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 1.89,
         "last_surprise_pct": null
       },
       {
         "ticker": "EMR",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 1.68,
         "last_surprise_pct": null
       },
       {
         "ticker": "FTNT",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 0.66,
         "last_surprise_pct": null
       },
       {
         "ticker": "GEO",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 0.28,
         "last_surprise_pct": null
       },
       {
         "ticker": "LYFT",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 0.17,
         "last_surprise_pct": null
       },
       {
         "ticker": "MCD",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 3.34,
         "last_surprise_pct": null
       },
       {
         "ticker": "MCK",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 9.63,
         "last_surprise_pct": null
       },
       {
         "ticker": "MIDD",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 2.32,
         "last_surprise_pct": null
       },
       {
         "ticker": "NI",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 0.21,
         "last_surprise_pct": null
       },
       {
         "ticker": "NRG",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 2.12,
         "last_surprise_pct": null
       },
       {
         "ticker": "PSN",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 0.68,
         "last_surprise_pct": null
       },
       {
         "ticker": "ROK",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 3.31,
         "last_surprise_pct": null
       },
       {
         "ticker": "STE",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 2.52,
         "last_surprise_pct": null
       },
       {
         "ticker": "TRMB",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 0.65,
         "last_surprise_pct": null
       },
       {
         "ticker": "UBER",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 0.84,
         "last_surprise_pct": null
       },
       {
         "ticker": "XNCR",
         "next_date": "2026-08-05",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "AMN",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.22,
         "last_surprise_pct": null
       },
       {
         "ticker": "CEG",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 2.3,
         "last_surprise_pct": null
       },
       {
         "ticker": "COP",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 2.72,
         "last_surprise_pct": null
       },
       {
         "ticker": "DDOG",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.12,
         "last_surprise_pct": null
       },
       {
         "ticker": "EVRG",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.87,
         "last_surprise_pct": null
       },
       {
         "ticker": "HASI",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.67,
         "last_surprise_pct": null
       },
       {
         "ticker": "LLY",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 9.01,
         "last_surprise_pct": null
       },
       {
         "ticker": "LYV",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.62,
         "last_surprise_pct": null
       },
       {
         "ticker": "MCHP",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.55,
         "last_surprise_pct": null
       },
       {
         "ticker": "MSI",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 3.43,
         "last_surprise_pct": null
       },
       {
         "ticker": "PH",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 8.31,
         "last_surprise_pct": null
       },
       {
         "ticker": "PINS",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.05,
         "last_surprise_pct": null
       },
       {
         "ticker": "PODD",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 1.37,
         "last_surprise_pct": null
       },
       {
         "ticker": "SN",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 1.03,
         "last_surprise_pct": null
       },
       {
         "ticker": "TLN",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 3.27,
         "last_surprise_pct": null
       },
       {
         "ticker": "TRGP",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 2.59,
         "last_surprise_pct": null
       },
       {
         "ticker": "TRUP",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.11,
         "last_surprise_pct": null
       },
       {
         "ticker": "TTD",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.22,
         "last_surprise_pct": null
       },
       {
         "ticker": "TTWO",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.07,
         "last_surprise_pct": null
       },
       {
         "ticker": "TWLO",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.59,
         "last_surprise_pct": null
       },
       {
         "ticker": "VST",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 2.16,
         "last_surprise_pct": null
       },
       {
         "ticker": "XYZ",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.47,
         "last_surprise_pct": null
       },
       {
         "ticker": "GILD",
         "next_date": "2026-08-06",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "ARES",
         "next_date": "2026-08-07",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 1.35,
         "last_surprise_pct": null
       },
       {
         "ticker": "BEN",
         "next_date": "2026-08-07",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.63,
         "last_surprise_pct": null
       },
       {
         "ticker": "BTSG",
         "next_date": "2026-08-07",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.34,
         "last_surprise_pct": null
       },
       {
         "ticker": "CL",
         "next_date": "2026-08-07",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.95,
         "last_surprise_pct": null
       },
       {
         "ticker": "CVX",
         "next_date": "2026-08-07",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 5.76,
         "last_surprise_pct": null
       },
       {
         "ticker": "D",
         "next_date": "2026-08-07",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.82,
         "last_surprise_pct": null
       },
       {
         "ticker": "LIN",
         "next_date": "2026-08-07",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 4.48,
         "last_surprise_pct": null
       },
       {
         "ticker": "NVT",
         "next_date": "2026-08-07",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 1.15,
         "last_surprise_pct": null
       },
       {
         "ticker": "REGN",
         "next_date": "2026-08-07",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 8.47,
         "last_surprise_pct": null
       },
       {
         "ticker": "XOM",
         "next_date": "2026-08-07",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 3.96,
         "last_surprise_pct": null
       },
       {
         "ticker": "NSP",
         "next_date": "2026-08-07",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "LIF",
         "next_date": "2026-08-10",
-        "days_to": 7,
+        "days_to": 6,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "LITE",
         "next_date": "2026-08-11",
-        "days_to": 8,
+        "days_to": 7,
         "eps_forecast": 2.59,
         "last_surprise_pct": null
       },
       {
         "ticker": "CSCO",
         "next_date": "2026-08-12",
-        "days_to": 9,
+        "days_to": 8,
         "eps_forecast": 0.99,
         "last_surprise_pct": null
       }
@@ -29873,16 +29775,6 @@
         "why": "clinical_phase3_start: 8 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: KEYTRUDA \u00b7 special_situation: Tender Offers"
       },
       {
-        "ticker": "T",
-        "score": 2,
-        "weighted_score": 1.1,
-        "channel_list": [
-          "congress_cluster",
-          "lobbying"
-        ],
-        "why": "congress_cluster: 4 members net +8 \u00b7 lobbying: $3,495,000 lobbied"
-      },
-      {
         "ticker": "INTC",
         "score": 3,
         "weighted_score": 1.05,
@@ -29964,6 +29856,17 @@
           "special_situation"
         ],
         "why": "congress_cluster: 3 members net +6 \u00b7 special_situation: Acquisitions"
+      },
+      {
+        "ticker": "ETSY",
+        "score": 3,
+        "weighted_score": 0.95,
+        "channel_list": [
+          "analyst_upgrade_cluster",
+          "app_demand",
+          "special_situation"
+        ],
+        "why": "analyst_upgrade_cluster: net upgrades +20 revision delta \u00b7 app_demand: 4.92\u2605 \u00d7 7,261,297 reviews \u00b7 special_situation: Divestitures"
       }
     ]
   }
