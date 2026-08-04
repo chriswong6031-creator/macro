@@ -245,6 +245,37 @@ trend-confirmation semantics invert in this regime. This is the operator's
 negatively priced at CN entry timing.** The featured shelf must feature the
 early window and demote the confirmed-late window, not vice versa.
 
+### 2.12 The 12-month formalization verdicts (W-B, PR #4506 — G0.8 applied)
+
+`ignition_chase_study.py` (241 sessions, 1,668 names, 257 baskets, 7,816
+matured chase events) re-ran the §2.9 constructions at scale:
+
+- **Chase×theme-heat DOES NOT REPLICATE** — chase inside HOT: median −2.04pp /
+  win 43.4% (n=3,317) vs chase with no theme: −1.51pp / 45.3% (n=3,694). The
+  in-era n=5 relay-winner cell was noise. Theme heat is NOT the chase
+  separator; R3's theme-backed leg was dropped before implementation.
+- **Blanket chase veto stays unjustifiable at scale** — median worse
+  (−1.72 vs −1.04) but mean (+0.98 vs +0.25) and win% better: a wider
+  distribution in both directions. Deleting the cohort deletes the right tail.
+- **RELAY POSITION is the real, monotone, robust separator**: early (≤1 other
+  same-theme member limit-closed in 3d) −1.17pp / 46.0% → mid −2.61pp / 42.3%
+  → late (≥4) **−5.32pp / 36.0%** (n=406; H=21 −8.36pp / 31.3%); the ladder
+  holds inside HOT and WARMING separately and across window halves. It is a
+  RANKING, not a green light — the only n≥100 name-level cell above water is
+  WARMING|early (+0.25pp, 50.6%), which weakly supports R2's WARMING-early
+  direction.
+- **Theme ignition leads at the BASKET level** (+1.25pp / 58% forward-10 after
+  a WARMING/HOT upgrade vs +0.33 control) **but naive member fresh-print
+  entries do not capture it** (−1.46pp vs −1.06 baseline) — the ride is real,
+  the naive translation to name-level entries fails. Any member-level
+  exploitation needs a construction that beats this measured null.
+- **Weakest joint (prerequisite for any relay promotion):** THS basket
+  membership is a single 2026-07-08 snapshot applied backward — the two
+  available PIT snapshots differ by 7.7% of member-slots in 8 days. Nightly
+  PIT membership snapshots are chartered as a W-C sub-task. (The §2.10 ex-ante
+  receipt is unaffected: it used the CURATED membership with PIT added/removed
+  dates.)
+
 ---
 
 ## §3 Root causes, ranked by measured impact
@@ -354,18 +385,20 @@ cycle-position×rotation confluence, no washout×turn term).
 *Tripwire:* W0 stratifies nightly by theme_timing bucket; if the 1.0 bucket's
 rolling loser rate exceeds the 0.25 bucket's over ≥60 matured, alarm + revert.
 
-**R3 — Conditional chase guard (the bimodality split, §2.9).**
-Build-time-knowable composite only (T+1 gap is grading-side): admission-day
-limit-close (close==high AND day move ≥ 0.95×limit) OR trail-21d ≥ +25% OR the
-micro chase_veto's 5-session ≥15% leg. **Naked chase** (composite ∧ no basket
-membership ∧ narr level None) → excluded from featured, lane
-`late_or_unfillable`, plain-word reason ("limit-day pop without theme support —
-the historical bagholder cohort"); still on the board, never population-deleted.
-**Theme-backed chase** (composite ∧ member ∧ WARMING/HOT-rising) → featured-
-eligible with a `relay` mark (the 龙头 class; §2.9 median +14.5). The dormant
-`assert_zt_not_positive` hook is retired-or-wired in the same commit (no dead
-guards). *Tripwire:* W0 grades both chase branches nightly; if naked-chase
-excluded names outperform kept featured over ≥60 matured, alarm.
+**R3 — Relay-position chase guard (REVISED 2026-08-04 per §2.12 / G0.8; the
+original theme-backed form was refuted before implementation).**
+Build-time-knowable composite (T+1 gap is grading-side): admission-day
+limit-close (close==high AND day move ≥ 0.95×limit, limit by board_type — not
+raw code prefix) OR trail-21d ≥ +25% OR the micro chase_veto's 5-session ≥15%
+leg. Per-candidate `relay_count_3d` = distinct OTHER members of the name's
+baskets printing a limit-close in [d−2, d]; position early ≤1 / mid 2-3 /
+late ≥4 / none (no membership). **The only admission effect:** chase-composite
+∧ relay LATE → featured-shortfall `relay_late` (routes to more_actionable —
+ordering-grade demotion, per the study's "a ranking, not a buy trigger").
+Everything else about chase is display/ledger: the chase + relay fields ride
+every row so W0 grades all branches nightly. No naked-chase demote (refuted),
+no relay green-light mark (refuted). *Tripwire:* relay_late demoted-vs-kept
+featured, rolling 60 matured.
 
 **R4 — Doors surface immediately (display), grade in shadow.**
 - Relay door: R3's theme-backed relay marks are a visible featured-adjacent
@@ -393,15 +426,20 @@ order, theme_timing bounds, naked-vs-relay routing, v3 definition stamp,
 v2-shadow parallel grading, updated invariants). Case receipts in PR body per
 G0.3: the §2.3 inversion table, §2.9 split, §2.10 table.
 
-### W-B — 12-month formalization (RUNNING, research PR)
-`ignition_chase_study.py`: chase×theme at scale, ignition lead test, half-split
-robustness. Its DECISION-RELEVANT SUMMARY refines R2/R3 thresholds (a summary
-that CONTRADICTS a slate item pauses that item pending operator read — G0.8).
+### W-B — 12-month formalization (DONE — PR #4506; verdicts in §2.12)
+Chase×theme refuted; relay ladder established; basket-level ignition lead real,
+naive member translation null. R3 revised accordingly BEFORE implementation
+(G0.8 worked as designed).
 
-### W-C — Continuation door plumbing + Theme Tape CN (display + shadow ledger)
+### W-C — Continuation door plumbing + Theme Tape CN + PIT membership (display + shadow ledger)
 The §2.7 cohort surfacing + `cn_continuation_watch_v1` ledger; CN Theme Tape on
 china_stocks reusing the US W2 pattern (#4488) — theme heat × member states ×
-why-not attributions, glance-tier, zh parity.
+why-not attributions, glance-tier, zh parity. NEW sub-task (W-B's weakest-joint
+flag): nightly PIT snapshots of THS basket membership (append-only store,
+keep-first per date) — the prerequisite for ANY future relay-construction
+promotion; member-slot drift measured at 7.7%/8 days. Any member-level
+ignition door must beat the §2.12 measured null (member fresh-prints after
+theme upgrade −1.46pp), not just show a positive cell.
 
 ### W-E — CN exit-policy study (RUNNING, research PR)
 Day-3 review / stops / winner-extension families vs H=10; feeds R5.
