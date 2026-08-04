@@ -728,6 +728,17 @@ order:
   wired in B6) is also touched by #4331: expect its first post-merge run through the new
   lane to be that PR's evidence, not this pass's.
 
+  **RESOLVED 2026-08-04.** #4331 merged 2026-08-03 and the follow-up lane staged the
+  family the next day: the four above plus `tests/test_cn_prophet_audit.py` and
+  `tests/test_us_context_vector.py` (the contract-§4 schema pin, dark since #4540).
+  All six green in the exact CI-minimal venv, serially and through the combined pack
+  run-lines (911 passed picks-boards / 301 passed learning-loop). Board-store family
+  (`china_board_rank`, `china_prophet_shadow`, `us_context_vector`) joined
+  `unrun-picks-boards`; the study half (`cn_prophet_audit`, `htf_super_tiers`,
+  `prophet_stage_fusion`) joined `unrun-prophet-learning-loop`, with
+  `data/china_standout_track/**` + `data/china_stocks/**` added to `ci.yml` paths so a
+  hand rewrite of the frozen reproduction's input grid can start the workflow.
+
 P4 (~436) and P5 (~455) remain the deliberate backlog. Wire in blast-radius order, batch
 per PR, stage serially first — and re-run `audit_unrun_tests.py` for current numbers
 rather than trusting this snapshot; the leak reopens weekly.
