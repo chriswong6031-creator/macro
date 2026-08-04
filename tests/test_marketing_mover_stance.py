@@ -128,6 +128,20 @@ _LAWFUL_COPY: tuple[str, ...] = (
     "That is the biggest move on my board today.",
     "Am I watching a rotation or one loud day?",
     "Do I know why they all went at once?",
+    # ── the descriptive buy/sell nouns (2026-08-04) ──────────────────────────
+    # FOUND BY A MERGE, NOT BY REVIEW. The trend-bucket lines and this detector
+    # shipped from two lanes for the SAME postmortem; each was green alone, and
+    # together the detector quarantined the very copy the other lane wrote to
+    # fix the defect. "Selling" and "buying" also name what the TAPE did, and
+    # copy most often reaches for the noun compound to DENY a signal, which is
+    # the opposite of issuing one. These belong here rather than in their own
+    # test because the must-fire direction is already pinned by
+    # test_detector_fires_on_every_stance_that_actually_shipped -- a carve-out
+    # that silenced the rule would break that sweep, not this list.
+    "First green that means anything after months of selling.",
+    "A flush this deep after weeks of selling is capitulation territory.",
+    "That's a fact about crowds, not a buy signal.",
+    "Sell pressure finally let up.",
 )
 
 
@@ -229,17 +243,30 @@ def test_every_mover_voice_bank_offers_both_lawful_shapes():
     comes back empty. A voice missing either side would therefore silently
     restore the unfiltered pool - and with it the possibility of rendering a
     "{mover_state}" line into a context that has no state.
+
+    SCOPED TO THE NON-BUCKET BANK (2026-08-04). The trend-context lines are a
+    SECOND, independent axis that landed for the same postmortem from another
+    lane: they gate on the tape shape, carry no {mover_state} token, and so
+    declare neither state tag by design. Requiring totality over the whole bank
+    would force a meaningless state tag onto every future bucket line. What has
+    to stay total is the partition of the lines the state axis actually governs,
+    because that is what makes the empty-pool fallback unreachable.
     """
     for (type_id, voice), bank in copywriter._TEMPLATES.items():
         if type_id != "mover":
             continue
-        tags = [set(v[2]) if len(v) > 2 else set() for v in bank]
+        state_bank = [
+            v for v in bank
+            if not (copywriter._MOVER_CONTEXT_TAG_SET
+                    & (set(v[2]) if len(v) > 2 else set()))
+        ]
+        tags = [set(v[2]) if len(v) > 2 else set() for v in state_bank]
         with_state = [t for t in tags if "needs_state" in t]
         without = [t for t in tags if "no_state" in t]
         assert with_state, f"mover/{voice}: no needs_state variant"
         assert without, f"mover/{voice}: no no_state variant"
-        assert len(with_state) + len(without) == len(bank), (
-            f"mover/{voice}: a variant declares neither shape"
+        assert len(with_state) + len(without) == len(state_bank), (
+            f"mover/{voice}: a non-bucket variant declares neither shape"
         )
         # A needs_state line must actually use the token, and a no_state line
         # must not - otherwise the tag is a label with no referent.

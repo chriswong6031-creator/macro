@@ -2540,6 +2540,33 @@ def no_reaction_violations(text: str) -> list[str]:
 # ("watching, not chasing").
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: THE DESCRIPTIVE CARVE-OUT. "Buying" and "selling" are also the ordinary mass
+#: nouns for what the TAPE did, and in that use they name nobody's decision:
+#: "First green that means anything after months of selling" reports a
+#: downtrend, exactly the observation this rule wants copy to make instead of a
+#: stance. Governed by a preposition, the word is a description of the market,
+#: so it is removed before the two-factor test rather than counted by it.
+#:
+#: Found by the 2026-08-04 merge, not by review: the bucket lines and this
+#: detector shipped from two different lanes for the SAME postmortem, and the
+#: detector quarantined the very copy the other lane wrote to fix it. Scoped
+#: deliberately narrow — only the buy/sell family, only after a preposition —
+#: because every other action stem in the list below has no innocent noun sense
+#: in this register ("months of chasing" is not a thing anyone writes).
+#: TWO descriptive shapes, both about the market rather than about us:
+#:   1. governed by a preposition - "months of selling", "after weeks of buying";
+#:   2. a market-structure NOUN COMPOUND - "a buy signal", "sell pressure",
+#:      "the buy side". These name a phenomenon, and copy most often reaches for
+#:      them to DENY one ("that's a fact about crowds, not a buy signal"), which
+#:      is the exact opposite of issuing an instruction.
+_STANCE_DESCRIPTIVE_ACTION_RE = re.compile(
+    r"\b(?:of|after|through|amid|despite|during|following)\s+"
+    r"(?:\w+\s+){0,2}?(?:buy\w*|sell\w*|dip[-\s]?buy\w*)\b"
+    r"|\b(?:buy|sell)\s+"
+    r"(?:signal|side|pressure|flow|program|order|wall|volume|tape)\b",
+    re.IGNORECASE,
+)
+
 #: Verbs and nouns that name a TRADE DECISION — entering, exiting, sizing, or
 #: timing a position. Stems, because the inflection is where a paraphrase hides.
 _STANCE_ACTION_RE = re.compile(
@@ -2629,7 +2656,12 @@ def uncomputed_stance(text: str) -> list[str]:
         if not low:
             continue
         why = ""
-        if _STANCE_IMPERATIVE_RE.match(low):
+        # The descriptive strip applies to the imperative branch too: "Sell
+        # pressure finally let up" OPENS on a trade verb but the verb belongs to
+        # a noun compound, not to the reader. "Sell it here" and "Buy the dip"
+        # carry no compound, so they survive the strip and still fire.
+        probe = _STANCE_DESCRIPTIVE_ACTION_RE.sub(" ", low).strip()
+        if _STANCE_IMPERATIVE_RE.match(probe):
             why = "imperative trade instruction"
         elif (_STANCE_NEEDS_TIME_RE.search(low)
               or _STANCE_DO_NOTHING_RE.search(low)
@@ -2639,7 +2671,12 @@ def uncomputed_stance(text: str) -> list[str]:
               and _STANCE_TIMING_FRAME_RE.search(low)):
             why = "entry-timing comparative"
         else:
-            action = _STANCE_ACTION_RE.search(low)
+            # Strip the descriptive buy/sell noun uses BEFORE looking for an
+            # action, so "months of selling" cannot supply the trade decision.
+            # A sentence that still carries an action after the strip keeps
+            # firing, so this narrows the rule without disarming it.
+            probe = _STANCE_DESCRIPTIVE_ACTION_RE.sub(" ", low)
+            action = _STANCE_ACTION_RE.search(probe)
             if action and _STANCE_FRAME_RE.search(low):
                 why = f"trade decision '{action.group(0)}' inside a prescriptive frame"
         if why:
