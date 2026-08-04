@@ -1379,6 +1379,15 @@
       nav.classList.remove('nav-open');
       btn.setAttribute('aria-expanded', 'false');
       links.querySelectorAll('.nav-dd.open').forEach(function(d) { d.classList.remove('open'); });
+      // Drills carry their own state class. Leaving one open would strand a
+      // full-screen country sheet over the page after the nav itself closed.
+      links.querySelectorAll('.nav-drill.is-open').forEach(function (d) {
+        d.classList.remove('is-open');
+        var t = d.querySelector(':scope > [data-nav-drill-open]');
+        if (t) t.setAttribute('aria-expanded', 'false');
+        var p = d.querySelector(':scope > [data-nav-drill-panel]');
+        if (p) p.setAttribute('inert', '');
+      });
     }
     btn.addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation();
@@ -1394,6 +1403,12 @@
       if (!trigger) return;
       trigger.addEventListener('click', function(e) {
         if (window.innerWidth > 900) return;
+        // A drill trigger is owned by initNavDrills' delegated handler, which
+        // listens on `document`. nav_market.js converts a folded country into
+        // exactly that (data-nav-drill-open) AFTER this listener is attached,
+        // so swallowing the click here with stopPropagation() left tapping a
+        // country inside International doing nothing at all on mobile. Yield.
+        if (trigger.hasAttribute('data-nav-drill-open')) return;
         e.preventDefault(); e.stopPropagation();
         var wasOpen = dd.classList.contains('open');
         dd.parentElement.querySelectorAll(':scope > .nav-dd.open').forEach(function(d) {
@@ -1442,7 +1457,14 @@
     // close after a destination link is picked, on Escape, on outside tap, on widen
     links.addEventListener('click', function (e) {
       var a = e.target.closest('a');
-      if (a && !a.closest('.nav-dd') || (a && a.closest('.nav-dd-menu'))) closeNav();
+      if (!a) return;
+      // A submenu/drill trigger is navigation WITHIN the menu, not a destination.
+      // Folded country triggers (nav_market.js) are <a class="nav-sub-trig"
+      // data-nav-drill-open> sitting inside International's .nav-dd-menu, so the
+      // rule below used to read them as "a link was picked" and shut the whole
+      // mobile nav — the reader tapped China and the menu simply vanished.
+      if (a.hasAttribute('data-nav-drill-open') || a.classList.contains('nav-sub-trig')) return;
+      if (!a.closest('.nav-dd') || a.closest('.nav-dd-menu')) closeNav();
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNav(); });
     document.addEventListener('click', function (e) { if (!nav.contains(e.target)) closeNav(); });
