@@ -1048,6 +1048,12 @@ RAN_LABEL_ZH = "已启动"
 # consumer can tell an exact marker-dated age from a session-count reconstruction.
 ANCHOR_MARKER = "marker"
 ANCHOR_APPROX = "approx"
+# ...and how its MOVE was anchored, when the caller supplies a `move_read`.  The date
+# and the age stay the marker's under all three words; `confirm` says only that the
+# move was measured from the close at which the marker's label first became knowable,
+# which is the only anchor `signal_quality._buy_filter` permits a forward return to
+# use.  See :func:`build_ran_rows`.
+ANCHOR_CONFIRM = "confirm"
 RAN_THEME_LINE = "Theme just confirmed — watch for the next entry"
 RAN_THEME_LINE_ZH = "主题刚确认 — 关注下一个买点"
 
@@ -1184,6 +1190,7 @@ def build_ran_rows(
     cap: int = RAN_CAP,
     ticks_min: int = RAN_TICKS_MIN,
     ticks_max: int = RAN_TICKS_MAX,
+    move_read: Callable[[Any, Any], Mapping[str, Any] | None] | None = None,
 ) -> list[dict]:
     """Build the ran lane: crossed days ago, trend intact, no entry claim attached.
 
@@ -1209,6 +1216,21 @@ def build_ran_rows(
 
     Order: theme-confirmed rows first (their theme only just turned, so the desync is
     the point), then the freshest cross, then the largest move since it fired.
+
+    ``move_read(series, marker_date) -> {pct_since, measured_from} | None`` REPLACES
+    the move — and only the move; the date, the age and the drop rules are untouched.
+    It exists because ``cross_read``'s marker anchor is the one
+    ``signal_quality._buy_filter`` forbids for a forward return: ``marker['date']`` is
+    a 3B bucket's LEFT edge whose label reads two buckets forward, so it precedes the
+    close at which the signal was knowable by ~8 sessions and sits at the trough that
+    created it.  MEASURED on the HK ran lane, 2026-07-31: every one of the 12 displayed
+    rows overstated, mean +8.09pp, worst 3690.HK at +29.2% against +10.9% from the
+    confirmation close.  The hook rather than an unconditional change because the move
+    is also the lane's third sort key — re-anchoring after the sort would order and
+    truncate the lane by a number it no longer prints — and because the US board's
+    identical exposure has not been measured yet, so it keeps the old read and the old
+    row shape byte-for-byte until it has.  Passing it adds ``measured_from``; omitting
+    it changes nothing.  ⚠ THE US BOARD STILL CARRIES THIS DEFECT.
     """
     skip = {str(t or "").strip().upper() for t in exclude}
     meta_by = meta_by or {}
@@ -1251,6 +1273,9 @@ def build_ran_rows(
 
         theme = (theme_by or {}).get(key)
         sig_date = signal_asof(meta, verdict)
+        move = None
+        if move_read is not None and read["anchor"] == ANCHOR_MARKER:
+            move = move_read(series, marker_date)
         row: dict[str, Any] = {
             "ticker": key,
             "name": meta.get("name") or key,
@@ -1259,8 +1284,9 @@ def build_ran_rows(
             "ticks": ticks,
             "cross_date": read["cross_date"],
             "sessions_since": read["sessions_since"],
-            "pct_since": read["pct_since"],
-            "anchor": read["anchor"],
+            "pct_since": (move["pct_since"] if move else
+                          None if move_read is not None else read["pct_since"]),
+            "anchor": (ANCHOR_CONFIRM if move else read["anchor"]),
             "stage": STAGE_RAN,
             "lane": "ran",
             "label": RAN_LABEL,
@@ -1271,6 +1297,10 @@ def build_ran_rows(
         # across both arrays of the artifact.
         row["days_since_signal"], row["days_since_signal_basis"] = signal_age(
             verdict, sig_date, board_asof)
+        if move_read is not None:
+            # Only the boards that asked for a confirmation read carry the field, so
+            # the US row shape is unchanged for every consumer that did not.
+            row["measured_from"] = move["measured_from"] if move else None
         if meta.get("spark_svg"):
             row["spark_svg"] = meta["spark_svg"]
         if theme:
