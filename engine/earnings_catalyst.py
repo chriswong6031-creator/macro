@@ -31,7 +31,15 @@ Field vocabulary produced here (all display-tier):
                         fails open.  ``False`` = checked and inside it.  ``None`` = the
                         freshness question was never asked (see
                         :func:`fields_from_assessment`) — never read a ``None`` as fresh.
-  ``earnings_reaction`` ``{date, day0, day0_move_pct, basis, ...}`` — see :func:`reaction`.
+  ``post_earnings_move`` ``{date, day0, day0_move_pct, basis, ...}`` — see :func:`reaction`.
+
+NAMING (commissioner ruling, W4 review).  The board-row key is ``post_earnings_move``,
+not ``earnings_reaction``: the latter is already a hot-tape TRIGGER name
+(``engine/marketing/hot_tape.py``, ``hot_tape_wire.py``, ``scripts/hot_tape_radar.py``)
+for "the gap a report opened".  Different artifact, but close enough in meaning that a
+shared token would make every future grep ambiguous, so the two vocabularies are kept
+grep-separable.  The function stays :func:`reaction` — module-scoped, unambiguous as
+``earnings_catalyst.reaction``, and never the emitted key.
 """
 from __future__ import annotations
 
@@ -332,7 +340,7 @@ def board_row_fields(assessment: dict | None, today: date,
                      *, closes=None, surprises=None) -> dict:
     """The complete display-tier earnings payload for one board row.
 
-    Returns ``{"earnings_soon": dict|None, "earnings_reaction": dict|None}``.  The
+    Returns ``{"earnings_soon": dict|None, "post_earnings_move": dict|None}``.  The
     caller attaches whichever values are non-None; nothing here is a gate.
 
     ``earnings_soon`` has TWO shapes, and the difference is load-bearing:
@@ -350,7 +358,7 @@ def board_row_fields(assessment: dict | None, today: date,
       this at all is W4's point: a stale row is precisely where
       ``earnings_blackout.assess`` fails open in silence.
     """
-    out: dict = {"earnings_soon": None, "earnings_reaction": None}
+    out: dict = {"earnings_soon": None, "post_earnings_move": None}
     if not assessment:
         return out
 
@@ -382,5 +390,5 @@ def board_row_fields(assessment: dict | None, today: date,
 
     rd = latest_report_date(next_date, surprises, today)
     if rd is not None:
-        out["earnings_reaction"] = reaction(rd, assessment.get("next_time"), closes, today)
+        out["post_earnings_move"] = reaction(rd, assessment.get("next_time"), closes, today)
     return out

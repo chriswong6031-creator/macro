@@ -19,7 +19,7 @@ Three defects, three fixes, one test file:
    ``_emit_staleness_annotation`` pages with a line-start ``::warning``.
 3. **No catalyst context.**  Board rows carried a proximity chip and nothing else.
    ``engine.earnings_catalyst`` adds ``days_to_report`` / ``reports_within_7`` /
-   ``stale`` and a post-earnings ``earnings_reaction``.
+   ``stale``, plus a ``post_earnings_move`` day-0 read.
 
 TIER: everything here is DISPLAY (masterplan §0 G0.1).  The blackout veto's semantics —
 fail-open included — are deliberately unchanged, and ``test_veto_semantics_untouched``
@@ -317,7 +317,7 @@ class TestDaysToReport:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 4. earnings_reaction — the day-0 convention
+# 4. post_earnings_move — the day-0 convention
 # ═══════════════════════════════════════════════════════════════════════════
 
 # Mon 07-27 .. Mon 08-03, all sessions. 100 -> 102 -> 104 -> 106 -> 108 (Fri) -> 120 (Mon).
@@ -469,26 +469,26 @@ class TestBoardRowSchema:
 
     def test_missing_assessment_attaches_nothing(self):
         assert ec.board_row_fields(None, CASE_DAY) == {"earnings_soon": None,
-                                                       "earnings_reaction": None}
+                                                       "post_earnings_move": None}
 
     def test_reaction_rides_along_on_a_just_reported_row(self):
         payload = ec.board_row_fields(
             self._assessment(next_date="2026-07-31", days_to_earnings=None,
                              reason="next_date_in_past"),
             CASE_DAY, closes=_CLOSES)
-        assert payload["earnings_reaction"]["day0"] == "2026-08-03"
-        assert payload["earnings_reaction"]["day0_move_pct"] == pytest.approx(11.11, abs=0.01)
+        assert payload["post_earnings_move"]["day0"] == "2026-08-03"
+        assert payload["post_earnings_move"]["day0_move_pct"] == pytest.approx(11.11, abs=0.01)
 
     def test_the_contract_registers_both_keys_as_may_be_absent(self):
         from scripts.export_signal_contracts import ARTIFACT_MANIFEST
         entry = next(e for e in ARTIFACT_MANIFEST
                      if e["artifact"] == "site/factordata/us_standouts.json")
         assert entry["schema_version"] == "1.7.0"
-        assert {"earnings_reaction", "earnings_soon"} <= set(entry["optional_fields"])
-        assert {"earnings_reaction", "earnings_soon"} <= set(entry["schema_item_fields"])
+        assert {"post_earnings_move", "earnings_soon"} <= set(entry["optional_fields"])
+        assert {"post_earnings_move", "earnings_soon"} <= set(entry["schema_item_fields"])
         # optional_fields is the may-be-absent register, NOT a promotion: neither key
         # may claim required status until a committed render proves it always ships.
-        assert not ({"earnings_reaction", "earnings_soon"} & set(entry["schema_fields"]))
+        assert not ({"post_earnings_move", "earnings_soon"} & set(entry["schema_fields"]))
 
     def test_the_live_artifact_still_parses_and_keeps_its_lanes(self):
         """The committed board predates this build, so it does NOT yet carry the new
@@ -516,10 +516,8 @@ class TestNothingGatesOnTheNewFields:
         """Files that READ the field off an object — the shape a consumer has.
 
         Keyed on access syntax (``get("f")`` / ``["f"]`` / ``.f``) rather than on the
-        bare word, because the bare word is not evidence: ``earnings_reaction`` is also
-        a hot-tape TRIGGER NAME (engine/marketing/hot_tape.py) living in a different
-        artifact's vocabulary, and a substring match would flag it forever while
-        teaching nothing.  A gate reads a value; a vocabulary entry does not.
+        bare word: a bare word matches prose, comments, and contract registrations, none
+        of which is a gate.  A gate READS a value.
         """
         pat = re.compile(r"""(?:get\(\s*['"]%s['"]|\[\s*['"]%s['"]\s*\]|\.%s\b)"""
                          % (field, field, field))
@@ -541,8 +539,52 @@ class TestNothingGatesOnTheNewFields:
         IS read (dashboard.html.j2 gates the chip on it), so the probe must find it."""
         assert "templates/dashboard.html.j2" in self._readers("days_to")
 
+    def test_the_two_earnings_vocabularies_stay_grep_separable(self):
+        """Commissioner ruling (W4 review): the board-row key is `post_earnings_move`,
+        and `earnings_reaction` belongs exclusively to the hot-tape TRIGGER vocabulary.
+
+        One token across two artifact vocabularies makes every future grep ambiguous —
+        "who reads the post-earnings move?" would return marketing files forever.
+
+        Graded on KEY USAGE, not on the bare word.  The docstrings in
+        earnings_catalyst.py and export_signal_contracts.py deliberately NAME the
+        hot-tape token to explain why the row key differs from it; a word-level ban
+        would forbid the very comment that keeps the next reader from "fixing" the
+        name back.  What must not exist is `earnings_reaction` as a field anyone emits,
+        reads, or registers.  Both directions are asserted — a one-way check passes
+        while the separation collapses from the other side.
+        """
+        # 1. nobody, anywhere, READS `earnings_reaction` off an object
+        assert self._readers("earnings_reaction") == set(), (
+            f"`earnings_reaction` is read as a field by "
+            f"{sorted(self._readers('earnings_reaction'))} — W4's key is "
+            "`post_earnings_move`")
+
+        # 2. the emitted payload carries the new key and only the new key
+        payload = ec.board_row_fields(
+            {"next_date": "2026-07-31", "next_time": "time-after-hours",
+             "days_to_earnings": None, "stale": False, "as_of_age_td": 0,
+             "in_blackout": False}, CASE_DAY, closes=_CLOSES)
+        assert set(payload) == {"earnings_soon", "post_earnings_move"}
+
+        # 3. the contract registers the new name, never the old one
+        from scripts.export_signal_contracts import ARTIFACT_MANIFEST
+        entry = next(e for e in ARTIFACT_MANIFEST
+                     if e["artifact"] == "site/factordata/us_standouts.json")
+        registered = set(entry["optional_fields"]) | set(entry["schema_item_fields"])
+        assert "post_earnings_move" in registered
+        assert "earnings_reaction" not in registered
+
+        # 4. the other side: hot-tape keeps its trigger token and gains nothing of ours
+        hot_tape = (ROOT / "engine" / "marketing" / "hot_tape.py").read_text()
+        assert "earnings_reaction" in hot_tape, (
+            "the hot-tape trigger vocabulary lost `earnings_reaction` — this test's "
+            "premise (two distinct vocabularies) no longer holds")
+        assert "post_earnings_move" not in hot_tape, (
+            "the W4 row key leaked into the hot-tape trigger vocabulary")
+
     @pytest.mark.parametrize("field", ["days_to_report", "reports_within_7",
-                                       "earnings_reaction"])
+                                       "post_earnings_move"])
     def test_only_the_producer_reads_the_new_fields(self, field):
         """The ONLY files allowed to read a W4 field are the module that computes it
         and the builder that attaches it.  A third reader is a consumer, and a consumer
@@ -557,7 +599,7 @@ class TestNothingGatesOnTheNewFields:
         may read `earnings_soon.in_blackout` and nothing else W4 added."""
         src = (ROOT / "engine" / "us_board_rank.py").read_text()
         assert 'earnings_soon") or {}).get("in_blackout")' in src
-        for f in ("days_to_report", "reports_within_7", "earnings_reaction"):
+        for f in ("days_to_report", "reports_within_7", "post_earnings_move"):
             assert f not in src, f"us_board_rank now reads {f} — that is a promotion"
 
     def test_veto_semantics_untouched(self, tmp_path):

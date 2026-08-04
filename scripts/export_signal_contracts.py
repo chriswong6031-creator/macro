@@ -240,9 +240,12 @@ ARTIFACT_MANIFEST = [
     # `ranking.component_coverage` also lands here (inside the existing `ranking`
     # object, so it adds no top-level or item-level key).
     # 1.6.0 -> 1.7.0 (2026-08-04, prophet-us W4): two DISPLAY-TIER per-row keys, both
-    # additive and both conditional. `earnings_reaction` ({date, day0, day0_move_pct,
+    # additive and both conditional. `post_earnings_move` ({date, day0, day0_move_pct,
     # basis, ...}) is attached only when the name reported inside the trailing 5
-    # sessions. `earnings_soon` has shipped since MLC-W5 but was never registered; W4
+    # sessions. It is deliberately NOT called `earnings_reaction` — that token is the
+    # hot-tape lane's TRIGGER name (engine/marketing/hot_tape.py) for a related but
+    # different thing, and one token across two artifact vocabularies makes every future
+    # grep ambiguous. `earnings_soon` has shipped since MLC-W5 but was never registered; W4
     # documents it and widens it — besides the existing CHIP shape (days_to + chip_en/
     # chip_zh, unchanged) it now also carries a DISCLOSURE shape on a row whose store
     # stamp has aged past 10 sessions: days_to_report=null, reports_within_7=null,
@@ -273,12 +276,12 @@ ARTIFACT_MANIFEST = [
          # anchor). check_contract_drift compares TOP-LEVEL keys only, so listing
          # an item key here exempts nothing that would otherwise be caught — it
          # documents conditionality for consumers.
-         # `earnings_soon` / `earnings_reaction` are likewise ITEM keys (W4): both are
+         # `earnings_soon` / `post_earnings_move` are likewise ITEM keys (W4): both are
          # attached per row only when the earnings store can answer for that name, so a
          # consumer must treat both as may-be-absent and must not infer "no report
          # scheduled" from their absence.
          # (List order is alphabetical — test_contract_drift asserts it sorted.)
-         "anchor", "earnings_reaction", "earnings_soon",
+         "anchor", "earnings_soon", "post_earnings_move",
      ],
      "schema_item_fields": [
          "above_trend", "adv_dollar_20d_median", "adv_dollar_21d", "align_tier", "alpha",
@@ -286,10 +289,11 @@ ARTIFACT_MANIFEST = [
          "cross_date", "days_since_signal", "days_since_signal_basis",
          "days_to_build_100k", "days_to_build_1m",
          "days_to_exit_at_10pct_adv", "dd_pct", "dir", "display_rank",
-         "earnings_reaction", "earnings_soon", "entry_signal",
+         "earnings_soon", "entry_signal",
          "eq_dir", "f1d_shadow_bonus", "f1d_shadow_c6", "f1d_shadow_rank", "factor_z",
          "featured", "featured_blocked_by", "hold", "label", "label_zh", "lane",
-         "liquidity_tier", "name", "new", "off_high", "pct_since", "price", "prophet",
+         "liquidity_tier", "name", "new", "off_high", "pct_since",
+         "post_earnings_move", "price", "prophet",
          "risk_sizing", "score_rank", "sector", "sector_n", "sector_pulse",
          "sector_rank", "sessions_since", "setup", "signal", "signal_asof",
          "spark_svg", "stage", "state", "stop_guidance", "sue_fresh_days", "theme",

@@ -117,8 +117,8 @@
    ],
    "optional_fields": [
     "anchor",
-    "earnings_reaction",
-    "earnings_soon"
+    "earnings_soon",
+    "post_earnings_move"
    ],
    "schema_item_fields": [
     "above_trend",
@@ -140,7 +140,6 @@
     "dd_pct",
     "dir",
     "display_rank",
-    "earnings_reaction",
     "earnings_soon",
     "entry_signal",
     "eq_dir",
@@ -159,6 +158,7 @@
     "new",
     "off_high",
     "pct_since",
+    "post_earnings_move",
     "price",
     "prophet",
     "risk_sizing",

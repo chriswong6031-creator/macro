@@ -3882,8 +3882,8 @@ def main() -> int:
                         surprises=_eb.surprise_history(t))
                     if _epay.get("earnings_soon"):
                         r["earnings_soon"] = _epay["earnings_soon"]
-                    if _epay.get("earnings_reaction"):
-                        r["earnings_reaction"] = _epay["earnings_reaction"]
+                    if _epay.get("post_earnings_move"):
+                        r["post_earnings_move"] = _epay["post_earnings_move"]
                 except Exception:  # noqa: BLE001 — display-only; never fatal
                     pass
             # W6-US fix 8: emit cand_depth_pct from the ladder onto every board row so
