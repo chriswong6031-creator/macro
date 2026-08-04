@@ -747,12 +747,29 @@ def test_sweep_runs_all_three_legs(monkeypatch):
 
 
 def test_the_window_cli_reports_the_bound_and_sends_nothing(monkeypatch, capsys, wired):
+    """The CLI must report the bound actually in force, and send nothing.
+
+    DATE BOMB REMOVED (2026-08-04). This asserted `floor.startswith("2026-07-")`
+    against an arm date of 2026-07-25 — but `welcome_window` returns the LATER of the
+    arm date and the lookback ceiling (`now - lookback_hours`), so the floor MOVES WITH
+    THE WALL CLOCK. The ceiling overtook the arm date on 2026-08-01 and the literal
+    month prefix went red on every PR in the repo, having been green for a week. The
+    contract is the max() rule, not the calendar, so assert the rule — reconstructed
+    from the CLI's OWN reported `now`, which makes it exact rather than racing the
+    clock between the call and the assertion.
+    """
     import json
 
     _arm(monkeypatch, MAIL_WELCOME_AFTER="2026-07-25")
     assert me._main(["--window"]) == 0
     out = json.loads(capsys.readouterr().out)
-    assert out["armed"] is True and out["floor"].startswith("2026-07-")
+
+    now = datetime.fromisoformat(out["now"])
+    after = me._parse_dt("2026-07-25")
+    ceiling = now - timedelta(hours=out["lookback_hours"])
+    assert out["floor"] == max(after, ceiling).isoformat(), (
+        "the reported floor must be the later of the arm date and the lookback ceiling")
+    assert out["armed"] is True
     assert wired[1].sent == []
 
 

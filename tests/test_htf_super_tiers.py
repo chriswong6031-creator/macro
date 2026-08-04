@@ -230,7 +230,10 @@ class TestSignalGateHTFPassthrough:
         res = {"markers": [{"date": "2024-01-06", "type": "buy", "quality": "take"}],
                "state": "long-bias", "above200": True, "weekly_bull": True,
                "early_now": False, "asof": "2024-02-01"}
-        monkeypatch.setattr(sg, "analyze", lambda t, c: res)
+        # `**kw`: gate() forwards keyword policy flags and swallows call errors,
+        # so a signature-drifted stub degrades the verdict silently (see the same
+        # note in tests/test_signal_gate.py).
+        monkeypatch.setattr(sg, "analyze", lambda t, c, **kw: res)
         monkeypatch.setattr(ct, "cascade",
                             lambda close, take_active=False, take_date=None: {
                                 "not_topped": True, "tier": "T2", "ticks": 1,

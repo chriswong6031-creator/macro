@@ -93,7 +93,13 @@ from engine.us_board_rank import (  # noqa: F401 — shared vocabulary, re-expor
 )
 from engine.us_board_rank import _as_date, _finite_float, _finite_int, _notice
 
-BOARD_DEFINITION = "hk_prophet_v1"
+# v2 (operator ruling 2026-08-03): ADMISSION changed — HK stopped requiring the 2-bar
+# 200-day reclaim (`signal_gate.gate(..., reclaim_veto=False)`; see
+# engine.signal_quality._buy_filter for why that leg was unsatisfiable-by-construction on
+# this tape). An admission change makes v1 and v2 two different products, so the stamp
+# moves and the ledger scopes to the newest definition — exactly the fence that keeps the
+# v1 forward record readable instead of silently pooled with a board that admits more.
+BOARD_DEFINITION = "hk_prophet_v2"
 
 # Board shape.  Caps are HK's own (masterplan §0 G4): a 156-name universe against
 # the US 1579, so the same 12/4 pair is a proportionally much wider net here.

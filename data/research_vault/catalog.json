@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T23:58:47.254710+00:00",
-  "count": 697,
+  "generated_at": "2026-08-04T03:07:22.550859+00:00",
+  "count": 706,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -9,6 +9,7 @@
     "Apollo",
     "BTIG",
     "Bank of America",
+    "BlackRock",
     "Blackrock",
     "Cantor",
     "Citi",
@@ -49,6 +50,26 @@
   ],
   "items": [
     {
+      "id": "marketdesk-1rsmtymxklr-268f90",
+      "title": "FX Comment",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T23:04:24Z",
+      "summary_points": [
+        "**Term Premiums Drive Dollar Weakness**: FOMC's lack of forward guidance raised US yields, triggering a record 5th percentile dollar decline (worst since 2008) and pushing USDSEK lower, amplified by US tariff/geopolitical skepticism.",
+        "**Term Premiums Dominate FX Volatility**: Regression shows term premiums explain 80% of USDJPY volatility vs.",
+        "45% for 10-yr yields alone, indicating JPY was disproportionately punished during financial repression; rising premiums risk reversing the strong dollar trend.",
+        "**Geopolitical Policy & Carry Trade Risks**: Wash's weak-dollar policy aligns with Trump-era tactics, with BoJ intervention timing (post-FOMC) signaling coordination; low-volatility currencies (JPY, SEK) underperforming higher-yield assets (USD, AUD) in carry trades amid cooling retail US equity demand, threatening USDSEK reversal."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-hoobnuhrzwi-24b087",
       "title": "mom",
       "institution": "Other",
@@ -70,6 +91,68 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-wktopv06ueh-3ff2bc",
+      "title": "VON32623269",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T22:59:08Z",
+      "summary_points": [
+        "**Holcim Philippines Divestment**: Margin-accretive sale of 99% stake (total USD 807m) to Huaxin Building Materials; low EBIT margin (<5%) and mid/high-teens EV/EBITDA vs Holcim’s 13x justify transaction, enabling portfolio focus and European M&A funding.",
+        "**Sandoz Litigation Resolution**: Settlement with 43 states ($400m over 7yrs from 2027) and resellers ($28.5m) eliminates class actions; increased provisions impact near-term EBITDA margin (17.7% in 2025E) but removes major legal risk.",
+        "**Clariant 1H26 Results & Target**: Hold rating confirmed; sales exceeded expectations with cost savings improving margins; Shell’s ethylene claim dismissal lifts sentiment, new CHF 9.40 target (up from CHF 8.20).",
+        "**Earnings Event Density**: Late August 2026 features 15+ companies reporting 1H26/2Q26 results across healthcare (Sandoz, Galenica), insurance (Swiss Re, Zurich), and industrials—critical for tactical positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rrbhgy7uy8l-6388e5",
+      "title": "Weekly investment commentary en us 20260803 a quiet august not for investors",
+      "institution": "BlackRock",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:51:52Z",
+      "summary_points": [
+        "**U.S.",
+        "Treasury Yield Surge**: 10-year yield hits 19-year high (5.28%), real yields at 2.2%, signaling persistent inflation and elevated borrowing costs amid supply scarcity.",
+        "**Geopolitical & Supply Shock Impact**: Middle East conflict drives oil volatility and intensifies capital competition; bonds shift from ballast to income asset due to supply-driven scarcity and fiscal deficits.",
+        "**Key Yield Repricing Drivers**: AI capex ($720B hyperscaler boom), fiscal deficits, Middle East energy shocks, and Fed policy uncertainty accelerate bond yield rises, reducing bonds' ballast efficacy.",
+        "**Critical Labor Data for Fed Policy**: Upcoming U.S."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hmvmaer1in7-0c4f6b",
+      "title": "Equities Tactical Top Picks",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:44:47Z",
+      "summary_points": [
+        "**New Tactical Additions**: Sonova Hldg N (242 CHF target vs current 223 CHF, 2.3% return) and Trane Tech Rg (570 USD target vs current 483.34 USD, -5.8% return) signal upside potential despite near-term underperformance.",
+        "**Regional Performance Divergence**: Switzerland leads (Roche +14.0%, Alcon +9.2%), while APAC lags (-8.7% absolute, -5.1% relative) due to China-US tensions impacting Alibaba.",
+        "**Closed Ideas Alpha**: -8.8% annualized alpha and 0.3% absolute return indicate significant underperformance against benchmarks.",
+        "**APAC Geopolitical Risk**: Alibaba faces heightened exposure to China-US tensions, driving severe underperformance (-8.7% absolute return).",
+        "**Sonova Fundamentals**: Hearing aids (90% sales) insulate from sector pressures; AI software upgrades to boost recurring revenue (UBS forecasts above consensus)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-ovegn6rwo5n-3ac8f3",
       "title": "Daily US",
       "institution": "UBS",
@@ -85,6 +168,47 @@
       "tickers": [],
       "top_pick": true,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-azqplzqwf5r-51fe46",
+      "title": "Earnings Blast",
+      "institution": "Raymond James",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:41:01Z",
+      "summary_points": [
+        "**AI-Driven EPS Surge**: S&P 500 2Q26 EPS growth revised to 46% Y/Y from hyperscalers’ AI demand/monetization; travel/leisure sector (Marriott, Airbnb, Booking) dominates earnings reports.",
+        "**Forward EPS Deceleration Signal**: S&P 500 consensus 2026 EPS ($459) exceeds 2027 ($400) and 2028 ($349), indicating near-term optimism but potential long-term slowdown.",
+        "**Health Care Underperformance**: Health Care sector shows -13.6% EPS growth vs.",
+        "S&P 500’s 46.3%, signaling significant sector-specific risk amid broader market strength.",
+        "**AI Infrastructure Capital Allocation**: Microsoft, Amazon ($220B capex), and Cadence highlight robust AI spending momentum despite margin pressures, driving tech sector momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7c4zw3a911x-a5514a",
+      "title": "Shionogi (4507)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:43Z",
+      "summary_points": [
+        "**High leverage risk**: Net debt/equity 20.0x (3/26) and leverage 1.5x (3/26) indicate significant financing vulnerability despite positive cash flows.",
+        "**Patent cliff & growth catalysts**: Core HIV treatment dolutegravir patent expiry approaching; sustainable earnings depend on long-acting HIV formulations, edaravone sales, and Japan Tobacco synergies.",
+        "**Critical risks**: Downside in key drug sales, development delays, Xofluza/Xocova sales volatility (flu/COVID-19 linked), forex, pricing/tariffs, and reimbursement changes.",
+        "**Price target confidence**: Goldman Sachs target ¥3,500 consistently exceeds current price (e.g., ¥2,843 on 16-Jul-26), signaling strong analyst conviction and upside potential."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
@@ -127,6 +251,67 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-htltc4jhgg9-0eeb8d",
+      "title": "Tracking U.S",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:38Z",
+      "summary_points": [
+        "**West Coast/East Coast Backlog Disparity**: West Coast container backlog unchanged at 1, East Coast at 5, signaling persistent congestion in key U.S.",
+        "trade corridors and elevated freight costs.",
+        "**Ocean Shipping Rates Reversal**: Weekly container shipping rates down 12% WoW ($6.21k vs $7.07k), reversing prior week’s +204% YoY spike, indicating near-term cost relief for importers.",
+        "**June Congestion Deterioration**: Monthly bottleneck metrics worsened vs May, contradicting easing narratives and signaling escalating supply chain pressures through mid-2026.",
+        "**PMI Supplier Delivery Times**: At 42.6 (below 50 threshold), confirming worsening delivery delays and systemic logistical bottlenecks critical for manufacturing sector positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dskn6izyomi-3e042c",
+      "title": "ON Semiconductor Corp. (ON) First Take Upside to quarter, with solid guidance",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:35Z",
+      "summary_points": [
+        "**Q2 Results & Guidance**: Q3 revenue guidance $1.70bn (midpoint) and EPS $0.81–$0.93 exceed Street ($0.84), with gross margin guidance 41% vs Street 40.3%, signaling stronger near-term execution than current performance.",
+        "**Key Risks**: Upside/downside hinges on Automotive demand weakness and gross margin execution timing, critical for near-term valuation and portfolio positioning.",
+        "**Price Target & Upside**: Goldman Sachs $95 target implies 16.4% upside from $81.61, supported by accelerating revenue forecasts (12/26E: $6.64B vs 12/25E: $5.99B), but requires monitoring actual vs.",
+        "guidance gaps."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-n1exk7qbd2r-ecc7aa",
+      "title": "Japan Banks August mortgage deposit rates Online banks raise floating rates",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:30Z",
+      "summary_points": [
+        "**Mortgage Rate Convergence**: Online banks raised variable mortgage rates (Docomo SMTB Net Bank +25bp, Rakuten +4bp), closing historical gap with major banks as funding costs rise and non-mortgage loan demand intensifies.",
+        "**Competitive Shift to Major Banks**: MUFG, Resona, and Bank of Yokohama now offer lowest floating mortgage rates due to strategic focus on non-mortgage channels and rising JGB yields (14bp June-July).",
+        "**Deposit Strategy Pressure**: Banks reduced ordinary time deposit rates (7/18 banks Aug 2023 vs July) amid BoJ ultra-loose policy, prioritizing retail time deposits to curb funding costs and mitigate margin compression.",
+        "**Reset Timing Risk**: Banks (MUFG, Mizuho, Resona) reset mortgages April/October with T+3m payments July/January, directly exposing lenders to interest rate volatility and margin pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },

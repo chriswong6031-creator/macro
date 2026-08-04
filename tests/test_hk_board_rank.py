@@ -1,4 +1,4 @@
-"""tests/test_hk_board_rank.py — engine/hk_board_rank.py (hk_prophet_v1).
+"""tests/test_hk_board_rank.py — engine/hk_board_rank.py (hk_prophet_v2 — era bumped 2026-08-03 with the reclaim-veto removal).
 
 Spec: research/HK_BOARD_RESURRECTION_MASTERPLAN_BY_FABLE.md §0 gates G1-G5.
 Machinery under test is the PARAMETERISATION of engine/us_board_rank.py, so the
@@ -169,7 +169,7 @@ def _marker(date="2026-07-06", kind="buy", quality="block",
 # --------------------------------------------------------------------------- #
 class TestFrozenConstants:
     def test_definition_string(self):
-        assert hbr.BOARD_DEFINITION == "hk_prophet_v1"
+        assert hbr.BOARD_DEFINITION == "hk_prophet_v2"
 
     def test_caps(self):
         assert (hbr.FEATURED_CAP, hbr.SECTOR_CAP, hbr.RAN_CAP) == (12, 4, 12)
@@ -431,7 +431,7 @@ class TestScoreRows:
     def test_definition_is_stamped_on_every_row(self):
         rows = hbr.score_rows([self._row("A", edge_z=1.0),
                                self._row("B", edge_z=0.0)], board_asof=BOARD_ASOF)
-        assert {r["prophet"]["version"] for r in rows} == {"hk_prophet_v1"}
+        assert {r["prophet"]["version"] for r in rows} == {"hk_prophet_v2"}
 
     def test_membership_is_untouched(self):
         pool = [self._row("A", edge_z=1.0), self._row("B", edge_z=-1.0),
@@ -474,7 +474,7 @@ class TestScoreRows:
         rows = hbr.score_rows([self._row("A", edge_z=1.0),
                                self._row("B", edge_z=0.0)], board_asof=BOARD_ASOF)
         block = hbr.ranking_block(rows)
-        assert block["definition"] == "hk_prophet_v1"
+        assert block["definition"] == "hk_prophet_v2"
         assert block["weights"] == dict(ubr.SCORE_WEIGHTS)
         edge = [f for f in block["formula_points"] if f["component"] == "edge"][0]
         assert "HK edge" in edge["reads"]
@@ -1111,7 +1111,7 @@ class TestBuilderWiring:
 
     A unit-tested engine that the builder never calls is a dark lane.  This runs
     the real function over a minimal synthetic fixture (the pattern
-    tests/test_hk_washout_watch.py established) and asserts the hk_prophet_v1 keys
+    tests/test_hk_washout_watch.py established) and asserts the hk_prophet_v2 keys
     reach the artifact.
     """
 
@@ -1149,8 +1149,8 @@ class TestBuilderWiring:
         return out
 
     def test_board_definition_is_stamped(self, built):
-        assert built["rank_by"] == "hk_prophet_v1"
-        assert built["board_definition"] == "hk_prophet_v1"
+        assert built["rank_by"] == "hk_prophet_v2"
+        assert built["board_definition"] == "hk_prophet_v2"
 
     def test_every_new_lane_key_is_present(self, built):
         for key in ("leaders", "ran", "vetoed", "ranking", "lane_counts"):
@@ -1169,7 +1169,7 @@ class TestBuilderWiring:
 
     def test_ranking_receipt_reaches_the_artifact(self, built):
         block = built["ranking"]
-        assert block["definition"] == "hk_prophet_v1"
+        assert block["definition"] == "hk_prophet_v2"
         assert block["score_kind"] == hbr.SCORE_KIND
         assert block["display_tier_lanes"] == list(hbr.DISPLAY_TIER_LANES)
 

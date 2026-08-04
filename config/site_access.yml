@@ -52,6 +52,7 @@ public:
     # the product statement we actually want a stranger to read.
     - /special_situations.html
     - /china_special_situations.html
+    - /etfs.html
     # china_heatmap.html — the A-share sector treemap, opened by
     # SEO_SUPERCHARGE_MASTERPLAN W2 (spec:
     # research/seo_supercharge/W2_HEATMAP_ETFS_PREVIEW_SPEC.md, Part A). This one

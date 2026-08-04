@@ -15,6 +15,28 @@ scope-bound v3 heads at the same key, and only a default-off same-selection v2
 to v3 migration exists. This wave does not add v3 genesis or successor
 publication, retention authority, coverage, UI, or Prophet use.
 
+Wave 6 adds the closed v4 witness contract, the v2/v3/v4 Synapse catalog union,
+native v4 signing/authentication and test seam, exact v2-or-v3-to-v4 structural
+migration, and v1/v2 journal recovery at that existing key. Production native
+v4 genesis/successor publication remains unavailable: the production wrapper
+does not enable the injected native-publish seam and no workflow schedules it.
+Both migration flags remain strict, mutually exclusive, and default false. This
+wave adds no activation, retention, coverage, UI/API, or Prophet authority.
+
+The next wave adds a manual-only isolated R2 conditional create/CAS/readback
+harness and one closed local review-receipt contract. Adversarial hardening now
+requires exact botocore HTTP 412 `PreconditionFailed` refusals, preserves closed
+stage/category evidence plus an ordered prefix of proven core witnesses, and
+attempts to close every owned response body; wrapper-only failures may carry an
+empty prefix and any close failure is inconclusive. The receipt also binds the
+exact reviewed source archive and dependency lock. Its
+protected Environment, dedicated bucket, and credentials are not provisioned;
+the workflow has never run; no receipt exists; and no R2 provider behavior is
+claimed. The reviewed harness invokes no List, Delete, HMAC, production
+publication, retention, UI/API, or Prophet operation; its same-process adapter
+is a reviewed-code target guard, not a security sandbox. Operator details live in
+`research/CAPITAL_STRUCTURE_SHARE_COUNT_R2_CONFORMANCE_HANDOFF.md`.
+
 ## 0. Acceptance boundary
 
 This wave is a deterministic, point-in-time evidence plane for three SEC Company
@@ -59,13 +81,23 @@ The operational v2 implementation files are:
 - `contracts/capital_structure_share_count_head_witness.schema.json`
 - `contracts/capital_structure_share_count_head_guard_scope.schema.json`
 - `contracts/capital_structure_share_count_head_witness_v3.schema.json`
+- `contracts/capital_structure_share_count_head_witness_v4.schema.json`
+- `contracts/capital_structure_share_count_external_head.schema.json`
 - `contracts/capital_structure_share_count_publish_journal.schema.json`
+- `contracts/capital_structure_share_count_publish_journal_v2.schema.json`
 - `contracts/capital_structure_share_count_retention_receipt.schema.json`
+- `contracts/capital_structure_share_count_r2_conformance_receipt.schema.json`
+- `engine/capital_structure/share_count_r2_conformance.py`
+- `scripts/probe_capital_structure_share_count_r2.py`
+- `.github/workflows/capital-share-count-r2-conformance.yml`
+- `requirements/capital-share-r2-conformance-macos-arm64-py312.lock`
 - `tests/test_capital_structure_companyfacts_authenticated_read.py`
 - `tests/test_capital_structure_share_count_materializer_model.py`
 - `tests/test_capital_structure_share_count_publication.py`
 - `tests/test_capital_structure_share_count_retention.py`
 - `tests/test_capital_structure_share_count_materializer.py`
+- `tests/test_capital_structure_share_count_r2_conformance.py`
+- `tests/test_capital_structure_share_count_r2_operator.py`
 
 ## 1. What one observation means
 
@@ -183,11 +215,16 @@ The v2 path closes the previously missing source seam without weakening it:
    complete before any ledger opens. Rejected rollback/fork/ancestry paths read
    no ledger; a valid convergence reads only logarithmic proof receipts followed
    by one selected external ledger fetch and an exact local install readback.
-   New publications use one absent-only, signed
+   Publication uses one absent-only, signed
    `.share_count_publish_journal.json`, durably linked from a fully fsynced
-   temporary file before CAS. It contains only exact v2 `E`/`C` witnesses and
-   their canonical pointer bytes under a dedicated journal HMAC domain; it has
-   no phase, token, timestamp, transaction ID, or redundant receipt digest.
+   temporary file before CAS and dispatched by its exact schema. Legacy
+   `capital_structure.share_count_publish_journal/v1` contains only exact v2
+   `E`/`C` witnesses and their canonical pointer bytes and remains drainable.
+   Native-v4 `capital_structure.share_count_publish_journal/v2` uses a distinct
+   HMAC domain and permits only null-to-v4 genesis or exact v4-to-v4 successor;
+   structural migration does not write it. Neither schema has phase, token,
+   timestamp, transaction ID, or redundant receipt digest, and mixed/unknown
+   journal shapes fail closed.
    Candidate external receipt and ledger bytes are exact-read before intent and
    re-authenticated before recovery CAS. Restart uses a fresh token, bounds
    conditional conflict replay at two, and accepts `C` or any proven descendant
@@ -195,16 +232,17 @@ The v2 path closes the previously missing source seam without weakening it:
    external winner. Rollback/fork evidence stays exact and no selected ledger is
    opened before the proof. An entry journal makes the publisher recovery-only,
    so a recovered result returns before migration or caller-candidate validation.
-   Scope-valid v3 same-selection migrations of virtual v2 `E`, `C`, or a proven
-   descendant are drainable, while wrong scope/digest fails before external
+   Scope-valid v3 migrations and v4 migration/genesis/successor outcomes are
+   drainable only under the exact v1-compatibility matrix below; wrong scope,
+   virtual-v2 anchor, or authenticated receipt ancestry fails before external
    artifact or ledger I/O.
    Native v3 publication remains blocked. Capsule-only legacy recovery follows
    its historical strict matrix: `H==E` validates E and
    clears; `H==C` or an authenticated descendant of C proves C before converging
    and clearing; every sibling, equal-sequence fork, rollback, malformed proof,
    or missing proof rejects and retains the exact capsule/pointer before any
-   ledger read. A v3 head plus any legacy marker/capsule bytes rejects unchanged,
-   even when those legacy bytes are malformed. Legacy readers remain for
+   ledger read. A v3 or v4 head plus any legacy marker/capsule bytes rejects
+   unchanged, even when those legacy bytes are malformed. Legacy readers remain for
    drainage only: normal publication never writes marker/capsule state. Journal
    plus either legacy name is terminal ambiguity before remote I/O, and any
    recovery bytes seen at entry defer migration to a second clean invocation.
@@ -218,7 +256,8 @@ The v2 path closes the previously missing source seam without weakening it:
    crash-recovery mirror, so the nightly broad data checkpoint cannot commit
    cumulative ledgers to Git. A propagated 15-minute budget plus a process-level
    workflow timeout bounds the production command.
-   The head key is now dual-read. A one-time v2-to-v3 migration keeps the exact
+   The head key now validates closed v2/v3/v4 witnesses. A one-time v2-to-v3
+   migration keeps the exact
    v2 selection and sequence, adds signed scope
    `{backend:r2, account_id, bucket, head_key}`, binds the exact canonical v2
    bytes including their newline, and signs through a distinct v3 HMAC method
@@ -228,13 +267,76 @@ The v2 path closes the previously missing source seam without weakening it:
    before PUT. The strict migration variable defaults false and gates only the
    rewrite: v3 clean recovery and exact no-op remain available when false, but
    genesis and every v3 successor publication remain blocked.
-8. The publisher never deletes. A bounded retention planner can identify only
+8. Wave 6 implements native v4 authentication/signing, structural migration,
+   recovery, and an injected native-publication test seam at the same mutable
+   key. The schema keeps the exact eleven v2/v3 selection fields, adds the exact
+   R2 guard scope, and closes `transition` to `genesis`, `migration`, or
+   `successor`. The only permitted state shapes are:
+
+   | Transition | Required state and proof | v1 journal interaction |
+   | --- | --- | --- |
+   | `genesis` | `sequence=1` and `previous_receipt=null`; the publish attempt's expected remote pointer must be null. | v1 recovery may converge only when its expected witness is null and the selected v4 artifacts authenticate; any non-null expected state fails closed. |
+   | `migration` from v2 | `from_witness_sha256` commits to exact v2 bytes and `v2_anchor_sha256` is that virtual-v2 anchor. | Drainable only if it proves the exact virtual-v2 anchor of the journal's v2 `E` or `C`. |
+   | `migration` from v3 | `from_witness_sha256` authenticates v3 and `v2_anchor_sha256` authenticates the v3-bound virtual-v2 anchor. | The v3 wrapper is not v1 evidence; the same exact virtual-v2-anchor rule is mandatory. |
+   | `successor` | `sequence>=2`, non-null `previous_receipt`, and `previous_witness_sha256`; authenticated signed exact-scope v4 receipt ancestry, not sequence arithmetic, must prove the preceding v4 state. | v1 recovery may converge only when that ancestry proves its v2 `E` or `C` outcome; otherwise exact evidence is retained and recovery fails closed. |
+
+   These v4 validation, migration, and recovery paths are executable, but native
+   genesis/successor publication is unavailable from the production wrapper and
+   has no scheduled workflow. The contract makes no global rollback claim: a
+   clean runner still cannot identify credential-
+   level restoration of a prior valid head without a separately durable
+   monotonic witness or signer domain. It grants no activation, retention,
+   coverage, UI/API, fact, risk, rank, sizing, entry, trade, or Prophet
+   authority.
+
+   The one local journal filename uses exact schema dispatch:
+
+   | Journal schema | Permitted intent | Release state |
+   | --- | --- | --- |
+   | `capital_structure.share_count_publish_journal/v1` | Exact v2 `E -> C`, including drainage through the compatibility matrix above | Implemented legacy path; remains drainable |
+   | `capital_structure.share_count_publish_journal/v2` | Null `E` to v4 `genesis`, or exact v4 `E` to v4 `successor`; never a structural migration | Implemented engine/test seam; production native publication unavailable |
+
+   `CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED` and
+   `CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V4_MIGRATION_ENABLED` are strict
+   lowercase booleans, default false, and mutually exclusive. V4 structural
+   migration and native publication also require separate invocations.
+9. The publisher never deletes. A bounded retention planner can identify only
    old, quarantined, unselected full ledger generations and emit an all-false
    operational receipt in injected tests. Its production command is hard-blocked:
    R2 conditional-delete semantics are not yet proven, no shared external
    publisher/compactor fence exists, and a same-bucket delete credential plus
    symmetric head HMAC would collapse the intended privilege boundary. No
    production generation is currently deleted by this lane.
+10. The manual R2 conformance harness is a separate, unprovisioned operator
+    plane. An explicit main-only dispatch with `run_conformance=true` would use
+    only five dedicated `R2_SHARE_COUNT_CONFORMANCE_*` Environment secrets and
+    one fresh disposable key under
+    `capital_structure/share_counts/conformance/v1/`. The reviewed path guards
+    an exact target and calls only HEAD, GET, and conditional PUT; the adapter is
+    not a same-process security sandbox, so dedicated isolated credentials and
+    source review are load-bearing. The target passing contract requires
+    absent-only A creation, exact HEAD/ranged-readback, exact HTTP 412
+    `PreconditionFailed` duplicate-create conflict plus
+    preservation, exact-ETag update to B, stale GET/PUT conflicts, and final
+    exact B readback. Only a botocore `ClientError` with HTTP 412 and exact
+    `Error.Code=PreconditionFailed` proves each deliberate refusal; every 409,
+    transport ambiguity, malformed result, or cleanup failure is non-passing.
+    Core non-pass receipts preserve the failed stage/category and the exact
+    ordered prefix of proven witnesses; wrapper-only failures may
+    conservatively report an empty prefix. Every returned body receives a close
+    attempt even on expired or malformed paths, and close failure is
+    inconclusive. The canonical receipt is a
+    90-day GitHub Actions review artifact only; it is never an R2/Git/public
+    artifact or production selector. No Environment/bucket/credential is
+    configured and the workflow has not run, so R2 CAS remains unproven.
+    The receipt is deliberately not registered in Synapse because no existing
+    storage locus truthfully represents an expiring GitHub review artifact and
+    it has no consumer.
+    This is a sequential trace, not a concurrent linearizability proof, and it
+    says nothing about the separately configured production publisher's hidden
+    SDK retries. Activation also requires either a single-attempt production CAS
+    client or exact candidate reconciliation for every ambiguous/retried result,
+    plus an independent concurrent-writer race proof.
 
 Outer publication v2 removes the former 512-receipt full-chain recovery cliff.
 It does not remove the upstream dependency: Company Facts source selection still
@@ -244,11 +346,12 @@ materializer is bounded by the upstream 512-source-publication checkpoint.
 
 The production trust domains are intentionally separate:
 `CAPITAL_STRUCTURE_COMPANYFACTS_HEAD_HMAC_KEY` authorizes the source selection;
-`CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY` authorizes only the v2/v3
-materialization selector domains. `SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID` completes
+`CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY` authorizes only the distinct
+v2/v3/v4 selector and v1/v2 journal HMAC domains.
+`SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID` completes
 the exact signed R2 scope; the bucket and fixed head key are also authenticated.
 It remains optional for migration-false v2 operation, but is mandatory before
-migration and whenever a v3 head is authenticated. If configured, it must match
+migration and whenever a v3 or v4 head is authenticated. If configured, it must match
 the exact resolved Cloudflare R2 global/EU/FedRAMP endpoint before client
 construction; the endpoint is deliberately not part of signed scope.
 Neither key grants fact, instrument, capacity, risk,
@@ -326,26 +429,38 @@ the correction chain.
    crash-recoverable publication, a bounded retention planner/receipt contract,
    selector/receipt-first high-water proof before any ledger load, default-off
    daily execution, DAG/Synapse declarations, CI coverage, and
-   explicit zero-source unavailability. The dual-read v3 head fence, exact
-   same-selection migration, old-writer rejection, one-write signed journal,
-   recovery-only entry fence, and legacy capsule-only drainage matrix are also
-   implemented. The retention production shell is a
+   explicit zero-source unavailability. The v2/v3/v4 authenticated reader,
+   exact selection-preserving v3/v4 structural migrations, old-writer rejection,
+   schema-dispatched v1/v2 single-file journal recovery, native-v4 publication
+   test seam, recovery-only entry fence, and legacy capsule-only drainage matrix
+   are also implemented. Production native v4 genesis/successor publication is
+   unavailable. The retention production shell is a
    deliberate fail-closed release block, not an operational compactor.
-3. **Still required before activation:** independently re-audit the one-journal
-   implementation, prove it against an isolated live R2 object, and make an
-   explicit operator activation decision. The selector/receipt-versus-ledger
-   split, journal crash protocol, and v3 old-writer fence are adversarially
+3. **Still required before activation:** the complete v4 and schema-dispatched
+   journal implementation has received independent adversarial review, but the
+   new isolated-provider harness is only locally tested code. Provision a
+   protected Environment plus dedicated disposable bucket/credential, obtain
+   and review a real `passed` receipt, and make an explicit operator activation
+   decision. The
+   selector/receipt-versus-ledger
+   split, journal crash protocol, and v3/v4 old-writer fences are adversarially
    pinned, but none enables the lane. Keep
-   `CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED=false` until every
-   intended publisher has dual-read support and the operator schedules the
-   one-time migration with the exact account/bucket scope provisioned.
-   Separately prove R2 atomic
+   both migration flags false until every intended publisher has v4 support and
+   the operator schedules exactly one mutually exclusive migration with the
+   exact account/bucket scope provisioned. Native v4 genesis/successor remains
+   unavailable from production and unscheduled regardless of those migration
+   flags.
+   A passed create/CAS/readback receipt closes only that exact scoped provider
+   sequential trace; it does not establish concurrent linearizability or safe
+   production retry behavior and does not activate publication. Separately
+   prove R2 atomic
    conditional delete on an isolated object, add a shared external publish/delete
    fence and exact race test, mint a verifier-only capability that cannot write
    the signed head/receipts, add an end-to-end retention deadline, and re-audit
    the complete lane. Then provision distinct production credentials and
    deliberately enable the publication variable.
-   Retention additionally requires its own visibility and apply variables. Only
+   The current reviewed conformance path never calls Delete, so it cannot release
+   retention. Retention additionally requires its own visibility and apply variables. Only
    afterward may the team observe the first
    successful daily receipt and report
    actual retained-source coverage/freshness. Code deployment alone is not
@@ -381,16 +496,20 @@ the correction chain.
 This is a solid substrate for parity work, but not parity itself: it adds a
 truthful denominator evidence layer rather than cosmetic “dilution risk” cards.
 
-The v2 suites additionally pin authenticated selection and read deadlines,
+The operational suites additionally pin authenticated selection and read deadlines,
 exact receipt/source/anchor binding, bounded append and replay, semantic
 re-derivation, all-false authority, strict store identity, separate HMAC/R2
 publication, concurrent CAS conflict, pre/post-CAS crash recovery, lagging
-runner convergence, one-write absent-only signed journal recovery, exact
+runner convergence, exact-schema dispatch for the single-filename absent-only
+signed v1/v2 journals, exact
 candidate artifact reread, two-conflict replay bound, recovery-only entry,
 direct-sibling/genesis convergence, mixed-protocol refusal, capsule-only drainage,
-scope-bound v3 dual-read/migration, exact v2-byte migration binding, distinct
-v3 signature domain, both old-v2-writer race orders, concurrent identical
-migration, strict legacy capsule sibling rejection, and legacy/v3 coexistence refusal,
+scope-bound v3 and v4 authentication/migration, exact virtual-v2 anchors,
+distinct v3/v4 head and v1/v2 journal signature domains, null-to-v4 genesis and
+v4-to-v4 successor test-seam publication/recovery, corrected v1/v4 compatibility,
+both old-v2-writer race orders, concurrent identical migration, mutually exclusive
+strict-default-false migration flags, strict legacy capsule sibling rejection, and
+legacy/v3/v4 coexistence refusal,
 logarithmic high-water ancestry proof before ledger access, zero ledger reads on
 rollback/fork/divergent-proof rejection, exactly one selected external ledger
 fetch after a successful proof, bounded local install readback, clean-run
@@ -399,4 +518,12 @@ tamper refusal, descriptor-relative symlink/root-swap/lock
 refusal, bounded retention planning and production hard-blocking, deadline
 enforcement, Git-plane
 exclusion, and explicit empty-source unavailability. They do not substitute for
-a live R2 publication probe or the first daily coverage receipt.
+a live R2 publication probe or the first daily coverage receipt. The dedicated
+conformance suites additionally pin the closed `passed|failed|inconclusive`
+receipt, redacted scope and GitHub provenance, exact fresh-key target guard,
+absent-only create, duplicate/stale conflict preservation, exact ETag update,
+bounded ranged readbacks, non-pass ambiguity handling, 90-second deadline,
+manual/main-only protected workflow, isolated-secret no-fallback rule, no
+List/Delete/HMAC/publication calls, and best-effort review-only receipt upload. These are
+local tests: no dedicated provider environment is provisioned and no live
+conformance receipt exists.

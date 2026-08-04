@@ -284,10 +284,12 @@ jobs:
           CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY: ${{ secrets.CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_HMAC_KEY }}
           SHARE_COUNT_HEAD_GUARD_BUCKET: ${{ secrets.SHARE_COUNT_HEAD_GUARD_BUCKET }}
           SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID: ${{ secrets.SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID }}
-          # Migration-only switch. False preserves the v2 publisher exactly;
-          # true may replace one clean selected v2 head with its same-selection
-          # scope-bound v3 fence, but cannot create or advance a v3 generation.
+          # Migration-only switches. Both default false and the engine rejects
+          # a run with both true before trust/client construction. V3 can only
+          # install its same-selection fence; V4 can only structurally migrate
+          # one clean v2/v3 head. Neither switch enables native publication.
           CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED: ${{ vars.CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED || 'false' }}
+          CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V4_MIGRATION_ENABLED: ${{ vars.CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V4_MIGRATION_ENABLED || 'false' }}
         run: |
           # The in-process bridge has one 15-minute monotonic deadline.  R2
           # strict reads cannot accept that remaining budget, so Linux runners
