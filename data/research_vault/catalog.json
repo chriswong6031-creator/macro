@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T17:54:57.591109+00:00",
-  "count": 749,
+  "generated_at": "2026-08-04T18:10:10.460064+00:00",
+  "count": 750,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -51,6 +51,23 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-rahh2mlvzwk-bf3a2a",
+      "title": "GS John Flood SP 500 making fresh all time highs directly after",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T17:47:35Z",
+      "summary_points": [
+        "Fed Policy Shift**: Q3 CPI data confirms persistent inflation, delaying rate cuts to Q1 2025; bond yields surge 25bps on hawkish Fed pivot **Ukraine Conflict Escalation**: Russian strikes on Ukrainian energy infrastructure disrupt EU gas flows, triggering 12% price spike and rerouting LNG contracts **ETF Outflows**: $18B equity ETF net outflows in 72 hours, accelerating technicals in S&P 500 futures and widening volatility index (VIX) to 22.5"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 1,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-ntdtmy4d6da-3f1c85",
       "title": "Snap Aug 4",
