@@ -425,6 +425,14 @@ def shapes_fixture() -> dict:
         _witness_buy_row(("8808.HK", "Sample Holdings H", "样本控股辛",
                           "Property", 6.0, 0.0),
                          "blocked", "counter-trend, no 200-reclaim/hold"),
+        # `failed next-bar hold` is what reclaim_veto=False (hk_prophet_v2) emits on a
+        # counter-trend refusal — 10 of the first v2 board's 12 vetoed rows carried it.
+        # Carded here so its CARD copy is exercised by a render, not only asserted
+        # against a map literal: with no _HK_BLOCK entry the popover fell through to
+        # the generic sentence with the raw engine slug appended.
+        _witness_buy_row(("8809.HK", "Sample Holdings I", "样本控股壬",
+                          "Healthcare", 7.0, 0.0),
+                         "blocked", "failed next-bar hold"),
     ]
     # a setting-up subject the real tape does supply — its own stage, untouched
     su["buy"] = score_buy_lane([dict(r) for r in su["buy"]] + extra_buy)
@@ -1083,12 +1091,30 @@ def test_the_glow_can_never_land_outside_the_live_bucket(prio_html):
 
 def test_blocked_witnesses_name_the_check_that_is_holding_them_out(prio_html):
     """G6 display-tier relief: a blocked name is visible AND its reason is nameable
-    in plain words, on Tier 2 where mechanics belong."""
-    assert "Price has not reclaimed its 200-day line and held there" in prio_html
-    assert "价格尚未重新站上200日均线并守住" in prio_html
+    in plain words, on Tier 2 where mechanics belong.
+
+    The `failed reclaim-and-hold` sentence used to be "Price has not reclaimed its
+    200-day line and held there, so entries stay shut until it does" — a promise about
+    a 200-day condition that branch of `_buy_filter` never evaluates (it tests the
+    next 3-day bar's close alone).  It now states the test that actually ran.
+    """
+    assert "The 3-day bar after the signal closed lower" in prio_html
+    assert "信号后的下一根 3 日K线收低" in prio_html
     assert "still under its 200-day line" in prio_html
-    assert "failed reclaim-and-hold</span>" not in prio_html, (
-        "the engine's raw reason string must not reach the glance tier verbatim")
+    for slug in ("failed reclaim-and-hold", "failed next-bar hold"):
+        assert "%s</span>" % slug not in prio_html, (
+            "the engine's raw reason string must not reach the glance tier verbatim")
+
+
+def test_the_blocked_card_copy_never_promises_a_200day_reclaim_it_did_not_test(
+        prio_html):
+    """The inverse guard.  `counter-trend, no 200-reclaim/hold` DOES test the 200-day
+    line, so its sentence must keep naming it — otherwise the fix above could be
+    'passed' by deleting every 200-day mention from the page."""
+    assert "This would be a bounce against the bigger downtrend" in prio_html
+    assert "Price has not reclaimed its 200-day line and held there" not in prio_html, (
+        "the next-bar-hold branch is again narrating a 200-day round trip it never "
+        "measured")
 
 
 # --------------------------------------------------------------------------- #

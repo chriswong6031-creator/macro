@@ -1053,12 +1053,27 @@ RAN_THEME_LINE_ZH = "主题刚确认 — 关注下一个买点"
 
 
 def ran_admits(verdict: Mapping[str, Any] | None, row: Mapping[str, Any] | None = None,
-               *, ticks_min: int = RAN_TICKS_MIN, ticks_max: int = RAN_TICKS_MAX) -> bool:
+               *, ticks_min: int = RAN_TICKS_MIN, ticks_max: int = RAN_TICKS_MAX,
+               require_above200: bool = True) -> bool:
     """Ran-lane admission: the cross has lapsed but the trend is provably intact.
 
     ``eligible is False`` (the gate no longer admits it) ∧ ``ticks`` inside the window
     ∧ ``above200`` ∧ ``weekly_bull`` ∧ the row is not marked down.  The ``is True``
     tests are deliberate: a ``None`` (unanalysed) trend must never read as intact.
+
+    ``require_above200`` (keyword-only, DEFAULT True = unchanged US/CN behaviour)
+    exists for the same reason ``signal_quality._buy_filter``'s ``reclaim_veto`` does,
+    and it is the SECOND door the same impossible condition walked through. A name
+    recovering from a 30-50% drawdown is BELOW its 200-day average by construction —
+    that is what a deep drawdown IS — so requiring ``above200`` here excluded exactly
+    the washout-bounce names this lane exists to show. Measured on the first
+    hk_prophet_v2 board (2026-08-03): 1810.HK, 9988.HK, 2318.HK, 1093.HK and 0867.HK
+    left the vetoed lane correctly (they are no longer blocked) and then landed on NO
+    lane at all, because every lane that could have caught them tests ``above200``.
+    With it False the lane still requires ``weekly_bull`` and not-marked-down, so the
+    row is never claimed to be in an intact long-term uptrend — only that its cross
+    fired, it has moved since, and the weekly structure is pointing up. The default
+    stays True because the US/CN lanes were measured with it.
     """
     verdict = verdict or {}
     if verdict.get("eligible") is not False:
@@ -1066,7 +1081,9 @@ def ran_admits(verdict: Mapping[str, Any] | None, row: Mapping[str, Any] | None 
     ticks = _finite_int(verdict.get("ticks"))
     if ticks is None or not (int(ticks_min) <= ticks <= int(ticks_max)):
         return False
-    if verdict.get("above200") is not True or verdict.get("weekly_bull") is not True:
+    if require_above200 and verdict.get("above200") is not True:
+        return False
+    if verdict.get("weekly_bull") is not True:
         return False
     if str((row or {}).get("dir") or "").strip().lower() == "down":
         return False
@@ -1184,6 +1201,7 @@ def build_ran_rows(
     cap: int = RAN_CAP,
     ticks_min: int = RAN_TICKS_MIN,
     ticks_max: int = RAN_TICKS_MAX,
+    require_above200: bool = True,
 ) -> list[dict]:
     """Build the ran lane: crossed days ago, trend intact, no entry claim attached.
 
@@ -1220,7 +1238,8 @@ def build_ran_rows(
         if not key or key in skip:
             continue
         meta = meta_by.get(ticker) or meta_by.get(key) or {}
-        if not ran_admits(verdict, meta, ticks_min=ticks_min, ticks_max=ticks_max):
+        if not ran_admits(verdict, meta, ticks_min=ticks_min, ticks_max=ticks_max,
+                          require_above200=require_above200):
             continue
 
         ticks = _finite_int((verdict or {}).get("ticks"))

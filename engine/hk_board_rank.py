@@ -150,15 +150,48 @@ _BUY_MARKERS = frozenset(("buy", "rebuy"))
 # Plain-word reason copy.  The verdict's own `reason` strings are internal
 # vocabulary ("counter-trend, no 200-reclaim/hold"); the glance tier gets these
 # instead, and the raw string rides along as `reason_raw` for the detail view.
+#
+# ONLY BLOCK REASONS BELONG IN THIS MAP.  :func:`veto_reason_copy` is called from
+# exactly one place — :func:`build_vetoed_rows`, which admits ``quality == "block"``
+# only — so a key for a take/pending reason would be unreachable copy that no
+# surface can render, and a test asserting its wording would be pinning dead code.
+# The complete block set `_buy_filter` can emit is the four keys below.
+#
+# WHY TWO KEYS SHARE ONE SENTENCE.  Read `engine.signal_quality._buy_filter`: both
+# "failed next-bar hold" (the hk_prophet_v2 counter-trend branch, reclaim_veto=False)
+# and "failed reclaim-and-hold" (the FINAL branch, reached whenever the name is NOT
+# both below-200 and weekly-down) resolve on ONE test — ``held = c.iloc[i+1] >
+# c.iloc[i]`` on the 3D signal frame.  Neither evaluates a 200-day reclaim at all,
+# so the same sentence is the whole truth for both.
+#
+# ⚠ "failed reclaim-and-hold" IS A MISLEADING ENGINE STRING and this copy no longer
+# echoes it.  It used to render as "Reclaimed the 200-day average, then lost it
+# again" — narrating a 200-day round trip its branch never measured, on a name that
+# may never have been near its 200-day line.  The engine literal is deliberately NOT
+# renamed: it is part of the §7 marker contract US/CN artifacts already carry
+# (site/signals/<T>.json `reason`, graded ledger rows, tests/test_hk_board_ui.py), so
+# renaming it would change US/CN output bytes to fix a copy defect.  The lie lived in
+# the copy, so the copy is where it is fixed.
+#
+# UNITS: the confirmation bar is a 3-DAY bar, not a session — `signal_frame`
+# resamples to "3B" before `_buy_filter` reads i+1.  The copy says "3-day bar" for
+# that reason; "the next session" would be the same species of small false narrative
+# this entry exists to remove.
+_NEXT_BAR_HOLD_COPY = {
+    "en": "The next 3-day bar closed lower, so the entry never confirmed",
+    "zh": "信号后的下一根 3 日K线收低，入场未获确认",
+}
 VETO_REASON_COPY: dict[str, dict[str, str]] = {
     "counter-trend, no 200-reclaim/hold": {
         "en": "Price never held above its 200-day average after the signal",
         "zh": "信号出现后股价未能站稳 200 日均线之上",
     },
-    "failed reclaim-and-hold": {
-        "en": "Reclaimed the 200-day average, then lost it again",
-        "zh": "曾收复 200 日均线，但随后再度失守",
-    },
+    # The reason `reclaim_veto=False` (hk_prophet_v2) made common.  Without this
+    # entry the rows fell through to VETO_REASON_FALLBACK: 10 of the 12 vetoed rows
+    # on the first v2 board rendered the contentless "The entry gate refused this
+    # signal", which tells a reader nothing at all.
+    "failed next-bar hold": dict(_NEXT_BAR_HOLD_COPY),
+    "failed reclaim-and-hold": dict(_NEXT_BAR_HOLD_COPY),
     "veto: bearish divergence": {
         "en": "Momentum was already fading as the signal fired",
         "zh": "信号出现时动能已在衰减",
@@ -555,6 +588,7 @@ def build_ran_rows(
     cap: int = RAN_CAP,
     ticks_min: int = RAN_TICKS_MIN,
     ticks_max: int = RAN_TICKS_MAX,
+    require_above200: bool = True,
 ) -> list[dict]:
     """Build the HK ran lane — the shared implementation, plus the cohort chip.
 
@@ -577,6 +611,7 @@ def build_ran_rows(
         cap=cap,
         ticks_min=ticks_min,
         ticks_max=ticks_max,
+        require_above200=require_above200,
     )
     members = _cohort_set(cohort)
     chip = leadership_chip(leadership)
