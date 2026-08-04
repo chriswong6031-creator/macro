@@ -34,6 +34,34 @@ program's standing answer to it is now doctrine:
    (THS membership history, own-market regime), the collector starts accruing
    NOW (W-C) and the analysis states its lookahead caveat instead of stalling.
 
+## §0.5 Regime context of the evidence base (operator + data, 2026-08-04)
+
+The V1 audit era IS the Korea-semiconductor contagion window: CSI300 peaked
+2026-06-25 (the board's first day was 06-30), fell −9.1% to a 07-17 trough, and
+based flat through 08-03; the semis ETF (512760) fell −37% with its trough at
+the last collected bar. Read the evidence accordingly:
+
+- **Era-scoped findings** (quote with the regime attached): Tech's 66% loser
+  rate, HOT-theme 42%, the same-day sector-cohort deaths, and the era-retro's
+  89%-vs-62% R1 margin — all measured through a contagion-and-basing tape.
+- **Structural findings** (tested outside the window): the chase/relay
+  mechanics and relay ladder (12-month, both halves), the ordering anti-signal,
+  re-admission churn, the wiring census, the exit-study conclusions (labeled).
+- **R1's home turf vs challenge regime:** a patience/early-turn rule is a
+  buy-the-correction rule — the era's own tail proves it (07-14..07-17 entries,
+  buying the forming trough, ran 4–14% loser rates). Its challenge regime is a
+  SUSTAINED momentum trend, where confirmed/continuation entries pay and
+  demoting them costs — the US failure mirrored. The v2 shadow race, the
+  continuation-watch ledger, and the named tripwires exist for exactly that.
+- **Tripwire adjudication rule:** a v3-vs-v2 race tightening DURING a momentum
+  rebound is regime-rotation information, not per-se proof the flip was wrong.
+  Adjudicate with the regime attached; consider regime-conditional forms before
+  a straight revert.
+- **The regime store has recorded only Q3 for its entire 14-row life.** If the
+  rebound is real it prints the store's SECOND regime — the unlock for
+  regime-conditioned re-grading (the standing single-regime caveat in
+  china_standout_track) and for P-SI-4's regime-scoped weights.
+
 ## §1 What "institutional-grade" means for an A-share picker, concretely
 
 Six information layers a top desk systematically exploits, ranked by edge
