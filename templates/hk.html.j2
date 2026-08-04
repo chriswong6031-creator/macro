@@ -4512,7 +4512,7 @@ function renderStrip(ev){
     var to=isZh()?e.to_leg.name_zh:e.to_leg.name_en;
     var sect=isZh()?e.sector_name_zh:e.sector_name_en;
     var copy=isZh()?e.copy_zh:e.copy_en;   // full sentence -> native title (JSON copy, not t()-macro)
-    return '<a class="rc-chip rc-'+esc(sev)+'" href="baskets.html" title="'+esc(copy||'')+'">'
+    return '<a class="rc-chip rc-'+esc(sev)+'" href="baskets_hk.html" title="'+esc(copy||'')+'">'
       +'⟲ <b>'+esc(from)+'</b> <span class="rc-arrow">→</span> <b>'+esc(to)+'</b>'
       +' <span class="rc-sect">('+esc(sect)+')</span>'
       +' <span class="rc-days">· '+esc(e.day_n)+t('d','天')+'</span></a>';
