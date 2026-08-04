@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_share_count_external_head.schema.json",
+  "title": "Cataloged share-count external head",
+  "description": "Closed catalog-only union for the existing mutable share-count R2 head key. It accepts only a fully valid v2, v3, or v4 witness by reference; it does not authorize any reader, writer, activation, or decision use.",
+  "type": "object",
+  "oneOf": [
+    {"$ref": "capital_structure_share_count_head_witness.schema.json"},
+    {"$ref": "capital_structure_share_count_head_witness_v3.schema.json"},
+    {"$ref": "capital_structure_share_count_head_witness_v4.schema.json"}
+  ],
+  "unevaluatedProperties": false
+}

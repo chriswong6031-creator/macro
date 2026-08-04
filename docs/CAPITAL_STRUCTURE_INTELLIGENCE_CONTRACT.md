@@ -61,7 +61,7 @@ flowchart LR
 | `data/capital_structure/companyfacts/generations/<sha256>/*` | `collectors/sec_capital_structure_companyfacts.py` | Immutable Company Facts manifest/coverage generation selected by a signed receipt and external head |
 | R2 `capital_structure/share_counts/v2/generations/<sha256>/ledger.json` | `scripts/materialize_capital_structure_share_counts.py` | Immutable v2 direct share/public-float observations bound to authenticated Company Facts bytes |
 | R2 `capital_structure/share_counts/v2/receipts/<sha256>.json` | same | HMAC-authenticated exact-predecessor publication receipt with constant-size rolling-prefix binding, bounded skip refs, and all-false authority |
-| R2 `capital_structure/share_counts/v2/current_head.json` | same | Mutable HMAC-authenticated compare-and-swap selector for exactly one immutable receipt/generation; dual-read v2/v3, with v3 a scope-bound same-selection migration fence rather than a new publisher |
+| R2 `capital_structure/share_counts/v2/current_head.json` | same | Mutable selector cataloged by a closed v2/v3/v4 witness union; runtime authenticates all three, supports exact structural migration/recovery, and keeps native v4 genesis/successor production publication unavailable |
 | ignored local `data/capital_structure/share_counts/v2/current_receipt.json` | same | Runner-local recovery/high-water cache; never an independent selector and never staged by the nightly broad `git add data/` |
 | `data/edgar/dilution_events.parquet` | `collectors/edgar_dilution.py` | Existing legacy feed; unchanged in Wave 1 |
 
@@ -113,23 +113,30 @@ missing source, oversize input, split-brain, or an indeterminate post-CAS result
 fails closed. A clean runner has no independent monotonic witness and therefore
 cannot detect credential-level restoration of an older, otherwise valid signed
 head; global rollback protection requires a separate durable witness
-or signer domain. New publications use exactly one absent-only, signed
-`capital_structure.share_count_publish_journal/v1` commit-intent record. Its
-dedicated HMAC domain binds only exact v2 predecessor/candidate witnesses and
-their canonical local pointer bytes: no phase, CAS token, timestamp, or
-duplicated receipt metadata exists. The publisher fully seals and exact-reads
-both external immutable objects, reasserts the held descriptor-relative lane,
-then durably creates the journal before CAS. Once durable, every caught failure
-retains or restores the exact journal. Restart re-authenticates the candidate
-receipt and ledger before replaying `E -> C`, uses a fresh token, and permits at
-most two conditional conflicts. `H == C`, an authenticated descendant of `E`
-(including a competing direct child), or a genesis winner converges after the
-same logarithmic ancestry proof; rollback and divergent ancestry retain the
+or signer domain. Publication uses exactly one absent-only, signed local
+`.share_count_publish_journal.json`; the reader dispatches by the record's exact
+schema and rejects mixed or unknown shapes. Legacy
+`capital_structure.share_count_publish_journal/v1` binds only exact v2
+predecessor/candidate witnesses and their canonical local pointer bytes in its
+dedicated HMAC domain and remains fully drainable. Native-v4
+`capital_structure.share_count_publish_journal/v2` has its own HMAC domain and
+admits only null expected witness to v4 genesis, or exact v4 expected witness to
+v4 successor. Neither journal carries phase, CAS token, timestamp, or duplicated
+receipt metadata.
+
+The publisher fully seals and exact-reads both external immutable objects,
+reasserts the held descriptor-relative lane, then durably creates the selected
+journal schema before CAS. Once durable, every caught failure retains or
+restores the exact journal. Restart re-authenticates the candidate receipt and
+ledger before replaying `E -> C`, uses a fresh token, and permits at most two
+conditional conflicts. `H == C`, a protocol-valid authenticated descendant, or
+an authenticated genesis winner under the null-expected rule converges after
+the required receipt-ancestry proof; rollback and divergent ancestry retain the
 journal and fail closed. Any recovery state observed at publisher entry makes
-that invocation recovery-only, so migration and new candidate validation need
-a second clean lease. A scope-valid v3 same-selection migration of virtual v2
-`E`, `C`, or a proven descendant can be drained; wrong scope or migration digest
-fails before external artifact or ledger reads. Native v3 publication remains
+that invocation recovery-only, so migration and new candidate validation need a
+second clean lease. Legacy v1 recovery remains compatible with v3/v4 only under
+the explicit matrix below; wrong scope, migration anchor, or ancestry fails
+before selected artifact or ledger reads. Native v3 publication remains
 impossible.
 
 Capsule-only legacy recovery remains deliberately asymmetric:
@@ -138,8 +145,8 @@ bundle and clears; a head equal to, or an authenticated descendant of, the
 capsule candidate must prove the candidate as high-water before clearing; a
 sibling, equal-sequence fork, rollback, malformed proof, or missing proof fails
 closed and retains the exact capsule and pointer without opening a ledger. Any
-legacy recovery bytes beside a v3 head fail unchanged, and legacy state observed
-at lease entry prevents migration in that invocation. Legacy marker/capsule
+legacy recovery bytes beside a v3 or v4 head fail unchanged, and legacy state
+observed at lease entry prevents migration in that invocation. Legacy marker/capsule
 readers remain only to drain old crash state; the normal publisher never writes
 them. A journal beside either legacy name is terminal ambiguity before remote
 I/O, with every exact local byte preserved.
@@ -164,8 +171,8 @@ They do not remove the upstream dependency: the Company Facts source selector
 still authenticates a v1 predecessor chain capped at 512 receipts and will block
 at that checkpoint until its own authenticated migration lands.
 
-The immutable v2 receipts/generations and the dual-read v2/v3 R2 head are the
-publication data plane. A one-time, default-off migration may replace an exact
+The immutable v2 receipts/generations and closed v2/v3/v4 R2 head are the
+publication data plane. A one-time, default-off v3 migration may replace an exact
 canonical v2 head at the same key and CAS token with
 `capital_structure.share_count_head_witness/v3`. The v3 witness keeps all eleven
 selection fields and the sequence unchanged, signs an exact R2 scope
@@ -174,8 +181,51 @@ domain, and commits to the exact canonical v2 witness bytes including their
 newline. It cannot create genesis, advance v3, or publish a new generation.
 While present at the same key, v3 makes an old v2-only writer reject the schema
 before conditional PUT. The migration flag gates only that v2-to-v3 rewrite;
-dual-read v3 recovery and exact no-op behavior remain active when the flag is
+v3 recovery and exact no-op behavior remain active when the flag is
 false, while every v3 successor publication remains blocked.
+
+### Wave 6 v4 head-transition runtime (pre-production)
+
+Wave 6 adds a closed Draft 2020-12 contract for
+`capital_structure.share_count_head_witness/v4` and a closed external-head
+catalog union referencing only v2, v3, and v4. The engine and test seam now
+authenticate and sign v4, structurally migrate exact v2 or v3 heads to v4, and
+recover both legacy-v1 and native-v2 journal outcomes. Production native v4
+genesis/successor publication remains unavailable: the production wrapper never
+enables the injected native-publish seam, and no workflow schedules it.
+
+The v4 witness repeats the exact eleven existing selection fields, signs the
+same exact R2 guard scope, and carries one closed transition object. The runtime
+enforces this state matrix before any selected ledger is opened:
+
+| Transition | Required witness state | Required external proof | v1-journal compatibility |
+| --- | --- | --- | --- |
+| `genesis` | `sequence=1`, `previous_receipt=null` | The expected remote head/pointer is null; no overwrite or non-null expected state is a genesis | A v1 recovery journal may converge only when its expected witness is null and the selected v4 artifacts authenticate; every non-null expected state fails closed. |
+| `migration` from v2 | Exact existing selection and scope | `from_witness_sha256` is the exact v2 witness bytes; `v2_anchor_sha256` is that same canonical virtual-v2 anchor | A v1 recovery journal may recognize this only when the migration proves the exact virtual-v2 anchor for its v2 `E` or `C`. |
+| `migration` from v3 | Exact existing selection and scope | `from_witness_sha256` authenticates the v3 witness and `v2_anchor_sha256` authenticates the v3 witness's exact virtual-v2 anchor | The same exact virtual-v2-anchor rule applies; a v3 wrapper never substitutes for the v1 journal's v2 evidence. |
+| `successor` | `sequence>=2`, non-null `previous_receipt`, and `previous_witness_sha256` | Authenticated signed exact-scope v4 receipt ancestry proves continuity from the named preceding v4 witness; a matching sequence alone is insufficient | A v1 recovery journal may converge only when that ancestry proves its v2 `E` or `C` outcome; otherwise it retains exact evidence and fails closed. |
+
+`from_schema` is closed to v2 or v3, and all migration digests plus a successor's
+`previous_witness_sha256` are fixed lowercase SHA-256 values. The v4 schema
+does not by itself establish a global rollback witness: a clean runner still
+needs a separately durable monotonic witness or signer domain to detect
+credential-level restoration of an older otherwise valid head. No activation,
+retention, UI/API exposure, Prophet ingestion, ranking, sizing, entry, trade,
+or analytical authority follows from cataloging this contract.
+
+Native-v4 intent uses the same local journal filename with exact schema dispatch:
+
+| Journal schema | Allowed durable intent | Current release state |
+| --- | --- | --- |
+| `capital_structure.share_count_publish_journal/v1` | Exact v2 `E -> C`; remains drainable through the v1/v4 compatibility matrix above | Implemented legacy path |
+| `capital_structure.share_count_publish_journal/v2` | Null `E` to v4 `genesis`, or exact v4 `E` to v4 `successor`; no structural migration intent | Implemented engine/test seam; unavailable from the production publisher |
+
+The strict lowercase
+`CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED` and
+`CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V4_MIGRATION_ENABLED` flags both default to
+false and are mutually exclusive. A structural v4 migration is migration-only;
+it cannot share an invocation with native publication. None of these code paths
+provides schedule, activation, retention, UI, or Prophet authority.
 
 Local generation, receipt, pointer, journal, legacy pending/recovery, and lease files
 are crash-recovery mirrors and are excluded by `.gitignore`; this lane never turns
@@ -186,13 +236,13 @@ credential lookup or remote I/O. Release requires all three of: a live isolated
 proof that the provider offers atomic conditional delete, a shared external fence
 covering publisher staging through head CAS and each retention delete, and a
 verifier-only/minted capability that can never write the signed head or receipts.
-The selector/receipt-only high-water split and single-journal recovery protocol
-are implemented and CI-pinned; they do not activate publication. Activation
+The selector/receipt-only high-water split and schema-dispatched single-file
+journal recovery protocol are implemented and CI-pinned; they do not activate
+publication. Activation
 still requires isolated live-provider proof and an explicit operator decision.
-The migration additionally requires exact
-`SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID` configuration and a strict lowercase
-`CAPITAL_STRUCTURE_SHARE_COUNT_HEAD_V3_MIGRATION_ENABLED=true`; the default is
-false, and migration-false v2 operation does not require the account ID. Any
+Migration additionally requires exact `SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID`
+configuration. Both strict lowercase migration flags default false and cannot
+be true together; migration-false v2 operation does not require the account ID. Any
 configured account ID is bound before client construction to the exact resolved
 Cloudflare R2 endpoint (`R2_CAPITAL_STRUCTURE_ENDPOINT`, then `R2_ENDPOINT`):
 HTTPS only, no URL credentials/port/path/query/fragment, and only the account's

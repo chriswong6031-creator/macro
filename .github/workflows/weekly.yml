@@ -71,6 +71,15 @@ jobs:
           path: data/midcap_breadth/_closes_cache.parquet
           key: midcap-closes-weekly-${{ github.run_id }}
           restore-keys: midcap-closes-
+      # 2026-07-25: this step was missing — the weekly deep-dive stamped a 1,704-name
+      # us_calls universe between 2,966-name nightly stamps (keep-FIRST PIT: permanent).
+      # Every lane that restores the S&P trio for the library must restore Russell too.
+      - name: restore Russell 2000 breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/russell_breadth/_closes_cache.parquet
+          key: russell-closes-weekly-${{ github.run_id }}
+          restore-keys: russell-closes-
       - name: weekly collect + recalibrate + build (resilient, self-diagnosing)
         # Same hardening as daily: each step runs isolated; a failure becomes a
         # ::error:: annotation (readable on the run page + via the public check-runs

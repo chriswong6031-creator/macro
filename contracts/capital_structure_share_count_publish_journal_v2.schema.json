@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_share_count_publish_journal_v2.schema.json",
+  "title": "Native v4 share-count publication write-ahead journal",
+  "description": "One signed, absent-only local commit intent for a null-to-v4 genesis or exact v4-to-v4 successor. It grants no analytical or decision authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "key_id",
+    "expected_witness",
+    "candidate_witness",
+    "expected_pointer_b64",
+    "candidate_pointer_b64",
+    "signature"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.share_count_publish_journal/v2"},
+    "key_id": {"type": "string", "minLength": 1},
+    "expected_witness": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "capital_structure_share_count_head_witness_v4.schema.json"}
+      ]
+    },
+    "candidate_witness": {
+      "$ref": "capital_structure_share_count_head_witness_v4.schema.json"
+    },
+    "expected_pointer_b64": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "minLength": 4, "maxLength": 43692, "pattern": "^[A-Za-z0-9+/]*={0,2}$"}
+      ]
+    },
+    "candidate_pointer_b64": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 43692,
+      "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+    },
+    "signature": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"expected_witness": {"type": "null"}},
+        "required": ["expected_witness"]
+      },
+      "then": {
+        "properties": {
+          "candidate_witness": {
+            "properties": {
+              "transition": {
+                "properties": {"kind": {"const": "genesis"}},
+                "required": ["kind"]
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "candidate_witness": {
+            "properties": {
+              "transition": {
+                "properties": {"kind": {"const": "successor"}},
+                "required": ["kind"]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

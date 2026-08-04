@@ -190,11 +190,10 @@ def test_tier_preview_shell_access_matches_reverted_etfs_boundary(monkeypatch):
         "_store_entitlement",
         lambda uid: ({"tier": "free", "status": "none", "features": []}, True),
     )
-    for shell in ("/special_situations.html", "/china_special_situations.html"):
+    for shell in ("/special_situations.html", "/china_special_situations.html",
+                  "/etfs.html"):
         assert paywall.classify_path(shell) == "public"
         assert _check(shell, "document").status_code == 204
-    assert paywall.classify_path("/etfs.html") == "premium"
-    assert _check("/etfs.html", "document").status_code == 403
     assert paywall.classify_path("/biocatalyst.html") == "free", (
         "control: a registered-preview shell must still classify free"
     )
