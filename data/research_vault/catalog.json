@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-03T23:36:54.465804+00:00",
-  "count": 696,
+  "generated_at": "2026-08-03T23:58:47.254710+00:00",
+  "count": 697,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -48,6 +48,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-hoobnuhrzwi-24b087",
+      "title": "mom",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T23:02:44Z",
+      "summary_points": [
+        "**S&P 500 FCF Margin Divergence**: FCF margins (green) show sectoral divergence vs.",
+        "resilient operating margins (blue), signaling cash flow sustainability as critical financial health metric amid inflation and AI-driven capital spending.",
+        "**Sector Rotation & Credit Stress**: S&P 500 IT down -7.76% (vs.",
+        "Banks +33.81% earnings growth) signals leadership shift to Energy/Financials; hyperscalers’ CDS spreads at record levels highlight credit risk in tech, pressuring valuations amid rising rates.",
+        "**Bank FCF Resilience & Performance**: Banks maintain higher free cash flow margins than AI-heavy tech firms; 84% of banks reported positive earnings surprises, driving sector-wide expected growth to ~20% (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-ovegn6rwo5n-3ac8f3",
       "title": "Daily US",
