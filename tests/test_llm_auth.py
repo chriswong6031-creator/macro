@@ -923,6 +923,17 @@ def test_build_providers_inserts_codex_after_oauth_before_metered(monkeypatch):
     monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
     monkeypatch.setattr("engine.neuralweb.key_pool.discover_present_keys", lambda root=None: [])
     monkeypatch.setattr(codex_provider, "available_accounts", lambda: [("codex_account", None)])
+    # DATE/STATE BOMB REMOVED (2026-08-04): build_providers ends with the
+    # cross-process cooldown re-sort, which reads key_pool.is_cooling off the
+    # COMMITTED data/metabolism/key_ledger.jsonl. Whenever the ops heartbeat
+    # committed a codex_account cooling row with a future reset_hint, codex sank
+    # behind anthropic and this INSERTION-order test went red on every PR in the
+    # repo until the hint expired. Pin the sort's input: this test owns the
+    # insertion contract; the cooldown demotion has its own deterministic test
+    # below (test_cooling_codex_cap_sinks_behind_non_cooling_providers).
+    monkeypatch.setattr(
+        "engine.neuralweb.key_pool.is_cooling", lambda key_id, root=None: False
+    )
     monkeypatch.setattr(
         codex_provider,
         "CodexClient",
@@ -941,6 +952,41 @@ def test_build_providers_inserts_codex_after_oauth_before_metered(monkeypatch):
     assert codex["source_model"] == "claude-opus-5"
     assert codex["model"] == "gpt-5.6-sol"
     assert codex["cap_id"] == "codex_account"
+
+
+def test_cooling_codex_cap_sinks_behind_non_cooling_providers(monkeypatch):
+    """The cross-process cooldown re-sort, pinned deterministically: a provider
+    whose cap_id is cooling moves behind every non-cooling provider while the
+    configured waterfall stays stable within each group. This is the OTHER half
+    of the insertion-order contract above — together they replace the
+    state-dependent behavior that used to flip with the committed key ledger."""
+    import sys
+    from unittest.mock import patch
+
+    from engine import codex_provider, llm_auth
+
+    monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
+    monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
+    monkeypatch.setattr("engine.neuralweb.key_pool.discover_present_keys", lambda root=None: [])
+    monkeypatch.setattr(codex_provider, "available_accounts", lambda: [("codex_account", None)])
+    monkeypatch.setattr(
+        "engine.neuralweb.key_pool.is_cooling",
+        lambda key_id, root=None: key_id == "codex_account",
+    )
+    monkeypatch.setattr(
+        codex_provider,
+        "CodexClient",
+        lambda **kwargs: _make_fake_client("codex"),
+    )
+
+    cfg = {
+        "provider_order": ["oauth", "anthropic"],
+        "opus_model": "claude-opus-5",
+    }
+    with patch("lib.config.secret", return_value="credential-present"):
+        providers = llm_auth.build_providers(cfg)
+
+    assert [p["name"] for p in providers] == ["oauth", "anthropic", "codex"]
 
 
 def test_deepseek_flash_gets_terra_codex_fallback_and_shared_cap_id(monkeypatch):

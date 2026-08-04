@@ -734,8 +734,8 @@
      encoding of the bucket (canonized §7 pattern) and the label is the stance —
      "Live now", "Ran — don't chase" are complete instructions on their own; the
      lighter tail sentence is the ≤14-word Tier-1 subtitle. --sgc carries the tone
-     so one rule set serves four buckets. Tones are --pv-* (direction-STABLE): they
-     never flip under html[data-lang="zh"] the way --up/--down do. */
+     so one rule set serves four buckets. Tones are --pv-* and follow the active
+     language convention: green-up/red-down in English, red-up/green-down in Chinese. */
   .nb-stage-hd { grid-column: 1 / -1; display: flex; align-items: baseline; flex-wrap: wrap;
                  gap: 3px 9px; margin: 15px 0 4px; padding: 5px 11px 5px 9px;
                  border-left: 3px solid var(--sgc, var(--muted)); border-radius: 0 8px 8px 0;
@@ -15384,6 +15384,14 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {%- endif %}
     <script type="application/json" id="plv-names">{{ _plv_nm | tojson }}</script>
     {% endif %}
+    {#- THEME TAPE (W2) — sits directly above the board because that is the reading
+        order the panel exists to create: here is what the market is heating, here is
+        what these picks do with it, here are the picks. It is deliberately NOT a
+        second "themes in favour" strip: that one lives inside the board below, is
+        driven by board names, and by design drops a theme with no names on it — the
+        exact silence this panel prints. Own guard, so the placement survives any
+        re-nesting of the block above. Renders nothing on a dead tape. -#}
+    {% if mode == 'stocks' %}{% include "_theme_tape.html.j2" %}{% endif %}
     {% if _su or action_board.notable %}
     <div class="panel span12 notable" id="us-standouts">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">

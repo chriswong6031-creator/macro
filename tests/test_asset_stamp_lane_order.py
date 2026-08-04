@@ -40,6 +40,8 @@ WORKFLOWS = ROOT / ".github/workflows"
 
 STAMP = "python -m scripts.optimize_assets"
 FIX = "python -m scripts.check_template_site_sync --fix"
+EXTERNALIZE = "python -m scripts.externalize_css"
+SHIM = "python -m scripts.inject_data_base"
 
 # Lanes that both stamp assets and commit site/ — every one of them must satisfy
 # the ordering + staging contract below.
@@ -138,6 +140,59 @@ def test_post_rebase_block_re_stamps_before_committing(lane):
         assert any(STAMP in ln and not ln.lstrip().startswith("#") for ln in window), (
             f"{lane}:{f + 1} heals post-rebase without re-stamping first — a page a sibling "
             "lane landed mid-run would be pushed un-stamped (render 6260e5ac8c0)")
+
+
+@pytest.mark.parametrize("lane", LANES)
+def test_post_rebase_block_runs_the_full_normalize_chain(lane):
+    """P0 2026-08-04 (9a997e9da3f): the nightly hit its 200m cap; the cancel skipped
+    the success()-gated normalize step while the always() commit still shipped 5,895
+    raw pages. Every later lane REBASED onto that main: its own re-render matched its
+    healthy checkout, so the replay merged its small deltas cleanly INTO the fat
+    inline pages (no conflict — -X theirs never engaged), and a re-stamp-only heal
+    pushed the poison onward re-stamped (f0deeabde39, 0159fe97631) until #4484 healed
+    main by hand. A post-rebase heal that re-stamps must therefore also re-shim and
+    re-externalize — the full chain makes the next lane push self-heal the tree."""
+    lines = _lines(lane)
+    stamps = _idx(lines, STAMP)
+    post = [i for i in stamps if len(lines[i]) - len(lines[i].lstrip()) >= 14]
+    if not post:
+        pytest.skip(f"{lane} has no post-rebase heal block (minimal push loop)")
+    for s in post:
+        window = lines[max(0, s - 12):s]
+        for needle, label in ((SHIM, "re-shim"), (EXTERNALIZE, "re-externalize")):
+            assert any(needle in ln and not ln.lstrip().startswith("#")
+                       for ln in window), (
+                f"{lane}:{s + 1} re-stamps post-rebase without a {label} (`{needle}`) "
+                "in the same heal block — a raw page inherited from main would be "
+                "re-stamped and pushed onward still un-normalized (9a997e9da3f)")
+
+
+# Lanes whose engine commit runs `if: always()` — it commits even when a
+# timeout-cancel skipped every success()-gated step, including the lane's
+# normalize pass, so the commit step itself must normalize what it stages.
+ALWAYS_COMMIT_LANES = ["daily.yml", "asia-close.yml"]
+
+
+@pytest.mark.parametrize("lane", ALWAYS_COMMIT_LANES)
+def test_always_commit_step_normalizes_inside_the_step(lane):
+    """P0 2026-08-04: daily's engine job was cancelled at its 200m cap mid-run; the
+    White House step (the job's ONLY shim/externalize/stamp pass) was skipped as
+    success()-gated, and the always() `commit engine outputs` step committed the raw
+    tree as 9a997e9da3f — 7 shipped-page guards red on every PR head in the repo.
+    The normalize chain must live INSIDE the always() step, between its start and
+    its `git commit`, so the staged tree is normalized by construction."""
+    lines = _lines(lane)
+    starts = [i for i, ln in enumerate(lines) if "- name: commit engine outputs" in ln]
+    assert starts, f"{lane}: 'commit engine outputs' step not found — did the step get renamed?"
+    start = starts[0]
+    commits = [i for i in range(start, len(lines)) if 'git commit -m "engine:' in lines[i]]
+    assert commits, f"{lane}: no `git commit -m \"engine:` after the commit step start"
+    body = lines[start:commits[0]]
+    for needle in (SHIM, EXTERNALIZE, STAMP):
+        assert any(needle in ln and not ln.lstrip().startswith("#") for ln in body), (
+            f"{lane}: the always() commit step no longer runs `{needle}` before its "
+            "`git commit` — a timeout-cancel that skips the normalize step would ship "
+            "a raw tree to main again (9a997e9da3f)")
 
 
 @pytest.mark.parametrize("lane", LANES)
