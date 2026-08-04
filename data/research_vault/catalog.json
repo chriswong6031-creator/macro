@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T10:53:31.040692+00:00",
-  "count": 729,
+  "generated_at": "2026-08-04T11:14:12.708447+00:00",
+  "count": 730,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -49,6 +49,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-dl5skzx2imd-1c66ff",
+      "title": "Snap Inc. (SNAP) Q2'26 Review Improved Advertising Performance & Operating Margin Leverage Drove Solid Results",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T10:37:46Z",
+      "summary_points": [
+        "**Q2 Performance & Cash Flow Turnaround**: Q2 revenue beat ($1.73B vs $1.66B est) and adj EBITDA beat ($336M vs $320M est) driven by ad momentum; operating cash flow improving from $656M (12/25) to $1.68B (12/28E), net income turning positive ($347M vs ($210M) 12/28E).",
+        "**Valuation Re-rating Catalyst**: EV/EBITDA declining sharply from 25.0x (current) to 5.1x (12/28E) with EBITDA margin rising from 2.0% (12/26E) to 4.1% (12/28E), signaling operational recovery and potential multiple expansion.",
+        "**Critical Near-Term Risks**: ROW revenue down 15% QoQ and infrastructure costs guidance raised by $5M, offsetting Q2 strength; key risks include advertiser demand volatility and regulatory pressures (data/privacy).",
+        "**Profitability & Margin Leverage**: Operating margin expansion via opex discipline, restructuring savings, and stock buybacks (Q2: $250M), with FY2026 adj EBITDA margin projected to rise to 18.5% (from 19.0% in Q2)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-kbj5h3kf27k-8e21ab",
       "title": "JPM JPM US MACRO THEMA",
