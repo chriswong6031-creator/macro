@@ -267,6 +267,20 @@ jobs:
           # ladder run is byte-identical to before this input existed.
           POST_NOW_ITEM: ${{ inputs.post_now_item }}
 
+          # ── COLD READ: THE LOCAL MODEL THAT READS A POST AS A STRANGER ─────
+          # engine/marketing/cold_read.py. Needs BOTH of these to run at all,
+          # and config/marketing.yml `cold_read.action` is what decides whether
+          # a flag does anything (it ships as "shadow" — logs, blocks nothing).
+          #
+          # Unconfigured repo variables resolve to "" and the rung is dropped,
+          # so these lines are inert until OLLAMA_BASE_URL points at the box.
+          # That state is NOT silent: the publisher prints a
+          # `::warning title=marketing-cold-read-dark` when the gate is enabled
+          # and no model answered for any relayed item, because "zero flags"
+          # from a dark gate reads exactly like "the copy was clean".
+          OLLAMA_BASE_URL: ${{ vars.OLLAMA_BASE_URL }}
+          MARKETING_LLM_ENABLED: "1"
+
           # ── R2: WHERE THE PUBLISH-TIME CARD BECOMES A PICTURE ──────────────
           # Same arming contract, and the same failure mode, as the press wire
           # (marketing-press-wire.yml): publish_card writes the SVG and the PNG

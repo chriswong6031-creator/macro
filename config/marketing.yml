@@ -557,6 +557,47 @@ sentinel:
 # set. The Buffer personal access token is read from env BUFFER_TOKEN (never
 # committed — see .env.example).
 # ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# COLD READ (2026-08-04) — engine/marketing/cold_read.py
+#
+# The last post-time screen, and the only one that is not a rule list. Every
+# other copy gate asks a question about the STRING; this asks whether a READER
+# who sees nothing but the post can resolve it. The post that forced it —
+#
+#     More info on this - South Korea core inflation hits 2-1/2 year high
+#     despite headline cooling -- wire reports
+#
+# — was grammatical, sourced, in budget, stance-free and handle-free. It passed
+# every deterministic gate and failed only "there is no 'this' anywhere in this
+# post", which is not a rule anybody can write.
+#
+# A DE-ESCALATION (A7). It runs last, it can only STOP a post — never pass,
+# rank, promote or edit one — and a block counts only when it names one of the
+# five categories in cold_read.BLOCK_CATEGORIES, so a model that decides the
+# copy is boring is discarded rather than obeyed.
+#
+# ARMING, in order. `action` is the graduated rung:
+#   shadow      log what it WOULD hold, block nothing        <- ships here
+#   hold        leave the item queued for another pass + an operator's eye
+#   quarantine  terminal
+# Read a week of shadow notices before moving off "shadow". Wiring a model veto
+# into a terminal quarantine with no measured precision is exactly what
+# research/WIRE_COPY_HARDENING_PROGRAM.md argues against.
+#
+# Local-first on purpose: ~30 relayed posts a day, one short question each, on
+# hardware already paid for. Needs OLLAMA_BASE_URL in the process env AND
+# MARKETING_LLM_ENABLED=1; absent either, zero model calls and nothing is
+# screened.
+# ─────────────────────────────────────────────────────────────────────────────
+cold_read:
+  enabled: true
+  action: shadow
+  provider_order: [ollama]
+  ollama_model: "qwen3.5:9b"
+  ollama_timeout_s: 30
+  ollama_num_ctx: 4096
+  max_tokens: 200
+
 publish:
   backend: buffer          # only "buffer" is implemented today
   require_approval: true   # only outbox items an operator approved may post
