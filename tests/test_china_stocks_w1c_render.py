@@ -18,8 +18,8 @@ Prophet-card redesign (2026-07-21) — what moved, and why this suite was re-pin
     Cards now render via {{ pv.pv_card({...}) }} from templates/_prophet_card.html.j2:
       · ENTRY rows -> verb 'buy'  (class="pvcard pv-buy",  stage 3 -> 'Ready' on)
       · RAN/LATE   -> verb 'wait' (class="pvcard pv-wait", stage 4 -> 'Trend' on)
-    The verb hue (--pv-buy) keeps Buy green; there is no green banding on a WAIT card
-    by construction, so B1/B2 is now enforced structurally, not by a class suppression.
+    The verb hue (--pv-buy) stays bullish under either language convention; a WAIT card
+    uses amber by construction, so B1/B2 is enforced structurally, not by suppression.
   - GOTCHA: the pv_css() <style> block emits the class SELECTORS `.pv-buy`, `.pv-wait`
     etc. as literal text, so the bare substrings "pv-buy" / "pv-wait" are ALWAYS present
     in the output. Card-presence / card-absence assertions MUST target the full
