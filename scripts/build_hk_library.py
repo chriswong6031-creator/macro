@@ -1751,6 +1751,10 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         leadership=_leadership,
         board_asof=as_of,
         require_above200=HK_RAN_REQUIRE_ABOVE200,
+        # Load-bearing: with the above200 door open the lane is ~5x oversubscribed,
+        # and without the cohort the cap truncates freshest-first — which drops every
+        # mega-cap a reader came to check.  No cohort => _cohort_first is a no-op.
+        cohort=_ldr.DEFAULT_COHORT,
     )
     # Vetoed lane (G1 / G6): a buy signal fired and the entry gate refused it —
     # the block reason named, and what the name did while the board stayed out.

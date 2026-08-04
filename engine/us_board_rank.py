@@ -1198,7 +1198,7 @@ def build_ran_rows(
     exclude: Iterable[str] = (),
     theme_by: Mapping[str, Mapping[str, Any]] | None = None,
     board_asof: Any = None,
-    cap: int = RAN_CAP,
+    cap: int | None = RAN_CAP,
     ticks_min: int = RAN_TICKS_MIN,
     ticks_max: int = RAN_TICKS_MAX,
     require_above200: bool = True,
@@ -1320,4 +1320,9 @@ def build_ran_rows(
             row["ticker"],
         )
     )
+    # cap=None means UNCAPPED — the caller intends to apply its own selection to the
+    # full admitted set (engine.hk_board_rank._cohort_first does exactly this, because
+    # a plain freshest-first truncation drops the very names a reader came to check).
+    if cap is None:
+        return rows
     return rows[: max(0, int(cap))]

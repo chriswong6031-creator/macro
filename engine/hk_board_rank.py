@@ -601,6 +601,10 @@ def build_ran_rows(
     ``pct_since: null`` disclosed.  Every emitted row carries ``anchor`` ∈
     {``marker``, ``approx``}.
     """
+    members = _cohort_set(cohort)
+    # Build UNCAPPED, then apply the cap cohort-first (see _cohort_first): with the
+    # above200 door open the lane is ~5x oversubscribed and a plain freshest-first
+    # truncation drops every mega-cap a reader would come here to check.
     rows = _ubr.build_ran_rows(
         verdict_by,
         meta_by=meta_by,
@@ -608,12 +612,12 @@ def build_ran_rows(
         exclude=exclude,
         theme_by=theme_by,
         board_asof=board_asof,
-        cap=cap,
+        cap=None,
         ticks_min=ticks_min,
         ticks_max=ticks_max,
         require_above200=require_above200,
     )
-    members = _cohort_set(cohort)
+    rows = _cohort_first(rows, members, cap)
     chip = leadership_chip(leadership)
     for row in rows:
         in_cohort = str(row.get("ticker") or "").strip().upper() in members
@@ -624,6 +628,32 @@ def build_ran_rows(
         if in_cohort and chip:
             row["leadership"] = dict(chip)
     return rows
+
+
+def _cohort_first(rows: list[dict], members: set[str], cap: int) -> list[dict]:
+    """Cohort members keep their slot; the rest fill what is left, order preserved.
+
+    THE CAP, NOT THE TREND TEST, IS WHAT HID THE MEGA-CAPS.  Opening the ran lane's
+    ``above200`` door (so a name recovering from a deep drawdown can appear at all)
+    takes HK admits from 13 to **64** for **12** slots, and the lane sorts
+    freshest-cross-first — so every name the operator named lands at rank 14-56 and
+    is cut, INCLUDING 3690.HK, which the stricter lane had been showing.  Measured on
+    the committed panel 2026-08-04: opening the door alone surfaces NONE of them and
+    evicts the one that was already there, which is a strictly worse board.
+
+    This is the rule :func:`build_vetoed_rows` already applies, for the same reason:
+    a lane whose job is "what the board did not act on" is worthless if the names a
+    reader is asking about are exactly the ones the cap drops.  It admits NOBODY new
+    — every row here already passed ``ran_admits`` — it only decides who keeps a seat
+    when the lane is oversubscribed.  Cohort membership is the ONE display-tier
+    priority (HKRV-R5: hk_leadership never touches rank, size or gate on the graded
+    buy lane; this is a display strip and carries no entry claim).
+    """
+    if cap is None or len(rows) <= cap:
+        return rows
+    keep = [r for r in rows if str(r.get("ticker") or "").strip().upper() in members]
+    rest = [r for r in rows if str(r.get("ticker") or "").strip().upper() not in members]
+    return (keep + rest)[:cap] if len(keep) <= cap else keep[:cap]
 
 
 # --------------------------------------------------------------------------- #

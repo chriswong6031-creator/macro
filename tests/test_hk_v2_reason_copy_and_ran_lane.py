@@ -353,3 +353,55 @@ def test_the_two_hk_policy_constants_stay_separate_switches():
     defs = [ln.strip() for ln in inspect.getsource(build_hk_library).splitlines()
             if ln.startswith(("HK_RECLAIM_VETO", "HK_RAN_REQUIRE_ABOVE200"))]
     assert defs == ["HK_RECLAIM_VETO = False", "HK_RAN_REQUIRE_ABOVE200 = False"], defs
+
+
+# --------------------------------------------------------------------------- #
+# 4 — the cap, not the trend test, is what actually hid the mega-caps
+# --------------------------------------------------------------------------- #
+def _ran_row(ticker: str) -> dict:
+    return {"ticker": ticker}
+
+
+def test_cohort_members_keep_their_seat_when_the_lane_is_oversubscribed():
+    """Opening the above200 door takes HK ran admits from 13 to 64 for 12 slots, and
+    the lane sorts freshest-cross-first — so every mega-cap lands at rank 14-56 and is
+    truncated away.  Measured 2026-08-04: the door alone surfaced NONE of the named
+    names AND evicted 3690.HK, which the stricter lane had been showing.  Cohort-first
+    is the rule build_vetoed_rows already applies for exactly this reason."""
+    rows = [_ran_row(f"FRESH{i}.HK") for i in range(12)] + [
+        _ran_row("1810.HK"), _ran_row("9988.HK")]
+    members = {"1810.HK", "9988.HK"}
+    kept = hk_board_rank._cohort_first(rows, members, 12)
+    tickers = [r["ticker"] for r in kept]
+    assert len(kept) == 12
+    assert tickers[:2] == ["1810.HK", "9988.HK"], tickers
+    assert "FRESH11.HK" not in tickers, "a non-cohort row should yield the slot"
+
+
+def test_cohort_first_admits_nobody_new_and_is_a_noop_under_the_cap():
+    """It re-orders, it never widens: every row it can return already passed
+    ran_admits.  Under the cap it must not touch the order at all."""
+    rows = [_ran_row("A.HK"), _ran_row("1810.HK"), _ran_row("B.HK")]
+    out = hk_board_rank._cohort_first(rows, {"1810.HK"}, 12)
+    assert [r["ticker"] for r in out] == ["A.HK", "1810.HK", "B.HK"]
+    assert len(hk_board_rank._cohort_first(rows, {"1810.HK"}, 2)) == 2
+
+
+def test_more_cohort_members_than_slots_still_respects_the_cap():
+    rows = [_ran_row(f"C{i}.HK") for i in range(20)]
+    members = {f"C{i}.HK" for i in range(20)}
+    assert len(hk_board_rank._cohort_first(rows, members, 12)) == 12
+
+
+def test_the_hk_ran_call_site_passes_the_cohort():
+    """_cohort_first is a NO-OP without members, so an unpassed cohort would make the
+    whole fix dead in production while every unit test above still passed — the same
+    dead-parameter class the require_above200 pin guards."""
+    import re
+    from scripts import build_hk_library
+
+    src = inspect.getsource(build_hk_library)
+    call = re.search(r"ran = hk_board_rank\.build_ran_rows\((.*?)\n    \)", src, re.S)
+    assert call, "could not locate the HK ran-lane call site"
+    assert "cohort=" in call.group(1), "the ran lane is built without a cohort"
+    assert "require_above200=HK_RAN_REQUIRE_ABOVE200" in call.group(1)
