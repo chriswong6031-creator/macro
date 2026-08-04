@@ -1,0 +1,563 @@
+"""Tests for the Prophet US miss-audit engine (W0 — ops telemetry, ZERO authority).
+
+Covers (engine/prophet_miss_audit.py, masterplan
+research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md §W0):
+
+* EXCLUDER ATTRIBUTION — the exact naming for every not-topped veto leg and every non-veto
+  exclusion path, pinned as strings (they are the histogram keys the forward log carries, so a
+  rename is a schema break, not a cosmetic edit). Both directions: a leg that is down must be
+  named, and a leg that is UP must not appear in the string.
+* CONVERSION JOIN — sighted denominator excludes never-measurable names, an empty denominator
+  is None (not 0%), and the numerator is the plan-asset intersection.
+* FORWARD-LOG APPEND GUARD — a non-nightly invocation appends NOTHING and writes no artifact;
+  nightly appends exactly one row and is idempotent on price_through. Pinned at the engine
+  entry point AND at the runner's flag parsing, because the guard is only as good as the flag
+  that reaches it.
+* ARTIFACT SCHEMA — the key set, the degraded disclosure, and determinism (two builds over the
+  same synthetic caches are byte-identical: no wall clock anywhere).
+
+Every store write in this file goes to tmp_path — the real data/ tree is never touched
+(MM_DATA_GUARD; conftest sessionfinish guard).
+"""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from engine import confluence_tiers as ct  # noqa: E402
+from engine import prophet_miss_audit as PMA  # noqa: E402
+import scripts.run_prophet_miss_audit as RUNNER  # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# synthetic frames
+# ---------------------------------------------------------------------------
+_N = 420          # > MIN_HISTORY (200) with room for a 63-session window
+
+
+def _bdays(n: int = _N) -> pd.DatetimeIndex:
+    return pd.bdate_range("2024-01-01", periods=n)
+
+
+def _walk(seed: int, drift: float, n: int = _N, vol: float = 0.012) -> pd.Series:
+    """A deterministic seeded random walk — a real price path for the tier math to chew on."""
+    rng = np.random.RandomState(seed)
+    steps = rng.normal(drift, vol, n)
+    return pd.Series(100.0 * np.exp(np.cumsum(steps)), index=_bdays(n))
+
+
+def _runner(seed: int, n: int = _N) -> pd.Series:
+    """A strongly-trending noisy path — the shape a top-decile runner actually has."""
+    return _walk(seed=seed, drift=0.004, n=n)
+
+
+def _legs(**over) -> dict:
+    """A leg snapshot with every leg constructive; override the ones under test."""
+    base = {"stoch_ob": False, "stoch_bear": False, "macd_bear": False, "rsi_block": False,
+            "k3": 40.0, "d3": 38.0, "rsi3d": 50.0,
+            "t1_ticks": 0, "t2_ticks": 0, "t2raw_ticks": 0, "recent3": True}
+    base.update(over)
+    return base
+
+
+def _patch_legs(monkeypatch, legs: dict) -> None:
+    monkeypatch.setattr(PMA, "leg_snapshot", lambda close: legs)
+
+
+# ---------------------------------------------------------------------------
+# (a) excluder attribution — one pin per veto leg
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("fired,expected", [
+    (["stoch_ob"], "not_topped_veto(stoch_ob)"),
+    (["stoch_bear"], "not_topped_veto(stoch_bear)"),
+    (["macd_bear"], "not_topped_veto(macd_bear)"),
+    (["stoch_ob", "stoch_bear"], "not_topped_veto(stoch_ob+stoch_bear)"),
+    (["stoch_bear", "macd_bear"], "not_topped_veto(stoch_bear+macd_bear)"),
+    (["stoch_ob", "macd_bear"], "not_topped_veto(stoch_ob+macd_bear)"),
+    (["stoch_ob", "stoch_bear", "macd_bear"],
+     "not_topped_veto(stoch_ob+stoch_bear+macd_bear)"),
+])
+def test_veto_leg_naming(monkeypatch, fired, expected):
+    """Each not-topped leg is named, in cascade's own evaluation order, and only when down."""
+    _patch_legs(monkeypatch, _legs(**{leg: True for leg in fired}))
+    out = PMA.attribute_excluder(pd.Series(dtype="float64"), eligible_today=False)
+    assert out["excluder"] == expected
+    assert out["excluder_family"] == "not_topped_veto"
+    assert out["veto_legs"] == [leg for leg in PMA.VETO_LEGS if leg in fired]
+    # inverse scan: a leg that is UP must never appear in the attribution string
+    for quiet in set(PMA.VETO_LEGS) - set(fired):
+        assert quiet not in out["excluder"], f"{quiet} is constructive but was named"
+
+
+def test_non_veto_excluder_paths(monkeypatch):
+    """The four non-veto exclusion names, in the cascade's evaluation order."""
+    cases = [
+        # RSI cap ate an otherwise-fresh 2D cross
+        (_legs(rsi_block=True, rsi3d=71.0, t1_ticks=9, t2raw_ticks=1),
+         PMA.EXC_RSI_CAP),
+        # the cross happened, but it is stale on both families
+        (_legs(t1_ticks=9, t2_ticks=9, t2raw_ticks=9), PMA.EXC_FRESHNESS),
+        # no 3D stoch cross inside CONF_W and no datable 2D/3D cross at all
+        (_legs(recent3=False, t1_ticks=None, t2_ticks=None, t2raw_ticks=None),
+         PMA.EXC_NO_RECENT_3D),
+        # legs constructive, window recent, but nothing crossed
+        (_legs(t1_ticks=None, t2_ticks=None, t2raw_ticks=None), PMA.EXC_NO_CROSS),
+    ]
+    for legs, expected in cases:
+        _patch_legs(monkeypatch, legs)
+        out = PMA.attribute_excluder(pd.Series(dtype="float64"), eligible_today=False)
+        assert out["excluder"] == expected, f"{legs} -> {out['excluder']}, want {expected}"
+        assert out["excluder_family"] == expected
+
+
+def test_eligible_short_circuits_every_leg(monkeypatch):
+    """The production verdict wins: an eligible name is ELIGIBLE even with legs that look bad.
+
+    attribute_excluder EXPLAINS the tier_stream verdict; it must never override it — otherwise
+    the histogram and the eligibility counts in the same artifact could disagree.
+    """
+    _patch_legs(monkeypatch, _legs(stoch_ob=True, macd_bear=True, t1_ticks=99))
+    out = PMA.attribute_excluder(pd.Series(dtype="float64"), eligible_today=True)
+    assert out["excluder"] == PMA.EXC_ELIGIBLE
+    assert out["excluder_family"] == PMA.EXC_ELIGIBLE
+    assert out["veto_legs"] == ["stoch_ob", "macd_bear"]   # still reported, just not the label
+
+
+def test_thin_history_is_named_not_guessed():
+    """Below MIN_HISTORY there are no legs to read — say so rather than invent a reason."""
+    thin = pd.Series(np.linspace(10, 20, 50), index=_bdays(50))
+    out = PMA.attribute_excluder(thin, eligible_today=False)
+    assert out["excluder"] == PMA.EXC_INSUFFICIENT
+    assert out["veto_legs"] == []
+
+
+@pytest.mark.parametrize("seed", range(1, 12))
+def test_leg_snapshot_never_forks_from_the_cascade_veto(seed):
+    """Anti-fork pin: the overlay's veto legs must reproduce cascade's own `not_topped`.
+
+    ``leg_snapshot`` is a diagnostic overlay that names WHICH leg is down; if it ever drifts
+    from ``confluence_tiers``, the artifact attributes an exclusion to a leg the board never
+    evaluated. Checked in BOTH directions across a spread of seeded paths: any leg down <=>
+    cascade says topped, no leg down <=> cascade says constructive.
+    """
+    s = _runner(seed)
+    legs = PMA.leg_snapshot(s)
+    assert legs, "expected a leg snapshot on a >MIN_HISTORY series"
+    fired = [n for n in PMA.VETO_LEGS if legs[n]]
+    casc = ct.cascade(s)
+    assert bool(fired) is (not casc["not_topped"]), (
+        f"seed {seed}: overlay fired {fired} but cascade not_topped={casc['not_topped']}")
+    if fired:
+        out = PMA.attribute_excluder(s, eligible_today=bool(casc["eligible"]))
+        assert out["excluder"] == "not_topped_veto(" + "+".join(fired) + ")"
+
+
+def test_leg_snapshot_pins_the_overbought_runner():
+    """A concrete overbought runner: k3/d3 in the OB zone, named stoch_ob and nothing else."""
+    s = _runner(3)
+    legs = PMA.leg_snapshot(s)
+    assert legs["stoch_ob"] is True, f"expected overbought, got k3={legs['k3']} d3={legs['d3']}"
+    assert max(legs["k3"], legs["d3"]) >= ct.OB
+    assert legs["stoch_bear"] is False and legs["macd_bear"] is False
+    casc = ct.cascade(s)
+    assert casc["not_topped"] is False and casc["eligible"] is False
+    out = PMA.attribute_excluder(s, eligible_today=False)
+    assert out["excluder"] == "not_topped_veto(stoch_ob)"
+
+
+def test_eligibility_window_agrees_with_tier_stream():
+    """eligible_today is the stream's own last row, and days_eligible counts the same object."""
+    s = _walk(seed=11, drift=0.0006)
+    win = PMA.eligibility_window(s, lookback=63)
+    st = ct.tier_stream(s)
+    assert not st.empty
+    assert win["eligible_today"] == bool(st["eligible"].iloc[-1])
+    assert win["days_eligible"] == int(st.tail(63)["eligible"].sum())
+    assert 0 <= win["days_eligible"] <= 63
+    if win["days_eligible"]:
+        assert win["first_eligible"] is not None
+        assert win["tiers_seen"]
+    else:
+        assert win["first_eligible"] is None
+
+
+def test_eligibility_window_thin_history_is_null_not_zero():
+    """A name we could never measure reports None days — not 0, which would read as a miss."""
+    win = PMA.eligibility_window(pd.Series(np.linspace(1, 2, 40), index=_bdays(40)))
+    assert win["days_eligible"] is None
+    assert win["eligible_today"] is False
+
+
+# ---------------------------------------------------------------------------
+# (b) conversion join
+# ---------------------------------------------------------------------------
+def test_conversion_join_counts_and_denominator():
+    rows = [
+        {"ticker": "AAA", "days_eligible": 5},     # sighted, has a plan
+        {"ticker": "BBB", "days_eligible": 1},     # sighted, no plan
+        {"ticker": "CCC", "days_eligible": 0},     # seen zero days -> never sighted
+        {"ticker": "DDD", "days_eligible": None},  # never measurable -> out of the denominator
+        {"ticker": "EEE", "days_eligible": 12},    # sighted, has a plan
+    ]
+    out = PMA.conversion_join(rows, {"AAA", "EEE", "ZZZ"})
+    assert out["sighted_n"] == 3                  # AAA, BBB, EEE (not CCC, not DDD)
+    assert out["converted_n"] == 2
+    assert out["converted"] == ["AAA", "EEE"]
+    assert out["rate"] == pytest.approx(2 / 3, abs=1e-4)   # stored rounded to 4dp
+    assert out["never_sighted_n"] == 1            # CCC only; DDD was never measurable
+    assert out["unconverted_top"] == ["BBB"]
+    assert out["plan_universe_n"] == 3
+
+
+def test_conversion_join_empty_denominator_is_null_not_zero():
+    """Nothing sighted is an ABSENCE of measurement, not a 0% conversion rate."""
+    out = PMA.conversion_join([{"ticker": "AAA", "days_eligible": 0}], {"AAA"})
+    assert out["sighted_n"] == 0
+    assert out["converted_n"] == 0
+    assert out["rate"] is None
+
+
+def test_conversion_join_ignores_plans_for_unsighted_names():
+    """A plan on a name the engine never sighted does not inflate the numerator."""
+    out = PMA.conversion_join([{"ticker": "AAA", "days_eligible": 0}], {"AAA", "BBB"})
+    assert out["converted_n"] == 0
+
+
+# ---------------------------------------------------------------------------
+# (c) forward-log append guard — nightly is the SOLE advancer
+# ---------------------------------------------------------------------------
+def _doc(price_through: str = "2026-07-31") -> dict:
+    return {
+        "schema": PMA.SCHEMA, "price_through": price_through,
+        "summary": {"universe_n": 3, "eligible_today_n": 1, "top63_n": 2,
+                    "top63_eligible_today_n": 1, "top63_never_eligible_n": 1,
+                    "top63_never_eligible_pct": 0.5,
+                    "top63_eligible_days": {"n": 2, "mean": 1.0, "p25": 0.5, "median": 1.0,
+                                            "p75": 1.5, "min": 0.0, "max": 2.0},
+                    "top21_n": 1, "top21_eligible_today_n": 0,
+                    "conversion_rate": 0.5, "conversion_n": "1/2"},
+        "top63_excluder_family_hist": {"not_topped_veto": 1, "ELIGIBLE": 1},
+        "conversion": {"sighted_n": 2, "converted_n": 1, "rate": 0.5, "converted": ["AAA"],
+                       "never_sighted_n": 1, "unconverted_top": ["BBB"], "plan_universe_n": 1},
+        "degraded": [],
+    }
+
+
+def test_forward_log_not_advanced_without_nightly(tmp_path):
+    log = tmp_path / "forward_log.jsonl"
+    assert PMA.append_forward_log(_doc(), log, advance=False) is False
+    assert not log.exists(), "a non-nightly invocation must append NOTHING"
+
+
+def test_forward_log_nightly_appends_once_and_is_idempotent(tmp_path):
+    log = tmp_path / "forward_log.jsonl"
+    assert PMA.append_forward_log(_doc(), log, advance=True) is True
+    assert PMA.append_forward_log(_doc(), log, advance=True) is False, \
+        "a same-price_through re-run must not double-count the night"
+    rows = [json.loads(x) for x in log.read_text(encoding="utf-8").splitlines() if x.strip()]
+    assert len(rows) == 1
+    assert rows[0]["price_through"] == "2026-07-31"
+    assert rows[0]["converted_n"] == 1 and rows[0]["sighted_n"] == 2
+    assert rows[0]["conversion_rate"] == 0.5
+    # a NEW price date is a new night and does advance
+    assert PMA.append_forward_log(_doc("2026-08-03"), log, advance=True) is True
+    rows = [json.loads(x) for x in log.read_text(encoding="utf-8").splitlines() if x.strip()]
+    assert [r["price_through"] for r in rows] == ["2026-07-31", "2026-08-03"]
+
+
+def test_forward_log_row_carries_no_wall_clock():
+    """Determinism law: the row is keyed by price_through, with no run timestamp anywhere."""
+    row = PMA.summary_row(_doc())
+    blob = json.dumps(row).lower()
+    for banned in ("generated", "timestamp", "utcnow", "run_at", "run_date"):
+        assert banned not in blob, f"{banned} makes the forward log non-deterministic"
+
+
+def test_run_writes_nothing_without_nightly(tmp_path, monkeypatch):
+    """The engine entry point: default invocation writes neither artifact nor log."""
+    monkeypatch.setattr(PMA, "build_audit", lambda root, **kw: _doc())
+    PMA.run(advance=False, root=tmp_path, quiet=True)
+    assert not (tmp_path / PMA.ARTIFACT_REL).exists()
+    assert not (tmp_path / PMA.FORWARD_LOG_REL).exists()
+
+
+def test_run_nightly_writes_artifact_and_log(tmp_path, monkeypatch):
+    monkeypatch.setattr(PMA, "build_audit", lambda root, **kw: _doc())
+    PMA.run(advance=True, root=tmp_path, quiet=True)
+    art = tmp_path / PMA.ARTIFACT_REL
+    log = tmp_path / PMA.FORWARD_LOG_REL
+    assert art.exists() and log.exists()
+    assert json.loads(art.read_text(encoding="utf-8"))["schema"] == PMA.SCHEMA
+    assert len(log.read_text(encoding="utf-8").splitlines()) == 1
+
+
+def test_runner_flag_maps_to_the_ledger_gate(monkeypatch):
+    """The guard is only as good as the flag that reaches it — pin the runner's own mapping."""
+    seen: list[dict] = []
+    monkeypatch.setattr(PMA, "run", lambda **kw: seen.append(kw) or {})
+    monkeypatch.setattr(RUNNER, "PMA", PMA)
+
+    monkeypatch.setattr(sys, "argv", ["run_prophet_miss_audit"])
+    RUNNER.main()
+    assert seen[-1]["advance"] is False and seen[-1]["out_dir"] is None
+
+    monkeypatch.setattr(sys, "argv", ["run_prophet_miss_audit", "--nightly"])
+    RUNNER.main()
+    assert seen[-1]["advance"] is True
+
+
+def test_out_dir_never_touches_the_real_store(tmp_path, monkeypatch):
+    """--out-dir runs the full write into a scratch dir; the root paths stay untouched."""
+    monkeypatch.setattr(PMA, "build_audit", lambda root, **kw: _doc())
+    out = tmp_path / "scratch"
+    PMA.run(advance=False, root=tmp_path, out_dir=out, quiet=True)
+    assert (out / "latest.json").exists() and (out / "forward_log.jsonl").exists()
+    assert not (tmp_path / PMA.ARTIFACT_REL).exists()
+    assert not (tmp_path / PMA.FORWARD_LOG_REL).exists()
+
+
+# ---------------------------------------------------------------------------
+# (d) artifact schema + degraded disclosure + determinism, over a synthetic repo
+# ---------------------------------------------------------------------------
+def _synth_root(tmp_path: Path, *, with_rotation: bool = True,
+                with_standouts: bool = True, with_sectors: bool = True) -> Path:
+    """A miniature repo tree: three close caches, a sector map, plans, board + rotation JSON."""
+    tickers = [f"T{i:02d}" for i in range(24)]
+    cols = {}
+    for i, t in enumerate(tickers):
+        cols[t] = _walk(seed=100 + i, drift=(0.002 - 0.0002 * i))
+    wide = pd.DataFrame(cols)
+    # split across the three cap-band caches the engine unions
+    bands = {"breadth": tickers[:8], "midcap_breadth": tickers[8:16],
+             "smallcap_breadth": tickers[16:]}
+    for grp, names in bands.items():
+        d = tmp_path / "data" / grp
+        d.mkdir(parents=True, exist_ok=True)
+        wide[names].to_parquet(d / "_closes_cache.parquet")
+    if with_sectors:
+        pd.DataFrame({"ticker": tickers,
+                      "sector": ["Information Technology" if i % 2 else "Health Care"
+                                 for i in range(len(tickers))]}) \
+            .to_parquet(tmp_path / "data" / "breadth" / "ticker_sectors.parquet")
+
+    plans = tmp_path / "site" / "prophet" / "plans"
+    plans.mkdir(parents=True, exist_ok=True)
+    for t in tickers[:3]:
+        (plans / f"{t}-BULL-20260701.json").write_text(
+            json.dumps({"id": f"{t}-BULL-20260701", "asset": t, "direction": "BULL"}),
+            encoding="utf-8")
+
+    if with_standouts:
+        (tmp_path / "site" / "factordata").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "site" / "factordata" / "us_standouts.json").write_text(json.dumps({
+            "as_of": "2026-07-31",
+            "buy": [{"ticker": tickers[0]}], "ran": [{"ticker": tickers[1]}],
+            "leaders": [{"ticker": tickers[2]}],
+        }), encoding="utf-8")
+    if with_rotation:
+        (tmp_path / "site" / "marketdata").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "site" / "marketdata" / "subsector_rotation.json").write_text(json.dumps({
+            "asof": "2026-08-02",
+            "themes": [{"theme": "Alpha", "emerging_score": 3.2},
+                       {"theme": "Beta", "emerging_score": 2.1},
+                       {"theme": "Gamma", "emerging_score": 0.4}],
+            "subsectors": [
+                {"key": "a1", "name": "A1", "theme": "Alpha",
+                 "members": [{"t": tickers[0]}, {"t": tickers[1]}, {"t": tickers[5]}]},
+                {"key": "b1", "name": "B1", "theme": "Beta",
+                 "members": [{"t": tickers[2]}, {"t": tickers[9]}]},
+                {"key": "g1", "name": "G1", "theme": "Gamma", "members": [{"t": tickers[20]}]},
+            ],
+        }), encoding="utf-8")
+    return tmp_path
+
+
+_ARTIFACT_KEYS = {
+    "schema", "price_through", "tier", "authority", "bases", "summary",
+    "top63_excluder_hist", "top63_excluder_family_hist", "top21_excluder_hist",
+    "veto_leg_hist", "runner_sector_hist", "eligible_today_sector_hist",
+    "conversion", "themes", "top63_runners", "top21_runners", "eligible_today", "degraded",
+}
+_SUMMARY_KEYS = {
+    "universe_n", "eligible_today_n", "top63_n",
+    "top63_eligible_today_n", "top63_never_eligible_n", "top63_never_eligible_pct",
+    "top63_eligible_days", "top21_n", "top21_eligible_today_n", "conversion_rate",
+    "conversion_n",
+}
+
+
+def test_artifact_schema_over_a_synthetic_universe(tmp_path):
+    root = _synth_root(tmp_path)
+    doc = PMA.build_audit(root, top63_n=10, top21_n=5, with_gate=False)
+    assert set(doc) == _ARTIFACT_KEYS
+    assert set(doc["summary"]) == _SUMMARY_KEYS
+    assert doc["schema"] == PMA.SCHEMA
+    assert doc["tier"] == "ops_telemetry"
+    assert doc["authority"].startswith("none")
+    assert doc["price_through"] == str(_bdays()[-1].date())
+    assert doc["summary"]["universe_n"] == 24
+    assert len(doc["top63_runners"]) == 10 and len(doc["top21_runners"]) == 5
+    # every runner row carries the attribution + window contract
+    for r in doc["top63_runners"]:
+        assert {"ticker", "r63_pct", "sector", "excluder", "excluder_family", "veto_legs",
+                "eligible_today", "days_eligible", "first_eligible"} <= set(r)
+        assert r["excluder"], "every runner must carry a named excluder or ELIGIBLE"
+    # the histogram totals the runner rows exactly (no name silently dropped)
+    assert sum(doc["top63_excluder_hist"].values()) == len(doc["top63_runners"])
+    assert sum(doc["top21_excluder_hist"].values()) == len(doc["top21_runners"])
+    # runners are ordered by 63d return, descending
+    rets = [r["r63_pct"] for r in doc["top63_runners"]]
+    assert rets == sorted(rets, reverse=True)
+    # the universe eligible-today set is the cascade basis, and it is a SUBSET of the stream
+    # basis the runner rows use (cascade needs take_active for raw-3D-cross T1, the stream
+    # takes it as a fallback) — pinning the direction stops the two bases being swapped
+    casc = {e["ticker"] for e in doc["eligible_today"]}
+    assert doc["summary"]["eligible_today_n"] == len(casc)
+    assert sum(doc["eligible_today_sector_hist"].values()) == len(casc)
+    runner_stream = {r["ticker"] for r in doc["top63_runners"] if r["eligible_today"]}
+    assert casc & {r["ticker"] for r in doc["top63_runners"]} <= runner_stream, \
+        "a cascade-eligible runner must also be stream-eligible (cascade is the stricter set)"
+
+
+def test_summary_row_is_a_subset_of_the_artifact(tmp_path):
+    root = _synth_root(tmp_path)
+    doc = PMA.build_audit(root, top63_n=10, top21_n=5, with_gate=False)
+    row = PMA.summary_row(doc)
+    assert row["price_through"] == doc["price_through"]
+    assert row["universe_n"] == doc["summary"]["universe_n"]
+    assert row["converted_n"] == doc["conversion"]["converted_n"]
+    assert row["excluder_family_hist"] == doc["top63_excluder_family_hist"]
+    assert row["degraded_n"] == len(doc["degraded"])
+
+
+def test_build_is_deterministic(tmp_path):
+    """Two builds over the same caches are byte-identical — no wall clock, keyed by asof."""
+    root = _synth_root(tmp_path)
+    a = PMA.build_audit(root, top63_n=10, top21_n=5, with_gate=False)
+    b = PMA.build_audit(root, top63_n=10, top21_n=5, with_gate=False)
+    assert json.dumps(a, sort_keys=True, default=str) == \
+        json.dumps(b, sort_keys=True, default=str)
+
+
+def test_missing_optional_stores_degrade_with_disclosure(tmp_path):
+    """Fail-soft, never silent: every degraded input is named in `degraded`, values go null."""
+    root = _synth_root(tmp_path, with_rotation=False, with_standouts=False,
+                       with_sectors=False)
+    doc = PMA.build_audit(root, top63_n=6, top21_n=3, with_gate=False)
+    inputs = {d["input"] for d in doc["degraded"]}
+    assert PMA.ROTATION_JSON in inputs
+    assert PMA.STANDOUTS_JSON in inputs
+    assert PMA.SECTORS_PARQUET in inputs
+    assert all(d.get("reason") for d in doc["degraded"]), "a disclosure needs a reason"
+    assert doc["themes"]["available"] is False and doc["themes"]["themes"] == []
+    assert doc["runner_sector_hist"] == {"?": 6}, "sectors collapse to '?', not to a guess"
+    # the audit still produced its measurement
+    assert doc["summary"]["universe_n"] == 24
+
+
+def test_theme_top5_latency_is_null_with_a_named_reason(tmp_path):
+    """The PIT archive carries no theme-level rank — report null AND say why (never guess)."""
+    root = _synth_root(tmp_path)
+    doc = PMA.build_audit(root, top63_n=6, top21_n=3, with_gate=False)
+    assert doc["themes"]["available"] is True
+    assert [t["theme"] for t in doc["themes"]["themes"]] == ["Alpha", "Beta", "Gamma"]
+    assert all(t["days_since_top5_entry"] is None for t in doc["themes"]["themes"])
+    reasons = [d for d in doc["degraded"] if d["input"] == PMA.THEME_PIT_JSONL]
+    assert reasons, "a null must be disclosed, not shipped bare"
+    assert reasons[0]["severity"] == "structural"
+
+
+def test_theme_member_lane_presence(tmp_path):
+    """Theme members are the union over that theme's subsectors; lane counts join by ticker."""
+    root = _synth_root(tmp_path)
+    doc = PMA.build_audit(root, top63_n=6, top21_n=3, with_gate=False)
+    alpha = doc["themes"]["themes"][0]
+    assert alpha["theme"] == "Alpha" and alpha["n_members"] == 3   # T00, T01, T05
+    assert alpha["present_counts"] == {"buy": 1, "ran": 1, "leaders": 0}
+    assert alpha["represented_n"] == 2
+    beta = doc["themes"]["themes"][1]
+    assert beta["present_counts"] == {"buy": 0, "ran": 0, "leaders": 1}
+
+
+# ---------------------------------------------------------------------------
+# annotations — bare print at line start (repo law), and only when they should fire
+# ---------------------------------------------------------------------------
+def test_annotations_fire_at_line_start(capsys):
+    doc = _doc()
+    doc["conversion"].update(sighted_n=100, converted_n=2, rate=0.02)
+    doc["summary"].update(top63_never_eligible_n=48, top63_n=150,
+                          top63_never_eligible_pct=0.32)
+    msgs = PMA.emit_annotations(doc)
+    assert len(msgs) == 1, "only the conversion alarm should fire at 32% never-eligible"
+    out = capsys.readouterr().out.splitlines()
+    ann = [ln for ln in out if "prophet-miss-audit" in ln]
+    assert ann and all(ln.startswith("::warning title=prophet-miss-audit::") for ln in ann), \
+        "GitHub only parses '::' at column 0 — a prefixed line is silently dropped"
+
+
+def test_never_eligible_annotation_fires_above_threshold(capsys):
+    doc = _doc()
+    doc["conversion"].update(sighted_n=100, converted_n=40, rate=0.40)   # conversion is fine
+    doc["summary"].update(top63_never_eligible_n=70, top63_n=150,
+                          top63_never_eligible_pct=0.47)
+    msgs = PMA.emit_annotations(doc)
+    assert len(msgs) == 1 and "never eligible" in msgs[0]
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::")]
+    assert len(lines) == 1
+
+
+def test_no_annotation_when_healthy(capsys):
+    doc = _doc()
+    doc["conversion"].update(sighted_n=100, converted_n=40, rate=0.40)
+    doc["summary"].update(top63_never_eligible_n=10, top63_n=150,
+                          top63_never_eligible_pct=0.07)
+    assert PMA.emit_annotations(doc) == []
+    assert [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::")] == []
+
+
+def test_structural_degradation_does_not_page_but_unexpected_does(capsys):
+    """A permanently-known gap must not cry wolf; a real missing input must."""
+    doc = _doc()
+    doc["conversion"].update(sighted_n=100, converted_n=40, rate=0.40)
+    doc["summary"].update(top63_never_eligible_n=10, top63_n=150,
+                          top63_never_eligible_pct=0.07)
+    doc["degraded"] = [{"input": PMA.THEME_PIT_JSONL, "severity": "structural",
+                        "reason": "no theme rank"}]
+    assert PMA.emit_annotations(doc) == []
+    capsys.readouterr()
+    doc["degraded"].append({"input": PMA.STANDOUTS_JSON, "severity": "unexpected",
+                            "reason": "gone"})
+    msgs = PMA.emit_annotations(doc)
+    assert len(msgs) == 1 and PMA.STANDOUTS_JSON in msgs[0]
+    assert PMA.THEME_PIT_JSONL not in msgs[0]
+
+
+# ---------------------------------------------------------------------------
+# zero authority — nothing outside the runner + tests may import this
+# ---------------------------------------------------------------------------
+def test_no_module_outside_the_runner_imports_the_audit():
+    """ZERO AUTHORITY (masterplan W0): no rank/gate/size path may read this instrument."""
+    root = Path(__file__).resolve().parent.parent
+    allowed = {"engine/prophet_miss_audit.py", "scripts/run_prophet_miss_audit.py",
+               "tests/test_prophet_miss_audit.py"}
+    offenders = []
+    for d in ("engine", "scripts", "app", "admin", "collectors", "lib", "tools", "tests"):
+        for p in (root / d).rglob("*.py"):
+            rel = p.relative_to(root).as_posix()
+            if rel in allowed:
+                continue
+            try:
+                blob = p.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            if "prophet_miss_audit" in blob:
+                offenders.append(rel)
+    assert not offenders, (
+        "prophet_miss_audit is ops telemetry with ZERO authority — it must not be imported "
+        "by any other module:\n  " + "\n  ".join(sorted(offenders))
+    )
