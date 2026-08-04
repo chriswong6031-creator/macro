@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T00:21:59.956233+00:00",
-  "count": 698,
+  "generated_at": "2026-08-04T00:37:02.225120+00:00",
+  "count": 699,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -61,6 +61,26 @@
         "**Sector Rotation & Credit Stress**: S&P 500 IT down -7.76% (vs.",
         "Banks +33.81% earnings growth) signals leadership shift to Energy/Financials; hyperscalers’ CDS spreads at record levels highlight credit risk in tech, pressuring valuations amid rising rates.",
         "**Bank FCF Resilience & Performance**: Banks maintain higher free cash flow margins than AI-heavy tech firms; 84% of banks reported positive earnings surprises, driving sector-wide expected growth to ~20% (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wktopv06ueh-3ff2bc",
+      "title": "VON32623269",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T22:59:08Z",
+      "summary_points": [
+        "**Holcim Philippines Divestment**: Margin-accretive sale of 99% stake (total USD 807m) to Huaxin Building Materials; low EBIT margin (<5%) and mid/high-teens EV/EBITDA vs Holcim’s 13x justify transaction, enabling portfolio focus and European M&A funding.",
+        "**Sandoz Litigation Resolution**: Settlement with 43 states ($400m over 7yrs from 2027) and resellers ($28.5m) eliminates class actions; increased provisions impact near-term EBITDA margin (17.7% in 2025E) but removes major legal risk.",
+        "**Clariant 1H26 Results & Target**: Hold rating confirmed; sales exceeded expectations with cost savings improving margins; Shell’s ethylene claim dismissal lifts sentiment, new CHF 9.40 target (up from CHF 8.20).",
+        "**Earnings Event Density**: Late August 2026 features 15+ companies reporting 1H26/2Q26 results across healthcare (Sandoz, Galenica), insurance (Swiss Re, Zurich), and industrials—critical for tactical positioning."
       ],
       "tags": [],
       "tickers": [],
