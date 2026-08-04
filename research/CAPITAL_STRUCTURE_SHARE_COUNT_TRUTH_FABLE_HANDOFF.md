@@ -26,8 +26,10 @@ wave adds no activation, retention, coverage, UI/API, or Prophet authority.
 The next wave adds a manual-only isolated R2 conditional create/CAS/readback
 harness and one closed local review-receipt contract. Adversarial hardening now
 requires exact botocore HTTP 412 `PreconditionFailed` refusals, preserves closed
-stage/category/completed-prefix evidence, closes every owned response body, and
-binds the exact reviewed source archive and dependency lock in the receipt. Its
+stage/category evidence plus an ordered prefix of proven core witnesses, and
+attempts to close every owned response body; wrapper-only failures may carry an
+empty prefix and any close failure is inconclusive. The receipt also binds the
+exact reviewed source archive and dependency lock. Its
 protected Environment, dedicated bucket, and credentials are not provisioned;
 the workflow has never run; no receipt exists; and no R2 provider behavior is
 claimed. The reviewed harness invokes no List, Delete, HMAC, production
@@ -319,9 +321,11 @@ The v2 path closes the previously missing source seam without weakening it:
     exact B readback. Only a botocore `ClientError` with HTTP 412 and exact
     `Error.Code=PreconditionFailed` proves each deliberate refusal; every 409,
     transport ambiguity, malformed result, or cleanup failure is non-passing.
-    Non-pass receipts preserve the failed stage/category and the exact ordered
-    completed-step prefix, and every returned body is closed even on expired or
-    malformed paths. The canonical receipt is a
+    Core non-pass receipts preserve the failed stage/category and the exact
+    ordered prefix of proven witnesses; wrapper-only failures may
+    conservatively report an empty prefix. Every returned body receives a close
+    attempt even on expired or malformed paths, and close failure is
+    inconclusive. The canonical receipt is a
     90-day GitHub Actions review artifact only; it is never an R2/Git/public
     artifact or production selector. No Environment/bucket/credential is
     configured and the workflow has not run, so R2 CAS remains unproven.

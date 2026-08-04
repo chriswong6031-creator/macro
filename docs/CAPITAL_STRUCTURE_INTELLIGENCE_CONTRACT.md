@@ -315,10 +315,12 @@ The closed
 `capital_structure.share_count_r2_conformance_receipt/v1` contract admits
 `passed`, `failed`, or `inconclusive`; only `passed` carries all eleven step
 witnesses. Non-pass receipts carry only a closed failure stage/category and an
-ordered completed-step prefix. The wrapper preserves that structured evidence
-from the core instead of flattening it, and owned response bodies are closed on
-deadline, malformed metadata, unexpected success, readback failure, and normal
-success paths. An admitted scope reduces bucket/key names and
+ordered completed-step prefix. For core failures that prefix contains only
+proven witnesses; wrapper-only failures may conservatively report an empty
+prefix. The wrapper preserves structured core evidence instead of flattening
+it. It attempts to close every owned response body on deadline, malformed
+metadata, unexpected success, readback failure, and normal success paths, and
+any close failure is non-passing. An admitted scope reduces bucket/key names and
 ETags to SHA-256 commitments and binds the endpoint host. A failure before
 configuration admission instead records `admitted=false`, null endpoint/bucket
 identity, and the fresh-key commitment rather than fabricating scope. Every

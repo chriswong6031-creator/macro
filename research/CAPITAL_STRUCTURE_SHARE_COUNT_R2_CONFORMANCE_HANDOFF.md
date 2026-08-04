@@ -22,9 +22,12 @@ or retention readiness.
 The reviewed implementation now accepts only botocore `ClientError`, HTTP 412,
 and exact `Error.Code=PreconditionFailed` for deliberate duplicate/stale
 refusals. Every 409 and unrelated or untyped exception is inconclusive. It also
-preserves the exact failed stage/category/completed prefix, closes owned bodies
-on deadline and malformed/unexpected-success paths, and binds reviewed source
-and dependency hashes. These code gates do not authorize provisioning or a run;
+preserves the core failure's exact stage/category and ordered prefix of proven
+witnesses, while wrapper-only failures may conservatively report an empty
+prefix. Every owned body receives a close attempt on deadline and
+malformed/unexpected-success paths; a close failure is inconclusive. The receipt
+also binds reviewed source and dependency hashes. These code gates do not
+authorize provisioning or a run;
 that remains an explicit operator action against an independently reviewed,
 dedicated Environment and bucket.
 
@@ -134,10 +137,12 @@ Every receipt binds GitHub run/ref/commit plus exact source-archive/dependency-
 lock provenance and hard-codes all
 publication, retention, share-count, risk, ranking, sizing, entry, trade, and
 Prophet authorities false. Core failures preserve a closed stage/category and
-the exact ordered completed-step prefix; response bodies are owned and closed
-on normal, deadline, malformed, unexpected-success, and readback-failure paths.
-The Python semantic validator remains normative for relationships and the
-receipt self-hash that JSON Schema alone cannot express.
+the exact ordered prefix of proven witnesses; wrapper-only failures may
+conservatively report an empty prefix. Every owned response body receives a
+close attempt on normal, deadline, malformed, unexpected-success, and
+readback-failure paths, and a close failure is inconclusive. The Python semantic
+validator remains normative for relationships and the receipt self-hash that
+JSON Schema alone cannot express.
 
 The workflow uploads the receipt as the 90-day review artifact
 `capital-share-count-r2-conformance-<run_id>-<attempt>`. It does not write the
@@ -147,10 +152,11 @@ cancellation failures can occur before any receipt is written, and the upload
 step deliberately warns rather than inventing one. A missing artifact on a
 failed run is a non-pass, not a green or empty receipt.
 
-The reviewed probe never deletes its fresh witness object. Every run therefore
-leaves one small disposable object in the isolated bucket. Do not aim this
-workflow at a production bucket and do not interpret conformance residue as a
-data-plane artifact.
+The reviewed probe never deletes its fresh witness object. A run leaves no
+object when creation is proven not to have committed, and can leave up to one
+small disposable object when creation commits or its outcome is ambiguous. Do
+not aim this workflow at a production bucket and do not interpret conformance
+residue as a data-plane artifact.
 
 ## 5. Synapse ruling
 
