@@ -105,7 +105,7 @@ evaluated at 2026-07-31 via the production `confluence_tiers` code path:
 - Over the whole trailing 63 sessions: **48/150 never printed a single eligible day**
   (PANW +85%, DDOG +103%, DELL +94%, OKTA +93%, FTNT +92% — all zero). Median eligibility
   window for the rest: **3 sessions of 63**.
-- Of the fast movers (top-50 by 21d return): 44/50 are stoch_ob-family vetoed — momentum
+- Of the fast movers (top-50 by 21d return): 43/50 are stoch_ob-family vetoed — momentum
   leaders live in "overbought" by construction, so the absolute-oscillator veto reads a hot
   theme as permanently unbuyable.
 - Sector mismatch: today's 38 cascade-eligible names skew Consumer Discretionary (9);
