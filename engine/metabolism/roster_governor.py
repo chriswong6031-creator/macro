@@ -6,6 +6,12 @@ config/metabolism_budget.yml (IMMUTABLE).
 When the charter queue would exceed the cap, the loop does NOT silently block.
 Instead it emits a digest ASK tap card so the operator can raise the cap.
 
+Enforcement point: applier.consume_charter_proposals (charter ONBOARDING into
+the PROPOSE gauntlet) — wired 2026-08-04 (roster-cap reconciliation memo,
+research/ROSTER_CAP_RECONCILIATION_2026-08-04.md).  Before that date this
+module had no production caller and the roster crossed its cap silently via
+session PRs.
+
 NEVER-RAISE CONTRACT: all functions return safe defaults on any error.
 """
 from __future__ import annotations
@@ -49,6 +55,12 @@ def check_charter_budget(
 
     If the cap would be exceeded, emits a digest ASK tap card (via tap.py)
     so the operator can raise the cap.  NEVER silently blocks.
+
+    The ACTIVE cap is checked for every charter proposal regardless of its
+    proposed lifecycle state (a newborn needs an active slot eventually, and
+    the ADJUDICATE genesis screen denies on the same roster-count predicate
+    at genesis time — R-V6-3a).  The PROBATION cap is checked only for
+    proposals arriving in 'probation' state.
 
     Parameters
     ----------
@@ -109,11 +121,16 @@ def check_charter_budget(
         result["current_active"] = current_active
         result["current_probation"] = current_probation
 
-        # Check caps
-        exceeded_active = (
-            proposed_lifecycle_state == "active"
-            and current_active >= max_active
-        )
+        # Check caps.
+        # R-V6-3a ALIGNMENT (2026-08-04 reconciliation): the ACTIVE-roster cap
+        # fires for ANY charter proposal once the active roster is at/over cap,
+        # not only for proposals that arrive already-active.  The genesis
+        # screen (adjudicate._genesis_screen) hard-denies genesis on
+        # current_active >= max_active regardless of the proposal's lifecycle
+        # state, so the operator ASK must fire on the same predicate — the old
+        # state-conditioned branch was unreachable for the genesis flow, whose
+        # proposals arrive as 'proposed'/'probation'.
+        exceeded_active = current_active >= max_active
         exceeded_probation = (
             proposed_lifecycle_state == "probation"
             and current_probation >= max_probation
@@ -191,7 +208,10 @@ def _emit_cap_digest_ask(
                 "max_n": max_n,
             },
         )
-        write_tap_card(card, root=root)
+        # Stable filename: one standing card per cap_type, overwritten on each
+        # re-check — nightly onboarding must not spam a new timestamped card
+        # per cycle while the cap stays exceeded.
+        write_tap_card(card, root=root, filename=f"tap_roster_cap_{cap_type}.json")
         return True
     except Exception as exc:  # noqa: BLE001
         log.warning("roster_governor._emit_cap_digest_ask: %s", exc)
