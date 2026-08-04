@@ -91,7 +91,7 @@
   {
    "artifact": "site/factordata/us_standouts.json",
    "kind": "board",
-   "schema_version": "1.6.0",
+   "schema_version": "1.7.0",
    "schema_fields": [
     "as_of",
     "board_definition",
@@ -116,7 +116,9 @@
     "watch"
    ],
    "optional_fields": [
-    "anchor"
+    "anchor",
+    "earnings_reaction",
+    "earnings_soon"
    ],
    "schema_item_fields": [
     "above_trend",
@@ -138,6 +140,8 @@
     "dd_pct",
     "dir",
     "display_rank",
+    "earnings_reaction",
+    "earnings_soon",
     "entry_signal",
     "eq_dir",
     "f1d_shadow_bonus",
