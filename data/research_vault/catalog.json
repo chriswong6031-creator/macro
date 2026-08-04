@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T14:09:01.845288+00:00",
-  "count": 738,
+  "generated_at": "2026-08-04T14:23:56.219297+00:00",
+  "count": 739,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -50,6 +50,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-eu8avifwxhw-6f0376",
+      "title": "Leidos Holdings (LDOS) 2Q26 First Take Solid quarter",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T13:46:33Z",
+      "summary_points": [
+        "**Q2 Beat & Guidance Upside**: Revenue ($4.6bn, +4% organic), EPS ($3.26), EBITDA ($631mn) beat consensus; 2026 revenue guidance raised to $18.2–$18.4bn (vs.",
+        "$18.0–$18.4bn), EPS $12.20–$12.50 (vs.",
+        "$12.10–$12.50), driven by 13.8% EBITDA margin (30bps above estimate) and 1.14x book-to-bill.",
+        "**Liquidity Risk**: Negative cash flow (-$1.75bn) and worsening guidance (-$1.85bn by August) despite top-line strength, signaling acute liquidity vulnerability.",
+        "**DoD Budget Vulnerability**: Goldman Sachs identifies defense budget shifts as primary risk; price target ($152) reliant on 9.3x–8x EV/EBITDA, exposing stock to policy/political volatility in aerospace/defense sector."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-o1dhi5xkwov-f5b6d7",
       "title": "Duke Energy Corp. (DUK) First Take EPS Beat vs",
