@@ -1205,6 +1205,12 @@ def build_ran_rows(
 ) -> list[dict]:
     """Build the ran lane: crossed days ago, trend intact, no entry claim attached.
 
+    "TREND INTACT" IS POLICY-DEPENDENT.  Under the default it means ``above200`` ∧
+    ``weekly_bull``; a board passing ``require_above200=False`` (HK, 2026-08-04) keeps
+    the weekly leg only — see :func:`ran_admits` for why, and note that the lane's
+    user-facing copy claims nothing stronger than "the move already started" either
+    way, so the relaxed policy introduces no surface claim the rows cannot support.
+
     These are DISPLAY-TIER context rows.  They carry no ``entry_signal``, no
     conviction claim and no priority score — the honest read is "the move already
     started; wait for the next entry", which is why they cannot outrank a live row.
