@@ -50,10 +50,10 @@
   --info: #5b9bf0; --link: #7aa7e0;
   --g-cold: #4d8df0; --g-hot: #e0a23c; --g-mid: #3a4150;
   /* ── prophet-card verb hues (_prophet_card.html.j2) ─────────────────────────
-     One hue per card state: buy/near/wait/hold/avoid. These are direction-STABLE
-     brand tokens — deliberately NOT flipped by html[data-lang="zh"] (unlike
-     --up/--down): a Buy card must stay green in zh mode. Do not alias to
-     --up/--down or the zh swap would paint Buy cards red. */
+     One hue per card state: buy/near/wait/hold/avoid. English uses the Western
+     green-up/red-down convention. Chinese mode rebinds only these Prophet tokens
+     onto the site's Asia-aware --up/--down pair below, so every Prophet board
+     becomes red-bullish/green-bearish without recolouring non-Prophet status UI. */
   --pv-buy: #45b873; --pv-near: #63c08d; --pv-wait: #e0a030;
   --pv-hold: #8b93a1; --pv-avoid: #e06464;
   --chart-bg: transparent;
@@ -125,7 +125,7 @@ html[data-theme="light"] {
   --up: #1f9a55; --down: #cf4040; --orange: #c4781f;
   --info: #285fff; --link: #285fff;
   --g-cold: #285fff; --g-hot: #c2841f; --g-mid: #cdd5e0;
-  /* prophet-card verb hues — light variants (see :root note; never zh-flipped) */
+  /* prophet-card verb hues — light English variants; zh rebinds them below */
   --pv-buy: #1f9a55; --pv-near: #3aad72; --pv-wait: #b9791a;
   --pv-hold: #5d6b7e; --pv-avoid: #cf4040;
   --chart-bg: #11151c;            /* keep dark-rendered Plotly charts legible */
@@ -156,6 +156,12 @@ html[data-lang="zh"] {
   --up: #e06464; --down: #45b873;        /* swapped: red now = up */
   --q1: #d04545;                         /* Goldilocks -> red */
   --q3: #2e9e4f;                         /* Stagflation -> green */
+  /* Prophet-only verdict palette: buy/near = bullish red, avoid = bearish green.
+     Wait/hold stay direction-neutral amber/grey.  `near` is a lighter red so it
+     remains distinguishable from the solid Buy state without changing meaning. */
+  --pv-buy: var(--up);
+  --pv-near: color-mix(in srgb, var(--up) 82%, #fff);
+  --pv-avoid: var(--down);
 }
 html[data-theme="light"][data-lang="zh"] {
   --up: #cf4040; --down: #1f9a55;
@@ -207,9 +213,8 @@ html[data-theme="light"][data-lang="zh"] {
   --ink-link:   color-mix(in srgb, var(--link)   var(--ink-mix-link),   var(--text));
   --ink-info:   color-mix(in srgb, var(--info)   var(--ink-mix-info),   var(--text));
 }
-/* prophet-card verb inks — same shape for the direction-STABLE --pv-* family
-   (see the --pv-* note above: never zh-flipped, so no zh twin here). --pv-near
-   sits higher in luminance than --pv-buy and needs the deeper 56% mix. */
+/* prophet-card verb inks. English keeps the original hue calibration; the light+zh
+   twin below re-keys the percentages after bullish becomes red and bearish green. */
 :root {
   --ink-pv-buy: var(--pv-buy); --ink-pv-near: var(--pv-near);
   --ink-pv-wait: var(--pv-wait); --ink-pv-avoid: var(--pv-avoid);
@@ -219,6 +224,11 @@ html[data-theme="light"] {
   --ink-pv-near:  color-mix(in srgb, var(--pv-near)  56%, var(--text));
   --ink-pv-wait:  color-mix(in srgb, var(--pv-wait)  62%, var(--text));
   --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 84%, var(--text));
+}
+html[data-theme="light"][data-lang="zh"] {
+  --ink-pv-buy:   color-mix(in srgb, var(--pv-buy)   84%, var(--text));
+  --ink-pv-near:  color-mix(in srgb, var(--pv-near)  84%, var(--text));
+  --ink-pv-avoid: color-mix(in srgb, var(--pv-avoid) 62%, var(--text));
 }
 /* ---- Chinese mode: directional GAUGES that paint state from status tokens ----
    The status tokens --ok/--act deliberately DON'T swap (they encode health/danger, see

@@ -58,309 +58,11 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=8798caae">
+<link rel="stylesheet" href="theme.css?v=315a84eb">
+<link rel="stylesheet" href="assets/css/3adff652.css?v=3adff652">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
-<style>
-  /* ══ Intelligence Hub ══════════════════════════════════════════════════════
-     The page is an instrument, not a poster. One hairline system, one radius,
-     one card fill, mono reserved for figures, and a single bright element — the
-     room-left spine down the Command ledger — which draws the page's own thesis
-     (how much of the move is still ahead) as the structure of the list itself.
-
-     Removed 2026-07-30 (operator order): the ambient sky canvas and its sun. A
-     drifting starfield behind four hundred figures competes with the only thing
-     on the page that matters, and the sun's 220px glow washed the top cards.
-     `sky.js` stays in the tree — start.html still owns that treatment.
-     ────────────────────────────────────────────────────────────────────────── */
-  body.page-hub{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-ui);
-    --r:10px;
-    --card:color-mix(in srgb,var(--panel) 92%,transparent);
-    --card-2:color-mix(in srgb,var(--panel) 62%,transparent);
-    --hair:color-mix(in srgb,var(--line) 78%,transparent);
-    --hair-soft:color-mix(in srgb,var(--line) 44%,transparent);
-    --dim:color-mix(in srgb,var(--text) 74%,transparent);
-    --cat:#8b5cf6;
-    --fig:var(--font-mono); }
-  .hub-wrap{ max-width:1200px; margin:0 auto; padding:6px 20px 64px; position:relative; z-index:1; }
-  body.page-hub > .site-nav{ max-width:1200px; margin:14px auto 6px; padding:0 20px; }
-  .ic-svg{ width:14px; height:14px; flex:none; vertical-align:middle; }
-  /* every figure on the page is mono + tabular; words never are */
-  .f{ font-family:var(--fig); font-variant-numeric:tabular-nums; }
-
-  /* ── hero: identity left, market state right, one rule under both ── */
-  .hh{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:16px 32px; align-items:end;
-    margin:16px 0 0; padding-bottom:17px; border-bottom:1px solid var(--hair); }
-  @media(max-width:880px){ .hh{ grid-template-columns:1fr; align-items:start; } }
-  .eyebrow{ display:inline-flex; align-items:center; gap:8px; font-size:10.5px; font-weight:700;
-    letter-spacing:.13em; text-transform:uppercase; color:var(--muted); }
-  .eyebrow time{ font-family:var(--fig); letter-spacing:.04em; }
-  .live{ width:6px; height:6px; border-radius:50%; background:var(--ok); position:relative; flex:none; }
-  .live::after{ content:""; position:absolute; inset:-4px; border-radius:50%;
-    border:1.5px solid var(--ok); opacity:.5; animation:hp 2.6s ease-out infinite; }
-  @keyframes hp{ 0%{ transform:scale(.55); opacity:.55 } 100%{ transform:scale(1.75); opacity:0 } }
-  .hh h1{ font-size:clamp(29px,3.7vw,41px); font-weight:800; letter-spacing:-.033em; line-height:1.03;
-    margin:10px 0 8px; color:var(--text); }
-  .deck{ margin:0; font-size:14px; line-height:1.5; color:var(--dim); max-width:58ch; }
-  .deck .lens-q{ vertical-align:baseline; }
-  /* market state: an instrument readout, not another row of pills */
-  .state{ display:flex; flex-wrap:wrap; align-items:baseline; row-gap:9px; }
-  .state i{ font-style:normal; display:inline-flex; align-items:baseline; gap:7px; padding:0 15px;
-    border-left:1px solid var(--hair); font-size:10px; font-weight:700; letter-spacing:.11em;
-    text-transform:uppercase; color:var(--muted); white-space:nowrap; }
-  .state i:first-child{ border-left:0; padding-left:0; }
-  /* the engine hands these down lower-cased ("mid", "expanding"); capitalise at render
-     so the readout doesn't mix cases beside "Goldilocks" / "Hawkish" */
-  .state b{ font-size:13px; font-weight:700; letter-spacing:-.008em; text-transform:capitalize;
-    color:var(--text); }
-  .state i.hot b{ color:var(--up); }
-  @media(max-width:880px){ .state i:first-child{ padding-left:0 } .state{ margin-top:4px } }
-
-  /* ── desk rail: six links, one container, hairline cells ── */
-  .rail{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); margin:18px 0 2px;
-    border:1px solid var(--hair); border-radius:var(--r); background:var(--card); overflow:hidden; }
-  .rl{ display:flex; align-items:center; gap:8px; min-width:0; padding:11px 13px;
-    text-decoration:none; color:var(--text); font-size:12.5px; font-weight:600;
-    border-left:1px solid var(--hair-soft); transition:background .16s ease, color .16s ease; }
-  .rl:first-child{ border-left:0; }
-  .rl:hover{ background:color-mix(in srgb,var(--info) 9%,transparent); color:var(--info); }
-  .rl .ic-svg{ color:var(--muted); transition:color .16s ease; }
-  .rl:hover .ic-svg{ color:var(--info); }
-  .rl .rn{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .rl .gw{ margin-left:auto; font-size:9px; font-weight:700; letter-spacing:.06em;
-    text-transform:uppercase; white-space:nowrap; }
-  .rl .lamp{ width:6px; height:6px; border-radius:50%; flex:none; background:var(--down); }
-  .rl .lamp.on{ background:var(--ok); }
-  .ql-chip-ungraded, .gw.ql-ungraded{ color:var(--muted); }
-  .ql-chip-accruing{ color:var(--warn); }
-  .ql-chip-graded-pos{ color:var(--up); }
-  .ql-chip-graded-neg{ color:var(--down); }
-  @media(max-width:1040px){
-    .rail{ grid-template-columns:repeat(3,minmax(0,1fr)); }
-    .rl{ border-left:1px solid var(--hair-soft); }
-    .rl:nth-child(3n+1){ border-left:0; }
-    .rl:nth-child(n+4){ border-top:1px solid var(--hair-soft); }
-  }
-  @media(max-width:620px){
-    .rail{ grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .rl{ border-left:1px solid var(--hair-soft); }
-    .rl:nth-child(3n+1){ border-left:1px solid var(--hair-soft); }
-    .rl:nth-child(odd){ border-left:0; }
-    .rl:nth-child(n+3){ border-top:1px solid var(--hair-soft); }
-    .rl .gw{ display:none; }
-  }
-
-  /* ── section mark: an accent tick, a label, a rule, a count ── */
-  .band{ display:flex; align-items:center; gap:11px; margin:34px 0 12px; }
-  .band .tick{ width:3px; height:14px; border-radius:2px; flex:none;
-    background:var(--accent,var(--info)); }
-  .band h2{ margin:0; font-size:11.5px; font-weight:800; letter-spacing:.11em; text-transform:uppercase;
-    color:var(--text); white-space:nowrap; }
-  .band .ln{ flex:1; height:1px; min-width:14px;
-    background:linear-gradient(90deg,var(--hair),transparent 94%); }
-  .band .n{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11.5px;
-    font-weight:700; color:var(--muted); flex:none; }
-  .band .legend{ display:inline-flex; align-items:center; gap:6px; flex:none; font-size:10px;
-    font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-  .band .legend .lg{ width:3px; height:12px; border-radius:2px;
-    background:linear-gradient(to top,var(--up) 62%,var(--hair-soft) 62%); }
-  @media(max-width:620px){ .band .legend{ display:none } }
-
-  /* ── one card system ── */
-  .card{ border:1px solid var(--hair); border-radius:var(--r); background:var(--card); }
-  .empty{ font-size:12.5px; color:var(--muted); padding:11px 0; }
-  /* Stance line — every signal band answers "so what do I do" ONCE, here, in plain
-     words (DESIGN_DOCTRINE Law 1 + Law 4). This is what the stage-templated sentence
-     that used to reprint itself on every row was reaching for. */
-  .stance{ font-size:11.5px; line-height:1.5; color:var(--muted); margin:-3px 0 11px; max-width:78ch; }
-  .stance b{ color:color-mix(in srgb,var(--text) 80%,transparent); font-weight:600; }
-
-  /* ── one chip system: state · good · caution · bad · catalyst · neutral ── */
-  .chip{ font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
-    padding:2px 7px; border-radius:5px; white-space:nowrap; flex:none;
-    background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); }
-  .chip.good, .chip.st-early{ background:color-mix(in srgb,var(--up) 17%,transparent); color:var(--up); }
-  .chip.info, .chip.st-emerging, .chip.st-discovery{
-    background:color-mix(in srgb,var(--info) 20%,transparent); color:var(--info); }
-  .chip.warn, .chip.crowd, .chip.st-faltering{
-    background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }
-  .chip.bad, .chip.st-exhausted, .chip.st-distribution{
-    background:color-mix(in srgb,var(--down) 17%,transparent); color:var(--down); }
-  .chip.cat{ background:color-mix(in srgb,var(--cat) 20%,transparent);
-    color:color-mix(in srgb,var(--cat) 68%,var(--text)); }
-  .chip.en-buy{ display:inline-flex; align-items:center; gap:3px; cursor:help;
-    background:color-mix(in srgb,var(--up) 22%,transparent); color:var(--up);
-    box-shadow:0 0 0 1px color-mix(in srgb,var(--up) 38%,transparent) inset; }
-  .chip.src{ background:color-mix(in srgb,var(--info) 14%,transparent); color:var(--info); }
-
-  /* ── shared row atoms ── */
-  .tk{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-weight:700; font-size:14.5px;
-    letter-spacing:-.015em; }
-  .px{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px; color:var(--muted);
-    white-space:nowrap; }
-  .nm{ font-size:10.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .score{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:20px; font-weight:700;
-    letter-spacing:-.035em; color:var(--text); line-height:1; }
-  .rd{ font-size:12px; line-height:1.45; color:var(--dim); }
-  .drv{ font-size:10.5px; line-height:1.5; color:var(--muted); margin-top:5px; }
-  .drv b{ color:color-mix(in srgb,var(--text) 80%,transparent); font-weight:600; }
-  .drv .cau{ color:var(--warn); }
-  .cline{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-  .watch{ font-size:10px; color:var(--muted); margin-top:5px; }
-  .watch b{ color:color-mix(in srgb,var(--text) 72%,transparent); font-weight:600; }
-
-  /* room-left rail — the figure keeps the precision the bar can only suggest */
-  .room{ display:flex; align-items:center; gap:9px; }
-  .room .lab{ font-size:9px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
-    color:var(--muted); white-space:nowrap; }
-  .room .trk{ flex:1; min-width:36px; height:3px; border-radius:2px; background:var(--hair-soft);
-    overflow:hidden; }
-  .room .trk i{ display:block; height:100%; background:var(--accent,var(--info)); }
-  .room .v{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px;
-    font-weight:700; color:color-mix(in srgb,var(--text) 84%,transparent); }
-
-  /* ── agreement matrix ── */
-  .mtx{ display:inline-flex; gap:3px; align-items:center; cursor:help; }
-  .mtx .cell{ width:8px; height:14px; border-radius:2px; background:var(--hair-soft); }
-  .mtx .cell.up{ background:var(--up); } .mtx .cell.dn{ background:var(--down); }
-  .mtx .cell.nz{ background:color-mix(in srgb,var(--muted) 55%,transparent); }
-  .mtx .cell.off{ background:color-mix(in srgb,var(--line) 40%,transparent); }
-
-  /* ── emerging: the page's hero. The only cards that get an accent edge. ──
-     Card faces are uniform by construction (no prose block one card carries and its
-     siblings don't) and the bottom strip is pushed down with margin-top:auto, so the
-     room-left rails line up across the row instead of leaving a hollow band under
-     the shortest card. Never `align-items:start` — that hides a void, it can't fix it. */
-  .ecards{ display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(272px,1fr)); }
-  .ecard{ position:relative; padding:14px 15px 13px; overflow:hidden;
-    display:flex; flex-direction:column; }
-  .ecard.lead::before{ content:""; position:absolute; inset:0 auto 0 0; width:2px;
-    background:var(--accent,var(--info)); }
-  /* the figure stays pinned to the top-right corner however far the chips wrap */
-  .ecard .et{ display:flex; align-items:baseline; gap:8px 7px; flex-wrap:wrap; padding-right:38px; }
-  .ecard .et .score, .ecard .et .dscore{ position:absolute; top:12px; right:15px; margin:0; }
-  .ecard .nm{ margin-top:3px; }
-  .ecard .rd{ margin:8px 0 0; }
-  .ecard .room{ margin-top:auto; padding-top:11px; border-top:1px solid var(--hair-soft); }
-  .ecard .foot{ margin-top:7px; font-size:10px; color:var(--muted);
-    display:flex; align-items:center; gap:5px; }
-  .ecard .foot .ic-svg{ width:12px; height:12px; }
-
-  /* ── discovery: same anatomy, quieter, no accent edge. The reason clamps to two
-        lines so fourteen cards can't each set their own height. ── */
-  .dcard .rd{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
-    overflow:hidden; }
-  .dscore{ font-family:var(--fig); font-variant-numeric:tabular-nums;
-    font-size:15px; font-weight:700; color:var(--info); }
-  .dchan{ font-size:10px; color:var(--muted); margin-top:auto; padding-top:8px;
-    display:flex; align-items:center; gap:5px; min-width:0; }
-  .dchan .ic-svg{ width:12px; height:12px; flex:none; }
-  .dchan .ch{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-
-  /* ── two-up alert panels ── */
-  /* minmax(0,1fr), not 1fr: the catalyst briefs are nowrap-ellipsised, and a bare 1fr
-     resolves to minmax(auto,1fr) — their min-content width would let that column push
-     the other panel down to a sliver */
-  .alerts{ display:grid; gap:12px; grid-template-columns:minmax(0,1fr) minmax(0,1fr); margin-top:6px; }
-  /* minmax(0,…) here too — a bare 1fr is minmax(auto,1fr) and the nowrap briefs would
-     set the column's min-content width, scrolling the whole page sideways on mobile */
-  @media(max-width:820px){ .alerts{ grid-template-columns:minmax(0,1fr); } }
-  .panel{ padding:13px 15px 14px; }
-  .panel h3{ display:flex; align-items:center; gap:10px; margin:0 0 3px; font-size:11px;
-    font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--text); }
-  .panel h3 .tick{ width:3px; height:12px; border-radius:2px; flex:none; background:var(--accent,var(--info)); }
-  .panel h3 .n{ margin-left:auto; font-family:var(--fig); font-variant-numeric:tabular-nums;
-    font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0; }
-  /* row-scoped, so the "View all" overlay can move these rows out of the panel
-     and they still lay out; separators stay in-flow-only (the overlay draws its own) */
-  .arow{ display:flex; align-items:center; gap:10px; padding:8px 0; font-size:12px; }
-  .panel .arow{ border-top:1px solid var(--hair-soft); }
-  .arow .tk{ font-size:12.5px; min-width:48px; flex:none; }
-  .arow .ab{ color:var(--dim); line-height:1.4; min-width:0; flex:1; }
-  .arow .age{ margin-left:auto; font-family:var(--fig); font-size:10px; color:var(--muted);
-    white-space:nowrap; }
-  .arow .pct{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11.5px;
-    font-weight:700; color:var(--down); }
-  /* one line per catalyst, ellipsised: two-line briefs made this panel taller than
-     its neighbour and parked a dead band under the shorter one */
-  .arow.cat-row .ab{ display:flex; align-items:center; gap:8px; overflow:hidden; }
-  .arow.cat-row .cb{ min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-
-  /* ══ Command ledger — the signature ════════════════════════════════════════
-     One container, thirty rows, no per-row card. A single rule runs down the
-     left edge and each row's segment fills from the bottom by how much of the
-     move is still ahead — so scrolling the ledger shows the edge draining away.
-     The bar is the shape; the mono figure beside the score keeps the precision.
-     ─────────────────────────────────────────────────────────────────────────── */
-  .led{ border:1px solid var(--hair); border-radius:var(--r); background:var(--card); overflow:hidden; }
-  .led-row{ display:grid; grid-template-columns:26px 150px 52px 55px minmax(0,1fr);
-    align-items:center; gap:0 14px; padding:10px 15px 10px 0; min-height:58px; }
-  .led > .led-row + .led-row{ border-top:1px solid var(--hair-soft); }
-  .sp{ align-self:stretch; position:relative; }
-  .sp::before{ content:""; position:absolute; left:11px; top:0; bottom:0; width:3px;
-    background:linear-gradient(to top, var(--sp-c) var(--sp-p), var(--hair-soft) var(--sp-p)); }
-  .led-row .id{ min-width:0; }
-  .led-row .id .tkline{ display:flex; align-items:baseline; gap:7px; }
-  .led-row .score{ text-align:right; }
-  .led-row .rmv{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px;
-    font-weight:700; color:var(--muted); text-align:right; }
-  @media(max-width:820px){
-    .led-row{ grid-template-columns:22px 118px 46px minmax(0,1fr); gap:0 11px; }
-    .led-row .mtxc{ display:none; }
-    .sp::before{ left:9px; }
-  }
-
-  /* ── track record: the plain read, with the study panel folded beneath ── */
-  .trh{ display:grid; gap:11px; grid-template-columns:repeat(auto-fill,minmax(258px,1fr)); }
-  .trc{ padding:12px 14px 13px; }
-  .trc .th{ display:flex; align-items:center; gap:8px; margin-bottom:9px; }
-  .trc .th .h{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:12.5px;
-    font-weight:700; letter-spacing:-.01em; }
-  .trc .th .chip{ margin-left:auto; }
-  .trg{ display:grid; grid-template-columns:1fr 1fr; gap:9px 14px; }
-  .trcell{ min-width:0; }
-  .trlab{ display:block; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
-    color:var(--muted); margin-bottom:3px; line-height:1.35; }
-  .trval{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:13.5px; font-weight:700;
-    color:var(--text); }
-  .trval.pos{ color:var(--up); } .trval.neg{ color:var(--down); }
-  .trans{ font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
-  .trans.ok{ color:var(--up); } .trans.bad{ color:var(--down); }
-  .note{ font-size:12px; line-height:1.55; color:var(--dim); padding:12px 15px; }
-  .note b{ color:var(--text); }
-
-  /* ── sector heat: one container, one column of bars ──
-     Six scattered cards each drew their meter at a different x-offset and width, so
-     the one comparison the panel exists to make — which sector is hottest — had to be
-     done by reading numbers. Aligned in a single list the bars share a scale and the
-     ranking is legible without any vocabulary at all. */
-  .slist{ overflow:hidden; }
-  .srow{ display:grid; grid-template-columns:46px minmax(110px,200px) minmax(70px,1fr) auto;
-    align-items:center; gap:0 14px; padding:10px 15px; font-size:12.5px; }
-  .slist > .srow + .srow{ border-top:1px solid var(--hair-soft); }
-  .srow .etf{ font-family:var(--fig); font-size:9.5px; font-weight:700; letter-spacing:.03em;
-    padding:2px 5px; border-radius:5px; text-align:center;
-    background:color-mix(in srgb,var(--info) 14%,transparent); color:var(--info); }
-  .srow .snm{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    display:flex; align-items:center; gap:7px; min-width:0; }
-  .srow .meter{ height:4px; border-radius:2px; background:var(--hair-soft); overflow:hidden; }
-  .srow .meter i{ display:block; height:100%; background:var(--accent,var(--info)); }
-  .srow .sf{ font-size:10px; color:var(--muted); display:flex; gap:12px; white-space:nowrap; }
-  .srow .sf b{ font-family:var(--fig); font-variant-numeric:tabular-nums;
-    color:color-mix(in srgb,var(--text) 80%,transparent); }
-  @media(max-width:620px){
-    .srow{ grid-template-columns:46px minmax(0,1fr) auto; row-gap:8px; }
-    .srow .meter{ grid-column:1 / -1; }
-  }
-
-  footer.hf{ margin-top:32px; padding-top:15px; border-top:1px solid var(--hair);
-    font-size:11px; color:var(--muted); line-height:1.6; }
-  footer.hf time{ font-family:var(--fig); }
-  @media (prefers-reduced-motion:reduce){
-    .rl, .rl .ic-svg{ transition:none; }
-    .live::after{ animation:none; }
-  }
-</style>
+<link rel="preload" as="style" href="assets/css/2561a86d.css?v=2561a86d">
 </head>
 <body class="page-hub">
 
@@ -605,7 +307,7 @@
   
   <header class="hh">
     <div>
-      <span class="eyebrow"><span class="live"></span><span class="l-en">Live</span><span class="l-zh">实时</span> · <time datetime="2026-08-04T04:45:03.081780+00:00">2026-08-04</time></span>
+      <span class="eyebrow"><span class="live"></span><span class="l-en">Live</span><span class="l-zh">实时</span> · <time datetime="2026-08-04T09:48:37.935521+00:00">2026-08-04</time></span>
       <h1><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></h1>
       <p class="deck"><span class="l-en">What still has room to run — surfaced before the crowd arrives.</span><span class="l-zh">仍有上行空间的机会 —— 抢在人群之前浮出水面。</span>
         <button class="lens-q" type="button" aria-label="How this page ranks names"
@@ -882,30 +584,30 @@
       <div class="stance" style="margin:2px 0 6px"><span class="l-en">Desks lean bearish and price is rolling over. <b>De-risk — not a long.</b></span><span class="l-zh">各台偏空且价格见顶回落。<b>降低风险 —— 不宜做多。</b></span></div>
       <div class="lst-wrap"><div class="lst-collapse is-collapsed">
       <div class="arow">
-        <span class="tk">FINS</span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">84%</span></span></div><div class="arow">
-        <span class="tk">ETSY</span>
+        <span class="tk">ETSY</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
         <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">89%</span></span></div><div class="arow">
-        <span class="tk">NVT</span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">52%</span></span></div><div class="arow">
-        <span class="tk">F</span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">45%</span></span></div><div class="arow">
-        <span class="tk">CEG</span>
+        <span class="tk">TDG</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">87%</span></span></div><div class="arow">
+        <span class="tk">RHHBY</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">69%</span></span></div><div class="arow">
+        <span class="tk">CEG</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
         <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">43%</span></span></div><div class="arow">
-        <span class="tk">NVT</span>
+        <span class="tk">NVT</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
         <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">49%</span></span></div><div class="arow">
-        <span class="tk">PG</span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">61%</span></span></div><div class="arow">
-        <span class="tk">MA</span>
+        <span class="tk">MA</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
         <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">47%</span></span></div><div class="arow">
-        <span class="tk">BIIB</span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">63%</span></span></div><div class="arow">
-        <span class="tk">ABBV</span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">48%</span></span></div><div class="arow">
-        <span class="tk">NRG</span>
+        <span class="tk">F</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">50%</span></span></div><div class="arow">
+        <span class="tk">NRG</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
         <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">54%</span></span></div><div class="arow">
-        <span class="tk">NB</span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">34%</span></span></div>
+        <span class="tk">NB</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">34%</span></span></div><div class="arow">
+        <span class="tk">LMT</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">41%</span></span></div><div class="arow">
+        <span class="tk">PG</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">48%</span></span></div><div class="arow">
+        <span class="tk">ETN</span><span class="chip st-exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">28%</span></span></div>
       </div>
       <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button></div>
       
@@ -916,30 +618,30 @@
       <div class="stance" style="margin:2px 0 6px"><span class="l-en">Events with a known date. <b>Context for timing — not a reason to buy.</b></span><span class="l-zh">有确定日期的事件。<b>用于把握时点 —— 而非买入理由。</b></span></div>
       <div class="lst-wrap"><div class="lst-collapse is-collapsed">
       <div class="arow cat-row">
-        <span class="tk">AMZN</span>
-        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">Amazon.com, Inc. filed an S-4 registration statement on July 31, 2026, in connection with its proposed acquisition of Globalstar, Inc. via a merger subsidiary, Grapefruit Acquisition Sub I, Inc. The transaction, announced April 13, 2026, in</span></span><span class="age">4<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
-        <span class="tk">NXPI</span>
-        <span class="ab"><span class="chip cat">Strategic Reviews</span><span class="cb">NXP Semiconductors is in talks to buy Ambarella for $3.3 billion to own the camera chips powering self-driving cars</span></span><span class="age">4<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
-        <span class="tk">NDAQ</span>
-        <span class="ab"><span class="chip cat">Strategic Reviews</span><span class="cb">Nasdaq, S&amp;P 500 Futures Rise As Amazon Reignites AI Trade, Apple Slides: Why TSLA, SPCX, RDDT, SMCI, BE, RKLB Are In Focus</span></span><span class="age">4<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
-        <span class="tk">VALE</span>
-        <span class="ab"><span class="chip cat">Capital Returns</span><span class="cb">Vale S.A. filed a Form 6-K reporting 2Q26 results and announcing that its Board of Directors approved US$1.7 billion in dividends and interest on capital, and extended its share buyback program. The company repurchased US$140 million of sha</span></span><span class="age">4<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
-        <span class="tk">ALOT</span>
-        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">AstroNova filed a definitive proxy (DEFM14A) on July 31, 2026, for a special meeting on August 25, 2026, to approve its merger with Orion Merger Parent, an affiliate of Arcline Investment Management. Shareholders will receive $29.00 per sha</span></span><span class="age">4<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
-        <span class="tk">AUC</span>
-        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">ATIF Holdings filed a 6-K disclosing a July 30, 2026 acquisition agreement to acquire all equity of GoldCoin Labs (BVI), a gold-tokenization platform indirectly owned by Metra Group, after an earlier LOI with Metra expired. Consideration is</span></span><span class="age">4<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
-        <span class="tk">AVB</span>
-        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">AvalonBay Communities filed an 8-K disclosing litigation updates related to its pending all-stock merger of equals with Equity Residential, forming Vivmark Residential. Demand letters and three shareholder complaints allege disclosure defic</span></span><span class="age">4<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
-        <span class="tk">AVXL</span>
-        <span class="ab"><span class="chip cat">Activist Campaigns</span><span class="cb">Anavex Life Sciences filed a preliminary proxy statement (PREC14A) on July 31, 2026, for its 2026 Annual Meeting. The board, led by Independent Chair Jiong Ma, is prioritizing blarcamesine (ANAVEX 2-73) for Alzheimer&#39;s, Rett syndrome, and F</span></span><span class="age">4<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
-        <span class="tk">AXIA-PC</span>
-        <span class="ab"><span class="chip cat">Divestitures</span><span class="cb">AXIA Energia S.A. filed a Form 6-K on July 31, 2026, announcing completion of a cross-holding unwinding with ISA Energia Brasil S.A. in Brazilian transmission SPEs. AXIA sold its 49% stakes in IE Madeira to ISA Energia and acquired ISA&#39;s 51</span></span><span class="age">4<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
-        <span class="tk">BLDP</span>
-        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">Ballard Power Systems filed a Form 6-K reporting Q2 2026 results and announcing a definitive agreement to acquire GeoPura Limited for $275 million in upfront consideration, subject to customary closing conditions and regulatory approvals. T</span></span><span class="age">4<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
-        <span class="tk">BSBR</span>
-        <span class="ab"><span class="chip cat">Tender Offers</span><span class="cb">Banco Santander (Brasil) S.A. disclosed via Form 6-K a Material Fact that its controlling shareholder, Banco Santander, S.A., intends to launch voluntary exchange tender offers in Brazil and the U.S. to acquire all outstanding common shares</span></span><span class="age">4<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
-        <span class="tk">CDTTW</span>
-        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">CDT Equity Inc. filed an 8-K reporting entry into a Securities Purchase Agreement on July 30, 2026, to acquire 270 shares of Sarborg Limited (approx. 4.76% of outstanding common stock) from certain stockholders. Consideration is pre-funded </span></span><span class="age">4<span class="l-en">d</span><span class="l-zh">天</span></span></div>
+        <span class="tk">ECHO</span>
+        <span class="ab"><span class="chip cat">Restructuring</span><span class="cb">On August 2, 2026, EchoStar&#39;s subsidiary Hughes Satellite Systems Corp and 11 wholly-owned subsidiaries filed voluntary Chapter 11 petitions in the U.S. Bankruptcy Court for the District of Texas, seeking joint administration under Case No.</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="tk">PICS</span>
+        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">PicPay (NASDAQ: PICS), via its parent PicS N.V., filed a Form 6-K press release announcing completion of its acquisition of Kovr Participações S.A. and subsidiaries, a digital insurance technology company. PicPay acquired 100% of Kovr share</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="tk">BEKE</span>
+        <span class="ab"><span class="chip cat">Capital Returns</span><span class="cb">KE Holdings Inc. filed a Form 6-K attaching Hong Kong Next Day Disclosure Returns detailing a series of share repurchases on the Hong Kong Stock Exchange and in the U.S. between May 22 and June 10, 2026. Repurchases were executed in HKD (ap</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="tk">ACA</span>
+        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">Arcosa, Inc. filed a definitive proxy statement (DEFM14A) on August 3, 2026, for a special meeting on September 4, 2026, to vote on the proposed acquisition by CRH Americas, Inc. Under the June 21, 2026 merger agreement, Neon Merger Sub wil</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="tk">ADSK</span>
+        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">Autodesk filed an 8-K on August 3, 2026, disclosing completion of its acquisition of MaintainX Inc. The deal was executed pursuant to the Agreement and Plan of Merger dated May 28, 2026, among Autodesk, its wholly-owned subsidiary Matterhor</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="tk">BXDIF</span>
+        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">Brookfield Corporation filed a Form 6-K announcing completion of its acquisition of Oaktree, a premier credit manager, on August 3, 2026. The transaction finalizes a partnership initiated in 2019, integrating Oaktree into Brookfield&#39;s $365B</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="tk">CMBT</span>
+        <span class="ab"><span class="chip cat">Divestitures</span><span class="cb">CMB.TECH NV, a Belgian maritime group, filed a Form 6-K on August 3, 2026, disclosing the sale of one VLCC vessel, the Donoussa (2016, 299,999 dwt). The sale generates an approximate $74.4 million capital gain in Q4 2026, with delivery to t</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="tk">DEVSF</span>
+        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">DevvStream Corp. (formerly Focus Impact Acquisition Corp.) filed a definitive proxy statement for a business combination with XCF Global, Inc. and Southern Energy Renewables Inc. Under the BCA dated April 13, 2026, DevvStream will domestica</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="tk">DHR</span>
+        <span class="ab"><span class="chip cat">Spin-Offs</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="tk">ITUB</span>
+        <span class="ab"><span class="chip cat">Divestitures</span><span class="cb">Itau Unibanco Holding S.A. filed a 6-K reporting the completion of a transaction whereby its subsidiary, Banco Itau Colombia S.A., transferred retail banking assets, liabilities, and contracts to Banco de Bogota S.A. at book value. The tran</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="tk">PUKPF</span>
+        <span class="ab"><span class="chip cat">Issuer Tenders</span><span class="cb">Prudential plc filed a Form 6-K announcing on-market share repurchases under a buyback programme with JP Morgan Securities plc. Between 27 and 31 July 2026, Prudential purchased 1,352,456 ordinary shares at a volume-weighted average price o</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="tk">PULM</span>
+        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">Pulmatrix, Inc. filed an amended S-4 registration statement on August 3, 2026, related to a proposed transaction with EosSenolytixs, Inc. The filing updates financial statements and pro forma data for the merger. The deal structure involves</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div>
       </div>
       <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button></div>
       
@@ -979,15 +681,16 @@
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--up);--sp-p:86%"></span>
+      <span class="sp" style="--sp-c:var(--up);--sp-p:89%"></span>
       <div class="id">
         <div class="tkline"><span class="tk">ECHO</span><span class="nb-px px" data-sym="ECHO" data-mkt="us">$84.09</span></div>
         
       </div>
-      <div><div class="score">52</div>
-        <div class="rmv">86%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 39 across 1 desk."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 39，来自 1 个台。">
+      <div><div class="score">54</div>
+        <div class="rmv">89%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 32 across 1 desk."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 32，来自 1 个台。">
+<span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
 <span class="cell off"></span>
@@ -1022,28 +725,6 @@
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--info);--sp-p:82%"></span>
-      <div class="id">
-        <div class="tkline"><span class="tk">NVDA</span><span class="nb-px px" data-sym="NVDA" data-mkt="us">$200.75</span></div>
-        
-      </div>
-      <div><div class="score">43</div>
-        <div class="rmv">82%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 38 across 2 desks."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 38，来自 2 个台。">
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div>
-        <div class="cline"><span class="chip st-emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +2</span></div>
-        <div class="drv"><b>RS -1% vs SPY</b> · <b>-15% off high</b></div>
-        
-      </div>
-    </div>
-    
-    <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:84%"></span>
       <div class="id">
         <div class="tkline"><span class="tk">LYV</span><span class="nb-px px" data-sym="LYV" data-mkt="us">$174.13</span></div>
@@ -1061,28 +742,6 @@
       <div>
         <div class="cline"><span class="chip st-early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
         <div class="drv"><b>basket laggard (room)</b> · <b>radar forming</b></div>
-        
-      </div>
-    </div>
-    
-    <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:84%"></span>
-      <div class="id">
-        <div class="tkline"><span class="tk">FINS</span></div>
-        
-      </div>
-      <div><div class="score">40</div>
-        <div class="rmv">84%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 30 across 1 desk."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 30，来自 1 个台。">
-<span class="cell off"></span>
-<span class="cell dn"></span>
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div>
-        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip cat"><span class="l-en">catalyst</span><span class="l-zh">催化</span></span></div>
-        <div class="drv"><b>fresh activist campaigns</b></div>
         
       </div>
     </div>
@@ -1132,13 +791,13 @@
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:88%"></span>
+      <span class="sp" style="--sp-c:var(--down);--sp-p:87%"></span>
       <div class="id">
         <div class="tkline"><span class="tk">TDG</span><span class="nb-px px" data-sym="TDG" data-mkt="us">$1285.56</span></div>
         
       </div>
-      <div><div class="score">32</div>
-        <div class="rmv">88%</div></div>
+      <div><div class="score">31</div>
+        <div class="rmv">87%</div></div>
       <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 22 across 1 desk."
   data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 22，来自 1 个台。">
 <span class="cell off"></span>
@@ -1455,7 +1114,7 @@
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
       <div>
-        <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip warn"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip en-buy" data-tip-en="Validated confluence buy · tier T1" data-tip-zh="已验证共振买入 · 层级 T1">⚡ <span class="l-en">entry</span><span class="l-zh">入场</span> T1</span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
         <div class="drv"><b>7 insiders bought open-market (3 officers) · 126d-lagged filing</b></div>
         
       </div>
@@ -1506,50 +1165,6 @@
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:56%"></span>
-      <div class="id">
-        <div class="tkline"><span class="tk">LMT</span><span class="nb-px px" data-sym="LMT" data-mkt="us">$586.29</span></div>
-        
-      </div>
-      <div><div class="score">23</div>
-        <div class="rmv">56%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 40 across 2 desks."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 40，来自 2 个台。">
-<span class="cell off"></span>
-<span class="cell dn"></span>
-<span class="cell dn"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div>
-        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span></div>
-        <div class="drv"><b>quiet tape (room)</b> · <b>-13% off high</b> · <span class="cau">⚠ radar fading</span></div>
-        
-      </div>
-    </div>
-    
-    <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:45%"></span>
-      <div class="id">
-        <div class="tkline"><span class="tk">F</span><span class="nb-px px" data-sym="F" data-mkt="us">$14.68</span></div>
-        
-      </div>
-      <div><div class="score">24</div>
-        <div class="rmv">45%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 50 across 2 desks."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 50，来自 2 个台。">
-<span class="cell off"></span>
-<span class="cell dn"></span>
-<span class="cell dn"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div>
-        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span><span class="chip mut"><span class="l-en">isolated</span><span class="l-zh">孤立</span></span></div>
-        <div class="drv"><b>-16% off high</b> · <b>quiet tape (room)</b> · <span class="cau">⚠ radar fading</span></div>
-        
-      </div>
-    </div>
-    
-    <div class="led-row">
       <span class="sp" style="--sp-c:var(--down);--sp-p:43%"></span>
       <div class="id">
         <div class="tkline"><span class="tk">CEG</span><span class="nb-px px" data-sym="CEG" data-mkt="us">$273.71</span></div>
@@ -1577,32 +1192,10 @@
         <div class="tkline"><span class="tk">NVT</span><span class="nb-px px" data-sym="NVT" data-mkt="us">$159.41</span></div>
         
       </div>
-      <div><div class="score">20</div>
-        <div class="rmv">53%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 36 across 2 desks."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 36，来自 2 个台。">
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div>
-        <div class="cline"><span class="chip st-early"><span class="l-en">early</span><span class="l-zh">早期</span></span></div>
-        <div class="drv"><b>RS +6% vs SPY</b> · <b>-9% off high</b> · <span class="cau">⚠ radar mature</span></div>
-        
-      </div>
-    </div>
-    
-    <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:32%"></span>
-      <div class="id">
-        <div class="tkline"><span class="tk">ETN</span><span class="nb-px px" data-sym="ETN" data-mkt="us">$415.20</span></div>
-        
-      </div>
-      <div><div class="score">20</div>
-        <div class="rmv">32%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 46 across 1 desk."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 46，来自 1 个台。">
+      <div><div class="score">23</div>
+        <div class="rmv">49%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 35 across 1 desk."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 35，来自 1 个台。">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell dn"></span>
@@ -1611,28 +1204,6 @@
       <div>
         <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span></div>
         <div class="drv"><b>RS -11% vs SPY</b> · <b>-13% off high</b> · <span class="cau">⚠ radar fading</span></div>
-        
-      </div>
-    </div>
-    
-    <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:61%"></span>
-      <div class="id">
-        <div class="tkline"><span class="tk">PG</span><span class="nb-px px" data-sym="PG" data-mkt="us">$144.97</span></div>
-        
-      </div>
-      <div><div class="score">22</div>
-        <div class="rmv">61%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 34 across 2 desks."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 34，来自 2 个台。">
-<span class="cell off"></span>
-<span class="cell dn"></span>
-<span class="cell dn"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div>
-        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span></div>
-        <div class="drv"><b>quiet tape (room)</b> · <b>RS -4% vs SPY</b> · <span class="cau">⚠ radar fading</span></div>
         
       </div>
     </div>
@@ -1660,37 +1231,15 @@
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:63%"></span>
+      <span class="sp" style="--sp-c:var(--down);--sp-p:50%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">BIIB</span><span class="nb-px px" data-sym="BIIB" data-mkt="us">$201.82</span></div>
+        <div class="tkline"><span class="tk">F</span><span class="nb-px px" data-sym="F" data-mkt="us">$14.43</span></div>
         
       </div>
-      <div><div class="score">22</div>
-        <div class="rmv">63%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 26 across 1 desk."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 26，来自 1 个台。">
-<span class="cell off"></span>
-<span class="cell dn"></span>
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div>
-        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip cat"><span class="l-en">catalyst</span><span class="l-zh">催化</span></span></div>
-        <div class="drv"><b>quiet tape (room)</b> · <b>RS +3% vs SPY</b> · <span class="cau">⚠ fresh acquisitions</span></div>
-        
-      </div>
-    </div>
-    
-    <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:48%"></span>
-      <div class="id">
-        <div class="tkline"><span class="tk">ABBV</span><span class="nb-px px" data-sym="ABBV" data-mkt="us">$245.10</span></div>
-        
-      </div>
-      <div><div class="score">19</div>
-        <div class="rmv">48%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 38 across 2 desks."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 38，来自 2 个台。">
+      <div><div class="score">21</div>
+        <div class="rmv">50%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 40 across 2 desks."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 40，来自 2 个台。">
 <span class="cell off"></span>
 <span class="cell dn"></span>
 <span class="cell dn"></span>
@@ -1698,7 +1247,51 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span></div>
-        <div class="drv"><b>quiet tape (room)</b> · <b>RS +17% vs SPY</b> · <span class="cau">⚠ radar fading</span></div>
+        <div class="drv"><b>-17% off high</b> · <b>quiet tape (room)</b> · <span class="cau">⚠ radar fading</span></div>
+        
+      </div>
+    </div>
+    
+    <div class="led-row">
+      <span class="sp" style="--sp-c:var(--up);--sp-p:86%"></span>
+      <div class="id">
+        <div class="tkline"><span class="tk">STM</span></div>
+        
+      </div>
+      <div><div class="score">19</div>
+        <div class="rmv">86%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 12 across 1 desk."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 12，来自 1 个台。">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div>
+        <div class="cline"><span class="chip st-early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="drv"><b>basket laggard (room)</b> · <b>radar forming</b></div>
+        
+      </div>
+    </div>
+    
+    <div class="led-row">
+      <span class="sp" style="--sp-c:var(--down);--sp-p:54%"></span>
+      <div class="id">
+        <div class="tkline"><span class="tk">NRG</span><span class="nb-px px" data-sym="NRG" data-mkt="us">$138.47</span></div>
+        
+      </div>
+      <div><div class="score">18</div>
+        <div class="rmv">54%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked. Agreement score 28 across 2 desks."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 28，来自 2 个台。">
+<span class="cell off"></span>
+<span class="cell dn"></span>
+<span class="cell dn"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div>
+        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span></div>
+        <div class="drv"><b>-25% off high</b> · <b>RS -11% vs SPY</b> · <span class="cau">⚠ radar fading</span></div>
         
       </div>
     </div>
@@ -1706,7 +1299,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--down);--sp-p:34%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">NB</span><span class="nb-px px" data-sym="NB" data-mkt="us">$4.25</span></div>
+        <div class="tkline"><span class="tk">NB</span><span class="nb-px px" data-sym="NB" data-mkt="us">$4.46</span></div>
         
       </div>
       <div><div class="score">18</div>
@@ -1720,7 +1313,7 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip warn"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span><span class="chip mut"><span class="l-en">faltering</span><span class="l-zh">faltering</span></span></div>
-        <div class="drv"><b>RS -31% vs SPY</b> · <b>radar fading</b> · <span class="cau">⚠ -64% off high (falling)</span></div>
+        <div class="drv"><b>RS -34% vs SPY</b> · <b>radar fading</b> · <span class="cau">⚠ -62% off high (falling)</span></div>
         
       </div>
     </div>
@@ -1823,70 +1416,7 @@
   
 
   
-  <style>
-  /* ── desk scorecard: a Tier-3 study panel folded behind a Tier-1 summary ──
-     Tokens only (no literal greys) so the panel tracks light / dark / zh. */
-  .dg{ --dg-hair:color-mix(in srgb,var(--line,#2a2f3a) 78%,transparent);
-    margin-top:22px; border:1px solid var(--dg-hair); border-radius:12px;
-    background:color-mix(in srgb,var(--panel,#181b21) 72%,transparent); }
-  .dg-sum{ display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-    padding:12px 15px; cursor:pointer; list-style:none;
-    font-size:13.5px; border-radius:12px; transition:background .16s ease; }
-  .dg-sum::-webkit-details-marker{ display:none; }
-  .dg-sum:hover{ background:color-mix(in srgb,var(--panel2,#1e222a) 55%,transparent); }
-  .dg-sum:focus-visible{ outline:2px solid var(--info,#5b9bf0); outline-offset:2px; }
-  .dg-mark{ width:17px; height:17px; flex:none; color:var(--muted,#8b93a1); }
-  .dg-is-alarm .dg-mark{ color:var(--down,#e06464); }
-  .dg-ttl{ font-weight:700; letter-spacing:-.005em; }
-  .dg-verdict{ font-size:12px; color:var(--muted,#8b93a1); }
-  .dg-open{ margin-left:auto; display:inline-flex; align-items:center; gap:4px;
-    font-size:11px; text-transform:uppercase; letter-spacing:.07em; font-weight:600;
-    color:var(--muted,#8b93a1); }
-  .dg-open svg{ width:13px; height:13px; transition:transform .2s ease; }
-  .dg[open] .dg-open svg{ transform:rotate(180deg); }
-  .dg[open] .dg-sum{ border-bottom:1px solid var(--dg-hair); border-radius:12px 12px 0 0; }
-  .dg-body{ padding:13px 15px 15px; }
-  .dg-lead{ font-size:12.5px; line-height:1.55; margin:0 0 12px; color:color-mix(in srgb,var(--text,#d7dce3) 82%,transparent); }
-  .dg-counts{ display:block; margin-top:3px; font-size:11px; color:var(--muted,#8b93a1); }
-  .dg-tblwrap{ overflow-x:auto; }
-  .dg-tbl{ width:100%; border-collapse:collapse; font-size:12.5px; }
-  .dg-tbl th,.dg-tbl td{ padding:6px 10px; text-align:left; border-bottom:1px solid color-mix(in srgb,var(--line,#2a2f3a) 45%,transparent); }
-  .dg-tbl th.num,.dg-tbl td.num{ text-align:right;
-    font-family:var(--font-mono,ui-monospace,Menlo,monospace); font-variant-numeric:tabular-nums; }
-  .dg-tbl thead th{ font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
-    font-weight:600; color:var(--muted,#8b93a1); }
-  .dg-tbl tbody td:first-child{ font-family:var(--font-mono,ui-monospace,Menlo,monospace); }
-  .dg-row-alarm{ background:color-mix(in srgb,var(--down,#e06464) 9%,transparent); }
-  .dg-pos{ color:var(--up,#45b873); } .dg-neg{ color:var(--down,#e06464); }
-  .mut2{ color:var(--muted,#8b93a1); }
-  .dg-badge{ font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
-    padding:2px 8px; border-radius:6px; white-space:nowrap; }
-  .dg-proven{ background:color-mix(in srgb,var(--up,#45b873) 18%,transparent); color:var(--up,#45b873); }
-  .dg-measuring{ background:color-mix(in srgb,var(--muted,#8b93a1) 16%,transparent); color:var(--muted,#8b93a1); }
-  .dg-alarm{ background:color-mix(in srgb,var(--down,#e06464) 20%,transparent); color:var(--down,#e06464); }
-  .dg-fine{ font-size:11px; color:var(--muted,#8b93a1); line-height:1.55; margin:10px 0 0; }
-  .dg-sub{ margin-top:14px; }
-  .dg-sub h3{ font-size:11px; text-transform:uppercase; letter-spacing:.07em; font-weight:700;
-    color:var(--muted,#8b93a1); margin:0 0 7px; }
-  .dg-ev{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12px; margin:3px 0; }
-  .dg-ev-h{ font-weight:700; min-width:34px; font-family:var(--font-mono,ui-monospace,Menlo,monospace); }
-  .dg-ev-tag{ padding:2px 8px; border-radius:6px;
-    background:color-mix(in srgb,var(--muted,#8b93a1) 11%,transparent); }
-  .dg-list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:5px; }
-  .dg-find{ font-size:12.5px; line-height:1.5; display:flex; gap:8px; padding:6px 10px; border-radius:7px;
-    background:color-mix(in srgb,var(--muted,#8b93a1) 8%,transparent); }
-  .dg-find.dg-alarm{ background:color-mix(in srgb,var(--down,#e06464) 10%,transparent); color:var(--text,#d7dce3); }
-  .dg-find.dg-warn{ background:color-mix(in srgb,var(--warn,#e0a030) 10%,transparent); }
-  .dg-sev{ flex:0 0 auto; }
-  .dg-notes li{ font-size:12px; line-height:1.5; padding:6px 0;
-    border-top:1px solid color-mix(in srgb,var(--line,#2a2f3a) 40%,transparent); }
-  .dg-nd{ display:inline-block; min-width:78px; color:var(--muted,#8b93a1);
-    font-family:var(--font-mono,ui-monospace,Menlo,monospace); font-variant-numeric:tabular-nums; font-size:11px; }
-  @media (prefers-reduced-motion:reduce){
-    .dg-sum{ transition:none; }
-    .dg-open svg{ transition:none; }
-  }
-</style>
+  <link rel="stylesheet" href="assets/css/2561a86d.css?v=2561a86d">
   
 
 <details class="dg">
@@ -1911,8 +1441,8 @@
         measured against SPY. Context only — never a trade instruction.</span>
       <span class="l-zh">本台每个入选标的都以其之后的实际走势评分，并与标普对比。仅作参考 —— 绝非交易指令。</span>
       <span class="dg-counts">
-        <span class="l-en">161,311 names recorded · 7,849 drops tracked</span>
-        <span class="l-zh">已记录 161,311 个标的 · 已追踪 7,849 次剔除</span></span>
+        <span class="l-en">164,161 names recorded · 7,965 drops tracked</span>
+        <span class="l-zh">已记录 164,161 个标的 · 已追踪 7,965 次剔除</span></span>
     </p>
 
     
@@ -1928,8 +1458,8 @@
     </tr></thead><tbody>
       
       <tr class=""
-          data-tip-en="After this desk dropped a name it went -0.7% against SPY (n=2391) · usable prices for 7.7% of surfaced names"
-          data-tip-zh="本台剔除标的后，其相对标普走势为 -0.7%（样本 2391）· 入选标的中 7.7% 有可用价格">
+          data-tip-en="After this desk dropped a name it went -0.6% against SPY (n=2517) · usable prices for 7.9% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 -0.6%（样本 2517）· 入选标的中 7.9% 有可用价格">
         <td><b>5</b><span class="l-en">d</span><span class="l-zh">日</span></td>
         <td class="num">11893</td>
         <td class="num dg-pos">+0.033</td>
@@ -1939,8 +1469,8 @@
       </tr>
       
       <tr class=""
-          data-tip-en="After this desk dropped a name it went -1.7% against SPY (n=1853) · usable prices for 7.3% of surfaced names"
-          data-tip-zh="本台剔除标的后，其相对标普走势为 -1.7%（样本 1853）· 入选标的中 7.3% 有可用价格">
+          data-tip-en="After this desk dropped a name it went -1.5% against SPY (n=1977) · usable prices for 7.6% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 -1.5%（样本 1977）· 入选标的中 7.6% 有可用价格">
         <td><b>10</b><span class="l-en">d</span><span class="l-zh">日</span></td>
         <td class="num">10321</td>
         <td class="num dg-neg">-0.006</td>
@@ -1949,9 +1479,9 @@
         <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
       </tr>
       
-      <tr class="dg-row-alarm"
-          data-tip-en="After this desk dropped a name it went -3.5% against SPY (n=698) · usable prices for 5.7% of surfaced names"
-          data-tip-zh="本台剔除标的后，其相对标普走势为 -3.5%（样本 698）· 入选标的中 5.7% 有可用价格">
+      <tr class=""
+          data-tip-en="After this desk dropped a name it went -3.4% against SPY (n=782) · usable prices for 6.1% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 -3.4%（样本 782）· 入选标的中 6.1% 有可用价格">
         <td><b>20</b><span class="l-en">d</span><span class="l-zh">日</span></td>
         <td class="num">6095</td>
         <td class="num dg-neg">-0.095</td>
@@ -2081,93 +1611,57 @@
     <span class="legend"><span class="l-en">where the desks cluster</span><span class="l-zh">各台聚集之处</span></span></div>
   <div class="card slist">
     
-    <div class="srow" style="--accent:var(--down)"
-         data-tip-en="Average conviction across the 3 names the desks surfaced here: 19.1 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 3 个标的平均信念度：19.1 / 100。各条形共用同一标尺，越长表示越热。">
-      <span class="etf">XLU</span>
-      <span class="snm">Utilities</span>
-      <span class="meter"><i style="width:19.1%"></i></span>
+    <div class="srow" style="--accent:var(--info)"
+         data-tip-en="Average conviction across the 3 names the desks surfaced here: 28.7 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 3 个标的平均信念度：28.7 / 100。各条形共用同一标尺，越长表示越热。">
+      <span class="etf">XLY</span>
+      <span class="snm">Discretionary</span>
+      <span class="meter"><i style="width:28.7%"></i></span>
       <span class="sf"><span><b>3</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
         
         </span>
     </div>
+    <div class="srow" style="--accent:var(--down)"
+         data-tip-en="Average conviction across the 1 name the desks surfaced here: 26.2 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 1 个标的平均信念度：26.2 / 100。各条形共用同一标尺，越长表示越热。">
+      <span class="etf">XLU</span>
+      <span class="snm">Utilities</span>
+      <span class="meter"><i style="width:26.2%"></i></span>
+      <span class="sf"><span><b>1</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
+        
+        </span>
+    </div>
     <div class="srow" style="--accent:var(--up)"
-         data-tip-en="Average conviction across the 7 names the desks surfaced here: 15.5 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 7 个标的平均信念度：15.5 / 100。各条形共用同一标尺，越长表示越热。">
+         data-tip-en="Average conviction across the 3 names the desks surfaced here: 13.7 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 3 个标的平均信念度：13.7 / 100。各条形共用同一标尺，越长表示越热。">
       <span class="etf">XLC</span>
       <span class="snm">Communication</span>
-      <span class="meter"><i style="width:15.5%"></i></span>
-      <span class="sf"><span><b>7</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
+      <span class="meter"><i style="width:13.7%"></i></span>
+      <span class="sf"><span><b>3</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
         
         </span>
     </div>
     <div class="srow" style="--accent:var(--down)"
-         data-tip-en="Average conviction across the 11 names the desks surfaced here: 15.3 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 11 个标的平均信念度：15.3 / 100。各条形共用同一标尺，越长表示越热。">
-      <span class="etf">XLV</span>
-      <span class="snm">Health Care</span>
-      <span class="meter"><i style="width:15.3%"></i></span>
-      <span class="sf"><span><b>11</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
-        
-        </span>
-    </div>
-    <div class="srow" style="--accent:var(--up)"
-         data-tip-en="Average conviction across the 8 names the desks surfaced here: 13.3 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 8 个标的平均信念度：13.3 / 100。各条形共用同一标尺，越长表示越热。">
-      <span class="etf">XLP</span>
-      <span class="snm">Staples</span>
-      <span class="meter"><i style="width:13.3%"></i></span>
-      <span class="sf"><span><b>8</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
-        
-        </span>
-    </div>
-    <div class="srow" style="--accent:var(--down)"
-         data-tip-en="Average conviction across the 13 names the desks surfaced here: 12.9 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 13 个标的平均信念度：12.9 / 100。各条形共用同一标尺，越长表示越热。">
-      <span class="etf">XLY</span>
-      <span class="snm">Discretionary</span>
-      <span class="meter"><i style="width:12.9%"></i></span>
-      <span class="sf"><span><b>13</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
-        
-        </span>
-    </div>
-    <div class="srow" style="--accent:var(--down)"
-         data-tip-en="Average conviction across the 27 names the desks surfaced here: 9.6 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 27 个标的平均信念度：9.6 / 100。各条形共用同一标尺，越长表示越热。">
+         data-tip-en="Average conviction across the 14 names the desks surfaced here: 9.7 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 14 个标的平均信念度：9.7 / 100。各条形共用同一标尺，越长表示越热。">
       <span class="etf">XLK</span>
       <span class="snm">Technology</span>
-      <span class="meter"><i style="width:9.6%"></i></span>
-      <span class="sf"><span><b>27</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
+      <span class="meter"><i style="width:9.7%"></i></span>
+      <span class="sf"><span><b>14</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
         
         </span>
     </div>
     <div class="srow" style="--accent:var(--up)"
-         data-tip-en="Average conviction across the 16 names the desks surfaced here: 7.0 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 16 个标的平均信念度：7.0 / 100。各条形共用同一标尺，越长表示越热。">
+         data-tip-en="Average conviction across the 5 names the desks surfaced here: 9.6 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 5 个标的平均信念度：9.6 / 100。各条形共用同一标尺，越长表示越热。">
       <span class="etf">XLF</span>
       <span class="snm">Financials</span>
-      <span class="meter"><i style="width:7.0%"></i></span>
-      <span class="sf"><span><b>16</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
+      <span class="meter"><i style="width:9.6%"></i></span>
+      <span class="sf"><span><b>5</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
         
         </span>
     </div>
-    <div class="srow" style="--accent:var(--down)"
-         data-tip-en="Average conviction across the 13 names the desks surfaced here: 6.0 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 13 个标的平均信念度：6.0 / 100。各条形共用同一标尺，越长表示越热。">
+    <div class="srow" style="--accent:var(--info)"
+         data-tip-en="Average conviction across the 3 names the desks surfaced here: 3.3 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 3 个标的平均信念度：3.3 / 100。各条形共用同一标尺，越长表示越热。">
       <span class="etf">XLI</span>
       <span class="snm">Industrials<span class="chip good"><span class="l-en">policy</span><span class="l-zh">政策</span> ↑</span></span>
-      <span class="meter"><i style="width:6.0%"></i></span>
-      <span class="sf"><span><b>13</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
-        
-        </span>
-    </div>
-    <div class="srow" style="--accent:var(--info)"
-         data-tip-en="Average conviction across the 2 names the desks surfaced here: 3.6 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 2 个标的平均信念度：3.6 / 100。各条形共用同一标尺，越长表示越热。">
-      <span class="etf">XLE</span>
-      <span class="snm">Energy<span class="chip good"><span class="l-en">policy</span><span class="l-zh">政策</span> ↑</span></span>
-      <span class="meter"><i style="width:3.6%"></i></span>
-      <span class="sf"><span><b>2</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
-        
-        </span>
-    </div>
-    <div class="srow" style="--accent:var(--info)"
-         data-tip-en="Average conviction across the 2 names the desks surfaced here: 2.4 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 2 个标的平均信念度：2.4 / 100。各条形共用同一标尺，越长表示越热。">
-      <span class="etf">XLRE</span>
-      <span class="snm">Real Estate</span>
-      <span class="meter"><i style="width:2.4%"></i></span>
-      <span class="sf"><span><b>2</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
+      <span class="meter"><i style="width:3.3%"></i></span>
+      <span class="sf"><span><b>3</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
         
         </span>
     </div>
@@ -2175,8 +1669,8 @@
   
 
   <footer class="hf">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-08-04T04:45:03.081780+00:00">2026-08-04 04:45</time> UTC ·
-    <span class="l-en">scanned</span><span class="l-zh">扫描</span> <span class="f">2,623</span> <span class="l-en">names</span><span class="l-zh">标的</span> · 
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-08-04T09:48:37.935521+00:00">2026-08-04 09:48</time> UTC ·
+    <span class="l-en">scanned</span><span class="l-zh">扫描</span> <span class="f">2,624</span> <span class="l-en">names</span><span class="l-zh">标的</span> · 
     Context only — five research desks fused into one read per name, never a trade instruction and never a position size.
   </footer>
 </div>

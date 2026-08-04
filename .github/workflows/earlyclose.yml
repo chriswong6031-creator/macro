@@ -421,6 +421,12 @@ jobs:
             # both sides' hashed files (next externalize_css prunes the orphan) and
             # finishes the rebase; anything else is left for the abort+retry below.
             if { git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; } && push_autostash_ok; then
+              # re-shim + re-externalize POST-rebase (P0 2026-08-04, 9a997e9da3f): the rebase
+              # can inherit RAW pages from main (a cancelled nightly's always() commit); a
+              # re-stamp-only heal re-stamps the fat inline page and pushes the poison
+              # onward. Full normalize chain here = the next lane push self-heals the tree.
+              python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+              python -m scripts.externalize_css || echo "::warning::post-rebase css externalize FAILED — inherited raw pages stay un-externalized (9a997e9da3f)"
               # re-stamp POST-rebase (ui.asset_stamp): the tree this loop PUSHES is not the tree
               # the normalizer step stamped — pages a sibling lane lands mid-render arrive here
               # un-stamped and unseen by that pass (2026-07-26 render 6260e5ac8c0 shipped

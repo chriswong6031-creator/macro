@@ -920,8 +920,8 @@
      encoding of the bucket (canonized §7 pattern) and the label is the stance —
      "Live now", "Ran — don't chase" are complete instructions on their own; the
      lighter tail sentence is the ≤14-word Tier-1 subtitle. --sgc carries the tone
-     so one rule set serves four buckets. Tones are --pv-* (direction-STABLE): they
-     never flip under html[data-lang="zh"] the way --up/--down do. */
+     so one rule set serves four buckets. Tones are --pv-* and follow the active
+     language convention: green-up/red-down in English, red-up/green-down in Chinese. */
   .nb-stage-hd { grid-column: 1 / -1; display: flex; align-items: baseline; flex-wrap: wrap;
                  gap: 3px 9px; margin: 15px 0 4px; padding: 5px 11px 5px 9px;
                  border-left: 3px solid var(--sgc, var(--muted)); border-radius: 0 8px 8px 0;
