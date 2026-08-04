@@ -23,6 +23,20 @@ does not enable the injected native-publish seam and no workflow schedules it.
 Both migration flags remain strict, mutually exclusive, and default false. This
 wave adds no activation, retention, coverage, UI/API, or Prophet authority.
 
+The next wave adds a manual-only isolated R2 conditional create/CAS/readback
+harness and one closed local review-receipt contract. Adversarial hardening now
+requires exact botocore HTTP 412 `PreconditionFailed` refusals, preserves closed
+stage/category evidence plus an ordered prefix of proven core witnesses, and
+attempts to close every owned response body; wrapper-only failures may carry an
+empty prefix and any close failure is inconclusive. The receipt also binds the
+exact reviewed source archive and dependency lock. Its
+protected Environment, dedicated bucket, and credentials are not provisioned;
+the workflow has never run; no receipt exists; and no R2 provider behavior is
+claimed. The reviewed harness invokes no List, Delete, HMAC, production
+publication, retention, UI/API, or Prophet operation; its same-process adapter
+is a reviewed-code target guard, not a security sandbox. Operator details live in
+`research/CAPITAL_STRUCTURE_SHARE_COUNT_R2_CONFORMANCE_HANDOFF.md`.
+
 ## 0. Acceptance boundary
 
 This wave is a deterministic, point-in-time evidence plane for three SEC Company
@@ -72,11 +86,18 @@ The operational v2 implementation files are:
 - `contracts/capital_structure_share_count_publish_journal.schema.json`
 - `contracts/capital_structure_share_count_publish_journal_v2.schema.json`
 - `contracts/capital_structure_share_count_retention_receipt.schema.json`
+- `contracts/capital_structure_share_count_r2_conformance_receipt.schema.json`
+- `engine/capital_structure/share_count_r2_conformance.py`
+- `scripts/probe_capital_structure_share_count_r2.py`
+- `.github/workflows/capital-share-count-r2-conformance.yml`
+- `requirements/capital-share-r2-conformance-macos-arm64-py312.lock`
 - `tests/test_capital_structure_companyfacts_authenticated_read.py`
 - `tests/test_capital_structure_share_count_materializer_model.py`
 - `tests/test_capital_structure_share_count_publication.py`
 - `tests/test_capital_structure_share_count_retention.py`
 - `tests/test_capital_structure_share_count_materializer.py`
+- `tests/test_capital_structure_share_count_r2_conformance.py`
+- `tests/test_capital_structure_share_count_r2_operator.py`
 
 ## 1. What one observation means
 
@@ -286,6 +307,36 @@ The v2 path closes the previously missing source seam without weakening it:
    publisher/compactor fence exists, and a same-bucket delete credential plus
    symmetric head HMAC would collapse the intended privilege boundary. No
    production generation is currently deleted by this lane.
+10. The manual R2 conformance harness is a separate, unprovisioned operator
+    plane. An explicit main-only dispatch with `run_conformance=true` would use
+    only five dedicated `R2_SHARE_COUNT_CONFORMANCE_*` Environment secrets and
+    one fresh disposable key under
+    `capital_structure/share_counts/conformance/v1/`. The reviewed path guards
+    an exact target and calls only HEAD, GET, and conditional PUT; the adapter is
+    not a same-process security sandbox, so dedicated isolated credentials and
+    source review are load-bearing. The target passing contract requires
+    absent-only A creation, exact HEAD/ranged-readback, exact HTTP 412
+    `PreconditionFailed` duplicate-create conflict plus
+    preservation, exact-ETag update to B, stale GET/PUT conflicts, and final
+    exact B readback. Only a botocore `ClientError` with HTTP 412 and exact
+    `Error.Code=PreconditionFailed` proves each deliberate refusal; every 409,
+    transport ambiguity, malformed result, or cleanup failure is non-passing.
+    Core non-pass receipts preserve the failed stage/category and the exact
+    ordered prefix of proven witnesses; wrapper-only failures may
+    conservatively report an empty prefix. Every returned body receives a close
+    attempt even on expired or malformed paths, and close failure is
+    inconclusive. The canonical receipt is a
+    90-day GitHub Actions review artifact only; it is never an R2/Git/public
+    artifact or production selector. No Environment/bucket/credential is
+    configured and the workflow has not run, so R2 CAS remains unproven.
+    The receipt is deliberately not registered in Synapse because no existing
+    storage locus truthfully represents an expiring GitHub review artifact and
+    it has no consumer.
+    This is a sequential trace, not a concurrent linearizability proof, and it
+    says nothing about the separately configured production publisher's hidden
+    SDK retries. Activation also requires either a single-attempt production CAS
+    client or exact candidate reconciliation for every ambiguous/retried result,
+    plus an independent concurrent-writer race proof.
 
 Outer publication v2 removes the former 512-receipt full-chain recovery cliff.
 It does not remove the upstream dependency: Company Facts source selection still
@@ -385,9 +436,12 @@ the correction chain.
    are also implemented. Production native v4 genesis/successor publication is
    unavailable. The retention production shell is a
    deliberate fail-closed release block, not an operational compactor.
-3. **Still required before activation:** independently re-audit the complete
-   v4 and schema-dispatched journal implementation, prove it against an isolated
-   live R2 object, and make an explicit operator activation decision. The
+3. **Still required before activation:** the complete v4 and schema-dispatched
+   journal implementation has received independent adversarial review, but the
+   new isolated-provider harness is only locally tested code. Provision a
+   protected Environment plus dedicated disposable bucket/credential, obtain
+   and review a real `passed` receipt, and make an explicit operator activation
+   decision. The
    selector/receipt-versus-ledger
    split, journal crash protocol, and v3/v4 old-writer fences are adversarially
    pinned, but none enables the lane. Keep
@@ -396,13 +450,17 @@ the correction chain.
    exact account/bucket scope provisioned. Native v4 genesis/successor remains
    unavailable from production and unscheduled regardless of those migration
    flags.
-   Separately prove R2 atomic
+   A passed create/CAS/readback receipt closes only that exact scoped provider
+   sequential trace; it does not establish concurrent linearizability or safe
+   production retry behavior and does not activate publication. Separately
+   prove R2 atomic
    conditional delete on an isolated object, add a shared external publish/delete
    fence and exact race test, mint a verifier-only capability that cannot write
    the signed head/receipts, add an end-to-end retention deadline, and re-audit
    the complete lane. Then provision distinct production credentials and
    deliberately enable the publication variable.
-   Retention additionally requires its own visibility and apply variables. Only
+   The current reviewed conformance path never calls Delete, so it cannot release
+   retention. Retention additionally requires its own visibility and apply variables. Only
    afterward may the team observe the first
    successful daily receipt and report
    actual retained-source coverage/freshness. Code deployment alone is not
@@ -460,4 +518,12 @@ tamper refusal, descriptor-relative symlink/root-swap/lock
 refusal, bounded retention planning and production hard-blocking, deadline
 enforcement, Git-plane
 exclusion, and explicit empty-source unavailability. They do not substitute for
-a live R2 publication probe or the first daily coverage receipt.
+a live R2 publication probe or the first daily coverage receipt. The dedicated
+conformance suites additionally pin the closed `passed|failed|inconclusive`
+receipt, redacted scope and GitHub provenance, exact fresh-key target guard,
+absent-only create, duplicate/stale conflict preservation, exact ETag update,
+bounded ranged readbacks, non-pass ambiguity handling, 90-second deadline,
+manual/main-only protected workflow, isolated-secret no-fallback rule, no
+List/Delete/HMAC/publication calls, and best-effort review-only receipt upload. These are
+local tests: no dedicated provider environment is provisioned and no live
+conformance receipt exists.
