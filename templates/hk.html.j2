@@ -455,6 +455,10 @@
   .ts-row { cursor: pointer; transition: background .12s; }
   .ts-row:hover { background: var(--panel2); }
   .ts-tk { font-weight: 800; color: var(--text); }
+  /* The ticker is a real anchor so theme.js's capture-phase Terminal intercept can
+     see it (and so middle-/cmd-click still opens a tab). It must not read as a blue
+     link inside the row — the row itself is the affordance. */
+  .ts-tk-a { color: inherit; text-decoration: none; }
   .ts-nm { font-size: 10px; color: var(--muted); }
   .ts-tbl td.az-up { color: var(--up); font-weight: 700; }
   .ts-tbl td.az-dn { color: var(--down); font-weight: 700; }
@@ -4056,8 +4060,8 @@
           {% set _lmz = r.get('momentum_z') if r.get('momentum_z') is not none else r.get('alpha') %}
           {% set _lage = r.get('days_since_signal') %}
           {% set _lt = r.get('leadership') or r.get('theme') %}
-          <tr class="ts-row" onclick="location.href='hk_lookup.html#{{ r.get('ticker','') }}'">
-            <td class="c-stock"><span class="ts-tk">{{ r.get('ticker','') }}</span>{% if _lnm %} <span class="ts-nm">{{ t(_lnm, r.get('name_zh') or _lnm) }}</span>{% endif %}</td>
+          <tr class="ts-row" data-tkr="{{ r.get('ticker','') }}">
+            <td class="c-stock"><a class="ts-tk-a" href="hk_lookup.html#{{ r.get('ticker','') }}"><span class="ts-tk">{{ r.get('ticker','') }}</span></a>{% if _lnm %} <span class="ts-nm">{{ t(_lnm, r.get('name_zh') or _lnm) }}</span>{% endif %}</td>
             {% set _lsec = r.get('sector') or '' %}
             {% set _lsz = r.get('sector_zh') %}
             <td class="muted c-sector">{% if _lsec %}{{ t(_lsec, _lsz if (_lsz and _lsz != _lsec) else tr(_lsec)) }}{% else %}—{% endif %}</td>
@@ -4074,6 +4078,33 @@
         {% endfor %}
         </tbody>
       </table></div>{# /tbl-scroll #}
+      {# ── 🏃 leaders row click → Terminal ──────────────────────────────────────
+           This table used to carry onclick="location.href='hk_lookup.html#TKR'" on
+           the <tr>. theme.js re-routes Terminal-covered analyzer links by
+           intercepting <a href> clicks in the capture phase (hk_lookup.html is in its
+           TERMINAL_PAGES) — an inline location.href assignment is invisible to it, so
+           every row click landed on the retired hk_lookup.html analyzer instead of the
+           Terminal portal. The ticker cell is now a real anchor (theme.js handles it,
+           and cmd-/middle-click keeps its native new-tab behaviour); this handler
+           covers clicks anywhere else in the row and mirrors the contract in
+           stocktable.js. Bubble phase on purpose: theme.js's capture handler calls
+           stopPropagation for anchor clicks, so the two can never both fire. #}
+      <script>
+      (function () {
+        document.addEventListener('click', function (e) {
+          if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          if (!e.target || !e.target.closest) return;
+          var tr = e.target.closest('tr.ts-row[data-tkr]');
+          if (!tr) return;
+          if (e.target.closest('a')) return;   /* anchors route themselves */
+          var tk = tr.getAttribute('data-tkr') || '';
+          if (!tk) return;
+          var T = window.MDXTerminal;
+          if (T && T.on && T.on() && T.open && T.open(tk, tr)) return;
+          location.href = 'hk_lookup.html#' + encodeURIComponent(tk);
+        });
+      })();
+      </script>
     </div>
     {% endif %}
     {% if setups.watch %}
