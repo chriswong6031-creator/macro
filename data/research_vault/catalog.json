@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T08:38:04.441639+00:00",
-  "count": 722,
+  "generated_at": "2026-08-04T08:53:07.159956+00:00",
+  "count": 723,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -126,6 +126,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-s6mrxe4aw9k-0f2639",
+      "title": "DB Research Early Morning Reid | Macro Strategy",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T07:17:20Z",
+      "summary_points": [
+        "**Geopolitical Energy Relief**: Trump’s Iran talks with Oman over Hormuz shipping ease energy shock fears, signaling potential oil flow improvement amid Brent/WTI drops to $83.77/$80.34/bbl.",
+        "**Energy & Inflation Dynamics**: Brent crude fell -4.73%, WTI -5.11%; US/Eurozone 1yr inflation swaps hit multi-month lows (1.86%/2.36%), reflecting easing inflation fears with strong growth data.",
+        "**Growth-Driven Equity Surge**: US ISM manufacturing rose to 55.6 (highest since May 2022), driving S&P 500 +1.48%, Nasdaq +2.13%, and Magnificent Seven +3.56% (best daily gain since March 31).",
+        "**Risk & Policy Focus**: Deutsche Bank highlights concentrated $-risks vs.",
+        "broader €-risks (global default monitor); Fed FOMC recap and Europe’s AI spending critical for risk assessment and policy-driven flows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
