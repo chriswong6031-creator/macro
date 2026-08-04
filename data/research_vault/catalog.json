@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T14:23:56.219297+00:00",
-  "count": 739,
+  "generated_at": "2026-08-04T14:54:01.201198+00:00",
+  "count": 740,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -50,6 +50,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-avscuti1dbn-a3cec1",
+      "title": "GS Peter Callahan Tech SPOT PLTR ON TKO",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:17:32Z",
+      "summary_points": [
+        "**Tech Sector Recovery & Catalysts**: V-shaped recovery driven by cleaner positioning, tidier valuations, and stronger fundamentals; optical names (LITE, CIEN, GLW) and hyperscalers (MSFT, AMZN) key catalysts amid overbought conditions (RSI >70) and semis vs.",
+        "hyperscalers debate.",
+        "**PLTR Earnings & AI Catalyst**: Revenue estimates up 11% (to $12.87bn), Q2 US Commercial accelerating (149% y/y), CEO AI growth focus driving +15% stock move; critical for AI sector positioning.",
+        "**SPOT Revenue Beat with Upside Risks**: Q2 Revs +15% y/y, GMs beat by 30bps, but \"early inbounds\" signals push back on upside potential; market sentiment concerns override beat.",
+        "**TKO Guidance Raise Amid WWE Timing Risk**: FY2026 guidance raised ($75M Rev, $25M EBITDA) due to World Cup demand, yet WWE results below consensus from event timing—key earnings risk factor."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-eu8avifwxhw-6f0376",
       "title": "Leidos Holdings (LDOS) 2Q26 First Take Solid quarter",
