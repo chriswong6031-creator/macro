@@ -34,101 +34,9 @@
 <title>Fund Directory — 13F Ownership Context</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=8798caae">
+<link rel="stylesheet" href="assets/css/34459dea.css?v=34459dea">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
-<style>
-  /* ---------- shared Research-Reports chrome ---------- */
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
-  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
-  a { color:var(--link); text-decoration:none; }
-  .wrap { max-width:1060px; margin:0 auto; }
-  /* unambiguous move colours (NOT tied to the zh red=up swap) */
-  .r-neg { color:#d23f3f; font-weight:600; }
-  .r-pos { color:#1f9a55; font-weight:600; }
-  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
-  html[data-theme="dark"] .r-pos { color:#3fc07e; }
-  .mut { color:var(--muted); }
-  /* tags / chips */
-  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
-          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
-  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
-  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
-  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
-  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
-  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
-  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
-  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
-  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
-  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
-  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
-  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
-  /* XG-W7 follow line — its own row, never appended to the disclaimer sentence:
-     a legal notice and a marketing CTA must not read as one thought. */
-  footer.rfoot .rf-x { display:inline-flex; align-items:center; gap:6px; margin-top:11px; padding:4px 10px;
-    border-radius:100px; border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600;
-    transition:color .16s, border-color .16s; }
-  footer.rfoot .rf-x:hover { color:var(--text); border-color:color-mix(in srgb,var(--text) 26%,transparent); }
-  
-.fx { --numf:"SF Mono",ui-monospace,"DejaVu Sans Mono",monospace; max-width:1220px; margin:0 auto; }
-.fx .num { font-family:var(--numf); font-variant-numeric:tabular-nums; }
-
-/* hero */
-.fx-hero { margin:22px auto 6px; }
-.fx-hero .eyebrow { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0 0 6px; }
-.fx-hero h1 { font-size:26px; margin:0 0 6px; }
-.fx-sub { color:var(--muted); font-size:13px; max-width:70ch; margin:0 0 12px; }
-.fx-meta { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
-.fx-chip { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; padding:5px 10px; border-radius:999px;
-           background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
-
-/* filter rail */
-.fx-filters { display:inline-flex; flex-wrap:wrap; gap:4px; padding:4px; border-radius:11px;
-              background:var(--panel2); border:1px solid var(--line); margin:14px 0 16px; }
-.fx-filters button { font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; border:1px solid transparent;
-                     background:transparent; color:var(--muted); padding:6px 13px; border-radius:8px; line-height:1.2;
-                     transition:all .14s ease; white-space:nowrap; }
-.fx-filters button:hover { color:var(--text); }
-.fx-filters button[aria-selected="true"] { background:var(--panel); color:var(--text); border-color:var(--line);
-                                            box-shadow:var(--popover-shadow); }
-
-/* grid of fund cards */
-.fx-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; margin:4px 0 30px; }
-.fx-card { display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 15px;
-           color:inherit; transition:border-color .14s ease, transform .14s ease, box-shadow .14s ease; }
-html body a.fx-card:hover { transform:translateY(-2px); border-color:color-mix(in srgb, var(--link) 45%, var(--line));
-                            box-shadow:0 14px 30px -16px color-mix(in srgb, var(--link) 40%, transparent); }
-.fx-card .fc-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
-.fx-card .fc-name { font-size:15px; font-weight:650; line-height:1.25; }
-.fx-card .fc-sub { color:var(--muted); font-size:11px; margin-top:2px; }
-.fx-card .fc-lean { font-size:12.5px; margin:10px 0 2px; color:var(--text); }
-.fx-card .fc-lean .lbl { color:var(--muted); font-size:10px; letter-spacing:.1em; text-transform:uppercase; display:block; margin-bottom:2px; }
-.fx-card .fc-stats { display:flex; gap:14px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
-.fx-card .fc-stat .k { font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
-.fx-card .fc-stat .v { font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; margin-top:2px; }
-
-.grade { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 5px;
-         border-radius:6px; font:700 12px/1 var(--numf); border:1px solid var(--line); }
-.grade.A { color:#1f9a55; border-color:#1f9a5566; background:#1f9a5514; }
-.grade.B { color:#3b82f6; border-color:#3b82f666; background:#3b82f614; }
-.grade.C { color:#c98a1a; border-color:#c98a1a66; background:#c98a1a14; }
-.grade.D { color:#d23f3f; border-color:#d23f3f66; background:#d23f3f14; }
-.grade.na { color:var(--muted); }
-html[data-theme="dark"] .grade.A { color:#3fc07e; }
-html[data-theme="dark"] .grade.C { color:#e0a93a; }
-html[data-theme="dark"] .grade.D { color:#ef6a6a; }
-
-.stylepill { font:600 9.5px/1 var(--numf); letter-spacing:.06em; text-transform:uppercase; padding:3px 7px;
-             border-radius:99px; border:1px solid var(--line); color:var(--muted); background:var(--panel2); }
-.relchip { font:600 10px/1 var(--numf); padding:3px 7px; border-radius:5px; letter-spacing:.03em; white-space:nowrap; }
-.relchip.improving { color:var(--up); background:rgba(69,184,115,.1); border:1px solid rgba(69,184,115,.35); }
-.relchip.deteriorating { color:var(--down); background:rgba(224,100,100,.12); border:1px solid rgba(224,100,100,.35); }
-.relchip.stable, .relchip.na { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
-.fx-disc { color:var(--muted); font-size:11.5px; border-left:3px solid var(--info); padding:8px 12px; margin:14px 0 8px;
-           background:var(--panel2); border-radius:0 8px 8px 0; }
-.fx-closed { opacity:.62; }
-
-</style>
 
 
 
@@ -637,7 +545,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
         </div>
         <div class="fc-stat">
           <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
-          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
         </div>
       </div>
     </a>
@@ -724,7 +632,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
     
     <a class="fx-card "
        href="fund_polen.html"
-       data-grade="D">
+       data-grade="C">
       <div class="fc-top">
         <div>
           <div class="fc-name">Polen Capital Management</div>
@@ -733,7 +641,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
             
           </div>
         </div>
-        <span class="grade D">D</span>
+        <span class="grade C">C</span>
       </div>
 
       
@@ -871,7 +779,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
         </div>
         <div class="fc-stat">
           <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
-          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
         </div>
       </div>
     </a>
@@ -919,7 +827,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
     
     <a class="fx-card "
        href="fund_rtw.html"
-       data-grade="D">
+       data-grade="C">
       <div class="fc-top">
         <div>
           <div class="fc-name">RTW Investments</div>
@@ -928,7 +836,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
             
           </div>
         </div>
-        <span class="grade D">D</span>
+        <span class="grade C">C</span>
       </div>
 
       
@@ -997,7 +905,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
     
     <a class="fx-card "
        href="fund_racapital.html"
-       data-grade="A">
+       data-grade="B">
       <div class="fc-top">
         <div>
           <div class="fc-name">RA Capital Management</div>
@@ -1006,7 +914,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
             
           </div>
         </div>
-        <span class="grade A">A</span>
+        <span class="grade B">B</span>
       </div>
 
       
@@ -1295,7 +1203,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
         </div>
         <div class="fc-stat">
           <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
-          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
+          <div class="v"><span class="relchip deteriorating"><span class="l-en">Deteriorating</span><span class="l-zh">走弱</span></span></div>
         </div>
       </div>
     </a>
@@ -1343,7 +1251,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
     
     <a class="fx-card "
        href="fund_oaktree.html"
-       data-grade="A">
+       data-grade="B">
       <div class="fc-top">
         <div>
           <div class="fc-name">Oaktree Capital Management</div>
@@ -1352,7 +1260,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
             
           </div>
         </div>
-        <span class="grade A">A</span>
+        <span class="grade B">B</span>
       </div>
 
       
@@ -1373,7 +1281,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
         </div>
         <div class="fc-stat">
           <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
-          <div class="v"><span class="relchip improving"><span class="l-en">Improving</span><span class="l-zh">走强</span></span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
         </div>
       </div>
     </a>
@@ -1382,7 +1290,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
     
     <a class="fx-card "
        href="fund_starboard.html"
-       data-grade="A">
+       data-grade="B">
       <div class="fc-top">
         <div>
           <div class="fc-name">Starboard Value</div>
@@ -1391,7 +1299,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
             
           </div>
         </div>
-        <span class="grade A">A</span>
+        <span class="grade B">B</span>
       </div>
 
       
@@ -1675,7 +1583,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
         </div>
         <div class="fc-stat">
           <div class="k"><span class="l-en">Record</span><span class="l-zh">记录</span></div>
-          <div class="v"><span class="relchip deteriorating"><span class="l-en">Deteriorating</span><span class="l-zh">走弱</span></span></div>
+          <div class="v"><span class="relchip stable"><span class="l-en">Stable</span><span class="l-zh">稳定</span></span></div>
         </div>
       </div>
     </a>
@@ -2361,7 +2269,7 @@ html[data-theme="dark"] .grade.D { color:#ef6a6a; }
 
   <div class="fx-disc"><span class="l-en">Context only — never a buy list. 13F is quarterly, ~45-day lag, long-only US-listed ≥$100M: no shorts, no cash, no non-US positions. A grade ranks trade quality within this curated cohort; it is not a recommendation.</span><span class="l-zh">仅供背景参考——绝非买入清单。13F为季度披露、约45天滞后、仅含美股多头且≥1亿美元：不含空头、现金或非美股仓位。评级衡量该精选队列内的交易质量，并非投资建议。</span></div>
 
-  <p class="sub" style="color:var(--muted);font-size:11px;margin-top:8px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-04 01:25 UTC</p>
+  <p class="sub" style="color:var(--muted);font-size:11px;margin-top:8px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-04 05:07 UTC</p>
 </div>
 
 

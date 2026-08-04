@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T04:37:48.887177+00:00",
-  "count": 710,
+  "generated_at": "2026-08-04T05:52:56.187747+00:00",
+  "count": 714,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -111,6 +111,40 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-xdeg6d6nvvi-41ea43",
+      "title": "Goldman Sachs Prime Services Monthly First Look July 2026",
+      "institution": "Prime",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:58:49Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ohvzm3kaos2-feec61",
+      "title": "Mi weekly market brief",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:52:32Z",
+      "summary_points": [
+        "**Rhine water levels threaten German industrial output**: Low water restricts freight, raises shipping costs, and slows production; 2026 droughts could amplify risks despite fiscal stimulus.",
+        "**US/China PMI expansion contrasts with Germany’s Rhine vulnerability**: US ISM PMI 53.3 and China composite PMI 53.6 signal expansion, while Germany faces critical supply chain disruption from Rhine conditions.",
+        "**Forward-looking drought risk amplifies German industrial exposure**: 2026 drought projections heighten near-term and structural risks to German manufacturing output beyond current fiscal measures."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-rrbhgy7uy8l-6388e5",
       "title": "Weekly investment commentary en us 20260803 a quiet august not for investors",
       "institution": "BlackRock",
@@ -128,6 +162,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ety1ryjntw8-7c6489",
+      "title": "market monitor",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:51:28Z",
+      "summary_points": [
+        "**Hawkish Rate Policy & Inflation Dynamics**: Persistent inflation (US core PCE 3.3% YoY, Euro CPI 2.9% YoY) drives 60% Fed hike probability in Sept; BoE/BoJ dissenters signal tightening amid sticky services/energy prices.",
+        "**Geopolitical & Energy Supply Disruption**: Middle East tensions override Strait of Hormuz crude flows, fueling energy sector dominance (S&P 500 Energy +16.5% YTD) and oil volatility.",
+        "**AI Infrastructure Bottleneck**: Microchip/data center demand outpacing supply creates pricing power for hyperscalers, critical risk for tech/semiconductor portfolios and momentum strategies.",
+        "**Quantitative Momentum Unwind**: AI capex rotation triggers de-leveraging, shifting capital from semiconductors/infrastructure to software/defensive equities, amplifying technical risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7ontnhc5q5u-5e9f69",
+      "title": "Weekly Commentary 030826 report 03Aug26 1",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T22:49:53Z",
+      "summary_points": [
+        "**NZ Unemployment Rate Rise**: Expected to climb to 5.4% as working-age population growth outpaces job creation, signaling labor market weakness and aligning with cycle highs.",
+        "**RBNZ Policy Tightening**: OCR raised to 2.5% with 25bp hikes expected in Sept/Dec, driving fixed-term mortgage rates above 5% and flattening yield curve (71bp 2-10yr swap).",
+        "**Middle East Geopolitical Risk**: Sustained US-Iran conflict volatility keeps Brent crude near $90/bbl, elevates second-round inflation risks, and pressures RBNZ/Fed policy decisions.",
+        "**Critical Data Releases**: NZ Q2 employment (Wed), US July payrolls (Fri), and Australia CPI are pivotal for NZD/USD direction and RBNZ/Fed policy trajectories."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },

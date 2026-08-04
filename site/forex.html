@@ -58,507 +58,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<style>
-:root{
-  --blue:#285FFF; --indigo:#4559DC; --r1:#E2E7FC; --r2:#B8C6FA; --r3:#8FA5F6;
-  --r4:#6888FB; --r5:#285FFF; --ink:#0B1733; --text:#344054; --muted:#6F6F6F;
-  --faint:#A0A0A0; --red:#D30B0B; --redfill:#FEB5B5; --amber:#F5AD42;
-  --green:#1a7f43; --grid:#EAECF0; --card:#FFFFFF; --bg:#F7F8FA;
-}
-*{box-sizing:border-box}
-html:not([data-lang="zh"]) .l-zh{display:none}
-html[data-lang="zh"] .l-en{display:none}
-html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:var(--blue);text-decoration:none}
-.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--red:#e06464;--r1:#1b2740;--r2:#243352}
-.grid{display:grid;gap:18px}
-.cols-2{grid-template-columns:1.05fr .95fr}.cols-3{grid-template-columns:repeat(3,1fr)}
-@media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
-.board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(328px,1fr));gap:18px}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px;transition:transform 150ms,box-shadow 150ms}
-.card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.07)}
-html[data-theme="dark"] .card:hover{box-shadow:0 6px 24px rgba(0,0,0,.28)}
-.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
-.brand .gn{color:var(--blue)}
-.lead{color:var(--muted);font-size:14px;margin:0 0 20px}
-.sub{font-size:13px;color:var(--muted)}.faint{color:var(--faint)}
-.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#eef1f6;color:var(--ink);margin:2px 4px 2px 0}
-html[data-theme="dark"] .pill{background:#222732}
-.kpis{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px}
-.kpi{font-size:13px;color:var(--muted)}.kpi b{display:block;font-size:18px;color:var(--ink);font-weight:700}
-.flag{display:inline-block;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;margin-top:10px}
-.flag.warn{background:rgba(245,173,66,.14);color:#9a6a10}
-.flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
-/* ---- section heads ---- */
-.section-h{display:flex;align-items:baseline;gap:8px;margin:28px 0 10px;flex-wrap:wrap}
-.section-h h2{margin:0;font-size:15px;font-weight:800;color:var(--ink);text-transform:none;letter-spacing:-.01em}
-.section-h .eyebrow{color:var(--blue);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
-.section-h .sh-sub{font-size:12px;color:var(--muted);margin-left:2px}
-.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
-/* ---- HERO glass card ---- */
-.hero-glass{background:rgba(255,255,255,.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--grid);border-radius:20px;padding:28px;box-shadow:0 8px 32px rgba(0,0,0,.06)}
-html[data-theme="dark"] .hero-glass{background:rgba(24,27,33,.82);box-shadow:0 8px 32px rgba(0,0,0,.28)}
-.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
-@media(max-width:900px){.hero-grid{grid-template-columns:1fr}}
-.hero-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px}
-.hero-state{font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1.1;margin:0 0 8px}
-.hero-state.tone-usd_up{color:#285FFF;text-shadow:0 0 32px rgba(40,95,255,.22),0 0 8px rgba(40,95,255,.13)}
-.hero-state.tone-usd_dn{color:#D30B0B;text-shadow:0 0 32px rgba(211,11,11,.22),0 0 8px rgba(211,11,11,.13)}
-.hero-state.tone-mixed{color:#C8A53B;text-shadow:0 0 32px rgba(200,165,59,.22),0 0 8px rgba(200,165,59,.13)}
-html[data-theme="dark"] .hero-state.tone-usd_up{text-shadow:0 0 32px rgba(40,95,255,.38),0 0 8px rgba(40,95,255,.22)}
-html[data-theme="dark"] .hero-state.tone-usd_dn{color:#e06464;text-shadow:0 0 32px rgba(224,100,100,.34),0 0 8px rgba(224,100,100,.2)}
-html[data-theme="dark"] .hero-state.tone-mixed{text-shadow:0 0 32px rgba(200,165,59,.38),0 0 8px rgba(200,165,59,.22)}
-.stance-chip{display:inline-block;padding:4px 14px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.01em;margin:0 6px 0 0}
-.stance-chip.calm{background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .stance-chip.calm{background:#222732}
-.stance-chip.watch{background:rgba(245,173,66,.16);color:#9a6a10}
-.stance-chip.alert{background:rgba(211,11,11,.13);color:var(--red);animation:pulse-alert 2.4s ease-in-out infinite}
-@keyframes pulse-alert{0%,100%{opacity:.75}50%{opacity:1}}
-@media(prefers-reduced-motion:reduce){.stance-chip.alert{animation:none}.smile-dot{animation:none!important}.smile-path{animation:none!important}}
-.hero-sentence{font-size:15px;color:var(--muted);margin:8px 0 0;line-height:1.5}
-.hero-kpi-row{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px}
-.hkpi{font-size:12.5px;color:var(--muted)}.hkpi b{display:block;font-size:17px;color:var(--ink);font-weight:700}
-.hero-badge{display:inline-block;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;margin-top:8px;margin-right:6px}
-.hero-badge.flash{background:rgba(245,173,66,.14);color:#9a6a10}
-.hero-badge.triple{background:rgba(211,11,11,.12);color:var(--red)}
-/* ---- dollar smile arc ---- */
-.smile-wrap{position:relative}
-.smile-svg{width:100%;overflow:visible}
-.smile-path{stroke-dasharray:500;stroke-dashoffset:500;animation:draw-smile 1s ease-out forwards}
-@keyframes draw-smile{to{stroke-dashoffset:0}}
-.smile-dot{animation:breathe 3.2s ease-in-out infinite}
-@keyframes breathe{0%,100%{opacity:.55;r:5}50%{opacity:1;r:6.5}}
-.smile-labels{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none}
-.smile-lbl{position:absolute;font-size:11.5px;font-weight:700;color:var(--text);line-height:1.2;white-space:nowrap}
-.smile-zone-line{font-size:13px;color:var(--muted);margin-top:8px;text-align:center}
-/* ---- sparkline SVG ---- */
-.spark-wrap{position:relative}
-.spark-svg{width:100%;display:block;overflow:visible}
-.spark-legend{display:flex;gap:12px;margin-top:4px;font-size:11px;color:var(--muted)}
-.spark-legend span{display:flex;align-items:center;gap:4px}
-.spark-legend i{display:inline-block;width:16px;height:2px;border-radius:1px;vertical-align:middle}
-/* ---- why tiles rack ---- */
-.why-rack{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px}
-@media(max-width:700px){.why-rack{grid-template-columns:repeat(2,1fr)}}
-.why-tile{background:var(--card);border:1px solid var(--grid);border-radius:12px;padding:12px 13px;cursor:default}
-.why-tile:hover .tip-pop{opacity:1;pointer-events:auto;transform:translateY(0)}
-.wt-lab{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-.wt-state{font-size:15px;font-weight:800;color:var(--ink);margin:4px 0 2px}
-.wt-state.up{color:var(--green)}.wt-state.down{color:var(--red)}.wt-state.flat{color:var(--muted)}
-.wt-q{display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--r1);color:var(--blue);font-size:10px;font-weight:800;text-align:center;line-height:16px;vertical-align:middle;margin-left:4px;cursor:help}
-/* ---- tooltip system (B1.6) ---- */
-[data-tip-en],[data-tip-zh]{position:relative}
-.tip-pop{position:absolute;z-index:99;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%) translateY(4px);background:var(--ink);color:#fff;font-size:11.5px;line-height:1.5;border-radius:8px;padding:7px 11px;min-width:180px;max-width:280px;white-space:normal;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;box-shadow:0 4px 16px rgba(0,0,0,.22)}
-[data-tip-en]:hover .tip-pop,[data-tip-en]:focus .tip-pop,
-[data-tip-zh]:hover .tip-pop,[data-tip-zh]:focus .tip-pop{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
-/* ---- §2 transmission ---- */
-.trans-table{width:100%;border-collapse:collapse}
-.trans-table td,.trans-table th{padding:8px 6px;border-bottom:1px solid var(--grid);font-size:13px;vertical-align:middle}
-.trans-table th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:2px solid var(--grid)}
-.eff-chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700}
-.eff-chip.headwind{background:rgba(211,11,11,.12);color:var(--red)}
-.eff-chip.tailwind{background:rgba(26,127,67,.12);color:var(--green)}
-.eff-chip.neutral{background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .eff-chip.neutral{background:#222732}
-.str-bar{height:8px;border-radius:4px;background:var(--grid);overflow:hidden;width:80px;display:inline-block;vertical-align:middle}
-.str-bar .fill{height:100%;border-radius:4px;background:var(--indigo)}
-.unstable-tag{font-size:10.5px;color:var(--amber);font-weight:700;margin-left:5px}
-/* strength meter */
-.seg-toggle{display:inline-flex;gap:4px}
-.seg-btn{padding:3px 11px;border-radius:999px;font-size:11.5px;font-weight:600;color:var(--muted);background:#eef1f6;border:1px solid var(--grid);cursor:pointer}
-.seg-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
-html[data-theme="dark"] .seg-btn{background:#222732}
-.smeter[hidden]{display:none}
-.srow{display:grid;grid-template-columns:72px 1fr 60px;align-items:center;gap:12px;margin:6px 0}
-.sccy{font-weight:800;color:var(--ink);font-size:13.5px}
-.sbar{position:relative;height:16px;background:#eef1f6;border-radius:8px;overflow:hidden}
-html[data-theme="dark"] .sbar{background:#222732}
-.sbar .smid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--faint);opacity:.6}
-.sbar .sfill{position:absolute;top:0;bottom:0}
-.sbar .sfill.pos{background:var(--green);border-radius:0 8px 8px 0}
-.sbar .sfill.neg{background:var(--red);border-radius:8px 0 0 8px}
-.spct{text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)}
-/* ---- §3 stress watch ---- */
-.stress-dot-strip{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}
-.stress-dot-item{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text);position:relative;cursor:default}
-.sdot{width:10px;height:10px;border-radius:50%;flex:none}
-.sdot.quiet{background:var(--faint)}
-.sdot.building{background:var(--amber);animation:pulse-dot 1.8s ease-in-out infinite}
-.sdot.active{background:var(--red);animation:pulse-dot 1.2s ease-in-out infinite}
-@keyframes pulse-dot{0%,100%{opacity:.5}50%{opacity:1}}
-@media(prefers-reduced-motion:reduce){.sdot.building,.sdot.active{animation:none}}
-.stress-card-active{border-color:var(--red)!important}
-.stress-stance{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(211,11,11,.12);color:var(--red);margin-bottom:8px}
-.cnh-chip{display:inline-block;padding:4px 11px;border-radius:8px;font-size:12.5px;font-weight:600;margin-top:8px}
-.cnh-chip.outflow{background:rgba(211,11,11,.12);color:var(--red)}
-.cnh-chip.inflow{background:rgba(26,127,67,.12);color:var(--green)}
-/* ---- §4 pairs ---- */
-.pair-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.pair-name{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
-.pair-nick{font-size:12px;color:var(--muted);margin:2px 0 6px;line-height:1.4;font-style:italic}
-.quote{font-size:22px;font-weight:800;color:var(--ink)}
-.chg.up{color:var(--green)}.chg.dn{color:var(--red)}
-.action-chip{display:inline-block;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.01em;cursor:default}
-.action-chip.higher{background:rgba(26,127,67,.13);color:var(--green)}
-.action-chip.lower{background:rgba(211,11,11,.12);color:var(--red)}
-.action-chip.flat{background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .action-chip.flat{background:#222732}
-.less-tested{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10.5px;font-weight:700;background:rgba(245,173,66,.14);color:#9a6a10;margin-left:6px}
-.pair-headline{font-size:14px;font-weight:600;color:var(--ink);margin:8px 0 6px;line-height:1.4}
-.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
-.mini-chip{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600}
-.mini-chip.carry{background:rgba(26,127,67,.10);color:var(--green)}
-.mini-chip.value-cheap{background:rgba(40,95,255,.10);color:var(--blue)}
-.mini-chip.value-rich{background:rgba(211,11,11,.10);color:var(--red)}
-.mini-chip.value-fair{background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .mini-chip.value-fair{background:#222732}
-.mini-chip.mtf{background:rgba(69,89,220,.10);color:var(--indigo)}
-.factor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
-.factor-cell{font-size:11.5px;padding:5px 7px;border-radius:8px;background:#f6f8fc;border:1px solid var(--grid)}
-html[data-theme="dark"] .factor-cell{background:#11151c}
-.factor-cell .fc-label{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px}
-.factor-cell .fc-dir{font-size:15px;font-weight:800}
-.fc-dir.for{color:var(--green)}.fc-dir.against{color:var(--red)}.fc-dir.flat{color:var(--muted)}
-.peg-note{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(245,173,66,.14);color:#9a6a10;margin-top:6px}
-.cnh-basis{margin:8px 0;padding:7px 10px;border-radius:8px;font-size:12.5px;background:#eef1f6}
-html[data-theme="dark"] .cnh-basis{background:#222732}
-.cnh-basis.s-outflow_stress{background:rgba(211,11,11,.10)}
-.cnh-basis.s-inflow{background:rgba(26,127,67,.10)}
-/* ---- §5 scoreboard & recent ---- */
-.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(305px,1fr));gap:16px;margin-top:6px}
-.sc-card{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:18px}
-.sc-name{font-size:16px;font-weight:800;color:var(--ink)}
-.sc-verdict{font-size:13px;color:var(--text);margin:4px 0 8px;line-height:1.5}
-.sc-tilt{font-size:12px;color:var(--muted);margin-top:6px}
-/* legacy scorecard support */
-.sc-met{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0}
-.sc-met .m{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
-.sc-met .m b{display:block;font-size:16px;color:var(--ink);font-weight:800;margin-top:2px}
-.sc-split{font-size:12px;margin-top:8px}
-.sc-split .sr{display:grid;grid-template-columns:54px 1fr 1fr 1fr;gap:6px;padding:3px 0;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums}
-.sc-split .sr.h{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.03em;border:none}
-.sc-pos{color:var(--green);font-weight:700}.sc-neg{color:var(--red);font-weight:700}
-/* timeline */
-.timeline{margin-top:6px}
-.tl-day{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px}
-.tl-ev{display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px solid var(--grid);font-size:13px}
-.tl-type{flex:none;min-width:62px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
-.tl-asset{flex:none;min-width:66px;color:var(--muted);font-size:12px}
-.tl-head{color:var(--text)}
-.tl-ev.is-hidden,.tl-day.is-hidden{display:none}
-.tl-more{margin-top:10px;border:1px solid var(--grid);background:var(--card);color:var(--text);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer}
-.tl-more .lbl-close{display:none}
-.tl-more.open .lbl-open{display:none}
-.tl-more.open .lbl-close{display:inline}
-.sev-high .tl-type{color:var(--red)}.sev-medium .tl-type{color:#9a6a10}.sev-info .tl-type{color:var(--muted)}
-/* tables */
-table.tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
-table.tbl th,table.tbl td{padding:7px 8px;border-bottom:1px solid var(--grid);text-align:right}
-table.tbl th:first-child,table.tbl td:first-child{text-align:left}
-table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
-/* footer */
-.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
-.honesty-note{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:8px}
-.meta-foot{font-size:11.5px;color:var(--faint);margin-top:8px}
-/* sparkline color by chg sign (EN: up=green, dn=red; ZH flipped below) */
-.sp-up{color:var(--green)}.sp-dn{color:var(--red)}
-/* zh 红涨绿跌 */
-html[data-lang="zh"] .chg.up{color:var(--red)}
-html[data-lang="zh"] .chg.dn{color:var(--green)}
-html[data-lang="zh"] .action-chip.higher{background:rgba(211,11,11,.13);color:var(--red)}
-html[data-lang="zh"] .action-chip.lower{background:rgba(26,127,67,.12);color:var(--green)}
-html[data-lang="zh"] .eff-chip.headwind{background:rgba(26,127,67,.12);color:var(--green)}
-html[data-lang="zh"] .eff-chip.tailwind{background:rgba(211,11,11,.12);color:var(--red)}
-html[data-lang="zh"] .sbar .sfill.pos{background:var(--red)}
-html[data-lang="zh"] .sbar .sfill.neg{background:var(--green)}
-html[data-lang="zh"] .sc-pos{color:var(--red)}
-html[data-lang="zh"] .sc-neg{color:var(--green)}
-html[data-lang="zh"] .wt-state.up{color:var(--red)}
-html[data-lang="zh"] .wt-state.down{color:var(--green)}
-html[data-lang="zh"] .fc-dir.for{color:var(--red)}
-html[data-lang="zh"] .fc-dir.against{color:var(--green)}
-html[data-lang="zh"] .cnh-basis.s-outflow_stress{background:rgba(26,127,67,.10)}
-html[data-lang="zh"] .cnh-basis.s-inflow{background:rgba(211,11,11,.10)}
-html[data-lang="zh"] .sp-up{color:var(--red)}
-html[data-lang="zh"] .sp-dn{color:var(--green)}
-/* tone-usd_up/dn = USD directional hero badge — direction read, flip in zh */
-html[data-lang="zh"] .hero-state.tone-usd_up{color:var(--red);text-shadow:0 0 32px rgba(211,11,11,.22),0 0 8px rgba(211,11,11,.13)}
-html[data-lang="zh"] .hero-state.tone-usd_dn{color:#285FFF;text-shadow:0 0 32px rgba(40,95,255,.22),0 0 8px rgba(40,95,255,.13)}
-html[data-theme="dark"][data-lang="zh"] .hero-state.tone-usd_up{color:var(--red);text-shadow:0 0 32px rgba(224,100,100,.34),0 0 8px rgba(224,100,100,.2)}
-html[data-theme="dark"][data-lang="zh"] .hero-state.tone-usd_dn{text-shadow:0 0 32px rgba(40,95,255,.38),0 0 8px rgba(40,95,255,.22)}
-</style>
+<link rel="stylesheet" href="assets/css/a0ee3a3a.css?v=a0ee3a3a">
 
 
 <link rel="stylesheet" href="product-nav-icons.css?v=093ad1ea">
+<link rel="stylesheet" href="assets/css/d91bcdb2.css?v=d91bcdb2">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
-<style>
-/* ambient aurora — fixed accents blended into transparent, pinned behind all
-   content (paints over the opaque body bg, under the page). Light default gets
-   the airier tint; dark gets the richer wash. */
-html body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:
-   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 9%,transparent),transparent 68%),
-   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 8%,transparent),transparent 70%),
-   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 7%,transparent),transparent 70%);}
-html[data-theme="dark"] body::before{
-  background:
-   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 20%,transparent),transparent 68%),
-   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 16%,transparent),transparent 70%),
-   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 14%,transparent),transparent 70%);}
-
-/* buttons — smooth transition + a subtle accent glow / lift on hover (additive;
-   vtm/tm only exist on the Bitcoin Vector page, harmless elsewhere) */
-.vtm-btn,.tm-btn,.navbtn,.ai-brief-link{transition:transform .16s ease,border-color .16s ease,
-  color .16s ease,background .16s ease,box-shadow .18s ease;}
-.vtm-btn:hover,.tm-btn:hover,.navbtn:hover{border-color:color-mix(in srgb,var(--blue) 58%,var(--grid));
-  box-shadow:0 4px 13px -5px color-mix(in srgb,var(--blue) 40%,transparent);}
-.ai-brief-link:hover{transform:translateY(-1px);
-  box-shadow:0 5px 14px -5px color-mix(in srgb,var(--blue) 42%,transparent);}
-
-/* top-bar link light-up — accent-tinted hover/active. Mix base uses the FULL
-   surface fallback chain --card → --panel2 → --panel (+ hardcoded final), same as
-   the glass fill below: the vector family has two palette conventions (most pages
-   define --card; commodities uses --panel2/--panel and no --card), so a bare
-   --card OR bare --panel2 base is null on some pages → invalid color-mix → dead
-   hover. The dropdown-item hover moved to the aurora-glass block below. */
-a.nav-link:hover,a.nav-link.active{background:color-mix(in srgb,var(--blue) 12%,var(--card,var(--panel2,var(--panel,#eef1f6))));}
-html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{
-  background:color-mix(in srgb,var(--blue) 20%,var(--card,var(--panel2,var(--panel,#222732))));}
-
-/* 3rd-tier fly-out (Other Assets ▸ Bitcoin Vector / Commodities) — layout only,
-   palette inherited from the host page's inline nav-dd-menu. Loaded after the
-   page <style>, so these position overrides win. */
-.nav-dd-menu .nav-sub{display:block;position:relative;}
-.nav-dd-menu .nav-sub>a.nav-sub-trig{display:flex;align-items:flex-start;}
-.nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{margin-left:auto;padding-left:12px;font-size:10px;
-  opacity:.55;flex:none;align-self:center;transition:transform .2s,color .2s,opacity .2s,filter .2s;}
-/* breathe only while the dropdown is open + hover-capable + motion allowed — never
-   on hidden carets (perf) or the mobile accordion (theme.js rotate clobber). */
-@media (hover:hover) and (prefers-reduced-motion:no-preference){
-  .nav-dd:hover .nav-sub>a.nav-sub-trig .caret-r,
-  .nav-dd:focus-within .nav-sub>a.nav-sub-trig .caret-r{animation:navCaretBreath 2.6s ease-in-out infinite;}}
-.nav-dd-menu .nav-sub:hover>a.nav-sub-trig .caret-r{animation:none;opacity:1;transform:translateX(3px);
-  color:var(--blue,var(--link,#5b9dff));
-  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 65%,transparent));}
-.nav-dd-menu .nav-sub>a.nav-sub-trig .nav-sub-text{display:block;flex:1;min-width:0;white-space:normal;}
-.nav-dd-menu .nav-sub>.nav-dd-menu{top:-7px;left:100%;z-index:95;}
-.nav-dd-menu .nav-sub::after{content:"";position:absolute;top:0;left:100%;width:12px;height:100%;}
-
-/* ---- #286 regression repair -------------------------------------------------
-   PR #286 switched the self-contained Vector-family pages (vector, commodities,
-   forex, bonds, transmission) from the old inline `.topbar` nav to
-   `<nav class="site-nav">` — but these pages don't link theme.css, so the
-   `.site-nav` menu lost ALL its base styling and rendered as a fully-expanded,
-   unstyled list ("menu looks css-broken"). Restore the base menu + controls CSS
-   here (the partial every Vector-family page already shares), themed with the
-   Vector-family vars (--card/--grid/--ink/--text/--muted/--blue) and scoped to
-   `.site-nav` so the `.topbar` pages that also include this partial keep their
-   own inline nav untouched. The fly-out + hover polish above still apply. The
-   `≤700px` mobile hamburger is injected later by theme.js and wins on order. */
-.site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px;max-width:1500px;margin-left:auto;margin-right:auto}
-/* menu on its own first row (one line); search + controls share row two — holds the bar to two rows */
-.site-nav .nav-links{grid-column:1 / -1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
-.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px;position:relative;min-width:0}
-/* global stock search field — the #286 repair restored the menu/brand/controls but
-   left the search field itself unstyled: the <input> fell back to a raw browser box
-   (inset border, square corners, ~150px wide) with the 🔎 glyph floating inline and
-   the suggestions list dropping into normal flow ("search bar looks css-broken").
-   Port theme.css's .nav-search recipe, scoped to .site-nav and themed via var
-   fallbacks that cover every palette this partial serves: theme.css pages
-   (--panel2/--line/--text/--muted/--link/--glass-*), the --card/--grid/--text/--muted
-   pages, and commodities' --panel2/--line/--tx/--mut/--blue. Loaded after each page's
-   own <style> (and after theme.css on the two pages that link it), so it wins. */
-/* CLS: pre-collapse the mobile nav at PARSE time (port of the theme.css rule —
-   this partial's pages don't all load theme.css). theme.js's hamburger sheet lands
-   ~2s in on phones; until then the expanded menu caused a 0.30 layout shift
-   (2026-07-21 audit). :not(.nav-open) yields once the flyout opens; the noscript
-   re-expand in _navlinks.html.j2 keeps the no-JS fallback reachable. */
-@media (max-width:900px){
-  .site-nav:not(.nav-open) .nav-links{display:none}
-}
-.site-nav .nav-search .mag{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.65;pointer-events:none}
-.site-nav .nav-search input{width:100%;box-sizing:border-box;padding:8px 12px 8px 32px;border-radius:10px;border:1px solid color-mix(in srgb,#416aec 30%,var(--line,var(--grid)));background:var(--panel2,var(--card));color:var(--text,var(--tx));font:inherit;font-size:13px;outline:none;box-shadow:0 0 5px 0 rgba(65,106,236,.10);transition:border-color .18s,box-shadow .25s ease}
-/* Perf: glow breathe on a pseudo animating ONLY opacity (compositor) — animating
-   border/box-shadow on the input restyled+repainted every frame (2026-07-21 mobile
-   audit; mirrors theme.css .nav-search::after). Local keyframes: vector-family
-   pages don't all load theme.css. */
-.site-nav .nav-search{position:relative}
-.site-nav .nav-search::after{content:"";position:absolute;inset:0;border-radius:10px;border:1px solid #416aec;box-shadow:0 0 0 3px rgba(65,106,236,.22),0 0 16px 2px rgba(65,106,236,.38);opacity:0;pointer-events:none;animation:vpGlowO 3.8s ease-in-out infinite}
-.site-nav .nav-search:focus-within::after{animation:none;opacity:0}
-@keyframes vpGlowO{0%,100%{opacity:0}50%{opacity:1}}
-.site-nav .nav-search input::placeholder{color:var(--muted,var(--mut))}
-.site-nav .nav-search input:focus{border-color:var(--blue,var(--link));box-shadow:none}
-@media(prefers-reduced-motion:reduce){.site-nav .nav-search::after{animation:none;opacity:0}}
-.site-nav .nav-sugg{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:80;background:var(--glass-bg,color-mix(in srgb,var(--card,var(--panel)) 92%,transparent));-webkit-backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));border:1px solid var(--glass-brd,color-mix(in srgb,var(--ink) 12%,transparent));border-radius:13px;overflow:hidden;overflow-y:auto;max-height:60vh;box-shadow:var(--glass-shadow,0 20px 54px -24px rgba(20,32,64,.34),0 10px 24px -14px rgba(20,32,64,.20));display:none}
-html[data-theme="dark"] .site-nav .nav-sugg{box-shadow:var(--glass-shadow,0 24px 64px -22px rgba(3,7,18,.74),0 10px 26px -12px rgba(3,7,18,.55))}
-.site-nav .nav-sugg.show{display:block}
-.site-nav .nav-sugg .row{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer}
-.site-nav .nav-sugg .row:hover,.site-nav .nav-sugg .row.sel{background:color-mix(in srgb,var(--blue,var(--link)) 12%,var(--panel2,var(--card)))}
-.site-nav .nav-sugg .row .mkt{flex:none;width:20px;text-align:center;font-size:13px;line-height:1}
-.site-nav .nav-sugg .row b{min-width:58px;font-size:13px;color:var(--text,var(--tx));font-weight:600}
-.site-nav .nav-sugg .row small{flex:1;color:var(--muted,var(--mut));font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.site-nav .nav-sugg .row .stt{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap}
-.site-nav .nav-sugg .empty{padding:11px 13px;color:var(--muted,var(--mut));font-size:12.5px}
-/* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
-.site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
-.site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
-.site-nav .nav-brand .brand-glyph,.topbar .nav-brand .brand-glyph{width:29px;height:29px;display:block;flex:none;filter:drop-shadow(0 2px 6px rgba(40,56,128,.34))}
-.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{font-family:var(--font-ui);font-size:13.5px;font-weight:900;letter-spacing:.07em;line-height:1;color:var(--text);white-space:nowrap}
-@media(max-width:560px){.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{display:none}}
-.site-nav a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
-.site-nav .nav-dd{position:relative;display:inline-flex}
-.site-nav .nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
-.site-nav .nav-dd:hover>a.nav-link .caret,.site-nav .nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
-.site-nav .nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
-/* The two rules above are theme.css copies, and this partial loads AFTER
-   navigation-refresh.css — at an identical (0,2,0) they silently outranked the
-   wide-menu anchors that file owns. A .nav-market-dd/.nav-mega-dd left
-   `position:relative` makes the pill the offset parent, so the mega's `right:0`
-   pinned a 1276px panel to the RIGHT EDGE OF ITS TRIGGER and hung the other
-   ~950px off the left of the viewport (that is the split-panel artifact on
-   special_situations.html and the other 58 vector-family pages). Restoring
-   static also restores navigation-refresh's `content:none`: on a static parent
-   the ::after bridge stops being a 9px strip under the pill and becomes one
-   spanning the whole header, which keeps panels alive on any downward exit.
-   Re-asserted here verbatim, under the SAME media gates as the source, so the
-   family matches a theme.css page exactly. */
-@media (min-width: 701px){
-  .site-nav .nav-mega-dd{position:static}
-  .site-nav .nav-mega-dd::after{content:none}
-}
-@media (min-width: 901px){
-  .site-nav .nav-market-dd{position:static}
-  .site-nav .nav-market-dd::after{content:none}
-}
-/* frosted glass — mirrors the --glass-* token recipe in theme.css (which this
-   self-contained family can't load), themed with the vector palette. Dual-targets
-   BOTH nav wrappers this family ships: the migrated `.site-nav` pages (forex,
-   bonds, commodities, vector, crossasset, transmission) and the legacy `.topbar`
-   pages (strategies, masterminds, spr, *_allocation …), so every page in the
-   family gets the same glass — not just the site-nav half. Loaded after each
-   page's inline `.nav-dd-menu` (0,1,0), so this (0,2,0) wins. */
-/* surface fallback chain --card → --panel2 → --panel covers BOTH vector-family
-   palette conventions: most pages (forex/vector/bonds/spr/strategies…) define
-   --card but not --panel2; commodities uses --panel2/--panel and no --card. A
-   hardcoded final keeps the glass opaque even if a page defines none. */
-.site-nav .nav-dd-menu,.topbar .nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;
-  background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#ffffff))) 90%,transparent);
-  -webkit-backdrop-filter:saturate(185%) blur(26px);backdrop-filter:saturate(185%) blur(26px);
-  border:1px solid color-mix(in srgb,var(--ink) 12%,transparent);border-radius:15px;
-  box-shadow:0 20px 54px -24px rgba(20,32,64,.34),0 12px 28px -14px rgba(20,32,64,.20),inset 0 1px 0 rgba(255,255,255,.85);
-  padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
-html[data-theme="dark"] .site-nav .nav-dd-menu,html[data-theme="dark"] .topbar .nav-dd-menu{background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#14171f))) 86%,transparent);
-  border-color:color-mix(in srgb,var(--text,var(--tx)) 14%,transparent);
-  box-shadow:0 24px 64px -22px rgba(3,7,18,.74),0 12px 28px -14px rgba(3,7,18,.55),inset 0 1px 0 color-mix(in srgb,#fff 10%,transparent)}
-/* 3rd-tier fly-out: its parent .nav-dd-menu is already a backdrop root, so the
-   nested backdrop-filter can't blur the page behind and the fill reads see-through.
-   A denser near-opaque card fill matches the 2nd tier's frosted density. This
-   selector is (0,4,0) — it beats the 2nd-tier glass rules above, including the
-   dark override (0,3,1), so one rule covers both themes. */
-.site-nav .nav-dd-menu .nav-sub>.nav-dd-menu,.topbar .nav-dd-menu .nav-sub>.nav-dd-menu{
-  background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#181b21))) 97%,transparent)}
-.site-nav .nav-dd:hover>.nav-dd-menu,.site-nav .nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
-.site-nav .nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
-.site-nav .nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted,var(--mut,#8b93a1));margin-top:2px}
-/* aurora-glass hover — mirrors theme.css so the whole site shares one menu feel:
-   a soft blue→violet wash (::before) + luminous left bar (::after) + 2px glide.
-   Excludes the Research mega cards (.nm-feat/.nav-mega-item, kept as-is). Accent
-   --blue→--link→#5b9dff so it resolves on every family palette. .active = current
-   page. Loaded after the page's inline nav, so it wins. */
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item){position:relative;isolation:isolate;transition:transform .24s cubic-bezier(.2,.7,.3,1),color .18s}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;opacity:0;transition:opacity .3s ease;
-  background:radial-gradient(130% 150% at 0% 50%,color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 18%,transparent),transparent 62%),linear-gradient(90deg,color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 10%,transparent),color-mix(in srgb,#9b8cff 7%,transparent) 70%,transparent);
-  box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent)}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::after{content:"";position:absolute;left:3px;top:50%;transform:translateY(-50%);height:0;width:2.5px;border-radius:3px;z-index:-1;opacity:0;
-  background:linear-gradient(color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 90%,#fff),#9b8cff);
-  box-shadow:0 0 8px color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 70%,transparent);transition:height .3s cubic-bezier(.2,.7,.3,1),opacity .3s ease}
-/* background:transparent neutralises each page's hardcoded inline flat hover
-   (#222732 / #eef1f6) so only the aurora wash paints (my 0,4,1 beats page 0,2,0). */
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover{transform:translateX(2px);background:transparent}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active{background:transparent}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover::before,.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active::before{opacity:1}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover::after,.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active::after{height:56%;opacity:1}
-@keyframes navCaretBreath{0%,100%{opacity:.45;transform:translateX(0)}50%{opacity:.9;transform:translateX(2px)}}
-@media(prefers-reduced-motion:reduce){.nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{animation:none}.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover{transform:none}.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::after{transition:none}}
-.site-nav .nav-ctrls{grid-column:2;grid-row:2;justify-self:end;align-self:center;display:flex;align-items:center;gap:10px}
-.site-nav .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;cursor:pointer}
-.site-nav .nav-ctrls .ai-brief-link.active{background:var(--blue);border-color:var(--blue);color:#fff}
-.site-nav .theme-switch{width:56px;height:27px;border-radius:999px;background:var(--card);border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
-.site-nav .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
-.site-nav .theme-switch .ic.sun{right:8px}
-.site-nav .theme-switch .ic.moon{left:8px}
-.site-nav .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#e8c15a;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
-.site-nav .theme-switch .knob::before{content:"🌙"}
-html[data-theme="light"] .site-nav .theme-switch .knob{transform:translateX(29px);background:#285fff}
-html[data-theme="light"] .site-nav .theme-switch .knob::before{content:"☀️"}
-.site-nav .lang-toggle{display:inline-flex;position:relative;background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:3px;flex:none;cursor:pointer}
-.site-nav .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
-html[data-lang="zh"] .site-nav .lang-toggle .pill{transform:translateX(100%)}
-.site-nav .lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
-html:not([data-lang="zh"]) .site-nav .lang-toggle .en-opt{color:#fff}
-html[data-lang="zh"] .site-nav .lang-toggle .zh-opt{color:#fff}
-
-/* One-row section menu (re-fix on current main): the 8-dropdown section menu
-   (~1418px) overflowed the 1180 content rail and wrapped onto a second row.
-   Widen the nav to the same ~1500 rail the macro family uses, on >=701px, for
-   whichever nav variant a family page renders today: the body-level .site-nav
-   (migrated vector pages, capped by an inline max-width:1180) and the legacy
-   in-wrap .topbar (strategy / misc pages, a sticky bar inside the content rail).
-   The page body keeps its 1180 rail and the <=700px hamburger (theme.js) is
-   untouched. */
-@media (min-width:701px){
-  nav.site-nav{max-width:1500px !important;}
-  .topbar{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
-    padding-left:max(40px,calc((100vw - 1500px)/2));
-    padding-right:max(40px,calc((100vw - 1500px)/2));}
-}
-
-/* toggles — subtle hover feedback (their slide animations are untouched) */
-.theme-switch,.lang-toggle{transition:border-color .18s ease,box-shadow .18s ease;}
-.theme-switch:hover,.lang-toggle:hover{border-color:color-mix(in srgb,var(--blue) 55%,var(--grid));
-  box-shadow:0 3px 11px -5px color-mix(in srgb,var(--blue) 40%,transparent);}
-
-/* clickable card / tile containers — the landing's hover light-up, but only when
-   the card is actually a link (display cards are untouched) */
-a.card,a.actitem,a.idx-alloc{transition:transform .2s cubic-bezier(.2,.7,.3,1),
-  border-color .2s ease,box-shadow .2s ease;}
-a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
-  border-color:color-mix(in srgb,var(--blue) 45%,var(--grid));
-  box-shadow:0 14px 30px -16px color-mix(in srgb,var(--blue) 40%,transparent);}
-
-/* AI Daily Brief card — these self-contained pages don't link theme.css, where
-   the .aibrief-card / .abc-* layout lives, so the 🧠 card collapsed to a raw
-   emoji + text run with no flex. Port the layout here (mirrors theme.css) so it
-   lays out; the base .card surface + the a.card:hover above still apply. */
-.aibrief-card{display:flex;align-items:center;gap:14px;text-decoration:none}
-.aibrief-card .abc-ic{font-size:30px;line-height:1;flex:none}
-.aibrief-card .abc-mid{flex:1;min-width:0}
-.aibrief-card .abc-tit{display:block;font-size:16px;font-weight:700;color:var(--ink)}
-.aibrief-card .abc-sub{display:block;margin-top:3px;color:var(--muted);font-size:13px;line-height:1.5}
-.aibrief-card .abc-go{font-size:22px;font-weight:700;color:var(--blue);flex:none}
-
-/* "?" help affordance — a circled question-mark that reveals a plain-language
-   note on hover/focus (native title, bilingual "EN · ZH" like the .tip pattern).
-   Used to lift cryptic micro-copy off the cards without losing the explanation. */
-.qm{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
-  border-radius:50%;border:1px solid var(--faint);color:var(--muted);font-size:10px;
-  font-weight:700;line-height:1;cursor:help;vertical-align:middle;margin-left:5px;
-  user-select:none;transition:border-color .15s ease,color .15s ease}
-.qm:hover,.qm:focus{border-color:var(--blue);color:var(--blue);outline:none}
-
-/* accessible keyboard focus ring */
-:where(.vtm-btn,.tm-btn,.navbtn,.ai-brief-link,a.nav-link,.nav-dd-menu a,.theme-switch,
-  .lang-toggle,a.card,a.actitem,a.idx-alloc):focus-visible{
-  outline:2px solid color-mix(in srgb,var(--blue) 70%,transparent);outline-offset:2px;}
-
-@media (prefers-reduced-motion: reduce){
-  .vtm-btn:hover,.tm-btn:hover,.navbtn:hover,.ai-brief-link:hover,
-  a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:none;}
-}
-</style>
 </head>
 <body>
 
@@ -888,10 +393,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <svg class="spark-svg" viewBox="0 0 440 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             
             
-            <polyline points="0.0,31.6 3.5,28.3 7.0,25.8 10.6,31.1 14.1,33.2 17.6,32.8 21.1,32.4 24.6,27.4 28.2,27.3 31.7,29.2 35.2,30.9 38.7,31.1 42.2,34.9 45.8,29.9 49.3,35.1 52.8,37.0 56.3,34.0 59.8,30.6 63.4,26.6 66.9,20.2 70.4,24.8 73.9,21.1 77.4,13.1 81.0,16.6 84.5,17.8 88.0,18.7 91.5,14.5 95.0,11.3 98.6,16.2 102.1,19.3 105.6,15.9 109.1,17.4 112.6,13.7 116.2,16.7 119.7,14.2 123.2,16.5 126.7,13.0 130.2,5.4 133.8,2.0 137.3,10.8 140.8,11.9 144.3,12.6 147.8,12.6 151.4,8.6 154.9,18.7 158.4,21.5 161.9,23.3 165.4,23.7 169.0,27.1 172.5,28.8 176.0,29.7 179.5,31.2 183.0,30.1 186.6,33.0 190.1,34.8 193.6,32.5 197.1,32.8 200.6,34.6 204.2,33.0 207.7,33.6 211.2,34.9 214.7,35.2 218.2,33.1 221.8,37.3 225.3,44.0 228.8,43.9 232.3,42.5 235.8,42.5 239.4,41.4 242.9,42.5 246.4,47.0 249.9,41.4 253.4,41.0 257.0,37.5 260.5,41.2 264.0,40.6 267.5,44.5 271.0,45.8 274.6,45.5 278.1,47.6 281.6,48.2 285.1,51.1 288.6,57.0 292.2,53.9 295.7,56.0 299.2,43.9 302.7,45.7 306.2,43.7 309.8,37.8 313.3,48.0 316.8,54.2 320.3,57.3 323.8,53.3 327.4,55.3 330.9,56.7 334.4,58.0 337.9,46.4 341.4,46.4 345.0,45.3 348.5,45.8 352.0,50.5 355.5,55.5 359.0,49.7 362.6,47.9 366.1,51.5 369.6,49.9 373.1,48.3 376.6,44.9 380.2,47.3 383.7,42.6 387.2,40.9 390.7,39.1 394.2,36.2 397.8,30.5 401.3,29.1 404.8,31.5 408.3,37.7 411.8,35.2 415.4,30.6 418.9,27.0 422.4,26.8 425.9,27.7 429.4,26.5 433.0,20.1 436.5,26.9 440.0,28.5" fill="none" stroke="#6F6F6F" stroke-width="1.5" opacity="0.45" stroke-linejoin="round" stroke-linecap="round"/>
+            <polyline points="0.0,28.3 3.5,25.8 7.0,31.1 10.6,33.2 14.1,32.8 17.6,32.4 21.1,27.4 24.6,27.3 28.2,29.2 31.7,30.9 35.2,31.1 38.7,34.9 42.2,29.9 45.8,35.1 49.3,37.0 52.8,34.0 56.3,30.6 59.8,26.6 63.4,20.2 66.9,24.8 70.4,21.1 73.9,13.1 77.4,16.6 81.0,17.8 84.5,18.7 88.0,14.5 91.5,11.3 95.0,16.2 98.6,19.3 102.1,15.9 105.6,17.4 109.1,13.7 112.6,16.7 116.2,14.2 119.7,16.5 123.2,13.0 126.7,5.4 130.2,2.0 133.8,10.8 137.3,11.9 140.8,12.6 144.3,12.6 147.8,8.6 151.4,18.7 154.9,21.5 158.4,23.3 161.9,23.7 165.4,27.1 169.0,28.8 172.5,29.7 176.0,31.2 179.5,30.1 183.0,33.0 186.6,34.8 190.1,32.5 193.6,32.8 197.1,34.6 200.6,33.0 204.2,33.6 207.7,34.9 211.2,35.2 214.7,33.1 218.2,37.3 221.8,44.0 225.3,43.9 228.8,42.5 232.3,42.5 235.8,41.4 239.4,42.5 242.9,47.0 246.4,41.4 249.9,41.0 253.4,37.5 257.0,41.2 260.5,40.6 264.0,44.5 267.5,45.8 271.0,45.5 274.6,47.6 278.1,48.2 281.6,51.1 285.1,57.0 288.6,53.9 292.2,56.0 295.7,43.9 299.2,45.7 302.7,43.7 306.2,37.8 309.8,48.0 313.3,54.2 316.8,57.3 320.3,53.3 323.8,55.3 327.4,56.7 330.9,58.0 334.4,46.4 337.9,46.4 341.4,45.3 345.0,45.8 348.5,50.5 352.0,55.5 355.5,49.7 359.0,47.9 362.6,51.5 366.1,49.9 369.6,48.3 373.1,44.9 376.6,47.3 380.2,42.6 383.7,40.9 387.2,39.1 390.7,36.2 394.2,30.5 397.8,29.1 401.3,31.5 404.8,37.7 408.3,35.2 411.8,30.6 415.4,27.0 418.9,26.8 422.4,27.7 425.9,26.5 429.4,20.1 433.0,26.9 436.5,28.5 440.0,27.5" fill="none" stroke="#6F6F6F" stroke-width="1.5" opacity="0.45" stroke-linejoin="round" stroke-linecap="round"/>
             
             
-            <polyline points="0.0,50.7 3.5,46.7 7.0,43.2 10.6,46.9 14.1,55.5 17.6,57.1 21.1,58.0 24.6,56.9 28.2,57.1 31.7,54.1 35.2,52.6 38.7,47.0 42.2,50.5 45.8,51.2 49.3,51.1 52.8,53.6 56.3,51.7 59.8,52.9 63.4,40.9 66.9,30.0 70.4,35.2 73.9,28.1 77.4,29.2 81.0,28.9 84.5,40.1 88.0,32.1 91.5,24.5 95.0,14.2 98.6,20.6 102.1,24.4 105.6,23.0 109.1,19.5 112.6,18.1 116.2,22.9 119.7,20.2 123.2,20.2 126.7,16.5 130.2,9.5 133.8,3.8 137.3,7.3 140.8,20.3 144.3,14.9 147.8,15.9 151.4,17.5 154.9,35.3 158.4,37.6 161.9,38.2 165.4,36.3 169.0,45.3 172.5,45.2 176.0,45.2 179.5,49.2 183.0,47.0 186.6,44.2 190.1,41.8 193.6,40.2 197.1,40.0 200.6,42.6 204.2,39.4 207.7,34.8 211.2,40.8 214.7,44.8 218.2,38.6 221.8,41.6 225.3,49.0 228.8,50.2 232.3,49.8 235.8,49.6 239.4,42.9 242.9,43.6 246.4,40.9 249.9,32.2 253.4,35.4 257.0,29.8 260.5,33.9 264.0,31.0 267.5,32.1 271.0,33.8 274.6,33.6 278.1,35.7 281.6,37.9 285.1,33.8 288.6,35.7 292.2,30.7 295.7,31.1 299.2,20.8 302.7,21.5 306.2,22.6 309.8,23.2 313.3,20.3 316.8,29.0 320.3,31.7 323.8,32.6 327.4,30.7 330.9,16.4 334.4,14.3 337.9,7.1 341.4,2.0 345.0,7.0 348.5,9.4 352.0,8.5 355.5,8.9 359.0,5.8 362.6,12.2 366.1,10.2 369.6,10.5 373.1,6.0 376.6,11.3 380.2,14.9 383.7,11.5 387.2,15.3 390.7,17.6 394.2,17.3 397.8,14.5 401.3,14.5 404.8,14.4 408.3,13.8 411.8,13.9 415.4,9.1 418.9,11.9 422.4,11.9 425.9,11.9 429.4,11.9 433.0,11.9 436.5,11.9 440.0,11.9" fill="none" stroke="#4559DC" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <polyline points="0.0,46.7 3.5,43.2 7.0,46.9 10.6,55.5 14.1,57.1 17.6,58.0 21.1,56.9 24.6,57.1 28.2,54.1 31.7,52.6 35.2,47.0 38.7,50.5 42.2,51.2 45.8,51.1 49.3,53.6 52.8,51.7 56.3,52.9 59.8,40.9 63.4,30.0 66.9,35.2 70.4,28.1 73.9,29.2 77.4,28.9 81.0,40.1 84.5,32.1 88.0,24.5 91.5,14.2 95.0,20.6 98.6,24.4 102.1,23.0 105.6,19.5 109.1,18.1 112.6,22.9 116.2,20.2 119.7,20.2 123.2,16.5 126.7,9.5 130.2,3.8 133.8,7.3 137.3,20.3 140.8,14.9 144.3,15.9 147.8,17.5 151.4,35.3 154.9,37.6 158.4,38.2 161.9,36.3 165.4,45.3 169.0,45.2 172.5,45.2 176.0,49.2 179.5,47.0 183.0,44.2 186.6,41.8 190.1,40.2 193.6,40.0 197.1,42.6 200.6,39.4 204.2,34.8 207.7,40.8 211.2,44.8 214.7,38.6 218.2,41.6 221.8,49.0 225.3,50.2 228.8,49.8 232.3,49.6 235.8,42.9 239.4,43.6 242.9,40.9 246.4,32.2 249.9,35.4 253.4,29.8 257.0,33.9 260.5,31.0 264.0,32.1 267.5,33.8 271.0,33.6 274.6,35.7 278.1,37.9 281.6,33.8 285.1,35.7 288.6,30.7 292.2,31.1 295.7,20.8 299.2,21.5 302.7,22.6 306.2,23.2 309.8,20.3 313.3,29.0 316.8,31.7 320.3,32.6 323.8,30.7 327.4,16.4 330.9,14.3 334.4,7.1 337.9,2.0 341.4,7.0 345.0,9.4 348.5,8.5 352.0,8.9 355.5,5.8 359.0,12.2 362.6,10.2 366.1,10.5 369.6,6.0 373.1,11.3 376.6,14.9 380.2,11.5 383.7,15.3 387.2,17.6 390.7,17.3 394.2,14.5 397.8,14.5 401.3,14.4 404.8,13.8 408.3,13.9 411.8,9.1 415.4,11.9 418.9,11.9 422.4,11.9 425.9,11.9 429.4,11.9 433.0,11.9 436.5,11.9 440.0,11.9" fill="none" stroke="#4559DC" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
           </svg>
           <div class="spark-legend">
             <span><i style="background:#4559DC"></i> <span class="l-en">Broad USD</span><span class="l-zh">广义美元</span></span>
@@ -963,8 +468,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
         </div>
         <div class="tip-pop">
-          <div class="l-en">Net Fed liquidity falling — tends to support the dollar. Net change: +81B / 63d.</div>
-          <div class="l-zh">美联储净流动性下降 — 往往支撑美元。净变化：+81B / 63天。</div>
+          <div class="l-en">Net Fed liquidity falling — tends to support the dollar. Net change: +100B / 63d.</div>
+          <div class="l-zh">美联储净流动性下降 — 往往支撑美元。净变化：+100B / 63天。</div>
         </div>
       </div>
     </div>
@@ -1708,7 +1213,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Cheap or rich</span><span class="l-zh">估值高低</span></div>
+        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
@@ -1721,12 +1226,12 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir for">●</div>
+        <div class="fc-label"><span class="l-en">Cheap or rich</span><span class="l-zh">估值高低</span></div>
+        <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: for. Pull on the score: +0.02.</div>
-          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.02。</div>
+          <div class="l-en">Cheap or rich: against. Pull on the score: -0.03.</div>
+          <div class="l-zh">估值高低：利空。对评分的拉动：-0.03。</div>
         </div>
       </div>
       
@@ -1747,8 +1252,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
-        <div class="fc-dir flat">−</div>
+        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
+        <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
           <div class="l-en">Sudden shocks: for. Pull on the score: +0.01.</div>
@@ -1862,10 +1367,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           
           <span class="mini-chip mtf" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">Follow the trend</span><span class="l-zh">顺势</span>
+            <span class="l-en">WAIT</span><span class="l-zh">等待</span>
             <div class="tip-pop">
-              <div class="l-en">Multi-timeframe grade: TREND-FOLLOW — Aligned uptrend across timeframes. Technical timing overlay only; not a return-checked signal.</div>
-              <div class="l-zh">多周期评级：顺势 — 各周期一致向上。仅为技术择时叠加，非经收益验证。</div>
+              <div class="l-en">Multi-timeframe grade: WAIT — Mixed / transitional. Technical timing overlay only; not a return-checked signal.</div>
+              <div class="l-zh">多周期评级：等待 — 混合 / 过渡。仅为技术择时叠加，非经收益验证。</div>
             </div>
           </span>
         
@@ -1915,8 +1420,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Chart structure: for. Pull on the score: +0.02.</div>
-          <div class="l-zh">形态结构：利多。对评分的拉动：+0.02。</div>
+          <div class="l-en">Chart structure: for. Pull on the score: +0.03.</div>
+          <div class="l-zh">形态结构：利多。对评分的拉动：+0.03。</div>
         </div>
       </div>
       
@@ -1980,8 +1485,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.01.</div>
-          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.01。</div>
+          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.00.</div>
+          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.00。</div>
         </div>
       </div>
       
@@ -2088,10 +1593,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           
           <span class="mini-chip mtf" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">WAIT</span><span class="l-zh">等待</span>
+            <span class="l-en">Caution</span><span class="l-zh">谨慎</span>
             <div class="tip-pop">
-              <div class="l-en">Multi-timeframe grade: WAIT — Mixed / transitional. Technical timing overlay only; not a return-checked signal.</div>
-              <div class="l-zh">多周期评级：等待 — 混合 / 过渡。仅为技术择时叠加，非经收益验证。</div>
+              <div class="l-en">Multi-timeframe grade: CAUTION — Unconfirmed turn within a bearish bigger picture. Technical timing overlay only; not a return-checked signal.</div>
+              <div class="l-zh">多周期评级：谨慎 — 偏空大格局内的未确认转向。仅为技术择时叠加，非经收益验证。</div>
             </div>
           </span>
         
@@ -2150,12 +1655,12 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
-        <div class="fc-dir for">●</div>
+        <div class="fc-label"><span class="l-en">Long-rate gap</span><span class="l-zh">长端利差</span></div>
+        <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Chart structure: for. Pull on the score: +0.04.</div>
-          <div class="l-zh">形态结构：利多。对评分的拉动：+0.04。</div>
+          <div class="l-en">Long-rate gap: against. Pull on the score: -0.05.</div>
+          <div class="l-zh">长端利差：利空。对评分的拉动：-0.05。</div>
         </div>
       </div>
       
@@ -2189,19 +1694,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir for">●</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Sudden shocks: for. Pull on the score: +0.02.</div>
-          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.02。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Trader crowding</span><span class="l-zh">持仓拥挤度</span></div>
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
@@ -2215,12 +1707,25 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Sudden shocks: for. Pull on the score: +0.01.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.01。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Risk mood</span><span class="l-zh">风险情绪</span></div>
         <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.01.</div>
-          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.01。</div>
+          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.00.</div>
+          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.00。</div>
         </div>
       </div>
       
@@ -2383,8 +1888,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: for. Pull on the score: -0.06.</div>
-          <div class="l-zh">突发冲击：利多。对评分的拉动：-0.06。</div>
+          <div class="l-en">Sudden shocks: for. Pull on the score: -0.05.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：-0.05。</div>
         </div>
       </div>
       
@@ -2422,8 +1927,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Its own trend: against. Pull on the score: -0.01.</div>
-          <div class="l-zh">自身趋势：利空。对评分的拉动：-0.01。</div>
+          <div class="l-en">Its own trend: against. Pull on the score: -0.02.</div>
+          <div class="l-zh">自身趋势：利空。对评分的拉动：-0.02。</div>
         </div>
       </div>
       
@@ -2631,8 +2136,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Long-rate gap</span><span class="l-zh">长端利差</span></div>
-        <div class="fc-dir against">○</div>
+        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
+        <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
           <div class="l-en">Chart structure: for. Pull on the score: +0.02.</div>
@@ -2661,8 +2166,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Risk mood: flat/neutral. Pull on the score: -0.01.</div>
-          <div class="l-zh">风险情绪：中性。对评分的拉动：-0.01。</div>
+          <div class="l-en">Risk mood: flat/neutral. Pull on the score: -0.00.</div>
+          <div class="l-zh">风险情绪：中性。对评分的拉动：-0.00。</div>
         </div>
       </div>
       
@@ -2812,8 +2317,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Long-rate gap: against. Pull on the score: -0.02.</div>
-          <div class="l-zh">长端利差：利空。对评分的拉动：-0.02。</div>
+          <div class="l-en">Long-rate gap: against. Pull on the score: -0.03.</div>
+          <div class="l-zh">长端利差：利空。对评分的拉动：-0.03。</div>
         </div>
       </div>
       
@@ -2879,19 +2384,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           <div class="l-en">Risk mood: flat/neutral. Pull on the score: -0.00.</div>
           <div class="l-zh">风险情绪：中性。对评分的拉动：-0.00。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Cheap or rich</span><span class="l-zh">估值高低</span></div>
-        <div class="fc-dir flat">−</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Cheap or rich: flat/neutral. Pull on the score: +0.00.</div>
-          <div class="l-zh">估值高低：中性。对评分的拉动：+0.00。</div>
         </div>
       </div>
       
@@ -3064,38 +2556,25 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Risk mood</span><span class="l-zh">风险情绪</span></div>
-        <div class="fc-dir flat">−</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.00.</div>
-          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.00。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir flat">−</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Sudden shocks: flat/neutral. Pull on the score: -0.00.</div>
-          <div class="l-zh">突发冲击：中性。对评分的拉动：-0.00。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Cheap or rich</span><span class="l-zh">估值高低</span></div>
         <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
           <div class="l-en">Cheap or rich: flat/neutral. Pull on the score: +0.00.</div>
           <div class="l-zh">估值高低：中性。对评分的拉动：+0.00。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Risk mood</span><span class="l-zh">风险情绪</span></div>
+        <div class="fc-dir flat">−</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.00.</div>
+          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.00。</div>
         </div>
       </div>
       
@@ -3323,7 +2802,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-dn">
-        <polyline points="0.0,2.2 2.4,2.8 4.8,3.5 7.2,2.2 9.6,2.1 12.0,2.0 14.4,2.8 16.8,2.7 19.2,3.7 21.6,3.3 24.0,5.5 26.4,6.5 28.8,5.7 31.2,6.5 33.6,6.2 36.0,6.4 38.4,7.5 40.8,8.3 43.2,8.8 45.6,9.1 48.0,9.6 50.4,11.0 52.8,11.5 55.2,9.9 57.6,10.3 60.0,9.3 62.4,10.0 64.8,10.5 67.2,11.5 69.6,10.7 72.0,11.0 74.4,11.6 76.8,11.2 79.2,12.9 81.6,12.7 84.0,12.1 86.4,13.3 88.8,13.3 91.2,14.1 93.6,13.8 96.0,13.3 98.4,12.4 100.8,14.0 103.2,14.5 105.6,13.9 108.0,14.3 110.4,14.7 112.8,16.0 115.2,16.2 117.6,17.0 120.0,17.5 122.4,17.9 124.8,19.5 127.2,18.7 129.6,18.1 132.0,18.2 134.4,19.1 136.8,20.0 139.2,22.4 141.6,23.1 144.0,21.5 146.4,18.5 148.8,16.5 151.2,18.5 153.6,15.1 156.0,16.9 158.4,16.5 160.8,19.9 163.2,19.5 165.6,18.9 168.0,16.8 170.4,27.3 172.8,26.0 175.2,27.4 177.6,27.2 180.0,27.6 182.4,28.5 184.8,29.0 187.2,29.5 189.6,30.1 192.0,30.1 194.4,30.1 196.8,28.6 199.2,28.8 201.6,27.4 204.0,28.0 206.4,28.6 208.8,28.4 211.2,29.3 213.6,29.8 216.0,34.0 218.4,33.5 220.8,33.6 223.2,33.3 225.6,30.6 228.0,31.4 230.4,31.4 232.8,31.7 235.2,29.5 237.6,28.8 240.0,29.0 242.4,29.3 244.8,29.5 247.2,29.8 249.6,30.5 252.0,30.8 254.4,29.6 256.8,29.4 259.2,29.2 261.6,30.6 264.0,30.8 266.4,30.8 268.8,31.9 271.2,30.9 273.6,30.6 276.0,31.0 278.4,31.5 280.8,31.5 283.2,31.0 285.6,30.5 288.0,31.0 290.4,31.6 292.8,31.0 295.2,31.9 297.6,33.0 300.0,32.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,2.8 2.4,3.5 4.8,2.2 7.2,2.1 9.6,2.0 12.0,2.8 14.4,2.7 16.8,3.7 19.2,3.3 21.6,5.5 24.0,6.5 26.4,5.7 28.8,6.5 31.2,6.2 33.6,6.4 36.0,7.5 38.4,8.3 40.8,8.8 43.2,9.1 45.6,9.6 48.0,11.0 50.4,11.5 52.8,9.9 55.2,10.3 57.6,9.3 60.0,10.0 62.4,10.5 64.8,11.5 67.2,10.7 69.6,11.0 72.0,11.6 74.4,11.2 76.8,12.9 79.2,12.7 81.6,12.1 84.0,13.3 86.4,13.3 88.8,14.1 91.2,13.8 93.6,13.3 96.0,12.4 98.4,14.0 100.8,14.5 103.2,13.9 105.6,14.3 108.0,14.7 110.4,16.0 112.8,16.2 115.2,17.0 117.6,17.5 120.0,17.9 122.4,19.5 124.8,18.7 127.2,18.1 129.6,18.2 132.0,19.1 134.4,20.0 136.8,22.4 139.2,23.1 141.6,21.5 144.0,18.5 146.4,16.5 148.8,18.5 151.2,15.1 153.6,16.9 156.0,16.5 158.4,19.9 160.8,19.5 163.2,18.9 165.6,16.8 168.0,27.3 170.4,26.0 172.8,27.4 175.2,27.2 177.6,27.6 180.0,28.5 182.4,29.0 184.8,29.5 187.2,30.1 189.6,30.1 192.0,30.1 194.4,28.6 196.8,28.8 199.2,27.4 201.6,28.0 204.0,28.6 206.4,28.4 208.8,29.3 211.2,29.8 213.6,34.0 216.0,33.5 218.4,33.6 220.8,33.3 223.2,30.6 225.6,31.4 228.0,31.4 230.4,31.7 232.8,29.5 235.2,28.8 237.6,29.0 240.0,29.3 242.4,29.5 244.8,29.8 247.2,30.5 249.6,30.8 252.0,29.6 254.4,29.4 256.8,29.2 259.2,30.6 261.6,30.8 264.0,30.8 266.4,31.9 268.8,30.9 271.2,30.6 273.6,31.0 276.0,31.5 278.4,31.5 280.8,31.0 283.2,30.5 285.6,31.0 288.0,31.6 290.4,31.0 292.8,31.9 295.2,33.0 297.6,32.5 300.0,32.0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -3379,12 +2858,12 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
+        <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Its own trend: for. Pull on the score: +0.11.</div>
-          <div class="l-zh">自身趋势：利多。对评分的拉动：+0.11。</div>
+          <div class="l-en">Choppiness: for. Pull on the score: +0.11.</div>
+          <div class="l-zh">波动风险：利多。对评分的拉动：+0.11。</div>
         </div>
       </div>
       
@@ -3392,12 +2871,12 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
+        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Choppiness: for. Pull on the score: +0.11.</div>
-          <div class="l-zh">波动风险：利多。对评分的拉动：+0.11。</div>
+          <div class="l-en">Its own trend: for. Pull on the score: +0.10.</div>
+          <div class="l-zh">自身趋势：利多。对评分的拉动：+0.10。</div>
         </div>
       </div>
       
@@ -3422,8 +2901,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: for. Pull on the score: +0.02.</div>
-          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.02。</div>
+          <div class="l-en">Sudden shocks: for. Pull on the score: +0.01.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.01。</div>
         </div>
       </div>
       
@@ -3489,19 +2968,19 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <span class="wt-q" tabindex="0" data-tip-en="." data-tip-zh=".">?
         <div class="tip-pop" style="min-width:230px">
           <div class="l-en">
-            Yearly gain: +0.7%
-            · Gain per unit of swing: 0.12
+            Yearly gain: +0.6%
+            · Gain per unit of swing: 0.11
             · Worst fall: -38%
             | Pre-2008: +0.7% / 0.15
-            | Post-2008: +0.7% / 0.11
+            | Post-2008: +0.6% / 0.11
             — past data only.
           </div>
           <div class="l-zh">
-            年化收益：+0.7%
-            · 单位波动收益：0.12
+            年化收益：+0.6%
+            · 单位波动收益：0.11
             · 最大回撤：-38%
             | 2008前：+0.7% / 0.15
-            | 2008后：+0.7% / 0.11
+            | 2008后：+0.6% / 0.11
             — 仅基于历史数据。
           </div>
         </div>
@@ -3561,7 +3040,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             · Gain per unit of swing: 0.12
             · Worst fall: -33%
             | Pre-2008: +1.0% / 0.20
-            | Post-2008: -0.5% / -0.04
+            | Post-2008: -0.4% / -0.04
             — past data only.
           </div>
           <div class="l-zh">
@@ -3569,7 +3048,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             · 单位波动收益：0.12
             · 最大回撤：-33%
             | 2008前：+1.0% / 0.20
-            | 2008后：-0.5% / -0.04
+            | 2008后：-0.4% / -0.04
             — 仅基于历史数据。
           </div>
         </div>
@@ -3628,19 +3107,28 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <span class="tl-head"><span class="l-en">Triple-red cleared: safe-haven function may be restoring</span><span class="l-zh">三重下跌解除：避险功能可能恢复</span></span>
       </div>
       
-    
-      <div class="tl-day">Mon Aug 03</div>
+      <div class="tl-ev sev-medium" data-tl-event="1">
+        
+        
+        
+        <span class="tl-type"><span class="l-en">Chart shape</span><span class="l-zh">形态</span></span>
+        <span class="tl-asset">GBP/USD</span>
+        
+        
+        
+        <span class="tl-head"><span class="l-en">GBP/USD: Chart shape turned constructive</span><span class="l-zh">GBP/USD：形态转好</span></span>
+      </div>
       
-      <div class="tl-ev sev-info" data-tl-event="1">
+      <div class="tl-ev sev-medium" data-tl-event="1">
         
         
         
-        <span class="tl-type"><span class="l-en">Triple-Red</span><span class="l-zh">triple_red</span></span>
-        <span class="tl-asset">Dollar</span>
+        <span class="tl-type"><span class="l-en">Chart shape</span><span class="l-zh">形态</span></span>
+        <span class="tl-asset">AUD/USD</span>
         
         
         
-        <span class="tl-head"><span class="l-en">Triple-red cleared: safe-haven function may be restoring</span><span class="l-zh">三重下跌解除：避险功能可能恢复</span></span>
+        <span class="tl-head"><span class="l-en">AUD/USD: Chart shape turned constructive</span><span class="l-zh">AUD/USD：形态转好</span></span>
       </div>
       
     
@@ -4995,7 +4483,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <span class="l-en">This page describes today's currency backdrop. It moves with markets and does not predict them; nothing here is a trade recommendation. Pair reads are measured on past data and shown for context.</span>
       <span class="l-zh">本页描述今日货币背景。随市场变化，不预测市场走势；本页内容不构成任何交易建议。货币对读数基于历史数据测算，仅作背景参考。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> Aug 04, 2026 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-08-04 02:21 UTC · <span class="l-en">Data</span><span class="l-zh">数据</span> 1996-10-30..2026-08-04
+    <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> Aug 04, 2026 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-08-04 05:47 UTC · <span class="l-en">Data</span><span class="l-zh">数据</span> 1996-10-30..2026-08-04
     </div>
   </div>
 </div>

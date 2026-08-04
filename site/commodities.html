@@ -41,7 +41,7 @@
 @font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 </style>
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Commodities — Jul 31, 2026</title>
+<title>Commodities — Aug 03, 2026</title>
 
 
 
@@ -61,701 +61,12 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
-<style>
-/* ── base vars — dark-default ──────────────────────────────── */
-:root {
-  --bg:#0a0e16; --panel:#111826; --panel2:#0e1420; --line:#1d2740; --line2:#27324e;
-  --tx:#e3e9f2; --mut:#8a97ac; --faint:#5b6b83;
-  --up:#37d07f; --dn:#ff6a6a; --amb:#f2b24d; --gold:#d6ab5c; --blue:#5d8bff; --pur:#9b8cff;
-  --ink:#e3e9f2;
-  --font-ui: Inter, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  /* glass */
-  --glass-bg: rgba(16,22,30,.55);
-  --glass-border: rgba(255,255,255,.10);
-  --glass-hi: rgba(255,255,255,.06);
-}
-/* light-theme overrides */
-[data-theme='light']:root, [data-theme='light'] {
-  --bg:#f7f8fa; --panel:#ffffff; --panel2:#f0f2f5; --line:#e1e7ef; --line2:#c8d0dc;
-  --tx:#1a2133; --mut:#5c6b80; --faint:#8b96a8;
-  --up:#1a7f43; --dn:#c0392b; --amb:#9a6800; --gold:#a07820; --blue:#285fff; --pur:#6c5ce7;
-  --ink:#1a2133;
-  --glass-bg: rgba(255,255,255,.75);
-  --glass-border: rgba(0,0,0,.10);
-  --glass-hi: rgba(255,255,255,.90);
-}
-*, *::before, *::after { box-sizing: border-box; }
-html:not([data-lang="zh"]) .l-zh { display: none; }
-html[data-lang="zh"] .l-en { display: none; }
-html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Microsoft JhengHei","Heiti SC",Inter,sans-serif; }
-body {
-  margin: 0; padding-top: 24px; background: var(--bg); color: var(--tx);
-  font: 14px/1.45 var(--font-ui);
-  -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums;
-}
-a { color: var(--blue); text-decoration: none; }
-.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; position: relative; z-index: 1; }
-/* ── typography helpers ─── */
-.kick { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
-        color: var(--faint); margin: 0 0 10px; }
-.mut { color: var(--mut); } .faint { color: var(--faint); } .up { color: var(--up); }
-.dn { color: var(--dn); } .amb { color: var(--amb); } .gold { color: var(--gold); }
-
-/* ── AURORA (ambient breathing layer) ───────────────────────── */
-body.page-commod .aurora {
-  position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
-}
-/* Base blobs — green family (watch/act default) */
-body.page-commod .aurora::before {
-  content: ""; position: absolute; top: -180px; left: 8%;
-  width: 780px; height: 540px; border-radius: 50%; filter: blur(90px);
-  background: radial-gradient(ellipse, rgba(55,208,127,.10) 0%, transparent 70%);
-  animation: au-drift-a 28s ease-in-out infinite alternate;
-}
-body.page-commod .aurora::after {
-  content: ""; position: absolute; bottom: -80px; right: -60px;
-  width: 660px; height: 560px; border-radius: 50%; filter: blur(90px);
-  background: radial-gradient(ellipse, rgba(93,139,255,.08) 0%, transparent 70%);
-  animation: au-drift-b 34s ease-in-out infinite alternate;
-}
-body.page-commod .aurora .au-a3 {
-  position: absolute; top: 42%; left: 52%; transform: translate(-50%,-50%);
-  width: 580px; height: 480px; border-radius: 50%; filter: blur(90px);
-  background: radial-gradient(ellipse, rgba(55,208,127,.06) 0%, transparent 70%);
-  animation: au-breathe 22s ease-in-out infinite;
-}
-/* State tint: amber (watch / protect) */
-body.page-commod .aurora.au-amber::before { background: radial-gradient(ellipse, rgba(242,178,77,.10) 0%, transparent 70%); }
-body.page-commod .aurora.au-amber .au-a3   { background: radial-gradient(ellipse, rgba(242,178,77,.06) 0%, transparent 70%); }
-/* State tint: red (protect gains / sell) */
-body.page-commod .aurora.au-red::before { background: radial-gradient(ellipse, rgba(255,106,106,.10) 0%, transparent 70%); }
-body.page-commod .aurora.au-red .au-a3   { background: radial-gradient(ellipse, rgba(255,106,106,.06) 0%, transparent 70%); }
-/* Light-mode — much fainter */
-[data-theme='light'] body.page-commod .aurora::before { background: radial-gradient(ellipse, rgba(55,208,127,.04) 0%, transparent 70%); }
-[data-theme='light'] body.page-commod .aurora .au-a3  { background: radial-gradient(ellipse, rgba(55,208,127,.025) 0%, transparent 70%); }
-[data-theme='light'] body.page-commod .aurora.au-amber::before { background: radial-gradient(ellipse, rgba(156,98,18,.04) 0%, transparent 70%); }
-[data-theme='light'] body.page-commod .aurora.au-amber .au-a3  { background: radial-gradient(ellipse, rgba(156,98,18,.025) 0%, transparent 70%); }
-[data-theme='light'] body.page-commod .aurora.au-red::before { background: radial-gradient(ellipse, rgba(192,57,43,.04) 0%, transparent 70%); }
-[data-theme='light'] body.page-commod .aurora.au-red .au-a3  { background: radial-gradient(ellipse, rgba(192,57,43,.025) 0%, transparent 70%); }
-@keyframes au-drift-a { from{transform:translate(0,0)} to{transform:translate(40px,30px)} }
-@keyframes au-drift-b { from{transform:translate(0,0)} to{transform:translate(-35px,25px)} }
-@keyframes au-breathe { 0%,100%{opacity:.7} 50%{opacity:1} }
-@media(prefers-reduced-motion:reduce) {
-  body.page-commod .aurora, body.page-commod .aurora::before, body.page-commod .aurora::after, body.page-commod .aurora .au-a3 { animation:none; }
-}
-
-/* ── GLASS panels ─── */
-.panel {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 28px rgba(0,0,0,.45), 0 1.5px 0 var(--glass-hi) inset;
-  padding: 16px 18px;
-  transition: box-shadow .2s, transform .2s, border-color .2s;
-}
-.panel.interactive:hover {
-  border-color: rgba(93,139,255,.30);
-  box-shadow: 0 6px 22px rgba(0,0,0,.30);
-  transform: translateY(-1px);
-}
-[data-theme='light'] .panel {
-  box-shadow: 0 4px 18px rgba(0,0,0,.10), 0 1px 0 rgba(255,255,255,.9) inset;
-}
-.panel2 { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 13px 15px; }
-.grid { display: grid; gap: 14px; }
-.g2 { grid-template-columns: 1.35fr 1fr; }
-.g2e { grid-template-columns: 1fr 1fr; }
-@media(max-width:780px){ .g2, .g2e { grid-template-columns: 1fr; } }
-
-/* ── page header ─── */
-.hd { display: flex; justify-content: space-between; align-items: flex-end;
-      margin-bottom: 18px; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
-.hd h1 { font-size: 15px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
-          color: var(--mut); margin: 0 0 2px; }
-.asof { font-size: 12px; color: var(--faint); }
-
-/* ── section header ─── */
-.sechd { display: flex; align-items: center; gap: 9px; margin: 22px 0 2px; }
-.sechd h2 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: .01em; }
-.sechd .q { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--line2);
-             color: var(--faint); font-size: 10px; display: flex; align-items: center;
-             justify-content: center; cursor: default; flex-shrink: 0; }
-.sechd .sub { font-size: 12px; color: var(--faint); margin: 0; }
-.tierlabel { font-size: 10.5px; color: var(--faint); border: 1px solid var(--line2);
-             border-radius: 5px; padding: 1px 6px; margin-left: auto; }
-
-/* ── HERO ─── */
-.hero { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; margin-bottom: 14px; }
-@media(max-width:780px){ .hero { grid-template-columns: 1fr; } }
-
-/* Big stance word — the anchor */
-.big-stance {
-  font-size: 50px; font-weight: 800; letter-spacing: -.025em;
-  line-height: .95; margin: 4px 0 10px;
-}
-.big-stance.t-watch    { color: var(--amb); text-shadow: 0 0 36px rgba(242,178,77,.35); }
-.big-stance.t-protect  { color: var(--dn);  text-shadow: 0 0 36px rgba(255,106,106,.35); }
-.big-stance.t-getready { color: var(--up);  text-shadow: 0 0 36px rgba(55,208,127,.35); }
-.big-stance.t-act      { color: var(--up);  text-shadow: 0 0 36px rgba(55,208,127,.35); }
-.big-stance.t-standaside { color: var(--mut); text-shadow: none; }
-@media(max-width:560px){ .big-stance { font-size: 36px; } }
-
-.stance-sub { font-size: 14px; color: var(--tx); max-width: 44ch; line-height: 1.55; margin-bottom: 12px; }
-.stance-tag {
-  display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
-  font-size: 12px; color: var(--faint); border: 1px solid var(--line2);
-  border-radius: 20px; padding: 4px 11px;
-}
-
-/* Quadrant tooltip text injected via data-tip-en/zh — plain words per quadrant */
-
-/* ── KPI RAIL (4 tiles under hero) ─── */
-.kpi-rail {
-  display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px;
-}
-@media(max-width:640px){ .kpi-rail { grid-template-columns: repeat(2,1fr); } }
-.kpi-tile {
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-radius: 12px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  padding: 10px 13px;
-}
-[data-theme='light'] .kpi-tile { background: rgba(255,255,255,.8); }
-.kpi-lbl { font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
-           color: var(--faint); margin-bottom: 4px; }
-.kpi-val { font-size: 18px; font-weight: 700; line-height: 1.1; }
-.kpi-sub { font-size: 11px; color: var(--mut); margin-top: 2px; }
-
-/* ── LIVE PRICE STRIP ─── */
-.live-strip {
-  display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px;
-}
-@media(max-width:640px){ .live-strip { grid-template-columns: repeat(2,1fr); } }
-.live-tile {
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  border-radius: 12px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  padding: 11px 13px; position: relative;
-}
-[data-theme='light'] .live-tile { background: rgba(255,255,255,.8); }
-.live-tile .lt-sym { font-size: 10.5px; font-weight: 700; letter-spacing: .8px;
-                     text-transform: uppercase; color: var(--mut); }
-.live-tile .lt-name { font-size: 9.5px; color: var(--faint); text-transform: uppercase;
-                      letter-spacing: .5px; margin-top: 1px; }
-.live-tile .lt-px {
-  font-size: 20px; font-weight: 700; margin-top: 7px;
-  font-variant-numeric: tabular-nums; white-space: nowrap;
-}
-.live-tile .lt-chg { font-size: 12px; font-weight: 650; margin-top: 1px; }
-.live-tile .lt-chg.up  { color: var(--up); }
-.live-tile .lt-chg.dn  { color: var(--dn); }
-/* live pill */
-.lt-pill {
-  display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px;
-  letter-spacing: .6px; color: var(--faint); border: 1px solid var(--line);
-  padding: 1px 7px; border-radius: 999px; margin-top: 4px; opacity: .55;
-  text-transform: uppercase;
-}
-.lt-pill .d { width: 5px; height: 5px; border-radius: 50%; background: var(--faint); }
-.lt-pill.on { opacity: 1; color: var(--up); border-color: rgba(55,208,127,.4); }
-.lt-pill.on .d { background: var(--up); box-shadow: 0 0 5px var(--up); }
-
-/* ── dot bars (breadth panel) ─── */
-.dotwrap { margin-top: 4px; }
-.dotrow { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
-.dotrow .lbl { width: 148px; font-size: 12px; color: var(--mut); flex-shrink: 0; }
-.dots { display: flex; gap: 3px; flex: 1; }
-.dot {
-  flex: 1; height: 15px; border-radius: 3px; background: var(--line);
-  opacity: 0; transition: opacity .3s;
-}
-.dot.vis { opacity: 1; }
-.dot.on-up  { background: var(--up); }
-.dot.on-amb { background: var(--amb); }
-.dotrow .cnt { width: 60px; text-align: right; font-size: 13px; font-weight: 600; flex-shrink: 0; }
-.diverge { margin-top: 10px; font-size: 12.5px; color: var(--amb); display: flex; gap: 7px; align-items: flex-start; }
-
-/* ── index card ─── */
-.idx-top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
-.idx-val { font-size: 26px; font-weight: 600; }
-.idx-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-.chip { font-size: 11.5px; padding: 3px 9px; border-radius: 7px;
-        border: 1px solid var(--line2); color: var(--mut); }
-.chip b { color: var(--tx); font-weight: 600; }
-
-/* ── SVG sparkline (area chart) ─── */
-.spark-wrap { height: 52px; margin-top: 12px; position: relative; overflow: hidden; }
-#idx-spark-svg { width: 100%; height: 100%; display: block; }
-
-/* ── cycle chips ─── */
-.cyc-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-.cyc-chip { font-size: 11.5px; padding: 3px 9px; border-radius: 7px;
-            border: 1px solid var(--line2); color: var(--mut); }
-.cyc-chip b { font-weight: 600; }
-.cyc-chip.ph-trough  b { color: var(--dn); }
-.cyc-chip.ph-recovery b { color: var(--up); }
-.cyc-chip.ph-downturn b { color: var(--amb); }
-.cyc-chip.ph-expansion b { color: var(--up); }
-.cyc-chip.ph-peak b { color: var(--dn); }
-
-/* ── BOTTOMS & TOPS BOARD ─── */
-.board { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
-@media(max-width:640px){ .board { grid-template-columns: 1fr; } }
-.bcol .bh { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600;
-             margin-bottom: 12px; letter-spacing: .02em; }
-.bcol .bh .ic { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center;
-                justify-content: center; font-size: 13px; flex-shrink: 0; }
-.tcol .ic { background: rgba(255,106,106,.14); color: var(--dn); }
-.bcolb .ic { background: rgba(55,208,127,.14); color: var(--up); }
-.brow { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0;
-        border-top: 1px solid var(--line); }
-.brow:first-of-type { border-top: 0; }
-.brow .nm { width: 88px; font-weight: 600; font-size: 13px; flex-shrink: 0; line-height: 1.3; }
-.brow .st { flex: 1; font-size: 12px; color: var(--mut); line-height: 1.45; }
-.rcpt-list { margin-top: 3px; font-size: 11px; color: var(--faint); }
-/* animated meter */
-.meter { width: 80px; height: 7px; border-radius: 4px; background: var(--line); overflow: hidden; flex-shrink: 0; }
-.meter i { display: block; height: 100%; border-radius: 4px; width: 0; transition: width .7s ease-out; }
-.meter.t i { background: linear-gradient(90deg, var(--amb), var(--dn)); }
-.meter.b i { background: linear-gradient(90deg, var(--blue), var(--up)); }
-.brow .sc { width: 28px; text-align: right; font-size: 12.5px; font-weight: 600; flex-shrink: 0; }
-.badge { font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 5px;
-         letter-spacing: .02em; display: inline-block; margin-top: 2px; }
-.badge.top  { background: rgba(242,178,77,.14); color: var(--amb); }
-.badge.euf  { background: rgba(255,106,106,.16); color: var(--dn); }
-.badge.wash { background: rgba(93,139,255,.16); color: var(--blue); }
-.badge.neut { background: var(--line); color: var(--faint); }
-
-/* ── HEAT GRID ─── */
-.legend { display: flex; gap: 16px; font-size: 11.5px; color: var(--faint); margin: 2px 0 12px; flex-wrap: wrap; }
-.legend span { display: flex; align-items: center; gap: 6px; }
-.sw { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-.hgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 9px; }
-.cell {
-  background: var(--panel2); border: 1px solid var(--line); border-left: 3px solid var(--line2);
-  border-radius: 8px; padding: 9px 11px; position: relative; overflow: hidden;
-  transition: transform .15s, border-color .15s, box-shadow .15s;
-  cursor: default;
-}
-.cell:hover { transform: translateY(-1px); border-color: var(--line2); box-shadow: 0 4px 14px rgba(0,0,0,.25); }
-.cell.c-up   { border-left-color: var(--up); }
-.cell.c-dn   { border-left-color: var(--dn); }
-.cell.c-wash { border-left-color: var(--blue); }
-.cell.c-flat { border-left-color: var(--line2); }
-.cell .cn { display: flex; justify-content: space-between; align-items: baseline; gap: 4px; }
-.cell .cnm { font-weight: 600; font-size: 13px; }
-.cell .cpc { font-size: 12.5px; font-weight: 600; }
-.cell .cmeta { display: flex; justify-content: space-between; margin-top: 5px;
-               font-size: 11px; color: var(--faint); }
-.cell .cst { margin-top: 4px; font-size: 11px; color: var(--mut); }
-/* 1m% bar at bottom of cell */
-.cell .chg-bar {
-  position: absolute; bottom: 0; left: 0; height: 3px; border-radius: 0 0 0 0;
-  max-width: 100%; transition: width .7s ease-out;
-}
-.cell.c-up .chg-bar, .cell.c-flat.pos .chg-bar  { background: var(--up); }
-.cell.c-dn .chg-bar, .cell.c-wash .chg-bar, .cell.c-flat.neg .chg-bar { background: var(--dn); }
-.grp { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
-       color: var(--faint); margin: 16px 0 8px; }
-
-/* ── DETAIL TABS ─── */
-.dtabs { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto; margin: 14px 0 0;
-         scrollbar-width: none; -ms-overflow-style: none; }
-.dtabs::-webkit-scrollbar { display: none; }
-.dtab {
-  font: inherit; font-size: 13px; font-weight: 600;
-  background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border); border-radius: 999px; padding: 6px 15px;
-  color: var(--mut); cursor: pointer; transition: border-color .1s, color .1s, background .1s;
-  white-space: nowrap; flex-shrink: 0;
-}
-.dtab:hover { border-color: var(--blue); color: var(--tx); }
-.dtab.active { border-color: var(--blue); color: var(--blue); background: var(--panel); }
-.dpanel { margin-top: 14px; }
-.dpanel[hidden] { display: none; }
-.det { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media(max-width:640px){ .det { grid-template-columns: 1fr; } }
-
-/* MTF table — plain headers */
-.mtf { width: 100%; border-collapse: collapse; font-size: 12px; }
-.mtf th { text-align: left; color: var(--faint); font-weight: 500; padding: 5px 6px;
-          border-bottom: 1px solid var(--line); }
-.mtf td { padding: 5px 6px; border-bottom: 1px solid var(--line); }
-.mtf tr:last-child td { border-bottom: 0; }
-.pill { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; white-space: nowrap; }
-.pill.u { background: rgba(55,208,127,.14); color: var(--up); }
-.pill.d { background: rgba(255,106,106,.14); color: var(--dn); }
-.pill.n { background: var(--line); color: var(--mut); }
-
-/* cycle clock arc */
-.clock-wrap { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
-.arc { width: 70px; height: 70px; border-radius: 50%; border: 6px solid var(--line);
-       border-top-color: var(--dn); border-right-color: var(--dn); flex-shrink: 0; }
-.arc.arc-up   { border-top-color: var(--up); border-right-color: var(--up); }
-.arc.arc-amb  { border-top-color: var(--amb); border-right-color: var(--amb); }
-
-/* conviction badge */
-.conv-badge { font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 8px;
-              color: #fff; display: inline-block; }
-.conv-sbuy { background: #0f8a4f; } .conv-buy { background: #3aa66f; }
-.conv-hold { background: #8a93a1; } .conv-sell { background: #e0744b; }
-.conv-ssell { background: var(--dn); }
-/* conviction lean pill */
-.lean-pill { font-size: 11.5px; padding: 3px 10px; border-radius: 7px; font-weight: 600; }
-.lean-pos  { background: rgba(55,208,127,.14); color: var(--up); }
-.lean-neg  { background: rgba(255,106,106,.14); color: var(--dn); }
-.lean-neut { background: var(--line); color: var(--mut); }
-
-/* shared verdict */
-.verdict { display: inline-block; padding: 3px 9px; border-radius: 7px; font-size: 11px;
-           font-weight: 700; white-space: nowrap; }
-.v-conf { background: rgba(55,208,127,.14); color: var(--up); }
-.v-dir  { background: rgba(242,178,77,.14); color: var(--amb); }
-.v-inv  { background: rgba(255,106,106,.14); color: var(--dn); }
-.v-ctx  { background: var(--line); color: var(--faint); }
-
-/* ── CATALYSTS ─── */
-.cat-list { display: flex; flex-direction: column; gap: 0; }
-.cat-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px;
-           border-bottom: 1px solid var(--line); flex-wrap: wrap; }
-.cat-row:last-child { border: none; }
-.cat-date { font-weight: 700; color: var(--tx); font-size: 13px; min-width: 128px; }
-.cat-cd { font-size: 11px; color: var(--faint); margin-left: 4px; font-weight: 600; }
-.cat-type { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 7px; }
-.ct-FOMC    { background: rgba(242,178,77,.14); color: var(--amb); }
-.ct-OPEC    { background: rgba(255,106,106,.14); color: var(--dn); }
-.ct-EIA_WPSR{ background: rgba(93,139,255,.14); color: var(--blue); }
-.cat-label { flex: 1; font-size: 13.5px; color: var(--tx); min-width: 160px; }
-.disclaimer { margin-top: 12px; font-size: 12px; color: var(--faint); line-height: 1.6; font-style: italic; }
-
-/* ── ALERT TIMELINE ─── */
-.tl-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
-.tlf { padding: 6px 14px; border-radius: 9px; background: var(--line); color: var(--mut);
-       font-weight: 700; font-size: 13px; cursor: pointer; border: none; font: inherit; }
-.tlf.active { background: var(--blue); color: #fff; }
-.tl-day { margin-bottom: 18px; }
-.tl-date { font-size: 12px; font-weight: 700; color: var(--faint); text-transform: uppercase;
-           letter-spacing: .05em; margin: 0 0 10px; }
-.tl-item { border-left: 2px solid var(--line); padding: 0 0 0 18px; margin-left: 6px; position: relative; }
-.tl-item summary { display: flex; align-items: center; gap: 10px; padding: 9px 0;
-                   cursor: pointer; list-style: none; flex-wrap: wrap; }
-.tl-item summary::-webkit-details-marker { display: none; }
-.tl-node { position: absolute; left: -7px; top: 15px; width: 12px; height: 12px;
-           border-radius: 50%; background: var(--faint); border: 2px solid var(--panel); }
-.tl-node.n-high   { background: var(--dn); }
-.tl-node.n-medium { background: var(--blue); }
-.tl-node.n-info   { background: var(--mut); }
-.tl-chip { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 7px;
-           background: var(--line); color: var(--mut); }
-.tl-chip.f-shock  { background: rgba(255,106,106,.14); color: var(--dn); }
-.tl-chip.f-risk   { background: rgba(242,178,77,.14); color: var(--amb); }
-.tl-chip.f-driver { background: rgba(93,139,255,.14); color: var(--blue); }
-.tl-chip.f-alloc  { background: rgba(155,140,255,.14); color: var(--pur); }
-.tl-asset { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 7px;
-            background: var(--line2); color: var(--tx); }
-.tl-head { font-weight: 600; color: var(--tx); font-size: 14px; flex: 1; min-width: 200px; }
-.tl-time { font-size: 12px; color: var(--faint); font-weight: 600; }
-.tl-detail { padding: 2px 0 12px; font-size: 13px; color: var(--mut); line-height: 1.6; }
-.tl-item[hidden] { display: none; }
-.tl-news { margin-top: 8px; padding: 8px 12px; background: var(--panel2);
-           border-radius: 9px; border: 1px dashed var(--line); }
-.tl-news-h { font-size: 12px; font-weight: 700; color: var(--tx); margin-bottom: 4px; }
-.tl-news-item { display: block; font-size: 12.5px; color: var(--mut); padding: 2px 0; }
-.tl-more { display: flex; justify-content: center; margin-top: 12px; }
-.tl-more button { border: 1px solid var(--line); background: var(--panel2); color: var(--tx);
-                  border-radius: 9px; padding: 8px 14px; font: inherit; font-size: 13px;
-                  font-weight: 700; cursor: pointer; }
-.tl-more button:hover { border-color: var(--blue); color: var(--blue); }
-.tl-more button .tl-hide { display: none; }
-.tl-more button.is-expanded .tl-show { display: none; }
-.tl-more button.is-expanded .tl-hide { display: inline; }
-/* foot */
-.foot { margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--line);
-        font-size: 12px; color: var(--faint); line-height: 1.7; }
-/* nav / site utilities */
-html:not([data-lang="zh"]) .l-zh { display: none; }
-html[data-lang="zh"] .l-en { display: none; }
-.section-title { font-size: 13px; font-weight: 700; color: var(--mut); text-transform: uppercase;
-                 letter-spacing: .05em; margin: 30px 4px 12px; }
-/* receipt popovers */
-.rcpt-toggle { font-size: 11px; color: var(--blue); cursor: pointer; margin-top: 3px;
-               display: inline-block; border: none; background: none; padding: 0; font: inherit; }
-/* ── zh 红涨绿跌 (operator ruling 2026-07-21) ── */
-/* pill.u=up, lean-pos=positive, v-conf=confirmed, bcolb .ic=bullish column icon = direction reads */
-html[data-lang="zh"] .pill.u  { background:rgba(211,11,11,.10); }
-html[data-lang="zh"] .lean-pos { background:rgba(211,11,11,.10); }
-html[data-lang="zh"] .v-conf  { background:rgba(211,11,11,.10); }
-html[data-lang="zh"] .bcolb .ic { background:rgba(211,11,11,.10); }
-</style>
+<link rel="stylesheet" href="assets/css/b7a0b6e6.css?v=b7a0b6e6">
 
 
 <link rel="stylesheet" href="product-nav-icons.css?v=093ad1ea">
+<link rel="stylesheet" href="assets/css/d91bcdb2.css?v=d91bcdb2">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
-<style>
-/* ambient aurora — fixed accents blended into transparent, pinned behind all
-   content (paints over the opaque body bg, under the page). Light default gets
-   the airier tint; dark gets the richer wash. */
-html body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:
-   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 9%,transparent),transparent 68%),
-   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 8%,transparent),transparent 70%),
-   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 7%,transparent),transparent 70%);}
-html[data-theme="dark"] body::before{
-  background:
-   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 20%,transparent),transparent 68%),
-   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 16%,transparent),transparent 70%),
-   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 14%,transparent),transparent 70%);}
-
-/* buttons — smooth transition + a subtle accent glow / lift on hover (additive;
-   vtm/tm only exist on the Bitcoin Vector page, harmless elsewhere) */
-.vtm-btn,.tm-btn,.navbtn,.ai-brief-link{transition:transform .16s ease,border-color .16s ease,
-  color .16s ease,background .16s ease,box-shadow .18s ease;}
-.vtm-btn:hover,.tm-btn:hover,.navbtn:hover{border-color:color-mix(in srgb,var(--blue) 58%,var(--grid));
-  box-shadow:0 4px 13px -5px color-mix(in srgb,var(--blue) 40%,transparent);}
-.ai-brief-link:hover{transform:translateY(-1px);
-  box-shadow:0 5px 14px -5px color-mix(in srgb,var(--blue) 42%,transparent);}
-
-/* top-bar link light-up — accent-tinted hover/active. Mix base uses the FULL
-   surface fallback chain --card → --panel2 → --panel (+ hardcoded final), same as
-   the glass fill below: the vector family has two palette conventions (most pages
-   define --card; commodities uses --panel2/--panel and no --card), so a bare
-   --card OR bare --panel2 base is null on some pages → invalid color-mix → dead
-   hover. The dropdown-item hover moved to the aurora-glass block below. */
-a.nav-link:hover,a.nav-link.active{background:color-mix(in srgb,var(--blue) 12%,var(--card,var(--panel2,var(--panel,#eef1f6))));}
-html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{
-  background:color-mix(in srgb,var(--blue) 20%,var(--card,var(--panel2,var(--panel,#222732))));}
-
-/* 3rd-tier fly-out (Other Assets ▸ Bitcoin Vector / Commodities) — layout only,
-   palette inherited from the host page's inline nav-dd-menu. Loaded after the
-   page <style>, so these position overrides win. */
-.nav-dd-menu .nav-sub{display:block;position:relative;}
-.nav-dd-menu .nav-sub>a.nav-sub-trig{display:flex;align-items:flex-start;}
-.nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{margin-left:auto;padding-left:12px;font-size:10px;
-  opacity:.55;flex:none;align-self:center;transition:transform .2s,color .2s,opacity .2s,filter .2s;}
-/* breathe only while the dropdown is open + hover-capable + motion allowed — never
-   on hidden carets (perf) or the mobile accordion (theme.js rotate clobber). */
-@media (hover:hover) and (prefers-reduced-motion:no-preference){
-  .nav-dd:hover .nav-sub>a.nav-sub-trig .caret-r,
-  .nav-dd:focus-within .nav-sub>a.nav-sub-trig .caret-r{animation:navCaretBreath 2.6s ease-in-out infinite;}}
-.nav-dd-menu .nav-sub:hover>a.nav-sub-trig .caret-r{animation:none;opacity:1;transform:translateX(3px);
-  color:var(--blue,var(--link,#5b9dff));
-  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 65%,transparent));}
-.nav-dd-menu .nav-sub>a.nav-sub-trig .nav-sub-text{display:block;flex:1;min-width:0;white-space:normal;}
-.nav-dd-menu .nav-sub>.nav-dd-menu{top:-7px;left:100%;z-index:95;}
-.nav-dd-menu .nav-sub::after{content:"";position:absolute;top:0;left:100%;width:12px;height:100%;}
-
-/* ---- #286 regression repair -------------------------------------------------
-   PR #286 switched the self-contained Vector-family pages (vector, commodities,
-   forex, bonds, transmission) from the old inline `.topbar` nav to
-   `<nav class="site-nav">` — but these pages don't link theme.css, so the
-   `.site-nav` menu lost ALL its base styling and rendered as a fully-expanded,
-   unstyled list ("menu looks css-broken"). Restore the base menu + controls CSS
-   here (the partial every Vector-family page already shares), themed with the
-   Vector-family vars (--card/--grid/--ink/--text/--muted/--blue) and scoped to
-   `.site-nav` so the `.topbar` pages that also include this partial keep their
-   own inline nav untouched. The fly-out + hover polish above still apply. The
-   `≤700px` mobile hamburger is injected later by theme.js and wins on order. */
-.site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px;max-width:1500px;margin-left:auto;margin-right:auto}
-/* menu on its own first row (one line); search + controls share row two — holds the bar to two rows */
-.site-nav .nav-links{grid-column:1 / -1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
-.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px;position:relative;min-width:0}
-/* global stock search field — the #286 repair restored the menu/brand/controls but
-   left the search field itself unstyled: the <input> fell back to a raw browser box
-   (inset border, square corners, ~150px wide) with the 🔎 glyph floating inline and
-   the suggestions list dropping into normal flow ("search bar looks css-broken").
-   Port theme.css's .nav-search recipe, scoped to .site-nav and themed via var
-   fallbacks that cover every palette this partial serves: theme.css pages
-   (--panel2/--line/--text/--muted/--link/--glass-*), the --card/--grid/--text/--muted
-   pages, and commodities' --panel2/--line/--tx/--mut/--blue. Loaded after each page's
-   own <style> (and after theme.css on the two pages that link it), so it wins. */
-/* CLS: pre-collapse the mobile nav at PARSE time (port of the theme.css rule —
-   this partial's pages don't all load theme.css). theme.js's hamburger sheet lands
-   ~2s in on phones; until then the expanded menu caused a 0.30 layout shift
-   (2026-07-21 audit). :not(.nav-open) yields once the flyout opens; the noscript
-   re-expand in _navlinks.html.j2 keeps the no-JS fallback reachable. */
-@media (max-width:900px){
-  .site-nav:not(.nav-open) .nav-links{display:none}
-}
-.site-nav .nav-search .mag{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.65;pointer-events:none}
-.site-nav .nav-search input{width:100%;box-sizing:border-box;padding:8px 12px 8px 32px;border-radius:10px;border:1px solid color-mix(in srgb,#416aec 30%,var(--line,var(--grid)));background:var(--panel2,var(--card));color:var(--text,var(--tx));font:inherit;font-size:13px;outline:none;box-shadow:0 0 5px 0 rgba(65,106,236,.10);transition:border-color .18s,box-shadow .25s ease}
-/* Perf: glow breathe on a pseudo animating ONLY opacity (compositor) — animating
-   border/box-shadow on the input restyled+repainted every frame (2026-07-21 mobile
-   audit; mirrors theme.css .nav-search::after). Local keyframes: vector-family
-   pages don't all load theme.css. */
-.site-nav .nav-search{position:relative}
-.site-nav .nav-search::after{content:"";position:absolute;inset:0;border-radius:10px;border:1px solid #416aec;box-shadow:0 0 0 3px rgba(65,106,236,.22),0 0 16px 2px rgba(65,106,236,.38);opacity:0;pointer-events:none;animation:vpGlowO 3.8s ease-in-out infinite}
-.site-nav .nav-search:focus-within::after{animation:none;opacity:0}
-@keyframes vpGlowO{0%,100%{opacity:0}50%{opacity:1}}
-.site-nav .nav-search input::placeholder{color:var(--muted,var(--mut))}
-.site-nav .nav-search input:focus{border-color:var(--blue,var(--link));box-shadow:none}
-@media(prefers-reduced-motion:reduce){.site-nav .nav-search::after{animation:none;opacity:0}}
-.site-nav .nav-sugg{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:80;background:var(--glass-bg,color-mix(in srgb,var(--card,var(--panel)) 92%,transparent));-webkit-backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));border:1px solid var(--glass-brd,color-mix(in srgb,var(--ink) 12%,transparent));border-radius:13px;overflow:hidden;overflow-y:auto;max-height:60vh;box-shadow:var(--glass-shadow,0 20px 54px -24px rgba(20,32,64,.34),0 10px 24px -14px rgba(20,32,64,.20));display:none}
-html[data-theme="dark"] .site-nav .nav-sugg{box-shadow:var(--glass-shadow,0 24px 64px -22px rgba(3,7,18,.74),0 10px 26px -12px rgba(3,7,18,.55))}
-.site-nav .nav-sugg.show{display:block}
-.site-nav .nav-sugg .row{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer}
-.site-nav .nav-sugg .row:hover,.site-nav .nav-sugg .row.sel{background:color-mix(in srgb,var(--blue,var(--link)) 12%,var(--panel2,var(--card)))}
-.site-nav .nav-sugg .row .mkt{flex:none;width:20px;text-align:center;font-size:13px;line-height:1}
-.site-nav .nav-sugg .row b{min-width:58px;font-size:13px;color:var(--text,var(--tx));font-weight:600}
-.site-nav .nav-sugg .row small{flex:1;color:var(--muted,var(--mut));font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.site-nav .nav-sugg .row .stt{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap}
-.site-nav .nav-sugg .empty{padding:11px 13px;color:var(--muted,var(--mut));font-size:12.5px}
-/* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
-.site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
-.site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
-.site-nav .nav-brand .brand-glyph,.topbar .nav-brand .brand-glyph{width:29px;height:29px;display:block;flex:none;filter:drop-shadow(0 2px 6px rgba(40,56,128,.34))}
-.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{font-family:var(--font-ui);font-size:13.5px;font-weight:900;letter-spacing:.07em;line-height:1;color:var(--text);white-space:nowrap}
-@media(max-width:560px){.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{display:none}}
-.site-nav a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
-.site-nav .nav-dd{position:relative;display:inline-flex}
-.site-nav .nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
-.site-nav .nav-dd:hover>a.nav-link .caret,.site-nav .nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
-.site-nav .nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
-/* The two rules above are theme.css copies, and this partial loads AFTER
-   navigation-refresh.css — at an identical (0,2,0) they silently outranked the
-   wide-menu anchors that file owns. A .nav-market-dd/.nav-mega-dd left
-   `position:relative` makes the pill the offset parent, so the mega's `right:0`
-   pinned a 1276px panel to the RIGHT EDGE OF ITS TRIGGER and hung the other
-   ~950px off the left of the viewport (that is the split-panel artifact on
-   special_situations.html and the other 58 vector-family pages). Restoring
-   static also restores navigation-refresh's `content:none`: on a static parent
-   the ::after bridge stops being a 9px strip under the pill and becomes one
-   spanning the whole header, which keeps panels alive on any downward exit.
-   Re-asserted here verbatim, under the SAME media gates as the source, so the
-   family matches a theme.css page exactly. */
-@media (min-width: 701px){
-  .site-nav .nav-mega-dd{position:static}
-  .site-nav .nav-mega-dd::after{content:none}
-}
-@media (min-width: 901px){
-  .site-nav .nav-market-dd{position:static}
-  .site-nav .nav-market-dd::after{content:none}
-}
-/* frosted glass — mirrors the --glass-* token recipe in theme.css (which this
-   self-contained family can't load), themed with the vector palette. Dual-targets
-   BOTH nav wrappers this family ships: the migrated `.site-nav` pages (forex,
-   bonds, commodities, vector, crossasset, transmission) and the legacy `.topbar`
-   pages (strategies, masterminds, spr, *_allocation …), so every page in the
-   family gets the same glass — not just the site-nav half. Loaded after each
-   page's inline `.nav-dd-menu` (0,1,0), so this (0,2,0) wins. */
-/* surface fallback chain --card → --panel2 → --panel covers BOTH vector-family
-   palette conventions: most pages (forex/vector/bonds/spr/strategies…) define
-   --card but not --panel2; commodities uses --panel2/--panel and no --card. A
-   hardcoded final keeps the glass opaque even if a page defines none. */
-.site-nav .nav-dd-menu,.topbar .nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;
-  background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#ffffff))) 90%,transparent);
-  -webkit-backdrop-filter:saturate(185%) blur(26px);backdrop-filter:saturate(185%) blur(26px);
-  border:1px solid color-mix(in srgb,var(--ink) 12%,transparent);border-radius:15px;
-  box-shadow:0 20px 54px -24px rgba(20,32,64,.34),0 12px 28px -14px rgba(20,32,64,.20),inset 0 1px 0 rgba(255,255,255,.85);
-  padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
-html[data-theme="dark"] .site-nav .nav-dd-menu,html[data-theme="dark"] .topbar .nav-dd-menu{background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#14171f))) 86%,transparent);
-  border-color:color-mix(in srgb,var(--text,var(--tx)) 14%,transparent);
-  box-shadow:0 24px 64px -22px rgba(3,7,18,.74),0 12px 28px -14px rgba(3,7,18,.55),inset 0 1px 0 color-mix(in srgb,#fff 10%,transparent)}
-/* 3rd-tier fly-out: its parent .nav-dd-menu is already a backdrop root, so the
-   nested backdrop-filter can't blur the page behind and the fill reads see-through.
-   A denser near-opaque card fill matches the 2nd tier's frosted density. This
-   selector is (0,4,0) — it beats the 2nd-tier glass rules above, including the
-   dark override (0,3,1), so one rule covers both themes. */
-.site-nav .nav-dd-menu .nav-sub>.nav-dd-menu,.topbar .nav-dd-menu .nav-sub>.nav-dd-menu{
-  background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#181b21))) 97%,transparent)}
-.site-nav .nav-dd:hover>.nav-dd-menu,.site-nav .nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
-.site-nav .nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
-.site-nav .nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted,var(--mut,#8b93a1));margin-top:2px}
-/* aurora-glass hover — mirrors theme.css so the whole site shares one menu feel:
-   a soft blue→violet wash (::before) + luminous left bar (::after) + 2px glide.
-   Excludes the Research mega cards (.nm-feat/.nav-mega-item, kept as-is). Accent
-   --blue→--link→#5b9dff so it resolves on every family palette. .active = current
-   page. Loaded after the page's inline nav, so it wins. */
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item){position:relative;isolation:isolate;transition:transform .24s cubic-bezier(.2,.7,.3,1),color .18s}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;opacity:0;transition:opacity .3s ease;
-  background:radial-gradient(130% 150% at 0% 50%,color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 18%,transparent),transparent 62%),linear-gradient(90deg,color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 10%,transparent),color-mix(in srgb,#9b8cff 7%,transparent) 70%,transparent);
-  box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent)}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::after{content:"";position:absolute;left:3px;top:50%;transform:translateY(-50%);height:0;width:2.5px;border-radius:3px;z-index:-1;opacity:0;
-  background:linear-gradient(color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 90%,#fff),#9b8cff);
-  box-shadow:0 0 8px color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 70%,transparent);transition:height .3s cubic-bezier(.2,.7,.3,1),opacity .3s ease}
-/* background:transparent neutralises each page's hardcoded inline flat hover
-   (#222732 / #eef1f6) so only the aurora wash paints (my 0,4,1 beats page 0,2,0). */
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover{transform:translateX(2px);background:transparent}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active{background:transparent}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover::before,.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active::before{opacity:1}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover::after,.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active::after{height:56%;opacity:1}
-@keyframes navCaretBreath{0%,100%{opacity:.45;transform:translateX(0)}50%{opacity:.9;transform:translateX(2px)}}
-@media(prefers-reduced-motion:reduce){.nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{animation:none}.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover{transform:none}.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::after{transition:none}}
-.site-nav .nav-ctrls{grid-column:2;grid-row:2;justify-self:end;align-self:center;display:flex;align-items:center;gap:10px}
-.site-nav .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;cursor:pointer}
-.site-nav .nav-ctrls .ai-brief-link.active{background:var(--blue);border-color:var(--blue);color:#fff}
-.site-nav .theme-switch{width:56px;height:27px;border-radius:999px;background:var(--card);border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
-.site-nav .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
-.site-nav .theme-switch .ic.sun{right:8px}
-.site-nav .theme-switch .ic.moon{left:8px}
-.site-nav .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#e8c15a;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
-.site-nav .theme-switch .knob::before{content:"🌙"}
-html[data-theme="light"] .site-nav .theme-switch .knob{transform:translateX(29px);background:#285fff}
-html[data-theme="light"] .site-nav .theme-switch .knob::before{content:"☀️"}
-.site-nav .lang-toggle{display:inline-flex;position:relative;background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:3px;flex:none;cursor:pointer}
-.site-nav .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
-html[data-lang="zh"] .site-nav .lang-toggle .pill{transform:translateX(100%)}
-.site-nav .lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
-html:not([data-lang="zh"]) .site-nav .lang-toggle .en-opt{color:#fff}
-html[data-lang="zh"] .site-nav .lang-toggle .zh-opt{color:#fff}
-
-/* One-row section menu (re-fix on current main): the 8-dropdown section menu
-   (~1418px) overflowed the 1180 content rail and wrapped onto a second row.
-   Widen the nav to the same ~1500 rail the macro family uses, on >=701px, for
-   whichever nav variant a family page renders today: the body-level .site-nav
-   (migrated vector pages, capped by an inline max-width:1180) and the legacy
-   in-wrap .topbar (strategy / misc pages, a sticky bar inside the content rail).
-   The page body keeps its 1180 rail and the <=700px hamburger (theme.js) is
-   untouched. */
-@media (min-width:701px){
-  nav.site-nav{max-width:1500px !important;}
-  .topbar{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
-    padding-left:max(40px,calc((100vw - 1500px)/2));
-    padding-right:max(40px,calc((100vw - 1500px)/2));}
-}
-
-/* toggles — subtle hover feedback (their slide animations are untouched) */
-.theme-switch,.lang-toggle{transition:border-color .18s ease,box-shadow .18s ease;}
-.theme-switch:hover,.lang-toggle:hover{border-color:color-mix(in srgb,var(--blue) 55%,var(--grid));
-  box-shadow:0 3px 11px -5px color-mix(in srgb,var(--blue) 40%,transparent);}
-
-/* clickable card / tile containers — the landing's hover light-up, but only when
-   the card is actually a link (display cards are untouched) */
-a.card,a.actitem,a.idx-alloc{transition:transform .2s cubic-bezier(.2,.7,.3,1),
-  border-color .2s ease,box-shadow .2s ease;}
-a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
-  border-color:color-mix(in srgb,var(--blue) 45%,var(--grid));
-  box-shadow:0 14px 30px -16px color-mix(in srgb,var(--blue) 40%,transparent);}
-
-/* AI Daily Brief card — these self-contained pages don't link theme.css, where
-   the .aibrief-card / .abc-* layout lives, so the 🧠 card collapsed to a raw
-   emoji + text run with no flex. Port the layout here (mirrors theme.css) so it
-   lays out; the base .card surface + the a.card:hover above still apply. */
-.aibrief-card{display:flex;align-items:center;gap:14px;text-decoration:none}
-.aibrief-card .abc-ic{font-size:30px;line-height:1;flex:none}
-.aibrief-card .abc-mid{flex:1;min-width:0}
-.aibrief-card .abc-tit{display:block;font-size:16px;font-weight:700;color:var(--ink)}
-.aibrief-card .abc-sub{display:block;margin-top:3px;color:var(--muted);font-size:13px;line-height:1.5}
-.aibrief-card .abc-go{font-size:22px;font-weight:700;color:var(--blue);flex:none}
-
-/* "?" help affordance — a circled question-mark that reveals a plain-language
-   note on hover/focus (native title, bilingual "EN · ZH" like the .tip pattern).
-   Used to lift cryptic micro-copy off the cards without losing the explanation. */
-.qm{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
-  border-radius:50%;border:1px solid var(--faint);color:var(--muted);font-size:10px;
-  font-weight:700;line-height:1;cursor:help;vertical-align:middle;margin-left:5px;
-  user-select:none;transition:border-color .15s ease,color .15s ease}
-.qm:hover,.qm:focus{border-color:var(--blue);color:var(--blue);outline:none}
-
-/* accessible keyboard focus ring */
-:where(.vtm-btn,.tm-btn,.navbtn,.ai-brief-link,a.nav-link,.nav-dd-menu a,.theme-switch,
-  .lang-toggle,a.card,a.actitem,a.idx-alloc):focus-visible{
-  outline:2px solid color-mix(in srgb,var(--blue) 70%,transparent);outline-offset:2px;}
-
-@media (prefers-reduced-motion: reduce){
-  .vtm-btn:hover,.tm-btn:hover,.navbtn:hover,.ai-brief-link:hover,
-  a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:none;}
-}
-</style>
 </head>
 <body class="page-commod">
 
@@ -1008,7 +319,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
 <div class="hd">
   <div>
     <h1><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></h1>
-    <div class="asof"><span class="l-en">Sector read · as of</span><span class="l-zh">板块读数 · 截至</span> Jul 31, 2026</div>
+    <div class="asof"><span class="l-en">Sector read · as of</span><span class="l-zh">板块读数 · 截至</span> Aug 03, 2026</div>
   </div>
 </div>
 
@@ -1052,7 +363,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         · <span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span> ⓘ
       </span>
     </div>
-    <div class="asof" style="margin-top:10px;font-size:11px"><span class="l-en">as of</span><span class="l-zh">截至</span> Jul 31, 2026</div>
+    <div class="asof" style="margin-top:10px;font-size:11px"><span class="l-en">as of</span><span class="l-zh">截至</span> Aug 03, 2026</div>
   </div>
   <!-- breadth panel (right) -->
   <div class="panel">
@@ -1110,7 +421,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     
     
     <div class="kpi-val" style="font-size:15px;font-weight:700">
-      <span class="l-en">Cycle low</span><span class="l-zh">周期底部</span>
+      <span class="l-en">Advancing</span><span class="l-zh">上行</span>
     </div>
     <div class="kpi-sub"><span class="l-en">dominant phase</span><span class="l-zh">主导阶段</span></div>
     
@@ -1193,10 +504,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="lt-sym">HG</div>
     <div class="lt-name"><span class="l-en">Copper</span><span class="l-zh">铜</span></div>
     <div class="lt-px nb-px" data-sym="HG=F" data-mkt="fut">
-      6.44
+      6.54
     </div>
     <div class="lt-chg nb-chg up" data-sym="HG=F" data-mkt="fut">
-      +4.2%
+      +6.0%
     </div>
     <div class="lt-pill" data-live-pill="HG=F">
       <span class="d"></span>
@@ -1276,11 +587,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
         
-        <span class="chip">DBC <b>29.45</b></span>
+        <span class="chip">DBC <b>28.88</b></span>
         
       
         
-        <span class="chip">GSG <b>32.04</b></span>
+        <span class="chip">GSG <b>31.18</b></span>
         
       
     </div>
@@ -1290,25 +601,25 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <p class="kick"><span class="l-en">The long cycle — where each commodity sits</span><span class="l-zh">长周期——各品种所处位置</span></p>
     <div class="cyc-chips">
       
-      <span class="cyc-chip ph-downturn">
-        <b><span class="l-en">Rolling over</span><span class="l-zh">见顶回落</span></b>
-        <span class="faint"> · </span>
-        <span class="l-en">Copper</span>
-        <span class="l-zh">铜</span>
-      </span>
-      
       <span class="cyc-chip ph-expansion">
         <b><span class="l-en">Advancing</span><span class="l-zh">上行</span></b>
         <span class="faint"> · </span>
-        <span class="l-en">Corn · Wheat · Soybeans</span>
-        <span class="l-zh">玉米 · 小麦 · 大豆</span>
+        <span class="l-en">Copper · Corn · Wheat · Soybeans</span>
+        <span class="l-zh">铜 · 玉米 · 小麦 · 大豆</span>
+      </span>
+      
+      <span class="cyc-chip ph-recovery">
+        <b><span class="l-en">Recovering</span><span class="l-zh">复苏中</span></b>
+        <span class="faint"> · </span>
+        <span class="l-en">Gold · Platinum · Palladium</span>
+        <span class="l-zh">黄金 · 铂金 · 钯金</span>
       </span>
       
       <span class="cyc-chip ph-trough">
         <b><span class="l-en">Cycle low</span><span class="l-zh">周期底部</span></b>
         <span class="faint"> · </span>
-        <span class="l-en">Gold · Silver · Oil · WTI · Natural Gas · Platinum · Palladium</span>
-        <span class="l-zh">黄金 · 白银 · 原油 · WTI · 天然气 · 铂金 · 钯金</span>
+        <span class="l-en">Silver · Oil · WTI · Natural Gas</span>
+        <span class="l-zh">白银 · 原油 · WTI · 天然气</span>
       </span>
       
       
@@ -1334,32 +645,9 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     </div>
     
     
-      
-      <div class="brow">
-        <div class="nm">
-          <span class="l-en">Heating Oil</span><span class="l-zh">取暖油</span>
-          
-          <span class="badge top"><span class="l-en">Extended</span><span class="l-zh">超涨</span></span>
-          
-        </div>
-        <div class="st">
-          <span class="l-en">Don&#39;t chase — watch for a turn</span><span class="l-zh">勿追高，等待拐点</span>
-          
-          <div class="rcpt-list"><span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
-            
-              <span class="l-en">Overbought longer-term</span><span class="l-zh">中周期超买</span> · 
-            
-              <span class="l-en">Price stretched above 200-day</span><span class="l-zh">价格大幅偏离200日均线</span> · 
-            
-              <span class="l-en">Momentum rolling over</span><span class="l-zh">动量下钩</span>
-            
-          </div>
-          
-        </div>
-        <div class="meter t" style="margin-top:2px"><i data-w="44.0"></i></div>
-        <span class="sc dn">44</span>
-      </div>
-      
+    <div class="faint" style="font-size:12.5px;padding:12px 0">
+      <span class="l-en">No euphoric or extended signals right now.</span><span class="l-zh">目前无亢奋或超涨信号。</span>
+    </div>
     
   </div>
   <!-- bottoms column -->
@@ -1432,7 +720,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     
   </div>
   
-  <div class="cell c-up up">
+  <div class="cell c-up dn">
     <div class="cn">
       <span class="cnm"><span class="l-en">Gasoline</span><span class="l-zh">汽油</span></span>
       
@@ -1517,16 +805,16 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     
   </div>
   
-  <div class="cell c-dn dn">
+  <div class="cell c-dn up">
     <div class="cn">
-      <span class="cnm"><span class="l-en">Silver</span><span class="l-zh">白银</span></span>
+      <span class="cnm"><span class="l-en">Platinum</span><span class="l-zh">铂金</span></span>
       
       <span class="cpc up">+0.5%</span>
       
     </div>
     <div class="cmeta">
       <span><span class="l-en">cycle</span><span class="l-zh">周期</span></span>
-      <span><span class="l-en">Cycle low</span><span class="l-zh">周期底部</span></span>
+      <span><span class="l-en">Recovering</span><span class="l-zh">复苏中</span></span>
     </div>
     <div class="cst">
       <span class="l-en">Momentum down</span><span class="l-zh">短期动量转弱</span>
@@ -1546,7 +834,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     </div>
     <div class="cmeta">
       <span><span class="l-en">cycle</span><span class="l-zh">周期</span></span>
-      <span><span class="l-en">Cycle low</span><span class="l-zh">周期底部</span></span>
+      <span><span class="l-en">Recovering</span><span class="l-zh">复苏中</span></span>
     </div>
     <div class="cst">
       <span class="l-en">Mixed</span><span class="l-zh">中性</span>
@@ -1561,19 +849,19 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="cn">
       <span class="cnm"><span class="l-en">Copper</span><span class="l-zh">铜</span></span>
       
-      <span class="cpc up">+3.4%</span>
+      <span class="cpc up">+5.9%</span>
       
     </div>
     <div class="cmeta">
       <span><span class="l-en">cycle</span><span class="l-zh">周期</span></span>
-      <span><span class="l-en">Rolling over</span><span class="l-zh">见顶回落</span></span>
+      <span><span class="l-en">Advancing</span><span class="l-zh">上行</span></span>
     </div>
     <div class="cst">
       <span class="l-en">Momentum up</span><span class="l-zh">短期动量向上</span>
     </div>
     
     
-    <div class="chg-bar" data-w="34"></div>
+    <div class="chg-bar" data-w="59"></div>
     
   </div>
   
@@ -1598,7 +886,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     </div>
     
     
-    <div class="chg-bar" data-w="47"></div>
+    <div class="chg-bar" data-w="100"></div>
     
   </div>
   
@@ -1618,7 +906,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     </div>
     
     
-    <div class="chg-bar" data-w="80"></div>
+    <div class="chg-bar" data-w="100"></div>
     
   </div>
   
@@ -1646,7 +934,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="cn">
       <span class="cnm"><span class="l-en">Live Cattle</span><span class="l-zh">活牛</span></span>
       
-      <span class="cpc dn">-10.2%</span>
+      <span class="cpc dn">-6.1%</span>
       
     </div>
     <div class="cmeta">
@@ -1658,15 +946,15 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     </div>
     
     
-    <div class="chg-bar" data-w="100"></div>
+    <div class="chg-bar" data-w="61"></div>
     
   </div>
   
-  <div class="cell c-flat up">
+  <div class="cell c-flat dn">
     <div class="cn">
       <span class="cnm"><span class="l-en">Coffee</span><span class="l-zh">咖啡</span></span>
       
-      <span class="cpc up">+6.7%</span>
+      <span class="cpc dn">-1.0%</span>
       
     </div>
     <div class="cmeta">
@@ -1678,7 +966,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     </div>
     
     
-    <div class="chg-bar" data-w="67"></div>
+    <div class="chg-bar" data-w="10"></div>
     
   </div>
   
@@ -1686,7 +974,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="cn">
       <span class="cnm"><span class="l-en">Sugar</span><span class="l-zh">白糖</span></span>
       
-      <span class="cpc up">+2.2%</span>
+      <span class="cpc up">+0.1%</span>
       
     </div>
     <div class="cmeta">
@@ -1698,7 +986,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     </div>
     
     
-    <div class="chg-bar" data-w="22"></div>
+    <div class="chg-bar" data-w="1"></div>
     
   </div>
   
@@ -1706,7 +994,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="cn">
       <span class="cnm"><span class="l-en">Cocoa</span><span class="l-zh">可可</span></span>
       
-      <span class="cpc up">+7.9%</span>
+      <span class="cpc up">+17.9%</span>
       
     </div>
     <div class="cmeta">
@@ -1718,7 +1006,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     </div>
     
     
-    <div class="chg-bar" data-w="79"></div>
+    <div class="chg-bar" data-w="100"></div>
     
   </div>
   
@@ -1726,7 +1014,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="cn">
       <span class="cnm"><span class="l-en">Cotton</span><span class="l-zh">棉花</span></span>
       
-      <span class="cpc up">+11.5%</span>
+      <span class="cpc up">+11.1%</span>
       
     </div>
     <div class="cmeta">
@@ -1881,7 +1169,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div style="margin-top:6px;font-size:12.5px;color:var(--mut);line-height:1.55">
           <span class="l-en">The model leans negative (-36 on a −100…+100 scale), weighted by how these calls have actually worked out.</span><span class="l-zh">模型倾向负面（在−100到+100的尺度上为-36），权重依据历史实际效果。</span>
         </div>
-        <div style="margin-top:5px;font-size:12px;color:var(--faint)"><span class="l-en">In a bull leg, overdue (227d in of a typical 194d), past the typical top window (overdue). Led by 12-month trend, real rates.</span><span class="l-zh">处于牛市段，逾期（已运行 227 天，典型 194 天），已过典型顶部窗口（逾期）。主导因素：12个月趋势、实际利率。</span></div>
+        <div style="margin-top:5px;font-size:12px;color:var(--faint)"><span class="l-en">In a bull leg, overdue (230d in of a typical 194d), past the typical top window (overdue). Led by cycle regime, 12-month trend.</span><span class="l-zh">处于牛市段，逾期（已运行 230 天，典型 194 天），已过典型顶部窗口（逾期）。主导因素：周期格局、12个月趋势。</span></div>
       </div>
       
       
@@ -1914,8 +1202,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Daily</span><span class="l-zh">日线</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
+          <td><span class="pill d">
+            <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
           <td style="color:var(--tx)">49.0</td>
           <td style="color:var(--tx)">21.0</td>
@@ -1955,8 +1243,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill d">
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">53.0</td>
-          <td style="color:var(--up)">19.0</td>
+          <td style="color:var(--tx)">51.0</td>
+          <td style="color:var(--up)">17.0</td>
           <td><span class="pill d">
             <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
             
@@ -1968,8 +1256,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">55.0</td>
-          <td style="color:var(--tx)">47.0</td>
+          <td style="color:var(--tx)">53.0</td>
+          <td style="color:var(--tx)">41.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -2000,7 +1288,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
         <span style="font-size:22px;font-weight:600"><span class="l-en">Watch — not enough signal yet</span><span class="l-zh">观望——信号不足</span></span>
         
-        <span class="badge wash"><span class="l-en">Bottom watch</span><span class="l-zh">底部关注</span> · 26</span>
+        <span class="badge wash"><span class="l-en">Bottom watch</span><span class="l-zh">底部关注</span> · 37</span>
         
       </div>
       <!-- stacking-up receipt -->
@@ -2008,6 +1296,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
         <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
+        
+          <span class="l-en">Oversold longer-term</span><span class="l-zh">中周期超卖</span> · 
         
           <span class="l-en">Momentum curl up</span><span class="l-zh">动量上钩</span> · 
         
@@ -2086,13 +1376,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Weekly</span><span class="l-zh">周线</span></td>
-          <td><span class="pill n">
-            <span class="l-en">flat</span><span class="l-zh">→</span>
+          <td><span class="pill d">
+            <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">42.0</td>
-          <td style="color:var(--tx)">27.0</td>
-          <td><span class="pill u">
-            <span class="l-en">+</span><span class="l-zh">正</span>
+          <td style="color:var(--tx)">43.0</td>
+          <td style="color:var(--up)">15.0</td>
+          <td><span class="pill d">
+            <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
             
           </span></td>
         </tr>
@@ -2115,7 +1405,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
           <td style="color:var(--tx)">46.0</td>
-          <td style="color:var(--up)">16.0</td>
+          <td style="color:var(--up)">8.0</td>
           <td><span class="pill d">
             <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
@@ -2221,8 +1511,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Weekly</span><span class="l-zh">周线</span></td>
-          <td><span class="pill n">
-            <span class="l-en">flat</span><span class="l-zh">→</span>
+          <td><span class="pill d">
+            <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
           <td style="color:var(--tx)">51.0</td>
           <td style="color:var(--tx)">22.0</td>
@@ -2236,8 +1526,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">60.0</td>
-          <td style="color:var(--tx)">49.0</td>
+          <td style="color:var(--tx)">55.0</td>
+          <td style="color:var(--tx)">43.0</td>
           <td><span class="pill d">
             <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
             
@@ -2249,8 +1539,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">61.0</td>
-          <td style="color:var(--tx)">63.0</td>
+          <td style="color:var(--tx)">57.0</td>
+          <td style="color:var(--tx)">60.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -2279,9 +1569,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="panel">
       <p class="kick"><span class="l-en">What to do now</span><span class="l-zh">当前该怎么做</span></p>
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
-        <span style="font-size:22px;font-weight:600"><span class="l-en">Don&#39;t chase — watch for a turn</span><span class="l-zh">勿追高，等待拐点</span></span>
-        
-        <span class="badge euf"><span class="l-en">Top risk</span><span class="l-zh">顶部风险</span> · 44</span>
+        <span style="font-size:22px;font-weight:600"><span class="l-en">Watch — not enough signal yet</span><span class="l-zh">观望——信号不足</span></span>
         
       </div>
       <!-- stacking-up receipt -->
@@ -2291,8 +1579,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
         
           <span class="l-en">Overbought longer-term</span><span class="l-zh">中周期超买</span> · 
-        
-          <span class="l-en">Price stretched above 200-day</span><span class="l-zh">价格大幅偏离200日均线</span> · 
         
           <span class="l-en">Momentum rolling over</span><span class="l-zh">动量下钩</span>
         
@@ -2338,8 +1624,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Daily</span><span class="l-zh">日线</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
+          <td><span class="pill d">
+            <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
           <td style="color:var(--tx)">49.0</td>
           <td style="color:var(--up)">8.0</td>
@@ -2351,8 +1637,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">3-Day</span><span class="l-zh">3日</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
+          <td><span class="pill n">
+            <span class="l-en">flat</span><span class="l-zh">→</span>
           </span></td>
           <td style="color:var(--tx)">54.0</td>
           <td style="color:var(--dn)">80.0</td>
@@ -2380,10 +1666,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">63.0</td>
-          <td style="color:var(--tx)">42.0</td>
-          <td><span class="pill u">
-            <span class="l-en">+</span><span class="l-zh">正</span>
+          <td style="color:var(--tx)">59.0</td>
+          <td style="color:var(--tx)">43.0</td>
+          <td><span class="pill d">
+            <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
             
           </span></td>
         </tr>
@@ -2425,8 +1711,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
         <span style="font-size:22px;font-weight:600"><span class="l-en">Watch — not enough signal yet</span><span class="l-zh">观望——信号不足</span></span>
         
-        <span class="badge euf"><span class="l-en">Top risk</span><span class="l-zh">顶部风险</span> · 32</span>
-        
       </div>
       <!-- stacking-up receipt -->
       
@@ -2434,9 +1718,9 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
         <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
         
-          <span class="l-en">Momentum rolling over</span><span class="l-zh">动量下钩</span> · 
+          <span class="l-en">Oversold longer-term</span><span class="l-zh">中周期超卖</span> · 
         
-          <span class="l-en">Momentum diverging from trend</span><span class="l-zh">动量与趋势背离</span>
+          <span class="l-en">Cycle in trough/recovery</span><span class="l-zh">周期处于低谷/复苏</span>
         
       </div>
       
@@ -2444,11 +1728,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div class="clock-wrap">
         
         
-        <div class="arc "></div>
+        <div class="arc arc-up"></div>
         <div>
           <div class="faint" style="font-size:11px"><span class="l-en">long cycle</span><span class="l-zh">长周期</span></div>
           <div style="font-weight:600">
-            <span class="l-en">Cycle low</span><span class="l-zh">周期底部</span>
+            <span class="l-en">Recovering</span><span class="l-zh">复苏中</span>
             <span class="badge top" style="margin-left:6px"><span class="l-en">hazard</span><span class="l-zh">风险</span></span>
           </div>
           
@@ -2470,14 +1754,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="conv-badge conv-hold">
             <span class="l-en">Hold</span><span class="l-zh">持有</span>
           </span>
-          <span class="lean-pill lean-neg">
-            -9 / 100
+          <span class="lean-pill lean-neut">
+            -3 / 100
           </span>
         </div>
         <div style="margin-top:6px;font-size:12.5px;color:var(--mut);line-height:1.55">
-          <span class="l-en">The model leans negative (-9 on a −100…+100 scale), weighted by how these calls have actually worked out.</span><span class="l-zh">模型倾向负面（在−100到+100的尺度上为-9），权重依据历史实际效果。</span>
+          <span class="l-en">The model leans neutral (-3 on a −100…+100 scale), weighted by how these calls have actually worked out.</span><span class="l-zh">模型倾向中性（在−100到+100的尺度上为-3），权重依据历史实际效果。</span>
         </div>
-        <div style="margin-top:5px;font-size:12px;color:var(--faint)"><span class="l-en">In a bear leg, late (183d in of a typical 177d), past the typical bottom window (late). Led by 12-month trend, inflation expectations.</span><span class="l-zh">处于熊市段，晚期（已运行 183 天，典型 177 天），已过典型底部窗口（晚期）。主导因素：12个月趋势、通胀预期。</span></div>
+        <div style="margin-top:5px;font-size:12px;color:var(--faint)"><span class="l-en">In a bear leg, overdue (186d in of a typical 177d), past the typical bottom window (overdue). Led by 12-month trend, inflation expectations.</span><span class="l-zh">处于熊市段，逾期（已运行 186 天，典型 177 天），已过典型底部窗口（逾期）。主导因素：12个月趋势、通胀预期。</span></div>
       </div>
       
       
@@ -2510,8 +1794,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Daily</span><span class="l-zh">日线</span></td>
-          <td><span class="pill n">
-            <span class="l-en">flat</span><span class="l-zh">→</span>
+          <td><span class="pill u">
+            <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
           <td style="color:var(--tx)">51.0</td>
           <td style="color:var(--tx)">76.0</td>
@@ -2523,8 +1807,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">3-Day</span><span class="l-zh">3日</span></td>
-          <td><span class="pill d">
-            <span class="l-en">down</span><span class="l-zh">↓</span>
+          <td><span class="pill u">
+            <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
           <td style="color:var(--tx)">41.0</td>
           <td style="color:var(--tx)">79.0</td>
@@ -2548,13 +1832,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Biweekly</span><span class="l-zh">双周</span></td>
-          <td><span class="pill d">
-            <span class="l-en">down</span><span class="l-zh">↓</span>
+          <td><span class="pill n">
+            <span class="l-en">flat</span><span class="l-zh">→</span>
           </span></td>
-          <td style="color:var(--tx)">47.0</td>
-          <td style="color:var(--up)">1.0</td>
-          <td><span class="pill d">
-            <span class="l-en">−</span><span class="l-zh">负</span>
+          <td style="color:var(--tx)">48.0</td>
+          <td style="color:var(--up)">3.0</td>
+          <td><span class="pill u">
+            <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
+            
           </span></td>
         </tr>
         
@@ -2563,8 +1848,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill d">
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">59.0</td>
-          <td style="color:var(--tx)">0.0</td>
+          <td style="color:var(--tx)">60.0</td>
+          <td style="color:var(--up)">2.0</td>
           <td><span class="pill d">
             <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
             
@@ -2574,7 +1859,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </table>
       
       <div style="margin-top:10px;font-size:12.5px;color:var(--mut)">
-        <span class="l-en">Downtrend confirmed across timeframes</span><span class="l-zh">各周期确认下行</span>
+        <span class="l-en">Unconfirmed turn within a bearish bigger picture</span><span class="l-zh">偏空大格局内的未确认转向</span>
       </div>
       
       <div class="faint" style="font-size:11.5px;margin-top:8px">
@@ -2595,16 +1880,12 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
         <span style="font-size:22px;font-weight:600"><span class="l-en">Watch — not enough signal yet</span><span class="l-zh">观望——信号不足</span></span>
         
-        <span class="badge euf"><span class="l-en">Top risk</span><span class="l-zh">顶部风险</span> · 32</span>
-        
       </div>
       <!-- stacking-up receipt -->
       
       
       <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
         <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
-        
-          <span class="l-en">Momentum rolling over</span><span class="l-zh">动量下钩</span> · 
         
           <span class="l-en">Momentum diverging from trend</span><span class="l-zh">动量与趋势背离</span>
         
@@ -2647,7 +1928,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div style="margin-top:6px;font-size:12.5px;color:var(--mut);line-height:1.55">
           <span class="l-en">The model leans negative (-12 on a −100…+100 scale), weighted by how these calls have actually worked out.</span><span class="l-zh">模型倾向负面（在−100到+100的尺度上为-12），权重依据历史实际效果。</span>
         </div>
-        <div style="margin-top:5px;font-size:12px;color:var(--faint)"><span class="l-en">In a bear leg, mid (186d in of a typical 453d), ~267d to a typical bottom. Led by value (ratio), cycle regime.</span><span class="l-zh">处于熊市段，中期（已运行 186 天，典型 453 天），距典型底部约 267 天。主导因素：价值（比价）、周期格局。</span></div>
+        <div style="margin-top:5px;font-size:12px;color:var(--faint)"><span class="l-en">In a bear leg, mid (189d in of a typical 453d), ~264d to a typical bottom. Led by value (ratio), cycle regime.</span><span class="l-zh">处于熊市段，中期（已运行 189 天，典型 453 天），距典型底部约 264 天。主导因素：价值（比价）、周期格局。</span></div>
       </div>
       
       
@@ -2680,8 +1961,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Daily</span><span class="l-zh">日线</span></td>
-          <td><span class="pill d">
-            <span class="l-en">down</span><span class="l-zh">↓</span>
+          <td><span class="pill u">
+            <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
           <td style="color:var(--tx)">46.0</td>
           <td style="color:var(--tx)">79.0</td>
@@ -2697,7 +1978,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
           <td style="color:var(--tx)">39.0</td>
-          <td style="color:var(--tx)">30.0</td>
+          <td style="color:var(--tx)">32.0</td>
           <td><span class="pill d">
             <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
@@ -2708,8 +1989,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill d">
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">40.0</td>
-          <td style="color:var(--up)">9.0</td>
+          <td style="color:var(--tx)">41.0</td>
+          <td style="color:var(--up)">14.0</td>
           <td><span class="pill d">
             <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
@@ -2720,8 +2001,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill d">
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">46.0</td>
-          <td style="color:var(--up)">1.0</td>
+          <td style="color:var(--tx)">47.0</td>
+          <td style="color:var(--up)">3.0</td>
           <td><span class="pill d">
             <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
@@ -2729,13 +2010,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Monthly</span><span class="l-zh">月线</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
+          <td><span class="pill d">
+            <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
           <td style="color:var(--tx)">55.0</td>
-          <td style="color:var(--up)">10.0</td>
-          <td><span class="pill u">
-            <span class="l-en">+</span><span class="l-zh">正</span>
+          <td style="color:var(--tx)">0.0</td>
+          <td><span class="pill d">
+            <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
             
           </span></td>
         </tr>
@@ -2764,12 +2045,16 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
         <span style="font-size:22px;font-weight:600"><span class="l-en">Watch — not enough signal yet</span><span class="l-zh">观望——信号不足</span></span>
         
+        <span class="badge euf"><span class="l-en">Top risk</span><span class="l-zh">顶部风险</span> · 32</span>
+        
       </div>
       <!-- stacking-up receipt -->
       
       
       <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
         <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
+        
+          <span class="l-en">Momentum rolling over</span><span class="l-zh">动量下钩</span> · 
         
           <span class="l-en">Momentum diverging from trend</span><span class="l-zh">动量与趋势背离</span>
         
@@ -2779,11 +2064,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div class="clock-wrap">
         
         
-        <div class="arc "></div>
+        <div class="arc arc-up"></div>
         <div>
           <div class="faint" style="font-size:11px"><span class="l-en">long cycle</span><span class="l-zh">长周期</span></div>
           <div style="font-weight:600">
-            <span class="l-en">Cycle low</span><span class="l-zh">周期底部</span>
+            <span class="l-en">Recovering</span><span class="l-zh">复苏中</span>
             <span class="badge top" style="margin-left:6px"><span class="l-en">hazard</span><span class="l-zh">风险</span></span>
           </div>
           
@@ -2822,8 +2107,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Daily</span><span class="l-zh">日线</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
+          <td><span class="pill n">
+            <span class="l-en">flat</span><span class="l-zh">→</span>
           </span></td>
           <td style="color:var(--tx)">50.0</td>
           <td style="color:var(--dn)">94.0</td>
@@ -2835,8 +2120,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">3-Day</span><span class="l-zh">3日</span></td>
-          <td><span class="pill d">
-            <span class="l-en">down</span><span class="l-zh">↓</span>
+          <td><span class="pill u">
+            <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
           <td style="color:var(--tx)">41.0</td>
           <td style="color:var(--tx)">72.0</td>
@@ -2852,7 +2137,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
           <td style="color:var(--tx)">41.0</td>
-          <td style="color:var(--up)">8.0</td>
+          <td style="color:var(--up)">15.0</td>
           <td><span class="pill d">
             <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
@@ -2860,14 +2145,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Biweekly</span><span class="l-zh">双周</span></td>
-          <td><span class="pill n">
-            <span class="l-en">flat</span><span class="l-zh">→</span>
+          <td><span class="pill d">
+            <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
           <td style="color:var(--tx)">47.0</td>
-          <td style="color:var(--up)">2.0</td>
-          <td><span class="pill u">
-            <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
-            
+          <td style="color:var(--up)">3.0</td>
+          <td><span class="pill d">
+            <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
         </tr>
         
@@ -2877,7 +2161,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
           <td style="color:var(--tx)">54.0</td>
-          <td style="color:var(--up)">16.0</td>
+          <td style="color:var(--up)">5.0</td>
           <td><span class="pill d">
             <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
             
@@ -2915,7 +2199,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
         <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
         
-          <span class="l-en">Momentum rolling over</span><span class="l-zh">动量下钩</span>
+          <span class="l-en">Cycle in trough/recovery</span><span class="l-zh">周期处于低谷/复苏</span>
         
       </div>
       
@@ -2923,11 +2207,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div class="clock-wrap">
         
         
-        <div class="arc "></div>
+        <div class="arc arc-up"></div>
         <div>
           <div class="faint" style="font-size:11px"><span class="l-en">long cycle</span><span class="l-zh">长周期</span></div>
           <div style="font-weight:600">
-            <span class="l-en">Cycle low</span><span class="l-zh">周期底部</span>
+            <span class="l-en">Recovering</span><span class="l-zh">复苏中</span>
             <span class="badge top" style="margin-left:6px"><span class="l-en">hazard</span><span class="l-zh">风险</span></span>
           </div>
           
@@ -2966,8 +2250,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Daily</span><span class="l-zh">日线</span></td>
-          <td><span class="pill n">
-            <span class="l-en">flat</span><span class="l-zh">→</span>
+          <td><span class="pill u">
+            <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
           <td style="color:var(--tx)">50.0</td>
           <td style="color:var(--tx)">63.0</td>
@@ -3009,16 +2293,15 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           </span></td>
           <td style="color:var(--tx)">45.0</td>
           <td style="color:var(--up)">4.0</td>
-          <td><span class="pill u">
-            <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
-            
+          <td><span class="pill d">
+            <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
         </tr>
         
         <tr>
           <td><span class="l-en">Monthly</span><span class="l-zh">月线</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
+          <td><span class="pill d">
+            <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
           <td style="color:var(--tx)">48.0</td>
           <td style="color:var(--up)">12.0</td>
@@ -3052,6 +2335,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
         <span style="font-size:22px;font-weight:600"><span class="l-en">Watch — not enough signal yet</span><span class="l-zh">观望——信号不足</span></span>
         
+        <span class="badge wash"><span class="l-en">Bottom watch</span><span class="l-zh">底部关注</span> · 28</span>
+        
       </div>
       <!-- stacking-up receipt -->
       
@@ -3059,11 +2344,9 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
         <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
         
-          <span class="l-en">Overbought longer-term</span><span class="l-zh">中周期超买</span> · 
+          <span class="l-en">Momentum curl up</span><span class="l-zh">动量上钩</span> · 
         
-          <span class="l-en">COT crowded long</span><span class="l-zh">COT大幅偏多</span> · 
-        
-          <span class="l-en">Cycle at peak/downturn</span><span class="l-zh">周期处于顶峰/下行</span>
+          <span class="l-en">Bottom-confidence high</span><span class="l-zh">底部信心高</span>
         
       </div>
       
@@ -3071,11 +2354,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div class="clock-wrap">
         
         
-        <div class="arc arc-amb"></div>
+        <div class="arc arc-up"></div>
         <div>
           <div class="faint" style="font-size:11px"><span class="l-en">long cycle</span><span class="l-zh">长周期</span></div>
           <div style="font-weight:600">
-            <span class="l-en">Rolling over</span><span class="l-zh">见顶回落</span>
+            <span class="l-en">Advancing</span><span class="l-zh">上行</span>
             <span class="badge top" style="margin-left:6px"><span class="l-en">hazard</span><span class="l-zh">风险</span></span>
           </div>
           
@@ -3094,17 +2377,17 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
         <div class="faint" style="font-size:11px;margin-bottom:5px"><span class="l-en">Model lean</span><span class="l-zh">模型倾向</span></div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span class="conv-badge conv-hold">
-            <span class="l-en">Hold</span><span class="l-zh">持有</span>
+          <span class="conv-badge conv-buy">
+            <span class="l-en">Buy</span><span class="l-zh">买入</span>
           </span>
-          <span class="lean-pill lean-neut">
-            +0 / 100
+          <span class="lean-pill lean-pos">
+            +12 / 100
           </span>
         </div>
         <div style="margin-top:6px;font-size:12.5px;color:var(--mut);line-height:1.55">
-          <span class="l-en">The model leans neutral (+0 on a −100…+100 scale), weighted by how these calls have actually worked out.</span><span class="l-zh">模型倾向中性（在−100到+100的尺度上为+0），权重依据历史实际效果。</span>
+          <span class="l-en">The model leans positive (+12 on a −100…+100 scale), weighted by how these calls have actually worked out.</span><span class="l-zh">模型倾向正面（在−100到+100的尺度上为+12），权重依据历史实际效果。</span>
         </div>
-        <div style="margin-top:5px;font-size:12px;color:var(--faint)"><span class="l-en">In a bull leg, overdue (1478d in of a typical 711d), past the typical top window (overdue). Led by 12-month trend, price structure.</span><span class="l-zh">处于牛市段，逾期（已运行 1478 天，典型 711 天），已过典型顶部窗口（逾期）。主导因素：12个月趋势、价格结构。</span></div>
+        <div style="margin-top:5px;font-size:12px;color:var(--faint)"><span class="l-en">In a bull leg, overdue (1481d in of a typical 711d), past the typical top window (overdue). Led by 12-month trend, cycle regime.</span><span class="l-zh">处于牛市段，逾期（已运行 1481 天，典型 711 天），已过典型顶部窗口（逾期）。主导因素：12个月趋势、周期格局。</span></div>
       </div>
       
       
@@ -3140,8 +2423,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">57.0</td>
-          <td style="color:var(--tx)">41.0</td>
+          <td style="color:var(--tx)">62.0</td>
+          <td style="color:var(--tx)">72.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -3150,13 +2433,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">3-Day</span><span class="l-zh">3日</span></td>
-          <td><span class="pill n">
-            <span class="l-en">flat</span><span class="l-zh">→</span>
+          <td><span class="pill u">
+            <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">58.0</td>
-          <td style="color:var(--tx)">58.0</td>
-          <td><span class="pill d">
-            <span class="l-en">−</span><span class="l-zh">负</span>
+          <td style="color:var(--tx)">61.0</td>
+          <td style="color:var(--tx)">67.0</td>
+          <td><span class="pill u">
+            <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
+            
           </span></td>
         </tr>
         
@@ -3177,8 +2461,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">67.0</td>
-          <td style="color:var(--tx)">71.0</td>
+          <td style="color:var(--tx)">68.0</td>
+          <td style="color:var(--dn)">84.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -3190,7 +2474,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">68.0</td>
+          <td style="color:var(--tx)">69.0</td>
           <td style="color:var(--dn)">91.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
@@ -3201,7 +2485,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </table>
       
       <div style="margin-top:10px;font-size:12.5px;color:var(--mut)">
-        <span class="l-en">Unconfirmed turn within a bearish bigger picture</span><span class="l-zh">偏空大格局内的未确认转向</span>
+        <span class="l-en">Aligned uptrend across timeframes</span><span class="l-zh">各周期一致向上</span>
       </div>
       
       <div class="faint" style="font-size:11.5px;margin-top:8px">
@@ -3222,6 +2506,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
         <span style="font-size:22px;font-weight:600"><span class="l-en">Watch — not enough signal yet</span><span class="l-zh">观望——信号不足</span></span>
         
+        <span class="badge wash"><span class="l-en">Bottom watch</span><span class="l-zh">底部关注</span> · 28</span>
+        
       </div>
       <!-- stacking-up receipt -->
       
@@ -3229,9 +2515,9 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
         <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
         
-          <span class="l-en">COT crowded long</span><span class="l-zh">COT大幅偏多</span> · 
+          <span class="l-en">Momentum curl up</span><span class="l-zh">动量上钩</span> · 
         
-          <span class="l-en">Momentum rolling over</span><span class="l-zh">动量下钩</span>
+          <span class="l-en">Bottom-confidence high</span><span class="l-zh">底部信心高</span>
         
       </div>
       
@@ -3282,8 +2568,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Daily</span><span class="l-zh">日线</span></td>
-          <td><span class="pill d">
-            <span class="l-en">down</span><span class="l-zh">↓</span>
+          <td><span class="pill u">
+            <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
           <td style="color:var(--tx)">62.0</td>
           <td style="color:var(--tx)">22.0</td>
@@ -3295,13 +2581,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">3-Day</span><span class="l-zh">3日</span></td>
-          <td><span class="pill n">
-            <span class="l-en">flat</span><span class="l-zh">→</span>
+          <td><span class="pill u">
+            <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">50.0</td>
+          <td style="color:var(--tx)">61.0</td>
           <td style="color:var(--dn)">84.0</td>
-          <td><span class="pill d">
-            <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
+          <td><span class="pill u">
+            <span class="l-en">+</span><span class="l-zh">正</span>
             
           </span></td>
         </tr>
@@ -3311,8 +2597,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">50.0</td>
-          <td style="color:var(--tx)">66.0</td>
+          <td style="color:var(--tx)">60.0</td>
+          <td style="color:var(--tx)">79.0</td>
           <td><span class="pill u">
             <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
             
@@ -3321,13 +2607,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Biweekly</span><span class="l-zh">双周</span></td>
-          <td><span class="pill d">
-            <span class="l-en">down</span><span class="l-zh">↓</span>
+          <td><span class="pill u">
+            <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">51.0</td>
-          <td style="color:var(--tx)">39.0</td>
-          <td><span class="pill d">
-            <span class="l-en">−</span><span class="l-zh">负</span>
+          <td style="color:var(--tx)">60.0</td>
+          <td style="color:var(--tx)">67.0</td>
+          <td><span class="pill u">
+            <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
+            
           </span></td>
         </tr>
         
@@ -3336,8 +2623,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">49.0</td>
-          <td style="color:var(--tx)">57.0</td>
+          <td style="color:var(--tx)">54.0</td>
+          <td style="color:var(--tx)">66.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -3360,153 +2647,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
 </div>
 
 <div class="dpanel" data-detpanel="wheat" hidden>
-  
-  <div class="det">
-    <!-- left: confluence call + cycle clock -->
-    <div class="panel">
-      <p class="kick"><span class="l-en">What to do now</span><span class="l-zh">当前该怎么做</span></p>
-      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
-        <span style="font-size:22px;font-weight:600"><span class="l-en">Watch — not enough signal yet</span><span class="l-zh">观望——信号不足</span></span>
-        
-      </div>
-      <!-- stacking-up receipt -->
-      
-      
-      <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
-        <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
-        
-          <span class="l-en">Overbought longer-term</span><span class="l-zh">中周期超买</span> · 
-        
-          <span class="l-en">COT crowded long</span><span class="l-zh">COT大幅偏多</span>
-        
-      </div>
-      
-      <!-- cycle clock -->
-      <div class="clock-wrap">
-        
-        
-        <div class="arc arc-up"></div>
-        <div>
-          <div class="faint" style="font-size:11px"><span class="l-en">long cycle</span><span class="l-zh">长周期</span></div>
-          <div style="font-weight:600">
-            <span class="l-en">Advancing</span><span class="l-zh">上行</span>
-            <span class="badge top" style="margin-left:6px"><span class="l-en">hazard</span><span class="l-zh">风险</span></span>
-          </div>
-          
-        </div>
-        
-      </div>
-      <!-- model lean (conviction) -->
-      
-      
-      
-      <div style="margin-top:10px;font-size:12px;color:var(--mut)">
-        <span class="faint"><span class="l-en">Dollar</span><span class="l-zh">美元</span>:</span>
-        
-          <span class="l-en"></span><span class="l-zh"></span>
-        
-        
-          <span class="faint">·</span>
-          
-        
-      </div>
-      
-    </div>
-    <!-- right: MTF signals table — plain headers -->
-    <div class="panel">
-      <p class="kick"><span class="l-en">Do the signals agree?</span><span class="l-zh">各周期是否共振？</span></p>
-      
-      
-      <table class="mtf">
-        <tr>
-          <th><span class="l-en">Timeframe</span><span class="l-zh">周期</span></th>
-          <th><span class="l-en">Trend</span><span class="l-zh">趋势</span></th>
-          <th data-tip-en="Momentum — RSI oscillator. High (≥70) = overbought, low (≤30) = oversold." data-tip-zh="动量——RSI震荡指标。高(≥70)=超买，低(≤30)=超卖。"><span class="l-en">Momentum</span><span class="l-zh">动量</span></th>
-          <th data-tip-en="Stretch — Stochastic. High (≥80) = stretched up, low (≤20) = stretched down." data-tip-zh="拉伸——随机指标。高(≥80)=超拉伸，低(≤20)=超拉伸。"><span class="l-en">Stretch</span><span class="l-zh">拉伸</span></th>
-          <th data-tip-en="Turn — MACD. Shows whether momentum is turning up or down." data-tip-zh="转折——MACD。显示动量是否正在转向。"><span class="l-en">Turn</span><span class="l-zh">转折</span></th>
-        </tr>
-        
-        <tr>
-          <td><span class="l-en">Daily</span><span class="l-zh">日线</span></td>
-          <td><span class="pill d">
-            <span class="l-en">down</span><span class="l-zh">↓</span>
-          </span></td>
-          <td style="color:var(--tx)">47.0</td>
-          <td style="color:var(--up)">2.0</td>
-          <td><span class="pill d">
-            <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
-            
-          </span></td>
-        </tr>
-        
-        <tr>
-          <td><span class="l-en">3-Day</span><span class="l-zh">3日</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
-          </span></td>
-          <td style="color:var(--tx)">54.0</td>
-          <td style="color:var(--tx)">69.0</td>
-          <td><span class="pill u">
-            <span class="l-en">+</span><span class="l-zh">正</span>
-            
-          </span></td>
-        </tr>
-        
-        <tr>
-          <td><span class="l-en">Weekly</span><span class="l-zh">周线</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
-          </span></td>
-          <td style="color:var(--tx)">57.0</td>
-          <td style="color:var(--tx)">75.0</td>
-          <td><span class="pill u">
-            <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
-            
-          </span></td>
-        </tr>
-        
-        <tr>
-          <td><span class="l-en">Biweekly</span><span class="l-zh">双周</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
-          </span></td>
-          <td style="color:var(--tx)">57.0</td>
-          <td style="color:var(--tx)">61.0</td>
-          <td><span class="pill d">
-            <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
-            
-          </span></td>
-        </tr>
-        
-        <tr>
-          <td><span class="l-en">Monthly</span><span class="l-zh">月线</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
-          </span></td>
-          <td style="color:var(--tx)">59.0</td>
-          <td style="color:var(--dn)">82.0</td>
-          <td><span class="pill u">
-            <span class="l-en">+</span><span class="l-zh">正</span>
-            
-          </span></td>
-        </tr>
-        
-      </table>
-      
-      <div style="margin-top:10px;font-size:12.5px;color:var(--mut)">
-        <span class="l-en">Mixed / transitional</span><span class="l-zh">混合 / 过渡</span>
-      </div>
-      
-      <div class="faint" style="font-size:11.5px;margin-top:8px">
-        <span class="l-en">Red = overbought; green = oversold. Use the call above for meaning.</span><span class="l-zh">红色=超买；绿色=超卖。含义以上方裁决为准。</span>
-      </div>
-      
-    </div>
-  </div>
-  
-</div>
-
-<div class="dpanel" data-detpanel="soybeans" hidden>
   
   <div class="det">
     <!-- left: confluence call + cycle clock -->
@@ -3579,8 +2719,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td style="color:var(--tx)">51.0</td>
           <td style="color:var(--up)">6.0</td>
           <td><span class="pill d">
-            <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
-            
+            <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
         </tr>
         
@@ -3764,8 +2903,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">56.0</td>
-          <td style="color:var(--tx)">42.0</td>
+          <td style="color:var(--tx)">58.0</td>
+          <td style="color:var(--tx)">46.0</td>
           <td><span class="pill u">
             <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
             
@@ -3777,8 +2916,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">54.0</td>
-          <td style="color:var(--dn)">87.0</td>
+          <td style="color:var(--tx)">55.0</td>
+          <td style="color:var(--dn)">86.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -3809,12 +2948,16 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
         <span style="font-size:22px;font-weight:600"><span class="l-en">Watch — not enough signal yet</span><span class="l-zh">观望——信号不足</span></span>
         
+        <span class="badge euf"><span class="l-en">Top risk</span><span class="l-zh">顶部风险</span> · 35</span>
+        
       </div>
       <!-- stacking-up receipt -->
       
       
       <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
         <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
+        
+          <span class="l-en">Momentum rolling over</span><span class="l-zh">动量下钩</span> · 
         
           <span class="l-en">Momentum diverging from trend</span><span class="l-zh">动量与趋势背离</span>
         
@@ -3860,13 +3003,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Daily</span><span class="l-zh">日线</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
+          <td><span class="pill d">
+            <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">45.0</td>
-          <td style="color:var(--dn)">100.0</td>
-          <td><span class="pill u">
-            <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
+          <td style="color:var(--tx)">38.0</td>
+          <td style="color:var(--dn)">91.0</td>
+          <td><span class="pill d">
+            <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
             
           </span></td>
         </tr>
@@ -3876,8 +3019,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill d">
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">39.0</td>
-          <td style="color:var(--up)">10.0</td>
+          <td style="color:var(--tx)">32.0</td>
+          <td style="color:var(--up)">4.0</td>
           <td><span class="pill d">
             <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
@@ -3888,11 +3031,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill d">
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">43.0</td>
-          <td style="color:var(--up)">11.0</td>
-          <td><span class="pill u">
-            <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
-            
+          <td style="color:var(--tx)">40.0</td>
+          <td style="color:var(--up)">15.0</td>
+          <td><span class="pill d">
+            <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
         </tr>
         
@@ -3901,11 +3043,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill d">
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">49.0</td>
-          <td style="color:var(--up)">7.0</td>
+          <td style="color:var(--tx)">46.0</td>
+          <td style="color:var(--up)">10.0</td>
           <td><span class="pill d">
-            <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
-            
+            <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
         </tr>
         
@@ -3914,8 +3055,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill d">
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">54.0</td>
-          <td style="color:var(--tx)">28.0</td>
+          <td style="color:var(--tx)">52.0</td>
+          <td style="color:var(--up)">16.0</td>
           <td><span class="pill d">
             <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
             
@@ -3925,7 +3066,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </table>
       
       <div style="margin-top:10px;font-size:12.5px;color:var(--mut)">
-        <span class="l-en">Unconfirmed turn within a bearish bigger picture</span><span class="l-zh">偏空大格局内的未确认转向</span>
+        <span class="l-en">Downtrend confirmed across timeframes</span><span class="l-zh">各周期确认下行</span>
       </div>
       
       <div class="faint" style="font-size:11.5px;margin-top:8px">
@@ -3953,7 +3094,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
         <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
         
-          <span class="l-en">Momentum curl up</span><span class="l-zh">动量上钩</span>
+          <span class="l-en">Overbought longer-term</span><span class="l-zh">中周期超买</span>
         
       </div>
       
@@ -3997,14 +3138,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Daily</span><span class="l-zh">日线</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
+          <td><span class="pill d">
+            <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">55.0</td>
-          <td style="color:var(--tx)">41.0</td>
-          <td><span class="pill u">
-            <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
-            
+          <td style="color:var(--tx)">51.0</td>
+          <td style="color:var(--tx)">38.0</td>
+          <td><span class="pill d">
+            <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
         </tr>
         
@@ -4013,8 +3153,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">59.0</td>
-          <td style="color:var(--tx)">74.0</td>
+          <td style="color:var(--tx)">56.0</td>
+          <td style="color:var(--tx)">71.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -4023,13 +3163,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Weekly</span><span class="l-zh">周线</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
+          <td><span class="pill n">
+            <span class="l-en">flat</span><span class="l-zh">→</span>
           </span></td>
-          <td style="color:var(--tx)">56.0</td>
-          <td style="color:var(--dn)">81.0</td>
-          <td><span class="pill u">
-            <span class="l-en">+</span><span class="l-zh">正</span>
+          <td style="color:var(--tx)">53.0</td>
+          <td style="color:var(--tx)">78.0</td>
+          <td><span class="pill d">
+            <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
             
           </span></td>
         </tr>
@@ -4039,8 +3179,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">53.0</td>
-          <td style="color:var(--dn)">98.0</td>
+          <td style="color:var(--tx)">51.0</td>
+          <td style="color:var(--dn)">96.0</td>
           <td><span class="pill u">
             <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
             
@@ -4052,8 +3192,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill d">
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">54.0</td>
-          <td style="color:var(--tx)">24.0</td>
+          <td style="color:var(--tx)">52.0</td>
+          <td style="color:var(--tx)">36.0</td>
           <td><span class="pill d">
             <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
@@ -4062,7 +3202,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </table>
       
       <div style="margin-top:10px;font-size:12.5px;color:var(--mut)">
-        <span class="l-en">Downtrend confirmed across timeframes</span><span class="l-zh">各周期确认下行</span>
+        <span class="l-en">Unconfirmed turn within a bearish bigger picture</span><span class="l-zh">偏空大格局内的未确认转向</span>
       </div>
       
       <div class="faint" style="font-size:11.5px;margin-top:8px">
@@ -4083,6 +3223,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
         <span style="font-size:22px;font-weight:600"><span class="l-en">Watch — not enough signal yet</span><span class="l-zh">观望——信号不足</span></span>
         
+        <span class="badge wash"><span class="l-en">Bottom watch</span><span class="l-zh">底部关注</span> · 30</span>
+        
       </div>
       <!-- stacking-up receipt -->
       
@@ -4090,7 +3232,9 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
         <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
         
-          <span class="l-en">Momentum curl up</span><span class="l-zh">动量上钩</span>
+          <span class="l-en">Momentum curl up</span><span class="l-zh">动量上钩</span> · 
+        
+          <span class="l-en">Bottom-confidence high</span><span class="l-zh">底部信心高</span>
         
       </div>
       
@@ -4137,11 +3281,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill n">
             <span class="l-en">flat</span><span class="l-zh">→</span>
           </span></td>
-          <td style="color:var(--tx)">52.0</td>
-          <td style="color:var(--up)">16.0</td>
-          <td><span class="pill u">
-            <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
-            
+          <td style="color:var(--tx)">60.0</td>
+          <td style="color:var(--tx)">49.0</td>
+          <td><span class="pill d">
+            <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
         </tr>
         
@@ -4150,8 +3293,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">52.0</td>
-          <td style="color:var(--tx)">70.0</td>
+          <td style="color:var(--tx)">56.0</td>
+          <td style="color:var(--tx)">76.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -4160,13 +3303,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Weekly</span><span class="l-zh">周线</span></td>
-          <td><span class="pill n">
-            <span class="l-en">flat</span><span class="l-zh">→</span>
+          <td><span class="pill u">
+            <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">51.0</td>
-          <td style="color:var(--dn)">90.0</td>
-          <td><span class="pill d">
-            <span class="l-en">turning down</span><span class="l-zh">转折向下</span>
+          <td style="color:var(--tx)">54.0</td>
+          <td style="color:var(--dn)">91.0</td>
+          <td><span class="pill u">
+            <span class="l-en">+</span><span class="l-zh">正</span>
             
           </span></td>
         </tr>
@@ -4176,8 +3319,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">46.0</td>
-          <td style="color:var(--dn)">91.0</td>
+          <td style="color:var(--tx)">49.0</td>
+          <td style="color:var(--dn)">93.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -4186,13 +3329,14 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Monthly</span><span class="l-zh">月线</span></td>
-          <td><span class="pill d">
-            <span class="l-en">down</span><span class="l-zh">↓</span>
+          <td><span class="pill u">
+            <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">40.0</td>
-          <td style="color:var(--tx)">56.0</td>
-          <td><span class="pill d">
-            <span class="l-en">−</span><span class="l-zh">负</span>
+          <td style="color:var(--tx)">42.0</td>
+          <td style="color:var(--tx)">78.0</td>
+          <td><span class="pill u">
+            <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
+            
           </span></td>
         </tr>
         
@@ -4227,7 +3371,9 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div style="margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6">
         <span class="l-en">stacking up:</span><span class="l-zh">已出现：</span>
         
-          <span class="l-en">Momentum curl up</span><span class="l-zh">动量上钩</span>
+          <span class="l-en">Overbought longer-term</span><span class="l-zh">中周期超买</span> · 
+        
+          <span class="l-en">Price stretched above 200-day</span><span class="l-zh">价格大幅偏离200日均线</span>
         
       </div>
       
@@ -4271,14 +3417,13 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <tr>
           <td><span class="l-en">Daily</span><span class="l-zh">日线</span></td>
-          <td><span class="pill u">
-            <span class="l-en">up</span><span class="l-zh">↑</span>
+          <td><span class="pill n">
+            <span class="l-en">flat</span><span class="l-zh">→</span>
           </span></td>
-          <td style="color:var(--tx)">55.0</td>
-          <td style="color:var(--up)">15.0</td>
-          <td><span class="pill u">
-            <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
-            
+          <td style="color:var(--tx)">63.0</td>
+          <td style="color:var(--tx)">42.0</td>
+          <td><span class="pill d">
+            <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
         </tr>
         
@@ -4287,8 +3432,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">59.0</td>
-          <td style="color:var(--tx)">45.0</td>
+          <td style="color:var(--tx)">64.0</td>
+          <td style="color:var(--tx)">52.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -4300,8 +3445,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">60.0</td>
-          <td style="color:var(--tx)">79.0</td>
+          <td style="color:var(--tx)">65.0</td>
+          <td style="color:var(--dn)">80.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -4313,7 +3458,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">51.0</td>
+          <td style="color:var(--tx)">55.0</td>
           <td style="color:var(--dn)">99.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
@@ -4326,8 +3471,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill d">
             <span class="l-en">down</span><span class="l-zh">↓</span>
           </span></td>
-          <td style="color:var(--tx)">48.0</td>
-          <td style="color:var(--tx)">41.0</td>
+          <td style="color:var(--tx)">50.0</td>
+          <td style="color:var(--tx)">59.0</td>
           <td><span class="pill d">
             <span class="l-en">−</span><span class="l-zh">负</span>
           </span></td>
@@ -4336,7 +3481,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </table>
       
       <div style="margin-top:10px;font-size:12.5px;color:var(--mut)">
-        <span class="l-en">Downtrend confirmed across timeframes</span><span class="l-zh">各周期确认下行</span>
+        <span class="l-en">Unconfirmed turn within a bearish bigger picture</span><span class="l-zh">偏空大格局内的未确认转向</span>
       </div>
       
       <div class="faint" style="font-size:11.5px;margin-top:8px">
@@ -4413,8 +3558,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">60.0</td>
-          <td style="color:var(--tx)">32.0</td>
+          <td style="color:var(--tx)">62.0</td>
+          <td style="color:var(--tx)">58.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -4426,7 +3571,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">60.0</td>
+          <td style="color:var(--tx)">61.0</td>
           <td style="color:var(--dn)">83.0</td>
           <td><span class="pill u">
             <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
@@ -4439,8 +3584,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">61.0</td>
-          <td style="color:var(--tx)">26.0</td>
+          <td style="color:var(--tx)">62.0</td>
+          <td style="color:var(--tx)">32.0</td>
           <td><span class="pill u">
             <span class="l-en">turning up</span><span class="l-zh">转折向上</span>
             
@@ -4453,7 +3598,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
           <td style="color:var(--tx)">63.0</td>
-          <td style="color:var(--tx)">48.0</td>
+          <td style="color:var(--tx)">57.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -4465,8 +3610,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <td><span class="pill u">
             <span class="l-en">up</span><span class="l-zh">↑</span>
           </span></td>
-          <td style="color:var(--tx)">58.0</td>
-          <td style="color:var(--tx)">77.0</td>
+          <td style="color:var(--tx)">59.0</td>
+          <td style="color:var(--dn)">83.0</td>
           <td><span class="pill u">
             <span class="l-en">+</span><span class="l-zh">正</span>
             
@@ -4506,7 +3651,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <span class="cat-label"><span class="l-en">EIA crude/petroleum inventories</span><span class="l-zh">EIA 原油／石油库存</span></span>
       <span class="faint" style="font-size:12px"><span class="l-en">Oil</span><span class="l-zh">原油</span></span>
       
-      <span class="faint" style="font-size:11px"><span class="l-en">in 5 days</span><span class="l-zh">5天后</span></span>
+      <span class="faint" style="font-size:11px"><span class="l-en">in 2 days</span><span class="l-zh">2天后</span></span>
       
     </div>
     
@@ -4519,7 +3664,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <span class="cat-label"><span class="l-en">EIA crude/petroleum inventories</span><span class="l-zh">EIA 原油／石油库存</span></span>
       <span class="faint" style="font-size:12px"><span class="l-en">Oil</span><span class="l-zh">原油</span></span>
       
-      <span class="faint" style="font-size:11px"><span class="l-en">in 12 days</span><span class="l-zh">12天后</span></span>
+      <span class="faint" style="font-size:11px"><span class="l-en">in 9 days</span><span class="l-zh">9天后</span></span>
       
     </div>
     
@@ -5489,11 +4634,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     </button>
   </div>
   
-  <div class="faint" style="margin-top:14px;font-size:12px"><span class="l-en">Alerts refresh from history; intraday price shocks are best-effort. Built</span><span class="l-zh">警报由历史重算；日内价格冲击为尽力更新。生成于</span> 2026-08-04 02:21 UTC.</div>
+  <div class="faint" style="margin-top:14px;font-size:12px"><span class="l-en">Alerts refresh from history; intraday price shocks are best-effort. Built</span><span class="l-zh">警报由历史重算；日内价格冲击为尽力更新。生成于</span> 2026-08-04 05:47 UTC.</div>
 </div>
 
 <div class="foot">
-  <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> · <span class="l-en">built</span><span class="l-zh">生成于</span> 2026-08-04 02:21 UTC · <span class="l-en">data as of</span><span class="l-zh">数据截至</span> Aug 03, 2026<br>
+  <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> · <span class="l-en">built</span><span class="l-zh">生成于</span> 2026-08-04 05:47 UTC · <span class="l-en">data as of</span><span class="l-zh">数据截至</span> Aug 03, 2026<br>
   <span style="font-size:11px">© 2026 Mastermind Inc</span>
 </div>
 </div>
