@@ -125,7 +125,9 @@ def main() -> int:
     # runs before this in daily.yml's cl_china; we copy the page assets and warn if data is absent.
     import shutil
     for asset in ("product-nav-icons.css", "dashboard-icons.css", "dashboard-icons.js",
-                  "sector_cycles.css", "sector_cycles.js"):
+                  "sector_cycles.css", "sector_cycles.js",
+                  # SI Workspace shell: hash router, per-view lazy mount, view reads.
+                  "si_workspace_china.js"):
         src = root / "templates" / asset
         if src.exists():
             shutil.copy2(src, site / asset)
