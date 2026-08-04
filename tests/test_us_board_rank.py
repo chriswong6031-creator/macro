@@ -1474,6 +1474,29 @@ def scored():
     return board, rows
 
 
+@pytest.fixture(scope="module")
+def scored_with_blocked_witness(scored):
+    """The live board shape with one deterministic downtrend witness.
+
+    A nightly board can legitimately contain no blocked/downtrend names, which
+    makes the two ordering guards below fail on fixture composition instead of
+    ranking behaviour.  Mutating one real row keeps the full production shape
+    while ensuring those guards always exercise the blocked bucket.
+    """
+    from pathlib import Path
+    board, _rows = scored
+    root = Path(__file__).resolve().parents[1]
+    gate = json.loads(
+        (root / "site" / "factordata" / "signal_gate.json").read_text())
+    raw = [dict(r) for r in board["buy"]]
+    assert raw, "committed board must contain a row for the blocked witness"
+    witness = raw[-1]
+    witness["dir"] = "down"
+    rows = ubr.score_rows(raw, verdict_by=gate.get("verdicts") or {},
+                          board_asof=board["as_of"])
+    return board, rows, witness["ticker"]
+
+
 class TestCommittedArtifactIntegration:
     """Run the real module over the COMMITTED us_standouts + signal_gate + baskets.
 
@@ -1490,8 +1513,8 @@ class TestCommittedArtifactIntegration:
             assert isinstance(score, float)
             assert 0.0 <= score <= 100.0
 
-    def test_no_blocked_row_ranks_above_any_live_row(self, scored):
-        _board, rows = scored
+    def test_no_blocked_row_ranks_above_any_live_row(self, scored_with_blocked_witness):
+        _board, rows, _witness = scored_with_blocked_witness
         live = [i for i, r in enumerate(rows) if r["stage"] == "live"]
         blocked = [i for i, r in enumerate(rows) if r["stage"] == "blocked"]
         assert live and blocked, "fixture must contain both stages to mean anything"
@@ -1606,11 +1629,11 @@ class TestCommittedArtifactIntegration:
             assert by[ticker]["days_since_signal"] == verdict["fresh_bars"]
             assert by[ticker]["days_since_signal_basis"] == "sessions"
 
-    def test_no_downtrend_row_escapes_the_blocked_bucket(self, scored):
-        """m1 on production shape: the 07-31 board carries DOWNTREND names."""
-        _board, rows = scored
+    def test_no_downtrend_row_escapes_the_blocked_bucket(self, scored_with_blocked_witness):
+        """m1 on production shape with a deterministic DOWNTREND witness."""
+        _board, rows, witness = scored_with_blocked_witness
         downtrend = [r for r in rows if ubr.is_downtrend(r)]
-        assert downtrend, "fixture must contain a DOWNTREND row"
+        assert witness in {r["ticker"] for r in downtrend}
         assert all(r["stage"] == "blocked" for r in downtrend)
 
     def test_the_board_is_json_safe(self, scored):
