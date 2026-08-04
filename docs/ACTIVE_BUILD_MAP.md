@@ -2,32 +2,16 @@
 
 # Active Build Map
 
-Generated: 2026-08-03T00:48:26.519739+00:00  |  Open PRs: 20  |  Merged (window): 500  |  base: `a3e6bd38a6d1de38f1a684d56a69e8482c57fadd`
+Generated: 2026-08-04T01:04:38.208568+00:00  |  Open PRs: 4  |  Merged (window): 500  |  base: `6b666e1a385cc66574c67277b7b741bfb7c2a3d2`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #4332 | perf(seo): split baskets_china_ths heavy planes into a fetched hydrate payload | `claude/gracious-borg-aa5283` | 2026-08-03 | ⚠ protected:1 |
-| #4331 | feat(prophet-board): us_prophet_v1 priority engine + unified pick surface (US+CN) | `claude/stock-picks-sorting-dashboard-d6c0d7` | 2026-08-03 | DRAFT |
-| #4330 | feat(seo): MastermindX entity package — homepage identity + About page | `claude/seo-entity-package` | 2026-08-03 | — |
-| #4329 | fix(nav): keep the wide mega/market panels anchored to the header | `claude/mega-menu-special-situations-499151` | 2026-08-03 | — |
-| #4328 | fix(seo): missing_from_sitemap consults the access boundary — kill the 243-page false-positive factory | `claude/nervous-pasteur-337004` | 2026-08-03 | — |
-| #4327 | Harden Company Intelligence launch surfaces | `codex/company-intelligence-launch-hardening-20260802` | 2026-08-03 | — |
-| #4326 | fix(nav): drop retired filename from consolidation comment — heals crypto nav guard | `claude/suspicious-knuth-4c3b4e` | 2026-08-03 | — |
-| #4324 | fix(seo): resolve on-page hygiene work orders across the public estate | `claude/seo-workorder-sweep` | 2026-08-03 | — |
-| #4323 | fix(nav): market mega menu catches up with the Sector Intelligence consolidation | `claude/us-nav-menu-collapse` | 2026-08-03 | — |
-| #4319 | feat(capital-structure): add authenticated candidate instrument terms | `codex/capital-structure-instrument-candidate-terms` | 2026-08-03 | — |
-| #4315 | fix(marketing): market clock + publish-time gate — no weekend "today", dead-date tenses, or fanned duplicates | `claude/marketing-time-awareness` | 2026-08-02 | — |
-| #4314 | fix(x-growth): W4 — the nightly ladder stops discarding the day it publishes; the news wire arms; the breaking card becomes legible | `claude/frosty-knuth-140e19` | 2026-08-02 | ⚠ protected:1 |
-| #4313 | pages: keep <meta charset> inside the 1024-byte pre-scan window | `claude/mystifying-bohr-6d855b` | 2026-08-02 | — |
-| #4312 | fix(sector-intelligence): restore the US #theme-<id> deep-link contract eaten by the consolidation stub | `claude/ecstatic-jang-ba1366` | 2026-08-02 | ⚠ protected:1 |
-| #4304 | fix(copy): de-register the AI scout watch line on Forming Narratives; Theme Tracker naming in plans | `claude/forming-copy-fix` | 2026-08-02 | — |
-| #4301 | feat(tiers): Phase 4 — machine ids speak essential; insider stays a permanent inbound alias | `claude/tier-essential-m4` | 2026-08-02 | ⚠ CONFLICTING / ⚠ protected:1 |
-| #4300 | feat(sector-intelligence): forming narratives on US, Theme Tracker naming, theme↔basket crosswalk (#4237 follow-ups) | `claude/si-followups-a1` | 2026-08-02 | ⚠ CONFLICTING |
-| #4299 | China Sector Intelligence: one platform — baskets + subsector rotation merged into sector_central_china | `claude/china-sector-intelligence-consolidation` | 2026-08-02 | ⚠ CONFLICTING |
-| #4260 | Add deterministic verified earnings evidence graph | `codex/earnings-evidence-graph-final-20260802` | 2026-08-02 | ⚠ CONFLICTING / ⚠ protected:1 |
-| #4236 | feat(seasonality): Calendar Clock — the sample is the picture, not a footnote | `claude/seasonality-frontend-page` | 2026-08-02 | ⚠ CONFLICTING / ⚠ protected:4 |
+| #4469 | publish-time lane: fix the four defects that shipped on the flagship today | `claude/theme-mover-quality` | 2026-08-04 | — |
+| #4468 | Fix Chinese unit leaking into US track record | `fix/us-hold-english-20260803` | 2026-08-04 | — |
+| #4465 | ci: register tests/test_copywriter.py in the marketing lane (unrun-suite rot) | `ci/wire-test-copywriter` | 2026-08-04 | — |
+| #4462 | mover copy: trend-context stance — no more 'let it settle' on washed-out reversals (FSLR postmortem) | `claude/mover-copy-context` | 2026-08-03 | — |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
 
@@ -35,41 +19,159 @@ Generated: 2026-08-03T00:48:26.519739+00:00  |  Open PRs: 20  |  Merged (window)
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
-| #4330 | #4301 | 63 | `site/about-research.html`, `site/blog/compound-growth-for-traders.html`, `site/blog/congress-trades-are-not-realtime-signals.html`, `site/blog/how-to-keep-a-trading-journal.html`, `site/blog/index.html`, `site/blog/the-math-of-losing-streaks.html`, `site/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html`, `site/blog/win-rate-is-overrated.html` +55 more |
-| #4330 | #4313 | 5 | `site/index.html`, `site/products/market-dashboards.html`, `site/products/market-terminal.html`, `site/products/mastermind-ai.html`, `templates/index.html` |
-| #4313 | #4301 | 5 | `site/index.html`, `site/products/market-dashboards.html`, `site/products/market-terminal.html`, `site/products/mastermind-ai.html`, `templates/index.html` |
-| #4312 | #4300 | 5 | `.github/ci/legacy-jobs.yml`, `scripts/build_site.py`, `templates/baskets.html.j2`, `templates/dashboard.html.j2`, `templates/sector_central.html.j2` |
-| #4300 | #4299 | 4 | `site/chat.html`, `templates/chat.html`, `tests/test_macro_desk_surface.py`, `tests/test_sector_intelligence_page.py` |
-| #4330 | #4236 | 3 | `app/deploy/Caddyfile`, `config/site_access.yml`, `tests/test_unsubscribe_page.py` |
-| #4332 | #4314 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4332 | #4312 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4332 | #4299 | 2 | `scripts/build_baskets_china_ths.py`, `templates/baskets_china.html.j2` |
-| #4328 | #4324 | 2 | `engine/marketing/seo_director.py`, `tests/test_seo_director.py` |
-| #4323 | #4299 | 2 | `site/nav_market.js`, `templates/nav_market.js` |
-| #4315 | #4314 | 2 | `engine/marketing/content_studio.py`, `engine/marketing/copywriter.py` |
-| #4314 | #4312 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4299 | #4236 | 2 | `templates/_navlinks.html.j2`, `tests/test_nav_submenu_icons.py` |
-| #4332 | #4319 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4332 | #4300 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4326 | #4299 | 1 | `templates/_navlinks.html.j2` |
-| #4326 | #4236 | 1 | `templates/_navlinks.html.j2` |
-| #4324 | #4300 | 1 | `templates/state_of_themes.html.j2` |
-| #4324 | #4299 | 1 | `templates/china.html.j2` |
-| #4319 | #4314 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4319 | #4312 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4319 | #4300 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4314 | #4300 | 1 | `.github/ci/legacy-jobs.yml` |
-| #4312 | #4299 | 1 | `tests/test_theme_hash_deeplink.py` |
+| #4469 | #4462 | 5 | `engine/marketing/content_studio.py`, `engine/marketing/copywriter.py`, `engine/marketing/movers_source.py`, `engine/marketing/publish_time_content.py`, `tests/test_marketing_publish_time_content.py` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #4467 | Add private Ollama provider fallback | 2026-08-04 |
+| #4466 | publish-time movers: PAUSE — the auto-posting lane shipped four defects today | 2026-08-04 |
+| #4464 | fix(contracts): register China reversal surfaces | 2026-08-03 |
+| #4463 | fix(name_score): us_calls ledger integrity — loud universe disclosures + Russell cache parity, no coverage gate | 2026-08-04 |
+| #4461 | feat(capital-structure): add scope-bound v4 head protocol | 2026-08-04 |
+| #4460 | feat(seo): gate-6b re-flip — etfs.html goes public against its committed walled shell | 2026-08-04 |
+| #4459 | BioCatalyst: add dark fixed cohort control v1 | 2026-08-03 |
+| #4458 | feat(capital-structure): add single publish journal | 2026-08-03 |
+| #4457 | BioCatalyst: add dark CT.gov discovery control plane v1 | 2026-08-03 |
+| #4456 | feat(capital-structure): add scoped v3 head migration fence | 2026-08-03 |
+| #4455 | test(access): repair China heatmap boundary guards | 2026-08-03 |
+| #4454 | Capital Structure Wave 3: prove receipts before ledger reads | 2026-08-03 |
+| #4453 | BioCatalyst: add bounded Trial Screen facets v1 | 2026-08-03 |
+| #4452 | fix(render): accept stamped government revenue asset | 2026-08-03 |
+| #4450 | feat(seo): W2 — china_heatmap goes anonymous with a crawlable summary layer | 2026-08-03 |
+| #4449 | BioCatalyst: add facts-only Trial Screen v1 | 2026-08-03 |
+| #4448 | test: align paywall with gated ETF shell | 2026-08-03 |
+| #4447 | docs(seo): gate 6b — leak-window sequencing (boundary flip must never outrun the bake) | 2026-08-03 |
+| #4446 | fix(seo): close the etfs anonymous leak — revert public flip until the shell bakes | 2026-08-03 |
+| #4445 | fix: isolate attested history R2 credentials | 2026-08-03 |
+| #4444 | test(marketing): align publisher runner contract | 2026-08-03 |
+| #4443 | feat(mag7): event lens + Mega-cap tape strip — why Prophet was silent through the MSFT week, and the lawful fix | 2026-08-03 |
+| #4442 | feat(biocatalyst): add atomic transcript context bundle | 2026-08-03 |
+| #4441 | fix(name_score): frozen-feed gate + echo quarantine for us_calls; ORCL flatline adjudicated not-a-defect | 2026-08-03 |
+| #4440 | fix(etfs): bilingual backdrop tile + pulse-dated rotation footer (post-#4426) | 2026-08-03 |
+| #4439 | outbox: audit the first clustered wire batch — 6 keep, 4 quarantined | 2026-08-03 |
+| #4438 | metrics poll: telemetry may not outbid posting — the cause of the silent days | 2026-08-03 |
+| #4437 | outbox: fable audits the held batch — 3 approved, 2 quarantined | 2026-08-03 |
+| #4436 | publish: move the sweep onto the idle self-hosted light lane | 2026-08-03 |
+| #4435 | desk: bounded confirmed group — keep the developing tail visible at the new floors | 2026-08-03 |
+| #4434 | feat(biocatalyst): publish replay-verified change tape | 2026-08-03 |
+| #4433 | wire: one story = one post, no line restates another, dark-desk traffic stops hitting the brand account | 2026-08-03 |
+| #4432 | feat(contracts): graduate us_standouts to 1.6.0 — us_prophet_v1 keys become required | 2026-08-03 |
+| #4431 | Fundamental Forensics: seal first AAPL issuer receipt | 2026-08-03 |
+| #4430 | Government Revenue Wave 9B: reviewed PLTR issuer path | 2026-08-03 |
+| #4429 | design(si-v2.1d): one label family, fewer labels, SF+Inter | 2026-08-03 |
+| #4428 | Fix shared SEO corporate-brand blocker | 2026-08-03 |
+| #4426 | feat(seo): W2 — etfs goes anonymous tier-preview | 2026-08-03 |
+| #4425 | design(si-v2.1): the visual language — macro.html idiom, drawn icons, ink over boxes | 2026-08-03 |
+| #4424 | fix(prophet-card): tone the featured glow down — ring + whisper aura, never a green container | 2026-08-03 |
+| #4423 | Keep US track-record filters static | 2026-08-03 |
+| #4422 | docs(seo): W2 spec — china_heatmap + etfs anonymous tier-previews | 2026-08-03 |
+| #4421 | feat(hk-board): resurrection — hk_prophet_v1 priority engine, leaders/ran/vetoed lanes, unified board UI | 2026-08-03 |
+| #4420 | BioCatalyst: add bounded trial change classification | 2026-08-03 |
+| #4419 | Fix the AI merge train: event-driven sweeps and a main-red circuit breaker | 2026-08-03 |
+| #4418 | feat(seo): W1b-redux — 301 baskets_china to its successor; conversion rides SI China V2 | 2026-08-03 |
+| #4417 | Reuse verified private earnings generations | 2026-08-03 |
+| #4416 | fix(govrev): align render budget fence | 2026-08-03 |
+| #4415 | Harden Earnings Wire publication and hosted CI | 2026-08-03 |
+| #4413 | Add third Codex OAuth account slot | 2026-08-03 |
+| #4412 | fix(nav): expose Earnings Wire across public dashboards | 2026-08-03 |
+| #4411 | feat(forensics): add zero-write history preflight | 2026-08-03 |
+| #4410 | feat(forensics): add sealed receipt control room | 2026-08-03 |
+| #4409 | Build secure earnings evidence spine | 2026-08-03 |
+| #4408 | design(theme): estate text-grade state inks + dark near-miss fixes (SI V2 W3 estate half) | 2026-08-03 |
+| #4406 | Government Revenue Wave9A: exact candidate radar foundation | 2026-08-03 |
+| #4405 | docs(tier-preview): access-state note refresh after W1a shell promotion | 2026-08-03 |
+| #4404 | docs(psi): Portfolio Superintelligence masterplan — Codex execution handoff | 2026-08-03 |
+| #4403 | feat(biocatalyst): add bounded endpoint alignment candidates | 2026-08-03 |
+| #4402 | test(sector-intelligence): prove synthetic shipping interoperability | 2026-08-03 |
+| #4401 | BioCatalyst: add facts-only sector packet compiler | 2026-08-03 |
+| #4400 | fix(heatmap): luminance-aware tile label ink — every bin ≥4.5:1 in both themes | 2026-08-03 |
+| #4399 | fix(hk): 9961.HK is Trip.com (TCOM's twin), not PDD — correct ADR bridge identity | 2026-08-03 |
+| #4398 | feat(forensics): harden attested pointer publication with CAS | 2026-08-03 |
+| #4397 | Government Revenue Wave 9: defense catalyst candidate ledger | 2026-08-03 |
+| #4396 | fix(engine): split the extension panel by calendar — crypto was deleting every equity's ext_z | 2026-08-03 |
+| #4395 | fix(brains): heal the LLM waterfall for narrative/risk/altdata desks | 2026-08-03 |
+| #4394 | ci: wire the seven #4331 prophet/board suites into the packs | 2026-08-03 |
+| #4393 | China Prophet: washout reversal_watch measurement shelf (regime-blocked bottoms) | 2026-08-03 |
+| #4392 | chore(basket_levels_persist): retire the dark __rel20 leg — no reader, never accrued | 2026-08-03 |
+| #4391 | fix(tests): un-mask btc_dat suites from the #4106 config disable + wire them into CI | 2026-08-03 |
+| #4390 | ci: wire the 5 X-growth desk suites + prophet-live surfaces; record the census pass (unrun backfill B7) | 2026-08-03 |
+| #4389 | ci: wire the 9 publish-ops/worker/live-plane suites + un-tie the checkout-bound size assertion (unrun backfill B6) | 2026-08-03 |
+| #4388 | ci: wire 11 market/release-plane suites into their owning lanes (unrun backfill B5) | 2026-08-03 |
+| #4387 | fix(china): restore the evicted legacy Prophet track ledger as a labeled cohort | 2026-08-03 |
+| #4386 | ci: wire the 11 page-guard suites — macro desk, hover cards, cold-load, stocktable, radar, reports (unrun backfill B4) | 2026-08-03 |
+| #4385 | ci: wire the 11 nav-chrome suites — one-header law, nav geometry, landing IA, Terminal portal (unrun backfill B3) | 2026-08-03 |
+| #4384 | ci: wire the 6 honesty-register suites — falsifier bans, plain-word chat, disclosure parity (unrun backfill B2) | 2026-08-03 |
+| #4383 | ci: wire the 11 Government Revenue suites — builder fence, UI contracts, federal-award collectors (unrun backfill B1) | 2026-08-03 |
+| #4382 | fix(ledgers): lane-gate thirteen more forward-ledger writers + canada's mislabeled gate | 2026-08-03 |
+| #4381 | feat(forensics): add pinned B4D materializer foundation | 2026-08-03 |
+| #4380 | fix(i18n): t() dual-span breaks inside HTML attributes on four pages | 2026-08-03 |
+| #4378 | fix(demand_ledger): id-immutability gate at append — claim-keyed ledger audit (#4362 follow-up) | 2026-08-03 |
+| #4377 | fix(nightly): make dispersion_regime + dt_contra_state degrade loudly (#4363 sibling sweep) | 2026-08-03 |
+| #4376 | fix(qledger): two-sided readiness-alert dedup — release key on ready=False | 2026-08-03 |
+| #4375 | feat(capital-structure): add authenticated share-count substrate | 2026-08-03 |
+| #4374 | ci: widen the annotation-guard byte prefilter + wire the public-dashboard-preview suite | 2026-08-03 |
+| #4373 | fix(basket_freeze): chain-link frozen levels so cross-date ratios are returns | 2026-08-03 |
+| #4372 | Sector Intelligence Workspace V2: sidebar shell, five views, per-view intelligence (operator redesign order) | 2026-08-03 |
+| #4371 | feat(biocatalyst): freeze D0a product acceptance system | 2026-08-03 |
+| #4370 | feat(seasonality): Lane 6 shadow lobe — nightly NW state emitter, forward ledger, mastermind context wiring | 2026-08-03 |
+| #4369 | fix(ledgers): lane-gate six ungated forward-ledger writers + pin them in the guard test | 2026-08-03 |
+| #4368 | feat(marketing): chart director + timeframe facts + attention selection (TrendSpider PR-C) | 2026-08-03 |
+| #4367 | feat(biocatalyst): add facts-only Trial Protocol Peer API | 2026-08-03 |
+| #4366 | fix(epistemics): withdraw three unearned authority claims found by the 2026-08-03 experiments audit | 2026-08-03 |
+| #4365 | fix(options-stamp): W-OVC silent-null repair — front7_charm_share + root_class never reached the ledger | 2026-08-03 |
+| #4364 | feat(biocatalyst): add trusted offline launch-SLO verifier | 2026-08-03 |
+| #4363 | fix(index_leadership): restore R2 sidecars in the engine job + make the skip loud | 2026-08-03 |
+| #4362 | fix(desks): run-scoped thesis ids, immutable ledger appends, placebo null beside hit-rate | 2026-08-03 |
+| #4361 | docs(seasonality): handoff §0 addendum — §3 complete, handed to Codex | 2026-08-03 |
+| #4360 | Fundamental Forensics: serve bounded attested history receipts | 2026-08-03 |
+| #4359 | fix(marketing): drop the AGGREGATOR badge word from the breaking card | 2026-08-03 |
+| #4358 | registry: 2026-08-03 experiments audit — all 29 ready results tested and adjudicated | 2026-08-03 |
+| #4357 | China / HK / Canada get the US hover decision card; SCORE caption leaves the ring; five jargon tips become plain-word LENS cards | 2026-08-03 |
+| #4356 | feat(x-growth): relax the D08 age ramp and graduate new desks fast | 2026-08-03 |
+| #4355 | fix(sectors): unwedge the render lane — restore ../ nav_prefix + asset stamps on 11 sector pages | 2026-08-03 |
+| #4354 | SI Workspace V2 — W1: shell, router, Overview reference view | 2026-08-03 |
+| #4353 | fix(test): re-pin stock_score cautions to the #4297 copy, export risk.veto structurally, wire the suite into CI | 2026-08-03 |
+| #4352 | news: unfreeze the live feed + kill the billed twitterapi.io lane (free RSS replaces it) | 2026-08-03 |
+| #4351 | fix(wire): a relay post ships ONE statement — the echo guard stops producing the doubled post it was built to stop | 2026-08-03 |
+| #4350 | perf(shadow-importance): kill the O(store²) nightly re-score — StoreIndex + register_batch | 2026-08-03 |
+| #4349 | fix(tests): pin synthetic Drugs@FDA archive timestamps — the flake was the wall clock, not test order | 2026-08-03 |
+| #4348 | Government Revenue Wave 8: IDV and DoD budget evidence rails | 2026-08-03 |
+| #4347 | feat(biocatalyst): freeze launch SLO and read adapters | 2026-08-03 |
+| #4346 | fix(levels): beats_equidistant_null becomes interval separation (no edge from a lucky null) | 2026-08-03 |
+| #4345 | fix(wire): de-handled relay, cards that earn their pixels — 1080 square, no restating, no tagging | 2026-08-03 |
+| #4344 | fix(us-stocks): prophet strip tables fit a 390px phone — demote tertiary columns at ≤680px | 2026-08-03 |
+| #4343 | fix(stage): nightly engine advances the overview parquet; freshness-gate the marketing stage feed | 2026-08-03 |
+| #4342 | Sector Intelligence Workspace V2: a workspace, not a page (operator redesign order) | 2026-08-03 |
+| #4341 | fix(earnings): unstarve the nightly sweep, single-stamp as_of, widen universe to Hot Tape names | 2026-08-03 |
+| #4340 | docs(seo): W1b design spec — baskets_china anonymous tier-preview | 2026-08-03 |
+| #4339 | feat(chart_render): TrendSpider-grade annotation grammar (PR-A) | 2026-08-03 |
+| #4338 | Widen marketing ticker supply to the liquid US market (TrendSpider PR-B) | 2026-08-03 |
+| #4337 | feat(seo): W1a — special-situations tier-preview shells go anonymous-public | 2026-08-03 |
+| #4336 | feat(levels): R2.4b — index grading lane + stronger nulls + intraday containment | 2026-08-03 |
+| #4335 | docs(seasonality): session handoff 2026-08-02 + live-verification script | 2026-08-03 |
+| #4334 | feat(oip-w1.6b): One Door — the flip. Four options pages become redirect stubs; the nav shows one door | 2026-08-03 |
+| #4333 | research(marketing): TrendSpider-grade hardening masterplan + reference pack | 2026-08-03 |
+| #4332 | perf(seo): split baskets_china_ths heavy planes into a fetched hydrate payload | 2026-08-03 |
+| #4331 | feat(prophet-board): us_prophet_v1 priority engine + unified pick surface (US+CN) | 2026-08-03 |
+| #4330 | feat(seo): MastermindX entity package — homepage identity + About page | 2026-08-03 |
+| #4329 | fix(nav): keep the wide mega/market panels anchored to the header | 2026-08-03 |
+| #4328 | fix(seo): missing_from_sitemap consults the access boundary — kill the 243-page false-positive factory | 2026-08-03 |
+| #4327 | Harden Company Intelligence launch surfaces | 2026-08-03 |
+| #4326 | fix(nav): drop retired filename from consolidation comment — heals crypto nav guard | 2026-08-03 |
 | #4325 | docs(biocatalyst): hand off full parity build | 2026-08-03 |
+| #4324 | fix(seo): resolve on-page hygiene work orders across the public estate | 2026-08-03 |
+| #4323 | fix(nav): market mega menu catches up with the Sector Intelligence consolidation | 2026-08-03 |
 | #4322 | Fix ticker dossier render DAG declarations | 2026-08-03 |
 | #4320 | docs(seo): charter the SEO Supercharge program (public tier-preview estate + entity package) | 2026-08-02 |
+| #4319 | feat(capital-structure): add authenticated candidate instrument terms | 2026-08-03 |
 | #4318 | Ship Company Intelligence dossiers in render lanes | 2026-08-02 |
 | #4316 | fix(ci): refresh signal bus registry doc | 2026-08-02 |
+| #4315 | fix(marketing): market clock + publish-time gate — no weekend "today", dead-date tenses, or fanned duplicates | 2026-08-03 |
+| #4314 | fix(x-growth): W4 — the nightly ladder stops discarding the day it publishes; the news wire arms; the breaking card becomes legible | 2026-08-03 |
+| #4313 | pages: keep <meta charset> inside the 1024-byte pre-scan window | 2026-08-03 |
+| #4312 | fix(sector-intelligence): restore the US #theme-<id> deep-link contract eaten by the consolidation stub | 2026-08-03 |
 | #4311 | feat(capital-structure): add authenticated Company Facts intake | 2026-08-02 |
 | #4310 | fix(tests): re-scope macro-desk surface pins post-#4237; restore the raced-away baskets stub | 2026-08-02 |
 | #4309 | BioCatalyst B4E: gate prospective accrual on retention proof | 2026-08-02 |
@@ -77,8 +179,12 @@ Generated: 2026-08-03T00:48:26.519739+00:00  |  Open PRs: 20  |  Merged (window)
 | #4307 | fix(regional-baskets): write baskets.json after the sector_pulse merge (intl/hk/canada) | 2026-08-02 |
 | #4306 | fix(sector-central): restore regime-sizing pill dropped by the baskets merge; re-aim parity guard | 2026-08-02 |
 | #4305 | Load balance a second Codex OAuth account | 2026-08-02 |
+| #4304 | fix(copy): de-register the AI scout watch line on Forming Narratives; Theme Tracker naming in plans | 2026-08-03 |
 | #4303 | tier-rename: flip write-only required_tier payload field insider -> essential | 2026-08-02 |
 | #4302 | fix(allies): derive pricing + tier names from config/plans.yml | 2026-08-02 |
+| #4301 | feat(tiers): Phase 4 — machine ids speak essential; insider stays a permanent inbound alias | 2026-08-03 |
+| #4300 | feat(sector-intelligence): forming narratives on US, Theme Tracker naming, theme↔basket crosswalk (#4237 follow-ups) | 2026-08-03 |
+| #4299 | China Sector Intelligence: one platform — baskets + subsector rotation merged into sector_central_china | 2026-08-03 |
 | #4298 | Launch the Earnings Wire and Company Intelligence teaser | 2026-08-02 |
 | #4297 | fix(ui): unclip the ⚠ caution popover, de-jargon its copy, unsqueeze the basket ring | 2026-08-02 |
 | #4296 | ads(round3.7): 7-headline A/B set on the 3-card fan + trial CTA | 2026-08-02 |
@@ -136,6 +242,7 @@ Generated: 2026-08-03T00:48:26.519739+00:00  |  Open PRs: 20  |  Merged (window)
 | #4239 | feat(oip-w1.6a): One Door — the workspace absorbs the estate (capability half) | 2026-08-02 |
 | #4238 | Government Revenue Wave 4: receipt-bound award tape | 2026-08-02 |
 | #4237 | feat(sector-intelligence): consolidate 3 pages into one Sector Intelligence platform | 2026-08-02 |
+| #4236 | feat(seasonality): Calendar Clock — the sample is the picture, not a footnote | 2026-08-03 |
 | #4235 | feat(seasonality): stock seasonality calendar clock — panel, curve, 2645-window family, selection correction | 2026-08-02 |
 | #4233 | feat(themes): publish immutable company theme context | 2026-08-02 |
 | #4232 | remove(baskets): delete the theme-rotation bell — markup, JS, CSS, and its dead payload | 2026-08-02 |
@@ -418,153 +525,6 @@ Generated: 2026-08-03T00:48:26.519739+00:00  |  Open PRs: 20  |  Merged (window)
 | #3939 | Public Research Vault preview with Pro gating | 2026-07-29 |
 | #3937 | feat(marketing): Hot Tape P2 — LLM wire desk behind the numeric-consistency gate | 2026-07-29 |
 | #3936 | fix(tests): defuse confluence content-plan date bomb (base-side red since 07-26) | 2026-07-28 |
-| #3935 | feat(x-growth): XG-W8 research triage — W-score, veto pass, tiering, dark research lane | 2026-07-28 |
-| #3934 | research(marketing): Hot Tape masterplan — attention-driven intraday content | 2026-07-28 |
-| #3933 | fix(ci): heal contract-drift — us_standouts 'leaders' joins the contract (1.3.0) | 2026-07-28 |
-| #3932 | fix(marketing): sector lists were generated all day from live quotes — and 100% dropped at the theme ramp | 2026-07-28 |
-| #3931 | Fix stock dashboard Grid/Table toggles | 2026-07-28 |
-| #3930 | fix(china-board): route the 110-cap overflow into a visible watch lane — nothing silently dropped | 2026-07-28 |
-| #3929 | feat(us-board): widen the gate's throat — sector cap re-tune, leaders strip, prophet intake ×2 | 2026-07-28 |
-| #3927 | fix(marketing): the persona cadence specs were a 20-post/day cap on a 70-post network | 2026-07-30 |
-| #3926 | Use names for user identities | 2026-07-28 |
-| #3925 | fix(marketing): the kill switch could not stop a booked post — add recall | 2026-07-28 |
-| #3924 | perf(marketing): the 10-min global floor was throttling seven desks as if they were one | 2026-07-28 |
-| #3923 | fix(marketing): feed the Lab from the live analytics ledger — telemetry was test-fed only | 2026-07-28 |
-| #3922 | fix(marketing): review, rewrite and approve today's queue — 31 posts that actually say something | 2026-07-28 |
-| #3921 | fix(marketing): a ticker post may no longer go out without its chart | 2026-07-28 |
-| #3920 | feat(ai): provision Codex in VPS provider pool | 2026-07-28 |
-| #3919 | feat(pricing): true up the Flash AI row — Free advertises the 5/wk trickle, Pro goes Unlimited (config+gateway+copy) | 2026-07-28 |
-| #3918 | fix(marketing): post-time headline-shape gate — queue-vintage fragments never post | 2026-07-29 |
-| #3917 | fix(tests): defuse reply-desk panel clock bomb (base-side red since 15:45Z) | 2026-07-28 |
-| #3916 | feat(x-growth): XG-W6 telemetry + learning — labels loop, health monitor, network tripwire, reply producer | 2026-07-28 |
-| #3915 | feat(x-growth): XG-W7 surfaces + seeding — news.html live rail, zh/tier gate, follow-CTA sweep | 2026-07-28 |
-| #3914 | feat(x-growth): XG-W5 scoring brain — L0 story spine, L1 features, garbage gate, golden-set harness | 2026-07-28 |
-| #3913 | fix(marketing): the publish lane was dead — 5 faults, plus today's 60-post queue | 2026-07-28 |
-| #3912 | fix(ship-guard): accept public-render.yml as a satisfying render lane | 2026-07-29 |
-| #3911 | docs(china): W3 first production night verified — §8 record | 2026-07-28 |
-| #3910 | ads(round2): 13 masterpiece ad concepts × 31 placement renders + the Ad Master Paper | 2026-07-28 |
-| #3909 | Replace stock dashboard emoji with semantic icons | 2026-07-28 |
-| #3908 | feat(x-growth): XG-W4 reply desk phase 1 — discovery, scorer, drafter, critics, queue, M1 handoff | 2026-07-28 |
-| #3907 | fix(marketing): watchlist variants require a ticker to render; fragment screen in validate_copy | 2026-07-28 |
-| #3906 | feat(x-growth): XG-W3 desk feeds + franchises + persona memory + Gift-Grip-Proof gate | 2026-07-28 |
-| #3905 | feat(prophet): add private trade memory | 2026-07-28 |
-| #3904 | feat(marketing): 59 posts/day from 1 — unlock stale names as watches, 30-min ladder, per-desk voices | 2026-07-28 |
-| #3901 | fix(landing): correct stale marketing figures — theme count, AI quotas, filings tally | 2026-07-28 |
-| #3900 | perf(marketing): stop writing the Prophet plan into every queue item (-34% content_plan.json) | 2026-07-28 |
-| #3899 | Add Codex subscription to shared AI provider waterfall | 2026-07-28 |
-| #3898 | feat(ci): merge-on-green label + sweeper — arm the merge and stop; no more CI-hostage sessions | 2026-07-28 |
-| #3897 | feat(plans): rebuild the pricing page in the homepage's pricing idiom | 2026-07-28 |
-| #3896 | fix(ci): wire test_marketing_chart_coverage into a lane — it shipped unrun | 2026-07-28 |
-| #3895 | fix(marketing): give every ticker post a chart — four causes, one bare Outbox | 2026-07-28 |
-| #3894 | marketing: add mobile X hero and carousel campaign | 2026-07-28 |
-| #3893 | products: redesign the three flagship product pages (landing-native, illustrated) | 2026-07-28 |
-| #3892 | ads(round2): master paper, ad design system, desk exemplar, review gallery | 2026-07-28 |
-| #3891 | docs: auto-merge is not a wait — main has no branch protection, --auto merges instantly | 2026-07-28 |
-| #3890 | fix(research_vault): re-read sidecars so late summaries reach published rows | 2026-07-28 |
-| #3889 | fix(ci): wire tests/test_billing_offers.py into a pack lane (unrun-suite rot) | 2026-07-28 |
-| #3888 | fix(deploy): admin restart regex learns engine/marketing/sentinel.py (#3884 follow-up) | 2026-07-28 |
-| #3887 | fix(ci): heal stale founding-copy pin in public fastlane suite, wire it into a pack lane | 2026-07-28 |
-| #3886 | ci: split the legacy packs 2 → 4 — halve time-to-green | 2026-07-28 |
-| #3885 | feat(x-growth): XG-W2 cadence + collision spine — per-account resolver, one-owner lock, canonical outbox path | 2026-07-28 |
-| #3884 | fix(marketing): post-time ramp caps, revive the dead publish-time lane, symmetric tier-typo handling (post-merge review of #3874) | 2026-07-28 |
-| #3883 | Marketing: replace X ads with mobile Category campaign | 2026-07-28 |
-| #3881 | fix(ci): a merged close must not cancel the PR's own proof run | 2026-07-28 |
-| #3880 | fix(billing): survive the test→live Stripe switch — mode-scoped customer verification + comp-safe reconciler | 2026-07-28 |
-| #3879 | ci: guard admin/static/*.js against out-of-scope references (eslint no-undef) | 2026-08-02 |
-| #3878 | Fix World Markets card height stretching | 2026-07-28 |
-| #3877 | Marketing: 20 production-ready X ad experiments | 2026-07-28 |
-| #3876 | fix(tests): prophet bridge main() smoke tests leak site/prophet/showcase.json | 2026-07-28 |
-| #3875 | feat(x-growth): XG-W1 employee desks — 4 codex specs, expression dial, three-layer wiring | 2026-07-28 |
-| #3874 | feat(marketing): enforce the D08 age ramp, cold-account cashtag/theme gates, CTA-free chart footer, send-time jitter | 2026-07-28 |
-| #3873 | research(media): X Growth charter rev 6.1 — adversarial cross-check corrections | 2026-07-28 |
-| #3872 | research(media): X Growth unified operation — constitution adopted, reply desk chartered, waves reconciled (rev 6) | 2026-07-28 |
-| #3871 | fix(admin): blank Outbox — rejBox referenced out of scope in obxRenderLive | 2026-07-28 |
-| #3870 | fix(ci): heal main — uncompiled kill-registry rows + a third skip-only marketing suite | 2026-07-28 |
-| #3869 | fix(terminal-refresh): add the crypto OHLC pass so crypto rows actually chart | 2026-07-28 |
-| #3868 | feat(ad-central): the human gate, round 1 rejected, and a handoff | 2026-07-28 |
-| #3867 | fix(hooks): ship-loop guard — escape ladders for every blocker, in-flight render defers | 2026-07-28 |
-| #3866 | fix(tests): PSS-RH1 historical parity audit tolerates total-return adjustment drift | 2026-07-28 |
-| #3864 | research(media): umbrella rev-5 pointer to the Intelligence Suite masterplan | 2026-07-28 |
-| #3863 | research(media): Intelligence Suite masterplan — sources, scoring brain, pathway router, employee desks | 2026-07-28 |
-| #3862 | fix(guards): finish the MastermindX brand sweep in the validated-claims selftest fixture | 2026-07-28 |
-| #3861 | feat(press-feeds): B2-COPY wire voice + dual-format law + tape stamps + B4a wires.json sink | 2026-07-28 |
-| #3860 | fix(ci): heal main red from #3850 entity migration — checker literal + stale renders | 2026-07-28 |
-| #3858 | test(neuralweb): close the determinism guard's lazily-imported-helper hole | 2026-07-28 |
-| #3857 | fix(registry): heal SIGNAL_BUS drift (#3844 added site-china-calendar without the pin bump) | 2026-07-27 |
-| #3856 | feat(pricing): founding-allotment meter (enforced daily withdrawal) + tier-card revamp | 2026-07-27 |
-| #3855 | marketing: 45-min ladder, unlimited breaking, near-dup dedup law, Content Studio usage fold | 2026-07-27 |
-| #3854 | feat: accrue prospective PSS follow-on gates | 2026-07-27 |
-| #3853 | fix(marketing): retail plain-speak — post-time language gate, chart draws the cited level, weekend copy dumb-down | 2026-07-28 |
-| #3852 | research(media): Alpaca build gate passed — probe evidence, keys on VPS, B1.5 unblocked | 2026-07-27 |
-| #3851 | feat(marketing): wire the founder's account (w_chris6031) as the 7th desk | 2026-07-27 |
-| #3850 | feat(seo): add MastermindX product discovery architecture | 2026-07-27 |
-| #3849 | feat(marketing): publish-time DAILY READ (kind=event), DARK by default | 2026-07-27 |
-| #3848 | ops(marketing): buffer-channels discovery workflow (dispatch-only, read-only) | 2026-07-27 |
-| #3847 | PSS-RH1: accrue synchronized relief hazard prospectively | 2026-07-27 |
-| #3846 | ci: guard the workflow `run:` size cap that de-registered render.yml | 2026-07-27 |
-| #3845 | feat(press): W1.5 — Mastermind News + Mastermind Research properties (dark until cutover) | 2026-07-27 |
-| #3844 | feat(china): W3 — PBOC OMO tape, GACC trade detail, gov.cn policy library, forward calendar organ, Futu/THS wires | 2026-07-27 |
-| #3843 | Cut public-render checkout to shallow history | 2026-07-27 |
-| #3842 | research(media): §7 B2-COPY charter — wire voice, dual formats, tape stamps, media posture | 2026-07-27 |
-| #3841 | Restore the homepage institutional intelligence promise | 2026-07-27 |
-| #3840 | Keep public partials off the heavy render lane | 2026-07-27 |
-| #3839 | research: adjudicate PSS-SR3 participation recovery | 2026-07-27 |
-| #3838 | feat(press-feeds): B1 Trump/markets wire ingestion spine (D05 Addendum 2) | 2026-07-27 |
-| #3837 | Align public navigation and footer with the homepage | 2026-07-27 |
-| #3836 | fix(marketing): event posts speak plain English — driver-label translation, no machinery-citing copy, coherent templates, post-time repeat gate | 2026-07-27 |
-| #3835 | research(media): restore race-dropped §6 + B4 Intelligence Suite assessment | 2026-07-27 |
-| #3834 | Fix render traffic jams with public fast lane | 2026-07-27 |
-| #3832 | research(media): twitterapi.io override + x_follow register v1 (D05 Addendum 2 rev) | 2026-07-27 |
-| #3831 | test(china-breadth): stub the tushare_client attribute, not just sys.modules (order-dependent failure) | 2026-07-27 |
-| #3830 | chore(marketing): quarantine the byte-identical 07-28 "read on today's move" repeat | 2026-07-27 |
-| #3829 | research(media): D05 Addendum 2 — Trump wire fast-source spine + speed-posture amendment | 2026-07-27 |
-| #3828 | Ship Founding Pro lifetime pricing | 2026-07-27 |
-| #3827 | research: adjudicate PSS-SR2 peer diffusion | 2026-07-27 |
-| #3826 | ci: give build_canada a first-class step + a render scope (was a swallowed build_vector hook) | 2026-07-27 |
-| #3825 | fix(bc2): retire dead measurement-doctrine allowlist entries; structural-skip the factors val payload | 2026-07-27 |
-| #3824 | fix(marketing): stop the outbox posting byte-identical copy night after night | 2026-07-27 |
-| #3823 | factors: sectioned IA, per-factor drawer, explorer tabs, ticker lookup | 2026-07-27 |
-| #3822 | docs(china): W1 first production night verified — §8 record | 2026-07-27 |
-| #3821 | feat(cycles): projection-first cycle surfaces — falsifiers move to the background | 2026-07-27 |
-| #3820 | feat(hk,canada): rebuild both dashboards to the macro.html bar — real unit bugs, 7 illustrations, dark data surfaced | 2026-07-27 |
-| #3819 | research: adjudicate PSS-SR1 stress elasticity | 2026-07-27 |
-| #3818 | ops(terminal-refresh): add FRED real-rates step to the nightly Terminal refresh | 2026-07-27 |
-| #3817 | fix(tech-lab): re-budget the nightly lane — the confluence screener page never once rendered | 2026-07-27 |
-| #3816 | ui: ticker-logo fallback, nested accents, SS hero/filter, factors ampersand, landing copy | 2026-07-27 |
-| #3815 | fix(neuralweb): world_state hashed a clock reading — the test_determinism flake | 2026-07-27 |
-| #3814 | Fix Divergence Radar loading stall | 2026-07-27 |
-| #3813 | fix(commodities): name 3-month horizon on oil→XEG chip; flag 1-month counter-move | 2026-07-27 |
-| #3812 | fix(ad-central): pause the hero test — no ad runs without an operator gate | 2026-07-27 |
-| #3811 | fix(pricing): sync CTA billing period | 2026-07-27 |
-| #3810 | guard(ci): a tree-walk must prune on the path RELATIVE to its scan root | 2026-07-27 |
-| #3809 | fix(research-vault): never stamp our ingest time as a paper's publish date | 2026-07-27 |
-| #3808 | fix(ad-central): the hero test was recording nothing — the landing never loads theme.js | 2026-07-27 |
-| #3807 | fix(bc2): gate 'validated' where it is authored — engine/ display copy | 2026-07-27 |
-| #3806 | feat(billing): launch truthful Founding Pro pricing | 2026-07-27 |
-| #3805 | feat(ad-central): the landing hero split test goes live — promise vs receipt | 2026-07-27 |
-| #3804 | research(media): charter W2R — research triage & tiering + engine economics ruling | 2026-07-27 |
-| #3803 | test(unrun): close the three gaps batch B left in the template-chip guards | 2026-07-27 |
-| #3802 | fix(press): the kill-switch guard scanned 0 files in every agent worktree | 2026-07-27 |
-| #3801 | fix(hooks): quota guard read "a loop and a gh call on one line" as polling | 2026-07-27 |
-| #3800 | test(unrun): wire the two guards that arrived strictly-dark today | 2026-07-27 |
-| #3799 | test(unrun): fix + wire the two PIT/tape reds — freeze the probe tape, straddle the ledger floor | 2026-07-27 |
-| #3798 | test(unrun): fix + wire the three template-surface reds — and re-arm three vacuous greens | 2026-07-27 |
-| #3797 | fix(hooks): one session polling CI 403s every other session — guard the shared GitHub quota | 2026-07-27 |
-| #3796 | feat(ad-central): wire the Plane O ingest into the nightly — the ledger now advances | 2026-07-27 |
-| #3795 | test(ci): wire the two unrun breakdown suites into the control-seed lane | 2026-07-27 |
-| #3793 | feat(press): W1 — press engine, Brief + Research desks, dark publish lane (D14) | 2026-07-27 |
-| #3792 | fix(research): BD-4/5/6 control seeds via crc32 — hash() is PYTHONHASHSEED-salted per run | 2026-07-27 |
-| #3791 | test(unrun): measure how many of the 870 unrun suites are RED — fix + wire the scoring-engine four | 2026-07-27 |
-| #3790 | fix(intl): the HK rate/FX backdrop is measured, not validated | 2026-07-27 |
-| #3789 | fix(landing): sort INSIDER rows to the bottom of the Daily Read group | 2026-07-27 |
-| #3788 | fix(tests): un-rot test_group_flow's baskets render guard + wire the suite into CI | 2026-07-27 |
-| #3787 | fix(render): publish rebuilt stockdata to R2 | 2026-07-27 |
-| #3786 | fix(imports): resolve 12 dead first-party imports; promote #3779's guard repo-wide | 2026-07-27 |
-| #3785 | fix(marketing): SVG ids via crc32 — hash() is PYTHONHASHSEED-salted per run | 2026-07-27 |
-| #3784 | feat(personas): W1 — persona spec layer, 13 specs, roster panel (D13) | 2026-07-27 |
-| #3783 | fix(flow-leaders): stop tape_names reordering the committed artifact every run | 2026-07-27 |
-| #3782 | fix(landing): speed Prophet belt on mobile | 2026-07-27 |
-| #3781 | feat(brain): capture AI thinking traces + contradiction assessment lane | 2026-07-27 |
 
 ---
 
