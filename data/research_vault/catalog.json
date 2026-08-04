@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T05:07:49.966035+00:00",
-  "count": 712,
+  "generated_at": "2026-08-04T05:38:03.845524+00:00",
+  "count": 713,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -122,6 +122,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ohvzm3kaos2-feec61",
+      "title": "Mi weekly market brief",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:52:32Z",
+      "summary_points": [
+        "**Rhine water levels threaten German industrial output**: Low water restricts freight, raises shipping costs, and slows production; 2026 droughts could amplify risks despite fiscal stimulus.",
+        "**US/China PMI expansion contrasts with Germany’s Rhine vulnerability**: US ISM PMI 53.3 and China composite PMI 53.6 signal expansion, while Germany faces critical supply chain disruption from Rhine conditions.",
+        "**Forward-looking drought risk amplifies German industrial exposure**: 2026 drought projections heighten near-term and structural risks to German manufacturing output beyond current fiscal measures."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
