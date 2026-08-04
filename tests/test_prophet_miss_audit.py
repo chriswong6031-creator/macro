@@ -659,12 +659,13 @@ def test_scorecard_never_forks_from_the_grader(tmp_path, monkeypatch):
     """ANTI-FORK PIN — the audit's block must reproduce ``name_score_grader.grade()`` field
     for field on one synthetic world.
 
-    The adapter exists for RUNTIME only: ``grade()`` resolves the close series inside a
-    per-(row, horizon) loop, which on the live 72k-row ledger is ~145k parquet reads
-    (measured 5.6ms each — ~13 minutes, and rising every night), while the audit reads each
-    of the ~3k tickers once. A cache that quietly answered differently would put two sets of
-    rank-IC numbers in the repo under one name, so the equality is pinned here rather than
-    asserted in a docstring.
+    The adapter exists for RUNTIME only: pre-memo, ``grade()`` resolved the close series
+    inside a per-(row, horizon) loop (~145k parquet reads on the live 72k-row ledger,
+    measured 5.6ms each — ~13 minutes, rising every night) while the audit read each of the
+    ~3k tickers once; ``grade()`` now memoizes the same way (``NSG._series_reader``), and
+    the two independent readers are additionally pinned series-for-series below. A cache
+    that quietly answered differently would put two sets of rank-IC numbers in the repo
+    under one name, so the equality is pinned here rather than asserted in a docstring.
     """
     root, _prices = _ns_world(tmp_path, monkeypatch)
     graded = NSG.grade("US")
@@ -691,6 +692,39 @@ def test_scorecard_never_forks_from_the_grader(tmp_path, monkeypatch):
     # the pin is only worth something if the matured horizon actually produced numbers
     assert block["by_horizon"]["21d"]["rank_ic"] is not None
     assert block["by_horizon"]["21d"]["n_ic_dates"] == len(_NS_STAMP_POS)
+
+
+def test_grader_reader_is_memoized_and_never_forks_from_the_audits(tmp_path, monkeypatch):
+    """The grader's own memo (``NSG._series_reader``) must (a) read each name ONCE per
+    ``grade()`` — the point of the memo: store reads bounded by the universe, never by
+    ledger depth — and (b) resolve series byte-identical to the audit's independent
+    reader (``PMA.name_score_series_reader``). Two implementations, one truth: a fork
+    fails HERE at the resolution layer with a per-ticker diff instead of surfacing as
+    a mysterious rank-IC drift in the scorecard pin above."""
+    _root, _prices = _ns_world(tmp_path, monkeypatch)
+    inner = PMA.store.read
+    seen: list[tuple[str, str]] = []
+
+    def counting_read(group, name):
+        seen.append((str(group), str(name)))
+        return inner(group, name)
+
+    monkeypatch.setattr(PMA.store, "read", counting_read)
+    graded = NSG.grade("US")
+    assert graded["available"] is True and graded["n_graded"] > 0
+    # one store read per name for the ENTIRE grade() (the US ladder is one group);
+    # pre-memo this was len(ledger rows) × len(horizons) = 90 × 2 = 180 reads.
+    assert len(seen) == len(_NS_TICKERS)
+    assert len(set(seen)) == len(_NS_TICKERS)
+    # resolution-layer anti-fork: both readers agree on every name (+ one absent name).
+    mine = NSG._series_reader("US")
+    theirs = PMA.name_score_series_reader("US")
+    for t in [*_NS_TICKERS, "GHOST-NO-STORE"]:
+        a, b = mine(t), theirs(t)
+        if a is None or b is None:
+            assert a is None and b is None, f"{t}: one reader resolved, the other nulled"
+        else:
+            pd.testing.assert_series_equal(a, b, check_exact=True)
 
 
 def test_scorecard_is_zero_authority_and_names_the_overwritten_key(tmp_path, monkeypatch):
