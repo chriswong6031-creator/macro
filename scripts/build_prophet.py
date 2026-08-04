@@ -3,7 +3,16 @@
 Reads us_standouts.json, originates prophet.trade_plan/v1 envelopes,
 runs the management confidence engine for every active plan, and writes:
 
-    site/prophet/index.json          — all active plans + states inline
+    site/prophet/index.json          — every plan the management engine could state,
+                                       with its state inline.  NOTE THE MISNOMER:
+                                       `active_count` and `plans[]` include plans that
+                                       have CLOSED in the forward ledger (16 of 74 on
+                                       2026-08-03).  That population is fixed — several
+                                       downstream consumers read it — so W1 added
+                                       `open_count` (the live subset) and a per-plan
+                                       `closed` flag instead of redefining it.  A closed
+                                       plan's `pulse` says "closed · <outcome>" and never
+                                       narrates its still-updating phase/human_state.
     site/prophet/plans/<ID>.json     — per-plan artifact
     site/prophet/states/<ID>.json    — per-state artifact
     site/prophet/showcase.json       — public landing teaser: DELAYED winning
@@ -429,14 +438,23 @@ def _initialize_ledger() -> None:
 # Ledger advancement (nightly is the SOLE advancer)
 # ---------------------------------------------------------------------------
 
-def _load_closed_ids() -> set[str]:
-    """Return plan IDs that already have a ledger row (idempotency guard).
+def _load_closed_outcomes() -> dict[str, str]:
+    """``{plan_id: outcome}`` for every plan that has a forward-ledger row.
 
-    Lines beginning with '#' are header comments (skipped).
+    ONE read of ledger.jsonl serving both W1 consumers: the re-origination block
+    (which needs only the id set, via ``_load_closed_ids`` below) and the index's
+    ``closed`` flag + closed-shaped pulse (which need the outcome word).  Lines
+    beginning with '#' are header comments (skipped); an unparseable line is
+    skipped rather than fatal, exactly as before.
+
+    First-wins on a duplicate id: ``_determine_outcome`` is first-trigger-closes,
+    so if a second row for one plan ever appeared, the FIRST is the real close.
+    Missing/blank ``outcome`` maps to "" — the plan is still closed, its outcome
+    is merely unnamed, and the pulse degrades to a bare "closed".
     """
-    closed: set[str] = set()
+    outcomes: dict[str, str] = {}
     if not LEDGER_PATH.exists():
-        return closed
+        return outcomes
     for line in LEDGER_PATH.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
@@ -445,10 +463,15 @@ def _load_closed_ids() -> set[str]:
             row = json.loads(line)
             plan_id = row.get("id")
             if plan_id:
-                closed.add(plan_id)
+                outcomes.setdefault(str(plan_id), str(row.get("outcome") or ""))
         except Exception:
             pass
-    return closed
+    return outcomes
+
+
+def _load_closed_ids() -> set[str]:
+    """Return plan IDs that already have a ledger row (idempotency guard)."""
+    return set(_load_closed_outcomes())
 
 
 def _append_ledger_row(row: dict) -> None:
@@ -762,6 +785,17 @@ _PHASE_WORD: dict[str, tuple[str, str]] = {
     "invalidated":         ("invalidated", "已失效"),
 }
 
+# Forward-ledger outcome → plain word.  `T1_HIT` / `INVALIDATED` are ledger enum
+# slugs, not language; a closed plan's pulse says what happened in words a reader
+# already knows.  An unmapped/blank outcome degrades to a bare "closed" — the plan
+# is still unambiguously finished, which is the load-bearing half.
+_OUTCOME_WORD: dict[str, tuple[str, str]] = {
+    "T1_HIT":      ("hit first target",  "达到首个目标"),
+    "T2_HIT":      ("hit second target", "达到第二目标"),
+    "INVALIDATED": ("stopped out",       "止损离场"),
+    "EXPIRED":     ("timed out",         "到期未达标"),
+}
+
 # human_state strings emitted by engine/prophet_management._human_state.  An
 # unmapped value drops from BOTH halves so the pair can never desync into an
 # EN-only chip (house bilingual law).
@@ -817,6 +851,9 @@ def _plan_pulse(
     age_days: int | None,
     phase: str | None,
     human_state: str | None,
+    *,
+    closed: bool = False,
+    outcome: str | None = None,
 ) -> tuple[str, str]:
     """(EN, ZH) one-line pulse for a plan — e.g. ``("32d · triggered · stalling", …)``.
 
@@ -824,7 +861,22 @@ def _plan_pulse(
     Every leg is independently optional, so a plan missing an age or an unmapped phase
     still gets the legs it does have, and a plan with nothing readable returns ``("", "")``
     rather than a half-built string.  DATA ONLY — W2 owns how (and whether) this renders.
+
+    CLOSED PLANS (W1 amendment).  ``closed=True`` — the plan has a forward-ledger row —
+    returns ``("closed · stopped out", "已结 · 止损离场")`` and reads NEITHER phase nor
+    human_state.  Both keep updating for a closed plan (the management engine states
+    every plan in the index), so a closed plan would otherwise pulse "138d · overtime ·
+    overtime stall" as though the thesis were still running.  The age leg is dropped
+    too: ``age_days`` counts from signal_date to TODAY, so on a dead plan it grows
+    forever and reads as duration-still-open.  ``age_days`` stays on the row as raw
+    data; it is only the plain-word line that must not imply life.
     """
+    if closed:
+        words = _OUTCOME_WORD.get(str(outcome or "").strip().upper())
+        if not words:
+            return "closed", "已结"
+        return f"closed · {words[0]}", f"已结 · {words[1]}"
+
     parts_en: list[str] = []
     parts_zh: list[str] = []
 
@@ -993,7 +1045,10 @@ def main() -> None:
     # W1: same-id suppression is not enough — the id carries signal_date, so a fresh
     # signal on a live name used to originate a SECOND plan for it and burn a slot.
     # The ticker+direction keys of still-OPEN plans block that; closure frees the key.
-    closed_ids = _load_closed_ids()
+    # ONE ledger read for both W1 consumers: the block needs the id set, the index
+    # needs the outcome word for each closed plan's `closed` flag and pulse.
+    closed_outcomes = _load_closed_outcomes()
+    closed_ids = set(closed_outcomes)
     active_keys = open_plan_keys(existing_plans, closed_ids)
     log.info(
         "build_prophet: %d existing plans loaded (%d closed in the ledger; "
@@ -1130,8 +1185,14 @@ def main() -> None:
         # read off state.days_elapsed, so it exists for the same reason the row does
         # and cannot go missing when a state field is absent.
         _age = _age_days(plan.get("signal_date") or plan.get("_signal_date"), asof)
+        # A plan with a forward-ledger row is FINISHED. The management engine still
+        # states it (it is still in all_plans), so without this flag the row is
+        # indistinguishable from a live one and its pulse would narrate a dead thesis.
+        # closed_ids is the same set the re-origination block uses — one ledger read.
+        _closed = plan_id in closed_ids
         _pulse_en, _pulse_zh = _plan_pulse(
             _age, resolved_phase, state.get("human_state"),
+            closed=_closed, outcome=closed_outcomes.get(plan_id),
         )
         active_entries.append({
             "id": plan_id,
@@ -1146,9 +1207,11 @@ def main() -> None:
             "_conviction_score": plan.get("_conviction_score"),
             "_signal_date": plan.get("_signal_date"),
             "phase": resolved_phase,
-            # W1 index hygiene — how old this thesis is, and one plain-word line
-            # saying where it stands.  Additive: nothing was removed or re-ordered.
+            # W1 index hygiene — how old this thesis is, whether it is finished, and
+            # one plain-word line saying where it stands.  Additive: nothing was
+            # removed or re-ordered.
             "age_days": _age,
+            "closed": _closed,
             "pulse": _pulse_en,
             "pulse_zh": _pulse_zh,
             "management_confidence": state.get("management_confidence"),
@@ -1208,9 +1271,15 @@ def main() -> None:
         "authority_tier": "display",
         "gate_go": _read_standouts_gate_go(),
         "plan_count": len(all_plans),
+        # MISNOMER, deliberately preserved: `active_count` (and `plans[]`) count every
+        # plan the management engine could state, INCLUDING forward-ledger-closed ones.
+        # Downstream consumers read that population, so it does not move. `open_count`
+        # below is the live subset, and each row carries its own `closed` flag.
         "active_count": len(active_entries),
+        "open_count": sum(1 for entry in active_entries if not entry.get("closed")),
         # W1 — how the shipped plans distribute by age (≤7d / 8-21d / >21d, plus the
-        # rows whose signal_date could not be read).  Sums to active_count by design.
+        # rows whose signal_date could not be read).  Sums to active_count by design —
+        # closed rows are bucketed too, because they are in `plans[]` too.
         "active_count_by_age": age_counts,
         # W1 — intake disclosure. How the candidate order was decided this run, and how
         # many candidates the active-plan block kept from burning a second slot.

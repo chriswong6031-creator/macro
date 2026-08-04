@@ -514,6 +514,93 @@ class TestAgeAndPulse:
         assert bp._plan_pulse(None, None, None) == ("", "")
         assert bp._plan_pulse(None, "nonsense", "Nonsense") == ("", "")
 
+    @pytest.mark.parametrize("outcome,en,zh", [
+        ("T1_HIT", "closed · hit first target", "已结 · 达到首个目标"),
+        ("T2_HIT", "closed · hit second target", "已结 · 达到第二目标"),
+        ("INVALIDATED", "closed · stopped out", "已结 · 止损离场"),
+        ("EXPIRED", "closed · timed out", "已结 · 到期未达标"),
+    ])
+    def test_a_closed_plan_pulses_its_outcome(self, outcome, en, zh):
+        assert bp._plan_pulse(138, "overtime", "Overtime Stall",
+                              closed=True, outcome=outcome) == (en, zh)
+
+    def test_a_closed_pulse_never_narrates_phase_or_human_state(self):
+        """The defect this closes: the management engine keeps stating a closed plan,
+        so its phase/human_state keep updating and the pulse read as a live thesis."""
+        for phase in bp._PHASE_WORD:
+            for state in bp._HUMAN_STATE_ZH:
+                en, zh = bp._plan_pulse(138, phase, state,
+                                        closed=True, outcome="INVALIDATED")
+                assert en == "closed · stopped out"
+                assert zh == "已结 · 止损离场"
+
+    def test_a_closed_pulse_drops_the_age_leg(self):
+        """age_days counts to TODAY, so on a dead plan it grows forever and would
+        read as "still running for 138 days"."""
+        assert "138d" not in bp._plan_pulse(
+            138, "overtime", "Overtime Stall", closed=True, outcome="EXPIRED")[0]
+
+    @pytest.mark.parametrize("outcome", [None, "", "SOME_NEW_OUTCOME", "t1_hit "])
+    def test_an_unnamed_outcome_still_reads_as_closed(self, outcome):
+        """Losing the outcome word must never resurrect the plan — `closed` is the
+        load-bearing half.  A case/whitespace variant still resolves."""
+        en, zh = bp._plan_pulse(50, "triggered_pre_t1", "Stalling",
+                                closed=True, outcome=outcome)
+        assert en.startswith("closed") and zh.startswith("已结")
+        assert "stalling" not in en
+        if outcome == "t1_hit ":
+            assert en == "closed · hit first target"
+
+    def test_an_open_plan_pulse_is_untouched_by_the_closed_path(self):
+        assert bp._plan_pulse(32, "triggered_pre_t1", "Stalling", closed=False) == \
+               bp._plan_pulse(32, "triggered_pre_t1", "Stalling")
+
+    def test_no_outcome_slug_reaches_the_pulse(self):
+        """`T1_HIT` is a ledger enum, not language (glance-tier word law)."""
+        for outcome in [*bp._OUTCOME_WORD, "UNMAPPED_THING"]:
+            for text in bp._plan_pulse(9, "at_t1", "T1 Hit — Holding",
+                                       closed=True, outcome=outcome):
+                assert "_" not in text and outcome.lower() not in text.lower()
+
+
+class TestLedgerOutcomeReader:
+    """`_load_closed_outcomes` — ONE ledger read serving the block and the index."""
+
+    def test_ids_map_to_their_outcomes(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(bp, "LEDGER_DIR", tmp_path)
+        monkeypatch.setattr(bp, "LEDGER_PATH", tmp_path / "ledger.jsonl")
+        bp.LEDGER_PATH.write_text(
+            "# header comment\n"
+            '{"id": "A-BULL-20260701", "outcome": "T1_HIT"}\n'
+            "\n"
+            '{"id": "B-BULL-20260701", "outcome": "EXPIRED"}\n'
+            "not json at all\n"
+            '{"id": "C-BULL-20260701"}\n',
+            encoding="utf-8")
+        assert bp._load_closed_outcomes() == {
+            "A-BULL-20260701": "T1_HIT",
+            "B-BULL-20260701": "EXPIRED",
+            "C-BULL-20260701": "",
+        }
+        # The id-set reader stays exactly what advance_ledger's guard expects.
+        assert bp._load_closed_ids() == {
+            "A-BULL-20260701", "B-BULL-20260701", "C-BULL-20260701"}
+
+    def test_a_duplicate_row_keeps_the_FIRST_close(self, tmp_path, monkeypatch):
+        """_determine_outcome is first-trigger-closes; a later row cannot rewrite it."""
+        monkeypatch.setattr(bp, "LEDGER_DIR", tmp_path)
+        monkeypatch.setattr(bp, "LEDGER_PATH", tmp_path / "ledger.jsonl")
+        bp.LEDGER_PATH.write_text(
+            '{"id": "A-BULL-20260701", "outcome": "T1_HIT"}\n'
+            '{"id": "A-BULL-20260701", "outcome": "INVALIDATED"}\n',
+            encoding="utf-8")
+        assert bp._load_closed_outcomes() == {"A-BULL-20260701": "T1_HIT"}
+
+    def test_an_absent_ledger_is_empty_not_fatal(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(bp, "LEDGER_PATH", tmp_path / "nope.jsonl")
+        assert bp._load_closed_outcomes() == {}
+        assert bp._load_closed_ids() == set()
+
     def test_the_invalidated_echo_is_collapsed(self):
         assert bp._plan_pulse(45, "invalidated", "Invalidated")[0] == "45d · invalidated"
 
@@ -550,7 +637,7 @@ class TestAgeAndPulse:
 
 def _run_main(tmp_path: Path, buys: list[dict], *, asof: str,
               seed_plans: dict[str, dict] | None = None,
-              ledger_ids: list[str] | None = None) -> dict:
+              ledger: dict[str, str] | None = None) -> dict:
     """Run build_prophet.main() against tmp_path and return the written index.json."""
     standouts_path = _write_standouts(tmp_path, buys, gate_go=False, as_of=asof)
 
@@ -572,11 +659,12 @@ def _run_main(tmp_path: Path, buys: list[dict], *, asof: str,
         bp.PLANS_DIR.mkdir(parents=True, exist_ok=True)
         for plan_id, plan in (seed_plans or {}).items():
             (bp.PLANS_DIR / f"{plan_id}.json").write_text(json.dumps(plan), encoding="utf-8")
-        if ledger_ids:
+        if ledger:
             bp.LEDGER_DIR.mkdir(parents=True, exist_ok=True)
             bp.LEDGER_PATH.write_text(
-                "\n".join(json.dumps({"schema": "prophet.ledger/v1", "id": i,
-                                      "outcome": "EXPIRED"}) for i in ledger_ids) + "\n",
+                "\n".join(json.dumps({"schema": "prophet.ledger/v1", "id": plan_id,
+                                      "outcome": outcome})
+                          for plan_id, outcome in ledger.items()) + "\n",
                 encoding="utf-8")
 
         prices = pd.DataFrame(
@@ -679,7 +767,7 @@ class TestIndexHygieneEndToEnd:
             asof="2026-08-03",
             seed_plans={"CLF-BULL-20260601": _seed_plan(
                 "CLF-BULL-20260601", "CLF", "2026-06-01")},
-            ledger_ids=["CLF-BULL-20260601"],
+            ledger={"CLF-BULL-20260601": "EXPIRED"},
         )
         assert index["intake"]["reorigination_blocked"] == 0
         assert "CLF-BULL-20260731" in {p["id"] for p in index["plans"]}
@@ -699,6 +787,69 @@ class TestIndexHygieneEndToEnd:
         assert sorted(ids) == sorted([*seeds, "AAPL-BULL-20260731"])
         assert ids == [p["id"] for p in sorted(
             index["plans"], key=lambda e: (-(e.get("_conviction_score") or 0), e["id"]))]
+
+    def test_a_ledger_closed_plan_is_flagged_and_pulses_as_closed(self, tmp_path):
+        """The amendment: a closed plan keeps getting stated by the management engine,
+        so without the flag it is indistinguishable from a live one on the surface."""
+        index = _run_main(
+            tmp_path,
+            [_buy("AAPL", priority=88.0, anchor="2026-07-31", spot=120.0)],
+            asof="2026-08-03",
+            seed_plans={
+                "DEAD-BULL-20260601": _seed_plan("DEAD-BULL-20260601", "DEAD", "2026-06-01"),
+                "WON-BULL-20260610": _seed_plan("WON-BULL-20260610", "WON", "2026-06-10"),
+                "LIVE-BULL-20260720": _seed_plan("LIVE-BULL-20260720", "LIVE", "2026-07-20"),
+            },
+            ledger={"DEAD-BULL-20260601": "INVALIDATED", "WON-BULL-20260610": "T1_HIT"},
+        )
+        by_id = {p["id"]: p for p in index["plans"]}
+
+        dead = by_id["DEAD-BULL-20260601"]
+        assert dead["closed"] is True
+        assert dead["pulse"] == "closed · stopped out"
+        assert dead["pulse_zh"] == "已结 · 止损离场"
+        assert by_id["WON-BULL-20260610"]["pulse"] == "closed · hit first target"
+
+        live = by_id["LIVE-BULL-20260720"]
+        assert live["closed"] is False
+        assert live["pulse"] and "closed" not in live["pulse"]
+        assert str(live["age_days"]) + "d" in live["pulse"]
+
+        # age_days survives on the closed row — it is raw data; only the plain-word
+        # line must not imply the thesis is still running.
+        assert dead["age_days"] == 63
+
+    def test_open_count_and_the_age_buckets_stay_coherent(self, tmp_path):
+        """`active_count` semantics are FIXED (downstream consumers read that
+        population); `open_count` is the live subset carved out of it."""
+        index = _run_main(
+            tmp_path,
+            [_buy("AAPL", priority=88.0, anchor="2026-07-31", spot=120.0)],
+            asof="2026-08-03",
+            seed_plans={
+                "DEAD-BULL-20260601": _seed_plan("DEAD-BULL-20260601", "DEAD", "2026-06-01"),
+                "WON-BULL-20260610": _seed_plan("WON-BULL-20260610", "WON", "2026-06-10"),
+                "LIVE-BULL-20260720": _seed_plan("LIVE-BULL-20260720", "LIVE", "2026-07-20"),
+            },
+            ledger={"DEAD-BULL-20260601": "INVALIDATED", "WON-BULL-20260610": "T1_HIT"},
+        )
+        closed = [p for p in index["plans"] if p["closed"]]
+        assert index["active_count"] == len(index["plans"]) == 4
+        assert len(closed) == 2
+        assert index["open_count"] == index["active_count"] - len(closed) == 2
+        # Buckets still census the WHOLE shipped population, closed rows included —
+        # they are in plans[], so excluding them would under-report the surface.
+        assert sum(index["active_count_by_age"].values()) == index["active_count"]
+
+    def test_open_count_equals_active_count_when_the_ledger_is_empty(self, tmp_path):
+        """Guards the inverse: an unread ledger must not silently mark rows closed."""
+        index = _run_main(
+            tmp_path, [_buy("AAPL", priority=88.0, anchor="2026-07-31", spot=120.0)],
+            asof="2026-08-03",
+            seed_plans={"LIVE-BULL-20260720": _seed_plan(
+                "LIVE-BULL-20260720", "LIVE", "2026-07-20")})
+        assert index["open_count"] == index["active_count"] == 2
+        assert not any(p["closed"] for p in index["plans"])
 
     def test_the_index_note_and_intake_basis_avoid_the_forbidden_claim(self, tmp_path):
         index = _run_main(
