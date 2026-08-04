@@ -1,5 +1,34 @@
 {
- "active": {},
+ "active": {
+  "xlk:semicap->ai_semis": {
+   "pair_id": "xlk:semicap->ai_semis",
+   "sector": "xlk",
+   "from_leg": "semicap",
+   "to_leg": "ai_semis",
+   "started": "2026-08-03",
+   "lapse_count": 0,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-30",
+     "runup_pct": 0.413,
+     "runup_z": 2.29,
+     "drawdown_pct": 0.2984,
+     "qualified_by": "z"
+    },
+    "turn": {
+     "low_date": "2026-07-29",
+     "off_low_pct": 0.1259,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.063,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-08-03"
+   }
+  }
+ },
  "closed": {
   "xlk:legacy_tech->software": "2026-07-06",
   "xlk:ai_semis->software": "2026-07-10",

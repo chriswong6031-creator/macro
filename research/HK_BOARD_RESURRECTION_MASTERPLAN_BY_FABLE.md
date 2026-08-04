@@ -54,12 +54,43 @@ the port depends on `engine/us_board_rank.py`. Siblings: `research/PROPHET_BOARD
 - **G5 — Laggards stop using the entry-contaminated composite.** Laggards key = selection-axis
   (residual alpha) only. A Meituan-class row (selection z > 0, entry z ≪ 0) must be
   structurally unable to enter laggards. Fixture-pinned.
-- **G6 — The 200-dma veto gets a measurement, not a hot-patch.** Ship display-tier relief
-  first (G1-G4 make blocked names VISIBLE with the blocking reason named). The veto itself
-  changes only via prereg: offline scan machinery (US gate-width pattern) over the HK panel
-  measuring (a) re-test cadence variants (the one-shot no-retest defect), (b) HK-depth reclaim
-  windows, with forward comparison before any admission change. Pre-registered before the
-  first grade is read.
+- **G6 — ~~The 200-dma veto gets a measurement, not a hot-patch.~~ SUPERSEDED FOR HK BY
+  OPERATOR RULING 2026-08-03.** Original text: ship display-tier relief first (G1-G4 make
+  blocked names VISIBLE with the blocking reason named); the veto itself changes only via
+  prereg — offline scan machinery over the HK panel measuring (a) re-test cadence variants,
+  (b) HK-depth reclaim windows, with forward comparison before any admission change.
+
+  **What happened:** G6's own display-tier relief worked. The `vetoed` lane printed 12
+  refused names — 0700/9988/1810/1211/2318/0268/3888/1093/0867 among them — and the operator
+  ordered the gate removed ("remove HK gate. It is a complete failure to have blocked the
+  buys to incredible wins"). Shipped as `hk_prophet_v2`.
+
+  **The mechanism finding, which outlives the directive:** the reclaim leg is
+  *unsatisfiable by construction* for a deep drawdown. A name 17% below its 200-day average
+  cannot close above it within 2 bars, so every buy signal it fires is auto-blocked until it
+  has already recovered — i.e. until the move is over. For the deep-washout bounce setups
+  that dominate this tape it was never a risk judgement; it was arithmetic. Verified on the
+  committed panel: 6 of 9 witness July markers flip `block`→`take` at their original signal
+  dates (Xiaomi 07-06, Alibaba 07-10, Meituan 07-03, Ping An 07-10, CSPC 06-26, China
+  Medical 06-25); BYD and Kingdee stay blocked on the next-bar hold, which is an honest
+  reason rather than an impossible one.
+
+  **Scope:** HK only, via `signal_gate.gate(..., reclaim_veto=False)`. KEPT on both policies:
+  the bearish-divergence veto and the next-bar hold. US/CN keep the original policy AND this
+  prereg discipline — nothing here licenses touching them.
+
+  **The cost, measured and disclosed on the board:** ~⅓ more names; over 26 years the
+  unblocked cohort earns ≈0 excess vs HSI (mean +0.55%/20d, CI crossing zero) and carries
+  deeper drawdown (median 60d MAE −9.0% vs −7.4%; P(excess<−20%) 5.8%→7.9%). Absolute
+  peak-after-entry across the live blocked population was positive for 54/54 names (median
+  +5.2%, five ≥+15%), which is the product case for admitting them. **The washout regime
+  that motivated the ruling is NOT gradeable** — zero readable post-2026-06-26 cells at any
+  horizon. This is a bet on that regime, not a finding about it; re-run the harness after
+  2026-10-20 (`scratchpad/veto_measure/`) and let `hk_prophet_v2`'s forward ledger settle it.
+
+  **Still open under the original G6 spirit:** the *bearish-divergence* veto measured a null
+  in HK (blocks 1,148 signals for no measurable return cost and no drawdown benefit) — the
+  cheaper leg to relax if more breadth is wanted, and it deserves the prereg G6 describes.
 - **G7 — Plumbing heals.** The board_track ledger write failure diagnosed and fixed (health
   leg green); the 126-session beta-gate universe gap gets a fallback (name admitted with
   beta=null context rather than silently dropped) or a disclosed exclusion count.

@@ -2491,7 +2491,15 @@ on:
       - "tests/test_live_delay_labeling.py"
       - "tests/test_options_flow_attention_reflex.py"
       - "tests/test_prophet_bridge.py"
+      # Prophet US W1 (2026-08-03). The intake-repair suite and the order-invariance
+      # suite both guard engine/prophet_bridge.py's sort key + origination path, which
+      # the patterns above already reach — these two lines are the OTHER half, so a
+      # suite-only edit (a new tie case, a new legacy-artifact shape) can start the
+      # pack that executes it. test_prophet_bridge_order_invariance.py was strictly
+      # dark before this: no `run:` step and no path pattern named it.
+      - "tests/test_prophet_bridge_order_invariance.py"
       - "tests/test_prophet_stage_tilt.py"
+      - "tests/test_prophet_w1_intake_repair.py"
       - "tests/test_tape_flow.py"
       - "tests/test_tape_flow_stamp.py"
       - "tests/test_tech_events_export.py"

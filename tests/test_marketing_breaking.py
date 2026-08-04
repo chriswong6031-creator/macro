@@ -1036,7 +1036,13 @@ class TestBreakingProviderRouting:
 
         assert seen, "the breaking lane never reached the provider waterfall"
         cfg = seen[0]
-        assert cfg["provider_order"] == ["codex", "oauth", "anthropic", "deepseek"]
+        # The HOSTED waterfall is exact; `ollama` may trail it and nothing else
+        # may (2026-08-04). A local model is what runs when every hosted rung has
+        # failed — at which point the alternative is the deterministic relay of a
+        # raw source headline, not a better sentence. It can never be promoted
+        # ahead of a hosted rung by a config edit.
+        assert cfg["provider_order"][:4] == ["codex", "oauth", "anthropic", "deepseek"]
+        assert cfg["provider_order"][4:] in ([], ["ollama"])
         assert cfg["codex_source_model"] == "gpt-5.6-sol"
         assert cfg["codex_reasoning_effort"] == "medium"
         assert cfg["oauth_pool_lane"] == "marketing-breaking"
@@ -1044,7 +1050,8 @@ class TestBreakingProviderRouting:
 
     def test_the_shipped_config_carries_the_ruling(self):
         block = self._live_cfg()["breaking"]["llm"]
-        assert block["provider_order"] == ["codex", "oauth", "anthropic", "deepseek"]
+        assert block["provider_order"][:4] == ["codex", "oauth", "anthropic", "deepseek"]
+        assert block["provider_order"][4:] in ([], ["ollama"])
         assert block["codex_source_model"] == "gpt-5.6-sol"
         assert block["codex_reasoning_effort"] == "medium"
         assert block["oauth_pool_lane"] == "marketing-breaking"

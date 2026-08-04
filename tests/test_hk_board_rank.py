@@ -1,4 +1,4 @@
-"""tests/test_hk_board_rank.py — engine/hk_board_rank.py (hk_prophet_v1).
+"""tests/test_hk_board_rank.py — engine/hk_board_rank.py (hk_prophet_v2 — era bumped 2026-08-03 with the reclaim-veto removal).
 
 Spec: research/HK_BOARD_RESURRECTION_MASTERPLAN_BY_FABLE.md §0 gates G1-G5.
 Machinery under test is the PARAMETERISATION of engine/us_board_rank.py, so the
@@ -22,7 +22,9 @@ from engine.setups import norm_company
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "hk_board_2026_07_31.json"
-ARTIFACT = Path(__file__).resolve().parents[1] / "site" / "factordata" / "hk_standouts.json"
+# The 2026-07-31 board, frozen alongside the price panel above.  NOT
+# site/factordata/hk_standouts.json — see the `prod_board` docstring.
+ARTIFACT = Path(__file__).parent / "fixtures" / "hk_standouts_2026_07_31.json"
 
 # The seven names the operator named as missing from the board (masterplan §1).
 # 9961.HK is the HK-listed exposure standing in for PDD, which has no HK line.
@@ -66,17 +68,26 @@ def board():
 def prod_board():
     """The production HK board for the fixture's own as_of — the exclusion source.
 
-    `site/factordata/hk_standouts.json` is the artifact the nightly shipped for
-    2026-07-31, the same session the G1 panel was frozen from.  Its buy and watch
-    arrays ARE the sets the builder hands the lanes as `exclude`; this PR does not
-    touch either lane's membership, so reading them here replays production rather
-    than approximating it.
+    The artifact the nightly shipped for 2026-07-31, the same session the G1 panel
+    was frozen from.  Its buy and watch arrays ARE the sets the builder hands the
+    lanes as `exclude`, so reading them here replays production rather than
+    approximating it.
+
+    FROZEN (incident 2026-08-04).  This read `site/factordata/hk_standouts.json`
+    live, and the guard below was a `pytest.skip` — so when the nightly moved the
+    board to `as_of: 2026-08-03` the pairing check stopped being a safety net and
+    became an off switch: NINE G1 gates (five-of-seven witness visibility, the
+    watch-strip witness, lane caps binding, the vetoed lane's missed moves) went
+    silently green-by-skip, and the suite reported `154 passed, 9 skipped` for a
+    board nobody was checking any more.  The pairing is now an ASSERT against a
+    frozen file: it cannot drift, so if it ever fails someone regenerated one half
+    of the pair without the other, and that must be loud.
     """
-    if not ARTIFACT.exists():                 # pragma: no cover — committed in-tree
-        pytest.skip(f"{ARTIFACT} not present")
+    assert ARTIFACT.exists(), f"missing frozen board artifact {ARTIFACT}"
     art = json.loads(ARTIFACT.read_text())
-    if str(art.get("as_of")) != BOARD_ASOF:   # pragma: no cover — same-session pairing
-        pytest.skip(f"artifact as_of {art.get('as_of')} != panel {BOARD_ASOF}")
+    assert str(art.get("as_of")) == BOARD_ASOF, (
+        f"frozen artifact as_of {art.get('as_of')} != panel {BOARD_ASOF} — re-pin "
+        f"the price panel, the artifact and BOARD_ASOF in the same commit")
     return art
 
 
@@ -169,7 +180,7 @@ def _marker(date="2026-07-06", kind="buy", quality="block",
 # --------------------------------------------------------------------------- #
 class TestFrozenConstants:
     def test_definition_string(self):
-        assert hbr.BOARD_DEFINITION == "hk_prophet_v1"
+        assert hbr.BOARD_DEFINITION == "hk_prophet_v2"
 
     def test_caps(self):
         assert (hbr.FEATURED_CAP, hbr.SECTOR_CAP, hbr.RAN_CAP) == (12, 4, 12)
@@ -431,7 +442,7 @@ class TestScoreRows:
     def test_definition_is_stamped_on_every_row(self):
         rows = hbr.score_rows([self._row("A", edge_z=1.0),
                                self._row("B", edge_z=0.0)], board_asof=BOARD_ASOF)
-        assert {r["prophet"]["version"] for r in rows} == {"hk_prophet_v1"}
+        assert {r["prophet"]["version"] for r in rows} == {"hk_prophet_v2"}
 
     def test_membership_is_untouched(self):
         pool = [self._row("A", edge_z=1.0), self._row("B", edge_z=-1.0),
@@ -474,7 +485,7 @@ class TestScoreRows:
         rows = hbr.score_rows([self._row("A", edge_z=1.0),
                                self._row("B", edge_z=0.0)], board_asof=BOARD_ASOF)
         block = hbr.ranking_block(rows)
-        assert block["definition"] == "hk_prophet_v1"
+        assert block["definition"] == "hk_prophet_v2"
         assert block["weights"] == dict(ubr.SCORE_WEIGHTS)
         edge = [f for f in block["formula_points"] if f["component"] == "edge"][0]
         assert "HK edge" in edge["reads"]
@@ -1111,7 +1122,7 @@ class TestBuilderWiring:
 
     A unit-tested engine that the builder never calls is a dark lane.  This runs
     the real function over a minimal synthetic fixture (the pattern
-    tests/test_hk_washout_watch.py established) and asserts the hk_prophet_v1 keys
+    tests/test_hk_washout_watch.py established) and asserts the hk_prophet_v2 keys
     reach the artifact.
     """
 
@@ -1149,8 +1160,8 @@ class TestBuilderWiring:
         return out
 
     def test_board_definition_is_stamped(self, built):
-        assert built["rank_by"] == "hk_prophet_v1"
-        assert built["board_definition"] == "hk_prophet_v1"
+        assert built["rank_by"] == "hk_prophet_v2"
+        assert built["board_definition"] == "hk_prophet_v2"
 
     def test_every_new_lane_key_is_present(self, built):
         for key in ("leaders", "ran", "vetoed", "ranking", "lane_counts"):
@@ -1169,7 +1180,7 @@ class TestBuilderWiring:
 
     def test_ranking_receipt_reaches_the_artifact(self, built):
         block = built["ranking"]
-        assert block["definition"] == "hk_prophet_v1"
+        assert block["definition"] == "hk_prophet_v2"
         assert block["score_kind"] == hbr.SCORE_KIND
         assert block["display_tier_lanes"] == list(hbr.DISPLAY_TIER_LANES)
 

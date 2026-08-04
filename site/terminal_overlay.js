@@ -39,7 +39,10 @@
     rootScrollBehavior: '',
     activeElement: null,
     bodyStyle: null,
-    locked: []
+    locked: [],
+    historyArmed: false,
+    historyToken: '',
+    historyCleanupTimer: 0
   };
   // A genuinely cold open keeps enough of the branded loader to feel
   // intentional. Once Terminal has painted successfully in this dashboard
@@ -53,6 +56,7 @@
   // Lifecycle v3: rotate the immutable bundle only after the live checkout advances.
   var HARD_LAUNCH_FALLBACK_MS = 9000;
   var CLOSE_ANIMATION_MS = 300;
+  var HISTORY_STATE_KEY = '__mdxTerminalOverlay';
 
   function isDashboardHost() {
     var h = location.hostname || '';
@@ -284,6 +288,50 @@
     } catch (e) {
       return raw;
     }
+  }
+
+  function isCurrentHistoryGuard(token) {
+    var entry = window.history.state;
+    return !!(entry && typeof entry === 'object' && entry[HISTORY_STATE_KEY] === token);
+  }
+
+  function armHistoryGuard() {
+    if (state.historyArmed) return;
+    var token = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+    try {
+      // Opening Terminal is one dismissible UI state on the SAME dashboard
+      // document. Browser Back consumes this state instead of escaping to the
+      // page that preceded the dashboard.
+      window.history.pushState({
+        __mdxTerminalOverlay: token,
+        dashboardState: window.history.state
+      }, '', window.location.href);
+      state.historyToken = token;
+      state.historyArmed = true;
+    } catch (e) {
+      state.historyToken = '';
+      state.historyArmed = false;
+    }
+  }
+
+  function consumeHistoryGuard() {
+    clearTimeout(state.historyCleanupTimer);
+    state.historyCleanupTimer = 0;
+    state.historyArmed = false;
+    state.historyToken = '';
+  }
+
+  function releaseHistoryGuard() {
+    var token = state.historyToken;
+    var ownsCurrentEntry = state.historyArmed && isCurrentHistoryGuard(token);
+    consumeHistoryGuard();
+    if (!ownsCurrentEntry) return;
+    // The UI button/Escape closes immediately. Then discard only the same-URL
+    // guard we created; never traverse unless it is still the current entry.
+    state.historyCleanupTimer = setTimeout(function () {
+      state.historyCleanupTimer = 0;
+      if (isCurrentHistoryGuard(token)) window.history.go(-1);
+    }, 0);
   }
 
   function setLaunchOrigin(trigger) {
@@ -522,6 +570,7 @@
       void root.offsetWidth;
       root.classList.add('is-open');
       lockDashboard();
+      armHistoryGuard();
     }
 
     showToast();
@@ -583,10 +632,10 @@
   }
 
   function requestClose() {
-    // The Terminal is an overlay, not a navigation. Closing it must never pop
-    // browser history or replace the dashboard document: the exact page, UI
-    // state, scroll coordinates and focused ticker stay where the user left them.
+    // Close the overlay first; history cleanup may only consume our same-page
+    // guard and can never navigate to the page that preceded the dashboard.
     performClose();
+    releaseHistoryGuard();
   }
 
   window.addEventListener('message', function (event) {
@@ -620,6 +669,14 @@
       event.preventDefault();
       requestClose();
     }
+  });
+
+  window.addEventListener('popstate', function () {
+    if (!state.open) return;
+    // Browser Back/Backspace already consumed the guard. Reveal the preserved
+    // dashboard without asking history to move a second time.
+    consumeHistoryGuard();
+    performClose();
   });
 
   window.MDXTerminalOverlay = {

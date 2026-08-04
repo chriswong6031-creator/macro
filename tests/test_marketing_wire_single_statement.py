@@ -270,7 +270,20 @@ def _press_tick(items: list[dict]) -> dict:
 
 
 class TestLivePostsShipOneStatement:
-    def test_the_gold_relay_ships_once_voiced_and_credited(self):
+    def test_the_gold_relay_ships_once_and_uncredited(self):
+        """THE CREDIT REQUIREMENT WAS RETIRED, 2026-08-04 (operator citation law).
+
+        This test used to assert " -- " was present: every single-source item
+        carried "-- wire reports", so a credit clause was universal. The operator
+        ruling ended that — there is no masthead called Wire, and an X relay is
+        someone else's account, so an unrecognisable source now gets NO credit
+        rather than an anonymous one.
+
+        The item still SHIPS: a gold price and a direction are checkable off the
+        tape without trusting the relay (source_authority.self_evident). What is
+        pinned here is the single-statement shape, which is what this file is
+        for, plus the new invariant — no invented credit, no foreign handle.
+        """
         item = _parse_relay("FirstSquawk", GOLD_TWEET, "1955000000000000001")
         res = _press_tick([item])
         emitted = [e for e in res["emitted"] if e.get("kind") == "breaking"]
@@ -282,11 +295,18 @@ class TestLivePostsShipOneStatement:
             assert text.count("GOLD ROSE ABOUT 0.6%") == 1, text
             # One paragraph: no headline line stacked over the body.
             assert "\n\n" not in text, text
-            # The single statement is still CREDITED (never a bare relay)...
-            assert " -- " in text, text
-            # ...and the redundancy drop left its audit trail.
-            assert "one statement" in (e["source"].get("x_clamp") or ""), \
-                e["source"].get("x_clamp")
+            # No anonymous credit, and no handle — the two strings this lane
+            # has actually shipped and must never ship again.
+            assert "wire reports" not in text, text
+            assert "@" not in text, text
+            assert e["source"].get("citation_tier") == "unnamed", e["source"]
+            # ...and the redundancy decision left an audit trail. It is the SHAPE
+            # field now, not x_clamp: without the credit clause the composed post
+            # no longer crosses 280, so the clamp never runs and has nothing to
+            # record. The property that matters — this shipped as one statement
+            # and we can say why — is unchanged.
+            assert e["source"].get("post_shape") == "short_form", e["source"]
+            assert e["source"].get("post_shape_reason"), e["source"]
 
     def test_the_korea_relay_ships_once(self):
         item = _parse_relay("financialjuice", KOREA_TWEET, "1955000000000000002")
@@ -322,7 +342,12 @@ class TestLivePostsShipOneStatement:
             "source_tier": "aggregator",
             "url": "https://example.invalid/distinct-1",
             "published_at": "2026-08-03T00:12:02Z",
-            "headline": "Fed holds rates steady at the July meeting",
+            # Carries a READING (2026-08-04). An uncreditable single source with
+            # no checkable figure is now a digest item — correctly, since it has
+            # nothing but its own say-so behind it — and a bare "Fed holds rates
+            # steady" was that shape. Real FOMC wire copy carries the range, so
+            # this fixture is closer to the traffic as well as reachable.
+            "headline": "Fed holds rates steady at 4.25%-4.50% at the July meeting",
             "body_snippet": "Policymakers left the target range untouched and "
                             "flagged supply, not demand, as the binding "
                             "constraint this year.",

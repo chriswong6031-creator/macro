@@ -1,0 +1,269 @@
+{
+  "as_of": "2026-08-04",
+  "coverage": {
+    "end": "2026-08-03",
+    "note": "daily rollup covers 10 session-date(s) from 2026-07-25 to 2026-08-03; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-07-25"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-08-03",
+      "events": [
+        {
+          "date": "2026-08-03",
+          "id": "cev-research_vault-df7884c1dd18",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ovegn6rwo5n-3ac8f3",
+          "tickers": [],
+          "title": "UBS: Daily US",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-02",
+      "events": []
+    },
+    {
+      "date": "2026-08-01",
+      "events": []
+    },
+    {
+      "date": "2026-07-31",
+      "events": [
+        {
+          "date": "2026-07-31",
+          "id": "cev-research_vault-32f68ca29d0d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-0natz1tlzak-bf2676",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Europe Equity Research Today’s Morning Meeting",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-30",
+      "events": [
+        {
+          "date": "2026-07-30",
+          "id": "cev-regime_flip-195d6fe8d1a1",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-07-30#regime_us",
+          "tickers": [],
+          "title": "US regime: Q1 Goldilocks → Q2 Reflation",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-440862b5bab5",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-4aoajzqskpx-37ff8b",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell Afternoon Briefing 29.07",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-30",
+          "id": "cev-research_vault-b7ed87c42ab2",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ehqbfjwfxxq-ad763b",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell Afternoon Briefing 29.07",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-29",
+      "events": [
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-55a143f60c32",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-kjiaumouiiu-af6784",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Europe Equity Research Today’s Morning Meeting",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-656c33b3e214",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-llcnf4qdjf0-618421",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM JPM Chips for Break",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-29",
+          "id": "cev-research_vault-837a11f89077",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-tsseepkd2yv-59aabc",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM JPM US Market Intell",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-28",
+      "events": [
+        {
+          "date": "2026-07-28",
+          "id": "cev-regime_flip-2c5d90609138",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-07-28#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q3 Stagflation → Q1 Goldilocks",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-28",
+          "id": "cev-research_vault-f1ecc4f598a6",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-cwta10ecnvl-186d33",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell | Morning Briefing",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-27",
+      "events": [
+        {
+          "date": "2026-07-27",
+          "id": "cev-research_vault-1ba0b6a9e9c3",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bms7cauktyp-277d6e",
+          "tickers": [],
+          "title": "Goldman Sachs: Japan Portfolio Strategy Trigger warnings Lessons from the July August 2024 sell off",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-26",
+      "events": [
+        {
+          "date": "2026-07-26",
+          "id": "cev-research_vault-1b1a30ca03e5",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-5jjtogk3lv8-5fdba8",
+          "tickers": [],
+          "title": "S&T: GS Brian Garrett Weekend Prep July 26",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-07-25",
+      "events": [
+        {
+          "date": "2026-07-25",
+          "id": "cev-research_vault-345a31661975",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-o9j78a886os-fb1ea4",
+          "tickers": [],
+          "title": "S&T: GS Benny Qwek Weekend Thoughts FOMO",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-25",
+          "id": "cev-research_vault-4a4c587934ca",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-o6uotktnk4c-7e7a10",
+          "tickers": [],
+          "title": "Goldman Sachs: China Dairy Modern Dairy positive profit alert plus controlling stake on Shengmu",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-25",
+          "id": "cev-research_vault-66603b84fd42",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-1tmr0fjwz6r-40b905",
+          "tickers": [],
+          "title": "Deutsche Bank: US Econ Notes July 24",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-25",
+          "id": "cev-research_vault-73ae0c051d82",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ehtiyuitugy-0ed3fa",
+          "tickers": [],
+          "title": "S&T: FOMO Fear Of Momentum",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-25",
+          "id": "cev-research_vault-7bcf7fa93c63",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-nsykygenf6i-d40f04",
+          "tickers": [],
+          "title": "Morgan Stanley: MS AI Debt Financing Tracker Heat Advisory",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-25",
+          "id": "cev-research_vault-b7755dd269c2",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-lizikexcern-35666b",
+          "tickers": [],
+          "title": "Goldman Sachs: Fed Chatterbox July Edition",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-25",
+          "id": "cev-research_vault-cd5152f18630",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-yuir5pzzczx-104728",
+          "tickers": [],
+          "title": "Goldman Sachs: EM Asia FX Rates Views Asian tech related currencies outperform",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-25",
+          "id": "cev-research_vault-ddb88eee6e2f",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-romgvlkmfpn-86c58d",
+          "tickers": [],
+          "title": "The Market Ear: Three Crosscurrents Reshaping Markets",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-25",
+          "id": "cev-research_vault-fdcb1a79bd56",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-jvdamhulfoh-9db6fe",
+          "tickers": [],
+          "title": "The Market Ear: Probably the Most Bearish Chart of the Weekend",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}

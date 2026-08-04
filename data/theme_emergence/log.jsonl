@@ -9,3 +9,5 @@
 {"sic":"3674","sic_desc":"Semiconductors & Related Devices","asof":"2026-07-24","ts":"2026-07-28T01:55:57.657412+00:00","n_new_filers":12,"velocity":8,"new_filers":["ALAB","CBRS","CRDO","CRUS","KOPN","MCHP","MRVL","MX","PENG","PRSO","SMTK","TXN"]}
 {"sic":"3760","sic_desc":"Guided Missiles & Space Vehicles & Parts","asof":"2026-07-23","ts":"2026-07-28T01:55:57.657412+00:00","n_new_filers":4,"velocity":3,"new_filers":["FLY","MNTS","RKLB","YSS"]}
 {"sic":"7372","sic_desc":"Services-Prepackaged Software","asof":"2026-07-27","ts":"2026-07-28T01:55:57.657412+00:00","n_new_filers":3,"velocity":0,"new_filers":["BSY","CDNS","PCTY"]}
+{"sic":"2834","sic_desc":"Pharmaceutical Preparations","asof":"2026-07-29","ts":"2026-08-04T02:15:51.166894+00:00","n_new_filers":6,"velocity":2,"new_filers":["APVO","CORT","HIND","HYPD","ONC","TIVC"]}
+{"sic":"3760","sic_desc":"Guided Missiles & Space Vehicles & Parts","asof":"2026-08-03","ts":"2026-08-04T02:15:51.166894+00:00","n_new_filers":5,"velocity":4,"new_filers":["FLY","MNTS","RKLB","VOYG","YSS"]}

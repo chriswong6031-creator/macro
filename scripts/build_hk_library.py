@@ -644,6 +644,22 @@ def _spark_zone(es) -> dict:
 # and must be SUPPRESSED with a visible reason — enforced in code, never by cadence.
 FRESHNESS_MAX_STALE_TD = 3
 
+# hk_prophet_v2 admission policy (operator ruling 2026-08-03). False = HK does NOT require
+# a name below its 200-day average and weekly-down to reclaim that average within 2 bars.
+# The rationale, the kept legs (bearish divergence, next-bar hold) and the US/CN
+# no-change guarantee are documented at engine.signal_quality._buy_filter. Named rather
+# than inlined so the policy is greppable and its single flip site is obvious.
+HK_RECLAIM_VETO = False
+# The SECOND door the same impossible condition walked through (2026-08-04). The ran
+# lane ("fired recently, already moved, don't chase") required `above200`, but a name
+# recovering from a 30-50% drawdown is BELOW its 200-day average BY CONSTRUCTION —
+# that is what a deep drawdown is. Measured on the first hk_prophet_v2 board: 1810.HK,
+# 9988.HK, 2318.HK, 1093.HK and 0867.HK correctly left the vetoed lane (no longer
+# blocked) and then landed on NO lane at all, because every lane that could catch them
+# tests above200. The lane still requires weekly_bull and not-marked-down, so it never
+# claims an intact long-term uptrend — only that the cross fired and the name has moved.
+HK_RAN_REQUIRE_ABOVE200 = False
+
 
 def _entry_window(e: dict) -> dict:
     """Derive the ripe-list CARD entry window (§5.0) from the existing entry-gauge
@@ -835,10 +851,13 @@ def _board_ledger_calls(buys: list[dict], watch: list[dict], *,
             # Inclusion-gate version — enables Q4/W7 grading to split pre/post cascade-swap.
             "gate_ver": "cascade_v1",
             # ERA FENCE (masterplan §3 / CN G5). hk_prophet_v1 re-sorted the buy
-            # lane, so `board_pos` stopped meaning what it meant on 2026-08-01.
-            # The stamp lets board_ledger.scorecard scope its rank statistics to
-            # ONE selection instrument instead of pooling two boards; rows
-            # written before this stamp read as legacy and keep their own pool.
+            # lane, so `board_pos` stopped meaning what it meant on 2026-08-01;
+            # hk_prophet_v2 (2026-08-03) then changed ADMISSION itself by dropping
+            # the 200-day reclaim requirement, which is the sharper break of the two
+            # — a wider lane is a different instrument, not a re-ordering of the same
+            # one. The stamp lets board_ledger.scorecard scope its rank statistics to
+            # ONE selection instrument instead of pooling three; rows written before
+            # each stamp read as legacy and keep their own pool.
             "board_definition": hk_board_rank.BOARD_DEFINITION,
         })
     return calls
@@ -1353,8 +1372,16 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         if close_s is not None and len(close_s) >= 60:
             # CONFLUENCE GATE (owner directive, 2026-07-16 — mirroring CN 2026-06-29):
             # sig_verdict is now the INCLUSION gate for the HK standout board (T1->T4 cascade).
+            #
+            # reclaim_veto=False (operator ruling 2026-08-03, hk_prophet_v2): HK drops the
+            # 2-bar 200-day reclaim requirement. It was unsatisfiable-by-construction for the
+            # deep-washout bounces this tape produces — a name 17% below its 200-day line
+            # cannot close above it in two sessions, so its every signal was blocked until the
+            # move was already over (68% of all HK rejections; the `vetoed` lane printed
+            # 0700/9988/1810/1211/2318 blocked into +8.7%…+44% runs). The bearish-divergence
+            # veto and the next-bar hold confirmation are UNCHANGED. US/CN keep the default.
             try:
-                sig_verdict[t] = signal_gate.gate(t, close_s)
+                sig_verdict[t] = signal_gate.gate(t, close_s, reclaim_veto=HK_RECLAIM_VETO)
             except Exception as ex:  # noqa: BLE001 — additive, never fatal
                 log.debug("hk signal-gate for %s failed (%s)", t, ex)
             # ⚖ vol-managed inverse-vol sizing — HOW MUCH to own (risk), orthogonal to the
@@ -1632,9 +1659,9 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     )
     _stage_ct = hk_board_rank.stage_counts(buys)
     _ranking = hk_board_rank.ranking_block(buys, theme_asof=as_of)
-    log.info("hk_prophet_v1: %d buy rows scored — stages %s, featured %d "
-             "(cap %d, sector cap %d)", len(buys), _stage_ct,
-             _ranking["featured_count"], hk_board_rank.FEATURED_CAP,
+    log.info("%s: %d buy rows scored — stages %s, featured %d "
+             "(cap %d, sector cap %d)", hk_board_rank.BOARD_DEFINITION, len(buys),
+             _stage_ct, _ranking["featured_count"], hk_board_rank.FEATURED_CAP,
              hk_board_rank.SECTOR_CAP)
 
     # days_since_signal on the non-buy conviction lanes: one field, one meaning
@@ -1723,6 +1750,11 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         exclude=_claimed | {r["ticker"] for r in leaders},
         leadership=_leadership,
         board_asof=as_of,
+        require_above200=HK_RAN_REQUIRE_ABOVE200,
+        # Load-bearing: with the above200 door open the lane is ~5x oversubscribed,
+        # and without the cohort the cap truncates freshest-first — which drops every
+        # mega-cap a reader came to check.  No cohort => _cohort_first is a no-op.
+        cohort=_ldr.DEFAULT_COHORT,
     )
     # Vetoed lane (G1 / G6): a buy signal fired and the entry gate refused it —
     # the block reason named, and what the name did while the board stayed out.

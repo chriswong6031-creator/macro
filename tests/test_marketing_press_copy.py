@@ -1601,8 +1601,17 @@ class TestRestatementEndToEnd:
         assert text.count("returning inflation to 2%") == 1, text
         assert "\n" not in text, text
         assert emit["source"]["post_shape"] == "short_form"
-        # The citation survives the degradation — a relay never drops its source.
-        assert "wire reports" in text, text
+        # THE CREDIT IS GONE, AND THAT IS THE POINT (operator law 2026-08-04).
+        # This line used to read `assert "wire reports" in text` with the note
+        # "a relay never drops its source". The operator reversed it: there is
+        # no masthead called Wire, an X relay is someone else's account, and an
+        # anonymous credit buys the reader nothing while costing us standing.
+        # @FirstSquawk is unnamed, so the post carries no source clause — and
+        # the item still ships, because a Fed official's public remark relayed
+        # by a squawk is checkable, not a claim resting on the relay's word.
+        assert "wire reports" not in text, text
+        assert "@" not in text, text
+        assert emit["source"]["citation_tier"] == "unnamed", emit["source"]
 
     def test_a_packet_that_carries_a_datum_still_ships_two_lines(self, tmp_path):
         """The other half: the short form is a DEGRADATION, not the only shape. A

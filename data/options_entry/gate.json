@@ -1,6 +1,6 @@
 {
  "schema": "options_entry.gate.v3",
- "generated_at": "2026-08-03 02:56 UTC",
+ "generated_at": "2026-08-04 04:12 UTC",
  "scored": false,
  "status": "signal",
  "weight": 0.0,
@@ -28,7 +28,7 @@
   "S-PIN_RISK": "building_history",
   "S-VOI2": "building_history",
   "S-VANNA-RELIEF": "no_effect",
-  "S-FRONT-CHARM": "building_history"
+  "S-FRONT-CHARM": "no_effect"
  },
  "tests": {
   "S-DOI": {
@@ -293,11 +293,36 @@
    "note": "CAUTION-ONLY (RO-3): holdability / de-escalation / stop-width state. PRIMARY = breach delta (beneficial = LOWER breach). SECONDARY = clean + mfe21 (reported honestly; no pre-judged direction). Never originates a new entry. Sign note (audit #29): flag uses signed net vanna under long-call/short-put dealer convention; mechanism narrative inherits that assumption."
   },
   "S-FRONT-CHARM": {
-   "bucket": "S-FRONT-CHARM",
-   "n_cond": 0,
-   "n_base": 0,
-   "ready": false,
-   "note": "opt_front7_charm_share not yet stamped \u2014 W-OVC harness extension (stamp ships in this PR; history accrues from live fires)"
+   "bucket": "S-FRONT-CHARM: opt_front7_charm_share top-tercile (near-term charm concentration)",
+   "n_cond": 109,
+   "n_base": 128,
+   "ready": true,
+   "breach": {
+    "n_cond": 0,
+    "n_base": 9,
+    "delta": null,
+    "ci_lo": null,
+    "ci_hi": null,
+    "excludes_zero": false
+   },
+   "clean": {
+    "n_cond": 9,
+    "n_base": 12,
+    "delta": -0.75,
+    "ci_lo": -1.0,
+    "ci_hi": -0.5,
+    "excludes_zero": true
+   },
+   "mfe21": {
+    "n_cond": 3,
+    "n_base": 4,
+    "delta": -0.11059,
+    "ci_lo": -0.21236,
+    "ci_hi": -0.00153,
+    "excludes_zero": true
+   },
+   "caution_only": true,
+   "note": "CAUTION-ONLY (RO-3): elevated front-charm = higher near-term vol risk = wider stops. PRIMARY = breach delta (beneficial = HIGHER breach \u2014 flag correctly identifies vol-exposed entries). SECONDARY = clean + mfe21 (reported honestly). Never initiates a negative position. Root-class caveat: ETF-slice sign is era-unstable (robustness \u00a73.2 of adjudication); per-class breakdowns reported once n\u226530 per class."
   }
  },
  "verdicts": {
@@ -310,7 +335,7 @@
   "S-TOP_RISK": "no_effect",
   "S-PIN_RISK": "building_history",
   "S-VANNA-RELIEF": "no_effect",
-  "S-FRONT-CHARM": "building_history"
+  "S-FRONT-CHARM": "no_effect"
  },
  "evidence": [
   "S-IVR: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_iv_rank_252 is null until the post-W1.1 IV-backfill PR (ruling A9)",
@@ -324,7 +349,7 @@
   "S-PIN_RISK: building history (n_cond=27, n_base=188; need 30/bucket) \u2014 CAUTION-ONLY: beneficial direction = flagged fires show lower clean liftoff / mfe21 (pinning suppresses follow-through). de-escalation only, never a short.",
   "S-VOI2: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_voi2_flag not yet stamped \u2014 awaits W-C harness extension that adds the stricter z-threshold + contract-count-floor to the stamp (future PR). S-VOI original registration stands; this is a distinct, stricter bucket registered after S-VOI was documented as degenerate (n_cond=42/n_base=4).",
   "S-VANNA-RELIEF: n_cond=69 n_base=142 \u2192 verdict=no_effect",
-  "S-FRONT-CHARM: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_front7_charm_share not yet stamped \u2014 W-OVC harness extension (stamp ships in this PR; history accrues from live fires)",
+  "S-FRONT-CHARM: n_cond=109 n_base=128 \u2192 verdict=no_effect",
   "stamp coverage [opt_ivspread_rel]: 211/2282 rows (9.2%)",
   "stamp coverage [opt_skew]: 215/2282 rows (9.4%)",
   "stamp coverage [opt_skew_5d_chg]: 211/2282 rows (9.2%)",
@@ -333,8 +358,8 @@
   "stamp coverage [opt_wall_dist_up_pct]: 215/2282 rows (9.4%)",
   "stamp coverage [opt_wall_dist_down_pct]: 215/2282 rows (9.4%)",
   "stamp coverage [opt_vanna_relief]: 211/2282 rows (9.2%)",
-  "stamp coverage [opt_front7_charm_share]: 0/2282 rows (0.0%)",
-  "stamp coverage [opt_root_class]: 0/2282 rows (0.0%)"
+  "stamp coverage [opt_front7_charm_share]: 237/2282 rows (10.4%)",
+  "stamp coverage [opt_root_class]: 2282/2282 rows (100.0%)"
  ],
  "note": "Pre-registered entry-quality gate (S-IVR/S-DOI/S-WALL/S-VOI + W-C: S-IVSPREAD-F/S-SKEW_DECEL/S-TOP_RISK/S-PIN_RISK/S-VOI2 + W-OVC: S-VANNA-RELIEF/S-FRONT-CHARM). Display/ledger-seed only until a bucket clears n\u226530 AND a primitive delta's bootstrap CI excludes 0 (doctrine \u00a72.3). Ledger primitives only (ruling A10). FDR family=36 tests, BH \u03b1=0.10. Never scored until a gate passes. S-TOP_RISK/S-PIN_RISK/S-FRONT-CHARM are caution-only: beneficial direction = flagged fires worse/higher-vol (correctly de-escalates). S-VANNA-RELIEF is caution-only: holdability context only, not an entry originator. Never initiates a negative position (RO-3)."
 }
