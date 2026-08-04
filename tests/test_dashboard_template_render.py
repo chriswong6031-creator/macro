@@ -258,6 +258,23 @@ def test_us_track_record_filter_bar_stays_in_document_flow():
     ) in html
 
 
+def test_us_track_record_hold_value_keeps_languages_in_separate_blocks():
+    """The hold unit must not leak Chinese into the English value line."""
+    vm = _base_vm()
+    vm["us_board_outcomes"] = {"rows": [{"ticker": "ACME"}], "as_of": "2026-07-04"}
+    vm["us_track_ledger"] = {
+        "state": "scored",
+        "as_of": "2026-07-04",
+        "summary": {"median_hold": 9, "horizon": 10},
+    }
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert '<div class="trd-card-v l-en">9<span' in html
+    assert 'class="trd-mut"> sessions</span></div>' in html
+    assert '<div class="trd-card-v l-zh">9<span' in html
+    assert 'class="trd-mut"> 个交易日</span></div>' in html
+    assert '<span class="l-en">sessions</span><span class="l-zh">个交易日</span>' not in html
+
+
 def test_stocks_mode_renders_standout_card_body():
     """The board-row loop body actually ran — this is where the template-crash
     class lives (per-card chips; the dossier/expander legs were removed from

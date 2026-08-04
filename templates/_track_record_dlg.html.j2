@@ -474,7 +474,8 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
         {%- if _st.get('median_hold') is not none -%}
         <div class="trd-card">
           <div class="trd-card-k">{{ t('Typical hold', '典型持有') }}</div>
-          <div class="trd-card-v">{{ _st.median_hold }}<span style="font-size:13px;font-weight:600" class="trd-mut"> {{ t('sessions', '个交易日') }}</span></div>
+          <div class="trd-card-v l-en">{{ _st.median_hold }}<span style="font-size:13px;font-weight:600" class="trd-mut"> sessions</span></div>
+          <div class="trd-card-v l-zh">{{ _st.median_hold }}<span style="font-size:13px;font-weight:600" class="trd-mut"> 个交易日</span></div>
           <div class="trd-card-m"><span class="l-en">sold at {{ _st.get('horizon', 10) }} sessions, or sooner on a hot run or a broken base</span><span class="l-zh">持有 {{ _st.get('horizon', 10) }} 个交易日卖出；冲高或跌破底部则提前</span></div>
         </div>
         {%- endif -%}
