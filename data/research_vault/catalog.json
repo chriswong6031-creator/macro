@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T17:09:59.076745+00:00",
-  "count": 747,
+  "generated_at": "2026-08-04T17:39:52.672704+00:00",
+  "count": 748,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -50,6 +50,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-ntdtmy4d6da-3f1c85",
+      "title": "Snap Aug 4",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T16:17:10Z",
+      "summary_points": [
+        "**Q2 Beat & Sustainable Growth**: Q2 revenue $1.6bn (19% y/y, above est), EBITDA $250m (32% above est); Q3 guidance $1.70–1.74bn (13–15% y/y) exceeds Street, signaling growth beyond temporary drivers (FIFA/Middle East).",
+        "**Subscription Engine & SPECS Risk**: Subscriptions +85% y/y ($316m, 20% of revenue), with 7–12% penetration benchmark; SPECS adoption at $2.195 (2.195 ASP, 100k target) faces mass-market hesitation, threatening medium-term viability.",
+        "**Strategic Infrastructure Spend**: FY26 infrastructure cost raised $500m to $1.65–1.70bn for DR optimization/ad platform, driving 56% platform conversion lift—offensive spend to improve returns, not defensive.",
+        "**Margin Expansion & Cash Flow**: Gross margin +7pp y/y, EBITDA margin 15.6% (vs 3.1% in Q225), TTM FCF $706mn; FCF per share now primary objective (Q2 FCF $121mn).",
+        "**Q3 Guidance Moderation**: Revenue guidance growth (13–15% y/y) moderates from prior 19% but near high end; EBITDA $300–350mn (vs Street $328mn), with 2027 profitability dependent on ad/subs execution."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-c4amh4zvobb-1ef1ad",
       "title": "GS Tony Pasquariello markets and macro Aug 4",
