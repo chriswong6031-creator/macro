@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T08:53:07.159956+00:00",
-  "count": 723,
+  "generated_at": "2026-08-04T09:23:12.463599+00:00",
+  "count": 724,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -607,6 +607,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vepfdsxsp0i-838c57",
+      "title": "Global Weekly Kickstart Markets Rise Amid Volatile Rotation",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:29Z",
+      "summary_points": [
+        "**Japan/APxJ Surge**: 2.5% 1-week return leads global markets, outpacing EM (2.3%) and Europe (1.8%), signaling strong regional momentum.",
+        "**Energy Collapse**: Brent oil (-8.1%) and USD/JPY (-3.8%) show severe downside, contrasting with Consumer Discretionary (+7.4%), highlighting sector volatility risk.",
+        "**Valuation Extremes**: GSBLBR at 67% with Shiller PE at 98th percentile signals extreme overvaluation risk, while unemployment at 80th percentile reflects tight labor market conditions.",
+        "**China HSI Performance**: HSI 1Yr +30.0% driven by domestic fundamentals, indicating robust EM inflows and bullish sentiment.",
+        "**Turkey Underperformance**: XU100 1Yr -5.2% vs MSCI AC World, underscoring geopolitical risks and currency volatility as critical portfolio risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
       "language": "en",
       "needs_metadata": false
     },
