@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T02:52:20.237423+00:00",
-  "count": 705,
+  "generated_at": "2026-08-04T03:07:22.550859+00:00",
+  "count": 706,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -49,6 +49,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-1rsmtymxklr-268f90",
+      "title": "FX Comment",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T23:04:24Z",
+      "summary_points": [
+        "**Term Premiums Drive Dollar Weakness**: FOMC's lack of forward guidance raised US yields, triggering a record 5th percentile dollar decline (worst since 2008) and pushing USDSEK lower, amplified by US tariff/geopolitical skepticism.",
+        "**Term Premiums Dominate FX Volatility**: Regression shows term premiums explain 80% of USDJPY volatility vs.",
+        "45% for 10-yr yields alone, indicating JPY was disproportionately punished during financial repression; rising premiums risk reversing the strong dollar trend.",
+        "**Geopolitical Policy & Carry Trade Risks**: Wash's weak-dollar policy aligns with Trump-era tactics, with BoJ intervention timing (post-FOMC) signaling coordination; low-volatility currencies (JPY, SEK) underperforming higher-yield assets (USD, AUD) in carry trades amid cooling retail US equity demand, threatening USDSEK reversal."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-hoobnuhrzwi-24b087",
       "title": "mom",
