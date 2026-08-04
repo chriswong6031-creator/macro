@@ -3,8 +3,8 @@
 # The scorer harness (engine/earnings_qual.py) reads this to know which provider
 # to try first, the local Qwen endpoint, model names, the daily call cap, and the
 # prompt version.  It is provider-agnostic: the SAME harness runs on the operator's
-# Windows PC against a LOCAL OpenAI-compatible endpoint (llama.cpp / LM Studio /
-# vLLM serving Qwen3-14B-Q4) and — as a cloud fallback, off the render path — on
+# Windows PC or VPS against the private Ollama/OpenAI-compatible endpoint serving
+# Qwen3.5-9B-Q4 and — as a cloud fallback, off the render path — on
 # Anthropic/DeepSeek via engine/llm_auth.make_call().
 #
 # SGA-R5: all output is context-only (is_context_only:true) — never a signal,
@@ -24,10 +24,10 @@ provider_order:
 
 # --- local OpenAI-compatible endpoint (the Qwen path) ---------------------------
 # base_url is a PLACEHOLDER — the worker overrides it from its own env/args when it
-# runs on the PC.  Default points at a locally-served llama.cpp / LM Studio server.
+# runs on the PC or VPS. Default points at Ollama's OpenAI-compatible endpoint.
 openai_compat:
-  base_url: "http://localhost:8000/v1"   # placeholder; PC worker overrides
-  model: "qwen3-14b"                       # LM Studio / llama.cpp model id
+  base_url: "http://localhost:11434/v1"  # override with EARNINGS_LLM_BASE_URL
+  model: "qwen3.5:9b"                    # multimodal Ollama model id
   api_key_env: "LOCAL_LLM_API_KEY"        # optional; most local servers ignore it
   connect_timeout_s: 5                     # fail over quickly when the LAN host is down
   timeout_s: 120

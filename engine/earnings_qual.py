@@ -17,9 +17,9 @@ from ``sga_score`` until a pre-registered promotion gauntlet passes.
 PROVIDERS
 ---------
 Provider-agnostic dispatch, ordered by ``config/earnings_qual.yml``:
-  • ``openai_compat`` — the LOCAL Qwen path.  POST ``{base_url}/chat/completions``
-    (OpenAI Chat Completions shape) against a llama.cpp / LM Studio / vLLM server
-    on the operator's Windows PC.  base_url + model come from provider_cfg.
+  • ``openai_compat`` — the private Qwen path. POST
+    ``{base_url}/chat/completions`` (OpenAI Chat Completions shape) against
+    Ollama on the operator's Windows PC. base_url + model come from provider_cfg.
   • ``anthropic`` / ``deepseek`` — cloud fallback via ``engine.llm_auth.make_call``
     (off the render-critical path, cheapest lane — Haiku/DeepSeek).
 
@@ -135,8 +135,8 @@ _MAX_HIGHLIGHTS = 3
 _DEFAULT_CFG: dict[str, Any] = {
     "provider_order": ["openai_compat", "deepseek", "kimi", "anthropic"],
     "openai_compat": {
-        "base_url": "http://localhost:8000/v1",
-        "model": "qwen3-14b",
+        "base_url": "http://localhost:11434/v1",
+        "model": "qwen3.5:9b",
         "api_key_env": "LOCAL_LLM_API_KEY",
         "timeout_s": 120,
         "max_tokens": 1200,
