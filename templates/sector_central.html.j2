@@ -849,10 +849,6 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     border-top:1px solid var(--line); text-decoration:none;
     font-size:12.5px; font-weight:600; color:var(--muted); }
   .si-side-out:hover { color:var(--link); }
-  /* provenance lives with the navigation — visible from every view (§1b rail footer) */
-  .si-side-foot { margin-top:auto; padding-top:10px; border-top:1px solid var(--line);
-    display:flex; flex-direction:column; gap:3px;
-    font-size:10.5px; line-height:1.45; color:var(--muted); }
   .si-stage { min-width:0; padding-left:20px; }
   .si-view { display:none; }
   .si-view.on { display:block; }
@@ -880,7 +876,6 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     .si-view-btn { justify-content:center; gap:0; padding:9px 0; }
     .si-view-btn .si-vb-l, .si-side-out .si-vb-l { display:none; }
     .si-side-out { justify-content:center; padding:11px 0 0; }
-    .si-side-foot { display:none; }
     .si-stage { padding-left:12px; }
   }
   /* <768px — the rail becomes a sticky TOP segmented switcher: five equal tabs,
@@ -1223,6 +1218,16 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
      the boxes gone the ink is the only carrier, so it flips in ZH. */
   .ftr-tape-strip .ftr-strip-chip { border:0; background:transparent; padding:1px 0; }
   .ftr-tape-strip { gap:5px 16px; }
+  /* …and the gap has to reach the chips. De-boxing took away the border AND the
+     7px side padding that used to hold them apart, leaving the strip's own
+     column-gap as the only separator — but the chips are not the strip's flex
+     children: they are painted three-at-a-time into #ftr-strip-leaders /
+     #ftr-strip-laggards, and a plain <span> passes no gap down. So the row read
+     "Memory Storage -6.8%Uranium Miners -5.9%", every label welded to the next
+     one's name (operator, 2026-08-04). Make each group its own flex row on the
+     SAME gap, so leaders and laggards space identically and can wrap. */
+  .ftr-strip-group { display:inline-flex; flex-wrap:wrap; align-items:center;
+    gap:5px 16px; min-width:0; }
   html[data-lang="zh"] .ftr-strip-chip.up { color:var(--down); }
   html[data-lang="zh"] .ftr-strip-chip.dn { color:var(--up); }
   html[data-theme="light"] .ftr-strip-chip.up { color:var(--si-ink-up, var(--up)); }
@@ -1339,10 +1344,9 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     <a class="si-view-btn" data-view="explore" href="#explore"><span class="si-vb-g dash-icon dash-icon-search" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Explore</span><span class="l-zh">深入探索</span></span></a>
     {# the funnel exit the retired rail carried — a link, never a sixth view #}
     <a class="si-side-out" href="subsectors.html"><span class="si-vb-g dash-icon submenu-icon-confluence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Stock entry funnel →</span><span class="l-zh">选股漏斗 →</span></span></a>
-    <div class="si-side-foot">
-      <span id="si-side-asof"></span>
-      <span id="si-side-grade"></span>
-    </div>
+    {# Rail footer removed (operator, 2026-08-04): the "as of <date> · Self-grader:
+       N% hit · n=NN" stamp. The page's own as-of stamp and the Self-grader panel
+       below still carry both facts. #}
   </nav>
   <div class="si-stage">
   <section class="si-view on" data-view="overview">
@@ -1366,8 +1370,8 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
       <span id="ftr-strip-token-lbl">—</span>
     </span>
     <span class="ftr-strip-asof" id="ftr-strip-asof"></span>
-    <span id="ftr-strip-leaders"></span>
-    <span id="ftr-strip-laggards"></span>
+    <span class="ftr-strip-group" id="ftr-strip-leaders"></span>
+    <span class="ftr-strip-group" id="ftr-strip-laggards"></span>
     <button class="ftr-strip-expand" id="ftr-strip-expand" type="button" aria-expanded="false">
       <span class="l-en">Full tape ▾</span><span class="l-zh">完整榜单 ▾</span>
     </button>
@@ -1826,8 +1830,9 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     <p class="rvx-sec-sub">{{ t('Every theme sorts into one action. When the honest answer is “wait,” it says so. Click a theme to see its stocks.', '每个主题归入一个操作。若答案是「等待」，也会如实标注。点击主题查看成分股。') }}</p>
     <div id="actnow" class="rvx-lanes"></div>
     <div id="actnow-footnote" class="rvx-actfoot"></div>
-    <div class="rvx-sec-sub si-lane-foot">{{ t('Lanes are the only gated, graded calls on this page — everything below is context, measured nightly.', '操作清单是本页唯一的门控与自评分判断 — 下方内容均为背景信息，每晚计算。') }}
-      <a href="subsectors.html" style="color:var(--link)">{{ t('Drill to stocks →', '下钻到个股 →') }}</a></div>
+    {# Lane footnote removed (operator, 2026-08-04). The "everything below is
+       context" sentence restated the section header, and its "Drill to stocks →"
+       link duplicated the rail's own "Stock entry funnel →" to the same page. #}
     <div id="grader" class="grader grader-inboard" hidden></div>
   </section>
 

@@ -208,24 +208,6 @@ function paint(view,pair){
     +'<span class="si-vr-q" data-tip-en="'+esc(r[0])+'" data-tip-zh="'+esc(r[1])+'">?</span>';
   el.hidden=false;
 }
-/* the rail footer: the workspace's provenance lives with its navigation (§1b) */
-function paintFoot(){
-  var p=P(), a=document.getElementById('si-side-asof');
-  if(a&&p&&p.as_of) a.innerHTML=L('as of '+esc(p.as_of),'截至 '+esc(p.as_of));
-  var g=document.getElementById('si-side-grade');
-  var GR=(window.SECTOR_CENTRAL&&window.SECTOR_CENTRAL.grader)||null;
-  if(!g||!GR) return;
-  if(!GR.available){
-    g.innerHTML=L('Self-grader: accruing · '+(GR.n_calls||0)+' calls logged',
-                  '自评分器：累积中 · 已记录 '+(GR.n_calls||0)+' 个判断');
-    return;
-  }
-  var bh=GR.by_horizon||{}, h=bh['21d']||bh['63d']||bh['126d']||null;
-  g.innerHTML=(h&&h.dir_hit_rate!=null)
-    ? L('Self-grader: '+Math.round(h.dir_hit_rate*100)+'% hit · n='+(h.n||0),
-        '自评分器：命中 '+Math.round(h.dir_hit_rate*100)+'% · n='+(h.n||0))
-    : L('Self-grader: accruing','自评分器：累积中');
-}
 function reads(){
   var o=document.getElementById('si-read-overview');
   if(o) paint('overview',readOverview(o));
@@ -234,7 +216,6 @@ function reads(){
   var m=document.getElementById('si-read-money');
   if(m) paint('money',readMoney(m));
   paint('explore',readExplore());
-  paintFoot();
   if(pendingTrace) openTrace(pendingTrace);
 }
 

@@ -192,7 +192,12 @@ def test_dead_v1_desk_stays_dead() -> None:
 def test_gated_read_and_movement_posture() -> None:
     s = _read(TPL / "sector_central.html.j2")
     # The lanes stay the only gated/graded surface; movement stays display-only.
-    assert "Lanes are the only gated, graded calls on this page" in s
+    # The footnote that SAID so was cut (operator, 2026-08-04) — it restated the
+    # section header. The posture is structural, so pin the structure: the lanes
+    # container exists, and movement is still labelled display-only.
+    assert 'id="actnow" class="rvx-lanes"' in s, "the lanes container is the gated surface"
+    assert "Lanes are the only gated, graded calls on this page" not in s, \
+        "the removed footnote came back"
     assert "display-only" in s
 
 

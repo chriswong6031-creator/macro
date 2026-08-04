@@ -423,12 +423,17 @@ def test_what_changed_strip_is_capped_and_fail_soft() -> None:
     assert 'class="tc-chip"' in s, "§1b: chip idiom is the existing tc-chip"
 
 
-def test_rail_footer_carries_provenance() -> None:
+def test_rail_footer_is_gone_and_left_nothing_behind() -> None:
+    """The rail's "as of <date> · Self-grader: N% hit · n=NN" footer was removed
+    (operator, 2026-08-04). Both facts still have a home — the page's own as-of
+    stamp and the Self-grader panel — so this asserts the REMOVAL is complete
+    rather than half-done: a leftover empty slot would still draw the rail's
+    top border, and a surviving painter would throw on the missing node."""
     page, router = _page(), _router()
-    for slot in ('id="si-side-asof"', 'id="si-side-grade"'):
-        assert slot in page, f"rail footer lost {slot}"
-    assert "function paintFoot()" in router
-    assert "SECTOR_CENTRAL&&window.SECTOR_CENTRAL.grader" in router
+    for slot in ('id="si-side-asof"', 'id="si-side-grade"', 'class="si-side-foot"'):
+        assert slot not in page, f"removed rail footer left {slot} behind"
+    assert ".si-side-foot" not in page, "dead .si-side-foot CSS survived the removal"
+    assert "paintFoot" not in router, "the rail-footer painter survived its markup"
 
 
 # ───────────────────────────────────────────────────────────────── shell CSS law
