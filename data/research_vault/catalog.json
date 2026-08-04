@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T12:53:52.489486+00:00",
-  "count": 734,
+  "generated_at": "2026-08-04T13:08:40.758963+00:00",
+  "count": 735,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -108,6 +108,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-75znykkcmbx-99975a",
+      "title": "South Korea Headline Inflation Drops to 2.8 , Below Consensus",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T10:38:03Z",
+      "summary_points": [
+        "**Divergence**: Headline CPI yoy fell to 2.8% (vs prior), core CPI rose to 2.6% (from 2.5%), signaling mixed inflation dynamics with headline easing but core accelerating.",
+        "**BOK Target Breach**: Both headline (2.8%) and core (2.6%) CPI exceed BOK’s target range, confirming inflation remains above mandate and implying sustained policy tightening pressure.",
+        "**Negative Momentum**: Sequential CPI momentum dropped to -0.2% mom sa (first negative since Aug 2025), driven by goods price declines, indicating cooling inflation trends."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
