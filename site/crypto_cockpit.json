@@ -2,12 +2,12 @@
   "schema": "crypto.cockpit/v1",
   "contract_phase": "w0",
   "display_only": true,
-  "as_of": "2026-08-02",
-  "generated_at": "2026-08-03T23:24:49+00:00",
+  "as_of": "2026-08-03",
+  "generated_at": "2026-08-03T23:58:06+00:00",
   "hero": {
     "asset": "BTC-USD",
-    "price": 63718.76,
-    "change_24h_pct": 1.37,
+    "price": 63455.11,
+    "change_24h_pct": 0.95,
     "stance_en": "RISK-OFF",
     "stance_zh": "偏空",
     "summary_en": "The big picture reads risk-off. Support comes from behaviour versus stocks and miners; the drag comes from momentum and futures positioning. Day-to-day direction is a coin flip — watch the dip-risk read below.",
@@ -134,9 +134,9 @@
           "label_en": "Coinbase premium",
           "label_zh": "Coinbase 溢价",
           "source": "master.board.premium",
-          "state_en": "Neutral",
-          "state_zh": "中性",
-          "tone": "neutral",
+          "state_en": "Healthy demand",
+          "state_zh": "健康需求",
+          "tone": "bull",
           "grade": "EXTREMES"
         }
       ]
