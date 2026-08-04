@@ -110,7 +110,7 @@ def priority_overlay(rows, *, n_themed=15, board_cap=12, sector_cap=4):
     # sector cap 4, score desc.  The buy_soon exclusion is load-bearing for the
     # display layer, not just the engine: buy_now/partial are the two statuses the
     # card maps to the `buy` verb, so every featured card's hue rail is --pv-buy and
-    # the green aura never sits on a lighter `near` card.
+    # the bullish aura never sits on a lighter `near` card.
     per_sector: dict[str, int] = {}
     featured = 0
     for row in out:
@@ -374,7 +374,7 @@ def test_featured_chip_is_bilingual_and_supersedes_the_triage_ring():
 def test_featured_glow_is_static_and_theme_aware():
     """No animation means no prefers-reduced-motion kill block to keep in sync — but
     that only holds while nothing animates.  Pin both halves, plus the light override
-    and the zh-safe hue (never --up, which flips to red under html[data-lang=zh])."""
+    and the semantic Prophet hue (never bypassing --pv-buy with --up)."""
     html = _priority_html()
     # Tone calibration (operator correction 2026-08-03): the card BODY stays plain —
     # dark keeps a 2.5% barely-there lift, light is pure #fff with NO tint; featured
@@ -386,7 +386,7 @@ def test_featured_glow_is_static_and_theme_aware():
     assert 'html[data-theme="light"] .pvcard.pv-featured:hover{' in html
     glow = html[html.find(".pvcard.pv-featured{"):html.find(".pv-chart{")]
     assert "animation" not in glow and "@keyframes" not in glow, "featured glow must not animate"
-    assert "var(--up)" not in glow, "the glow must use --pv-buy; --up flips to red in zh"
+    assert "var(--up)" not in glow, "the glow must use the language-aware --pv-buy token"
 
 
 # --------------------------------------------------------------------------- #
