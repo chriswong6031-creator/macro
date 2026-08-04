@@ -7,10 +7,12 @@ while still trying every series when the failures are merely dead series ids.
 """
 from __future__ import annotations
 
+import socket
 import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -24,6 +26,42 @@ from collectors.intl_macro import (  # noqa: E402
     _ABORT_AFTER_CONSECUTIVE_CONN_ERRORS as INTL_ABORT,
     IntlMacroAdapter,
 )
+from lib import config  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_no_network_no_data_writes(monkeypatch, tmp_path):
+    """Pin these breaker tests to their STUBS, never to the runner's uplink.
+
+    2026-08-04: ``test_intl_aborts_fast_when_host_unreachable`` was RED on a
+    pristine main on any NETWORKED machine, and clobbered a tracked file on
+    every run.  The tests stub only ``a._fetch_fred``, but
+    ``IntlMacroAdapter.fetch()`` grew a SECOND live leg in #4109 — the
+    ``official_series`` loop (``_fetch_official`` -> ``http_get`` -> live
+    ECB/Eurostat, 2 series in config.yml).  With connectivity those officials
+    RESOLVED, so ``frames`` was non-empty, the expected RuntimeError never
+    raised, and ``fetch()`` ran on into ``_write_provenance()`` against the REAL
+    ``data/intl_macro/provenance.json`` — rewriting 358 lines of committed
+    provenance down to the ~28 lines of whichever 2 series happened to resolve.
+    Offline, the identical test passed.  A verdict that depends on the runner's
+    network is not a test.
+
+    Two belts, because the per-test ``_fetch_official`` stubs below only close
+    the leg we know about today:
+      * socket-level block — any FUTURE unstubbed live leg fails LOUDLY right
+        here instead of silently inheriting the machine's connectivity;
+      * ``config.data_dir`` -> tmp_path — the conftest MM_DATA_GUARD idiom, so a
+        provenance write that ever does get reached physically lands outside the
+        repo.  Both collectors.intl_macro and collectors.base call
+        ``config.data_dir()`` through the module reference, so patching the
+        module attribute covers them at call time.
+    """
+    def _boom(*_a, **_k):
+        raise AssertionError("test attempted real network access")
+
+    monkeypatch.setattr(socket, "getaddrinfo", _boom)
+    monkeypatch.setattr(socket, "create_connection", _boom)
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
 
 
 def _intl_plan_len(a: IntlMacroAdapter) -> int:
@@ -51,7 +89,11 @@ def test_intl_aborts_fast_when_host_unreachable():
         calls["n"] += 1
         raise requests.exceptions.ConnectTimeout("Read timed out")
 
+    def official_down(_col, _spec):
+        raise requests.exceptions.ConnectTimeout("Read timed out")
+
     a._fetch_fred = conn_down
+    a._fetch_official = official_down
     try:
         a.fetch()
         raise AssertionError("expected RuntimeError when nothing resolved")
@@ -69,7 +111,11 @@ def test_intl_tries_all_when_failures_are_dead_series():
         calls["n"] += 1
         raise ValueError(f"fred {fid}: no numeric rows")
 
+    def official_down(_col, _spec):
+        raise requests.exceptions.ConnectTimeout("Read timed out")
+
     a._fetch_fred = data_dead
+    a._fetch_official = official_down
     try:
         a.fetch()
     except RuntimeError:
