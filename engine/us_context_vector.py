@@ -625,7 +625,11 @@ def build_records(
             "display_rank": _finite(board.get("display_rank")),
             "featured": _bool(board.get("featured")),
             # ── theme ─────────────────────────────────────────────────────
-            "theme_membership_count": len(memberships),
+            # A count of 0 is a MEASURED fact ("in no curated basket") only when
+            # the membership source actually loaded.  If it did not, every name
+            # would otherwise get a confident 0 — a missing file rendering as
+            # evidence.  Null it instead.
+            "theme_membership_count": len(memberships) if theme_ids else None,
             "theme_membership_ids": _ids(memberships),
             "theme_primary_id": _text(pulse.get("id")),
             "theme_primary_name": _text(pulse.get("name")),

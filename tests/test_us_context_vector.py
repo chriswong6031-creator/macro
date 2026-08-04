@@ -261,7 +261,8 @@ class TestSchemaContract:
             elif kind == "f":
                 ok = actual.kind in "fiu" or actual == object
             elif kind == "i":
-                ok = actual.kind in "iuf"
+                # nullable int: object is legitimate when the source was absent
+                ok = actual.kind in "iuf" or actual == object
             else:  # bool
                 ok = actual.kind == "b" or actual == object
             if not ok:
@@ -344,6 +345,29 @@ class TestBuildRecords:
         row = {r["ticker"]: r for r in records}["AAA"]
         assert row["theme_membership_count"] == 2
         assert row["theme_membership_ids"] == "ai_infra|ai_semiconductors"
+
+    def test_missing_membership_source_nulls_the_count_rather_than_zeroing_it(
+        self, verdicts
+    ):
+        """A missing file must not render as evidence.
+
+        With no membership source loaded, every name would otherwise be stamped
+        "in 0 curated baskets" — a confident measurement manufactured out of an
+        absent input. The count is null unless the source actually loaded.
+        """
+        blind = ucv.build_records(
+            verdicts, stamp_date="2026-07-31",
+            board_definition="us_prophet_v1", is_buyable=_is_buyable,
+            theme_ids={})                      # source unavailable
+        assert {r["theme_membership_count"] for r in blind} == {None}
+
+        seeing = ucv.build_records(
+            verdicts, stamp_date="2026-07-31",
+            board_definition="us_prophet_v1", is_buyable=_is_buyable,
+            theme_ids={"AAA": ["ai_infra"]})   # source loaded; BBB genuinely in none
+        by_ticker = {r["ticker"]: r for r in seeing}
+        assert by_ticker["AAA"]["theme_membership_count"] == 1
+        assert by_ticker["BBB"]["theme_membership_count"] == 0
 
     def test_foresight_stage_joins_only_through_the_crosswalk(self, verdicts):
         """No fuzzy joins: an unmapped basket contributes no stage."""
