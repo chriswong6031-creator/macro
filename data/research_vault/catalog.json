@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T04:07:30.947723+00:00",
-  "count": 709,
+  "generated_at": "2026-08-04T04:37:48.887177+00:00",
+  "count": 710,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -168,6 +168,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kehnzlk2jzy-c14cc6",
+      "title": "GM Market Rhythm Focus",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T22:42:26Z",
+      "summary_points": [
+        "**S&P 500 Breakout Confirmation**: Reclaims 50dma with improving momentum oscillators, signaling potential breakout from multi-week sideways pattern; requires break above 7,565/7,580 for sustained upward momentum.",
+        "**Equal-Weight S&P 500 ETF (RSP) Uptrend**: Confirmed breakout with four new highs, indicating intact uptrend and broader market strength exceeding SPX headline index performance.",
+        "**Nasdaq 100 Breakout Validation**: Cleared top at 28,274 in strong uptrend; requires follow-through on Thu/Fri bounce to confirm, with key resistances at 29,080/29,390.",
+        "**VIX Trend Reversal**: Broke uptrend after 3+ weeks, momentum oscillators signal short-term downside; near-term support at 15.99 (summer floor), with rallies potentially capping VIX at 13.",
+        "**Brent Crude Technical Support**: Price at 83.65 with 200dma (81.13) acting as critical support to slow decline; key resistances at 85.05/86.79 for trend continuation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
