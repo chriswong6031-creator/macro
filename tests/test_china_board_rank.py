@@ -158,8 +158,10 @@ def test_exact_score_math_and_zero_authority_fields():
     )
     best = next(row for row in scored if row["ticker"] == "BEST.SS")
 
-    # signal 35 + entry 25 + runway 20*(.6*.5 + .4*.75) + bottom 10 + reversal 10
-    assert best["prophet_score"] == pytest.approx(92.0)
+    # V3 weights: signal 30 + entry 20*buy_now(.7) + runway 15*(.6*.5 + .4*.75)
+    # + bottom 10 + reversal 10 + theme_timing 15*non-member(.25)
+    # = 30 + 14 + 9 + 10 + 10 + 3.75
+    assert best["prophet_score"] == pytest.approx(76.75)
     assert best["prophet_rank"]["components"]["runway"]["value"] == pytest.approx(0.6)
     assert best["prophet"]["version"] == china_board_rank.BOARD_DEFINITION
     assert best["prophet"]["components"]["runway"] == pytest.approx(0.6)
@@ -223,7 +225,10 @@ def test_signal_modifiers_and_entry_status_values_are_deterministic():
     assert t3["prophet_rank"]["components"]["signal"]["value"] == pytest.approx(0.357)
     assert t3["prophet_rank"]["components"]["entry"]["value"] == pytest.approx(0.4)
     assert t2["prophet_rank"]["components"]["signal"]["value"] == pytest.approx(1.0)
-    assert t2["prophet_rank"]["components"]["entry"]["value"] == pytest.approx(0.9)
+    # V3 R1 re-ordered the entry ladder to the measured order: partial .9 -> .6
+    # (§2.3 measured partial at a 41.4% loser rate). tests/test_china_board_rank_v3.py
+    # pins the full ladder.
+    assert t2["prophet_rank"]["components"]["entry"]["value"] == pytest.approx(0.6)
     assert t2["score_rank"] < t3["score_rank"]
 
 
@@ -516,10 +521,12 @@ def test_unknown_extension_never_receives_best_case_runway_points():
         scored["KNOWN.SS"]["prophet"]["points"]["runway"]
         > scored["UNKNOWN.SS"]["prophet"]["points"]["runway"]
     )
+    # The unknown-extension leg forfeits 0.4 of the runway component, which V3
+    # weights at 15 points (was 20): 15 * 0.4 = 6.
     assert (
         scored["KNOWN.SS"]["prophet"]["points"]["runway"]
         - scored["UNKNOWN.SS"]["prophet"]["points"]["runway"]
-        == pytest.approx(8.0)
+        == pytest.approx(6.0)
     )
 
 

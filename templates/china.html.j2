@@ -23,6 +23,8 @@
 {% elif code == 'chase_veto' %}{{ t('do-not-chase veto','勿追涨否决') }}
 {% elif code == 'extended' %}{{ t('price already extended','价格已经延伸') }}
 {% elif code == 'extension_unknown' %}{{ t('extension check not verified','延伸检查未验证') }}
+{% elif code == 'confirmed_late' %}{{ t('confirmed but late — smaller edge','确认但偏晚 — 优势减弱') }}
+{% elif code == 'relay_late' %}{{ t('late in the theme\'s limit-up relay — historically the weakest cohort','题材接力后段 — 历史胜率偏低') }}
 {% elif code == 'non_entry_stage' %}{{ t('outside entry lifecycle','不在入场生命周期') }}
 {% elif code == 'tier_t4_not_actionable' %}{{ t('T4 early warning — not actionable','T4早期预警 — 不可操作') }}
 {% elif code == 'no_buyable_tier' %}{{ t('no actionable T1–T3 tier','无可操作T1–T3层级') }}
@@ -3460,7 +3462,11 @@
          cn_lane_reason() keeps its own longer forms for the depth lanes below; this map
          is shorter, and deliberately carries NO machine slug fallback — an unknown code
          renders the generic chip and puts the raw code in the hover, because a raw slug
-         at glance tier is a documented doctrine violation, not a graceful degradation. #}
+         at glance tier is a documented doctrine violation, not a graceful degradation.
+         `confirmed_late` and `relay_late` are the V3 R1/R3 demotions: a confirmed-but-
+         matured entry window, and a name arriving late in its theme's limit-up relay.
+         Both are ordering-grade — the row is still a real signal, which is exactly what
+         the chip has to convey. #}
     {%- set _CN_MK = {
       'entry_status_bounce_wait':     ['Turn not confirmed', '转向未确认'],
       'entry_status_hold':            ['No add here', '此处不加仓'],
@@ -3472,6 +3478,8 @@
       'entry_status_blocked':         ['Entry blocked', '入场受阻'],
       'entry_status_exit':            ['Exit signalled', '已发出离场'],
       'entry_status_avoid':           ['Avoid for now', '暂时回避'],
+      'confirmed_late':               ['Confirmed but late — smaller edge', '确认但偏晚 — 优势减弱'],
+      'relay_late':                   ['Late in the theme\'s limit-up relay — historically the weakest cohort', '题材接力后段 — 历史胜率偏低'],
       'featured_cap':                 ['Board full today', '今日名额已满'],
       'sector_cap':                   ['Sector quota full', '该行业已满额'],
       'liquidity_unknown':            ['Liquidity unchecked', '流动性未核实'],
@@ -3585,8 +3593,8 @@
       {%- set _mk = namespace(rows=[]) %}
       {%- if _cn_v2 %}
         {%- if _is_feat %}{% set _mk.rows = _mk.rows + [{'k':'feat','en':'★ Featured','zh':'★ 精选',
-          'tip_en':'One of today\'s picks: a live T1–T3 signal, the entry window open now, enough turnover to trade it, no chase veto and price not yet extended. Capped per sector and per board, so fewer names can show. Priority order, not a return forecast.',
-          'tip_zh':'今日精选之一：T1–T3信号有效、入场窗口当前已打开、成交足以买入、无追涨否决且价格尚未拉伸。受行业与全榜名额限制，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
+          'tip_en':'One of today\'s picks: a live T1–T3 signal caught in the early part of its turn, enough turnover to trade it, no chase veto and price not yet extended. Names that only confirmed late, or arrived late in their theme\'s run, sit below instead. Capped per sector and per board, so fewer names can show. Priority order, not a return forecast.',
+          'tip_zh':'今日精选之一：T1–T3信号有效且处于转向早段、成交足以买入、无追涨否决且价格尚未拉伸。确认偏晚、或在题材行情后段才出现的个股改列下方。受行业与全榜名额限制，因此可能更少。这是排序，不是收益预测。'}] %}{% endif %}
         {%- if not _is_feat %}
           {%- set _lr0 = (n.get('lane_reasons') or [])[0] if (n.get('lane_reasons') or []) else none %}
           {%- set _lrw = _CN_MK.get(_lr0) %}
@@ -4072,7 +4080,7 @@
       {% for r in setups.laggards %}<a href="china_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
     </p>
     {% endif %}
-    <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Priority = signal 35% + entry 25% + runway 20% + bottom quality 10% + reversal-sleeve membership 10%. It is a readiness rank, not a win probability. The cn_prophet_v2 forward cohort is accruing separately.</span><span class="l-zh">优先级＝信号35%＋入场25%＋上行空间20%＋底部质量10%＋反转组合成员10%。这是就绪度排序，并非胜率。cn_prophet_v2前瞻样本将单独积累。</span></p>
+    <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Priority = signal 30% + entry 20% + runway 15% + theme timing 15% + bottom quality 10% + reversal-sleeve membership 10%. It is a readiness rank, not a win probability. The current forward cohort is accruing separately.</span><span class="l-zh">优先级＝信号30%＋入场20%＋上行空间15%＋题材时机15%＋底部质量10%＋反转组合成员10%。这是就绪度排序，并非胜率。当前前瞻样本将单独积累。</span></p>
     </div>{# /nb-grid-section #}
 
     {# ── BOARD TRACK RECORD — receipt chip + popup (shared partial, 2026-07-20) ──

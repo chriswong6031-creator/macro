@@ -71,20 +71,27 @@ def _prophet_ranking_contract() -> dict:
         "featured_requirements": {
             "signal_tiers": list(signal_gate.BUYABLE_TIERS),
             "stage": "ENTRY",
-            "entry_status": ["buy_now", "partial"],
+            # V3 R1: the prime-window set. Read from the engine so this public
+            # contract can never drift from the rule that actually admits.
+            "entry_status": sorted(china_board_rank.FEATURED_ENTRY_STATUSES),
+            "early_ticks_max_for_confirmed_statuses": (
+                china_board_rank.EARLY_TICKS_MAX
+            ),
             "adv_floor_yi": china_board_rank.ADV_FLOOR_YI,
             "same_day_signal": True,
             "same_day_microstructure": True,
             "fillable": True,
             "chase_veto": False,
+            # V3 R3: a chase-composite name sitting LATE in its theme's limit-up
+            # relay demotes out of featured. Every other chase branch is display.
+            "relay_position_late_with_chase": False,
             "extended": False,
             "sector_cap": china_board_rank.SECTOR_CAP,
             "board_cap": china_board_rank.FEATURED_CAP,
         },
-        "zero_score_authority": [
-            "residual_alpha", "setup", "sector_turn", "narrative",
-            "quality", "low_vol", "risk_sizing",
-        ],
+        # V3 R2: ``narrative`` left this list because theme timing now has exactly
+        # the bounded theme_timing authority in SCORE_WEIGHTS — and nothing more.
+        "zero_score_authority": list(china_board_rank.ZERO_SCORE_AUTHORITY),
     }
 
 
@@ -2438,11 +2445,306 @@ def main(alpha: dict | None = None) -> dict | None:
         if _sw_match and _sw_match in _sector_turn_by_sw:
             _sector_turn_by_ticker[str(_row.get("ticker"))] = _sector_turn_by_sw[_sw_match]
 
-    # Prophet v2 score authority is intentionally small and transparent:
-    # confluence 35 + entry 25 + runway 20 + bottom quality 10 + membership
-    # in the validated broad reversal sleeve 10.  Residual alpha, narratives,
-    # sector turns, quality and low-vol context are recorded but have zero score
-    # authority until their own forward evidence earns promotion.
+    # ── V3 R2: narrative tags (computed once per build, best-effort) ───────────
+    # Calls build_narrative_tags() which loads closes + memberships + radar on
+    # its own; returns empty dicts on any missing artifact (never raises).
+    # MOVED AHEAD OF SCORING BY R2 (masterplan §5): theme timing now feeds the
+    # bounded 15-point theme_timing component, so the tags must be attached before
+    # enrich_and_score_rows rather than joined afterwards as display columns.
+    try:
+        from engine.china_narrative_tags import (
+            build_narrative_tags as _build_narr_tags,
+            ab_tier as _narr_ab_tier,
+        )
+        _narr_result = _build_narr_tags()
+        _narr_asof = str(_narr_result.get("as_of") or "")[:10] or None
+        _narr_tags: dict = (
+            _narr_result.get("tags") or {}
+            if (
+                _narr_asof
+                and _board_asof
+                and _narr_asof <= _board_asof
+            )
+            else {}
+        )
+        if (_narr_result.get("tags") or {}) and not _narr_tags:
+            log.warning(
+                "R2 narrative tags rejected for PIT mismatch: narrative=%s board=%s",
+                _narr_asof, _board_asof,
+            )
+        log.info("R2 narrative tags: %d tickers tagged (%d baskets, as_of %s)",
+                 _narr_result.get("n_tagged", 0), _narr_result.get("n_baskets", 0),
+                 _narr_result.get("as_of", "?"))
+    except Exception as _narr_exc:  # noqa: BLE001 — additive, never fatal
+        log.warning("R2 narrative tags failed (%s) — board renders without narrative data",
+                    _narr_exc)
+        _narr_tags = {}
+        _narr_asof = None
+        _narr_ab_tier = lambda stage, tag: None  # noqa: E731 — degraded stub
+
+    # Per-ticker narrative payload for scoring.  Same shape the card and the ledger
+    # consume below, so the scored value and the displayed chip can never disagree.
+    _narrative_by_ticker: dict[str, dict] = {
+        str(_nt): {
+            "theme":     _tag.get("theme"),
+            "theme_zh":  _tag.get("theme_zh"),
+            "basket_id": _tag.get("basket_id"),
+            "level":     _tag.get("level"),
+            "rel20":     _tag.get("rel20"),
+            "breadth":   _tag.get("breadth"),
+            "source":    _tag.get("source"),
+            "radar":     _tag.get("radar"),
+            "asof":      _narr_asof,
+        }
+        for _nt, _tag in (_narr_tags or {}).items()
+        if _tag
+    }
+
+    # ── PIT basket membership (shared by the R2 cycle join and R3 relay ladder) ─
+    # Curated ∪ THS: both membership files expose the same {baskets: {id: {members:
+    # [{ticker, added, removed}]}}} shape, so the union is clean.  Only baskets that
+    # ALSO appear in the cycle forward log get a cycle state (today: the 22 curated
+    # ones — the THS concepts have no cycle rows, hence the logged count).
+    _bc_members: dict[str, list[str]] = {}
+    _bc_ths_added = 0
+    try:
+        for _mem_path in (
+            config.data_dir() / "baskets_china" / "membership.json",
+            config.data_dir() / "baskets_china_ths" / "membership.json",
+        ):
+            if not _mem_path.exists():
+                continue
+            _is_ths = "ths" in _mem_path.parts[-2]
+            _mem_doc = json.loads(_mem_path.read_text())
+            for _bid, _bval in (_mem_doc.get("baskets") or {}).items():
+                _rows_m = (
+                    _bval.get("members") or _bval.get("tickers") or []
+                    if isinstance(_bval, dict) else (_bval or [])
+                )
+                _active: list[str] = []
+                for _m in _rows_m:
+                    if not isinstance(_m, dict):
+                        _active.append(str(_m))
+                        continue
+                    _added = str(_m.get("added") or "")[:10]
+                    _removed = str(_m.get("removed") or "")[:10] or None
+                    # PIT membership: added on or before the board date and not
+                    # yet removed as of the board date.
+                    if _board_asof and _added and _added > _board_asof:
+                        continue
+                    if _removed and _board_asof and _removed <= _board_asof:
+                        continue
+                    _t_m = _m.get("ticker") or _m.get("symbol")
+                    if _t_m:
+                        _active.append(str(_t_m))
+                if not _active:
+                    continue
+                if _bid in _bc_members:
+                    _bc_members[_bid] = sorted(set(_bc_members[_bid]) | set(_active))
+                else:
+                    _bc_members[_bid] = _active
+                    if _is_ths:
+                        _bc_ths_added += 1
+        log.info("R2/R3 basket membership: %d PIT baskets (%d from THS)",
+                 len(_bc_members), _bc_ths_added)
+    except Exception as _mem_exc:  # noqa: BLE001 — additive context, never fatal
+        log.warning("R2/R3 basket membership unavailable (%s)", _mem_exc)
+        _bc_members = {}
+
+    # ── V3 R2: PIT basket-cycle state per candidate ticker ────────────────────
+    # §2.10 measured the cycle engine's own early-turn states separating losers
+    # point-in-time: Trough+ 3.6% loser rate, Recovery+ 0%, Downturn− 50%.  The
+    # join is: newest forward_log basket row on or before the panel date, ->
+    # PIT-active basket members, -> best (lowest) rs_rank basket per ticker.
+    _basket_cycle_by_ticker: dict[str, dict] = {}
+    try:
+        _bc_path = config.data_dir() / "china_sector_cycles" / "forward_log.parquet"
+        if _bc_path.exists() and _bc_members:
+            _bc_frame = pd.read_parquet(_bc_path)
+            _bc_frame = _bc_frame[_bc_frame["kind"].astype(str) == "basket"]
+            _bc_dates = _bc_frame["date"].astype(str)
+            if _board_asof:
+                _bc_frame = _bc_frame[_bc_dates <= _board_asof]
+            if not _bc_frame.empty:
+                _bc_asof = str(_bc_frame["date"].astype(str).max())
+                _bc_latest = _bc_frame[_bc_frame["date"].astype(str) == _bc_asof]
+                # Best rs_rank first (rank 1 = strongest relative strength), so a
+                # ticker in several baskets takes its strongest theme's cycle.
+                _bc_ordered = _bc_latest.sort_values(
+                    "rs_rank", ascending=True, na_position="last"
+                )
+                _bc_matched = 0
+                for _bc_row in _bc_ordered.to_dict("records"):
+                    _bid_raw = str(_bc_row.get("id") or "")
+                    # forward_log ids are "b-<basket_id>"; membership keys are bare.
+                    _bid_key = _bid_raw.removeprefix("b-")
+                    _members = _bc_members.get(_bid_key) or _bc_members.get(_bid_raw)
+                    if not _members:
+                        continue
+                    _bc_matched += 1
+                    _osc = pd.to_numeric(_bc_row.get("osc_slope"), errors="coerce")
+                    _state = {
+                        "basket_id": _bid_key,
+                        "phase": (
+                            str(_bc_row.get("phase")) if _bc_row.get("phase") else None
+                        ),
+                        "osc_up": bool(_osc > 0) if pd.notna(_osc) else False,
+                        "asof": _bc_asof,
+                    }
+                    for _tm in _members:
+                        _basket_cycle_by_ticker.setdefault(str(_tm), _state)
+                log.info(
+                    "R2 basket cycle: %d tickers stamped from %d/%d cycle baskets "
+                    "(as_of %s; membership sources: curated + %d THS baskets)",
+                    len(_basket_cycle_by_ticker), _bc_matched, len(_bc_ordered),
+                    _bc_asof, _bc_ths_added,
+                )
+            else:
+                log.warning(
+                    "R2 basket cycle: no forward_log basket rows on or before %s "
+                    "— theme_timing runs on narrative level alone", _board_asof,
+                )
+    except Exception as _bc_exc:  # noqa: BLE001 — additive context, never fatal
+        log.warning("R2 basket cycle join unavailable (%s)", _bc_exc)
+        _basket_cycle_by_ticker = {}
+
+    # ── V3 R3: chase inputs + the RELAY-POSITION ladder ───────────────────────
+    # PR #4506 (n=7,816 chase events) refuted both the blanket chase demote and the
+    # in-era theme split.  What replicated is relay POSITION: how many OTHER members
+    # of the name's basket printed a limit-close inside the trailing 3 sessions.
+    # early <=1 −1.17pp/46.0% win · mid 2-3 −2.61pp/42.3% · late >=4 −5.32pp/36.0%.
+    # The chase composite itself stays a display/ledger cohort label so W0 can grade
+    # every branch nightly; only relay-late earns an admission effect, in
+    # china_board_rank._featured_shortfalls.  The T+1 gap leg is grading-side and
+    # deliberately absent.
+    _chase_by_ticker: dict[str, dict] = {}
+    _relay_by_ticker: dict[str, dict] = {}
+    try:
+        from engine.china_microstructure import (  # noqa: PLC0415
+            _board_from_ticker as _board_of,
+            _load_st_set as _chase_st_set,
+            limit_width_for_date as _limit_width,
+        )
+        _high_map = {_t: _h for (_t, _c, _h, _n, _s) in uni if _h is not None}
+        _st_set_chase = _chase_st_set(config.data_dir())
+
+        def _limit_close_bars(ticker: str, lookback: int) -> list[bool]:
+            """Limit-close flags for the last ``lookback`` bars, newest LAST.
+
+            A limit close is ``close == high`` on a move of at least 0.95x the
+            name's own band, resolved through the production era/ST-aware helper
+            (engine.china_microstructure) rather than a local prefix rule.  A name
+            with no real high series yields no events — a close-only cache cannot
+            prove the close sat at the high, and inventing one would manufacture
+            relay counts.
+            """
+            close = _close_map.get(ticker)
+            high = _high_map.get(ticker)
+            if close is None or high is None:
+                return []
+            close = close.dropna()
+            high = high.dropna()
+            if len(close) < 2 or high.empty:
+                return []
+            board = _board_of(ticker)
+            is_st = ticker in _st_set_chase
+            flags: list[bool] = []
+            for _pos in range(max(1, len(close) - lookback), len(close)):
+                _bar_date = close.index[_pos]
+                if _bar_date not in high.index:
+                    flags.append(False)
+                    continue
+                _c_now = float(close.iloc[_pos])
+                _c_prev = float(close.iloc[_pos - 1])
+                _h_now = float(high.loc[_bar_date])
+                if not _c_prev or not _h_now:
+                    flags.append(False)
+                    continue
+                _ret = _c_now / _c_prev - 1.0
+                _band = _limit_width(board, pd.Timestamp(_bar_date), is_st)
+                flags.append(
+                    abs(_c_now - _h_now) < 1e-9 and _ret >= 0.95 * _band
+                )
+            return flags
+
+        # Which basket members printed a limit close inside [d-2, d]?  Counted over
+        # DISTINCT members, not events, so one name limit-closing twice counts once.
+        _relay_universe = {str(_t) for _members in _bc_members.values() for _t in _members}
+        _limit_recent: set[str] = {
+            _t for _t in _relay_universe if any(_limit_close_bars(_t, 3))
+        }
+        _baskets_of: dict[str, set[str]] = {}
+        for _bid, _members in _bc_members.items():
+            for _t in _members:
+                _baskets_of.setdefault(str(_t), set()).add(_bid)
+
+        _n_limit_days = 0
+        for _row in _candidate_rows:
+            _ct = str(_row.get("ticker") or "")
+            _cc = _close_map.get(_ct)
+            if _cc is None:
+                continue
+            _cc = _cc.dropna()
+            if len(_cc) < 2:
+                continue
+            _own_flags = _limit_close_bars(_ct, 1)
+            _limit_close = bool(_own_flags and _own_flags[-1])
+            _trail_21 = (
+                float(_cc.iloc[-1] / _cc.iloc[-22] - 1.0) if len(_cc) >= 22 else None
+            )
+            _run_5d = (
+                float(_cc.iloc[-1] / _cc.iloc[-6] - 1.0) if len(_cc) >= 6 else None
+            )
+            if _limit_close:
+                _n_limit_days += 1
+            _chase_by_ticker[_ct] = {
+                "limit_close_day": _limit_close,
+                "trail_21": _trail_21,
+                "run_5d": _run_5d,
+            }
+            _own_baskets = _baskets_of.get(_ct)
+            if not _own_baskets:
+                # No basket membership → no relay to be early or late in. This is a
+                # DIFFERENT state from a count of zero and must stay unpositioned.
+                _relay_by_ticker[_ct] = china_board_rank.relay_state(None)
+                continue
+            _peers = {
+                str(_p)
+                for _bid in _own_baskets
+                for _p in _bc_members.get(_bid, ())
+                if str(_p) != _ct
+            }
+            _relay_by_ticker[_ct] = china_board_rank.relay_state(
+                len(_peers & _limit_recent)
+            )
+        _n_positioned = sum(
+            1 for _v in _relay_by_ticker.values() if _v.get("position")
+        )
+        _n_late = sum(
+            1 for _v in _relay_by_ticker.values() if _v.get("position") == "late"
+        )
+        log.info(
+            "R3 chase/relay inputs: %d/%d candidates measured (%d closed at the "
+            "limit today); %d basket members printed a limit close inside 3 "
+            "sessions; %d candidates positioned in a relay, %d of them late",
+            len(_chase_by_ticker), len(_candidate_rows), _n_limit_days,
+            len(_limit_recent), _n_positioned, _n_late,
+        )
+    except Exception as _chase_exc:  # noqa: BLE001 — additive; no input, no demotion
+        log.warning(
+            "R3 chase/relay inputs unavailable (%s) — relay-late demotion inert",
+            _chase_exc,
+        )
+        _chase_by_ticker = {}
+        _relay_by_ticker = {}
+
+    # China Prophet v3 score authority is intentionally small and transparent:
+    # confluence 30 + entry 20 + runway 15 + bottom quality 10 + membership in the
+    # broad reversal sleeve 10 + theme timing 15.  Residual alpha, the legacy setup
+    # score, sector turns, quality and low-vol context are recorded but have zero
+    # score authority until their own forward evidence earns promotion.  Theme
+    # timing's authority is exactly the 15-point component and nothing else —
+    # raw heat level alone still buys no score (masterplan §5 R2).
     _scored_candidates = china_board_rank.enrich_and_score_rows(
         _candidate_rows,
         verdict_by=sig_verdict,
@@ -2454,6 +2756,10 @@ def main(alpha: dict | None = None) -> dict | None:
         micro_by=_micro_by,
         liquidity_by=liq_by,
         sector_turn_by=_sector_turn_by_ticker,
+        narrative_by=_narrative_by_ticker,
+        basket_cycle_by=_basket_cycle_by_ticker,
+        chase_by=_chase_by_ticker,
+        relay_by=_relay_by_ticker,
         # Each packet carries its own as-of.  Passing the board date here lets
         # _micro_is_fresh require both the batch and per-name dates to match.
         micro_asof=_micro_doc.get("as_of"),
@@ -2500,45 +2806,10 @@ def main(alpha: dict | None = None) -> dict | None:
              len(_wsetup_by), time.time() - _t0_wsetup,
              sum(1 for v in _wsetup_by.values() if v is not None))
 
-    # ── W2-B: Narrative tags (computed once per build, best-effort) ───────────
-    # Calls build_narrative_tags() which loads closes + memberships + radar on
-    # its own; returns empty dicts on any missing artifact (never raises).
-    # Result is then joined per-name into buy and ripening rows below.
-    # DISPLAY/LEDGER ONLY — rank influence NOT wired in W2 (F4 / F3 discipline).
-    try:
-        from engine.china_narrative_tags import (
-            build_narrative_tags as _build_narr_tags,
-            ab_tier as _narr_ab_tier,
-        )
-        _narr_result = _build_narr_tags()
-        _narr_asof = str(_narr_result.get("as_of") or "")[:10] or None
-        _narr_tags: dict = (
-            _narr_result.get("tags") or {}
-            if (
-                _narr_asof
-                and _board_asof
-                and _narr_asof <= _board_asof
-            )
-            else {}
-        )
-        if (_narr_result.get("tags") or {}) and not _narr_tags:
-            log.warning(
-                "W2-B narrative tags rejected for PIT mismatch: narrative=%s board=%s",
-                _narr_asof, _board_asof,
-            )
-        log.info("W2-B narrative tags: %d tickers tagged (%d baskets, as_of %s)",
-                 _narr_result.get("n_tagged", 0), _narr_result.get("n_baskets", 0),
-                 _narr_result.get("as_of", "?"))
-    except Exception as _narr_exc:  # noqa: BLE001 — additive, never fatal
-        log.warning("W2-B narrative tags failed (%s) — board renders without narrative data",
-                    _narr_exc)
-        _narr_tags = {}
-        _narr_asof = None
-        _narr_ab_tier = lambda stage, tag: None  # noqa: E731 — degraded stub
-
     # Preserve every shadow/challenger input on the full scored universe before
     # partition_board_rows copies it into display lanes. These are context-only:
-    # enrich_and_score_rows has already frozen the live score.
+    # enrich_and_score_rows has already frozen the live score, and the R2 inputs
+    # (narrative / basket_cycle / chase) were attached BEFORE it, not here.
     for _ranked_row in _scored_candidates:
         _ranked_ticker = str(_ranked_row.get("ticker") or "")
         if quality_badge.get(_ranked_ticker):
@@ -2550,10 +2821,6 @@ def main(alpha: dict | None = None) -> dict | None:
             for _key, _value in (disp_map.get(_ranked_ticker) or {}).items()
             if _value is not None
         })
-        if _narr_tags.get(_ranked_ticker):
-            _ranked_row["narrative"] = copy.deepcopy(
-                _narr_tags[_ranked_ticker]
-            )
 
     # (2) Derive last_cross_info for rule-3 (NOT gate-eligible, recent cross <=15 sessions).
     #     Source: sig_verdict["last"] gives the last buy marker date; we compute sessions_since
@@ -2930,7 +3197,8 @@ def main(alpha: dict | None = None) -> dict | None:
              _t1_rip - _t0_rip, len(_ripening_all),
              len(_ready_capped), len(_basing_capped), len(_ripening_falling))
 
-    # W2-B: attach narrative tags to RIPENING rows (display/ledger only — no rank change).
+    # Attach narrative tags to RIPENING rows. These rows are not gate-eligible and
+    # never reach the Prophet scorer, so for them the tags stay display/ledger only.
     # Stage is implicitly RIPENING for all rows in these arrays.
     for _rr in _ripening_rows + _ripening_falling:
         _rr_ticker = _rr.get("ticker")
@@ -3005,12 +3273,32 @@ def main(alpha: dict | None = None) -> dict | None:
         _forming_rows = _board_lanes["forming"]
         _watch_rows = list(_more_rows) + list(_late_rows) + list(_forming_rows)
         assert sum(_board_lanes["counts"].values()) == len(eligible_rows), (
-            "China Prophet v2 invariant FAILED: lane partition lost or duplicated "
+            "China Prophet v3 invariant FAILED: lane partition lost or duplicated "
             f"raw-eligible rows ({_board_lanes['counts']} vs {len(eligible_rows)})."
         )
         assert all(signal_gate.is_buyable(r.get("signal")) for r in _buy_rows), (
-            "China Prophet v2 invariant FAILED: featured shelf contains a non-T1-T3 row."
+            "China Prophet v3 invariant FAILED: featured shelf contains a non-T1-T3 row."
         )
+
+        # ── R1 SHADOW RACE (G0.8) ─────────────────────────────────────────────
+        # The DISPLACED v2 featured rule, re-run on the SAME scored rows and
+        # stamped with its own definition. It is never displayed and never
+        # graded as the headline (china_standout_track.WATCH_DEFINITIONS excludes
+        # it) — it exists so the v3-vs-v2 race the operator would otherwise have
+        # waited weeks for runs from merge day, with the evidence-favoured side
+        # live. Isolating the ADMISSION RULE (the §2.3 defect) means the shadow
+        # shares v3's scores and caps; only the shelf gate differs.
+        _v2_shadow_rows: list[dict] = []
+        try:
+            _v2_shadow_rows = china_board_rank.v2_shadow_featured(eligible_rows)
+            log.info(
+                "R1 shadow race: %d rows on the v2 rule vs %d featured on v3",
+                len(_v2_shadow_rows), len(_buy_rows),
+            )
+        except Exception as _shadow_rule_e:  # noqa: BLE001 — the race never blocks the board
+            log.warning("R1 v2-shadow shelf failed (%s) — race not logged tonight",
+                        _shadow_rule_e)
+            _v2_shadow_rows = []
 
         # laggards watch-strip: weakest residual-alpha names, independent of the buy gate.
         laggards = dedupe_dual_class(sorted(
@@ -3143,9 +3431,12 @@ def main(alpha: dict | None = None) -> dict | None:
             _sw_match = _YAHOO_TO_SW.get(_row_sector)
             if _sw_match and _sw_match in _sector_turn_by_sw:
                 r["sector_turn"] = _sector_turn_by_sw[_sw_match]
-            # W2-B NARRATIVE TAGS: attach per-name theme heat + radar join + A/B tier.
-            # DISPLAY/LEDGER ONLY — narrative NEVER affects Prophet v2 score or admission.
-            # ab_tier is None for RAN_LATE rows (spec law: ENTRY/RIPENING only).
+            # NARRATIVE TAGS: attach per-name theme heat + radar join + A/B tier.
+            # The scored rows already carry this payload (it is an R2 SCORE input,
+            # attached before enrich_and_score_rows); re-stamping here keeps the
+            # laggards strip and any row that skipped the lane copy consistent.
+            # ab_tier is None for RAN_LATE rows (spec law: ENTRY/RIPENING only) and
+            # remains display-only — the tier itself has no score authority.
             _nb_tag = _narr_tags.get(t) if t else None
             if _nb_tag:
                 r["narrative"] = {
@@ -3161,13 +3452,31 @@ def main(alpha: dict | None = None) -> dict | None:
                 }
             _nb_stage = r.get("stage")
             r["ab_tier"] = _narr_ab_tier(_nb_stage, _nb_tag)
-        # W2-B order-invariance assertion: buy order must be unchanged by narrative tagging.
-        # Narrative is display/ledger only — it must never alter the ranked order.
+        # V3 R2 BOUNDED-AUTHORITY INVARIANT (replaces the W2-B order-invariance
+        # assertion, which asserted the OPPOSITE contract: that narrative tagging
+        # left the buy order byte-identical).
+        #
+        # Narrative/cycle context now has EXACTLY ONE score channel — the 15-point
+        # theme_timing component — and the display join below must still not move
+        # anything.  So the invariant splits in two:
+        #   (a) the display re-stamp above is order-neutral (unchanged guarantee,
+        #       now about the re-stamp rather than about narrative as such); and
+        #   (b) theme_timing is the ONLY place narrative reaches the score, which
+        #       is pinned by tests/test_china_board_rank_v3.py rather than here —
+        #       a builder assertion cannot see inside the scorer.
         _buy_tickers_pre  = [r.get("ticker") for r in _buy_rows]
         _buy_tickers_post = [r.get("ticker") for r in wide["buy"]]
         assert _buy_tickers_pre == _buy_tickers_post, (
-            "W2-B invariant FAILED: narrative tags altered the buy row order. "
+            "V3 invariant FAILED: the display re-stamp altered the buy row order. "
             f"Pre: {_buy_tickers_pre[:5]} ... Post: {_buy_tickers_post[:5]}")
+        _score_components = {
+            _k
+            for r in wide["buy"]
+            for _k in ((r.get("prophet") or {}).get("components") or {})
+        }
+        assert not (_score_components - set(china_board_rank.SCORE_WEIGHTS)), (
+            "V3 invariant FAILED: a scored component outside SCORE_WEIGHTS reached "
+            f"the board: {sorted(_score_components - set(china_board_rank.SCORE_WEIGHTS))}")
         wide["eligible"] = len(eligible_rows)
         wide["actionable"] = _n_buyable
         wide["universe"] = len(_scored_candidates)
@@ -3238,6 +3547,15 @@ def main(alpha: dict | None = None) -> dict | None:
                 _bn_rw = china_standout_track.append_board(
                     wide["reversal_watch"], asof=as_of, lane=_lane)
                 log.info("china reversal_watch board-track: logged %d rows", _bn_rw)
+            # R1 SHADOW RACE (G0.8): the displaced v2 featured rule accrues its own
+            # forward record under cn_prophet_v2_shadow. Same store, own definition;
+            # WATCH_DEFINITIONS keeps it out of headline-grade resolution, and
+            # append_board's keep-first key is (date, ticker, board_definition), so a
+            # name on both shelves keeps one row per definition.
+            if _v2_shadow_rows:
+                _bn_sh = china_standout_track.append_board(
+                    _v2_shadow_rows, asof=as_of, lane=_lane)
+                log.info("china v2-shadow board-track: logged %d rows", _bn_sh)
             # W0 — loser + miss telemetry (engine/cn_prophet_audit.py). OPS-TELEMETRY
             # tier with ZERO authority: it reads the board store we just appended to,
             # the price stores, and the PIT candidate ledger, and writes ONLY to
