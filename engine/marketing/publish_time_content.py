@@ -50,13 +50,14 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 from engine.marketing import (
     copywriter,
     live_verify,
+    market_clock,
     market_facts,
     movers_source,
     outbox,
@@ -77,6 +78,23 @@ _DEFAULTS: dict[str, Any] = {
     "min_abs_theme_pct": 1.0,   # floor for a theme-average claim
     "max_quote_age_min": 45,    # generation freshness gate (mirrors live_gate)
     "min_active_tiles": 25,     # flat-tape belt: skip when the board isn't moving
+    # ── DEFECT 1: the cashtag-spam fingerprint (operator, live post 2026-08-03)
+    # How many member cashtags a theme_list POST TEXT may name. The card still
+    # lists the full membership (see _CARD_MAX_ROWS); this caps the ENUMERATION
+    # IN THE TEXT, which is the half X reads as spam.
+    #
+    # "you know tagging this many cashtags will get flagged as spam right? like
+    # u can do 2-3 but not like all of them" — operator, on a live post that
+    # named eight ($COHR $LITE $AXON $META $RBLX $MSFT $GOOGL $U) in one line.
+    # Eight cashtags in one post is the account-safety risk, not a style nit:
+    # it is the cashtag-piggybacking fingerprint X's spam classifier keys on,
+    # and this lane auto-approves and posts with no human in the loop.
+    #
+    # Config-driven with an in-code default so an operator can retune it without
+    # a deploy; 3 is the top of the operator's stated band. The names chosen are
+    # the BIGGEST MOVERS in the theme's direction — if we only name three, they
+    # should be the three that are the story.
+    "max_theme_cashtags_in_text": 3,
     # A ticker post ships a picture or it does not ship (see the module
     # docstring). Default ON. The OFF setting is NOT a production escape hatch —
     # it exists so an operator can exercise the copy path on a host with no
@@ -148,9 +166,27 @@ def _has_first_person(text: str) -> bool:
     s = str(text or "")
     return bool(_FIRST_PERSON_I_RE.search(s) or _FIRST_PERSON_OTHER_RE.search(s))
 
-#: Rows a theme card shows. The watchlist card supports 3-10 and the copy names
-#: at most 8 cashtags, so 8 keeps the picture and the text describing the SAME
-#: names — a card listing a name the post never mentions is its own small lie.
+#: Rows a theme card shows. The watchlist card supports 3-10; 8 is also
+#: ``movers_source.theme_lists``' own ``n`` default, so the card shows every
+#: member the theme item carries and the "N names higher" count in the copy is
+#: the number of rows in the picture, by construction.
+#:
+#: WHY 8 SURVIVED THE CASHTAG CAP (defect 1, rewritten 2026-08-03). This constant
+#: used to be justified by "the copy names at most 8 cashtags, so 8 keeps the
+#: picture and the text describing the SAME names — a card listing a name the
+#: post never mentions is its own small lie". That reasoning was wrong, and it is
+#: what pinned the text at eight cashtags and gave the account a spam
+#: fingerprint. THE CARD IS THE ENUMERATION; THE TEXT IS THE HEADLINE. A picture
+#: of eight names captioned with three of them is a summary, not a lie — the same
+#: way a chart of a year of bars is not lying because the caption quotes one
+#: week. The card may keep all 8 rows PRECISELY BECAUSE the text no longer
+#: enumerates them (max_theme_cashtags_in_text).
+#:
+#: What the two halves must still agree on, and what the session/consistency
+#: checks below enforce: the THEME, the COUNT ("8 names higher") and the AVERAGE.
+#: Naming 3 of 8 is a summary. Naming a name the card omits is the actual lie —
+#: which is why the named cashtags are always a PREFIX of the card's rows (both
+#: come from the same direction-sorted member list).
 _CARD_MAX_ROWS = 8
 
 
@@ -514,7 +550,35 @@ def _radar_tier_map(root: Path, cfg: dict | None) -> dict | None:
     return None
 
 
-def _build_candidates(overlaid: dict, root: Path, cfg: dict, pt: dict) -> list[dict]:
+def _theme_text_cashtags(members: list[dict], cap: int) -> list[str]:
+    """The member cashtags the POST TEXT may name — biggest movers, capped.
+
+    DEFECT 1. The lane used to hand copywriter ``members[:10]``, so a theme post
+    enumerated every name the card shows and shipped eight cashtags in one line
+    — the spam fingerprint. The text now names at most `cap` of them.
+
+    WHICH ones is not arbitrary: sorted by |move| descending (ticker as the
+    tiebreak, so the choice is deterministic across runs), because the names we
+    do name should be the ones that are the story. ``theme_lists`` already
+    returns members most-extreme-first in the theme's direction, so this is
+    normally a no-op re-sort — it is written explicitly anyway so the guarantee
+    belongs to THIS function rather than to an upstream ordering nobody here
+    would notice changing.
+
+    The result is a PREFIX-equivalent subset of the card's rows by construction
+    (same list, same order), which is what keeps "naming 3 of 8" a summary
+    rather than a post that names a name the picture omits.
+    """
+    ordered = sorted(
+        (m for m in (members or []) if m.get("ticker")),
+        key=lambda m: (-abs(float(m.get("pct") or 0.0)), str(m.get("ticker"))),
+    )
+    n = max(0, int(cap))
+    return [f"${m['ticker']}" for m in ordered[:n]]
+
+
+def _build_candidates(overlaid: dict, root: Path, cfg: dict, pt: dict,
+                      *, now: datetime) -> list[dict]:
     """Build interleaved [theme1, mover1, theme2, mover2, ...] candidates.
 
     Replicates the nightly wiring (content_studio.py ~1126-1239): cashtag_tiers
@@ -523,6 +587,13 @@ def _build_candidates(overlaid: dict, root: Path, cfg: dict, pt: dict) -> list[d
     ranked by abs(pct) desc over losers+gainers (nightly convention — losers
     listed first so they win ties). Themes and movers interleave THEME-first.
     Each candidate is a movers-desk-shaped item dict (no copy yet).
+
+    `now` is REQUIRED and is passed straight through to the facts builders as the
+    clock the temporal word resolves against, alongside each row's OWN ``asof``
+    (defect 2). Both used to be omitted, so ``movers_source.session_phrase`` fell
+    back to the real wall clock and to ``last_completed_session`` — which is the
+    prior session for the whole of an intraday run, and is exactly how a Monday
+    post about Monday's live tape came to say "on Friday".
     """
     tier_map = _radar_tier_map(root, cfg)
     cashtag_tiers: dict | None = None
@@ -555,25 +626,40 @@ def _build_candidates(overlaid: dict, root: Path, cfg: dict, pt: dict) -> list[d
             "ticker": tkr,
             "cashtag": f"${tkr}",
             "_mover_data": mv,
-            "_mover_facts": movers_source.mover_facts(mv),
+            # asof = the row's own session, never the clock's guess (defect 2).
+            "_mover_facts": movers_source.mover_facts(
+                mv, now=now, asof=mv.get("asof")),
         })
 
+    text_cap = int(pt["max_theme_cashtags_in_text"])
     theme_items: list[dict] = []
     for tl in tl_result:
         members = tl.get("members") or []
         if not members:
             continue
+        # The names the TEXT may say (defect 1). `_theme_data.members` is left
+        # WHOLE — the card enumerates it, and the copy's "N names higher" count
+        # and average are computed from it, so truncating it here would make the
+        # picture and the breadth fact disagree with each other.
+        cashtags = _theme_text_cashtags(members, text_cap)
+        if not cashtags:
+            continue
         lead = members[0]
         theme_items.append({
             "type": "theme_list",
             "ticker": "",
-            "cashtags": [f"${m['ticker']}" for m in members[:10]],
+            "cashtags": cashtags,
             "_theme_data": tl,
-            "_theme_facts": movers_source.theme_facts(tl),
+            "_theme_facts": movers_source.theme_facts(
+                tl, now=now, asof=tl.get("asof")),
             "_lead_ticker": lead.get("ticker", ""),
             "_lead_pct": lead.get("pct"),
             "_theme_name": tl.get("theme", ""),
             "_agg_pct": tl.get("agg_pct"),
+            #: How many members the CARD will list. Carried on the candidate so
+            #: the text/card agreement check has a number to compare against
+            #: without re-deriving the card's own slicing rule.
+            "_card_rows": len(members[:_CARD_MAX_ROWS]),
         })
 
     # Interleave THEME-first: [theme1, mover1, theme2, mover2, ...].
@@ -717,9 +803,62 @@ def _only_length_violations(violations: list[str] | None) -> bool:
     return bool(items) and all(_LENGTH_VIOLATION_RE.search(v) for v in items)
 
 
+#: copywriter.validate_copy's theme_list minimum, matched by its exact emitted
+#: shape ("theme_list post must contain ≥4 cashtags; found 3") with the count
+#: captured. See _drop_lane_capped_cashtag_violation for why this lane, and only
+#: this lane, resolves it against the account-safety cap.
+_MIN_CASHTAG_VIOLATION_RE = re.compile(
+    r"theme_list post must contain\s*[≥>]=?\s*(\d+)\s*cashtags;\s*found\s*(\d+)",
+    re.IGNORECASE)
+
+
+def _drop_lane_capped_cashtag_violation(
+        violations: list[str] | None, cand: dict, cap: int) -> list[str]:
+    """Violations with copywriter's theme_list ≥4-cashtag floor removed — and ONLY
+    when this lane's own cap is what put the count under it.
+
+    THE COLLISION, NAMED (defect 1). ``copywriter.validate_copy`` requires a
+    theme_list post to carry ≥4 member cashtags. That rule was written when the
+    text WAS the list: a "theme post" naming two names was not a theme post. The
+    card changed the premise — the picture is now the enumeration — and the
+    operator's account-safety cap (2-3) sits strictly below copywriter's floor,
+    so with the cap applied and the rule enforced this lane would generate a
+    theme_list, fail validation on every variant, and emit NOTHING. Silently
+    darkening the family is not a fix for the spam fingerprint.
+
+    THIS IS DELIBERATELY NOT A BYPASS AROUND A GENERATION LAW. Four conditions
+    must ALL hold, so nothing else can slip through the hole:
+      * the candidate is a theme_list that carries a member list at all;
+      * the violation matches copywriter's exact emitted shape;
+      * the count copywriter FOUND equals the number of cashtags this lane
+        deliberately supplied (so a post that lost cashtags to a render bug, or
+        that came out under the cap for some other reason, is still terminal);
+      * that number is ≤ the configured cap (so raising the cap above
+        copywriter's floor retires this exception automatically rather than
+        leaving a permanent hole behind).
+    Every OTHER violation in the list is returned untouched.
+
+    The right end-state is copywriter's floor becoming card-aware; that lives in
+    another lane's file and is reported rather than reached into from here.
+    """
+    items = [str(v) for v in (violations or [])]
+    if not items or str(cand.get("type") or "") != "theme_list":
+        return items
+    supplied = len(cand.get("cashtags") or [])
+    if supplied == 0 or supplied > max(0, int(cap)):
+        return items
+    kept: list[str] = []
+    for v in items:
+        m = _MIN_CASHTAG_VIOLATION_RE.search(v)
+        if m and int(m.group(2)) == supplied:
+            continue
+        kept.append(v)
+    return kept
+
+
 def _render_copy_unbaited(candidate: dict, *, account: str, voice: str,
-                          persona: dict, slot: str,
-                          has_chart: bool) -> tuple[str, str, list[str], bool]:
+                          persona: dict, slot: str, has_chart: bool,
+                          theme_cashtag_cap: int) -> tuple[str, str, list[str], bool]:
     """(text, headline, violations, bait) — copy that does not end on reader-bait.
 
     The bait can come from a template bank this lane does not own: exactly one
@@ -751,6 +890,14 @@ def _render_copy_unbaited(candidate: dict, *, account: str, voice: str,
     existing empty-copy and violation branches still see a real render — a
     candidate that is too long in every variant reports `copy_violation` with the
     real "too long: N chars" string, not a silent drop.
+
+    `theme_cashtag_cap` is this lane's account-safety cap on the number of member
+    cashtags a theme_list TEXT may name (defect 1). It is applied here rather
+    than at the caller because copywriter's own ≥4-cashtag floor has to be
+    resolved BEFORE the length/bait logic runs: it is not a length violation, so
+    it would otherwise short-circuit attempt 0 and drop every theme candidate the
+    cap touches. See _drop_lane_capped_cashtag_violation for the four conditions
+    that keep that resolution from being a general hole.
     """
     text = headline = ""
     violations: list[str] = ["empty render"]
@@ -758,6 +905,8 @@ def _render_copy_unbaited(candidate: dict, *, account: str, voice: str,
         text, headline, violations = _render_copy(
             candidate, account=account, voice=voice, persona=persona,
             slot=slot, has_chart=has_chart, roll=attempt)
+        violations = _drop_lane_capped_cashtag_violation(
+            violations, candidate, theme_cashtag_cap)
         if not text:
             # Not a bait decision: hand this straight back so the caller reports
             # the real reason (empty_copy) rather than "bait".
@@ -788,6 +937,191 @@ def _cand_session(cand: dict) -> str | None:
     else:
         src = cand.get("_theme_data") or {}
     return str(src.get("asof") or "") or None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ONE SESSION PER POST — the mixed-session-claim check (defect 2)
+#
+# THE DEFECT, in the post that shipped (operator, live 2026-08-03 ~17:30Z):
+#
+#     "Virtual & Augmented Reality is up across the board today"          ← today
+#     "$COHR $LITE $AXON $META $RBLX $MSFT $GOOGL $U"
+#     "Virtual & Augmented Reality is +3.7% on average on Friday (8 …)"   ← Friday
+#     card header dated 2026-08-03                                        ← today
+#
+# Three different claims about which session the post is about, in one post,
+# published on a Monday. The row-session gate below ("rows dated X, not today")
+# was already in place and PASSED — the rows really were Monday's. It asks
+# whether the DATA is current; it never looked at what the WORDS said. The body's
+# day word came from `movers_source.session_phrase`, which inferred the session
+# from the clock (`last_completed_session`) instead of from the row — fixed at
+# the source in movers_source — and nothing downstream would have noticed if it
+# had not been.
+#
+# So this is the belt: resolve EVERY temporal claim the rendered text makes back
+# to a session date, and refuse the candidate unless they all name the one
+# session its rows are from. A rejection, never a warning: this lane
+# auto-approves and posts with no human in the loop, so a warning is a post.
+#
+# The word tables come from market_clock (the estate's single calendar
+# authority) rather than being re-listed here — a new "today"-class word added
+# there is covered by this check the day it lands, which is the failure mode a
+# local copy would silently reopen.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: A weekday name as published copy writes it ("on Friday", "Friday's move").
+#: CASE-SENSITIVE on the capitalised form: these are proper nouns in a headline,
+#: and a case-insensitive match would be a needless invitation for a lower-case
+#: false positive to kill a good post (the quarantine here is terminal).
+_WEEKDAY_CLAIM_RE = re.compile(
+    r"(?<![\w'])(" + "|".join(market_clock._WEEKDAYS_EN) + r")(?![\w])")
+
+#: "on July 31", "Aug 1" — the shape `market_clock.temporal_vocab` degrades to
+#: once a weekday name would be ambiguous. Two deliberate narrowings:
+#:   * a BARE month name is NOT matched. "May" is also an ordinary English word,
+#:     and a month with no day number names no session anyway.
+#:   * the alternation lists the FULL names and their 3-letter abbreviations
+#:     EXPLICITLY, longest-first, instead of `Mar[a-z]*`-style prefixing. A
+#:     wildcard suffix makes "Market 5" a March date, and a false positive here
+#:     kills a good post (the refusal is terminal).
+_MONTH_ALTS: tuple[str, ...] = tuple(
+    sorted({m for name in market_clock._MONTHS_EN for m in (name, name[:3])}
+           | {"Sept"},
+           key=len, reverse=True))
+_MONTH_DAY_CLAIM_RE = re.compile(
+    r"(?<![\w'])(" + "|".join(_MONTH_ALTS) + r")\.?\s+(\d{1,2})(?![\d])")
+
+#: How far back a weekday / month-day phrase is resolved. 7 days covers every
+#: phrase this lane's banks can emit (the vocab switches to month-day past 6
+#: days); a month-day gets a year, because that is the range over which a
+#: "July 31" in a live post could still be honest.
+_WEEKDAY_LOOKBACK_DAYS = 7
+_MONTH_DAY_LOOKBACK_DAYS = 366
+
+
+def _session_claims(text: str, *, now: datetime) -> tuple[set[date], list[str]]:
+    """(sessions the text claims, unresolvable claims) for copy said at `now`.
+
+    Every claim is resolved to a SESSION DATE so two differently-worded claims
+    about the same session ("today" on Monday and "on Monday") compare equal, and
+    two claims about different sessions compare unequal no matter how they were
+    phrased. That is the whole point: the check is about sessions, not strings.
+
+    An unresolvable claim (a "today" word on a day with no session in progress; a
+    weekday or month-day naming no session in the lookback) is returned SEPARATELY
+    rather than dropped, because "we cannot tell which session this names" is a
+    refusal, not a pass.
+    """
+    body = str(text or "")
+    claims: set[date] = set()
+    unresolved: list[str] = []
+    if not body.strip():
+        return claims, unresolved
+
+    et_today = market_clock.et_date(now)
+
+    # "today" / "this session" / "at the close" … → the session in progress NOW.
+    if market_clock._TODAY_RE.search(body):
+        cur = market_clock.current_session(now)
+        if cur is None:
+            # No session in progress (weekend / holiday) — a "today" word here
+            # names nothing at all. market_clock.temporal_violations reports the
+            # same condition; it is repeated as an unresolved CLAIM so the two
+            # halves of this check share one refusal path.
+            unresolved.append(
+                f"today-word with no session in progress at "
+                f"{et_today.isoformat()}")
+        else:
+            claims.add(cur)
+
+    for m in _WEEKDAY_CLAIM_RE.finditer(body):
+        name = m.group(1)
+        hit: date | None = None
+        for back in range(_WEEKDAY_LOOKBACK_DAYS + 1):
+            d = et_today - timedelta(days=back)
+            if market_clock.weekday_name(d) == name:
+                # session_of walks back off a non-session day, so "on Friday"
+                # said about a Good Friday resolves to the Thursday that
+                # actually traded — the same normalisation temporal_vocab uses.
+                hit = market_clock.session_of(d)
+                break
+        if hit is None:
+            unresolved.append(f"weekday '{name}' names no session in the last "
+                              f"{_WEEKDAY_LOOKBACK_DAYS} days")
+        else:
+            claims.add(hit)
+
+    for m in _MONTH_DAY_CLAIM_RE.finditer(body):
+        mon = m.group(1)
+        try:
+            day = int(m.group(2))
+            month = next(i + 1 for i, name in enumerate(market_clock._MONTHS_EN)
+                         if name.startswith(mon))
+        except (ValueError, StopIteration):  # pragma: no cover - regex-guarded
+            unresolved.append(f"unparseable date '{m.group(0)}'")
+            continue
+        hit = None
+        for back in range(_MONTH_DAY_LOOKBACK_DAYS + 1):
+            d = et_today - timedelta(days=back)
+            if d.month == month and d.day == day:
+                hit = market_clock.session_of(d)
+                break
+        if hit is None:
+            unresolved.append(f"date '{m.group(0)}' is not in the last "
+                              f"{_MONTH_DAY_LOOKBACK_DAYS} days")
+        else:
+            claims.add(hit)
+
+    return claims, unresolved
+
+
+def _session_conflict(text: str, *, now: datetime, row_session: str | None,
+                      card_session: str | None) -> str | None:
+    """The reason this post may NOT ship, or None when its three surfaces agree.
+
+    The three surfaces of a publish-time post are the first line (headline), the
+    body, and the card's date stamp. `text` is headline + body — one string,
+    because a claim is a claim wherever in the post it sits, and the live defect
+    put the two halves of the contradiction in DIFFERENT lines.
+
+    Refuses, in order:
+      * a claim that resolves to no session at all (`unresolvable_session_claim`);
+      * more than one distinct session claimed (`mixed_session_claim`) — this is
+        the "today" + "on Friday" post verbatim;
+      * a single claim that is not the session the ROWS are from
+        (`wrong_session_claim`);
+      * a card dated to a different session than the rows (`card_session_mismatch`).
+
+    Text carrying NO temporal claim is honest and passes: the day word degrades
+    to nothing when it cannot be justified (market_clock's fail direction), and
+    a post with no session word makes no session claim to be wrong about.
+    """
+    row = market_clock._as_date(row_session) if row_session else None
+    if row is None:
+        # Undatable rows are already refused by the row-session gate; saying so
+        # here too keeps this function total rather than trusting a caller order.
+        return f"rows carry no parseable session ({row_session!r})"
+
+    claims, unresolved = _session_claims(text, now=now)
+    if unresolved:
+        return f"unresolvable_session_claim: {unresolved[0]}"
+
+    if len(claims) > 1:
+        named = ", ".join(d.isoformat() for d in sorted(claims))
+        return (f"mixed_session_claim: one post claims {len(claims)} sessions "
+                f"({named}); rows are {row.isoformat()}")
+
+    if claims:
+        only = next(iter(claims))
+        if only != row:
+            return (f"wrong_session_claim: copy says {only.isoformat()}, "
+                    f"rows are {row.isoformat()}")
+
+    card = market_clock._as_date(card_session) if card_session else None
+    if card is not None and card != row:
+        return (f"card_session_mismatch: card dated {card.isoformat()}, "
+                f"rows are {row.isoformat()}")
+    return None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1142,7 +1476,7 @@ def generate_slot_items(
                                                   f"≥{_ACTIVE_TILE_MIN_ABS}% (min "
                                                   f"{pt['min_active_tiles']}; closed market?)"}])
 
-        candidates = _build_candidates(overlaid, r, cfg or {}, pt)
+        candidates = _build_candidates(overlaid, r, cfg or {}, pt, now=now)
         if not candidates:
             return _empty_report(slot, enabled=True, quote_source=quote_source,
                                  drop=[{"reason": "no_candidates",
@@ -1358,7 +1692,18 @@ def generate_slot_items(
                     card = {"media": None, "published": {},
                             "reason": "card-deferred-dry-run"}
                 else:
-                    card = _resolve_card(cand, root=r, cfg=cfg or {}, as_of=today,
+                    # as_of = THE ROW'S SESSION, not the clock's `today` (defect
+                    # 2). This argument is what the watchlist card prints in its
+                    # header, so it is one of the three surfaces that must agree
+                    # about which session the post is about — and a date the
+                    # card takes from the wall clock is a claim nothing in the
+                    # data supports. `cand_session` has just been proven equal
+                    # to `today` by the row-session gate above, so this is a
+                    # no-op in production TODAY; it is the derivation that
+                    # matters, and _session_conflict below re-checks it rather
+                    # than trusting the gate's ordering.
+                    card = _resolve_card(cand, root=r, cfg=cfg or {},
+                                         as_of=cand_session,
                                          now=now, slot=slot)
                     if not card.get("media"):
                         cards_unhosted += 1
@@ -1374,7 +1719,8 @@ def generate_slot_items(
                 text, headline, violations, bait = _render_copy_unbaited(
                     cand, account=chosen, voice=voice, persona=persona,
                     slot=slot,
-                    has_chart=bool(card.get("media")) or card_deferred)
+                    has_chart=bool(card.get("media")) or card_deferred,
+                    theme_cashtag_cap=int(pt["max_theme_cashtags_in_text"]))
             except Exception as exc:  # noqa: BLE001
                 dropped.append({"reason": "copy_error", "detail": f"{lead_cashtag}: {exc}"})
                 continue
@@ -1398,16 +1744,57 @@ def generate_slot_items(
                                 "detail": f"{lead_cashtag}: {violations[:3]}"})
                 continue
 
-            # ── Cashtag breadth (movers only; theme_list exempt, per sentinel) ─
-            # Cap is the chosen account's effective one: a ramping desk gets its
-            # tier's tighter value, a graduated desk keeps the base block's.
-            if cand["type"] == "mover":
-                max_cashtags = _acct_caps(chosen)["max_cashtags_per_post"]
-                distinct = set(_CASHTAG_RE.findall(text))
-                if len(distinct) > max_cashtags:
-                    dropped.append({"reason": "cashtag_breadth",
-                                    "detail": f"{lead_cashtag}: {len(distinct)} > {max_cashtags}"})
-                    continue
+            # ── Cashtag breadth — EVERY KIND, theme_list included ────────────
+            #
+            # DEFECT 1: the exemption is gone. This gate used to read "(movers
+            # only; theme_list exempt, per sentinel)", so the one kind that
+            # enumerates a whole group by construction was the one kind nobody
+            # counted — and the post that drew the operator's complaint shipped
+            # eight cashtags in a single line ("$COHR $LITE $AXON $META $RBLX
+            # $MSFT $GOOGL $U"), which is the spam fingerprint X flags. An
+            # exemption granted to the format most likely to trip the rule is
+            # not a policy; it is the rule pointed away from its own case.
+            #
+            # theme_list gets its OWN, tighter cap (max_theme_cashtags_in_text,
+            # default 3 — the top of the operator's stated 2-3 band) and the
+            # account's tier cap still applies on top: the STRICTER of the two
+            # wins, so a ramping desk cannot be loosened by the theme knob and
+            # the theme knob cannot be loosened by a graduated desk.
+            #
+            # This is measured on the RENDERED TEXT, not on the candidate's
+            # cashtag list, because the text is what X reads. The card's own row
+            # list is not text and is deliberately not counted here — see
+            # _CARD_MAX_ROWS for why the picture may still carry all 8.
+            max_cashtags = _acct_caps(chosen)["max_cashtags_per_post"]
+            if cand["type"] == "theme_list":
+                max_cashtags = min(int(max_cashtags),
+                                   int(pt["max_theme_cashtags_in_text"]))
+            distinct = set(_CASHTAG_RE.findall(text))
+            if len(distinct) > max_cashtags:
+                dropped.append({"reason": "cashtag_breadth",
+                                "detail": f"{lead_cashtag or cand['type']}: "
+                                          f"{len(distinct)} > {max_cashtags}"})
+                continue
+
+            # ── ONE SESSION PER POST ────────────────────────────────────────
+            # The three surfaces (first line, body, card date) must all name the
+            # session the ROWS are from. REJECTS, never warns — this lane
+            # auto-approves and posts with no human in the loop, so a warning
+            # here is a published post. See _session_conflict for the live
+            # 2026-08-03 example this fires on ("up across the board today" +
+            # "+3.7% on average on Friday" + a Monday card).
+            _conflict = _session_conflict(
+                text, now=now, row_session=cand_session,
+                # The card's printed date IS `cand_session` by construction (it
+                # is the argument passed to _resolve_card above). Passing it
+                # through rather than assuming it is what makes the third
+                # surface part of the check instead of part of the comment.
+                card_session=cand_session)
+            if _conflict:
+                dropped.append({"reason": "session_conflict",
+                                "detail": f"{lead_cashtag or cand['type']}: "
+                                          f"{_conflict}"})
+                continue
 
             # ── Near-dup gate (vs other accepted this run + existing today) ──
             tokset = sentinel._token_set(text)

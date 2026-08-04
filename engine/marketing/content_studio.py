@@ -4401,34 +4401,56 @@ def content_plan(
                 if not _mv_ticker or _mv_ticker in _mover_tickers_used:
                     continue
                 _mover_tickers_used.add(_mv_ticker)
-                _mv_facts = _mover_facts_fn(_mv, _movers_data, now=_plan_now)
+                # `root` opts this in to the COMPUTED technical state (defect 4,
+                # 2026-08-03): mover_facts reads the name's own daily bars and
+                # emits a `mover_state` fact when it can. Nightly runs after the
+                # close on a checkout that already carries the parquets, so the
+                # read is local and cheap; an unreadable name simply gets no
+                # state fact and the reaction below stays in its no-state shape.
+                _mv_facts = _mover_facts_fn(_mv, _movers_data, now=_plan_now,
+                                            root=_ohlcv_root_mv)
                 _mv_top_fact = _mv_facts["facts"][0]["text"] if _mv_facts["facts"] else ""
+                _mv_state = next(
+                    (str(f.get("text") or "").strip().rstrip(".")
+                     for f in _mv_facts["facts"] if f.get("id") == "mover_state"),
+                    "")
                 _mv_pct_str = f"{_mv['pct']:+.1f}%"
                 _mv_headline = " ".join(
                     p for p in (f"${_mv_ticker}", _mv_pct_str, _day_word) if p)
-                # Direction-aware stance (doctrine v3): down = flush-watch, dry;
-                # up = respect, don't chase. Same honest posture either way.
+                # NO UNCOMPUTED DIRECTIONAL STANCE (operator, 2026-08-03).
                 #
-                # These used to be ONE fixed sentence per direction, so every up
-                # mover the desk ever posted ended "Strength worth respecting, not
-                # chasing here." (retired as boilerplate 2026-07-30). Rotate on a
-                # crc32 of the ticker: deterministic — the same name reads the same
-                # way twice — but the batch no longer speaks in one voice.
-                _mv_rot = zlib.crc32(str(_mv_ticker or "").encode("utf-8")) % 4
-                if (_mv.get("pct") or 0) < 0:
+                # This block used to hold two direction-keyed banks of four
+                # canned stances: down movers got "I'd rather be late here than
+                # early", "No rush to be a hero on this one", "Nothing to do
+                # until it stops going down"; up movers got "Respect the move,
+                # don't pay for it", "Late entries here get punished", "I'm not
+                # paying this price". The rotation is a crc32 of the TICKER, and
+                # a crc32 has never looked at a chart — so the desk issued a
+                # timing call at random over every mover it posted and was wrong
+                # about half the time by construction. The publish-time sibling
+                # of this bank is what shipped "$FSLR ... either way I'd let it
+                # settle first" onto the flagship over a name that had just
+                # crossed up out of a two-month washout.
+                #
+                # The two lawful shapes now (see copywriter's mover bank for the
+                # same split): when the engines supply a real technical state,
+                # SAY IT — that is a read we earned and it survives being quoted
+                # back. When they do not, say the move and what we have not done,
+                # and stop. Both still cost the author something, which is the
+                # voice law; neither tells anyone what to do with the name.
+                _mv_rot = zlib.crc32(str(_mv_ticker or "").encode("utf-8")) % 3
+                if _mv_state:
                     _mv_body = f"{_mv_top_fact} " + (
-                        "The dip buyers get to find out who was early. Watching how "
-                        "it holds.",
-                        "I'd rather be late here than early. Levels are on the chart.",
-                        "No rush to be a hero on this one. Watching where it settles.",
-                        "Nothing to do until it stops going down. Chart's below.",
+                        f"{_mv_state}. That is the situation the move landed in.",
+                        f"The state underneath it: {_mv_state}.",
+                        f"{_mv_state}, which is the context the number needs.",
                     )[_mv_rot]
                 else:
                     _mv_body = f"{_mv_top_fact} " + (
-                        "Good for anyone already in. I'm not paying this price.",
-                        "Respect the move, don't pay for it. Levels are on the chart.",
-                        "Nice if you were early. Late entries here get punished.",
-                        "This is what leadership looks like while it lasts. Chart's below.",
+                        "I have no explanation for it yet and I am not going to "
+                        "invent one.",
+                        "No position, and no read on it I can back up tonight.",
+                        "Big number. What it means is chart work I have not done.",
                     )[_mv_rot]
                 _mover_item_dict = {
                     "id": f"post-mover-{_mover_item_counter:03d}",

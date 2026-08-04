@@ -234,8 +234,15 @@ def test_mover_copy_has_cashtag_and_live_pct(tmp_path):
     assert "-14.0%" in mv["text"]          # the LIVE overlaid pct, not the stale 0.1
 
 
-def test_theme_copy_has_members_and_ends_with_question(tmp_path):
-    """A generated theme item has ≥4 member cashtags and its body ends with '?'."""
+def test_theme_copy_names_at_most_the_cap_and_ends_with_question(tmp_path):
+    """A generated theme item names AT MOST the cap, and its body ends with '?'.
+
+    REWRITTEN FOR DEFECT 1 (operator, live 2026-08-03). This test used to assert
+    ``len(cashtags) >= 4`` — it encoded copywriter's floor as this lane's law, so
+    the eight-cashtag spam fingerprint the operator caught was a PASSING state
+    here. The floor belongs to a bank that predates the card; the account-safety
+    ceiling is what this lane owes X. The assertion is inverted accordingly.
+    """
     _write_themes(tmp_path, [_theme_tile("Artificial Intelligence", {
         "NVDA": 0.0, "AMD": 0.0, "SMCI": 0.0, "MU": 0.0, "AVGO": 0.0})])
     _write_snapshot(tmp_path, {
@@ -247,7 +254,7 @@ def test_theme_copy_has_members_and_ends_with_question(tmp_path):
     tl = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "theme_list")
     import re
     cashtags = set(re.findall(r"\$[A-Z]{1,5}", tl["text"]))
-    assert len(cashtags) >= 4
+    assert 0 < len(cashtags) <= pt._DEFAULTS["max_theme_cashtags_in_text"], tl["text"]
     assert tl["text"].rstrip().endswith("?")
 
 
@@ -682,23 +689,55 @@ def test_variant_pool_fallback_never_empty():
     ctx = {"type": "mover", "ticker": "AAPL", "mover_pct": "+8.2%", "has_chart": False}
     pool = [v for v in _TEMPLATES[("mover", "authoritative desk")]
             if _variant_allowed(v, ctx)]
-    # The authoritative up+no-chart pool is exactly the one untagged variant.
-    assert len(pool) == 1
-    assert "biggest move in the index" in pool[0][0]
+    # UPDATED 2026-08-03 (defect 4, the uncomputed-stance ruling). This used to
+    # assert the pool was "exactly the one untagged variant", identified by the
+    # string "biggest move in the index" — which was the headline of the post
+    # whose body said "either way I'd let it settle first". The mover bank is now
+    # partitioned by whether a COMPUTED technical state exists for the name, and
+    # this ctx carries none, so the pool is the bank's no-stance half. The
+    # invariant the test exists for is unchanged and restated below: filtering
+    # never empties the pool, and it never leaves a line whose {mover_state}
+    # token has nothing to render.
+    assert pool, "chart/direction/state filters emptied the pool"
+    assert all("{mover_state}" not in v[0] and "{mover_state}" not in v[1]
+               for v in pool), (
+        "a stateless context may not select a state-citing variant")
+    assert all("chart" not in v[1].lower() for v in pool), (
+        "has_chart=False must still exclude the chart-claiming lines")
 
 
 def test_nightly_path_selection_unchanged_by_tags():
     """A ctx WITHOUT direction/has_chart info (the nightly D-slot shape) filters
-    nothing — the pool is the full bank, so nightly selection is unchanged."""
+    nothing — the pool is the full bank, so nightly selection is unchanged.
+
+    THE MOVER BANK IS THE EXCEPTION AS OF 2026-08-03 (defect 4), and it is a
+    deliberate one: "needs_state"/"no_state" is not an optional flavour tag like
+    down_only/needs_chart, it is the partition that keeps a canned directional
+    stance off the account. A stateless ctx therefore selects the no-stance half
+    rather than the whole bank, which is the point. The direction/chart tags
+    still filter nothing, and that is what the theme half of this test pins.
+    """
     from engine.marketing.copywriter import _TEMPLATES, _variant_allowed
-    for key in (("mover", "authoritative desk"), ("theme_list", "fast, reactive")):
-        bank = _TEMPLATES[key]
-        # No mover_pct / theme_direction / has_chart. "ticker" IS set, because
-        # every real ctx has it (build_context always writes the key) and it now
-        # also drives the ticker-dependency partition; a mover bank is entirely
-        # cashtag-bearing, so a ticker-less ctx would legitimately select none.
-        ctx = {"type": key[0], "ticker": "AAPL"}
-        assert [v for v in bank if _variant_allowed(v, ctx)] == list(bank)
+    # No mover_pct / theme_direction / has_chart. "ticker" IS set, because every
+    # real ctx has it (build_context always writes the key) and it now also
+    # drives the ticker-dependency partition; a mover bank is entirely
+    # cashtag-bearing, so a ticker-less ctx would legitimately select none.
+    theme_bank = _TEMPLATES[("theme_list", "fast, reactive")]
+    theme_ctx = {"type": "theme_list", "ticker": "AAPL"}
+    assert [v for v in theme_bank
+            if _variant_allowed(v, theme_ctx)] == list(theme_bank)
+
+    mover_bank = _TEMPLATES[("mover", "authoritative desk")]
+    mover_ctx = {"type": "mover", "ticker": "AAPL"}
+    stateless = [v for v in mover_bank if _variant_allowed(v, mover_ctx)]
+    assert stateless and len(stateless) < len(mover_bank)
+    assert all("no_state" in (v[2] if len(v) > 2 else ()) for v in stateless)
+    # ...and the complementary half is exactly what a stateful ctx selects, so
+    # the two shapes partition the bank rather than overlapping or leaking.
+    stateful = [v for v in mover_bank
+                if _variant_allowed(v, dict(mover_ctx, mover_state="X is above its 50-day average"))]
+    assert stateful and not set(map(id, stateful)) & set(map(id, stateless))
+    assert len(stateful) + len(stateless) == len(mover_bank)
 
 
 def test_flat_tape_belt_skips_closed_market(tmp_path):
@@ -934,11 +973,17 @@ def test_theme_list_item_ships_a_hosted_card(tmp_path, monkeypatch, real_card):
     assert entry["kind"] == "chart_svg"
     assert entry["chart_id"].startswith("ptlive-theme-")
     assert entry["media_url"].startswith("https://")
-    # The picture names the SAME tickers the copy does — a card listing a name
-    # the post never mentions is its own small lie.
+    # THE CONTAINMENT DIRECTION FLIPPED (defect 1, 2026-08-03). This used to
+    # assert card ⊆ text — "a card listing a name the post never mentions is its
+    # own small lie" — and that reasoning is what pinned the copy at eight
+    # cashtags and gave the account the spam fingerprint. The card is the
+    # ENUMERATION and the text is the HEADLINE, so the honest containment is
+    # TEXT ⊆ CARD: naming 3 of 8 is a summary; naming a name the picture omits
+    # is the actual lie, and that is what this now forbids.
     import re as _re
-    assert set(entry["tickers"]) <= set(
-        t.lstrip("$") for t in _re.findall(r"\$[A-Z]{1,5}", tl["text"]))
+    named = set(t.lstrip("$") for t in _re.findall(r"\$[A-Z]{1,5}", tl["text"]))
+    assert named <= set(entry["tickers"]), (named, entry["tickers"])
+    assert len(named) <= pt._DEFAULTS["max_theme_cashtags_in_text"], tl["text"]
 
 
 def test_mover_item_ships_a_tape_chart_card(tmp_path, monkeypatch, real_card):
@@ -1548,3 +1593,406 @@ def test_resolve_card_never_arms_the_legacy_png_fallback(tmp_path, monkeypatch):
         "justification comment in .github/workflows/marketing-publish.yml is "
         "stale again"
     )
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 21. DEFECT 1 — THE CASHTAG SPAM FINGERPRINT
+#
+# Two posts went LIVE on the flagship on 2026-08-03 ~17:30Z from this lane, which
+# auto-approves and posts with no human in the loop. The theme_list one read:
+#
+#     Virtual & Augmented Reality is up across the board today
+#     $COHR $LITE $AXON $META $RBLX $MSFT $GOOGL $U
+#     Virtual & Augmented Reality is +3.7% on average on Friday (8 names higher).
+#     Does not chasing keep costing me money?
+#
+# Eight cashtags in one post is the spam signature X flags — an ACCOUNT-SAFETY
+# risk, not a style note. Operator: "you know tagging this many cashtags will get
+# flagged as spam right? like u can do 2-3 but not like all of them."
+#
+# TWO code decisions produced it, and both are pinned below:
+#   * the cashtag-breadth gate said "(movers only; theme_list exempt, per
+#     sentinel)" — the rule pointed away from the one format that enumerates a
+#     group by construction;
+#   * `_CARD_MAX_ROWS = 8` was justified by "the copy names at most 8 cashtags,
+#     so 8 keeps the picture and the text describing the SAME names". That
+#     reasoning is backwards: the CARD is the enumeration, the TEXT is the
+#     headline. A picture of 8 names captioned with 3 is a summary.
+# ═════════════════════════════════════════════════════════════════════════════
+
+#: Eight names, all up, with DISTINCT magnitudes so "the biggest movers" is a
+#: decidable question rather than a tie broken by insertion order.
+_EIGHT = {"COHR": 9.1, "LITE": 7.4, "AXON": 6.2, "META": 5.0,
+          "RBLX": 4.1, "MSFT": 3.3, "GOOGL": 2.2, "U": 1.4}
+
+
+def _eight_name_theme(tmp: Path) -> None:
+    """The live post's shape: one theme, eight members higher, a live snapshot."""
+    _write_themes(tmp, [_theme_tile("Virtual & Augmented Reality",
+                                    {t: 0.0 for t in _EIGHT})])
+    _write_snapshot(tmp, {t: (100.0, 100.0 - p, p) for t, p in _EIGHT.items()})
+
+
+def _named_cashtags(text: str) -> set[str]:
+    import re as _re
+    return {t.lstrip("$") for t in _re.findall(r"\$[A-Z]{1,5}", text)}
+
+
+def test_the_text_names_at_most_the_cap_while_the_card_still_lists_all_eight(
+        tmp_path, monkeypatch, real_card):
+    """PINS BOTH HALVES OF DEFECT 1 IN ONE ASSERTION PAIR.
+
+    The `<= 3` line is the mutation check for the cap: restore the theme_list
+    exemption (or `members[:10]` in _build_candidates) and it fails with the
+    live post's eight. The `== 8` line is the mutation check for the OTHER
+    direction — "just truncate the members" would silence the first assertion
+    while quietly deleting five names from the picture, and this catches that.
+    """
+    monkeypatch.setattr(real_card, "publish_card", _hosted())
+    _eight_name_theme(tmp_path)
+
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"], rep["dropped"]
+    tl = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "theme_list")
+
+    named = _named_cashtags(tl["text"])
+    assert len(named) <= pt._DEFAULTS["max_theme_cashtags_in_text"], tl["text"]
+    assert len(tl["media"][0]["tickers"]) == 8, tl["media"][0]["tickers"]
+    # ...and every name the text says is a name the picture shows.
+    assert named <= set(tl["media"][0]["tickers"]), (named, tl["media"][0])
+
+
+def test_the_names_we_do_say_are_the_biggest_movers(tmp_path):
+    """The three named are the top three by |move|, not the first three the
+    upstream payload happened to hand over.
+
+    Mutation check: drop the sort in _theme_text_cashtags and the assertion
+    fails on any fixture whose payload order is not magnitude order — which is
+    why the tile is written in ASCENDING magnitude below.
+    """
+    _write_themes(tmp_path, [_theme_tile(
+        "Virtual & Augmented Reality",
+        # ascending — insertion order is the WRONG answer
+        {t: 0.0 for t in sorted(_EIGHT, key=lambda k: _EIGHT[k])})])
+    _write_snapshot(tmp_path, {t: (100.0, 100.0 - p, p) for t, p in _EIGHT.items()})
+
+    rep = _gen(tmp_path, _cfg(), live=False)
+    tls = [g for g in rep["would_generate"] if g["kind"] == "theme_list"]
+    assert tls, (rep["would_generate"], rep["dropped"])
+
+    named = _named_cashtags(tls[0]["text"])
+    top = set(sorted(_EIGHT, key=lambda k: -abs(_EIGHT[k]))[:len(named)])
+    assert named == top, (named, top, tls[0]["text"])
+
+
+def test_the_cap_is_config_driven(tmp_path):
+    """An operator retune of publish.publish_time_movers.max_theme_cashtags_in_text
+    changes the post, without a code change. Pinned at 2 (inside the operator's
+    stated 2-3 band) so a hardcoded 3 fails here."""
+    _eight_name_theme(tmp_path)
+    cfg = _cfg()
+    cfg["publish"]["publish_time_movers"]["max_theme_cashtags_in_text"] = 2
+
+    rep = _gen(tmp_path, cfg, live=False)
+    tls = [g for g in rep["would_generate"] if g["kind"] == "theme_list"]
+    assert tls, (rep["would_generate"], rep["dropped"])
+    assert len(_named_cashtags(tls[0]["text"])) <= 2, tls[0]["text"]
+
+
+def test_the_breadth_gate_is_no_longer_exempt_for_theme_list(tmp_path):
+    """PINS THE REMOVED EXEMPTION ITSELF.
+
+    The cap is bypassed at the source (the candidate builder is forced to hand
+    over all eight cashtags again), so the only thing that can still stop the
+    live post is the breadth gate. Pre-fix that gate read `if cand["type"] ==
+    "mover"` and this candidate sailed through it; post-fix it is refused by
+    name. Without this test the exemption could be restored and every other
+    test in this section would still pass, because they measure the builder.
+    """
+    monkeypatch_all = pt._theme_text_cashtags
+    try:
+        pt._theme_text_cashtags = lambda members, cap: [
+            f"${m['ticker']}" for m in members]
+        _eight_name_theme(tmp_path)
+        rep = _gen(tmp_path, _cfg(), live=False)
+    finally:
+        pt._theme_text_cashtags = monkeypatch_all
+
+    assert not [g for g in rep["would_generate"] if g["kind"] == "theme_list"], \
+        rep["would_generate"]
+    breadth = [d for d in rep["dropped"] if d["reason"] == "cashtag_breadth"]
+    assert breadth, rep["dropped"]
+    assert "8 >" in breadth[0]["detail"], breadth[0]
+
+
+def test_the_card_and_the_text_still_agree_on_theme_count_and_average(
+        tmp_path, monkeypatch, real_card):
+    """Naming 3 of 8 is a summary; the two halves must still agree on the facts
+    that are NOT the enumeration — the theme, the breadth count and the average.
+
+    The subtitle is generated from the same theme item the copy's breadth fact
+    is, so this pins that the cap did not quietly truncate `_theme_data`.
+    """
+    monkeypatch.setattr(real_card, "publish_card", _hosted())
+    _eight_name_theme(tmp_path)
+
+    seen: dict = {}
+    _real = pt._theme_card_subtitle
+    monkeypatch.setattr(pt, "_theme_card_subtitle",
+                        lambda c: seen.setdefault("sub", _real(c)))
+
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"], rep["dropped"]
+    tl = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "theme_list")
+
+    assert seen["sub"].startswith("8 names higher"), seen["sub"]
+    assert "8 names higher" in tl["text"], tl["text"]
+    # the average appears in both, to the same precision
+    avg = seen["sub"].split("average ")[1].rstrip("%")
+    assert f"{avg}%" in tl["text"], (avg, tl["text"])
+
+
+def test_a_theme_post_still_ships_rather_than_going_dark_under_the_cap(tmp_path):
+    """copywriter.validate_copy requires ≥4 cashtags on a theme_list, and this
+    lane's cap is 3 — so without _drop_lane_capped_cashtag_violation the whole
+    family would generate, fail validation on every variant, and emit NOTHING.
+    A silently dark format is not a fix for a spam fingerprint."""
+    _eight_name_theme(tmp_path)
+    rep = _gen(tmp_path, _cfg(), live=False)
+    assert [g for g in rep["would_generate"] if g["kind"] == "theme_list"], \
+        (rep["would_generate"], rep["dropped"])
+    assert not [d for d in rep["dropped"] if d["reason"] == "copy_violation"], \
+        rep["dropped"]
+
+
+def test_the_cashtag_floor_exception_is_not_a_general_hole():
+    """The excuse fires ONLY for the shortfall this lane created.
+
+    Four separate mutation checks on _drop_lane_capped_cashtag_violation: a
+    mover, a different violation, a count that does NOT match what the lane
+    supplied, and a supplied count already above the cap. Each must keep its
+    violation, or the "named collision" is really a bypass.
+    """
+    cand = {"type": "theme_list", "cashtags": ["$A", "$B", "$C"]}
+    v = ["theme_list post must contain ≥4 cashtags; found 3"]
+    assert pt._drop_lane_capped_cashtag_violation(v, cand, 3) == []
+
+    # (a) not a theme_list
+    assert pt._drop_lane_capped_cashtag_violation(
+        v, {"type": "mover", "cashtags": ["$A", "$B", "$C"]}, 3) == v
+    # (b) a different violation rides along and survives
+    v2 = v + ["banned phrase: guaranteed"]
+    assert pt._drop_lane_capped_cashtag_violation(v2, cand, 3) == \
+        ["banned phrase: guaranteed"]
+    # (c) copywriter found FEWER than the lane supplied — something else ate a
+    #     cashtag, so this is a real defect and stays terminal
+    assert pt._drop_lane_capped_cashtag_violation(
+        ["theme_list post must contain ≥4 cashtags; found 2"], cand, 3) == \
+        ["theme_list post must contain ≥4 cashtags; found 2"]
+    # (d) the cap has been raised past copywriter's floor → the exception retires
+    assert pt._drop_lane_capped_cashtag_violation(
+        ["theme_list post must contain ≥4 cashtags; found 5"],
+        {"type": "theme_list", "cashtags": ["$A"] * 5}, 4) == \
+        ["theme_list post must contain ≥4 cashtags; found 5"]
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 22. DEFECT 2 — ONE SESSION PER POST
+#
+# The same live post carried THREE claims about which session it was about:
+#
+#   first line : "Virtual & Augmented Reality is up across the board today"
+#   body       : "... is +3.7% on average on Friday (8 names higher)."
+#   card header: dated 2026-08-03
+#
+# posted Monday 2026-08-03. The rows really were Monday's — the row-session gate
+# ("rows dated X, not today") passed, because it asks whether the DATA is
+# current and never looks at what the WORDS say. The body's day word came from
+# movers_source.session_phrase, which inferred the session from the CLOCK
+# (`last_completed_session`, = Friday at 13:30 ET Monday) instead of from the
+# row that supplied the number.
+# ═════════════════════════════════════════════════════════════════════════════
+
+#: Monday 2026-08-03, 17:30 UTC == 13:30 ET — the PM slot, mid-session. The
+#: exact wall clock of the live posts.
+MON = datetime(2026, 8, 3, 17, 30, 0, tzinfo=timezone.utc)
+MON_DAY = "2026-08-03"
+FRI_DAY = "2026-07-31"
+
+#: The live post, reproduced. Load-bearing: the check must fire on THIS string.
+LIVE_MIXED_POST = (
+    "Virtual & Augmented Reality is up across the board today\n\n"
+    "$COHR $LITE $AXON\n"
+    "Virtual & Augmented Reality is +3.7% on average on Friday "
+    "(8 names higher). Does not chasing keep costing me money?"
+)
+
+
+def test_the_reproduced_live_post_is_rejected_as_a_mixed_session_claim():
+    """PINS THE LIVE DEFECT. "today" in the first line and "on Friday" in the
+    body resolve to two different sessions, so the post is refused BY NAME.
+
+    Mutation check: delete the `len(claims) > 1` branch of _session_conflict and
+    this returns None — the exact state that let the post ship.
+    """
+    reason = pt._session_conflict(LIVE_MIXED_POST, now=MON,
+                                  row_session=MON_DAY, card_session=MON_DAY)
+    assert reason and reason.startswith("mixed_session_claim"), reason
+    assert FRI_DAY in reason and MON_DAY in reason, reason
+
+
+def test_the_same_post_with_one_session_passes():
+    """The control. The ONLY edit is the body's day word; nothing else about the
+    post changes. Without this the test above would also pass on a check that
+    rejects every theme post."""
+    assert pt._session_conflict(LIVE_MIXED_POST.replace("on Friday", "today"),
+                                now=MON, row_session=MON_DAY,
+                                card_session=MON_DAY) is None
+
+
+def test_the_body_day_word_now_comes_from_the_row_not_the_clock():
+    """THE ROOT CAUSE, at the source. At 13:30 ET Monday the clock's "last
+    completed session" is Friday, so the clock-inferred word is "on Friday" —
+    that is the string that shipped. Given the ROW's session it is "today".
+
+    Both halves are asserted: the first documents the pre-fix behaviour still
+    reachable via `asof=None` (the nightly desk's legitimate reading), the
+    second is the fix.
+    """
+    from engine.marketing import movers_source as ms
+    assert ms.session_phrase(MON) == "on Friday"          # clock-inferred
+    assert ms.session_phrase(MON, asof=MON_DAY) == "today"  # row-derived
+    assert ms.session_phrase(MON, asof=FRI_DAY) == "on Friday"
+
+    item = {"theme": "Virtual & Augmented Reality", "direction": "up",
+            "members": [{"ticker": t, "pct": p} for t, p in _EIGHT.items()],
+            "agg_pct": 3.7, "question": "", "asof": MON_DAY}
+    agg = next(f["text"] for f in ms.theme_facts(item, now=MON, asof=MON_DAY)["facts"]
+               if f["id"] == "theme_agg")
+    assert "today" in agg and "Friday" not in agg, agg
+
+    mover = {"ticker": "FSLR", "name": "First Solar", "pct": 10.3,
+             "sector": "Technology", "asof": MON_DAY}
+    lead = ms.mover_facts(mover, now=MON, asof=MON_DAY)["facts"][0]["text"]
+    assert "today" in lead and "Friday" not in lead, lead
+
+
+def test_a_lane_post_carries_ONE_session_across_first_line_body_and_card(
+        tmp_path, monkeypatch, real_card):
+    """END TO END on the live post's own clock: Monday rows, Monday wall clock.
+
+    All three surfaces must name 2026-08-03. Pre-fix the body said "on Friday"
+    here — this is the regression pin for the shipped post.
+    """
+    monkeypatch.setattr(real_card, "publish_card", _hosted())
+    _write_themes_meta(tmp_path, [_theme_tile("Virtual & Augmented Reality",
+                                              {t: 0.0 for t in _EIGHT})],
+                       asof=MON_DAY, generated_utc=MON.strftime("%Y-%m-%d %H:%M"))
+    _write_snapshot(tmp_path, {t: (100.0, 100.0 - p, p) for t, p in _EIGHT.items()},
+                    asof=MON.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                    ts_ms=int(MON.timestamp() * 1000))
+
+    rep = _gen(tmp_path, _cfg(), now=MON)
+    assert rep["generated"], rep["dropped"]
+    tl = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "theme_list")
+
+    # (1)+(2) first line and body: exactly one session, and it is the rows'.
+    claims, unresolved = pt._session_claims(tl["text"], now=MON)
+    assert not unresolved, (unresolved, tl["text"])
+    assert {d.isoformat() for d in claims} == {MON_DAY}, (claims, tl["text"])
+    assert "Friday" not in tl["text"], tl["text"]
+    # (3) the card. Its stamp is the row session, which is also the item's as_of.
+    assert tl["as_of"] == MON_DAY
+    assert MON_DAY in tl["media"][0]["path"], tl["media"][0]["path"]
+    assert tl["source"]["session_asof"] == MON_DAY, tl["source"]
+
+
+def test_friday_rows_posted_on_monday_never_reach_the_copy(tmp_path):
+    """The OTHER direction of "one session per post": rows from a prior session
+    cannot wear this lane's banks (every template says "today" in its own words
+    and this lane does not own copywriter), so they are refused BY NAME rather
+    than published with a re-worded day.
+
+    The complementary path — a Friday day-word on Friday rows — is pinned at the
+    facts level in test_the_body_day_word_now_comes_from_the_row_not_the_clock.
+
+    HEATMAP-ONLY on purpose (no live snapshot): a snapshot feed is by definition
+    the current session, so _overlay_movers would re-date every covered row to
+    Monday and the fixture would stop being Friday's data at all.
+    """
+    _write_themes_meta(tmp_path, [_theme_tile("Virtual & Augmented Reality", _EIGHT)],
+                       asof=FRI_DAY, generated_utc=MON.strftime("%Y-%m-%d %H:%M"))
+    rep = _gen(tmp_path, _cfg(), now=MON, live=False)
+
+    assert rep["would_generate"] == [], rep["would_generate"]
+    stale = [d for d in rep["dropped"] if d["reason"] == "stale_session"]
+    assert stale and FRI_DAY in stale[0]["detail"], rep["dropped"]
+
+
+def test_a_card_dated_to_another_session_is_rejected():
+    """The THIRD surface has its own refusal. Nothing in the text is wrong here —
+    only the picture's date is — and it is still not publishable.
+
+    Mutation check for `as_of=cand_session` in the card call: restore
+    `as_of=today` and the two agree only for as long as the row-session gate
+    holds them equal; this is the check that says they MUST.
+    """
+    ok = LIVE_MIXED_POST.replace("on Friday", "today")
+    reason = pt._session_conflict(ok, now=MON, row_session=MON_DAY,
+                                  card_session=FRI_DAY)
+    assert reason and reason.startswith("card_session_mismatch"), reason
+
+
+def test_a_today_word_with_no_session_in_progress_is_rejected():
+    """Saturday 2026-08-01: nothing is in progress, so "today" names no session
+    at all. Refused as unresolvable rather than silently resolved to Friday —
+    the same defect class as ob-2026-08-01-a83c188711 ("$AMZN +15.3% today",
+    written on a Saturday)."""
+    sat = datetime(2026, 8, 1, 17, 30, 0, tzinfo=timezone.utc)
+    reason = pt._session_conflict("AMZN surged +15.3% today.", now=sat,
+                                  row_session=FRI_DAY, card_session=FRI_DAY)
+    assert reason and reason.startswith("unresolvable_session_claim"), reason
+
+
+def test_a_post_with_no_temporal_word_makes_no_session_claim():
+    """The degradation path. market_clock returns an EMPTY phrase when no word
+    can be justified, so copy legitimately ships with none — and a post that
+    claims no session cannot claim the wrong one."""
+    assert pt._session_conflict("Tape check. Not touching it yet.", now=MON,
+                                row_session=MON_DAY, card_session=MON_DAY) is None
+
+
+def test_two_wordings_of_the_SAME_session_are_not_a_conflict():
+    """Resolution is to a DATE, not to a string — otherwise "today" and "on
+    Monday" said on a Monday would read as two sessions and the check would
+    reject honest copy. The whole point of resolving before comparing."""
+    claims, unresolved = pt._session_claims(
+        "Up today. Monday's tape was the tell.", now=MON)
+    assert not unresolved
+    assert {d.isoformat() for d in claims} == {MON_DAY}, claims
+    assert pt._session_conflict("Up today. Monday's tape was the tell.",
+                                now=MON, row_session=MON_DAY,
+                                card_session=MON_DAY) is None
+
+
+def test_the_date_claim_regexes_do_not_manufacture_a_false_conflict():
+    """A false positive here is TERMINAL — it kills an honest post — so the two
+    resolvers are narrowed and pinned.
+
+    "Market 5" must not read as a March date (the `Mar[a-z]*` wildcard shape
+    would), and a bare month name with no day number names no session at all.
+    The positive controls sit alongside so a regex that matches NOTHING (the
+    other way to make this test pass) fails too.
+    """
+    def claims(s):
+        c, u = pt._session_claims(s, now=MON)
+        assert not u, (s, u)
+        return {d.isoformat() for d in c}
+
+    assert claims("Market 5 names higher.") == set()
+    assert claims("Marching 3 names into the group.") == set()
+    assert claims("May the trend hold.") == set()
+    # positive controls — the shapes market_clock.temporal_vocab actually emits
+    assert claims("Ripped on July 31.") == {FRI_DAY}
+    assert claims("Ripped on Jul 31.") == {FRI_DAY}
+    assert claims("Up today.") == {MON_DAY}
