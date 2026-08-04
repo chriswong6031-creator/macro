@@ -54,6 +54,7 @@ from engine import coiled  # noqa: E402  — wave-2-validated COILED ranking bon
 from engine import donor  # noqa: E402  — G6a donor-sector context chip (display-only)
 from engine import hold as hold_engine  # noqa: E402  — W6-C HOLD tracker (basing state / invalidation)
 from engine import earnings_blackout as _eb  # noqa: E402  — W1.5 earnings-blackout hygiene veto
+from engine import earnings_catalyst as _ecat  # noqa: E402  — W4 display-tier catalyst fields
 from engine import us_board_rank  # noqa: E402  — us_prophet_v1 priority score / stages / ran lane
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
@@ -3860,49 +3861,31 @@ def main() -> int:
                     _eb_blackout_map[t] = _eb_row
                 except Exception:  # noqa: BLE001
                     _eb_row = None
-            if _eb_row and not _eb_row.get("stale") and _eb_row.get("days_to_earnings") is not None:
-                _eb_days = _eb_row["days_to_earnings"]
-                if _eb_days is not None and _eb_days <= 14:
-                    # Map Nasdaq raw time tokens to display-friendly labels.
-                    _raw_nt = _eb_row.get("next_time")
-                    _nt_labels = {
-                        "time-after-hours": "after close",
-                        "time-pre-market": "pre-market",
-                        "time-not-supplied": None,
-                    }
-                    _disp_nt = _nt_labels.get(_raw_nt, _raw_nt) if _raw_nt else None
-                    # EN/ZH bilingual chip text (MLC-R6; glance-tier plain words).
-                    # Display proximity in CALENDAR days from next_date so "today/
-                    # tomorrow/in N d" read the way a human means them. _eb_days is a
-                    # TRADING-day count (used for the ≤14 gate + W1.5 blackout), so a
-                    # single trading day across a weekend is NOT calendar-"tomorrow"
-                    # (Fri→Mon = 1 td / 3 cal). Fall back to _eb_days if next_date is
-                    # unparseable.
-                    _cal_days = _eb_days
-                    _nd_raw = _eb_row.get("next_date")
-                    if _nd_raw:
-                        try:
-                            _cal_days = (date.fromisoformat(str(_nd_raw)[:10])
-                                         - date.today()).days
-                        except Exception:  # noqa: BLE001
-                            _cal_days = _eb_days
-                    if _cal_days <= 0:
-                        _chip_en = "Reports today"
-                        _chip_zh = "今日公布业绩"
-                    elif _cal_days == 1:
-                        _chip_en = "Reports tomorrow"
-                        _chip_zh = "明日公布业绩"
-                    else:
-                        _chip_en = f"Reports in {_cal_days} d"
-                        _chip_zh = f"{_cal_days}日后公布业绩"
-                    r["earnings_soon"] = {
-                        "days_to": _cal_days,
-                        "next_date": _eb_row.get("next_date"),
-                        "next_time": _disp_nt,
-                        "in_blackout": bool(_eb_row.get("in_blackout")),
-                        "chip_en": _chip_en,
-                        "chip_zh": _chip_zh,
-                    }
+            # W4 (2026-08-04): the whole earnings payload — chip + catalyst fields +
+            # post-earnings reaction — now comes from engine/earnings_catalyst so it is
+            # unit-testable against the code the builder actually runs (the pre-W4 block
+            # lived inline here and its only "test" re-implemented the chip text in the
+            # test file, which pinned nothing). DISPLAY-TIER, masterplan §0 G0.1: zero
+            # gate/rank/size/veto power, and earnings_blackout.assess above is untouched.
+            # The chip shape is unchanged; what is new is the DISCLOSURE shape emitted for
+            # a STALE row — `days_to_report: null` + `stale: true`, no `days_to`, no chip
+            # text — because a stale row is exactly where the veto fails open in silence.
+            # Nothing new renders this wave: every consumer gates on `days_to`
+            # (dashboard.html.j2, build_prophet, stock_dossier) or `in_blackout is True`
+            # (us_board_rank), and the disclosure shape carries neither. W2 owns display.
+            if _eb_row:
+                try:
+                    _ecl = (_ext_closes[t].dropna()
+                            if "_ext_closes" in dir() and t in _ext_closes.columns else None)
+                    _epay = _ecat.board_row_fields(
+                        _eb_row, date.today(), closes=_ecl,
+                        surprises=_eb.surprise_history(t))
+                    if _epay.get("earnings_soon"):
+                        r["earnings_soon"] = _epay["earnings_soon"]
+                    if _epay.get("post_earnings_move"):
+                        r["post_earnings_move"] = _epay["post_earnings_move"]
+                except Exception:  # noqa: BLE001 — display-only; never fatal
+                    pass
             # W6-US fix 8: emit cand_depth_pct from the ladder onto every board row so
             # it is a first-class field available for the US-2 ledger study (depth vs
             # forward returns for FRESH-BUY rows). NOT a gate — we do NOT filter on it
