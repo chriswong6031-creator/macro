@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T05:38:03.845524+00:00",
-  "count": 713,
+  "generated_at": "2026-08-04T05:52:56.187747+00:00",
+  "count": 714,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -162,6 +162,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ety1ryjntw8-7c6489",
+      "title": "market monitor",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:51:28Z",
+      "summary_points": [
+        "**Hawkish Rate Policy & Inflation Dynamics**: Persistent inflation (US core PCE 3.3% YoY, Euro CPI 2.9% YoY) drives 60% Fed hike probability in Sept; BoE/BoJ dissenters signal tightening amid sticky services/energy prices.",
+        "**Geopolitical & Energy Supply Disruption**: Middle East tensions override Strait of Hormuz crude flows, fueling energy sector dominance (S&P 500 Energy +16.5% YTD) and oil volatility.",
+        "**AI Infrastructure Bottleneck**: Microchip/data center demand outpacing supply creates pricing power for hyperscalers, critical risk for tech/semiconductor portfolios and momentum strategies.",
+        "**Quantitative Momentum Unwind**: AI capex rotation triggers de-leveraging, shifting capital from semiconductors/infrastructure to software/defensive equities, amplifying technical risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
