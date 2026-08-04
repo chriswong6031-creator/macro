@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T04:52:36.588117+00:00",
-  "count": 711,
+  "generated_at": "2026-08-04T05:07:49.966035+00:00",
+  "count": 712,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -107,6 +107,21 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xdeg6d6nvvi-41ea43",
+      "title": "Goldman Sachs Prime Services Monthly First Look July 2026",
+      "institution": "Prime",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:58:49Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
