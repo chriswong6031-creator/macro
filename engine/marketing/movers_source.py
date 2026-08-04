@@ -976,6 +976,81 @@ def technical_state(ticker: str, root: PathLike | None) -> str | None:
 # mover_facts
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: trend_context buckets — where today's big move LANDED in the recent trend.
+#: The vocabulary the copy banks key on; "plain" means "no strong read", which
+#: selects the generic variants exactly as before this function existed.
+TREND_CONTEXTS = ("washout_bounce", "breakout", "crack_from_highs",
+                  "capitulation", "plain")
+
+#: ~3 months of sessions. The window the chart shows is the window the words
+#: must describe — a bucket computed off a horizon the reader cannot see is
+#: how copy and chart end up disagreeing.
+_TREND_WINDOW = 63
+_TREND_MIN_ROWS = _TREND_WINDOW + 1
+
+
+def trend_context(closes: list | tuple, pct: float | int | None) -> str:
+    """Deterministic trend bucket for a mover's copy stance (pure, stdlib-only).
+
+    THE FSLR POSTMORTEM (operator, 2026-08-03). FSLR printed +10.3% the first
+    session after a two-month, -35% slide — a washed-out name swinging off the
+    lows, daily MACD crossing, good earnings — and the flagship posted "Real
+    strength or real damage, either way I'd let it settle first." Every mover
+    variant in the bank was the same context-blind caution, so a post about
+    the most context-heavy tape event of the day read like it hadn't seen the
+    chart it was attached to. The operator deleted it: "there's no settling in
+    stocks that literally just got washed out and just began to rally."
+
+    `closes` are daily closes INCLUDING the move day as the last element (the
+    exact series the attached chart renders). The bucket is computed on the
+    series BEFORE the move — where the move landed, not what it did. When the
+    local store has not rolled yet (intraday: last row = the prior session),
+    the window just shifts by one session, which moves no bucket at these
+    thresholds — the shapes are three-month structures, not day-count trivia:
+
+        up day    · prior 3m return <= -15% and prior close in the bottom 35%
+                    of the 3m range                      -> "washout_bounce"
+                  · prior close in the top 20% of the range with a flat-or-up
+                    3m tape                              -> "breakout"
+        down day  · prior close in the top 30% after a +10% 3m run
+                                                         -> "crack_from_highs"
+                  · prior 3m return <= -15% and bottom 35% of range
+                                                         -> "capitulation"
+        anything else, or fewer than ~3 months of usable rows -> "plain"
+
+    "plain" is the SAFE answer and the exact pre-existing behavior: generic
+    variants only. This never raises and never returns outside TREND_CONTEXTS.
+    A stance word is still never a recommendation — the buckets choose which
+    honest observation ships, not a call to buy or sell (A7 holds: this is
+    arithmetic on closes, no model, no LLM).
+    """
+    try:
+        pct_f = float(pct if pct is not None else 0.0)
+        prior = [float(c) for c in list(closes)[:-1]
+                 if c is not None and float(c) > 0.0]
+    except (TypeError, ValueError):
+        return "plain"
+    if len(prior) < _TREND_MIN_ROWS - 1:
+        return "plain"
+    window = prior[-_TREND_WINDOW:]
+    lo, hi = min(window), max(window)
+    if hi <= lo:
+        return "plain"
+    pos = (window[-1] - lo) / (hi - lo)
+    ret3m = window[-1] / window[0] - 1.0
+    if pct_f >= 0:
+        if ret3m <= -0.15 and pos <= 0.35:
+            return "washout_bounce"
+        if pos >= 0.80 and ret3m >= 0.0:
+            return "breakout"
+    else:
+        if pos >= 0.70 and ret3m >= 0.10:
+            return "crack_from_highs"
+        if ret3m <= -0.15 and pos <= 0.35:
+            return "capitulation"
+    return "plain"
+
+
 def mover_facts(mover: dict, data: dict | None = None, *,
                 now: datetime | None = None,
                 asof: object | None = None,

@@ -621,6 +621,22 @@ def _build_candidates(overlaid: dict, root: Path, cfg: dict, pt: dict,
         if not tkr or tkr in used_mover_tickers:
             continue
         used_mover_tickers.add(tkr)
+        # Trend context for the copy stance (FSLR postmortem 2026-08-03): the
+        # same local daily bars the mover card is rendered from decide whether
+        # this move landed as a washout bounce / breakout / first crack /
+        # capitulation, so the words can never contradict the attached chart.
+        # chart_render is imported HERE, not at module top (header law: the
+        # publisher's import of this module costs nothing but stdlib), and any
+        # failure degrades to the generic bank exactly as before.
+        try:
+            from engine.marketing import chart_render as _cr  # noqa: PLC0415
+            _closes = _cr.load_closes(tkr, root, n=70)
+            if _closes:
+                mv = dict(mv)
+                mv["trend_context"] = movers_source.trend_context(
+                    _closes[1], mv.get("pct"))
+        except Exception:  # noqa: BLE001 — context is optional, copy is not
+            pass
         mover_items.append({
             "type": "mover",
             "ticker": tkr,

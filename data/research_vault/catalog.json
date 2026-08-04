@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T03:07:22.550859+00:00",
-  "count": 706,
+  "generated_at": "2026-08-04T07:08:03.069284+00:00",
+  "count": 718,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -111,6 +111,40 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-xdeg6d6nvvi-41ea43",
+      "title": "Goldman Sachs Prime Services Monthly First Look July 2026",
+      "institution": "Prime",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:58:49Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ohvzm3kaos2-feec61",
+      "title": "Mi weekly market brief",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:52:32Z",
+      "summary_points": [
+        "**Rhine water levels threaten German industrial output**: Low water restricts freight, raises shipping costs, and slows production; 2026 droughts could amplify risks despite fiscal stimulus.",
+        "**US/China PMI expansion contrasts with Germany’s Rhine vulnerability**: US ISM PMI 53.3 and China composite PMI 53.6 signal expansion, while Germany faces critical supply chain disruption from Rhine conditions.",
+        "**Forward-looking drought risk amplifies German industrial exposure**: 2026 drought projections heighten near-term and structural risks to German manufacturing output beyond current fiscal measures."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-rrbhgy7uy8l-6388e5",
       "title": "Weekly investment commentary en us 20260803 a quiet august not for investors",
       "institution": "BlackRock",
@@ -128,6 +162,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ety1ryjntw8-7c6489",
+      "title": "market monitor",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:51:28Z",
+      "summary_points": [
+        "**Hawkish Rate Policy & Inflation Dynamics**: Persistent inflation (US core PCE 3.3% YoY, Euro CPI 2.9% YoY) drives 60% Fed hike probability in Sept; BoE/BoJ dissenters signal tightening amid sticky services/energy prices.",
+        "**Geopolitical & Energy Supply Disruption**: Middle East tensions override Strait of Hormuz crude flows, fueling energy sector dominance (S&P 500 Energy +16.5% YTD) and oil volatility.",
+        "**AI Infrastructure Bottleneck**: Microchip/data center demand outpacing supply creates pricing power for hyperscalers, critical risk for tech/semiconductor portfolios and momentum strategies.",
+        "**Quantitative Momentum Unwind**: AI capex rotation triggers de-leveraging, shifting capital from semiconductors/infrastructure to software/defensive equities, amplifying technical risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7ontnhc5q5u-5e9f69",
+      "title": "Weekly Commentary 030826 report 03Aug26 1",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T22:49:53Z",
+      "summary_points": [
+        "**NZ Unemployment Rate Rise**: Expected to climb to 5.4% as working-age population growth outpaces job creation, signaling labor market weakness and aligning with cycle highs.",
+        "**RBNZ Policy Tightening**: OCR raised to 2.5% with 25bp hikes expected in Sept/Dec, driving fixed-term mortgage rates above 5% and flattening yield curve (71bp 2-10yr swap).",
+        "**Middle East Geopolitical Risk**: Sustained US-Iran conflict volatility keeps Brent crude near $90/bbl, elevates second-round inflation risks, and pressures RBNZ/Fed policy decisions.",
+        "**Critical Data Releases**: NZ Q2 employment (Wed), US July payrolls (Fri), and Australia CPI are pivotal for NZD/USD direction and RBNZ/Fed policy trajectories."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
@@ -153,6 +227,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-wha8te9iahm-c63eb4",
+      "title": "What does the Warsh era mean for Fed policy",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:44:27Z",
+      "summary_points": [
+        "**Fed Rate Hold & Watchful Stance**: Fed maintained rates unchanged with 3 dissenters; moderated June inflation and fading tariff impacts drive near-term hold, prioritizing \"watchful thinking\" over hawkish signals.",
+        "**Short/Medium Bond Yield Opportunity**: Aggressive market pricing for Fed hikes creates attractive yields on short/medium-duration quality bonds, offering strategic yield enhancement amid supportive Fed policy.",
+        "**US Equity Policy Support**: Fed policy broadly underpins US equity markets, reinforcing the case for tactical allocations toward equities alongside bond strategies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-ovegn6rwo5n-3ac8f3",
       "title": "Daily US",
       "institution": "UBS",
@@ -168,6 +261,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kehnzlk2jzy-c14cc6",
+      "title": "GM Market Rhythm Focus",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-03T22:42:26Z",
+      "summary_points": [
+        "**S&P 500 Breakout Confirmation**: Reclaims 50dma with improving momentum oscillators, signaling potential breakout from multi-week sideways pattern; requires break above 7,565/7,580 for sustained upward momentum.",
+        "**Equal-Weight S&P 500 ETF (RSP) Uptrend**: Confirmed breakout with four new highs, indicating intact uptrend and broader market strength exceeding SPX headline index performance.",
+        "**Nasdaq 100 Breakout Validation**: Cleared top at 28,274 in strong uptrend; requires follow-through on Thu/Fri bounce to confirm, with key resistances at 29,080/29,390.",
+        "**VIX Trend Reversal**: Broke uptrend after 3+ weeks, momentum oscillators signal short-term downside; near-term support at 15.99 (summer floor), with rallies potentially capping VIX at 13.",
+        "**Brent Crude Technical Support**: Price at 83.65 with 200dma (81.13) acting as critical support to slow decline; key resistances at 85.05/86.79 for trend continuation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
@@ -276,6 +390,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-xyyexrl51mp-481d8d",
+      "title": "Siemens Healthineers AG (SHLG)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:36Z",
+      "summary_points": [
+        "**China Diagnostics Policy Risks**: Hemostasis VBP, DRG, and pricing unification pose near-term EBIT headwinds for China diagnostics; legacy platform decline (FY27 consensus +53% adj.",
+        "EBIT growth) is a key downside risk.",
+        "**EPS Headwinds & Gap**: FY27e EPS shortfall of 2% vs.",
+        "consensus (€2.38) driven by net financials (€0.05), higher tax rate (€0.06), and separation costs (€0.02), partially offset by inflation mitigation.",
+        "**Valuation Upside & Target**: Goldman Sachs’ €42 target (13.9% upside from current €36.86) implies strong growth expectations (EPS €2.57 by 2028), though recent volatility (peaked ~€54 in 2023) persists."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-dskn6izyomi-3e042c",
       "title": "ON Semiconductor Corp. (ON) First Take Upside to quarter, with solid guidance",
       "institution": "Goldman Sachs",
@@ -296,6 +431,65 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-gfuvp63hnci-c0603e",
+      "title": "Americas Transportation Railroads Weekly Rail Carload Snapshot — Week 30",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:34Z",
+      "summary_points": [
+        "**US Rail Carload Deceleration**: US Class I rail carloads growth slowed to +2.4% YoY (week 30) from +3.6% (week 29), driven by intermodal deceleration to +4.6% YoY (from +5.3%) and ex-intermodal slowing to +0.3% YoY (from +2.0%), signaling weakening logistics demand fundamentals.",
+        "**Canadian Rail Divergence**: CN intermodal growth improved to -4.2% YoY (from -17%) but CPKC surged to +8.1% YoY, while total Canadian carloads remained stagnant at +0.1% YoY, highlighting sector-specific operational risks and recovery disparities.",
+        "**Goldman NR Impact**: \"Not Rated\" (NR) status directly affects portfolio construction due to suspended recommendations (e.g., mergers, regulatory issues), creating allocation uncertainty for PMs managing coverage universe exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-l0tbvwke6fj-9bef04",
+      "title": "Americas Branded Consumer Goods Apparel & Accessories July store traffic update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:33Z",
+      "summary_points": [
+        "**Premium Department Store Resilience**: Bloomingdale’s robust Y/Y traffic growth vs peers (Exhibit 2) and sequential July improvement vs June (Exhibit 1) signal strong premium consumer demand amid sector volatility.",
+        "**Off-Price Sector Divergence**: dd’s DISCOUNTS and Ross Dress for Less maintained strong traffic (Exhibit 4), contrasting sharply with T.J.",
+        "Maxx/Marshalls’ weaker performance vs historical norms.",
+        "**URBN Banner Strength**: Urban Outfitters (UO) sustained robust traffic amid sector volatility, with Free People and Anthropologie accelerating growth—highlighting key resilience in branded apparel banners."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-cntckhtdlz9-20af20",
+      "title": "Midday Market Intelligence august",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:31Z",
+      "summary_points": [
+        "**US Market Momentum & AI Volatility**: Hyperscalers’ $1tn global AI investment ($581bn US) fuels tech momentum and persistent volatility; geopolitical calm supports resumption of momentum trade amid strong capex growth.",
+        "**Manufacturing Data Strength**: ISM Manufacturing survey beats expectations (highest since May 2022), driven by robust new orders and production, reinforcing growth narrative and enabling sector rotation opportunities.",
+        "**Sector Rotation Catalyst**: IT sector shows strong earnings growth but largest de-rating; Energy underperforms earnings growth—critical for identifying momentum reversal points and tactical allocation shifts.",
+        "**Key Data Releases**: June JOLTS job openings, Factory orders, and earnings (VRTX, JAZZ, MRK) drive near-term flows and positioning adjustments for portfolio managers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-n1exk7qbd2r-ecc7aa",
       "title": "Japan Banks August mortgage deposit rates Online banks raise floating rates",
       "institution": "Goldman Sachs",
@@ -312,6 +506,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-o8keeai6j0r-15dc59",
+      "title": "Americas Retail Takeaways from IR management",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:28Z",
+      "summary_points": [
+        "**BBWI Tariff Headwind**: $80m tariff risk persists from prior year, critical downside factor amid strategic shifts (Fruit Fusion franchise, Amazon/Ultra 3P distribution).",
+        "**ORLY Repurchase Momentum**: $3.1bn YTD share repurchases (opportunistic/programmatic) with 1–2% 2H ticket growth above inflation, signaling capital allocation discipline.",
+        "**EYE Valuation Gap**: Revised EBITDA estimates ($228.1mn/$259.1mn/$306.2mn) and target price ($16.00) above closing ($15.28), indicating bullish technical signal.",
+        "**ORLY Target vs.",
+        "Close**: Target price ($53.00) below closing ($57.57), reflecting bearish sentiment despite strong repurchase program and ticket growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vngo7fncebx-6ef624",
+      "title": "GS Bobby Lien USDJPY views and charts trading within 157.00 157.85 range this morning",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:14:25Z",
+      "summary_points": [
+        "**US-Japan Yen Intervention Scale**: Joint PACT intervention with KATAYAMA confirms $60bn coordinated defense (15-yr high vs prior $25bn), signaling aggressive policy shift despite muted market reaction.",
+        "**EURJPY Coordination Risk**: Coordinated EURJPY intervention to avoid USD sell-off risks UST selling as key flow concern amid policy-driven Yen defense.",
+        "**USD/JPY Target Projection**: Goldman Sachs technical analysis projects USD/JPY trend toward 165 by October 2026, mirroring April 30 intervention response."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },

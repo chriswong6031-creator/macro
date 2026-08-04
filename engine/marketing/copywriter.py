@@ -918,6 +918,16 @@ def build_context(
         "mover_pct": (f"{float(_mv_pct):+.1f}%" if _mv_pct is not None else ""),
         # "" whenever the engines did not supply a state. See the block above.
         "mover_state": mover_state,
+        # Trend bucket for the mover copy stance (movers_source.trend_context,
+        # FSLR postmortem 2026-08-03). Absent/unknown reads as "" and the
+        # context-tagged variants stay unselectable, generic bank only.
+        #
+        # TWO INDEPENDENT AXES, both landed for the same postmortem by different
+        # lanes: `mover_state` is the engines' computed technical sentence that
+        # the {mover_state} token RENDERS, `mover_context` is the coarse tape
+        # bucket that only GATES which lines are selectable. A line may need
+        # either, both, or neither.
+        "mover_context": str(mover_data.get("trend_context") or ""),
     }
 
 
@@ -2953,6 +2963,63 @@ def queued_voice_violations(text: str, kind: str = "",
     return out
 
 
+def queued_relay_violations(text: str, provenance: str = "") -> list[str]:
+    """The RELAY hygiene laws, runnable against copy already in the queue.
+
+    Same argument as :func:`queued_voice_violations`, one lane over. The relay
+    laws landed on 2026-08-04 after "More info on this - South Korea core
+    inflation hits 2-1/2 year high despite headline cooling -- wire reports"
+    posted to the flagship; the fix was at COMPOSE time, and the outbox was
+    holding 308 queued items going back eleven days. Five of them still carried
+    a foreign "@handle" banned two days earlier. Fixing the writer fixes
+    tomorrow; only a last gate fixes the queue, and the queue is what reaches
+    the timeline.
+
+    SCOPED TO RELAYED LANES, INSIDE THE SCREEN. Our own desks write in the first
+    person deliberately ("I'm not fighting this one" — the house voice the
+    operator approved on 2026-07-30, 46 queued items at the time). These rules
+    ask "was this sentence written for a reader on somebody else's page", which
+    is only a defect when the sentence came from somebody else's page. Applied to
+    the marketing desks they would quarantine the voice wholesale.
+
+    That check is made HERE, from ``relay_hygiene._RELAYED_PROVENANCES``, and not
+    by the caller: an allowlist the caller owns puts the whole marketing voice one
+    forgotten argument away from a terminal quarantine. An empty or unrecognised
+    ``provenance`` returns [] — an unknown lane is never screened.
+
+    Fail-SOFT on an import error: post-time quarantine is terminal, so a screen
+    that cannot evaluate must let the item through, never kill it.
+    """
+    body = str(text or "")
+    if not body.strip():
+        return []
+
+    try:
+        from engine.marketing import relay_hygiene as _rh  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return []
+    if not _rh.lane_is_relayed(provenance):
+        return []
+
+    out: list[str] = []
+
+    # The de-handling law's own backstop, applied to queue vintage. A foreign
+    # handle in a post is the 2026-08-02 defect and there is no innocent
+    # reading of one on a relayed item.
+    for handle in foreign_handle_mentions(body):
+        out.append(f"foreign handle '@{handle}': we reword and republish, "
+                   "we never brand the original account")
+
+    # The post text is `headline\n\nbody`; both halves are screened, because the
+    # live defect lived in the HEADLINE half and the first-person one lived in
+    # the body half.
+    for part in [p for p in body.split("\n\n") if p.strip()]:
+        for slug in _rh.body_defects(part):
+            out.append(f"relay artifact '{slug}': written for a reader on the "
+                       "source's page, not ours")
+    return out
+
+
 def jargon_violations(text: str) -> list[str]:
     """Internal-machinery vocabulary in copy (gate 3f). [] = clean.
 
@@ -4589,6 +4656,37 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{top_fact} No position. Reading it properly is work I have not done yet.",
             ("no_state",),
         ),
+        # ── trend-context lines (FSLR postmortem 2026-08-03) ────────────────
+        # Selectable ONLY when movers_source.trend_context put that shape on
+        # the chart, and preferred over the generic caution when it did. The
+        # stance is still an observation, never a recommendation. House copy
+        # law: no em dashes in rendered strings (validate_copy bans U+2014).
+        (
+            "{cashtag} | first swing off the lows",
+            "{top_fact} First green that means anything after months of selling. "
+            "Bottoms and dead-cat bounces start identically. The next few closes "
+            "decide which this is.",
+            ("washout_only",),
+        ),
+        (
+            "{cashtag} pressing the highs",
+            "{top_fact} Strength at the top of the range is not a bounce, it's "
+            "leadership until proven otherwise. Chasing it here is a separate "
+            "decision from respecting it.",
+            ("breakout_only",),
+        ),
+        (
+            "{cashtag} | first crack",
+            "{top_fact} First real crack after a long run. One red day isn't a "
+            "top, but every top starts with one of these.",
+            ("crack_only",),
+        ),
+        (
+            "{cashtag} | late-stage flush",
+            "{top_fact} A flush this hard, this deep into a decline, is "
+            "capitulation territory. Watching the close, not guessing the bottom.",
+            ("capitulation_only",),
+        ),
     ],
     ("mover", "dry, receipts-forward"): [
         (
@@ -4610,6 +4708,28 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{cashtag} | {mover_pct}",
             "{top_fact} On the list. I do not know why it happened yet.",
             ("no_state",),
+        ),
+        (
+            "{cashtag} | {mover_pct} off the lows",
+            "{top_fact} First bounce after a long slide. Logged. Follow-through "
+            "or it didn't happen.",
+            ("washout_only",),
+        ),
+        (
+            "{cashtag} | {mover_pct} at the highs",
+            "{top_fact} Strength on strength. Noted. Trend intact until it isn't.",
+            ("breakout_only",),
+        ),
+        (
+            "{cashtag} | {mover_pct} from the top",
+            "{top_fact} First dent in an uptrend. Logged, watching the next few "
+            "sessions.",
+            ("crack_only",),
+        ),
+        (
+            "{cashtag} | {mover_pct}, deep in the decline",
+            "{top_fact} Late flush. Capitulation watch, nothing else yet.",
+            ("capitulation_only",),
         ),
     ],
     ("mover", "specialist"): [
@@ -4633,6 +4753,30 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{top_fact} Chart below. Whether the neighbours agree is not something I know yet.",
             ("no_state", "needs_chart"),
         ),
+        (
+            "{cashtag} | the washed-out one just moved",
+            "{top_fact} When the most sold-off name in a group swings first, the "
+            "group usually votes within days. Watching the neighbors.",
+            ("washout_only",),
+        ),
+        (
+            "{cashtag} | leadership check",
+            "{top_fact} A group leader printing range highs either pulls the rest "
+            "along or it doesn't, and that answer comes fast.",
+            ("breakout_only",),
+        ),
+        (
+            "{cashtag} | the strong one just cracked",
+            "{top_fact} When a group's strongest name takes the first hit, the "
+            "rest usually answer within days. Watching how the neighbors take it.",
+            ("crack_only",),
+        ),
+        (
+            "{cashtag} | flushing late in the decline",
+            "{top_fact} Late-decline flushes in one name often mark the group's "
+            "low-water line. Watching who follows it down, and who refuses to.",
+            ("capitulation_only",),
+        ),
     ],
     ("mover", "educational"): [
         (
@@ -4654,6 +4798,32 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "How a move like {cashtag} gets read",
             "{top_fact} I am not sure yet what it changes. Guessing would be worse than saying so.",
             ("no_state",),
+        ),
+        (
+            "{cashtag} {mover_pct} | bounce or bottom",
+            "{top_fact} After a long decline, the first big green day is "
+            "information: durable bottoms get follow-through, dead cats don't. "
+            "Day two and three tell you which one you're looking at.",
+            ("washout_only",),
+        ),
+        (
+            "{cashtag} {mover_pct} | what strength up here means",
+            "{top_fact} A big move at the top of the range is trend behavior, "
+            "not a dip. Different setup, different rules.",
+            ("breakout_only",),
+        ),
+        (
+            "{cashtag} {mover_pct} | the first crack",
+            "{top_fact} Big red days at the highs are how trends announce a "
+            "change of character. One day is a warning, not a verdict.",
+            ("crack_only",),
+        ),
+        (
+            "{cashtag} {mover_pct} | capitulation math",
+            "{top_fact} The hardest selling often comes nearest the end of a "
+            "decline. That's a fact about crowds, not a buy signal. The "
+            "difference is what the next week does with it.",
+            ("capitulation_only",),
         ),
     ],
     ("mover", "fast, reactive"): [
@@ -4677,6 +4847,28 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{top_fact} Big number, and that is genuinely all I know about it right now.",
             ("no_state",),
         ),
+        (
+            "{cashtag} woke up 👀",
+            "{top_fact} One of the most washed-out names out there just swung. "
+            "Bounce or bottom, next few closes decide. What's your read?",
+            ("washout_only",),
+        ),
+        (
+            "{cashtag} through the highs 👀",
+            "{top_fact} Leaders lead until they don't. Who's chasing this one?",
+            ("breakout_only",),
+        ),
+        (
+            "{cashtag} just cracked 👀",
+            "{top_fact} First red day that matters in this uptrend. Blip or turn?",
+            ("crack_only",),
+        ),
+        (
+            "{cashtag} | full flush 👀",
+            "{top_fact} This deep into a decline, that's capitulation tape. "
+            "Who's still selling down here?",
+            ("capitulation_only",),
+        ),
     ],
     ("mover", "pattern/history"): [
         (
@@ -4698,6 +4890,32 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{cashtag} {mover_pct} today | no precedent read yet",
             "{top_fact} The history on moves this size is work I owe, not work I have done.",
             ("no_state",),
+        ),
+        (
+            "{cashtag} | seen this shape before",
+            "{top_fact} Long slide, then one violent green day. Durable lows "
+            "have started exactly like this, and so have bull traps. "
+            "Follow-through is the tell, and it shows up within days.",
+            ("washout_only",),
+        ),
+        (
+            "{cashtag} | familiar strength",
+            "{top_fact} Range-top strength has a habit of running further than "
+            "anyone's comfortable with. The pattern says respect it.",
+            ("breakout_only",),
+        ),
+        (
+            "{cashtag} | this is how turns have started",
+            "{top_fact} Long run, first hard red day. The precedent says "
+            "respect it and count the sessions until the level's reclaimed.",
+            ("crack_only",),
+        ),
+        (
+            "{cashtag} | endgame tape",
+            "{top_fact} Declines this mature usually end on a day that looks "
+            "exactly like this one. They also sometimes just keep going. The "
+            "reclaim tells you which.",
+            ("capitulation_only",),
         ),
     ],
 
@@ -5308,6 +5526,17 @@ _CASHTAG_REQUIRED_TYPES = ("signal", "chart", "receipt", "watchlist", "mover",
                            "congress", "insider")
 
 
+#: mover trend bucket -> the variant tag that claims it (movers_source.
+#: trend_context vocabulary; "plain" maps to nothing on purpose).
+_MOVER_CONTEXT_TAGS = {
+    "washout_bounce": "washout_only",
+    "breakout": "breakout_only",
+    "crack_from_highs": "crack_only",
+    "capitulation": "capitulation_only",
+}
+_MOVER_CONTEXT_TAG_SET = frozenset(_MOVER_CONTEXT_TAGS.values())
+
+
 def _variant_allowed(variant: tuple, ctx: dict) -> bool:
     """Applicability filter for a template variant against this context.
 
@@ -5371,11 +5600,24 @@ def _variant_allowed(variant: tuple, ctx: dict) -> bool:
         return False
     if "needs_chart" in tags and ctx.get("has_chart") is False:
         return False
+    # State tags: a line carrying the {mover_state} token renders an empty
+    # fragment ("The state that move landed in: .") when the engines supplied
+    # no state, so it is gated on the state being present; `no_state` is the
+    # mirror for lines that read wrong once a state IS available.
     has_state = bool(str(ctx.get("mover_state") or "").strip())
     if "needs_state" in tags and not has_state:
         return False
     if "no_state" in tags and has_state:
         return False
+    # Trend-context tags (FSLR postmortem 2026-08-03): a bucket line is written
+    # around a specific tape shape ("first green after months of selling"), so
+    # it is FAIL-CLOSED, selectable ONLY when the context says that shape is on
+    # the chart. Absent/unknown context excludes every bucket line, which is
+    # the pre-existing generic behavior.
+    ctx_tag = _MOVER_CONTEXT_TAGS.get(str(ctx.get("mover_context") or ""))
+    for tag in tags:
+        if tag in _MOVER_CONTEXT_TAG_SET and tag != ctx_tag:
+            return False
     return True
 
 
@@ -5587,6 +5829,19 @@ def write_posts_deterministic(
         # Applicability filter (direction / chart-dependency tags). An empty
         # pool falls back to the unfiltered bank — selection must never crash.
         pool = [v for v in variants if _variant_allowed(v, ctx)] or variants
+
+        # Trend-context preference (FSLR postmortem 2026-08-03): when the tape
+        # has a strong read (washout bounce, breakout, first crack,
+        # capitulation) and this voice's bank carries a line written FOR that
+        # read, the generic caution must not be able to outdraw it — "let it
+        # settle first" on a washed-out name that just swung IS the defect. The
+        # bucket lines already passed _variant_allowed, so this only narrows.
+        _ctx_tag = _MOVER_CONTEXT_TAGS.get(str(ctx.get("mover_context") or ""))
+        if _ctx_tag:
+            _ctx_pool = [v for v in pool
+                         if len(v) > 2 and _ctx_tag in (v[2] or ())]
+            if _ctx_pool:
+                pool = _ctx_pool
 
         ticker = ctx.get("ticker", "")
         slot = ctx.get("slot", str(i))

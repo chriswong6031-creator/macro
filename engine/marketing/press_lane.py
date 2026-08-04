@@ -258,6 +258,88 @@ def _garbage_check(item: dict, *, gate_cfg: dict, blocklist_lower: set[str]) -> 
         return None
 
 
+def _relay_scrub(item: dict, *, gate_cfg: dict) -> dict:
+    """REPAIR-THEN-JUDGE the source's own page furniture (2026-08-04 postmortem).
+
+    Mutates a COPY of `item`: a headline wearing a removable pointer ("More info
+    on this - <story>") is cleaned and the story kept; a headline that IS the
+    furniture (a calendar post, a house wrap) is reported for the P0 drop that
+    :func:`_garbage_check` then makes.
+
+    RUNS BEFORE THE GARBAGE CHECK so the two see the same headline: judging the
+    dirty string and then posting the clean one — or the reverse — is how a
+    screen and its subject drift apart. The original survives as
+    ``headline_source`` for provenance; an edit to a publisher's words has to be
+    visible from the outbox alone.
+
+    Fail-open, same posture as the gate above.
+    """
+    from engine.marketing import garbage_gate as _gg  # noqa: PLC0415
+
+    try:
+        return _gg.scrub(item, cfg=gate_cfg)
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=relay-scrub-failed::{item.get('id', '')}: "
+              f"{type(exc).__name__}: {exc} — headline passed through unscrubbed",
+              flush=True)
+        return {"item": dict(item), "scrubbed": False, "marks": [], "drop": ""}
+
+
+def _publish_decision(
+    scored: dict,
+    *,
+    corroborated_sources: int,
+    window_ok: bool,
+    citation_cfg: dict | None = None,
+) -> dict:
+    """The publish gate AND the credit clause, resolved together.
+
+    Two questions that used to be one string. ``press_corroboration`` answers MAY
+    THIS POST (instant / attributed / digest); ``source_authority`` answers WHOSE
+    NAME GOES ON IT (primary / marquee / unnamed) and may tighten the gate to
+    ``digest`` when the answer is "nobody's" and the item cannot stand on its
+    own. Returns the corroboration decision's shape plus ``citation_tier`` and
+    ``citation_reason``, so every caller keeps reading ``gate`` / ``attribution``
+    exactly as before.
+
+    ONE HELPER, BOTH CALL SITES. The rail-only display text and the X post text
+    are composed in different places and both used to call the corroboration
+    decision directly; a credit policy applied to one of them would have put a
+    masthead on the timeline and an anonymous clause on news.html for the same
+    story.
+
+    Fail-SOFT to the corroboration decision alone: a broken authority module
+    costs the new policy, never the wire. It cannot fail OPEN in the dangerous
+    direction — the fallback is the pre-existing behaviour, not a bypass.
+    """
+    from engine.marketing.press_corroboration import (  # noqa: PLC0415
+        corroboration_decision,
+    )
+
+    decision = corroboration_decision(
+        scored, corroborated_sources=corroborated_sources, window_ok=window_ok
+    )
+    try:
+        from engine.marketing import source_authority as _sa  # noqa: PLC0415
+        resolved = _sa.resolve_attribution(scored, decision, cfg=citation_cfg)
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=citation-policy-failed::{scored.get('id', '')}: "
+              f"{type(exc).__name__}: {exc} — falling back to the corroboration "
+              "credit", flush=True)
+        return dict(decision)
+
+    out = dict(decision)
+    out["gate"] = resolved["gate"]
+    out["attribution"] = resolved["attribution"]
+    out["citation_tier"] = resolved["tier"]
+    out["citation_reason"] = resolved["reason"]
+    if resolved.get("downgraded"):
+        out["reason"] = resolved["reason"]
+        print("::notice title=press-uncreditable-claim::"
+              f"{scored.get('id', '')}: {resolved['reason']}", flush=True)
+    return out
+
+
 _DEFAULT_CORPUS_ROW_WINDOW_H = 24
 
 
@@ -1326,6 +1408,7 @@ def _build_rail_item(
     quotes_store: dict | None,
     tape_cfg: dict,
     wire_voice_enabled: bool,
+    citation_cfg: dict | None = None,
 ) -> dict:
     """Build one wires.v1 rail item for a scored press item.
 
@@ -1361,15 +1444,14 @@ def _build_rail_item(
         register = hit.get("register", register)
     else:
         # Deterministic rail-only text. Attribution comes from the corroboration
-        # decision so the rail never presents hearsay as fact.
-        from engine.marketing.press_corroboration import (  # noqa: PLC0415
-            corroboration_decision,
-        )
+        # decision so the rail never presents hearsay as fact — and from the
+        # citation policy, so the rail never credits a masthead nobody knows.
         window_ok = _within_window(
             corr.get(ck, {}).get("first_ts", now_iso), now, window_s
         )
-        decision = corroboration_decision(
-            scored, corroborated_sources=n_sources, window_ok=window_ok
+        decision = _publish_decision(
+            scored, corroborated_sources=n_sources, window_ok=window_ok,
+            citation_cfg=citation_cfg,
         )
         attribution = decision.get("attribution", "")
         headline = str(scored.get("headline", "")).strip()
@@ -1566,8 +1648,6 @@ def run_press_tick(
         build_breaking_payload,
         card_earns_attachment,
     )
-    from engine.marketing.press_corroboration import corroboration_decision
-
     root = Path(root)
     # PER-TICK card census. Zeroed here so the number this tick returns is this
     # tick's, not a process-lifetime running total the daemon would misread.
@@ -1587,6 +1667,11 @@ def run_press_tick(
     format_cfg = wire_cfg.get("format", {}) if isinstance(wire_cfg, dict) else {}
     tape_cfg = wire_cfg.get("tape", {}) if isinstance(wire_cfg, dict) else {}
     wire_voice_enabled = bool(voice_cfg.get("enabled", True))
+    # CITATION POLICY (operator law 2026-08-04) — press_sources.yml `citation`.
+    # Absent => source_authority's built-in tiers, which is the intended default;
+    # the config exists so an operator can promote or retire a masthead without a
+    # code change, never so the policy can be switched off.
+    citation_cfg = (press_cfg or {}).get("citation", {}) if isinstance(press_cfg, dict) else {}
 
     # Live-quote store for tape stamps — read ONCE (fail-soft: None => no stamps).
     quotes_store = None
@@ -1764,8 +1849,17 @@ def run_press_tick(
     seen_this_tick: set[str] = set()
     gate_drops: dict[str, int] = {}
     gate_rows: list[dict] = []
+    scrubbed_n = 0
     for it in items:
         iid = str(it.get("id", ""))
+        # REPAIR FIRST. A headline wearing a source-page pointer is a story we
+        # correctly ingested with a prefix that means nothing off their site;
+        # scrubbing it here keeps the story and hands the gate below the same
+        # string the post will carry.
+        _scrub = _relay_scrub(it, gate_cfg=gate_cfg)
+        it = _scrub["item"]
+        if _scrub["scrubbed"]:
+            scrubbed_n += 1
         drop = _garbage_check(it, gate_cfg=gate_cfg, blocklist_lower=blocklist_lower)
         if drop is not None:
             reason = str(drop.get("reason", "garbage"))
@@ -1786,6 +1880,14 @@ def run_press_tick(
         if ekey:
             seen_this_tick.add(ekey)
         ingest.append(it)
+    if scrubbed_n:
+        # SAY WHAT WAS EDITED. A silent rewrite of a publisher's headline is the
+        # kind of change that reviews as "hygiene" and ships as a fabrication if
+        # a rule is ever wrong; the count in the Actions summary plus
+        # `headline_source` in provenance is what makes it auditable.
+        print(f"::notice title=press-relay-scrub::{scrubbed_n} headline(s) had a "
+              "source-page pointer removed (original kept as headline_source)",
+              flush=True)
     if gate_drops:
         print("::notice title=press-garbage-gate::" + ", ".join(
             f"{reason}={count}" for reason, count in sorted(gate_drops.items())
@@ -1921,6 +2023,9 @@ def run_press_tick(
             "_seen": sorted(seen),
         }
 
+    # Per-tick summarizer census — see the fallback warning below for why a bare
+    # counter is load-bearing rather than telemetry garnish.
+    summary_modes: dict[str, int] = {}
     for s in scored:
         iid = str(s.get("id", ""))
         ck = _corroboration_key(s)
@@ -1928,9 +2033,10 @@ def run_press_tick(
         n_sources = len(entry.get("sources", []))
         window_ok = _within_window(entry.get("first_ts"), now, window_s)
 
-        # 4. Corroboration gate.
-        decision = corroboration_decision(
-            s, corroborated_sources=n_sources, window_ok=window_ok
+        # 4. Corroboration gate + citation policy (one call, see _publish_decision).
+        decision = _publish_decision(
+            s, corroborated_sources=n_sources, window_ok=window_ok,
+            citation_cfg=citation_cfg,
         )
         if decision["gate"] == "digest":
             digest.append({"id": iid, "reason": decision["reason"],
@@ -2138,6 +2244,27 @@ def run_press_tick(
         # mirror is named only in provenance.
         attribution = decision.get("attribution", "")
         mode = payload.get("mode", "deterministic")
+        # ── THE LLM FALLBACK WAS DARK (2026-08-04 postmortem) ────────────────
+        # `mode` was assigned here and never read again — not logged, not
+        # counted, not recorded in provenance. So "the summarizer produced a
+        # sentence" and "the summarizer's sentence was thrown away and we
+        # relayed the raw RSS title instead" were the same observable event:
+        # a queued item with a body. Eight of the outbox's press items were
+        # headline relays and nothing anywhere said so.
+        #
+        # A silent fallback is worse than a loud failure. It reads as a working
+        # LLM lane, so nobody looks at the prompt, the validator, or the source
+        # whose packets keep failing — and the deterministic relay is exactly the
+        # path that carries a source's own page furniture onto the timeline.
+        summary_violations = list(payload.get("violations_seen") or [])
+        if mode not in ("llm", "llm_repaired"):
+            _mode_label = ("no LLM output" if mode == "deterministic"
+                           else "LLM output rejected twice")
+            print("::warning title=press-summary-fallback::"
+                  f"{iid}: {_mode_label} ({mode}); shipping the deterministic "
+                  f"body. source={s.get('source', '?')} "
+                  f"violations={summary_violations or 'none'}", flush=True)
+        summary_modes[mode] = summary_modes.get(mode, 0) + 1
         source_name = str(s.get("source_name", s.get("source", "")))
         # The summary WITHOUT the trailing "— {source_name}" fallback clause — the
         # attribution is (re)applied by the corroboration decision, and the wire
@@ -2279,6 +2406,22 @@ def run_press_tick(
             # summarizer regressed into rephrasing headlines (not).
             "post_shape": _shape["shape"],
             "post_shape_reason": _shape["reason"],
+            # WHICH SUMMARIZER WROTE THIS BODY, and what the validator said if it
+            # was not the LLM. The census that answers "is the wire short because
+            # its packets are thin, or because our summarizer's output keeps
+            # being rejected" — a question the outbox could not answer at all
+            # before 2026-08-04.
+            "summary_mode": mode,
+            "summary_violations": summary_violations,
+            # WHOSE NAME IS ON THIS POST, and why. "unnamed" with an empty
+            # attribution is the intended shape for a source a reader would not
+            # recognise (operator citation law 2026-08-04), not a missing field.
+            "citation_tier": decision.get("citation_tier", ""),
+            "citation_reason": decision.get("citation_reason", ""),
+            # The publisher's original headline when the relay scrub edited it.
+            # An edit to someone else's words has to be visible from the outbox.
+            **({"headline_source": s["headline_source"]}
+               if s.get("headline_source") else {}),
         }
 
         # ── M1 platform clamp ─────────────────────────────────────────────────
@@ -2436,6 +2579,22 @@ def run_press_tick(
         emitted_bodies[iid] = {"text": body, "register": register,
                                "tape_stamp": tape_stamp, "attribution": attribution}
 
+    # ── SUMMARIZER CENSUS ─────────────────────────────────────────────────────
+    # One line per tick naming how many bodies each summarizer path produced. The
+    # ratio is the health signal: an LLM lane that is armed, paid for, and
+    # rejected on every item looks EXACTLY like a working lane from the outbox,
+    # and that is how eight headline relays reached the timeline unnoticed.
+    if summary_modes:
+        _llm_n = summary_modes.get("llm", 0) + summary_modes.get("llm_repaired", 0)
+        _total = sum(summary_modes.values())
+        _line = ", ".join(f"{k}={v}" for k, v in sorted(summary_modes.items()))
+        if _llm_n < _total:
+            print(f"::warning title=press-summarizer-census::{_line} — "
+                  f"{_total - _llm_n}/{_total} bodies did NOT come from the "
+                  "summarizer", flush=True)
+        else:
+            print(f"::notice title=press-summarizer-census::{_line}", flush=True)
+
     # ── B4a rail ───────────────────────────────────────────────────────────────
     # The rail shows EVERYTHING above a LOWER floor (incl. digest-class items X
     # never posts) — the news.html retention surface. Items that emitted to X reuse
@@ -2462,7 +2621,7 @@ def run_press_tick(
         rail_item = _build_rail_item(
             s, now, emitted_bodies, corr=corr, now_iso=now_iso,
             window_s=window_s, quotes_store=quotes_store, tape_cfg=tape_cfg,
-            wire_voice_enabled=wire_voice_enabled,
+            wire_voice_enabled=wire_voice_enabled, citation_cfg=citation_cfg,
         )
         rkey = rail_item["id"]
         if rkey in rail_seen:

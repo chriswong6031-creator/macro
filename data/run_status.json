@@ -1799,8 +1799,8 @@
       "status": "ok",
       "n_leaders": 116,
       "base_json": "site/flowtracker/base.json",
-      "as_of": "2026-08-03T02:23:29.648134+00:00",
-      "checked_at": "2026-08-03T02:23:31.662775+00:00"
+      "as_of": "2026-08-04T02:40:07.203082+00:00",
+      "checked_at": "2026-08-04T02:40:08.661427+00:00"
     },
     "broad_flows": {
       "source": "broad_flows",
@@ -1859,12 +1859,12 @@
     },
     "flow_signals": {
       "status": "ok",
-      "n_new": 0,
-      "n_graded_ok": 0,
+      "n_new": 863,
+      "n_graded_ok": 2761,
       "n_scored_this_run": 0,
-      "elapsed_sec": 6.4,
-      "last_date": "2026-08-03",
-      "checked_at": "2026-08-03T02:44:31.231303+00:00"
+      "elapsed_sec": 8.3,
+      "last_date": "2026-08-04",
+      "checked_at": "2026-08-04T03:24:21.746283+00:00"
     },
     "cboe_cor_vol": {
       "source": "cboe_cor_vol",
@@ -3389,6 +3389,22 @@
       "age_days": 1,
       "reason": "missing NYSE session row(s) 2026-07-31 in the last 5 sessions (last obs 2026-07-30)",
       "detected_at": "2026-08-02T00:47:10.829219+00:00"
+    },
+    {
+      "group": "yahoo",
+      "series": "RGI",
+      "last_obs": "2026-07-17",
+      "cadence_days": 5,
+      "age_days": 18,
+      "detected_at": "2026-08-04T01:18:08.817949+00:00"
+    },
+    {
+      "group": "yahoo",
+      "series": "TCNNF",
+      "last_obs": "2026-07-17",
+      "cadence_days": 5,
+      "age_days": 18,
+      "detected_at": "2026-08-04T01:18:08.817960+00:00"
     }
   ],
   "tushare": {

@@ -476,6 +476,54 @@ alpaca:
   snippet_max_chars: 400
 
 # ─────────────────────────────────────────────────────────────────────────────
+# CITATION POLICY (operator law, 2026-08-04) — engine/marketing/source_authority.py
+#
+#   "Reduce the citing unless it's a popular news outlet that can help to give us
+#    authority. We shouldn't be citing some random site like ForexLive or citing
+#    other X accounts. But we can say WSJ, Reuters, NYT... We gain when we cite
+#    from big shots, we gain nothing and even lose prestige by citing places no
+#    one knows about."
+#
+# THE STRING THIS REPLACES was "-- wire reports", stamped on every single-source
+# item. There is no masthead called Wire; it was an anonymiser written on
+# 2026-08-02 to stop an X relay shipping "-- @FirstSquawk reporting", and it
+# solved de-branding by making EVERY credit read as a source nobody has heard of.
+#
+# Three tiers, resolved in source_authority (hosts are the durable key):
+#   primary   the body that ISSUED the fact — Fed, BLS, BEA, ECB, White House
+#   marquee   a masthead that lends standing — Reuters, WSJ, NYT, Bloomberg, FT,
+#             AP, CNBC, MarketWatch, Barron's, The Economist
+#   unnamed   everything else — NO CREDIT CLAUSE IS EMITTED AT ALL
+#
+# The lists below only ADD to or SUBTRACT from the built-in defaults; the policy
+# itself is code, not config, so it cannot be switched off by an edit here.
+#
+# AND THE HALF THAT KEEPS THE SILENCE HONEST: an uncreditable item must be able
+# to stand WITHOUT a credit (a published print, a market level, an official
+# action, or two independent sources). An uncreditable CLAIM — "sources say",
+# a geopolitical relay — goes to the digest instead of the timeline. We stop
+# borrowing credibility we cannot name.
+# ─────────────────────────────────────────────────────────────────────────────
+citation:
+  # Promote a source into a tier (matched on feed key, URL host, or display name).
+  primary_extra: []
+  marquee_extra: []
+  # Retire a masthead whatever else matches. ABSOLUTE — checked first.
+  #
+  # zerohedge and investing.com are DELIBERATELY not in the built-in marquee list
+  # and are named here so the judgment is visible rather than implied: both are
+  # widely read, neither is a byline a research desk gains standing by citing.
+  # Moving one is a one-line edit and an operator call.
+  never_cite:
+    - zerohedge_feed
+    - zerohedge.com
+    - investing_news
+    - investing.com
+    - forexlive_news
+    - forexlive.com
+    - investinglive.com
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Wire lane emission policy — flagship interim lane (B1). Only the top-K highest
 # salience wire items/day may emit for the flagship account; counter persisted in
 # the daemon's LOCAL state (data/marketing/press/, never the repo).

@@ -1,6 +1,6 @@
 {
   "schema": "contagion_links.v1",
-  "built": "2026-08-03T02:46:35.807183+00:00",
+  "built": "2026-08-04T03:26:18.581908+00:00",
   "params": {
     "structural_version": "structural.v1",
     "dy_window": 150,
@@ -452,22 +452,22 @@
   },
   "severity": {
     "us": {
-      "sigma": 0.1131,
-      "dd21": 0.0113,
-      "ret10": 0.0043,
-      "as_of": "2026-07-31"
+      "sigma": 0.0,
+      "dd21": 0.0,
+      "ret10": 0.0211,
+      "as_of": "2026-08-03"
     },
     "cn": {
-      "sigma": 0.5227,
-      "dd21": 0.0523,
-      "ret10": 0.0181,
-      "as_of": "2026-07-31"
+      "sigma": 0.573,
+      "dd21": 0.0573,
+      "ret10": 0.0035,
+      "as_of": "2026-08-03"
     },
     "hk": {
       "sigma": 0.0,
       "dd21": 0.0,
-      "ret10": 0.0538,
-      "as_of": "2026-07-31"
+      "ret10": 0.0345,
+      "as_of": "2026-08-03"
     },
     "ca": {
       "sigma": 0.1465,
@@ -520,7 +520,7 @@
   },
   "pressure": {
     "us": {
-      "raw": 0.3431,
+      "raw": 0.3494,
       "pct": 0.7778,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Taiwan's weakness is the main source",
@@ -559,10 +559,10 @@
       ],
       "shadow_state": "watch",
       "incumbent_state": "watch",
-      "incumbent_as_of": "2026-07-31"
+      "incumbent_as_of": "2026-08-03"
     },
     "cn": {
-      "raw": 0.2673,
+      "raw": 0.2504,
       "pct": 0.6647,
       "level": "low",
       "line_en": "Pressure from abroad: low",
@@ -604,7 +604,7 @@
       "incumbent_as_of": "2026-07-16"
     },
     "hk": {
-      "raw": 0.3597,
+      "raw": 0.3553,
       "pct": 0.7996,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -635,10 +635,10 @@
           "name_en": "China",
           "name_zh": "中国",
           "weight": 0.1528,
-          "dd21": 0.0523,
-          "ret10": 0.0181,
-          "sigma": 0.5227,
-          "contribution": 0.0799
+          "dd21": 0.0573,
+          "ret10": 0.0035,
+          "sigma": 0.573,
+          "contribution": 0.0875
         }
       ],
       "shadow_state": "risk-off",
@@ -646,7 +646,7 @@
       "incumbent_as_of": "2026-07-16"
     },
     "ca": {
-      "raw": 0.312,
+      "raw": 0.2969,
       "pct": 0.75,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -688,7 +688,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "kr": {
-      "raw": 0.4092,
+      "raw": 0.4022,
       "pct": 0.8274,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Taiwan's weakness is the main source",
@@ -719,10 +719,10 @@
           "name_en": "China",
           "name_zh": "中国",
           "weight": 0.0844,
-          "dd21": 0.0523,
-          "ret10": 0.0181,
-          "sigma": 0.5227,
-          "contribution": 0.0441
+          "dd21": 0.0573,
+          "ret10": 0.0035,
+          "sigma": 0.573,
+          "contribution": 0.0484
         }
       ],
       "shadow_state": "calm",
@@ -730,7 +730,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "jp": {
-      "raw": 0.4005,
+      "raw": 0.3928,
       "pct": 0.8155,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — South Korea's weakness is the main source",
@@ -761,10 +761,10 @@
           "name_en": "China",
           "name_zh": "中国",
           "weight": 0.0747,
-          "dd21": 0.0523,
-          "ret10": 0.0181,
-          "sigma": 0.5227,
-          "contribution": 0.0391
+          "dd21": 0.0573,
+          "ret10": 0.0035,
+          "sigma": 0.573,
+          "contribution": 0.0428
         }
       ],
       "shadow_state": "calm",
@@ -772,7 +772,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "tw": {
-      "raw": 0.474,
+      "raw": 0.4655,
       "pct": 0.8492,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — South Korea's weakness is the main source",
@@ -803,10 +803,10 @@
           "name_en": "China",
           "name_zh": "中国",
           "weight": 0.0937,
-          "dd21": 0.0523,
-          "ret10": 0.0181,
-          "sigma": 0.5227,
-          "contribution": 0.049
+          "dd21": 0.0573,
+          "ret10": 0.0035,
+          "sigma": 0.573,
+          "contribution": 0.0537
         }
       ],
       "shadow_state": "risk-off",
@@ -814,7 +814,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "in": {
-      "raw": 0.2958,
+      "raw": 0.2857,
       "pct": 0.748,
       "level": "low",
       "line_en": "Pressure from abroad: low",
@@ -831,6 +831,16 @@
           "contribution": 0.0769
         },
         {
+          "market": "cn",
+          "name_en": "China",
+          "name_zh": "中国",
+          "weight": 0.1035,
+          "dd21": 0.0573,
+          "ret10": 0.0035,
+          "sigma": 0.573,
+          "contribution": 0.0593
+        },
+        {
           "market": "tw",
           "name_en": "Taiwan",
           "name_zh": "台湾",
@@ -839,16 +849,6 @@
           "ret10": 0.0105,
           "sigma": 0.7826,
           "contribution": 0.0579
-        },
-        {
-          "market": "cn",
-          "name_en": "China",
-          "name_zh": "中国",
-          "weight": 0.1035,
-          "dd21": 0.0523,
-          "ret10": 0.0181,
-          "sigma": 0.5227,
-          "contribution": 0.0541
         }
       ],
       "shadow_state": "calm",
@@ -856,7 +856,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "au": {
-      "raw": 0.4071,
+      "raw": 0.4016,
       "pct": 0.8234,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -883,14 +883,14 @@
           "contribution": 0.0952
         },
         {
-          "market": "tw",
-          "name_en": "Taiwan",
-          "name_zh": "台湾",
-          "weight": 0.1,
-          "dd21": 0.0783,
-          "ret10": 0.0105,
-          "sigma": 0.7826,
-          "contribution": 0.0783
+          "market": "cn",
+          "name_en": "China",
+          "name_zh": "中国",
+          "weight": 0.1381,
+          "dd21": 0.0573,
+          "ret10": 0.0035,
+          "sigma": 0.573,
+          "contribution": 0.0791
         }
       ],
       "shadow_state": "watch",
@@ -898,7 +898,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "gb": {
-      "raw": 0.3608,
+      "raw": 0.351,
       "pct": 0.7877,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -940,7 +940,7 @@
       "incumbent_as_of": "2026-07-31"
     },
     "ez": {
-      "raw": 0.3419,
+      "raw": 0.3299,
       "pct": 0.7679,
       "level": "moderate",
       "line_en": "Pressure from abroad: building — Japan's weakness is the main source",
@@ -983,5 +983,5 @@
     }
   },
   "gaps": [],
-  "timing_sec": 0.43
+  "timing_sec": 0.38
 }

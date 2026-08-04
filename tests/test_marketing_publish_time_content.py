@@ -87,6 +87,11 @@ def _cfg(*, accounts: list[dict] | None = None, channels: dict | None = None,
                 "enabled": enabled, "max_per_run": max_per_run,
                 "min_abs_mover_pct": 3.0, "min_abs_theme_pct": 1.0,
                 "max_quote_age_min": 45,
+                # Defect 1 (cashtag spam fingerprint): every lane key in this
+                # block is REQUIRED — the module hard-indexes them so a config
+                # that forgot one fails loudly instead of silently posting on a
+                # default. Mirrors the shipped config/marketing.yml value.
+                "max_theme_cashtags_in_text": 3,
                 # Unit fixtures are a handful of tiles — pin the flat-tape belt
                 # to 1 so it only fires in its own dedicated tests.
                 "min_active_tiles": 1,
@@ -707,17 +712,19 @@ def test_variant_pool_fallback_never_empty():
 
 
 def test_nightly_path_selection_unchanged_by_tags():
-    """A ctx WITHOUT direction/has_chart info (the nightly D-slot shape) filters
-    nothing — the pool is the full bank, so nightly selection is unchanged.
+    """A ctx WITHOUT direction/has_chart/state/trend info (the nightly D-slot
+    shape) filters on the two FAIL-CLOSED axes only, and on nothing else.
 
-    THE MOVER BANK IS THE EXCEPTION AS OF 2026-08-03 (defect 4), and it is a
-    deliberate one: "needs_state"/"no_state" is not an optional flavour tag like
-    down_only/needs_chart, it is the partition that keeps a canned directional
-    stance off the account. A stateless ctx therefore selects the no-stance half
-    rather than the whole bank, which is the point. The direction/chart tags
-    still filter nothing, and that is what the theme half of this test pins.
+    Both axes landed for the 2026-08-03 FSLR postmortem, from two lanes, and
+    both are deliberate. A `needs_state` line renders a {mover_state} token a
+    stateless ctx has nothing to fill; a trend-bucket line claims a tape shape
+    no trend read has established. Direction/chart tags still filter nothing,
+    which is what the theme half pins, and which is what keeps the hash-based
+    variant assignments for every existing post from moving.
     """
-    from engine.marketing.copywriter import _TEMPLATES, _variant_allowed
+    from engine.marketing.copywriter import (
+        _MOVER_CONTEXT_TAG_SET, _TEMPLATES, _variant_allowed,
+    )
     # No mover_pct / theme_direction / has_chart. "ticker" IS set, because every
     # real ctx has it (build_context always writes the key) and it now also
     # drives the ticker-dependency partition; a mover bank is entirely
@@ -727,17 +734,28 @@ def test_nightly_path_selection_unchanged_by_tags():
     assert [v for v in theme_bank
             if _variant_allowed(v, theme_ctx)] == list(theme_bank)
 
+    def _tags(v):
+        return set(v[2] or ()) if len(v) > 2 else set()
+
     mover_bank = _TEMPLATES[("mover", "authoritative desk")]
     mover_ctx = {"type": "mover", "ticker": "AAPL"}
     stateless = [v for v in mover_bank if _variant_allowed(v, mover_ctx)]
     assert stateless and len(stateless) < len(mover_bank)
-    assert all("no_state" in (v[2] if len(v) > 2 else ()) for v in stateless)
-    # ...and the complementary half is exactly what a stateful ctx selects, so
-    # the two shapes partition the bank rather than overlapping or leaking.
-    stateful = [v for v in mover_bank
-                if _variant_allowed(v, dict(mover_ctx, mover_state="X is above its 50-day average"))]
+    assert not any(_MOVER_CONTEXT_TAG_SET & _tags(v) for v in stateless), (
+        "a trend-less ctx may not select a bucket line")
+    assert not any("needs_state" in _tags(v) for v in stateless), (
+        "a stateless ctx may not select a state-citing variant")
+
+    # ...and the state half is exactly the complement WITHIN the no-bucket bank,
+    # so the two shapes partition it rather than overlapping or leaking.
+    no_bucket = [v for v in mover_bank
+                 if not (_MOVER_CONTEXT_TAG_SET & _tags(v))]
+    stateful = [v for v in no_bucket
+                if _variant_allowed(
+                    v, dict(mover_ctx,
+                            mover_state="X is above its 50-day average"))]
     assert stateful and not set(map(id, stateful)) & set(map(id, stateless))
-    assert len(stateful) + len(stateless) == len(mover_bank)
+    assert len(stateful) + len(stateless) == len(no_bucket)
 
 
 def test_flat_tape_belt_skips_closed_market(tmp_path):
@@ -1996,3 +2014,51 @@ def test_the_date_claim_regexes_do_not_manufacture_a_false_conflict():
     assert claims("Ripped on July 31.") == {FRI_DAY}
     assert claims("Ripped on Jul 31.") == {FRI_DAY}
     assert claims("Up today.") == {MON_DAY}
+# ─────────────────────────────────────────────────────────────────────────────
+# Trend-context enrichment (FSLR postmortem, 2026-08-03): _build_candidates
+# stamps _mover_data.trend_context from the same local daily bars the mover
+# card renders, so the copywriter's bucket lines can fire. Fail-soft: a store
+# with no bars (or a loader crash) must leave the candidate exactly as before.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _washout_closes(n: int = 70) -> tuple[list[str], list[float]]:
+    closes = [320.0 - i * (120.0 / (n - 1)) for i in range(n)] + [220.6]
+    return ([f"d{i}" for i in range(len(closes))], closes)
+
+
+def test_build_candidates_stamps_trend_context(monkeypatch, tmp_path):
+    import engine.marketing.chart_render as chart_render
+
+    monkeypatch.setattr(chart_render, "load_closes",
+                        lambda tkr, root, n=90: _washout_closes())
+    overlaid = {"sp500_tiles": [_tile("FSLR", 10.3)], "theme_tiles": [],
+                "asof": "2026-08-03"}
+    cfg = _cfg()
+    # `now` became REQUIRED when the session-claim check landed (defect 2):
+    # every candidate resolves its day-words against this clock. MON matches the
+    # fixtures' asof, so the mover reads as "today" and no session gate fires.
+    cands = pt._build_candidates(
+        overlaid, tmp_path, cfg, cfg["publish"]["publish_time_movers"], now=MON)
+    movers = [c for c in cands if c.get("type") == "mover"]
+    assert movers, "fixture mover should survive min_abs"
+    assert movers[0]["_mover_data"]["trend_context"] == "washout_bounce"
+
+
+def test_build_candidates_survives_a_closes_loader_crash(monkeypatch, tmp_path):
+    import engine.marketing.chart_render as chart_render
+
+    def _boom(tkr, root, n=90):
+        raise RuntimeError("no store on this host")
+
+    monkeypatch.setattr(chart_render, "load_closes", _boom)
+    overlaid = {"sp500_tiles": [_tile("FSLR", 10.3)], "theme_tiles": [],
+                "asof": "2026-08-03"}
+    cfg = _cfg()
+    # `now` became REQUIRED when the session-claim check landed (defect 2):
+    # every candidate resolves its day-words against this clock. MON matches the
+    # fixtures' asof, so the mover reads as "today" and no session gate fires.
+    cands = pt._build_candidates(
+        overlaid, tmp_path, cfg, cfg["publish"]["publish_time_movers"], now=MON)
+    movers = [c for c in cands if c.get("type") == "mover"]
+    assert movers, "a context failure must never cost the post itself"
+    assert "trend_context" not in movers[0]["_mover_data"]

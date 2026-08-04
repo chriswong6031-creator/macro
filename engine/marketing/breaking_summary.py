@@ -342,8 +342,18 @@ def validate_summary(
 # LLM-gated summarizer (mirrors copywriter.write_posts_llm gate exactly)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _llm_summarize(item: dict, cfg: dict, wire: dict | None = None) -> str | None:
+def _llm_summarize(
+    item: dict,
+    cfg: dict,
+    wire: dict | None = None,
+    repair: tuple[str, list[str]] | None = None,
+) -> str | None:
     """Call the LLM to produce a ≤2-sentence restate-only summary.
+
+    `repair` (2026-08-04): a ``(previous_text, violations)`` pair turns this into
+    a SECOND, corrective attempt — the model is shown its own rejected draft and
+    the validator's exact complaints. See :func:`summarize_item` for why one
+    retry is worth a call and why there is not a third.
 
     Returns the summary string on success, None on any failure.
     NEVER called when MARKETING_LLM_ENABLED is not set (env guard).
@@ -400,6 +410,23 @@ def _llm_summarize(item: dict, cfg: dict, wire: dict | None = None) -> str | Non
                 or ["codex", "oauth", "anthropic", "deepseek"],
                 "codex_source_model": llm_cfg.get("codex_source_model", "gpt-5.6-sol"),
                 "codex_reasoning_effort": llm_cfg.get("codex_reasoning_effort", "medium"),
+                # LOCAL MODEL RUNG (2026-08-04). Forwarded so a config that lists
+                # `ollama` in provider_order actually reaches the local box —
+                # build_providers never inserts this rung implicitly, and without
+                # these keys the entry silently resolved to nothing.
+                #
+                # It belongs LAST and only last. A local 9B is a weaker writer
+                # than any hosted rung, so it must never take work they can do;
+                # but when every hosted rung has failed the alternative is not a
+                # better sentence, it is the deterministic relay of a raw RSS
+                # title — the exact path that put a publisher's page furniture on
+                # the timeline. A restatement from a small local model is a
+                # strictly better last resort than no restatement at all.
+                "ollama_base_url": llm_cfg.get("ollama_base_url"),
+                "ollama_base_url_env": llm_cfg.get("ollama_base_url_env"),
+                "ollama_model": llm_cfg.get("ollama_model"),
+                "ollama_timeout_s": llm_cfg.get("ollama_timeout_s"),
+                "ollama_num_ctx": llm_cfg.get("ollama_num_ctx"),
             },
             opus_model=model_id,
         )
@@ -435,6 +462,17 @@ def _llm_summarize(item: dict, cfg: dict, wire: dict | None = None) -> str | Non
         headline = item.get("headline", "")
         snippet = item.get("body_snippet", "")
         user_msg = f"Source headline: {headline}\n\nSource snippet: {snippet}"
+        if repair is not None:
+            prev, violations = repair
+            user_msg += (
+                "\n\nYour previous attempt was REJECTED by the copy validator.\n"
+                f"Rejected draft: {prev}\n"
+                "Validator complaints:\n"
+                + "\n".join(f"  - {v}" for v in list(violations)[:6])
+                + "\n\nWrite a NEW summary that fixes every complaint. Do not "
+                  "argue with the validator and do not explain the change — "
+                  "output only the corrected summary text."
+            )
 
         def _do_call(client, model):
             resp = client.messages.create(
@@ -466,6 +504,13 @@ _DET_LEAD_MIN_WORDS = 6
 #: And one longer than this is a paragraph, which blows the flash budget the
 #: composed post is measured against (wire_format.flash_budget, 280 chars).
 _DET_LEAD_MAX_CHARS = 200
+
+#: How many opening sentences :func:`_det_lead_sentence` may consider before it
+#: gives up. Three, because a wire item's useful lead is in the first paragraph
+#: or nowhere, and scanning further starts relaying a source's context section as
+#: if it were their news. See the scan comment for why this is a scan and never a
+#: truncation.
+_DET_LEAD_SCAN_SENTENCES = 3
 
 _DET_DASHES = ("—", "–", "―")     # em dash, en dash, horizontal bar
 _DET_WS_RE = re.compile(r"\s+")
@@ -529,18 +574,51 @@ def _det_lead_sentence(item: dict) -> str:
     for dash in _DET_DASHES:
         raw = raw.replace(dash, " -- ")
     text = _DET_WS_RE.sub(" ", raw).strip()
-    # First sentence only: the ladder in wire_format trims to whole sentences and
-    # a flash is at most two, so a paragraph here buys nothing but a clamp.
+    # SCAN THE OPENING SENTENCES, DON'T STOP AT THE FIRST (2026-08-04 postmortem).
+    #
+    # This used to take sentence 1 and return "" if it did not fit the budget,
+    # which made the fallback WORSE the richer the source: ForexLive handed us a
+    # real analyst paragraph whose first sentence ran 274 characters against a
+    # 200 cap, so the whole paragraph was discarded and the post fell back to
+    # relaying the raw RSS title. On the live feed that cap bit 12 of 25 items.
+    # A source that wrote three good sentences should not be punished for
+    # putting a long one first — so the scan walks the opening sentences and
+    # takes the first that FITS.
+    #
+    # SCAN, NEVER TRUNCATE. Cutting a sentence at a clause boundary is how a
+    # conditional loses its condition ("the Fed is expected to cut in September,
+    # unless inflation reaccelerates"), and a wire desk that clips the qualifier
+    # off a hedge is inventing a claim. A sentence either fits whole or is
+    # skipped whole.
     masked = _ABBREV_RE.sub(lambda m: m.group(0).replace(".", "\x00"), text)
-    first = re.split(r"(?<=[.!?])\s", masked, maxsplit=1)[0]
-    lead = _DET_WS_RE.sub(" ", first.replace("\x00", ".")).strip()
-    if len(lead) > _DET_LEAD_MAX_CHARS or len(lead.split()) < _DET_LEAD_MIN_WORDS:
-        return ""
+    sentences = re.split(r"(?<=[.!?])\s", masked)[:_DET_LEAD_SCAN_SENTENCES]
     headline = str(item.get("headline") or "").strip()
-    if headline and _is_near_verbatim(lead, headline) \
-            and not _lead_completes_headline(lead, headline):
-        return ""
-    return lead
+
+    for raw_sentence in sentences:
+        lead = _DET_WS_RE.sub(" ", raw_sentence.replace("\x00", ".")).strip()
+        if not lead:
+            continue
+        if len(lead) > _DET_LEAD_MAX_CHARS or len(lead.split()) < _DET_LEAD_MIN_WORDS:
+            continue
+        if headline and _is_near_verbatim(lead, headline) \
+                and not _lead_completes_headline(lead, headline):
+            continue
+        # THE SOURCE'S OWN PAGE VOICE IS NOT OURS. "On the wires: I'll have more
+        # to come on this separately, details etc." shipped on the flagship on
+        # 2026-08-03 — the ForexLive author's first person, relayed as our line
+        # 2, promising a follow-up we were never going to write. This is the one
+        # path that puts SOURCE PROSE (not a restatement of it) into a post, so
+        # it is the path that has to screen for prose written to a page we are
+        # not on. Fail-soft: a broken hygiene import costs the screen, never the
+        # wire.
+        try:
+            from engine.marketing import relay_hygiene as _rh  # noqa: PLC0415
+            if _rh.body_defects(lead):
+                continue
+        except Exception:  # noqa: BLE001
+            pass
+        return lead
+    return ""
 
 
 def _deterministic_summary(item: dict) -> str:
@@ -613,7 +691,7 @@ def summarize_item(
     Returns:
         {
             summary: str,
-            mode: "llm" | "deterministic" | "llm_fallback",
+            mode: "llm" | "llm_repaired" | "deterministic" | "llm_fallback",
             violations_seen: list[str],
             source_name: str,
             source_tier: str,
@@ -661,9 +739,44 @@ def summarize_item(
             mode = "llm"
         else:
             violations_seen = violations
-            # Validation failed → deterministic fallback
-            summary = _deterministic_summary(item)
-            mode = "llm_fallback"
+            # ── ONE REPAIR ATTEMPT (2026-08-04) ───────────────────────────────
+            # A rejected draft used to go straight in the bin, and the bin's
+            # replacement is the deterministic relay — which on a thin packet is
+            # the raw RSS title, page furniture and all. That is the single
+            # biggest source of unwritten posts on this lane: the summarizer was
+            # armed, paid for, and its output discarded without ever being told
+            # what was wrong with it.
+            #
+            # The validator's complaints are SPECIFIC ("number 4,070 not in
+            # source", "summary near-verbatim of source headline"), which makes
+            # them a usable instruction rather than a score. One retry, never
+            # two: a second failure means the packet cannot support a compliant
+            # restatement, and at that point more calls buy drift, not quality.
+            #
+            # Skipped for the test seam (_llm_override), which is a pure
+            # callable with no repair contract.
+            repaired: str | None = None
+            if _llm_override is None:
+                repaired = _llm_summarize(
+                    item, cfg, wire, repair=(llm_text, violations)
+                )
+            if repaired is not None:
+                repair_violations = validate_summary(
+                    repaired, item, max_chars=max_chars,
+                    max_sentences=max_sentences, skip_length_check=is_deep,
+                )
+                if not repair_violations:
+                    summary = repaired
+                    mode = "llm_repaired"
+                else:
+                    violations_seen = violations + [
+                        f"repair:{v}" for v in repair_violations
+                    ]
+                    summary = _deterministic_summary(item)
+                    mode = "llm_fallback"
+            else:
+                summary = _deterministic_summary(item)
+                mode = "llm_fallback"
 
     return {
         "summary": summary,
@@ -902,7 +1015,7 @@ def build_breaking_payload(
         headline: str        # verbatim from the wire (may be a whole post)
         card_headline: str   # sentence-bounded hero the card renders (W4g)
         summary: str
-        mode: "llm" | "deterministic" | "llm_fallback"
+        mode: "llm" | "llm_repaired" | "deterministic" | "llm_fallback"
         source_name: str
         source_tier: str
         url: str

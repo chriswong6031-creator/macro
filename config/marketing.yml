@@ -2424,10 +2424,21 @@ breaking:
     max_tokens: 800
     # ChatGPT-first per the operator directive on copywriter.llm above. Sol: the
     # breaking rewriter produces the published sentence, so it is writing work.
-    provider_order: [codex, oauth, anthropic, deepseek]
+    # LOCAL MODEL AS THE LAST RUNG (2026-08-04). `ollama` runs only after every
+    # hosted rung has failed, and it is there because of what the NEXT step used
+    # to be: with no model output at all, breaking_summary falls back to relaying
+    # the source's raw RSS title — which is how ForexLive's own page furniture
+    # ("More info on this - ...") reached the flagship timeline. A restatement
+    # from a local 9B beats no restatement. It needs OLLAMA_BASE_URL in the
+    # process env; absent, build_providers drops the rung and behaviour is
+    # exactly as before.
+    provider_order: [codex, oauth, anthropic, deepseek, ollama]
     codex_source_model: "gpt-5.6-sol"
     codex_reasoning_effort: "medium"
     oauth_pool_lane: "marketing-breaking"
+    ollama_model: "qwen3.5:9b"
+    ollama_timeout_s: 45
+    ollama_num_ctx: 8192
 
   # ═══════════════════════════════════════════════════════════════════════════
   # GARBAGE GATE (XG-W5 / IS-W2) — engine/marketing/garbage_gate.py
@@ -2449,6 +2460,13 @@ breaking:
       promo_spam: true
       paywalled_stub: true
       non_story: true
+      # RELAY STUB (2026-08-04) — the source's own page furniture. A blog writes
+      # for a reader mid-scroll; relayed standalone its conventions break.
+      # SCRUB (a removable pointer around a real story) keeps the story; DROP
+      # (the furniture IS the item — a calendar post, a house wrap) kills it.
+      # Rules and the three live posts that motivated them:
+      # engine/marketing/relay_hygiene.py.
+      relay_stub: true
 
     # Source keys ("cnbc_top"), x handles ("SomeHandle") or URL hosts
     # ("example.com" — suffix-matched, so "eu.example.com" is covered too).
