@@ -1,28 +1,107 @@
 {
   "schema": "ai_desk.v1",
   "is_context_only": true,
-  "generated_at": "2026-08-01T21:10:49.014676+00:00",
+  "generated_at": "2026-08-04T04:05:08.430653+00:00",
   "state_asof": "2026-07-31",
   "model": "deepseek-v4-pro",
-  "regime_context": "Flow detectors are explicitly display-only with no validated forward edge (rank-IC ~0). The regime snap is building from a fragile, catalyst-free relief that is prone to reversal. No asset-class-level or sector-level directional signal meets the falsifiability bar.",
-  "theses": [],
+  "regime_context": "Flow detector is display-only with no validated forward edge; cross-sectional concentration is building in Energy while cooling from extremes in Health Care, Financials, and Information Technology. VIX is dormant, so the stress-conditional edge is absent.",
+  "theses": [
+    {
+      "id": "2026-07-31-20260804040508-1",
+      "subject": "Health Care",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Health Care relative strength is at an extreme percentile (rs_pctile 0.988) while flow_score is deeply negative and the sector is in the cooling stage, consistent with fading momentum and elevated mean-reversion risk.",
+      "evidence": [
+        "Sector detector: Health Care stage=cooling, rs_pctile=0.988, flow_score=-1.188 (cooling list), cohesion_gate: cohering=false.",
+        "Base-rate analyst: extremes in RS percentile tend to revert; no forward edge from flow detector supports fade.",
+        "Skeptic: negative acceleration and low cohesion suggest distribution, not accumulation."
+      ],
+      "dissent": "Skeptic insists the extreme RS and deep flow deterioration warrant a full avoid, not just underweight; reversion could be sharper than an underweight captures.",
+      "falsifier": {
+        "text": "Health Care relative strength percentile stabilizes above 0.95 and flow_score turns positive with cohesion rising.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "XLV",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-28"
+    },
+    {
+      "id": "2026-07-31-20260804040508-2",
+      "subject": "Financials",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Financials is cooling with high relative strength (rs_pctile 0.885), declining cohesion, and negative flow acceleration, indicating that concentrated flow is rotating out and the sector may underperform.",
+      "evidence": [
+        "Sector detector: Financials stage=cooling, rs_pctile=0.885, cohesion_chg=-0.037, flow_score=-0.770 (cooling list).",
+        "Skeptic: declining cohesion and negative alpha in leadership support mean-reversion.",
+        "Base-rate analyst: flow concentration fading from a high base-rate extreme."
+      ],
+      "dissent": "A sudden VIX spike could activate the detector's stress-conditional edge, benefiting cyclical sectors like Financials and invalidating the cooling thesis.",
+      "falsifier": {
+        "text": "Financials rs_pctile recovers above 0.9 and cohesion_chg turns positive with fresh leadership alpha.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "XLF",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-28"
+    },
+    {
+      "id": "2026-07-31-20260804040508-3",
+      "subject": "Information Technology",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Information Technology is in confirmed stage with extreme relative strength (0.865) but low cohesion and negative leadership alpha, consistent with momentum exhaustion and potential distribution.",
+      "evidence": [
+        "Sector detector: Information Technology stage=confirmed, rs_pctile=0.865, cohesion=0.18 (cohesion_gate: cohering=false), leadership alpha negative.",
+        "Skeptic: high RS paired with low cohesion and no directional signal suggests risky reward.",
+        "Base-rate context: flow lens has no forward edge, so high RS extremes may persist but the low cohesion adds fragility."
+      ],
+      "dissent": "Base-rate analyst warns that RS extremes can persist longer than anticipated, and low cohesion may reflect stock-specific noise rather than a clear distribution signal, so underweight may be premature.",
+      "falsifier": {
+        "text": "Information Technology cohesion rises above 0.25 and 20-day leadership alpha shifts positive.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "XLK",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-28"
+    }
+  ],
   "source_verdicts": {
     "flow": "display_only",
     "regime_snap": "coincident"
   },
   "track_record": {
     "schema": "ai_desk_track_record.v1",
-    "as_of": "2026-08-01",
-    "scored_total": 27,
-    "open": 24,
+    "as_of": "2026-08-03",
+    "scored_total": 28,
+    "open": 23,
     "unscored_soft": 0,
     "expired": 0,
     "overall": {
-      "n": 27,
-      "hits": 24,
+      "n": 28,
+      "hits": 25,
       "misses": 3,
-      "hit_rate": 0.889,
-      "dir_accuracy": 0.778
+      "hit_rate": 0.893,
+      "dir_accuracy": 0.786
     },
     "by_conviction": {
       "high": {
@@ -40,20 +119,20 @@
         "dir_accuracy": null
       },
       "low": {
-        "n": 27,
-        "hits": 24,
+        "n": 28,
+        "hits": 25,
         "misses": 3,
-        "hit_rate": 0.889,
-        "dir_accuracy": 0.778
+        "hit_rate": 0.893,
+        "dir_accuracy": 0.786
       }
     },
     "by_kind": {
       "rel_return": {
-        "n": 24,
-        "hits": 24,
+        "n": 25,
+        "hits": 25,
         "misses": 0,
         "hit_rate": 1.0,
-        "dir_accuracy": 0.792
+        "dir_accuracy": 0.8
       },
       "level": {
         "n": 3,
@@ -65,15 +144,24 @@
     },
     "by_regime": {
       "Goldilocks": {
-        "n": 20,
-        "hits": 19,
+        "n": 21,
+        "hits": 20,
         "misses": 1,
-        "hit_rate": 0.95,
-        "dir_accuracy": 0.75
+        "hit_rate": 0.952,
+        "dir_accuracy": 0.762
       }
     },
-    "calibration_note": "27 scored, hit-rate 0.889 (directional accuracy 0.778).",
+    "calibration_note": "28 scored, hit-rate 0.893 (directional accuracy 0.786). Chance alone would land a hit-rate near 0.8617 (directional accuracy near 0.4895) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
     "recent": [
+      {
+        "id": "2026-07-06-1",
+        "subject": "Health Care",
+        "lean": "avoid",
+        "conviction": "low",
+        "outcome": "hit",
+        "realized": -0.0265,
+        "check_by": "2026-08-03"
+      },
       {
         "id": "2026-07-17-2",
         "subject": "VIX",
@@ -154,18 +242,9 @@
         "outcome": "hit",
         "realized": 0.0213,
         "check_by": "2026-07-27"
-      },
-      {
-        "id": "2026-06-26-3",
-        "subject": "Information Technology",
-        "lean": "underweight",
-        "conviction": "low",
-        "outcome": "hit",
-        "realized": -0.0425,
-        "check_by": "2026-07-24"
       }
     ],
-    "calibration_note_zh": "\u5df2\u8bc4\u5206 27 \u6761\uff0c\u547d\u4e2d\u7387 0.889\uff08\u65b9\u5411\u51c6\u786e\u7387 0.778\uff09\u3002"
+    "calibration_note_zh": "\u5df2\u8bc4\u5206 28 \u6761\uff0c\u547d\u4e2d\u7387 0.893\uff08\u65b9\u5411\u51c6\u786e\u7387 0.786\uff09\u3002\u540c\u6837\u6761\u4ef6\u4e0b\uff0c\u65e0\u6280\u80fd\u5224\u65ad\u51ed\u673a\u4f1a\u5373\u53ef\u8fbe\u5230\u7ea6 0.8617 \u7684\u547d\u4e2d\u7387\uff08\u65b9\u5411\u51c6\u786e\u7387\u7ea6 0.4895\uff09\u2014\u2014\u4e0a\u8ff0\u6570\u5b57\u5e94\u4e0e\u8be5\u57fa\u7ebf\u6bd4\u8f83\uff0c\u800c\u975e 0.5\u3002"
   },
   "passport": {
     "state": "measured",
@@ -179,136 +258,106 @@
     "expected_max_age_days": null,
     "tooltip_en": "Earned from a matured forward track record (spine-graded)."
   },
-  "confidence": "high",
-  "raw_text": "{\n  \"regime_context\": \"Flow detectors are explicitly display-only with no validated forward edge (rank-IC ~0). The regime snap is building from a fragile, catalyst-free relief that is prone to reversal. No asset-class-level or sector-level directional signal meets the falsifiability bar.\",\n  \"theses\": [],\n  \"confidence\": \"high\"\n}",
+  "confidence": "low",
+  "raw_text": "{\n  \"regime_context\": \"Flow detector is display-only with no validated forward edge; cross-sectional concentration is building in Energy while cooling from extremes in Health Care, Financials, and Information Technology. VIX is dormant, so the stress-conditional edge is absent.\",\n  \"theses\": [\n    {\n      \"subject\": \"Health Care\",\n      \"lean\": \"underweight\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Health Care relative strength is at an extreme percentile (rs_pctile 0.988) while flow_score is deeply negative and the sector is in the cooling stage, consistent with fading momentum and elevated mean-reversion risk.\",\n      \"evidence\": [\n        \"Sector detector: Health Care stage=cooling, rs_pctile=0.988, flow_score=-1.188 (cooling list), cohesion_gate: cohering=false.\",\n        \"Base-rate analyst: extremes in RS percentile tend to revert; no forward edge from flow detector supports fade.\",\n        \"Skeptic: negative acceleration and low cohesion suggest distribution, not accumulation.\"\n      ],\n      \"dissent\": \"Skeptic insists the extreme RS and deep flow deterioration warrant a full avoid, not just underweight; reversion could be sharper than an underweight captures.\",\n      \"falsifier_text\": \"Health Care relative strength percentile stabilizes above 0.95 and flow_score turns positive with cohesion rising.\"\n    },\n    {\n      \"subject\": \"Financials\",\n      \"lean\": \"underweight\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Financials is cooling with high relative strength (rs_pctile 0.885), declining cohesion, and negative flow acceleration, indicating that concentrated flow is rotating out and the sector may underperform.\",\n      \"evidence\": [\n        \"Sector detector: Financials stage=cooling, rs_pctile=0.885, cohesion_chg=-0.037, flow_score=-0.770 (cooling list).\",\n        \"Skeptic: declining cohesion and negative alpha in leadership support mean-reversion.\",\n        \"Base-rate analyst: flow concentration fading from a high base-rate extreme.\"\n      ],\n      \"dissent\": \"A sudden VIX spike could activate the detector's stress-conditional edge, benefiting cyclical sectors like Financials and invalidating the cooling thesis.\",\n      \"falsifier_text\": \"Financials rs_pctile recovers above 0.9 and cohesion_chg turns positive with fresh leadership alpha.\"\n    },\n    {\n      \"subject\": \"Information Technology\",\n      \"lean\": \"underweight\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Information Technology is in confirmed stage with extreme relative strength (0.865) but low cohesion and negative leadership alpha, consistent with momentum exhaustion and potential distribution.\",\n      \"evidence\": [\n        \"Sector detector: Information Technology stage=confirmed, rs_pctile=0.865, cohesion=0.18 (cohesion_gate: cohering=false), leadership alpha negative.\",\n        \"Skeptic: high RS paired with low cohesion and no directional signal suggests risky reward.\",\n        \"Base-rate context: flow lens has no forward edge, so high RS extremes may persist but the low cohesion adds fragility.\"\n      ],\n      \"dissent\": \"Base-rate analyst warns that RS extremes can persist longer than anticipated, and low cohesion may reflect stock-specific noise rather than a clear distribution signal, so underweight may be premature.\",\n      \"falsifier_text\": \"Information Technology cohesion rises above 0.25 and 20-day leadership alpha shifts positive.\"\n    }\n  ],\n  \"confidence\": \"low\"\n}",
   "degraded_reason": null,
-  "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, FALSIFIABLE judgement with a check-by date, not a trade recommendation or a position size.",
+  "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, CHECKABLE judgement with a check-by date, not a trade recommendation or a position size.",
   "panel": {
     "opportunity": {
-      "stance": "Flow concentration is singularly strong in Energy while Health Care, Real Estate, and Industrials register the most negative scores, pointing to a rotation away from recent leaders; the fragile relief snap tentatively supports risk-on, but lack of a structural catalyst keeps conviction low.",
+      "stance": "Flow is concentrating in Energy (emerging) while cooling out of stretched Health Care and Financials; with VIX dormant and no relief snap, the flow lens points to a relative lean, though edge is thin per display-only verdict.",
       "candidates": [
         {
           "subject": "Energy",
           "lean": "overweight",
-          "rationale": "Energy is the only sector in the emerging stage with the highest flow_score (1.332) and positive acceleration/broadening, signaling concentrated cross-sectional flow.",
-          "strength": "moderate"
+          "rationale": "Energy is the only sector in the emerging stage with positive flow_score and acceleration, indicating cross-sectional concentration despite low cohesion.",
+          "strength": "weak"
         },
         {
           "subject": "Health Care",
           "lean": "underweight",
-          "rationale": "Health Care shows the most negative flow_score (-1.188) while in a cooling stage and at an extreme relative-strength percentile (0.988), suggestive of rotation out.",
-          "strength": "moderate"
-        },
-        {
-          "subject": "Industrials",
-          "lean": "underweight",
-          "rationale": "Industrials flow_score is negative (-0.718) and cooling, despite a high-correlation pair with Materials; the flow lens shows concentration moving elsewhere.",
+          "rationale": "Health Care shows extreme relative strength (rs_pctile 0.99) but deteriorating flow (cooling, negative flow_score), suggesting concentration is unwinding.",
           "strength": "weak"
-        },
-        {
-          "subject": "Real Estate",
-          "lean": "underweight",
-          "rationale": "Real Estate flow_score (-0.865) and cooling stage, with cohesion not cohering, suggest flow is drifting away from the group.",
-          "strength": "weak"
-        }
-      ],
-      "key_risk": "If the fragile relief snap fails to find a structural catalyst and volatility rises, the rotation into Energy could stall rapidly, and the cooling sectors (Health Care, Real Estate, Industrials) could see a sharp defensive bid."
-    },
-    "skeptic": {
-      "stance": "The flow lens has no forward edge; high-relative-strength sectors are cooling (flow score negative) alongside a fragile, catalyst-free relief snap. Trend-chasing these gains is a trap, as mean-reversion risk is elevated.",
-      "candidates": [
-        {
-          "subject": "Health Care",
-          "lean": "underweight",
-          "rationale": "Extreme relative strength (rs_pctile 0.988) is coincident with negative flow score (-1.188) and low, non-cohering dispersion\u2014classic exhaustion, not a theme.",
-          "strength": "moderate"
         },
         {
           "subject": "Financials",
-          "lean": "underweight",
-          "rationale": "High RS (0.885) cooling with decelerating cohesion; the leadership is broad but no directional signal, making recent gains a mean-reversion candidate.",
-          "strength": "moderate"
+          "lean": "avoid",
+          "rationale": "Financials is cooling with high rs_pctile and negative acceleration, part of a dominant cluster losing momentum without a directional signal.",
+          "strength": "weak"
+        }
+      ],
+      "key_risk": "A sudden re-acceleration in the dominant cluster (Financials, Health Care, Discretionary) that shifts cross-sectional flow back, negating the current concentration read on Energy."
+    },
+    "skeptic": {
+      "stance": "The flow lens has no forward edge; the high RS percentiles in Health Care, Financials, and Info Tech coincide with cooling stages and decelerating cohesion, making them mean-reversion traps. Energy's emerging tag is concentration-driven and narrow, not a theme.",
+      "candidates": [
+        {
+          "subject": "Health Care",
+          "lean": "avoid",
+          "rationale": "RS at 0.988 extreme while flow score deeply negative (-1.188) and cohesion low; likely late-cycle exhaustion, not accumulation.",
+          "strength": "strong"
         },
         {
           "subject": "Information Technology",
-          "lean": "underweight",
-          "rationale": "RS at 0.865 but read-quality only 0.6, cohesion low and declining; the confirmed stage is coincident, not predictive, and the fragile regime snap threatens the rally.",
-          "strength": "weak"
-        },
-        {
-          "subject": "VIX",
-          "lean": "fade-fear",
-          "rationale": "The relief snap is coincident and flagged as fragile with no structural catalyst; fading fear (betting on a volatility crush) is a trap likely to reverse.",
-          "strength": "weak"
-        }
-      ],
-      "key_risk": "A genuine policy shock or hard-data surprise that turns the relief snap structural would invalidate the mean-reversion thesis and extend these sectors' runs."
-    },
-    "base_rate": {
-      "stance": "The flow lens has no validated forward edge (display-only, rank-IC ~0) and the relief snap is coincident and fragile. Any lean drawn from this setup is inherently weak and anchored on mean-reversion tendencies, not a tested edge.",
-      "candidates": [
-        {
-          "subject": "Energy",
-          "lean": "overweight",
-          "rationale": "Emerging stage with positive flow score, strong RS pctile (0.76) that is not yet extreme, and broad breadth; base rates weakly favor recent outperformance when flow is still concentrating.",
-          "strength": "weak"
-        },
-        {
-          "subject": "Health Care",
-          "lean": "underweight",
-          "rationale": "Cooling stage, negative flow score, extreme RS pctile (0.99) and low cohesion suggest the ride may be overbought with no structural tailwind; base rates for extreme RS with negative flow favor mean reversion.",
-          "strength": "weak"
-        },
-        {
-          "subject": "VIX",
           "lean": "avoid",
-          "rationale": "Regime snap is building but fragile with no structural catalyst; the recent VIX fade-fear call missed, and the coincident nature of the snap provides no reliable timing for a fade.",
-          "strength": "weak"
-        }
-      ],
-      "key_risk": "The flow lens is display-only with ~0 forward edge and the regime snap is coincident, so any candidate may fail purely on noise."
-    },
-    "structural": {
-      "stance": "The dominant cluster (Consumer Discretionary, Real Estate, Financials, Health Care) shows genuine broad-based co-movement with low HHI, not a single-name mirage; the tight Industrials\u2013Materials pair (0.81) likely reflects a supply-chain linkage.",
-      "candidates": [
-        {
-          "subject": "Consumer Discretionary",
-          "lean": "none",
-          "rationale": "Part of the dominant broad co-movement cluster with very low HHI (0.008), indicating genuine sector-wide participation.",
+          "rationale": "RS 0.865 but cohesion only 0.18 and no directional signal; momentum is priced-in and breadth of recent leaders (neg alpha) suggests distribution.",
           "strength": "moderate"
         },
         {
-          "subject": "Real Estate",
-          "lean": "none",
-          "rationale": "In the dominant cluster, broad leadership (HHI 0.019) and correlated with the cyclical/value rotation theme.",
+          "subject": "Energy",
+          "lean": "avoid",
+          "rationale": "Emerging solely from concentrated flow in refiners with no directional confidence; highly coincident with oil, not a persistent sector rotation.",
           "strength": "moderate"
         },
         {
           "subject": "Financials",
-          "lean": "none",
-          "rationale": "Key member of the dominant cluster, broad breadth (HHI 0.008), reflecting a genuine cross-sector cycle trade.",
+          "lean": "underweight",
+          "rationale": "RS 0.885 while cooling, cohesion declining, and leadership showing negative alpha; ample room for mean-reversion.",
           "strength": "moderate"
-        },
+        }
+      ],
+      "key_risk": "A sudden VIX spike would activate the stress-conditional edge, turning flow scores from coincident to potentially directional and invalidating the mean-reversion thesis."
+    },
+    "base_rate": {
+      "stance": "The flow lens shows concentration building in Energy and fading from extremes in Health Care and Financials, but the detector has no validated forward edge, so base rates for persistence are low.",
+      "candidates": [
         {
-          "subject": "Health Care",
-          "lean": "none",
-          "rationale": "Included in the dominant cluster with broad leadership (HHI 0.012), though its high RS percentile suggests it may be stretched.",
+          "subject": "Energy",
+          "lean": "overweight",
+          "rationale": "Flow is concentrating here (emerging stage, rs_pctile 0.762), but base rates for emerging stage durability are weak; tentative positive lean.",
           "strength": "weak"
         },
         {
+          "subject": "Health Care",
+          "lean": "avoid",
+          "rationale": "Cooling from a near-record relative strength percentile (0.988) with low cohesion; base rates favor reversion after such extremes.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Financials",
+          "lean": "avoid",
+          "rationale": "High relative strength (0.885) but in cooling stage with declining cohesion, indicating fading flow concentration.",
+          "strength": "weak"
+        }
+      ],
+      "key_risk": "The flow lens has no validated forward edge (rank-IC ~0), so any apparent signal is coincident and may reverse by the next observation."
+    },
+    "structural": {
+      "stance": "The broad cluster (Consumer Discretionary, Real Estate, Financials, Health Care) is notable, but the tightest cross\u2011group correlation (0.81) lies between Industrials and Materials, indicating a genuine supply\u2011chain/cyclical theme rather than a narrow single\u2011name mirage; leadership is broad across both sectors.",
+      "candidates": [
+        {
           "subject": "Industrials",
           "lean": "none",
-          "rationale": "Tightly correlated with Materials (0.81), forming a supply-chain pair; broad breadth (HHI 0.007) adds to co-movement credibility.",
+          "rationale": "Forms the strongest co\u2011movement pair with Materials; leadership HHI 0.007 confirms the move is broad, not driven by one stock.",
           "strength": "moderate"
         },
         {
           "subject": "Materials",
           "lean": "none",
-          "rationale": "Part of the top correlation pair with Industrials, broad leadership (HHI 0.021), indicating a genuine cyclical input-demand theme.",
+          "rationale": "Forms the strongest co\u2011movement pair with Industrials; leadership HHI 0.021 confirms the move is broad, not driven by one stock.",
           "strength": "moderate"
         }
       ],
-      "key_risk": "A sharp macro shock (e.g., credit event or real-rate spike) that breaks the correlation structure could quickly decouple this cluster."
+      "key_risk": "A sudden VIX spike or a sector\u2011specific shock in either Industrials or Materials would break the observed co\u2011movement and render the theme read unreliable."
     }
   }
 }

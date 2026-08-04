@@ -1,7 +1,7 @@
 {
   "schema": "transmission_chains.v1",
-  "asof": "2026-07-31",
-  "built": "2026-08-03 02:04 UTC",
+  "asof": "2026-08-03",
+  "built": "2026-08-04 02:21 UTC",
   "chains": [
     {
       "chain": "credit_spreads_refinancing",
@@ -37,7 +37,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": 0.812,
+              "value": 0.929,
               "op": "lt",
               "threshold": 0,
               "passed": false
@@ -55,7 +55,7 @@
               "series": "HYG/LQD",
               "metric": "ratio_ret_pct",
               "window": 22,
-              "value": 2.139,
+              "value": 1.855,
               "op": "lt",
               "threshold": -2.0,
               "passed": false
@@ -72,7 +72,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": 0.812,
+              "value": 0.929,
               "op": "lt",
               "threshold": 0,
               "passed": false
@@ -93,12 +93,12 @@
         "en": "Dollar spike → EM & multinational-EPS headwind",
         "zh": "美元飙升 → 新兴市场与跨国企业盈利承压"
       },
-      "state": "propagating",
+      "state": "expressed",
       "state_label": {
-        "en": "Propagating",
-        "zh": "传导中"
+        "en": "Expressed",
+        "zh": "已兑现"
       },
-      "hop": 1,
+      "hop": 2,
       "n_hops": 2,
       "armable": true,
       "episode_id": "dollar_spike_em_multinational@r3:2026-07-31",
@@ -145,15 +145,15 @@
             0,
             90
           ],
-          "confirmed": false,
-          "asof": null,
+          "confirmed": true,
+          "asof": "2026-08-03",
           "value_receipt": [
             {
               "series": "FXI",
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -4.736,
+              "value": -6.088,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -221,7 +221,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -4.736,
+              "value": -6.088,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -837,7 +837,7 @@
               "path": "state.rates.real_10y_chg_63d_bp",
               "op": "gt",
               "threshold": 30,
-              "value": 45.0,
+              "value": 47.0,
               "passed": true
             }
           ]
@@ -858,7 +858,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -0.915,
+              "value": -1.292,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -876,7 +876,7 @@
               "series": "CL=F",
               "metric": "ret_pct",
               "window": 60,
-              "value": -16.185,
+              "value": -19.907,
               "op": "gt",
               "threshold": 25,
               "passed": false
@@ -884,7 +884,7 @@
             {
               "series": "CL=F",
               "metric": "ma50_slope5",
-              "value": -0.9966,
+              "value": -0.8484,
               "op": "gt",
               "threshold": 0,
               "passed": false
@@ -923,7 +923,7 @@
               "path": "state.rates.real_10y_chg_63d_bp",
               "op": "gt",
               "threshold": 30,
-              "value": 45.0,
+              "value": 47.0,
               "passed": true
             }
           ]
@@ -938,7 +938,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -0.915,
+              "value": -1.292,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -984,7 +984,7 @@
               "path": "vol_regime.vol_target_scalar",
               "op": "lt",
               "threshold": 0.85,
-              "value": 0.75,
+              "value": 0.76,
               "passed": true
             }
           ]
@@ -1005,7 +1005,7 @@
               "vs": "SPLV",
               "metric": "rs_pp",
               "window": 21,
-              "value": -9.677,
+              "value": -2.509,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -1033,7 +1033,7 @@
               "path": "vol_regime.vix",
               "op": "gte",
               "threshold": 25,
-              "value": 15.99,
+              "value": 15.86,
               "passed": false
             }
           ]
@@ -1047,7 +1047,7 @@
               "path": "vol_regime.vol_target_scalar",
               "op": "lt",
               "threshold": 0.85,
-              "value": 0.75,
+              "value": 0.76,
               "passed": true
             }
           ]
@@ -1062,7 +1062,7 @@
               "vs": "SPLV",
               "metric": "rs_pp",
               "window": 21,
-              "value": -9.677,
+              "value": -2.509,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -1095,7 +1095,7 @@
     "universe": 2936,
     "substrate_asof": {
       "min": "2026-05-07",
-      "max": "2026-08-01"
+      "max": "2026-08-04"
     }
   }
 }

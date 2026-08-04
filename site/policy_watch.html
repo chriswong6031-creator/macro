@@ -33,10 +33,213 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fed & Policy Watch — Macro Dashboard</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=8798caae">
-<link rel="stylesheet" href="assets/css/cd7f4a4a.css?v=cd7f4a4a">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  /* XG-W7 follow line — its own row, never appended to the disclaimer sentence:
+     a legal notice and a marketing CTA must not read as one thought. */
+  footer.rfoot .rf-x { display:inline-flex; align-items:center; gap:6px; margin-top:11px; padding:4px 10px;
+    border-radius:100px; border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600;
+    transition:color .16s, border-color .16s; }
+  footer.rfoot .rf-x:hover { color:var(--text); border-color:color-mix(in srgb,var(--text) 26%,transparent); }
+  
+  /* ── Policy Watch — situation-desk revamp ──────────────────────────────────
+     Type roles follow the macro.html Attio trial: Inter Display carries
+     headings, state words and overlines; body stays on the shared UI stack;
+     dates, counts and percentages get tabular figures. Fonts are the same
+     self-hosted files macro.html uses (China-safe, no third-party request). */
+  @font-face { font-family:"MX Inter Display"; src:url("fonts/InterDisplay-600.woff2") format("woff2");
+               font-style:normal; font-weight:600; font-display:swap; }
+  @font-face { font-family:"MX Inter Display"; src:url("fonts/InterDisplay-700.woff2") format("woff2");
+               font-style:normal; font-weight:700; font-display:swap; }
+  :root {
+    --pw-disp: "MX Inter Display", Inter, "PingFang SC", "Hiragino Sans GB",
+      "Microsoft YaHei", "Noto Sans CJK SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    /* page accent set = the dossier's existing thread colors, promoted to tokens
+       (dark values are the base — theme.css is dark-default, light overrides) */
+    --pwa: #c77dff;   /* fed violet — the page identity */
+    --pwb: #5b8def;   /* policy blue */
+    --pwt: #3fb6c0;   /* treasury / dollar teal */
+    --pwg: #3fc07e;   /* working / hit green */
+    --pwam: #e0973a;  /* prior / caution amber */
+    --pwr: #ef6a6a;   /* miss / lagging red */
+  }
+  html[data-theme="light"] {
+    --pwa: #8b46e0; --pwb: #3b63d4; --pwt: #147f8a; --pwg: #1f9a55; --pwam: #a8701f; --pwr: #d23f3f;
+  }
+  html { scroll-behavior:smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+
+  /* ── hero ── */
+  .pw-hero { max-width:1060px; margin:18px auto 0; position:relative; overflow:hidden;
+             background:radial-gradient(620px 240px at 88% -30%, color-mix(in srgb, var(--pwa) 10%, transparent), transparent 70%), var(--panel);
+             border:1px solid var(--line); border-radius:16px; padding:24px 28px 22px;
+             display:grid; grid-template-columns:1.35fr .85fr 1fr; gap:14px 30px; box-shadow:var(--card-shadow, none); }
+  .pw-hero::before { content:""; position:absolute; inset:0 0 auto 0; height:3px;
+             background:linear-gradient(90deg, var(--pwa), color-mix(in srgb, var(--pwa) 12%, transparent) 60%, transparent); }
+  @media (max-width: 960px) { .pw-hero { grid-template-columns:1fr; } }
+  .pw-hero .eyebrow { font-family:var(--pw-disp); font-size:11px; font-weight:600; letter-spacing:.06em;
+             text-transform:uppercase; color:var(--pwa); margin:0 0 10px; }
+  .pw-hero h1 { font-family:var(--pw-disp); font-size:30px; font-weight:700; letter-spacing:-.02em; margin:0 0 8px; line-height:1.12; }
+  html[data-lang="zh"] .pw-hero h1, html[data-lang="zh"] .pw-hero .eyebrow, html[data-lang="zh"] .pw-ovl { letter-spacing:0; }
+  .pw-hero .lens { font-size:13px; color:var(--muted); margin:0 0 14px; line-height:1.55; max-width:46ch; }
+  .pw-chips { display:flex; flex-wrap:wrap; gap:7px; }
+  .pwc { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:6px 10px;
+         border-radius:999px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .pwc b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .pwc.age-ok    { color:var(--pwg); border-color:color-mix(in srgb, var(--pwg) 30%, transparent); }
+  .pwc.age-amber { color:var(--pwam); border-color:color-mix(in srgb, var(--pwam) 32%, transparent); }
+  .pwc.age-red   { color:var(--pwr); border-color:color-mix(in srgb, var(--pwr) 32%, transparent); }
+  /* stance cell */
+  .pw-ovl { font-family:var(--pw-disp); font-size:11px; font-weight:600; letter-spacing:.06em;
+            text-transform:uppercase; color:var(--muted); margin:0 0 8px; display:flex; align-items:center; gap:7px; }
+  .pw-dot { width:7px; height:7px; border-radius:50%; background:var(--c, var(--muted)); flex:0 0 auto; }
+  .pw-state { font-family:var(--pw-disp); font-size:26px; font-weight:700; letter-spacing:-.02em; margin:0 0 6px; line-height:1.15; }
+  html[data-lang="zh"] .pw-state { letter-spacing:0; }
+  .pw-state.s-down { color:var(--pwr); }
+  .pw-state.s-up { color:var(--pwg); }
+  .pw-state.s-muted { color:var(--text); }
+  .pw-since { font-size:12px; color:var(--muted); margin:0 0 8px; font-variant-numeric:tabular-nums; }
+  .pw-drv { font-size:11.5px; color:var(--muted); margin:0; line-height:1.6; }
+  /* decision clock cell */
+  .pw-clock { border-left:1px solid var(--line); padding-left:26px; }
+  @media (max-width: 960px) { .pw-clock { border-left:none; padding-left:0; border-top:1px solid var(--line); padding-top:14px; } }
+  .pw-ck-row { display:flex; align-items:baseline; gap:9px; padding:6px 0; border-bottom:1px dashed color-mix(in srgb, var(--line) 72%, transparent); }
+  .pw-ck-row:last-of-type { border-bottom:none; }
+  .pw-ck-date { font-family:var(--pw-disp); font-weight:600; font-size:12px; font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--text); }
+  .pw-ck-ev { font-size:12px; line-height:1.4; color:var(--text); opacity:.9; flex:1; min-width:0; }
+  .pw-ck-ev .imp { margin-left:6px; }
+  .pw-ck-chip { font-size:10px; font-weight:700; letter-spacing:.03em; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+  .pw-ck-chip.up { color:var(--pwa); background:color-mix(in srgb, var(--pwa) 14%, transparent); }
+  .pw-ck-chip.past { color:var(--muted); background:var(--panel2); }
+  .pw-ck-note { font-size:11px; color:var(--muted); margin:8px 0 0; }
+  /* impact dots: 3/2/1 filled for high/medium/low */
+  .imp { display:inline-flex; gap:3px; align-items:center; vertical-align:middle; }
+  .imp i { width:5px; height:5px; border-radius:50%; background:color-mix(in srgb, var(--muted) 32%, transparent); }
+  .imp i.on { background:var(--pwa); }
+
+  /* ── merged notice band (divergence + staleness live here, once) ── */
+  .pw-note { max-width:1060px; margin:14px auto 0; border:1px solid color-mix(in srgb, var(--pwam) 32%, transparent);
+             border-left:3px solid var(--pwam); background:color-mix(in srgb, var(--pwam) 7%, var(--panel));
+             border-radius:12px; padding:11px 16px; font-size:13px; line-height:1.6; }
+  .pw-note p { margin:2px 0; }
+
+  /* ── on-page jump chips ── */
+  .pw-toc { max-width:1060px; margin:16px auto 0; display:flex; flex-wrap:wrap; gap:7px; }
+  .pw-toc a { font-family:var(--pw-disp); font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+              color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:6px 12px;
+              transition:color .16s, border-color .16s; }
+  .pw-toc a:hover { color:var(--text); border-color:color-mix(in srgb, var(--text) 26%, transparent); }
+  html[data-lang="zh"] .pw-toc a { letter-spacing:0; }
+
+  .pw-wrap { max-width:1060px; margin:0 auto; }
+
+  /* ── thesis duo ── */
+  .pw-duo { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0 0; }
+  @media (max-width: 860px) { .pw-duo { grid-template-columns:1fr; } }
+  .pw-th { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 19px; box-shadow:var(--card-shadow, none); }
+  .pw-th.key { border-top:3px solid var(--pwg); }
+  .pw-th.warn { border-top:3px solid var(--pwam); }
+  .pw-th .pw-ovl { margin-bottom:9px; }
+  .pw-prose { font-size:13.5px; line-height:1.65; margin:0; display:-webkit-box; -webkit-line-clamp:8; -webkit-box-orient:vertical; overflow:hidden; }
+  .pw-prose.open { display:block; -webkit-line-clamp:unset; overflow:visible; }
+  .pw-more { appearance:none; background:none; border:none; padding:8px 0 0; cursor:pointer;
+             font:600 12px/1 var(--pw-disp); color:var(--pwa); letter-spacing:.02em; }
+  .pw-more:hover { text-decoration:underline; }
+  .pw-more .less, .pw-more.open .more { display:none; }
+  .pw-more.open .less { display:inline; }
+
+  /* ── section rhythm ── */
+  .pw-sec { border-top:1px solid var(--line); margin-top:40px; padding-top:26px; scroll-margin-top:84px; }
+  .pw-sec h2 { font-family:var(--pw-disp); font-size:20px; font-weight:600; letter-spacing:-.01em; margin:0 0 6px; }
+  html[data-lang="zh"] .pw-sec h2 { letter-spacing:0; }
+  h3.sub { font-family:var(--pw-disp); font-size:11.5px; margin:20px 0 8px; color:var(--muted);
+           text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
+  html[data-lang="zh"] h3.sub { letter-spacing:0; }
+  .lede { font-size:13.5px; line-height:1.65; }
+  .pw-lede { font-size:13px; line-height:1.6; color:var(--muted); margin:4px 0 10px; max-width:88ch; }
+
+  /* ── badges (basis / status / confidence) ── */
+  .b { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.03em; padding:2.5px 7px; border-radius:6px; white-space:nowrap; }
+  .b-fact { color:var(--pwg); background:color-mix(in srgb, var(--pwg) 13%, transparent); }
+  .b-inf  { color:var(--pwa); background:color-mix(in srgb, var(--pwa) 14%, transparent); }
+  .b-prior{ color:var(--pwam); background:color-mix(in srgb, var(--pwam) 14%, transparent); }
+  .b-open { color:var(--muted); background:var(--panel2); }
+  .b-hit  { color:var(--pwg); background:color-mix(in srgb, var(--pwg) 13%, transparent); }
+  .b-miss { color:var(--pwr); background:color-mix(in srgb, var(--pwr) 13%, transparent); }
+  .th-fed{color:var(--pwa)}.th-treasury{color:var(--pwt)}.th-policy{color:var(--pwb)}.th-rotation{color:var(--pwg)}.th-debasement{color:var(--pwam)}.th-dollar{color:var(--pwt)}
+  .conf { font-size:11px; color:var(--muted); }
+
+  /* ── panels + cards ── */
+  .pw-panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 18px; margin:12px 0; box-shadow:var(--card-shadow, none); }
+  .pw-panel .pw-ovl { margin-bottom:7px; }
+  .pw-panel.warn { border-left:3px solid var(--pwam); }
+  .pw-quote { border-left:3px solid var(--pwa); background:var(--panel2); border-radius:0 10px 10px 0;
+              padding:10px 14px; margin:12px 0; font-size:13px; line-height:1.6; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; margin:12px 0; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px;
+          box-shadow:var(--card-shadow, none); transition:border-color .16s; }
+  .card:hover { border-color:color-mix(in srgb, var(--text) 18%, var(--line)); }
+  .card .cn { font-family:var(--pw-disp); font-weight:600; font-size:14.5px; letter-spacing:-.01em; margin:0 0 4px; line-height:1.35; }
+  .card .cmeta { font-size:11px; color:var(--muted); margin-bottom:8px; display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+  .card .cch { font-size:12.5px; line-height:1.55; margin:6px 0; }
+  .pw-block { margin-top:9px; padding-left:10px; border-left:2px solid var(--line); font-size:12.5px; line-height:1.55; }
+  .pw-block.read { border-left-color:var(--pwa); }
+  .pw-block.cap { border-left-color:var(--pwt); }
+  .pw-block .pw-bl { display:block; font-family:var(--pw-disp); font-size:10px; font-weight:600;
+                     letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+  html[data-lang="zh"] .pw-block .pw-bl { letter-spacing:0; }
+  .pw-tkr { font-family:var(--pw-disp); font-weight:600; letter-spacing:0; }
+
+  /* ── tables ── */
+  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
+  table.data th { font-family:var(--pw-disp); text-align:left; padding:8px 10px; background:var(--panel2); color:var(--muted);
+                  font-weight:600; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; border-bottom:2px solid var(--line); }
+  html[data-lang="zh"] table.data th { letter-spacing:0; }
+  table.data td { padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.5; }
+  table.data tr:hover td { background:var(--panel2); }
+  table.data td .num, table.data td strong { font-variant-numeric:tabular-nums; }
+  tr.key-row td { background:color-mix(in srgb, var(--pwa) 6%, transparent); }
+  tr.key-row:hover td { background:color-mix(in srgb, var(--pwa) 10%, transparent); }
+  .k-star { color:var(--pwa); }
+  .prox { font-family:var(--pw-disp); font-weight:600; font-size:11px; letter-spacing:.01em; color:var(--text); opacity:.85; }
+  .led-stat { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 4px; }
+
+  /* ── monitor + sources ── */
+  .monitor { list-style:none; padding:0; margin:12px 0; display:grid; grid-template-columns:1fr 1fr; gap:2px 26px; }
+  @media (max-width: 760px) { .monitor { grid-template-columns:1fr; } }
+  .monitor li { margin:0; padding:8px 2px; font-size:13px; border-bottom:1px dashed color-mix(in srgb, var(--line) 72%, transparent); }
+  .monitor a { color:var(--link); }
+  .srcs { font-size:11.5px; color:var(--muted); word-break:break-word; line-height:2; }
+  .srcs a { color:var(--link); border:1px solid var(--line); border-radius:6px; padding:2px 6px; margin-right:2px; white-space:nowrap; }
+  .srcs a:hover { border-color:color-mix(in srgb, var(--link) 45%, transparent); }
+
+</style>
 
 
 
@@ -63,7 +266,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -270,10 +473,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -368,7 +571,7 @@
 <div class="pw-note">
   
   
-  <p>⚠ <b><span class="l-en">Sharpest divergence</span><span class="l-zh">最大背离</span>:</b> <span class="l-en">the map targets</span><span class="l-zh">地图看好</span> <b><span class="l-en">Critical minerals / rare earths</span><span class="l-zh">关键矿产/稀土</span></b> <span class="l-en">but it is lagging SPY by</span><span class="l-zh">但其跑输标普</span> -41.3% — <span class="l-en">evidence against that leg of the rotation thesis.</span><span class="l-zh">是对该轮动判断的反证。</span></p>
+  <p>⚠ <b><span class="l-en">Sharpest divergence</span><span class="l-zh">最大背离</span>:</b> <span class="l-en">the map targets</span><span class="l-zh">地图看好</span> <b><span class="l-en">Critical minerals / rare earths</span><span class="l-zh">关键矿产/稀土</span></b> <span class="l-en">but it is lagging SPY by</span><span class="l-zh">但其跑输标普</span> -39.3% — <span class="l-en">evidence against that leg of the rotation thesis.</span><span class="l-zh">是对该轮动判断的反证。</span></p>
   
   
   <p>⏳ <b><span class="l-en">Intel is</span><span class="l-zh">情报已</span> 21 <span class="l-en">days old</span><span class="l-zh">天未更新</span></b> — <span class="l-en">re-verify before acting; this layer is time-sensitive (truces, ceasefires and pending rulings move).</span><span class="l-zh">行动前请重新核实；该层具时效性（休战、停火与待决裁决随时变化）。</span></p>
@@ -772,7 +975,7 @@
       <td><strong><span class="l-en">Nuclear · uranium · HALEU/fuel cycle</span><span class="l-zh">核能·铀·HALEU燃料循环</span></strong></td>
       <td><span class="l-en">EO 14299 quadruple-to-400GW; HALEU released for AI; DoD/pilot reactors. UPDATE (7/2): all 3 pilot reactors (Valar/Antares/Deployable) hit criticality before the Jul-4 deadline — a policy-execution proof point (P12 delivered).</span><span class="l-zh">第14299号行政令翻两番至400吉瓦；为AI释放HALEU；国防部/试点反应堆。更新（7/2）：三座试点反应堆（Valar/Antares/Deployable）均在7月4日截止前达临界——政策执行力的证明点（P12达成）。</span></td>
       <td class="prox">URA URNM NLR SMR OKLO CCJ LEU</td>
-      <td class="num"><span class="b b-miss"><span class="l-en">lagging</span><span class="l-zh">落后</span></span> -35.1%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 0/20</span></td>
+      <td class="num"><span class="b b-miss"><span class="l-en">lagging</span><span class="l-zh">落后</span></span> -31.0%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 0/20</span></td>
       <td><span class="b b-fact"><span class="l-en">FACT mechanism · INFERENCE proxies</span><span class="l-zh">事实 机制 · 推断 代理</span></span><br><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
     </tr>
     
@@ -780,7 +983,7 @@
       <td><strong><span class="l-en">Power · grid · datacenter capex (AI compute)</span><span class="l-zh">电力·电网·数据中心资本开支（AI算力）</span></strong></td>
       <td><span class="l-en">AI build-out + nuclear-for-AI demand on the grid</span><span class="l-zh">AI建设 + 为AI供电对电网的需求</span></td>
       <td class="prox">GEV VST CEG ETN PWR GRID</td>
-      <td class="num"><span class="b b-miss"><span class="l-en">lagging</span><span class="l-zh">落后</span></span> -12.5%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 0/20</span></td>
+      <td class="num"><span class="b b-miss"><span class="l-en">lagging</span><span class="l-zh">落后</span></span> -9.3%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 0/20</span></td>
       <td><span class="b b-fact"><span class="l-en">FACT mechanism · INFERENCE proxies</span><span class="l-zh">事实 机制 · 推断 代理</span></span><br><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
     </tr>
     
@@ -788,7 +991,7 @@
       <td><strong><span class="l-en">Domestic semiconductors / fabs</span><span class="l-zh">国内半导体/晶圆厂</span></strong></td>
       <td><span class="l-en">25% Section-232 chip tariff pressures import channels (no verified fab-input exemption)</span><span class="l-zh">25%的232条款芯片关税挤压进口渠道（无已核实的建厂进口豁免）</span></td>
       <td class="prox">SMH SOXX</td>
-      <td class="num"><span class="b b-fact"><span class="l-en">working</span><span class="l-zh">达标</span></span> +4.1%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 19/20</span></td>
+      <td class="num"><span class="b b-fact"><span class="l-en">working</span><span class="l-zh">达标</span></span> +2.9%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 19/20</span></td>
       <td><span class="b b-fact"><span class="l-en">FACT mechanism · INFERENCE proxies</span><span class="l-zh">事实 机制 · 推断 代理</span></span><br><span class="conf"><span class="l-en">medium-high</span><span class="l-zh">中高</span></span></td>
     </tr>
     
@@ -796,7 +999,7 @@
       <td><strong><span class="l-en">Financials / dealer banks</span><span class="l-zh">金融/做市商银行</span></strong></td>
       <td><span class="l-en">eSLR reform + central-clearing + buyback expansion ease bank Treasury intermediation</span><span class="l-zh">eSLR改革+中央清算+扩大回购，缓解银行承接国债的约束</span></td>
       <td class="prox">XLF KBE</td>
-      <td class="num"><span class="b b-fact"><span class="l-en">working</span><span class="l-zh">达标</span></span> +4.9%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 14/20</span></td>
+      <td class="num"><span class="b b-fact"><span class="l-en">working</span><span class="l-zh">达标</span></span> +5.1%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 14/20</span></td>
       <td><span class="b b-fact"><span class="l-en">FACT mechanism · INFERENCE proxies</span><span class="l-zh">事实 机制 · 推断 代理</span></span><br><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
     </tr>
     
@@ -820,7 +1023,7 @@
       <td><strong><span class="l-en">Energy (oil &amp; gas)</span><span class="l-zh">能源（油气）</span></strong></td>
       <td><span class="l-en">2026 Iran war drove oil above $120/bbl at the Hormuz-closure peak (Brent), making Energy the top ETF-inflow sector Q1 2026; ceasefire declared over 7/8 (Trump), Brent spiked ~$80 intraday, Hormuz near-standstill by 7/9 -- now re-escalation, not ceasefire, is the base state</span><span class="l-zh">2026年伊朗战争在霍尔木兹封锁高峰期将布伦特推升至120美元以上，使能源成为2026年一季度ETF净流入最多板块；停火于7/8被宣告终结（特朗普），布伦特盘中飙至约80美元，7/9起霍尔木兹濒临停滞——再升级、而非停火，现为基准状态</span></td>
       <td class="prox">XLE XOP</td>
-      <td class="num"><span class="b b-miss"><span class="l-en">lagging</span><span class="l-zh">落后</span></span> -4.3%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 0/20</span></td>
+      <td class="num"><span class="b b-miss"><span class="l-en">lagging</span><span class="l-zh">落后</span></span> -5.9%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 0/20</span></td>
       <td><span class="b b-fact"><span class="l-en">FACT mechanism (headline-fragile)</span><span class="l-zh">事实 机制 (易受头条扰动)</span></span><br><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
     </tr>
     
@@ -828,7 +1031,7 @@
       <td><strong><span class="l-en">Critical minerals / rare earths</span><span class="l-zh">关键矿产/稀土</span></strong></td>
       <td><span class="l-en">De-risking funds domestic minerals — BUT the Nov-2025 China truce restores rare-earth/gallium/germanium licenses, capping the squeeze (two-sided)</span><span class="l-zh">去风险为国内矿产提供资金——但2025年11月中国休战恢复稀土/镓/锗许可，抑制逼空（两面性）</span></td>
       <td class="prox">REMX MP</td>
-      <td class="num"><span class="b b-miss"><span class="l-en">lagging</span><span class="l-zh">落后</span></span> -41.3%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 0/20</span></td>
+      <td class="num"><span class="b b-miss"><span class="l-en">lagging</span><span class="l-zh">落后</span></span> -39.3%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 0/20</span></td>
       <td><span class="b b-fact"><span class="l-en">FACT mechanism (truce caveat)</span><span class="l-zh">事实 机制 (休战告诫)</span></span><br><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
     </tr>
     
@@ -1365,7 +1568,7 @@
   <p class="srcs"><strong><span class="l-en">Primary sources</span><span class="l-zh">一手来源</span>:</strong>
     <a href="https://www.federalreserve.gov/mediacenter/files/FOMCpresconf20260617.pdf" target="_blank" rel="noopener">[1]</a> <a href="https://www.federalreserve.gov/monetarypolicy/files/fomcprojtabl20260617.pdf" target="_blank" rel="noopener">[2]</a> <a href="https://www.cfr.org/articles/what-kevin-warshs-confirmation-hearing-revealed-about-the-future-of-the-fed" target="_blank" rel="noopener">[3]</a> <a href="https://home.treasury.gov/news/press-releases/sb0314" target="_blank" rel="noopener">[4]</a> <a href="https://www.whitehouse.gov/fact-sheets/2026/01/fact-sheet-president-donald-j-trump-takes-action-on-certain-advanced-computing-chips-to-protect-americas-economic-and-national-security/" target="_blank" rel="noopener">[5]</a> <a href="https://www.energy.gov/ne/articles/9-key-takeaways-president-trumps-executive-orders-nuclear-energy" target="_blank" rel="noopener">[6]</a> <a href="https://www.cnbc.com/2026/06/17/kevin-warsh-fed-interest-rates-risk-analysis.html" target="_blank" rel="noopener">[7]</a> <a href="https://www.npr.org/2026/06/17/nx-s1-5860084/fed-chief-warsh-first-fomc-meeting" target="_blank" rel="noopener">[8]</a> <a href="https://www.whitehouse.gov/fact-sheets/2025/11/fact-sheet-president-donald-j-trump-strikes-deal-on-economic-and-trade-relations-with-china/" target="_blank" rel="noopener">[9]</a> <a href="https://www.congress.gov/crs-product/R48549" target="_blank" rel="noopener">[10]</a> <a href="https://commonslibrary.parliament.uk/research-briefings/cbp-10637/" target="_blank" rel="noopener">[11]</a> <a href="https://www.aljazeera.com/news/2026/6/14/us-iran-ceasefire-deal-announced-trump-says-strait-of-hormuz-reopening" target="_blank" rel="noopener">[12]</a> <a href="https://www.csis.org/analysis/unpacking-15-trillion-fy-2027-defense-budget-topline" target="_blank" rel="noopener">[13]</a> <a href="https://www.nato.int/en/about-us/official-texts-and-resources/official-texts/2025/06/25/the-hague-summit-declaration" target="_blank" rel="noopener">[14]</a> <a href="https://www.congress.gov/crs-product/R48891" target="_blank" rel="noopener">[15]</a> <a href="https://home.treasury.gov/news/press-releases/sb0197" target="_blank" rel="noopener">[16]</a> <a href="https://www.cfr.org/articles/mar-lago-accord-not-recipe-success" target="_blank" rel="noopener">[17]</a> <a href="https://www.ishares.com/us/insights/inside-the-market/2026-etf-market-trends-and-flows" target="_blank" rel="noopener">[18]</a> <a href="https://www.cnbc.com/2026/06/24/cnbc-transcript-us-treasury-secretary-scott-bessent-speaks-with-cnbcs-joe-kernen-on-squawk-box-today.html" target="_blank" rel="noopener">[19]</a> <a href="https://home.treasury.gov/news/press-releases/sb0539" target="_blank" rel="noopener">[20]</a> <a href="https://www.coindesk.com/markets/2026/06/24/gold-silver-and-bitcoin-tumble-as-debasement-trade-unwinds" target="_blank" rel="noopener">[21]</a> <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" rel="noopener">[22]</a> <a href="https://www.bea.gov/data/personal-consumption-expenditures-price-index-excluding-food-and-energy" target="_blank" rel="noopener">[23]</a> <a href="https://www.bls.gov/news.release/archives/empsit_07022026.htm" target="_blank" rel="noopener">[24]</a> <a href="https://www.cnbc.com/2026/07/01/kevin-warsh-ecb-forum-live-updates.html" target="_blank" rel="noopener">[25]</a> <a href="https://www.energy.gov/articles/us-department-energy-meets-president-trumps-goal-delivers-third-advanced-reactor" target="_blank" rel="noopener">[26]</a> <a href="https://www.congress.gov/crs-product/LSB11398" target="_blank" rel="noopener">[27]</a> <a href="https://www.supremecourt.gov/opinions/25pdf/24-1287_4gcj.pdf" target="_blank" rel="noopener">[28]</a> <a href="https://www.axios.com/2026/06/14/us-iran-ceasefire-extended-hormuz-reopen-trump" target="_blank" rel="noopener">[29]</a> <a href="https://www.cnn.com/2026/07/08/politics/trump-iran-ceasefire-over-nato-summit" target="_blank" rel="noopener">[30]</a> <a href="https://www.spglobal.com/commodity-insights/en/news-research/latest-news/oil/070826-trump-declares-iran-ceasefire-over-oil-prices-spike" target="_blank" rel="noopener">[31]</a> <a href="https://www.federalreserve.gov/monetarypolicy/files/fomcminutes20260617.pdf" target="_blank" rel="noopener">[32]</a> <a href="https://www.perkinscole.com/en/news-and-insights/section-122-tariff-150-day-expiry-july-2026" target="_blank" rel="noopener">[33]</a> <a href="https://www.jdsupra.com/legalnews/cit-strikes-section-122-tariffs-may-7-2026/" target="_blank" rel="noopener">[34]</a> <a href="https://www.ustr.gov/about-us/policy-offices/press-office/press-releases/2026/july/ustr-section-301-replacement-tariff-proposal" target="_blank" rel="noopener">[35]</a> 
   </p>
-  <p class="conf"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-04 02:12 UTC · <span class="l-en">context only — not investment advice</span><span class="l-zh">仅供参考——不构成投资建议</span></p>
+  <p class="conf"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-04 02:23 UTC · <span class="l-en">context only — not investment advice</span><span class="l-zh">仅供参考——不构成投资建议</span></p>
 
 </div>
 
@@ -1399,6 +1602,6 @@
 })();
 </script>
 
-<script src="theme.js?v=55773325" defer></script>
+<script src="theme.js"></script>
 </body>
 </html>

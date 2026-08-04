@@ -1,0 +1,2359 @@
+{
+  "as_of": "2026-08-03",
+  "gaps": [],
+  "generated_at": "2026-08-04T02:23:33Z",
+  "inputs_hash": "sha256:db5a14d968cdce01fbbccaadc4174717a3a5721616c3c549838084630dbf0922",
+  "produced_at": "2026-08-04T02:23:34Z",
+  "produced_by": "scripts/build_seasonality_shadow_state.py",
+  "schema": "neuralweb.biopharma_seasonality_state.file.v1",
+  "schema_version": 1,
+  "states": {
+    "A": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 128,
+        "end_doy": 344,
+        "occurrence_end_date": "2026-12-10",
+        "pattern_id": "cal:A:299-344",
+        "phase": "out_of_window",
+        "start_doy": 299,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:A",
+        "ticker": "A",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.096952,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.598739,
+          0.870473
+        ],
+        "edge": 0.18825,
+        "horizon_td": 129,
+        "p": 0.76,
+        "p_baseline": 0.57175,
+        "quantiles": {
+          "q05": -0.030362,
+          "q50": 0.08634,
+          "q95": 0.205606
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:340fcbb3e4e656d8869f7ee004cc5e2055017c3ae933fe3b32ddd2ebaf53caa4",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:a09acc324b29243676c53913aca60a493223c2de02f8011bfd6193b9ee52323d"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "ABT": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 149,
+        "end_doy": 365,
+        "occurrence_end_date": "2026-12-31",
+        "pattern_id": "cal:ABT:345-365",
+        "phase": "out_of_window",
+        "start_doy": 345,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:ABT",
+        "ticker": "ABT",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.938031,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.642303,
+          0.899096
+        ],
+        "edge": 0.228174,
+        "horizon_td": 150,
+        "p": 0.8,
+        "p_baseline": 0.571826,
+        "quantiles": {
+          "q05": -0.024408,
+          "q50": 0.01819,
+          "q95": 0.046648
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:05a2c5a7d2e638b2ff5a4d714d1b557c714dd075174b01350ff14fe7e5f5df52",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:066ba6b80381314b0e7b761b65770b416baa750c6111935a9a96babcb9d9cad9"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "AMGN": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 360,
+        "end_doy": 211,
+        "occurrence_end_date": "2027-07-30",
+        "pattern_id": "cal:AMGN:181-211",
+        "phase": "out_of_window",
+        "start_doy": 181,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:AMGN",
+        "ticker": "AMGN",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.212394,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.687505,
+          0.92608
+        ],
+        "edge": 0.313313,
+        "horizon_td": 361,
+        "p": 0.84,
+        "p_baseline": 0.526687,
+        "quantiles": {
+          "q05": -0.036558,
+          "q50": 0.0572,
+          "q95": 0.256872
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:01bccfedb58f77b076ea35adee10549f811248e6e4c24e2ce34d052d2e8d2f7b",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:febfeb9904f38de2fa3f2315e87e06de14900a61ea04c0c51384b4ca7738f924"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "AZN": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 268,
+        "end_doy": 119,
+        "occurrence_end_date": "2027-04-29",
+        "pattern_id": "cal:AZN:29-119",
+        "phase": "out_of_window",
+        "start_doy": 29,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:AZN",
+        "ticker": "AZN",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.301349,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.556556,
+          0.84047
+        ],
+        "edge": 0.122182,
+        "horizon_td": 269,
+        "p": 0.72,
+        "p_baseline": 0.597818,
+        "quantiles": {
+          "q05": -0.04199,
+          "q50": 0.07031,
+          "q95": 0.192598
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:1828296a07424effc49153b761c4faa70eb203164b061ac8530ed41193b8321b",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:d2658a3db1c29c65c0ceafd538b234e4b5e647cef85a5e512875f3b35e5e2434"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "BSX": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 167,
+        "end_doy": 18,
+        "occurrence_end_date": "2027-01-18",
+        "pattern_id": "cal:BSX:3-18",
+        "phase": "out_of_window",
+        "start_doy": 3,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:BSX",
+        "ticker": "BSX",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.663168,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.51558,
+          0.809259
+        ],
+        "edge": 0.124571,
+        "horizon_td": 168,
+        "p": 0.68,
+        "p_baseline": 0.555429,
+        "quantiles": {
+          "q05": -0.035224,
+          "q50": 0.04667,
+          "q95": 0.133372
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:263b9aa972899ed782f72ba522b7b83ee15e100166c2b5c5ba6f3653466f6683",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:3ec167739aa37ae9bd3180b97fe2b5590672c4e894064e1e000be2d3f0a14398"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "CVS": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 119,
+        "end_doy": 335,
+        "occurrence_end_date": "2026-12-01",
+        "pattern_id": "cal:CVS:325-335",
+        "phase": "out_of_window",
+        "start_doy": 325,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:CVS",
+        "ticker": "CVS",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.383808,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.734759,
+          0.951012
+        ],
+        "edge": 0.326986,
+        "horizon_td": 120,
+        "p": 0.88,
+        "p_baseline": 0.553014,
+        "quantiles": {
+          "q05": -0.01737,
+          "q50": 0.02079,
+          "q95": 0.06255
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:3b8920a3ef2bffd26084dab41fc8032b1160b15980f51c157a93f3ca78d9538f",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:7753c88c05d7b9d6178820e1b8912b334e2a7b8476c7fbeb86d118912cf815da"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "DGX": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 299,
+        "end_doy": 150,
+        "occurrence_end_date": "2027-05-30",
+        "pattern_id": "cal:DGX:60-150",
+        "phase": "out_of_window",
+        "start_doy": 60,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:DGX",
+        "ticker": "DGX",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.033983,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.734759,
+          0.951012
+        ],
+        "edge": 0.231564,
+        "horizon_td": 300,
+        "p": 0.88,
+        "p_baseline": 0.648436,
+        "quantiles": {
+          "q05": -0.044232,
+          "q50": 0.09666,
+          "q95": 0.182346
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:981c46c2003a0ba9233ad6e4f0124cb4992e6e800fdb6f95d337ba5b9c3ebdad",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:bba42b897d08a442b5ece0e5d13cc01e66f8807ed9ad77dc14b0b68ae06b7063"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "DHR": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 142,
+        "end_doy": 358,
+        "occurrence_end_date": "2026-12-24",
+        "pattern_id": "cal:DHR:298-358",
+        "phase": "out_of_window",
+        "start_doy": 298,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:DHR",
+        "ticker": "DHR",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.591204,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.734759,
+          0.951012
+        ],
+        "edge": 0.245115,
+        "horizon_td": 143,
+        "p": 0.88,
+        "p_baseline": 0.634885,
+        "quantiles": {
+          "q05": -0.045838,
+          "q50": 0.04688,
+          "q95": 0.13344
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:30a48dfceacbc676d2535b8fb0c9703a0a15a7e6de966e9065a31158eb1d38c0",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:65c80fde4b4ef43a690443f4bbd0cec953bb624dd5f6f8baaa3db52d4433e09a"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "DXCM": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 12,
+        "end_doy": 228,
+        "occurrence_end_date": "2026-08-16",
+        "pattern_id": "cal:DXCM:223-228",
+        "phase": "pre_window",
+        "start_doy": 223,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:DXCM",
+        "ticker": "DXCM",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 20,
+        "n_independent": 20,
+        "n_issuers": 1,
+        "p_max_t": 0.322339,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.567781,
+          0.872631
+        ],
+        "edge": 0.227083,
+        "horizon_td": 13,
+        "p": 0.75,
+        "p_baseline": 0.522917,
+        "quantiles": {
+          "q05": -0.019417,
+          "q50": 0.032815,
+          "q95": 0.068519
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:aa9ce29d8c8c426ad23ca800a7dc9fe2b84bb1f874e9d00b059eddc5ec907470",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:7436d9211c7dbff33d3fabc5be27a5a3193fd8021cf5de549f2b8c08aa112f48"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "EW": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 238,
+        "end_doy": 89,
+        "occurrence_end_date": "2027-03-30",
+        "pattern_id": "cal:EW:74-89",
+        "phase": "out_of_window",
+        "start_doy": 74,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:EW",
+        "ticker": "EW",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.532734,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.598739,
+          0.870473
+        ],
+        "edge": 0.173714,
+        "horizon_td": 239,
+        "p": 0.76,
+        "p_baseline": 0.586286,
+        "quantiles": {
+          "q05": -0.010248,
+          "q50": 0.02311,
+          "q95": 0.062822
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:3c1e4a66eccf7b8a17ac2a4357380e270510ffec9d083ad76e65bb50fbca197d",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:4889d2d5ec0339d8cae43982cc2a7c658cd51b5f9fa38d2a036664c0a8ae6817"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "IBB": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 113,
+        "end_doy": 329,
+        "occurrence_end_date": "2026-11-25",
+        "pattern_id": "cal:IBB:324-329",
+        "phase": "out_of_window",
+        "start_doy": 324,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:IBB",
+        "ticker": "IBB",
+        "type": "etf"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 24,
+        "n_independent": 24,
+        "n_issuers": 1,
+        "p_max_t": 0.296852,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.676213,
+          0.922902
+        ],
+        "edge": 0.292014,
+        "horizon_td": 114,
+        "p": 0.833333,
+        "p_baseline": 0.541319,
+        "quantiles": {
+          "q05": -0.008635,
+          "q50": 0.01425,
+          "q95": 0.047555
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:5e9bf7a90fa161c7f1a2fd22c869e806c6b7ab0581f555445e5b05967f3f76b8",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:e911a07010f91b3af7db6ac5477ca03a4f6687c3f0482b297d2c19f01e59e860"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "IDXX": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 264,
+        "end_doy": 115,
+        "occurrence_end_date": "2027-04-25",
+        "pattern_id": "cal:IDXX:105-115",
+        "phase": "out_of_window",
+        "start_doy": 105,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:IDXX",
+        "ticker": "IDXX",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.778111,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.687505,
+          0.92608
+        ],
+        "edge": 0.275718,
+        "horizon_td": 265,
+        "p": 0.84,
+        "p_baseline": 0.564282,
+        "quantiles": {
+          "q05": -0.02205,
+          "q50": 0.02594,
+          "q95": 0.124692
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:4d9096f224dc8105f17709eaa152491004f23c73f3405f0875e6bfe0fd5ae95f",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:fc42267a5a39a14e6924d629ab972a6c5504ff29b602fa0c0ecba70b1772e0af"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "ILMN": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 51,
+        "end_doy": 267,
+        "occurrence_end_date": "2026-09-24",
+        "pattern_id": "cal:ILMN:262-267",
+        "phase": "out_of_window",
+        "start_doy": 262,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:ILMN",
+        "ticker": "ILMN",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.443278,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.07392,
+          0.312495
+        ],
+        "edge": -0.361,
+        "horizon_td": 52,
+        "p": 0.16,
+        "p_baseline": 0.521,
+        "quantiles": {
+          "q05": -0.099994,
+          "q50": -0.02503,
+          "q95": 0.032504
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:0d59e9796bfe3e87f13fb88d01c9c706e0b3a475ab05f3ffaeecbdaacd5b8dd6",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:aa6f4b962e23e331e20320bfc1d7080c547659457a25b32ddbce67ff940ddf22"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "ISRG": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 302,
+        "end_doy": 153,
+        "occurrence_end_date": "2027-06-02",
+        "pattern_id": "cal:ISRG:143-153",
+        "phase": "out_of_window",
+        "start_doy": 143,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:ISRG",
+        "ticker": "ISRG",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.598701,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.687505,
+          0.92608
+        ],
+        "edge": 0.28169,
+        "horizon_td": 303,
+        "p": 0.84,
+        "p_baseline": 0.55831,
+        "quantiles": {
+          "q05": -0.016062,
+          "q50": 0.02496,
+          "q95": 0.094382
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:e1d8cc5550f6537a6c2fd4bbb3d87b2661b87066e2c3f736b605a63ed6821a97",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:ec2b4b82bf1b438d23db10da5703bbc13c201ea0cd2ecbaea16e6f91e5e35782"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "LH": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 241,
+        "end_doy": 92,
+        "occurrence_end_date": "2027-04-02",
+        "pattern_id": "cal:LH:82-92",
+        "phase": "out_of_window",
+        "start_doy": 82,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:LH",
+        "ticker": "LH",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.528236,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.642303,
+          0.899096
+        ],
+        "edge": 0.24,
+        "horizon_td": 242,
+        "p": 0.8,
+        "p_baseline": 0.56,
+        "quantiles": {
+          "q05": -0.021428,
+          "q50": 0.02503,
+          "q95": 0.06604
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:a2d6dda2f53c088b949bc11f500d2b0ff596d48f85afd7bcdee0b86c5c822ef8",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:46afab5a145b835df5c621b4cf96d95fff47c4297086bb09b460b4d25bdbc598"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "LLY": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 134,
+        "end_doy": 350,
+        "occurrence_end_date": "2026-12-16",
+        "pattern_id": "cal:LLY:305-350",
+        "phase": "out_of_window",
+        "start_doy": 305,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:LLY",
+        "ticker": "LLY",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.218391,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.687505,
+          0.92608
+        ],
+        "edge": 0.262125,
+        "horizon_td": 135,
+        "p": 0.84,
+        "p_baseline": 0.577875,
+        "quantiles": {
+          "q05": -0.01872,
+          "q50": 0.05048,
+          "q95": 0.189204
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:a542b7482c0765d7ed7fccdb0a9ec2a785bf0713a52be3516fd800db56cc1882",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:4bf44491d990fd965001d72d4e459f1d09066fde3052b90fa65fc275f4301d6a"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "MDT": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 161,
+        "end_doy": 12,
+        "occurrence_end_date": "2027-01-12",
+        "pattern_id": "cal:MDT:7-12",
+        "phase": "out_of_window",
+        "start_doy": 7,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:MDT",
+        "ticker": "MDT",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.413793,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.598739,
+          0.870473
+        ],
+        "edge": 0.235,
+        "horizon_td": 162,
+        "p": 0.76,
+        "p_baseline": 0.525,
+        "quantiles": {
+          "q05": -0.012446,
+          "q50": 0.01542,
+          "q95": 0.034956
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:97f73c7cfe3818e9f73d7baa732c0f06cd1a7c8d8c06b4be3529769e4817573a",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:4f982cd86375feb2a006d4c818c8924c643ad84f615a59d7f32cbf9ab33c68f8"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "NEO": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 90,
+        "end_doy": 306,
+        "occurrence_end_date": "2026-11-02",
+        "pattern_id": "cal:NEO:286-306",
+        "phase": "out_of_window",
+        "start_doy": 286,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:NEO",
+        "ticker": "NEO",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 21,
+        "n_independent": 21,
+        "n_issuers": 1,
+        "p_max_t": 0.252374,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.535248,
+          0.844402
+        ],
+        "edge": 0.213527,
+        "horizon_td": 91,
+        "p": 0.714286,
+        "p_baseline": 0.500759,
+        "quantiles": {
+          "q05": -0.07094,
+          "q50": 0.09899,
+          "q95": 0.24949
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:8952b9f36711ba83010c5d014c5f158cd4dc472ef1667db3aaf54a6909c6bf4b",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:169f441f2176dd9adf79bd36a24340ccfd5b18ed404e4a732d6a7c05f340cd10"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "NVO": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 201,
+        "end_doy": 52,
+        "occurrence_end_date": "2027-02-21",
+        "pattern_id": "cal:NVO:42-52",
+        "phase": "out_of_window",
+        "start_doy": 42,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:NVO",
+        "ticker": "NVO",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.414293,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.734759,
+          0.951012
+        ],
+        "edge": 0.307268,
+        "horizon_td": 202,
+        "p": 0.88,
+        "p_baseline": 0.572732,
+        "quantiles": {
+          "q05": -0.004614,
+          "q50": 0.02092,
+          "q95": 0.07015
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:e87916b3fcc88ee4bbafa0f352adaa7a9af10c4850697fef12766d17eb557ff6",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:c334f36f2b1b22e8632300c5e9948ae5cbe82fd2d38825cab552f4faf9947e44"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "PFE": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 118,
+        "end_doy": 334,
+        "occurrence_end_date": "2026-11-30",
+        "pattern_id": "cal:PFE:324-334",
+        "phase": "out_of_window",
+        "start_doy": 324,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:PFE",
+        "ticker": "PFE",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.610195,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.598739,
+          0.870473
+        ],
+        "edge": 0.246648,
+        "horizon_td": 119,
+        "p": 0.76,
+        "p_baseline": 0.513352,
+        "quantiles": {
+          "q05": -0.027908,
+          "q50": 0.02306,
+          "q95": 0.059358
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:71dde66028f409f860994208ebfb9fc8f2b5a907c19bbdfd73d4c1e7733b30a1",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:f91753df2d5fb432b93758e9b9ce8e6c71f0c17ff0bf0adf129438a4d1f4ffdd"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "PODD": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 337,
+        "end_doy": 188,
+        "occurrence_end_date": "2027-07-07",
+        "pattern_id": "cal:PODD:143-188",
+        "phase": "out_of_window",
+        "start_doy": 143,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:PODD",
+        "ticker": "PODD",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 18,
+        "n_independent": 18,
+        "n_issuers": 1,
+        "p_max_t": 0.272864,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.648177,
+          0.931364
+        ],
+        "edge": 0.245659,
+        "horizon_td": 338,
+        "p": 0.833333,
+        "p_baseline": 0.587674,
+        "quantiles": {
+          "q05": -0.062489,
+          "q50": 0.101405,
+          "q95": 0.16326
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:d5ed462092484984cd492d77c72843889913df32c07e9d31bd0bdfe02f21bf3d",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:e9c329249775f576b7091117b37f436fd1645ef9bb23fb02f752826947401fd5"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "RHHBY": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 260,
+        "end_doy": 111,
+        "occurrence_end_date": "2027-04-21",
+        "pattern_id": "cal:RHHBY:51-111",
+        "phase": "out_of_window",
+        "start_doy": 51,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:RHHBY",
+        "ticker": "RHHBY",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 22,
+        "n_independent": 22,
+        "n_issuers": 1,
+        "p_max_t": 0.762619,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.5529,
+          0.85186
+        ],
+        "edge": 0.156632,
+        "horizon_td": 261,
+        "p": 0.727273,
+        "p_baseline": 0.570641,
+        "quantiles": {
+          "q05": -0.031961,
+          "q50": 0.043165,
+          "q95": 0.11345
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:3f3d551f4ce4396edea596db9b7970db84f9326bce1a790eb01ea4e0062ecdbd",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:d7b3bb8bccbdeef08a57c34c3ccbbe67f2556278a27771280da46d110cb25078"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "RMD": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 52,
+        "end_doy": 268,
+        "occurrence_end_date": "2026-09-25",
+        "pattern_id": "cal:RMD:258-268",
+        "phase": "out_of_window",
+        "start_doy": 258,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:RMD",
+        "ticker": "RMD",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.348826,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.100904,
+          0.357697
+        ],
+        "edge": -0.354141,
+        "horizon_td": 53,
+        "p": 0.2,
+        "p_baseline": 0.554141,
+        "quantiles": {
+          "q05": -0.05174,
+          "q50": -0.02515,
+          "q95": 0.01701
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:0e089b726fc6d1be8da57575c66c2e69c1e06eb83710a06f76b3c609365dc0cb",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:ac2ef8d27c16b9b0f8c1f674d5b705fcd7af9f710c2a359649ec9979b47b3795"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "SYK": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 196,
+        "end_doy": 47,
+        "occurrence_end_date": "2027-02-16",
+        "pattern_id": "cal:SYK:2-47",
+        "phase": "out_of_window",
+        "start_doy": 2,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:SYK",
+        "ticker": "SYK",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.684658,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.734759,
+          0.951012
+        ],
+        "edge": 0.278,
+        "horizon_td": 197,
+        "p": 0.88,
+        "p_baseline": 0.602,
+        "quantiles": {
+          "q05": -0.065616,
+          "q50": 0.05135,
+          "q95": 0.158498
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:153e951b7a092d5b51569d7b90500c033ceba295aa2829fa5f9cc97eda524023",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:2b545b28eba57efe9913d519f150b1b9c096443df30b4c39e60d8a30585b92c8"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "TMO": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 355,
+        "end_doy": 206,
+        "occurrence_end_date": "2027-07-25",
+        "pattern_id": "cal:TMO:191-206",
+        "phase": "out_of_window",
+        "start_doy": 191,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:TMO",
+        "ticker": "TMO",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.716642,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.642303,
+          0.899096
+        ],
+        "edge": 0.237371,
+        "horizon_td": 356,
+        "p": 0.8,
+        "p_baseline": 0.562629,
+        "quantiles": {
+          "q05": -0.023312,
+          "q50": 0.03582,
+          "q95": 0.104232
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:d187f0f89bc16c5b2a394fdf4a0785fb244ae6ff2c74d9319ab8a2dbb1635e33",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:f5ad02409f33fb6a8c7dc0661b22bfbfbee970140debca0f96cb9a2016ef92e8"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "XBI": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 353,
+        "end_doy": 204,
+        "occurrence_end_date": "2027-07-23",
+        "pattern_id": "cal:XBI:144-204",
+        "phase": "out_of_window",
+        "start_doy": 144,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:XBI",
+        "ticker": "XBI",
+        "type": "etf"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 19,
+        "n_independent": 19,
+        "n_issuers": 1,
+        "p_max_t": 0.064968,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.726517,
+          0.964535
+        ],
+        "edge": 0.308887,
+        "horizon_td": 354,
+        "p": 0.894737,
+        "p_baseline": 0.58585,
+        "quantiles": {
+          "q05": -0.011069,
+          "q50": 0.08048,
+          "q95": 0.17328
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:a895c67523a941e1b93b1e2aa938664a7333fe19d5e43ab183755ce15d7c9f4e",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:bc41cdf97aa7f0995dcab1734bb05946d3c44a5266f219065dd193c7d422fea7"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "XLV": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 128,
+        "end_doy": 344,
+        "occurrence_end_date": "2026-12-10",
+        "pattern_id": "cal:XLV:324-344",
+        "phase": "out_of_window",
+        "start_doy": 324,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:XLV",
+        "ticker": "XLV",
+        "type": "etf"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 25,
+        "n_independent": 25,
+        "n_issuers": 1,
+        "p_max_t": 0.354823,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.687505,
+          0.92608
+        ],
+        "edge": 0.260174,
+        "horizon_td": 129,
+        "p": 0.84,
+        "p_baseline": 0.579826,
+        "quantiles": {
+          "q05": -0.010292,
+          "q50": 0.01721,
+          "q95": 0.038694
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:dd227ca4a18fcccbb53df761138fc134ce0c953763cf53a7dedc45acc56d74fd",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:1862218e9362fb518a5ffcd9e45b3a06e0adb5268b2eddec4969eb312a1c52ad"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "forward_sample_thin"
+        ]
+      }
+    },
+    "ZBH": {
+      "artifact_id": "data-neuralweb-biopharma-seasonality-state",
+      "asof": "2026-08-03",
+      "authority": {
+        "may_boost_confidence": false,
+        "may_deescalate": false,
+        "may_explain": true,
+        "may_flag_attention": true,
+        "may_gate": false,
+        "may_originate": false,
+        "may_rank": false,
+        "may_rewrite_geometry": false,
+        "may_size": false
+      },
+      "available_at": "2026-08-04T02:23:33Z",
+      "clock": {
+        "days_to_window_end": 238,
+        "end_doy": 89,
+        "occurrence_end_date": "2027-03-30",
+        "pattern_id": "cal:ZBH:84-89",
+        "phase": "out_of_window",
+        "start_doy": 84,
+        "type": "calendar",
+        "window_source": "symbol_best"
+      },
+      "entity": {
+        "id": "ticker:ZBH",
+        "ticker": "ZBH",
+        "type": "issuer"
+      },
+      "evidence": {
+        "live_n": 0,
+        "n_date_clusters": 24,
+        "n_independent": 24,
+        "n_issuers": 1,
+        "p_max_t": 0.401799,
+        "q_by": null,
+        "spa_p": null
+      },
+      "expires_at": "2026-08-06T02:23:33Z",
+      "forecast": {
+        "baseline_basis": "same_length_all_starts_mean",
+        "ci90": [
+          0.725081,
+          0.948924
+        ],
+        "edge": 0.349769,
+        "horizon_td": 239,
+        "p": 0.875,
+        "p_baseline": 0.525231,
+        "quantiles": {
+          "q05": -0.018804,
+          "q50": 0.01603,
+          "q95": 0.03371
+        },
+        "target": "default_window_return_gt_0"
+      },
+      "hooks": {
+        "calendar_tailwind_vs_event_hazard": {
+          "status": "event_clock_not_built"
+        },
+        "momentum_overlap": {
+          "note": "covariance-spine crosswalk lands with Lane 4",
+          "status": "not_yet_measured"
+        }
+      },
+      "is_context_only": true,
+      "provenance": {
+        "data_snapshot": "sha256:b040413969a4fdbfe7777ba285cd7991b5bd78784de0ea6a70c321f0416c6f5e",
+        "model_version": "seasonality-calendar-v1",
+        "pattern_spec_hash": "sha256:97d300f9207c69c77886ccfd1c31de7a09d92ea8be26c12a6f89cc3408240472"
+      },
+      "schema": "neuralweb.biopharma_seasonality_state.v1",
+      "tier": "shadow",
+      "uncertainty": {
+        "abstain": false,
+        "flags": [
+          "raw_null_not_cleared",
+          "neutral_null_not_cleared",
+          "stability_fragile",
+          "forward_sample_thin"
+        ]
+      }
+    }
+  },
+  "tier": "shadow",
+  "universe": {
+    "n_covered": 28,
+    "n_emitted": 28,
+    "n_gaps": 0,
+    "sector_filter": "Health Care",
+    "source": "site/seasonalitydata/index.json"
+  }
+}

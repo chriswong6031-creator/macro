@@ -935,10 +935,481 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=8798caae">
-<link rel="stylesheet" href="assets/css/1497dedc.css?v=1497dedc">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ── CSS Variables (aurora-glass palette) ── */
+:root {
+  --bg-base:       var(--bg, #0d0f14);
+  --bg-glass:      rgba(18,22,32,0.72);
+  --bg-glass-2:    rgba(24,28,42,0.60);
+  --bg-card:       rgba(20,24,36,0.85);
+  --border:        rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.14);
+  --text-primary:  var(--text, #e8eaf0);
+  --text-secondary:var(--muted, #8b90a8);
+  --text-muted:    #4e5370;
+  --text-dim:      #3a3e54;
+  --col-ignition:  #3b82f6;
+  --col-quiet:     #7c3aed;
+  --col-suppressed:#6b7280;
+  --col-breakaway: #22c55e;
+  --col-leading:   #16a34a;
+  --col-crowded:   #f59e0b;
+  --col-failed:    #ef4444;
+  --glow-ignition:  rgba(59,130,246,0.18);
+  --glow-quiet:     rgba(124,58,237,0.18);
+  --glow-suppressed:rgba(107,114,128,0.12);
+  --glow-breakaway: rgba(34,197,94,0.15);
+  --glow-failed:    rgba(239,68,68,0.10);
+  --radius-card: 14px;
+  --radius-chip: 6px;
+  --transition: 0.18s ease;
+  /* ── mx5 port: mono numerals + deliberate type scale ──
+     Alias the house mono token (theme.css --font-mono) so the numeric face
+     matches the rest of the site. Lead the inline fallback with ui-monospace,
+     NOT the literal "SF Mono": Chromium can't resolve "SF Mono" by that family
+     name and falls back to SERIF, which is what broke the gauge numerals.
+     ui-monospace resolves to SF Mono on macOS/iOS and the platform mono
+     elsewhere. */
+  --num: var(--font-mono, ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace);
+  --fs-display: 44px;
+  --fs-num-xl:  38px;
+  --fs-h1:      27px;
+  --fs-num-lg:  22px;
+  --fs-h2:      16px;
+  --fs-md:      15px;
+  --fs-body:    14px;
+  --fs-sm:      12.5px;
+  --fs-label:   11px;
+  --fs-micro:   10px;
+  /* ── laser hairlines + machined-surface shadow ── */
+  --hair:        rgba(255,255,255,0.06);
+  --hair-strong: rgba(255,255,255,0.11);
+  --tile:        rgba(255,255,255,0.025);
+  --ms: inset 0 1px 0 0 rgba(255,255,255,.05), 0 1px 1px rgba(0,0,0,.28), 0 16px 36px -22px rgba(0,0,0,.62);
+  /* ── mx5 glass card system ── */
+  --mx5-glass-bg:     rgba(17,22,31,.60);
+  --mx5-glass-border: rgba(255,255,255,.10);
+  --mx5-glass-shadow: 0 8px 32px rgba(0,0,0,.5), 0 1.5px 0 rgba(255,255,255,.06) inset;
+  --mx5-glass-hover:  0 16px 46px -8px rgba(0,0,0,.6), 0 1.5px 0 rgba(255,255,255,.10) inset;
+  --mx5-blur:         blur(20px) saturate(1.35);
+  --mx5-radius-card:  18px;
+  /* ── section rail + eyebrow tracking ── */
+  --rail: var(--col-ignition);
+  --trk:  .16em;
+}
+[data-theme="light"] {
+  --bg-base: #f0f2f8;
+  --bg-glass: rgba(255,255,255,0.78);
+  --bg-glass-2: rgba(240,242,248,0.82);
+  --bg-card: rgba(255,255,255,0.92);
+  --border: rgba(0,0,0,0.07);
+  --border-strong: rgba(0,0,0,0.13);
+  --text-primary: #0f1117;
+  --text-secondary: #4b5068;
+  --text-muted: #8a8fa8;
+  --text-dim: #c0c3d0;
+  --glow-ignition: rgba(59,130,246,0.10);
+  --glow-quiet: rgba(124,58,237,0.10);
+  --glow-breakaway: rgba(34,197,94,0.10);
+  --glow-failed: rgba(239,68,68,0.07);
+  /* mx5 light overrides */
+  --hair:        rgba(15,20,35,0.07);
+  --hair-strong: rgba(15,20,35,0.12);
+  --tile:        rgba(15,20,35,0.02);
+  --ms: inset 0 1px 0 0 rgba(255,255,255,.7), 0 1px 2px rgba(20,30,50,.05), 0 16px 34px -22px rgba(20,30,50,.18);
+  --mx5-glass-bg:     rgba(255,255,255,.82);
+  --mx5-glass-border: rgba(15,20,35,.09);
+  --mx5-glass-shadow: 0 12px 34px -14px rgba(20,32,64,.22), 0 1.5px 0 rgba(255,255,255,.9) inset;
+  --mx5-glass-hover:  0 18px 46px -12px rgba(20,32,64,.28), 0 1.5px 0 rgba(255,255,255,.95) inset;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{font-family:var(--font-ui,-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif);background:var(--bg-base);color:var(--text-primary);min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased;margin:0;padding-top:24px;
+  --aur-a:rgba(59,130,246,0.13);--aur-b:rgba(124,58,237,0.12);--aur-c:rgba(34,197,94,0.06);}
+/* Regime-tinted ambient aurora (static — painted once, perf-safe) */
+body.rg-narrow{--aur-a:rgba(245,158,11,0.14);--aur-b:rgba(59,130,246,0.10);--aur-c:rgba(124,58,237,0.06);}
+body.rg-broad{--aur-a:rgba(34,197,94,0.15);--aur-b:rgba(59,130,246,0.10);--aur-c:rgba(34,197,94,0.07);}
+body.rg-mixed{--aur-a:rgba(59,130,246,0.12);--aur-b:rgba(124,58,237,0.11);--aur-c:rgba(148,163,184,0.05);}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(680px 460px at 12% -6%,var(--aur-a) 0%,transparent 68%),
+    radial-gradient(620px 460px at 92% 2%,var(--aur-b) 0%,transparent 70%),
+    radial-gradient(760px 520px at 55% 114%,var(--aur-c) 0%,transparent 70%);}
+a{text-decoration:none;color:inherit;}
+.page-wrap{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:20px 28px 52px;}
+.glass{background:var(--mx5-glass-bg);border:1px solid var(--mx5-glass-border);border-radius:var(--mx5-radius-card);backdrop-filter:var(--mx5-blur);-webkit-backdrop-filter:var(--mx5-blur);box-shadow:var(--mx5-glass-shadow);}
+/* Mono tabular numerals — the terminal feel */
+.num{font-family:var(--num);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;letter-spacing:-.01em;}
+/* ── mx5 animation keyframes (opacity / dash-reveal — one-shot, perf-safe) ── */
+@keyframes lrRise{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
+@keyframes lrGlowBreathe{0%,100%{opacity:.32;}50%{opacity:.72;}}
+@keyframes lrDrawIn{to{stroke-dashoffset:0;}}
+@keyframes lrBarGrow{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+@keyframes lrDotPulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+/* breadth gauge: the scale arc draws left→right, then the value marker fades in.
+   Rest state is the finished frame (full arc / visible marker) so the value is
+   correct even when the animation is skipped — the old needle broke precisely
+   because its resting value lived only inside a (losing) keyframe. */
+@keyframes lrArcReveal{from{stroke-dashoffset:100;}}
+@keyframes lrMarkFade{from{opacity:0;}to{opacity:1;}}
+/* ═══════════════ HERO ═══════════════ */
+.lr-hero{position:relative;display:grid;grid-template-columns:minmax(0,0.86fr) minmax(0,1.14fr);gap:0;overflow:hidden;margin-bottom:20px;padding:0;animation:lrRise .5s cubic-bezier(.22,.9,.26,1.02) both;}
+.lr-hero-read{padding:24px 26px 22px;display:flex;flex-direction:column;gap:12px;min-width:0;}
+.lr-eyebrow{font-size:var(--fs-label);font-weight:700;letter-spacing:var(--trk);text-transform:uppercase;color:var(--text-muted);}
+.lr-verdict-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.lr-verdict{font-size:var(--fs-display);font-weight:800;letter-spacing:-.025em;line-height:.98;color:var(--text-primary);}
+.lr-verdict.r-narrow{color:var(--col-crowded);}
+.lr-verdict.r-broad{color:var(--col-breakaway);}
+.lr-verdict.r-mixed{color:var(--text-primary);}
+.lr-stance{font-size:var(--fs-md);font-weight:700;letter-spacing:-.01em;color:var(--text-primary);}
+.lr-stance .lr-stance-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:baseline;box-shadow:0 0 10px currentColor;}
+.lr-says{font-size:var(--fs-sm);color:var(--text-secondary);line-height:1.5;max-width:46ch;}
+/* what-would-flip-it callout */
+.lr-flip{display:flex;gap:9px;align-items:flex-start;font-size:0.78rem;line-height:1.45;color:var(--text-secondary);padding:9px 12px;border-radius:10px;background:color-mix(in srgb,var(--col-crowded) 8%,transparent);border:1px solid color-mix(in srgb,var(--col-crowded) 22%,transparent);}
+.lr-flip .lr-flip-ar{color:var(--col-crowded);font-weight:800;flex-shrink:0;}
+/* count chips */
+.lr-counts{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;}
+.lr-count{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 9px;border-radius:9px;background:var(--tile);border:1px solid var(--hair-strong);font-size:0.74rem;font-weight:600;color:var(--text-secondary);}
+.lr-count b{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:0.95rem;font-weight:800;color:var(--text-primary);letter-spacing:-.02em;}
+.lr-count .lr-cdot{width:7px;height:7px;border-radius:50%;}
+/* ── breadth arc gauge — mx5 idiom (gradient scale + value marker, no centre
+   needle). The value is a marker riding the arc + the numeral in the well;
+   nothing crosses the number, so the read is always clean. ── */
+.lr-gauge-wrap{display:flex;align-items:center;gap:20px;margin:8px 0 2px;}
+.lr-gauge{position:relative;width:158px;height:96px;flex-shrink:0;}
+.lr-gauge svg{width:158px;height:96px;overflow:visible;display:block;}
+.lr-br-track{fill:none;stroke:var(--hair-strong);stroke-width:9;stroke-linecap:round;}
+.lr-br-scale{fill:none;stroke-width:9;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:0;
+  filter:drop-shadow(0 1px 5px rgba(0,0,0,.28));animation:lrArcReveal 1.05s cubic-bezier(.22,.9,.26,1.02);}
+/* Breadth is a direction read (advance/decline) → paint from --down/--up so the
+   global zh swap flips it to 红涨绿跌. Stops get their colour from a CSS rule,
+   not a stop-color="var(…)" presentation attribute (SVG can't resolve var there). */
+.lr-br-g0{stop-color:var(--down);}   /* weak / narrow breadth */
+.lr-br-gm{stop-color:var(--text-muted);}
+.lr-br-g1{stop-color:var(--up);}     /* broad advance */
+/* regime gates etched on the dial: below 40% narrows, over 61% broadens */
+.lr-br-tick{stroke:var(--text-secondary);stroke-width:2;stroke-linecap:round;opacity:.62;}
+.lr-br-halo{fill:color-mix(in srgb,var(--text-primary) 16%,transparent);animation:lrMarkFade .6s .34s both;}
+.lr-br-core{fill:var(--text-primary);stroke:var(--bg-base);stroke-width:2;
+  filter:drop-shadow(0 0 6px color-mix(in srgb,var(--text-primary) 55%,transparent));animation:lrMarkFade .6s .34s both;}
+.lr-gauge-val{position:absolute;left:0;right:0;bottom:2px;text-align:center;pointer-events:none;}
+.lr-gauge-num{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:30px;font-weight:800;letter-spacing:-.03em;color:var(--text-primary);line-height:1;}
+.lr-gauge-cap{font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-top:4px;}
+.lr-gauge-side{min-width:0;}
+.lr-gauge-side .lr-gs-line{font-size:0.82rem;color:var(--text-secondary);line-height:1.5;}
+.lr-gauge-side .lr-gs-line b{color:var(--text-primary);font-weight:700;}
+/* ── lifecycle funnel (hero right) ── */
+.lr-funnel{position:relative;padding:22px 24px 20px;border-left:1px solid var(--hair);display:flex;flex-direction:column;justify-content:center;min-width:0;background:linear-gradient(180deg,rgba(255,255,255,0.012),transparent 40%);}
+.lr-dist{display:flex;height:8px;border-radius:5px;overflow:hidden;margin:18px 0 8px;background:var(--hair-strong);}
+.lr-dist-seg{height:100%;animation:lrBarGrow .7s cubic-bezier(.22,.9,.26,1.02) both;transform-origin:left;}
+.lr-dist-key{display:flex;gap:16px;font-size:0.66rem;color:var(--text-muted);}
+.lr-dist-key .num{color:var(--text-secondary);font-weight:700;}
+.lr-dist-key .lr-dk-dot{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px;vertical-align:middle;}
+.lr-funnel-hd{display:flex;align-items:baseline;gap:8px;margin-bottom:13px;}
+.lr-funnel-title{font-size:var(--fs-label);font-weight:700;letter-spacing:var(--trk);text-transform:uppercase;color:var(--text-muted);}
+.lr-funnel-sub{font-size:0.7rem;color:var(--text-dim);}
+.lr-flow{display:flex;align-items:stretch;gap:0;}
+.lr-fstage{position:relative;flex:1 1 0;min-width:0;padding:2px 8px 2px 0;display:flex;flex-direction:column;gap:3px;animation:lrRise .5s cubic-bezier(.22,.9,.26,1.02) both;}
+.lr-fstage+.lr-fstage{padding-left:12px;border-left:1px solid var(--hair);}
+.lr-fstage.is-empty{opacity:.5;}
+.lr-fs-top{display:flex;align-items:center;gap:5px;}
+.lr-fs-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.lr-fs-name{font-size:0.66rem;font-weight:700;color:var(--text-secondary);line-height:1.15;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lr-fs-count{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:1.7rem;font-weight:800;line-height:1;letter-spacing:-.03em;}
+.lr-fs-stance{font-size:0.6rem;color:var(--text-muted);line-height:1.25;}
+.lr-fs-arrow{position:absolute;right:-6px;top:16px;z-index:2;font-size:0.6rem;color:var(--text-dim);pointer-events:none;}
+.lr-funnel-foot{display:flex;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair);align-items:center;flex-wrap:wrap;}
+.lr-ff-item{display:flex;align-items:center;gap:7px;font-size:0.7rem;color:var(--text-muted);}
+.lr-ff-item b{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:0.95rem;font-weight:800;letter-spacing:-.01em;}
+.lr-ff-item.failed b{color:var(--col-failed);}
+.lr-ff-sep{width:1px;height:14px;background:var(--hair-strong);}
+.lr-ff-chips{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto;}
+.lr-ff-chip{font-family:var(--num);font-size:0.6rem;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--col-failed) 11%,transparent);color:var(--col-failed);font-weight:600;text-decoration:none;}
+.lr-ff-chip:hover{background:color-mix(in srgb,var(--col-failed) 20%,transparent);}
+@media(max-width:920px){
+  .lr-hero{grid-template-columns:1fr;}
+  .lr-funnel{border-left:none;border-top:1px solid var(--hair);}
+  .lr-flow{overflow-x:auto;}
+  .lr-fstage{min-width:78px;}
+}
+@media(prefers-reduced-motion:reduce){
+  .lr-hero,.lr-fstage{animation:none;}
+  .lr-br-scale,.lr-br-halo,.lr-br-core{animation:none;}
+}
+/* ── LANG/THEME visibility ── */
+.l-zh{display:none;}
+[data-lang="zh"] .l-en{display:none;}
+[data-lang="zh"] .l-zh{display:inline;}
+/* ── Banner ── */
+.banner{padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:12px;border:1px solid;}
+.banner-stale{background:rgba(239,68,68,.08);border-color:#ef4444;color:#ef4444;}
+.banner-degraded{background:rgba(245,158,11,.08);border-color:#f59e0b;color:#f59e0b;}
+/* ── HERO META + affordances ── */
+.header-meta{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:0.75rem;color:var(--text-muted);flex-wrap:wrap;}
+.header-meta .dot{width:3px;height:3px;border-radius:50%;background:var(--text-dim);}
+.q-afford{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--border-strong);color:var(--text-muted);font-size:0.65rem;cursor:pointer;transition:var(--transition);font-weight:700;border:1px solid var(--border);}
+.q-afford:hover{background:var(--col-ignition);color:#fff;}
+/* ── SECTION LABELS ── */
+.section-header{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
+.section-title{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);}
+.section-count{font-size:0.72rem;color:var(--text-dim);}
+.section-rule{flex:1;height:1px;background:var(--border);}
+/* ── TONIGHT'S FOCUS ── */
+.tonight-section{margin-bottom:20px;}
+.section-note{font-size:0.72rem;color:var(--text-muted);font-weight:500;}
+.tonight-wrap{padding:15px 17px;}
+.tonight-grid{display:flex;flex-wrap:wrap;gap:9px;}
+.move-card{display:inline-flex;align-items:center;gap:9px;padding:9px 14px 9px 12px;border-radius:11px;background:var(--bg-card);border:1px solid var(--border);position:relative;overflow:hidden;transition:var(--transition);text-decoration:none;animation:lrRise .4s cubic-bezier(.22,.9,.26,1.02) both;}
+.move-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--mv-c,var(--text-muted));}
+.move-card:hover{border-color:var(--mv-c,var(--border-strong));transform:translateY(-1px);box-shadow:0 7px 20px rgba(0,0,0,.24);}
+.move-glyph{color:var(--mv-c);font-size:0.9rem;filter:drop-shadow(0 0 6px var(--mv-c));}
+.move-tkr{font-weight:800;font-size:0.92rem;color:var(--text-primary);letter-spacing:-.01em;}
+.move-ar{color:var(--text-dim);font-size:0.82rem;}
+.move-badge{font-size:0.68rem;font-weight:700;padding:2px 9px;border-radius:6px;background:color-mix(in srgb,var(--mv-c) 16%,transparent);color:var(--mv-c);white-space:nowrap;}
+.move-from{font-size:0.68rem;color:var(--text-muted);}
+.move-card.is-fire{--mv-c:var(--col-ignition);box-shadow:0 0 0 1px color-mix(in srgb,var(--col-ignition) 24%,transparent),0 6px 20px -6px var(--glow-ignition);}
+.move-card.is-crowded{--mv-c:var(--col-crowded);}
+.tonight-empty{font-size:0.82rem;color:var(--text-muted);padding:2px 0;}
+/* one signal away — folded in */
+.tonight-near{margin-top:13px;padding-top:12px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.tn-label{font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);flex-shrink:0;}
+.tn-chip{display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:8px;background:var(--tile);border:1px solid var(--hair-strong);font-size:0.74rem;text-decoration:none;transition:var(--transition);}
+.tn-chip:hover{border-color:var(--col-ignition);}
+.tn-chip .tn-tkr{font-weight:800;color:var(--text-primary);}
+.tn-chip .tn-miss{color:var(--col-crowded);font-size:0.66rem;}
+/* cooled summary — the de-noised de-escalations */
+.tonight-cooled{margin-top:13px;padding-top:12px;border-top:1px solid var(--hair);font-size:0.74rem;color:var(--text-muted);display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
+.tonight-cooled b{color:var(--text-secondary);font-weight:700;}
+/* ── entry-read shelves (LRV-O9): stance-graded overnight moves ── */
+.tn-shelf{margin-bottom:13px;}
+.tn-shelf:last-of-type{margin-bottom:0;}
+.tn-shelf-label{display:flex;align-items:center;gap:7px;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
+.tn-shelf-label .tns-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.tn-shelf-label .tns-sub{font-weight:500;text-transform:none;letter-spacing:0;color:var(--text-dim);}
+.move-card.is-late{--mv-c:var(--col-crowded);}
+.move-card.is-late .move-badge{color:var(--col-crowded);}
+.move-card.is-late .move-glyph{filter:none;}
+.move-card.is-turn{--mv-c:var(--col-suppressed);}
+.move-card.is-turn .move-tkr{color:var(--text-secondary);}
+.move-card.is-turn .move-badge{color:var(--text-muted);}
+.move-read{font-size:0.68rem;color:var(--text-muted);border-left:1px solid var(--hair-strong);padding-left:9px;white-space:nowrap;}
+.move-read b{color:var(--text-secondary);font-weight:700;}
+.tonight-baserate{margin-top:13px;padding-top:12px;border-top:1px solid var(--hair);font-size:0.7rem;color:var(--text-dim);line-height:1.5;}
+/* lane-card entry flags */
+.entry-flag{display:inline-block;font-size:0.66rem;font-weight:600;padding:3px 9px;border-radius:5px;margin-top:7px;letter-spacing:0.01em;}
+.entry-flag.late{background:color-mix(in srgb,var(--col-crowded) 12%,transparent);color:var(--col-crowded);}
+.entry-flag.turn{background:rgba(255,255,255,0.04);color:var(--text-muted);}
+/* OEU M-PRO options caveat — quietest of the three: context, not a verdict. */
+.entry-flag.opt{background:rgba(255,255,255,0.03);color:var(--text-muted);font-weight:500;}
+.cooled-list{font-size:0.68rem;color:var(--text-dim);font-family:var(--num);letter-spacing:.01em;}
+/* ── FIRE RECEIPTS ── */
+.fire-receipts-section{margin-bottom:20px;}
+.fire-receipts-table{width:100%;border-collapse:collapse;font-size:0.8rem;}
+.fire-receipts-table th{text-align:left;padding:7px 12px;color:var(--text-dim);font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--hair-strong);}
+.fire-receipts-table td{padding:8px 12px;border-bottom:1px solid var(--hair);color:var(--text-secondary);font-variant-numeric:tabular-nums;}
+.fire-receipts-table tr:last-child td{border-bottom:none;}
+.fire-receipts-table tbody tr{transition:var(--transition);}
+.fire-receipts-table tbody tr:hover td{background:color-mix(in srgb,var(--col-ignition) 6%,transparent);}
+.fire-receipts-table td:first-child,.fire-receipts-table td:nth-child(2){font-family:var(--num);}
+.fire-receipts-footer{font-size:0.72rem;color:var(--text-dim);padding:9px 2px 2px;}
+/* ── EARLY ENTRY BOARD ── */
+.early-entry-section{margin-bottom:26px;}
+.lane-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.lane-col{display:flex;flex-direction:column;gap:11px;}
+.lane-header{display:flex;align-items:center;gap:9px;padding:11px 15px;border-radius:12px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+.lane-header.ignition{background:color-mix(in srgb,var(--col-ignition) 12%,transparent);border:1px solid color-mix(in srgb,var(--col-ignition) 26%,transparent);}
+.lane-header.quiet{background:color-mix(in srgb,var(--col-quiet) 12%,transparent);border:1px solid color-mix(in srgb,var(--col-quiet) 24%,transparent);}
+.lane-header.suppressed{background:color-mix(in srgb,var(--col-suppressed) 10%,transparent);border:1px solid color-mix(in srgb,var(--col-suppressed) 18%,transparent);}
+.lane-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.lane-dot.ignition{background:var(--col-ignition);box-shadow:0 0 10px var(--col-ignition);}
+.lane-dot.quiet{background:var(--col-quiet);box-shadow:0 0 10px var(--col-quiet);}
+.lane-dot.suppressed{background:var(--col-suppressed);}
+.lane-name{font-size:0.86rem;font-weight:700;color:var(--text-primary);flex:1;letter-spacing:-.01em;}
+.lane-count-chip{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:0.72rem;font-weight:800;padding:2px 9px;border-radius:10px;}
+.lane-count-chip.ignition{background:color-mix(in srgb,var(--col-ignition) 22%,transparent);color:#93c5fd;}
+.lane-count-chip.quiet{background:color-mix(in srgb,var(--col-quiet) 22%,transparent);color:#c4b5fd;}
+.lane-count-chip.suppressed{background:color-mix(in srgb,var(--col-suppressed) 18%,transparent);color:var(--text-muted);}
+/* Entry card */
+.entry-card{background:var(--bg-card);border:1px solid var(--border);border-radius:13px;padding:14px 16px;transition:transform .16s ease,box-shadow .22s ease,border-color .2s ease;cursor:pointer;position:relative;overflow:hidden;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:lrRise .45s cubic-bezier(.22,.9,.26,1.02) both;}
+.entry-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;z-index:2;}
+.entry-card:hover{transform:translateY(-2px);}
+.entry-card.ignition{border-color:color-mix(in srgb,var(--col-ignition) 28%,transparent);}
+.entry-card.ignition::before{background:linear-gradient(90deg,var(--col-ignition),color-mix(in srgb,var(--col-ignition) 30%,transparent));}
+.entry-card.ignition:hover{box-shadow:0 10px 28px -6px var(--glow-ignition);border-color:color-mix(in srgb,var(--col-ignition) 50%,transparent);}
+.entry-card.quiet{border-color:color-mix(in srgb,var(--col-quiet) 24%,transparent);}
+.entry-card.quiet::before{background:linear-gradient(90deg,var(--col-quiet),color-mix(in srgb,var(--col-quiet) 30%,transparent));}
+.entry-card.quiet:hover{box-shadow:0 10px 28px -6px var(--glow-quiet);border-color:color-mix(in srgb,var(--col-quiet) 42%,transparent);}
+.entry-card.suppressed{border-color:color-mix(in srgb,var(--col-suppressed) 18%,transparent);}
+.entry-card.suppressed::before{background:linear-gradient(90deg,var(--col-suppressed),transparent);}
+.entry-card.suppressed:hover{box-shadow:0 8px 20px -6px var(--glow-suppressed);}
+/* breathing glow — draws the eye to the time-sensitive ignition names */
+.entry-card.ignition::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:0 0 0 1px color-mix(in srgb,var(--col-ignition) 40%,transparent),0 0 20px 1px var(--glow-ignition);opacity:0;animation:lrGlowBreathe 3.9s ease-in-out infinite;}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px;}
+.card-ticker{font-size:1.34rem;font-weight:800;letter-spacing:-0.03em;color:var(--text-primary);line-height:1;}
+.card-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+.card-days{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:0.66rem;color:var(--text-muted);letter-spacing:-.01em;}
+.card-sparkline{width:66px;height:24px;}
+.spark-path{fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.spark-path.up{stroke:#4ade80;}
+.spark-path.down{stroke:#f87171;}
+.spark-path.flat{stroke:#8b90a8;}
+/* dot bar */
+.evidence-bar{display:flex;align-items:center;gap:6px;margin-bottom:7px;}
+.dot-bar{display:flex;gap:3px;}
+.dot-bar-dot{width:6px;height:6px;border-radius:50%;transition:var(--transition);}
+.dot-bar-dot.filled.ignition{background:var(--col-ignition);box-shadow:0 0 6px color-mix(in srgb,var(--col-ignition) 60%,transparent);}
+.dot-bar-dot.filled.quiet{background:var(--col-quiet);box-shadow:0 0 6px color-mix(in srgb,var(--col-quiet) 55%,transparent);}
+.dot-bar-dot.filled.suppressed{background:var(--text-muted);}
+.dot-bar-dot.empty{background:var(--text-dim);}
+.ev-label{font-size:0.7rem;color:var(--text-muted);}
+.ev-label strong{color:var(--text-secondary);}
+/* evidence line */
+.evidence-line{font-size:0.78rem;color:var(--text-secondary);line-height:1.45;}
+.ev-sep{color:var(--text-dim);margin:0 3px;}
+/* timing chip */
+.timing-chip{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:3px 9px;border-radius:6px;font-size:0.7rem;font-weight:600;}
+.timing-chip.near{background:color-mix(in srgb,var(--col-ignition) 15%,transparent);border:1px solid color-mix(in srgb,var(--col-ignition) 30%,transparent);color:#93c5fd;}
+.timing-chip.watch{background:color-mix(in srgb,var(--col-quiet) 15%,transparent);border:1px solid color-mix(in srgb,var(--col-quiet) 30%,transparent);color:#c4b5fd;}
+/* fire badge */
+.fire-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:0.68rem;font-weight:700;background:color-mix(in srgb,var(--col-ignition) 15%,transparent);border:1px solid color-mix(in srgb,var(--col-ignition) 30%,transparent);color:#93c5fd;}
+/* Empty lane state */
+.lane-empty{padding:12px 13px;font-size:0.72rem;color:var(--text-muted);font-style:italic;border:1px dashed color-mix(in srgb,var(--col-ignition) 18%,transparent);border-radius:10px;background:color-mix(in srgb,var(--col-ignition) 4%,transparent);line-height:1.5;}
+@media(prefers-reduced-motion:reduce){.entry-card{animation:none;}.entry-card.ignition::after{animation:none;opacity:0;}}
+@media(pointer:coarse){.entry-card.ignition::after{animation:none;opacity:.25;}}
+/* ── DUAL CARDS ── */
+.dual-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:26px;}
+.side-card{padding:20px 22px;}
+.side-card-title{font-size:0.92rem;font-weight:700;color:var(--text-primary);margin-bottom:5px;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;}
+.side-card-title::before{content:'';width:3px;height:15px;border-radius:2px;background:linear-gradient(180deg,var(--rail),color-mix(in srgb,var(--rail) 35%,transparent));flex:none;}
+.side-card.sc-handoff{--rail:var(--col-breakaway);}
+.side-card.sc-rerate{--rail:var(--col-quiet);}
+.side-card-sub{font-size:0.75rem;color:var(--text-muted);margin-bottom:15px;margin-left:12px;}
+/* Handoff empty state */
+.empty-state{display:flex;flex-direction:column;align-items:flex-start;padding:4px 0 2px;gap:5px;color:var(--text-muted);}
+.empty-label{font-size:0.8rem;font-weight:700;color:var(--text-secondary);}
+.empty-sub{font-size:0.73rem;line-height:1.5;}
+.closest-list{margin-top:15px;}
+.closest-title{font-size:0.64rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-dim);margin-bottom:9px;}
+.closest-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--hair);font-size:0.78rem;}
+.closest-row:last-child{border-bottom:none;}
+.closest-ticker{font-weight:700;min-width:118px;color:var(--text-primary);font-size:0.76rem;}
+.closest-why{color:var(--text-muted);flex:1;font-size:0.72rem;line-height:1.4;}
+/* Rerating card */
+.rerating-rows{display:flex;flex-direction:column;gap:7px;}
+.rerating-row{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:9px;background:var(--tile);border:1px solid var(--hair-strong);font-size:0.78rem;transition:var(--transition);}
+.rerating-row:hover{border-color:var(--border-strong);}
+.rerating-row.rr-dim{opacity:0.6;}
+.rerating-ticker{font-family:var(--num);font-weight:800;min-width:46px;color:var(--text-primary);letter-spacing:-.01em;}
+.rerating-stage-chip{padding:2px 7px;border-radius:5px;font-size:0.63rem;font-weight:700;white-space:nowrap;}
+.rerating-stage-chip.s-breakaway{background:color-mix(in srgb,var(--col-breakaway) 14%,transparent);color:#4ade80;}
+.rerating-stage-chip.s-quiet{background:color-mix(in srgb,var(--col-quiet) 16%,transparent);color:#c4b5fd;}
+.rerating-stage-chip.s-suppressed{background:color-mix(in srgb,var(--col-suppressed) 16%,transparent);color:#9ca3af;}
+.rerating-stage-chip.s-leadership{background:color-mix(in srgb,var(--col-leading) 16%,transparent);color:#4ade80;}
+.rerating-stage-chip.s-crowded{background:color-mix(in srgb,var(--col-crowded) 16%,transparent);color:#fcd34d;}
+.rerating-stage-chip.s-none{background:color-mix(in srgb,var(--text-muted) 14%,transparent);color:var(--text-muted);}
+.rerating-chips{display:flex;gap:5px;flex:1;flex-wrap:wrap;align-items:center;}
+.rerate-chip{padding:2px 8px;border-radius:5px;font-size:0.65rem;font-weight:600;background:color-mix(in srgb,var(--col-breakaway) 13%,transparent);color:#4ade80;border:1px solid color-mix(in srgb,var(--col-breakaway) 24%,transparent);}
+.rerate-chip.warn{background:color-mix(in srgb,var(--col-crowded) 12%,transparent);color:#fcd34d;border-color:color-mix(in srgb,var(--col-crowded) 22%,transparent);}
+.rr-watching{font-size:0.68rem;color:var(--text-dim);font-style:italic;}
+.rr-footer{margin-top:12px;font-size:0.68rem;color:var(--text-dim);line-height:1.45;padding-top:10px;border-top:1px solid var(--hair);}
+/* ── FULL BOARD ── */
+.full-board-section{margin-bottom:24px;}
+.board-toggle{display:flex;align-items:center;gap:8px;padding:12px 18px;cursor:pointer;border-radius:var(--radius-card);border:1px solid var(--border);background:var(--bg-glass-2);transition:var(--transition);user-select:none;justify-content:space-between;}
+.board-toggle:hover{border-color:var(--border-strong);}
+.board-toggle-left{display:flex;align-items:center;gap:10px;}
+.board-toggle-label{font-size:0.82rem;font-weight:600;color:var(--text-primary);}
+.board-toggle-sub{font-size:0.73rem;color:var(--text-muted);}
+.board-caret{color:var(--text-muted);font-size:0.75rem;transition:transform 0.2s;}
+.board-caret.open{transform:rotate(180deg);}
+.board-table-wrap{display:none;padding:0 0 6px;overflow-x:auto;border-radius:0 0 var(--radius-card) var(--radius-card);}
+.board-table-wrap.open{display:block;}
+.board-table{width:100%;border-collapse:collapse;font-size:0.78rem;}
+.board-table th{text-align:left;padding:8px 10px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);border-bottom:1px solid var(--border);white-space:nowrap;}
+.board-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.board-table tr:hover td{background:rgba(255,255,255,0.025);}
+.board-table tr:last-child td{border-bottom:none;}
+/* Board group headers */
+.board-grp-hd td{background:var(--bg-glass-2);font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);cursor:pointer;user-select:none;}
+.board-grp-hd td:hover{background:var(--bg-base);}
+.board-grp-body.collapsed{display:none;}
+/* Stage pills */
+.stage-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.65rem;font-weight:700;white-space:nowrap;}
+.stage-pill.QUIET_ACCUMULATION{background:rgba(124,58,237,0.18);color:#c4b5fd;}
+.stage-pill.BREAKAWAY{background:rgba(34,197,94,0.15);color:#4ade80;}
+.stage-pill.SUPPRESSED{background:rgba(107,114,128,0.15);color:#9ca3af;}
+.stage-pill.FAILED{background:rgba(239,68,68,0.12);color:#f87171;}
+.stage-pill.CATALYST_WINDOW{background:rgba(59,130,246,0.18);color:#93c5fd;}
+.stage-pill.NONE{background:rgba(55,65,81,0.30);color:var(--text-muted);}
+.stage-pill.LEADERSHIP{background:rgba(22,163,74,0.18);color:#4ade80;}
+.stage-pill.CROWDED{background:rgba(245,158,11,0.18);color:#fcd34d;}
+.ticker-link{font-weight:700;font-size:0.85rem;color:var(--text-primary);}
+.board-spark{width:48px;height:18px;display:inline-block;vertical-align:middle;}
+.leg-chips{display:flex;flex-wrap:wrap;gap:3px;}
+.leg-chip{font-size:0.63rem;padding:1px 5px;border-radius:4px;background:rgba(124,58,237,0.12);color:#c4b5fd;}
+.leg-chip.green{background:rgba(34,197,94,0.12);color:#4ade80;}
+.leg-chip.blue{background:rgba(59,130,246,0.12);color:#93c5fd;}
+.leg-chip.gray{background:rgba(107,114,128,0.12);color:#9ca3af;}
+/* ── FIELD GUIDE ACCORDION ── */
+.guide-section{margin-bottom:24px;}
+.guide-wrap{padding:16px 20px;}
+.guide-title{font-size:0.88rem;font-weight:700;margin-bottom:4px;color:var(--text-primary);}
+.guide-sub{font-size:0.75rem;color:var(--text-muted);margin-bottom:14px;}
+.playbook{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px;}
+.pb-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;font-weight:600;font-size:0.82rem;user-select:none;color:var(--text-primary);}
+.pb-hd:hover{background:var(--bg-glass-2);}
+.pb-hd .car{font-size:11px;color:var(--text-muted);transition:transform .2s;}
+.pb-hd.open .car{transform:rotate(90deg);}
+.pb-bd{display:none;padding:12px 14px;font-size:0.77rem;line-height:1.7;border-top:1px solid var(--border);color:var(--text-secondary);}
+.pb-hd.open+.pb-bd{display:block;}
+/* ── FOOTER ── */
+footer{padding:18px 24px;margin-top:8px;}
+.footer-honesty{font-size:0.76rem;color:var(--text-muted);line-height:1.5;}
+/* ── POPOVER ── */
+.popover-backdrop{display:none;position:fixed;inset:0;background:rgba(3,6,10,0.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;}
+.popover-backdrop.open{display:flex;}
+.popover-box{background:var(--mx5-glass-bg);border:1px solid var(--mx5-glass-border);border-radius:16px;padding:22px 24px;max-width:420px;width:90%;box-shadow:var(--mx5-glass-shadow);-webkit-backdrop-filter:blur(28px) saturate(1.4);backdrop-filter:blur(28px) saturate(1.4);}
+.popover-title{font-size:0.9rem;font-weight:700;margin-bottom:6px;color:var(--text-primary);}
+.popover-body{font-size:0.78rem;color:var(--text-secondary);line-height:1.55;}
+.popover-body p{margin:0 0 8px;}
+.popover-body p:last-child{margin-bottom:0;}
+.popover-close{float:right;border:none;background:none;color:var(--text-muted);cursor:pointer;font-size:1rem;line-height:1;padding:0 0 4px 8px;}
+.receipt-chip-list{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0;}
+.receipt-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:5px;font-size:0.72rem;font-weight:600;}
+.receipt-chip.on{background:rgba(124,58,237,0.18);color:#c4b5fd;}
+.receipt-chip.on.ignition{background:rgba(59,130,246,0.18);color:#93c5fd;}
+.receipt-chip.on.suppressed{background:rgba(107,114,128,0.18);color:#9ca3af;}
+.receipt-chip.null{background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--border);opacity:0.7;font-style:italic;}
+.receipt-machine-state{font-size:0.68rem;color:var(--text-dim);font-family:'SF Mono',monospace;padding:4px 8px;background:rgba(255,255,255,0.03);border-radius:5px;margin-top:8px;}
+.receipt-seeding-note{font-size:0.7rem;color:var(--text-muted);margin-top:8px;padding:6px 8px;background:rgba(255,200,0,0.07);border:1px solid rgba(255,200,0,0.14);border-radius:6px;}
+.receipt-context-line{font-size:0.72rem;color:var(--text-secondary);margin-top:4px;padding:2px 8px;}
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .lane-grid{grid-template-columns:1fr;}
+  .dual-cards{grid-template-columns:1fr;}
+  .page-wrap{padding:14px 14px 36px;}
+  .lr-verdict{font-size:36px;}
+}
+@media(max-width:390px){
+  .lr-verdict{font-size:31px;}
+  .entry-card{padding:11px 12px;}
+  .card-ticker{font-size:1.1rem;}
+  .move-card{padding:8px 11px;}
+}
+/* ── 红涨绿跌: directional colour flips for Chinese mode ── */
+html[data-lang="zh"] { --col-breakaway:#ef4444; --col-leading:#dc2626; --col-failed:#22c55e; --glow-breakaway:rgba(239,68,68,0.15); --glow-failed:rgba(34,197,94,0.10); }
+html[data-lang="zh"][data-theme="light"] { --col-breakaway:#dc2626; --col-leading:#b91c1c; --col-failed:#16a34a; }
+/* Sparkline strokes */
+html[data-lang="zh"] .spark-path.up{stroke:#f87171;}
+html[data-lang="zh"] .spark-path.down{stroke:#4ade80;}
+/* Stage pills — BREAKAWAY (bullish) and FAILED (bearish) */
+html[data-lang="zh"] .stage-pill.BREAKAWAY{background:rgba(239,68,68,0.15);color:#f87171;}
+html[data-lang="zh"] .stage-pill.FAILED{background:rgba(34,197,94,0.12);color:#4ade80;}
+html[data-lang="zh"] .stage-pill.LEADERSHIP{background:rgba(220,38,38,0.18);color:#f87171;}
+/* Rerating stage chip */
+html[data-lang="zh"] .rerating-stage-chip.s-breakaway{background:rgba(239,68,68,0.12);color:#f87171;}
+/* Leg chip green (breakaway context) */
+html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f87171;}
+</style>
 </head>
 <body class="rg-mixed">
 
@@ -947,7 +1418,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -1154,10 +1625,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -1264,6 +1735,11 @@
 
 
 
+<div class="banner banner-degraded">
+  <span class="l-en"><strong>Data health:</strong> breadth 1 session behind price data · relative strength 1 session behind price data</span>
+  <span class="l-zh"><strong>数据状态：</strong>广度数据落后价格数据1个交易日 · 相对强度数据落后价格数据1个交易日</span>
+</div>
+
 
 
 
@@ -1340,7 +1816,7 @@
     
     <div class="lr-counts">
       <span class="lr-count"><span class="lr-cdot" style="background:var(--col-quiet);"></span><b class="num">18</b> <span class="l-en">quietly building</span><span class="l-zh">静默筑底</span></span>
-      <span class="lr-count"><span class="lr-cdot" style="background:var(--col-ignition);"></span><b class="num">8</b> <span class="l-en">in ignition</span><span class="l-zh">点火中</span></span>
+      <span class="lr-count"><span class="lr-cdot" style="background:var(--col-ignition);"></span><b class="num">9</b> <span class="l-en">in ignition</span><span class="l-zh">点火中</span></span>
       <span class="lr-count"><span class="lr-cdot" style="background:var(--col-breakaway);"></span><b class="num">15</b> <span class="l-en">leading</span><span class="l-zh">领涨中</span></span>
     </div>
 
@@ -1367,7 +1843,7 @@
         
         
         
-      <span><span class="l-en">Data through Jul 31 close · updates nightly</span><span class="l-zh">数据截至7月31日收盘 · 每晚更新</span></span>
+      <span><span class="l-en">Data through Aug 3 close · updates nightly</span><span class="l-zh">数据截至8月3日收盘 · 每晚更新</span></span>
       
       
       
@@ -1396,7 +1872,7 @@
     <div class="lr-flow">
       <div class="lr-fstage " style="animation-delay:.04s;">
         <div class="lr-fs-top"><span class="lr-fs-dot" style="background:var(--col-suppressed);"></span><span class="lr-fs-name"><span class="l-en">Left for dead</span><span class="l-zh">无人问津</span></span></div>
-        <div class="lr-fs-count num" style="color:var(--col-suppressed);">8</div>
+        <div class="lr-fs-count num" style="color:var(--col-suppressed);">9</div>
         <div class="lr-fs-stance"><span class="l-en">First stirrings</span><span class="l-zh">初现异动</span></div>
         <span class="lr-fs-arrow">›</span>
       </div>
@@ -1408,7 +1884,7 @@
       </div>
       <div class="lr-fstage " style="animation-delay:.16s;">
         <div class="lr-fs-top"><span class="lr-fs-dot" style="background:var(--col-ignition);"></span><span class="lr-fs-name"><span class="l-en">Ignition</span><span class="l-zh">点火窗口</span></span></div>
-        <div class="lr-fs-count num" style="color:#93c5fd;">8</div>
+        <div class="lr-fs-count num" style="color:#93c5fd;">9</div>
         <div class="lr-fs-stance"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></div>
         <span class="lr-fs-arrow">›</span>
       </div>
@@ -1424,9 +1900,9 @@
         <div class="lr-fs-stance"><span class="l-en">In favour</span><span class="l-zh">受青睐</span></div>
         <span class="lr-fs-arrow">›</span>
       </div>
-      <div class="lr-fstage " style="animation-delay:.34s;">
+      <div class="lr-fstage is-empty" style="animation-delay:.34s;">
         <div class="lr-fs-top"><span class="lr-fs-dot" style="background:var(--col-crowded);"></span><span class="lr-fs-name"><span class="l-en">Crowded</span><span class="l-zh">过度拥挤</span></span></div>
-        <div class="lr-fs-count num" style="color:#fcd34d;">1</div>
+        <div class="lr-fs-count num" style="color:#fcd34d;">0</div>
         <div class="lr-fs-stance"><span class="l-en">Protect gains</span><span class="l-zh">保护盈利</span></div>
       </div>
     </div>
@@ -1437,21 +1913,21 @@
     
     
     <div class="lr-dist" aria-hidden="true">
-      <span class="lr-dist-seg" style="width:71.1%;background:var(--text-dim);animation-delay:.02s;"></span>
-      <span class="lr-dist-seg" style="width:15.0%;background:var(--col-quiet);animation-delay:.08s;"></span>
-      <span class="lr-dist-seg" style="width:13.3%;background:var(--col-breakaway);animation-delay:.14s;"></span>
-      <span class="lr-dist-seg" style="width:0.6%;background:var(--col-crowded);animation-delay:.2s;"></span>
+      <span class="lr-dist-seg" style="width:70.5%;background:var(--text-dim);animation-delay:.02s;"></span>
+      <span class="lr-dist-seg" style="width:15.6%;background:var(--col-quiet);animation-delay:.08s;"></span>
+      <span class="lr-dist-seg" style="width:13.9%;background:var(--col-breakaway);animation-delay:.14s;"></span>
+      
     </div>
     <div class="lr-dist-key">
-      <span><span class="lr-dk-dot" style="background:var(--text-dim);"></span><span class="l-en">Dormant</span><span class="l-zh">沉寂</span> <span class="num">123</span></span>
-      <span><span class="lr-dk-dot" style="background:var(--col-quiet);"></span><span class="l-en">Building</span><span class="l-zh">筑底</span> <span class="num">26</span></span>
-      <span><span class="lr-dk-dot" style="background:var(--col-breakaway);"></span><span class="l-en">Live</span><span class="l-zh">活跃</span> <span class="num">23</span></span>
+      <span><span class="lr-dk-dot" style="background:var(--text-dim);"></span><span class="l-en">Dormant</span><span class="l-zh">沉寂</span> <span class="num">122</span></span>
+      <span><span class="lr-dk-dot" style="background:var(--col-quiet);"></span><span class="l-en">Building</span><span class="l-zh">筑底</span> <span class="num">27</span></span>
+      <span><span class="lr-dk-dot" style="background:var(--col-breakaway);"></span><span class="l-en">Live</span><span class="l-zh">活跃</span> <span class="num">24</span></span>
     </div>
     
     <div class="lr-funnel-foot">
       <span class="lr-ff-item failed"><b class="num">32</b> <span class="l-en">failed breaks</span><span class="l-zh">突破失败</span></span>
       <span class="lr-ff-sep"></span>
-      <span class="lr-ff-item"><b class="num">91</b> <span class="l-en">no signal</span><span class="l-zh">无信号</span></span>
+      <span class="lr-ff-item"><b class="num">90</b> <span class="l-en">no signal</span><span class="l-zh">无信号</span></span>
       
       <span class="lr-ff-chips">
         <a class="lr-ff-chip" href="us_stocks.html#AMAT">AMAT</a><a class="lr-ff-chip" href="us_stocks.html#APH">APH</a><a class="lr-ff-chip" href="us_stocks.html#APLD">APLD</a><a class="lr-ff-chip" href="us_stocks.html#ASML">ASML</a><a class="lr-ff-chip" href="us_stocks.html#ASTS">ASTS</a><a class="lr-ff-chip" href="us_stocks.html#AXON">AXON</a><a class="lr-ff-chip" href="us_stocks.html#BTDR">BTDR</a><a class="lr-ff-chip" href="us_stocks.html#CAT">CAT</a>
@@ -1483,21 +1959,10 @@
   
   
 
-  
-  
-  
 
   
   
   
-
-
-  
-  
-  
-    
-    
-    
     
   
 
@@ -1525,11 +1990,15 @@
   
   
     
+    
+    
   
 
   
   
   
+    
+    
     
   
 
@@ -1542,6 +2011,14 @@
   
   
   
+    
+  
+
+  
+  
+  
+    
+    
     
   
 
@@ -1580,58 +2057,52 @@
         <div class="tn-shelf-label"><span class="tns-dot" style="background:var(--col-ignition);"></span><span class="l-en">Worth a look</span><span class="l-zh">值得关注</span> <span class="tns-sub">— <span class="l-en">staged, not extended</span><span class="l-zh">蓄势·未过热</span></span></div>
         <div class="tonight-grid">
         
-        <a class="move-card is-fire" href="us_stocks.html#FTNT">
+        <a class="move-card is-fire" href="us_stocks.html#AMZN">
           <span class="move-glyph">⚡</span>
-          <span class="move-tkr">FTNT</span>
+          <span class="move-tkr">AMZN</span>
           
           <span class="move-badge"><span class="l-en">Ignition fired · get ready</span><span class="l-zh">点火触发·准备就绪</span></span>
           
         </a>
         
-        <a class="move-card is-fire" href="us_stocks.html#MSFT">
-          <span class="move-glyph">⚡</span>
-          <span class="move-tkr">MSFT</span>
+        <a class="move-card" href="us_stocks.html#ETN" style="--mv-c:var(--col-quiet);">
           
-          <span class="move-badge"><span class="l-en">Ignition fired · get ready</span><span class="l-zh">点火触发·准备就绪</span></span>
-          
-        </a>
-        
-        <a class="move-card is-fire" href="us_stocks.html#REGN">
-          <span class="move-glyph">⚡</span>
-          <span class="move-tkr">REGN</span>
-          
-          <span class="move-badge"><span class="l-en">Ignition fired · get ready</span><span class="l-zh">点火触发·准备就绪</span></span>
-          
-        </a>
-        
-        <a class="move-card" href="us_stocks.html#GEHC" style="--mv-c:var(--col-ignition);">
-          
-          <span class="move-tkr">GEHC</span>
-          <span class="move-ar">→</span>
-          <span class="move-badge"><span class="l-en">Ignition window</span><span class="l-zh">点火窗口</span></span>
-          <span class="move-from"><span class="l-en">from Left for dead</span><span class="l-zh">来自无人问津</span></span>
-        </a>
-        
-        </div>
-      </div>
-      
-      
-      
-      
-      
-      <div class="tn-shelf">
-        <div class="tn-shelf-label"><span class="tns-dot" style="background:var(--col-suppressed);"></span><span class="l-en">Turnaround attempts</span><span class="l-zh">反转尝试</span> <span class="tns-sub">— <span class="l-en">long downtrend still intact — watch only</span><span class="l-zh">长期下行未改——仅观察</span></span></div>
-        <div class="tonight-grid">
-        
-        <a class="move-card is-turn" href="us_stocks.html#CMCSA">
-          <span class="move-tkr">CMCSA</span>
+          <span class="move-tkr">ETN</span>
           <span class="move-ar">→</span>
           <span class="move-badge"><span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span></span>
-          <span class="move-read"><span class="l-en">below its 200-day for a year</span><span class="l-zh">低于200日线已一年</span></span>
+          
+        </a>
+        
+        <a class="move-card" href="us_stocks.html#FANG" style="--mv-c:var(--col-quiet);">
+          
+          <span class="move-tkr">FANG</span>
+          <span class="move-ar">→</span>
+          <span class="move-badge"><span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span></span>
+          
+        </a>
+        
+        <a class="move-card" href="us_stocks.html#HUBB" style="--mv-c:var(--col-quiet);">
+          
+          <span class="move-tkr">HUBB</span>
+          <span class="move-ar">→</span>
+          <span class="move-badge"><span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span></span>
+          
+        </a>
+        
+        <a class="move-card" href="us_stocks.html#ROST" style="--mv-c:var(--col-quiet);">
+          
+          <span class="move-tkr">ROST</span>
+          <span class="move-ar">→</span>
+          <span class="move-badge"><span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span></span>
+          
         </a>
         
         </div>
       </div>
+      
+      
+      
+      
       
       
       
@@ -1641,6 +2112,15 @@
   
     <div class="tonight-near">
       <span class="tn-label"><span class="l-en">One signal away</span><span class="l-zh">差一个信号</span></span>
+      
+      
+      <a class="tn-chip" href="us_stocks.html#CRM">
+        <span class="tn-tkr">CRM</span>
+        
+        <span class="tn-miss"><span class="l-en js-chip-en" data-chip-key="obv_divergence">Obv Divergence</span><span class="l-zh js-chip-zh" data-chip-key="obv_divergence">Obv Divergence</span></span>
+        
+      </a>
+      
       
       
       <a class="tn-chip" href="us_stocks.html#CVX">
@@ -1701,8 +2181,8 @@
       
       
       
-      <a class="tn-chip" href="us_stocks.html#CSX">
-        <span class="tn-tkr">CSX</span>
+      <a class="tn-chip" href="us_stocks.html#AMZN">
+        <span class="tn-tkr">AMZN</span>
         
         <span class="tn-miss"><span class="l-en js-chip-en" data-chip-key="bw_emerging">Bw Emerging</span><span class="l-zh js-chip-zh" data-chip-key="bw_emerging">Bw Emerging</span></span>
         
@@ -1712,14 +2192,7 @@
       
       
       
-      <a class="tn-chip" href="us_stocks.html#GEHC">
-        <span class="tn-tkr">GEHC</span>
-        
-        <span class="tn-miss"><span class="l-en js-chip-en" data-chip-key="bw_emerging">Bw Emerging</span><span class="l-zh js-chip-zh" data-chip-key="bw_emerging">Bw Emerging</span></span>
-        
-        
-        
-      </a>
+      
       
       
       
@@ -1732,8 +2205,8 @@
   
   
     <div class="tonight-cooled">
-      <span><span class="l-en">Also</span><span class="l-zh">另有</span> <b class="num">5</b> <span class="l-en">names cooled out of earlier stages</span><span class="l-zh">个标的自早前阶段回落</span></span>
-      <span class="cooled-list">CSCO · GILD · LRCX · NXPI · TTWO</span>
+      <span><span class="l-en">Also</span><span class="l-zh">另有</span> <b class="num">6</b> <span class="l-en">names cooled out of earlier stages</span><span class="l-zh">个标的自早前阶段回落</span></span>
+      <span class="cooled-list">CRM · EA · MDLZ · MELI · TMUS · XEL</span>
     </div>
   
   
@@ -1756,7 +2229,7 @@
       <div class="lane-header ignition">
         <div class="lane-dot ignition"></div>
         <div class="lane-name"><span class="l-en">Ignition window</span><span class="l-zh">点火窗口</span></div>
-        <span class="lane-count-chip ignition">8</span>
+        <span class="lane-count-chip ignition">9</span>
       </div>
 
       
@@ -1819,7 +2292,7 @@
       
       <div class="entry-card ignition" onclick="openCardReceiptFromEl(this)"
            data-ticker="AAPL" data-stage="CATALYST_WINDOW"
-           data-days="3"
+           data-days="4"
            data-macd-bars=""
            data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": true, "revision_positive": false, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": false, "valuation_extreme": null}'
            data-fwd-pe="32.5"
@@ -1828,7 +2301,7 @@
           <a class="card-ticker" href="us_stocks.html#AAPL" onclick="event.stopPropagation()" style="color:inherit;">AAPL</a>
           <div class="card-right">
             
-            <div class="card-days"><span class="l-en">3s tracked</span><span class="l-zh">已追踪3个交易日</span></div>
+            <div class="card-days"><span class="l-en">4s tracked</span><span class="l-zh">已追踪4个交易日</span></div>
             
             <svg class="card-sparkline" data-hist='[-0.112, -0.931, -1.441, -1.808, -1.9, -2.18, -3.542, -3.861, -3.115, -1.63, -0.536, 0.483, 1.113, 2.046, 2.863, 2.777, 2.118, 2.49, 2.593, 0.564]' viewBox="0 0 64 24"></svg>
           </div>
@@ -1918,7 +2391,7 @@
       
       <div class="entry-card ignition" onclick="openCardReceiptFromEl(this)"
            data-ticker="ADBE" data-stage="CATALYST_WINDOW"
-           data-days="6"
+           data-days="7"
            data-macd-bars=""
            data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": true, "bw_emerging": true, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": true, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": true, "revision_positive": false, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}'
            data-fwd-pe=""
@@ -1927,7 +2400,7 @@
           <a class="card-ticker" href="us_stocks.html#ADBE" onclick="event.stopPropagation()" style="color:inherit;">ADBE</a>
           <div class="card-right">
             
-            <div class="card-days"><span class="l-en">6s tracked</span><span class="l-zh">已追踪6个交易日</span></div>
+            <div class="card-days"><span class="l-en">7s tracked</span><span class="l-zh">已追踪7个交易日</span></div>
             
             <svg class="card-sparkline" data-hist='[1.13, -0.905, -2.895, -4.597, -5.445, -5.486, -5.407, -4.158, -2.771, -1.098, 0.229, 1.223, 2.39, 2.705, 3.66, 3.503, 2.338, 3.184, 5.247, 5.482]' viewBox="0 0 64 24"></svg>
           </div>
@@ -2017,7 +2490,7 @@
       
       <div class="entry-card ignition" onclick="openCardReceiptFromEl(this)"
            data-ticker="ADSK" data-stage="CATALYST_WINDOW"
-           data-days="2"
+           data-days="3"
            data-macd-bars=""
            data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": true, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": true, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": true, "revision_positive": false, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}'
            data-fwd-pe=""
@@ -2026,7 +2499,7 @@
           <a class="card-ticker" href="us_stocks.html#ADSK" onclick="event.stopPropagation()" style="color:inherit;">ADSK</a>
           <div class="card-right">
             
-            <div class="card-days"><span class="l-en">2s tracked</span><span class="l-zh">已追踪2个交易日</span></div>
+            <div class="card-days"><span class="l-en">3s tracked</span><span class="l-zh">已追踪3个交易日</span></div>
             
             <svg class="card-sparkline" data-hist='[-0.985, -2.535, -3.791, -4.697, -4.924, -5.072, -4.77, -3.899, -2.771, -1.331, 0.052, 0.772, 1.511, 1.782, 2.544, 2.513, 2.062, 3.062, 4.829, 5.032]' viewBox="0 0 64 24"></svg>
           </div>
@@ -2046,6 +2519,103 @@
         <div class="entry-flag turn"><span class="l-en">Downtrend intact — turnaround attempt only</span><span class="l-zh">下行趋势未改——仅为反转尝试</span></div>
         
         
+      </div>
+      
+      
+      
+      
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      <div class="entry-card ignition" onclick="openCardReceiptFromEl(this)"
+           data-ticker="AMZN" data-stage="CATALYST_WINDOW"
+           data-days="3"
+           data-macd-bars=""
+           data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": true, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": false, "valuation_extreme": null}'
+           data-fwd-pe="26.4"
+           data-val-pctile="">
+        <div class="card-top">
+          <a class="card-ticker" href="us_stocks.html#AMZN" onclick="event.stopPropagation()" style="color:inherit;">AMZN</a>
+          <div class="card-right">
+            
+            <div class="card-days"><span class="l-en">3s tracked</span><span class="l-zh">已追踪3个交易日</span></div>
+            
+            <svg class="card-sparkline" data-hist='[-4.051, -4.526, -4.374, -4.657, -4.204, -4.401, -4.78, -3.952, -3.141, -2.413, -1.621, -0.969, -0.489, 0.332, 0.34, 0.352, -0.542, -1.215, -1.868, 0.699]' viewBox="0 0 64 24"></svg>
+          </div>
+        </div>
+        <div class="evidence-bar">
+          <div class="dot-bar" data-k="4" data-n="6"></div>
+          
+          
+          <span class="ev-label"><span class="l-en">Strengthening</span><span class="l-zh">增强中</span></span>
+        </div>
+        <div class="evidence-line" data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": true, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": false, "valuation_extreme": null}' data-stage="CATALYST_WINDOW"></div>
+        
+        <div class="timing-chip near"><span class="l-en">MACD crossed ↑ today</span><span class="l-zh">MACD今日上穿</span></div>
+        
+        
+        <div class="fire-badge">&#x26A1; <span class="l-en">Watch window opened</span><span class="l-zh">观察窗口开启</span></div>
+        
+        
+        
+        
+        <div class="entry-flag opt"><span class="l-en">Options pricing a bigger move than usual</span><span class="l-zh">期权定价高于平常的波动</span></div>
       </div>
       
       
@@ -2110,7 +2680,7 @@
       
       <div class="entry-card ignition" onclick="openCardReceiptFromEl(this)"
            data-ticker="CSX" data-stage="CATALYST_WINDOW"
-           data-days="3"
+           data-days="4"
            data-macd-bars="1.0"
            data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": true, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": false, "valuation_extreme": null}'
            data-fwd-pe="22.2"
@@ -2119,7 +2689,7 @@
           <a class="card-ticker" href="us_stocks.html#CSX" onclick="event.stopPropagation()" style="color:inherit;">CSX</a>
           <div class="card-right">
             
-            <div class="card-days"><span class="l-en">3s tracked</span><span class="l-zh">已追踪3个交易日</span></div>
+            <div class="card-days"><span class="l-en">4s tracked</span><span class="l-zh">已追踪4个交易日</span></div>
             
             <svg class="card-sparkline" data-hist='[0.004, 0.012, 0.005, -0.129, -0.214, -0.235, -0.165, -0.088, -0.025, 0.041, 0.045, 0.087, 0.117, 0.104, 0.163, 0.125, 0.268, 0.267, 0.17, 0.065]' viewBox="0 0 64 24"></svg>
           </div>
@@ -2199,7 +2769,7 @@
       
       <div class="entry-card ignition" onclick="openCardReceiptFromEl(this)"
            data-ticker="GEHC" data-stage="CATALYST_WINDOW"
-           data-days="3"
+           data-days="1"
            data-macd-bars=""
            data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": true, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": true, "revision_positive": false, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": false, "valuation_extreme": null}'
            data-fwd-pe=""
@@ -2208,7 +2778,7 @@
           <a class="card-ticker" href="us_stocks.html#GEHC" onclick="event.stopPropagation()" style="color:inherit;">GEHC</a>
           <div class="card-right">
             
-            <div class="card-days"><span class="l-en">3s tracked</span><span class="l-zh">已追踪3个交易日</span></div>
+            <div class="card-days"><span class="l-en">1s tracked</span><span class="l-zh">已追踪1个交易日</span></div>
             
             <svg class="card-sparkline" data-hist='[0.606, 0.709, 0.636, 0.476, 0.311, 0.484, 0.642, 0.615, 0.682, 0.658, 0.612, 0.565, 0.324, 0.424, 0.291, 0.111, -0.049, 0.087, 0.548, 0.694]' viewBox="0 0 64 24"></svg>
           </div>
@@ -2302,7 +2872,7 @@
       
       <div class="entry-card ignition" onclick="openCardReceiptFromEl(this)"
            data-ticker="INTU" data-stage="CATALYST_WINDOW"
-           data-days="2"
+           data-days="3"
            data-macd-bars=""
            data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": true, "bw_emerging": true, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": true, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}'
            data-fwd-pe=""
@@ -2311,7 +2881,7 @@
           <a class="card-ticker" href="us_stocks.html#INTU" onclick="event.stopPropagation()" style="color:inherit;">INTU</a>
           <div class="card-right">
             
-            <div class="card-days"><span class="l-en">2s tracked</span><span class="l-zh">已追踪2个交易日</span></div>
+            <div class="card-days"><span class="l-en">3s tracked</span><span class="l-zh">已追踪3个交易日</span></div>
             
             <svg class="card-sparkline" data-hist='[-5.558, -6.29, -5.847, -5.794, -5.299, -4.979, -4.394, -2.755, -1.211, 0.677, 2.525, 3.457, 5.222, 5.717, 6.746, 7.238, 6.892, 7.986, 10.343, 10.392]' viewBox="0 0 64 24"></svg>
           </div>
@@ -2397,7 +2967,7 @@
       
       <div class="entry-card ignition" onclick="openCardReceiptFromEl(this)"
            data-ticker="MMM" data-stage="CATALYST_WINDOW"
-           data-days="3"
+           data-days="4"
            data-macd-bars=""
            data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": false, "drawdown_25pct": false, "extension_extreme": true, "gap_ignition": true, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": false, "valuation_extreme": null}'
            data-fwd-pe="18.2"
@@ -2406,7 +2976,7 @@
           <a class="card-ticker" href="us_stocks.html#MMM" onclick="event.stopPropagation()" style="color:inherit;">MMM</a>
           <div class="card-right">
             
-            <div class="card-days"><span class="l-en">3s tracked</span><span class="l-zh">已追踪3个交易日</span></div>
+            <div class="card-days"><span class="l-en">4s tracked</span><span class="l-zh">已追踪4个交易日</span></div>
             
             <svg class="card-sparkline" data-hist='[1.319, 1.424, 1.437, 1.43, 1.433, 1.429, 1.731, 1.459, 1.035, 0.724, 0.312, -0.158, -0.317, -0.243, -0.251, 0.432, 0.74, 1.42, 1.727, 1.689]' viewBox="0 0 64 24"></svg>
           </div>
@@ -2491,7 +3061,7 @@
       
       <div class="entry-card ignition" onclick="openCardReceiptFromEl(this)"
            data-ticker="TRV" data-stage="CATALYST_WINDOW"
-           data-days="6"
+           data-days="7"
            data-macd-bars=""
            data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": false, "drawdown_25pct": false, "extension_extreme": true, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": false, "valuation_extreme": null}'
            data-fwd-pe=""
@@ -2500,7 +3070,7 @@
           <a class="card-ticker" href="us_stocks.html#TRV" onclick="event.stopPropagation()" style="color:inherit;">TRV</a>
           <div class="card-right">
             
-            <div class="card-days"><span class="l-en">6s tracked</span><span class="l-zh">已追踪6个交易日</span></div>
+            <div class="card-days"><span class="l-en">7s tracked</span><span class="l-zh">已追踪7个交易日</span></div>
             
             <svg class="card-sparkline" data-hist='[-0.73, -0.207, 0.288, 0.551, 0.789, 1.47, 1.891, 2.905, 3.538, 4.207, 4.454, 3.924, 3.582, 2.323, 3.877, 4.605, 5.156, 6.017, 6.036, 4.663]' viewBox="0 0 64 24"></svg>
           </div>
@@ -2549,6 +3119,8 @@
         
       
         
+      
+        
           
         
       
@@ -2630,6 +3202,8 @@
     
     
     
+      
+        
       
         
       
@@ -3071,6 +3645,471 @@
         
         
           
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        <div class="entry-card quiet" onclick="openCardReceiptFromEl(this)"
+             data-ticker="CRM" data-stage="QUIET_ACCUMULATION"
+             data-days="3"
+             data-macd-bars=""
+             data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": true, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": true, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}'
+             data-fwd-pe=""
+             data-val-pctile="">
+          <div class="card-top">
+            <a class="card-ticker" href="us_stocks.html#CRM" onclick="event.stopPropagation()" style="color:inherit;">CRM</a>
+            <div class="card-right">
+              
+              <div class="card-days"><span class="l-en">3s tracked</span><span class="l-zh">已追踪3个交易日</span></div>
+              
+              <svg class="card-sparkline" data-hist='[1.49, 0.234, -0.662, -1.769, -2.547, -2.759, -2.91, -2.309, -1.417, -0.542, 0.312, 0.442, 1.114, 1.263, 1.583, 1.705, 0.898, 1.452, 2.706, 3.106]' viewBox="0 0 64 24"></svg>
+            </div>
+          </div>
+          <div class="evidence-bar">
+            <div class="dot-bar" data-k="3" data-n="4"></div>
+            
+            
+            
+            <span class="ev-label"><span class="l-en">Strengthening</span><span class="l-zh">增强中</span></span>
+          </div>
+          <div class="evidence-line" data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": true, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": true, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}' data-stage="QUIET_ACCUMULATION"></div>
+          
+          
+          
+          
+          
+          <div class="entry-flag turn"><span class="l-en">Downtrend intact — turnaround attempt only</span><span class="l-zh">下行趋势未改——仅为反转尝试</span></div>
+          
+          <div class="entry-flag opt"><span class="l-en">Options pricing a bigger move than usual</span><span class="l-zh">期权定价高于平常的波动</span></div>
+        </div>
+        
+      
+      
+      
+      
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        
+        
+      
+      
+        
+        
+        
+        
+        
+        
+          
         
           
         
@@ -3131,7 +4170,7 @@
         
         <div class="entry-card quiet" onclick="openCardReceiptFromEl(this)"
              data-ticker="CVX" data-stage="QUIET_ACCUMULATION"
-             data-days="6"
+             data-days="7"
              data-macd-bars=""
              data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": true, "valuation_extreme": null}'
              data-fwd-pe="15.4"
@@ -3140,7 +4179,7 @@
             <a class="card-ticker" href="us_stocks.html#CVX" onclick="event.stopPropagation()" style="color:inherit;">CVX</a>
             <div class="card-right">
               
-              <div class="card-days"><span class="l-en">6s tracked</span><span class="l-zh">已追踪6个交易日</span></div>
+              <div class="card-days"><span class="l-en">7s tracked</span><span class="l-zh">已追踪7个交易日</span></div>
               
               <svg class="card-sparkline" data-hist='[-0.33, -0.374, -0.732, -1.101, -1.526, -1.559, -1.73, -1.976, -2.189, -1.963, -1.387, -0.923, -0.033, 0.518, 1.235, 1.881, 2.423, 2.37, 2.342, 2.524]' viewBox="0 0 64 24"></svg>
             </div>
@@ -3586,7 +4625,7 @@
         
         <div class="entry-card quiet" onclick="openCardReceiptFromEl(this)"
              data-ticker="NVDA" data-stage="QUIET_ACCUMULATION"
-             data-days="9"
+             data-days="10"
              data-macd-bars=""
              data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": false, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": false, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": true, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": true, "valuation_extreme": null}'
              data-fwd-pe="15.6"
@@ -3595,7 +4634,7 @@
             <a class="card-ticker" href="us_stocks.html#NVDA" onclick="event.stopPropagation()" style="color:inherit;">NVDA</a>
             <div class="card-right">
               
-              <div class="card-days"><span class="l-en">9s tracked</span><span class="l-zh">已追踪9个交易日</span></div>
+              <div class="card-days"><span class="l-en">10s tracked</span><span class="l-zh">已追踪10个交易日</span></div>
               
               <svg class="card-sparkline" data-hist='[-1.825, -2.305, -2.066, -2.366, -2.099, -2.552, -3.02, -3.242, -3.075, -3.007, -2.69, -1.986, -1.399, -0.387, -0.352, -0.027, 0.272, -0.339, -1.118, -0.861]' viewBox="0 0 64 24"></svg>
             </div>
@@ -4043,7 +5082,7 @@
         
         <div class="entry-card quiet" onclick="openCardReceiptFromEl(this)"
              data-ticker="IDXX" data-stage="QUIET_ACCUMULATION"
-             data-days="11"
+             data-days="12"
              data-macd-bars=""
              data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": false, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}'
              data-fwd-pe=""
@@ -4052,7 +5091,7 @@
             <a class="card-ticker" href="us_stocks.html#IDXX" onclick="event.stopPropagation()" style="color:inherit;">IDXX</a>
             <div class="card-right">
               
-              <div class="card-days"><span class="l-en">11s tracked</span><span class="l-zh">已追踪11个交易日</span></div>
+              <div class="card-days"><span class="l-en">12s tracked</span><span class="l-zh">已追踪12个交易日</span></div>
               
               <svg class="card-sparkline" data-hist='[4.74, 3.879, 4.011, 2.452, 2.457, 1.088, 1.124, -0.048, -0.596, 0.462, 1.974, 2.149, 2.574, 2.309, 2.746, 1.971, 0.595, 0.821, 1.83, 1.723]' viewBox="0 0 64 24"></svg>
             </div>
@@ -4073,464 +5112,6 @@
           <div class="entry-flag turn"><span class="l-en">Downtrend intact — turnaround attempt only</span><span class="l-zh">下行趋势未改——仅为反转尝试</span></div>
           
           
-        </div>
-        
-      
-      
-      
-      
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        
-        
-        
-        
-      
-      
-        
-        
-        
-        
-        
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-            
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        <div class="entry-card quiet" onclick="openCardReceiptFromEl(this)"
-             data-ticker="JPM" data-stage="QUIET_ACCUMULATION"
-             data-days="11"
-             data-macd-bars="5.0"
-             data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": true, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": true, "parabolic": false, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": false, "valuation_extreme": null}'
-             data-fwd-pe="14.2"
-             data-val-pctile="">
-          <div class="card-top">
-            <a class="card-ticker" href="us_stocks.html#JPM" onclick="event.stopPropagation()" style="color:inherit;">JPM</a>
-            <div class="card-right">
-              
-              <div class="card-days"><span class="l-en">11s tracked</span><span class="l-zh">已追踪11个交易日</span></div>
-              
-              <svg class="card-sparkline" data-hist='[0.357, 0.747, 1.32, 2.493, 2.559, 3.011, 3.17, 2.704, 2.525, 2.259, 2.319, 1.938, 1.476, 1.832, 1.519, 1.433, 1.525, 1.825, 1.1, 0.952]' viewBox="0 0 64 24"></svg>
-            </div>
-          </div>
-          <div class="evidence-bar">
-            <div class="dot-bar" data-k="3" data-n="4"></div>
-            
-            
-            
-            <span class="ev-label"><span class="l-en">Strengthening</span><span class="l-zh">增强中</span></span>
-          </div>
-          <div class="evidence-line" data-chips='{"accum_evidence": true, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": false, "extension_extreme": true, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": true, "parabolic": false, "qa_context": true, "revision_positive": true, "rs_line_nh": false, "rs_slope_negative_3m": false, "rs_turn": false, "valuation_extreme": null}' data-stage="QUIET_ACCUMULATION"></div>
-          
-          
-          
-          
-          
-          
-          <div class="entry-flag late">&#x26A0; <span class="l-en">Already moved — don't chase</span><span class="l-zh">已经启动——勿追高</span> · +8% <span class="l-en">vs 50-day</span><span class="l-zh">对50日线</span></div>
-          
-          <div class="entry-flag opt"><span class="l-en">Options ceiling just above — price tends to stall there</span><span class="l-zh">上方紧邻期权天花板——价格倾向在此停滞</span></div>
         </div>
         
       
@@ -9545,7 +10126,7 @@
       <div class="lane-header suppressed">
         <div class="lane-dot suppressed"></div>
         <div class="lane-name"><span class="l-en">First stirrings</span><span class="l-zh">初动迹象</span></div>
-        <span class="lane-count-chip suppressed">8 <span class="l-en">left for dead</span><span class="l-zh">无人问津</span></span>
+        <span class="lane-count-chip suppressed">9 <span class="l-en">left for dead</span><span class="l-zh">无人问津</span></span>
       </div>
 
       
@@ -9930,7 +10511,7 @@
           
           <div class="entry-card suppressed" onclick="openCardReceiptFromEl(this)"
                data-ticker="CHTR" data-stage="SUPPRESSED"
-               data-days="2"
+               data-days="3"
                data-chips='{"accum_evidence": false, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": true, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": false, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": false, "revision_positive": false, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}'
                data-fwd-pe=""
                data-val-pctile="">
@@ -9938,7 +10519,7 @@
               <a class="card-ticker" href="us_stocks.html#CHTR" onclick="event.stopPropagation()" style="color:inherit;">CHTR</a>
               <div class="card-right">
                 
-                <div class="card-days"><span class="l-en">2s tracked</span><span class="l-zh">已追踪2个交易日</span></div>
+                <div class="card-days"><span class="l-en">3s tracked</span><span class="l-zh">已追踪3个交易日</span></div>
                 
                 <svg class="card-sparkline" data-hist='[-1.101, -0.169, 0.89, 0.931, 0.711, 1.055, 1.248, 2.521, 2.94, 3.031, 3.125, 2.922, 2.582, 2.349, 2.207, 1.888, 1.615, 1.792, 2.778, 3.331]' viewBox="0 0 64 24" style="flex-shrink:0;"></svg>
               </div>
@@ -10334,7 +10915,7 @@
           
           <div class="entry-card suppressed" onclick="openCardReceiptFromEl(this)"
                data-ticker="CPRT" data-stage="SUPPRESSED"
-               data-days="11"
+               data-days="12"
                data-chips='{"accum_evidence": false, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": true, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": false, "gap_ignition": true, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": false, "revision_positive": false, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}'
                data-fwd-pe=""
                data-val-pctile="">
@@ -10342,7 +10923,7 @@
               <a class="card-ticker" href="us_stocks.html#CPRT" onclick="event.stopPropagation()" style="color:inherit;">CPRT</a>
               <div class="card-right">
                 
-                <div class="card-days"><span class="l-en">11s tracked</span><span class="l-zh">已追踪11个交易日</span></div>
+                <div class="card-days"><span class="l-en">12s tracked</span><span class="l-zh">已追踪12个交易日</span></div>
                 
                 <svg class="card-sparkline" data-hist='[-0.109, -0.113, -0.151, -0.209, -0.181, -0.185, -0.141, -0.22, -0.205, -0.096, -0.059, -0.083, -0.138, -0.165, -0.141, -0.134, -0.109, 0.09, 0.288, 0.301]' viewBox="0 0 64 24" style="flex-shrink:0;"></svg>
               </div>
@@ -10738,7 +11319,7 @@
           
           <div class="entry-card suppressed" onclick="openCardReceiptFromEl(this)"
                data-ticker="PDD" data-stage="SUPPRESSED"
-               data-days="11"
+               data-days="12"
                data-chips='{"accum_evidence": false, "analyst_saturated": null, "basket_corr_rising": null, "below_200dma_12m": false, "bw_emerging": false, "call_skew_rich": null, "cheap_pctile_40": null, "context_ok": true, "drawdown_25pct": true, "extension_extreme": false, "gap_ignition": false, "insider_cluster": null, "monthly_rsi_80": false, "obv_divergence": false, "parabolic": false, "qa_context": false, "revision_positive": null, "rs_line_nh": false, "rs_slope_negative_3m": true, "rs_turn": true, "valuation_extreme": null}'
                data-fwd-pe=""
                data-val-pctile="">
@@ -10746,7 +11327,7 @@
               <a class="card-ticker" href="us_stocks.html#PDD" onclick="event.stopPropagation()" style="color:inherit;">PDD</a>
               <div class="card-right">
                 
-                <div class="card-days"><span class="l-en">11s tracked</span><span class="l-zh">已追踪11个交易日</span></div>
+                <div class="card-days"><span class="l-en">12s tracked</span><span class="l-zh">已追踪12个交易日</span></div>
                 
                 <svg class="card-sparkline" data-hist='[-1.351, -1.366, -1.127, -1.118, -1.035, -1.079, -1.215, -0.985, -0.359, 0.093, 0.429, 0.878, 1.075, 1.261, 1.25, 1.258, 1.135, 1.129, 1.317, 1.408]' viewBox="0 0 64 24" style="flex-shrink:0;"></svg>
               </div>
@@ -10770,7 +11351,7 @@
       
       
       <div style="font-size:0.72rem;color:var(--text-dim);padding:6px 4px;">
-        5 <span class="l-en">without lead signs — ignore for now</span><span class="l-zh">个无领先信号——暂不关注</span>
+        6 <span class="l-en">without lead signs — ignore for now</span><span class="l-zh">个无领先信号——暂不关注</span>
       </div>
       
     </div>
@@ -11136,11 +11717,17 @@
       
     
   
+    
+    
+    
+      
+    
+  
   <div class="glass side-card sc-rerate">
     <div class="side-card-title"><span class="l-en">Rerating watch</span><span class="l-zh">重估观察</span></div>
     <div class="side-card-sub">
       <span class="l-en">Estimates turning up while still cheap</span><span class="l-zh">预期上调而估值仍低</span>
-       — <span style="color:var(--col-breakaway);font-weight:700;">13</span> <span class="l-en">with a live signal</span><span class="l-zh">有活跃信号</span>
+       — <span style="color:var(--col-breakaway);font-weight:700;">15</span> <span class="l-en">with a live signal</span><span class="l-zh">有活跃信号</span>
     </div>
 
     
@@ -11211,6 +11798,23 @@
           <span class="rerate-chip"><span class="l-en">Broad breadth</span><span class="l-zh">广泛修正</span></span>
           
           
+          
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="rerating-row">
+        <a class="rerating-ticker" href="us_stocks.html#AMZN" style="text-decoration:none;">AMZN</a>
+        <span class="rerating-stage-chip s-none">
+          <span class="l-en">No signal</span><span class="l-zh">无信号</span>
+        </span>
+        <div class="rerating-chips">
+          <span class="rerate-chip"><span class="l-en">Estimates ↑</span><span class="l-zh">盈利预期↑</span></span>
+          <span class="rerate-chip"><span class="l-en">Broad breadth</span><span class="l-zh">广泛修正</span></span>
+          
+          <span class="rerate-chip warn"><span class="l-en">Earnings &lt;14d</span><span class="l-zh">财报&lt;14天</span></span>
           
         </div>
       </div>
@@ -11312,8 +11916,26 @@
           
         </span>
         <div class="rerating-chips">
-          <span class="rerate-chip"><span class="l-en">Estimates ↑</span><span class="l-zh">盈利预期↑</span></span>
+          
           <span class="rerate-chip"><span class="l-en">Broad breadth</span><span class="l-zh">广泛修正</span></span>
+          
+          <span class="rerate-chip warn"><span class="l-en">Earnings &lt;14d</span><span class="l-zh">财报&lt;14天</span></span>
+          
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="rerating-row">
+        <a class="rerating-ticker" href="us_stocks.html#REGN" style="text-decoration:none;">REGN</a>
+        <span class="rerating-stage-chip s-breakaway">
+          <span class="l-en">Breaking away</span><span class="l-zh">突破启动</span>
+          
+        </span>
+        <div class="rerating-chips">
+          <span class="rerate-chip"><span class="l-en">Estimates ↑</span><span class="l-zh">盈利预期↑</span></span>
+          
           
           <span class="rerate-chip warn"><span class="l-en">Earnings &lt;14d</span><span class="l-zh">财报&lt;14天</span></span>
           
@@ -11484,24 +12106,6 @@
       
       
       <div class="rerating-row rr-dim">
-        <a class="rerating-ticker" href="us_stocks.html#REGN" style="text-decoration:none;">REGN</a>
-        <span class="rerating-stage-chip s-breakaway">
-          <span class="l-en">Breaking away</span><span class="l-zh">突破启动</span>
-          
-        </span>
-        <div class="rerating-chips">
-          
-          
-          
-          <span class="rerate-chip warn"><span class="l-en">Earnings &lt;14d</span><span class="l-zh">财报&lt;14天</span></span>
-          <span class="rr-watching"><span class="l-en">watching — no rerating signal yet</span><span class="l-zh">观察中——暂无重估信号</span></span>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="rerating-row rr-dim">
         <a class="rerating-ticker" href="us_stocks.html#ROP" style="text-decoration:none;">ROP</a>
         <span class="rerating-stage-chip s-breakaway">
           <span class="l-en">Breaking away</span><span class="l-zh">突破启动</span>
@@ -11582,6 +12186,48 @@
       <tbody>
       
       <tr>
+        <td style="white-space:nowrap;">2026-07-31</td>
+        <td><a href="us_stocks.html#REGN" style="color:inherit;text-decoration:none;">REGN</a></td>
+        <td>
+          <span class="l-en">Breakout entry</span><span class="l-zh">突破入场</span>
+          
+        </td>
+        <td>
+          
+          <span style="color:var(--text-dim);font-style:italic;"><span class="l-en">accruing</span><span class="l-zh">累计中</span></span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td style="white-space:nowrap;">2026-07-31</td>
+        <td><a href="us_stocks.html#MSFT" style="color:inherit;text-decoration:none;">MSFT</a></td>
+        <td>
+          <span class="l-en">Breakout entry</span><span class="l-zh">突破入场</span>
+          
+        </td>
+        <td>
+          
+          <span style="color:var(--text-dim);font-style:italic;"><span class="l-en">accruing</span><span class="l-zh">累计中</span></span>
+          
+        </td>
+      </tr>
+      
+      <tr>
+        <td style="white-space:nowrap;">2026-07-31</td>
+        <td><a href="us_stocks.html#FTNT" style="color:inherit;text-decoration:none;">FTNT</a></td>
+        <td>
+          <span class="l-en">Breakout entry</span><span class="l-zh">突破入场</span>
+          
+        </td>
+        <td>
+          
+          <span style="color:var(--text-dim);font-style:italic;"><span class="l-en">accruing</span><span class="l-zh">累计中</span></span>
+          
+        </td>
+      </tr>
+      
+      <tr>
         <td style="white-space:nowrap;">2026-07-29</td>
         <td><a href="us_stocks.html#VRSK" style="color:inherit;text-decoration:none;">VRSK</a></td>
         <td>
@@ -11639,9 +12285,9 @@
       
       <tr>
         <td style="white-space:nowrap;">2026-07-28</td>
-        <td><a href="us_stocks.html#MMM" style="color:inherit;text-decoration:none;">MMM</a></td>
+        <td><a href="us_stocks.html#ROP" style="color:inherit;text-decoration:none;">ROP</a></td>
         <td>
-          <span class="l-en">Pre-launch watch</span><span class="l-zh">起飞前观察</span>
+          <span class="l-en">Breakout entry</span><span class="l-zh">突破入场</span>
           
         </td>
         <td>
@@ -11695,9 +12341,9 @@
       
       <tr>
         <td style="white-space:nowrap;">2026-07-28</td>
-        <td><a href="us_stocks.html#ROP" style="color:inherit;text-decoration:none;">ROP</a></td>
+        <td><a href="us_stocks.html#MMM" style="color:inherit;text-decoration:none;">MMM</a></td>
         <td>
-          <span class="l-en">Breakout entry</span><span class="l-zh">突破入场</span>
+          <span class="l-en">Pre-launch watch</span><span class="l-zh">起飞前观察</span>
           
         </td>
         <td>
@@ -11808,48 +12454,6 @@
       <tr>
         <td style="white-space:nowrap;">2026-07-17</td>
         <td><a href="us_stocks.html#NET" style="color:inherit;text-decoration:none;">NET</a></td>
-        <td>
-          <span class="l-en">Breakout entry</span><span class="l-zh">突破入场</span>
-          
-        </td>
-        <td>
-          
-          <span style="color:var(--text-dim);font-style:italic;"><span class="l-en">accruing</span><span class="l-zh">累计中</span></span>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td style="white-space:nowrap;">2026-07-15</td>
-        <td><a href="us_stocks.html#DDOG" style="color:inherit;text-decoration:none;">DDOG</a></td>
-        <td>
-          <span class="l-en">Breakout entry</span><span class="l-zh">突破入场</span>
-          
-        </td>
-        <td>
-          
-          <span style="color:var(--text-dim);font-style:italic;"><span class="l-en">accruing</span><span class="l-zh">累计中</span></span>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td style="white-space:nowrap;">2026-07-15</td>
-        <td><a href="us_stocks.html#PYPL" style="color:inherit;text-decoration:none;">PYPL</a></td>
-        <td>
-          <span class="l-en">Breakout entry</span><span class="l-zh">突破入场</span>
-          
-        </td>
-        <td>
-          
-          <span style="color:var(--text-dim);font-style:italic;"><span class="l-en">accruing</span><span class="l-zh">累计中</span></span>
-          
-        </td>
-      </tr>
-      
-      <tr>
-        <td style="white-space:nowrap;">2026-07-15</td>
-        <td><a href="us_stocks.html#CRWD" style="color:inherit;text-decoration:none;">CRWD</a></td>
         <td>
           <span class="l-en">Breakout entry</span><span class="l-zh">突破入场</span>
           
@@ -11992,7 +12596,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">4s</span><span class="l-zh">4日</span>
+            <span class="l-en">5s</span><span class="l-zh">5日</span>
           </td>
           <td>
             
@@ -12097,7 +12701,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
+            <span class="l-en">3s</span><span class="l-zh">3日</span>
           </td>
           <td>
             
@@ -12184,7 +12788,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">3s</span><span class="l-zh">3日</span>
+            <span class="l-en">4s</span><span class="l-zh">4日</span>
           </td>
           <td>
             
@@ -12271,7 +12875,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">3s</span><span class="l-zh">3日</span>
+            <span class="l-en">4s</span><span class="l-zh">4日</span>
           </td>
           <td>
             
@@ -12364,7 +12968,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
+            <span class="l-en">3s</span><span class="l-zh">3日</span>
           </td>
           <td>
             
@@ -12457,7 +13061,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -12544,7 +13148,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">8s</span><span class="l-zh">8日</span>
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -12637,7 +13241,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">1s</span><span class="l-zh">1日</span>
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -12724,7 +13328,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
+            <span class="l-en">3s</span><span class="l-zh">3日</span>
           </td>
           <td>
             
@@ -12817,7 +13421,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">10s</span><span class="l-zh">10日</span>
+            <span class="l-en">11s</span><span class="l-zh">11日</span>
           </td>
           <td>
             
@@ -12904,7 +13508,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">4s</span><span class="l-zh">4日</span>
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -12991,7 +13595,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">3s</span><span class="l-zh">3日</span>
+            <span class="l-en">4s</span><span class="l-zh">4日</span>
           </td>
           <td>
             
@@ -13078,7 +13682,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">3s</span><span class="l-zh">3日</span>
+            <span class="l-en">4s</span><span class="l-zh">4日</span>
           </td>
           <td>
             
@@ -13165,7 +13769,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
+            <span class="l-en">3s</span><span class="l-zh">3日</span>
           </td>
           <td>
             
@@ -13252,7 +13856,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">3s</span><span class="l-zh">3日</span>
+            <span class="l-en">4s</span><span class="l-zh">4日</span>
           </td>
           <td>
             
@@ -13355,11 +13959,96 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">7s</span><span class="l-zh">7日</span>
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.143, -0.106, -0.067, -0.11, -0.138, -0.115, -0.09, 0.037, 0.115, 0.172, 0.185, 0.189, 0.23, 0.222, 0.233, 0.236, 0.112, 0.092, 0.196, 0.216]'></svg>
+            
+          </td>
+        </tr>
+      
+        
+        
+        
+        
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        <tr>
+          <td><a class="ticker-link" href="us_stocks.html#CRM" style="text-decoration:none;">CRM</a>
+            
+          </td>
+          <td>
+            <span class="stage-pill QUIET_ACCUMULATION">
+              <span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span>
+            </span>
+          </td>
+          <td style="font-size:0.72rem;color:var(--text-muted);">
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
+          </td>
+          <td>
+            <div class="leg-chips">
+              
+              <span class="leg-chip gray" data-chip-key="extension_extreme"></span>
+              
+              <span class="leg-chip gray" data-chip-key="parabolic"></span>
+              
+            </div>
+          </td>
+          <td style="color:var(--text-muted);">
+            <span class="l-en">3s</span><span class="l-zh">3日</span>
+          </td>
+          <td>
+            
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[1.49, 0.234, -0.662, -1.769, -2.547, -2.759, -2.91, -2.309, -1.417, -0.542, 0.312, 0.442, 1.114, 1.263, 1.583, 1.705, 0.898, 1.452, 2.706, 3.106]'></svg>
             
           </td>
         </tr>
@@ -13440,7 +14129,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">1s</span><span class="l-zh">1日</span>
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -13525,7 +14214,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
@@ -13565,6 +14254,8 @@
           
         
           
+            
+          
         
           
         
@@ -13587,7 +14278,7 @@
         
         
         <tr>
-          <td><a class="ticker-link" href="us_stocks.html#EA" style="text-decoration:none;">EA</a>
+          <td><a class="ticker-link" href="us_stocks.html#ETN" style="text-decoration:none;">ETN</a>
             
           </td>
           <td>
@@ -13601,16 +14292,18 @@
           <td>
             <div class="leg-chips">
               
+              <span class="leg-chip gray" data-chip-key="revision_positive"></span>
+              
               <span class="leg-chip gray" data-chip-key="accum_evidence"></span>
               
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">9s</span><span class="l-zh">9日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[0.167, 0.201, 0.217, 0.208, 0.135, 0.168, 0.255, 0.314, 0.357, 0.346, 0.331, 0.37, 0.355, 0.379, 0.47, 0.502, 0.483, 0.439, 0.366, 0.348]'></svg>
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-1.756, -2.257, -1.661, -1.097, 0.03, -0.377, 0.261, -0.152, -0.203, -1.161, -1.938, -1.726, -1.739, -1.06, -1.441, -1.452, -0.639, -1.181, -3.834, -1.914]'></svg>
             
           </td>
         </tr>
@@ -13687,11 +14380,96 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[0.072, 0.104, 0.165, 0.159, 0.167, 0.217, 0.248, 0.282, 0.233, 0.295, 0.298, 0.208, 0.185, 0.073, 0.031, -0.022, 0.032, 0.055, 0.057, -0.024]'></svg>
+            
+          </td>
+        </tr>
+      
+        
+        
+        
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        <tr>
+          <td><a class="ticker-link" href="us_stocks.html#FANG" style="text-decoration:none;">FANG</a>
+            
+          </td>
+          <td>
+            <span class="stage-pill QUIET_ACCUMULATION">
+              <span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span>
+            </span>
+          </td>
+          <td style="font-size:0.72rem;color:var(--text-muted);">
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
+          </td>
+          <td>
+            <div class="leg-chips">
+              
+              <span class="leg-chip gray" data-chip-key="rs_turn"></span>
+              
+              <span class="leg-chip gray" data-chip-key="accum_evidence"></span>
+              
+            </div>
+          </td>
+          <td style="color:var(--text-muted);">
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
+          </td>
+          <td>
+            
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-1.388, -1.732, -2.003, -2.391, -2.668, -2.447, -2.543, -2.613, -3.076, -3.202, -2.565, -1.927, -0.799, -0.15, 0.652, 1.408, 2.184, 1.946, 1.91, 2.031]'></svg>
             
           </td>
         </tr>
@@ -13772,7 +14550,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">4s</span><span class="l-zh">4日</span>
+            <span class="l-en">5s</span><span class="l-zh">5日</span>
           </td>
           <td>
             
@@ -13857,11 +14635,96 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">4s</span><span class="l-zh">4日</span>
+            <span class="l-en">5s</span><span class="l-zh">5日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.01, -0.171, 0.297, 0.658, 0.88, 0.528, 0.873, 0.101, -0.778, -0.771, -1.033, -1.245, -1.381, -1.348, -1.105, -0.572, 0.855, 1.685, 1.831, 1.956]'></svg>
+            
+          </td>
+        </tr>
+      
+        
+        
+        
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        <tr>
+          <td><a class="ticker-link" href="us_stocks.html#HUBB" style="text-decoration:none;">HUBB</a>
+            
+          </td>
+          <td>
+            <span class="stage-pill QUIET_ACCUMULATION">
+              <span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span>
+            </span>
+          </td>
+          <td style="font-size:0.72rem;color:var(--text-muted);">
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
+          </td>
+          <td>
+            <div class="leg-chips">
+              
+              <span class="leg-chip gray" data-chip-key="revision_positive"></span>
+              
+              <span class="leg-chip gray" data-chip-key="accum_evidence"></span>
+              
+            </div>
+          </td>
+          <td style="color:var(--text-muted);">
+            <span class="l-en">4s</span><span class="l-zh">4日</span>
+          </td>
+          <td>
+            
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-1.739, -1.818, -0.415, 1.764, 4.035, 4.414, 6.117, 5.522, 3.296, 1.534, -0.179, -0.831, -1.734, -2.023, -1.533, -1.694, -1.153, -0.126, -1.821, -2.027]'></svg>
             
           </td>
         </tr>
@@ -13942,7 +14805,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -14027,7 +14890,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -14112,181 +14975,11 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[0.357, 0.747, 1.32, 2.493, 2.559, 3.011, 3.17, 2.704, 2.525, 2.259, 2.319, 1.938, 1.476, 1.832, 1.519, 1.433, 1.525, 1.825, 1.1, 0.952]'></svg>
-            
-          </td>
-        </tr>
-      
-        
-        
-        
-        
-        
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        
-        
-        <tr>
-          <td><a class="ticker-link" href="us_stocks.html#MDLZ" style="text-decoration:none;">MDLZ</a>
-            
-          </td>
-          <td>
-            <span class="stage-pill QUIET_ACCUMULATION">
-              <span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span>
-            </span>
-          </td>
-          <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
-          </td>
-          <td>
-            <div class="leg-chips">
-              
-              <span class="leg-chip gray" data-chip-key="parabolic"></span>
-              
-              <span class="leg-chip gray" data-chip-key="rs_turn"></span>
-              
-            </div>
-          </td>
-          <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
-          </td>
-          <td>
-            
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[0.058, 0.102, -0.003, -0.118, -0.24, -0.253, -0.247, -0.304, -0.349, -0.266, -0.249, -0.352, -0.303, -0.332, -0.19, -0.166, -0.131, -0.065, 0.255, 0.269]'></svg>
-            
-          </td>
-        </tr>
-      
-        
-        
-        
-        
-        
-        
-          
-            
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        
-        
-        <tr>
-          <td><a class="ticker-link" href="us_stocks.html#MELI" style="text-decoration:none;">MELI</a>
-            
-          </td>
-          <td>
-            <span class="stage-pill QUIET_ACCUMULATION">
-              <span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span>
-            </span>
-          </td>
-          <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
-          </td>
-          <td>
-            <div class="leg-chips">
-              
-              <span class="leg-chip gray" data-chip-key="extension_extreme"></span>
-              
-              <span class="leg-chip gray" data-chip-key="parabolic"></span>
-              
-            </div>
-          </td>
-          <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
-          </td>
-          <td>
-            
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[0.301, -0.802, 1.285, 2.011, 2.982, 0.55, 1.669, 6.756, 13.741, 19.1, 24.971, 27.223, 31.19, 30.619, 26.834, 23.599, 18.737, 15.94, 15.984, 15.924]'></svg>
             
           </td>
         </tr>
@@ -14367,11 +15060,96 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">9s</span><span class="l-zh">9日</span>
+            <span class="l-en">10s</span><span class="l-zh">10日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-1.825, -2.305, -2.066, -2.366, -2.099, -2.552, -3.02, -3.242, -3.075, -3.007, -2.69, -1.986, -1.399, -0.387, -0.352, -0.027, 0.272, -0.339, -1.118, -0.861]'></svg>
+            
+          </td>
+        </tr>
+      
+        
+        
+        
+        
+        
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        <tr>
+          <td><a class="ticker-link" href="us_stocks.html#ROST" style="text-decoration:none;">ROST</a>
+            
+          </td>
+          <td>
+            <span class="stage-pill QUIET_ACCUMULATION">
+              <span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span>
+            </span>
+          </td>
+          <td style="font-size:0.72rem;color:var(--text-muted);">
+            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
+          </td>
+          <td>
+            <div class="leg-chips">
+              
+              <span class="leg-chip gray" data-chip-key="parabolic"></span>
+              
+              <span class="leg-chip gray" data-chip-key="bw_emerging"></span>
+              
+            </div>
+          </td>
+          <td style="color:var(--text-muted);">
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
+          </td>
+          <td>
+            
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.155, 0.414, 0.557, 0.348, 0.124, -0.307, -1.494, -2.603, -3.002, -3.025, -2.824, -2.186, -1.755, -0.994, 0.019, 0.799, 1.022, 1.799, 2.729, 3.094]'></svg>
             
           </td>
         </tr>
@@ -14452,7 +15230,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -14537,96 +15315,11 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.054, 0.955, 1.814, 1.906, 2.365, 2.712, 3.864, 4.75, 5.192, 5.619, 4.939, 3.589, 2.339, 1.618, 0.991, -0.307, -1.641, -1.35, -0.062, 0.532]'></svg>
-            
-          </td>
-        </tr>
-      
-        
-        
-        
-        
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-        
-        
-        <tr>
-          <td><a class="ticker-link" href="us_stocks.html#TMUS" style="text-decoration:none;">TMUS</a>
-            
-          </td>
-          <td>
-            <span class="stage-pill QUIET_ACCUMULATION">
-              <span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span>
-            </span>
-          </td>
-          <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
-          </td>
-          <td>
-            <div class="leg-chips">
-              
-              <span class="leg-chip gray" data-chip-key="rs_slope_negative_3m"></span>
-              
-              <span class="leg-chip gray" data-chip-key="drawdown_25pct"></span>
-              
-            </div>
-          </td>
-          <td style="color:var(--text-muted);">
-            <span class="l-en">4s</span><span class="l-zh">4日</span>
-          </td>
-          <td>
-            
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.766, -0.332, 0.191, 0.065, 0.045, 0.252, 0.216, -0.266, -0.575, -0.414, 0.208, 0.42, 1.011, 1.315, 1.777, 1.896, 0.598, 0.21, 0.254, -0.272]'></svg>
             
           </td>
         </tr>
@@ -14707,92 +15400,11 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.124, -0.46, -0.363, 0.115, 0.187, 0.28, 0.432, 1.192, 2.182, 3.363, 3.255, 2.716, 2.793, 2.47, 2.292, 1.817, 1.081, 1.185, 1.506, 1.38]'></svg>
-            
-          </td>
-        </tr>
-      
-        
-        
-        
-        
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        
-        
-        <tr>
-          <td><a class="ticker-link" href="us_stocks.html#XEL" style="text-decoration:none;">XEL</a>
-            
-          </td>
-          <td>
-            <span class="stage-pill QUIET_ACCUMULATION">
-              <span class="l-en">Quiet build</span><span class="l-zh">静默筑底</span>
-            </span>
-          </td>
-          <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Watch — don't chase</span><span class="l-zh">观察——勿追高</span>
-          </td>
-          <td>
-            <div class="leg-chips">
-              
-              <span class="leg-chip gray" data-chip-key="rs_turn"></span>
-              
-            </div>
-          </td>
-          <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
-          </td>
-          <td>
-            
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.298, -0.258, -0.112, -0.134, -0.141, 0.05, 0.26, 0.394, 0.313, 0.389, 0.334, 0.174, 0.157, 0.056, -0.043, -0.109, -0.015, 0.038, -0.058, -0.153]'></svg>
             
           </td>
         </tr>
@@ -14806,7 +15418,7 @@
           <span class="stage-pill CATALYST_WINDOW">
             <span class="l-en">Ignition window</span><span class="l-zh">点火窗口</span>
           </span>
-          <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">8 <span class="l-en">names</span><span class="l-zh">个</span></span>
+          <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">9 <span class="l-en">names</span><span class="l-zh">个</span></span>
           <span style="margin-left:4px;font-size:0.66rem;color:var(--text-dim);">· <span class="l-en">click to expand/collapse</span><span class="l-zh">点击展开/折叠</span></span>
           <span style="float:right;font-size:0.66rem;color:var(--text-dim);font-style:italic;">
             <span class="l-en">Get ready</span><span class="l-zh">做好准备</span>
@@ -14887,7 +15499,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">3s</span><span class="l-zh">3日</span>
+            <span class="l-en">4s</span><span class="l-zh">4日</span>
           </td>
           <td>
             
@@ -14972,7 +15584,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
@@ -15057,11 +15669,96 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
+            <span class="l-en">3s</span><span class="l-zh">3日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.985, -2.535, -3.791, -4.697, -4.924, -5.072, -4.77, -3.899, -2.771, -1.331, 0.052, 0.772, 1.511, 1.782, 2.544, 2.513, 2.062, 3.062, 4.829, 5.032]'></svg>
+            
+          </td>
+        </tr>
+      
+        
+        
+        
+        
+        
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        <tr>
+          <td><a class="ticker-link" href="us_stocks.html#AMZN" style="text-decoration:none;">AMZN</a>
+            <span class="fire-badge" style="font-size:0.6rem;padding:1px 5px;margin-left:4px;">&#x26A1;</span>
+          </td>
+          <td>
+            <span class="stage-pill CATALYST_WINDOW">
+              <span class="l-en">Ignition window</span><span class="l-zh">点火窗口</span>
+            </span>
+          </td>
+          <td style="font-size:0.72rem;color:var(--text-muted);">
+            <span class="l-en">Get ready</span><span class="l-zh">做好准备</span>
+          </td>
+          <td>
+            <div class="leg-chips">
+              
+              <span class="leg-chip blue" data-chip-key="parabolic"></span>
+              
+              <span class="leg-chip blue" data-chip-key="gap_ignition"></span>
+              
+            </div>
+          </td>
+          <td style="color:var(--text-muted);">
+            <span class="l-en">3s</span><span class="l-zh">3日</span>
+          </td>
+          <td>
+            
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-4.051, -4.526, -4.374, -4.657, -4.204, -4.401, -4.78, -3.952, -3.141, -2.413, -1.621, -0.969, -0.489, 0.332, 0.34, 0.352, -0.542, -1.215, -1.868, 0.699]'></svg>
             
           </td>
         </tr>
@@ -15142,7 +15839,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">3s</span><span class="l-zh">3日</span>
+            <span class="l-en">4s</span><span class="l-zh">4日</span>
           </td>
           <td>
             
@@ -15227,7 +15924,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">3s</span><span class="l-zh">3日</span>
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -15312,7 +16009,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
+            <span class="l-en">3s</span><span class="l-zh">3日</span>
           </td>
           <td>
             
@@ -15397,7 +16094,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">3s</span><span class="l-zh">3日</span>
+            <span class="l-en">4s</span><span class="l-zh">4日</span>
           </td>
           <td>
             
@@ -15482,7 +16179,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
@@ -15500,7 +16197,7 @@
           <span class="stage-pill SUPPRESSED">
             <span class="l-en">Left for dead</span><span class="l-zh">无人问津</span>
           </span>
-          <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">8 <span class="l-en">names</span><span class="l-zh">个</span></span>
+          <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">9 <span class="l-en">names</span><span class="l-zh">个</span></span>
           <span style="margin-left:4px;font-size:0.66rem;color:var(--text-dim);">· <span class="l-en">click to expand/collapse</span><span class="l-zh">点击展开/折叠</span></span>
           <span style="float:right;font-size:0.66rem;color:var(--text-dim);font-style:italic;">
             <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
@@ -15585,7 +16282,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -15670,7 +16367,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
+            <span class="l-en">3s</span><span class="l-zh">3日</span>
           </td>
           <td>
             
@@ -15755,7 +16452,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -15840,7 +16537,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -15925,7 +16622,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16010,7 +16707,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">1s</span><span class="l-zh">1日</span>
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -16095,7 +16792,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16180,7 +16877,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16189,70 +16886,52 @@
           </td>
         </tr>
       
-      </tbody>
-      
-      
-      
-      <tr class="board-grp-hd" onclick="toggleBoardGroup('bg-CROWDED')">
-        <td colspan="6">
-          <span class="stage-pill CROWDED">
-            <span class="l-en">Crowded</span><span class="l-zh">过度拥挤</span>
-          </span>
-          <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">1 <span class="l-en">names</span><span class="l-zh">个</span></span>
-          <span style="margin-left:4px;font-size:0.66rem;color:var(--text-dim);">· <span class="l-en">click to expand/collapse</span><span class="l-zh">点击展开/折叠</span></span>
-          <span style="float:right;font-size:0.66rem;color:var(--text-dim);font-style:italic;">
-            <span class="l-en">Protect gains</span><span class="l-zh">保护利润</span>
-          </span>
-        </td>
-      </tr>
-      <tbody id="bg-CROWDED" class="board-grp-body collapsed">
-      
         
         
         
         
         
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
         
           
             
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
           
         
           
@@ -16262,37 +16941,39 @@
         
         
         <tr>
-          <td><a class="ticker-link" href="us_stocks.html#CRM" style="text-decoration:none;">CRM</a>
+          <td><a class="ticker-link" href="us_stocks.html#TMUS" style="text-decoration:none;">TMUS</a>
             
           </td>
           <td>
-            <span class="stage-pill CROWDED">
-              <span class="l-en">Crowded</span><span class="l-zh">过度拥挤</span>
+            <span class="stage-pill SUPPRESSED">
+              <span class="l-en">Left for dead</span><span class="l-zh">无人问津</span>
             </span>
           </td>
           <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Protect gains</span><span class="l-zh">保护利润</span>
+            <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
           </td>
           <td>
             <div class="leg-chips">
               
-              <span class="leg-chip gray" data-chip-key="extension_extreme"></span>
+              <span class="leg-chip gray" data-chip-key="rs_slope_negative_3m"></span>
               
-              <span class="leg-chip gray" data-chip-key="parabolic"></span>
+              <span class="leg-chip gray" data-chip-key="drawdown_25pct"></span>
               
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
+            <span class="l-en">5s</span><span class="l-zh">5日</span>
           </td>
           <td>
             
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[1.49, 0.234, -0.662, -1.769, -2.547, -2.759, -2.91, -2.309, -1.417, -0.542, 0.312, 0.442, 1.114, 1.263, 1.583, 1.705, 0.898, 1.452, 2.706, 3.106]'></svg>
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.766, -0.332, 0.191, 0.065, 0.045, 0.252, 0.216, -0.266, -0.575, -0.414, 0.208, 0.42, 1.011, 1.315, 1.777, 1.896, 0.598, 0.21, 0.254, -0.272]'></svg>
             
           </td>
         </tr>
       
       </tbody>
+      
+      
       
       
       
@@ -16338,7 +17019,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">5s</span><span class="l-zh">5日</span>
+            <span class="l-en">6s</span><span class="l-zh">6日</span>
           </td>
           <td>
             
@@ -16375,7 +17056,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">8s</span><span class="l-zh">8日</span>
+            <span class="l-en">9s</span><span class="l-zh">9日</span>
           </td>
           <td>
             
@@ -16412,7 +17093,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16449,7 +17130,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16486,7 +17167,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16523,7 +17204,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">10s</span><span class="l-zh">10日</span>
+            <span class="l-en">11s</span><span class="l-zh">11日</span>
           </td>
           <td>
             
@@ -16560,7 +17241,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16597,7 +17278,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">8s</span><span class="l-zh">8日</span>
+            <span class="l-en">9s</span><span class="l-zh">9日</span>
           </td>
           <td>
             
@@ -16634,7 +17315,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16671,7 +17352,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16708,7 +17389,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16745,7 +17426,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16782,7 +17463,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16819,7 +17500,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16856,7 +17537,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -16893,7 +17574,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">3s</span><span class="l-zh">3日</span>
+            <span class="l-en">4s</span><span class="l-zh">4日</span>
           </td>
           <td>
             
@@ -16930,7 +17611,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
+            <span class="l-en">3s</span><span class="l-zh">3日</span>
           </td>
           <td>
             
@@ -17004,7 +17685,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">8s</span><span class="l-zh">8日</span>
+            <span class="l-en">9s</span><span class="l-zh">9日</span>
           </td>
           <td>
             
@@ -17041,7 +17722,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17078,7 +17759,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">5s</span><span class="l-zh">5日</span>
+            <span class="l-en">6s</span><span class="l-zh">6日</span>
           </td>
           <td>
             
@@ -17115,7 +17796,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17152,7 +17833,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17189,7 +17870,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17226,7 +17907,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">10s</span><span class="l-zh">10日</span>
+            <span class="l-en">11s</span><span class="l-zh">11日</span>
           </td>
           <td>
             
@@ -17263,7 +17944,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17300,7 +17981,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17337,7 +18018,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17374,7 +18055,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17411,7 +18092,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17485,7 +18166,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17503,7 +18184,7 @@
           <span class="stage-pill NONE">
             <span class="l-en">No signal</span><span class="l-zh">无信号</span>
           </span>
-          <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">91 <span class="l-en">names</span><span class="l-zh">个</span></span>
+          <span style="margin-left:8px;font-size:0.68rem;color:var(--text-dim);">90 <span class="l-en">names</span><span class="l-zh">个</span></span>
           <span style="margin-left:4px;font-size:0.66rem;color:var(--text-dim);">· <span class="l-en">click to expand/collapse</span><span class="l-zh">点击展开/折叠</span></span>
           <span style="float:right;font-size:0.66rem;color:var(--text-dim);font-style:italic;">
             <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
@@ -17584,7 +18265,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17661,7 +18342,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
@@ -17742,7 +18423,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17823,7 +18504,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17908,7 +18589,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -17985,7 +18666,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
@@ -18066,7 +18747,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -18147,7 +18828,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">10s</span><span class="l-zh">10日</span>
+            <span class="l-en">11s</span><span class="l-zh">11日</span>
           </td>
           <td>
             
@@ -18228,96 +18909,11 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[1.918, 2.624, 2.73, 2.107, 1.361, 1.435, 1.785, 2.409, 2.722, 3.586, 3.539, 3.014, 2.294, 1.551, 1.474, 1.302, 1.416, 1.669, 2.413, 2.537]'></svg>
-            
-          </td>
-        </tr>
-      
-        
-        
-        
-        
-        
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        
-        
-        <tr>
-          <td><a class="ticker-link" href="us_stocks.html#AMZN" style="text-decoration:none;">AMZN</a>
-            
-          </td>
-          <td>
-            <span class="stage-pill NONE">
-              <span class="l-en">No signal</span><span class="l-zh">无信号</span>
-            </span>
-          </td>
-          <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
-          </td>
-          <td>
-            <div class="leg-chips">
-              
-              <span class="leg-chip gray" data-chip-key="parabolic"></span>
-              
-              <span class="leg-chip gray" data-chip-key="gap_ignition"></span>
-              
-            </div>
-          </td>
-          <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
-          </td>
-          <td>
-            
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-4.051, -4.526, -4.374, -4.657, -4.204, -4.401, -4.78, -3.952, -3.141, -2.413, -1.621, -0.969, -0.489, 0.332, 0.34, 0.352, -0.542, -1.215, -1.868, 0.699]'></svg>
             
           </td>
         </tr>
@@ -18398,7 +18994,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -18483,7 +19079,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -18568,7 +19164,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -18653,7 +19249,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -18730,7 +19326,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
@@ -18811,7 +19407,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -18896,7 +19492,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -18981,7 +19577,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -19062,7 +19658,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -19143,7 +19739,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -19228,7 +19824,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -19309,7 +19905,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -19386,7 +19982,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">7s</span><span class="l-zh">7日</span>
+            <span class="l-en">8s</span><span class="l-zh">8日</span>
           </td>
           <td>
             
@@ -19471,7 +20067,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -19552,7 +20148,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -19637,7 +20233,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -19718,7 +20314,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -19799,7 +20395,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">7s</span><span class="l-zh">7日</span>
+            <span class="l-en">8s</span><span class="l-zh">8日</span>
           </td>
           <td>
             
@@ -19880,7 +20476,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">10s</span><span class="l-zh">10日</span>
+            <span class="l-en">11s</span><span class="l-zh">11日</span>
           </td>
           <td>
             
@@ -19965,7 +20561,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">2s</span><span class="l-zh">2日</span>
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -20050,7 +20646,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">8s</span><span class="l-zh">8日</span>
+            <span class="l-en">9s</span><span class="l-zh">9日</span>
           </td>
           <td>
             
@@ -20135,7 +20731,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">8s</span><span class="l-zh">8日</span>
+            <span class="l-en">9s</span><span class="l-zh">9日</span>
           </td>
           <td>
             
@@ -20220,7 +20816,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
@@ -20305,7 +20901,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -20345,8 +20941,6 @@
           
         
           
-            
-          
         
           
         
@@ -20369,7 +20963,7 @@
         
         
         <tr>
-          <td><a class="ticker-link" href="us_stocks.html#ETN" style="text-decoration:none;">ETN</a>
+          <td><a class="ticker-link" href="us_stocks.html#EA" style="text-decoration:none;">EA</a>
             
           </td>
           <td>
@@ -20383,103 +20977,16 @@
           <td>
             <div class="leg-chips">
               
-              <span class="leg-chip gray" data-chip-key="revision_positive"></span>
-              
               <span class="leg-chip gray" data-chip-key="accum_evidence"></span>
               
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">10s</span><span class="l-zh">10日</span>
           </td>
           <td>
             
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-1.756, -2.257, -1.661, -1.097, 0.03, -0.377, 0.261, -0.152, -0.203, -1.161, -1.938, -1.726, -1.739, -1.06, -1.441, -1.452, -0.639, -1.181, -3.834, -1.914]'></svg>
-            
-          </td>
-        </tr>
-      
-        
-        
-        
-        
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        
-        
-        <tr>
-          <td><a class="ticker-link" href="us_stocks.html#FANG" style="text-decoration:none;">FANG</a>
-            
-          </td>
-          <td>
-            <span class="stage-pill NONE">
-              <span class="l-en">No signal</span><span class="l-zh">无信号</span>
-            </span>
-          </td>
-          <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
-          </td>
-          <td>
-            <div class="leg-chips">
-              
-              <span class="leg-chip gray" data-chip-key="rs_turn"></span>
-              
-              <span class="leg-chip gray" data-chip-key="accum_evidence"></span>
-              
-            </div>
-          </td>
-          <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
-          </td>
-          <td>
-            
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-1.388, -1.732, -2.003, -2.391, -2.668, -2.447, -2.543, -2.613, -3.076, -3.202, -2.565, -1.927, -0.799, -0.15, 0.652, 1.408, 2.184, 1.946, 1.91, 2.031]'></svg>
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[0.167, 0.201, 0.217, 0.208, 0.135, 0.168, 0.255, 0.314, 0.357, 0.346, 0.331, 0.37, 0.355, 0.379, 0.47, 0.502, 0.483, 0.439, 0.366, 0.348]'></svg>
             
           </td>
         </tr>
@@ -20560,7 +21067,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">1s</span><span class="l-zh">1日</span>
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -20637,7 +21144,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -20722,7 +21229,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -20803,7 +21310,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">8s</span><span class="l-zh">8日</span>
+            <span class="l-en">9s</span><span class="l-zh">9日</span>
           </td>
           <td>
             
@@ -20884,7 +21391,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -20965,96 +21472,11 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[1.822, 2.631, 3.317, 3.491, 3.909, 3.389, 4.238, 4.952, 5.162, 5.484, 4.584, 3.353, 2.281, 1.74, 1.114, 0.167, -0.909, -0.84, -0.643, -0.917]'></svg>
-            
-          </td>
-        </tr>
-      
-        
-        
-        
-        
-        
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        
-        
-        <tr>
-          <td><a class="ticker-link" href="us_stocks.html#HUBB" style="text-decoration:none;">HUBB</a>
-            
-          </td>
-          <td>
-            <span class="stage-pill NONE">
-              <span class="l-en">No signal</span><span class="l-zh">无信号</span>
-            </span>
-          </td>
-          <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
-          </td>
-          <td>
-            <div class="leg-chips">
-              
-              <span class="leg-chip gray" data-chip-key="revision_positive"></span>
-              
-              <span class="leg-chip gray" data-chip-key="accum_evidence"></span>
-              
-            </div>
-          </td>
-          <td style="color:var(--text-muted);">
-            <span class="l-en">3s</span><span class="l-zh">3日</span>
-          </td>
-          <td>
-            
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-1.739, -1.818, -0.415, 1.764, 4.035, 4.414, 6.117, 5.522, 3.296, 1.534, -0.179, -0.831, -1.734, -2.023, -1.533, -1.694, -1.153, -0.126, -1.821, -2.027]'></svg>
             
           </td>
         </tr>
@@ -21131,7 +21553,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -21212,7 +21634,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -21297,7 +21719,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -21382,7 +21804,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -21463,7 +21885,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -21548,7 +21970,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -21633,7 +22055,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
@@ -21718,7 +22140,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">1s</span><span class="l-zh">1日</span>
+            <span class="l-en">2s</span><span class="l-zh">2日</span>
           </td>
           <td>
             
@@ -21795,7 +22217,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -21876,7 +22298,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -21953,7 +22375,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -22034,7 +22456,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -22119,11 +22541,181 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">4s</span><span class="l-zh">4日</span>
+            <span class="l-en">5s</span><span class="l-zh">5日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-1.107, -1.119, -0.647, -0.761, -0.479, -0.738, -0.851, -1.242, -1.484, -1.853, -2.05, -1.83, -1.877, -1.696, -1.847, -1.701, -1.656, -1.764, -2.154, -2.094]'></svg>
+            
+          </td>
+        </tr>
+      
+        
+        
+        
+        
+        
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        <tr>
+          <td><a class="ticker-link" href="us_stocks.html#MDLZ" style="text-decoration:none;">MDLZ</a>
+            
+          </td>
+          <td>
+            <span class="stage-pill NONE">
+              <span class="l-en">No signal</span><span class="l-zh">无信号</span>
+            </span>
+          </td>
+          <td style="font-size:0.72rem;color:var(--text-muted);">
+            <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
+          </td>
+          <td>
+            <div class="leg-chips">
+              
+              <span class="leg-chip gray" data-chip-key="parabolic"></span>
+              
+              <span class="leg-chip gray" data-chip-key="rs_turn"></span>
+              
+            </div>
+          </td>
+          <td style="color:var(--text-muted);">
+            <span class="l-en">3s</span><span class="l-zh">3日</span>
+          </td>
+          <td>
+            
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[0.058, 0.102, -0.003, -0.118, -0.24, -0.253, -0.247, -0.304, -0.349, -0.266, -0.249, -0.352, -0.303, -0.332, -0.19, -0.166, -0.131, -0.065, 0.255, 0.269]'></svg>
+            
+          </td>
+        </tr>
+      
+        
+        
+        
+        
+        
+        
+          
+            
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        <tr>
+          <td><a class="ticker-link" href="us_stocks.html#MELI" style="text-decoration:none;">MELI</a>
+            
+          </td>
+          <td>
+            <span class="stage-pill NONE">
+              <span class="l-en">No signal</span><span class="l-zh">无信号</span>
+            </span>
+          </td>
+          <td style="font-size:0.72rem;color:var(--text-muted);">
+            <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
+          </td>
+          <td>
+            <div class="leg-chips">
+              
+              <span class="leg-chip gray" data-chip-key="extension_extreme"></span>
+              
+              <span class="leg-chip gray" data-chip-key="parabolic"></span>
+              
+            </div>
+          </td>
+          <td style="color:var(--text-muted);">
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
+          </td>
+          <td>
+            
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[0.301, -0.802, 1.285, 2.011, 2.982, 0.55, 1.669, 6.756, 13.741, 19.1, 24.971, 27.223, 31.19, 30.619, 26.834, 23.599, 18.737, 15.94, 15.984, 15.924]'></svg>
             
           </td>
         </tr>
@@ -22204,7 +22796,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -22289,7 +22881,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -22366,7 +22958,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
@@ -22451,7 +23043,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -22536,7 +23128,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">5s</span><span class="l-zh">5日</span>
+            <span class="l-en">6s</span><span class="l-zh">6日</span>
           </td>
           <td>
             
@@ -22621,7 +23213,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">5s</span><span class="l-zh">5日</span>
+            <span class="l-en">6s</span><span class="l-zh">6日</span>
           </td>
           <td>
             
@@ -22706,7 +23298,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
@@ -22787,7 +23379,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">7s</span><span class="l-zh">7日</span>
+            <span class="l-en">8s</span><span class="l-zh">8日</span>
           </td>
           <td>
             
@@ -22868,7 +23460,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -22949,7 +23541,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">10s</span><span class="l-zh">10日</span>
+            <span class="l-en">1s</span><span class="l-zh">1日</span>
           </td>
           <td>
             
@@ -23034,7 +23626,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">8s</span><span class="l-zh">8日</span>
+            <span class="l-en">9s</span><span class="l-zh">9日</span>
           </td>
           <td>
             
@@ -23074,6 +23666,8 @@
           
         
           
+            
+          
         
           
             
@@ -23085,8 +23679,6 @@
         
           
         
-          
-            
           
         
           
@@ -23112,14 +23704,14 @@
           <td>
             <div class="leg-chips">
               
-              <span class="leg-chip gray" data-chip-key="rs_turn"></span>
+              <span class="leg-chip gray" data-chip-key="revision_positive"></span>
               
-              <span class="leg-chip gray" data-chip-key="rs_slope_negative_3m"></span>
+              <span class="leg-chip gray" data-chip-key="rs_turn"></span>
               
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -23200,7 +23792,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">5s</span><span class="l-zh">5日</span>
+            <span class="l-en">6s</span><span class="l-zh">6日</span>
           </td>
           <td>
             
@@ -23285,7 +23877,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">3s</span><span class="l-zh">3日</span>
+            <span class="l-en">4s</span><span class="l-zh">4日</span>
           </td>
           <td>
             
@@ -23366,7 +23958,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -23443,7 +24035,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">6s</span><span class="l-zh">6日</span>
+            <span class="l-en">7s</span><span class="l-zh">7日</span>
           </td>
           <td>
             
@@ -23528,7 +24120,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -23609,7 +24201,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -23690,96 +24282,11 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">5s</span><span class="l-zh">5日</span>
+            <span class="l-en">6s</span><span class="l-zh">6日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-1.683, -2.165, -2.822, -3.277, -3.539, -4.385, -5.691, -5.176, -4.51, -3.88, -4.41, -4.596, -4.863, -4.817, -5.081, -4.87, -4.402, -4.037, -4.085, -3.442]'></svg>
-            
-          </td>
-        </tr>
-      
-        
-        
-        
-        
-        
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-            
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-          
-        
-        
-        
-        <tr>
-          <td><a class="ticker-link" href="us_stocks.html#ROST" style="text-decoration:none;">ROST</a>
-            
-          </td>
-          <td>
-            <span class="stage-pill NONE">
-              <span class="l-en">No signal</span><span class="l-zh">无信号</span>
-            </span>
-          </td>
-          <td style="font-size:0.72rem;color:var(--text-muted);">
-            <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
-          </td>
-          <td>
-            <div class="leg-chips">
-              
-              <span class="leg-chip gray" data-chip-key="parabolic"></span>
-              
-              <span class="leg-chip gray" data-chip-key="bw_emerging"></span>
-              
-            </div>
-          </td>
-          <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
-          </td>
-          <td>
-            
-            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.155, 0.414, 0.557, 0.348, 0.124, -0.307, -1.494, -2.603, -3.002, -3.025, -2.824, -2.186, -1.755, -0.994, 0.019, 0.799, 1.022, 1.799, 2.729, 3.094]'></svg>
             
           </td>
         </tr>
@@ -23860,7 +24367,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -23945,7 +24452,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">5s</span><span class="l-zh">5日</span>
+            <span class="l-en">6s</span><span class="l-zh">6日</span>
           </td>
           <td>
             
@@ -24030,7 +24537,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -24115,7 +24622,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -24196,7 +24703,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -24277,7 +24784,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">4s</span><span class="l-zh">4日</span>
+            <span class="l-en">5s</span><span class="l-zh">5日</span>
           </td>
           <td>
             
@@ -24362,7 +24869,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -24443,7 +24950,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">4s</span><span class="l-zh">4日</span>
+            <span class="l-en">5s</span><span class="l-zh">5日</span>
           </td>
           <td>
             
@@ -24528,7 +25035,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -24613,7 +25120,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -24694,7 +25201,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -24779,7 +25286,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -24864,7 +25371,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
@@ -24949,7 +25456,7 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">5s</span><span class="l-zh">5日</span>
+            <span class="l-en">6s</span><span class="l-zh">6日</span>
           </td>
           <td>
             
@@ -25030,11 +25537,92 @@
             </div>
           </td>
           <td style="color:var(--text-muted);">
-            <span class="l-en">11s</span><span class="l-zh">11日</span>
+            <span class="l-en">12s</span><span class="l-zh">12日</span>
           </td>
           <td>
             
             <svg class="board-spark" viewBox="0 0 48 18" data-hist='[0.008, -0.033, 0.105, 0.147, 0.219, 0.22, 0.015, -0.164, -0.415, -0.723, -0.955, -0.876, -0.941, -1.04, -1.133, -1.029, -0.902, -0.908, -1.048, -0.914]'></svg>
+            
+          </td>
+        </tr>
+      
+        
+        
+        
+        
+        
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+        
+        
+        <tr>
+          <td><a class="ticker-link" href="us_stocks.html#XEL" style="text-decoration:none;">XEL</a>
+            
+          </td>
+          <td>
+            <span class="stage-pill NONE">
+              <span class="l-en">No signal</span><span class="l-zh">无信号</span>
+            </span>
+          </td>
+          <td style="font-size:0.72rem;color:var(--text-muted);">
+            <span class="l-en">Ignore</span><span class="l-zh">暂不关注</span>
+          </td>
+          <td>
+            <div class="leg-chips">
+              
+              <span class="leg-chip gray" data-chip-key="rs_turn"></span>
+              
+            </div>
+          </td>
+          <td style="color:var(--text-muted);">
+            <span class="l-en">3s</span><span class="l-zh">3日</span>
+          </td>
+          <td>
+            
+            <svg class="board-spark" viewBox="0 0 48 18" data-hist='[-0.298, -0.258, -0.112, -0.134, -0.141, 0.05, 0.26, 0.394, 0.313, 0.389, 0.334, 0.174, 0.157, 0.056, -0.043, -0.109, -0.015, 0.038, -0.058, -0.153]'></svg>
             
           </td>
         </tr>
@@ -25427,6 +26015,6 @@ function toggleBoardGroup(id) {
   });
 })();
 </script>
-<script src="theme.js?v=55773325" defer></script>
+<script src="theme.js"></script>
 </body>
 </html>

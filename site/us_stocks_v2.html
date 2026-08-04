@@ -52,9 +52,82 @@
 <meta name="robots" content="noindex">
 <title>Buy Board 2.0 — shadow preview (dual-gated)</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||'';if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=8798caae">
-<link rel="stylesheet" href="assets/css/d456a57c.css?v=d456a57c">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1360px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:22px; margin:0 0 2px; }
+  .lead-p { color:var(--muted); font-size:13px; margin:0 0 12px; max-width:900px; }
+  .shadow-tag { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.04em;
+    color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));
+    background:color-mix(in srgb,var(--warn) 12%,transparent); padding:2px 8px; border-radius:7px; margin-left:8px; }
+  /* stat strip */
+  .strip { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 14px; }
+  .stat { font-size:12px; color:var(--muted); padding:5px 12px; border:1px solid var(--line); border-radius:9px; background:var(--panel); }
+  .stat b { color:var(--text); font-size:14px; font-variant-numeric:tabular-nums; }
+  /* section heads */
+  .sec { display:flex; align-items:baseline; gap:10px; margin:22px 0 4px; }
+  .sec h2 { font-size:16px; margin:0; }
+  .sec .cnt { color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .sub { color:var(--muted); font-size:12.5px; margin:0 0 8px; max-width:840px; }
+  .conc { font-size:12px; color:var(--muted); padding:6px 12px; border:1px dashed var(--line); border-radius:9px; margin:0 0 10px; display:inline-block; }
+  .conc.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 45%,var(--line)); border-style:solid; }
+  /* grid + cards */
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; margin:4px 0 6px; }
+  .v2-card { display:flex; flex-direction:column; gap:7px; min-width:0; overflow:hidden; position:relative;
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:12px; padding:12px 13px; transition:border-color .12s; }
+  /* lane accent as a TOP gradient stripe (RIPENING-shelf idiom) — not a left border */
+  .v2-card::before { content:""; position:absolute; top:0; left:0; right:0; height:3px; pointer-events:none;
+    background:linear-gradient(90deg,var(--muted),transparent); opacity:.6; }
+  .v2-card[data-lane="entry_open"]::before { background:linear-gradient(90deg,var(--up),color-mix(in srgb,var(--up) 30%,transparent)); opacity:1; }
+  .v2-card[data-lane="setting_up"]::before { background:linear-gradient(90deg,var(--warn),color-mix(in srgb,var(--warn) 30%,transparent)); opacity:1; }
+  .v2-card:hover { border-color:var(--accent,var(--up)); }
+  .v2-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .v2-rank { font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .v2-tk { font-weight:800; font-size:15px; letter-spacing:.02em; }
+  .glyph { font-size:11px; font-weight:800; padding:2px 7px; border-radius:6px; border:1px solid var(--line);
+    font-variant-numeric:tabular-nums; }
+  .glyph.edge { min-width:22px; text-align:center; }
+  .glyph.tone-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,var(--line)); background:color-mix(in srgb,var(--up) 10%,transparent); }
+  .glyph.tone-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); background:color-mix(in srgb,var(--down) 10%,transparent); }
+  .glyph.tone-neutral { color:var(--muted); }
+  .glyph.tone-warm { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); background:color-mix(in srgb,var(--warn) 10%,transparent); }
+  .glyph.prov { color:var(--muted); font-weight:600; border-style:dashed; }
+  .v2-name { font-size:12.5px; color:var(--text); }
+  .v2-sec { color:var(--muted); }
+  .v2-lead { display:flex; align-items:center; gap:8px; }
+  .lead-bar { flex:0 0 60px; height:5px; border-radius:3px; background:var(--line); position:relative; overflow:hidden; }
+  .lead-bar::after { content:""; position:absolute; inset:0 auto 0 0; width:calc(var(--lead)*1%);
+    background:linear-gradient(90deg,var(--down),var(--muted) 50%,var(--up)); }
+  .lead-txt { font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .v2-chips { display:flex; flex-wrap:wrap; gap:5px; }
+  .chip { font-size:11px; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--muted); }
+  .chip.tone-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,var(--line)); }
+  .chip.tone-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
+  .chip.tone-warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .chip.tone-warm { color:var(--warn); }
+  .v2-foot { display:flex; flex-wrap:wrap; gap:8px; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .fp.ok { color:var(--up); }
+  .empty { color:var(--muted); font-size:13px; padding:14px; border:1px dashed var(--line); border-radius:10px; }
+  .pass { font-size:11.5px; color:var(--muted); margin:6px 0 0; }
+  .foot { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; }
+  code { font-size:11px; background:color-mix(in srgb,var(--muted) 12%,transparent); padding:1px 4px; border-radius:4px; }
+  /* W4 reflexivity overlay */
+  .rx-chip { cursor:help; }
+  .rx-basis { font-size:10px; color:var(--muted); cursor:help; margin-left:4px; }
+  .rx-banner { font-size:11.5px; color:var(--muted); margin:0 0 10px;
+    padding:5px 12px; border:1px solid color-mix(in srgb,var(--muted) 30%,var(--line));
+    border-radius:9px; display:inline-block; }
+  .rx-banner b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .rx-thesis-banner { border-color:color-mix(in srgb,var(--warn) 50%,var(--line));
+    color:var(--warn); display:block; margin-top:4px; }
+  .rx-caveat { display:inline-block; font-size:10px; cursor:help; margin-left:6px;
+    color:var(--muted); border:1px solid var(--line); border-radius:50%;
+    width:15px; height:15px; text-align:center; line-height:13px; vertical-align:middle; }
+</style>
 </head>
 <body>
 <h1><span class="l-en">Buy Board 2.0</span><span class="l-zh">买入榜 2.0</span><span class="shadow-tag">SHADOW · not live</span></h1>
@@ -62,9 +135,9 @@
 
 <div class="strip">
   <span class="stat"><span class="l-en">as of</span><span class="l-zh">截至</span> <b>2026-07-31</b></span>
-  <span class="stat"><span class="l-en">candidates</span><span class="l-zh">候选</span> <b>131</b></span>
-  <span class="stat"><span class="l-en">entry open</span><span class="l-zh">入场开放</span> <b>5</b></span>
-  <span class="stat"><span class="l-en">setting up</span><span class="l-zh">酝酿中</span> <b>3</b></span>
+  <span class="stat"><span class="l-en">candidates</span><span class="l-zh">候选</span> <b>133</b></span>
+  <span class="stat"><span class="l-en">entry open</span><span class="l-zh">入场开放</span> <b>6</b></span>
+  <span class="stat"><span class="l-en">setting up</span><span class="l-zh">酝酿中</span> <b>4</b></span>
   <span class="stat"><span class="l-en">knobs</span><span class="l-zh">参数</span> <b>prior</b></span>
 </div>
 <div class="rx-banner">
@@ -91,6 +164,38 @@
 
 <div class="grid">
   <a class="v2-card" data-lane="entry_open" data-tone="neutral"
+   href="stock.html?t=PI">
+  <div class="v2-top">
+    <span class="v2-rank">#1</span>
+    <span class="v2-tk">PI</span>
+    
+    <span class="glyph edge tone-neutral" data-tip-en="Neutral — no clear edge" data-tip-zh="Neutral — no clear edge">
+      C</span>
+    
+    <span class="glyph entry tone-pos">
+      T2 · just crossed</span>
+    
+    <span class="chip rx-chip tone-neg"
+          data-tip-en="Same bet as BOX — Information Technology (similarity 100%). | Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names."
+          data-tip-zh="与 BOX 押注相同 — Information Technology（相似度 100%）。 | Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names."><span class="l-en">⚠ same bet</span><span class="l-zh">⚠ 重复押注</span></span></div>
+  <div class="v2-name">Impinj, Inc. · <span class="v2-sec">Information Technology</span></div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:53"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> +0.07 · neutral</span>
+  </div>
+  
+  <div class="v2-chips">
+    <span class="chip tone-pos">Event edge (insider/PEAD/8-K)</span><span class="chip tone-neutral">Sector: Neutral</span><span class="chip tone-pos">RRG Leading</span>
+  </div>
+  
+  <div class="v2-foot">
+    <span class="fp">z 0.27</span>
+    <span class="fp">α +0.10</span>
+    <span class="fp">edge pctl 55</span>
+    <span class="fp">off-high -37.4%</span>
+    
+  </div>
+</a><a class="v2-card" data-lane="entry_open" data-tone="neutral"
    href="stock.html?t=M">
   <div class="v2-top">
     <span class="v2-rank">#1</span>
@@ -116,7 +221,7 @@
   <div class="v2-foot">
     <span class="fp">z 0.36</span>
     <span class="fp">α +1.60</span>
-    <span class="fp">edge pctl 68</span>
+    <span class="fp">edge pctl 67</span>
     <span class="fp">off-high -4.4%</span>
     <span class="fp ok">in setups.json</span>
   </div>
@@ -210,11 +315,11 @@
   </div>
   
   <div class="v2-foot">
-    <span class="fp">z 0.06</span>
-    <span class="fp">α +0.17</span>
-    <span class="fp">edge pctl 47</span>
-    <span class="fp">off-high -6.7%</span>
-    
+    <span class="fp">z 0.32</span>
+    <span class="fp">α +0.54</span>
+    <span class="fp">edge pctl 60</span>
+    <span class="fp">off-high 0.0%</span>
+    <span class="fp ok">in setups.json</span>
   </div>
 </a><a class="v2-card" data-lane="entry_open" data-tone="pos"
    href="stock.html?t=FHI">
@@ -252,7 +357,7 @@
 </div>
 
 <p class="pass"><span class="l-en">Passport</span><span class="l-zh">护照</span>: basis <code>dual-gate</code> · frame <code>cross-sectional</code> · rotation sources
-  sector_central=<code>ok</code> · subsector_confluence=<code>ok</code> · index_leadership=<code>degraded</code> · subsector_rotation=<code>ok</code> · baskets=<code>ok</code></p>
+  sector_central=<code>ok</code> · subsector_confluence=<code>ok</code> · index_leadership=<code>ok</code> · subsector_rotation=<code>ok</code> · baskets=<code>ok</code></p>
 
 
 <div class="sec"><h2><span class="l-en">Setting up</span><span class="l-zh">酝酿中</span></h2><span class="cnt">3 <span class="l-en">names</span><span class="l-zh">只</span></span></div>
@@ -280,12 +385,12 @@
           data-tip-zh="与 FHI 押注相同 — 共同因子敞口（相似度 93%）。 | Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names."><span class="l-en">⚠ same bet</span><span class="l-zh">⚠ 重复押注</span></span></div>
   <div class="v2-name">Airbnb Inc Class A · <span class="v2-sec">Consumer Discretionary</span></div>
   <div class="v2-lead">
-    <span class="lead-bar" style="--lead:52"></span>
-    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> +0.04 · neutral</span>
+    <span class="lead-bar" style="--lead:55"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> +0.11 · neutral</span>
   </div>
   
   <div class="v2-chips">
-    <span class="chip tone-pos">Event edge (insider/PEAD/8-K)</span><span class="chip tone-neutral">Sector: Neutral</span><span class="chip tone-pos">RRG Leading</span><span class="chip tone-neutral">Theme: DETERIORATING</span>
+    <span class="chip tone-pos">Event edge (insider/PEAD/8-K)</span><span class="chip tone-neutral">Sector: Neutral</span><span class="chip tone-pos">LAS Running</span><span class="chip tone-pos">RRG Leading</span><span class="chip tone-neutral">Theme: EMERGING</span>
   </div>
   
   <div class="v2-foot">
@@ -353,10 +458,42 @@
   </div>
   
   <div class="v2-foot">
-    <span class="fp">z 0.76</span>
+    <span class="fp">z 0.75</span>
     <span class="fp">α +0.97</span>
-    <span class="fp">edge pctl 78</span>
+    <span class="fp">edge pctl 75</span>
     <span class="fp">off-high -4.7%</span>
+    
+  </div>
+</a><a class="v2-card" data-lane="setting_up" data-tone="neutral"
+   href="stock.html?t=HEI">
+  <div class="v2-top">
+    <span class="v2-rank">#4</span>
+    <span class="v2-tk">HEI</span>
+    
+    <span class="glyph edge tone-neutral" data-tip-en="Neutral — no clear edge" data-tip-zh="Neutral — no clear edge">
+      D</span>
+    
+    <span class="glyph entry tone-warm">
+      T4 · projected T4, ~1.02 bars to cross</span>
+    <span class="glyph prov" data-tip-en="Provisional — may repaint. Graded on the incomplete 2D/3D resample bucket." data-tip-zh="暂定，可能重绘。基于未完成的 2D/3D 重采样桶评级。">provisional</span>
+    <span class="chip rx-chip tone-warn"
+          data-tip-en="Partial overlap with JBLU — Industrials (similarity 50%). | Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names."
+          data-tip-zh="与 JBLU 部分重叠 — Industrials（相似度 50%）。 | Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names."><span class="l-en">~ partial overlap</span><span class="l-zh">~ 部分重叠</span></span></div>
+  <div class="v2-name">HEICO · <span class="v2-sec">Industrials</span></div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:39"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> -0.22 · lagging</span>
+  </div>
+  
+  <div class="v2-chips">
+    <span class="chip tone-pos">Event edge (insider/PEAD/8-K)</span><span class="chip tone-neutral">Sector: Cautious</span><span class="chip tone-neg">RRG Weakening</span><span class="chip tone-neutral">Theme: DETERIORATING</span>
+  </div>
+  
+  <div class="v2-foot">
+    <span class="fp">z 0.01</span>
+    <span class="fp">α -0.24</span>
+    <span class="fp">edge pctl 38</span>
+    <span class="fp">off-high -1.3%</span>
     
   </div>
 </a>

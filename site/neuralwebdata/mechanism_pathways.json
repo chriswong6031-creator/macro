@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-08-03",
+  "as_of": "2026-08-04",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -25,29 +25,29 @@
   },
   "pathways": [
     {
-      "family": "credit_stress",
-      "driver": "credit_stress",
+      "family": "ai_semis",
+      "driver": "ai_semis",
       "pathway_role": "primary",
-      "as_of": "2026-08-03",
-      "direction_en": "Credit stress",
-      "direction_zh": "信用压力",
+      "as_of": "2026-08-04",
+      "direction_en": "Bubble / blow-off unwind",
+      "direction_zh": "泡沫/见顶回吐",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
       "coherence": "partial",
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_credit_stress",
-          "as_of": "2026-08-03",
+          "node_id": "driver_ai_semis",
+          "as_of": "2026-08-04",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "credit_stress",
+          "entity": "ai_semis",
           "observation": {
-            "en": "Credit stress",
-            "zh": "信用压力"
+            "en": "Bubble / blow-off unwind",
+            "zh": "泡沫/见顶回吐"
           },
           "direction": "",
-          "value": 61.0,
+          "value": 50.7,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -60,13 +60,13 @@
       "edges": [],
       "coverage_basis": "scare_trigger",
       "source_trigger": "risk_radar",
-      "scare": "credit"
+      "scare": "bubble"
     },
     {
       "family": "rates",
       "driver": "fed_repricing",
       "pathway_role": "alternate",
-      "as_of": "2026-08-03",
+      "as_of": "2026-08-04",
       "direction_en": "dovish repricing — cuts priced in, front-end down",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -76,7 +76,7 @@
       "nodes": [
         {
           "node_id": "driver_fed_repricing",
-          "as_of": "2026-08-03",
+          "as_of": "2026-08-04",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "fed_repricing",
@@ -85,7 +85,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 0.9,
+          "value": 0.79,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -99,11 +99,11 @@
       "coverage_basis": "scare_trigger"
     },
     {
-      "family": "liquidity",
-      "driver": "liquidity_impulse",
+      "family": "fx",
+      "driver": "usd_shock",
       "pathway_role": "alternate",
-      "as_of": "2026-08-03",
-      "direction_en": "net liquidity draining — risk headwind",
+      "as_of": "2026-08-04",
+      "direction_en": "dollar falling — risk tailwind, commodities & EM bid",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -111,17 +111,17 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_liquidity_impulse",
-          "as_of": "2026-08-03",
+          "node_id": "driver_usd_shock",
+          "as_of": "2026-08-04",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "liquidity_impulse",
+          "entity": "usd_shock",
           "observation": {
-            "en": "net liquidity draining — risk headwind",
+            "en": "dollar falling — risk tailwind, commodities & EM bid",
             "zh": ""
           },
           "direction": "",
-          "value": 0.76,
+          "value": 0.64,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

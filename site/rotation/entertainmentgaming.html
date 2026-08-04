@@ -34,10 +34,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gaming — Digital Entertainment · Subsector Rotation</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="../theme.css?v=8798caae">
-<link rel="stylesheet" href="../assets/css/6c71ef56.css?v=6c71ef56">
-<link rel="preload" as="style" href="../product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="../navigation-refresh.css?v=073377a0">
+<link rel="stylesheet" href="../theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 'Inter',-apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:24px 0 28px; }
+  a { text-decoration:none; color:inherit; }
+  .wrap { padding:16px 20px; }
+  @media (min-width:1100px){ .wrap{ padding:18px max(48px,calc((100vw - 1160px)/2)); } }
+  .sd-back { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700;
+             color:var(--link); margin:6px 2px 14px; }
+  .sd-head { display:flex; flex-wrap:wrap; align-items:flex-start; gap:10px 18px; margin:0 2px 6px; }
+  .sd-head h1 { font-size:26px; margin:0; font-weight:800; letter-spacing:-.02em; }
+  .sd-theme { font-size:13px; color:var(--muted); margin-top:3px; }
+  .sd-theme b { color:var(--text); font-weight:700; }
+  .sd-q { font-size:12px; font-weight:800; padding:4px 11px; border-radius:8px; white-space:nowrap;
+          align-self:center; }
+  .sd-q.q-lead{color:var(--up);background:color-mix(in srgb,var(--up) 15%,transparent);}
+  .sd-q.q-weak{color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,transparent);}
+  .sd-q.q-impr{color:var(--link);background:color-mix(in srgb,var(--link) 15%,transparent);}
+  .sd-q.q-lag{color:var(--down);background:color-mix(in srgb,var(--down) 15%,transparent);}
+  .sd-lede { font-size:13.5px; color:var(--muted); max-width:78ch; line-height:1.55; margin:8px 2px 18px; }
+  .sd-lede b { color:var(--text); }
+  .sd-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+  .sd-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:13px 14px; }
+  .sd-card .lab { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+                  color:var(--muted); }
+  .sd-card .val { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:5px; }
+  .sd-card .sub { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
+  .up{color:var(--up);} .dn{color:var(--down);}
+  .sd-sec { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:16px; }
+  .sd-sec h2 { font-size:14px; font-weight:800; margin:0 0 12px; }
+  .sd-perf { display:flex; flex-wrap:wrap; gap:10px; }
+  .sd-perf .sp { display:flex; flex-direction:column; align-items:center; min-width:60px; padding:8px 10px;
+                 background:var(--panel2); border:1px solid var(--line); border-radius:10px; }
+  .sd-perf .sp i { font-style:normal; font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; }
+  .sd-perf .sp b { font-size:15px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:3px; }
+  .sd-mem { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; }
+  .sd-chip { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 11px;
+             background:var(--panel2); border:1px solid var(--line); border-radius:10px; transition:border-color .12s,background .12s; }
+  .sd-chip:hover { border-color:color-mix(in srgb,var(--link) 55%,var(--line)); background:color-mix(in srgb,var(--link) 6%,transparent); }
+  .sd-chip .tk { font-weight:800; font-size:13px; }
+  .sd-chip .pc { font-size:11.5px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .sd-chip .pc i { font-style:normal; color:var(--muted); font-weight:600; margin-right:3px; }
+  .sd-foot { color:var(--muted); font-size:11px; margin:8px 2px 0; line-height:1.6; }
+</style>
 </head>
 <body>
 
@@ -46,7 +87,7 @@
 
 
 
-    <link rel="stylesheet" href="../navigation-refresh.css?v=073377a0">
+    <link rel="stylesheet" href="../navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="../start.html" aria-label="MASTERMINDX — Home">
@@ -253,10 +294,10 @@
     </div>
   </div>
   
-  <script src="../logo_config.js?v=b37d33d3" defer></script>
-  <script src="../stock-logos.js?v=cc29be53" defer></script>
-  <script src="../live_config.js?v=52943e92" defer></script>
-  <script src="../live.js?v=e19f6af3" defer></script>
+  <script src="../logo_config.js"></script>
+  <script src="../stock-logos.js"></script>
+  <script src="../live_config.js"></script>
+  <script src="../live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -418,6 +459,6 @@
   <span class="dev">Developed by Chris Wong</span>
 </footer>
 
-<script src="../theme.js?v=55773325" defer></script>
+<script src="../theme.js"></script>
 </body>
 </html>
