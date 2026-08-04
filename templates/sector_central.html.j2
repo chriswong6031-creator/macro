@@ -1046,12 +1046,18 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
      Recomposed over the ink tokens so the tint tracks the theme (and the zh flip)
      instead of a frozen literal. Fills stay light on purpose: a heavier tint
      darkens the surface and pushes the chip's own label back under AA. */
-  html[data-theme="light"] .si-stage :is(.ftr-strip-chip.up, .tc-chip.up, .tc-chip.aln, .fs-chip.tailwind, .sr-tw-chip.up) { --si-chip: var(--up); }
-  html[data-theme="light"] .si-stage :is(.ftr-strip-chip.dn, .tc-chip.dn, .tc-chip.was1, .sr-tw-chip.dn) { --si-chip: var(--down); }
+  /* .ftr-strip-chip left this family in V2.1 (see "the session tape's rank chips"
+     below): the tape strip's movers have no box at all any more, so there is no
+     dark-era rgba here to recompose. It stayed listed, and because this layer
+     out-specifies V2.1's `background:transparent` (0,4,1 vs 0,2,0) light mode kept
+     painting a tint behind a chip whose padding V2.1 had already taken to `1px 0` —
+     a colour smear clamped to the glyphs and bleeding into the next mover (operator
+     crop, 2026-08-03). Ink carries the state here; nothing else. */
+  html[data-theme="light"] .si-stage :is(.tc-chip.up, .tc-chip.aln, .fs-chip.tailwind, .sr-tw-chip.up) { --si-chip: var(--up); }
+  html[data-theme="light"] .si-stage :is(.tc-chip.dn, .tc-chip.was1, .sr-tw-chip.dn) { --si-chip: var(--down); }
   html[data-theme="light"] .si-stage .fs-chip.headwind { --si-chip: var(--warn); }
   html[data-theme="light"] .si-stage .tc-chip.mig { --si-chip: var(--link); }
   html[data-theme="light"] .si-stage :is(
-    .ftr-strip-chip.up, .ftr-strip-chip.dn,
     .tc-chip.up, .tc-chip.dn, .tc-chip.aln, .tc-chip.was1, .tc-chip.mig,
     .fs-chip.headwind, .fs-chip.tailwind
   ) {
@@ -1127,8 +1133,24 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
 
   /* — rail: macro-desk composure — */
   .si-side { padding:14px 11px; }
-  .si-view-btn { font-size:13px; padding:8.5px 11px; }
-  .si-view-btn.on { border-left-width:3px; }
+  .si-view-btn { font-size:13px; padding:8.5px 11px; position:relative; }
+  /* The active accent is DRAWN, not a painted border-left. A left border on a
+     border-radius:9px box follows BOTH corner arcs, so on a 36px pill a 3px
+     accent spends 9px at each end tapering to a point: it reads as a bowed
+     crescent sliding off the pill rather than a rule (operator crop, dark mode
+     2026-08-03). Same rail tick the section heads already use
+     (.rvx-sec-h h2::before), pinned over the 3px border box every button still
+     reserves — so the tick sits flush on the pill's straight edge and nothing
+     shifts between the on and off states. */
+  .si-view-btn.on { border-left-width:3px; border-left-color:transparent; }
+  .si-view-btn.on::before { content:""; position:absolute; left:-3px; top:50%;
+    width:3px; height:18px; margin-top:-9px; border-radius:0 2px 2px 0;
+    background:linear-gradient(180deg, var(--link),
+      color-mix(in srgb, var(--link) 40%, transparent)); }
+  /* <768px the rail is a top tab strip and the accent is a bottom border — the
+     tick would hang off the tab's left edge. Declared here, after the tick, so
+     it wins on source order (the ≤767px block above this style element cannot). */
+  @media (max-width:767px) { .si-view-btn.on::before { display:none; } }
   .si-side-out { white-space:nowrap; }
   .si-side-out .si-vb-l { white-space:nowrap; }
   /* rail: dark = translucent over the aurora (the estate's sticky idiom); light =
@@ -1219,16 +1241,33 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   .rvx-stance-days { opacity:.72; font-weight:500; }
 
   /* the session tape's rank chips: same boxless family — state ink + mono figure,
-     no borders (the six outlined pills were their own mongrel row). 红涨绿跌: with
-     the boxes gone the ink is the only carrier, so it flips in ZH. */
-  .ftr-tape-strip .ftr-strip-chip { border:0; background:transparent; padding:1px 0; }
-  .ftr-tape-strip { gap:5px 16px; }
-  html[data-lang="zh"] .ftr-strip-chip.up { color:var(--down); }
-  html[data-lang="zh"] .ftr-strip-chip.dn { color:var(--up); }
+     no borders (the six outlined pills were their own mongrel row). 红涨绿跌 needs
+     NO rule here: theme.css already swaps --up/--down (and the light --si-ink-* pair
+     re-keys with them) on html[data-lang="zh"], so a chip painted from var(--up)
+     flips on its own. The four zh overrides this block used to carry re-swapped it a
+     SECOND time and handed Chinese readers 绿涨红跌 — gainers green, losers red — in
+     both themes (measured dark+light, 2026-08-03; the standing double-flip trap).
+
+     The two rank groups are their OWN flex rows. Their chips are siblings inside a
+     plain <span>, so the strip's own gap never reached them, and taking the boxes
+     off left `padding:1px 0` — zero horizontal separation — so the six movers ran
+     together as one word: "Mag7 +3.5%Data Center Power +2.3%" (operator crop,
+     2026-08-03). Each chip is also one flat 400-weight run; typography now follows
+     the sanctioned .dtp tape idiom (theme.css .dtp-mname/.dtp-mpct): name in text
+     ink at 500, figure in mono tabular at 700 carrying the state colour. Chips never
+     break internally — a wrapping strip drops whole movers to the next row. */
+  .ftr-tape-strip .ftr-strip-chip { border:0; background:transparent; padding:1px 0;
+    gap:6px; white-space:nowrap; }
+  .ftr-tape-strip { gap:6px 22px; }
+  .ftr-strip-grp { display:inline-flex; align-items:center; flex-wrap:wrap; gap:5px 14px;
+    min-width:0; }
+  .ftr-strip-nm { color:var(--text); font-weight:500; }
+  .ftr-strip-pct { font-family:var(--font-mono,monospace); font-variant-numeric:tabular-nums;
+    font-weight:700; letter-spacing:-.01em; }
+  /* light only: reach for the text-grade ink when the strip renders outside the
+     subtree where W3 rebinds --up/--down. Language-agnostic on purpose — see above. */
   html[data-theme="light"] .ftr-strip-chip.up { color:var(--si-ink-up, var(--up)); }
   html[data-theme="light"] .ftr-strip-chip.dn { color:var(--si-ink-down, var(--down)); }
-  html[data-theme="light"][data-lang="zh"] .ftr-strip-chip.up { color:var(--si-ink-down, var(--down)); }
-  html[data-theme="light"][data-lang="zh"] .ftr-strip-chip.dn { color:var(--si-ink-up, var(--up)); }
 
   /* typeface: SF first (Apple system faces), Inter everywhere else — operator
      directive for the sector pages */
@@ -1366,8 +1405,8 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
       <span id="ftr-strip-token-lbl">—</span>
     </span>
     <span class="ftr-strip-asof" id="ftr-strip-asof"></span>
-    <span id="ftr-strip-leaders"></span>
-    <span id="ftr-strip-laggards"></span>
+    <span class="ftr-strip-grp" id="ftr-strip-leaders"></span>
+    <span class="ftr-strip-grp" id="ftr-strip-laggards"></span>
     <button class="ftr-strip-expand" id="ftr-strip-expand" type="button" aria-expanded="false">
       <span class="l-en">Full tape ▾</span><span class="l-zh">完整榜单 ▾</span>
     </button>
@@ -1673,10 +1712,15 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     all.sort(function(a,b){return b.tape_rank-a.tape_rank;});
     var leadEl=document.getElementById('ftr-strip-leaders');
     var lagEl=document.getElementById('ftr-strip-laggards');
+    /* name and figure are separate spans: they carry different type (the .dtp tape
+       idiom — readable name, mono tabular figure) and the strip prints the ZH name
+       in ZH, like the full band below it already does. */
     function chipHtml(b,cls){
       var chg=b.live_ew_chg_pct;
-      var nm=nameEn(b.id)||b.id;
-      return '<span class="ftr-strip-chip '+cls+'">'+esc(nm)+' '+(chg>=0?'+':'')+chg.toFixed(1)+'%</span>';
+      return '<span class="ftr-strip-chip '+cls+'">'
+        +'<span class="ftr-strip-nm">'+L(esc(nameEn(b.id)),esc(nameZh(b.id)))+'</span>'
+        +'<span class="ftr-strip-pct">'+(chg>=0?'+':'')+chg.toFixed(1)+'%</span>'
+        +'</span>';
     }
     if(leadEl){
       var top3=all.slice(0,3);
@@ -1727,6 +1771,17 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   }
 
   fetchJson('live/basket_pulse.json', function(d){ pulse=d; tryRender(); });
+
+  /* Display names come from window.BASKETS, which the DEFERRED sector_central_data.js
+     assigns via __siInitPage — and a same-origin basket_pulse.json fetch routinely
+     resolves first. When it does, _theme() finds nothing and every label in BOTH the
+     strip and the full band falls back to a prettified slug, in both languages:
+     "Ai Neoclouds", "Non Ai Software", "Us Sector Energy" (operator crop, 2026-08-03).
+     Doctrine §3 bans raw machine slugs from the glance tier — the prettified form is
+     the never-block-render safety net, not the label we ship. __siInitPage calls this
+     once the name map is in and (Equal-Weight)-stripped, and the tape repaints with
+     real names. No file, no call, no change: the fallback still holds the page up. */
+  window.__ftrTapeNamesReady = function(){ if(pulse) tryRender(); };
   })();
   </script>
 
@@ -2130,6 +2185,10 @@ function deepStrip(obj) {
   }
 }
 deepStrip(BASKETS);
+/* The tape band fetches its quotes from a parse-time script and usually paints before
+   this deferred payload lands, i.e. against an empty name map. Now that the map is in
+   AND de-suffixed, let it repaint with real display names. */
+try{ if(window.__ftrTapeNamesReady) window.__ftrTapeNamesReady(); }catch(e){ console.warn('tape names', e); }
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
 // W4 velocity/heat card-chip helpers removed with the dead FTR chip lane (#4257).
