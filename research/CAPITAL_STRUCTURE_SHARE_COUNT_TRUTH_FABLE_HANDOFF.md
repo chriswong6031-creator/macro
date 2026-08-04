@@ -51,6 +51,20 @@ default-off, native v4 remains unavailable from the production wrapper, and
 provider conformance, concurrent-writer, retention, coverage, UI/API, and
 Prophet authority remain unproven or disabled.
 
+Wave 9 adds a separate manual-only eight-round concurrent-writer witness. Two
+persistent spawned OS children own distinct boto sessions and clients and race
+precommitted genesis and successor candidates on eight unique disposable keys.
+A passing round requires overlapping transport attempts, exactly one HTTP 200
+and one exact base botocore HTTP 412 `PreconditionFailed` with no hidden retry,
+exact parent readback of both winners, ETag advancement, and an exact stale-E0
+refusal that leaves E1 unchanged. Every 409, double success/refusal, response
+ambiguity, repeated send, malformed readback, sequential span, or possible
+in-flight worker is non-passing. The workflow reuses the protected Wave 7
+Environment/secrets/lock/mutex but is a distinct receipt and workflow. It is
+unprovisioned, has never run, and has produced no provider evidence. All
+authority remains false; this code adds no publication, migration, retention,
+coverage, UI/API, or Prophet activation.
+
 ## 0. Acceptance boundary
 
 This wave is a deterministic, point-in-time evidence plane for three SEC Company
@@ -101,9 +115,13 @@ The operational v2 implementation files are:
 - `contracts/capital_structure_share_count_publish_journal_v2.schema.json`
 - `contracts/capital_structure_share_count_retention_receipt.schema.json`
 - `contracts/capital_structure_share_count_r2_conformance_receipt.schema.json`
+- `contracts/capital_structure_share_count_r2_concurrency_receipt.schema.json`
 - `engine/capital_structure/share_count_r2_conformance.py`
+- `engine/capital_structure/share_count_r2_concurrency.py`
 - `scripts/probe_capital_structure_share_count_r2.py`
+- `scripts/probe_capital_structure_share_count_r2_concurrency.py`
 - `.github/workflows/capital-share-count-r2-conformance.yml`
+- `.github/workflows/capital-share-count-r2-concurrency.yml`
 - `requirements/capital-share-r2-conformance-macos-arm64-py312.lock`
 - `tests/test_capital_structure_companyfacts_authenticated_read.py`
 - `tests/test_capital_structure_share_count_materializer_model.py`
@@ -112,6 +130,8 @@ The operational v2 implementation files are:
 - `tests/test_capital_structure_share_count_materializer.py`
 - `tests/test_capital_structure_share_count_r2_conformance.py`
 - `tests/test_capital_structure_share_count_r2_operator.py`
+- `tests/test_capital_structure_share_count_r2_concurrency.py`
+- `tests/test_capital_structure_share_count_r2_concurrency_operator.py`
 
 ## 1. What one observation means
 
@@ -353,7 +373,11 @@ The v2 path closes the previously missing source seam without weakening it:
     read-back exactly matches the frozen submitted candidate; absent, unchanged,
     unreadable, or otherwise ambiguous evidence remains indeterminate. That
     closes only the retry-classification code gate. Independent concurrent-writer
-    race proof remains required before activation.
+    race proof remains required before activation. Wave 9 supplies the dormant
+    two-process/eight-round harness and a separate closed receipt contract, but
+    it has never been dispatched and therefore supplies no provider proof. It
+    can leave at most eight small disposable objects and deliberately has no
+    List/Delete/cleanup capability.
 
 Outer publication v2 removes the former 512-receipt full-chain recovery cliff.
 It does not remove the upstream dependency: Company Facts source selection still
@@ -455,10 +479,11 @@ the correction chain.
    deliberate fail-closed release block, not an operational compactor.
 3. **Still required before activation:** the complete v4 and schema-dispatched
    journal implementation has received independent adversarial review, but the
-   new isolated-provider harness is only locally tested code. Provision a
-   protected Environment plus dedicated disposable bucket/credential, obtain
-   and review a real `passed` receipt, and make an explicit operator activation
-   decision. The
+   two isolated-provider harnesses are only locally tested code. Provision and
+   independently review the protected Environment plus dedicated disposable
+   bucket/credential, then obtain and review both a real sequential `passed`
+   receipt and a separate real concurrent-writer `passed` receipt before making
+   an explicit operator activation decision. The
    selector/receipt-versus-ledger
    split, journal crash protocol, and v3/v4 old-writer fences are adversarially
    pinned, but none enables the lane. Keep
@@ -468,9 +493,12 @@ the correction chain.
    unavailable from production and unscheduled regardless of those migration
    flags.
    A passed create/CAS/readback receipt closes only that exact scoped provider
-   sequential trace; it does not establish concurrent linearizability or itself
+   sequential trace; it does not establish concurrent behavior or itself
    attest the separately unit-tested production exception-reconciliation
-   behavior, and it does not activate publication. Separately
+   behavior, and it does not activate publication. A passed Wave 9 receipt would
+   close only its exact eight-round independent-client transport witness; it is
+   not a general provider linearizability, security, durability, availability,
+   or future-behavior proof and also does not activate publication. Separately
    prove R2 atomic
    conditional delete on an isolated object, add a shared external publish/delete
    fence and exact race test, mint a verifier-only capability that cannot write

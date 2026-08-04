@@ -310,9 +310,38 @@ candidate; an absent, unchanged, unreadable, or otherwise ambiguous result is
 indeterminate, while a recognized conditional-write failure plus a different
 authenticated head is a conflict. Regression tests cover v2 genesis/successor,
 v2-to-v3, v2/v3-to-v4, v4 genesis/successor, transport failure, and outage recovery. This
-closes only the post-PUT retry-classification code prerequisite. An independent
-concurrent-writer race proof remains separate, and neither this correction nor a
-passing sequential receipt activates publication.
+closes only the post-PUT retry-classification code prerequisite.
+
+Wave 9 adds the separate, manual-only code foundation for the remaining
+concurrent-writer prerequisite. It precommits eight unique disposable keys and
+four candidate bodies per key before any remote call. For every key, two
+persistent spawned OS children with distinct boto sessions and clients race one
+`If-None-Match: *` genesis and then one `If-Match: <E0>` successor. A pass
+requires exactly one HTTP 200 and one exact base botocore `ClientError` carrying
+HTTP 412 plus `PreconditionFailed` in both races, one actual `before-send` and
+one `needs-retry` attempt at attempt 1 per writer, zero SDK retries, overlapping
+transport-attempt intervals, and exact parent HEAD/bounded-GET authentication of
+the winning bytes. A final parent stale `If-Match: <E0>` PUT must receive the
+same exact 412 and leave E1 byte-for-byte and ETag-for-ETag unchanged. A 409,
+two successes, two refusals, response loss, hidden retry, missing hook,
+sequential transport spans, malformed readback, unchanged successor ETag, or
+post-hoc rewrite is non-passing. If a child may still have a request in flight,
+the process is terminated and no semantic receipt or post-race readback is
+emitted.
+
+This second workflow reuses only the protected Wave 7 Environment, its five
+dedicated conformance secret names, its exact dependency lock, and the same
+concurrency mutex. It has no schedule, no production credentials or fallback,
+and no List/Delete/copy/multipart/HMAC/publication capability. Its separate
+`capital_structure.share_count_r2_concurrency_receipt/v1` contract is a
+90-day review artifact with all output authorities false. The workflow is not
+provisioned or dispatched, no concurrency receipt exists, and no R2 concurrent
+behavior is yet proven. Even a future reviewed `passed` receipt would establish
+only the exact bounded, time-and-scope-specific eight-round transport witness;
+it would not be a general provider linearizability, security, durability,
+availability, production-client, or activation proof. Neither that future
+receipt, the sequential receipt, nor the Wave 8 reconciliation code activates
+publication.
 
 Every ambiguous transport outcome, deadline, malformed response, unexpected
 status, body/metadata/range mismatch, or stream-close failure is non-passing.
@@ -361,14 +390,14 @@ issuer coverage.
 
 #### Synapse non-registration ruling
 
-The review receipt is intentionally absent from `config/synapse.yml`. It has no
-consumer, expires as a GitHub Actions artifact, and is neither Git-, runner-, nor
-R2-canonical state. The current Synapse storage vocabulary has no exact GitHub
-review-artifact locus; labeling it `gitignored-local` or `r2` would misstate its
-authority and persistence. The JSON Schema is code, not a runtime artifact. A
-later durable receipt plane or consumer must receive its own reviewed storage,
-cadence, retention, and Synapse contract before use; this expiring artifact may
-not be silently promoted.
+The sequential and concurrent review receipts are intentionally absent from
+`config/synapse.yml`. They have no consumer, expire as GitHub Actions artifacts,
+and are neither Git-, runner-, nor R2-canonical state. The current Synapse
+storage vocabulary has no exact GitHub review-artifact locus; labeling either
+one `gitignored-local` or `r2` would misstate its authority and persistence. The
+JSON Schemas are code, not runtime artifacts. A later durable receipt plane or
+consumer must receive its own reviewed storage, cadence, retention, and Synapse
+contract before use; neither expiring artifact may be silently promoted.
 
 Local generation, receipt, pointer, journal, legacy pending/recovery, and lease files
 are crash-recovery mirrors and are excluded by `.gitignore`; this lane never turns
@@ -382,11 +411,12 @@ isolated proof that the provider offers atomic conditional delete, a shared
 external fence covering publisher staging through head CAS and each retention
 delete, and a
 verifier-only/minted capability that can never write the signed head or receipts.
-The selector/receipt-only high-water split and schema-dispatched single-file
-journal recovery protocol and the unrun manual provider harness are implemented
-and CI-pinned; they do not activate publication. Activation still requires a
-real isolated-provider `passed` receipt, review of its exact run evidence, and an
-explicit operator decision.
+The selector/receipt-only high-water split, schema-dispatched single-file
+journal recovery protocol, Wave 8 exception reconciliation, and both unrun
+manual provider harnesses are implemented and CI-pinned; they do not activate
+publication. Activation still requires separately reviewed `passed` sequential
+and concurrent isolated-provider receipts, review of their exact run evidence,
+all other release gates, and an explicit operator decision.
 Migration additionally requires exact `SHARE_COUNT_HEAD_GUARD_ACCOUNT_ID`
 configuration. Both strict lowercase migration flags default false and cannot
 be true together; migration-false v2 operation does not require the account ID. Any

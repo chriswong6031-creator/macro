@@ -19,6 +19,14 @@ has not run, no receipt exists, and R2 CAS behavior is not yet proven. Do not
 describe this as provider proof, publication activation, share-count coverage,
 or retention readiness.
 
+Wave 9 now adds a separate dormant concurrent-writer witness using the same
+protected Environment, five secret names, dependency lock, and concurrency
+mutex. It has also never run and has no receipt or provider proof. Its canonical
+operator handoff is
+`research/CAPITAL_SHARE_R2_CONCURRENCY_WITNESS_WAVE9_HANDOFF.md`; the sequential
+contract in this document remains unchanged and neither receipt substitutes for
+the other.
+
 The reviewed implementation now accepts only botocore `ClientError`, HTTP 412,
 and exact `Error.Code=PreconditionFailed` for deliberate duplicate/stale
 refusals. Every 409 and unrelated or untyped exception is inconclusive. It also
@@ -40,6 +48,16 @@ dedicated Environment and bucket.
 - `tests/test_capital_structure_share_count_r2_conformance.py`
 - `tests/test_capital_structure_share_count_r2_operator.py`
 - `requirements/capital-share-r2-conformance-macos-arm64-py312.lock`
+
+The separate Wave 9 inventory is:
+
+- `.github/workflows/capital-share-count-r2-concurrency.yml`
+- `engine/capital_structure/share_count_r2_concurrency.py`
+- `scripts/probe_capital_structure_share_count_r2_concurrency.py`
+- `contracts/capital_structure_share_count_r2_concurrency_receipt.schema.json`
+- `tests/test_capital_structure_share_count_r2_concurrency.py`
+- `tests/test_capital_structure_share_count_r2_concurrency_operator.py`
+- `research/CAPITAL_SHARE_R2_CONCURRENCY_WITNESS_WAVE9_HANDOFF.md`
 
 The workflow executes an exact reviewed source archive from its `main` commit
 and installs the hash-locked
@@ -199,9 +217,10 @@ an unchanged, absent, unreadable, or otherwise ambiguous result is
 indeterminate; and only a recognized conditional-write failure plus a different
 authenticated head is a conflict. A sequential provider receipt neither proves
 nor activates that code property. The correction closes only the post-PUT
-retry-classification prerequisite. Publication activation remains blocked on an
-independent concurrent-writer race proof and the other release gates, which a
-sequential provider receipt cannot close.
+retry-classification prerequisite. Publication activation remains blocked on a
+real, independently reviewed passing Wave 9 concurrent-writer receipt and the
+other release gates, which a sequential provider receipt cannot close. The
+Wave 9 code foundation alone does not close that provider-evidence gate.
 
 ## 7. Next steps (provider provisioning remains deferred)
 
@@ -213,3 +232,5 @@ download and schema-validate the receipt, inspect every step witness, and record
 an activation ruling separately. A passing run does not itself toggle any
 publication or migration variable, and it is insufficient without the
 independent concurrent-writer proof and the separate activation ruling above.
+Provisioning or dispatching the Wave 9 workflow is a second, separately reviewed
+operator action; do not infer it from a sequential dispatch.
