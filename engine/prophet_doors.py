@@ -39,6 +39,16 @@ PROSPECTIVE ONLY
 There is NO historical backfill. The ledger starts accruing the night this merges, mirroring
 the PSS prospective-accrual charters. Every row is a real forward call made without hindsight.
 
+RECORDED FEATURES ARE NOT FIRE CONDITIONS
+-----------------------------------------
+Each flag carries an analysis-only feature block (relay position, admission-day turnover,
+Foresight Desk stage — :data:`FEATURE_KEYS`, prereg §9 addendum 2026-08-04). They exist so the
+promotion read can test the CN-measured relay hypothesis on US forward data from day one.
+**They have ZERO effect on fire / cap / dedupe / grading**: :class:`_RecordedFeatures` is
+queried only AFTER a night's kept rows are already decided, and it degrades to nulls on any
+failure. `tests/test_prophet_doors.py::TestFireInvariance` pins that the fire set is identical
+with features on and off.
+
 NIGHTLY IS THE SOLE ADVANCER
 ----------------------------
 House law (CLAUDE.md §Ledgers). :func:`append_flags` refuses off-lane via
@@ -54,6 +64,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import tempfile
 import time
 from datetime import datetime, timezone
@@ -95,6 +106,43 @@ SECTOR_PARQUET = ("data", "breadth", "ticker_sectors.parquet")
 DOOR_T = "T"
 DOOR_R = "R"
 DOORS = (DOOR_T, DOOR_R)
+
+# --------------------------------------------------------------------------- #
+# RECORDED-FEATURE constants — ANALYSIS ONLY (prereg §9 addendum, 2026-08-04).
+#
+# These are NOT frozen construction constants. Nothing below is read by a fire
+# condition, the priority sort, the cap, the dedupe, or the grader, so changing
+# one changes what an analyst can measure — never which flags exist. The frozen
+# door constants are the block above; this block is deliberately separate so the
+# two can never be confused.
+# --------------------------------------------------------------------------- #
+RELAY_HIGH_LOOKBACK = 63     # a "fresh high" = close > the max of the PRIOR 63 closes
+RELAY_RECENT_SESSIONS = 3    # relay_count_3d: trailing sessions (inclusive of the flag bar)
+RELAY_POSITION_WINDOW = 21   # relay_position: trailing sessions the ordering is read over
+RELAY_MIN_MEMBERS = 4        # relay_position is null below this covered-member count
+TURNOVER_WINDOW_MAX = 60     # turnover_pctile: window = min(60, sessions actually available)
+CLOSES_CACHE_NAME = "_closes_cache.parquet"
+VOLUME_CACHE_NAME = "_volume_cache.parquet"
+FORESIGHT_ARTIFACT = ("site", "basketdata", "foresight_cascade.json")
+
+#: Every recorded-feature key. Present on EVERY flag row (null when uncomputable) so a null is
+#: always a disclosed null and never an absent field.
+FEATURE_KEYS = (
+    "relay_count_3d",
+    "relay_position",
+    "relay_members_covered",
+    "turnover_pctile",
+    "turnover_window",
+    "foresight_stage",
+    "foresight_covered",
+)
+
+
+def null_features() -> dict[str, Any]:
+    """The all-null feature block. Every failure path returns exactly this shape."""
+    out: dict[str, Any] = {k: None for k in FEATURE_KEYS}
+    out["foresight_covered"] = False
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -185,10 +233,19 @@ def write_status(doc: dict, root: Path | None = None) -> bool:
 def load_universe(root: Path | None = None) -> pd.DataFrame:
     """Wide close matrix over the US cache universe (same three breadth caches the §2 audit
     and `engine.equity_factors._closes("broad")` read). Columns = tickers, index = sessions."""
+    wide = _concat_group_caches(root, CLOSES_CACHE_NAME)
+    if wide.empty:
+        return wide
+    # universe floor = the production gate's own history requirement
+    return wide.loc[:, wide.notna().sum() >= MIN_HISTORY]
+
+
+def _concat_group_caches(root: Path | None, name: str) -> pd.DataFrame:
+    """Wide frame concatenated across the three breadth caches, deduped columns, datetime index."""
     r = Path(root or ROOT)
     frames = []
     for grp in UNIVERSE_GROUPS:
-        p = r / "data" / grp / "_closes_cache.parquet"
+        p = r / "data" / grp / name
         if p.exists():
             frames.append(pd.read_parquet(p))
     if not frames:
@@ -196,8 +253,86 @@ def load_universe(root: Path | None = None) -> pd.DataFrame:
     wide = pd.concat(frames, axis=1)
     wide = wide.loc[:, ~wide.columns.duplicated()].sort_index()
     wide.index = pd.to_datetime(wide.index)
-    # universe floor = the production gate's own history requirement
-    return wide.loc[:, wide.notna().sum() >= MIN_HISTORY]
+    return wide
+
+
+def load_volumes(root: Path | None = None) -> pd.DataFrame:
+    """Wide share-volume matrix over the same three breadth caches.
+
+    NO history floor, deliberately. These caches were backfilled 2026-05-19 and the MEDIAN
+    column carries ~51 non-null sessions, so a `MIN_HISTORY`-style floor would empty the frame.
+    :meth:`_RecordedFeatures._turnover` records the window length it actually used
+    (``turnover_window``) rather than claiming a 60-session read it cannot support — the US
+    Superintelligence Roadmap §4.1 names this cache depth as known debt.
+    """
+    return _concat_group_caches(root, VOLUME_CACHE_NAME)
+
+
+def _norm_theme(s: Any) -> str:
+    """Casefold + strip every non-alphanumeric. Join key between the rotation artifact's theme
+    NAMES and the Foresight Desk's theme slugs/names. Exact-after-normalisation only: a fuzzy
+    match would fabricate desk coverage the desk never claimed."""
+    return re.sub(r"[^a-z0-9]+", "", str(s or "").lower())
+
+
+def load_foresight_stages(root: Path | None = None) -> tuple[dict[str, str], dict]:
+    """({normalised theme key: STAGE}, disclosure) from the Thematic Foresight Desk artifact.
+
+    READ-ONLY join (`scripts/build_foresight.py` owns the artifact; this lane never triggers,
+    modifies, or reorders the desk). Both the desk's ``theme`` slug and its display ``name``
+    are indexed, because the rotation artifact names themes in display form.
+
+    The two taxonomies were built independently, so coverage is PARTIAL by construction and
+    that is the honest state: a theme the desk does not cover records
+    ``foresight_stage: null`` + ``foresight_covered: false``, never a guessed stage.
+    """
+    p = Path(root or ROOT).joinpath(*FORESIGHT_ARTIFACT)
+    disc: dict[str, Any] = {"source": "/".join(FORESIGHT_ARTIFACT), "ok": False,
+                            "asof": None, "n_themes": 0, "reason": None}
+    if not p.exists():
+        disc["reason"] = "foresight artifact absent — foresight_stage null on every flag"
+        return {}, disc
+    try:
+        doc = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        disc["reason"] = (f"foresight artifact unreadable ({type(e).__name__}) — "
+                          f"foresight_stage null on every flag")
+        return {}, disc
+    disc["asof"] = doc.get("asof")
+    out: dict[str, str] = {}
+    n_staged = 0
+    for t in (doc.get("themes") or []):
+        stage = t.get("stage")
+        if stage is None or str(stage) == "":
+            continue
+        n_staged += 1
+        for key in (t.get("theme"), t.get("name")):
+            nk = _norm_theme(key)
+            if nk:
+                out.setdefault(nk, str(stage))
+    disc["ok"] = True
+    disc["n_themes"] = n_staged                      # desk themes carrying a STAGE
+    disc["n_keys"] = len(out)                        # join keys (slug + display name per theme)
+    if not out:
+        disc["reason"] = "foresight artifact carries no staged themes"
+    return out, disc
+
+
+def theme_member_index(members: dict[str, dict]) -> dict[str, list[str]]:
+    """{theme: sorted member tickers}, inverted from :func:`theme_membership`'s ticker map.
+
+    Inverts on each record's ``themes_hit`` (EVERY hot theme the ticker belongs to), not on the
+    single best theme: a ticker whose best theme is A but which also sits in B is a genuine B
+    member and must count toward B's relay denominator. Inverting on ``theme`` alone would
+    under-count exactly the multi-theme names a relay read cares most about.
+    """
+    out: dict[str, set[str]] = {}
+    for tk, rec in (members or {}).items():
+        hits = rec.get("themes_hit") or ([rec.get("theme")] if rec.get("theme") else [])
+        for th in hits:
+            if th:
+                out.setdefault(str(th), set()).add(str(tk))
+    return {th: sorted(v) for th, v in out.items()}
 
 
 def load_sectors(root: Path | None = None) -> dict[str, str]:
@@ -423,16 +558,227 @@ def recent_by_door(rows: list[dict], index: pd.DatetimeIndex,
 
 
 # --------------------------------------------------------------------------- #
+# recorded features — ANALYSIS ONLY (prereg §9 addendum, 2026-08-04)
+# --------------------------------------------------------------------------- #
+class _RecordedFeatures:
+    """Per-flag analysis features. Built once per :func:`emit`, queried per KEPT row.
+
+    ZERO EFFECT ON THE DOORS, structurally. :func:`emit` decides a night's fire set — every
+    fire condition, the priority sort, the cap and the dedupe — and only THEN calls
+    :meth:`compute` on the rows it already kept. Nothing here can add, drop, or reorder a flag,
+    and :meth:`compute` swallows its own failures into :func:`null_features` so a broken input
+    cannot change a flag set either.
+
+    RUNTIME. Bounded by construction: at most ``2 * MAX_FLAGS_PER_DOOR`` (50) queries a night,
+    and the one vectorised pass is over the trailing
+    ``RELAY_HIGH_LOOKBACK + RELAY_POSITION_WINDOW`` (84) sessions of the HOT-THEME MEMBER
+    columns of the universe frame already in memory — never a second full-universe sweep. Every
+    input is loaded lazily, so a night with no flags pays nothing.
+
+    The features
+    ------------
+    ``relay_count_3d`` / ``relay_position`` / ``relay_members_covered``
+        Where in its theme's relay the name is firing. A "fresh high" is
+        ``close > max(prior RELAY_HIGH_LOOKBACK closes)`` — the session a NEW 63-session
+        closing high printed, not merely a session sitting at one.
+    ``turnover_pctile`` / ``turnover_window``
+        Admission-day share volume against the name's OWN recent history.
+    ``foresight_stage`` / ``foresight_covered``
+        The Thematic Foresight Desk's stage for the flag's theme, when the desk covers it.
+    """
+
+    def __init__(self, root: Path, px: pd.DataFrame, members: dict[str, dict],
+                 *, enabled: bool = True) -> None:
+        self._root = root
+        self._px = px
+        self._enabled = bool(enabled)
+        self._by_theme = theme_member_index(members) if self._enabled else {}
+        self._breakout: pd.DataFrame | None = None
+        self._vol: pd.DataFrame | None = None
+        self._stages: dict[str, str] | None = None
+        self._relay_disc: dict[str, Any] = {"consulted": False}
+        self._vol_disc: dict[str, Any] = {"consulted": False}
+        self._fs_disc: dict[str, Any] = {"consulted": False}
+
+    # ---- inputs (lazy) ---------------------------------------------------- #
+    def _breakouts(self) -> pd.DataFrame:
+        """Boolean frame (trailing ``RELAY_POSITION_WINDOW`` sessions × covered hot-theme
+        members): True where that session printed a NEW ``RELAY_HIGH_LOOKBACK``-session high.
+
+        ``rolling(63).max().shift(1)`` compares the close against the max of the PRIOR 63
+        closes, so the flag bar itself is never inside its own comparison window. A tail of
+        ``63 + 21`` rows makes exactly the last 21 rows valid, which is the window relay
+        position is read over.
+
+        COVERAGE IS STRICT. A member is covered only when its closes are complete across the
+        whole 84-session tail. A hole would make ``close > NaN`` evaluate False, i.e. would
+        silently record "did not break out" for a name nobody could measure; requiring
+        completeness turns that into an honest exclusion from ``relay_members_covered``.
+        """
+        if self._breakout is not None:
+            return self._breakout
+        need = RELAY_HIGH_LOOKBACK + RELAY_POSITION_WINDOW
+        wanted = {t for lst in self._by_theme.values() for t in lst}
+        cols = [c for c in self._px.columns if str(c) in wanted]
+        disc: dict[str, Any] = {"consulted": True, "members_indexed": len(wanted),
+                                "n_covered": 0, "window_sessions": RELAY_POSITION_WINDOW,
+                                "high_lookback": RELAY_HIGH_LOOKBACK, "reason": None}
+        if not cols:
+            disc["reason"] = "no hot-theme member is present in the close cache"
+            self._relay_disc = disc
+            self._breakout = pd.DataFrame(dtype=bool)
+            return self._breakout
+        tail = self._px.loc[:, cols].tail(need)
+        tail.columns = [str(c) for c in tail.columns]
+        if len(tail) < need:
+            disc["reason"] = (f"close cache holds {len(tail)} sessions, "
+                              f"{need} needed for a {RELAY_POSITION_WINDOW}-session relay read")
+            self._relay_disc = disc
+            self._breakout = pd.DataFrame(dtype=bool)
+            return self._breakout
+        covered = tail.columns[tail.notna().all(axis=0)]
+        tail = tail.loc[:, covered]
+        bo = (tail > tail.rolling(RELAY_HIGH_LOOKBACK).max().shift(1)).tail(RELAY_POSITION_WINDOW)
+        disc["n_covered"] = int(bo.shape[1])
+        self._relay_disc = disc
+        self._breakout = bo
+        return self._breakout
+
+    def _volumes(self) -> pd.DataFrame:
+        if self._vol is None:
+            v = load_volumes(self._root)
+            if not v.empty:
+                v.columns = [str(c) for c in v.columns]
+            self._vol = v
+            self._vol_disc = {
+                "consulted": True,
+                "source": f"data/{{{','.join(UNIVERSE_GROUPS)}}}/{VOLUME_CACHE_NAME}",
+                "ok": not v.empty, "n_tickers": int(v.shape[1]) if not v.empty else 0,
+                "last_session": str(v.index.max().date()) if not v.empty else None,
+                "window_max": TURNOVER_WINDOW_MAX,
+                "reason": None if not v.empty else
+                          "volume cache absent or empty — turnover_pctile null on every flag",
+            }
+        return self._vol
+
+    def _foresight(self) -> dict[str, str]:
+        if self._stages is None:
+            self._stages, disc = load_foresight_stages(self._root)
+            self._fs_disc = {"consulted": True} | disc
+        return self._stages
+
+    # ---- features --------------------------------------------------------- #
+    def _relay(self, ticker: str, theme: Any) -> dict[str, Any]:
+        """Relay count / position for ``ticker`` inside ``theme``.
+
+        ``relay_count_3d`` — OTHER covered members of the theme that printed a fresh high in
+        the trailing ``RELAY_RECENT_SESSIONS`` sessions, the flag bar included.
+
+        ``relay_position`` — OTHER covered members whose fresh high printed STRICTLY BEFORE the
+        flag bar inside the ``RELAY_POSITION_WINDOW``, over the theme's covered-member count.
+        0 = first mover; → 1 = late relay. Simultaneous is not earlier: a peer printing on the
+        flag bar itself counts toward the COUNT but not the POSITION.
+
+        The denominator is the theme's whole covered-member set, so it is identical for every
+        flag in that theme on that night and the positions are comparable to each other. The
+        numerator excludes the flag's own name. A flag that is ITSELF covered is therefore
+        bounded at ``(n−1)/n``; a flag the coverage rule excluded (a hole in its own tail, or a
+        name outside the doors' universe) still reads its theme's relay, against all ``n``
+        covered peers. Null below ``RELAY_MIN_MEMBERS`` covered members — a "position" among
+        two names is an artefact of the denominator, not a relay reading. ``n`` is always
+        disclosed as ``relay_members_covered``.
+        """
+        out: dict[str, Any] = {"relay_count_3d": None, "relay_position": None,
+                               "relay_members_covered": None}
+        if not theme:
+            return out                     # Door R on a name in no hot theme — a disclosed null
+        bo = self._breakouts()
+        if bo.empty:
+            return out
+        mem = [m for m in self._by_theme.get(str(theme), ()) if m in bo.columns]
+        out["relay_members_covered"] = len(mem)
+        if not mem:
+            return out
+        others = [m for m in mem if m != str(ticker)]
+        sub = bo.loc[:, others] if others else None
+        out["relay_count_3d"] = (0 if sub is None
+                                 else int(sub.tail(RELAY_RECENT_SESSIONS).any(axis=0).sum()))
+        if len(mem) >= RELAY_MIN_MEMBERS:
+            earlier = 0 if sub is None else int(sub.iloc[:-1].any(axis=0).sum())
+            out["relay_position"] = round(earlier / len(mem), 4)
+        return out
+
+    def _turnover(self, ticker: str) -> dict[str, Any]:
+        """Admission-day share volume as a percentile of the name's OWN trailing window.
+
+        Window = the last ``min(TURNOVER_WINDOW_MAX, available)`` non-null sessions ending ON
+        the flag bar; ``turnover_window`` records the length actually used. The percentile is
+        the share of that window at or below the flag-bar volume (1.0 = the window's highest).
+
+        NEVER IMPUTED. If the cache carries no observation ON the flag bar there is no
+        admission-day volume, so both fields are null — reading a stale session's volume as
+        "admission day" would fabricate the feature. A single-observation window is likewise
+        null: its percentile is definitionally 1.0 and carries no information.
+        """
+        out: dict[str, Any] = {"turnover_pctile": None, "turnover_window": None}
+        vol = self._volumes()
+        if vol.empty or str(ticker) not in vol.columns:
+            return out
+        asof = self._px.index[-1]
+        s = vol[str(ticker)]
+        s = s.loc[s.index <= asof].dropna()
+        if s.empty or s.index[-1] != asof:
+            return out
+        w = s.iloc[-min(TURNOVER_WINDOW_MAX, len(s)):]
+        out["turnover_window"] = int(len(w))
+        if len(w) >= 2:
+            out["turnover_pctile"] = round(float((w <= float(w.iloc[-1])).mean()), 4)
+        return out
+
+    def _stage(self, theme: Any) -> dict[str, Any]:
+        """Foresight Desk stage for the flag's theme, or a disclosed non-coverage."""
+        out: dict[str, Any] = {"foresight_stage": None, "foresight_covered": False}
+        if not theme:
+            return out
+        stage = self._foresight().get(_norm_theme(theme))
+        if stage:
+            out["foresight_stage"] = str(stage)
+            out["foresight_covered"] = True
+        return out
+
+    def compute(self, ticker: str, theme: Any) -> dict[str, Any]:
+        """The full feature block for one KEPT flag. ``{}`` when features are disabled."""
+        if not self._enabled:
+            return {}
+        try:
+            return {**self._relay(ticker, theme), **self._turnover(ticker), **self._stage(theme)}
+        except Exception as e:  # noqa: BLE001 — an analysis feature may never break the lane
+            log.warning("prophet_doors: recorded features failed for %s (%s)", ticker, e)
+            return null_features()
+
+    def disclosure(self) -> dict[str, Any]:
+        """What each feature source actually offered tonight — the "nulls printed" receipt."""
+        return {"enabled": self._enabled, "keys": list(FEATURE_KEYS),
+                "relay": dict(self._relay_disc), "turnover": dict(self._vol_disc),
+                "foresight": dict(self._fs_disc)}
+
+
+# --------------------------------------------------------------------------- #
 # the nightly run
 # --------------------------------------------------------------------------- #
 def emit(root: Path | None = None, *, dry_run: bool = False,
-         universe: pd.DataFrame | None = None) -> dict:
+         universe: pd.DataFrame | None = None, features: bool = True) -> dict:
     """Evaluate both doors on the committed caches and (unless ``dry_run``) accrue the flags.
 
     Returns the run document: per-door flag rows, overflow counts, dedupe counts, the theme
     disclosure, and timing. ``dry_run=True`` writes NOTHING anywhere — it is the PR-receipt
     and local-preview path. On the nightly lane the ledger append is additionally gated by
     :func:`append_flags`, so an off-lane nightly invocation is also a no-op.
+
+    ``features=False`` records no analysis feature block. It exists so the fire set can be
+    compared with features on and off (``TestFireInvariance``); the two MUST be identical,
+    because the feature computer only ever sees rows the doors already kept. Production always
+    runs with features on.
     """
     t0 = time.time()
     root = Path(root or ROOT)
@@ -445,7 +791,7 @@ def emit(root: Path | None = None, *, dry_run: bool = False,
         "overflow": {DOOR_T: 0, DOOR_R: 0},
         "deduped": {DOOR_T: 0, DOOR_R: 0},
         "candidates": {DOOR_T: 0, DOOR_R: 0},
-        "theme_source": {}, "appended": 0, "dry_run": bool(dry_run),
+        "theme_source": {}, "feature_source": {}, "appended": 0, "dry_run": bool(dry_run),
         "runtime_s": None,
     }
     if px is None or px.empty:
@@ -533,6 +879,7 @@ def emit(root: Path | None = None, *, dry_run: bool = False,
     prior = recent_by_door(load_flags(root), di, asof)
     asof_str = str(asof.date())
     rows_by_door: dict[str, list[dict]] = {DOOR_T: [], DOOR_R: []}
+    fx = _RecordedFeatures(root, px, members, enabled=features)
 
     for door, cands in ((DOOR_T, t_cand), (DOOR_R, r_cand)):
         kept: list[dict] = []
@@ -547,6 +894,12 @@ def emit(root: Path | None = None, *, dry_run: bool = False,
                 continue
             kept.append({"schema": SCHEMA, "date": asof_str, "door": door,
                          "ticker": tk, "features": feats})
+        # Recorded features are attached HERE — after every fire decision, the priority sort,
+        # the cap and the dedupe are already settled, and only to rows that survived them
+        # (≤ MAX_FLAGS_PER_DOOR per door). Nothing above this line can read them, which is what
+        # makes "features change no flag" structural rather than a promise (prereg §9).
+        for row in kept:
+            row["features"].update(fx.compute(row["ticker"], row["features"].get("theme")))
         rows_by_door[door] = kept
         run["flags"][door] = kept
         if run["overflow"][door]:
@@ -556,6 +909,7 @@ def emit(root: Path | None = None, *, dry_run: bool = False,
                   f"(asof {asof_str})", flush=True)
 
     all_rows = rows_by_door[DOOR_T] + rows_by_door[DOOR_R]
+    run["feature_source"] = fx.disclosure()
     run["runtime_s"] = round(time.time() - t0, 1)
     if not dry_run:
         run["appended"] = append_flags(all_rows, root)
