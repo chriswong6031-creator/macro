@@ -308,6 +308,36 @@ def assess(ticker: str,
     }
 
 
+def surprise_history(ticker: str, store_path: Path | None = None) -> list[dict]:
+    """READ-ONLY: the stored surprise rows for a ticker (``[]`` on any error).
+
+    A display-tier accessor added for W4's post-earnings reaction field.  It reads the
+    SAME module-cached frame :func:`assess` already loaded (so it costs no extra I/O)
+    and participates in NO verdict — nothing in the blackout path calls it, and
+    :func:`assess` is byte-identical to before it existed.  Each row is the collector's
+    shape: ``{qtr, reported, eps, consensus, surprise_pct}``.
+    """
+    import json as _json
+
+    df = _load_store(store_path)
+    if df.empty:
+        return []
+    tk = ticker.strip().upper()
+    if tk not in df.index or "surprises_json" not in df.columns:
+        return []
+    row = df.loc[tk]
+    if isinstance(row, pd.DataFrame):
+        row = row.iloc[0]
+    raw = row.get("surprises_json")
+    if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+        return []
+    try:
+        parsed = _json.loads(str(raw) or "[]")
+    except (TypeError, ValueError):
+        return []
+    return [r for r in parsed if isinstance(r, dict)] if isinstance(parsed, list) else []
+
+
 def set_td_calendar(td_index: "pd.DatetimeIndex") -> None:
     """Inject a pre-built trading-day calendar, bypassing the full-parquet-glob.
 

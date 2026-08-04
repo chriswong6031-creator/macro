@@ -5,14 +5,28 @@ Gates covered here: G1 (the seven witnesses are visible), G2 (leaders lane),
 G3 (ran lane, marker-anchored, fail-closed on unknown age), G4 (stage buckets +
 filter chips + featured + priority score), G9 (fail-soft on pre-v1 artifacts).
 
-TWO SHAPES, ONE TEMPLATE.  The committed `site/factordata/hk_standouts.json`
-carries NONE of the v1 fields (stage / prophet / featured / new / theme, the
-`ran[]` and `leaders[]` arrays, the `ranking` block) — the first nightly after the
-engine lane merges fills them.  So the assertions come in pairs: the new schema
-must produce the priority surface, and the OLD schema must still produce the flat
+TWO SHAPES, ONE TEMPLATE.  The assertions come in pairs: the new schema must
+produce the priority surface, and the OLD schema must still produce the flat
 three-lane board with none of it.  A regression that quietly drops the fail-soft
-branch would ship a broken board on merge night, when the artifact on disk is
-still the old one.
+branch would ship a broken board the first night the engine lane degrades and the
+artifact on disk comes back without `ran[]` / `leaders[]` / the era stamp.
+
+FROZEN FIXTURES, NEVER THE LIVE ARTIFACT (incident 2026-08-04).  Both shapes are
+read from committed fixtures pinned to the 2026-07-31 session — the same session
+`tests/fixtures/hk_board_2026_07_31.json` and ``BOARD_ASOF`` are pinned to.  They
+used to be read from `site/factordata/hk_standouts.json`, which the NIGHTLY
+REWRITES, and that is a fixture with a fuse in it: this suite pins BOTH sides of a
+one-way migration, so no single state of a live file can satisfy it.  The nightly
+at 94568a91302 crossed the boundary (`ran: None→12`, `leaders: None→15`,
+`board_definition: None→hk_prophet_v1`, `as_of: 07-31→08-03`) and took NINE gates
+here red in one commit, while the same drift silently SKIPPED nine more in
+tests/test_hk_board_rank.py through an ``as_of``-mismatch guard — eighteen dark
+gates, and the red ones read as a template regression that had never happened.
+The live artifact keeps exactly one, era-agnostic assertion here
+(``test_the_live_artifact_still_renders``); everything era-specific reads a
+fixture.  A fixture that has to be regenerated is a ledger event: re-pin
+``BOARD_ASOF``, the price panel and BOTH json files in the same commit, or the
+board is being scored against a session it did not happen in.
 
 ASSERTION STYLE (harness law): every presence/absence assertion targets a full
 markup string (`'<div class="nb-stage-hd sg-live"'`), never a bare class token.
@@ -41,7 +55,13 @@ import pytest
 from jinja2 import Environment, FileSystemLoader
 
 ROOT = Path(__file__).resolve().parent.parent
-ARTIFACT = ROOT / "site" / "factordata" / "hk_standouts.json"
+FIXTURES = ROOT / "tests" / "fixtures"
+
+# The 2026-07-31 board, frozen.  Same session as the price panel and BOARD_ASOF.
+LEGACY_ARTIFACT = FIXTURES / "hk_standouts_2026_07_31.json"
+# The nightly's own output — read ONLY by the era-agnostic smoke test, because it
+# is rewritten every night and cannot satisfy both halves of the era contract.
+LIVE_ARTIFACT = ROOT / "site" / "factordata" / "hk_standouts.json"
 
 _STAGE_ORDER = ["live", "setting_up", "ran", "blocked"]
 
@@ -107,8 +127,33 @@ def _tags(html: str) -> list[str]:
 # Fixtures
 # --------------------------------------------------------------------------- #
 
-def committed_artifact() -> dict:
-    return json.loads(ARTIFACT.read_text())
+def legacy_artifact() -> dict:
+    """The 2026-07-31 board as the nightly shipped it, BEFORE the priority engine.
+
+    Frozen — see the module docstring.  Was `committed_artifact()`, reading the live
+    `site/factordata/hk_standouts.json`; the word "committed" was doing the damage,
+    because the file is committed AND rewritten nightly, and the second half is the
+    one that matters to a fixture.
+    """
+    return json.loads(LEGACY_ARTIFACT.read_text())
+
+
+def priority_era_artifact() -> dict:
+    """The SAME board carrying the era stamp — the minimal-difference other half.
+
+    The template gates the whole priority layer on
+    ``(board_definition or rank_by).startswith('hk_prophet_v')`` and on nothing else
+    (templates/hk.html.j2:3532), so stamping that one key is the exact inverse of the
+    strip in :func:`test_legacy_render_is_tag_stream_identical_to_the_base_branch`.
+    Deriving it here rather than freezing a second 184 KB artifact is what lets the
+    pair claim what it claims: the era stamp is the ONLY variable between the two
+    renders, so anything the second render gains, it gained from the stamp.
+    """
+    from engine import hk_board_rank as hbr
+
+    art = dict(legacy_artifact())
+    art["board_definition"] = hbr.BOARD_DEFINITION
+    return art
 
 
 def score_buy_lane(rows: list[dict]) -> list[dict]:
@@ -155,7 +200,7 @@ def _a_real_spark() -> str:
     recolors it to the verb hue in CSS, so any row's SVG is visually valid on any
     other — and a fixture whose cards have no chart produces a screenshot of a board
     that does not exist."""
-    for row in committed_artifact().get("buy") or []:
+    for row in legacy_artifact().get("buy") or []:
         if row.get("spark_svg"):
             return row["spark_svg"]
     return ""
@@ -215,19 +260,23 @@ _LEADERSHIP = {"state": "leaders_participating", "cohesion_now": 0.9,
                "broad_breadth_pct": 71.2, "breadth_confirming": True}
 
 
-SCOREBOARD = ROOT / "site" / "factordata" / "hk_scoreboard.json"
+SCOREBOARD = FIXTURES / "hk_scoreboard_2026_07_31.json"
 
 
 def _universe_rows() -> list[dict]:
     """The whole scored HK universe for the fixture's session — name, sector, edge_z.
 
-    `site/factordata/hk_scoreboard.json` is the same 156-name cross-section the
-    builder's `enriched` list carries, from the same 2026-07-31 render, and it is the
-    only committed source with a company NAME and a SECTOR for every ticker.  Both
+    The 156-name cross-section the builder's `enriched` list carries for 2026-07-31,
+    and the only source with a company NAME and a SECTOR for every ticker.  Both
     matter to the picture: the frozen G1 price panel stores the ticker in its `name`
     slot and no sector at all, so a screenshot shot without this backfill shows a
     Sector column of em-dashes and rows reading "0669.HK  0669.HK" — a board that
     does not exist, which is what the review objected to.
+
+    FROZEN for the same reason the board artifact is (module docstring).  This read
+    was `site/factordata/hk_scoreboard.json` — nightly-rewritten, and by 2026-08-04
+    already stamped `as_of: 2026-08-03` while every other input here is 07-31, so the
+    "same session" the paragraph above claims had quietly stopped being true.
     """
     if not SCOREBOARD.exists():             # pragma: no cover — committed in-tree
         return []
@@ -290,7 +339,7 @@ def engine_lanes(exclude: set[str] | None = None) -> dict:
         for key in ("name", "name_zh", "sector"):
             if row.get(key) and not (m.get(key) and key != "name"):
                 m[key] = row[key]
-    art = committed_artifact()
+    art = legacy_artifact()
     for lane in ("buy", "watch", "laggards"):
         for row in art.get(lane) or []:
             m = meta.get(row.get("ticker"))
@@ -348,7 +397,7 @@ def production_fixture() -> dict:
     """
     from engine import hk_board_rank as hbr
 
-    art = committed_artifact()
+    art = legacy_artifact()
     su = dict(art)
 
     buy = [dict(r) for r in (art.get("buy") or [])]
@@ -425,6 +474,14 @@ def shapes_fixture() -> dict:
         _witness_buy_row(("8808.HK", "Sample Holdings H", "样本控股辛",
                           "Property", 6.0, 0.0),
                          "blocked", "counter-trend, no 200-reclaim/hold"),
+        # `failed next-bar hold` is what reclaim_veto=False (hk_prophet_v2) emits on a
+        # counter-trend refusal — 10 of the first v2 board's 12 vetoed rows carried it.
+        # Carded here so its CARD copy is exercised by a render, not only asserted
+        # against a map literal: with no _HK_BLOCK entry the popover fell through to
+        # the generic sentence with the raw engine slug appended.
+        _witness_buy_row(("8809.HK", "Sample Holdings I", "样本控股壬",
+                          "Healthcare", 7.0, 0.0),
+                         "blocked", "failed next-bar hold"),
     ]
     # a setting-up subject the real tape does supply — its own stage, untouched
     su["buy"] = score_buy_lane([dict(r) for r in su["buy"]] + extra_buy)
@@ -473,7 +530,7 @@ def prod_html() -> str:
 
 @pytest.fixture(scope="module")
 def legacy_html() -> str:
-    return _render(committed_artifact())
+    return _render(legacy_artifact())
 
 
 # --------------------------------------------------------------------------- #
@@ -1083,12 +1140,30 @@ def test_the_glow_can_never_land_outside_the_live_bucket(prio_html):
 
 def test_blocked_witnesses_name_the_check_that_is_holding_them_out(prio_html):
     """G6 display-tier relief: a blocked name is visible AND its reason is nameable
-    in plain words, on Tier 2 where mechanics belong."""
-    assert "Price has not reclaimed its 200-day line and held there" in prio_html
-    assert "价格尚未重新站上200日均线并守住" in prio_html
+    in plain words, on Tier 2 where mechanics belong.
+
+    The `failed reclaim-and-hold` sentence used to be "Price has not reclaimed its
+    200-day line and held there, so entries stay shut until it does" — a promise about
+    a 200-day condition that branch of `_buy_filter` never evaluates (it tests the
+    next 3-day bar's close alone).  It now states the test that actually ran.
+    """
+    assert "The 3-day bar after the signal closed lower" in prio_html
+    assert "信号后的下一根 3 日K线收低" in prio_html
     assert "still under its 200-day line" in prio_html
-    assert "failed reclaim-and-hold</span>" not in prio_html, (
-        "the engine's raw reason string must not reach the glance tier verbatim")
+    for slug in ("failed reclaim-and-hold", "failed next-bar hold"):
+        assert "%s</span>" % slug not in prio_html, (
+            "the engine's raw reason string must not reach the glance tier verbatim")
+
+
+def test_the_blocked_card_copy_never_promises_a_200day_reclaim_it_did_not_test(
+        prio_html):
+    """The inverse guard.  `counter-trend, no 200-reclaim/hold` DOES test the 200-day
+    line, so its sentence must keep naming it — otherwise the fix above could be
+    'passed' by deleting every 200-day mention from the page."""
+    assert "This would be a bounce against the bigger downtrend" in prio_html
+    assert "Price has not reclaimed its 200-day line and held there" not in prio_html, (
+        "the next-bar-hold branch is again narrating a 200-day round trip it never "
+        "measured")
 
 
 # --------------------------------------------------------------------------- #
@@ -1195,10 +1270,21 @@ _NEW_MARKUP = [
 ]
 
 
-def test_committed_artifact_carries_none_of_the_v1_contract():
+def test_the_frozen_legacy_fixture_carries_none_of_the_v1_contract():
     """If this ever fails the fixture has drifted and the fail-soft tests below have
-    quietly stopped testing fail-soft."""
-    art = committed_artifact()
+    quietly stopped testing fail-soft.
+
+    It fired for real on 2026-08-04 — correctly, and against the wrong subject.  It
+    was reading the LIVE artifact, so what it actually detected was the nightly
+    shipping the priority engine, not a fixture someone had broken; the fail-soft
+    tests below went red beside it and the whole set read as a template regression.
+    Pointed at the frozen fixture it now means what its name says: this file is the
+    pre-v1 board, and nobody has regenerated it off a priority-era nightly.
+    """
+    art = legacy_artifact()
+    assert art.get("as_of") == BOARD_ASOF, (
+        "the legacy fixture must be the same session as the price panel and "
+        "BOARD_ASOF, got %r" % art.get("as_of"))
     assert art.get("ran") is None and art.get("leaders") is None
     assert art.get("ranking") is None
     assert not any(r.get("stage") for r in art.get("buy") or [])
@@ -1211,7 +1297,7 @@ def test_legacy_artifact_renders_the_flat_board_with_no_priority_markup(legacy_h
     # the absence test is anchored to a real TAG, never to the bare attribute name.
     stray = re.search(r'<[a-zA-Z][a-zA-Z0-9-]*[^>]*\sdata-stage="', legacy_html)
     assert stray is None, "legacy element carries data-stage: %r" % (stray and stray.group(0))
-    assert legacy_html.count('<a class="pvcard') == len(committed_artifact()["buy"])
+    assert legacy_html.count('<a class="pvcard') == len(legacy_artifact()["buy"])
 
 
 def test_legacy_board_keeps_its_own_copy_and_the_edge_slot(legacy_html):
@@ -1224,7 +1310,7 @@ def test_legacy_board_keeps_its_own_copy_and_the_edge_slot(legacy_html):
 
 def test_legacy_board_keeps_the_artifacts_own_card_order(legacy_html):
     order = re.findall(r'<a class="pvcard[^"]*" href="hk_lookup\.html#([^"]+)"', legacy_html)
-    assert order == [r["ticker"] for r in committed_artifact()["buy"]]
+    assert order == [r["ticker"] for r in legacy_artifact()["buy"]]
 
 
 def test_laggards_value_class_follows_the_sign(legacy_html):
@@ -1232,7 +1318,7 @@ def test_laggards_value_class_follows_the_sign(legacy_html):
     colour — and because `.neg` maps to --down, which inverts under
     html[data-lang="zh"], the same +1.05 read "loss" in English and "gain" in
     Chinese. The class must follow the sign; the theme still owns the hue."""
-    art = committed_artifact()
+    art = legacy_artifact()
     lagg = art.get("laggards") or []
     assert lagg, "the committed artifact has no laggards — this test is vacuous"
     assert any(r.get("alpha") is not None and r["alpha"] > 0 for r in lagg), (
@@ -1257,11 +1343,11 @@ def test_health_banner_survives_the_rebuild(legacy_html, prio_html):
 
 
 def test_legacy_render_is_tag_stream_identical_to_the_base_branch():
-    """The strongest form of the fail-soft proof: render the COMMITTED artifact
-    through this template and through the base branch's, and compare the element
-    streams.  Skipped (never failed) when the base ref is unreachable — a shallow or
-    sparse CI checkout has no business reddening main — because every observable half
-    of the same contract is pinned unconditionally by the tests above."""
+    """The strongest form of the fail-soft proof: render the LEGACY artifact through
+    this template and through the base branch's, and compare the element streams.
+    Skipped (never failed) when the base ref is unreachable — a shallow or sparse CI
+    checkout has no business reddening main — because every observable half of the
+    same contract is pinned unconditionally by the tests above."""
     base = None
     for ref in ("origin/main", "main"):
         try:
@@ -1273,15 +1359,15 @@ def test_legacy_render_is_tag_stream_identical_to_the_base_branch():
             continue
     if not base:
         pytest.skip("base ref templates/hk.html.j2 unavailable in this checkout")
-    # The committed artifact is now a PRIORITY-ERA board (it carries
-    # board_definition), so comparing it whole stopped testing what this test is
-    # named for and started asserting the priority layer never changes — which the
-    # hk_prophet_v2 admission disclosure legitimately does.  Strip the era stamps to
-    # get a genuinely LEGACY artifact: that is the fail-soft contract, and it must
-    # stay byte-for-byte identical across the change.
-    art = dict(committed_artifact())
-    art.pop("board_definition", None)
-    art.pop("rank_by", None)
+    # The era stamps used to be STRIPPED here, because the live artifact this read
+    # from had become a priority-era board and comparing it whole had stopped testing
+    # fail-soft and started asserting the priority layer never changes — which the
+    # hk_prophet_v2 admission disclosure legitimately does.  The fixture is genuinely
+    # legacy now, so the strip is gone and the absence is ASSERTED instead: a silent
+    # pop would hide a fixture regenerated off a priority-era nightly, which is the
+    # exact drift that took this file down.
+    art = legacy_artifact()
+    assert art.get("board_definition") is None and art.get("rank_by") is None
     mine, theirs = _tags(_render(art)), _tags(_render_source(base, art))
     assert mine == theirs, "legacy render changed shape vs the base branch (%d vs %d tags)" % (
         len(mine), len(theirs))
@@ -1294,7 +1380,7 @@ def test_the_priority_era_render_gains_exactly_the_admission_disclosure():
     the disclosure while keeping the wider board."""
     # Collapse whitespace: the copy wraps across template lines, so a raw substring
     # match would pin the indentation rather than the sentence.
-    flat = re.sub(r"\s+", " ", _render(committed_artifact()))
+    flat = re.sub(r"\s+", " ", _render(priority_era_artifact()))
     assert "until 3 Aug this board also" in flat
     assert "close back above that average within two sessions" in flat
     assert "roughly a third more names here, and deeper drawdowns" in flat, (
@@ -1379,11 +1465,60 @@ def test_an_empty_buy_lane_on_a_v1_artifact_keeps_every_section():
 
 def test_a_legacy_artifact_still_renders_none_of_it():
     """The other half: fail-soft is unchanged, and it is decided by the same key."""
-    art = committed_artifact()
+    art = legacy_artifact()
     assert art.get("board_definition") is None and art.get("rank_by") is None
     html = _render(art)
     for frag in _V1_SECTIONS:
         assert frag not in html, "priority markup leaked onto a legacy artifact: %r" % frag
+
+
+def test_the_live_artifact_still_renders():
+    """The ONE assertion in this file that reads `site/factordata/hk_standouts.json`.
+
+    Freezing the fixtures bought determinism at a price: nothing here would notice
+    the NIGHTLY's own artifact drifting into a shape this template cannot render.
+    This buys that back without re-arming the fuse, by asserting only what is true in
+    BOTH eras — the page renders, it cards the buy lane, and the priority layer is
+    present exactly when the era stamp says it should be.  No era-specific copy, no
+    row counts, no lane membership: those are what made the old reads unsatisfiable.
+
+    A failure here is a real incompatibility between the shipped board and the
+    shipped template, which is the thing the era-pinned tests could never separate
+    from an ordinary nightly.
+
+    LANE-GATED, NOT ERA-GATED.  Three of the five priority sections are
+    ``{% if _hsg.any and <lane> %}`` (templates/hk.html.j2:3861/3941/4010) — an empty
+    lane correctly prints nothing.  Demanding them on every priority-era board would
+    red main on a thin night, which is a worse gate than none; each is asserted
+    against its OWN lane instead.
+    """
+    if not LIVE_ARTIFACT.exists():           # pragma: no cover — committed in-tree
+        pytest.skip("%s not present" % LIVE_ARTIFACT)
+    art = json.loads(LIVE_ARTIFACT.read_text())
+    html = _render(art)
+
+    assert html.count('<a class="pvcard') == len(art.get("buy") or []), (
+        "the live board cards every buy row in both eras")
+
+    stamp = str(art.get("board_definition") or art.get("rank_by") or "")
+    priority_era = stamp.startswith("hk_prophet_v")
+    # era stamp alone decides these two
+    era_only = ('<div class="pbf-bar" id="hk-stage-filter"', '<p class="pb-fn">')
+    # these need the era stamp AND rows in their own lane
+    lane_gated = {'<div class="topsetups leaders-strip">': "leaders",
+                  '<div class="pbr" data-stage="ran">': "ran",
+                  '<div class="pbv" data-stage="blocked">': "vetoed"}
+
+    for frag in era_only:
+        assert (frag in html) is priority_era, (
+            "live artifact stamps %r but the render %s %r"
+            % (stamp, "dropped" if priority_era else "kept", frag))
+    for frag, lane in lane_gated.items():
+        expected = priority_era and bool(art.get(lane))
+        assert (frag in html) is expected, (
+            "live artifact stamps %r with %d %s row(s) but the render %s %r"
+            % (stamp, len(art.get(lane) or []), lane,
+               "dropped" if expected else "kept", frag))
 
 
 def test_the_sentinel_reads_the_artifact_stamp_not_the_rows():
@@ -1447,7 +1582,7 @@ def test_no_display_lane_re_lists_a_name_the_board_already_placed():
 
 def test_the_watch_lane_is_never_promoted_into_the_buy_lane():
     su = production_fixture()
-    art = committed_artifact()
+    art = legacy_artifact()
     assert [r["ticker"] for r in su["buy"]] != []
     assert not ({r["ticker"] for r in su["buy"]}
                 & {r["ticker"] for r in art["watch"]})
