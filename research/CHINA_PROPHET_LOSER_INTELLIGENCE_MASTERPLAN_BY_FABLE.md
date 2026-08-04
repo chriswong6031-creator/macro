@@ -49,6 +49,13 @@ touches the US lanes.
   measured cost table (losers removed vs winners forfeited vs kept-cohort delta).
   A restriction whose removed cohort has POSITIVE median excess is dead on
   arrival — this is the operator's "don't cut winners" constraint, made binding.
+- **G0.8 (ratified-tier discipline; added 2026-08-04).** Every operator-ratified
+  direct wiring (§5 R-slate) ships in the same PR with: (a) a parallel shadow
+  grading of the displaced definition (the race runs anyway, with the evidence-
+  favored side live), (b) a named auto-tripwire in the W0 artifact with its
+  threshold and revert action, and (c) a clean single-commit revert path. A
+  pending study whose decision-relevant summary CONTRADICTS a slate item pauses
+  that item pending operator read.
 
 ---
 
@@ -186,32 +193,85 @@ since the 2026-07-30 cutover; V2 order = `prophet_score` sort, lanes =
   `data/china_prophet_rank/candidates.parquet` since 2026-07-30 — the challenger
   data spine already exists; it lacks only a forward-return grader.
 
+### 2.9 The chase cohort is BIMODAL (operator challenge round, 2026-08-04)
+
+The operator asked why the chase composite ships shadow-first if it helps, and
+whether its forfeited winners are weak. Measured answer: **the forfeited winners
+are the STRONGEST winners** — the 9 chase-cohort winners median +14.5 excess vs
++6.8 for non-chase winners (incl. +37.8 and +54.8). The chase cohort is the
+A-share 龙头/跟风 dichotomy in one bucket: relay leaders AND bagholders. And the
+system's own theme intelligence separates them **in-era**: chase × narr HOT =
+median **+14.5** (3/5 win); chase × no-theme = median **−14.3** (6/26 win). A
+naive blanket veto is aggregate-positive (+217pp total avoided) but amputates
+the exact fast-winner right tail the desk exists to catch. The correct wiring is
+CONDITIONAL: naked chase (no theme behind it) demotes; theme-backed chase is the
+relay class and stays. 12-month out-of-era formalization:
+`ignition_chase_study.py` (§5 W-B).
+
+### 2.10 The intelligence had ex-ante value (measured, not assumed)
+
+`sector_intel_exante_test.py` joins the PIT `china_sector_cycles`
+forward_log (accrued nightly, covers the whole era) + PIT-dated curated basket
+membership onto the 407 matured episodes at admission:
+
+| Ex-ante state at admission | n | loser rate | median excess |
+|---|---|---|---|
+| In a curated basket (any state) | 84 | **13.1%** | +7.2 |
+| NOT in any curated basket | 323 | **36.2%** | — |
+| Basket phase Trough, oscillator turning up ("Trough+") | 28 | **3.6%** | +8.3 |
+| Basket Recovery+ | 7 | 0% | +9.0 |
+| Basket Trough− | 37 | 16.2% | +5.9 |
+| Basket Downturn− | 4 | 50% | −7.5 |
+| Basket above 200d (late-stage theme) | 19 | 26.3% | +4.5 |
+
+Membership in a researched theme — and the cycle engine's own early-turn states —
+separated losers from winners point-in-time, with the direction consistent
+across three independent instruments (narrative WARMING>HOT §2.2, chase×theme
+§2.9, phase×slope here). The pick chain consumed none of it. Caveats: 21%
+coverage (22 curated baskets), thin cells, one era — corroboration at 12-month
+scale in W-B; the coverage split partially reflects curation quality itself,
+which is still an admissible prior (researched-theme membership is PIT-knowable).
+
+### 2.11 Why the entry gauge inverts (mechanism, not mystery)
+
+`entry_signal.assess` maps a daily-cycle ladder's urgency to statuses;
+`bounce_wait` is specifically the **regime-gate demotion of an already-fired
+daily buy** — "washed out far below its 200dma, turn not confirmed". In a
+mean-reversion tape, that demotion selects exactly the early-reclaim cohort
+(measured 93% win), while "confirmed window open" (`buy_now`) fires after the
+bounce has matured (the loser cohort). The gauge is not broken — its
+trend-confirmation semantics invert in this regime. This is the operator's
+"confluence gating as deterrent" instinct, measured: **confirmation is
+negatively priced at CN entry timing.** The featured shelf must feature the
+early window and demote the confirmed-late window, not vice versa.
+
 ---
 
 ## §3 Root causes, ranked by measured impact
 
-1. **CN-RC1 — Chase-cohort admission.** The A-share-specific pattern (admission on
-   limit/close-at-high days, T+1 gaps, hot 21d trails inside washouts) supplies
-   the deepest losers (removed-cohort median −13%); the machinery that should
-   catch it (extension score) measures a different axis and was dark (1.4% fire
-   rate, wrong sign where it fired).
-2. **CN-RC2 — Entry-status inversion in the featured shelf.** The one cohort
-   evidence favors (patience statuses, 93% win) is structurally excluded from
-   featured; the cohort evidence indicts (buy_now/partial) is what featured
-   selects. Live in cn_prophet_v2 today.
-3. **CN-RC3 — Theme/sector intelligence unwired (CN edition of US RC3).** Theme
-   heat exists on cards (narr_*), sector-turn exists as a flag, rotation engines
-   exist as artifacts — none conditions candidacy, ordering, admission, or
-   surfacing; the measured usable axis (WARMING-early vs HOT-late) is not even
-   displayed as a distinction.
-4. **CN-RC4 — Ordering anti-signal.** Board rank-IC +0.073; setup-score chase
+1. **CN-RC0 — Confirmation is negatively priced at CN entry timing (the unifying
+   cause).** Three layers of the chain wait for confirmation and each waiting
+   step selects a later, worse entry: the entry gauge's "window open" statuses
+   (§2.11), the fresh-cross recency inside the cascade (losers' 5d trail +6.6%),
+   and the featured shelf built on both. The record's edge lived in the cohorts
+   every confirmation layer demoted (bounce_wait 93%, blocked 5/5, Trough+ 96%).
+2. **CN-RC1 — Unconditional chase admission.** The A-share limit-day/relay
+   pattern is bimodal (§2.9); the chain neither demotes the naked-chase
+   bagholder class nor recognizes the theme-backed relay class — the extension
+   detector measures a different axis (1.4% fire rate).
+3. **CN-RC2 — Entry-status inversion made structural in V2's featured shelf**
+   (60.5% vs 78.5% excluded), and the V2 ledger now grades exactly that shelf.
+4. **CN-RC3 — Theme/cycle intelligence unwired despite measured ex-ante value**
+   (§2.10: membership 13% vs 36% loser rate; Trough+ 3.6%; three instruments
+   agree). US RC3's CN edition, now with the wiring case quantified.
+5. **CN-RC4 — Ordering anti-signal.** Board rank-IC +0.073; setup-score chase
    bias put the worst cohort at the top of the board the user reads.
-5. **CN-RC5 — No continuation/rotation doors.** RAN_LATE cohort +6.0 medX / 83%
-   win sits excluded from featured; era runner cohorts (§2.7) show which winners
-   have no admissible door at all.
-6. **CN-RC6 — Churn + ledger hygiene.** Sub-verdict re-admission churn (33% win);
-   `n_skipped_no_price` mislabel; last-row-wins rk/tr in the shipped table;
-   initialization-cohort drag undisclosed in the closed book.
+6. **CN-RC5 — No continuation/relay doors.** RAN_LATE +6.0 medX / 83% win
+   excluded from featured; 11% of era runners never-eligible (counter-trend
+   blocks); relay winners only enter by accident.
+7. **CN-RC6 — Churn + ledger hygiene.** Sub-verdict re-admission churn (33%
+   win); `n_skipped_no_price` mislabel; last-row-wins rk/tr; initialization-
+   cohort drag undisclosed.
 
 ## §4 What cn_prophet_v2 already fixed (delta-audit)
 
@@ -232,9 +292,123 @@ since the 2026-07-30 cutover; V2 order = `prophet_score` sort, lanes =
 
 ---
 
-## §5 The program
+## §5 The program — CHINA PROPHET V3 "RELAY ENGINE"
 
-### W0 — CN loser+miss telemetry engine (ops-telemetry; build first)
+Amended 2026-08-04 after the operator's challenge round ("solutions not powerful
+enough; wire the intelligence in"). The amendment upgrades the plan from
+shadow-first conservatism to a **ratified direct-wiring slate with tripwires**:
+the gauntlet remains the promotion gate for *future* tuning, but the changes
+below cite measured in-era evidence plus mechanism, ship with parallel shadow
+grading of the displaced definition, and auto-alarm on regression (new G0.8).
+The operator's directive in the 2026-08-04 session is the ratification event
+G0.4 requires; each R-item below is individually revertible.
+
+**The architecture (three axes, one sentence each):**
+- **WHERE (theme/cycle context):** a pick's theme membership, heat *timing*
+  (warming-early vs hot-late), and basket cycle state (Trough+/Recovery+ vs
+  Downturn−) condition admission priors, score, and surfacing — §2.10 measured.
+- **WHEN (entry timing):** featured = the EARLY-reclaim window (the demoted
+  cohorts that won 92-93%), confirmed-late demotes — §2.3/§2.11 measured.
+- **WHO ELSE (relay/breadth):** limit-day/velocity events are read through
+  theme ignition: theme-backed relay ≠ naked chase — §2.9 measured.
+
+### R-SLATE — ratified direct wirings (ship now; each with tripwire + shadow)
+
+**R1 — Featured shelf re-founded on the prime window (`cn_prophet_v3`).**
+`engine/china_board_rank.py`: `_FEATURED_ENTRY_STATUSES` becomes the
+prime-window set {bounce_wait, wait_pullback, hold, buy_now, partial} MINUS the
+confirmed-late demotion: buy_now/partial admit to featured only with
+`signal.ticks ≤ 1` and no R3 naked-chase flag; bounce_wait/wait_pullback/hold
+admit with the same execution safeguards as today (fresh signal, micro clear,
+liquid, not extended). `_ENTRY_VALUE` re-ordered to the measured order
+(bounce_wait 1.0, wait_pullback 0.95, hold 0.8, buy_now 0.7, partial 0.6,
+buy_soon 0.35, extended 0.3, rest unchanged at ≤0.3). BOARD_DEFINITION bumps to
+`cn_prophet_v3` so the graded record forks cleanly (era discipline; v2 record
+closes at 39 rows/0 matured — no era pooling). The old v2 featured definition
+keeps grading as a labeled shadow (`cn_prophet_v2_shadow`) via a second
+append_board call under WATCH_DEFINITIONS, so the race the operator would have
+waited weeks for runs anyway — with v3 LIVE and v2 as the challenger.
+User-facing copy: featured = "prime entry window — early turn"; demoted late
+entries say so in plain words (glance budgets, zh parity).
+*Tripwire (G0.8):* W0 telemetry compares v3-featured vs v2-shadow on rolling
+matured cohorts; if v3 trails by ≥5pp win-rate over ≥60 matured episodes,
+`::warning` + revert proposal to the operator.
+
+**R2 — Theme/cycle context gains bounded score + admission authority.**
+`china_board_rank.SCORE_WEIGHTS` rebalanced: signal 30 / entry 20 / runway 15 /
+bottom_quality 10 / reversal_member 10 / **theme_timing 15** (sums 100).
+`theme_timing` value per name (all PIT, from inputs build_china_library already
+computes): 1.0 = basket member AND (narr WARMING or basket phase Trough+/
+Recovery+); 0.6 = basket member, neutral state; 0.25 = non-member (curated ∪ THS
+union); 0.0 = member of HOT-fading (narr HOT with rel20_slope5 < 0) or
+Downturn− basket. Narrative/cycle attachment moves BEFORE `enrich_and_score_rows`
+in `build_china_library.py`; the W2-B order-invariance assertion is REPLACED by
+its inverse contract (a test pinning that theme_timing has exactly the bounded
+authority above and that `sector_turn`/raw heat still add zero) —
+`_ZERO_SCORE_AUTHORITY` updated to name the surviving zero-authority keys and
+the docstring/design-law comments updated in the same commit. DNR row 85
+differentiation: this is a bounded score tilt + admission prior on the standout
+board keyed to theme-basket cycle/timing states, not the falsified binary
+subsector-state gate on the reversal sleeve; rows 37/78 untouched (no
+cycle-position×rotation confluence, no washout×turn term).
+*Tripwire:* W0 stratifies nightly by theme_timing bucket; if the 1.0 bucket's
+rolling loser rate exceeds the 0.25 bucket's over ≥60 matured, alarm + revert.
+
+**R3 — Conditional chase guard (the bimodality split, §2.9).**
+Build-time-knowable composite only (T+1 gap is grading-side): admission-day
+limit-close (close==high AND day move ≥ 0.95×limit) OR trail-21d ≥ +25% OR the
+micro chase_veto's 5-session ≥15% leg. **Naked chase** (composite ∧ no basket
+membership ∧ narr level None) → excluded from featured, lane
+`late_or_unfillable`, plain-word reason ("limit-day pop without theme support —
+the historical bagholder cohort"); still on the board, never population-deleted.
+**Theme-backed chase** (composite ∧ member ∧ WARMING/HOT-rising) → featured-
+eligible with a `relay` mark (the 龙头 class; §2.9 median +14.5). The dormant
+`assert_zt_not_positive` hook is retired-or-wired in the same commit (no dead
+guards). *Tripwire:* W0 grades both chase branches nightly; if naked-chase
+excluded names outperform kept featured over ≥60 matured, alarm.
+
+**R4 — Doors surface immediately (display), grade in shadow.**
+- Relay door: R3's theme-backed relay marks are a visible featured-adjacent
+  class from day one.
+- Continuation door: the §2.7 never-eligible cohort (intact-trend names blocked
+  by counter-trend/200-reclaim filters) surfaces as a labeled watch strip when
+  theme-backed (member of WARMING/igniting basket), shadow-graded under
+  `cn_continuation_watch_v1` (WATCH_DEFINITIONS pattern; zero population
+  authority until its prereg clears). Implementation W-C (builder wave, needs
+  candidate plumbing outside `eligible_rows`).
+- Both doors' promotion to population authority stays gauntleted (≥100 matured,
+  ≥60td, G0.7 table) — surfacing now, authority by evidence.
+
+**R5 — Exits: decided by the CN exit study (W-E), not by default.** The day-3
+tell (70% loser at ≤−3%) sizes a real salvage; if the study's day-3-review
+family beats the incumbent in-sample at acceptable winner cost, ship it as the
+pick-management line on cards ("3 sessions in: thesis failing — read updated")
++ propose the graded-exit prereg; never silently change the record basis.
+
+### Build waves (all Opus builders; specs above are binding)
+
+### W-A — R1+R2+R3 implementation (one PR)
+`china_board_rank.py` + `build_china_library.py` wiring + tests (entry-map
+order, theme_timing bounds, naked-vs-relay routing, v3 definition stamp,
+v2-shadow parallel grading, updated invariants). Case receipts in PR body per
+G0.3: the §2.3 inversion table, §2.9 split, §2.10 table.
+
+### W-B — 12-month formalization (RUNNING, research PR)
+`ignition_chase_study.py`: chase×theme at scale, ignition lead test, half-split
+robustness. Its DECISION-RELEVANT SUMMARY refines R2/R3 thresholds (a summary
+that CONTRADICTS a slate item pauses that item pending operator read — G0.8).
+
+### W-C — Continuation door plumbing + Theme Tape CN (display + shadow ledger)
+The §2.7 cohort surfacing + `cn_continuation_watch_v1` ledger; CN Theme Tape on
+china_stocks reusing the US W2 pattern (#4488) — theme heat × member states ×
+why-not attributions, glance-tier, zh parity.
+
+### W-E — CN exit-policy study (RUNNING, research PR)
+Day-3 review / stops / winner-extension families vs H=10; feeds R5.
+
+### W0 — CN loser+miss telemetry engine (ops-telemetry; RUNNING — now also the
+R-slate tripwire host: v3-vs-v2-shadow race, theme_timing strata, chase-branch
+grades, all in the nightly artifact + forward log)
 Productionize both instruments as `engine/cn_prophet_audit.py` + nightly artifact
 `data/cn_prophet_audit/latest.json` (+ forward log): per-night matured-episode
 loser forensics (chase-fingerprint fields, sector/theme cells, entry-status
@@ -255,66 +429,14 @@ G0.2.** *Routing: builder (opus), 1 PR.*
 4. Board-date × definition keep-first already fixed; add a test pinning the
    episode-grain rk/tr join. *Routing: builder (opus).*
 
-### W2 — Chase-risk + theme-timing + day-3 pulse chips (display-tier; ships freely)
-1. **Chase chip** on CN board cards whose row matches the chase composite
-   (plain words: "enters after a limit-day pop — historically the crash cohort" /
-   zh equivalent under glance budgets; Tier-2 hover carries the numbers).
-2. **Theme-timing chip**: WARMING (early heat) vs HOT (late heat) distinction on
-   the existing narrative chip — the measured axis, replacing undifferentiated
-   heat display. No new surface (row 54 fence): these live on existing cards.
-3. **Day-3 thesis pulse** on featured/live rows: "3 sessions in: on track /
-   under review" from the existing interim marks (management surface, no exit
-   authority).
-4. **Re-admission flag**: "re-entering below prior exit" chip when a name returns
-   under its prior episode fill.
-No rank/gate/size authority anywhere in W2. *Routing: designer (opus) for chip
-language/placement, builder (opus) for wiring; frontend-design skill +
-DESIGN_DOCTRINE mandatory.*
-
-### W3 — Shadow ledgers for the three candidate authorities (shadow-accrual → prereg)
-Each accrues nightly in its own ledger (WATCH_DEFINITIONS pattern), each with a
-pre-registered promotion gate (≥100 matured, ≥60td, and the G0.7 cost table
-sustained prospectively) before any admission/rank authority:
-- **S1 chase-veto shadow:** the composite from §2.6 as a would-have-vetoed flag;
-  grades vetoed vs kept cohorts. Wiring home: the dormant
-  `china_signals.assert_zt_not_positive` hook + `china_prophet_shadow`
-  candidates.parquet as the PIT feature source. Differs from killed
-  constructions: keys on admission-day tape mechanics (limit-day/gap/trail), not
-  extension level (the ≥0.60 detector that fired on 1.4%), not washout-depth
-  (#1747-A3), not subsector state (row 85). Overlap with the live micro
-  chase_veto (sealed-limit / 5d ≥15%) is disclosed per-row so S1 grades only the
-  RESIDUAL the live veto misses.
-- **S2 patience-shelf shadow:** featured-alternative selecting the
-  bounce_wait/wait_pullback/hold cohort (with V2's execution safeguards kept);
-  races the live featured shelf on identical grading. The flip, if won, is a
-  featured-definition adjudication (G0.4).
-- **S3 continuation door (CN Door R):** RAN_LATE + re-arm rows (intact trend,
-  reset-and-recross) as a shadow lane — the CN mirror of US W3 Door R, separate
-  ledger, separate prereg. Differs from row 37 (no cycle-position leg) and
-  row 78 (no 2W turn interaction): trend-intactness + reset only.
-All three read features from the EXISTING `china_prophet_shadow`
-candidates.parquet PIT store (every lane, every component, logged since
-2026-07-30) — W3 builds graders, not new collectors.
-*Routing: builder (opus) per shadow; preregs adjudicated in main loop.*
-
-### W4 — Rotation-aware surfacing (display; the sector-intelligence wiring)
-CN Theme Tape on china_stocks: top warming/hot themes × member board states with
-why-not attributions (mirrors US W2 #4488 pattern; CN reference implementation is
-the partition idiom). Sector-direction context chip per card (sector 20d relative
-trend, plain words). Zero authority; the display half of CN-RC3. The scored half
-(any theme-timing boost) waits for its own prereg on S-ledger evidence — and must
-state its difference from DNR rows 37/85 explicitly. *Routing: designer+builder
-(opus).*
-
-### W5 — CN exit-policy + regime studies (research; feeds preregs, not weights)
-1. CN edition of `exit_policy_study` over the 407-episode frame (A-share fills,
-   limit-day exclusions): test the day-3 review family (§2.4) against the H=10
-   incumbent — the US result (nothing beat H=10) does NOT port automatically;
-   CN bleeds are front-loaded (median loser day-3 −5.5% → final −10.8%).
-2. Regime-throttle study once own_market_regime accrues a second regime: does
-   full-rate admission into falling-CSI windows cost absolute pain the
-   excess-basis record hides?
-*Routing: builder (opus) instruments, main-loop adjudication.*
+### (Superseded by the R-slate, 2026-08-04 amendment)
+The original shadow-first waves W2 (display chips), W3 (S1 chase-veto / S2
+patience-shelf / S3 continuation shadows), W4 (rotation surfacing) and W5.1
+(exit study) are absorbed as follows: S1→R3 (conditional, direct), S2→R1
+(direct flip, v2 becomes the shadow), S3→R4/W-C, W2 chips→W-A copy + W-C Theme
+Tape, W4→W-C, W5.1→W-E. W5.2 (regime-throttle study once own_market_regime
+accrues a second regime) remains open as a research follow-up. The day-3 pulse
+and re-entry-below-prior-fill display chips remain in scope inside W-A/W-C.
 
 ### W6 — Learning-loop closure (ops)
 Extend the postmortem protocol: CN loser taxonomy (chase / sector-cohort /
@@ -332,11 +454,16 @@ joins CN losers × missed runners into tilt preregs. Never hot-patched weights.
 - No subsector-state gate on reversal (row 85), no rotation×cycle confluence
   (row 37), no washout×turn (row 78), no parallel rotation surface (row 54), no
   washout-depth ranking (#1747-A3), no LLM-originated signals (A7).
+- No BLANKET chase veto — measured to amputate the strongest winners (§2.9);
+  only the conditional R3 form ships.
 - No touching the US Prophet lanes (#4485-#4488) or the HK board (#4421).
-- No era pooling; prior_record stays a closed book; cn_prophet_v2 membership
-  byte-identical until an operator-ratified flip.
-- No exit-rule hot patch from the day-3 tell — study first (W5), display pulse
-  only (W2).
+- No era pooling; prior_record and the 39-row cn_prophet_v2 book stay closed,
+  labeled eras; the R1 flip is the operator-ratified event G0.4 contemplates
+  (2026-08-04 directive), stamped as a NEW definition — never an in-place edit.
+- No exit-rule hot patch from the day-3 tell — the W-E study decides (R5);
+  display pulse only until then.
+- No population deletion anywhere: naked-chase and demoted names stay on the
+  board in labeled lanes; only featured membership and ordering move.
 
 ## §7 Rollout, fences, collisions
 
