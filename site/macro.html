@@ -104,7 +104,7 @@
 
 
 
-<link rel="stylesheet" href="assets/css/be94529c.css?v=be94529c">
+<link rel="stylesheet" href="assets/css/d6f33697.css?v=d6f33697">
 
 <link rel="stylesheet" href="assets/css/7689f0db.css?v=7689f0db">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
@@ -479,7 +479,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">1</span>
+                <span class="ct">6</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -493,6 +493,51 @@
                   
                   
                   
+                  
+                  
+                  
+                  <a class="ms-sig sev-warn" href="macro_context.html#board">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🧲</span><span class="ms-sig-title"><span class="l-en">Options “gravity” flipped — bigger swings more likely</span><span class="l-zh">期权“引力”反转 — 波动可能加大</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">GEX: net GEX changed sign (net +79bn, spot vs flip -0.7%)</span><span class="l-zh">GEX：net GEX changed sign（净 +79bn，现价相对翻转点 -0.7%）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">Dealer gamma (GEX) measures how options hedging pushes the market around. Positive gamma damps moves (calmer); negative amplifies them (sharper swings, both ways). This flag means that backdrop just changed — expect the market to move more freely until it flips back.</span><span class="l-zh">做市商 gamma（GEX）衡量期权对冲如何推动市场。正 gamma 抑制波动（更平静）；负 gamma 放大波动（双向更剧烈）。此信号表示该背景刚刚改变 —在它再次反转前，市场可能波动得更自由。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Medium — changes the volatility backdrop, not the direction.</span><span class="l-zh">中 — 改变的是波动背景，而非方向。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Source &#39;sentiment_naaim&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;sentiment_naaim&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" data-ms-dlg="dlg-sector" href="#dlg-sector">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">📉</span><span class="ms-sig-title"><span class="l-en">A sector fell out of favor</span><span class="l-zh">某板块失宠</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">XLB RS vs SPY crossed below 10th pctile of 90d (now 9)</span><span class="l-zh">XLB RS 相对 SPY 下穿 90 天第 10 百分位（现为 9）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One sector’s strength versus the market just dropped to the bottom of its recent range — money is rotating out. Usually a reason to avoid or trim, not to bottom-fish; wait for it to base and trigger again.</span><span class="l-zh">某板块相对市场的强度刚跌至其近期区间的底部 — 资金正在流出。通常是回避或减仓的理由，而非抄底；等它筑底并再次触发。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — descriptive rotation, not a timing signal.</span><span class="l-zh">背景 — 描述性的轮动，而非择时信号。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" data-ms-dlg="dlg-sector" href="#dlg-sector">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">📉</span><span class="ms-sig-title"><span class="l-en">A sector fell out of favor</span><span class="l-zh">某板块失宠</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">XLU RS vs SPY crossed below 10th pctile of 90d (now 7)</span><span class="l-zh">XLU RS 相对 SPY 下穿 90 天第 10 百分位（现为 7）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One sector’s strength versus the market just dropped to the bottom of its recent range — money is rotating out. Usually a reason to avoid or trim, not to bottom-fish; wait for it to base and trigger again.</span><span class="l-zh">某板块相对市场的强度刚跌至其近期区间的底部 — 资金正在流出。通常是回避或减仓的理由，而非抄底；等它筑底并再次触发。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — descriptive rotation, not a timing signal.</span><span class="l-zh">背景 — 描述性的轮动，而非择时信号。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">ARKK: manager cut FIG by -100% of position (2026-07-24..2026-07-31, flow-normalized)</span><span class="l-zh">ARKK：经理 cut FIG 仓位 -100%（2026-07-24..2026-07-31，已按资金流标准化）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
+                  </a>
                   
                   
                   
@@ -3995,7 +4040,7 @@
         <g filter="url(#dialGlow5)">
           <line class="fg-mark-s" x1="190" y1="185" x2="190" y2="30"
                 style="stroke:var(--warn)" stroke-width="4" stroke-linecap="round"
-                transform="rotate(1.8, 190, 185)"/>
+                transform="rotate(3.6, 190, 185)"/>
           <circle class="fg-mark-s" cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" style="stroke:var(--warn)" stroke-width="2.5"/>
           <circle class="fg-mark-f" cx="190" cy="185" r="4"  style="fill:var(--warn)"/>
         </g>
@@ -4011,8 +4056,8 @@
       <span class="l-zh">中性</span>
     </div>
     <div class="mx5-sentiment-label">
-      <span class="l-en">Composite at 51 &middot; neutral zone</span>
-      <span class="l-zh">综合指数 51 &middot; 中性区间</span>
+      <span class="l-en">Composite at 52 &middot; neutral zone</span>
+      <span class="l-zh">综合指数 52 &middot; 中性区间</span>
     </div>
     
     
@@ -4065,18 +4110,18 @@
       <div class="mx5-sector-chips">
         
         <span class="mx5-sector-chip cold">
-          <span class="l-en">Regional Banks</span>
-          <span class="l-zh">区域银行</span>
-        </span>
-        
-        <span class="mx5-sector-chip cold">
           <span class="l-en">Cybersecurity</span>
           <span class="l-zh">网络安全</span>
         </span>
         
         <span class="mx5-sector-chip cold">
-          <span class="l-en">Big Pharma</span>
-          <span class="l-zh">大型药企</span>
+          <span class="l-en">Regional Banks</span>
+          <span class="l-zh">区域银行</span>
+        </span>
+        
+        <span class="mx5-sector-chip cold">
+          <span class="l-en">Reshoring &amp; Industrial Capex</span>
+          <span class="l-zh">回流与工业资本开支</span>
         </span>
         
       </div>
@@ -4145,7 +4190,7 @@
         
         
         
-        <div class="mx5-sector-heat-col" data-tip-en="Regional Banks — cooling" data-tip-zh="区域银行 — 退潮">
+        <div class="mx5-sector-heat-col" data-tip-en="Cybersecurity — cooling" data-tip-zh="网络安全 — 退潮">
           <div class="mx5-sector-heat-bar mx5-shb-cool" style="height:32px;opacity:0.41999999999999993;"></div>
         </div>
         
@@ -4157,8 +4202,8 @@
         
         
         
-        <div class="mx5-sector-heat-col" data-tip-en="Cybersecurity — cooling" data-tip-zh="网络安全 — 退潮">
-          <div class="mx5-sector-heat-bar mx5-shb-cool" style="height:27px;opacity:0.3499999999999999;"></div>
+        <div class="mx5-sector-heat-col" data-tip-en="Regional Banks — cooling" data-tip-zh="区域银行 — 退潮">
+          <div class="mx5-sector-heat-bar mx5-shb-cool" style="height:22px;opacity:0.2799999999999999;"></div>
         </div>
         
         
@@ -4169,8 +4214,8 @@
         
         
         
-        <div class="mx5-sector-heat-col" data-tip-en="Big Pharma — cooling" data-tip-zh="大型药企 — 退潮">
-          <div class="mx5-sector-heat-bar mx5-shb-cool" style="height:17px;opacity:0.22;"></div>
+        <div class="mx5-sector-heat-col" data-tip-en="Reshoring &amp; Industrial Capex — cooling" data-tip-zh="回流与工业资本开支 — 退潮">
+          <div class="mx5-sector-heat-bar mx5-shb-cool" style="height:16px;opacity:0.22;"></div>
         </div>
         
         
@@ -4181,7 +4226,7 @@
         
         
         
-        <div class="mx5-sector-heat-col" data-tip-en="Insurance &amp; Brokers — cooling" data-tip-zh="保险与经纪 — 退潮">
+        <div class="mx5-sector-heat-col" data-tip-en="Health Care (Equal-Weight) — cooling" data-tip-zh="医疗保健（等权） — 退潮">
           <div class="mx5-sector-heat-bar mx5-shb-cool" style="height:16px;opacity:0.22;"></div>
         </div>
         
@@ -4420,11 +4465,11 @@
       
       <div class="mx5-ai-ticker-pills">
         
+        <span class="mx5-ai-ticker-pill">USO</span>
+        
         <span class="mx5-ai-ticker-pill">QQQ</span>
         
-        <span class="mx5-ai-ticker-pill">PLTR</span>
-        
-        <span class="mx5-ai-ticker-pill">MSFT</span>
+        <span class="mx5-ai-ticker-pill">XHB</span>
         
         <span class="mx5-ai-ticker-pill">SPY</span>
         
@@ -4434,14 +4479,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          7 high-impact signals across channels
+          8 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          7 条高影响信号
+          8 条高影响信号
         </span>
         
       </div>
@@ -4479,8 +4524,8 @@
         <div class="mx5-card-title"><span class="l-en">Alerts Centre</span><span class="l-zh">警报中心</span></div>
         
         <div class="mx5-card-badge" style="color:var(--mx5-warn-ink);background:var(--mx5-warn-dim);border:1px solid rgba(245,158,11,.20);">
-          <span class="l-en">1 FIRED</span>
-          <span class="l-zh">1 条触发</span>
+          <span class="l-en">2 FIRED</span>
+          <span class="l-zh">2 条触发</span>
         </div>
         
       </div>
@@ -4489,6 +4534,24 @@
       
       
       <div class="mx5-alerts-list">
+        
+        
+        
+        
+        <div class="mx5-alert-item warn">
+          <div class="mx5-alert-dot warn"></div>
+          <div class="mx5-alert-content">
+            <div class="mx5-alert-title warn">
+              <span style="font-size:12px;margin-right:3px">🧲</span>
+              <span class="l-en">Options “gravity” flipped — bigger swings more likely</span>
+              <span class="l-zh">期权“引力”反转 — 波动可能加大</span>
+            </div>
+            <div class="mx5-alert-detail">
+              <span class="l-en">GEX: net GEX changed sign (net +79bn, spot vs flip -0.7%)</span>
+              <span class="l-zh">GEX：net GEX changed sign（净 +79bn，现价相对翻转点 -0.7%）</span>
+            </div>
+          </div>
+        </div>
         
         
         
@@ -4517,8 +4580,8 @@
           <div class="mx5-alert-content">
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
-              <span class="l-en">HSBC reports strong 1H results: Profit up 23% to $19.5B, declares $0.10 dividend…</span>
-              <span class="l-zh">汇丰公布强劲上半年业绩：利润增长23%至195亿美元，宣派每股0.10美元股息及10亿美元股票回购</span>
+              <span class="l-en">Evonik Industries Non-GAAP EPS of €0.65, revenue of €3.89B; raises FY 2026 outlo…</span>
+              <span class="l-zh">赢创工业非GAAP每股收益0.65欧元，营收38.9亿欧元；上调2026财年展望</span>
             </div>
             <div class="mx5-alert-detail">
               <span>Seeking Alpha - Market Currents</span> · 
@@ -4534,8 +4597,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 1 in feed</span>
-          <span class="l-zh">显示 1 / 1 条</span>
+          <span class="l-en">Showing 2 of 6 in feed</span>
+          <span class="l-zh">显示 2 / 6 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -5345,26 +5408,26 @@
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span>
               <span class="mx5-dlg-sector-rk">#5</span>
             </div>
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></span>
-              <span class="mx5-dlg-sector-rk">#6</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></span>
+              <span class="mx5-dlg-sector-rk">#7</span>
             </div>
             
             <div class="mx5-dlg-sector-row">
               <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></span>
-              <span class="mx5-dlg-sector-rk">#8</span>
-            </div>
-            
-            <div class="mx5-dlg-sector-row">
-              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
-              <span class="mx5-dlg-sector-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Reshoring &amp; Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></span>
               <span class="mx5-dlg-sector-rk">#9</span>
+            </div>
+            
+            <div class="mx5-dlg-sector-row">
+              <span class="mx5-dlg-sector-arr cool">&#9661;</span>
+              <span class="mx5-dlg-sector-name"><span class="l-en">Health Care (Equal-Weight)</span><span class="l-zh">医疗保健（等权）</span></span>
+              <span class="mx5-dlg-sector-rk">#11</span>
             </div>
             
           </div>
@@ -7157,12 +7220,12 @@
               <div class="rkc-mood-lens-top">
                 <span class="rkc-mood-lens-name"><span class="l-en">Sentiment mix</span><span class="l-zh">情绪合成</span></span>
                 <span class="rkc-mood-scoreline">
-                  <strong class="rkc-mood-score">51</strong><span class="rkc-mood-unit">/100</span>
+                  <strong class="rkc-mood-score">52</strong><span class="rkc-mood-unit">/100</span>
                   <span class="chip c-muted"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
                 </span>
               </div>
-              <div class="rkc-mood-mini-track" role="img" aria-label="Sentiment mix 51 out of 100">
-                <span class="rkc-mood-pin" style="--rkc-pos:51%"></span>
+              <div class="rkc-mood-mini-track" role="img" aria-label="Sentiment mix 52 out of 100">
+                <span class="rkc-mood-pin" style="--rkc-pos:52%"></span>
               </div>
             </div>
             
@@ -7867,6 +7930,25 @@
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px">
                 <div style="font-size:13px;font-weight:600;color:var(--mx5-warn)">
+                  <span style="font-size:12px;margin-right:3px">🧲</span>
+                  <span class="l-en">Options “gravity” flipped — bigger swings more likely</span><span class="l-zh">期权“引力”反转 — 波动可能加大</span>
+                </div>
+                
+                
+                <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.12);color:var(--mx5-warn-ink,#9c6212);border:1px solid rgba(245,158,11,.22);white-space:nowrap"><span class="l-en">Watch</span><span class="l-zh">关注</span></span>
+                
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">GEX: net GEX changed sign (net +79bn, spot vs flip -0.7%)</span><span class="l-zh">GEX：net GEX changed sign（净 +79bn，现价相对翻转点 -0.7%）</span></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="display:flex;gap:10px;padding:12px;background:rgba(245,158,11,.06);border-radius:10px;border:1px solid rgba(245,158,11,.18)">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--mx5-warn);flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                <div style="font-size:13px;font-weight:600;color:var(--mx5-warn)">
                   <span style="font-size:12px;margin-right:3px">📅</span>
                   <span class="l-en">Major event on deck — expect bigger swings either way</span><span class="l-zh">重大事件临近 — 双向波动或加大</span>
                 </div>
@@ -7883,6 +7965,67 @@
         
         
         
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🔌</span>
+                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;sentiment_naaim&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;sentiment_naaim&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">📉</span>
+                  <span class="l-en">A sector fell out of favor</span><span class="l-zh">某板块失宠</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">XLB RS vs SPY crossed below 10th pctile of 90d (now 9)</span><span class="l-zh">XLB RS 相对 SPY 下穿 90 天第 10 百分位（现为 9）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">📉</span>
+                  <span class="l-en">A sector fell out of favor</span><span class="l-zh">某板块失宠</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">XLU RS vs SPY crossed below 10th pctile of 90d (now 7)</span><span class="l-zh">XLU RS 相对 SPY 下穿 90 天第 10 百分位（现为 7）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKK: manager cut FIG by -100% of position (2026-07-24..2026-07-31, flow-normalized)</span><span class="l-zh">ARKK：经理 cut FIG 仓位 -100%（2026-07-24..2026-07-31，已按资金流标准化）</span></div>
+            </div>
+          </div>
+          
+        </div>
+        
         
         
         
@@ -7894,10 +8037,10 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4624279-hsbc-reports-strong-1h-results-profit-up-23-to-195b-declares-010-dividend-and-1b-share-buyback?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4624332-evonik-industries-non-gaap-eps-of-065-revenue-of-389b-raises-fy-2026-outlook?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">HSBC reports strong 1H results: Profit up 23% to $19.5B, declares $0.10 dividend and $1B share buyback</span><span class="l-zh">汇丰公布强劲上半年业绩：利润增长23%至195亿美元，宣派每股0.10美元股息及10亿美元股票回购</span></span>
+              <span class="nbx-title"><span class="l-en">Evonik Industries Non-GAAP EPS of €0.65, revenue of €3.89B; raises FY 2026 outlook</span><span class="l-zh">赢创工业非GAAP每股收益0.65欧元，营收38.9亿欧元；上调2026财年展望</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7912,10 +8055,64 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4624206-onsemi-expects-ai-data-center-revenue-to-more-than-double-in-2026-as-it-guides-q3-eps-to-0_81?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4624330-paymentus-forecasts-2026-revenue-of-1_443b-1_458b-as-it-raises-adjusted-ebitda-guidance-to?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Amazon tops $3 trillion market cap as stock continues post-earnings surge</span><span class="l-zh">亚马逊股价续涨，市值突破3万亿美元</span></span>
+              <span class="nbx-title"><span class="l-en">Paymentus forecasts 2026 revenue of $1.443B-$1.458B as it raises adjusted EBITDA guidance to $175M-$185M</span><span class="l-zh">Paymentus预测2026年营收14.43亿至14.58亿美元，同时将调整后EBITDA指引上调至1.75亿至1.85亿美元</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 4</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.cnbc.com/2026/08/03/amazon-amzn-stock-market-cap-earnings.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Amazon tops $3 trillion market cap as stock continues post-earnings surge</span><span class="l-zh">亚马逊市值突破3万亿美元，股价延续财报后涨势</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 3</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4624331-mitsubishi-heavy-industries-gaap-eps-of-4007-revenue-of-119b-reaffims-fy-outlook?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Mitsubishi Heavy Industries GAAP EPS of ¥40.07, revenue of ¥1.19B; reaffims FY outlook</span><span class="l-zh">三菱重工GAAP每股收益40.07日元，营收11.9亿日元；重申财年展望</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 4</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4624308-oracles-default-risk-hits-record-high-tops-2008-financial-crisis-peak?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nbx-title"><span class="l-en">Oracle&#39;s default risk hits record high, tops 2008 financial crisis peak</span><span class="l-zh">甲骨文违约风险创历史新高，超过2008年金融危机峰值</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7974,7 +8171,7 @@
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 4</span>
+              <span class="nbx-date">Aug 3</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -7984,69 +8181,15 @@
           
           
           
-          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/3-reasons-microsoft-stock-soared-173002074.html" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.investors.com/market-trend/stock-market-today/dow-jones-futures-spacex-amd-sandisk-eli-lilly-earnings-loom/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">3 Reasons Microsoft Stock Soared After Q4 Earnings</span><span class="l-zh">微软股价第四季度财报后飙升的3个原因</span></span>
+              <span class="nbx-title"><span class="l-en">Dow Jones Futures Rise, Oil Prices Dive As Trump Shifts On Iran; SpaceX, AMD, Sandisk, Eli Lilly Earnings Loom</span><span class="l-zh">道琼斯期货上涨，油价跳水，特朗普对伊朗态度转变；SpaceX、AMD、SanDisk、礼来财报在即</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 2</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4624283-wixcom-beats-top-line-and-bottom-line-estimates-gives-q3-and-reaffirms-fy26-outlook?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-              <span class="nbx-title"><span class="l-en">Wix.com beats top-line and bottom-line estimates; gives Q3 and reaffirms FY26 outlook</span><span class="l-zh">Wix.com营收和利润均超预期；给出三季度指引并重申2026财年展望</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 4</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4624281-banner-authorizes-5-buyback?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nbx-title"><span class="l-en">Banner authorizes 5% buyback</span><span class="l-zh">Banner授权5%股票回购</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 4</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4624275-medifast-targets-return-to-profitability-in-q4-2026-as-trilivy-rollout-continues?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Medifast targets return to profitability in Q4 2026 as Trilivy rollout continues</span><span class="l-zh">Medifast目标2026年第四季度恢复盈利，Trilivy持续推广</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 4</span>
+              <span class="nbx-date">Aug 3</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -8656,7 +8799,7 @@
         
         
         <div class="fg-neutral sg-hero">
-          <div class="sg-hero-num" style="color:var(--fg-col, #f59e0b)">51</div>
+          <div class="sg-hero-num" style="color:var(--fg-col, #f59e0b)">52</div>
           <div>
             <div class="sg-hero-band" style="color:var(--fg-col, #f59e0b)"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
             <div class="sg-hero-sub"><span class="l-en">Composite of 11 market gauges — a mood read, not a signal.</span><span class="l-zh">11 项市场指标合成 — 情绪参考，非交易信号。</span></div>
@@ -8667,7 +8810,7 @@
             <span class="sg-track-tick" style="left:40%"></span>
             <span class="sg-track-tick" style="left:60%"></span>
           </div>
-          <div class="sg-track-marker" style="--sg-pos:51%"></div>
+          <div class="sg-track-marker" style="--sg-pos:52%"></div>
           <div class="sg-track-axis"><span>0 · <span class="l-en">Fear</span><span class="l-zh">恐慌</span></span><span><span class="l-en">Neutral</span><span class="l-zh">中性</span></span><span><span class="l-en">Greed</span><span class="l-zh">贪婪</span> · 100</span></div>
         </div>
         <div class="mx5-dlg-sep"></div>
@@ -8692,8 +8835,8 @@
               
             </div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:63.0%;background:var(--fg-col, #22d97a)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">63</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:75.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">75</div>
           
           <span class="rp-src" hidden>
             <div class="row-pop-hd">
@@ -8707,10 +8850,10 @@
 <path class="sg-dial-band-fear"  d="M14 64 A52 52 0 0 1 40.7 20.5" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-neu"   d="M46.9 16.6 A52 52 0 0 1 85.1 16.6" fill="none" stroke-width="9"/>
 <path class="sg-dial-band-greed" d="M91.3 20.5 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
-<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(23.4 66 64)"/>
+<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(45.0 66 64)"/>
 <circle class="sg-dial-hub" cx="66" cy="64" r="4.5"/>
 </svg>
-<div class="sg-dial-val">63</div>
+<div class="sg-dial-val">75</div>
 <div class="sg-dial-cap">Greed</div>
 </div></div>
             <div class="sg-pop-expl">
@@ -8729,14 +8872,14 @@
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,7.86 5.42,8.7 10.85,7.26 16.27,7.05 21.69,7.41 27.12,6.63 32.54,5.67 37.97,7.56 43.39,7.8 48.81,10.14 54.24,7.98 59.66,7.77 65.08,7.32 70.51,6.45 75.93,6.63 81.36,6.0 86.78,5.79 92.2,5.52 97.63,5.46 103.05,6.57 108.47,6.18 113.9,11.61 119.32,11.22 124.75,12.06 130.17,16.44 135.59,12.09 141.02,10.92 146.44,7.29 151.86,8.58 157.29,11.82 162.71,9.51 168.14,10.44 173.56,14.22 178.98,14.58 184.41,14.28 189.83,16.53 195.25,12.24 200.68,10.5 206.1,11.04 211.53,11.58 216.95,9.63 222.37,10.95 227.8,11.88 233.22,9.96 238.64,9.15 244.07,11.16 249.49,10.44 254.92,9.66 260.34,11.19 265.76,13.77 271.19,14.37 276.61,12.45 282.03,12.87 287.46,16.5 292.88,16.38 298.31,16.47 303.73,16.05 309.15,20.22 314.58,15.99 320.0,14.01 "/>
+<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,8.7 5.42,7.26 10.85,7.05 16.27,7.41 21.69,6.63 27.12,5.67 32.54,7.56 37.97,7.8 43.39,10.14 48.81,7.98 54.24,7.77 59.66,7.32 65.08,6.45 70.51,6.63 75.93,6.0 81.36,5.79 86.78,5.52 92.2,5.46 97.63,6.57 103.05,6.18 108.47,11.61 113.9,11.22 119.32,12.06 124.75,16.44 130.17,12.09 135.59,10.92 141.02,7.29 146.44,8.58 151.86,11.82 157.29,9.51 162.71,10.44 168.14,14.22 173.56,14.58 178.98,14.28 184.41,16.53 189.83,12.24 195.25,10.5 200.68,11.04 206.1,11.58 211.53,9.63 216.95,10.95 222.37,11.88 227.8,9.96 233.22,9.15 238.64,11.16 244.07,10.44 249.49,9.66 254.92,11.19 260.34,13.77 265.76,14.37 271.19,12.45 276.61,12.87 282.03,16.5 287.46,16.38 292.88,16.47 298.31,16.05 303.73,20.22 309.15,15.99 314.58,14.01 320.0,10.62 "/>
 </svg>
 </div>
             </div>
             
             <div class="row-pop-ft">
-              <span class="l-en">Reading: 5.02 · 63/100 in its own history</span>
-              <span class="l-zh">读数：5.02 · 历史百分位 63/100</span>
+              <span class="l-en">Reading: 6.44 · 75/100 in its own history</span>
+              <span class="l-zh">读数：6.44 · 历史百分位 75/100</span>
             </div>
           </span>
         </div>
@@ -8940,8 +9083,8 @@
               
             </div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:73.0%;background:var(--fg-col, #22d97a)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">73</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:77.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">77</div>
           
           <span class="rp-src" hidden>
             <div class="row-pop-hd">
@@ -8955,10 +9098,10 @@
 <path class="sg-dial-band-fear"  d="M14 64 A52 52 0 0 1 40.7 20.5" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-neu"   d="M46.9 16.6 A52 52 0 0 1 85.1 16.6" fill="none" stroke-width="9"/>
 <path class="sg-dial-band-greed" d="M91.3 20.5 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
-<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(41.4 66 64)"/>
+<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(48.6 66 64)"/>
 <circle class="sg-dial-hub" cx="66" cy="64" r="4.5"/>
 </svg>
-<div class="sg-dial-val">73</div>
+<div class="sg-dial-val">77</div>
 <div class="sg-dial-cap">Greed</div>
 </div></div>
             <div class="sg-pop-expl">
@@ -8977,14 +9120,14 @@
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,4.62 5.42,5.07 10.85,4.92 16.27,4.86 21.69,5.04 27.12,5.37 32.54,5.58 37.97,5.73 43.39,5.52 48.81,5.7 54.24,6.54 59.66,6.51 65.08,7.5 70.51,8.16 75.93,7.59 81.36,8.64 86.78,10.26 92.2,9.69 97.63,9.78 103.05,11.16 108.47,12.3 113.9,18.03 119.32,16.86 124.75,21.03 130.17,24.81 135.59,25.47 141.02,25.23 146.44,22.38 151.86,24.75 157.29,26.64 162.71,25.62 168.14,24.6 173.56,26.85 178.98,28.56 184.41,28.17 189.83,28.8 195.25,27.51 200.68,25.08 206.1,24.6 211.53,24.3 216.95,22.71 222.37,16.26 227.8,18.42 233.22,14.37 238.64,10.26 244.07,11.73 249.49,13.05 254.92,16.89 260.34,15.27 265.76,15.15 271.19,15.15 276.61,13.47 282.03,9.69 287.46,9.03 292.88,9.27 298.31,8.94 303.73,12.9 309.15,17.31 314.58,14.37 320.0,11.04 "/>
+<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,5.07 5.42,4.92 10.85,4.86 16.27,5.04 21.69,5.37 27.12,5.58 32.54,5.73 37.97,5.52 43.39,5.7 48.81,6.54 54.24,6.51 59.66,7.5 65.08,8.16 70.51,7.59 75.93,8.64 81.36,10.26 86.78,9.69 92.2,9.78 97.63,11.16 103.05,12.3 108.47,18.03 113.9,16.86 119.32,21.03 124.75,24.81 130.17,25.47 135.59,25.23 141.02,22.38 146.44,24.75 151.86,26.64 157.29,25.62 162.71,24.6 168.14,26.85 173.56,28.56 178.98,28.17 184.41,28.8 189.83,27.51 195.25,25.08 200.68,24.6 206.1,24.3 211.53,22.71 216.95,16.26 222.37,18.42 227.8,14.37 233.22,10.26 238.64,11.73 244.07,13.05 249.49,16.89 254.92,15.27 260.34,15.15 265.76,15.15 271.19,13.47 276.61,9.69 282.03,9.03 287.46,9.27 292.88,8.94 298.31,12.9 303.73,17.31 309.15,14.37 314.58,11.04 320.0,9.81 "/>
 </svg>
 </div>
             </div>
             
             <div class="row-pop-ft">
-              <span class="l-en">Reading: 4.11 · 73/100 in its own history</span>
-              <span class="l-zh">读数：4.11 · 历史百分位 73/100</span>
+              <span class="l-en">Reading: 4.67 · 77/100 in its own history</span>
+              <span class="l-zh">读数：4.67 · 历史百分位 77/100</span>
             </div>
           </span>
         </div>
@@ -9002,8 +9145,8 @@
               
             </div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:61.0%;background:var(--fg-col, #22d97a)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">61</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:62.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">62</div>
           
           <span class="rp-src" hidden>
             <div class="row-pop-hd">
@@ -9017,10 +9160,10 @@
 <path class="sg-dial-band-fear"  d="M14 64 A52 52 0 0 1 40.7 20.5" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-neu"   d="M46.9 16.6 A52 52 0 0 1 85.1 16.6" fill="none" stroke-width="9"/>
 <path class="sg-dial-band-greed" d="M91.3 20.5 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
-<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(19.8 66 64)"/>
+<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(21.6 66 64)"/>
 <circle class="sg-dial-hub" cx="66" cy="64" r="4.5"/>
 </svg>
-<div class="sg-dial-val">61</div>
+<div class="sg-dial-val">62</div>
 <div class="sg-dial-cap">Greed</div>
 </div></div>
             <div class="sg-pop-expl">
@@ -9039,14 +9182,14 @@
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,17.25 5.42,19.26 10.85,18.66 16.27,18.45 21.69,17.37 27.12,19.32 32.54,18.36 37.97,18.78 43.39,17.7 48.81,16.41 54.24,16.29 59.66,15.99 65.08,16.92 70.51,15.33 75.93,14.1 81.36,13.23 86.78,14.79 92.2,14.16 97.63,14.79 103.05,13.38 108.47,23.97 113.9,20.16 119.32,21.63 124.75,24.84 130.17,20.94 135.59,18.12 141.02,15.12 146.44,15.63 151.86,19.35 157.29,15.6 162.71,16.47 168.14,17.43 173.56,21.06 178.98,19.71 184.41,20.1 189.83,19.32 195.25,18.06 200.68,15.72 206.1,15.99 211.53,15.0 216.95,13.74 222.37,14.97 227.8,16.68 233.22,14.28 238.64,12.66 244.07,17.22 249.49,15.84 254.92,13.95 260.34,16.35 265.76,19.98 271.19,19.77 276.61,17.01 282.03,16.14 287.46,19.86 292.88,19.62 298.31,19.8 303.73,19.02 309.15,22.8 314.58,17.1 320.0,14.61 "/>
+<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,19.26 5.42,18.66 10.85,18.45 16.27,17.37 21.69,19.32 27.12,18.36 32.54,18.78 37.97,17.7 43.39,16.41 48.81,16.29 54.24,15.99 59.66,16.92 65.08,15.33 70.51,14.1 75.93,13.23 81.36,14.79 86.78,14.16 92.2,14.79 97.63,13.38 103.05,23.97 108.47,20.16 113.9,21.63 119.32,24.84 124.75,20.94 130.17,18.12 135.59,15.12 141.02,15.63 146.44,19.35 151.86,15.6 157.29,16.47 162.71,17.43 168.14,21.06 173.56,19.71 178.98,20.1 184.41,19.32 189.83,18.06 195.25,15.72 200.68,15.99 206.1,15.0 211.53,13.74 216.95,14.97 222.37,16.68 227.8,14.28 233.22,12.66 238.64,17.22 244.07,15.84 249.49,13.95 254.92,16.35 260.34,19.98 265.76,19.77 271.19,17.01 276.61,16.14 282.03,19.86 287.46,19.62 292.88,19.8 298.31,19.02 303.73,22.8 309.15,17.1 314.58,14.61 320.0,14.28 "/>
 </svg>
 </div>
             </div>
             
             <div class="row-pop-ft">
-              <span class="l-en">Reading: 16.0 · 61/100 in its own history</span>
-              <span class="l-zh">读数：16.0 · 历史百分位 61/100</span>
+              <span class="l-en">Reading: 15.9 · 62/100 in its own history</span>
+              <span class="l-zh">读数：15.9 · 历史百分位 62/100</span>
             </div>
           </span>
         </div>
@@ -9064,8 +9207,8 @@
               
             </div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:48.0%;background:var(--fg-col, #f59e0b)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">48</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:42.0%;background:var(--fg-col, #f59e0b)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #f59e0b)">42</div>
           
           <span class="rp-src" hidden>
             <div class="row-pop-hd">
@@ -9079,10 +9222,10 @@
 <path class="sg-dial-band-fear"  d="M14 64 A52 52 0 0 1 40.7 20.5" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-neu"   d="M46.9 16.6 A52 52 0 0 1 85.1 16.6" fill="none" stroke-width="9"/>
 <path class="sg-dial-band-greed" d="M91.3 20.5 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
-<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(-3.6 66 64)"/>
+<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(-14.4 66 64)"/>
 <circle class="sg-dial-hub" cx="66" cy="64" r="4.5"/>
 </svg>
-<div class="sg-dial-val">48</div>
+<div class="sg-dial-val">42</div>
 <div class="sg-dial-cap">Neutral</div>
 </div></div>
             <div class="sg-pop-expl">
@@ -9101,14 +9244,14 @@
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,11.22 5.42,15.99 10.85,17.61 16.27,18.0 21.69,16.29 27.12,22.83 32.54,14.67 37.97,13.2 43.39,13.08 48.81,9.78 54.24,11.28 59.66,13.26 65.08,15.69 70.51,9.87 75.93,14.31 81.36,12.42 86.78,10.65 92.2,12.66 97.63,13.62 103.05,12.36 108.47,29.58 113.9,21.45 119.32,25.56 124.75,29.61 130.17,26.31 135.59,15.99 141.02,12.6 146.44,12.48 151.86,22.98 157.29,17.73 162.71,19.65 168.14,21.96 173.56,26.88 178.98,26.61 184.41,28.14 189.83,28.05 195.25,24.87 200.68,21.93 206.1,21.42 211.53,22.11 216.95,5.1 222.37,9.12 227.8,8.76 233.22,4.8 238.64,6.63 244.07,17.04 249.49,20.43 254.92,16.02 260.34,12.24 265.76,26.7 271.19,25.53 276.61,18.3 282.03,9.0 287.46,19.56 292.88,17.97 298.31,20.28 303.73,21.51 309.15,29.49 314.58,21.3 320.0,18.6 "/>
+<polyline fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linejoin="round" points="0.0,15.99 5.42,17.61 10.85,18.0 16.27,16.29 21.69,22.83 27.12,14.67 32.54,13.2 37.97,13.08 43.39,9.78 48.81,11.28 54.24,13.26 59.66,15.69 65.08,9.87 70.51,14.31 75.93,12.42 81.36,10.65 86.78,12.66 92.2,13.62 97.63,12.36 103.05,29.58 108.47,21.45 113.9,25.56 119.32,29.61 124.75,26.31 130.17,15.99 135.59,12.6 141.02,12.48 146.44,22.98 151.86,17.73 157.29,19.65 162.71,21.96 168.14,26.88 173.56,26.61 178.98,28.14 184.41,28.05 189.83,24.87 195.25,21.93 200.68,21.42 206.1,22.11 211.53,5.1 216.95,9.12 222.37,8.76 227.8,4.8 233.22,6.63 238.64,17.04 244.07,20.43 249.49,16.02 254.92,12.24 260.34,26.7 265.76,25.53 271.19,18.3 276.61,9.0 282.03,19.56 287.46,17.97 292.88,20.28 298.31,21.51 303.73,29.49 309.15,21.3 314.58,18.6 320.0,20.43 "/>
 </svg>
 </div>
             </div>
             
             <div class="row-pop-ft">
-              <span class="l-en">Reading: -0.16 · 48/100 in its own history</span>
-              <span class="l-zh">读数：-0.16 · 历史百分位 48/100</span>
+              <span class="l-en">Reading: 0.29 · 42/100 in its own history</span>
+              <span class="l-zh">读数：0.29 · 历史百分位 42/100</span>
             </div>
           </span>
         </div>
@@ -9126,8 +9269,8 @@
               
             </div>
           </div>
-          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:80.0%;background:var(--fg-col, #22d97a)"></div></div>
-          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">80</div>
+          <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:82.0%;background:var(--fg-col, #22d97a)"></div></div>
+          <div class="mx5-dlg-factor-score" style="color:var(--fg-col, #22d97a)">82</div>
           
           <span class="rp-src" hidden>
             <div class="row-pop-hd">
@@ -9141,10 +9284,10 @@
 <path class="sg-dial-band-fear"  d="M14 64 A52 52 0 0 1 40.7 20.5" fill="none" stroke-width="9" stroke-linecap="round"/>
 <path class="sg-dial-band-neu"   d="M46.9 16.6 A52 52 0 0 1 85.1 16.6" fill="none" stroke-width="9"/>
 <path class="sg-dial-band-greed" d="M91.3 20.5 A52 52 0 0 1 118 64" fill="none" stroke-width="9" stroke-linecap="round"/>
-<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(54.0 66 64)"/>
+<line class="sg-dial-ptr" x1="66" y1="64" x2="66" y2="22" transform="rotate(57.6 66 64)"/>
 <circle class="sg-dial-hub" cx="66" cy="64" r="4.5"/>
 </svg>
-<div class="sg-dial-val">80</div>
+<div class="sg-dial-val">82</div>
 <div class="sg-dial-cap">Greed</div>
 </div></div>
             <div class="sg-pop-expl">
@@ -9163,14 +9306,14 @@
               <div class="sg-spark">
 <svg viewBox="0 0 320 36" preserveAspectRatio="none" role="img" aria-hidden="true">
 <line x1="0" y1="18.0" x2="320" y2="18.0" stroke="var(--line)" stroke-width="1"/>
-<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,9.6 5.42,8.64 10.85,8.52 16.27,12.63 21.69,11.13 27.12,9.3 32.54,7.2 37.97,12.3 43.39,10.59 48.81,11.13 54.24,8.7 59.66,8.43 65.08,7.89 70.51,11.16 75.93,8.37 81.36,6.75 86.78,6.48 92.2,6.99 97.63,5.31 103.05,5.64 108.47,4.71 113.9,28.65 119.32,20.04 124.75,22.95 130.17,27.36 135.59,19.65 141.02,12.21 146.44,8.28 151.86,8.79 157.29,17.55 162.71,8.49 168.14,14.28 173.56,22.08 178.98,20.67 184.41,22.56 189.83,20.64 195.25,19.08 200.68,12.75 206.1,12.75 211.53,10.05 216.95,7.35 222.37,10.08 227.8,13.2 233.22,7.98 238.64,5.34 244.07,14.16 249.49,11.16 254.92,7.32 260.34,11.64 265.76,20.55 271.19,20.64 276.61,13.62 282.03,10.59 287.46,19.71 292.88,19.38 298.31,21.99 303.73,21.03 309.15,26.31 314.58,14.58 320.0,8.88 "/>
+<polyline fill="none" stroke="#22d97a" stroke-width="1.8" stroke-linejoin="round" points="0.0,8.64 5.42,8.52 10.85,12.63 16.27,11.13 21.69,9.3 27.12,7.2 32.54,12.3 37.97,10.59 43.39,11.13 48.81,8.7 54.24,8.43 59.66,7.89 65.08,11.16 70.51,8.37 75.93,6.75 81.36,6.48 86.78,6.99 92.2,5.31 97.63,5.64 103.05,4.71 108.47,28.65 113.9,20.04 119.32,22.95 124.75,27.36 130.17,19.65 135.59,12.21 141.02,8.28 146.44,8.79 151.86,17.55 157.29,8.49 162.71,14.28 168.14,22.08 173.56,20.67 178.98,22.56 184.41,20.64 189.83,19.08 195.25,12.75 200.68,12.75 206.1,10.05 211.53,7.35 216.95,10.08 222.37,13.2 227.8,7.98 233.22,5.34 238.64,14.16 244.07,11.16 249.49,7.32 254.92,11.64 260.34,20.55 265.76,20.64 271.19,13.62 276.61,10.59 282.03,19.71 287.46,19.38 292.88,21.99 298.31,21.03 303.73,26.31 309.15,14.58 314.58,8.88 320.0,8.43 "/>
 </svg>
 </div>
             </div>
             
             <div class="row-pop-ft">
-              <span class="l-en">Reading: 0.841 · 80/100 in its own history</span>
-              <span class="l-zh">读数：0.841 · 历史百分位 80/100</span>
+              <span class="l-en">Reading: 0.838 · 82/100 in its own history</span>
+              <span class="l-zh">读数：0.838 · 历史百分位 82/100</span>
             </div>
           </span>
         </div>
@@ -9390,20 +9533,20 @@
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX level</span><span class="l-zh">VIX 水平</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">Volatility is low by recent standards. &middot; lower than 76% of days</span>
-              <span class="l-zh">近期波动率偏低。 &middot; 低于历史 76% 的交易日</span>
+              <span class="l-en">Volatility is low by recent standards. &middot; lower than 77% of days</span>
+              <span class="l-zh">近期波动率偏低。 &middot; 低于历史 77% 的交易日</span>
             </div>
             
           </div>
           <div class="sg-pos-wrap">
             
-            <div class="sg-pos"><span class="sg-pos-mark" style="--sg-pp:24%"></span></div>
+            <div class="sg-pos"><span class="sg-pos-mark" style="--sg-pp:23%"></span></div>
             <div class="sg-pos-axis"><span><span class="l-en">Low</span><span class="l-zh">低</span></span><span><span class="l-en">High</span><span class="l-zh">高</span></span></div>
             
           </div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            16.0
+            15.9
             
           </div>
         </div>
@@ -9435,7 +9578,7 @@
           </div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            -2.59
+            -2.81
             
           </div>
         </div>
@@ -9454,20 +9597,20 @@
             <div class="mx5-dlg-factor-name"><span class="l-en">VIX term slope (9D / 3M)</span><span class="l-zh">VIX 期限斜率（9D / 3M）</span></div>
             
             <div class="mx5-dlg-factor-read">
-              <span class="l-en">The curve is steeply in contango — vol market is calm, sellers in control. &middot; lower than 85% of days</span>
-              <span class="l-zh">曲线深度顺结构，波动率市场平静，做空方占主导。 &middot; 低于历史 85% 的交易日</span>
+              <span class="l-en">The curve is steeply in contango — vol market is calm, sellers in control. &middot; lower than 80% of days</span>
+              <span class="l-zh">曲线深度顺结构，波动率市场平静，做空方占主导。 &middot; 低于历史 80% 的交易日</span>
             </div>
             
           </div>
           <div class="sg-pos-wrap">
             
-            <div class="sg-pos"><span class="sg-pos-mark" style="--sg-pp:15%"></span></div>
+            <div class="sg-pos"><span class="sg-pos-mark" style="--sg-pp:20%"></span></div>
             <div class="sg-pos-axis"><span><span class="l-en">Low</span><span class="l-zh">低</span></span><span><span class="l-en">High</span><span class="l-zh">高</span></span></div>
             
           </div>
           <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2,rgba(255,255,255,.7))">
             
-            0.686
+            0.702
             
           </div>
         </div>
@@ -9703,7 +9846,7 @@
           <span><span class="l-en">Sentiment context only — display-only composite of public market indicators. Never scored, never feeds the regime engine, no forward claim. Greed/fear readings are not contrarian signals without regime context.</span><span class="l-zh">仅为情绪参考 — 公开市场指标的仅展示合成。不计分，不进入周期引擎，无前瞻性判断。贪婪/恐惧读数若无周期背景，不构成反向信号。</span></span>
           
           
-          <span class="sg-foot-asof" style="margin-left:auto"><span class="l-en">As of 2026-07-31</span><span class="l-zh">数据日期 2026-07-31</span></span>
+          <span class="sg-foot-asof" style="margin-left:auto"><span class="l-en">As of 2026-08-03</span><span class="l-zh">数据日期 2026-08-03</span></span>
           
         </div>
         
@@ -9832,80 +9975,80 @@
           <div class="sct-rung" style="--sct-c:var(--up,#22d97a)">
     <span class="sct-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V6M6 12l6-6 6 6"/></svg></span>
     <div class="sct-body">
-      <div class="sct-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></div>
+      <div class="sct-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></div>
       <div class="sct-sub">
         <span class="sct-rk">#5</span>
-        <span class="sct-stance"><span class="l-en">fading</span><span class="l-zh">fading</span></span>
+        <span class="sct-stance"><span class="l-en">deteriorating</span><span class="l-zh">deteriorating</span></span>
       </div>
     </div>
     <svg class="sct-trace" viewBox="0 0 132 30" fill="none" aria-hidden="true">
       <line class="sct-base" x1="8" y1="15" x2="124" y2="15"/>
-      <path class="sct-ln" d="M8 16.3 L124 13.7"/>
-      <circle class="sct-dot-old" cx="8" cy="16.3" r="2.4"/>
-      <circle class="sct-dot-now" cx="124" cy="13.7" r="3.4"/>
+      <path class="sct-ln" d="M8 16.6 L124 13.4"/>
+      <circle class="sct-dot-old" cx="8" cy="16.6" r="2.4"/>
+      <circle class="sct-dot-now" cx="124" cy="13.4" r="3.4"/>
     </svg>
     <div class="sct-delta">
-      <span class="sct-delta-v">+4</span>
+      <span class="sct-delta-v">+5</span>
       <span class="sct-delta-k"><span class="l-en">vs 5d</span><span class="l-zh">对比5日</span></span>
     </div>
   </div>
   <div class="sct-rung" style="--sct-c:var(--up,#22d97a)">
     <span class="sct-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V6M6 12l6-6 6 6"/></svg></span>
     <div class="sct-body">
-      <div class="sct-name"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></div>
+      <div class="sct-name"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></div>
       <div class="sct-sub">
-        <span class="sct-rk">#6</span>
+        <span class="sct-rk">#7</span>
+        <span class="sct-stance"><span class="l-en">fading</span><span class="l-zh">fading</span></span>
+      </div>
+    </div>
+    <svg class="sct-trace" viewBox="0 0 132 30" fill="none" aria-hidden="true">
+      <line class="sct-base" x1="8" y1="15" x2="124" y2="15"/>
+      <path class="sct-ln" d="M8 15.6 L124 14.4"/>
+      <circle class="sct-dot-old" cx="8" cy="15.6" r="2.4"/>
+      <circle class="sct-dot-now" cx="124" cy="14.4" r="3.4"/>
+    </svg>
+    <div class="sct-delta">
+      <span class="sct-delta-v">+2</span>
+      <span class="sct-delta-k"><span class="l-en">vs 5d</span><span class="l-zh">对比5日</span></span>
+    </div>
+  </div>
+  <div class="sct-rung" style="--sct-c:var(--up,#22d97a)">
+    <span class="sct-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V6M6 12l6-6 6 6"/></svg></span>
+    <div class="sct-body">
+      <div class="sct-name"><span class="l-en">Reshoring &amp; Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></div>
+      <div class="sct-sub">
+        <span class="sct-rk">#9</span>
         <span class="sct-stance"><span class="l-en">deteriorating</span><span class="l-zh">deteriorating</span></span>
       </div>
     </div>
     <svg class="sct-trace" viewBox="0 0 132 30" fill="none" aria-hidden="true">
       <line class="sct-base" x1="8" y1="15" x2="124" y2="15"/>
-      <path class="sct-ln" d="M8 16.3 L124 13.7"/>
-      <circle class="sct-dot-old" cx="8" cy="16.3" r="2.4"/>
-      <circle class="sct-dot-now" cx="124" cy="13.7" r="3.4"/>
+      <path class="sct-ln" d="M8 17.6 L124 12.4"/>
+      <circle class="sct-dot-old" cx="8" cy="17.6" r="2.4"/>
+      <circle class="sct-dot-now" cx="124" cy="12.4" r="3.4"/>
     </svg>
     <div class="sct-delta">
-      <span class="sct-delta-v">+4</span>
+      <span class="sct-delta-v">+8</span>
       <span class="sct-delta-k"><span class="l-en">vs 5d</span><span class="l-zh">对比5日</span></span>
     </div>
   </div>
   <div class="sct-rung" style="--sct-c:var(--down,#ef4444)">
     <span class="sct-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v13M6 12l6 6 6-6"/></svg></span>
     <div class="sct-body">
-      <div class="sct-name"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></div>
+      <div class="sct-name"><span class="l-en">Health Care (Equal-Weight)</span><span class="l-zh">医疗保健（等权）</span></div>
       <div class="sct-sub">
-        <span class="sct-rk">#8</span>
+        <span class="sct-rk">#11</span>
         <span class="sct-stance"><span class="l-en">neutral</span><span class="l-zh">neutral</span></span>
       </div>
     </div>
     <svg class="sct-trace" viewBox="0 0 132 30" fill="none" aria-hidden="true">
       <line class="sct-base" x1="8" y1="15" x2="124" y2="15"/>
-      <path class="sct-ln" d="M8 14.0 L124 16.0"/>
-      <circle class="sct-dot-old" cx="8" cy="14.0" r="2.4"/>
-      <circle class="sct-dot-now" cx="124" cy="16.0" r="3.4"/>
+      <path class="sct-ln" d="M8 13.7 L124 16.3"/>
+      <circle class="sct-dot-old" cx="8" cy="13.7" r="2.4"/>
+      <circle class="sct-dot-now" cx="124" cy="16.3" r="3.4"/>
     </svg>
     <div class="sct-delta">
-      <span class="sct-delta-v">-3</span>
-      <span class="sct-delta-k"><span class="l-en">vs 5d</span><span class="l-zh">对比5日</span></span>
-    </div>
-  </div>
-  <div class="sct-rung" style="--sct-c:var(--down,#ef4444)">
-    <span class="sct-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v13M6 12l6 6 6-6"/></svg></span>
-    <div class="sct-body">
-      <div class="sct-name"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></div>
-      <div class="sct-sub">
-        <span class="sct-rk">#9</span>
-        <span class="sct-stance"><span class="l-en">neutral</span><span class="l-zh">neutral</span></span>
-      </div>
-    </div>
-    <svg class="sct-trace" viewBox="0 0 132 30" fill="none" aria-hidden="true">
-      <line class="sct-base" x1="8" y1="15" x2="124" y2="15"/>
-      <path class="sct-ln" d="M8 13.1 L124 16.9"/>
-      <circle class="sct-dot-old" cx="8" cy="13.1" r="2.4"/>
-      <circle class="sct-dot-now" cx="124" cy="16.9" r="3.4"/>
-    </svg>
-    <div class="sct-delta">
-      <span class="sct-delta-v">-6</span>
+      <span class="sct-delta-v">-4</span>
       <span class="sct-delta-k"><span class="l-en">vs 5d</span><span class="l-zh">对比5日</span></span>
     </div>
   </div>
@@ -11865,9 +12008,9 @@
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-08-04 05:07 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-08-04 08:10 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-08-04 05:07 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-08-04 08:10 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
@@ -11959,7 +12102,7 @@ window.__CHART_SWAP__ = {
 };
 </script>
 <script src="theme.js?v=55773325" defer></script>
-<script src="tier_preview.js?v=9383a50c" defer></script>
+<script src="tier_preview.js?v=2dc35193" defer></script>
 <script src="chart_i18n.js?v=23272c48" defer></script>
 <script src="timemachine.js?v=92798ed7" defer></script>
 <script src="tablesort.js?v=484d9333" defer></script>
