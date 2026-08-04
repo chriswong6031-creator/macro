@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T15:09:04.776909+00:00",
-  "count": 741,
+  "generated_at": "2026-08-04T15:24:10.707791+00:00",
+  "count": 742,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -50,6 +50,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-qf8iwtlhrbi-3c8b69",
+      "title": "Clorox Aug 4",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:56:58Z",
+      "summary_points": [
+        "**Organic Sales Deterioration**: Organic sales down 13% (vs.",
+        "+1% category growth), signaling weak underlying demand; Q4 adjusted net income collapsed 43.1% YoY to $202M, gross profit dropped 9.7% to $834M.",
+        "**Revised EPS Guidance Downward**: FY27 EPS guidance lowered to $5.70–$6.00 (vs.",
+        "prior $5.84/$5.95), with FY27 adjusted EPS revised to $5.82 (down from $5.84), reflecting ERP inventory drawdown offsetting modest growth.",
+        "**Margin Contraction & Segment Weakness**: Gross margin shrunk 367 bps YoY to 42.8%; Household/Lifestyle segments posted negative growth (-15.2%/-11.1% in Adj EBIT), offsetting Health & Wellness’ 16.1% sales lift."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-bgx046304qp-ce6913",
       "title": "GS Peter Callahan Tech SPOT PLTR ON TKO",
