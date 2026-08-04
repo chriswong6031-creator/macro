@@ -26,9 +26,21 @@ each with its own preregistration.
 ## Measured facts (2026-08-04, this Mac Studio, 1,540-name universe)
 
 - **Shape:** 1,540 rows x 150 columns for one `stamp_date`.
-- **Assembly cost:** 500.8 s (8.3 min) total. Of that, **~2.8 s is everything except
-  the Context Snapshot** — `neuralweb.context_api.context_frame` is essentially the
-  entire budget at 0.302 s/name, linear.
+- **Assembly cost:** 500.8 s (8.3 min) total. `neuralweb.context_api.context_frame` is
+  essentially the entire budget at 0.302 s/name (linear); **everything else is ~2.8 s**:
+
+  | block | cost | n |
+  |---|---|---|
+  | `context_frame` (11 dims) | ~462 s | 1,540 |
+  | `event_features` | 1.95 s | 1,540 |
+  | `eightk_recency` | 0.27 s | 659 |
+  | `turnover_percentiles` | 0.17 s | 1,536 |
+  | `relay_features` | 0.15 s | 300 |
+  | `basket_membership` / `theme_state` / `foresight_stage_map` / `regime_block` | <0.02 s each | 36 / 47 / 27 / 5 |
+
+  The dominant term inside `context_frame` is `_insider_dim`, which re-reads all 81 files
+  in `data/sec_insider/panel/` **per ticker** (~125k parquet reads a night). See the
+  growth/perf caveats below — not fixed here, it is a shared canonical module.
 - **Growth:** 462 KB for the first night; 99 KB/night marginal measured on repeated
   nights. Real nights vary more than the repeat test, so the true marginal sits
   between those bounds: **~25-115 MB of file after one year (252 sessions)**.

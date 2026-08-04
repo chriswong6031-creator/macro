@@ -412,7 +412,9 @@ def event_features(
     Calls the canonical pair ``earnings_blackout.assess`` +
     ``earnings_catalyst.board_row_fields`` — the same functions the builder runs
     for board rows — over the FULL universe, so an ineligible name carries the
-    same event context as a featured one.  Measured 12.9 s / 1,540 names.
+    same event context as a featured one.  Measured 1.95 s / 1,540 names: the
+    earnings store is module-cached, and the per-name reaction path only runs for
+    the ~22% of names with a recent report.
 
     Null-not-false (#4485): ``reports_within_7`` stays ``None`` when
     ``days_to_report`` is unknown, because ``False`` there would assert
