@@ -341,3 +341,70 @@ class TestTheLivePostCannotBeRebuilt:
         posted = shape["body"] if shape["shape"] == "short_form" else shape["headline"]
         assert "More info on this" not in posted
         assert "wire reports" not in posted
+
+
+# ── 11. The last gate: the queue is not a bypass ─────────────────────────────
+
+class TestTheQueueIsNotABypass:
+    """THE MEASUREMENT THAT FORCED THIS SCREEN (2026-08-04).
+
+    The outbox held 308 queued items reaching back ELEVEN days, and content laws
+    run at COMPOSE time. Five of those items still carried a foreign "@handle"
+    banned on 2026-08-02 — the generator fix never touched them, because a fix to
+    the writer cannot reach copy already written. The relay laws in this file
+    would have had exactly the same blind spot.
+
+    Fixing the generator fixes tomorrow's posts. Only a last gate fixes the
+    queue, and the queue is what reaches the timeline.
+    """
+
+    def test_the_live_post_is_caught_at_post_time_too(self):
+        from engine.marketing.copywriter import queued_relay_violations
+        v = queued_relay_violations(f"{LIVE_POINTER} -- wire reports")
+        assert v and "lead_pointer" in v[0]
+
+    def test_a_queue_vintage_handle_is_caught(self):
+        """The five that were still sitting in the queue on 2026-08-04."""
+        from engine.marketing.copywriter import queued_relay_violations
+        v = queued_relay_violations(
+            "GOLD ROSE 0.6% TO $4,070 -- @FirstSquawk reporting")
+        assert v and "foreign handle" in v[0]
+
+    def test_a_clean_wire_post_passes(self):
+        from engine.marketing.copywriter import queued_relay_violations
+        assert queued_relay_violations(
+            "US ISM Manufacturing PMI for July 55.6 versus 54.0 estimate") == []
+
+    def test_the_screen_is_scoped_to_relayed_lanes_only(self):
+        """THE MOST DANGEROUS PROPERTY OF THIS CHANGE, pinned.
+
+        Our own desks write in the first person deliberately — "I'd rather wait"
+        is the house voice the operator approved on 2026-07-30, and 46 queued
+        items carried it. These rules ask "was this written for a reader on
+        somebody else's page", which is only a defect when it CAME from somebody
+        else's page. Pointed at content_studio or weekend_levels this screen
+        would quarantine the marketing voice wholesale.
+
+        So the allowlist is the safety property, and an unknown provenance is
+        NOT screened. Both halves are asserted: the house voice DOES trip the
+        raw rule (which is why scoping is required, not optional), and the
+        publisher's allowlist does not contain the lanes that write it.
+        """
+        from engine.marketing.copywriter import queued_relay_violations
+        house = ("$AAPL into the week\n\nUp at 52-week highs. Nothing broken "
+                 "here, and I'd rather wait.")
+        assert queued_relay_violations(house), \
+            "if this ever passes, the scoping test below is measuring nothing"
+
+        src = (ROOT / "scripts" / "marketing_publisher.py").read_text(encoding="utf-8")
+        import re as _re
+        block = _re.search(r"_RELAYED_PROVENANCES:[^=]*=\s*frozenset\(\{(.*?)\}\)",
+                           src, _re.S)
+        assert block, "the publisher's relay-lane allowlist went missing"
+        allow = block.group(1)
+        for own_lane in ("content_studio", "weekend_levels", "claude_rewrite",
+                         "publisher_live_movers"):
+            assert own_lane not in allow, (
+                f"{own_lane} writes in the house voice and must never be "
+                "screened by the relay rules")
+        assert "press_lane" in allow

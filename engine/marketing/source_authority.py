@@ -155,6 +155,33 @@ _PRINT_SHAPE_RE = re.compile(
     re.IGNORECASE,
 )
 
+#: A MARKET MOVE is checkable too, and this is a separate shape from a print.
+#:
+#: "GOLD ROSE ABOUT 0.6% TO AROUND $4,070 AN OUNCE AFTER TRUMP SAID FRESH IRAN
+#: TALKS WOULD BEGIN" carries no "vs"/"expected"/"prior", so the print shape
+#: above does not see it — and the first cut of this module therefore called a
+#: gold price "not checkable" and sent it to the digest. A price and a direction
+#: are the most verifiable thing on a wire; anyone can pull the tape.
+#:
+#: The causal clause ("after Trump said...") rides along as the SOURCE'S framing,
+#: which is what a relay is. What still needs a name is a claim about what
+#: someone said or plans with no reading attached — that is what the hearsay
+#: markers below catch, and they are checked first.
+#: The vivid verbs (plunge/surge/soar/tumble) are HERE but banned in
+#: breaking_summary._STANCE_BANNED, and both are right: we never WRITE "plunge",
+#: and a source that did still described a move anyone can pull off the tape.
+#: Their absence sent "GameStop Shares Plunge As $1.4 Billion Debt-For-Equity
+#: Swap Threatens Dilution" to the digest — the only live item this law dropped.
+_MARKET_MOVE_RE = re.compile(
+    r"(?<!\w)(?:rose|fell|gains?|gained|lost|climbed|dropp?e?d?|slipped|jumped"
+    r"|slid|advanced|declined|hit|touched|topped|closed|settled|traded"
+    r"|holds?|held|steady|higher|lower|up|down"
+    r"|plunges?|plunged|surges?|surged|soars?|soared|tumbles?|tumbled"
+    r"|sinks?|sank|slumps?|slumped|rallies|rallied|spikes?|spiked"
+    r"|rebounds?|rebounded|beats?|beat|misses|missed)(?!\w)",
+    re.IGNORECASE,
+)
+
 #: Event classes whose items are checkable by construction.
 _SELF_EVIDENT_CLASSES: frozenset[str] = frozenset({"macro_print", "market_data"})
 
@@ -272,8 +299,10 @@ def self_evident(item: dict) -> tuple[bool, str]:
     """May this item post with NO credit? ``(ok, reason)``.
 
     True when the statement is checkable without trusting whoever relayed it:
-    a published print, a market level, an official action, or a claim already
-    carried by two independent sources.
+    a published print, a market move, an official action, or a mirror-verified
+    direct quote. (A claim carried by two independent sources never reaches here
+    — :func:`resolve_attribution` returns before this is asked, because
+    corroboration IS the evidence a credit would have supplied.)
 
     False for a CLAIM — something whose truth rests on the source's standing.
     Those need a nameable source, and without one the honest move is not to post.
@@ -286,6 +315,8 @@ def self_evident(item: dict) -> tuple[bool, str]:
     if tier == "official":
         return True, "official issuer — the source IS the fact"
 
+    # CHECKED FIRST, ahead of every escape below: prose that announces "someone
+    # told us this" is a claim however many numbers it carries.
     if _HEARSAY_MARKERS_RE.search(headline):
         return False, "headline announces a sourced claim, not a checkable fact"
 
@@ -295,8 +326,12 @@ def self_evident(item: dict) -> tuple[bool, str]:
     if event_class in _SELF_EVIDENT_CLASSES:
         return True, f"{event_class} — a published figure the reader can check"
 
-    if _PRINT_SHAPE_RE.search(headline) and re.search(r"\d", headline):
+    has_figure = bool(re.search(r"\d", headline))
+    if has_figure and _PRINT_SHAPE_RE.search(headline):
         return True, "print shape (figure against an expectation or a prior)"
+
+    if has_figure and _MARKET_MOVE_RE.search(headline):
+        return True, "market move (a level and a direction anyone can pull)"
 
     if corr_class == "direct-quote":
         return True, "mirror-verified direct quote — the venue is the evidence"
@@ -331,6 +366,22 @@ def resolve_attribution(
     if incoming.lower().startswith("on "):
         return {"gate": gate, "attribution": incoming, "tier": "venue",
                 "reason": "venue attribution (where it was said)",
+                "downgraded": False}
+
+    # ALREADY CORROBORATED — THIS LAYER HAS NOTHING TO ADD.
+    #
+    # The corroboration law grants `instant` with NO attribution for exactly one
+    # reason: two or more INDEPENDENT sources carried the claim inside the
+    # window, which is the evidence a masthead would otherwise have supplied.
+    # Re-asking "but can we name someone?" here re-litigates a question that has
+    # already been answered better — and it is not hypothetical: the first cut of
+    # this function sent every corroborated geopolitical pair to the digest,
+    # killing the ≥2-source instant path outright (three suites caught it).
+    #
+    # A credit is a SUBSTITUTE for corroboration, never a second hurdle after it.
+    if gate == "instant" and not incoming:
+        return {"gate": gate, "attribution": "", "tier": "corroborated",
+                "reason": "independently corroborated — no credit needed",
                 "downgraded": False}
 
     cite = citation(item, cfg=cfg)

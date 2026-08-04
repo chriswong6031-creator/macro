@@ -62,6 +62,7 @@ if _CODE_ROOT not in sys.path:
 from engine.marketing.copywriter import banned_language as _banned_language  # noqa: E402
 from engine.marketing.copywriter import headline_fragments as _headline_fragments  # noqa: E402
 from engine.marketing.copywriter import queued_voice_violations as _queued_voice_violations  # noqa: E402
+from engine.marketing.copywriter import queued_relay_violations as _queued_relay_violations  # noqa: E402
 from engine.marketing.copywriter import batch_body_duplicate_violations as _batch_body_duplicate_violations  # noqa: E402
 from engine.marketing.copywriter import repeated_sentence_violations as _repeated_sentence_violations  # noqa: E402
 from engine.marketing import market_clock as _clock  # noqa: E402
@@ -233,6 +234,21 @@ def _queued_headline(kind: str | None, text: str) -> str | None:
     if not head or "\n" in head:
         return None
     return head
+
+
+#: Lanes whose copy RELAYS someone else's words, and therefore the only lanes
+#: the relay-hygiene screen may judge.
+#:
+#: Our own desks write in the first person on purpose — "I'm not fighting this
+#: one", the house voice the operator approved on 2026-07-30, and 46 items in
+#: the queue were carrying it when this screen was written. The relay rules ask
+#: "was this sentence written for a reader on somebody else's page", which is
+#: only a defect when the sentence CAME from somebody else's page. Pointed at
+#: content_studio or weekend_levels it would quarantine the voice wholesale, so
+#: the allowlist is explicit and an unknown provenance is NOT screened.
+_RELAYED_PROVENANCES: frozenset[str] = frozenset({
+    "press_lane", "press_research_lane", "hot_tape", "earnings_call_lane",
+})
 
 
 _PUBLICATIONS_REL = Path("data/marketing/publications.jsonl")
@@ -1827,6 +1843,7 @@ def main(argv: list[str] | None = None) -> int:
     # first time a gate actually fired.
     quarantined_bare_cashtag = quarantined_unknown_cashtag = 0
     quarantined_voice_laws = quarantined_run_duplicate = 0
+    quarantined_relay_hygiene = 0
     #: Sends refused for quota, not for content — requeued rather than failed.
     #: Counted separately because "3 failed" and "3 will retry next sweep" are
     #: opposite facts and the summary line was reporting them as the same one.
@@ -2380,6 +2397,40 @@ def main(argv: list[str] | None = None) -> int:
             quarantined += 1
             quarantined_voice_laws += 1
             continue
+
+        # -- relay gate: the queue is not a bypass around the hygiene laws -----
+        # THE MEASUREMENT THAT FORCED THIS (2026-08-04). The outbox holds 308
+        # queued items going back ELEVEN days, and content laws run at COMPOSE
+        # time — so every item enqueued before a law existed keeps its pre-law
+        # text forever. Five queued items still carry a foreign "@handle" that
+        # the de-handling law banned on 2026-08-02, and the relay-hygiene fix
+        # shipped alongside this screen would not have touched one of them.
+        # Fixing the generator fixes tomorrow's posts; only a last gate fixes
+        # the queue, and the queue is what actually reaches the timeline.
+        #
+        # SCOPED TO RELAYED LANES. Our OWN desks write in the first person on
+        # purpose ("I'm not fighting this one" — 46 queued items, house voice,
+        # operator-approved 2026-07-30), so a first-person screen aimed at a
+        # source author would quarantine the marketing voice wholesale. This
+        # runs on the lanes that relay someone else's words and nowhere else.
+        #
+        # Fail-SAFE, like every screen on this terminal path: a hygiene module
+        # that cannot be imported leaves the item unscreened rather than dead.
+        if str(it.get("provenance") or "") in _RELAYED_PROVENANCES:
+            _relay = _queued_relay_violations(text)
+            if _relay:
+                reason = "relay hygiene (queue vintage): " + "; ".join(_relay[:2])
+                print(f"::warning title=marketing-relay-gate::item {iid} "
+                      f"({account}/{it.get('kind')}) quarantined — {_relay[0][:110]}",
+                      flush=True)
+                log.warning("item %s (%s) QUARANTINED by relay gate: %s",
+                            iid, account, reason)
+                if live:
+                    _outbox.transition(iid, "quarantined", actor="publisher",
+                                       root=root, note=reason)
+                quarantined += 1
+                quarantined_relay_hygiene += 1
+                continue
 
         # -- run dedup: the queue is not a bypass around "don't repeat yourself"
         # The FIRST of a near-duplicate pair posts; the clones do not. Terminal
@@ -2971,6 +3022,7 @@ def main(argv: list[str] | None = None) -> int:
         "named a ticker no price store knows": quarantined_unknown_cashtag,
         "reads machine-written": quarantined_voice_laws,
         "repeats a post already sent": quarantined_run_duplicate,
+        "relays the source's own page furniture": quarantined_relay_hygiene,
         "same skeleton as a recent post": quarantined_frame,
         "claimed a session that was not the posting session": quarantined_clock,
         "repeats a fact another post already carries": quarantined_fact_fanout,
@@ -3034,6 +3086,7 @@ def main(argv: list[str] | None = None) -> int:
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
         "quarantined_bare_cashtag=%d quarantined_unknown_cashtag=%d "
         "quarantined_voice_laws=%d quarantined_run_duplicate=%d "
+        "quarantined_relay_hygiene=%d "
         "quarantined_frame=%d skipped_filler=%d quarantined_substance=%d "
         "substance_shadow=%d quarantined_clock=%d quarantined_fact_fanout=%d "
         "skipped_no_channel=%d skipped_halt=%d parked_dark=%d "
@@ -3046,6 +3099,7 @@ def main(argv: list[str] | None = None) -> int:
         skipped_cap, skipped_cadence, shadow_cadence, deferred_xa,
         quarantined_bare_cashtag, quarantined_unknown_cashtag,
         quarantined_voice_laws, quarantined_run_duplicate,
+        quarantined_relay_hygiene,
         quarantined_frame, skipped_filler, quarantined_substance, shadow_substance,
         quarantined_clock, quarantined_fact_fanout,
         skipped_channel,
@@ -3081,6 +3135,7 @@ def main(argv: list[str] | None = None) -> int:
             "quarantined_unknown_cashtag": quarantined_unknown_cashtag,
             "quarantined_voice_laws": quarantined_voice_laws,
             "quarantined_run_duplicate": quarantined_run_duplicate,
+            "quarantined_relay_hygiene": quarantined_relay_hygiene,
             "quarantined_frame": quarantined_frame,
             "skipped_filler": skipped_filler,
             "quarantined_substance": quarantined_substance,
