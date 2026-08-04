@@ -60,228 +60,10 @@
 @font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 </style>
 <link rel="stylesheet" href="illus.css?v=8032719c">
+<link rel="stylesheet" href="assets/css/bd78613c.css?v=bd78613c">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<style>
-:root{
-  /* Inter loads via _interfonts; token mirrors theme.css --font-ui (standalone page). */
-  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-    "Noto Sans CJK SC", sans-serif;
-  --blue:#285FFF; --indigo:#4559DC; --ink:#0B1733;
-  --text:#344054; --muted:#6F6F6F; --red:#D30B0B; --amber:#F5AD42;
-  --grid:#EAECF0; --card:#FFFFFF; --bg:#F7F8FA; --green:#1FA971;
-  /* --faint raised to meet WCAG AA (the old C.faint failed contrast; it carries
-     null-disclosure text that the doctrine requires to be readable). */
-  --faint:#6b7280;
-  /* IPO identity — a distinct indigo→violet accent (macro=blue, transmission=rates/infl/usd) */
-  --acc:#6366f1; --acc2:#a855f7;
-}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;
-  --muted:#8b93a1;--faint:#9199a6;--red:#e06464;--acc:#8b8ff8;--acc2:#c084fc;}
-*{box-sizing:border-box}
-html:not([data-lang="zh"]) .l-zh{display:none}
-html[data-lang="zh"] .l-en{display:none}
-html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-body{margin:0;padding-top:18px;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:var(--blue);text-decoration:none}
-:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
-.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:8px;position:sticky;top:0;background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:saturate(160%) blur(12px);backdrop-filter:saturate(160%) blur(12px);z-index:20}
-@media (min-width:701px){
-  .topbar{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
-    padding-left:max(40px,calc((100vw - 1500px)/2));
-    padding-right:max(40px,calc((100vw - 1500px)/2));}
-}
-.nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
-a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
-a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
-.nav-dd{position:relative;display:inline-flex}
-.nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
-.nav-dd:hover>a.nav-link .caret,.nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
-.nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
-.nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;background:var(--card);border:1px solid var(--grid);border-radius:13px;box-shadow:0 12px 34px rgba(16,24,40,.14);padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
-.nav-dd:hover>.nav-dd-menu,.nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
-.nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
-.nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
-.nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
-.nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
-.nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;text-decoration:none;transition:border-color .15s,color .15s}
-.nav-ctrls .ai-brief-link:hover{border-color:var(--acc);color:var(--acc)}
-.lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
-.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--acc);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
-html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
-.lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
-html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
-html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
-.theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
-.theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
-.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
-.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
-.theme-switch .knob::before{content:"☀️"}
-html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
-html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
-html[data-theme="dark"] .lang-toggle{background:#222732}
-html[data-theme="dark"] .theme-switch{background:#222732}
-html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
-html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
-
-/* ---------- hero ---------- */
-.hero{padding:22px 0 4px;animation:ipoUp .5s cubic-bezier(.2,.7,.3,1) both}
-.brand{display:inline-flex;align-items:center;gap:10px;font-weight:800;font-size:25px;color:var(--ink);letter-spacing:-.02em}
-.brand .radar{width:26px;height:26px;flex:none;filter:drop-shadow(0 2px 7px color-mix(in srgb,var(--acc) 45%,transparent))}
-.brand .gn{background:linear-gradient(95deg,var(--acc),var(--acc2) 70%);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero-eyebrow{font-size:11px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin:14px 0 0}
-.verdict{font-size:clamp(21px,3.1vw,30px);font-weight:800;color:var(--ink);letter-spacing:-.022em;line-height:1.3;margin:6px 0 10px;max-width:920px}
-.verdict .hl{color:var(--acc)}
-.hero-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:4px}
-.asof{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
-.asof .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:ipoBreathe 2.8s ease-in-out infinite}
-.tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;border:1px solid var(--grid);background:var(--card);font-size:12px;font-weight:600;color:var(--muted)}
-.stance{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:999px;font-size:13px;font-weight:800;letter-spacing:.01em;
-  background:color-mix(in srgb,var(--acc) 13%,var(--card));color:var(--acc);border:1px solid color-mix(in srgb,var(--acc) 34%,var(--grid))}
-.stance.warn{background:color-mix(in srgb,var(--amber) 15%,var(--card));color:var(--amber);border-color:color-mix(in srgb,var(--amber) 38%,var(--grid))}
-.stance.red{background:color-mix(in srgb,var(--red) 14%,var(--card));color:var(--red);border-color:color-mix(in srgb,var(--red) 36%,var(--grid))}
-.stance.good{background:color-mix(in srgb,var(--green) 14%,var(--card));color:var(--green);border-color:color-mix(in srgb,var(--green) 36%,var(--grid))}
-
-/* ---------- what changed ---------- */
-.changes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0 2px}
-.changes .cx-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-right:2px}
-.cx-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;border:1px solid var(--grid);background:var(--card);font-size:12.5px;font-weight:600;color:var(--ink)}
-.cx-chip .dot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--muted)}
-.cx-chip.up .dot{background:var(--green)}.cx-chip.down .dot{background:var(--red)}.cx-chip.flat .dot{background:var(--amber)}
-.cx-chip.calm{color:var(--muted);font-weight:500}
-
-/* ---------- section chrome ---------- */
-.sec{display:flex;align-items:baseline;gap:10px;font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;margin:34px 2px 4px}
-.sec .sec-hint{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0}
-.sec-sub{font-size:13px;color:var(--muted);margin:0 2px 14px}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:22px}
-.grid{display:grid;gap:16px}.cols-2{grid-template-columns:1fr 1fr}
-@media(max-width:900px){.cols-2{grid-template-columns:1fr}}
-
-/* ---------- AVOID panel — the honest deliverable ---------- */
-.avoid{margin-top:16px;background:linear-gradient(180deg,color-mix(in srgb,var(--amber) 7%,var(--card)),var(--card) 62%);
-  border:1px solid color-mix(in srgb,var(--amber) 30%,var(--grid));border-radius:18px;padding:20px 22px;position:relative;overflow:hidden}
-.avoid::before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(var(--amber),var(--red))}
-.avoid h3{margin:0 0 3px;font-size:15px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:9px}
-.avoid .ah-sub{font-size:12.5px;color:var(--muted);margin:0 0 14px}
-.avoid-list{display:grid;gap:10px}
-/* One accent rail per panel: .avoid::before already paints the coloured left
-   edge, so the items inside keep a plain border rather than repeating a second
-   colour bar within a coloured container. Tone classes stay on the markup. */
-.avoid-item{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--card) 82%,transparent);border:1px solid var(--grid)}
-.avoid-item .ai-ic{font-size:18px;line-height:1.3;flex:none}
-.avoid-item .ai-t{font-size:14px;font-weight:700;color:var(--ink)}
-.avoid-item .ai-d{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5}
-
-/* ---------- signature triad ---------- */
-.triad{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
-@media(max-width:900px){.triad{grid-template-columns:1fr}}
-.tcard{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:20px 20px 16px;overflow:hidden;
-  transition:transform .18s ease,box-shadow .2s ease,border-color .2s ease;animation:ipoUp .5s cubic-bezier(.2,.7,.3,1) both}
-.tcard:nth-child(2){animation-delay:.05s}.tcard:nth-child(3){animation-delay:.1s}
-.tcard:hover{transform:translateY(-2px);box-shadow:0 12px 30px -16px rgba(9,17,40,.3)}
-.tcard::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--tcc,var(--acc))}
-.tcard.good{--tcc:var(--green)}.tcard.warn{--tcc:var(--amber)}.tcard.red{--tcc:var(--red)}.tcard.acc{--tcc:var(--acc)}
-.tc-eyebrow{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--tcc,var(--acc))}
-.tc-state{font-size:27px;font-weight:800;letter-spacing:-.028em;color:var(--ink);line-height:1.12;margin:9px 0 2px}
-.tc-sub{font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.45;min-height:34px}
-.tc-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 2px}
-.tcm .tcm-v{font-size:16px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.1}
-.tcm .tcm-l{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.25}
-.tc-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid var(--grid)}
-.dotbar{display:inline-flex;gap:4px;margin:10px 0 2px}
-.dotbar i{width:9px;height:9px;border-radius:50%;background:var(--grid);display:inline-block}
-.dotbar i.on{background:var(--green)}.dotbar i.warn{background:var(--amber)}
-/* arc gauge (froth) */
-.arc{display:block;width:130px;height:70px;margin:6px auto 0}
-.arc path{fill:none;stroke-linecap:round}
-.arc .arc-bg{stroke:var(--grid);stroke-width:9}
-.arc .arc-fill{stroke:var(--tcc,var(--acc));stroke-width:9;transition:stroke-dasharray .6s ease}
-.arc .arc-tick{stroke:var(--ink);stroke-width:2.4;opacity:.55}
-.arc-cap{text-align:center;font-size:11px;color:var(--muted);margin-top:2px}
-
-/* ---------- lock-up cliff ---------- */
-.cliff-lead{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;margin-bottom:14px}
-.cliff-next{font-size:15px;font-weight:700;color:var(--ink)}
-.cliff-next b{color:var(--amber)}
-.cliff-meta{font-size:12.5px;color:var(--muted)}
-.timeline{position:relative;height:118px;margin:6px 4px 2px;border-radius:12px}
-.tl-axis{position:absolute;left:0;right:0;top:64px;height:2px;background:var(--grid)}
-.tl-today{position:absolute;top:20px;bottom:20px;width:2px;background:color-mix(in srgb,var(--acc) 70%,transparent);z-index:2}
-.tl-today .tl-lbl{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--acc);white-space:nowrap}
-.tl-mark{position:absolute;top:64px;transform:translate(-50%,-50%);border-radius:50%;background:var(--muted);border:1.5px solid var(--card);cursor:help;z-index:3;transition:transform .15s}
-.tl-mark:hover,.tl-mark:focus{transform:translate(-50%,-50%) scale(1.35);z-index:6;outline:none}
-.tl-mark.sm{width:9px;height:9px}.tl-mark.md{width:14px;height:14px}.tl-mark.lg{width:20px;height:20px}
-.tl-mark.approaching{background:var(--amber)}.tl-mark.just-expired{background:var(--red)}.tl-mark.locked{background:var(--muted)}
-.tl-mark .tl-tip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:10;width:186px;padding:9px 11px;border-radius:11px;background:var(--card);border:1px solid var(--grid);box-shadow:0 12px 30px -12px rgba(9,17,40,.4);font-size:11.5px;font-weight:500;color:var(--text);line-height:1.5;text-align:left;white-space:normal}
-.tl-mark:hover .tl-tip,.tl-mark:focus .tl-tip{display:block}
-.tl-mark .tl-tip b{color:var(--ink)}
-.tl-scale{position:absolute;left:0;right:0;top:78px;display:flex;justify-content:space-between;font-size:10px;color:var(--faint)}
-.tl-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:11.5px;color:var(--muted)}
-.tl-legend .k{display:inline-flex;align-items:center;gap:5px}
-.tl-legend .k i{width:9px;height:9px;border-radius:50%;display:inline-block}
-
-/* ---------- aftermarket chart ---------- */
-.after-chart{margin:4px 0 6px}
-.after-chart figure{margin:0}
-
-/* ---------- deal cards (upcoming) ---------- */
-.dealgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-.deal{border:1px solid var(--grid);border-radius:14px;padding:14px 15px;background:var(--card)}
-.deal .d-tkr{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
-.deal .d-co{font-size:12.5px;color:var(--muted);margin:1px 0 9px;line-height:1.35;min-height:34px}
-.deal .d-row{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;border-top:1px dashed var(--grid)}
-.deal .d-row .k{color:var(--muted)}.deal .d-row .v{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
-.spac{display:inline-block;background:color-mix(in srgb,var(--acc2) 16%,var(--card));color:var(--acc2);border-radius:6px;padding:1px 6px;font-size:10px;font-weight:800;margin-left:6px;vertical-align:middle}
-
-/* ---------- tables (a11y: thead/tbody/scope + overflow scroll from first paint) ---------- */
-.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:2px -4px 0;padding:0 4px}
-.tbl{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
-.tbl th,.tbl td{padding:9px 10px;border-bottom:1px solid var(--grid);text-align:left;white-space:nowrap}
-.tbl thead th{color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;position:sticky;top:0;background:var(--card)}
-.tbl td.n,.tbl th.n{text-align:right;font-variant-numeric:tabular-nums}
-.tbl tbody tr:hover{background:color-mix(in srgb,var(--acc) 5%,transparent)}
-.chip{display:inline-block;padding:3px 10px;border-radius:8px;font-weight:700;font-size:11.5px;border:1px solid var(--grid);white-space:nowrap}
-.legtbl{width:100%;border-collapse:collapse;font-size:13px}
-.legtbl th,.legtbl td{padding:8px;border-bottom:1px solid var(--grid);text-align:right}
-.legtbl td.l,.legtbl th.l{text-align:left}
-.legtbl thead th{color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
-.empty{padding:16px 4px;color:var(--muted);font-size:13px}
-.mini{font-size:12px;color:var(--faint);margin-top:10px;line-height:1.6}
-.xlink{font-size:12px;font-weight:600;color:var(--acc)}.xlink:hover{text-decoration:underline}
-
-/* ---------- study shelf (progressive disclosure) ---------- */
-.shelf{margin-top:14px}
-.shelf details{background:var(--card);border:1px solid var(--grid);border-radius:16px;margin-bottom:12px;overflow:hidden}
-.shelf summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700;color:var(--ink);transition:background .18s}
-.shelf summary::-webkit-details-marker{display:none}
-.shelf summary:hover{background:color-mix(in srgb,var(--acc) 5%,var(--card))}
-.shelf summary .sh-ic{flex:none;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;background:color-mix(in srgb,var(--acc) 11%,var(--card))}
-.shelf summary .sh-hint{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--faint);white-space:nowrap}
-.shelf summary .sh-caret{flex:none;font-size:11px;color:var(--faint);transition:transform .25s;margin-left:6px}
-.shelf details[open] summary .sh-caret{transform:rotate(90deg)}
-.shelf .sh-body{padding:4px 20px 20px;border-top:1px solid var(--grid)}
-.sh-body h4{margin:16px 0 4px;font-size:12.5px;font-weight:700;color:var(--ink)}
-.note{border-left:3px solid var(--acc);padding:8px 0 8px 14px;margin:10px 0;color:var(--text);font-size:13px;line-height:1.55}
-.note.warn{border-color:var(--amber)}.note.red{border-color:var(--red)}
-
-/* ---------- ? tip ---------- */
-.qtip{position:relative;display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;
-  border:1px solid var(--grid);color:var(--muted);font-size:11px;font-weight:800;cursor:help;flex:none;vertical-align:middle;margin-left:5px}
-.qtip:hover,.qtip:focus{border-color:var(--acc);color:var(--acc);outline:none}
-.qtip .qtip-body{display:none;position:absolute;top:23px;right:-6px;z-index:40;width:262px;padding:11px 13px;border-radius:12px;
-  background:var(--card);border:1px solid var(--grid);box-shadow:0 14px 34px -14px rgba(9,17,40,.4);
-  font-size:12px;font-weight:500;color:var(--text);line-height:1.55;text-transform:none;letter-spacing:0;text-align:left}
-.qtip:hover .qtip-body,.qtip:focus .qtip-body{display:block}
-
-.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
-
-@keyframes ipoUp{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
-@keyframes ipoBreathe{0%,100%{opacity:.55;transform:scale(.86)}50%{opacity:1;transform:scale(1)}}
-@media(prefers-reduced-motion:reduce){.hero,.tcard,.asof .dot{animation:none}}
-</style>
+<link rel="preload" as="style" href="assets/css/d91bcdb2.css?v=d91bcdb2">
 </head>
 <body>
 
@@ -544,19 +326,12 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
     
     <div class="hero-row">
       <span class="stance warn"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观望，别追</span></span>
-      <span class="asof"><span class="dot"></span><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-31</span>
+      <span class="asof"><span class="dot"></span><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-08-03</span>
       <span class="tag"><span class="l-en">Context, not a buy signal</span><span class="l-zh">背景，而非买入信号</span></span>
     </div>
   </div>
 
   <!-- ============ WHAT CHANGED ============ -->
-  
-  <div class="changes">
-    <span class="cx-eyebrow"><span class="l-en">What changed</span><span class="l-zh">最新变化</span></span>
-    
-    <span class="cx-chip flat"><span class="dot"></span><span class="l-en">Next lock-up is now EIKN (was OBAI)</span><span class="l-zh">下一解禁现为 EIKN（此前 OBAI）</span></span>
-    
-  </div>
   
 
   <!-- ============ AVOID panel — the honest deliverable ============ -->
@@ -608,9 +383,9 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
       <div class="tc-state" style="color:var(--red)"><span class="l-en">Trails</span><span class="l-zh">跑输</span></div>
       <div class="tc-sub"><span class="l-en">“Own recent IPOs” has lagged simply owning the S&amp;P.</span><span class="l-zh">“持有近期新股”跑输了单纯持有标普。</span></div>
       <div class="tc-metrics">
-        <div class="tcm"><div class="tcm-v" style="color:var(--red)">-3.8%</div><div class="tcm-l"><span class="l-en">IPO ETF 5y/yr</span><span class="l-zh">新股ETF 5年/年</span></div></div>
-        <div class="tcm"><div class="tcm-v" style="color:var(--green)">+12.7%</div><div class="tcm-l"><span class="l-en">S&amp;P 5y/yr</span><span class="l-zh">标普 5年/年</span></div></div>
-        <div class="tcm"><div class="tcm-v">-16.5</div><div class="tcm-l"><span class="l-en">gap pp/yr</span><span class="l-zh">差距 个百分点/年</span></div></div>
+        <div class="tcm"><div class="tcm-v" style="color:var(--red)">-3.3%</div><div class="tcm-l"><span class="l-en">IPO ETF 5y/yr</span><span class="l-zh">新股ETF 5年/年</span></div></div>
+        <div class="tcm"><div class="tcm-v" style="color:var(--green)">+12.9%</div><div class="tcm-l"><span class="l-en">S&amp;P 5y/yr</span><span class="l-zh">标普 5年/年</span></div></div>
+        <div class="tcm"><div class="tcm-v">-16.2</div><div class="tcm-l"><span class="l-en">gap pp/yr</span><span class="l-zh">差距 个百分点/年</span></div></div>
       </div>
       <div class="tc-foot">
         <span class="stance red"><span class="l-en">Don&#39;t chase the basket</span><span class="l-zh">别追新股篮子</span></span>
@@ -761,17 +536,17 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   <!-- ============ AFTERMARKET chart ============ -->
   <div class="sec"><span class="l-en">The aftermarket trade</span><span class="l-zh">二级市场交易</span> <span class="sec-hint"><span class="l-en">IPO &amp; IPOX vs the S&amp;P · 5y, rebased</span><span class="l-zh">新股与IPOX对比标普 · 5年，归一</span></span></div>
   <div class="card">
-    <div class="after-chart"><figure class="ilx ilx-multi" style="--ilx-h:300px" role="img" aria-label="Five-year total-return paths of the Renaissance IPO ETF, the First Trust IPOX-100 and the S&amp;P 500, each rebased to 100 at the start."><svg viewBox="0 0 560 300" preserveAspectRatio="none" aria-hidden="true"><path class="ilx-path ilx-m" d="M0.0 168.51 L2.55 164.95 L5.09 167.91 L7.64 162.95 L10.18 162.58 L12.73 166.53 L15.27 165.57 L17.82 171.39 L20.36 169.69 L22.91 162.33 L25.45 162.06 L28.0 156.8 L30.55 158.06 L33.09 155.73 L35.64 163.06 L38.18 155.81 L40.73 160.74 L43.27 154.77 L45.82 152.05 L48.36 156.71 L50.91 154.61 L53.45 169.82 L56.0 159.76 L58.55 166.3 L61.09 163.95 L63.64 173.37 L66.18 175.55 L68.73 166.06 L71.27 164.49 L73.82 157.68 L76.36 161.72 L78.91 166.8 L81.45 166.69 L84.0 176.69 L86.55 176.94 L89.09 185.34 L91.64 183.64 L94.18 174.62 L96.73 180.74 L99.27 194.09 L101.82 189.4 L104.36 184.87 L106.91 189.14 L109.45 178.29 L112.0 177.53 L114.55 169.51 L117.09 169.19 L119.64 181.32 L122.18 176.4 L124.73 185.59 L127.27 184.43 L129.82 196.57 L132.36 188.52 L134.91 196.81 L137.45 193.38 L140.0 184.25 L142.55 190.01 L145.09 180.58 L147.64 177.03 L150.18 182.65 L152.73 179.24 L155.27 187.05 L157.82 188.36 L160.36 181.03 L162.91 183.7 L165.45 177.08 L168.0 179.06 L170.55 172.77 L173.09 173.85 L175.64 181.33 L178.18 177.55 L180.73 184.98 L183.27 181.77 L185.82 174.42 L188.36 175.73 L190.91 173.15 L193.45 176.99 L196.0 172.48 L198.55 174.7 L201.09 171.19 L203.64 174.37 L206.18 167.33 L208.73 167.03 L211.27 162.07 L213.82 163.86 L216.36 158.71 L218.91 158.82 L221.45 155.82 L224.0 155.48 L226.55 161.32 L229.09 163.9 L231.64 158.14 L234.18 158.07 L236.73 160.55 L239.27 160.78 L241.82 169.08 L244.36 167.93 L246.91 163.29 L249.45 173.37 L252.0 163.93 L254.55 164.26 L257.09 156.24 L259.64 156.63 L262.18 154.34 L264.73 153.9 L267.27 147.39 L269.82 146.66 L272.36 150.38 L274.91 148.4 L277.45 140.91 L280.0 144.22 L282.55 136.99 L285.09 138.74 L287.64 132.4 L290.18 134.63 L292.73 130.85 L295.27 127.68 L297.82 131.68 L300.36 129.21 L302.91 138.77 L305.45 136.96 L308.0 130.29 L310.55 130.07 L313.09 124.44 L315.64 127.9 L318.18 123.13 L320.73 122.74 L323.27 117.66 L325.82 118.66 L328.36 111.87 L330.91 110.46 L333.45 120.96 L336.0 116.04 L338.55 129.31 L341.09 115.14 L343.64 111.54 L346.18 110.93 L348.73 120.19 L351.27 111.83 L353.82 106.23 L356.36 108.6 L358.91 101.91 L361.45 102.3 L364.0 108.27 L366.55 105.06 L369.09 96.27 L371.64 99.56 L374.18 92.66 L376.73 92.8 L379.27 101.31 L381.82 94.44 L384.36 102.77 L386.91 102.09 L389.45 91.07 L392.0 95.86 L394.55 91.08 L397.09 89.8 L399.64 104.22 L402.18 101.74 L404.73 114.39 L407.27 104.09 L409.82 132.22 L412.36 135.75 L414.91 114.84 L417.45 120.14 L420.0 107.57 L422.55 108.54 L425.09 96.31 L427.64 99.17 L430.18 93.01 L432.73 95.84 L435.27 87.54 L437.82 86.44 L440.36 83.16 L442.91 83.8 L445.45 78.62 L448.0 84.81 L450.55 75.47 L453.09 79.25 L455.64 73.87 L458.18 75.95 L460.73 68.51 L463.27 69.47 L465.82 64.96 L468.36 63.39 L470.91 71.49 L473.45 65.54 L476.0 57.64 L478.55 59.25 L481.09 71.69 L483.64 69.07 L486.18 58.32 L488.73 64.08 L491.27 55.61 L493.82 59.03 L496.36 53.68 L498.91 60.79 L501.45 53.54 L504.0 53.58 L506.55 60.77 L509.09 54.49 L511.64 59.67 L514.18 59.28 L516.73 67.97 L519.27 78.53 L521.82 67.48 L524.36 60.67 L526.91 46.4 L529.45 47.52 L532.0 37.23 L534.55 38.04 L537.09 31.22 L539.64 27.59 L542.18 41.39 L544.73 29.5 L547.27 39.19 L549.82 32.79 L552.36 28.67 L554.91 30.38 L557.45 39.0 L560.0 31.88" style="stroke:#9AA4B2;--ilx-len:1381.5;--i:0"/><circle class="ilx-dot ilx-m" cx="560.0" cy="31.88" r="2.8" style="fill:#9AA4B2;--i:0"/><path class="ilx-path ilx-m" d="M0.0 168.51 L2.53 164.26 L5.07 168.77 L7.6 171.66 L10.14 159.54 L12.67 158.16 L15.2 152.83 L17.74 151.26 L20.27 172.37 L22.81 170.14 L25.34 155.06 L27.87 151.86 L30.41 158.23 L32.94 161.64 L35.48 153.65 L38.01 164.89 L40.54 185.53 L43.08 190.27 L45.61 180.02 L48.14 179.81 L50.68 198.92 L53.21 195.86 L55.75 225.93 L58.28 221.79 L60.81 204.77 L63.35 206.61 L65.88 225.77 L68.42 223.33 L70.95 240.35 L73.48 222.84 L76.02 213.34 L78.55 219.37 L81.09 231.04 L83.62 235.66 L86.15 246.09 L88.69 250.73 L91.22 263.5 L93.76 260.83 L96.29 249.03 L98.82 262.56 L101.36 247.56 L103.89 255.82 L106.43 247.43 L108.96 255.56 L111.49 246.64 L114.03 249.32 L116.56 239.2 L119.1 240.58 L121.63 250.42 L124.16 254.85 L126.7 245.72 L129.23 253.14 L131.76 260.83 L134.3 254.48 L136.83 265.15 L139.37 259.04 L141.9 265.75 L144.43 270.29 L146.97 258.91 L149.5 266.86 L152.04 261.06 L154.57 264.34 L157.1 270.05 L159.64 272.41 L162.17 266.2 L164.71 266.65 L167.24 259.12 L169.77 261.59 L172.31 253.64 L174.84 252.88 L177.38 261.85 L179.91 259.54 L182.44 266.23 L184.98 263.29 L187.51 258.02 L190.05 261.48 L192.58 259.07 L195.11 260.72 L197.65 263.79 L200.18 259.41 L202.71 256.13 L205.25 259.67 L207.78 252.38 L210.32 248.61 L212.85 253.72 L215.38 250.18 L217.92 241.69 L220.45 243.84 L222.99 240.22 L225.52 238.72 L228.05 250.65 L230.59 253.77 L233.12 248.87 L235.66 249.05 L238.19 246.35 L240.72 250.02 L243.26 254.53 L245.79 254.35 L248.33 250.42 L250.86 258.05 L253.39 251.36 L255.93 253.69 L258.46 246.9 L261.0 248.63 L263.53 243.08 L266.06 243.08 L268.6 235.58 L271.13 234.06 L273.67 242.79 L276.2 245.2 L278.73 241.48 L281.27 245.49 L283.8 235.84 L286.33 237.81 L288.87 230.73 L291.4 233.45 L293.94 227.42 L296.47 225.04 L299.0 229.84 L301.54 227.87 L304.07 239.54 L306.61 237.83 L309.14 232.25 L311.67 234.48 L314.21 229.52 L316.74 228.73 L319.28 232.8 L321.81 232.07 L324.34 228.84 L326.88 230.08 L329.41 225.2 L331.95 223.08 L334.48 231.1 L337.01 229.24 L339.55 240.83 L342.08 229.42 L344.62 224.05 L347.15 230.89 L349.68 222.71 L352.22 221.22 L354.75 224.73 L357.29 224.99 L359.82 218.38 L362.35 219.56 L364.89 215.76 L367.42 212.22 L369.95 218.57 L372.49 217.65 L375.02 211.48 L377.56 211.72 L380.09 220.11 L382.62 213.49 L385.16 220.95 L387.69 210.47 L390.23 219.97 L392.76 208.61 L395.29 213.81 L397.83 210.84 L400.36 228.72 L402.9 228.19 L405.43 236.2 L407.96 228.12 L410.5 247.34 L413.03 249.02 L415.57 237.93 L418.1 237.61 L420.63 228.46 L423.17 227.56 L425.7 218.81 L428.24 222.41 L430.77 219.04 L433.3 221.32 L435.84 216.66 L438.37 215.03 L440.9 218.61 L443.44 217.4 L445.97 212.37 L448.51 214.43 L451.04 201.42 L453.57 202.0 L456.11 207.39 L458.64 206.47 L461.18 192.57 L463.71 194.32 L466.24 204.59 L468.78 196.83 L471.31 207.63 L473.85 201.63 L476.38 209.9 L478.91 209.48 L481.45 222.74 L483.98 220.63 L486.52 207.82 L489.05 206.92 L491.58 215.06 L494.12 214.16 L496.65 206.84 L499.19 207.58 L501.72 212.92 L504.25 224.75 L506.79 214.45 L509.32 215.0 L511.86 221.92 L514.39 222.58 L516.92 217.53 L519.46 219.78 L521.99 229.88 L524.52 219.67 L527.06 203.15 L529.59 209.05 L532.13 196.51 L534.66 205.79 L537.19 192.52 L539.73 181.1 L542.26 195.06 L544.8 189.16 L547.33 177.26 L549.86 177.57 L552.4 189.93 L554.93 190.96 L557.47 203.02 L560.0 199.45" style="stroke:#285FFF;--ilx-len:1565.9;--i:1"/><circle class="ilx-dot ilx-m" cx="560.0" cy="199.45" r="2.8" style="fill:#285FFF;--i:1"/><path class="ilx-path ilx-m" d="M0.0 168.51 L2.53 165.11 L5.07 169.14 L7.6 172.4 L10.14 163.56 L12.67 162.38 L15.2 168.47 L17.74 163.43 L20.27 174.98 L22.81 172.74 L25.34 161.56 L27.87 166.69 L30.41 159.41 L32.94 156.04 L35.48 161.84 L38.01 166.88 L40.54 179.15 L43.08 172.95 L45.61 182.14 L48.14 171.36 L50.68 184.22 L53.21 181.19 L55.75 204.96 L58.28 201.38 L60.81 187.97 L63.35 190.07 L65.88 204.05 L68.42 209.71 L70.95 197.85 L73.48 195.72 L76.02 188.08 L78.55 192.98 L81.09 197.75 L83.62 201.02 L86.15 211.0 L88.69 214.05 L91.22 223.72 L93.76 221.98 L96.29 210.85 L98.82 215.95 L101.36 229.7 L103.89 226.57 L106.43 222.51 L108.96 227.04 L111.49 217.95 L114.03 217.26 L116.56 209.83 L119.1 210.08 L121.63 217.32 L124.16 220.77 L126.7 213.35 L129.23 219.42 L131.76 228.85 L134.3 220.87 L136.83 229.91 L139.37 225.68 L141.9 219.15 L144.43 225.97 L146.97 219.45 L149.5 220.81 L152.04 225.58 L154.57 224.4 L157.1 230.73 L159.64 232.69 L162.17 226.85 L164.71 228.49 L167.24 221.93 L169.77 224.17 L172.31 218.0 L174.84 218.26 L177.38 224.08 L179.91 220.87 L182.44 229.02 L184.98 228.5 L187.51 223.0 L190.05 227.09 L192.58 224.0 L195.11 225.15 L197.65 229.42 L200.18 228.38 L202.71 224.95 L205.25 228.37 L207.78 220.71 L210.32 216.68 L212.85 221.83 L215.38 220.12 L217.92 211.8 L220.45 209.3 L222.99 214.43 L225.52 207.78 L228.05 220.21 L230.59 223.56 L233.12 217.8 L235.66 216.56 L238.19 220.55 L240.72 221.13 L243.26 227.16 L245.79 221.5 L248.33 227.93 L250.86 233.15 L253.39 225.28 L255.93 227.62 L258.46 219.26 L261.0 219.59 L263.53 213.36 L266.06 213.08 L268.6 205.71 L271.13 205.39 L273.67 214.16 L276.2 212.69 L278.73 206.01 L281.27 210.14 L283.8 201.26 L286.33 204.58 L288.87 196.4 L291.4 200.07 L293.94 195.59 L296.47 192.78 L299.0 199.19 L301.54 196.7 L304.07 207.31 L306.61 206.11 L309.14 196.76 L311.67 198.56 L314.21 194.72 L316.74 197.32 L319.28 204.04 L321.81 200.62 L324.34 203.68 L326.88 202.62 L329.41 198.66 L331.95 195.83 L334.48 204.5 L337.01 201.37 L339.55 211.79 L342.08 200.3 L344.62 196.65 L347.15 203.32 L349.68 192.35 L352.22 192.18 L354.75 187.53 L357.29 189.19 L359.82 182.2 L362.35 182.45 L364.89 187.79 L367.42 182.96 L369.95 167.22 L372.49 169.03 L375.02 159.09 L377.56 165.18 L380.09 176.32 L382.62 167.98 L385.16 175.67 L387.69 172.97 L390.23 158.69 L392.76 160.81 L395.29 148.17 L397.83 143.45 L400.36 178.0 L402.9 175.87 L405.43 193.19 L407.96 173.19 L410.5 202.53 L413.03 202.04 L415.57 186.04 L418.1 185.67 L420.63 167.45 L423.17 167.07 L425.7 154.32 L428.24 154.69 L430.77 147.9 L433.3 151.45 L435.84 143.01 L438.37 145.93 L440.9 140.35 L443.44 140.15 L445.97 133.58 L448.51 135.78 L451.04 127.43 L453.57 138.97 L456.11 129.95 L458.64 135.31 L461.18 117.66 L463.71 118.52 L466.24 110.78 L468.78 110.54 L471.31 119.44 L473.85 120.59 L476.38 107.0 L478.91 112.05 L481.45 134.96 L483.98 133.8 L486.52 107.87 L489.05 102.78 L491.58 119.53 L494.12 115.55 L496.65 107.43 L499.19 109.57 L501.72 112.73 L504.25 125.68 L506.79 112.8 L509.32 116.87 L511.86 108.38 L514.39 112.17 L516.92 120.34 L519.46 113.75 L521.99 130.79 L524.52 108.0 L527.06 93.25 L529.59 99.01 L532.13 81.47 L534.66 91.16 L537.19 75.51 L539.73 73.3 L542.26 90.58 L544.8 79.49 L547.33 63.49 L549.86 58.34 L552.4 81.72 L554.93 79.82 L557.47 103.38 L560.0 96.89" style="stroke:#4559DC;--ilx-len:1685.7;--i:2"/><circle class="ilx-dot ilx-m" cx="560.0" cy="96.89" r="2.8" style="fill:#4559DC;--i:2"/></svg><span class="ilx-chips"><span class="ilx-chip" style="--dot:#9AA4B2"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></span><span class="ilx-chip" style="--dot:#285FFF"><span class="l-en">Renaissance IPO ETF</span><span class="l-zh">文艺复兴新股ETF</span></span><span class="ilx-chip" style="--dot:#4559DC"><span class="l-en">First Trust IPOX-100</span><span class="l-zh">IPOX-100</span></span></span><span class="ilx-d ilx-d0">2021-08-02</span><span class="ilx-d ilx-d1">2026-07-31</span></figure></div>
+    <div class="after-chart"><figure class="ilx ilx-multi" style="--ilx-h:300px" role="img" aria-label="Five-year total-return paths of the Renaissance IPO ETF, the First Trust IPOX-100 and the S&amp;P 500, each rebased to 100 at the start."><svg viewBox="0 0 560 300" preserveAspectRatio="none" aria-hidden="true"><path class="ilx-path ilx-m" d="M0.0 167.38 L2.55 168.2 L5.09 165.16 L7.64 168.13 L10.18 163.16 L12.73 162.8 L15.27 169.55 L17.82 165.79 L20.36 171.62 L22.91 169.71 L25.45 162.09 L28.0 162.27 L30.55 156.39 L33.09 158.26 L35.64 155.93 L38.18 163.27 L40.73 156.01 L43.27 160.95 L45.82 152.42 L48.36 152.25 L50.91 156.92 L53.45 157.22 L56.0 170.04 L58.55 159.97 L61.09 167.07 L63.64 164.16 L66.18 173.6 L68.73 175.79 L71.27 164.43 L73.82 164.71 L76.36 157.89 L78.91 162.8 L81.45 167.02 L84.0 170.37 L86.55 177.18 L89.09 178.34 L91.64 185.58 L94.18 182.54 L96.73 174.85 L99.27 194.35 L101.82 184.7 L104.36 189.65 L106.91 185.12 L109.45 187.84 L112.0 176.24 L114.55 177.76 L117.09 169.41 L119.64 170.11 L122.18 182.73 L124.73 176.64 L127.27 185.83 L129.82 186.4 L132.36 196.83 L134.91 189.11 L137.45 197.07 L140.0 184.49 L142.55 191.47 L145.09 190.26 L147.64 180.81 L150.18 177.26 L152.73 182.89 L155.27 179.47 L157.82 187.3 L160.36 188.61 L162.91 180.71 L165.45 183.95 L168.0 177.31 L170.55 177.0 L173.09 172.99 L175.64 174.08 L178.18 181.57 L180.73 177.79 L183.27 185.22 L185.82 182.01 L188.36 174.65 L190.91 175.79 L193.45 173.38 L196.0 177.23 L198.55 172.71 L201.09 174.93 L203.64 171.42 L206.18 173.21 L208.73 167.25 L211.27 162.29 L213.82 166.02 L216.36 163.4 L218.91 158.91 L221.45 158.41 L224.0 155.69 L226.55 156.2 L229.09 162.8 L231.64 164.12 L234.18 158.35 L236.73 158.27 L239.27 160.99 L241.82 162.59 L244.36 169.3 L246.91 163.5 L249.45 169.46 L252.0 173.59 L254.55 163.75 L257.09 164.48 L259.64 156.44 L262.18 156.36 L264.73 154.1 L267.27 153.4 L269.82 147.27 L272.36 146.85 L274.91 150.57 L277.45 148.59 L280.0 141.09 L282.55 144.41 L285.09 137.17 L287.64 138.92 L290.18 132.57 L292.73 134.81 L295.27 130.8 L297.82 127.85 L300.36 131.85 L302.91 129.37 L305.45 138.95 L308.0 136.89 L310.55 130.24 L313.09 130.22 L315.64 124.6 L318.18 128.07 L320.73 122.89 L323.27 122.38 L325.82 117.81 L328.36 118.81 L330.91 111.92 L333.45 110.6 L336.0 121.12 L338.55 129.48 L341.09 115.29 L343.64 114.79 L346.18 111.07 L348.73 120.34 L351.27 111.31 L353.82 106.36 L356.36 108.73 L358.91 108.74 L361.45 102.04 L364.0 102.55 L366.55 108.4 L369.09 96.39 L371.64 101.58 L374.18 98.42 L376.73 92.78 L379.27 92.92 L381.82 101.44 L384.36 94.55 L386.91 102.9 L389.45 98.43 L392.0 91.19 L394.55 95.98 L397.09 91.19 L399.64 89.91 L402.18 104.35 L404.73 104.72 L407.27 114.53 L409.82 104.22 L412.36 132.75 L414.91 135.92 L417.45 114.99 L420.0 115.76 L422.55 107.71 L425.09 108.68 L427.64 96.43 L430.18 99.29 L432.73 93.13 L435.27 95.96 L437.82 86.47 L440.36 86.55 L442.91 83.26 L445.45 82.55 L448.0 78.72 L450.55 84.91 L453.09 75.56 L455.64 79.34 L458.18 73.96 L460.73 74.63 L463.27 67.27 L465.82 69.55 L468.36 64.07 L470.91 63.47 L473.45 71.58 L476.0 57.7 L478.55 64.6 L481.09 59.32 L483.64 71.78 L486.18 65.24 L488.73 57.63 L491.27 64.16 L493.82 55.67 L496.36 59.1 L498.91 53.74 L501.45 60.85 L504.0 53.6 L506.55 53.63 L509.09 60.84 L511.64 54.55 L514.18 59.74 L516.73 60.57 L519.27 71.88 L521.82 78.62 L524.36 60.74 L526.91 59.34 L529.45 46.45 L532.0 46.3 L534.55 35.73 L537.09 38.07 L539.64 31.24 L542.18 27.61 L544.73 41.43 L547.27 29.53 L549.82 39.23 L552.36 32.82 L554.91 28.69 L557.45 39.04 L560.0 27.59" style="stroke:#9AA4B2;--ilx-len:1394.0;--i:0"/><circle class="ilx-dot ilx-m" cx="560.0" cy="27.59" r="2.8" style="fill:#9AA4B2;--i:0"/><path class="ilx-path ilx-m" d="M0.0 167.38 L2.53 163.47 L5.07 168.88 L7.6 170.92 L10.14 157.32 L12.67 151.95 L15.2 157.71 L17.74 150.37 L20.27 171.63 L22.81 168.73 L25.34 151.88 L27.87 150.98 L30.41 157.66 L32.94 152.77 L35.48 166.19 L38.01 164.1 L40.54 184.89 L43.08 189.67 L45.61 179.13 L48.14 180.53 L50.68 198.38 L53.21 202.27 L55.75 225.59 L58.28 220.09 L60.81 204.27 L63.35 206.12 L65.88 225.43 L68.42 240.11 L70.95 219.06 L73.48 222.47 L76.02 212.91 L78.55 223.53 L81.09 235.81 L83.62 235.39 L86.15 250.57 L88.69 263.43 L91.22 253.19 L93.76 258.02 L96.29 248.86 L98.82 262.48 L101.36 247.38 L103.89 255.7 L106.43 247.24 L108.96 246.45 L111.49 254.9 L114.03 248.46 L116.56 238.95 L119.1 243.36 L121.63 250.44 L124.16 254.72 L126.7 245.53 L129.23 260.74 L131.76 254.35 L134.3 254.75 L136.83 265.1 L139.37 258.94 L141.9 266.39 L144.43 270.27 L146.97 258.81 L149.5 266.66 L152.04 260.98 L154.57 264.44 L157.1 270.83 L159.64 272.41 L162.17 265.15 L164.71 266.6 L167.24 259.02 L169.77 253.5 L172.31 261.32 L174.84 252.74 L177.38 261.77 L179.91 260.05 L182.44 266.18 L184.98 262.83 L187.51 257.91 L190.05 261.4 L192.58 258.97 L195.11 263.72 L197.65 259.31 L200.18 259.29 L202.71 256.01 L205.25 259.58 L207.78 252.24 L210.32 248.43 L212.85 253.58 L215.38 250.02 L217.92 241.46 L220.45 243.63 L222.99 238.48 L225.52 239.64 L228.05 251.26 L230.59 253.64 L233.12 248.7 L235.66 246.16 L238.19 249.86 L240.72 250.78 L243.26 254.4 L245.79 250.26 L248.33 255.04 L250.86 257.94 L253.39 251.21 L255.93 253.56 L258.46 246.72 L261.0 247.69 L263.53 242.78 L266.06 242.86 L268.6 235.2 L271.13 233.77 L273.67 242.57 L276.2 245.0 L278.73 241.25 L281.27 245.29 L283.8 235.39 L286.33 237.55 L288.87 230.24 L291.4 233.17 L293.94 227.09 L296.47 224.69 L299.0 229.52 L301.54 227.54 L304.07 239.29 L306.61 237.05 L309.14 231.69 L311.67 234.2 L314.21 229.21 L316.74 228.41 L319.28 232.51 L321.81 231.77 L324.34 227.65 L326.88 229.77 L329.41 224.56 L331.95 222.71 L334.48 230.8 L337.01 240.6 L339.55 229.11 L342.08 228.66 L344.62 223.69 L347.15 230.58 L349.68 222.08 L352.22 220.84 L354.75 224.64 L357.29 223.75 L359.82 217.91 L362.35 219.17 L364.89 215.34 L367.42 211.78 L369.95 218.17 L372.49 214.84 L375.02 211.04 L377.56 212.13 L380.09 219.72 L382.62 213.06 L385.16 220.57 L387.69 210.02 L390.23 219.59 L392.76 208.14 L395.29 213.38 L397.83 210.39 L400.36 228.39 L402.9 235.93 L405.43 230.2 L407.96 227.79 L410.5 247.16 L413.03 248.85 L415.57 237.36 L418.1 233.83 L420.63 227.24 L423.17 227.0 L425.7 218.41 L428.24 222.04 L430.77 218.65 L433.3 220.95 L435.84 216.01 L438.37 214.61 L440.9 218.22 L443.44 216.12 L445.97 211.93 L448.51 214.0 L451.04 200.9 L453.57 206.92 L456.11 201.66 L458.64 203.36 L461.18 191.99 L463.71 195.13 L466.24 204.1 L468.78 196.27 L471.31 207.48 L473.85 201.11 L476.38 212.69 L478.91 209.02 L481.45 222.38 L483.98 217.77 L486.52 206.78 L489.05 206.44 L491.58 214.63 L494.12 213.73 L496.65 206.36 L499.19 207.1 L501.72 216.39 L504.25 224.4 L506.79 214.02 L509.32 214.58 L511.86 221.55 L514.39 222.22 L516.92 217.13 L519.46 229.57 L521.99 218.43 L524.52 219.29 L527.06 202.64 L529.59 208.58 L532.13 195.96 L534.66 205.3 L537.19 191.86 L539.73 180.43 L542.26 194.49 L544.8 186.74 L547.33 176.56 L549.86 179.01 L552.4 193.51 L554.93 190.36 L557.47 202.51 L560.0 193.64" style="stroke:#285FFF;--ilx-len:1606.4;--i:1"/><circle class="ilx-dot ilx-m" cx="560.0" cy="193.64" r="2.8" style="fill:#285FFF;--i:1"/><path class="ilx-path ilx-m" d="M0.0 167.38 L2.53 164.63 L5.07 170.35 L7.6 171.96 L10.14 163.07 L12.67 161.89 L15.2 169.61 L17.74 162.94 L20.27 174.55 L22.81 170.48 L25.34 159.68 L27.87 166.22 L30.41 158.47 L32.94 155.52 L35.48 166.41 L38.01 166.64 L40.54 178.75 L43.08 181.75 L45.61 170.92 L48.14 172.86 L50.68 183.85 L53.21 185.83 L55.75 204.7 L58.28 199.06 L60.81 187.62 L63.35 189.73 L65.88 203.79 L68.42 209.48 L70.95 194.26 L73.48 195.41 L76.02 187.72 L78.55 193.36 L81.09 200.74 L83.62 202.16 L86.15 213.84 L88.69 223.56 L91.22 216.67 L93.76 219.26 L96.29 210.62 L98.82 219.75 L101.36 229.57 L103.89 222.35 L106.43 226.91 L108.96 225.12 L111.49 216.55 L114.03 217.07 L116.56 209.6 L119.1 210.63 L121.63 217.69 L124.16 220.6 L126.7 213.13 L129.23 220.69 L131.76 228.73 L134.3 220.96 L136.83 229.79 L139.37 218.97 L141.9 223.67 L144.43 225.82 L146.97 219.27 L149.5 220.64 L152.04 225.44 L154.57 224.25 L157.1 230.61 L159.64 232.59 L162.17 225.74 L164.71 228.36 L167.24 221.76 L169.77 217.81 L172.31 222.23 L174.84 218.08 L177.38 223.93 L179.91 221.03 L182.44 228.89 L184.98 228.38 L187.51 222.84 L190.05 226.96 L192.58 223.84 L195.11 225.5 L197.65 229.3 L200.18 228.26 L202.71 224.81 L205.25 228.24 L207.78 220.54 L210.32 216.49 L212.85 221.66 L215.38 219.94 L217.92 211.58 L220.45 214.23 L222.99 207.54 L225.52 209.64 L228.05 221.51 L230.59 223.41 L233.12 217.1 L235.66 216.37 L238.19 220.96 L240.72 222.7 L243.26 227.02 L245.79 221.33 L248.33 229.51 L250.86 233.04 L253.39 225.13 L255.93 227.49 L258.46 219.08 L261.0 218.68 L263.53 212.87 L266.06 211.2 L268.6 205.44 L271.13 205.13 L273.67 213.96 L276.2 212.47 L278.73 205.76 L281.27 209.91 L283.8 200.24 L286.33 204.32 L288.87 196.07 L291.4 199.79 L293.94 195.28 L296.47 192.45 L299.0 198.9 L301.54 196.4 L304.07 207.06 L306.61 203.04 L309.14 196.45 L311.67 194.41 L314.21 199.01 L316.74 197.02 L319.28 203.78 L321.81 200.34 L324.34 203.42 L326.88 202.35 L329.41 197.58 L331.95 195.52 L334.48 204.23 L337.01 211.57 L339.55 200.0 L342.08 200.02 L344.62 196.35 L347.15 203.06 L349.68 191.85 L352.22 187.17 L354.75 189.08 L357.29 187.62 L359.82 181.82 L362.35 182.07 L364.89 187.44 L367.42 176.58 L369.95 166.75 L372.49 166.24 L375.02 158.58 L377.56 165.52 L380.09 175.9 L382.62 167.51 L385.16 175.25 L387.69 168.32 L390.23 158.17 L392.76 160.3 L395.29 144.57 L397.83 142.85 L400.36 177.59 L402.9 192.87 L405.43 179.79 L407.96 172.75 L410.5 202.26 L413.03 201.76 L415.57 185.3 L418.1 179.49 L420.63 165.92 L423.17 166.61 L425.7 152.16 L428.24 154.15 L430.77 147.33 L433.3 150.9 L435.84 140.86 L438.37 145.34 L440.9 139.24 L443.44 139.54 L445.97 131.06 L448.51 135.14 L451.04 126.74 L453.57 138.34 L456.11 129.28 L458.64 133.18 L461.18 114.4 L463.71 117.78 L466.24 110.0 L468.78 109.76 L471.31 119.87 L473.85 106.2 L476.38 118.64 L478.91 111.28 L481.45 134.32 L483.98 125.86 L486.52 103.18 L489.05 101.96 L491.58 118.8 L494.12 114.79 L496.65 106.63 L499.19 108.78 L501.72 114.69 L504.25 124.98 L506.79 112.03 L509.32 116.01 L511.86 107.59 L514.39 112.15 L516.92 119.62 L519.46 130.12 L521.99 107.21 L524.52 106.26 L527.06 92.38 L529.59 98.16 L532.13 80.53 L534.66 90.28 L537.19 74.28 L539.73 72.31 L542.26 89.69 L544.8 75.83 L547.33 57.28 L549.86 63.92 L552.4 87.82 L554.93 78.87 L557.47 102.56 L560.0 91.76" style="stroke:#4559DC;--ilx-len:1704.0;--i:2"/><circle class="ilx-dot ilx-m" cx="560.0" cy="91.76" r="2.8" style="fill:#4559DC;--i:2"/></svg><span class="ilx-chips"><span class="ilx-chip" style="--dot:#9AA4B2"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></span><span class="ilx-chip" style="--dot:#285FFF"><span class="l-en">Renaissance IPO ETF</span><span class="l-zh">文艺复兴新股ETF</span></span><span class="ilx-chip" style="--dot:#4559DC"><span class="l-en">First Trust IPOX-100</span><span class="l-zh">IPOX-100</span></span></span><span class="ilx-d ilx-d0">2021-08-03</span><span class="ilx-d ilx-d1">2026-08-03</span></figure></div>
     <div class="tbl-wrap">
       <table class="legtbl">
         <thead><tr><th class="l" scope="col"><span class="l-en">Basket</span><span class="l-zh">篮子</span></th><th scope="col">1Y</th><th scope="col">3Y</th><th scope="col">5Y</th></tr></thead>
         <tbody>
         
-        <tr style="font-weight:700"><td class="l" scope="row">Renaissance IPO ETF <span class="faint" style="color:var(--faint)">(IPO)</span></td><td>+11.6%</td><td>+12.1%</td><td>-3.8%</td></tr>
+        <tr style="font-weight:700"><td class="l" scope="row">Renaissance IPO ETF <span class="faint" style="color:var(--faint)">(IPO)</span></td><td>+16.8%</td><td>+15.4%</td><td>-3.3%</td></tr>
         
-        <tr><td class="l" scope="row">First Trust IPOX-100 <span class="faint" style="color:var(--faint)">(FPX)</span></td><td>+17.2%</td><td>+23.3%</td><td>+7.4%</td></tr>
+        <tr><td class="l" scope="row">First Trust IPOX-100 <span class="faint" style="color:var(--faint)">(FPX)</span></td><td>+21.7%</td><td>+25.7%</td><td>+7.7%</td></tr>
         
-        <tr><td class="l" scope="row">S&amp;P 500 <span class="faint" style="color:var(--faint)">(SPY)</span></td><td>+19.2%</td><td>+19.1%</td><td>+12.7%</td></tr>
+        <tr><td class="l" scope="row">S&amp;P 500 <span class="faint" style="color:var(--faint)">(SPY)</span></td><td>+22.9%</td><td>+20.5%</td><td>+12.9%</td></tr>
         
         </tbody>
       </table>
@@ -842,37 +617,37 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
             
             <tr>
               <td class="l" scope="row"><span class="l-en">Macro risk backdrop</span><span class="l-zh">宏观风险背景</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">validated de-risk score (reused, not new)</span><span class="l-zh">复用已验证的降险评分（非新建）</span></div></td>
-              <td><b style="color:var(--ink)">14/100</b></td>
-              <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">Supportive</span><span class="l-zh">偏好</span></span></td>
+              <td><b style="color:var(--ink)">29/100</b></td>
+              <td><span class="chip" style="border-color:#6F6F6F;color:#6F6F6F"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span></td>
             </tr>
             
             <tr>
               <td class="l" scope="row"><span class="l-en">Volatility (VIX)</span><span class="l-zh">波动率（VIX）</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">low vol = receptive tape</span><span class="l-zh">低波动 = 接纳新股的盘面</span></div></td>
-              <td><b style="color:var(--ink)">16.0</b></td>
+              <td><b style="color:var(--ink)">15.9</b></td>
               <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">Supportive</span><span class="l-zh">偏好</span></span></td>
             </tr>
             
             <tr>
               <td class="l" scope="row"><span class="l-en">Credit appetite (HY vs IG)</span><span class="l-zh">信用偏好（高收益 vs 投资级）</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">high-yield leading = risk-on credit</span><span class="l-zh">高收益领先 = 信用风险偏好</span></div></td>
-              <td><b style="color:var(--ink)">+1.6%</b></td>
+              <td><b style="color:var(--ink)">+1.5%</b></td>
               <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">Supportive</span><span class="l-zh">偏好</span></span></td>
             </tr>
             
             <tr>
               <td class="l" scope="row"><span class="l-en">Small-cap leadership (IWM vs SPY)</span><span class="l-zh">小盘领先（IWM vs SPY）</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">small-caps leading = appetite for risk/new names</span><span class="l-zh">小盘领先 = 对风险/新名的偏好</span></div></td>
-              <td><b style="color:var(--ink)">+0.8%</b></td>
+              <td><b style="color:var(--ink)">+0.9%</b></td>
               <td><span class="chip" style="border-color:#6F6F6F;color:#6F6F6F"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span></td>
             </tr>
             
             <tr>
               <td class="l" scope="row"><span class="l-en">Speculative appetite (high-beta vs low-vol)</span><span class="l-zh">投机偏好（高贝塔 vs 低波）</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">high-beta leading = speculative bid</span><span class="l-zh">高贝塔领先 = 投机性买盘</span></div></td>
-              <td><b style="color:var(--ink)">+1.0%</b></td>
-              <td><span class="chip" style="border-color:#6F6F6F;color:#6F6F6F"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span></td>
+              <td><b style="color:var(--ink)">+2.6%</b></td>
+              <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">Supportive</span><span class="l-zh">偏好</span></span></td>
             </tr>
             
             <tr>
               <td class="l" scope="row"><span class="l-en">IPO basket trend (IPO vs SPY)</span><span class="l-zh">新股篮子趋势（IPO vs SPY）</span><div style="color:var(--faint);font-size:11.5px"><span class="l-en">recent-IPO ETF leading = aftermarket demand</span><span class="l-zh">新股ETF领先 = 二级市场需求</span></div></td>
-              <td><b style="color:var(--ink)">+1.6%</b></td>
+              <td><b style="color:var(--ink)">+1.8%</b></td>
               <td><span class="chip" style="border-color:#1FA971;color:#1FA971"><span class="l-en">Supportive</span><span class="l-zh">偏好</span></span></td>
             </tr>
             
@@ -1230,277 +1005,13 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
   </div>
 
   <div class="foot">
-    <span class="l-en">Display-only, never scored — an avoidance + context tool, not a buy signal. Deal calendar: Nasdaq public JSON (community-sourced, not official; the predictive demand signals — over-subscription, book demand, allocation — live in paid feeds and are not here). Aftermarket: Renaissance IPO ETF (IPO) &amp; First Trust IPOX-100 (FPX) vs SPY, total-return adjusted closes. Evidence: Ritter (Univ. of Florida IPO data), Huang-Jiang-Li-Wu (SSRN 4012288), Çolak-Fu-Hasan (J. Banking &amp; Finance 2025), Ritter-Welch (2002), Field &amp; Hanka (2001). Not investment advice. Built</span><span class="l-zh">仅供展示，从不计分 —— 一个规避与背景工具，而非买入信号。交易日历：纳斯达克公开 JSON（社区来源，非官方；具预测性的需求信号 —— 超额认购、簿记需求、配售 —— 存在于付费数据源，此处没有）。二级市场：复兴新股ETF (IPO) 与 First Trust IPOX-100 (FPX) 对比 SPY，总回报调整收盘价。证据：Ritter（佛罗里达大学新股数据）、Huang-Jiang-Li-Wu (SSRN 4012288)、Çolak-Fu-Hasan（《银行与金融杂志》2025）、Ritter-Welch (2002)、Field &amp; Hanka (2001)。非投资建议。生成于</span> 2026-08-04 04:28 UTC.
+    <span class="l-en">Display-only, never scored — an avoidance + context tool, not a buy signal. Deal calendar: Nasdaq public JSON (community-sourced, not official; the predictive demand signals — over-subscription, book demand, allocation — live in paid feeds and are not here). Aftermarket: Renaissance IPO ETF (IPO) &amp; First Trust IPOX-100 (FPX) vs SPY, total-return adjusted closes. Evidence: Ritter (Univ. of Florida IPO data), Huang-Jiang-Li-Wu (SSRN 4012288), Çolak-Fu-Hasan (J. Banking &amp; Finance 2025), Ritter-Welch (2002), Field &amp; Hanka (2001). Not investment advice. Built</span><span class="l-zh">仅供展示，从不计分 —— 一个规避与背景工具，而非买入信号。交易日历：纳斯达克公开 JSON（社区来源，非官方；具预测性的需求信号 —— 超额认购、簿记需求、配售 —— 存在于付费数据源，此处没有）。二级市场：复兴新股ETF (IPO) 与 First Trust IPOX-100 (FPX) 对比 SPY，总回报调整收盘价。证据：Ritter（佛罗里达大学新股数据）、Huang-Jiang-Li-Wu (SSRN 4012288)、Çolak-Fu-Hasan（《银行与金融杂志》2025）、Ritter-Welch (2002)、Field &amp; Hanka (2001)。非投资建议。生成于</span> 2026-08-04 06:29 UTC.
   </div>
 </div>
 
 
 <link rel="stylesheet" href="product-nav-icons.css?v=093ad1ea">
-<style>
-/* ambient aurora — fixed accents blended into transparent, pinned behind all
-   content (paints over the opaque body bg, under the page). Light default gets
-   the airier tint; dark gets the richer wash. */
-html body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:
-   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 9%,transparent),transparent 68%),
-   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 8%,transparent),transparent 70%),
-   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 7%,transparent),transparent 70%);}
-html[data-theme="dark"] body::before{
-  background:
-   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 20%,transparent),transparent 68%),
-   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 16%,transparent),transparent 70%),
-   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 14%,transparent),transparent 70%);}
-
-/* buttons — smooth transition + a subtle accent glow / lift on hover (additive;
-   vtm/tm only exist on the Bitcoin Vector page, harmless elsewhere) */
-.vtm-btn,.tm-btn,.navbtn,.ai-brief-link{transition:transform .16s ease,border-color .16s ease,
-  color .16s ease,background .16s ease,box-shadow .18s ease;}
-.vtm-btn:hover,.tm-btn:hover,.navbtn:hover{border-color:color-mix(in srgb,var(--blue) 58%,var(--grid));
-  box-shadow:0 4px 13px -5px color-mix(in srgb,var(--blue) 40%,transparent);}
-.ai-brief-link:hover{transform:translateY(-1px);
-  box-shadow:0 5px 14px -5px color-mix(in srgb,var(--blue) 42%,transparent);}
-
-/* top-bar link light-up — accent-tinted hover/active. Mix base uses the FULL
-   surface fallback chain --card → --panel2 → --panel (+ hardcoded final), same as
-   the glass fill below: the vector family has two palette conventions (most pages
-   define --card; commodities uses --panel2/--panel and no --card), so a bare
-   --card OR bare --panel2 base is null on some pages → invalid color-mix → dead
-   hover. The dropdown-item hover moved to the aurora-glass block below. */
-a.nav-link:hover,a.nav-link.active{background:color-mix(in srgb,var(--blue) 12%,var(--card,var(--panel2,var(--panel,#eef1f6))));}
-html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{
-  background:color-mix(in srgb,var(--blue) 20%,var(--card,var(--panel2,var(--panel,#222732))));}
-
-/* 3rd-tier fly-out (Other Assets ▸ Bitcoin Vector / Commodities) — layout only,
-   palette inherited from the host page's inline nav-dd-menu. Loaded after the
-   page <style>, so these position overrides win. */
-.nav-dd-menu .nav-sub{display:block;position:relative;}
-.nav-dd-menu .nav-sub>a.nav-sub-trig{display:flex;align-items:flex-start;}
-.nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{margin-left:auto;padding-left:12px;font-size:10px;
-  opacity:.55;flex:none;align-self:center;transition:transform .2s,color .2s,opacity .2s,filter .2s;}
-/* breathe only while the dropdown is open + hover-capable + motion allowed — never
-   on hidden carets (perf) or the mobile accordion (theme.js rotate clobber). */
-@media (hover:hover) and (prefers-reduced-motion:no-preference){
-  .nav-dd:hover .nav-sub>a.nav-sub-trig .caret-r,
-  .nav-dd:focus-within .nav-sub>a.nav-sub-trig .caret-r{animation:navCaretBreath 2.6s ease-in-out infinite;}}
-.nav-dd-menu .nav-sub:hover>a.nav-sub-trig .caret-r{animation:none;opacity:1;transform:translateX(3px);
-  color:var(--blue,var(--link,#5b9dff));
-  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 65%,transparent));}
-.nav-dd-menu .nav-sub>a.nav-sub-trig .nav-sub-text{display:block;flex:1;min-width:0;white-space:normal;}
-.nav-dd-menu .nav-sub>.nav-dd-menu{top:-7px;left:100%;z-index:95;}
-.nav-dd-menu .nav-sub::after{content:"";position:absolute;top:0;left:100%;width:12px;height:100%;}
-
-/* ---- #286 regression repair -------------------------------------------------
-   PR #286 switched the self-contained Vector-family pages (vector, commodities,
-   forex, bonds, transmission) from the old inline `.topbar` nav to
-   `<nav class="site-nav">` — but these pages don't link theme.css, so the
-   `.site-nav` menu lost ALL its base styling and rendered as a fully-expanded,
-   unstyled list ("menu looks css-broken"). Restore the base menu + controls CSS
-   here (the partial every Vector-family page already shares), themed with the
-   Vector-family vars (--card/--grid/--ink/--text/--muted/--blue) and scoped to
-   `.site-nav` so the `.topbar` pages that also include this partial keep their
-   own inline nav untouched. The fly-out + hover polish above still apply. The
-   `≤700px` mobile hamburger is injected later by theme.js and wins on order. */
-.site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px;max-width:1500px;margin-left:auto;margin-right:auto}
-/* menu on its own first row (one line); search + controls share row two — holds the bar to two rows */
-.site-nav .nav-links{grid-column:1 / -1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
-.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px;position:relative;min-width:0}
-/* global stock search field — the #286 repair restored the menu/brand/controls but
-   left the search field itself unstyled: the <input> fell back to a raw browser box
-   (inset border, square corners, ~150px wide) with the 🔎 glyph floating inline and
-   the suggestions list dropping into normal flow ("search bar looks css-broken").
-   Port theme.css's .nav-search recipe, scoped to .site-nav and themed via var
-   fallbacks that cover every palette this partial serves: theme.css pages
-   (--panel2/--line/--text/--muted/--link/--glass-*), the --card/--grid/--text/--muted
-   pages, and commodities' --panel2/--line/--tx/--mut/--blue. Loaded after each page's
-   own <style> (and after theme.css on the two pages that link it), so it wins. */
-/* CLS: pre-collapse the mobile nav at PARSE time (port of the theme.css rule —
-   this partial's pages don't all load theme.css). theme.js's hamburger sheet lands
-   ~2s in on phones; until then the expanded menu caused a 0.30 layout shift
-   (2026-07-21 audit). :not(.nav-open) yields once the flyout opens; the noscript
-   re-expand in _navlinks.html.j2 keeps the no-JS fallback reachable. */
-@media (max-width:900px){
-  .site-nav:not(.nav-open) .nav-links{display:none}
-}
-.site-nav .nav-search .mag{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.65;pointer-events:none}
-.site-nav .nav-search input{width:100%;box-sizing:border-box;padding:8px 12px 8px 32px;border-radius:10px;border:1px solid color-mix(in srgb,#416aec 30%,var(--line,var(--grid)));background:var(--panel2,var(--card));color:var(--text,var(--tx));font:inherit;font-size:13px;outline:none;box-shadow:0 0 5px 0 rgba(65,106,236,.10);transition:border-color .18s,box-shadow .25s ease}
-/* Perf: glow breathe on a pseudo animating ONLY opacity (compositor) — animating
-   border/box-shadow on the input restyled+repainted every frame (2026-07-21 mobile
-   audit; mirrors theme.css .nav-search::after). Local keyframes: vector-family
-   pages don't all load theme.css. */
-.site-nav .nav-search{position:relative}
-.site-nav .nav-search::after{content:"";position:absolute;inset:0;border-radius:10px;border:1px solid #416aec;box-shadow:0 0 0 3px rgba(65,106,236,.22),0 0 16px 2px rgba(65,106,236,.38);opacity:0;pointer-events:none;animation:vpGlowO 3.8s ease-in-out infinite}
-.site-nav .nav-search:focus-within::after{animation:none;opacity:0}
-@keyframes vpGlowO{0%,100%{opacity:0}50%{opacity:1}}
-.site-nav .nav-search input::placeholder{color:var(--muted,var(--mut))}
-.site-nav .nav-search input:focus{border-color:var(--blue,var(--link));box-shadow:none}
-@media(prefers-reduced-motion:reduce){.site-nav .nav-search::after{animation:none;opacity:0}}
-.site-nav .nav-sugg{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:80;background:var(--glass-bg,color-mix(in srgb,var(--card,var(--panel)) 92%,transparent));-webkit-backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));border:1px solid var(--glass-brd,color-mix(in srgb,var(--ink) 12%,transparent));border-radius:13px;overflow:hidden;overflow-y:auto;max-height:60vh;box-shadow:var(--glass-shadow,0 20px 54px -24px rgba(20,32,64,.34),0 10px 24px -14px rgba(20,32,64,.20));display:none}
-html[data-theme="dark"] .site-nav .nav-sugg{box-shadow:var(--glass-shadow,0 24px 64px -22px rgba(3,7,18,.74),0 10px 26px -12px rgba(3,7,18,.55))}
-.site-nav .nav-sugg.show{display:block}
-.site-nav .nav-sugg .row{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer}
-.site-nav .nav-sugg .row:hover,.site-nav .nav-sugg .row.sel{background:color-mix(in srgb,var(--blue,var(--link)) 12%,var(--panel2,var(--card)))}
-.site-nav .nav-sugg .row .mkt{flex:none;width:20px;text-align:center;font-size:13px;line-height:1}
-.site-nav .nav-sugg .row b{min-width:58px;font-size:13px;color:var(--text,var(--tx));font-weight:600}
-.site-nav .nav-sugg .row small{flex:1;color:var(--muted,var(--mut));font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.site-nav .nav-sugg .row .stt{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap}
-.site-nav .nav-sugg .empty{padding:11px 13px;color:var(--muted,var(--mut));font-size:12.5px}
-/* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
-.site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
-.site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
-.site-nav .nav-brand .brand-glyph,.topbar .nav-brand .brand-glyph{width:29px;height:29px;display:block;flex:none;filter:drop-shadow(0 2px 6px rgba(40,56,128,.34))}
-.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{font-family:var(--font-ui);font-size:13.5px;font-weight:900;letter-spacing:.07em;line-height:1;color:var(--text);white-space:nowrap}
-@media(max-width:560px){.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{display:none}}
-.site-nav a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
-.site-nav .nav-dd{position:relative;display:inline-flex}
-.site-nav .nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
-.site-nav .nav-dd:hover>a.nav-link .caret,.site-nav .nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
-.site-nav .nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
-/* The two rules above are theme.css copies, and this partial loads AFTER
-   navigation-refresh.css — at an identical (0,2,0) they silently outranked the
-   wide-menu anchors that file owns. A .nav-market-dd/.nav-mega-dd left
-   `position:relative` makes the pill the offset parent, so the mega's `right:0`
-   pinned a 1276px panel to the RIGHT EDGE OF ITS TRIGGER and hung the other
-   ~950px off the left of the viewport (that is the split-panel artifact on
-   special_situations.html and the other 58 vector-family pages). Restoring
-   static also restores navigation-refresh's `content:none`: on a static parent
-   the ::after bridge stops being a 9px strip under the pill and becomes one
-   spanning the whole header, which keeps panels alive on any downward exit.
-   Re-asserted here verbatim, under the SAME media gates as the source, so the
-   family matches a theme.css page exactly. */
-@media (min-width: 701px){
-  .site-nav .nav-mega-dd{position:static}
-  .site-nav .nav-mega-dd::after{content:none}
-}
-@media (min-width: 901px){
-  .site-nav .nav-market-dd{position:static}
-  .site-nav .nav-market-dd::after{content:none}
-}
-/* frosted glass — mirrors the --glass-* token recipe in theme.css (which this
-   self-contained family can't load), themed with the vector palette. Dual-targets
-   BOTH nav wrappers this family ships: the migrated `.site-nav` pages (forex,
-   bonds, commodities, vector, crossasset, transmission) and the legacy `.topbar`
-   pages (strategies, masterminds, spr, *_allocation …), so every page in the
-   family gets the same glass — not just the site-nav half. Loaded after each
-   page's inline `.nav-dd-menu` (0,1,0), so this (0,2,0) wins. */
-/* surface fallback chain --card → --panel2 → --panel covers BOTH vector-family
-   palette conventions: most pages (forex/vector/bonds/spr/strategies…) define
-   --card but not --panel2; commodities uses --panel2/--panel and no --card. A
-   hardcoded final keeps the glass opaque even if a page defines none. */
-.site-nav .nav-dd-menu,.topbar .nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;
-  background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#ffffff))) 90%,transparent);
-  -webkit-backdrop-filter:saturate(185%) blur(26px);backdrop-filter:saturate(185%) blur(26px);
-  border:1px solid color-mix(in srgb,var(--ink) 12%,transparent);border-radius:15px;
-  box-shadow:0 20px 54px -24px rgba(20,32,64,.34),0 12px 28px -14px rgba(20,32,64,.20),inset 0 1px 0 rgba(255,255,255,.85);
-  padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
-html[data-theme="dark"] .site-nav .nav-dd-menu,html[data-theme="dark"] .topbar .nav-dd-menu{background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#14171f))) 86%,transparent);
-  border-color:color-mix(in srgb,var(--text,var(--tx)) 14%,transparent);
-  box-shadow:0 24px 64px -22px rgba(3,7,18,.74),0 12px 28px -14px rgba(3,7,18,.55),inset 0 1px 0 color-mix(in srgb,#fff 10%,transparent)}
-/* 3rd-tier fly-out: its parent .nav-dd-menu is already a backdrop root, so the
-   nested backdrop-filter can't blur the page behind and the fill reads see-through.
-   A denser near-opaque card fill matches the 2nd tier's frosted density. This
-   selector is (0,4,0) — it beats the 2nd-tier glass rules above, including the
-   dark override (0,3,1), so one rule covers both themes. */
-.site-nav .nav-dd-menu .nav-sub>.nav-dd-menu,.topbar .nav-dd-menu .nav-sub>.nav-dd-menu{
-  background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#181b21))) 97%,transparent)}
-.site-nav .nav-dd:hover>.nav-dd-menu,.site-nav .nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
-.site-nav .nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
-.site-nav .nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted,var(--mut,#8b93a1));margin-top:2px}
-/* aurora-glass hover — mirrors theme.css so the whole site shares one menu feel:
-   a soft blue→violet wash (::before) + luminous left bar (::after) + 2px glide.
-   Excludes the Research mega cards (.nm-feat/.nav-mega-item, kept as-is). Accent
-   --blue→--link→#5b9dff so it resolves on every family palette. .active = current
-   page. Loaded after the page's inline nav, so it wins. */
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item){position:relative;isolation:isolate;transition:transform .24s cubic-bezier(.2,.7,.3,1),color .18s}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;opacity:0;transition:opacity .3s ease;
-  background:radial-gradient(130% 150% at 0% 50%,color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 18%,transparent),transparent 62%),linear-gradient(90deg,color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 10%,transparent),color-mix(in srgb,#9b8cff 7%,transparent) 70%,transparent);
-  box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent)}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::after{content:"";position:absolute;left:3px;top:50%;transform:translateY(-50%);height:0;width:2.5px;border-radius:3px;z-index:-1;opacity:0;
-  background:linear-gradient(color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 90%,#fff),#9b8cff);
-  box-shadow:0 0 8px color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 70%,transparent);transition:height .3s cubic-bezier(.2,.7,.3,1),opacity .3s ease}
-/* background:transparent neutralises each page's hardcoded inline flat hover
-   (#222732 / #eef1f6) so only the aurora wash paints (my 0,4,1 beats page 0,2,0). */
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover{transform:translateX(2px);background:transparent}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active{background:transparent}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover::before,.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active::before{opacity:1}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover::after,.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active::after{height:56%;opacity:1}
-@keyframes navCaretBreath{0%,100%{opacity:.45;transform:translateX(0)}50%{opacity:.9;transform:translateX(2px)}}
-@media(prefers-reduced-motion:reduce){.nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{animation:none}.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover{transform:none}.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::after{transition:none}}
-.site-nav .nav-ctrls{grid-column:2;grid-row:2;justify-self:end;align-self:center;display:flex;align-items:center;gap:10px}
-.site-nav .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;cursor:pointer}
-.site-nav .nav-ctrls .ai-brief-link.active{background:var(--blue);border-color:var(--blue);color:#fff}
-.site-nav .theme-switch{width:56px;height:27px;border-radius:999px;background:var(--card);border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
-.site-nav .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
-.site-nav .theme-switch .ic.sun{right:8px}
-.site-nav .theme-switch .ic.moon{left:8px}
-.site-nav .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#e8c15a;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
-.site-nav .theme-switch .knob::before{content:"🌙"}
-html[data-theme="light"] .site-nav .theme-switch .knob{transform:translateX(29px);background:#285fff}
-html[data-theme="light"] .site-nav .theme-switch .knob::before{content:"☀️"}
-.site-nav .lang-toggle{display:inline-flex;position:relative;background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:3px;flex:none;cursor:pointer}
-.site-nav .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
-html[data-lang="zh"] .site-nav .lang-toggle .pill{transform:translateX(100%)}
-.site-nav .lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
-html:not([data-lang="zh"]) .site-nav .lang-toggle .en-opt{color:#fff}
-html[data-lang="zh"] .site-nav .lang-toggle .zh-opt{color:#fff}
-
-/* One-row section menu (re-fix on current main): the 8-dropdown section menu
-   (~1418px) overflowed the 1180 content rail and wrapped onto a second row.
-   Widen the nav to the same ~1500 rail the macro family uses, on >=701px, for
-   whichever nav variant a family page renders today: the body-level .site-nav
-   (migrated vector pages, capped by an inline max-width:1180) and the legacy
-   in-wrap .topbar (strategy / misc pages, a sticky bar inside the content rail).
-   The page body keeps its 1180 rail and the <=700px hamburger (theme.js) is
-   untouched. */
-@media (min-width:701px){
-  nav.site-nav{max-width:1500px !important;}
-  .topbar{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
-    padding-left:max(40px,calc((100vw - 1500px)/2));
-    padding-right:max(40px,calc((100vw - 1500px)/2));}
-}
-
-/* toggles — subtle hover feedback (their slide animations are untouched) */
-.theme-switch,.lang-toggle{transition:border-color .18s ease,box-shadow .18s ease;}
-.theme-switch:hover,.lang-toggle:hover{border-color:color-mix(in srgb,var(--blue) 55%,var(--grid));
-  box-shadow:0 3px 11px -5px color-mix(in srgb,var(--blue) 40%,transparent);}
-
-/* clickable card / tile containers — the landing's hover light-up, but only when
-   the card is actually a link (display cards are untouched) */
-a.card,a.actitem,a.idx-alloc{transition:transform .2s cubic-bezier(.2,.7,.3,1),
-  border-color .2s ease,box-shadow .2s ease;}
-a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
-  border-color:color-mix(in srgb,var(--blue) 45%,var(--grid));
-  box-shadow:0 14px 30px -16px color-mix(in srgb,var(--blue) 40%,transparent);}
-
-/* AI Daily Brief card — these self-contained pages don't link theme.css, where
-   the .aibrief-card / .abc-* layout lives, so the 🧠 card collapsed to a raw
-   emoji + text run with no flex. Port the layout here (mirrors theme.css) so it
-   lays out; the base .card surface + the a.card:hover above still apply. */
-.aibrief-card{display:flex;align-items:center;gap:14px;text-decoration:none}
-.aibrief-card .abc-ic{font-size:30px;line-height:1;flex:none}
-.aibrief-card .abc-mid{flex:1;min-width:0}
-.aibrief-card .abc-tit{display:block;font-size:16px;font-weight:700;color:var(--ink)}
-.aibrief-card .abc-sub{display:block;margin-top:3px;color:var(--muted);font-size:13px;line-height:1.5}
-.aibrief-card .abc-go{font-size:22px;font-weight:700;color:var(--blue);flex:none}
-
-/* "?" help affordance — a circled question-mark that reveals a plain-language
-   note on hover/focus (native title, bilingual "EN · ZH" like the .tip pattern).
-   Used to lift cryptic micro-copy off the cards without losing the explanation. */
-.qm{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
-  border-radius:50%;border:1px solid var(--faint);color:var(--muted);font-size:10px;
-  font-weight:700;line-height:1;cursor:help;vertical-align:middle;margin-left:5px;
-  user-select:none;transition:border-color .15s ease,color .15s ease}
-.qm:hover,.qm:focus{border-color:var(--blue);color:var(--blue);outline:none}
-
-/* accessible keyboard focus ring */
-:where(.vtm-btn,.tm-btn,.navbtn,.ai-brief-link,a.nav-link,.nav-dd-menu a,.theme-switch,
-  .lang-toggle,a.card,a.actitem,a.idx-alloc):focus-visible{
-  outline:2px solid color-mix(in srgb,var(--blue) 70%,transparent);outline-offset:2px;}
-
-@media (prefers-reduced-motion: reduce){
-  .vtm-btn:hover,.tm-btn:hover,.navbtn:hover,.ai-brief-link:hover,
-  a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:none;}
-}
-</style>
+<link rel="stylesheet" href="assets/css/d91bcdb2.css?v=d91bcdb2">
 <script defer src="illus.js?v=8e0a3779"></script>
 <script src="theme.js?v=55773325" defer></script>
 </body></html>
