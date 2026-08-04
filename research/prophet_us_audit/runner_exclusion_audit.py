@@ -24,7 +24,6 @@ REPO = str(Path(__file__).resolve().parents[2])
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "runner_audit_results.json")
 os.chdir(REPO)
 sys.path.insert(0, REPO)
-warnings.filterwarnings("ignore")
 
 from engine import confluence_tiers as ct  # noqa: E402
 from engine.confluence_tiers import (  # noqa: E402
@@ -262,7 +261,7 @@ def main() -> None:
     res["cases"] = cases
     # DLBY from yahoo store
     try:
-        from engine import store
+        from lib import store
         df = store.read("yahoo", "DLBY")
         if df is not None and "close" in df:
             s = df["close"].dropna()
@@ -297,4 +296,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    warnings.filterwarnings("ignore")   # CLI-only: never at import time (repo guard)
     main()

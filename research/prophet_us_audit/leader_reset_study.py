@@ -23,7 +23,6 @@ import pandas as pd
 REPO = str(Path(__file__).resolve().parents[2])
 os.chdir(REPO)
 sys.path.insert(0, REPO)
-warnings.filterwarnings("ignore")
 
 from engine import confluence_tiers as ct  # noqa: E402
 from engine.confluence_tiers import _rsi_macd, _stoch_rsi_kd, _tf_bars, _to_daily  # noqa: E402
@@ -133,4 +132,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    warnings.filterwarnings("ignore")   # CLI-only: never at import time (repo guard)
     main()
