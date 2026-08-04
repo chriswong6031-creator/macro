@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T16:24:45.450392+00:00",
-  "count": 745,
+  "generated_at": "2026-08-04T16:54:46.890921+00:00",
+  "count": 746,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -50,6 +50,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-c4amh4zvobb-1ef1ad",
+      "title": "GS Tony Pasquariello markets and macro Aug 4",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T16:15:44Z",
+      "summary_points": [
+        "**Q2 Earnings Momentum**: 7th consecutive double-digit EPS growth (46% y/y mega caps, 12% median), sustained by robust retail demand and buybacks driving net positive August flows.",
+        "**Fed Policy & Disinflation Shift**: US financial conditions easing pre-FOMC, with disinflation trend (2026→2027) accelerating via tariff lapping, altering policy expectations.",
+        "**Geopolitical Policy Impact**: Tariff lapping absence driving disinflation, reducing near-term policy tightening risks despite elevated inflation readings."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-qf8iwtlhrbi-3c8b69",
       "title": "Clorox Aug 4",
