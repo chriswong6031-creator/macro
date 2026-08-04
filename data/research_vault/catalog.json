@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T09:23:12.463599+00:00",
-  "count": 724,
+  "generated_at": "2026-08-04T10:08:14.938438+00:00",
+  "count": 726,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -649,6 +649,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ffpn2mpntrw-b18837",
+      "title": "Upstart Holdings (UPST) Releases July Origination Volumes",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:27Z",
+      "summary_points": [
+        "**July Origination Volumes & Estimates**: July origination volumes at $1.397bn (≈$510m daily) trend 2% below Street 3Q estimates ($4.1bn vs $4.2bn), with Upstart Macro Index flat at 1.50 signaling modestly higher default rates vs historical averages.",
+        "**Upcoming Earnings & Growth Context**: 2Q earnings (8/4) critical to clarify growth composition (Auto/HELOC) and performance relative to profit expectations amid decelerated May/June volumes.",
+        "**Valuation Upside**: 42.1% upside to $39.00 target (vs $27.44) driven by accelerating earnings growth, enterprise value ($3.1bn) alignment with sector M&A activity (M&A Rank 3)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-v1ic267gpef-df8b56",
+      "title": "Americas Payment Technology Consumer spending update July Fiserv SMB spend steps down from strong June levels",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:27Z",
+      "summary_points": [
+        "**SMB Spend Deceleration**: July SMB spend growth slowed to 1.6% YoY (SA), down from 2.3% in June, with transaction growth declining (-1.6% YoY) and restaurant spending falling (-0.8% YoY) amid pricing moderation despite resilient foot traffic.",
+        "**Essential vs Discretionary Split**: Essential spend growth (2.0% YoY) outpaced discretionary (1.3% YoY), driving sector divergence; retail sector growth decelerated to 1.9% YoY (vs.",
+        "1% June) due to weaker discretionary spend and moderate pricing (2.9% YoY).",
+        "**Retail Sector Pressure**: Retail growth decelerated sharply in July (1.9% YoY) from June’s 3.1% record, linked to declining discretionary foot traffic (-3.6% YoY) and pricing moderation, though payment providers remain positioned to capture cross-category spend.",
+        "**Restaurant Sector Decline**: Restaurant spending fell 0.8% YoY in July, driven by pricing deceleration (2.9% YoY vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
