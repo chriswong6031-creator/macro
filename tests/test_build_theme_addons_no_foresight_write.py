@@ -22,10 +22,18 @@ from unittest.mock import MagicMock, patch
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_fake_module(name: str) -> types.ModuleType:
-    """Return a stub module registered in sys.modules under `name`."""
+def _make_fake_module(monkeypatch, name: str) -> types.ModuleType:
+    """Return a stub module registered in sys.modules under `name`.
+
+    Registration must go through monkeypatch.setitem so the real module (or
+    the key's absence) is restored at teardown — a bare `sys.modules[name] =`
+    assignment leaks the stub to every test that runs after this file in the
+    same pytest process (engine.bottleneck stubs broke test_bottleneck /
+    test_theme_fingerprint / test_glut_watch imports with "unknown location"
+    ImportErrors, ordering-dependent).
+    """
     mod = types.ModuleType(name)
-    sys.modules[name] = mod
+    monkeypatch.setitem(sys.modules, name, mod)
     return mod
 
 
@@ -33,38 +41,38 @@ def _patch_all_engines(monkeypatch):
     """Stub out every engine import that build_theme_addons.main() does so the
     test stays hermetic even when data/ files are absent."""
     # etf_pulse
-    ep_mod = _make_fake_module("engine.etf_pulse")
+    ep_mod = _make_fake_module(monkeypatch, "engine.etf_pulse")
     ep_mod.compute_etf_pulse = lambda: {"etf": "stub"}
 
     # vol_sentiment
-    vs_mod = _make_fake_module("engine.vol_sentiment")
+    vs_mod = _make_fake_module(monkeypatch, "engine.vol_sentiment")
     vs_mod.compute_vol_sentiment = lambda: {"vol": "stub"}
 
     # theme_extension
-    te_mod = _make_fake_module("engine.theme_extension")
+    te_mod = _make_fake_module(monkeypatch, "engine.theme_extension")
     te_mod.compute_theme_extension = lambda region: {"region": region}
 
     # basket_member_context
-    bmc_mod = _make_fake_module("engine.basket_member_context")
+    bmc_mod = _make_fake_module(monkeypatch, "engine.basket_member_context")
     bmc_mod.compute_member_context = lambda region: {"region": region}
 
     # edgar_fts — drip call; non-fatal
-    fts_mod = _make_fake_module("collectors.edgar_fts")
+    fts_mod = _make_fake_module(monkeypatch, "collectors.edgar_fts")
     fts_mod.fetch_bottleneck_hits = lambda: None
 
     # theme_revisions
-    tr_mod = _make_fake_module("engine.theme_revisions")
+    tr_mod = _make_fake_module(monkeypatch, "engine.theme_revisions")
     tr_mod.compute_theme_revisions = lambda write_ledger=False: {"rv": "stub"}
 
     # bottleneck
-    bn_mod = _make_fake_module("engine.bottleneck")
+    bn_mod = _make_fake_module(monkeypatch, "engine.bottleneck")
     bn_mod.compute_bottleneck = lambda write_ledger=False: {"bn": "stub"}
 
     # eightk enrichment — optional, failure is non-fatal
-    e8_col = _make_fake_module("collectors.edgar_8k")
+    e8_col = _make_fake_module(monkeypatch, "collectors.edgar_8k")
     e8_col.enrich_contract_amounts = lambda df, incremental=False: df
 
-    e8_eng = _make_fake_module("engine.eightk_magnitude")
+    e8_eng = _make_fake_module(monkeypatch, "engine.eightk_magnitude")
     e8_eng.compute_eightk_magnitude = lambda write_ledger=False: {"mag": "stub"}
 
 
