@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T17:39:52.672704+00:00",
-  "count": 748,
+  "generated_at": "2026-08-04T17:54:57.591109+00:00",
+  "count": 749,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -24,6 +24,7 @@
     "Mizuho",
     "Morgan Stanley",
     "Natixis",
+    "Nomura",
     "Nordea",
     "Nuveen",
     "Other",
@@ -87,6 +88,28 @@
       "tickers": [],
       "top_pick": false,
       "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ybiqaqgp6ol-4f6d83",
+      "title": "Nomura Cross Asset AND WE'RE BACK (AT U.S. EQUITIES ATH'S)",
+      "institution": "Nomura",
+      "side": "sell",
+      "desk": "McElligott",
+      "published_at": "2026-08-04T16:15:31Z",
+      "summary_points": [
+        "AI Theme Reversal**: Hyperscalers rallied +16.0% QTD vs Enablers falling -7.7% since June 26, signaling structural shift from \"Long Enablers\" to Hyperscalers leading the rally.",
+        "Reverse Dispersion**: S&P 500 correlation \"CRUSHED\" amid leaders/laggards role reversal; Top 50 single-name volatility high vs low index volatility sustaining \"DESTROYED CORRELATION.\" **Fed Rate Hike Certainty**: SOFR implied probabilities show 95% chance of single rate hike (vs 63% yesterday), signaling strong market consensus and immediate policy impact.",
+        "Geopolitical Oil Shock**: Strait of Hormuz reopening rumors triggered crude oil -5% drop and UST futures rally, highlighting oil market sensitivity to geopolitical risks as key risk factor.",
+        "Earnings Momentum**: 85% of S&P 500 companies beat EPS (avg past 4Q 83%), driving \"Everything Rally\" via Netting-Up (adding Longs, covering Shorts) amid volatility spike."
+      ],
+      "tags": [
+        "McElligott"
+      ],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
