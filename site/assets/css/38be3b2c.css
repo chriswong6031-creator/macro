@@ -143,38 +143,11 @@
     background:var(--panel2); font-size:11px; cursor:pointer; color:inherit; }
   .overlap-chip:hover { border-color:var(--muted); }
 
-  /* ── Theme Context Hero — aurora living-glass (ported from baskets.html.j2) ── */
-  #theme-context-hero { position:relative; overflow:hidden; border-radius:12px;
-    background:rgba(var(--panel-rgb,16,22,30),.55); border:1px solid rgba(255,255,255,.09);
-    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
-    box-shadow:0 8px 28px rgba(0,0,0,.40),0 1.5px 0 rgba(255,255,255,.06) inset;
-    padding:16px 18px; margin-top:10px; }
-  [data-theme='light'] #theme-context-hero {
-    background:rgba(255,255,255,.78); border-color:rgba(0,0,0,.09);
-    box-shadow:0 4px 18px rgba(0,0,0,.08),0 1px 0 rgba(255,255,255,.9) inset; }
-  .tc-aurora { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
-  .tc-aurora::before { content:""; position:absolute; top:-80px; left:-60px;
-    width:480px; height:380px; border-radius:50%; filter:blur(80px);
-    background:radial-gradient(ellipse,var(--tc-blob-a,rgba(74,222,128,.08)) 0%,transparent 70%);
-    animation:tc-drift-a 28s ease-in-out infinite alternate; }
-  .tc-aurora::after  { content:""; position:absolute; bottom:-60px; right:-40px;
-    width:380px; height:320px; border-radius:50%; filter:blur(80px);
-    background:radial-gradient(ellipse,rgba(93,139,255,.06) 0%,transparent 70%);
-    animation:tc-drift-b 34s ease-in-out infinite alternate; }
-  @keyframes tc-drift-a { from{transform:translate(0,0)} to{transform:translate(30px,20px)} }
-  @keyframes tc-drift-b { from{transform:translate(0,0)} to{transform:translate(-25px,18px)} }
-  @media(prefers-reduced-motion:reduce){
-    .tc-aurora,.tc-aurora::before,.tc-aurora::after{ animation:none; } }
-  #theme-context-hero.tc-rotating { --tc-blob-a:rgba(248,113,113,.09); }
-  #theme-context-hero.tc-strain   { --tc-blob-a:rgba(250,204,21,.08); }
-  #theme-context-hero.tc-steady   { --tc-blob-a:rgba(74,222,128,.08); }
-  [data-theme='light'] #theme-context-hero.tc-rotating { --tc-blob-a:rgba(192,57,43,.05); }
-  [data-theme='light'] #theme-context-hero.tc-strain   { --tc-blob-a:rgba(156,98,18,.05); }
-  [data-theme='light'] #theme-context-hero.tc-steady   { --tc-blob-a:rgba(34,197,94,.04); }
-  .tc-inner { position:relative; z-index:1; }
-  .tc-toprow { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 14px; margin-bottom:8px; }
-  .tc-big-state { font-size:22px; font-weight:750; letter-spacing:-.01em; line-height:1.1; }
-  .tc-stance-sub { color:var(--muted); font-size:13px; line-height:1.5; margin:4px 0 10px; max-width:80ch; }
+  /* ── Theme-context chip family (retained from the aurora-glass hero the rvx hero
+       replaced): the What-changed strip, the client-injected policy-lever chip and the
+       strength/breaking chips all still draw from it. The glass panel + drifting aurora
+       blobs that used to wrap them are gone with the hero markup — the page-level
+       .rvx-aurora backdrop and the hero's own radial wash do that work now. ── */
   .tc-chips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; }
   .tc-chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; padding:3px 9px;
     border-radius:20px; border:1px solid; white-space:nowrap; text-decoration:none; color:inherit; }
@@ -200,8 +173,6 @@
   html[data-lang="zh"] .tc-chip.aln { background:rgba(224,85,85,.10); border-color:rgba(224,85,85,.35); }
   html[data-lang="zh"] .tc-chip.dn,
   html[data-lang="zh"] .tc-chip.was1 { background:rgba(69,184,115,.10); border-color:rgba(69,184,115,.35); }
-  html[data-lang="zh"] #theme-context-hero.tc-steady   { --tc-blob-a:rgba(224,85,85,.08); }
-  html[data-lang="zh"] #theme-context-hero.tc-rotating { --tc-blob-a:rgba(69,184,115,.07); }
   /* zh 红涨绿跌 (operator ruling 2026-07-21): strong=bullish→red; confirmed=basing→turning→red */
   html[data-lang="zh"] .score-badge.strong { color:#e06464; border-color:color-mix(in srgb,#e06464 40%,var(--line)); background:color-mix(in srgb,#e06464 8%,transparent); }
   html[data-lang="zh"] .turn-chip.confirmed { color:#e06464; border-color:color-mix(in srgb,#e06464 40%,var(--line)); }

@@ -1,23 +1,11 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-08-03",
-  "generated_at_utc": "2026-08-03T11:18:35.860289+00:00",
+  "asof": "2026-08-04",
+  "generated_at_utc": "2026-08-04T13:14:30.733749+00:00",
   "horizon_days": 45,
   "entries": [
     {
-      "date": "2026-08-03",
-      "window_end": null,
-      "etype": "CAIXIN_M",
-      "label_en": "Caixin Manufacturing PMI",
-      "label_zh": "财新制造业 PMI",
-      "region": "cn",
-      "impact": "medium",
-      "source_class": "rule",
-      "source": "engine.china_event_calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-08-03",
+      "date": "2026-08-04",
       "window_end": "2026-08-31",
       "etype": "earnings_season",
       "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
@@ -26,30 +14,6 @@
       "impact": "high",
       "source_class": "feed",
       "source": "china_earnings.calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-08-03",
-      "window_end": null,
-      "etype": "omo_reverse_repo_preannounce",
-      "label_en": "PBoC reverse repo (pre-announced) — 隔夜, RMB 300bn",
-      "label_zh": "央行逆回购操作（预告）：隔夜，3,000亿元",
-      "region": "cn",
-      "impact": "medium",
-      "source_class": "feed",
-      "source": "china_omo.operations",
-      "approx": false
-    },
-    {
-      "date": "2026-08-03",
-      "window_end": null,
-      "etype": "HK_PMI",
-      "label_en": "S&P Global HK PMI",
-      "label_zh": "标普全球香港 PMI",
-      "region": "hk",
-      "impact": "medium",
-      "source_class": "rule",
-      "source": "engine.hk_event_calendar",
       "approx": false
     },
     {
@@ -62,6 +26,18 @@
       "impact": "medium",
       "source_class": "rule",
       "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-08-05",
+      "window_end": null,
+      "etype": "omo_outright_repo_tender",
+      "label_en": "PBoC outright reverse repo tender — 3个月, RMB 500bn, matures 2026-11-05",
+      "label_zh": "央行买断式逆回购操作：3个月，5,000亿元，到期 2026-11-05",
+      "region": "cn",
+      "impact": "medium",
+      "source_class": "feed",
+      "source": "china_omo.operations",
       "approx": false
     },
     {

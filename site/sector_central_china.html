@@ -5,6 +5,7 @@
 <html lang="en" class="scc-page">
 
 <head>
+<meta charset="utf-8">
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
   var B = window.DATA_BASE;
@@ -32,7 +33,6 @@
     return orig.call(this, u, o);
   };
 })();</script>
-<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>China Sector Intelligence — Mastermind</title>
@@ -58,23 +58,28 @@
 <link rel="stylesheet" href="cycle.css?v=4">
 <link rel="stylesheet" href="sector_cycles.css?v=f67e9e6a">
 
-<link rel="preload" href="sector_cycles_china_data.js?v=c1274bad" as="script">
-<link rel="preload" href="mm_charts.js?v=244eb769" as="script">
-<link rel="preload" href="sector_cycles.js?v=bc35b288" as="script">
-<link rel="prefetch" href="sector_cycles_china_series_data.js?v=89bbbc17" as="script">
-<link rel="prefetch" href="sector_cycles_china_narr_data.js?v=f1efec95" as="script">
+<link rel="prefetch" href="sector_cycles_china_data.js?v=ffbd01cc" as="script">
+<link rel="prefetch" href="mm_charts.js?v=244eb769" as="script">
+<link rel="prefetch" href="sector_cycles.js?v=bc35b288" as="script">
+<link rel="prefetch" href="sector_cycles_china_series_data.js?v=32410f71" as="script">
+<link rel="prefetch" href="sector_cycles_china_narr_data.js?v=df4eb7da" as="script">
 <link rel="prefetch" href="sector_cycles_china_dna_data.js?v=ea6c6a47" as="script">
-<link rel="stylesheet" href="assets/css/b3b8ea22.css?v=b3b8ea22">
-<link rel="stylesheet" href="assets/css/43352729.css?v=43352729">
+<link rel="prefetch" href="subsector_rotation.js?v=be121ce4" as="script">
 
-<link rel="stylesheet" href="assets/css/b357b5f6.css?v=b357b5f6">
+<link rel="preload" href="sector_central_china_data.js?v=e6080aac" as="script">
+<link rel="stylesheet" href="assets/css/2138e883.css?v=2138e883">
+<link rel="stylesheet" href="assets/css/175d34c3.css?v=175d34c3">
+
+<link rel="stylesheet" href="assets/css/38be3b2c.css?v=38be3b2c">
 <link rel="stylesheet" href="macro-desk.css?v=b4966394">
+<link rel="stylesheet" href="assets/css/7529bbc4.css?v=7529bbc4">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 <link rel="preload" as="style" href="assets/css/eb9ca676.css?v=eb9ca676">
 <link rel="preload" as="style" href="assets/css/ee332d19.css?v=ee332d19">
 </head>
 <body class="macro-desk page-sector-central">
+<div class="rvx-aurora" aria-hidden="true"><b class="a1"></b><b class="a2"></b><b class="a3"></b></div>
 
 
 <nav class="site-nav">
@@ -116,6 +121,8 @@
         <a href="us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
         
         <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+        
+        <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Live session board — volume, tape and stance lanes · ≈15-min delayed</span><span class="l-zh">盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         
         <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
@@ -125,11 +132,9 @@
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">Workspace · desk · flow tracker · dark pool</span><span class="l-zh">工作台 · 期权台 · 资金流追踪 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Market Structure</span><span class="l-zh">期权与市场结构</span><span class="d"><span class="l-en">Workspace · dark pool · index regime</span><span class="l-zh">工作台 · 暗池 · 指数结构</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 筛选 · 个股 · 领头股</span></span></a>
-            <a href="gex.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">Instrument bench — charts, walls, vol surface</span><span class="l-zh">工具台 — 图表、墙位、波动率曲面</span></span></a>
-            <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Flow · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 资金流 · 筛选 · 个股 · 领头股</span></span></a>
             <a href="darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
             <a href="market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
           </div>
@@ -315,159 +320,143 @@
 
 <div class="scc-wrap">
   
+  <div class="si-shell">
+  
+  <nav class="si-side" aria-label="China Sector Intelligence views">
+    
+    <a class="si-view-btn on" data-view="overview" href="#overview" aria-current="page"><span class="si-vb-g dash-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Overview</span><span class="l-zh">总览</span></span></a>
+    <a class="si-view-btn" data-view="map" href="#map"><span class="si-vb-g dash-icon dash-icon-compass" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">The Map</span><span class="l-zh">全景图谱</span></span></a>
+    <a class="si-view-btn" data-view="moving" href="#moving"><span class="si-vb-g dash-icon submenu-icon-rotation" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">What&#39;s Moving</span><span class="l-zh">正在轮动</span></span></a>
+    <a class="si-view-btn" data-view="explore" href="#explore"><span class="si-vb-g dash-icon dash-icon-search" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Explore</span><span class="l-zh">深入探索</span></span></a>
+    
+    <a class="si-side-out" href="subsectors_china.html"><span class="si-vb-g dash-icon submenu-icon-confluence" aria-hidden="true"></span><span class="si-vb-l"><span class="l-en">Stock entry funnel →</span><span class="l-zh">个股入场漏斗 →</span></span></a>
+    <div class="si-side-foot">
+      <span id="si-side-asof"></span>
+      <span id="si-side-grade"></span>
+    </div>
+  </nav>
+  <div class="si-stage">
+  <section class="si-view on" data-view="overview">
   
   
   
   
   
   
-  
-  <div id="theme-context-hero" class="tc-rotating">
-    <div class="tc-aurora" aria-hidden="true"></div>
-    <div class="tc-inner">
-
-      
-      <div class="tc-toprow">
-        <h1 style="font-size:21px;margin:0">🇨🇳 <span class="l-en">China Sector Intelligence</span><span class="l-zh">中国行业智慧</span></h1>
-        <span class="asof" style="margin-left:auto"><span class="pfx"><span class="l-en">as of</span><span class="l-zh">截至</span> </span><span id="asof">—</span></span>
-      </div>
-      <p class="story" id="story" style="font-size:14.5px;margin:4px 0 8px;line-height:1.5"></p>
-      <p class="tagline" style="margin:2px 0 10px"><span class="l-en">One desk for China sectors and themes — the gated board, the cycle map, whole-market rotation, every basket in depth.</span><span class="l-zh">中国行业与主题的统一看板 — 门控研判、周期图谱、全市场轮动、每个篮子的深读。</span>
-        <a href="baskets_china_ths.html" style="white-space:nowrap">→ <span class="l-en">同花顺 themes</span><span class="l-zh">同花顺主题</span></a></p>
-
-      
-      <div style="margin:6px 0 4px">
-        <div class="tc-big-state">
-          <span class="l-en">Money is rotating</span><span class="l-zh">资金正在轮动</span>
+  <section id="theme-context-hero" class="rvx-hero rvx-reveal strain">
+    <div class="rvx-eyebrow">
+      <h1>🇨🇳 <span class="l-en">China Sector Intelligence</span><span class="l-zh">中国行业智慧</span></h1>
+      <span class="as-of"><span class="l-en">as of</span><span class="l-zh">截至</span> <span id="asof">—</span></span>
+    </div>
+    <div class="rvx-hgrid">
+      <div>
+        <div class="rvx-vword">
+          <span class="l-en">Leadership under</span><span class="l-zh">领涨</span> <span class="ac"><span class="l-en">strain</span><span class="l-zh">承压</span></span>
           
         </div>
-        <p class="tc-stance-sub"><span class="l-en">Rotation under way — favour the fresh leaders, not the old one.</span><span class="l-zh">轮动进行中——关注新领涨主题，勿追旧龙头。</span></p>
-      </div>
-
-      
-      
-      <div class="tc-chips">
-        <span class="tc-days"><span class="l-en">9 days</span><span class="l-zh">9 天</span></span>
+        <p class="rvx-vsub"><span class="l-en">Money is moving into Financials &amp; Value and out of Advanced Manufacturing.</span><span class="l-zh">资金正流入金融与价值，流出先进制造。</span></p>
+        <span class="rvx-stance">⚑ <span class="l-en">Leadership under strain — watch, don&#39;t chase.</span><span class="l-zh">领涨承压——观望，勿追高。</span><span class="rvx-stance-days"> · <span class="l-en">1 day in</span><span class="l-zh">已持续 1 天</span></span></span>
       </div>
       
-
-      
-      
-      <div style="margin:6px 0 4px">
-        <span class="muted" style="font-size:11px"><span class="l-en">Strength now</span><span class="l-zh">当前强势</span></span>
-        <div class="tc-chips" style="margin-top:4px">
-          
-          
-          <a class="tc-chip up" href="basket_china/cn_banks.html"
-            data-tip-en="desk score 70/100" data-tip-zh="评分 70/100">
-            <span class="l-en">Banks</span><span class="l-zh">银行</span>
-          </a>
-          
-          
-          
-          <a class="tc-chip up" href="basket_china/cn_food_bev.html"
-            data-tip-en="desk score 69/100" data-tip-zh="评分 69/100">
-            <span class="l-en">Food &amp; Beverage</span><span class="l-zh">食品饮料</span>
-          </a>
-          
-          
-          
-          <a class="tc-chip up" href="basket_china/cn_appliances.html"
-            data-tip-en="desk score 67/100" data-tip-zh="评分 67/100">
-            <span class="l-en">Home Appliances</span><span class="l-zh">家电</span>
-          </a>
-          
-          
-          
-          <a class="tc-chip up" href="basket_china/cn_soe_value.html"
-            data-tip-en="desk score 65/100" data-tip-zh="评分 65/100">
-            <span class="l-en">SOE Blue Chips (中特估)</span><span class="l-zh">中特估·央企</span>
-          </a>
-          
-          
-          
-          <a class="tc-chip up" href="basket_china/cn_insurers.html"
-            data-tip-en="desk score 64/100" data-tip-zh="评分 64/100">
-            <span class="l-en">Insurers</span><span class="l-zh">保险</span>
-          </a>
-          
-          
-          
-          <a class="tc-chip up" href="basket_china/cn_baijiu.html"
-            data-tip-en="desk score 64/100" data-tip-zh="评分 64/100">
-            <span class="l-en">Baijiu / Liquor</span><span class="l-zh">白酒</span>
-          </a>
-          
-          
+      <div class="rvx-hocard">
+        <div class="cap"><span class="l-en">THIS WEEK&#39;S HANDOFF</span><span class="l-zh">本周交棒</span></div>
+        <div class="rvx-handoff">
+          <div class="rvx-hocol out">
+            <div class="lbl"><span class="l-en">Losing the lead</span><span class="l-zh">失去领先</span></div>
+            <div class="nm"><span class="l-en">Industrial Metals</span><span class="l-zh">有色金属</span></div>
+            <div class="meta"><span class="l-en">was #1</span><span class="l-zh">原第一</span></div>
+          </div>
+          <div class="rvx-hoarrow"><svg viewBox="0 0 46 28" aria-hidden="true"><defs><linearGradient id="rvxHo" x1="0" x2="1"><stop offset="0" stop-color="var(--rvx-weak)"/><stop offset="1" stop-color="var(--rvx-lead)"/></linearGradient></defs><path class="ln" d="M3 14 H37"/><path class="hd" d="M33 8 L43 14 L33 20 Z"/></svg></div>
+          <div class="rvx-hocol in">
+            <div class="lbl"><span class="l-en">Taking the lead</span><span class="l-zh">接过领先</span></div>
+            <div class="nm"><span class="l-en">Home Appliances</span><span class="l-zh">家电</span> · <span class="l-en">Food &amp; Beverage</span><span class="l-zh">食品饮料</span></div>
+            <div class="meta"><span class="l-en">confirming strength</span><span class="l-zh">强势确认中</span></div>
+          </div>
         </div>
       </div>
-      
+    </div>
 
-      
-      
-      <div style="margin:4px 0 6px">
-        <span class="muted" style="font-size:11px"><span class="l-en">Breaking down</span><span class="l-zh">走弱</span></span>
-        <div class="tc-chips" style="margin-top:4px">
-          
-          
-          <a class="tc-chip dn" href="basket_china/cn_ai_compute.html">
-            <span class="l-en">AI Compute &amp; Optics</span><span class="l-zh">AI算力与光模块</span>
-            
-          </a>
-          
-          
-          
-          <a class="tc-chip dn" href="basket_china/cn_semis.html">
-            <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span>
-            <span class="tc-chip was1"><span class="l-en">was #1</span><span class="l-zh">原第一</span></span>
-          </a>
-          
-          
-          
-          <a class="tc-chip dn" href="basket_china/cn_robotics.html">
-            <span class="l-en">Robotics &amp; Automation</span><span class="l-zh">机器人与自动化</span>
-            
-          </a>
-          
-          
-          
-          <a class="tc-chip dn" href="basket_china/cn_consumer_elec.html">
-            <span class="l-en">Consumer Electronics</span><span class="l-zh">消费电子</span>
-            
-          </a>
-          
-          
-        </div>
-      </div>
-      
-
-      
-      
-      <div class="tc-chips" style="margin-top:6px">
-        <span class="tc-chip mig"><span class="l-en">Money is moving into Financials &amp; Value and out of Advanced Manufacturing.</span><span class="l-zh">资金正流入金融与价值，流出先进制造。</span></span>
+    
+    
+    <div style="margin:16px 0 0">
+      <span class="rvx-names-l"><span class="l-en">Strength now</span><span class="l-zh">当前强势</span></span>
+      <div class="rvx-names">
+        
+        
+        <a class="tc-chip up" href="basket_china/cn_appliances.html"
+          data-tip-en="desk score 68/100" data-tip-zh="评分 68/100"><span class="l-en">Home Appliances</span><span class="l-zh">家电</span></a>
+        
+        
+        
+        <a class="tc-chip up" href="basket_china/cn_food_bev.html"
+          data-tip-en="desk score 67/100" data-tip-zh="评分 67/100"><span class="l-en">Food &amp; Beverage</span><span class="l-zh">食品饮料</span></a>
+        
+        
+        
+        <a class="tc-chip up" href="basket_china/cn_baijiu.html"
+          data-tip-en="desk score 62/100" data-tip-zh="评分 62/100"><span class="l-en">Baijiu / Liquor</span><span class="l-zh">白酒</span></a>
+        
+        
+        
+        <a class="tc-chip up" href="basket_china/cn_med_devices.html"
+          data-tip-en="desk score 60/100" data-tip-zh="评分 60/100"><span class="l-en">Medical Devices &amp; TCM</span><span class="l-zh">医疗器械与中药</span></a>
+        
+        
+        
+        <a class="tc-chip up" href="basket_china/cn_gold.html"
+          data-tip-en="desk score 55/100" data-tip-zh="评分 55/100"><span class="l-en">Gold Miners</span><span class="l-zh">黄金</span></a>
+        
+        
+        
+        <a class="tc-chip up" href="basket_china/cn_insurers.html"
+          data-tip-en="desk score 55/100" data-tip-zh="评分 55/100"><span class="l-en">Insurers</span><span class="l-zh">保险</span></a>
+        
         
       </div>
-      
-
-      
-      <div class="tc-chips" style="margin-top:8px">
-        <span class="tc-chip rcpt tc-receipt-tip"
-              data-tip-en="Trailing-momentum rank names Semiconductors first; skips the most recent ~3 weeks by construction; suggested weights unchanged. Shape read only — not a forecast."
-              data-tip-zh="趋势动量排名以半导体居首；设计上跳过最近约3周数据；建议权重不变。仅为形态读数，非预测。">ⓘ <span class="l-en">How this works</span><span class="l-zh">原理说明</span></span>
-        <a class="tc-pb-link" href="allocation_china.html"><span class="l-en">Open the playbook →</span><span class="l-zh">打开操盘手册 →</span></a>
-      </div>
-
     </div>
-  </div>
+    
+
+    
+    <div style="margin:11px 0 0">
+      <span class="rvx-names-l"><span class="l-en">Breaking down</span><span class="l-zh">走弱</span></span>
+      <div class="rvx-names">
+        
+        
+        <a class="tc-chip dn" href="basket_china/cn_semis.html"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></a>
+        
+        
+        
+        <a class="tc-chip dn" href="basket_china/cn_ai_compute.html"><span class="l-en">AI Compute &amp; Optics</span><span class="l-zh">AI算力与光模块</span></a>
+        
+        
+        
+        <a class="tc-chip dn" href="basket_china/cn_consumer_elec.html"><span class="l-en">Consumer Electronics</span><span class="l-zh">消费电子</span></a>
+        
+        
+        
+        <a class="tc-chip dn" href="basket_china/cn_robotics.html"><span class="l-en">Robotics &amp; Automation</span><span class="l-zh">机器人与自动化</span></a>
+        
+        
+      </div>
+    </div>
+    
+
+    
+    <p class="rvx-story" id="story"></p>
+
+    <div class="rvx-chips">
+      <span class="rvx-chip"
+            data-tip-en="Trailing-momentum rank names Industrial Metals first; skips the most recent ~3 weeks by construction; suggested weights unchanged. Shape read only — not a forecast."
+            data-tip-zh="趋势动量排名以有色金属居首；设计上跳过最近约3周数据；建议权重不变。仅为形态读数，非预测。">ⓘ <span class="l-en">How this works</span><span class="l-zh">原理说明</span></span>
+      
+      <a class="rvx-chip" href="allocation_china.html"><span class="l-en">Open the playbook →</span><span class="l-zh">打开操盘手册 →</span></a>
+    </div>
+  </section>
   
+
+  
+  <p class="si-view-read" id="si-read-overview" hidden></p>
   <div id="regime" class="regime"></div>
-  <div class="si-rail" id="si-rail">
-    <a href="#actnow-section">🎯 <span class="l-en">Do this now</span><span class="l-zh">现在怎么做</span></a>
-    <a href="#si-map">🧭 <span class="l-en">The map</span><span class="l-zh">全景图谱</span></a>
-    <a href="#si-movement">🌀 <span class="l-en">What&#39;s moving</span><span class="l-zh">正在轮动</span></a>
-    <a href="#si-explore">🔍 <span class="l-en">Explore</span><span class="l-zh">深入探索</span></a>
-    <a href="subsectors_china.html">🔗 <span class="l-en">Stock entry funnel ↗</span><span class="l-zh">个股入场漏斗 ↗</span></a>
-  </div>
 
   <section class="si-sec" id="actnow-section">
   <div class="scc-boardhead" id="sc-board">
@@ -484,6 +473,18 @@
   <div id="grader" class="grader" hidden></div>
   </section>
 
+  
+  <div class="si-changed">
+    <span class="si-changed-l"><span class="l-en">What changed</span><span class="l-zh">最新变化</span></span>
+    <span class="tc-chip"><span class="l-en">Leadership is now under strain — it was rotating.</span><span class="l-zh">领涨格局转为承压 — 此前为轮动中。</span></span>
+    <span class="tc-chip"><span class="l-en">Industrial Metals is the one losing the lead now — that changed this session.</span><span class="l-zh">有色金属 成为失去领先的一方 — 本时段刚变化。</span></span>
+    <span class="tc-chip"><span class="l-en">Held for 1 day.</span><span class="l-zh">已持续 1 天。</span></span>
+  </div>
+
+  </section>
+
+  <section class="si-view" data-view="map">
+    <p class="si-view-read" id="si-read-map" hidden></p>
   <section class="si-sec" id="si-map">
   
   <div class="scc-universe">
@@ -551,11 +552,14 @@
     <div class="poskey" id="sc-desk-key"></div>
   </details>
   </section>
+  </section>
 
+  <section class="si-view" data-view="moving">
+    <p class="si-view-read" id="si-read-moving" hidden></p>
   <section class="si-sec" id="si-movement">
     <div class="si-sec-h">
       <h2><span class="l-en">What&#39;s moving — the whole A-share market</span><span class="l-zh">正在轮动 — 全市场视角</span></h2>
-      <span class="si-sec-sub"><span class="l-en">The rotation map over 233 concept boards and 22 curated themes, plus leadership-handoff events. A heads-up layer — the board above stays the only calls.</span><span class="l-zh">覆盖 233 个概念板块与 22 个精选主题的轮动图，以及领导权交接事件。此为提示层 — 操作判断仅见上方研判。</span></span>
+      <span class="si-sec-sub"><span class="l-en">The rotation map over 233 concept boards and 22 curated themes, plus leadership-handoff events. A heads-up layer — the Overview board stays the only calls.</span><span class="l-zh">覆盖 233 个概念板块与 22 个精选主题的轮动图，以及领导权交接事件。此为提示层 — 操作判断仅见「总览」中的研判。</span></span>
     </div>
   <!-- ── RC-R14: China Rotation Events rail ─────────────────────────────────────── -->
   <!-- Fetched from marketdata/rotation_events_china.json. Absent file = graceful note. -->
@@ -671,7 +675,10 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
     <span class="l-en">Subsectors are the 同花顺 concept boards (reliable set ≥ 6 priced members); Themes are our curated A-share thematic baskets — both equal-weighted, refreshed nightly. Relative strength is measured cross-sectionally vs the median basket. On the rotation map the horizontal axis is strength vs. the market (right = stronger) and the vertical axis is whether that strength is heating up or cooling (up = heating); each trail traces where a basket has been and the arrow points where it is heading, so a longer trail is a faster mover. Click a quadrant to zoom in. Benchmark context is CSI 300. Research context only — not investment advice.</span><span class="l-zh">「子行业」为同花顺概念板块（可靠集 ≥ 6 只可定价成分）；「主题」为我们精选的 A 股主题篮子——均为等权，每晚刷新。相对强度以横截面方式相对中位数篮子衡量。轮动图中，横轴为相对大盘的强弱（越靠右越强），纵轴为该强度在升温还是降温（越靠上越热）；每条轨迹描绘篮子的来路，箭头指向去向，轨迹越长移动越快。点击象限可放大。基准参考为沪深300。仅供研究参考，非投资建议。</span>
   </div>
   </section>
+  </section>
 
+  <section class="si-view" data-view="explore">
+    <p class="si-view-read" id="si-read-explore" hidden></p>
   <section class="si-sec" id="si-explore">
     <div class="si-sec-h">
       <h2><span class="l-en">Explore — every basket in depth</span><span class="l-zh">深入探索 — 每个篮子的深读</span></h2>
@@ -804,6 +811,7 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
       <a href="china_heatmap.html">🌡 <span class="l-en">Market Heatmap ↗</span><span class="l-zh">市场热力图 ↗</span></a>
     </div>
   </section>
+  </section>
 
   <footer>
     <span class="l-en">Read-only analytics — not investment advice. Conviction is a gated-confluence read: the validated credit/vol/margin regime and the
@@ -811,9 +819,13 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
       intervals, not forecasts. The grader measures realized accuracy as it accrues.</span><span class="l-zh">只读分析 — 非投资建议。信念为门控共振研判：经验证的信用/波动率/融资体制与路径条件概率主导并门控；
       动量、资金流与拥挤度为受限背景。前瞻概率为带置信区间的条件概率，而非预测。评分器随数据累积衡量已实现准确度。</span>
   </footer>
+  
+  </div>
+  </div>
 </div>
 
-<script src="sector_central_china_data.js?v=df34667e" defer></script>
+
+<script data-sync src="sector_central_china_data.js?v=e6080aac"></script>
 <script>
 (function(){
   "use strict";
@@ -1180,20 +1192,6 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
 })();
 </script>
 
-<script>
-(function(){
-  window.SC_EXTRA_DATA=['sector_cycles_china_narr_data.js','sector_cycles_china_dna_data.js'];
-  window.SC_SERIES_DATA='sector_cycles_china_series_data.js';  // heavy arrays, hydrated after first paint
-  function vUrl(name){try{var l=document.querySelector('link[rel="preload"][href^="'+name+'"],link[rel="prefetch"][href^="'+name+'"]');if(l){var h=l.getAttribute('href');if(h)return h;}}catch(e){}return name;}
-  var files=['sector_cycles_china_data.js','mm_charts.js','sector_cycles.js'];
-  var head=document.head;
-  files.forEach(function(f,i){
-    var s=document.createElement('script'); s.async=false; s.src=vUrl(f);
-    if(i===0) s.addEventListener('load',function(){ document.dispatchEvent(new CustomEvent('sc:cycles-data')); });
-    head.appendChild(s);
-  });
-})();
-</script>
 <script src="lightweight-charts.js?v=46fc6953" defer></script>
 <script src="baskets_desk.js?v=b3b92683" defer></script>
 <script>
@@ -1393,6 +1391,9 @@ function renderBTable(){
 
 // ---- 02 chart -------------------------------------------------------------
 let chart=null, chartMode='rel', chartRange=parseInt(localStorage.getItem('cnfw-brange')||'252',10)||252, hidden={};
+/* Set when renderChart() is asked to draw while #chart is still inside a display:none
+   view; si:view clears it the moment Explore is really on screen. See renderChart(). */
+let _chartDeferred=false;
 // Crosshair floating tooltip
 let _xhTooltip=null;
 function _xhTip(){
@@ -1443,6 +1444,13 @@ function chartOpts(){ return { autoSize:true,
   crosshair:{ mode:0, vertLine:{labelBackgroundColor:cssv('--panel2')||'#333'}, horzLine:{labelBackgroundColor:cssv('--panel2')||'#333'} } }; }
 function renderChart(){
   const el=document.getElementById('chart'); if(typeof LightweightCharts==='undefined'){ el.innerHTML='<p class="muted">The charting library failed to load — the rest of the page is unaffected.</p>'; return; }
+  /* Under the workspace shell #chart starts inside a display:none view, where it measures
+     0 wide — and the basket payload lands (calling us) long before anyone opens Explore.
+     lightweight-charts binds autoSize at CREATION: a chart born zero-wide never recovers.
+     Measured 2026-08-04: after the view was shown, neither a window resize event nor a
+     container width nudge moved its canvases off 0px. So do not create it yet — mark the
+     draw deferred and let the si:view handler below run us again with a real box. */
+  if(!chart && !el.clientWidth){ _chartDeferred=true; return; }
   if(!chart){ chart=LightweightCharts.createChart(el,chartOpts()); }
   (chart.__series||[]).forEach(s=>chart.removeSeries(s)); chart.__series=[];
   const start=rangeStart(CHART.dates);
@@ -1732,6 +1740,16 @@ function boot(){
   if(location.hash.startsWith('#theme-')) setTimeout(()=>openTheme(location.hash.slice(7)),250);
   document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderTblCatFilter(); renderAll(); });
   document.addEventListener('themechange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderChart(); });
+  /* The overlay chart could not be built while Explore was hidden (see renderChart);
+     build it the first time the view is actually on screen. */
+  document.addEventListener('si:view',function(e){
+    if(e&&e.detail==='explore'&&_chartDeferred){ _chartDeferred=false; renderChart(); }
+  });
+  /* The basket payload arrives by fetch, well after si_workspace_china.js has run and
+     composed its per-view reads off an empty window.BASKETS. Announce the landing so
+     the router re-composes them instead of leaving "no data yet" baked into the rail
+     footer and the What's Moving / Explore lines. */
+  try{ document.dispatchEvent(new CustomEvent('csi:payload')); }catch(e){}
 }
 /* Cross-script exports — baskets_desk.js reads these seven helpers (plus BASKETS/CHART/THEME,
    which are top-level vars and hence window-attached already) from the shared global scope.
@@ -1753,8 +1771,10 @@ if(document.readyState!=='loading') boot(); else document.addEventListener('DOMC
     .then(__csiInitPage).catch(function(e){ try{ fail(); }catch(_){} });
 })();
 </script>
+
 <script>window.SR_CFG={json:'marketdata/subsector_rotation_china.json',detailDir:'rotation_china/',pageHref:'sector_central_china.html'};</script>
-<script src="subsector_rotation.js?v=be121ce4" defer></script>
 <script src="theme.js?v=37ffbce3" defer></script>
+
+<script src="si_workspace_china.js?v=49caf6df" defer></script>
 </body>
 </html>

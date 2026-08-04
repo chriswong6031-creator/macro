@@ -5,7 +5,7 @@
   "expected_hk_session": "2026-08-04",
   "freshness_verdict": "ok",
   "adr_freshness": {
-    "BIDU": {
+    "KWEB": {
       "asof": "2026-08-03",
       "lag_days": 1,
       "state": "fresh"
@@ -15,12 +15,12 @@
       "lag_days": 1,
       "state": "fresh"
     },
-    "FXI": {
+    "TCOM": {
       "asof": "2026-08-03",
       "lag_days": 1,
       "state": "fresh"
     },
-    "KWEB": {
+    "BIDU": {
       "asof": "2026-08-03",
       "lag_days": 1,
       "state": "fresh"
@@ -31,11 +31,6 @@
       "state": "fresh"
     },
     "JD": {
-      "asof": "2026-08-03",
-      "lag_days": 1,
-      "state": "fresh"
-    },
-    "TCOM": {
       "asof": "2026-08-03",
       "lag_days": 1,
       "state": "fresh"

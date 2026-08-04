@@ -1,7 +1,7 @@
 {
  "schema": "track_ledger/v1",
  "market": "HK",
- "as_of": "2026-08-03",
+ "as_of": "2026-08-04",
  "state": "accruing",
  "bench": {
   "code": "_HSI",
@@ -10,18 +10,246 @@
  },
  "summary": {
   "state": "accruing",
-  "n_calls": 359,
-  "n_logged": 347,
-  "n_matured": 0,
+  "n_calls": 370,
+  "n_logged": 359,
+  "n_matured": 9,
   "n_beat": 0,
-  "n_lag": 0,
-  "n_suspended": 81,
-  "hit_matured": null,
-  "wilson_lo_pct": null,
-  "wilson_hi_pct": null,
+  "n_lag": 9,
+  "n_suspended": 68,
+  "hit_matured": 0.0,
+  "wilson_lo_pct": 0.0,
+  "wilson_hi_pct": 29.9,
   "first_read_est": "2026-08-24"
  },
  "rows": [
+  {
+   "t": "9999.HK",
+   "nm": "NetEase",
+   "sec": "Internet & Tech",
+   "grp": "entry_open",
+   "d": "2026-08-03",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 1,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "1024.HK",
+   "nm": "Kuaishou",
+   "sec": "Internet & Tech",
+   "grp": "entry_open",
+   "d": "2026-08-03",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 2,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "0763.HK",
+   "nm": "ZTE Corporation",
+   "sec": "Industrials & Transport",
+   "grp": "entry_open",
+   "d": "2026-08-03",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 3,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "9888.HK",
+   "nm": "Baidu",
+   "sec": "Internet & Tech",
+   "grp": "setting_up",
+   "d": "2026-08-03",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 4,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "2015.HK",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-03",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 5,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "2331.HK",
+   "nm": "Li Ning",
+   "sec": "Consumer",
+   "grp": "watch",
+   "d": "2026-08-03",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 6,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "0700.HK",
+   "nm": "Tencent",
+   "sec": "Internet & Tech",
+   "grp": "watch",
+   "d": "2026-08-03",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 7,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "1658.HK",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-03",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 8,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "2888.HK",
+   "nm": "Standard Chartered",
+   "sec": "Financials & Banks",
+   "grp": "watch",
+   "d": "2026-08-03",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 9,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "1208.HK",
+   "nm": "MMG",
+   "sec": "Materials",
+   "grp": "watch",
+   "d": "2026-08-03",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 10,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "3618.HK",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-08-03",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 11,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "9626.HK",
+   "nm": "Bilibili",
+   "sec": "Internet & Tech",
+   "grp": "watch",
+   "d": "2026-08-03",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 12,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
   {
    "t": "0763.HK",
    "nm": "ZTE Corporation",
@@ -366,8 +594,8 @@
   },
   {
    "t": "2015.HK",
-   "nm": "Li Auto",
-   "sec": "Auto & EV",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-30",
    "e": null,
@@ -404,8 +632,8 @@
   },
   {
    "t": "1072.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Dongfang Electric",
+   "sec": "Industrials & Transport",
    "grp": "watch",
    "d": "2026-07-30",
    "e": null,
@@ -480,8 +708,8 @@
   },
   {
    "t": "1928.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sands China",
+   "sec": "Gaming & Leisure",
    "grp": "watch",
    "d": "2026-07-30",
    "e": null,
@@ -632,8 +860,8 @@
   },
   {
    "t": "1072.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Dongfang Electric",
+   "sec": "Industrials & Transport",
    "grp": "watch",
    "d": "2026-07-29",
    "e": null,
@@ -651,8 +879,8 @@
   },
   {
    "t": "2015.HK",
-   "nm": "Li Auto",
-   "sec": "Auto & EV",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-29",
    "e": null,
@@ -936,8 +1164,8 @@
   },
   {
    "t": "1072.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Dongfang Electric",
+   "sec": "Industrials & Transport",
    "grp": "watch",
    "d": "2026-07-28",
    "e": null,
@@ -1012,8 +1240,8 @@
   },
   {
    "t": "2015.HK",
-   "nm": "Li Auto",
-   "sec": "Auto & EV",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-28",
    "e": null,
@@ -1101,9 +1329,7 @@
    "m": false,
    "rk": 1,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0998.HK",
@@ -1120,9 +1346,7 @@
    "m": false,
    "rk": 2,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "3988.HK",
@@ -1139,9 +1363,7 @@
    "m": false,
    "rk": 3,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "3328.HK",
@@ -1158,9 +1380,7 @@
    "m": false,
    "rk": 4,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "1398.HK",
@@ -1177,9 +1397,7 @@
    "m": false,
    "rk": 5,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0358.HK",
@@ -1196,9 +1414,7 @@
    "m": false,
    "rk": 6,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0001.HK",
@@ -1215,9 +1431,7 @@
    "m": false,
    "rk": 7,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0083.HK",
@@ -1234,14 +1448,12 @@
    "m": false,
    "rk": 8,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0941.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Mobile",
+   "sec": "Telecom & Utilities",
    "grp": "setting_up",
    "d": "2026-07-27",
    "e": null,
@@ -1253,9 +1465,7 @@
    "m": false,
    "rk": 9,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "1816.HK",
@@ -1272,9 +1482,7 @@
    "m": false,
    "rk": 10,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0762.HK",
@@ -1291,9 +1499,7 @@
    "m": false,
    "rk": 11,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0200.HK",
@@ -1310,9 +1516,7 @@
    "m": false,
    "rk": 12,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0902.HK",
@@ -1329,9 +1533,7 @@
    "m": false,
    "rk": 13,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0288.HK",
@@ -1348,9 +1550,7 @@
    "m": false,
    "rk": 14,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0371.HK",
@@ -1367,9 +1567,7 @@
    "m": false,
    "rk": 15,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0175.HK",
@@ -1386,9 +1584,7 @@
    "m": false,
    "rk": 16,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0960.HK",
@@ -1405,9 +1601,7 @@
    "m": false,
    "rk": 17,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "1898.HK",
@@ -1424,9 +1618,7 @@
    "m": false,
    "rk": 18,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0017.HK",
@@ -1443,14 +1635,12 @@
    "m": false,
    "rk": 19,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "1072.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Dongfang Electric",
+   "sec": "Industrials & Transport",
    "grp": "watch",
    "d": "2026-07-27",
    "e": null,
@@ -1462,9 +1652,7 @@
    "m": false,
    "rk": 20,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "1057.HK",
@@ -1481,9 +1669,7 @@
    "m": false,
    "rk": 21,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "1799.HK",
@@ -1500,9 +1686,7 @@
    "m": false,
    "rk": 22,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "2331.HK",
@@ -1519,9 +1703,7 @@
    "m": false,
    "rk": 23,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "3800.HK",
@@ -1538,14 +1720,12 @@
    "m": false,
    "rk": 24,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0884.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CIFI Holdings",
+   "sec": "Property",
    "grp": "watch",
    "d": "2026-07-27",
    "e": null,
@@ -1557,9 +1737,7 @@
    "m": false,
    "rk": 25,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "0358.HK",
@@ -1580,8 +1758,8 @@
   },
   {
    "t": "0941.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Mobile",
+   "sec": "Telecom & Utilities",
    "grp": "entry_open",
    "d": "2026-07-24",
    "e": null,
@@ -1767,8 +1945,8 @@
   },
   {
    "t": "1766.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CRRC Corporation",
+   "sec": "Industrials & Transport",
    "grp": "setting_up",
    "d": "2026-07-24",
    "e": null,
@@ -1937,8 +2115,8 @@
   },
   {
    "t": "2600.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Aluminum Corp of China",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-07-24",
    "e": null,
@@ -1971,8 +2149,8 @@
   },
   {
    "t": "1072.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Dongfang Electric",
+   "sec": "Industrials & Transport",
    "grp": "watch",
    "d": "2026-07-24",
    "e": null,
@@ -2022,8 +2200,8 @@
   },
   {
    "t": "0884.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CIFI Holdings",
+   "sec": "Property",
    "grp": "watch",
    "d": "2026-07-24",
    "e": null,
@@ -2141,8 +2319,8 @@
   },
   {
    "t": "2388.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "BOC Hong Kong",
+   "sec": "Financials & Banks",
    "grp": "entry_open",
    "d": "2026-07-23",
    "e": null,
@@ -2158,8 +2336,8 @@
   },
   {
    "t": "1766.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CRRC Corporation",
+   "sec": "Industrials & Transport",
    "grp": "entry_open",
    "d": "2026-07-23",
    "e": null,
@@ -2175,8 +2353,8 @@
   },
   {
    "t": "6969.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Smoore International",
+   "sec": "Consumer",
    "grp": "entry_open",
    "d": "2026-07-23",
    "e": null,
@@ -2192,8 +2370,8 @@
   },
   {
    "t": "0941.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Mobile",
+   "sec": "Telecom & Utilities",
    "grp": "entry_open",
    "d": "2026-07-23",
    "e": null,
@@ -2430,8 +2608,8 @@
   },
   {
    "t": "1928.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sands China",
+   "sec": "Gaming & Leisure",
    "grp": "setting_up",
    "d": "2026-07-23",
    "e": null,
@@ -2583,8 +2761,8 @@
   },
   {
    "t": "2020.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Anta Sports",
+   "sec": "Consumer",
    "grp": "setting_up",
    "d": "2026-07-23",
    "e": null,
@@ -2617,8 +2795,8 @@
   },
   {
    "t": "2600.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Aluminum Corp of China",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-07-23",
    "e": null,
@@ -2651,8 +2829,8 @@
   },
   {
    "t": "1072.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Dongfang Electric",
+   "sec": "Industrials & Transport",
    "grp": "watch",
    "d": "2026-07-23",
    "e": null,
@@ -2753,8 +2931,8 @@
   },
   {
    "t": "2015.HK",
-   "nm": "Li Auto",
-   "sec": "Auto & EV",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-23",
    "e": null,
@@ -2787,8 +2965,8 @@
   },
   {
    "t": "0884.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CIFI Holdings",
+   "sec": "Property",
    "grp": "watch",
    "d": "2026-07-23",
    "e": null,
@@ -2872,8 +3050,8 @@
   },
   {
    "t": "0639.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Shougang Resources",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -2923,8 +3101,8 @@
   },
   {
    "t": "0656.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Fosun International",
+   "sec": "Industrials & Transport",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -2957,8 +3135,8 @@
   },
   {
    "t": "6862.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Haidilao",
+   "sec": "Consumer",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -2991,8 +3169,8 @@
   },
   {
    "t": "1766.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CRRC Corporation",
+   "sec": "Industrials & Transport",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -3008,8 +3186,8 @@
   },
   {
    "t": "2388.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "BOC Hong Kong",
+   "sec": "Financials & Banks",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -3093,8 +3271,8 @@
   },
   {
    "t": "1928.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sands China",
+   "sec": "Gaming & Leisure",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -3161,8 +3339,8 @@
   },
   {
    "t": "6969.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Smoore International",
+   "sec": "Consumer",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -3229,8 +3407,8 @@
   },
   {
    "t": "2601.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Pacific Insurance",
+   "sec": "Insurance",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -3246,8 +3424,8 @@
   },
   {
    "t": "2020.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Anta Sports",
+   "sec": "Consumer",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -3280,8 +3458,8 @@
   },
   {
    "t": "2600.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Aluminum Corp of China",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-07-21",
    "e": null,
@@ -3382,8 +3560,8 @@
   },
   {
    "t": "0884.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CIFI Holdings",
+   "sec": "Property",
    "grp": "watch",
    "d": "2026-07-21",
    "e": null,
@@ -3399,8 +3577,8 @@
   },
   {
    "t": "0656.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Fosun International",
+   "sec": "Industrials & Transport",
    "grp": "entry_open",
    "d": "2026-07-20",
    "e": null,
@@ -3552,8 +3730,8 @@
   },
   {
    "t": "1928.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sands China",
+   "sec": "Gaming & Leisure",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -3569,8 +3747,8 @@
   },
   {
    "t": "0639.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Shougang Resources",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -3654,8 +3832,8 @@
   },
   {
    "t": "1658.HK",
-   "nm": "Postal Savings Bank of China",
-   "sec": "Financials & Banks",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -3671,8 +3849,8 @@
   },
   {
    "t": "3618.HK",
-   "nm": "Chongqing Rural Commercial Bank",
-   "sec": "Financials & Banks",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -3722,8 +3900,8 @@
   },
   {
    "t": "6969.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Smoore International",
+   "sec": "Consumer",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -3773,8 +3951,8 @@
   },
   {
    "t": "1766.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "CRRC Corporation",
+   "sec": "Industrials & Transport",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -3960,8 +4138,8 @@
   },
   {
    "t": "6862.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Haidilao",
+   "sec": "Consumer",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -4011,8 +4189,8 @@
   },
   {
    "t": "9961.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Trip.com",
+   "sec": "Consumer",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -4062,8 +4240,8 @@
   },
   {
    "t": "2601.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Pacific Insurance",
+   "sec": "Insurance",
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -4113,8 +4291,8 @@
   },
   {
    "t": "2600.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Aluminum Corp of China",
+   "sec": "Materials",
    "grp": "watch",
    "d": "2026-07-20",
    "e": null,
@@ -4232,8 +4410,8 @@
   },
   {
    "t": "0656.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Fosun International",
+   "sec": "Industrials & Transport",
    "grp": "entry_open",
    "d": "2026-07-17",
    "e": null,
@@ -4249,8 +4427,8 @@
   },
   {
    "t": "0019.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Swire Pacific",
+   "sec": "Exchange & Diversified",
    "grp": "entry_open",
    "d": "2026-07-17",
    "e": null,
@@ -4283,8 +4461,8 @@
   },
   {
    "t": "6969.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Smoore International",
+   "sec": "Consumer",
    "grp": "entry_open",
    "d": "2026-07-17",
    "e": null,
@@ -4334,8 +4512,8 @@
   },
   {
    "t": "0639.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Shougang Resources",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -4351,8 +4529,8 @@
   },
   {
    "t": "0778.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Fortune REIT",
+   "sec": "Property",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -4402,8 +4580,8 @@
   },
   {
    "t": "9618.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "JD.com",
+   "sec": "Internet & Tech",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -4436,8 +4614,8 @@
   },
   {
    "t": "3618.HK",
-   "nm": "Chongqing Rural Commercial Bank",
-   "sec": "Financials & Banks",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -4453,8 +4631,8 @@
   },
   {
    "t": "1658.HK",
-   "nm": "Postal Savings Bank of China",
-   "sec": "Financials & Banks",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -4640,8 +4818,8 @@
   },
   {
    "t": "9961.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Trip.com",
+   "sec": "Consumer",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -4657,8 +4835,8 @@
   },
   {
    "t": "6862.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Haidilao",
+   "sec": "Consumer",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -4691,8 +4869,8 @@
   },
   {
    "t": "0003.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "HK & China Gas",
+   "sec": "Telecom & Utilities",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -4708,8 +4886,8 @@
   },
   {
    "t": "2318.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Ping An Insurance",
+   "sec": "Insurance",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -4725,8 +4903,8 @@
   },
   {
    "t": "2601.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "China Pacific Insurance",
+   "sec": "Insurance",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -4895,8 +5073,8 @@
   },
   {
    "t": "1928.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Sands China",
+   "sec": "Gaming & Leisure",
    "grp": "watch",
    "d": "2026-07-16",
    "e": null,
@@ -4946,8 +5124,8 @@
   },
   {
    "t": "2269.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "WuXi Biologics",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-16",
    "e": null,
@@ -4963,8 +5141,8 @@
   },
   {
    "t": "6160.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "BeiGene",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-16",
    "e": null,
@@ -4997,8 +5175,8 @@
   },
   {
    "t": "0981.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "SMIC",
+   "sec": "Internet & Tech",
    "grp": "watch",
    "d": "2026-07-16",
    "e": null,
@@ -5082,8 +5260,8 @@
   },
   {
    "t": "2269.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "WuXi Biologics",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-15",
    "e": null,
@@ -5133,8 +5311,8 @@
   },
   {
    "t": "0981.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "SMIC",
+   "sec": "Internet & Tech",
    "grp": "watch",
    "d": "2026-07-15",
    "e": null,
@@ -5167,8 +5345,8 @@
   },
   {
    "t": "6160.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "BeiGene",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-15",
    "e": null,
@@ -5184,8 +5362,8 @@
   },
   {
    "t": "0019.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Swire Pacific",
+   "sec": "Exchange & Diversified",
    "grp": "watch",
    "d": "2026-07-15",
    "e": null,
@@ -5252,8 +5430,8 @@
   },
   {
    "t": "0981.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "SMIC",
+   "sec": "Internet & Tech",
    "grp": "watch",
    "d": "2026-07-14",
    "e": null,
@@ -5269,8 +5447,8 @@
   },
   {
    "t": "2269.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "WuXi Biologics",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-14",
    "e": null,
@@ -5286,8 +5464,8 @@
   },
   {
    "t": "6160.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "BeiGene",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-14",
    "e": null,
@@ -5337,8 +5515,8 @@
   },
   {
    "t": "9988.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Alibaba",
+   "sec": "Internet & Tech",
    "grp": "watch",
    "d": "2026-07-14",
    "e": null,
@@ -5388,8 +5566,8 @@
   },
   {
    "t": "0981.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "SMIC",
+   "sec": "Internet & Tech",
    "grp": "watch",
    "d": "2026-07-13",
    "e": null,
@@ -5405,8 +5583,8 @@
   },
   {
    "t": "6160.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "BeiGene",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-13",
    "e": null,
@@ -5422,8 +5600,8 @@
   },
   {
    "t": "2269.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "WuXi Biologics",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-13",
    "e": null,
@@ -5490,8 +5668,8 @@
   },
   {
    "t": "9988.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Alibaba",
+   "sec": "Internet & Tech",
    "grp": "watch",
    "d": "2026-07-13",
    "e": null,
@@ -5524,8 +5702,8 @@
   },
   {
    "t": "0981.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "SMIC",
+   "sec": "Internet & Tech",
    "grp": "watch",
    "d": "2026-07-10",
    "e": null,
@@ -5558,8 +5736,8 @@
   },
   {
    "t": "6160.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "BeiGene",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-10",
    "e": null,
@@ -5575,8 +5753,8 @@
   },
   {
    "t": "2269.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "WuXi Biologics",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-10",
    "e": null,
@@ -5660,8 +5838,8 @@
   },
   {
    "t": "2269.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "WuXi Biologics",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-08",
    "e": null,
@@ -5677,8 +5855,8 @@
   },
   {
    "t": "6160.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "BeiGene",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-08",
    "e": null,
@@ -5694,8 +5872,8 @@
   },
   {
    "t": "0981.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "SMIC",
+   "sec": "Internet & Tech",
    "grp": "watch",
    "d": "2026-07-08",
    "e": null,
@@ -5830,8 +6008,8 @@
   },
   {
    "t": "0981.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "SMIC",
+   "sec": "Internet & Tech",
    "grp": "watch",
    "d": "2026-07-07",
    "e": null,
@@ -5847,8 +6025,8 @@
   },
   {
    "t": "6160.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "BeiGene",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-07",
    "e": null,
@@ -5881,8 +6059,8 @@
   },
   {
    "t": "2269.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "WuXi Biologics",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-07",
    "e": null,
@@ -5898,8 +6076,8 @@
   },
   {
    "t": "2020.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Anta Sports",
+   "sec": "Consumer",
    "grp": "watch",
    "d": "2026-07-07",
    "e": null,
@@ -5938,28 +6116,28 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 2.9,
+   "x": -6.55,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 1,
    "tr": null,
    "fl": []
   },
   {
    "t": "0981.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "SMIC",
+   "sec": "Internet & Tech",
    "grp": "watch",
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -13.8,
+   "x": -23.27,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 2,
    "tr": null,
    "fl": []
@@ -5972,11 +6150,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": -2.1,
+   "x": -11.55,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 3,
    "tr": null,
    "fl": []
@@ -5989,28 +6167,28 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 3.1,
+   "x": -6.37,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 4,
    "tr": null,
    "fl": []
   },
   {
    "t": "2269.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "WuXi Biologics",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 7.0,
+   "x": -2.43,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 5,
    "tr": null,
    "fl": []
@@ -6023,28 +6201,28 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 0.6,
+   "x": -8.83,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 6,
    "tr": null,
    "fl": []
   },
   {
    "t": "6160.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "BeiGene",
+   "sec": "Healthcare & Pharma",
    "grp": "watch",
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 1.6,
+   "x": -7.84,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 7,
    "tr": null,
    "fl": []
@@ -6057,11 +6235,11 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 1.1,
+   "x": -8.42,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 8,
    "tr": null,
    "fl": []
@@ -6074,22 +6252,22 @@
    "d": "2026-07-03",
    "e": null,
    "l": null,
-   "p": null,
-   "x": null,
-   "dy": null,
-   "st": "early",
-   "m": false,
+   "p": 2.7,
+   "x": -6.73,
+   "dy": 21,
+   "st": "lag",
+   "m": true,
    "rk": 9,
    "tr": null,
    "fl": []
   }
  ],
  "meta": {
-  "n_total": 347,
+  "n_total": 359,
   "truncated": 0,
   "grain": "board_day",
   "survivorship": {
-   "n_suspended": 81,
+   "n_suspended": 68,
    "note": "no delisting archive — vanished names leave the sample"
   }
  }
