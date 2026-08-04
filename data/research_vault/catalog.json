@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T02:07:16.182802+00:00",
-  "count": 703,
+  "generated_at": "2026-08-04T02:22:55.642458+00:00",
+  "count": 704,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -148,6 +148,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-azqplzqwf5r-51fe46",
+      "title": "Earnings Blast",
+      "institution": "Raymond James",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:41:01Z",
+      "summary_points": [
+        "**AI-Driven EPS Surge**: S&P 500 2Q26 EPS growth revised to 46% Y/Y from hyperscalers’ AI demand/monetization; travel/leisure sector (Marriott, Airbnb, Booking) dominates earnings reports.",
+        "**Forward EPS Deceleration Signal**: S&P 500 consensus 2026 EPS ($459) exceeds 2027 ($400) and 2028 ($349), indicating near-term optimism but potential long-term slowdown.",
+        "**Health Care Underperformance**: Health Care sector shows -13.6% EPS growth vs.",
+        "S&P 500’s 46.3%, signaling significant sector-specific risk amid broader market strength.",
+        "**AI Infrastructure Capital Allocation**: Microsoft, Amazon ($220B capex), and Cadence highlight robust AI spending momentum despite margin pressures, driving tech sector momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
