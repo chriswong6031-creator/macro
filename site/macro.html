@@ -479,7 +479,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">1</span>
+                <span class="ct">6</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -493,6 +493,51 @@
                   
                   
                   
+                  
+                  
+                  
+                  <a class="ms-sig sev-warn" href="macro_context.html#board">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🧲</span><span class="ms-sig-title"><span class="l-en">Options “gravity” flipped — bigger swings more likely</span><span class="l-zh">期权“引力”反转 — 波动可能加大</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">GEX: net GEX changed sign (net +79bn, spot vs flip -0.7%)</span><span class="l-zh">GEX：net GEX changed sign（净 +79bn，现价相对翻转点 -0.7%）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">Dealer gamma (GEX) measures how options hedging pushes the market around. Positive gamma damps moves (calmer); negative amplifies them (sharper swings, both ways). This flag means that backdrop just changed — expect the market to move more freely until it flips back.</span><span class="l-zh">做市商 gamma（GEX）衡量期权对冲如何推动市场。正 gamma 抑制波动（更平静）；负 gamma 放大波动（双向更剧烈）。此信号表示该背景刚刚改变 —在它再次反转前，市场可能波动得更自由。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Medium — changes the volatility backdrop, not the direction.</span><span class="l-zh">中 — 改变的是波动背景，而非方向。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-warn" data-ms-jump href="#health">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🔌</span><span class="ms-sig-title"><span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Source &#39;sentiment_naaim&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;sentiment_naaim&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+                    <div class="ms-sig-what"><span class="l-en">A feed this dashboard relies on failed several runs in a row, so it’s paused until it recovers. Any signals that depend on it automatically lose confidence until it’s back. This is a plumbing notice, not a market signal.</span><span class="l-zh">本仪表盘依赖的某个数据源连续多次失败，已暂停直至恢复。依赖它的信号会自动降低置信度，直到其恢复。这是系统管线提示，并非市场信号。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Plumbing — data health, not a market signal.</span><span class="l-zh">管线 — 数据健康度，而非市场信号。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" data-ms-dlg="dlg-sector" href="#dlg-sector">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">📉</span><span class="ms-sig-title"><span class="l-en">A sector fell out of favor</span><span class="l-zh">某板块失宠</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">XLB RS vs SPY crossed below 10th pctile of 90d (now 9)</span><span class="l-zh">XLB RS 相对 SPY 下穿 90 天第 10 百分位（现为 9）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One sector’s strength versus the market just dropped to the bottom of its recent range — money is rotating out. Usually a reason to avoid or trim, not to bottom-fish; wait for it to base and trigger again.</span><span class="l-zh">某板块相对市场的强度刚跌至其近期区间的底部 — 资金正在流出。通常是回避或减仓的理由，而非抄底；等它筑底并再次触发。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — descriptive rotation, not a timing signal.</span><span class="l-zh">背景 — 描述性的轮动，而非择时信号。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" data-ms-dlg="dlg-sector" href="#dlg-sector">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">📉</span><span class="ms-sig-title"><span class="l-en">A sector fell out of favor</span><span class="l-zh">某板块失宠</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">XLU RS vs SPY crossed below 10th pctile of 90d (now 7)</span><span class="l-zh">XLU RS 相对 SPY 下穿 90 天第 10 百分位（现为 7）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One sector’s strength versus the market just dropped to the bottom of its recent range — money is rotating out. Usually a reason to avoid or trim, not to bottom-fish; wait for it to base and trigger again.</span><span class="l-zh">某板块相对市场的强度刚跌至其近期区间的底部 — 资金正在流出。通常是回避或减仓的理由，而非抄底；等它筑底并再次触发。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — descriptive rotation, not a timing signal.</span><span class="l-zh">背景 — 描述性的轮动，而非择时信号。</span></div>
+                  </a>
+                  
+                  
+                  
+                  <a class="ms-sig sev-info" href="us_stocks.html#holdings">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🐳</span><span class="ms-sig-title"><span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
+                    <div class="ms-sig-detail"><span class="l-en">ARKK: manager cut FIG by -100% of position (2026-07-24..2026-07-31, flow-normalized)</span><span class="l-zh">ARKK：经理 cut FIG 仓位 -100%（2026-07-24..2026-07-31，已按资金流标准化）</span></div>
+                    <div class="ms-sig-what"><span class="l-en">One of the tracked funds (ARK, etc.) meaningfully added to or cut a position, after stripping out mechanical fund-flow effects — so it reflects genuine conviction. It’s information about what active managers are doing, not a recommendation to copy it.</span><span class="l-zh">在剔除机械性资金流影响后，某只跟踪基金（如 ARK）显著加仓或减仓 —因此反映了真实的信念。这是关于主动经理动作的信息，并非照搬的建议。</span></div>
+                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — what an active manager did, not a recommendation.</span><span class="l-zh">背景 — 主动经理的动作，并非建议。</span></div>
+                  </a>
                   
                   
                   
@@ -4426,6 +4471,10 @@
         
         <span class="mx5-ai-ticker-pill">QQQ</span>
         
+        <span class="mx5-ai-ticker-pill">CAT</span>
+        
+        <span class="mx5-ai-ticker-pill">SPY</span>
+        
         <span class="mx5-ai-ticker-pill">USO</span>
         
       </div>
@@ -4434,14 +4483,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          8 high-impact signals across channels
+          5 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">5 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          8 条高影响信号
+          5 条高影响信号
         </span>
         
       </div>
@@ -4479,8 +4528,8 @@
         <div class="mx5-card-title"><span class="l-en">Alerts Centre</span><span class="l-zh">警报中心</span></div>
         
         <div class="mx5-card-badge" style="color:var(--mx5-warn-ink);background:var(--mx5-warn-dim);border:1px solid rgba(245,158,11,.20);">
-          <span class="l-en">1 FIRED</span>
-          <span class="l-zh">1 条触发</span>
+          <span class="l-en">2 FIRED</span>
+          <span class="l-zh">2 条触发</span>
         </div>
         
       </div>
@@ -4489,6 +4538,24 @@
       
       
       <div class="mx5-alerts-list">
+        
+        
+        
+        
+        <div class="mx5-alert-item warn">
+          <div class="mx5-alert-dot warn"></div>
+          <div class="mx5-alert-content">
+            <div class="mx5-alert-title warn">
+              <span style="font-size:12px;margin-right:3px">🧲</span>
+              <span class="l-en">Options “gravity” flipped — bigger swings more likely</span>
+              <span class="l-zh">期权“引力”反转 — 波动可能加大</span>
+            </div>
+            <div class="mx5-alert-detail">
+              <span class="l-en">GEX: net GEX changed sign (net +79bn, spot vs flip -0.7%)</span>
+              <span class="l-zh">GEX：net GEX changed sign（净 +79bn，现价相对翻转点 -0.7%）</span>
+            </div>
+          </div>
+        </div>
         
         
         
@@ -4517,11 +4584,11 @@
           <div class="mx5-alert-content">
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
-              <span class="l-en">Amazon tops $3 trillion market cap as stock continues post-earnings surge</span>
-              <span class="l-zh">亚马逊市值突破3万亿美元，股价在财报后持续飙升</span>
+              <span class="l-en">Merck hikes revenue outlook as new drug sales grow, but cuts profit guidance due…</span>
+              <span class="l-zh">默克上调营收预期，新药销售增长，但因交易费用下调利润指引</span>
             </div>
             <div class="mx5-alert-detail">
-              <span>CNBC - Tech</span> · 
+              <span>CNBC - Stock Blog</span> · 
               <span style="color:var(--mx5-warn-ink,#9c6212);font-weight:600"><span class="l-en">High impact</span><span class="l-zh">高影响</span></span>
             </div>
           </div>
@@ -4534,8 +4601,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 1 of 1 in feed</span>
-          <span class="l-zh">显示 1 / 1 条</span>
+          <span class="l-en">Showing 2 of 6 in feed</span>
+          <span class="l-zh">显示 2 / 6 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -7867,6 +7934,25 @@
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px">
                 <div style="font-size:13px;font-weight:600;color:var(--mx5-warn)">
+                  <span style="font-size:12px;margin-right:3px">🧲</span>
+                  <span class="l-en">Options “gravity” flipped — bigger swings more likely</span><span class="l-zh">期权“引力”反转 — 波动可能加大</span>
+                </div>
+                
+                
+                <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.12);color:var(--mx5-warn-ink,#9c6212);border:1px solid rgba(245,158,11,.22);white-space:nowrap"><span class="l-en">Watch</span><span class="l-zh">关注</span></span>
+                
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">GEX: net GEX changed sign (net +79bn, spot vs flip -0.7%)</span><span class="l-zh">GEX：net GEX changed sign（净 +79bn，现价相对翻转点 -0.7%）</span></div>
+            </div>
+          </div>
+          
+          
+          
+          <div style="display:flex;gap:10px;padding:12px;background:rgba(245,158,11,.06);border-radius:10px;border:1px solid rgba(245,158,11,.18)">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--mx5-warn);flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                <div style="font-size:13px;font-weight:600;color:var(--mx5-warn)">
                   <span style="font-size:12px;margin-right:3px">📅</span>
                   <span class="l-en">Major event on deck — expect bigger swings either way</span><span class="l-zh">重大事件临近 — 双向波动或加大</span>
                 </div>
@@ -7883,6 +7969,67 @@
         
         
         
+        <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🔌</span>
+                  <span class="l-en">A data source went dark</span><span class="l-zh">某数据源中断</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Source &#39;sentiment_naaim&#39; marked dead after 3 consecutive failures — collector skipped until it recovers; affected signals degrade</span><span class="l-zh">数据源 &#39;sentiment_naaim&#39; 连续 3 次失败后被标记为中断 —采集器暂停直至恢复；相关信号置信度下降</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">📉</span>
+                  <span class="l-en">A sector fell out of favor</span><span class="l-zh">某板块失宠</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">XLB RS vs SPY crossed below 10th pctile of 90d (now 9)</span><span class="l-zh">XLB RS 相对 SPY 下穿 90 天第 10 百分位（现为 9）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">📉</span>
+                  <span class="l-en">A sector fell out of favor</span><span class="l-zh">某板块失宠</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">XLU RS vs SPY crossed below 10th pctile of 90d (now 7)</span><span class="l-zh">XLU RS 相对 SPY 下穿 90 天第 10 百分位（现为 7）</span></div>
+            </div>
+          </div>
+          
+          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
+                  <span style="font-size:11px;margin-right:3px">🐳</span>
+                  <span class="l-en">A star fund manager made a notable move</span><span class="l-zh">明星基金经理出现显著动作</span>
+                </div>
+                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">ARKK: manager cut FIG by -100% of position (2026-07-24..2026-07-31, flow-normalized)</span><span class="l-zh">ARKK：经理 cut FIG 仓位 -100%（2026-07-24..2026-07-31，已按资金流标准化）</span></div>
+            </div>
+          </div>
+          
+        </div>
+        
         
         
         
@@ -7894,10 +8041,10 @@
           
           
           
-          <a class="nbx-item" href="https://www.cnbc.com/2026/08/03/amazon-amzn-stock-market-cap-earnings.html" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.cnbc.com/2026/08/04/merck-mrk-earnings-q2-2026.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Amazon tops $3 trillion market cap as stock continues post-earnings surge</span><span class="l-zh">亚马逊市值突破3万亿美元，股价在财报后持续飙升</span></span>
+              <span class="nbx-title"><span class="l-en">Merck hikes revenue outlook as new drug sales grow, but cuts profit guidance due to deal charges</span><span class="l-zh">默克上调营收预期，新药销售增长，但因交易费用下调利润指引</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7915,7 +8062,7 @@
           <a class="nbx-item" href="https://www.cnbc.com/2026/08/04/pfizer-pfe-earnings-q2-2026.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Pfizer tops estimates, hikes low end of revenue guidance on strength of Eliquis, other drugs</span><span class="l-zh">辉瑞业绩超预期，上调营收指引下限，受Eliquis及其他药物强劲表现推动</span></span>
+              <span class="nbx-title"><span class="l-en">Pfizer tops estimates, hikes low end of revenue guidance on strength of Eliquis, other drugs</span><span class="l-zh">辉瑞业绩超预期，上调营收指引低端，受Eliquis等药物强劲表现推动</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7930,10 +8077,10 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4624539-fidelity-national-information-stock-slumps-after-cutting-guidance-mixed-q2-results?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4624575-top-financial-trades-higher-on-ai-usage-expansion-plan-potential-technology-acquisitions?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-              <span class="nbx-title"><span class="l-en">Fidelity National Information stock slumps after cutting guidance; mixed Q2 results</span><span class="l-zh">Fidelity National Information股价因下调指引而下跌；Q2业绩喜忧参半</span></span>
+              <span class="nbx-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="nbx-title"><span class="l-en">TOP Financial trades higher on AI usage expansion plan, potential technology acquisitions</span><span class="l-zh">TOP Financial因AI应用扩展计划和潜在技术收购而走高</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7951,7 +8098,7 @@
           <a class="nbx-item" href="https://www.investors.com/news/cat-stock-dow-jones-caterpillar-q2-earnings/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">CAT Stock Lifts Dow Jones With Massive Earnings Beat</span><span class="l-zh">CAT股票因强劲财报推动道指上涨</span></span>
+              <span class="nbx-title"><span class="l-en">CAT Stock Lifts Dow Jones With Massive Earnings Beat</span><span class="l-zh">Caterpillar股票凭借大幅盈利超预期提振道琼斯指数</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -7987,7 +8134,7 @@
           <a class="nbx-item" href="https://www.npr.org/2026/08/04/nx-s1-5918538/apple-will-invest-tariff-refund-into-u-s-manufacturing" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-              <span class="nbx-title"><span class="l-en">Apple will invest tariff refund into U.S. manufacturing</span><span class="l-zh">苹果将把关税退款投入美国制造业</span></span>
+              <span class="nbx-title"><span class="l-en">Apple will invest tariff refund into U.S. manufacturing</span><span class="l-zh">苹果将把关税退款投资于美国制造业</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8005,7 +8152,7 @@
           <a class="nbx-item" href="https://finance.yahoo.com/markets/live/stock-market-today-tuesday-august-4-dow-sp-500-nasdaq-100140227.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Stock market today: Dow, S&amp;P 500, Nasdaq futures rise as earnings roll in, Palantir and Caterpillar stocks jump</span><span class="l-zh">今日股市：道指、标普500、纳斯达克期货随财报季上涨，Palantir和Caterpillar股价大涨</span></span>
+              <span class="nbx-title"><span class="l-en">Stock market today: Dow, S&amp;P 500, Nasdaq futures rise as earnings roll in, Palantir and Caterpillar stocks jump</span><span class="l-zh">今日股市：财报陆续公布，道指、标普500、纳斯达克期货上涨，Palantir和Caterpillar股价大涨</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8023,7 +8170,7 @@
           <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/article/why-palantir-stock-is-ripping-higher-after-earnings-alphaspace-stat-of-the-morning-121006694.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Why Palantir stock is ripping higher after earnings: AlphaSpace stat of the morning</span><span class="l-zh">为何Palantir股价在财报后猛涨：AlphaSpace晨间数据</span></span>
+              <span class="nbx-title"><span class="l-en">Why Palantir stock is ripping higher after earnings: AlphaSpace stat of the morning</span><span class="l-zh">为何Palantir股价财报后大幅上涨：AlphaSpace晨间数据</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8038,15 +8185,15 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4624581-smith-nephew-raises-interim-dividend-by-4-to-156-per-share-312-per-ads?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://www.cnbc.com/2026/08/03/big-techs-anthropic-and-openai-stakes-distort-corporate-earnings.html" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="nbx-title"><span class="l-en">Smith &amp; Nephew raises interim dividend by 4% to 15.6¢ per share (31.2¢ per ADS)</span><span class="l-zh">Smith &amp; Nephew将中期股息上调4%至每股15.6美分（每ADS 31.2美分）</span></span>
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Big Tech&#39;s Anthropic and OpenAI stakes are distorting the corporate earnings picture</span><span class="l-zh">大型科技公司对Anthropic和OpenAI的投资正在扭曲企业盈利图景</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 4</span>
+              <span class="nbx-date">Aug 3</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -8056,10 +8203,10 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4624335-wix-rises-after-q2-beat-maintains-fy26-outlook?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4624551-everspin-maxlinear-partner-to-advance-memory-efficiency-in-ai-servers?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-              <span class="nbx-title"><span class="l-en">Wix rises after Q2 beat, maintains FY26 outlook</span><span class="l-zh">Wix在Q2业绩超预期后上涨，维持2026财年展望</span></span>
+              <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="nbx-title"><span class="l-en">Everspin, MaxLinear partner to advance memory efficiency in AI servers</span><span class="l-zh">Everspin与MaxLinear合作提升AI服务器内存效率</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -10250,7 +10397,7 @@
     <summary><span class="l-en">Data health</span><span class="l-zh">数据健康度</span>
       <span class="help">?<span class="tip"><span class="l-en">Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence reduced automatically). FAILED = today&#39;s fetch broke (yesterday&#39;s data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ runs and paused until it recovers.</span><span class="l-zh">本仪表盘所依赖的每个数据源。OK = 新鲜。STALE = 近期无新数据（信号置信度已自动下调）。FAILED = 今日抓取失败（仍沿用昨日数据）。BLOCKED = 已知且有记录的限制 — 并非故障。DEAD = 连续 3 次以上失败，已暂停直至恢复。</span></span></span>
       
-      <span class="fold-stat">13 <span class="l-en">need attention</span><span class="l-zh">需关注</span> · 181 <span class="l-en">sources</span><span class="l-zh">数据源</span></span>
+      <span class="fold-stat">14 <span class="l-en">need attention</span><span class="l-zh">需关注</span> · 181 <span class="l-en">sources</span><span class="l-zh">数据源</span></span>
       <span class="fold-caret">▾</span>
     </summary>
     <table>
@@ -10396,7 +10543,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>10465</td><td>2026-08-03</td>
+        <td>10467</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10405,7 +10552,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10414,7 +10561,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>701</td><td>2026-08-03</td>
+        <td>701</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10423,7 +10570,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>251</td><td>2026-08-03</td>
+        <td>251</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10432,7 +10579,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>29</td><td>2026-08-03</td>
+        <td>29</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10441,7 +10588,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>180</td><td>2026-08-03</td>
+        <td>180</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10468,7 +10615,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10477,7 +10624,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>4</td><td>2026-08-03</td>
+        <td>4</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10495,7 +10642,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>2349</td><td>2026-08-03</td>
+        <td>2350</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10504,7 +10651,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10513,7 +10660,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10522,7 +10669,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10531,7 +10678,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>2526</td><td>2026-08-03</td>
+        <td>2526</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10540,7 +10687,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>180</td><td>2026-07-31</td>
+        <td>180</td><td>2026-08-03</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10549,7 +10696,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10558,7 +10705,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>5</td><td>2026-08-02</td>
+        <td>6</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10567,7 +10714,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10576,7 +10723,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10585,7 +10732,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10594,7 +10741,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>8986</td><td>2026-08-03</td>
+        <td>8987</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10603,7 +10750,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>3923</td><td>2026-08-03</td>
+        <td>6876</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10612,7 +10759,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>8060</td><td>2026-08-03</td>
+        <td>8062</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10630,7 +10777,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10639,7 +10786,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>141069</td><td>2026-08-03</td>
+        <td>141100</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10648,7 +10795,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>69707</td><td>2026-08-03</td>
+        <td>40718</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10657,7 +10804,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>40633</td><td>2026-08-03</td>
+        <td>40718</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10666,7 +10813,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10675,7 +10822,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10684,7 +10831,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -10693,7 +10840,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>954</td><td>2026-08-03</td>
+        <td>956</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11044,7 +11191,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>606</td><td>2026-08-03</td>
+        <td>607</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11053,7 +11200,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>5733</td><td>2026-08-03</td>
+        <td>5734</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11062,7 +11209,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>709</td><td>2026-08-03</td>
+        <td>709</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11071,7 +11218,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11080,7 +11227,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11089,7 +11236,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>42</td><td>2026-08-03</td>
+        <td>42</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11098,7 +11245,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>4901</td><td>2026-08-03</td>
+        <td>4903</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11116,7 +11263,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11125,7 +11272,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11134,7 +11281,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1462</td><td>2026-07-31</td>
+        <td>1463</td><td>2026-08-03</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11143,7 +11290,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11152,7 +11299,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>176</td><td>2026-08-03</td>
+        <td>168</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11169,7 +11316,7 @@
         <td class="l">hk_shorts_positions</td>
         
         
-        <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
+        <td class="l"><span class="pill pill-stale"><span class="l-en">stale</span><span class="l-zh">过期</span></span></td>
         <td>1</td><td>2026-07-24</td>
         <td class="l muted"></td>
       </tr>
@@ -11179,7 +11326,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11188,7 +11335,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-07-31</td>
+        <td>1</td><td>2026-08-03</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11197,7 +11344,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>3569</td><td>2026-08-03</td>
+        <td>9081</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11206,7 +11353,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>1</td><td>2026-08-03</td>
+        <td>1</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11215,7 +11362,7 @@
         
         
         <td class="l"><span class="pill pill-ok"><span class="l-en">ok</span><span class="l-zh">正常</span></span></td>
-        <td>367</td><td>2026-08-03</td>
+        <td>367</td><td>2026-08-04</td>
         <td class="l muted"></td>
       </tr>
       
@@ -11225,7 +11372,7 @@
         
         <td class="l"><span class="pill pill-failed"><span class="l-en">failed</span><span class="l-zh">失败</span></span></td>
         <td>0</td><td>—</td>
-        <td class="l muted">ReadTimeout: HTTPSConnectionPool(host=&#39;api.hkma.gov.hk&#39;, port=443): Read timed out. (read </td>
+        <td class="l muted">HTTPError: HTTP 502</td>
       </tr>
       
       <tr>
@@ -11887,9 +12034,9 @@
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-08-04 12:27 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-08-04 12:35 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-08-04 12:27 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-08-04 12:35 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
