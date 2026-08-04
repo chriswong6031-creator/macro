@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T19:10:07.531613+00:00",
-  "count": 753,
+  "generated_at": "2026-08-04T19:40:10.849852+00:00",
+  "count": 754,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -346,6 +346,26 @@
         "$12.10–$12.50), driven by 13.8% EBITDA margin (30bps above estimate) and 1.14x book-to-bill.",
         "**Liquidity Risk**: Negative cash flow (-$1.75bn) and worsening guidance (-$1.85bn by August) despite top-line strength, signaling acute liquidity vulnerability.",
         "**DoD Budget Vulnerability**: Goldman Sachs identifies defense budget shifts as primary risk; price target ($152) reliant on 9.3x–8x EV/EBITDA, exposing stock to policy/political volatility in aerospace/defense sector."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4jzmtmz8qg8-bb5b3f",
+      "title": "TransDigm Group (TDG) F3Q26 First Take aftermarket acceleration, margin beat, doing deals, guidance raised",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T13:45:49Z",
+      "summary_points": [
+        "**Q3 Performance Exceeds Estimates**: Q3 revenues ($2,741m) and adjusted EPS ($10.87) beat Goldman Sachs estimates ($2,661m, $10.16), with 22.5% YoY sales growth and 52.8% EBITDA margin (vs.",
+        "7% estimate).",
+        "**FY2026 Guidance & Price Target**: FY2026 revenue guidance $10.47B–$10.55B, adjusted EPS $40.62–$41.46; 12-month price target $1,937 (50.7% upside from $1,285.56) based on 22.5x CY27E EV/EBITDA.",
+        "**Fundamentals & Growth Trajectory**: Accelerating revenue/EBITDA growth (e.g., EBITDA to $6.264B by 9/28E from $4.165B), with EPS expanding to $9.76 by 12/26E."
       ],
       "tags": [],
       "tickers": [],
