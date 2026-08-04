@@ -1,4 +1,4 @@
-"""Featured-glow invariants pinned at the SOURCE of the shared prophet card.
+"""Shared Prophet-card color and mobile-layout invariants pinned at the source.
 
 `templates/_prophet_card.html.j2` is one partial with five consumers — the US
 dashboard, china, hk, canada and intl — but the equivalent assertions live in
@@ -8,7 +8,7 @@ covers exactly one caller: the CN board consumes the same partial, ships the sam
 be caught on us_stocks.html and land silently on china.html — and the CN board is
 where the second invariant actually bites, because `--up` FLIPS to red under
 `html[data-lang="zh"]` (theme.css `html[data-lang="zh"] { --up: #e06464 }`) and the
-CN page is the one read in Chinese by default.
+CN page is the one most often read in Chinese mode.
 
 So these assertions grep the partial itself rather than any page render: one file,
 every consumer, present and future. Two laws, both stated in the macro's own header:
@@ -16,9 +16,11 @@ every consumer, present and future. Two laws, both stated in the macro's own hea
   1. the featured glow is STATIC. That is what makes "no prefers-reduced-motion kill
      block" compliant rather than a gap — the strongest form of that compliance is
      having nothing to disable, and it only holds while nothing animates.
-  2. the aura is pinned to `--pv-buy`, never to `--up`/`--up-flip` (which flip red in
-     zh) and never to `--pvh` (which follows the card's verb). A featured pick
-     glowing red in Chinese would invert the message the glow exists to carry.
+  2. the aura is pinned to the semantic `--pv-buy` token, never straight to the
+     base direction tokens and never to `--pvh` (which follows the card's verb).
+     theme.css owns the language convention: bullish green in EN, bullish red in ZH.
+  3. at mobile widths, the company name receives its own line so display zoom cannot
+     collapse it to zero between the ticker and Edge score.
 
 Run: .venv/bin/python -m pytest tests/test_prophet_card_shared.py -q
 """
@@ -30,6 +32,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PARTIAL = ROOT / "templates" / "_prophet_card.html.j2"
+THEME = ROOT / "templates" / "theme.css"
+THEME_CSS = THEME.read_text(encoding="utf-8")
 
 #: Jinja comments are prose — the macro header *discusses* animation at length and a
 #: substring test over the raw file would fire on the explanation rather than on a
@@ -41,10 +45,9 @@ _STYLE = re.search(r"<style>(.*?)</style>", _SRC, flags=re.S)
 assert _STYLE, "pv_css() no longer emits a <style> block — this whole file is vacuous"
 CSS = _STYLE.group(1)
 
-#: Hue tokens that flip meaning under `html[data-lang="zh"]` (红涨绿跌). `--up-flip`
-#: is named defensively: it does not exist today, and a future rename of the flipping
-#: token must not slip the guard.
-FLIPPING = ("var(--up)", "var(--up-flip)", "var(--down)")
+#: Base direction tokens. Prophet components consume the semantic --pv-* layer so
+#: the language-specific convention stays centralized in theme.css.
+DIRECTION_BASE = ("var(--up)", "var(--up-flip)", "var(--down)")
 
 
 def _featured_rules(css: str) -> list[tuple[str, str]]:
@@ -104,21 +107,21 @@ def test_no_featured_rule_animates_from_anywhere_in_the_partial():
 
 
 # --------------------------------------------------------------------------- #
-# 2. the glow hue is direction-STABLE
+# 2. the glow hue follows the semantic Prophet buy token
 # --------------------------------------------------------------------------- #
 def test_the_aura_is_pinned_to_pv_buy():
     for selector, body in AURA:
         assert "var(--pv-buy)" in body, f"{selector} lost the --pv-buy pin"
         assert "var(--pvh)" not in body, \
-            f"{selector} follows the card's verb hue; the aura must stay green"
+            f"{selector} follows the card's verb hue; the aura must stay bullish"
 
 
-def test_no_featured_rule_uses_a_token_that_flips_red_under_zh():
+def test_no_featured_rule_bypasses_the_prophet_palette():
     for selector, body in RULES:
-        for token in FLIPPING:
+        for token in DIRECTION_BASE:
             assert token not in body, (
-                f"{selector} uses {token}, which theme.css swaps under "
-                'html[data-lang="zh"] — a featured pick would glow RED in Chinese')
+                f"{selector} bypasses --pv-buy with {token}; language-aware Prophet "
+                "colors must stay centralized in theme.css")
 
 
 def test_the_featured_chip_carries_the_same_hue_law():
@@ -127,8 +130,36 @@ def test_the_featured_chip_carries_the_same_hue_law():
     chip = re.search(r"\.pv-mk-feat\{([^{}]*)\}", CSS)
     assert chip, ".pv-mk-feat rule not found"
     assert "var(--pv-buy)" in chip.group(1)
-    for token in FLIPPING:
+    for token in DIRECTION_BASE:
         assert token not in chip.group(1)
+
+
+def _all_rule_bodies(selector: str) -> str:
+    """Join every declaration block for an exact selector in theme.css."""
+    return "\n".join(re.findall(re.escape(selector) + r"\s*\{([^{}]*)\}", THEME_CSS))
+
+
+def test_chinese_mode_rebinds_prophet_bullish_red_and_bearish_green():
+    zh = _all_rule_bodies('html[data-lang="zh"]')
+    assert "--pv-buy: var(--up)" in zh
+    assert "--pv-near: color-mix(in srgb, var(--up) 82%, #fff)" in zh
+    assert "--pv-avoid: var(--down)" in zh
+
+    light_zh = _all_rule_bodies('html[data-theme="light"][data-lang="zh"]')
+    assert "--ink-pv-buy:" in light_zh and "var(--pv-buy)   84%" in light_zh
+    assert "--ink-pv-near:" in light_zh and "var(--pv-near)  84%" in light_zh
+    assert "--ink-pv-avoid:" in light_zh and "var(--pv-avoid) 62%" in light_zh
+
+
+def test_mobile_company_name_gets_a_noncollapsing_second_line():
+    assert ".pv-idw{flex:1 1 auto;flex-wrap:wrap;row-gap:1px;overflow:visible}" in CSS
+    assert ".pv-nm{flex-basis:100%;width:100%}" in CSS
+
+
+def test_what_to_buy_now_keeps_its_existing_direction_palette():
+    """The separate action lanes stay on --ink-up/--ink-down, not Prophet tokens."""
+    assert ".anv2-lane--buy   .anv2-lane-title { color:var(--ink-up); }" in THEME_CSS
+    assert ".anv2-lane--red   .anv2-lane-title { color:var(--ink-down); }" in THEME_CSS
 
 
 # --------------------------------------------------------------------------- #
@@ -247,6 +278,6 @@ def test_the_partial_really_is_shared_beyond_the_us_page():
         p.name for p in (ROOT / "templates").glob("*.j2")
         if "_prophet_card.html.j2" in p.read_text(encoding="utf-8")
     )
-    assert "dashboard.html.j2" in consumers
-    assert "china.html.j2" in consumers, "CN board no longer shares the partial"
-    assert len(consumers) >= 3, consumers
+    expected = {"dashboard.html.j2", "china.html.j2", "hk.html.j2",
+                "canada.html.j2", "intl.html.j2"}
+    assert expected <= set(consumers), consumers

@@ -291,9 +291,9 @@
      a coloured left bar plus a tint fading out to the right. The bar is the
      non-verbal encoding of the bucket and the label IS the stance — "Live now",
      "Ran — don't chase" are complete instructions on their own. --sgc carries
-     the tone so one rule set serves four buckets. Tones are --pv-* tokens
-     (direction-STABLE): they never flip under html[data-lang="zh"] the way
-     --up/--down do, so Live now stays green in Chinese. */
+     the tone so one rule set serves four buckets. Tones are --pv-* tokens and
+     follow the active language convention: green-up/red-down in English,
+     red-up/green-down in Chinese. */
   .nb-stage-hd { grid-column: 1 / -1; display: flex; align-items: baseline; flex-wrap: wrap;
                  gap: 3px 9px; margin: 15px 0 4px; padding: 5px 11px 5px 9px;
                  border-left: 3px solid var(--sgc, var(--muted)); border-radius: 0 8px 8px 0;
