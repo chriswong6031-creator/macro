@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T10:08:14.938438+00:00",
-  "count": 726,
+  "generated_at": "2026-08-04T10:23:17.732756+00:00",
+  "count": 727,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -809,6 +809,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wfwed7r5sqa-25cd11",
+      "title": "Kazakhstan Headline Inflation Fell to 10.3 yoy in July, in Line with Our Forecast but Below Consensus",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T16:05:57Z",
+      "summary_points": [
+        "**NBK Policy Shift**: Surprise 25bp rate cut linked to easing services inflation and Tenge appreciation; policy rate expected to fall to 15.25% by end-2026.",
+        "**Broad Inflation Easing**: Headline CPI YoY declined from 12.2% (Jan-26) to 10.3% (Jul-26), with synchronized monthly drops across all core components (food, nonfood goods, services).",
+        "**Fiscal Policy Constraint**: NBK-government-Baiterek agreement to limit large-scale investment financing may mitigate inflation risks, but NBK remains cautious on fiscal consolidation implementation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
