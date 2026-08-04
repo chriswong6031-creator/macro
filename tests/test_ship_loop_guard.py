@@ -2695,11 +2695,217 @@ def test_the_escape_never_arms_without_the_reported_phrase(tmp_path, capsys):
     # Well past both the consecutive (10) and total (15) ceilings, still blocking.
     assert GUARD._load(path)["total_blocks"] == 30
 
-    # And a reported message without stop_hook_active is equally inert.
+    # And a reported message on the FIRST block is inert however it is phrased —
+    # the report cannot buy a bailout before the session has tried again.
     path = _block_state(tmp_path)
     no_active = {"stop_hook_active": False, "last_assistant_message": _REPORTED}
+    assert _drive_block(path, capsys, "render_pending", no_active) is False
+    assert GUARD._load(path)["total_blocks"] == 1
+
+
+# --- the ladders have to be REACHABLE (measured brick, 2026-08-04) ---
+#
+# The escape ladders above were unreachable in the field, so the guard inflicted the
+# exact brick they exist to prevent. Two independent causes, both about DETECTING the
+# `SHIP LOOP BLOCKED:` report rather than about whether one is required:
+#
+#   1. `stop_hook_active` describes how the CURRENT turn was started, not whether the
+#      guard has ever blocked. A background `<task-notification>` starting the turn
+#      clears it. Session 787452b5 filed a correct token-leading report on live_stale
+#      at count 5 and was refused on exactly that turn.
+#   2. `last_assistant_message` is an UNDOCUMENTED payload field. This harness sends
+#      it; a client that does not would make every report invisible.
+
+
+def _transcript(tmp_path: Path, *messages, sidechain_tail: bool = False) -> Path:
+    """A JSONL transcript ending in `messages` as assistant turns.
+
+    Shaped like a real one: user rows, tool_result rows, and a thinking block ahead
+    of the visible text, so the reader is exercised against the noise it must skip
+    rather than a one-line fixture.
+    """
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    path = tmp_path / "transcript.jsonl"
+    rows: list[dict] = [
+        {"type": "user", "message": {"role": "user", "content": "ship it"}},
+        {
+            "type": "user",
+            "message": {
+                "role": "user",
+                "content": [{"type": "tool_result", "content": "x" * 4096}],
+            },
+        },
+    ]
+    for text in messages:
+        rows.append(
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "thinking", "thinking": "SHIP LOOP BLOCKED: not visible"},
+                        {"type": "text", "text": text},
+                    ],
+                },
+            }
+        )
+    if sidechain_tail:
+        rows.append(
+            {
+                "type": "assistant",
+                "isSidechain": True,
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "subagent finished"}],
+                },
+            }
+        )
+    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    return path
+
+
+def test_a_payload_supplied_report_is_still_the_source_of_truth(tmp_path, capsys):
+    """(a) When the harness supplies `last_assistant_message`, nothing changes.
+
+    The transcript is not consulted at all, proved by pointing at one whose final
+    message says the OPPOSITE of the payload in both directions.
+    """
+    contradicting = _transcript(tmp_path, "done for now")
+    path = _block_state(tmp_path)
+    payload = {
+        "stop_hook_active": True,
+        "last_assistant_message": _REPORTED,
+        "transcript_path": str(contradicting),
+    }
+    assert _drive_block(path, capsys, "render_pending", payload) is False
+    assert _drive_block(path, capsys, "render_pending", payload) is True
+
+    # Inverse: a payload message that is NOT the report keeps blocking even though
+    # the transcript holds a valid one. A present message is never second-guessed.
+    reporting = _transcript(tmp_path / "b", "SHIP LOOP BLOCKED: evidence")
+    path = _block_state(tmp_path)
+    unreported = {
+        "stop_hook_active": True,
+        "last_assistant_message": "still working on it",
+        "transcript_path": str(reporting),
+    }
     for _ in range(20):
-        assert _drive_block(path, capsys, "render_pending", no_active) is False
+        assert _drive_block(path, capsys, "render_pending", unreported) is False
+
+
+def test_the_report_is_recovered_from_the_transcript_when_the_field_is_absent(tmp_path, capsys):
+    """(b) No `last_assistant_message`, but the transcript's last assistant message
+    starts with the token -> the ladder arms once the counters clear the ceiling."""
+    path = _block_state(tmp_path)
+    payload = {
+        "stop_hook_active": True,
+        "transcript_path": str(_transcript(tmp_path, "SHIP LOOP BLOCKED: live_stale, evidence")),
+    }
+    assert _drive_block(path, capsys, "render_pending", payload) is False
+    assert _drive_block(path, capsys, "render_pending", payload) is True
+
+
+def test_a_transcript_without_the_token_still_blocks(tmp_path, capsys):
+    """(c) Recovering the message must not lower the bar: a transcript whose final
+    assistant message is ordinary prose files no report and never escapes."""
+    path = _block_state(tmp_path)
+    payload = {
+        "stop_hook_active": True,
+        "transcript_path": str(
+            _transcript(tmp_path, "SHIP LOOP BLOCKED: an earlier one", "all done, merged and live")
+        ),
+    }
+    for _ in range(20):
+        assert _drive_block(path, capsys, "render_pending", payload) is False
+    assert GUARD._load(path)["total_blocks"] == 20
+
+
+def test_an_unreadable_transcript_fails_closed(tmp_path, capsys):
+    """(d) Missing, absent, or unparseable transcripts leave the report unfiled."""
+    for transcript in (
+        {},
+        {"transcript_path": ""},
+        {"transcript_path": str(tmp_path / "nope.jsonl")},
+        {"transcript_path": str(tmp_path)},  # a directory
+    ):
+        path = _block_state(tmp_path)
+        payload = {"stop_hook_active": True, **transcript}
+        for _ in range(20):
+            assert _drive_block(path, capsys, "render_pending", payload) is False
+
+    corrupt = tmp_path / "corrupt.jsonl"
+    corrupt.write_bytes(b"\x00not json\nalso not json\n")
+    path = _block_state(tmp_path)
+    payload = {"stop_hook_active": True, "transcript_path": str(corrupt)}
+    for _ in range(20):
+        assert _drive_block(path, capsys, "render_pending", payload) is False
+
+
+def test_a_task_notification_turn_no_longer_vetoes_a_filed_report(tmp_path, capsys):
+    """The measured brick. `stop_hook_active` is False on a turn a background
+    `<task-notification>` started, even though the guard had already blocked. The
+    guard's own ledger proves re-entrancy instead, so a filed report still counts."""
+    path = _block_state(tmp_path)
+    notification_turn = {"stop_hook_active": False, "last_assistant_message": _REPORTED}
+    # First block: total_blocks == 1, so no arm can fire and no bailout is possible.
+    assert _drive_block(path, capsys, "live_stale", notification_turn) is False
+    # Second: external arm armed (count >= 2) and the ledger proves re-entrancy.
+    assert _drive_block(path, capsys, "live_stale", notification_turn) is True
+
+
+def test_the_ledger_never_widens_a_ladder_beyond_its_counters(tmp_path, capsys):
+    """`total_blocks >= 2` cannot release anything the counters would not already
+    allow: an INTERNAL code still has to reach its own far higher ceiling."""
+    path = _block_state(tmp_path)
+    notification_turn = {"stop_hook_active": False, "last_assistant_message": _REPORTED}
+    for index in range(9):
+        assert _drive_block(path, capsys, "unmerged", notification_turn) is False, index
+    assert _drive_block(path, capsys, "unmerged", notification_turn) is True
+
+
+def test_the_transcript_reader_skips_thinking_and_sidechain_rows(tmp_path):
+    """A report has to be text the operator can read in the transcript. Reasoning the
+    session never surfaced does not count, and a subagent's last word is not the
+    session's — both would otherwise forge a report the session never filed."""
+    thinking_only = _transcript(tmp_path, "ordinary closing text")
+    assert not GUARD._transcript_final_message(
+        {"transcript_path": str(thinking_only)}
+    ).startswith("SHIP LOOP BLOCKED:")
+
+    with_subagent = _transcript(
+        tmp_path / "s", "SHIP LOOP BLOCKED: evidence", sidechain_tail=True
+    )
+    assert GUARD._transcript_final_message(
+        {"transcript_path": str(with_subagent)}
+    ).startswith("SHIP LOOP BLOCKED:")
+
+
+def test_the_report_is_found_past_a_tool_result_larger_than_the_tail_window(tmp_path):
+    """The tail window is an optimisation, not a cap. One pathological tool_result
+    row bigger than the window must not hide the report behind it."""
+    path = tmp_path / "huge.jsonl"
+    rows = [
+        {
+            "type": "assistant",
+            "message": {
+                "role": "assistant",
+                "content": [{"type": "text", "text": "SHIP LOOP BLOCKED: behind a wall"}],
+            },
+        },
+        {
+            "type": "user",
+            "message": {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "y" * (GUARD._TRANSCRIPT_TAIL_BYTES + 4096)}
+                ],
+            },
+        },
+    ]
+    path.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    assert GUARD._transcript_final_message({"transcript_path": str(path)}).startswith(
+        "SHIP LOOP BLOCKED:"
+    )
 
 
 def test_the_escape_hint_is_gated_by_proximity_to_the_ceiling(tmp_path, capsys):
