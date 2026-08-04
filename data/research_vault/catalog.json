@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T01:37:23.104490+00:00",
-  "count": 702,
+  "generated_at": "2026-08-04T02:07:16.182802+00:00",
+  "count": 703,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -231,6 +231,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-n1exk7qbd2r-ecc7aa",
+      "title": "Japan Banks August mortgage deposit rates Online banks raise floating rates",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:30Z",
+      "summary_points": [
+        "**Mortgage Rate Convergence**: Online banks raised variable mortgage rates (Docomo SMTB Net Bank +25bp, Rakuten +4bp), closing historical gap with major banks as funding costs rise and non-mortgage loan demand intensifies.",
+        "**Competitive Shift to Major Banks**: MUFG, Resona, and Bank of Yokohama now offer lowest floating mortgage rates due to strategic focus on non-mortgage channels and rising JGB yields (14bp June-July).",
+        "**Deposit Strategy Pressure**: Banks reduced ordinary time deposit rates (7/18 banks Aug 2023 vs July) amid BoJ ultra-loose policy, prioritizing retail time deposits to curb funding costs and mitigate margin compression.",
+        "**Reset Timing Risk**: Banks (MUFG, Mizuho, Resona) reset mortgages April/October with T+3m payments July/January, directly exposing lenders to interest rate volatility and margin pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
