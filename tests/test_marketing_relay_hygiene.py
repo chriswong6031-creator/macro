@@ -415,7 +415,10 @@ class TestTheQueueIsNotABypass:
         and a house lane quietly becomes screenable."""
         import re as _re
         src = (ROOT / "scripts" / "marketing_publisher.py").read_text(encoding="utf-8")
-        assert "_RELAYED_PROVENANCES" not in src
+        # An ASSIGNMENT, not a mention: the comment at the call site names
+        # relay_hygiene._RELAYED_PROVENANCES on purpose, to say where the list
+        # lives. What must not exist here is a second definition of it.
+        assert not _re.search(r"^\s*_RELAYED_PROVENANCES\s*[:=]", src, _re.M)
         call = _re.search(r"_queued_relay_violations\(([^)]*)\)", src)
         assert call, "the publisher stopped calling the relay screen"
         assert "provenance" in call.group(1), (
