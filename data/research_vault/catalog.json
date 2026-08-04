@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T15:24:10.707791+00:00",
-  "count": 742,
+  "generated_at": "2026-08-04T15:54:43.257461+00:00",
+  "count": 743,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -88,6 +88,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-luzhzdaifyu-64fbf1",
+      "title": "GS Earnings Recap 8.4.26",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:21:24Z",
+      "summary_points": [
+        "**PLTR**: Commercial growth +150% YoY, Govt +90% YoY, revenue beat 7% above Street, EBIT margin +200bps, 2026 revenue guidance +6% vs Street - **ZBRA**: Q2 EPS $6.35 vs $4.36 consensus, Q3 EPS guidance +17-20% vs consensus, EBITDA margin 23.5-24% (vs 22% prior), strong margin expansion - **SNAP**: Margin expansion via scaling/revenue growth, buybacks to manage dilution, but RoW revenue miss and infrastructure costs guidance raised - **WMB**: $5.5bn acquisition (cash/debt + equity), major capital allocation event impacting portfolio flows - **HLNE**: Q2 beat 22% above Street, fee-paying AUM solid, flows $300-400mm better, relief rally potential amid worst YTD performance - **MPC**: Capital spend increased to $2.9bn for GC fractionation project, accelerated growth investment despite inflationary pressures"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
