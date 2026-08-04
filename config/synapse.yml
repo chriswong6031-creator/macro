@@ -11203,6 +11203,45 @@ artifacts:
       (T1_HIT|T2_HIT|INVALIDATED|EXPIRED|CLOSED_EARLY), stock_result_pct,
       option_result_pct, days_held, plan_adherence, asof.
 
+  # --- us-context-vector: full-universe PIT context store (roadmap §2 keystone) ---
+  us-context-vector:
+    path: data/us_prophet_rank/candidates.parquet
+    format: parquet
+    producer: engine/us_context_vector.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: git
+    asof_field: stamp_date
+    freshness_sla_hours: 9999
+    schema: us.context_vector/v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      US Context Vector point-in-time candidate store (PROPHET US roadmap §2 keystone).
+      One row per analyzed US universe name per night, INCLUDING names that never passed
+      the raw signal gate — 1,540 rows x 150 cols measured 2026-07-31. Stamped from
+      scripts/build_stock_library.py, which calls engine/us_context_vector.py at the end
+      of its nightly run (no separate dag module; the write is declared on
+      scripts.build_stock_library in config/dag.yml).
+      ZERO AUTHORITY AT BIRTH: consumers is deliberately EMPTY. Nothing reads this store
+      for scoring; it changes no lane, rank, score or gate, and originates nothing —
+      every column is READ off a producer that already ran that night (glass-box, A7).
+      Columns reach decision authority only through the roadmap §3 bounded-authority
+      ladder, one axis at a time, each with its own prereg.
+      NIGHTLY IS THE SOLE ADVANCER: ledger_lane.nightly_advance_enabled()
+      (COLLECT_LANE=nightly) is the FIRST statement of append_candidates, so intraday and
+      render lanes return 0 without opening a file. Keep-first on
+      (stamp_date, ticker, board_definition); schema-union append; no retroactive backfill.
+      Coverage is deliberately uneven and disclosed, never imputed — a null means "not
+      measured for this name tonight", never "false" (#4485). Named debts
+      (turnover_pctile_60d data-blocked; stoch_ob/stoch_bear/macd_bear not exposed by
+      confluence_tiers) are documented in data/us_prophet_rank/README.md.
+
   # --- nasdaq-internals (TI-R2/R3/R5, program: nasdaq-internals) ---
   nasdaq-internals:
     path: site/marketdata/nasdaq_internals.json

@@ -4983,6 +4983,57 @@ def main() -> int:
                 log.warning("pick_lab snapshot skipped: no as_of or no close panel")
         except Exception as _plab_e:  # noqa: BLE001 — snapshot producer is never fatal
             log.warning("pick_lab snapshot skipped (%s)", _plab_e)
+
+        # ── US Context Vector PIT store (PROPHET US roadmap §2 keystone) ──────────────
+        # Stamps ONE row per universe name per night — including names that never passed
+        # the raw gate — so future studies join evidence point-in-time instead of
+        # reconstructing the night from mutable files. ZERO AUTHORITY: nothing reads it
+        # for scoring, it changes no lane, no rank and no score, and it originates
+        # nothing (every column is READ off a producer that already ran tonight).
+        #
+        # Nightly is the sole advancer: engine.us_context_vector gates on
+        # ledger_lane.nightly_advance_enabled() as its FIRST statement, so the render
+        # and intraday lanes (whose data/ writes are discarded anyway) return 0 without
+        # loading a single file and pay none of the assembly cost.
+        #
+        # Budget: ~8.3 min on the nightly lane over ~1,540 names, dominated by
+        # neuralweb.context_api.context_frame (0.302 s/name, the canonical Context
+        # Snapshot — called, never re-derived). Measured 2026-08-04; see
+        # data/us_prophet_rank/README.md. Wrapped try/except — never fatal.
+        try:
+            from engine import us_context_vector as _ucv
+
+            _ucv_asof = wide.get("as_of")
+            if _ucv_asof and sig_verdict:
+                _ucv_t0 = time.time()
+                _ucv_board: dict[str, dict] = {}
+                _ucv_lane: dict[str, str] = {}
+                for _ucv_lane_name in ("buy", "watch", "leaders", "laggards"):
+                    for _ucv_row in (wide.get(_ucv_lane_name) or []):
+                        _ucv_t = _ucv_row.get("ticker")
+                        if _ucv_t:
+                            _ucv_board[_ucv_t] = _ucv_row
+                            _ucv_lane[_ucv_t] = _ucv_lane_name
+                _ucv_meta = {t: {"name": nm, "sector": sec}
+                             for (t, _c, _h, nm, sec) in uni}
+                _ucv_n = _ucv.append_candidates(
+                    sig_verdict, _ucv_asof,
+                    board_definition=us_board_rank.BOARD_DEFINITION,
+                    is_buyable=signal_gate.is_buyable,
+                    universe_meta=_ucv_meta,
+                    board_rows=_ucv_board,
+                    lane_by_ticker=_ucv_lane,
+                    profile_rows=row_by_t,
+                    ext_map=ext_map,
+                    blackout_map=_eb_blackout_map if "_eb_blackout_map" in dir() else None,
+                    closes=_ext_closes if "_ext_closes" in dir() else None,
+                    gate_go=wide.get("gate_go"),
+                )
+                if _ucv_n:
+                    log.info("us_context_vector: store now %d rows (stamped %s, %.1fs)",
+                             _ucv_n, _ucv_asof, time.time() - _ucv_t0)
+        except Exception as _ucv_e:  # noqa: BLE001 — research telemetry is never fatal
+            log.warning("us_context_vector stamp skipped (%s)", _ucv_e)
     # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
     # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)
     bccal = config.data_dir() / "regime" / "bottom_confidence_calibration.json"
