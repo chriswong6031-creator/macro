@@ -10226,3 +10226,15 @@
 {"series": "hk_cbbc_sld", "group": "hk_cbbc", "fetch_ts": "2026-08-03T10:19:53.850100+00:00", "last_obs_date": "2026-08-03"}
 {"series": "china_filings", "group": "china_filings", "fetch_ts": "2026-08-03T10:23:43.809219+00:00", "last_obs_date": "2026-08-03"}
 {"series": "china_irm", "group": "china_irm", "fetch_ts": "2026-08-03T10:25:13.643429+00:00", "last_obs_date": "2026-08-03"}
+{"series": "china_prices", "group": "china", "fetch_ts": "2026-08-04T08:35:32.836945+00:00", "last_obs_date": "2026-08-04"}
+{"series": "china_stocks", "group": "china_stocks", "fetch_ts": "2026-08-04T08:39:01.799943+00:00", "last_obs_date": "2026-08-04"}
+{"series": "china_stocks_raw", "group": "china_stocks_raw", "fetch_ts": "2026-08-04T08:42:26.658383+00:00", "last_obs_date": "2026-08-04"}
+{"series": "china_macro", "group": "china_macro", "fetch_ts": "2026-08-04T08:42:43.430804+00:00", "last_obs_date": "2026-08-04"}
+{"series": "china_breadth", "group": "china_breadth", "fetch_ts": "2026-08-04T08:42:51.025932+00:00", "last_obs_date": "2026-08-04"}
+{"series": "china_board_breadth", "group": "china_board_breadth", "fetch_ts": "2026-08-04T08:45:48.950503+00:00", "last_obs_date": "2026-08-04"}
+{"series": "china_universe", "group": "china_search", "fetch_ts": "2026-08-04T08:49:44.043224+00:00", "last_obs_date": "2026-08-04"}
+{"series": "china_margin", "group": "china_margin", "fetch_ts": "2026-08-04T08:49:46.692884+00:00", "last_obs_date": "2026-08-03"}
+{"series": "china_margin_detail", "group": "china_margin_detail", "fetch_ts": "2026-08-04T08:50:00.883990+00:00", "last_obs_date": "2026-08-04"}
+{"series": "china_lhb", "group": "china_lhb", "fetch_ts": "2026-08-04T08:50:11.357574+00:00", "last_obs_date": "2026-08-04"}
+{"series": "china_connect", "group": "china_connect", "fetch_ts": "2026-08-04T08:50:13.249019+00:00", "last_obs_date": "2026-08-03"}
+{"series": "china_flows", "group": "china_flows", "fetch_ts": "2026-08-04T08:51:08.538151+00:00", "last_obs_date": "2026-08-04"}
