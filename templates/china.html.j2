@@ -4,6 +4,13 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
+{# Event-calendar impact badge. `importance` is a raw slug (high/med/low) and
+   both call sites used to print it straight through `| upper`, so a Chinese
+   reader got "HIGH" sitting beside a Chinese event name. #}
+{% macro imp(importance) -%}
+{% set _zh = {'high': '高', 'med': '中', 'medium': '中', 'low': '低'} -%}
+<span class="cnx-imp {{ importance }}">{{ t(importance | upper, _zh.get(importance, importance | upper)) }}</span>
+{%- endmacro %}
 {% macro help(en, zh='', cls='') -%}
 <span class="help{% if cls %} {{ cls }}{% endif %}">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
 {%- endmacro %}
@@ -2177,7 +2184,7 @@
           <div class="edot {{ 'h' if c.importance == 'high' else 'm' }}"></div>
           <div class="en">{{ t((c.name_en or '')|truncate(18, true, '…'), (c.name_zh or '')|truncate(18, true, '…')) }}</div>
           <div class="ed">{{ c.date }}</div>
-          <span class="cnx-imp {{ c.importance }}">{{ c.importance | upper }}</span>
+          {{ imp(c.importance) }}
         </div>
         {% endfor %}
       </div>
@@ -3154,7 +3161,7 @@
             <td>{{ c.date }}</td>
             <td>+{{ c.days_until }}{{ t('d','天') }}</td>
             <td>{% if c.importance=='high' %}<b>{{ t(c.name_en, c.name_zh) }}</b>{% else %}{{ t(c.name_en, c.name_zh) }}{% endif %}</td>
-            <td class="r"><span class="cnx-imp {{ c.importance }}">{{ c.importance | upper }}</span></td>
+            <td class="r">{{ imp(c.importance) }}</td>
           </tr>
           {% endfor %}
         </table>

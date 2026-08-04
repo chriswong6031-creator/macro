@@ -158,20 +158,29 @@
     var la = relLum(a), lb = relLum(b);
     return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
   }
-  // Label ink per tile: white where white reads, near-black where the fill is
-  // too bright for white (saturated / pale bins measured ~3.07:1 in both themes
-  // — SI V2 W3 contrast audit, 2026-08-03). The ink is CHOSEN by WCAG contrast
-  // against the tile's own fill, so every bin clears 4.5:1; the fill itself
-  // never changes (红涨绿跌 tile colours stay exactly as assigned — the zh
-  // palette swap reassigns fills, and the ink simply follows the fill).
-  // INK_DARK is deliberately darker than the house slate: at the white/dark
-  // crossover a #10151c ink tops out ~4.3:1, this one keeps the worst bin ≥4.5.
-  var INK_DARK = [8, 10, 14], INK_DARK_HEX = '#080a0e', INK_WHITE = [255, 255, 255];
-  function inkDark(c) { return contrast(c, INK_DARK) >= contrast(c, INK_WHITE); }
-  function fgFor(c) { return inkDark(c) ? INK_DARK_HEX : '#ffffff'; }
-  // Dark-ink tiles also drop the white-ink text-shadow (a dark halo under dark
-  // ink smears instead of helping) — inkCls tags them for injectStyle's rule.
-  function inkCls(c) { return inkDark(c) ? ' hm-ink-dark' : ''; }
+  // Label ink per tile: ALWAYS WHITE, over a dark halo (see .hm-tile's
+  // text-shadow in injectStyle).
+  //
+  // The previous cut CHOSE the ink by WCAG contrast against each tile's own
+  // fill (SI V2 W3 audit, 2026-08-03 / #4400), which put near-black #080a0e on
+  // roughly a third of the map — 440 of 1468 tiles on the China board. It
+  // measured well (6.8:1 on a saturated green vs white's 2.9:1) and read
+  // terribly: on a treemap the ink is not decoration, it is the constant the
+  // eye tracks while the FILL carries the signal. Flipping it per tile made
+  // neighbouring names look like two different datasets and, on the saturated
+  // bins, like a rendering fault. Operator call, 2026-08-04: white everywhere.
+  //
+  // The trade is real and deliberate: white on the brightest bins sits at
+  // ~2.9:1 against the raw fill, under AA's 4.5:1. The halo below is what buys
+  // the legibility back. If the measured guarantee is wanted again, the fix is
+  // to DEEPEN those fills until white clears 4.5:1 — not to flip the ink.
+  var INK_WHITE = [255, 255, 255];
+  function fgFor(c) { return '#ffffff'; }
+  // Both kept as no-ops so the ~8 call sites keep their shape. The
+  // `.hm-ink-dark{text-shadow:none}` rule they fed is gone from injectStyle —
+  // there is no dark-ink tile left to strip the halo from.
+  function inkCls(c) { return ''; }
+  function inkDark(c) { return false; }
   function neutral() {
     // flat ~0% tile: a dark slate in both themes so the white label stays legible
     // (light mode used to be a pale grey that white text vanished on).
@@ -2010,10 +2019,9 @@
       + '.hm-sub-hd{position:absolute;left:0;top:0;width:100%;padding:0 5px;font-size:9px;font-weight:700;color:color-mix(in srgb,var(--text) 66%,transparent);white-space:nowrap;z-index:3;text-transform:uppercase;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;cursor:help;background:transparent;text-shadow:0 1px 2px rgba(0,0,0,.7);}'
       + '.hm-sub:hover>.hm-sub-hd{color:var(--text);background:color-mix(in srgb,var(--link) 30%,transparent);}'
       + '.hm-sub-hd .snm{pointer-events:none;}'
-      + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.05;transition:filter .1s,box-shadow .1s;text-shadow:0 1px 2px rgba(0,0,0,.45);}'
+      + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.05;transition:filter .1s,box-shadow .1s;text-shadow:0 1px 2px rgba(0,0,0,.55),0 0 3px rgba(0,0,0,.5);}'
       // dark-ink tiles (bright fills): the white-ink halo would smear dark text.
       // Compound selectors so this outranks .hm-mpc's own later shadow rule.
-      + '.hm-tile.hm-ink-dark,.hm-mpc.hm-ink-dark{text-shadow:none;}'
       + '.hm-tile.big{border-radius:3px;} .hm-tile.huge{border-radius:4px;}'
       + '.hm-tile:hover{z-index:8;filter:brightness(1.06);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--text) 78%,transparent);}'
       + '.hm-tile .sym,.hm-tile .pc{display:block;max-width:calc(100% - 3px);white-space:nowrap;overflow:hidden;text-overflow:clip;}'
@@ -2144,7 +2152,7 @@
       + '.hm-mbr{margin-left:auto;width:58px;height:7px;border-radius:4px;overflow:hidden;display:flex;background:var(--panel);} .hm-mbr i{display:block;height:100%;} .hm-mbr i.up{background:var(--up);} .hm-mbr i.dn{background:var(--down);}'
       + '.hm-mrow{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--line);border-top:0;background:var(--panel);text-decoration:none;}'
       + '.hm-mgrp .hm-mrow:last-child{border-radius:0 0 10px 10px;}'
-      + '.hm-mpc{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;padding:6px 9px;border-radius:9px;min-width:66px;text-align:center;flex:none;text-shadow:0 1px 2px rgba(0,0,0,.45);}'
+      + '.hm-mpc{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;padding:6px 9px;border-radius:9px;min-width:66px;text-align:center;flex:none;text-shadow:0 1px 2px rgba(0,0,0,.55),0 0 3px rgba(0,0,0,.5);}'
       + '.hm-mid{flex:1;min-width:0;display:flex;flex-direction:column;} .hm-mid b{font-size:14px;font-weight:800;color:var(--text);} .hm-mid span{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
       + '.hm-mgo{color:var(--muted);font-size:20px;font-weight:700;flex:none;}'
       + '.hm-mobile .hm-legend,.hm-mobile .hm-read-src,.hm-mobile .hm-hint{display:none;} .hm-mobile .hm-sort{display:flex;}'
