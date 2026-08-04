@@ -1403,6 +1403,27 @@ def _render_lanes_for_paths(
     return lanes
 
 
+def _merge_changed_paths(
+    root: Path, merge_sha: str, start_head: str, head: str
+) -> list[str]:
+    """The paths ``merge_sha`` itself changed.
+
+    Scoped to the merge's OWN diff, never the session range: this repo runs many
+    concurrent sessions, and a worktree synced to origin/main sweeps every OTHER
+    session's merges into start_head..head. The session range survives only as the
+    fallback for a root/orphan merge with no reachable parent, where it
+    over-reports rather than under-reports — the fail-closed direction for every
+    caller here, since each of them reads "this merge touched a path" as "this
+    merge owes proof".
+    """
+    try:
+        return _run(
+            root, "git", "diff", "--name-only", f"{merge_sha}^", merge_sha
+        ).splitlines()
+    except Exception:
+        return _run(root, "git", "diff", "--name-only", start_head, head).splitlines()
+
+
 _RENDER_LANE_CACHE: dict[tuple[str, str, str, str], frozenset[str]] = {}
 
 
@@ -1446,14 +1467,7 @@ def _required_render_lanes(
     cached = _RENDER_LANE_CACHE.get(memo_key)
     if cached is not None:
         return set(cached)
-    try:
-        changed = _run(
-            root, "git", "diff", "--name-only", f"{merge_sha}^", merge_sha
-        ).splitlines()
-    except Exception:
-        # Root/orphan merge or unavailable parent — fall back to the session
-        # range, which over-requires rather than under-requires a render.
-        changed = _run(root, "git", "diff", "--name-only", start_head, head).splitlines()
+    changed = _merge_changed_paths(root, merge_sha, start_head, head)
     lanes = _render_lanes_for_paths(
         changed, _plain_copy_pairs(root), _render_lane_filters(root)
     )
@@ -1469,6 +1483,60 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
 def _needs_public_render(root: Path, merge_sha: str, start_head: str, head: str) -> bool:
     """Whether a push-triggered ``public-render.yml`` run must exist for ``merge_sha``."""
     return _RENDER_LANE_PUBLIC in _required_render_lanes(root, merge_sha, start_head, head)
+
+
+_DEPLOY_UPDATE_SCRIPT = Path("app") / "deploy" / "update.sh"
+# The macro-api restart condition in app/deploy/update.sh, identified by the one
+# thing no other restart block in that script shares: `$API_UNIT_UPDATED`. The
+# script holds a dozen `grep -qE` restart guards (admin, press feeds, biocatalyst,
+# the live timers), and matching the wrong one would answer a different question
+# than /api/health's `commit` field does.
+_API_RESTART_GUARD = re.compile(r"API_UNIT_UPDATED.*?grep -qE '(?P<filter>[^']+)'")
+
+
+def _api_restart_filter(root: Path) -> str:
+    """The ERE ``app/deploy/update.sh`` restarts macro-api on, read from the script.
+
+    Parsed at runtime, never transcribed — the same stance ``_render_lane_filters``
+    takes on the two render workflows, and for the same reason. That list names
+    ~120 modules and grows most weeks as new engine code enters the API's
+    ``sys.modules``; a second copy here would be wrong within days, and wrong in
+    the one direction this gate must never be wrong in.
+
+    Returns ``""`` on anything it cannot vouch for — missing file, renamed guard,
+    a rewrite that splits the condition across lines. Every caller reads that as
+    ignorance rather than permission.
+    """
+    try:
+        text = (root / _DEPLOY_UPDATE_SCRIPT).read_text(encoding="utf-8")
+    except Exception:
+        return ""
+    match = _API_RESTART_GUARD.search(text)
+    return match.group("filter") if match else ""
+
+
+def _needs_api_restart(root: Path, merge_sha: str, start_head: str, head: str) -> bool:
+    """Whether ``merge_sha`` changes code the running macro-api process imported.
+
+    Which is exactly the question "does this merge owe an API DEPLOY, or only a
+    pull?" — and therefore which field of /api/health can prove it live. The
+    predicate is the deploy script's own restart condition applied to this
+    merge's own diff, so it can be neither wider nor narrower than what the VPS
+    actually does.
+
+    True on every uncertainty: an unreadable script, an unparseable filter, a
+    diff git cannot produce. Not knowing whether the API restarts means demanding
+    the field that proves it did.
+    """
+    pattern = _api_restart_filter(root)
+    if not pattern:
+        return True
+    try:
+        compiled = re.compile(pattern)
+        changed = _merge_changed_paths(root, merge_sha, start_head, head)
+    except Exception:
+        return True
+    return any(compiled.search(item) for item in changed)
 
 
 def _is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
@@ -1633,25 +1701,99 @@ def _render_status(
     )
 
 
-def _find_commit(value: Any) -> str:
-    """Find a plausible deployed git SHA in a health payload."""
-    preferred = {"commit", "commit_sha", "git_sha", "git_commit", "revision", "sha"}
-    if isinstance(value, dict):
-        for key, child in value.items():
-            if str(key).lower() in preferred and isinstance(child, str):
-                match = re.search(r"\b[0-9a-f]{7,40}\b", child, re.I)
-                if match:
-                    return match.group(0)
-        for child in value.values():
-            found = _find_commit(child)
-            if found:
-                return found
-    elif isinstance(value, list):
-        for child in value:
-            found = _find_commit(child)
-            if found:
-                return found
-    return ""
+# The two shas /api/health reports, which answer DIFFERENT questions (app/main.py
+# health()): `commit` is the build the running macro-api PROCESS imported at
+# startup, `checkout` is /opt/macro's working tree at request time. They diverge
+# whenever the 3-minute pull loop has advanced past the last restart — measured
+# 2026-08-04 at 70 commits and ~14 hours apart.
+_LIVE_PROCESS_FIELD = "commit"
+_LIVE_CHECKOUT_FIELD = "checkout"
+
+
+def _health_sha(payload: Any, field: str) -> str:
+    """The git sha under a NAMED top-level key of the health payload.
+
+    Named, never sniffed. The helper this replaced walked the payload for any
+    plausible sha-ish key and returned whichever it reached first — the right
+    answer to "did anything deploy" and the wrong one here, since `commit` and
+    `checkout` answer different questions and the gate must read the specific
+    field it decided proves THIS merge, not whichever the endpoint serialises
+    first. It was deleted rather than left beside this one: a sniffing reader in
+    reach of the live gate is the defect, not a spare part.
+    """
+    if not isinstance(payload, dict):
+        return ""
+    value = payload.get(field)
+    if not isinstance(value, str):
+        return ""
+    match = re.search(r"\b[0-9a-f]{7,40}\b", value, re.I)
+    return match.group(0) if match else ""
+
+
+def _live_health_fields(
+    root: Path, merge_sha: str, start_head: str, head: str
+) -> tuple[str, ...]:
+    """Which /api/health fields are allowed to prove ``merge_sha`` is live.
+
+    A merge that changes code macro-api imported is not live until the API has
+    RESTARTED into it, and only `commit` shows that. A merge that changes nothing
+    the deploy script restarts on is live the moment /opt/macro's tree carries it,
+    which is what `checkout` shows — and its `commit` may never advance at all.
+
+    Reading `commit` for both was structurally unsatisfiable for the second kind
+    (observed 2026-08-04, PR #4499: a tests-only merge sat in `checkout` while
+    `commit` was 70 commits behind, so the gate blocked `live_stale` on a merge
+    that had been fully live for hours, and no action the session could take would
+    ever satisfy it — restarting production to bless a test-only merge is the
+    wrong move, so the session was pinned until an unrelated later PR happened to
+    touch API code).
+
+    `commit` stays in the tuple for the pull-only case as a fallback, not as a
+    softening: the pull loop only ever moves forward, so a process that IMPORTED a
+    sha containing the merge proves the tree containing it too. That keeps the
+    gate satisfiable against a health payload that omits `checkout` entirely
+    (an older API build) without ever accepting weaker evidence than the question
+    demands — for an api-code merge the tuple is `commit` alone, and `checkout`
+    carrying the merge means nothing.
+    """
+    if _needs_api_restart(root, merge_sha, start_head, head):
+        return (_LIVE_PROCESS_FIELD,)
+    return (_LIVE_CHECKOUT_FIELD, _LIVE_PROCESS_FIELD)
+
+
+def _live_gate(
+    root: Path, merge_sha: str, start_head: str, head: str, payload: Any
+) -> tuple[bool, str]:
+    """Whether production demonstrably carries ``merge_sha``, plus the detail why.
+
+    Fail-closed at every step. A field that is absent, non-string, sha-less, or
+    unknown to this checkout is NO EVIDENCE, never permission: it is skipped, and
+    if no permitted field clears, the caller blocks. ``_is_ancestor`` collapses
+    its own failures to False for the same reason.
+    """
+    fields = _live_health_fields(root, merge_sha, start_head, head)
+    seen: list[str] = []
+    for field in fields:
+        sha = _health_sha(payload, field)
+        if not sha:
+            seen.append(f"{field}=<absent>")
+            continue
+        try:
+            _run(root, "git", "rev-parse", sha)
+        except Exception:
+            seen.append(f"{field}={sha} (unknown to this checkout — try `git fetch origin main`)")
+            continue
+        if _is_ancestor(root, merge_sha, sha):
+            return True, f"{field}={sha} contains the merge"
+        seen.append(f"{field}={sha}")
+    demanded = (
+        "this merge changes code macro-api imported, so only a RESTARTED API "
+        f"(`{_LIVE_PROCESS_FIELD}`) proves it live"
+        if fields == (_LIVE_PROCESS_FIELD,)
+        else "this merge restarts nothing, so the VPS pull loop "
+        f"(`{_LIVE_CHECKOUT_FIELD}`) is what makes it live"
+    )
+    return False, f"{demanded}; production reports {', '.join(seen) or '<no usable field>'}"
 
 
 def _block(
@@ -2083,14 +2225,23 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         elif isinstance(render_proof, dict) and "deferred" in render_proof:
             render_notes.append(str(render_proof.get("deferred") or ""))
 
+    # Which /api/health field can prove this merge live depends on whether the
+    # merge owes an API DEPLOY or only a pull — see _live_health_fields. Asking
+    # `commit` of a merge that restarts nothing is unsatisfiable by construction.
     try:
-        deployed = _find_commit(_get_json(LIVE_HEALTH_URL))
-        if not deployed:
-            raise RuntimeError("Production health response did not include a git commit.")
-        deployed_full = _run(root, "git", "rev-parse", deployed)
-        _run(root, "git", "merge-base", "--is-ancestor", merge_sha, deployed_full)
+        health = _get_json(LIVE_HEALTH_URL)
     except Exception as exc:
-        _block(path, state, payload, "live_stale", f"Production does not yet contain the merge: {exc}")
+        _block(path, state, payload, "live_unreachable", f"Production health check failed: {exc}")
+        return
+    live_ok, live_detail = _live_gate(root, merge_sha, start_head, head, health)
+    if not live_ok:
+        _block(
+            path,
+            state,
+            payload,
+            "live_stale",
+            f"Production does not yet contain the merge: {live_detail}",
+        )
         return
 
     audit: list[str] = []
