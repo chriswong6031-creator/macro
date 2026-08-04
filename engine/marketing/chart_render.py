@@ -3722,16 +3722,146 @@ def _wl_monogram(ticker: str, cx: float, cy: float, size: float, uid: str) -> tu
     return defs, group
 
 
-def _wl_avatar_chip(logo_datauri: str, cx: float, cy: float, size: float, uid: str) -> tuple[str, str]:
-    """A light circular avatar chip housing a full-color company logo.
+# ─────────────────────────────────────────────────────────────────────────────
+# Avatar-chip plates — the mount a brand mark sits on.
+#
+# WHY TWO (defect, live 2026-08-03): the card mounted every mark on ONE near-white
+# disc. The nvstly source set is a DARK-THEME icon set — measured over 70 CDN
+# marks, 36 (51%) put less than half their ink above 3:1 against that white disc,
+# and 16 are pure-white knockouts at contrast ratio 1.00:1. COHR / LITE / AXON /
+# RBLX shipped to the flagship as blank white circles. The mirror is just as real:
+# JPM, WFC, LIN, DHR, NFLX are near-black marks that vanish on anything dark. No
+# single plate serves both families, so the plate is CHOSEN per mark, measured.
+#
+# The two plates are tonal siblings, not opposites: identical silhouette, diameter,
+# inner padding, rim weight and sheen direction — only the finish changes, paper or
+# slate. A column that mixes them reads the way a phone home screen does (some app
+# icons are light, some dark), which is honest, because that IS what the brand marks
+# are. What would read as broken is a mark repainted to fit one plate: we do not
+# recolour someone's logo, we change what it stands on.
+#
+# Each plate lists EVERY colour under the mark (both gradient stops). The
+# legibility score must clear the floor against the worst of them — a mark is never
+# scored on the friendlier half of a gradient.
+# ─────────────────────────────────────────────────────────────────────────────
+_WL_CHIP_PAPER = {
+    "name": "paper",
+    # The fill stays this bright DELIBERATELY, against the instinct to dim it. Once
+    # paper became the minority finish its discs read as hot spots, so three softer
+    # fills were measured — and every one of them dropped at least one real mark
+    # (SBUX, a green-and-white two-tone) below the legibility floor, because 29 of
+    # the 70 sampled marks are dark inks that need exactly this much headroom
+    # underneath them. Glare is a taste problem; an unreadable mark is the defect.
+    # The rim, not the fill, is where the glare gets paid for.
+    "top": "#FFFFFF",
+    "bot": "#E7ECF6",
+    # Darker than the old #C3CEE0 so the disc reads as a contained object rather
+    # than a light source. The rim sits outside the mark's padded box, so this
+    # costs the contrast contract nothing.
+    "rim": "#9FB0C9",
+}
+_WL_CHIP_SLATE = {
+    "name": "slate",
+    # Lighter at the top than the row plate (#141C2C) so the disc still reads as a
+    # RAISED lit surface on the card rather than a hole punched through it.
+    "top": "#242E45",
+    "bot": "#161E30",
+    "rim": "#3D4A66",
+}
 
-    The premium-fintech idiom: a near-white circle with a subtle cool rim and a
-    soft inner shadow, the logo centered with ~22% padding. Any brand mark — dark
-    or light, square or round — reads as intentional inside it, and the light disc
-    lifts off the dark card the way an app-icon does off a home screen. Returns
-    (defs, group). The logo is clipped to the disc so a wide wordmark can never
-    bleed past the rim.
+# WCAG 2.1 SC 1.4.11 (non-text contrast) — the published floor for a graphical
+# object whose shape must be identifiable. A logo is recognised, not read, so the
+# text floors do not apply and 3:1 is the correct minimum to cite.
+_WL_MARK_MIN_RATIO = 3.0
+# Share of a mark's ink that must clear that floor for the mark to count as
+# legible. A clear majority, not a coin flip: below half, more of the silhouette is
+# lost than kept and the shape stops being recognisable. Measured over the 70-mark
+# CDN sample, the better of the two plates scores >= 0.586 for EVERY mark, so this
+# floor is met with headroom on real inputs and the monogram stays a true safety
+# net rather than a common path.
+_WL_MARK_MIN_LEGIBLE = 0.55
+
+
+def _wl_png_bytes(logo_datauri: str) -> bytes | None:
+    """Decode a ``data:image/png;base64,…`` URI back to raw PNG bytes.
+
+    The plate decision needs the mark's PIXELS, and the resolver hands back a data
+    URI. Fail-soft None on anything that is not decodable — a caller must treat
+    None as "unmeasurable", never as "illegible".
     """
+    try:
+        s = str(logo_datauri or "")
+        idx = s.find("base64,")
+        if idx < 0:
+            return None
+        import base64  # noqa: PLC0415
+        return base64.b64decode(s[idx + 7:], validate=False)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _wl_chip_plate(logo_datauri: str) -> "dict | None":
+    """Choose the plate a mark is legible on, or None if it is legible on neither.
+
+    Scores the mark against both plates (fraction of ink clearing 3:1 against the
+    worst stop of that plate) and returns the winner. Returns None only when even
+    the better plate leaves the mark below the legibility floor — the caller must
+    then draw the monogram, because a mark nobody can see is worse than an honest
+    initial and a blank hole is worst of all.
+
+    Unmeasurable marks (Pillow absent, undecodable bytes) fall back to SLATE, not
+    to the old white default. Two reasons, both evidence: slate wins outright on 41
+    of the 70 sampled marks, and — the load-bearing one — the source set's failure
+    mode is the pure-white knockout, whose contrast on paper is 1.00:1, absolute
+    zero. An unmeasured guess should not be able to land on the one plate where the
+    set's most common defect is total.
+    """
+    png = _wl_png_bytes(logo_datauri)
+    if png is None:
+        return _WL_CHIP_SLATE
+    try:
+        from engine.marketing.logo_cache import mark_legible_fraction  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return _WL_CHIP_SLATE
+    slate = mark_legible_fraction(
+        png, (_WL_CHIP_SLATE["top"], _WL_CHIP_SLATE["bot"]),
+        min_ratio=_WL_MARK_MIN_RATIO,
+    )
+    paper = mark_legible_fraction(
+        png, (_WL_CHIP_PAPER["top"], _WL_CHIP_PAPER["bot"]),
+        min_ratio=_WL_MARK_MIN_RATIO,
+    )
+    if slate is None or paper is None:
+        return _WL_CHIP_SLATE
+    best = max(slate, paper)
+    if best < _WL_MARK_MIN_LEGIBLE:
+        return None
+    # Ties go to slate: it is the finish the source set was authored for, and it is
+    # the finish that keeps the card's tonal centre of gravity dark.
+    return _WL_CHIP_SLATE if slate >= paper else _WL_CHIP_PAPER
+
+
+def _wl_avatar_chip(
+    logo_datauri: str,
+    cx: float,
+    cy: float,
+    size: float,
+    uid: str,
+    plate: "dict | None" = None,
+) -> tuple[str, str]:
+    """A circular avatar chip housing a full-color company logo.
+
+    The premium-fintech idiom: a circle with a subtle cool rim and a top-down
+    sheen, the logo centered with ~22% padding, clipped to the disc so a wide
+    wordmark can never bleed past the rim. Returns (defs, group).
+
+    *plate* is the finish the mark stands on — `_WL_CHIP_PAPER` for dark marks,
+    `_WL_CHIP_SLATE` for light ones, decided per mark by `_wl_chip_plate` from the
+    mark's own pixels. It defaults to SLATE rather than paper: a caller that has
+    not measured must not be able to land a pure-white knockout on the near-white
+    disc, which is the 1.00:1 blank-circle defect this argument exists to close.
+    """
+    p = plate or _WL_CHIP_SLATE
     r = size / 2.0
     pad = size * 0.22          # inner padding — the logo occupies the middle ~56%
     inner = size - 2 * pad
@@ -3742,15 +3872,15 @@ def _wl_avatar_chip(logo_datauri: str, cx: float, cy: float, size: float, uid: s
         f'r="{r - 1:.1f}"/></clipPath>'
         # Faint top-down sheen so the disc reads as a lit surface, not a flat dot.
         f'<linearGradient id="{grad_id}" x1="0" y1="0" x2="0" y2="1">'
-        f'<stop offset="0" stop-color="#ffffff"/>'
-        f'<stop offset="1" stop-color="#E7ECF6"/>'
+        f'<stop offset="0" stop-color="{p["top"]}"/>'
+        f'<stop offset="1" stop-color="{p["bot"]}"/>'
         f'</linearGradient>'
     )
     group = (
-        # Light disc + cool rim (the chip).
+        # Disc + cool rim (the chip).
         f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="url(#{grad_id})"/>'
         f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r - 0.5:.1f}" fill="none" '
-        f'stroke="#C3CEE0" stroke-width="1"/>'
+        f'stroke="{p["rim"]}" stroke-width="1"/>'
         # Full-color logo, padded + clipped to the disc.
         f'<image href="{logo_datauri}" '
         f'x="{cx - inner / 2:.1f}" y="{cy - inner / 2:.1f}" '
@@ -3777,7 +3907,7 @@ def render_watchlist_card(
     $SNAP -3.4% $RBLX -4.3% …") as a screenshot of a premium SaaS watchlist
     panel on a phone: dark #0E1420 base, favicon lockup + wordmark, a titled
     panel with a column-label header, one raised cell per ticker (rank rail +
-    light color-logo avatar chip + ticker/name + 10-session sparkline +
+    color-logo avatar chip + ticker/name + 10-session sparkline +
     right-aligned price + colored % pill), and the shared _brand_bar CTA footer.
     The third member of the earnings / breaking card family.
 
@@ -3797,8 +3927,11 @@ def render_watchlist_card(
         as_of: Optional as-of stamp shown in the panel header (e.g. "Jul 20").
         logo_root: If provided, each row's logo is auto-resolved + cached via
             resolve_color_logo(ticker, logo_root) — the ORIGINAL full-color icon,
-            housed in a light avatar chip. Rows with no resolvable logo fall back
-            to a deterministic circular gradient monogram.
+            housed in an avatar chip whose finish (paper or slate) is measured
+            from the mark's own pixels so the mark always clears 3:1 against what
+            it stands on. Rows with no resolvable logo — or a mark legible on
+            neither finish — fall back to a deterministic circular gradient
+            monogram, so the avatar column never contains a blank hole.
         subtitle: Optional one-line plain-word stance under the title
             (Tier-1 doctrine: every panel answers "so what do I do"). Omitted
             cleanly when None.
@@ -4024,12 +4157,24 @@ def render_watchlist_card(
             f'letter-spacing="-0.03em">{i + 1}</text>'
         )
 
-        # Avatar chip: full-color logo in a light disc, else circular monogram.
+        # Avatar chip: full-color logo on the plate it is legible against, else a
+        # circular monogram.
+        #
+        # WHY the plate is computed here rather than fixed (defect, live
+        # 2026-08-03): this row used to mount every mark on one near-white disc, so
+        # the source set's white-knockout marks rendered at contrast ratio 1.00:1 —
+        # COHR / LITE / AXON / RBLX went out on the flagship as blank circles. The
+        # plate is now chosen from the mark's own pixels, and a mark that clears the
+        # legibility floor on NEITHER plate falls through to the monogram, so the
+        # avatar column can never contain a hole.
         av = 58.0
         av_cx = sym_x + av / 2
         color_uri = resolve_color_logo(ticker, logo_root) if logo_root else None
-        if color_uri:
-            a_defs, a_group = _wl_avatar_chip(color_uri, av_cx, row_cy, av, ruid)
+        plate = _wl_chip_plate(color_uri) if color_uri else None
+        if color_uri and plate is not None:
+            a_defs, a_group = _wl_avatar_chip(
+                color_uri, av_cx, row_cy, av, ruid, plate=plate
+            )
             defs_parts.append(a_defs)
             body_parts.append(a_group)
         else:

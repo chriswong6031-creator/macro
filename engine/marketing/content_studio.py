@@ -4416,26 +4416,63 @@ def content_plan(
                         _mv["trend_context"] = _mv_trend
                 except Exception:  # noqa: BLE001 — context is optional
                     pass
-                _mv_facts = _mover_facts_fn(_mv, _movers_data, now=_plan_now)
+                # `root` opts this in to the COMPUTED technical state (defect 4,
+                # 2026-08-03): mover_facts reads the name's own daily bars and
+                # emits a `mover_state` fact when it can. Nightly runs after the
+                # close on a checkout that already carries the parquets, so the
+                # read is local and cheap; an unreadable name simply gets no
+                # state fact and the reaction below stays in its no-state shape.
+                #
+                # BOTH legs are required: the bucket above only GATES which
+                # lines may be drawn, while `_mv_state` on the next line is the
+                # sentence a {mover_state} line RENDERS. Dropping `root=` here
+                # leaves that lookup permanently "" and ships the empty
+                # fragment "The state that move landed in: ."
+                _mv_facts = _mover_facts_fn(_mv, _movers_data, now=_plan_now,
+                                            root=_ohlcv_root_mv)
                 _mv_top_fact = _mv_facts["facts"][0]["text"] if _mv_facts["facts"] else ""
+                _mv_state = next(
+                    (str(f.get("text") or "").strip().rstrip(".")
+                     for f in _mv_facts["facts"] if f.get("id") == "mover_state"),
+                    "")
                 _mv_pct_str = f"{_mv['pct']:+.1f}%"
                 _mv_headline = " ".join(
                     p for p in (f"${_mv_ticker}", _mv_pct_str, _day_word) if p)
-                # Direction-aware stance (doctrine v3): down = flush-watch, dry;
-                # up = respect, don't chase. Same honest posture either way.
+                # NO UNCOMPUTED DIRECTIONAL STANCE (operator, 2026-08-03).
                 #
-                # These used to be ONE fixed sentence per direction, so every up
-                # mover the desk ever posted ended "Strength worth respecting, not
-                # chasing here." (retired as boilerplate 2026-07-30). Rotate on a
-                # crc32 of the ticker: deterministic — the same name reads the same
-                # way twice — but the batch no longer speaks in one voice.
-                # Trend-bucketed pools first (FSLR postmortem): a washed-out
-                # name swinging off the lows must not draw "I'm not paying this
-                # price", and a first crack from the highs must not draw
-                # bottom-watch copy. "plain" keeps the original four-line pools
-                # byte-identical. No em dashes: rendered copy law.
+                # This block used to hold two direction-keyed banks of four
+                # canned stances: down movers got "I'd rather be late here than
+                # early", "No rush to be a hero on this one", "Nothing to do
+                # until it stops going down"; up movers got "Respect the move,
+                # don't pay for it", "Late entries here get punished", "I'm not
+                # paying this price". The rotation is a crc32 of the TICKER, and
+                # a crc32 has never looked at a chart — so the desk issued a
+                # timing call at random over every mover it posted and was wrong
+                # about half the time by construction. The publish-time sibling
+                # of this bank is what shipped "$FSLR ... either way I'd let it
+                # settle first" onto the flagship over a name that had just
+                # crossed up out of a two-month washout.
+                #
+                # THREE TIERS, strongest evidence first. Two lanes fixed this
+                # same postmortem in parallel and both fixes are kept, ordered by
+                # how much the engines actually knew:
+                #   1. a COMPUTED technical state ("closed back above its 50-day
+                #      for the first time since June") is a read we earned and it
+                #      survives being quoted back, so it wins outright;
+                #   2. the trend BUCKET is the coarse fallback, which at least
+                #      cannot contradict the chart it ships with;
+                #   3. the generic direction pools are last.
+                # Rotation is a crc32 of the ticker: deterministic, so the same
+                # name reads the same way twice, but the batch no longer speaks
+                # in one voice. No em dashes: rendered copy law.
                 _mv_rot = zlib.crc32(str(_mv_ticker or "").encode("utf-8"))
-                if (_mv.get("pct") or 0) < 0:
+                if _mv_state:
+                    _mv_pool = (
+                        f"{_mv_state}. That is the situation the move landed in.",
+                        f"The state underneath it: {_mv_state}.",
+                        f"{_mv_state}, which is the context the number needs.",
+                    )
+                elif (_mv.get("pct") or 0) < 0:
                     _mv_pool = {
                         "crack_from_highs": (
                             "First real crack after a long run. One red day isn't "

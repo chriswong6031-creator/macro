@@ -2193,6 +2193,20 @@ jobs:
         # sibling forward ledger, the committed store is what lets cohorts accrue night to
         # night. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_bottom_calls --nightly || true
+      - name: Prophet miss-audit (why don't the winners surface? ops telemetry, ZERO authority)
+        # Prophet US trend-intelligence W0 (masterplan
+        # research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md): the nightly
+        # measurement the program grades itself against — per-runner dominant-excluder
+        # attribution, the trailing-63-session eligibility window, sighting->plan conversion,
+        # and theme-representation counts. Reads the committed close caches + the board/plan
+        # artifacts through the PRODUCTION tier paths (confluence_tiers.tier_stream/cascade,
+        # signal_gate); computes nothing the board reads back. Sole forward advancer of
+        # data/prophet_miss_audit/forward_log.jsonl (nightly-only, like the Bottom Ledger
+        # above), idempotent on price_through. Both it and data/prophet_miss_audit/latest.json
+        # are landed by the "commit engine outputs" step below (git add data/). ~2-3 min on
+        # ~1,500 names. ZERO authority: no rank/gate/size/membership consumer, ever
+        # (tests/test_prophet_miss_audit.py pins that nothing else imports it). Resilient.
+        run: python -m scripts.run_prophet_miss_audit --nightly || true
       - name: Options-state stamp on board ledger (Options Alpha W1.3; context-only)
         # Stamps the freshly-graded + accumulated retro_grades.parquet with the eight nullable
         # opt_* options-state columns (PIT: only positioning data with as-of ≤ each fire's as_of).
@@ -2931,6 +2945,19 @@ jobs:
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # normalize the EXACT tree this always() commit stages (P0 2026-08-04,
+          # 9a997e9da3f): the engine job hit its 200m cap at 04:28Z; the cancel skipped
+          # every success()-gated step INCLUDING the White House step above — the only
+          # normalize pass in this job — while this always() step still committed 5,895
+          # raw pages (inline workspace scripts, stale ?v= stamps): 7 shipped-page
+          # guards red on every PR head in the repo until #4484 re-ran the passes by
+          # hand. The builders' partial output IS safe to commit ("committing what
+          # built beats shipping nothing"); a tree the NORMALIZERS never touched is
+          # not partial output — it is a sitewide regression. All three passes are
+          # idempotent, ~35s total when the White House step already ran them.
+          python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.externalize_css || echo "::warning::pre-commit css externalize FAILED — pages may ship un-externalized (9a997e9da3f)"
+          python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
           # pre-commit template↔site re-sync (ui.template_site_sync): the shim/externalize
           # step above rewrites the site/ copies of the ~48 templates/-paired plain-copy
           # assets, and only the post-rebase --fix in the push loop heals the divergence —
@@ -3073,6 +3100,16 @@ jobs:
               # mid-nightly (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's
               # site-side de-escalation in sector_cycles.js this way). templates/ is now
               # fresh post-rebase main — re-copy and fold any delta into a follow-up commit.
+              # re-shim + re-externalize POST-rebase (P0 2026-08-04, 9a997e9da3f): the
+              # rebase can inherit RAW pages from main — a cancelled nightly's always()
+              # commit shipped 5,895 un-normalized pages, and every later lane's replay
+              # merged its small deltas INTO those fat pages (clean merge, no conflict,
+              # so -X theirs never engaged) while its re-stamp-only heal pushed the
+              # poison onward re-stamped. Running the FULL normalize chain here makes
+              # the next lane push self-heal the whole tree instead. Same order as the
+              # normalizer step: shim → externalize → stamp; all idempotent.
+              python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+              python -m scripts.externalize_css || echo "::warning::post-rebase css externalize FAILED — inherited raw pages stay un-externalized (9a997e9da3f)"
               # re-stamp POST-rebase (ui.asset_stamp): the tree this loop PUSHES is not the tree
               # the normalizer step stamped — pages a sibling lane lands mid-run arrive here
               # un-stamped and unseen by that pass (2026-07-26 render 6260e5ac8c0 shipped
