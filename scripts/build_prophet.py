@@ -57,7 +57,7 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from engine.prophet_bridge import originate_plans
+from engine.prophet_bridge import originate_plans, plan_key
 from engine.prophet_management import compute_management_state
 from engine.options_structure import validate_trade_plan
 
@@ -705,6 +705,150 @@ def _load_existing_state(plan_id: str) -> dict | None:
     return _read_json(state_path)
 
 
+def open_plan_keys(plans: dict[str, dict], closed_ids: set[str]) -> set[str]:
+    """``<TICKER>-<DIRECTION>`` keys that still have an OPEN plan (W1 intake repair).
+
+    "Closed" is exactly what the forward ledger already says: ``advance_ledger`` appends
+    one row the first time a plan hits INVALIDATED / T1_HIT / T2_HIT / EXPIRED, and
+    ``_load_closed_ids`` reads that file back.  No new store is introduced — this reads
+    the plans dict and the ledger this pipeline already loads, and a plan that closes
+    frees its ticker+direction slot for a fresh origination.
+
+    Timing (deliberate, one-night lag): origination runs BEFORE this run's
+    ``advance_ledger`` call, so a plan whose exit is being written tonight still blocks
+    tonight and frees the slot tomorrow.  The lag errs toward NOT re-originating a name
+    whose close is in flight, which is the conservative direction.
+
+    Cross-check on the 2026-08-03 artifacts: every plan whose management state reads
+    ``phase == "invalidated"`` (QCOM ×2, MS, COIN) already carries a ledger row, so the
+    ledger is a sufficient closure authority here and a second, divergeable one is not
+    introduced.
+    """
+    keys: set[str] = set()
+    for plan_id, plan in plans.items():
+        if plan_id in closed_ids:
+            continue
+        asset = plan.get("asset")
+        direction = plan.get("direction")
+        if not asset or not direction:
+            continue
+        keys.add(plan_key(str(asset), str(direction)))
+    return keys
+
+
+# ---------------------------------------------------------------------------
+# Index hygiene (W1) — aging + pulse. DATA ONLY; W2 renders it.
+# ---------------------------------------------------------------------------
+# The index lists every plan the management engine could state, with no sense of
+# time: a 3-day-old thesis and a 138-day-old one read identically, which is how a
+# live PLTR plan stayed invisible to the operator (masterplan §1.3, PLTR case).
+# These fields add the age, and one plain-word line per plan.  Nothing is removed
+# and nothing is re-ordered — the graded population is fenced (G0.4).
+
+AGE_BUCKET_KEYS = ("le_7d", "d8_21d", "gt_21d", "unknown")
+
+# Phase → plain word.  Raw phase slugs (``pre_trigger``, ``triggered_pre_t1``) are
+# banned from any string a surface may print (glance-tier word law), so an UNMAPPED
+# phase drops the leg rather than leaking the slug.
+_PHASE_WORD: dict[str, tuple[str, str]] = {
+    "pre_trigger":         ("pre-trigger", "触发前"),
+    "triggered_pre_t1":    ("triggered",   "已触发"),
+    "at_t1":               ("at T1",       "已达 T1"),
+    "between_t1_t2":       ("past T1",     "T1 之上"),
+    "post_t1_failed_hold": ("giveback",    "回吐"),
+    "at_t2":               ("at T2",       "已达 T2"),
+    "post_t2":             ("past T2",     "T2 之上"),
+    "overtime":            ("overtime",    "超时"),
+    "invalidated":         ("invalidated", "已失效"),
+}
+
+# human_state strings emitted by engine/prophet_management._human_state.  An
+# unmapped value drops from BOTH halves so the pair can never desync into an
+# EN-only chip (house bilingual law).
+_HUMAN_STATE_ZH: dict[str, str] = {
+    "Awaiting Trigger":          "等待触发",
+    "Approaching Trigger":       "接近触发",
+    "Advancing Cleanly":         "顺利推进",
+    "On Track":                  "按计划推进",
+    "Needs Follow-Through":      "需要跟进确认",
+    "Stalling":                  "停滞",
+    "T1 Hit — Holding":          "已达 T1 — 持有",
+    "Advancing to T2":           "向 T2 推进",
+    "T1 Giveback Warning":       "T1 回吐预警",
+    "Deep Giveback — Reassess":  "大幅回吐 — 重新评估",
+    "High Conviction":           "高确信",
+    "Extended — Watch Giveback": "涨幅拉伸 — 留意回吐",
+    "Overtime Stall":            "超时停滞",
+    "Invalidated":               "已失效",
+}
+
+
+def _age_days(signal_date: str | None, asof: str) -> int | None:
+    """Whole days from signal_date to the index asof; None when either is unusable.
+
+    Clamped at 0 (matching ``prophet_management.days_elapsed``) so a plan anchored on a
+    later date than the run reads "0d" rather than a negative age.
+    """
+    if not signal_date:
+        return None
+    try:
+        return max(0, (date.fromisoformat(str(asof)[:10])
+                       - date.fromisoformat(str(signal_date)[:10])).days)
+    except (TypeError, ValueError):
+        return None
+
+
+def _age_bucket(age_days: int | None) -> str:
+    """≤7d / 8-21d / >21d, or 'unknown' when the age could not be computed.
+
+    'unknown' is a real bucket, not a dropped row: the buckets must sum to
+    ``active_count`` or the surface would under-report its own population.
+    """
+    if age_days is None:
+        return "unknown"
+    if age_days <= 7:
+        return "le_7d"
+    if age_days <= 21:
+        return "d8_21d"
+    return "gt_21d"
+
+
+def _plan_pulse(
+    age_days: int | None,
+    phase: str | None,
+    human_state: str | None,
+) -> tuple[str, str]:
+    """(EN, ZH) one-line pulse for a plan — e.g. ``("32d · triggered · stalling", …)``.
+
+    Composed from fields the state engine already computes; adds no judgement of its own.
+    Every leg is independently optional, so a plan missing an age or an unmapped phase
+    still gets the legs it does have, and a plan with nothing readable returns ``("", "")``
+    rather than a half-built string.  DATA ONLY — W2 owns how (and whether) this renders.
+    """
+    parts_en: list[str] = []
+    parts_zh: list[str] = []
+
+    if isinstance(age_days, int) and age_days >= 0:
+        parts_en.append(f"{age_days}d")
+        parts_zh.append(f"{age_days}天")
+
+    words = _PHASE_WORD.get(str(phase or ""))
+    if words:
+        parts_en.append(words[0])
+        parts_zh.append(words[1])
+
+    state_zh = _HUMAN_STATE_ZH.get(str(human_state or "").strip())
+    state_en = str(human_state or "").strip().lower()
+    # "invalidated · invalidated" says nothing twice — drop the echo, keep the pair.
+    if state_zh and not (words and state_en == words[0].lower()):
+        parts_en.append(state_en)
+        parts_zh.append(state_zh)
+
+    if not parts_en:
+        return "", ""
+    return " · ".join(parts_en), " · ".join(parts_zh)
+
+
 # ---------------------------------------------------------------------------
 # Price history loader (for management engine)
 # ---------------------------------------------------------------------------
@@ -846,7 +990,16 @@ def main() -> None:
     # ── 1. Load existing plans (duplicate suppression) ────────────────────────
     existing_plans = _load_existing_plans()
     existing_ids: set[str] = set(existing_plans.keys())
-    log.info("build_prophet: %d existing plans loaded", len(existing_ids))
+    # W1: same-id suppression is not enough — the id carries signal_date, so a fresh
+    # signal on a live name used to originate a SECOND plan for it and burn a slot.
+    # The ticker+direction keys of still-OPEN plans block that; closure frees the key.
+    closed_ids = _load_closed_ids()
+    active_keys = open_plan_keys(existing_plans, closed_ids)
+    log.info(
+        "build_prophet: %d existing plans loaded (%d closed in the ledger; "
+        "%d open ticker+direction keys blocking re-origination)",
+        len(existing_ids), len(existing_ids & closed_ids), len(active_keys),
+    )
 
     # ── 2. Originate new plans ────────────────────────────────────────────────
     # WP-RESOLVER: canonical store resolution (THETADATA_STORE env →
@@ -862,13 +1015,22 @@ def main() -> None:
             "build_prophet: no ThetaData store resolves — option recommendations "
             "will be SKIPPED for all new plans (plans/ledger still advance)")
     thetadata_store = str(_resolved_store) if _resolved_store is not None else None
+    intake_stats: dict[str, Any] = {}
     new_plans = originate_plans(
         standouts_path=STANDOUTS_PATH,
         asof=asof,
         existing_ids=existing_ids,
         thetadata_store=thetadata_store,
+        active_keys=active_keys,
+        intake_stats=intake_stats,
     )
-    log.info("build_prophet: %d new plans originated", len(new_plans))
+    log.info(
+        "build_prophet: %d new plans originated (%d candidate(s) blocked by an open "
+        "same-ticker plan: %s)",
+        len(new_plans),
+        intake_stats.get("reorigination_blocked", 0),
+        ", ".join(intake_stats.get("reorigination_blocked_keys") or []) or "none",
+    )
 
     # Merge all plans
     all_plans = {**existing_plans}
@@ -963,6 +1125,14 @@ def main() -> None:
         _last_close = float(ph_pit["close"].iloc[-1])
         if not (math.isfinite(_last_close) and _last_close > 0.0):
             _last_close = None  # type: ignore[assignment]
+        # ── W1 index hygiene: age + pulse (data only; W2 renders it) ──────────
+        # age_days is computed from signal_date against THIS run's asof rather than
+        # read off state.days_elapsed, so it exists for the same reason the row does
+        # and cannot go missing when a state field is absent.
+        _age = _age_days(plan.get("signal_date") or plan.get("_signal_date"), asof)
+        _pulse_en, _pulse_zh = _plan_pulse(
+            _age, resolved_phase, state.get("human_state"),
+        )
         active_entries.append({
             "id": plan_id,
             "asset": plan.get("asset"),
@@ -976,6 +1146,11 @@ def main() -> None:
             "_conviction_score": plan.get("_conviction_score"),
             "_signal_date": plan.get("_signal_date"),
             "phase": resolved_phase,
+            # W1 index hygiene — how old this thesis is, and one plain-word line
+            # saying where it stands.  Additive: nothing was removed or re-ordered.
+            "age_days": _age,
+            "pulse": _pulse_en,
+            "pulse_zh": _pulse_zh,
             "management_confidence": state.get("management_confidence"),
             "recommended_action": state.get("recommended_action"),
             # R0.7 — last close the management engine saw (same PIT frame).
@@ -1020,6 +1195,12 @@ def main() -> None:
     active_entries.sort(
         key=lambda e: (-(e.get("_conviction_score") or 0), e.get("id", "")),
     )
+    # W1 index hygiene: age census over exactly the rows that ship, so the buckets
+    # always sum to active_count (an under-reporting surface is its own defect).
+    age_counts: dict[str, int] = {key: 0 for key in AGE_BUCKET_KEYS}
+    for entry in active_entries:
+        age_counts[_age_bucket(entry.get("age_days"))] += 1
+
     index: dict[str, Any] = {
         "schema": "prophet.index/v1",
         "asof": asof,
@@ -1028,6 +1209,26 @@ def main() -> None:
         "gate_go": _read_standouts_gate_go(),
         "plan_count": len(all_plans),
         "active_count": len(active_entries),
+        # W1 — how the shipped plans distribute by age (≤7d / 8-21d / >21d, plus the
+        # rows whose signal_date could not be read).  Sums to active_count by design.
+        "active_count_by_age": age_counts,
+        # W1 — intake disclosure. How the candidate order was decided this run, and how
+        # many candidates the active-plan block kept from burning a second slot.
+        "intake": {
+            "sort_key": "us_prophet_v1 priority score desc, act_level desc, ticker asc",
+            "reorigination_blocked": intake_stats.get("reorigination_blocked", 0),
+            "reorigination_blocked_keys": intake_stats.get(
+                "reorigination_blocked_keys", []
+            ),
+            "open_plan_keys": len(active_keys),
+            "basis": (
+                "Ordering only — admission filters, band gate and the 12-candidate cap"
+                " are unchanged. Candidates are ranked by the same us_prophet_v1 priority"
+                " score the board is ranked by, and an open plan on the same"
+                " ticker+direction blocks re-origination until it closes in the forward"
+                " ledger."
+            ),
+        },
         "plans": active_entries,
         "note": (
             "DISPLAY-ONLY. All plans are display-tier artifacts. No signal has"
