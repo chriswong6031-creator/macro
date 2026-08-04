@@ -52,6 +52,46 @@ def _store_path(market: str):
     return d / "name_score" / f"{m.lower()}_calls.parquet"
 
 
+_SHRINK_WARN_RATIO = 0.8   # disclose when a stamp admits < 80% of the previous stamp's names
+_SHRINK_MIN_PREV = 25      # young/tiny ledgers never warn (±a few names is a huge ratio there)
+
+
+def _disclose_universe_shrink(market: str, asof: str, n_new: int, prior: pd.DataFrame) -> None:
+    """Loud — never blocking — disclosure that this stamp's admitted universe collapsed
+    vs the ledger's previous stamp. 2026-07-25: the weekly lane stamped 1,704 US names
+    between 2,966-name nightly stamps because its runner restores no russell_breadth
+    close cache, and universe() skipped the missing source group with a logger-only
+    line. A thin stamp is real-but-incomplete coverage — strictly better than a missing
+    stamp, and measurement is insulated today (grade()'s forward join resolves only the
+    deep-store subset, which every stamp carries in full) — so admission is NEVER
+    refused for coverage. But the ledger is keep-FIRST PIT: no later date can widen the
+    stamp (only a same-day re-run can), so the collapse must surface AT THE WRITE, as a
+    GitHub annotation (bare line-start print per the repo annotation law — a logger
+    call would be silently dropped by Actions). Fires once per thin stamp: same-day
+    re-runs skip (the first write already disclosed)."""
+    try:
+        if not {"date", "ticker"}.issubset(prior.columns):
+            return
+        pdates = prior["date"].astype(str)
+        if (pdates == str(asof)).any():
+            return
+        before = pdates[pdates < str(asof)]
+        if before.empty:
+            return
+        d_prev = before.max()
+        n_prev = int(prior.loc[pdates == d_prev, "ticker"].nunique())
+        if n_prev < _SHRINK_MIN_PREV or n_new >= _SHRINK_WARN_RATIO * n_prev:
+            return
+        print(f"::warning title=name-score universe shrink ({market})::stamp {asof} "
+              f"admits {n_new} names vs {n_prev} on {d_prev} "
+              f"({100.0 * (n_new / n_prev - 1.0):+.1f}%) — an upstream source group "
+              "(breadth close cache / extras store) is likely missing in this lane; "
+              "the ledger is keep-FIRST PIT, so only a same-day re-run can widen this "
+              "stamp", flush=True)
+    except Exception:  # noqa: BLE001 — disclosure must never break the append
+        return
+
+
 _MAX_BAR_LAG_DAYS = 7  # calendar days a name's own last bar may lag the ledger stamp.
 # The worst structural lag on the real NYSE calendar 2000-2026 is exactly 7 (the
 # post-9/11-class 4-session closure: reopen stamp ← last bar one week back), which
@@ -117,6 +157,7 @@ def append_name_calls(calls: list[dict], market: str = "CN", asof: str | None = 
         p.parent.mkdir(parents=True, exist_ok=True)
         if p.exists():
             prior = pd.read_parquet(p)
+            _disclose_universe_shrink(market, str(asof), int(new["ticker"].nunique()), prior)
             combined = pd.concat([prior, new], ignore_index=True).drop_duplicates(
                 subset=["date", "ticker"], keep="first")
         else:
@@ -216,6 +257,22 @@ def grade(market: str = "CN") -> dict | None:
            "n_frozen_excluded": n_frozen,
            "dates": sorted(df["date"].dropna().unique().tolist()),
            "horizons_d": list(_HORIZONS_D), "by_horizon": {}}
+    # PIT continuity disclosure: a missed nightly leaves a hole no later run can
+    # backfill (keep-FIRST forward ledger — US 2026-07-13/23/24 are missing exactly
+    # this way: the wedged runs never reached the engine commit). A "gap" is a
+    # calendar day inside the stamp range whose weekday this ledger has stamped
+    # before, so a weekday-cadence ledger (CN) never miscounts weekends while the
+    # daily-stamping ledgers (US/HK/CA/INTL) count every day.
+    try:
+        d_idx = pd.to_datetime(pd.Index(out["dates"]))
+        have = set(d_idx)
+        dows = {d.dayofweek for d in d_idx}
+        gaps = [str(x.date()) for x in pd.date_range(d_idx.min(), d_idx.max(), freq="D")
+                if x.dayofweek in dows and x not in have]
+        out["n_stamp_gaps"] = len(gaps)
+        out["stamp_gap_dates"] = gaps[:14]
+    except Exception:  # noqa: BLE001 — disclosure only, never fatal
+        pass
     for h in _HORIZONS_D:
         recs = []
         for _i, row in df.iterrows():
@@ -229,9 +286,11 @@ def grade(market: str = "CN") -> dict | None:
             continue
         g = pd.DataFrame(recs)
         ics = []
+        ic_ns = []
         for _d, sub in g.groupby("date"):
             if sub["score"].nunique() >= 5:
                 ics.append(float(sub["score"].rank().corr(sub["fwd"].rank())))
+                ic_ns.append(int(len(sub)))
         buys = g[g["tier"].isin(_BUY_TIERS)]
         hit = float((buys["fwd"] > 0).mean()) if len(buys) else None
         by_tier = {}
@@ -244,6 +303,15 @@ def grade(market: str = "CN") -> dict | None:
             "n": int(len(g)),
             "buy_tier_hit_rate": round(hit, 3) if hit is not None else None,
             "rank_ic": round(float(np.mean(ics)), 4) if ics else None, "n_ic_dates": len(ics),
+            # per-date graded cross-section behind rank_ic. Today the US forward join
+            # resolves only the ~235 deep-store names, so a thin display stamp (the
+            # 1,704-name 2026-07-25 between 2,966-name neighbours) does NOT move these
+            # denominators — every stamp carries the deep-store subset in full. If
+            # per-name store coverage ever widens toward the cache universe, a min far
+            # below max here is the tell that stamp coverage started leaking into the
+            # IC average.
+            "ic_cross_section": ({"min": min(ic_ns), "median": int(np.median(ic_ns)),
+                                  "max": max(ic_ns)} if ic_ns else None),
             "by_tier": by_tier,
         }
     out["n_graded"] = max((v.get("n", 0) for v in out["by_horizon"].values()), default=0)
