@@ -38,15 +38,42 @@ def test_programmatic_stock_rows_use_the_same_portal():
 def test_overlay_has_keyboard_accessibility_and_strict_message_guards():
     code = _read("templates/terminal_overlay.js")
     assert "event.key === 'Escape'" in code
-    assert "history.pushState" not in code
+    assert "window.addEventListener('popstate'" in code
+    assert "window.history.pushState" in code
     assert "history.back()" not in code
-    assert "The Terminal is an overlay, not a navigation" in code
+    assert "window.history.go(-1)" in code
+    assert "isCurrentHistoryGuard(token)" in code
     assert "role', 'dialog'" in code
     assert "aria-modal', 'true'" in code
     assert "event.source !== state.frame.contentWindow" in code
     assert "event.origin !== state.targetOrigin" in code
     assert "Press <kbd>Esc</kbd> to return to Dashboard" in code
     assert "window.MDXTerminalOverlay" in code
+
+
+def test_overlay_history_guard_closes_in_place_and_only_unwinds_its_own_entry():
+    code = _read("templates/terminal_overlay.js")
+    assert "var HISTORY_STATE_KEY = '__mdxTerminalOverlay';" in code
+    assert "dashboardState: window.history.state" in code
+    assert "function armHistoryGuard()" in code
+    assert "function consumeHistoryGuard()" in code
+    assert "function releaseHistoryGuard()" in code
+    assert "if (isCurrentHistoryGuard(token)) window.history.go(-1);" in code
+
+    opened = code.index("state.open = true;")
+    locked = code.index("lockDashboard();", opened)
+    armed = code.index("armHistoryGuard();", locked)
+    assert opened < locked < armed
+
+    requested = code.index("function requestClose()")
+    closed = code.index("performClose();", requested)
+    released = code.index("releaseHistoryGuard();", closed)
+    assert requested < closed < released
+
+    popped = code.index("window.addEventListener('popstate'")
+    consumed = code.index("consumeHistoryGuard();", popped)
+    pop_closed = code.index("performClose();", consumed)
+    assert popped < consumed < pop_closed
 
 
 def test_overlay_keeps_desktop_warm_but_remounts_mobile_with_a_new_iframe_node():
