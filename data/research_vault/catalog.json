@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T02:22:55.642458+00:00",
-  "count": 704,
+  "generated_at": "2026-08-04T02:52:20.237423+00:00",
+  "count": 705,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -252,6 +252,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dskn6izyomi-3e042c",
+      "title": "ON Semiconductor Corp. (ON) First Take Upside to quarter, with solid guidance",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:35Z",
+      "summary_points": [
+        "**Q2 Results & Guidance**: Q3 revenue guidance $1.70bn (midpoint) and EPS $0.81–$0.93 exceed Street ($0.84), with gross margin guidance 41% vs Street 40.3%, signaling stronger near-term execution than current performance.",
+        "**Key Risks**: Upside/downside hinges on Automotive demand weakness and gross margin execution timing, critical for near-term valuation and portfolio positioning.",
+        "**Price Target & Upside**: Goldman Sachs $95 target implies 16.4% upside from $81.61, supported by accelerating revenue forecasts (12/26E: $6.64B vs 12/25E: $5.99B), but requires monitoring actual vs.",
+        "guidance gaps."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
