@@ -43,6 +43,13 @@ from engine import china_standout_track as cst  # noqa: E402
 from engine import track_scoring as ts  # noqa: E402
 
 H = 10  # the shipped CN horizon (forced verdict)
+# FROZEN-REPLAY PIN: the committed results JSON was computed with price stores whose
+# last bar was 2026-08-03. Without a pin, every later nightly bar matures more
+# episodes and the reproduction gate below "fails" against the SHIPPED prior-record
+# headline (407/68.6%) it exists to reproduce — the frozen-replay-audit trap. Every
+# price series (names + benchmark) is truncated at this date; the shipped ledger's
+# own numbers are anchored to the same grid.
+REPRO_ASOF = "2026-08-03"
 OUT = Path(__file__).parent / "v1_loser_audit_results.json"
 
 # A-share daily price-limit thresholds by listing board (approx, non-ST):
@@ -176,10 +183,33 @@ def build_sector_rel(look: dict[str, dict], bench: pd.Series | None) -> dict[str
     return out
 
 
+_PIN = None  # set in main(); module-level so helpers can honor it
+
+
+def _pin_series(obj):
+    """Truncate a Series/DataFrame at the replay pin (index ≤ REPRO_ASOF)."""
+    if obj is None or _PIN is None:
+        return obj
+    try:
+        return obj[obj.index <= _PIN]
+    except Exception:  # noqa: BLE001 — non-indexed objects pass through
+        return obj
+
+
+_orig_price_frame = cst._price_frame  # noqa: SLF001
+
+
+def _pinned_price_frame(ticker):
+    return _pin_series(_orig_price_frame(ticker))
+
+
 def main() -> None:
+    global _PIN
+    _PIN = pd.Timestamp(REPRO_ASOF)
+    cst._price_frame = _pinned_price_frame  # noqa: SLF001 — replay pin, process-local
     board = load_board()
     look = sector_lookup()
-    bench = cst._bench_close()  # noqa: SLF001
+    bench = _pin_series(cst._bench_close())  # noqa: SLF001
     sector_rel = build_sector_rel(look, bench)
 
     board_days: dict[str, set[str]] = defaultdict(set)
