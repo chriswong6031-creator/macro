@@ -19,7 +19,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
 | ccw | 10 |
-| china-alpha | 20 |
+| china-alpha | 25 |
 | china-intel-hub | 2 |
 | china-pick-lab | 3 |
 | china-system | 6 |
@@ -61,7 +61,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-phase-v2d | 4 |
 | metabolism-phase0 | 2 |
 | mlc | 1 |
-| momoedge | 9 |
+| momoedge | 8 |
 | narrative-ignition | 5 |
 | nasdaq-internals | 1 |
 | neural-web | 64 |
@@ -107,16 +107,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 364 |
-| infrastructure | 139 |
+| display | 365 |
+| infrastructure | 141 |
 | scored | 4 |
-| shadow | 82 |
+| shadow | 83 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 557 |
+| git | 561 |
 | git+r2 | 2 |
 | gitignored-local | 15 |
 | r2 | 15 |
@@ -178,7 +178,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | capital-structure-companyfacts-coverage-receipts | `data/capital_structure/companyfacts/receipts/*.json` | json | collect | infrastructure | 2 | 0 |
 | capital-structure-companyfacts-source-manifest | `data/capital_structure/companyfacts/generations/*/source_manifest.parquet` | parquet | collect | infrastructure | 2 | 0 |
 | capital-structure-share-count-current-pointer | `data/capital_structure/share_counts/v2/current_receipt.json` | json | collect | infrastructure | 2 | 0 |
-| capital-structure-source-manifest | `data/capital_structure/source_manifest.jsonl` | jsonl | collect | infrastructure | 2 | 0 |
+| capital-structure-source-manifest | `data/capital_structure/source_manifest.parquet` | parquet | collect | infrastructure | 2 | 0 |
 | capital-structure-discovery | `data/capital_structure/discovery.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-event-edges | `data/capital_structure/event_edges.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-event-versions | `data/capital_structure/event_versions.parquet` | parquet | collect | infrastructure | 1 | 0 |
@@ -231,8 +231,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| site-china-standouts | `site/factordata/china_standouts.json` | json | asia-close | display | 5 | 2 |
 | china-sector-cycles-forward-log | `data/china_sector_cycles/forward_log.parquet` | parquet | asia-close | shadow | 6 | 0 |
-| site-china-standouts | `site/factordata/china_standouts.json` | json | asia-close | display | 4 | 2 |
 | name-score-calls | `data/name_score/us_calls.parquet` | parquet | daily-engine | shadow | 3 | 0 |
 | china-basket-turn-cn | `site/chinabasketdata/basket_turn_cn.json` | json | daily-engine | display | 2 | 0 |
 | china-board-ledger | `data/china_standout_track/board.parquet` | parquet | asia-close | shadow | 2 | 0 |
@@ -240,16 +240,21 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-standout-cn-audit-state | `data/standout_audit/cn_audit_state.json` | json | asia-close | infrastructure | 2 | 0 |
 | site-china-altdata-mastermind | `site/chinaaltdata/mastermind.json` | json | asia-close | display | 2 | 0 |
 | site-china-intel-briefing | `site/china_intel/briefing.json` | json | asia-close | display | 1 | 1 |
+| site-cn-track-ledger | `site/factordata/cn_track_ledger.json` | json | asia-close | display | 2 | 0 |
 | china-mtf-upturn | `site/chinastockdata/mtf_upturn_cn.json` | json | daily-engine | display | 1 | 0 |
 | china-radar-ledger | `data/china_radar/ledger.parquet` | parquet | asia-close | shadow | 1 | 0 |
 | china-standout-cn-attribution | `data/standout_audit/cn_attribution.parquet` | parquet | asia-close | shadow | 1 | 0 |
 | china-standout-cn-audit-scoreboard | `site/factordata/cn_audit_scoreboard.json` | json | asia-close | shadow | 1 | 0 |
 | china-standout-cn-evidence | `data/standout_audit/cn_evidence.jsonl` | jsonl | asia-close | shadow | 1 | 0 |
 | china-standout-cn-fitness | `data/metabolism/fitness/standouts_cn.json` | json | asia-close | shadow | 1 | 0 |
+| cn-prophet-audit-latest | `data/cn_prophet_audit/latest.json` | json | asia-close | shadow | 1 | 0 |
 | cn-reversal-sleeve-ledger | `data/cn_reversal_sleeve_track/sleeve.parquet` | parquet | asia-close | shadow | 1 | 0 |
 | site-china-altdata-by-ticker | `site/chinaaltdata/by_ticker.json` | json | asia-close | display | 1 | 0 |
 | china-basket-turn-ledger | `data/china_basket_turn/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| china-curated-membership-pit | `data/baskets_china/membership_history.parquet` | parquet | asia-close | infrastructure | 0 | 0 |
 | china-mtf-upturn-ledger | `data/mtf_upturn_cn/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| china-ths-membership-pit | `data/baskets_china_ths/membership_history.parquet` | parquet | asia-close | infrastructure | 0 | 0 |
+| cn-prophet-audit-forward-log | `data/cn_prophet_audit/forward_log.parquet` | parquet | asia-close | shadow | 0 | 0 |
 | site-china-altdata-feed | `site/chinaaltdata/feed.json` | json | asia-close | display | 0 | 0 |
 
 ### china-intel-hub
@@ -699,7 +704,6 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
 | prophet-index | `site/prophet/index.json` | json | daily-engine | display | 0 | 1 |
 | prophet-ledger | `data/prophet/ledger.jsonl` | jsonl | daily-engine | display | 1 | 0 |
-| us-context-vector | `data/us_prophet_rank/candidates/YYYY-MM.parquet` | parquet | daily-engine | shadow | 0 | 0 |
 
 ### narrative-ignition
 
@@ -1411,6 +1415,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - engine/stock_fundamentals.py — _compute_capital_allocation_block() calls compute_capital_allocation() inside panels()
 
+### china-curated-membership-pit
+
+- **path:** `data/baskets_china/membership_history.parquet`
+- **declared producer:** `engine/basket_membership_pit.py`
+- **extra writers:**
+  - scripts/build_baskets_china_ths.py — calls basket_membership_pit.append_all() on --snapshot
+
 ### china-regime-pit-daily
 
 - **path:** `data/china_regime/regime_daily.parquet`
@@ -1467,6 +1478,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/china_standout_audit.py`
 - **extra writers:**
   - scripts/build_china_library.py — calls china_standout_audit.run_attribution()
+
+### china-ths-membership-pit
+
+- **path:** `data/baskets_china_ths/membership_history.parquet`
+- **declared producer:** `engine/basket_membership_pit.py`
+- **extra writers:**
+  - scripts/build_baskets_china_ths.py — calls basket_membership_pit.append_all() on --snapshot
 
 ### cn-pick-lab-snapshots
 

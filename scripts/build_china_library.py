@@ -3368,6 +3368,29 @@ def main(alpha: dict | None = None) -> dict | None:
             log.warning("china reversal_watch scan failed (%s) — shelf empty, build continues", _rw_e)
             _rev_watch_rows = []
 
+        # ── CONTINUATION WATCH cohort (masterplan §2.7 / §5 W-C) ──────────────
+        # The 17 never-eligible era runners (11% of the top-150 funnel, median
+        # era return +18.7%) were the SHALLOWEST charts, blocked by the
+        # counter-trend / no-200-reclaim leg — the continuation shape the
+        # detector family structurally cannot admit.  This collects tonight's
+        # equivalent cohort so a forward record can accrue before anyone
+        # proposes a door.  SHADOW ACCRUAL, ZERO DISPLAY: these rows are
+        # deliberately NOT written into `wide`/`setups` — they exist only in the
+        # board store under cn_continuation_watch_v1, which WATCH_DEFINITIONS
+        # excludes from the headline grade.  Rule frozen in the engine module.
+        _cont_watch_rows: list[dict] = []
+        try:
+            from engine import china_continuation_watch as _ccw  # noqa: PLC0415
+            _t0_ccw = time.time()
+            _cont_watch_rows = _ccw.select(
+                _scored_candidates, {t: c for (t, c, _h, _n, _s) in uni})
+            log.info("china continuation_watch: %d candidates of %d scored in %.0fs",
+                     len(_cont_watch_rows), len(_scored_candidates), time.time() - _t0_ccw)
+        except Exception as _ccw_e:  # noqa: BLE001 — a watch lane never breaks the build
+            log.warning("china continuation_watch scan failed (%s) — cohort empty, build continues",
+                        _ccw_e)
+            _cont_watch_rows = []
+
         wide = {
             "schema_version": "2.0.0",
             "as_of": as_of,
@@ -3570,6 +3593,18 @@ def main(alpha: dict | None = None) -> dict | None:
                 _bn_sh = china_standout_track.append_board(
                     _v2_shadow_rows, asof=as_of, lane=_lane)
                 log.info("china v2-shadow board-track: logged %d rows", _bn_sh)
+            # CONTINUATION WATCH cohort (§2.7 / §5 W-C) — appended LAST so no
+            # other definition's append order is disturbed.  Same store, own
+            # board_definition; WATCH_DEFINITIONS keeps it out of headline-grade
+            # resolution, and append_board's keep-first key is
+            # (date, ticker, board_definition), so a name that also sits on the
+            # featured shelf keeps one row per definition rather than colliding.
+            if _cont_watch_rows:
+                # _ccw is bound whenever _cont_watch_rows is non-empty (the scan
+                # above sets the list only after its import succeeded).
+                _bn_cw = china_standout_track.append_board(
+                    _cont_watch_rows, asof=as_of, lane=_lane, top_n=_ccw.CAP)
+                log.info("china continuation_watch board-track: logged %d rows", _bn_cw)
             # W0 — loser + miss telemetry (engine/cn_prophet_audit.py). OPS-TELEMETRY
             # tier with ZERO authority: it reads the board store we just appended to,
             # the price stores, and the PIT candidate ledger, and writes ONLY to
