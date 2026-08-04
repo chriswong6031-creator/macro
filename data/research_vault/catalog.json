@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T16:09:36.999678+00:00",
-  "count": 744,
+  "generated_at": "2026-08-04T16:24:45.450392+00:00",
+  "count": 745,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -115,6 +115,27 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-08-04T14:21:21Z",
+      "summary_points": [
+        "**Asian Equity Selling Pressure**: Record net selling flows (-2.3 Z-score) driven by long sales, largest risk-off flows (-1.9 Z-score), signaling severe sentiment shift in Asian equities.",
+        "**KOSPI Undervaluation Opportunity**: KOSPI 12,000 target (P/E 5.1x → 7.8x) with 320% 2026-2028 earnings growth; market underprices 2027-2028 EPS upside despite pricing slower 2027 growth.",
+        "**Semiconductor Supply Shock**: Memory undersupply through 2027-2030; HBM revenue share to 20% by 2028E, driving profit growth for Korean producers (Samsung/Hynix) amid key risk of demand mismatch.",
+        "**China Metals Volatility**: Policy-driven supply chain leverage amplifies critical metals volatility, necessitating metals inclusion in inflation hedges despite energy's larger basket weight.",
+        "**TTF Gas Hedge Asymmetry**: Lower China gas inventories vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6k8etefdrgp-6ab480",
+      "title": "GS What Matters Today HF Performance and Flows in July, Reiterate our Buy in Korea, Hatzius Argues Less Information brings More Noise, How China Policy",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:17:33Z",
       "summary_points": [
         "**Asian Equity Selling Pressure**: Record net selling flows (-2.3 Z-score) driven by long sales, largest risk-off flows (-1.9 Z-score), signaling severe sentiment shift in Asian equities.",
         "**KOSPI Undervaluation Opportunity**: KOSPI 12,000 target (P/E 5.1x → 7.8x) with 320% 2026-2028 earnings growth; market underprices 2027-2028 EPS upside despite pricing slower 2027 growth.",
