@@ -2,8 +2,8 @@
   "schema": "crypto.cockpit/v1",
   "contract_phase": "w0",
   "display_only": true,
-  "as_of": "2026-08-02",
-  "generated_at": "2026-08-04T04:27:04+00:00",
+  "as_of": "2026-08-04",
+  "generated_at": "2026-08-04T06:27:39+00:00",
   "hero": {
     "asset": "BTC-USD",
     "price": 63363.26,
@@ -38,9 +38,9 @@
           "label_en": "Structure",
           "label_zh": "结构",
           "source": "master.board.structure",
-          "state_en": "Neutral",
-          "state_zh": "中性",
-          "tone": "neutral",
+          "state_en": "Constructive",
+          "state_zh": "偏多",
+          "tone": "bull",
           "grade": "DIRECTIONAL"
         },
         {
@@ -210,9 +210,9 @@
           "label_en": "Holder spread (STH/LTH)",
           "label_zh": "持有者价差",
           "source": "master.board.holders",
-          "state_en": "Distribution",
-          "state_zh": "派发",
-          "tone": "bear",
+          "state_en": "Neutral",
+          "state_zh": "中性",
+          "tone": "neutral",
           "grade": "NEW"
         },
         {
