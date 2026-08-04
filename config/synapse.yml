@@ -16783,7 +16783,7 @@ artifacts:
     storage: r2
     asof_field: published_at
     freshness_sla_hours: 30
-    schema: capital_structure.share_count_head_witness/v2
+    schema: capital_structure.share_count_external_head/v1
     tier: infrastructure
     horizon_role: context
     weights: none
@@ -16795,12 +16795,20 @@ artifacts:
       - scripts/retain_capital_structure_share_counts.py
     external_consumers: []
     notes: >
-      PRE-PRODUCTION/default-off mutable HMAC-authenticated compare-and-swap selector
-      for exactly one immutable receipt and ledger generation. A clean runner validates
-      the selected state but cannot detect credential-level restoration of an older
-      otherwise valid head; a separate monotonic witness would be required for global
-      rollback detection. It grants no fact, denominator, risk, rank, sizing, entry,
-      trade, or Prophet authority, and deployment alone is not coverage or freshness.
+      PRE-PRODUCTION/default-off mutable selector cataloged only by the closed
+      capital_structure_share_count_external_head.schema.json v2/v3/v4 union. The
+      runtime authenticates v2/v3/v4, implements exact v2-or-v3-to-v4 structural
+      migration and v1/v2 journal recovery, and exposes native v4 genesis/successor
+      only through an injected test seam. Both migration flags are strict, mutually
+      exclusive, and default false; production has no native v4 genesis/successor
+      publisher or schedule. The one local .share_count_publish_journal.json filename
+      dispatches exactly by schema: legacy v1 remains drainable, while v2 permits only
+      null-to-v4 genesis or v4-to-v4 successor. A clean runner validates its selected
+      state but cannot detect credential-level restoration of an older otherwise valid
+      head; a separate monotonic witness would be required for global rollback detection.
+      It grants no fact, denominator, risk, rank, sizing, entry, trade, UI, Prophet,
+      retention, schedule, or activation authority, and deployment alone is not coverage
+      or freshness.
 
   capital-structure-document-term-observations:
     path: data/capital_structure/document_term_observations.parquet

@@ -84,10 +84,10 @@ router = APIRouter()
 # locked slot in its place. hk_heatmap/canada_heatmap run the same builder and
 # join by adding one line each, here and in the other two mirrors.
 #
-# /etfs.html W2 flip TEMPORARILY REVERTED 2026-08-03: the boundary deployed ahead
-# of the free-shell bake (render lane superseded 3x) and the full board leaked
-# anonymously ~1h. Re-flip in a follow-up PR ONLY after the walled shell is
-# committed on main (masterplan gate 6b). It is the same
+# /etfs.html re-flipped 2026-08-03 per masterplan gate 6b: the walled shell is
+# committed on main (verified 3 gate markers), so the public grant now points at
+# a page that carries its wall. (History: #4426 flip outran the bake, #4446
+# closed the ~1h leak, this restores it safely.) It is the same
 # shape with one difference worth stating: the two desks above were ALREADY split
 # and W1a moved only their access class, whereas etfs.html was fully server-
 # rendered with every graded row in the markup, so the PR that opened it is also
@@ -107,6 +107,7 @@ PUBLIC_PATHS = {
     "/research_vault.html",
     "/special_situations.html",
     "/china_special_situations.html",
+    "/etfs.html",
     "/china_heatmap.html",
     "/support.html",
     "/unsubscribe.html",
