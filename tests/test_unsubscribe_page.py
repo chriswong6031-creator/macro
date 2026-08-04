@@ -661,6 +661,9 @@ PUBLIC_EXACT = frozenset({
     # and the upgrade wall — every paid row stays in /premiumdata/* (plus the two raw
     # snapshots in premium.enforced_early), which 403 anonymous and Free alike.
     "/special_situations.html", "/china_special_situations.html",
+    # etfs tier-preview shell (W2 #4426; re-flipped per gate 6b after #4446 —
+    # the walled shell is committed, the graded remainder is /premiumdata/etfs.json).
+    "/etfs.html",
     # The fund-conviction desk, converted to the same shape by W2. Reviewed public
     # on the same reasoning, with one difference: this page was NOT already split,
     # so the PR that opened it also moved every graded row (consensus board, fresh
