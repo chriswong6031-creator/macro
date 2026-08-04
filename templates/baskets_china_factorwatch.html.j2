@@ -337,11 +337,11 @@
       </div>
       {% endif %}
 
-      {# ── Receipt ⓘ chip + playbook link ── #}
+      {# ── Playbook link. The ⓘ "How this works" receipt chip was removed here too
+         (operator, 2026-08-04): this row is byte-identical to the one on
+         sector_central_china, so leaving it would fork the same idiom across two
+         China surfaces one screen apart. ── #}
       <div class="tc-chips" style="margin-top:8px">
-        <span class="tc-chip rcpt tc-receipt-tip"
-              data-tip-en="Trailing-momentum rank names {{ _tc_tl.name | e }} first; skips the most recent ~3 weeks by construction; suggested weights unchanged. Shape read only — not a forecast."
-              data-tip-zh="趋势动量排名以{{ _tc_tl.name_zh | e }}居首；设计上跳过最近约3周数据；建议权重不变。仅为形态读数，非预测。">ⓘ {{ t('How this works', '原理说明') }}</span>
         <a class="tc-pb-link" href="allocation_china.html">{{ t('Open the playbook →', '打开操盘手册 →') }}</a>
       </div>
 

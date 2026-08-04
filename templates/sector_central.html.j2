@@ -469,9 +469,100 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
 .rvx-stance{display:inline-flex;align-items:center;gap:8px;margin-top:15px;padding:7px 13px;border-radius:999px;
   background:color-mix(in srgb,var(--warn) 14%,transparent);border:1px solid color-mix(in srgb,var(--warn) 34%,transparent);font-weight:700;font-size:13px}
 .rvx-hero.steady .rvx-stance{background:color-mix(in srgb,var(--up) 13%,transparent);border-color:color-mix(in srgb,var(--up) 32%,transparent)}
-.rvx-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px;align-items:center}
-.rvx-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;border:1px solid var(--rvx-hair2);background:color-mix(in srgb,var(--panel2) 40%,transparent);text-decoration:none;color:var(--text)}
-.rvx-chip.sz{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+/* ── CONDITIONS BAR (replaces .rvx-chips / .rvx-chip) ──────────────────────
+   The hero used to end in ragged rows of chips that wore ONE costume over FOUR
+   kinds of information: a call, a size constraint, a seasonal caveat and a nav
+   link. Nothing told the reader which was which. One hairline now separates
+   the CALL (above it) from the CONDITIONS on that call (below it), and the
+   treatment names the kind:
+     · it binds you  → left rule + warn ink + an eyebrow that says so
+     · context only  → no rule, no fill, muted ink + a state dot
+     · navigation    → a link, never a label
+   Micro-labels deliberately reuse .rvx-hocol .lbl's type (10px/.06em/700 caps)
+   so the bar rhymes with the handoff card instead of inventing a fifth family. */
+.rvx-cond{margin-top:18px;padding-top:14px;border-top:1px solid var(--rvx-hair);
+  display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px 32px}
+.rvx-cond-cell{display:flex;flex-direction:column;gap:5px;min-width:0}
+/* load-bearing: `display:flex` above outranks the UA's `[hidden]{display:none}`, so
+   without this a calm volatility regime (no sizing pill at all) still painted the
+   eyebrow "LIMITS YOUR SIZE" over an empty cell */
+.rvx-cond-cell[hidden]{display:none}
+.rvx-cond-k{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
+  color:var(--muted);white-space:nowrap}
+.rvx-cond-v{display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 15px;
+  font-size:12.5px;line-height:1.45;min-width:0}
+/* the ONE thing that binds: a rule you can see and ink that means "constraint" */
+.rvx-cond-cell.lim{padding-left:13px;border-left:2px solid color-mix(in srgb,var(--warn) 55%,transparent)}
+.rvx-cond-cell.lim .rvx-cond-k{color:color-mix(in srgb,var(--warn) 60%,var(--text))}
+.rvx-cond-cell.lim .rvx-cond-v{font-size:13px;font-weight:650;color:var(--warn);
+  font-variant-numeric:tabular-nums}
+/* context: no rule, no fill, quiet ink — the treatment IS the disclosure */
+.rvx-cond-cell.ctx .rvx-cond-v{color:var(--muted)}
+/* The two client-filled slots are pass-through boxes, never items. `display:contents`
+   drops the empty wrapper out of the flex layout entirely, so a slot the nightly left
+   empty — a calm volatility regime emits NO sizing pill, policy_lever.json can be
+   absent — costs neither a column gap nor an orphaned dot. The dot therefore hangs off
+   the CHIP, not the slot, which also means it inherits the chip's own state ink. */
+.rvx-cond-slot{display:contents}
+/* flex-start + an em-relative nudge, not center: at mobile widths the seasonal note
+   wraps to two lines, and a centred dot floats to the middle of the block instead of
+   marking the line it belongs to */
+.rvx-cond-cell.ctx :is(.tc-chip,.fs-chip){display:inline-flex;align-items:flex-start;gap:7px}
+.rvx-cond-cell.ctx :is(.tc-chip,.fs-chip)::before{content:'';width:5px;height:5px;
+  border-radius:50%;background:currentColor;opacity:.55;flex:none;margin-top:.46em}
+/* strip every chip costume the injected spans arrive already wearing (the policy
+   read's inline colour survives on purpose — it is the one context item with a
+   graded state, and it should not read identically to a fixed seasonal note) */
+.rvx-cond :is(.pulse-size,.tc-chip,.fs-chip){border:0;background:none;padding:0;
+  border-radius:0;font:inherit;color:inherit}
+/* …and again at the weight the zh tint rules use. `html[data-lang="zh"]
+   .fs-chip.tailwind{background:rgba(224,85,85,.10)}` (the 红涨绿跌 chip-TINT swap,
+   ~40 rules up) is (0,3,1) and beat the plain reset above, so in dark+ZH the
+   seasonal note came back wearing a red box with padding:0 — the exact "ugly and
+   no padding label" this bar exists to kill, surviving in one of four cells.
+   Matched on [data-lang] rather than ="zh" so it is a reset, not a zh special case;
+   the plain rule above stays as the fallback if the attribute is ever missing. */
+html[data-lang] .rvx-cond :is(.pulse-size,.tc-chip,.fs-chip){border:0;background:none;
+  padding:0;border-radius:0;font:inherit;color:inherit}
+/* the seasonal lean keeps its direction — as a DOT. A line of green text would
+   read "good news, act on it", the exact opposite of the tier it sits in.
+   红涨绿跌 needs NO rule here: theme.css already flips the --up/--down TOKENS by
+   language (--up resolves to #e06464 under data-lang="zh"), so `var(--up)` is
+   red in ZH on its own. The row this replaced carried an explicit
+   `html[data-lang="zh"] … .fs-chip.tailwind{color:var(--down)}` override, which
+   flipped an already-flipped token and shipped a GREEN tailwind in Chinese —
+   backwards, in both themes. Not ported. Headwind is a caution tone, not a
+   direction, so it stays --warn in every language. */
+.rvx-cond-cell.ctx .fs-chip.tailwind::before{background:var(--up);opacity:.95}
+.rvx-cond-cell.ctx .fs-chip.headwind::before{background:var(--warn);opacity:.95}
+/* navigation is not a label */
+.rvx-cond-go{margin-left:auto;align-self:center;font-size:12.5px;font-weight:600;
+  color:var(--link);text-decoration:none;white-space:nowrap;padding:4px 0;
+  display:inline-flex;align-items:center;gap:7px;border-bottom:1px solid transparent}
+.rvx-cond-go i{font-style:normal;transition:transform .18s cubic-bezier(.2,.7,.2,1)}
+.rvx-cond-go:hover{border-bottom-color:color-mix(in srgb,var(--link) 55%,transparent)}
+.rvx-cond-go:hover i{transform:translateX(3px)}
+.rvx-cond-go:focus-visible{outline:2px solid var(--link);outline-offset:3px;border-radius:3px}
+@media (prefers-reduced-motion:reduce){
+  .rvx-cond-go i{transition:none}
+  .rvx-cond-go:hover i{transform:none}
+}
+/* The stance is a SENTENCE, not a two-column pill. Under inline-flex the
+   days-in-state span was a second flex column, so at every width where the
+   sentence wrapped it orphaned "· 10 days in" against the right edge as a
+   three-line stub. inline-block lets it flow with the words it belongs to. */
+.rvx-stance{display:inline-block}
+/* inline-block drops the old flex `gap`, so the flag carries its own spacing and
+   hangs slightly back — it marks the sentence, it is not part of it */
+.rvx-stance-flag{margin-right:9px;opacity:.72;font-weight:400}
+/* the alignment tick CONFIRMS the call, so it rides inside the stance banner
+   instead of standing next to it as an unlabelled peer */
+.rvx-stance-ok{margin-left:9px;padding-left:10px;font-size:11.5px;font-weight:600;
+  color:var(--up);border-left:1px solid color-mix(in srgb,var(--text) 20%,transparent)}
+@media (max-width:640px){
+  .rvx-cond{gap:13px 22px}
+  .rvx-cond-go{margin-left:0;width:100%}
+}
 /* handoff */
 .rvx-hocard{border:1px solid var(--rvx-hair2);border-radius:14px;overflow:hidden;background:color-mix(in srgb,var(--panel2) 32%,transparent)}
 .rvx-hocard .cap{font-size:10px;letter-spacing:.06em;color:var(--muted);padding:9px 16px 0;font-weight:700}
@@ -736,81 +827,14 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   .lead-track .tr-badge { font-weight: 700; font-size: 10.5px; padding: 1px 8px; border-radius: 9px; border: 1px solid; }
   .lead-track .tr-txt { font-variant-numeric: tabular-nums; }
 </style>
-{# old subsector_rotation page styles removed — the movement modules (subsector_rotation.js, rotation_events.js, desk_watch.js, time_machine.js) inject their own scoped styles (N2 flag A: avoid double-shipping + drift). #}
-<style>
-  #rc-events { margin:0 2px 22px; }
-  #rc-events h2 { font-size:17px; font-weight:800; letter-spacing:-.015em; margin:0 0 4px; }
-  .rc-sub { color:var(--muted); font-size:12px; margin:0 0 10px; max-width:84ch; line-height:1.5; }
-  .rc-grid { display:flex; flex-wrap:wrap; gap:10px; }
-  .rc-card { flex:1 1 300px; min-width:260px; border-radius:12px; border:1px solid var(--line);
-    background:var(--panel); padding:12px 14px; }
-  .rc-card.rc-major { border-left:4px solid var(--warn); }
-  .rc-hd { display:flex; align-items:baseline; gap:7px; margin-bottom:5px; flex-wrap:wrap; }
-  .rc-title { font-weight:800; font-size:13.5px; }
-  .rc-sev { font-size:9.5px; font-weight:700; text-transform:uppercase; padding:2px 7px; border-radius:6px;
-    background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); letter-spacing:.04em; }
-  .rc-sev.major { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }
-  .rc-sev.notable { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
-  .rc-day { font-size:11px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; }
-  .rc-copy { font-size:12.5px; line-height:1.55; }
-  .rc-receipts { margin-top:6px; font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .rc-stale { font-style:italic; }
-  .rc-quiet { color:var(--muted); font-size:12.5px; padding:8px 0; }
-  .rc-frag { margin-top:12px; }
-  .rc-frag-hd { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.07em;
-    color:var(--muted); margin:0 0 7px; }
-  .rc-frag-chips { display:flex; flex-wrap:wrap; gap:6px; }
-  .rc-frag-chip { font-size:11px; padding:4px 10px; border-radius:8px; border:1px solid var(--line);
-    background:color-mix(in srgb,var(--warn) 9%,var(--panel2)); line-height:1.45; }
-  .rc-frag-chip b { font-weight:800; }
-  .rc-caveat { margin-top:10px; font-size:10.5px; color:var(--muted); line-height:1.55; }
-
-  /* ── Flow-lanes hero (.rcf-*) ── */
-  #rc-flowmap-content { margin-bottom:14px; }
-  .rcf-empty { color:var(--muted); font-size:12.5px; padding:8px 0; }
-  .rcf-lane { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px;
-    padding:10px 13px; border-radius:11px; border:1px solid var(--line);
-    background:var(--panel2); margin-bottom:8px; position:relative; }
-  .rcf-lane.rcf-handoff    { border-left:4px solid var(--link); }
-  .rcf-lane.rcf-into_strength { border-left:4px solid var(--up); }
-  .rcf-lane.rcf-contagion_break { border-left:4px solid var(--warn); }
-  .rcf-lane.rcf-faltering  { border-left:4px solid var(--muted); }
-  .rcf-pill { font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:8px;
-    background:color-mix(in srgb,var(--text) 8%,var(--panel)); border:1px solid var(--line);
-    white-space:nowrap; }
-  .rcf-arrow { font-size:13px; color:var(--muted); flex:none; }
-  .rcf-state { font-size:12.5px; font-weight:600; flex:1 1 160px; min-width:120px; }
-  .rcf-stance { font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:6px;
-    white-space:nowrap; }
-  .rcf-stance.rcf-watch { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
-  .rcf-stance.rcf-favour { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); }
-  .rcf-stance.rcf-aside  { background:color-mix(in srgb,var(--warn) 14%,transparent); color:var(--warn); }
-  .rcf-stance.rcf-weak   { background:color-mix(in srgb,var(--muted) 14%,transparent); color:var(--muted); }
-  .rcf-decay { width:100%; height:5px; border-radius:3px;
-    background:var(--panel2); border:1px solid var(--line); overflow:hidden; margin-top:4px; }
-  .rcf-decay-bar { height:100%; border-radius:3px; background:var(--warn); transition:width .3s; }
-  .rcf-decay-cap { font-size:10px; color:var(--warn); margin-top:3px; }
-  .rcf-help { display:inline-block; font-size:9.5px; font-weight:700; color:var(--muted);
-    border:1px solid var(--line); border-radius:50%; width:16px; height:16px; line-height:14px;
-    text-align:center; cursor:help; flex:none; }
-  .rcf-footer { font-size:10.5px; color:var(--muted); margin-top:4px; line-height:1.5; }
-  .rcf-coldstart-note { font-size:10px; color:var(--muted); margin-left:6px; }
-
-  /* ── Closures strip (.rcx-*) ── */
-  #rc-closures { margin-bottom:10px; }
-  .rcx-strip { font-size:11.5px; color:var(--muted); border:1px solid var(--line);
-    border-radius:9px; padding:7px 12px; background:var(--panel2); }
-  .rcx-toggle { cursor:pointer; font-weight:700; user-select:none; }
-  .rcx-toggle:hover { color:var(--text); }
-  .rcx-list { margin-top:7px; display:flex; flex-direction:column; gap:4px; }
-  .rcx-row { font-size:11px; color:var(--muted); }
-  .rcx-foot { margin-top:5px; font-size:10px; color:var(--muted); font-style:italic; }
-  @media (max-width:520px) {
-    .rcf-lane { gap:6px 8px; }
-    .rcf-state { flex-basis:100%; }
-    .rcf-decay { margin-top:3px; }
-  }
-</style>
+{# The movement modules (subsector_rotation.js, rotation_events.js, desk_watch.js,
+   time_machine.js) inject their own scoped styles — this page ships NONE of them.
+   A byte-copy of rotation_events.js's whole sheet used to sit here anyway, under a
+   comment saying it had been removed; it had not, and it silently shadowed every
+   property the module stopped setting (2026-08-04: `text-transform:uppercase` on
+   .rc-frag-hd survived the module dropping it). Deleted — the modules own these
+   .rc-* / .rcf-* / .rcx-* rules, and si_workspace.js lazy-injects them with the
+   markup they dress, so nothing is styled before they land. #}
 <style>
   .si-lane-foot{margin-top:10px}
   .si-kind{font-size:9.5px;font-weight:700;letter-spacing:.05em;border:1px solid var(--line);border-radius:5px;padding:1px 5px;margin-left:7px;color:var(--muted);vertical-align:1px}
@@ -1182,32 +1206,26 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   html[data-theme="light"] .rvx-hero.strain .rvx-vword .ac {
     background:linear-gradient(94deg, var(--si-ink-warn, var(--warn)), var(--si-ink-down, var(--down)));
     -webkit-background-clip:text; background-clip:text; }
-  /* ONE family for the hero context row (.rvx-chips.ctx): quiet ink + a state dot,
-     no boxes — the row previously mixed FOUR treatments (plain text, green pill,
-     amber pill, warn pill; operator: "each of ur 4 children look nothing like you").
-     Covers the server chips (.rvx-chip), the seasonality tones (.fs-chip.*) and the
-     client-injected lever/sizing chips (.tc-chip): the lever's inline border-COLOR
-     cannot survive border:0, and each item's ink still carries its state. */
-  .rvx-chips { gap:5px 15px; margin-top:12px; }
-  .rvx-chips.ctx { gap:7px 20px; }
-  .rvx-chips.ctx :is(.rvx-chip, .fs-chip, .tc-chip, .pulse-size) {
-    border:0; background:transparent; padding:2px 0; font-size:12px; gap:7px;
-    display:inline-flex; align-items:center; }
-  .rvx-chips.ctx :is(.rvx-chip, .fs-chip, .tc-chip, .pulse-size)::before {
-    content:''; width:7px; height:7px; border-radius:50%;
-    background:currentColor; opacity:.5; flex:none; }
-  .rvx-chips.ctx > .rvx-chip:not(.fs-chip) { color:var(--muted); }
-  /* 红涨绿跌: with the boxes gone the INK is the only state carrier — flip it in ZH */
-  html[data-lang="zh"] .rvx-chips.ctx .fs-chip.tailwind { color:var(--down); }
-  html[data-theme="light"] .rvx-chips.ctx .fs-chip.tailwind { color:var(--si-ink-up, var(--up)); }
-  html[data-theme="light"][data-lang="zh"] .rvx-chips.ctx .fs-chip.tailwind { color:var(--si-ink-down, var(--down)); }
-  html[data-theme="light"] .rvx-chips.ctx .fs-chip.headwind { color:var(--si-ink-warn, var(--warn)); }
-  /* the action/receipt row: quiet text and links, no boxes, no dots */
-  .rvx-chips:not(.ctx) .rvx-chip { border:0; background:transparent; padding:2px 0;
-    color:var(--muted); gap:5px; }
-  .rvx-chip.sz { border:0; background:transparent; color:var(--warn); }
-  html[data-theme="light"] .rvx-chip.sz { color:var(--si-ink-warn, var(--warn)); }
-  a.rvx-chip { color:var(--link); }
+  /* Conditions bar, light theme. The generic state-chip recomposition above
+     (html[data-theme="light"] .si-stage :is(… .fs-chip.tailwind …)) re-paints a
+     fill and an edge at (0,4,1) and lands LATER in this sheet than the .rvx-cond
+     reset, so the seasonal item would come back wearing a box under light. These
+     rules match that weight and sit after it, so the bar stays boxless in both
+     themes; the ink tokens are the light-theme organ's, not the dark literals. */
+  html[data-theme="light"] .si-stage .rvx-cond :is(.fs-chip, .tc-chip, .pulse-size) {
+    background:none; border:0; padding:0; }
+  html[data-theme="light"] .si-stage .rvx-cond-cell.lim {
+    border-left-color: color-mix(in srgb, var(--si-ink-warn, var(--warn)) 62%, transparent); }
+  html[data-theme="light"] .si-stage .rvx-cond-cell.lim .rvx-cond-k,
+  html[data-theme="light"] .si-stage .rvx-cond-cell.lim .rvx-cond-v {
+    color: var(--si-ink-warn, var(--warn)); }
+  /* --si-ink-up/-down are recomposed from the SAME language-flipped --up/--down, so
+     they carry 红涨绿跌 by themselves too — no [data-lang="zh"] variant here either. */
+  html[data-theme="light"] .si-stage .rvx-cond-cell.ctx .fs-chip.tailwind::before {
+    background: var(--si-ink-up, var(--up)); }
+  html[data-theme="light"] .si-stage .rvx-cond-cell.ctx .fs-chip.headwind::before {
+    background: var(--si-ink-warn, var(--warn)); }
+  html[data-theme="light"] .si-stage .rvx-stance-ok { color: var(--si-ink-up, var(--up)); }
   /* the stance banner joins the family: tint stays (it is the one instruction that
      earns a surface), the border goes; days-in-state rides inside it quietly */
   .rvx-stance { border:0; border-radius:11px; font-weight:600; }
@@ -1301,7 +1319,21 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
       // ink token is declared on the page body rather than on the shell.
       el.innerHTML='<div class="shock-deesc-banner" style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.4);color:var(--si-ink-warn,var(--warn));border-radius:9px;padding:9px 14px;margin:8px 0;font-size:13px">'+msg+'</div>';
     }).catch(function(){/* absent file → no banner */});
-  // Policy-lever chip — inject into hero chip row (#ftr-lever-chip)
+  // ── Conditions-bar visibility ────────────────────────────────────────────
+  // Both cells are filled asynchronously (the sizing pill by renderVerdictHero,
+  // the policy read by the fetch below), and either can legitimately be empty —
+  // a calm volatility regime emits NO sizing pill at all, and policy_lever.json
+  // may be absent. A cell whose eyebrow says "Limits your size" over nothing is
+  // worse than no cell, so each one stays hidden until it actually has content.
+  // Idempotent and null-safe: callable from either producer, in any order.
+  window.__rvxSyncCond=function(){
+    var has=function(id){var e=document.getElementById(id);return !!(e&&e.innerHTML.trim());};
+    var lim=document.getElementById('hero-limit');
+    if(lim) lim.hidden=!has('hero-sizing');
+    var ctx=document.getElementById('hero-context');
+    if(ctx) ctx.hidden=!(has('ftr-lever-chip')||document.getElementById('factor-season'));
+  };
+  // Policy-lever chip — inject into the hero's context cell (#ftr-lever-chip)
   fetch('policy_lever.json',{cache:'no-cache'})
     .then(function(r){if(!r.ok)throw 0;return r.json();})
     .then(function(d){
@@ -1314,6 +1346,7 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
       var sZh={'ARMED':'政策风险：高','ELEVATED':'政策风险：偏高','QUIET':'政策面：平静'}[s]||s;
       el.innerHTML='<span class="tc-chip lever" data-tip-en="'+esc((d.framing||''))+'" data-tip-zh="'+esc((d.framing_zh||d.framing||''))+'" style="border-color:'+c+';color:'+c+'">'
         +'<span class="l-en">'+esc(sEn)+'</span><span class="l-zh">'+esc(sZh)+'</span></span>';
+      window.__rvxSyncCond();
     }).catch(function(){/* absent file → no chip */});
   })();
   </script>
@@ -1755,11 +1788,9 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
           {% else %}{{ t('Leadership', '领涨格局') }} <span class="ac">{{ t('steady', '稳定') }}</span>{% endif %}
         </div>
         <p class="rvx-vsub">{% if theme_context.migration is defined and theme_context.migration.note_en %}{{ t(theme_context.migration.note_en, theme_context.migration.note_zh) }} {% endif %}{{ t("Favour the fresh leaders — not last month's winners.", '顺势买入新领涨，而非上月的赢家。') }}</p>
-        <span class="rvx-stance">⚑ {{ t(_tc_lead.stance_en, _tc_lead.stance_zh) }}{% if _tc_lead.days_in_state is not none and _tc_lead.days_in_state %}<span class="rvx-stance-days"> · {{ t(_tc_lead.days_in_state|string + " days in", _tc_lead.days_in_state|string + " 天") }}</span>{% endif %}</span>
-        <div class="rvx-chips ctx">
-          <span id="ftr-lever-chip"></span>
-          <span id="hero-sizing"></span>
-        </div>
+        {# The tick CONFIRMS the call, so it rides inside the stance banner. As a peer
+           chip in the row below it read like a fourth unrelated fact. #}
+        <span class="rvx-stance"><span class="rvx-stance-flag" aria-hidden="true">⚑</span>{{ t(_tc_lead.stance_en, _tc_lead.stance_zh) }}{% if _tc_lead.days_in_state is not none and _tc_lead.days_in_state %}<span class="rvx-stance-days"> · {{ t(_tc_lead.days_in_state|string + " days in", _tc_lead.days_in_state|string + " 天") }}</span>{% endif %}{% if theme_context.alignment is defined and theme_context.alignment.sector_rotation_agrees %}<span class="rvx-stance-ok" data-tip-en="{{ theme_context.alignment.note_en | e }}" data-tip-zh="{{ theme_context.alignment.note_zh | e }}">✓ {{ t('sector rotation agrees', '板块轮动一致') }}</span>{% endif %}</span>
       </div>
       <div class="rvx-hocard">
         <div class="cap">{{ t("THIS WEEK'S HANDOFF", '本周交棒') }}</div>
@@ -1778,16 +1809,24 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
         </div>
       </div>
     </div>
-    <div class="rvx-chips" style="margin-top:14px">
-      <span class="rvx-chip rcpt" data-tip-en="Trailing-momentum rank names {{ _tc_tl.name }} first; skips the most recent ~3 weeks by construction; suggested weights unchanged. Shape read only — not a forecast." data-tip-zh="趋势动量排名以{{ _tc_tl.name_zh }}居首；设计上跳过最近约3周数据；建议权重不变。仅为形态读数，非预测。">ⓘ {{ t('How this works', '原理说明') }}</span>
-      {% if factor_season is defined and factor_season is not none %}
-      {% set _fs_tone = factor_season.tone if factor_season.tone in ('headwind','tailwind') else '' %}
-      <span id="factor-season" class="rvx-chip fs-chip {{ _fs_tone }}" data-tip-en="{{ factor_season.tip_en | e }}" data-tip-zh="{{ factor_season.tip_zh | e }}">{{ t(factor_season.chip_en, factor_season.chip_zh) }}</span>
-      {% endif %}
-      {% if theme_context.alignment is defined and theme_context.alignment.sector_rotation_agrees %}
-      <span class="rvx-chip" style="color:var(--up)" data-tip-en="{{ theme_context.alignment.note_en | e }}" data-tip-zh="{{ theme_context.alignment.note_zh | e }}">✓ {{ t('sector rotation agrees', '板块轮动一致') }}</span>
-      {% endif %}
-      <a class="rvx-chip" href="allocation.html" style="color:var(--link)">{{ t('Open the playbook →', '打开操盘手册 →') }}</a>
+    {# ── The conditions on that call. Everything below the hairline qualifies the
+       stance above it; the treatment says WHICH KIND each one is. Exactly one item
+       binds (the size cap — ruled + warn); the rest are reads that change nothing
+       (flat, muted, dotted). "How this works" is gone: it was a receipt wearing a
+       chip, and the same mechanics already live on the board's ordering ? tip. #}
+    {%- set _fs_ok = factor_season is defined and factor_season is not none and factor_season.chip_en %}
+    <div class="rvx-cond">
+      <div class="rvx-cond-cell lim" id="hero-limit" hidden>
+        <div class="rvx-cond-k">{{ t('Limits your size', '会限制仓位') }}</div>
+        <div class="rvx-cond-v"><span class="rvx-cond-slot" id="hero-sizing"></span></div>
+      </div>
+      <div class="rvx-cond-cell ctx" id="hero-context"{% if not _fs_ok %} hidden{% endif %}>
+        <div class="rvx-cond-k">{{ t('Context only', '仅供参考') }}</div>
+        <div class="rvx-cond-v"><span class="rvx-cond-slot" id="ftr-lever-chip"></span>{% if _fs_ok %}
+          {%- set _fs_tone = factor_season.tone if factor_season.tone in ('headwind','tailwind') else '' -%}
+          <span id="factor-season" class="fs-chip {{ _fs_tone }}" data-tip-en="{{ factor_season.tip_en | e }}" data-tip-zh="{{ factor_season.tip_zh | e }}">{{ t(factor_season.chip_en | replace(' · context only', ''), factor_season.chip_zh | replace('· 仅供参考', '')) }}</span>{% endif %}</div>
+      </div>
+      <a class="rvx-cond-go" href="allocation.html">{{ t('Open the playbook', '打开操盘手册') }} <i aria-hidden="true">→</i></a>
     </div>
   </section>
   {% else %}
@@ -1796,8 +1835,22 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
     <div class="rvx-eyebrow"><span>{{ t('US Sector Intelligence 🇺🇸', '美国行业智慧 🇺🇸') }}</span><span class="rvx-mut" id="hero-count"></span><span class="as-of">{{ t('as of', '截至') }} <span id="asof">—</span></span></div>
     <div class="rvx-vword">{{ t('Thematic', '主题') }} <span class="ac">{{ t('baskets', '篮子') }}</span></div>
     <p class="rvx-vsub" id="story">{{ t('Equal-weight US theme baskets measured against the S&P 500. Use them to see which themes are leading or fading.', '等权重美国主题篮子，对标标普 500。用于观察哪些主题在走强或走弱。') }}</p>
-    <div class="rvx-chips ctx" style="margin-top:12px">
-      <span id="ftr-lever-chip"></span><span id="hero-sizing"></span>
+    {# Same conditions bar as the primary hero (only one branch ever renders, so the
+       ids stay unique). Kept structurally identical on purpose: the fallback used to
+       be the branch where the two chips rendered as raw text with no padding at all. #}
+    {%- set _fs_ok = factor_season is defined and factor_season is not none and factor_season.chip_en %}
+    <div class="rvx-cond">
+      <div class="rvx-cond-cell lim" id="hero-limit" hidden>
+        <div class="rvx-cond-k">{{ t('Limits your size', '会限制仓位') }}</div>
+        <div class="rvx-cond-v"><span class="rvx-cond-slot" id="hero-sizing"></span></div>
+      </div>
+      <div class="rvx-cond-cell ctx" id="hero-context"{% if not _fs_ok %} hidden{% endif %}>
+        <div class="rvx-cond-k">{{ t('Context only', '仅供参考') }}</div>
+        <div class="rvx-cond-v"><span class="rvx-cond-slot" id="ftr-lever-chip"></span>{% if _fs_ok %}
+          {%- set _fs_tone = factor_season.tone if factor_season.tone in ('headwind','tailwind') else '' -%}
+          <span id="factor-season" class="fs-chip {{ _fs_tone }}" data-tip-en="{{ factor_season.tip_en | e }}" data-tip-zh="{{ factor_season.tip_zh | e }}">{{ t(factor_season.chip_en | replace(' · context only', ''), factor_season.chip_zh | replace('· 仅供参考', '')) }}</span>{% endif %}</div>
+      </div>
+      <a class="rvx-cond-go" href="allocation.html">{{ t('Open the playbook', '打开操盘手册') }} <i aria-hidden="true">→</i></a>
     </div>
   </section>
   {% endif %}
@@ -2004,10 +2057,14 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
   <section class="rvx-sec rvx-reveal" id="si-movement" style="animation-delay:.12s">
     <div class="rvx-sec-h">
       <h2>{{ t("What's moving — the whole market", '正在轮动 — 全市场') }}</h2>
-      <span class="q">{{ t('— 269 subsectors & 11 sector ETFs · display-only', '— 269个子行业与11个板块ETF · 仅展示') }}</span>
+      <span class="q">{{ t('— 269 subsectors & 11 sector ETFs', '— 269个子行业与11个板块ETF') }}</span>
       <span class="si-vocab" data-tip-en="The broadest universe (Finviz industry groups + a Mag-7 composite). A context lens: it measures the speed of relative strength — it ranks nothing, gates nothing and sizes nothing. Detail pages open per subsector." data-tip-zh="最广的市场范围（Finviz行业分组+Mag-7组合）。背景视角：衡量相对强度的速度 — 不排序、不门控、不定仓。各子行业有详情页。">?</span>
     </div>
-    <p class="rvx-sec-sub">{{ t('The quadrant map over the broadest universe, the groups that just turned, and where money is rotating in and out. A heads-up layer — the lanes above stay the only calls.', '覆盖最广市场的象限图、本周拐点、以及资金流入流出的方向。此为提示层 — 操作判断仅见上方清单。') }}</p>
+    {# ONE disclaimer for the whole view, stated once, at the top. It used to be said
+       four times before the reader reached the map: here, again under the events
+       heading, again in the flow-map footer, and again in a closing caveat. The
+       remaining three are deleted in rotation_events.js — see the note there. #}
+    <p class="rvx-sec-sub">{{ t('A heads-up layer — the only calls stay in the lanes above.', '此为提示层 — 操作判断仅见上方清单。') }}</p>
     <div id="rc-events-mount"></div>
     <div id="rotation-app" class="sr-scope"></div>
     <div id="desk-watch-mount"></div>
@@ -2440,7 +2497,7 @@ function renderRegimeSizing(){
   const rcEn=showNote?`Caution gate: US books only (volatility-overlay drawdown study${asof?`, asof ${asof}`:''}) — no drawdown edge over plain volatility-targeting. Not tested separately for this market.`:'';
   const rcZh=showNote?`审慎档位：仅基于美国标的（波动率叠加回撤研究${asof?`，数据截至 ${asof}`:''}）——相较单纯波动率目标没有回撤优势。未针对本市场单独检验。`:'';
   const rcAttr=showNote?` data-tip-rc-en="${esc(rcEn)}" data-tip-rc-zh="${esc(rcZh)}"`:'';
-  return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}"${rcAttr}>⚠ ${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
+  return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}"${rcAttr}>${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
 }
 
 // ── Verdict hero enrichment (server renders the shell; JS fills counts + handoff perf) ──
@@ -2449,6 +2506,7 @@ function renderVerdictHero(){
   const n=(BASKETS.baskets||[]).length, nc=(BASKETS.categories||[]).length;
   const hc=document.getElementById('hero-count'); if(hc) hc.textContent='· '+n+(zh?' 个主题 · ':' themes · ')+nc+(zh?' 个分类':' categories');
   const hs=document.getElementById('hero-sizing'); if(hs) hs.innerHTML=renderRegimeSizing();
+  if(window.__rvxSyncCond) window.__rvxSyncCond();
   const om=document.getElementById('hero-out-meta');
   if(om&&om.dataset.id){ const t=themeById(om.dataset.id); if(t){ const r20=relPct(t,'20d'),r5=relPct(t,'5d');
     om.innerHTML=(zh?'原第一':'was #1')+(r20!=null?' · <span class="rvx-num">'+fmtPct(r20)+'</span> 20d':'')+(r5!=null&&r5<0?' · <span class="rvx-num rvx-dn">'+fmtPct(r5)+'</span> 5d':''); } }
