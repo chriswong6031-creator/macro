@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T08:23:01.326396+00:00",
-  "count": 721,
+  "generated_at": "2026-08-04T08:38:04.441639+00:00",
+  "count": 722,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -49,6 +49,23 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-iim2137xn3o-bf11aa",
+      "title": "JPM Europe Equity Research | Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T07:39:18Z",
+      "summary_points": [
+        "**Diageo Capital Markets Day**: Investor skepticism on growth path, $1bn cost savings, FY27 soft guide, top-line recovery risk - **Rolls-Royce**: 9x consecutive H1 beat, 2026-30E EPS up 19%/14%/13%/14%, PT raised 20% to 1,800p - **Global Banks Risk Shift**: Cybersecurity now primary risk over credit risk, critical sector pivot - **EPS Divergence**: Extreme contrast—Worldline +6045.7% vs Taylor Wimpey -16.5%, signaling sector rotation opportunities - **European Utilities Catalyst**: Low gas storage driving earnings momentum for generators/integrated utilities - **JPMorgan Roadshows**: Targeting AstraZeneca, Weir Group, BAE Systems (pharma/industrials/defense), active capital flow catalyst"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-vmsdpnfuiiz-4923fa",
       "title": "Citi The Point for Europe Tuesday, 04 August 2026",
