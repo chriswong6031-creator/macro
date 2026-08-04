@@ -12,8 +12,8 @@
      · contextual zone footer: ZONE range / muted pending range / "sets on confirmation" /
        RE-ADD range / "no zone" — plus the signal as-of date pinned right
      · one hue per card: glow edge, chart, chip, score, tracker and zone label all follow the
-       verb via --pvh. Hues are the dedicated --pv-* tokens (theme.css) — NEVER --up/--down,
-       which flip red/green under html[data-lang="zh"]; Buy must stay green in zh.
+       verb via --pvh. Hues are the dedicated --pv-* tokens (theme.css): green-up/red-down
+       in English and red-up/green-down under html[data-lang="zh"].
 
    ONE DELIBERATE EXCEPTION TO THE ONE-HUE LAW — .pv-live (Prophet Live P1, spec §5.1).
    The card's hue encodes THE NIGHTLY VERDICT. The ◐ live chip belongs to TODAY'S TAPE: a
@@ -39,10 +39,11 @@
        'imminent' renders dashed (pending semantics). Like every element, the chip
        follows the card hue --pvh (one-hue law).
      featured — OPTIONAL bool (prophet board priority engine, 2026-08-02): the
-       glow cohort. Adds .pv-featured — a soft green aura + a full-bleed lit rail.
+       glow cohort. Adds .pv-featured — a soft bullish aura + a full-bleed lit rail.
        It is the ONE element that does NOT follow --pvh: the aura is pinned to
-       --pv-buy because "featured" MEANS the pick cohort, and it must stay green
-       even if a future stage rule ever lets a non-buy verb be featured. Callers
+       --pv-buy because "featured" MEANS the pick cohort, and it must follow the
+       active language's bullish convention even if a future stage rule ever lets
+       a non-buy verb be featured. Callers
        must not also pass triage on a featured row (one accent per card) — the
        aura supersedes the triage ring.
      stage_key — OPTIONAL slug ('live'|'setting_up'|'ran'|'blocked'): emitted as
@@ -84,11 +85,11 @@
    animation here and therefore no prefers-reduced-motion kill block to keep in
    sync (the strongest form of that compliance is having nothing to disable).
 
-   The glow is pinned to --pv-buy, NOT --pvh (see the macro header) — and never
-   to --up, which flips to RED under html[data-lang="zh"]; a featured pick glowing
-   red in Chinese would invert the entire message. Colour is never the only
-   carrier either: every featured card also renders a "★ Featured / 精选" chip in
-   its marks row (contrast-checked below). #}
+   The glow is pinned to --pv-buy, NOT --pvh (see the macro header). theme.css
+   rebinds --pv-buy to the active language's bullish convention, so the featured
+   treatment remains semantically bullish in both English and Chinese. Colour is
+   never the only carrier either: every featured card also renders a
+   "★ Featured / 精选" chip in its marks row (contrast-checked below). #}
 {# TONE CALIBRATION (operator correction 2026-08-03, live-board review): the first
    shipped values washed the ENTIRE container green — background tints of 7%/8%
    with 50-60%-alpha auras read as "radioactive paint", worst on light where 8%
@@ -254,6 +255,12 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
 }
 @media (max-width:680px){
   .pvcard .pv-chart svg,.pvcard .pv-nochart{height:58px}
+{# System display zoom reduces the effective CSS width. Keep the ticker + Edge
+   score on the first line and give the company name its own full-width line;
+   otherwise flex shrink can collapse .pv-nm to zero on narrow two-up cards. #}
+  .pv-hd{align-items:flex-start}
+  .pv-idw{flex:1 1 auto;flex-wrap:wrap;row-gap:1px;overflow:visible}
+  .pv-nm{flex-basis:100%;width:100%}
   .pv-stl span{font-size:9px}
   .pv-zn{font-size:10px}
   /* narrow cards: trigger chip collapses to the bare ⚡ glyph (the board copy

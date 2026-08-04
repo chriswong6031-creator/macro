@@ -729,13 +729,46 @@ publish:
     #     computed, and backwards for the setup.
     # Every 30-minute sweep would have shipped more of the same. Volume is not
     # worth an account strike or a reputation for not reading our own charts.
-    # RE-ARM once the four fixes land and one clean batch has been eyeballed.
-    enabled: false
+    #
+    # RE-ARMED in this same PR, 2026-08-04, because the pause and the fixes now
+    # land together — a lane that is dark at the 13:30Z open ships zero mover and
+    # theme posts for the whole session, which is the failure this week has
+    # actually been about. All four defects carry a test, and each was probed
+    # directly against the live defect rather than only through its suite:
+    #   * cashtag cap: _theme_text_cashtags(members, 3) on the live 8-name post
+    #     returns ['$AMBA','$AMZN','$OUST'] — the three biggest moves — while the
+    #     card still renders all eight rows.
+    #   * session claims: _session_conflict on the live string "...average +3.7%
+    #     on Friday" with Monday rows returns
+    #     "wrong_session_claim: copy says 2026-07-31, rows are 2026-08-03";
+    #     the same copy saying "today" returns None.
+    #   * logos: the icon CDN is a DARK-theme set and the card mounted every mark
+    #     on one near-white disc. Contrast-aware plates + monogram fallback;
+    #     verified by eye on the rendered PNG (COHR/LITE/AXON/RBLX all legible).
+    #   * stance: trend_context() buckets an FSLR-shaped series (-34% over 3m,
+    #     then +10.3%) as "washout_bounce", and the selector then NARROWS the
+    #     variant pool to bucket lines, so the generic "let it settle first"
+    #     cannot be drawn. Coverage is one bucket line per voice bank.
+    # KNOWN RESIDUAL: the narrowing only bites when a voice's bank carries a line
+    # for that bucket. A voice bank added later without one silently falls back
+    # to the generic caution — worth a guard test before the next voice lands.
+    enabled: true
     max_per_run: 2           # network-wide new items per slot run
     min_abs_mover_pct: 3.0   # floor for a single-name move claim
     min_abs_theme_pct: 1.0   # floor for a theme-average claim
     max_quote_age_min: 45    # generation freshness gate (mirrors live_gate)
     min_active_tiles: 25     # flat-tape belt: skip unless ≥N S&P names moved ±0.5% (closed-market guard)
+    # Defect 1, the cashtag spam fingerprint: the most cashtags a theme_list
+    # POST TEXT may name. The card still renders every row, and the breadth
+    # count and average are still computed over the whole member list — this
+    # caps only what the text says out loud, and names the biggest movers.
+    #
+    # OPTIONAL, like every key here: publish_time_content.resolve() overlays this
+    # block onto its in-code _DEFAULTS, so omitting it simply takes the default
+    # (also 3). Written out anyway because it is an operator dial — 3 is the top
+    # of the stated "2-3, not all of them" band — and every other tunable in this
+    # block is explicit here rather than buried in the module.
+    max_theme_cashtags_in_text: 3
     # Per-call lane allowlist (XG-W1). This lane picks an account straight from
     # desk_network and builds a mover/theme item — it never consults tilt, so the
     # employee desks' zeroed mover/event weights cannot reach it. The charter
