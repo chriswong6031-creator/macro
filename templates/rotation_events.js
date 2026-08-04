@@ -148,80 +148,108 @@
     sorted.forEach(function(e){
       // Determine event_type — default to handoff for v1 payload without event_type (graceful degrade)
       var etype=e.event_type||'handoff';
-      // Donor/receiver labels
-      var donorName,receiverName;
+      /* Donor/receiver labels. Both languages are resolved, not just the active one:
+         the hover card writes an EN and a ZH attribute at the same time, and a card
+         built from only the active language leaves the other half in English until
+         the next re-render. */
+      var donorEn,donorZh,recvEn,recvZh;
       if(etype==='correlation_break'||etype==='contagion_break'){
         // contagion — use a+b from contagion field or from the event itself
-        donorName=isZh()
-          ?esc(e.from_leg&&(e.from_leg.name_zh||e.from_leg.name_en)||esc(e.from_leg&&e.from_leg.key)||'—')
-          :esc(e.from_leg&&(e.from_leg.name_en||e.from_leg.key)||'—');
-        receiverName=isZh()
-          ?esc(e.to_leg&&(e.to_leg.name_zh||e.to_leg.name_en)||'—')
-          :esc(e.to_leg&&(e.to_leg.name_en||e.to_leg.key)||'—');
+        donorEn=esc(e.from_leg&&(e.from_leg.name_en||e.from_leg.key)||'—');
+        donorZh=esc(e.from_leg&&(e.from_leg.name_zh||e.from_leg.name_en||e.from_leg.key)||'—');
+        recvEn=esc(e.to_leg&&(e.to_leg.name_en||e.to_leg.key)||'—');
+        recvZh=esc(e.to_leg&&(e.to_leg.name_zh||e.to_leg.name_en||e.to_leg.key)||'—');
       } else {
-        donorName=isZh()
-          ?esc(e.from_leg&&(e.from_leg.name_zh||e.from_leg.name_en)||e.donor||'—')
-          :esc(e.from_leg&&(e.from_leg.name_en||e.from_leg.key)||e.donor||'—');
-        receiverName=isZh()
-          ?esc(e.to_leg&&(e.to_leg.name_zh||e.to_leg.name_en)||e.receiver||'—')
-          :esc(e.to_leg&&(e.to_leg.name_en||e.to_leg.key)||e.receiver||'—');
+        donorEn=esc(e.from_leg&&(e.from_leg.name_en||e.from_leg.key)||e.donor||'—');
+        donorZh=esc(e.from_leg&&(e.from_leg.name_zh||e.from_leg.name_en)||e.donor||'—');
+        recvEn=esc(e.to_leg&&(e.to_leg.name_en||e.to_leg.key)||e.receiver||'—');
+        recvZh=esc(e.to_leg&&(e.to_leg.name_zh||e.to_leg.name_en)||e.receiver||'—');
       }
       // Mag-7 basket pill: never show "MAGS"
       if((e.to_leg&&(e.to_leg.key==='mag7'||e.to_leg.key==='mag7_basket'))||e.receiver==='mag7_basket'){
-        receiverName=isZh()?'七巨头等权篮子':'Mag-7 basket';
+        recvEn='Mag-7 basket'; recvZh='七巨头等权篮子';
       }
+      var donorName=isZh()?donorZh:donorEn, receiverName=isZh()?recvZh:recvEn;
       // Health / faltering
       var h=e.health||null;
       var isFaltering=!!(h&&(h.weakening||h.lapse_count>=2||h.neg_run>=2));
       var effectiveType=isFaltering?'faltering':etype;
 
-      // State line and stance per type
-      var stateLine,stanceText,stanceCls;
+      // State line and stance per type. The state line doubles as the hover card's
+      // headline, so it is kept in both languages.
+      var stateLineEn,stateLineZh,stanceText,stanceCls;
       if(effectiveType==='into_strength'){
-        stateLine=t('Strength rotating toward '+receiverName,'强势正在轮向'+receiverName);
+        stateLineEn='Strength rotating toward '+recvEn;
+        stateLineZh='强势正在轮向'+recvZh;
         stanceText=t('In favour — watch for entry','处于优势——留意入场');
         stanceCls='rcf-favour';
       } else if(effectiveType==='contagion_break'||effectiveType==='correlation_break'){
-        stateLine=t(donorName+' and '+receiverName+' no longer offsetting — falling together',
-                    donorName+'与'+receiverName+'不再互相对冲——同步下跌');
+        stateLineEn=donorEn+' and '+recvEn+' no longer offsetting — falling together';
+        stateLineZh=donorZh+'与'+recvZh+'不再互相对冲——同步下跌';
         stanceText=t('Stand aside — diversification fading','暂避——分散效果减弱');
         stanceCls='rcf-aside';
       } else if(effectiveType==='faltering'){
-        stateLine=t(donorName+'→'+receiverName+' rotation weakening',donorName+'→'+receiverName+'轮动转弱');
+        stateLineEn=donorEn+'→'+recvEn+' rotation weakening';
+        stateLineZh=donorZh+'→'+recvZh+'轮动转弱';
         stanceText=t('Rotation weakening — may close','轮动转弱——或将关闭');
         stanceCls='rcf-weak';
       } else {
         // handoff (default for unknown types — cautious fallback per spec)
-        stateLine=t('Money leaving '+donorName+', turning up in '+receiverName,
-                    '资金撤出'+donorName+'，在'+receiverName+'转强');
+        stateLineEn='Money leaving '+donorEn+', turning up in '+recvEn;
+        stateLineZh='资金撤出'+donorZh+'，在'+recvZh+'转强';
         stanceText=t('Watch — don\'t chase','观望，不要追高');
         stanceCls='rcf-watch';
       }
+      var stateLine=isZh()?stateLineZh:stateLineEn;
 
-      // Hover receipt (Tier-2)
+      /* Hover card (Tier-2). Rewritten 2026-08-04 with the popup overhaul: the old
+         tip was one run-on chain of eight machine fragments — "Out: X −30% from
+         peak · In: Y +12.6% off low · Ratio: +6.3%/10s · Historical: about half
+         reach +7.8% in ~9 sessions (n=8) · Heads-up…" — with the English suffixes
+         hardcoded, so the Chinese card read half in English. It is now a headline,
+         two plain sentences, and a receipt line for the base rate. Both languages
+         are built separately rather than sharing one pre-resolved string. */
       var r=e.receipts||{};
-      var tipLines=[];
-      if(r.blowoff&&r.blowoff.drawdown_pct!=null)
-        tipLines.push(t('Out: ','流出：')+donorName+' −'+(r.blowoff.drawdown_pct*100).toFixed(0)+'% from peak');
-      if(r.turn&&r.turn.off_low_pct!=null)
-        tipLines.push(t('In: ','流入：')+receiverName+' +'+(r.turn.off_low_pct*100).toFixed(1)+'% off low');
-      if(r.ratio&&r.ratio.ratio_chg_10s!=null)
-        tipLines.push(t('Ratio: ','比值：')+(r.ratio.ratio_chg_10s>0?'+':'')+(r.ratio.ratio_chg_10s*100).toFixed(1)+'%/10s'+(r.ratio.ratio_20s_high?' · 20d-high':''));
-      // Flow receipt — only if flow_receipts present (v2)
-      var fr=e.flow_receipts||null;
-      if(fr&&fr.receiver&&fr.receiver.flow_5d_mn!=null)
-        tipLines.push(t('ETF flow: ','ETF资金：')+'$'+(fr.receiver.flow_5d_mn/1e6).toFixed(0)+'M'+(fr.receiver.flow_asof?' (as of '+esc(fr.receiver.flow_asof)+')':''));
-      // Ruler
+      var bodyEn=[],bodyZh=[];
+      if(r.blowoff&&r.blowoff.drawdown_pct!=null){
+        var dd=(r.blowoff.drawdown_pct*100).toFixed(0);
+        bodyEn.push(donorEn+' sits '+dd+'% below its peak.');
+        bodyZh.push(donorZh+'较峰值低 '+dd+'%。');
+      }
+      if(r.turn&&r.turn.off_low_pct!=null){
+        var ol=(r.turn.off_low_pct*100).toFixed(1);
+        bodyEn.push(recvEn+' is '+ol+'% up off its low.');
+        bodyZh.push(recvZh+'自低点回升 '+ol+'%。');
+      }
+      if(r.ratio&&r.ratio.ratio_chg_10s!=null){
+        var rc=Math.abs(r.ratio.ratio_chg_10s*100).toFixed(1);
+        bodyEn.push('The two have moved '+rc+'% apart over the last ten sessions'
+          +(r.ratio.ratio_20s_high?', the widest gap in a month.':'.'));
+        bodyZh.push('近十个交易日两者差距扩大 '+rc+'%'+(r.ratio.ratio_20s_high?'，为一个月来最大。':'。'));
+      }
+      bodyEn.push('A heads-up on shifting leadership, not a buy signal.');
+      bodyZh.push('这是领导权变化的提示，并非买入信号。');
+      /* The receipt strip — base rates, sample sizes and money flow. Sanctioned
+         Tier-2 home for the machine facts the body must not carry. */
+      var rcEn=[],rcZh=[];
       var ru=(ev&&ev.ruler&&ev.ruler.modern&&ev.ruler.modern.run_pct)?ev.ruler.modern:null;
-      if(ru&&ru.n>=5)
-        tipLines.push(t('Historical: about half reach +'+ru.run_pct.median+'% in ~'+ru.sessions_to_peak.median+' sessions (n='+ru.n+')',
-                        '历史：约半数在约'+ru.sessions_to_peak.median+'个交易日内达到约+'+ru.run_pct.median+'%（n='+ru.n+'）'));
-      tipLines.push(t('Heads-up, not a buy signal.','仅为提示，非买入信号。'));
-      var tipEn=tipLines.join(' · ');
-      var tipZh=tipLines.join(' · ');
+      if(ru&&ru.n>=5){
+        rcEn.push('past handoffs: half ran +'+ru.run_pct.median+'% within ~'+ru.sessions_to_peak.median+' sessions (n='+ru.n+')');
+        rcZh.push('历史同类轮动：半数在约'+ru.sessions_to_peak.median+'个交易日内录得 +'+ru.run_pct.median+'%（n='+ru.n+'）');
+      }
+      var fr=e.flow_receipts||null;
+      if(fr&&fr.receiver&&fr.receiver.flow_5d_mn!=null){
+        var fm='$'+(fr.receiver.flow_5d_mn/1e6).toFixed(0)+'M';
+        rcEn.push('ETF flow 5d '+fm+(fr.receiver.flow_asof?' · as of '+esc(fr.receiver.flow_asof):''));
+        rcZh.push('ETF 5日资金 '+fm+(fr.receiver.flow_asof?' · 截至 '+esc(fr.receiver.flow_asof):''));
+      }
 
       var laneClass='rcf-lane rcf-'+esc(etype.replace('correlation_break','contagion_break'));
-      html+='<div class="'+laneClass+'" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">'
+      html+='<div class="'+laneClass+'"'
+        +' data-tip-t-en="'+esc(stateLineEn)+'" data-tip-t-zh="'+esc(stateLineZh)+'"'
+        +' data-tip-en="'+esc(bodyEn.join(' '))+'" data-tip-zh="'+esc(bodyZh.join(''))+'"'
+        +(rcEn.length?' data-tip-rc-en="'+esc(rcEn.join(' · '))+'" data-tip-rc-zh="'+esc(rcZh.join(' · '))+'"':'')
+        +'>'
         +'<span class="rcf-pill">'+donorName+'</span>'
         +'<span class="rcf-arrow">&#x279C;</span>'
         +'<span class="rcf-pill">'+receiverName+'</span>'
@@ -243,14 +271,20 @@
     // Footer
     var asof=(ev&&ev.as_of)||'—';
     var coldstarNote=(ev&&ev.coldstart)?
-      '<span class="rcf-coldstart-note"><span class="rcf-help" data-tip-en="History was rebuilt tonight — counts may look reset." data-tip-zh="今晚重建了历史——计数可能看似重置。">?</span></span>'
+      '<span class="rcf-coldstart-note"><span class="rcf-help"'
+      +' data-tip-t-en="Counts look reset" data-tip-t-zh="计数看似重置"'
+      +' data-tip-en="History was rebuilt last night, so the day counts start over. The events themselves are unchanged."'
+      +' data-tip-zh="昨夜重建了历史，因此天数从头计起。事件本身没有变化。">?</span></span>'
       :'';
     html+='<div class="rcf-footer">'
       +'<span class="l-en">A heads-up on shifting leadership — not a buy list. as of '+esc(asof)+'</span>'
       +'<span class="l-zh">领导权变化的提示——非买入清单。截至 '+esc(asof)+'</span>'
       +' <span class="rcf-help" tabindex="0" role="button" aria-label="details"'
-      +' data-tip-en="Events are logged and their outcomes tracked; most are still being measured, so nothing here ranks, gates, or sizes anything. Cross-sector and into-strength reads use each series\' own history (the Mag-7 line is an equal-weight basket, not the MAGS ETF). Started from the 2026-06-25 semis→Mag-7 miss."'
-      +' data-tip-zh="事件会被记录、结果会被跟踪；多数仍在观察中，因此此处不排名、不门控、不调仓。跨板块与「轮向强势」读数使用各自序列的历史（七巨头用等权篮子，而非MAGS ETF）。源自2026-06-25存储→七巨头轮动漏报的复盘。">?</span>'
+      +' data-tip-t-en="How these are tracked" data-tip-t-zh="这些事件如何被跟踪"'
+      +' data-tip-en="Every event is logged and its outcome followed. Most are still being measured, so nothing here ranks, gates or sizes anything."'
+      +' data-tip-zh="每个事件都会记录并跟踪结果。多数仍在观察中，因此此处不排名、不门控、不调仓。"'
+      +' data-tip-rc-en="each series measured on its own history · Mag-7 = equal-weight basket, not the MAGS ETF · logging began 2026-06-25"'
+      +' data-tip-rc-zh="各序列以自身历史衡量 · 七巨头为等权篮子，非 MAGS ETF · 自 2026-06-25 起记录">?</span>'
       +coldstarNote
       +'</div>';
     el.innerHTML=html;

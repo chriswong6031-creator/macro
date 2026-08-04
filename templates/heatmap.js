@@ -569,6 +569,15 @@
           + '<small>/100</small></span>';
       }
       h += '</div>';
+      /* The band chip already says the word, so a verdict that opens by repeating it
+         ("Neutral" + "Neutral — no clear edge") spends a line on nothing. Drop the
+         echoed lead and keep the reason, which is the half the chip cannot carry. */
+      if (verdict && band) {
+        var lead = new RegExp('^\\s*' + band.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          + '\\s*[—–\\-:·]\\s*', 'i');
+        var trimmed = verdict.replace(lead, '');
+        if (trimmed) verdict = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+      }
       if (verdict) h += '<div class="hm-c-verdict">' + esc(verdict) + '</div>';
     }
     body.innerHTML = h || '<div class="hm-c-stub">' + L('Open the analyzer for the full read.', '打开分析器查看完整解读。') + '</div>';
@@ -2033,12 +2042,26 @@
       + '.hm-thtile{padding:2px 4px;}'
       + '.hm-thtile .thn{font-weight:800;letter-spacing:.1px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.12;}'
       + '.hm-mrow-th{cursor:default;}'
-      // stock hover card
+      // stock hover card — the same glass shell the rotation card and the Lens
+      // explainer use, so every popup on a page reads as one component. --glass-*
+      // are theme-aware (theme.css rebinds them for light); the dark values stay
+      // inlined as fallbacks. The ring blooms in the accent at the top-left corner.
       + '.hm-card{position:fixed;z-index:1200;left:0;top:0;width:300px;max-width:calc(100vw - 16px);'
-      + 'background:color-mix(in srgb,var(--panel) 96%,transparent);border:1px solid color-mix(in srgb,var(--text) 16%,var(--line));'
-      + 'border-radius:13px;padding:13px 14px;box-shadow:0 8px 24px rgba(0,0,0,.34);'
-      + 'pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .13s,transform .13s;}'
-      + '.hm-card.on{opacity:1;transform:none;}'
+      + 'border-radius:15px;padding:14px 15px 13px;'
+      // Alone among the three, this card always sits on saturated treemap tiles, so the
+      // glass tint is composited over an OPAQUE panel — a translucent card here reads as
+      // a red or green wash of whatever it happens to be covering.
+      + 'background:linear-gradient(var(--glass-bg,color-mix(in srgb,var(--panel) 90%,transparent)),'
+      + 'var(--glass-bg,color-mix(in srgb,var(--panel) 90%,transparent))),var(--panel);'
+      + 'box-shadow:var(--glass-shadow,0 24px 64px -22px rgba(3,7,18,.74),0 10px 26px -12px rgba(3,7,18,.55));'
+      + 'pointer-events:none;opacity:0;transform:translateY(6px) scale(.97);transition:opacity .13s ease,transform .13s ease;}'
+      + '.hm-card::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;'
+      + 'background:radial-gradient(150px 74px at 20% -6%,color-mix(in srgb,var(--link) 55%,transparent),transparent 70%),'
+      + 'var(--glass-brd,color-mix(in srgb,var(--text) 14%,transparent));'
+      + '-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;'
+      + 'mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;pointer-events:none;}'
+      + '.hm-card>*{position:relative;z-index:1;}'
+      + '.hm-card.on{opacity:1;transform:none;transition:opacity .18s ease,transform .26s cubic-bezier(.34,1.26,.4,1);}'
       // touch preview: a dimming scrim behind a now-tappable card (tap the card → full read; tap the scrim → dismiss)
       + '.hm-tap-scrim{position:fixed;inset:0;z-index:1190;background:rgba(4,7,13,.44);opacity:0;pointer-events:none;transition:opacity .2s ease;}'
       + '.hm-tap-scrim.on{opacity:1;pointer-events:auto;}'
@@ -2046,7 +2069,7 @@
       + '.hm-card.hm-card-tap .hm-c-foot{margin-top:11px;padding-top:9px;border-top:1px solid color-mix(in srgb,var(--text) 12%,var(--line));}'
       + '.hm-card .up{color:var(--up);} .hm-card .dn{color:var(--down);}'
       + '.hm-c-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}'
-      + '.hm-c-sym{font-size:18px;font-weight:800;color:var(--text);line-height:1;}'
+      + '.hm-c-sym{font-size:18px;font-weight:800;letter-spacing:-.022em;color:var(--text);line-height:1;}'
       + '.hm-c-nm{font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.3;}'
       + '.hm-c-px{text-align:right;white-space:nowrap;}'
       + '.hm-c-pxv{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text);}'
@@ -2074,9 +2097,9 @@
       + '.hm-c-locked svg{width:13px;height:13px;flex:none;margin-top:2px;color:#8b5cf6;}'
       + '.hm-c-locked a{color:var(--link);border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent);}'
       // five evenly-spread windows — room to breathe, never a 12-column cram
-      + '.hm-c-strip{display:flex;justify-content:space-between;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);}'
-      + '.hm-c-m{flex:1;text-align:center;min-width:0;} .hm-c-m .k{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;} .hm-c-m .v{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;}'
-      + '.hm-c-foot{margin-top:10px;font-size:11px;font-weight:700;color:var(--link);}'
+      + '.hm-c-strip{display:flex;justify-content:space-between;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--text) 11%,transparent);}'
+      + '.hm-c-m{flex:1;text-align:center;min-width:0;} .hm-c-m .k{display:block;font:700 8.5px/1 var(--font-ui,Inter,sans-serif);color:color-mix(in srgb,var(--muted) 80%,transparent);text-transform:uppercase;letter-spacing:.13em;margin-bottom:4px;} .hm-c-m .v{font-size:11.5px;font-weight:700;letter-spacing:-.012em;font-variant-numeric:tabular-nums;}'
+      + '.hm-c-foot{margin-top:11px;padding-top:9px;border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent);font:700 10.5px/1 var(--font-ui,Inter,sans-serif);letter-spacing:.01em;color:var(--link);}'
       // member popup (sector / subsector)
       + '.hm-mem{position:fixed;z-index:1200;left:0;top:0;width:286px;max-width:calc(100vw - 16px);background:color-mix(in srgb,var(--panel) 97%,transparent);border:1px solid color-mix(in srgb,var(--text) 16%,var(--line));border-radius:13px;padding:0;box-shadow:0 8px 24px rgba(0,0,0,.34);pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .13s,transform .13s;overflow:hidden;}'
       + '.hm-mem.on{opacity:1;transform:none;pointer-events:auto;}'
@@ -2149,7 +2172,7 @@
       + '.hm-mgo{color:var(--muted);font-size:20px;font-weight:700;flex:none;}'
       + '.hm-mobile .hm-legend,.hm-mobile .hm-read-src,.hm-mobile .hm-hint{display:none;} .hm-mobile .hm-sort{display:flex;}'
       // reduced motion
-      + '@media (prefers-reduced-motion: reduce){.hm-tile,.hm-card,.hm-mem,.hm-ov-scrim,.hm-ov-panel{transition:none !important;} .hm-c-load span{animation:none;}}'
+      + '@media (prefers-reduced-motion: reduce){.hm-tile,.hm-card,.hm-card.on,.hm-mem,.hm-ov-scrim,.hm-ov-panel{transition:none !important;transform:none !important;} .hm-c-load span{animation:none;}}'
       + '@media (max-width:560px){.hm-bar{gap:8px;} .hm-sc-foot{gap:10px;} .hm-sc-meta{font-size:10px;}}'
       // hide the scorecard Expand on small screens OR any touch device (no hover) — the deep map stays reachable via the standalone Sector Heatmap page
       + '@media (max-width:560px),(any-hover:none){.hm-sc-exp{display:none;}}'
