@@ -990,6 +990,33 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
     return doc
 
 
+def name_score_row_fields(doc: dict) -> dict:
+    """The name_score scorecard's HEADLINE figures, flattened for the forward-log row.
+
+    Deliberately compact — the full block lives in the artifact; the forward log only needs
+    the series a reader would plot: coverage, and each horizon's rank-IC with the number of
+    IC dates behind it. ``name_score_available`` is what keeps a null unambiguous once these
+    rows accumulate: available + null rank-IC is the ACCRUING state (the block carries the
+    plain reason); not-available means the ledger or the forward join failed that night, and
+    the artifact's ``degraded`` list names which.
+
+    Null-safe on every path, including a doc with no block at all — this row is written by
+    the nightly and must never be the thing that takes the lane down. ``n_ic_dates`` is
+    reported beside every rank-IC so a thin cell can never be read as a measurement.
+    """
+    ns = doc.get("name_score_scorecard") or {}
+    by_h = ns.get("by_horizon") or {}
+    out: dict = {
+        "name_score_available": bool(ns.get("available")),
+        "name_score_coverage_pct": (ns.get("forward_store") or {}).get("coverage_pct"),
+    }
+    for h in nsg._HORIZONS_D:
+        cell = by_h.get(f"{h}d") or {}
+        out[f"name_score_rank_ic_{h}d"] = cell.get("rank_ic")
+        out[f"name_score_ic_dates_{h}d"] = cell.get("n_ic_dates")
+    return out
+
+
 def summary_row(doc: dict) -> dict:
     """The one-line forward-log row: the summary block + the family histogram, keyed by date."""
     s = doc["summary"]
@@ -1009,6 +1036,7 @@ def summary_row(doc: dict) -> dict:
         "converted_n": doc["conversion"]["converted_n"],
         "conversion_rate": doc["conversion"]["rate"],
         "excluder_family_hist": doc["top63_excluder_family_hist"],
+        **name_score_row_fields(doc),
         "degraded_n": len(doc["degraded"]),
     }
 

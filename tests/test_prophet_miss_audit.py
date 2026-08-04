@@ -251,6 +251,16 @@ def _doc(price_through: str = "2026-07-31") -> dict:
         "top63_excluder_family_hist": {"not_topped_veto": 1, "ELIGIBLE": 1},
         "conversion": {"sighted_n": 2, "converted_n": 1, "rate": 0.5, "converted": ["AAA"],
                        "never_sighted_n": 1, "unconverted_top": ["BBB"], "plan_universe_n": 1},
+        # the live shape on the night this schema shipped: 21d graded thin, 63d accruing
+        "name_score_scorecard": {
+            "tier": "ops_telemetry", "available": True,
+            "forward_store": {"coverage_pct": 11.9},
+            "by_horizon": {
+                "21d": {"rank_ic": -0.0571, "n_ic_dates": 2, "thin": True},
+                "63d": {"rank_ic": None, "n_ic_dates": 0, "thin": True,
+                        "null_reason": "still accruing"},
+            },
+        },
         "degraded": [],
     }
 
@@ -275,6 +285,45 @@ def test_forward_log_nightly_appends_once_and_is_idempotent(tmp_path):
     assert PMA.append_forward_log(_doc("2026-08-03"), log, advance=True) is True
     rows = [json.loads(x) for x in log.read_text(encoding="utf-8").splitlines() if x.strip()]
     assert [r["price_through"] for r in rows] == ["2026-07-31", "2026-08-03"]
+
+
+def test_forward_log_row_carries_the_name_score_headline():
+    """The scorecard's headline figures ride the forward log so the rank-IC is a SERIES,
+    not a value you have to dig out of each night's artifact in git history.
+
+    Shipped before the log's first row was ever written (the 08-02/08-03 nightlies failed),
+    so this is a schema-before-first-row change rather than a migration across mixed-era
+    rows — every row the log will ever hold carries these keys.
+    """
+    row = PMA.summary_row(_doc())
+    assert row["name_score_available"] is True
+    assert row["name_score_coverage_pct"] == 11.9
+    assert row["name_score_rank_ic_21d"] == -0.0571
+    assert row["name_score_ic_dates_21d"] == 2
+    # the accruing horizon rides as a NULL with its date count, never as a 0.0 rank-IC
+    assert row["name_score_rank_ic_63d"] is None
+    assert row["name_score_ic_dates_63d"] == 0
+    # both horizons the grader defines are present, so a later horizon change is visible
+    for h in NSG._HORIZONS_D:
+        assert f"name_score_rank_ic_{h}d" in row and f"name_score_ic_dates_{h}d" in row
+
+
+def test_forward_log_row_is_null_safe_without_a_scorecard():
+    """A night whose scorecard failed still writes its row: the fields go null and
+    ``name_score_available`` False says WHICH kind of null this is (join failed, not
+    accruing). The forward log must never be what takes the nightly down."""
+    doc = _doc()
+    doc.pop("name_score_scorecard")
+    row = PMA.summary_row(doc)
+    assert row["name_score_available"] is False
+    assert row["name_score_coverage_pct"] is None
+    assert row["name_score_rank_ic_21d"] is None and row["name_score_ic_dates_21d"] is None
+    json.dumps(row)          # the row must still serialise to one JSONL line
+
+    doc["name_score_scorecard"] = {"available": False, "null_reason": "ledger unreadable"}
+    row = PMA.summary_row(doc)
+    assert row["name_score_available"] is False
+    assert row["name_score_rank_ic_21d"] is None
 
 
 def test_forward_log_row_carries_no_wall_clock():
@@ -441,6 +490,14 @@ def test_summary_row_is_a_subset_of_the_artifact(tmp_path):
     assert row["converted_n"] == doc["conversion"]["converted_n"]
     assert row["excluder_family_hist"] == doc["top63_excluder_family_hist"]
     assert row["degraded_n"] == len(doc["degraded"])
+    # the name_score headline is a SUBSET of the block, never a second computation.
+    # This synthetic root ships no name_score ledger, so the block is the disclosed null —
+    # which is exactly the case the row must carry as False + nulls rather than omit.
+    ns = doc["name_score_scorecard"]
+    assert row["name_score_available"] == ns["available"] is False
+    for h in NSG._HORIZONS_D:
+        assert row[f"name_score_rank_ic_{h}d"] == \
+            (ns.get("by_horizon") or {}).get(f"{h}d", {}).get("rank_ic")
 
 
 def test_build_is_deterministic(tmp_path):
