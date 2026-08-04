@@ -2248,24 +2248,52 @@ house_picks:
 wire_volume:
   breaking:
     window_hours: 24
-    # Network default for a desk with no row below. 8 is the wire desk's working
-    # number: mastermind_news's own ramp tier allows 14 posts/day and the wire
-    # must not be able to eat the whole allowance, because the nightly ladder
-    # and the publish-time lanes draw from the same tier.
-    default_per_window: 8
+    # CAPS REMOVED (operator, 2026-08-04: "remove caps"). A negative number is
+    # the documented UNLIMITED sentinel — `breaking_cap_for` returns it and
+    # `route()` short-circuits on `cap < 0` before it ever counts the window.
+    # ZERO IS NOT "no cap", it is a real zero, which is why the persona rows
+    # below are untouched.
+    #
+    # WHAT THIS GIVES UP, recorded plainly because this block was built as the
+    # backstop for the operator's OWN quadruple-posting complaint (four posts
+    # from one John Williams appearance, two Switzerland CPI sub-prints, same
+    # batch). Two defences existed and only the second is being removed:
+    #   1. STORY CLUSTERING (wire_story.py, the D1 lane) stops the
+    #      four-from-one-speech shape AT THE SOURCE. Still in force, untouched,
+    #      and it is the one that actually addressed that complaint.
+    #   2. This per-account ceiling was the BACKSTOP for when clustering
+    #      mis-fires or a genuinely busy tape produces that much unrelated news.
+    #      That backstop is now gone.
+    # Also gone: the wire could not previously eat a desk's whole daily
+    # allowance, since the nightly ladder and the publish-time lanes draw from
+    # the same ramp tier. A busy tape can now crowd them out of the brand
+    # account.
+    #
+    # Made deliberately: on 2026-08-04 every wire desk hit its ceiling at once
+    # and items were being HELD with nowhere to route. Supply was not the
+    # constraint, this block was. If duplicate-ish bursts reappear, fix them in
+    # clustering rather than by restoring a counter that fired on whichever
+    # items happened to arrive last.
+    default_per_window: -1
     accounts:
-      # THE BRAND ACCOUNT SITS BELOW THE NETWORK DEFAULT, on purpose. @mastermindx001
-      # is the desk a reader judges the product by, and a relay whose whole
-      # content is a restated headline is the least valuable thing it can post.
-      # 6 is under the 11 that shipped on 2026-08-03 (so it BINDS on the day
-      # that caused this) and under `breaking.flagship_top_k_per_day: 10` (so it
-      # is the stricter of the two and the one that decides). Raise it only with
-      # a reason better than "the tape was busy".
-      flagship: 6
-      # The publication wire IS this content's home. It gets the network default
-      # explicitly rather than by omission, so an operator reading this block
-      # sees the split rather than inferring it.
-      mastermind_news: 8
+      # UNCAPPED (operator, 2026-08-04). This row used to read 6, deliberately
+      # below the network default, on the argument that the brand account is
+      # what a reader judges the product by and a restated headline is the least
+      # valuable thing it can post. That argument was about QUALITY and it is
+      # now enforced where it belongs rather than by a counter: the restatement
+      # gate drops a line that re-says the headline, the card gate refuses a
+      # card that only restates the post, and the attribution gate digests a
+      # source it cannot name. Those fire per item; a volume ceiling only ever
+      # fired at the wrong ones, whichever happened to arrive last.
+      #
+      # NOTE: `breaking.flagship_top_k_per_day: 10` is a SEPARATE ceiling and is
+      # still in force. Removing this row does not make the flagship unbounded
+      # on its own — that key now decides, and it is the one to change next if
+      # the flagship is still short.
+      flagship: -1
+      # The publication wire IS this content's home, so it is the last desk that
+      # should carry a ceiling.
+      mastermind_news: -1
       # A persona/employee desk may never carry a wire relay at all (charter §4
       # safety rails — wire accounts relay and never take a stance), and
       # wire_routing.spill_pool already refuses to select one. This 0 is the
