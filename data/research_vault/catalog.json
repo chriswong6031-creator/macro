@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T03:52:27.905162+00:00",
-  "count": 708,
+  "generated_at": "2026-08-04T04:07:30.947723+00:00",
+  "count": 709,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -352,6 +352,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vngo7fncebx-6ef624",
+      "title": "GS Bobby Lien USDJPY views and charts trading within 157.00 157.85 range this morning",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:14:25Z",
+      "summary_points": [
+        "**US-Japan Yen Intervention Scale**: Joint PACT intervention with KATAYAMA confirms $60bn coordinated defense (15-yr high vs prior $25bn), signaling aggressive policy shift despite muted market reaction.",
+        "**EURJPY Coordination Risk**: Coordinated EURJPY intervention to avoid USD sell-off risks UST selling as key flow concern amid policy-driven Yen defense.",
+        "**USD/JPY Target Projection**: Goldman Sachs technical analysis projects USD/JPY trend toward 165 by October 2026, mirroring April 30 intervention response."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
