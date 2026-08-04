@@ -2062,3 +2062,39 @@ def test_build_candidates_survives_a_closes_loader_crash(monkeypatch, tmp_path):
     movers = [c for c in cands if c.get("type") == "mover"]
     assert movers, "a context failure must never cost the post itself"
     assert "trend_context" not in movers[0]["_mover_data"]
+
+
+def test_every_hard_indexed_lane_key_has_an_in_code_default():
+    """Every `pt["key"]` the module hard-indexes must exist in `_DEFAULTS`.
+
+    `resolve()` builds the lane dict as `dict(_DEFAULTS)` overlaid with the YAML
+    block, so `_DEFAULTS` -- NOT config/marketing.yml -- is what makes a
+    subscript safe. A key added to the code and to the unit fixture but to
+    neither would raise KeyError on the first live sweep, and no test in this
+    file could see it: `_cfg()` is hand-written, so it only ever proves the code
+    agrees with the fixture.
+
+    Asserting against the YAML instead would be wrong in the other direction:
+    the block is explicitly designed so an operator can omit a key and take the
+    default ("config-driven with an in-code default so an operator can retune it
+    without a deploy"), and `require_card` is deliberately absent from the file.
+
+    Derived from the source rather than a hand-kept list, because a hand-kept
+    list is the same drift one level up.
+    """
+    import re
+    from pathlib import Path
+
+    src = Path(pt.__file__).read_text()
+    # `pt` is the lane-config parameter name throughout the module. Only the
+    # unguarded subscripts can raise; `.get(...)` with a default cannot.
+    keys = set(re.findall(r'\bpt\["([a-z_]+)"\]', src))
+    assert keys, "no hard-indexed lane keys found - has the parameter been renamed?"
+
+    missing = sorted(k for k in keys if k not in pt._DEFAULTS)
+    assert not missing, (
+        "publish_time_content hard-indexes lane keys with no entry in _DEFAULTS: "
+        f"{missing}. resolve() cannot supply them, so the live lane raises "
+        "KeyError on its first sweep; the hand-written _cfg() fixture cannot "
+        "see this."
+    )

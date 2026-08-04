@@ -758,6 +758,17 @@ publish:
     min_abs_theme_pct: 1.0   # floor for a theme-average claim
     max_quote_age_min: 45    # generation freshness gate (mirrors live_gate)
     min_active_tiles: 25     # flat-tape belt: skip unless ≥N S&P names moved ±0.5% (closed-market guard)
+    # Defect 1, the cashtag spam fingerprint: the most cashtags a theme_list
+    # POST TEXT may name. The card still renders every row, and the breadth
+    # count and average are still computed over the whole member list — this
+    # caps only what the text says out loud, and names the biggest movers.
+    #
+    # OPTIONAL, like every key here: publish_time_content.resolve() overlays this
+    # block onto its in-code _DEFAULTS, so omitting it simply takes the default
+    # (also 3). Written out anyway because it is an operator dial — 3 is the top
+    # of the stated "2-3, not all of them" band — and every other tunable in this
+    # block is explicit here rather than buried in the module.
+    max_theme_cashtags_in_text: 3
     # Per-call lane allowlist (XG-W1). This lane picks an account straight from
     # desk_network and builds a mover/theme item — it never consults tilt, so the
     # employee desks' zeroed mover/event weights cannot reach it. The charter
