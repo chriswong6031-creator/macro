@@ -4996,10 +4996,12 @@ def main() -> int:
         # and intraday lanes (whose data/ writes are discarded anyway) return 0 without
         # loading a single file and pay none of the assembly cost.
         #
-        # Budget: ~8.3 min on the nightly lane over ~1,540 names, dominated by
-        # neuralweb.context_api.context_frame (0.302 s/name, the canonical Context
-        # Snapshot — called, never re-derived). Measured 2026-08-04; see
-        # data/us_prophet_rank/README.md. Wrapped try/except — never fatal.
+        # Budget: 0.0675 s/name measured 2026-08-04 — ~1.7 min over this checkout's
+        # 1,540 names, ~3.3 min over the host's ~2,932. Dominated by
+        # neuralweb.context_api.context_frame (the canonical Context Snapshot —
+        # called, never re-derived), whose insider dimension now loads the panel
+        # once per process instead of per ticker. See data/us_prophet_rank/README.md.
+        # Wrapped try/except — never fatal.
         try:
             from engine import us_context_vector as _ucv
 

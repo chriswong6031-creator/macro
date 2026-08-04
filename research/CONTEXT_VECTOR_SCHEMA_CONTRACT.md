@@ -19,10 +19,11 @@ So this is the first draft of the US half, written to be conformed to, not impos
 
 | | CN | US |
 |---|---|---|
-| Store | `data/china_prophet_rank/candidates.parquet` | `data/us_prophet_rank/candidates.parquet` |
+| Store | `data/china_prophet_rank/candidates.parquet` | `data/us_prophet_rank/candidates/YYYY-MM.parquet` |
 | Producer | `engine/china_prophet_shadow.py` | `engine/us_context_vector.py` |
 | Since | 2026-07-30 | 2026-08-04 (this PR) |
 | Shape | 5,881 x 88 (4 nights) | 1,540 x 150 (1 night) |
+| Layout | one accreting file | monthly parts, read via `load_candidates()` |
 | Stamp column | **`date`** | **`stamp_date`** |
 | Keep-first key | `(date, ticker, board_definition)` | `(stamp_date, ticker, board_definition)` |
 | Lane gate | `lane == "asia"` argument | `ledger_lane.nightly_advance_enabled()` |
@@ -51,16 +52,33 @@ the two one family:
 
 ## §3 Open divergences — for joint adjudication
 
-These are the actual decisions. The US side states a preference and will conform to
-whatever is adjudicated; **it does not act unilaterally on any of them.**
+These are the actual decisions. On the still-open items the US side states a
+preference and will conform to whatever is adjudicated; **it does not act unilaterally
+on any of them.** §3.1 is settled and recorded below with its date.
+
+### 3.1 — ADJUDICATED 2026-08-04: `stamp_date` wins
+
+The stamp column is `stamp_date` for the schema family. It is self-documenting where
+`date` is ambiguous next to the event dates it sits beside in a joined frame (both
+stores already carry several `*_asof` columns). **US ships as-is and does not change.**
+The CN-side rename of `date` -> `stamp_date` is filed as its own task for the CN lane,
+to be done while that store is still young — it is not a rider on this PR, and no CN
+file was touched here.
+
+Rationale for settling it now rather than later: this is the JOIN KEY. Every night both
+stores accrue makes the rename more expensive, and until it lands a cross-market study
+must special-case per market or alias on read — exactly the shape contamination §7
+exists to prevent.
+
+### 3.2-3.5 — still open
 
 | # | Divergence | US preference | Cost of the split |
 |---|---|---|---|
-| 3.1 | **Stamp column name**: CN `date` vs US `stamp_date` | Rename CN `date` -> `stamp_date` at a definition bump. `date` is ambiguous next to `signal_asof`/`board_asof`/`micro_asof`, of which both stores carry several | **Highest.** This is the JOIN KEY. A cross-market study must special-case per market or alias on read — exactly the shape-contamination §7 exists to prevent |
 | 3.2 | **Leg names**: CN `(signal, entry, runway, bottom_quality, reversal_member)` vs US `(signal, entry, edge, runway, quality)` | Keep divergent — these are genuinely market-specific axes, which §7 explicitly permits. `signal`/`entry`/`runway` already agree | Low. A joiner reads `prophet_*_points` as a per-market block |
-| 3.3 | **Context block**: US carries 82 `neuralweb.context_api` columns (`<dim>__<field>`); CN carries none | CN adopt `context_frame` if/when its cost is acceptable on the asia lane. US measured 0.302 s/name | Medium — the US store answers questions the CN one cannot |
+| 3.3 | **Context block**: US carries 82 `neuralweb.context_api` columns (`<dim>__<field>`); CN carries none | CN adopt `context_frame` if/when its cost is acceptable on the asia lane. US measures 0.0675 s/name after the insider-panel memo (2026-08-04) | Medium — the US store answers questions the CN one cannot |
 | 3.4 | **Lane-gate mechanism**: CN passes `lane=` as an argument; US reads the env sentinel via `ledger_lane` | Converge on `engine/ledger_lane.py` — it already defines BOTH markets' gates (`nightly_advance_enabled` / `asia_advance_enabled`) and is a leaf module | Low, but the CN form lets a caller pass the wrong lane; the env form cannot be spoofed by a caller |
 | 3.5 | **Coverage disclosure**: US stamps `context_dims` per row; CN has no equivalent | Adopt per-row disclosure wherever a block can be thinned | Low |
+| 3.6 | **Storage layout**: US writes monthly parts (`candidates/YYYY-MM.parquet`), CN one accreting file | **Not a schema question — explicitly out of scope for this contract.** Layout is a per-market storage idiom; the COLUMNS are identical either way, so the family is intact. US partitioned because a git-tracked whole-file rewrite costs `S x N(N+1)/2` of history (3.2-14.7 GB in year one) against `12 x S x 231` for parts (0.27-1.28 GB). CN carries the same exposure and the same remedy is available to it, but that is the CN lane's call | None to the schema; the reader helper hides it |
 
 ## §4 US field contract v1
 
@@ -90,6 +108,10 @@ which producer owns it.
 - **quality** — 82 `<dim>__<field>` columns over the 11 Context Snapshot dimensions,
   plus `context_dims`
 
+Storage layout (monthly parts on the US side) is NOT part of this contract — see
+§3.6. The field list above is what one schema family means; where the bytes sit is
+each market's own call.
+
 Per-column provenance, measured coverage and the three named debts live in
 `data/us_prophet_rank/README.md`. The schema is pinned by
 `tests/test_us_context_vector.py::TestSchemaContract`.
@@ -98,6 +120,5 @@ Per-column provenance, measured coverage and the three named debts live in
 
 No CN edits. No score, blend, or gate change in either market. No claim that either
 store has authority — both are display/shadow tier until an axis clears the §3
-bounded-authority ladder with its own preregistration. Adjudicating §3.1 is the one
-item worth doing soon: every night both stores accrue makes the join-key rename more
-expensive.
+bounded-authority ladder with its own preregistration. §3.1 was adjudicated 2026-08-04
+(`stamp_date` wins; CN rename filed to the CN lane). §3.2-3.6 remain open.

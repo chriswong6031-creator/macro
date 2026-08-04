@@ -26,6 +26,13 @@ Storage idiom is copied from the CN sibling ``engine/china_prophet_shadow.py``
   nights — it self-heals forward, never backwards);
 * NO retroactive backfill: only same-night values are ever stamped.
 
+Where it DELIBERATELY diverges from CN: the US store is written as MONTHLY PARTS
+(``candidates/YYYY-MM.parquet``) rather than one accreting file, so a nightly
+rewrites only the current month and closed months stop churning git history.
+That is a per-market STORAGE idiom, not a shape divergence — the columns are
+unchanged and the two markets remain one schema family.  Read the store through
+:func:`load_candidates`; nothing outside this module should glob the parts.
+
 Fail-soft by contract: research telemetry must never break the nightly build, so
 every failure path logs and returns 0.
 
@@ -62,7 +69,16 @@ from lib import config
 log = logging.getLogger(__name__)
 
 STORE_DIR = "us_prophet_rank"
-STORE_FILE = "candidates.parquet"
+#: Monthly parts: ``data/us_prophet_rank/candidates/YYYY-MM.parquet``.
+#:
+#: The store is git-tracked and a nightly rewrites whatever file it touches, so a
+#: single accreting file would commit a whole new blob every night — parquet is
+#: already compressed, so git deltas it poorly (projected 3.2-14.7 GB of history
+#: in year one).  Monthly parts bound that: only the current month is rewritten,
+#: and every earlier part is byte-identical forever after its month closes.
+#: LAYOUT ONLY — the schema is unchanged and stays one family with CN (roadmap §7).
+#: Read through :func:`load_candidates`; no consumer should know parts exist.
+STORE_SUBDIR = "candidates"
 
 #: Keep-first key.  ``board_definition`` participates so a definition change
 #: starts a fresh series for the same night instead of silently shadowing it.
@@ -84,9 +100,46 @@ TURNOVER_WINDOW_20D = 20
 # coercion helpers (idiom copied from engine/china_prophet_shadow.py)
 # --------------------------------------------------------------------------- #
 
-def _store_path(root: Any = None):
+def _store_dir(root: Any = None):
     base = config.data_dir() if root is None else (root / "data")
-    return base / STORE_DIR / STORE_FILE
+    return base / STORE_DIR / STORE_SUBDIR
+
+
+def _part_path(stamp_date: str, root: Any = None):
+    """The monthly part a given stamp_date belongs to (``YYYY-MM.parquet``)."""
+    return _store_dir(root) / f"{str(stamp_date)[:7]}.parquet"
+
+
+def load_candidates(root: Any = None, *, months: Iterable[str] | None = None):
+    """Read the store as ONE frame — the only supported way to consume it.
+
+    The monthly parts are a storage detail; nothing outside this module should
+    glob them.  Parts are concatenated in filename order, which is chronological,
+    and rows keep their append order within a part — so this returns exactly what
+    a single accreting file would have.
+
+    Columns unify across parts: a column introduced in a later month reads back
+    null for earlier months, which is the same forward-only self-healing the
+    schema-union append gives within a part.
+
+    ``months`` optionally restricts to ``YYYY-MM`` keys, so a study that only
+    needs one quarter never reads the whole store.
+    """
+    store = _store_dir(root)
+    if not store.exists():
+        return pd.DataFrame()
+    wanted = {str(m) for m in months} if months is not None else None
+    frames: list[pd.DataFrame] = []
+    for part in sorted(store.glob("*.parquet")):
+        if wanted is not None and part.stem not in wanted:
+            continue
+        try:
+            frames.append(pd.read_parquet(part))
+        except Exception as exc:  # noqa: BLE001 — one bad part must not blind the rest
+            log.warning("us_context_vector: part %s unreadable (%s)", part.name, exc)
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
 
 
 def _finite(value: Any) -> float | None:
@@ -773,7 +826,10 @@ def append_candidates(
     root: Any = None,
     with_context_dims: bool = True,
 ) -> int:
-    """Append one settled full-universe US context snapshot.  Returns row count.
+    """Append one settled full-universe US context snapshot.
+
+    Returns the row count of the MONTH PART written (month-to-date), or 0 on any
+    refusal or failure.  Use :func:`load_candidates` for a whole-store view.
 
     ``verdicts`` must be the COMPLETE ``sig_verdict`` map (every analyzed name,
     not just board rows) — the store's whole value is that ineligible names are
@@ -862,7 +918,9 @@ def append_candidates(
             new["context_dims"] = None
         new = _coerce_nullable_objects(new)
 
-        path = _store_path(root)
+        # Only the CURRENT MONTH's part is opened or rewritten; every earlier
+        # part is untouched, so it stops churning git the moment its month closes.
+        path = _part_path(stamp_date, root)
         path.parent.mkdir(parents=True, exist_ok=True)
         if path.exists():
             prior = pd.read_parquet(path)

@@ -2976,7 +2976,7 @@ modules:
       - site/factordata/stock_personality.json
       - data/stock_personality/panel/YYYY-MM/panel.parquet
       - data/stock_personality/forward_ledger.parquet
-      - data/us_prophet_rank/candidates.parquet
+      - data/us_prophet_rank/candidates/YYYY-MM.parquet
     impure: true
     needs_secrets: false
     event_driven: false
@@ -2984,9 +2984,11 @@ modules:
       Mixed: pure computation PLUS optional per-build drip fetches (SEC/Wikipedia
       equity_profile, edgar_rpo, edgar_headcount). Drip fetches are network calls and
       are suppressed in engine-render/render lanes via RENDER_NO_DRIP=1.
-      us_prophet_rank/candidates.parquet is the US Context Vector PIT store
+      us_prophet_rank/candidates/YYYY-MM.parquet is the US Context Vector PIT store
       (engine/us_context_vector.py, roadmap §2): stamped inside this module rather than
-      as its own dag step, so no new serial-order entry is added. Nightly-only —
+      as its own dag step, so no new serial-order entry is added. Written as MONTHLY
+      PARTS — a nightly rewrites only the current month, so closed months stop churning
+      git history; consumers read via us_context_vector.load_candidates(). Nightly-only —
       ledger_lane.nightly_advance_enabled() gates the write, so the render lanes that
       discard data/ writes never produce it.
 

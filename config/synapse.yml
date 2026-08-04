@@ -11205,7 +11205,7 @@ artifacts:
 
   # --- us-context-vector: full-universe PIT context store (roadmap §2 keystone) ---
   us-context-vector:
-    path: data/us_prophet_rank/candidates.parquet
+    path: data/us_prophet_rank/candidates/YYYY-MM.parquet
     format: parquet
     producer: engine/us_context_vector.py
     known_extra_writers: []
@@ -11224,7 +11224,12 @@ artifacts:
     notes: >
       US Context Vector point-in-time candidate store (PROPHET US roadmap §2 keystone).
       One row per analyzed US universe name per night, INCLUDING names that never passed
-      the raw signal gate — 1,540 rows x 150 cols measured 2026-07-31. Stamped from
+      the raw signal gate — 1,540 rows x 150 cols measured 2026-07-31. Written as MONTHLY
+      PARTS (candidates/YYYY-MM.parquet): a nightly rewrites only the current month, so a
+      closed month is byte-stable forever and git stops storing a whole new blob nightly.
+      Layout only — the SCHEMA is unchanged and stays one family with the CN sibling
+      (roadmap §7). Consumers must read via us_context_vector.load_candidates(), never by
+      globbing parts. Stamped from
       scripts/build_stock_library.py, which calls engine/us_context_vector.py at the end
       of its nightly run (no separate dag module; the write is declared on
       scripts.build_stock_library in config/dag.yml).

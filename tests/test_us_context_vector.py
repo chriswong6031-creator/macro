@@ -94,12 +94,12 @@ class TestNightlyLaneGate:
             monkeypatch.setenv("COLLECT_LANE", lane)
 
         assert ucv.append_candidates(verdicts, "2026-07-31", **append_kwargs) == 0
-        assert not ucv._store_path(tmp_path).exists()
+        assert not ucv._part_path("2026-07-31", tmp_path).exists()
 
     def test_nightly_lane_writes(self, verdicts, append_kwargs, tmp_path, monkeypatch):
         monkeypatch.setenv("COLLECT_LANE", "nightly")
         assert ucv.append_candidates(verdicts, "2026-07-31", **append_kwargs) == 3
-        assert ucv._store_path(tmp_path).exists()
+        assert ucv._part_path("2026-07-31", tmp_path).exists()
 
     def test_legacy_us_lane_alias_writes(
         self, verdicts, append_kwargs, tmp_path, monkeypatch
@@ -139,7 +139,7 @@ class TestPitDiscipline:
         self, verdicts, append_kwargs, tmp_path
     ):
         ucv.append_candidates(verdicts, "2026-07-31", **append_kwargs)
-        frame = pd.read_parquet(ucv._store_path(tmp_path))
+        frame = ucv.load_candidates(tmp_path)
         assert set(frame["ticker"]) == {"AAA", "BBB", "CCC"}
         # the ineligible name is present, and is marked so
         row = frame.set_index("ticker").loc["BBB"]
@@ -156,7 +156,7 @@ class TestPitDiscipline:
         mutated["AAA"] = _verdict(tier="T1", ticks=99)
         total = ucv.append_candidates(mutated, "2026-07-31", **append_kwargs)
         assert total == 3
-        frame = pd.read_parquet(ucv._store_path(tmp_path))
+        frame = ucv.load_candidates(tmp_path)
         assert frame.set_index("ticker").loc["AAA"]["ticks"] == 1
         assert frame.set_index("ticker").loc["AAA"]["tier_cascade"] == "T2"
 
@@ -164,18 +164,27 @@ class TestPitDiscipline:
         self, verdicts, append_kwargs, tmp_path
     ):
         ucv.append_candidates(verdicts, "2026-07-31", **append_kwargs)
-        total = ucv.append_candidates(verdicts, "2026-08-03", **append_kwargs)
-        assert total == 6
-        frame = pd.read_parquet(ucv._store_path(tmp_path))
+        # the return is the MONTH PART's row count, and August is a new part
+        assert ucv.append_candidates(verdicts, "2026-08-03", **append_kwargs) == 3
+        frame = ucv.load_candidates(tmp_path)
+        assert len(frame) == 6
         assert sorted(frame["stamp_date"].unique()) == ["2026-07-31", "2026-08-03"]
         assert len(frame[frame["stamp_date"] == "2026-07-31"]) == 3
+
+    def test_same_month_nights_share_one_part(
+        self, verdicts, append_kwargs, tmp_path
+    ):
+        ucv.append_candidates(verdicts, "2026-08-03", **append_kwargs)
+        assert ucv.append_candidates(verdicts, "2026-08-04", **append_kwargs) == 6
+        parts = sorted(p.name for p in ucv._store_dir(tmp_path).glob("*.parquet"))
+        assert parts == ["2026-08.parquet"]
 
     def test_schema_union_preserves_a_retired_column(
         self, verdicts, append_kwargs, tmp_path
     ):
         """A column present on an older night survives a night that lacks it."""
         ucv.append_candidates(verdicts, "2026-07-31", **append_kwargs)
-        path = ucv._store_path(tmp_path)
+        path = ucv._part_path("2026-07-31", tmp_path)
         prior = pd.read_parquet(path)
         prior["legacy_only_column"] = "kept"
         prior.to_parquet(path, index=False)
@@ -199,7 +208,113 @@ class TestPitDiscipline:
     def test_empty_or_undated_input_writes_nothing(self, append_kwargs, tmp_path):
         assert ucv.append_candidates({}, "2026-07-31", **append_kwargs) == 0
         assert ucv.append_candidates({"AAA": _verdict()}, None, **append_kwargs) == 0
-        assert not ucv._store_path(tmp_path).exists()
+        assert not ucv._part_path("2026-07-31", tmp_path).exists()
+
+
+# --------------------------------------------------------------------------- #
+# 2b. monthly-partitioned layout
+# --------------------------------------------------------------------------- #
+
+class TestMonthlyPartitionedLayout:
+    """The layout exists to stop the store rewriting its whole history nightly.
+
+    That claim holds only if a stamp provably leaves earlier parts alone, and it
+    is only safe if no consumer has to know parts exist.  Both are pinned here.
+    """
+
+    def test_a_stamp_leaves_every_earlier_part_byte_identical(
+        self, verdicts, append_kwargs, tmp_path
+    ):
+        import hashlib
+
+        for stamp in ("2026-06-30", "2026-07-31"):
+            ucv.append_candidates(verdicts, stamp, **append_kwargs)
+
+        def digests():
+            return {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                    for p in sorted(ucv._store_dir(tmp_path).glob("*.parquet"))}
+
+        before = digests()
+        assert set(before) == {"2026-06.parquet", "2026-07.parquet"}
+
+        # a night in a NEW month must not rewrite a single earlier byte
+        ucv.append_candidates(verdicts, "2026-08-03", **append_kwargs)
+        after = digests()
+        assert set(after) == {"2026-06.parquet", "2026-07.parquet",
+                              "2026-08.parquet"}
+        for part in ("2026-06.parquet", "2026-07.parquet"):
+            assert after[part] == before[part], (
+                f"{part} was rewritten by a later month's stamp — the whole "
+                "point of the partitioned layout is that it is not")
+
+        # and a second night INSIDE the current month rewrites only that part
+        before2 = digests()
+        ucv.append_candidates(verdicts, "2026-08-04", **append_kwargs)
+        after2 = digests()
+        for part in ("2026-06.parquet", "2026-07.parquet"):
+            assert after2[part] == before2[part]
+        assert after2["2026-08.parquet"] != before2["2026-08.parquet"]
+
+    def test_reader_equivalence_across_parts(
+        self, verdicts, append_kwargs, tmp_path
+    ):
+        """load_candidates() must return what one accreting file would have.
+
+        Built by concatenating the parts by hand in chronological order and
+        comparing frames — if the reader ever reorders, drops, or duplicates a
+        row, this reds.
+        """
+        for stamp in ("2026-07-30", "2026-07-31", "2026-08-03"):
+            ucv.append_candidates(verdicts, stamp, **append_kwargs)
+
+        parts = sorted(ucv._store_dir(tmp_path).glob("*.parquet"))
+        assert [p.name for p in parts] == ["2026-07.parquet", "2026-08.parquet"]
+
+        expected = pd.concat([pd.read_parquet(p) for p in parts],
+                             ignore_index=True)
+        actual = ucv.load_candidates(tmp_path)
+        pd.testing.assert_frame_equal(actual, expected)
+        assert len(actual) == 9
+        assert list(actual["stamp_date"]) == (
+            ["2026-07-30"] * 3 + ["2026-07-31"] * 3 + ["2026-08-03"] * 3)
+
+    def test_months_filter_reads_only_what_was_asked_for(
+        self, verdicts, append_kwargs, tmp_path
+    ):
+        for stamp in ("2026-07-31", "2026-08-03"):
+            ucv.append_candidates(verdicts, stamp, **append_kwargs)
+        only_aug = ucv.load_candidates(tmp_path, months=["2026-08"])
+        assert set(only_aug["stamp_date"]) == {"2026-08-03"}
+        assert len(only_aug) == 3
+
+    def test_a_column_added_in_a_later_month_is_null_for_earlier_months(
+        self, verdicts, append_kwargs, tmp_path
+    ):
+        """Schema union has to survive ACROSS parts, not just within one."""
+        ucv.append_candidates(verdicts, "2026-07-31", **append_kwargs)
+        ucv.append_candidates(verdicts, "2026-08-03", **append_kwargs)
+
+        aug = ucv._part_path("2026-08-03", tmp_path)
+        frame = pd.read_parquet(aug)
+        frame["new_axis_v2"] = 1.0
+        frame.to_parquet(aug, index=False)
+
+        merged = ucv.load_candidates(tmp_path)
+        assert "new_axis_v2" in merged.columns
+        assert merged[merged["stamp_date"] == "2026-08-03"]["new_axis_v2"].notna().all()
+        assert merged[merged["stamp_date"] == "2026-07-31"]["new_axis_v2"].isna().all()
+
+    def test_reader_is_empty_and_safe_before_the_first_stamp(self, tmp_path):
+        assert ucv.load_candidates(tmp_path).empty
+
+    def test_one_unreadable_part_does_not_blind_the_rest(
+        self, verdicts, append_kwargs, tmp_path
+    ):
+        for stamp in ("2026-07-31", "2026-08-03"):
+            ucv.append_candidates(verdicts, stamp, **append_kwargs)
+        ucv._part_path("2026-07-31", tmp_path).write_bytes(b"not a parquet")
+        surviving = ucv.load_candidates(tmp_path)
+        assert set(surviving["stamp_date"]) == {"2026-08-03"}
 
 
 # --------------------------------------------------------------------------- #
@@ -246,13 +361,13 @@ class TestSchemaContract:
         self, verdicts, append_kwargs, tmp_path
     ):
         ucv.append_candidates(verdicts, "2026-07-31", **append_kwargs)
-        frame = pd.read_parquet(ucv._store_path(tmp_path))
+        frame = ucv.load_candidates(tmp_path)
         missing = sorted(set(CONTRACT) - set(frame.columns))
         assert not missing, f"schema contract lost columns: {missing}"
 
     def test_contract_dtypes_parse(self, verdicts, append_kwargs, tmp_path):
         ucv.append_candidates(verdicts, "2026-07-31", **append_kwargs)
-        frame = pd.read_parquet(ucv._store_path(tmp_path))
+        frame = ucv.load_candidates(tmp_path)
         wrong = {}
         for column, kind in CONTRACT.items():
             actual = frame[column].dtype
@@ -273,7 +388,7 @@ class TestSchemaContract:
         self, verdicts, append_kwargs, tmp_path
     ):
         ucv.append_candidates(verdicts, "2026-07-31", **append_kwargs)
-        frame = pd.read_parquet(ucv._store_path(tmp_path))
+        frame = ucv.load_candidates(tmp_path)
         for component in ucv.SCORE_COMPONENTS:
             assert f"prophet_{component}" in frame.columns
             assert f"prophet_{component}_points" in frame.columns
@@ -286,7 +401,7 @@ class TestSchemaContract:
     ):
         """#4485: an unmeasured flag is None, never False."""
         ucv.append_candidates(verdicts, "2026-07-31", **append_kwargs)
-        frame = pd.read_parquet(ucv._store_path(tmp_path))
+        frame = ucv.load_candidates(tmp_path)
         for column in NULLABLE_BOOL_COLUMNS:
             values = frame[column]
             assert values.isna().all(), (
