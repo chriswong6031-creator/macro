@@ -682,12 +682,12 @@ def test_no_cjk_inside_a_title_attribute_anywhere_in_the_touched_blocks():
             assert not re.search(r"[一-鿿]", attr), attr
 
 
-def test_the_cn_grid_key_dot_is_never_pinned_to_the_language_flipping_tokens():
-    """SCOPE: the CN grid-key dot only — the one glow-coloured element this template
-    owns. `--up`/`--down` swap red/green under html[data-lang="zh"], so a key bullet on
-    --up would print a RED dot next to "glowing = act today" for a Chinese reader. The
-    card's own aura lives in templates/_prophet_card.html.j2 and is pinned by the
-    prophet-card suite, not here; this file cannot see a change to it."""
+def test_the_cn_grid_key_dot_uses_the_prophet_bullish_token():
+    """The grid key must match the card aura in both language conventions.
+
+    The shared --pv-buy token resolves green in English and red in Chinese. Directly
+    consuming --up here would duplicate that ownership and could drift from the card.
+    """
     key = SRC[SRC.index(".cn-gridkey-dot {"):SRC.index(".cn-gridkey-dot {") + 400]
     assert "var(--pv-buy)" in key
     assert "var(--up)" not in key

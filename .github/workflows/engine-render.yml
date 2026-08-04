@@ -912,6 +912,14 @@ jobs:
               # to the CHECKOUT-TIME template blob, reverting #1793's de-escalation merged
               # 20 min earlier. templates/ is now fresh post-rebase main — re-copy the
               # plain-copy page assets from it and fold any delta into a follow-up commit.
+              # re-shim + re-externalize POST-rebase (P0 2026-08-04, 9a997e9da3f): the rebase
+              # can inherit RAW pages from main (a cancelled nightly's always() commit shipped
+              # 5,895 un-normalized pages; THIS lane's run 30873888298 then merged its small
+              # deltas cleanly INTO those fat pages — no conflict, -X theirs never engaged —
+              # and its re-stamp-only heal pushed the poison onward as f0deeabde39). With the
+              # full chain here that same push would have healed the whole tree instead.
+              python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+              python -m scripts.externalize_css || echo "::warning::post-rebase css externalize FAILED — inherited raw pages stay un-externalized (9a997e9da3f)"
               # re-stamp POST-rebase (ui.asset_stamp): the tree this loop PUSHES is not the tree
               # the normalizer step stamped — pages a sibling lane lands mid-render arrive here
               # un-stamped and unseen by that pass (2026-07-26 render 6260e5ac8c0 shipped
