@@ -1484,31 +1484,54 @@
 
   {% if mode == 'stocks' %}
   <!-- ===================== A-SHARE STOCK DASHBOARD HEADER ===================== -->
+  {# Header geometry is the SHARED stock-board head — identical partial the US
+     stock dashboard renders (operator 2026-08-03: "same style and UI as the US
+     one"). Never re-style the pills/links locally: change the partial so both
+     boards move together. #}
+  {% include "_stocks_header_css.html.j2" %}
   <div class="panel span12" id="stocks-header">
-    <div style="display:flex;align-items:center;gap:12px 14px;flex-wrap:wrap">
-      <h1 style="margin:0">🇨🇳 {{ t('A-Share Stock Dashboard', 'A股个股看板') }}
+    {# Freshness pill — the CN analogue of the US board's staleness chip. There is
+       no CN exchange calendar in lib/, so this claims NO session-count verdict:
+       the degrade is driven only by facts the board already publishes — a partial
+       collection session (setups.coverage.partial_session) or the W0.7 coverage
+       outage flag (setups.data_outage.flag) — and the stamped date is the board's
+       own settled-session anchor (coverage.data_through = CSI300 last bar). #}
+    {% set _cn_cov = setups.coverage if (setups and setups.coverage is defined) else none %}
+    {% set _cn_outage = (setups.get('data_outage') or {}) if setups else {} %}
+    {% set _cn_degraded = (_cn_cov.partial_session if _cn_cov else false) or _cn_outage.get('flag') %}
+    {% set _cn_through = (_cn_cov.data_through if _cn_cov else none) or (setups.as_of if setups else none) or latest.date %}
+    <div class="stk-headline">
+      <h1>🇨🇳 {{ t('A-Share Stock Dashboard', 'A股个股看板') }}
         {{ help('A stock-picking watchlist for China A-shares: names that sold off hard and just started turning back up. Rank means how ready a setup looks to buy — research context, not advice.', 'A股选股观察表：大幅回调后刚开始回升的个股。排序表示形态离买点有多近——研究参考，非投资建议。') }}</h1>
-      {# Regime + Posture header pills, aligned with the US stock dashboard (Regime: … / Posture: …) #}
-      <span style="display:inline-flex;align-items:center">
-        <span class="badge quad-{{ latest.quad }}">{{ t('Regime', '周期') }}: {{ td(latest.quad_name) }}</span>{{ lens.lens(
+      <div class="stk-head-meta">
+        <span class="stk-status{{ ' is-delayed' if _cn_degraded else '' }}">
+          <span class="stk-fresh-dot" aria-hidden="true"></span>
+          <span class="l-en">{{ 'Partial data' if _cn_degraded else 'Fresh' }}</span><span class="l-zh">{{ '数据不全' if _cn_degraded else '新鲜' }}</span>
+          {% if _cn_through %}<strong>{{ _cn_through }}</strong>{% endif %}
+        </span>
+      {# Regime + Posture header pills, aligned with the US stock dashboard #}
+        <span class="stk-status">
+          <span class="l-en">Regime</span><span class="l-zh">周期</span> <strong>{{ td(latest.quad_name) }}</strong>{{ lens.lens(
           kind='define', ill=lens.ILL_QUAD,
           kick=('Backdrop','背景'),
           title=('The economy, not today&#39;s market','描述经济，而非今日盘面'),
           body=('Where growth and inflation sit right now. It moves slowly, so use it to judge <b>which sectors are favoured</b> — not when to buy. For whether the market itself is turning over, read the risk backdrop on the China macro dashboard.','当前增长与通胀所处的位置。它变化缓慢，用来判断<b>哪些板块占优</b>，而不是用来择时。市场本身是否转向，请看中国宏观看板的风险读数。'),
           receipt=('growth × inflation quadrant · filters this entire page','增长 × 通胀象限 · 过滤整个页面')) }}
-      </span>
-      {% if pb and pb.dial %}{% set pzh = {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'} %}<span style="display:inline-flex;align-items:center">
-        <span class="badge" style="background:var(--panel2);color:var(--text)">{{ t('Posture', '姿态') }}: {{ t(pb.dial.posture, pzh.get(pb.dial.posture, pb.dial.posture)) }}</span>{{ lens.lens(
+        </span>
+        {% if pb and pb.dial %}{% set pzh = {'DEFENSIVE':'防御','CAREFUL':'谨慎','NEUTRAL':'中性','CONSTRUCTIVE':'积极','AGGRESSIVE':'进取'} %}<span class="stk-status">
+          <span class="l-en">Posture</span><span class="l-zh">姿态</span> <strong>{{ t(pb.dial.posture, pzh.get(pb.dial.posture, pb.dial.posture)) }}</strong>{{ lens.lens(
           kind='read', ill=lens.ILL_DIAL,
           kick=('Position size','仓位'),
           title=('How hard to lean in','该用多大力度'),
           body=('A dial from <b>defensive</b> to <b>aggressive</b> that sets how much risk to carry today. It sizes your positions — it does not pick stocks and it is not a buy or sell call. The full dial and its reasoning live on the China macro dashboard.','一个从<b>防御</b>到<b>进取</b>的刻度，决定今天承担多少风险。它只调整仓位大小 — 不选股，也不是买卖建议。完整刻度与推理见中国宏观看板。'),
           receipt=('Defensive · Careful · Neutral · Constructive · Aggressive','防御 · 谨慎 · 中性 · 建设性 · 进取')) }}
-      </span>{% endif %}
+        </span>{% endif %}
+      </div>
     </div>
-    <p class="note" style="margin:8px 0 0;text-transform:none">
-      <a href="china.html" style="color:var(--link);font-weight:600">← {{ t('China macro dashboard', '中国宏观看板') }}</a>
-      <a href="china_stocks_lab.html" style="margin-left:14px;padding:4px 11px;border:1.5px solid var(--link);border-radius:8px;font-size:12px;font-weight:700;color:var(--link);white-space:nowrap;display:inline-block;margin-top:4px">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span></a></p>
+    <div class="stk-header-links">
+      <a href="china.html">← <span class="l-en">China macro dashboard</span><span class="l-zh">中国宏观看板</span></a>
+      <a href="china_stocks_lab.html">🧪 <span class="l-en">Pick Lab</span><span class="l-zh">选股实验室</span> →</a>
+    </div>
     {# W5b EDGE-1 — CN drawdown-radar RISK-BACKDROP cue. Source: engine/risk_radar_intl.py
        cn_sleeve_chip(), wired into setups.sleeve_chip by build_china_library.main().
        Plain-word rebuild of the old "Sleeve ×0.62" chip: the "sleeve" multiplier was
@@ -1527,7 +1550,7 @@
     {% set _rs_act_en = {'risk-off':'trade smaller','elevated':'trade smaller','caution':'avoid chasing','calm':'normal sizing'}.get(_rs, '') %}
     {% set _rs_act_zh = {'risk-off':'减小仓位','elevated':'减小仓位','caution':'谨慎追高','calm':'正常仓位'}.get(_rs, '') %}
     {% set _rs_idx = {'calm':0,'caution':1,'elevated':2,'risk-off':3}.get(_rs, 1) %}
-    <div style="margin:8px 0 0;padding:6px 10px;border-radius:8px;font-size:11.5px;line-height:1.5;display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;border:1px solid var(--line);border-left:3px solid {{ _rs_col }};background:color-mix(in srgb,{{ _rs_col }} 6%,var(--panel))">
+    <div style="margin:11px 0 0;padding:7px 11px;border-radius:8px;font-size:11.5px;line-height:1.5;display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;border:1px solid var(--line);border-left:3px solid {{ _rs_col }};background:color-mix(in srgb,{{ _rs_col }} 6%,var(--panel))">
       <span style="font-weight:600;color:var(--muted)"><span class="l-en">Risk backdrop</span><span class="l-zh">风险背景</span></span>
       <span aria-hidden="true" style="display:inline-flex;gap:3px;align-items:center">{% for _i in range(4) %}<span style="width:{{ 15 if _i == _rs_idx else 9 }}px;height:6px;border-radius:3px;background:{{ _rs_col if _i == _rs_idx else 'var(--line)' }}"></span>{% endfor %}</span>
       <span style="color:{{ _rs_col }};font-weight:700"><span class="l-en">{{ _rs_en }} — {{ _rs_act_en }}</span><span class="l-zh">{{ _rs_zh }} — {{ _rs_act_zh }}</span></span>
