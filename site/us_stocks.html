@@ -80,10 +80,10 @@
 <link rel="stylesheet" href="dashboard-icons.css?v=be32e541">
 <script defer src="dashboard-icons.js?v=e096076e"></script>
 
-<link rel="stylesheet" href="assets/css/d6f33697.css?v=d6f33697">
+<link rel="stylesheet" href="assets/css/e10ef314.css?v=e10ef314">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
-<link rel="preload" as="style" href="assets/css/39307d7a.css?v=39307d7a">
+<link rel="preload" as="style" href="assets/css/2658e187.css?v=2658e187">
 <link rel="preload" as="style" href="assets/css/fd5a7df3.css?v=fd5a7df3">
 <link rel="preload" as="style" href="assets/css/3cff5b20.css?v=3cff5b20">
 <link rel="preload" as="style" href="assets/css/65aef5e4.css?v=65aef5e4">
@@ -338,7 +338,22 @@
 
   
   <!-- ===================== US STOCK DASHBOARD HEADER ===================== -->
-  <link rel="stylesheet" href="assets/css/39307d7a.css?v=39307d7a">
+  
+  <link rel="stylesheet" href="assets/css/2658e187.css?v=2658e187">
+  <style id="stocks-home-css">
+  /* Keep the two strongest existing surfaces exactly as designed:
+     #action-board first, then the Prophet #us-standouts scorecards. Remove only
+     the duplicated research boards that pushed both below the fold. */
+  body.page-stocks #sector-heat,
+  body.page-stocks #sentiment-regime,
+  body.page-stocks #cross-asset-macro,
+  body.page-stocks #dash-tape-band,
+  body.page-stocks #equity-scoreboard,
+  body.page-stocks #sectors,
+  body.page-stocks #dash-mtf-section,
+  body.page-stocks #accumulation,
+  body.page-stocks #holdings{display:none!important}
+  </style>
   <div class="panel span12" id="stocks-header">
     
     
@@ -433,7 +448,8 @@
     
     <span class="scx-alert" data-tip-en="1 overseas market in a risk-off cascade — details on the Risk Radar" data-tip-zh="1 个海外市场处于避险传导 — 详见风险雷达">⚠ <span class="l-en">1 market abroad risk-off</span><span class="l-zh">1 个海外市场避险</span></span>
     
-    <a class="scx-more" href="macro.html#sx-risk-v2"><span class="l-en">Risk radar →</span><span class="l-zh">风险雷达 →</span></a>
+    
+    <a class="scx-more" href="macro.html#dlg-risk"><span class="l-en">Risk radar →</span><span class="l-zh">风险雷达 →</span></a>
   </div>
   
   
@@ -9743,8 +9759,8 @@
           </tr></thead>
           <tbody>
           
-            <tr class="ts-row" onclick="location.href='stock.html#HP'">
-              <td class="c-stock"><span class="ts-tk">HP</span> <span class="ts-nm">Helmerich &amp; Payne, Inc.</span></td>
+            <tr class="ts-row" data-tkr="HP">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#HP"><span class="ts-tk">HP</span></a> <span class="ts-nm">Helmerich &amp; Payne, Inc.</span></td>
               <td class="muted c-sector"><span class="l-en">Energy</span><span class="l-zh">能源</span></td>
               <td class="r c-edge az-up">+1.04</td>
               <td class="r muted c-rank">#8/77</td>
@@ -9755,8 +9771,8 @@
               <td class="r c-setup"><b>+0.38</b></td>
             </tr>
           
-            <tr class="ts-row" onclick="location.href='stock.html#ELAN'">
-              <td class="c-stock"><span class="ts-tk">ELAN</span> <span class="ts-nm">Elanco</span> <span class="ts-ins" data-tip-en="4 distinct insiders net-bought $0.9M (+0.7 bps of cap) in the last 6 months — a Form-4 CLUSTER confirmer" data-tip-zh="4 名内部人近 6 个月净买入 — Form-4 集群确认">👤 4</span></td>
+            <tr class="ts-row" data-tkr="ELAN">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#ELAN"><span class="ts-tk">ELAN</span></a> <span class="ts-nm">Elanco</span> <span class="ts-ins" data-tip-en="4 distinct insiders net-bought $0.9M (+0.7 bps of cap) in the last 6 months — a Form-4 CLUSTER confirmer" data-tip-zh="4 名内部人近 6 个月净买入 — Form-4 集群确认">👤 4</span></td>
               <td class="muted c-sector"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td>
               <td class="r c-edge az-up">+0.72</td>
               <td class="r muted c-rank">#42/171</td>
@@ -9767,8 +9783,8 @@
               <td class="r c-setup"><b>+1.05</b></td>
             </tr>
           
-            <tr class="ts-row" onclick="location.href='stock.html#ABNB'">
-              <td class="c-stock"><span class="ts-tk">ABNB</span> <span class="ts-nm">Airbnb Inc Class A</span></td>
+            <tr class="ts-row" data-tkr="ABNB">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#ABNB"><span class="ts-tk">ABNB</span></a> <span class="ts-nm">Airbnb Inc Class A</span></td>
               <td class="muted c-sector"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td>
               <td class="r c-edge az-up">+0.56</td>
               <td class="r muted c-rank">#59/210</td>
@@ -9809,8 +9825,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#CORT'">
-              <td class="c-stock"><span class="ts-tk">CORT</span> <span class="ts-nm">Corcept Therapeutics Incorporated</span></td>
+            <tr class="ts-row" data-tkr="CORT">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#CORT"><span class="ts-tk">CORT</span></a> <span class="ts-nm">Corcept Therapeutics Incorporated</span></td>
               <td class="muted c-sector"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td>
               <td class="c-theme"><span class="muted">—</span></td>
               <td class="r c-edge az-up">+0.31</td>
@@ -9821,8 +9837,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#SNOW'">
-              <td class="c-stock"><span class="ts-tk">SNOW</span> <span class="ts-nm">Snowflake</span></td>
+            <tr class="ts-row" data-tkr="SNOW">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#SNOW"><span class="ts-tk">SNOW</span></a> <span class="ts-nm">Snowflake</span></td>
               <td class="muted c-sector"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
               <td class="c-theme"><span class="pv-mk-i pv-mk-warm" data-tip-en="The theme itself only just turned up (5 days in) — the basket is early even though this name has been running. Context, not an entry." data-tip-zh="主题本身刚刚转强（已进入第5天） — 尽管该股已在上涨，篮子仍处早期。仅供参考，非入场信号。"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span> ◦</span></td>
               <td class="r c-edge az-dn">-0.15</td>
@@ -9833,8 +9849,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#PANW'">
-              <td class="c-stock"><span class="ts-tk">PANW</span> <span class="ts-nm">Palo Alto Networks Inc</span></td>
+            <tr class="ts-row" data-tkr="PANW">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#PANW"><span class="ts-tk">PANW</span></a> <span class="ts-nm">Palo Alto Networks Inc</span></td>
               <td class="muted c-sector"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
               <td class="c-theme"><span class="pv-mk-i pv-mk-warm" data-tip-en="The theme itself only just turned up (5 days in) — the basket is early even though this name has been running. Context, not an entry." data-tip-zh="主题本身刚刚转强（已进入第5天） — 尽管该股已在上涨，篮子仍处早期。仅供参考，非入场信号。"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span> ◦</span></td>
               <td class="r c-edge az-up">+1.07</td>
@@ -9845,8 +9861,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#SEZL'">
-              <td class="c-stock"><span class="ts-tk">SEZL</span> <span class="ts-nm">Sezzle</span></td>
+            <tr class="ts-row" data-tkr="SEZL">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#SEZL"><span class="ts-tk">SEZL</span></a> <span class="ts-nm">Sezzle</span></td>
               <td class="muted c-sector"><span class="l-en">Financials</span><span class="l-zh">金融</span></td>
               <td class="c-theme"><span class="muted">—</span></td>
               <td class="r c-edge az-dn">-0.09</td>
@@ -9857,8 +9873,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#OKTA'">
-              <td class="c-stock"><span class="ts-tk">OKTA</span> <span class="ts-nm">Okta, Inc.</span></td>
+            <tr class="ts-row" data-tkr="OKTA">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#OKTA"><span class="ts-tk">OKTA</span></a> <span class="ts-nm">Okta, Inc.</span></td>
               <td class="muted c-sector"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
               <td class="c-theme"><span class="muted">—</span></td>
               <td class="r c-edge az-up">+0.10</td>
@@ -9869,8 +9885,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#CRWD'">
-              <td class="c-stock"><span class="ts-tk">CRWD</span> <span class="ts-nm">Crowdstrike Holdings Inc   A</span></td>
+            <tr class="ts-row" data-tkr="CRWD">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#CRWD"><span class="ts-tk">CRWD</span></a> <span class="ts-nm">Crowdstrike Holdings Inc   A</span></td>
               <td class="muted c-sector"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
               <td class="c-theme"><span class="pv-mk-i pv-mk-warm" data-tip-en="The theme itself only just turned up (5 days in) — the basket is early even though this name has been running. Context, not an entry." data-tip-zh="主题本身刚刚转强（已进入第5天） — 尽管该股已在上涨，篮子仍处早期。仅供参考，非入场信号。"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span> ◦</span></td>
               <td class="r c-edge az-up">+0.80</td>
@@ -9881,8 +9897,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#CBRL'">
-              <td class="c-stock"><span class="ts-tk">CBRL</span> <span class="ts-nm">Cracker Barrel</span></td>
+            <tr class="ts-row" data-tkr="CBRL">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#CBRL"><span class="ts-tk">CBRL</span></a> <span class="ts-nm">Cracker Barrel</span></td>
               <td class="muted c-sector"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td>
               <td class="c-theme"><span class="muted">—</span></td>
               <td class="r c-edge az-dn">-0.06</td>
@@ -9893,8 +9909,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#MAN'">
-              <td class="c-stock"><span class="ts-tk">MAN</span> <span class="ts-nm">ManpowerGroup</span></td>
+            <tr class="ts-row" data-tkr="MAN">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#MAN"><span class="ts-tk">MAN</span></a> <span class="ts-nm">ManpowerGroup</span></td>
               <td class="muted c-sector"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
               <td class="c-theme"><span class="muted">—</span></td>
               <td class="r c-edge az-dn">-0.32</td>
@@ -9905,8 +9921,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#NSIT'">
-              <td class="c-stock"><span class="ts-tk">NSIT</span> <span class="ts-nm">Insight Enterprises, Inc.</span></td>
+            <tr class="ts-row" data-tkr="NSIT">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#NSIT"><span class="ts-tk">NSIT</span></a> <span class="ts-nm">Insight Enterprises, Inc.</span></td>
               <td class="muted c-sector"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td>
               <td class="c-theme"><span class="muted">—</span></td>
               <td class="r c-edge az-dn">-0.64</td>
@@ -9917,8 +9933,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#BJRI'">
-              <td class="c-stock"><span class="ts-tk">BJRI</span> <span class="ts-nm">BJ&#39;s Restaurants, Inc.</span></td>
+            <tr class="ts-row" data-tkr="BJRI">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#BJRI"><span class="ts-tk">BJRI</span></a> <span class="ts-nm">BJ&#39;s Restaurants, Inc.</span></td>
               <td class="muted c-sector"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td>
               <td class="c-theme"><span class="muted">—</span></td>
               <td class="r c-edge az-up">+0.68</td>
@@ -9929,8 +9945,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#BRKR'">
-              <td class="c-stock"><span class="ts-tk">BRKR</span> <span class="ts-nm">Bruker</span></td>
+            <tr class="ts-row" data-tkr="BRKR">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#BRKR"><span class="ts-tk">BRKR</span></a> <span class="ts-nm">Bruker</span></td>
               <td class="muted c-sector"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td>
               <td class="c-theme"><span class="muted">—</span></td>
               <td class="r c-edge az-up">+0.37</td>
@@ -9941,8 +9957,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#VSXY'">
-              <td class="c-stock"><span class="ts-tk">VSXY</span> <span class="ts-nm">Victoria&#39;s Secret</span></td>
+            <tr class="ts-row" data-tkr="VSXY">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#VSXY"><span class="ts-tk">VSXY</span></a> <span class="ts-nm">Victoria&#39;s Secret</span></td>
               <td class="muted c-sector"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td>
               <td class="c-theme"><span class="muted">—</span></td>
               <td class="r c-edge az-up">+1.98</td>
@@ -9953,8 +9969,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#AVTR'">
-              <td class="c-stock"><span class="ts-tk">AVTR</span> <span class="ts-nm">Avantor</span></td>
+            <tr class="ts-row" data-tkr="AVTR">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#AVTR"><span class="ts-tk">AVTR</span></a> <span class="ts-nm">Avantor</span></td>
               <td class="muted c-sector"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td>
               <td class="c-theme"><span class="muted">—</span></td>
               <td class="r c-edge az-dn">-0.99</td>
@@ -9965,8 +9981,8 @@
           
             
             
-            <tr class="ts-row" onclick="location.href='stock.html#XNCR'">
-              <td class="c-stock"><span class="ts-tk">XNCR</span> <span class="ts-nm">Xencor Inc</span></td>
+            <tr class="ts-row" data-tkr="XNCR">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#XNCR"><span class="ts-tk">XNCR</span></a> <span class="ts-nm">Xencor Inc</span></td>
               <td class="muted c-sector"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td>
               <td class="c-theme"><span class="muted">—</span></td>
               <td class="r c-edge az-up">+0.79</td>
@@ -9980,6 +9996,23 @@
       </div>
       
     </div>
+    
+    <script>
+    (function () {
+      document.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        if (!e.target || !e.target.closest) return;
+        var tr = e.target.closest('tr.ts-row[data-tkr]');
+        if (!tr) return;
+        if (e.target.closest('a')) return;   /* anchors route themselves */
+        var tk = tr.getAttribute('data-tkr') || '';
+        if (!tk) return;
+        var T = window.MDXTerminal;
+        if (T && T.on && T.on() && T.open && T.open(tk, tr)) return;
+        location.href = 'stock.html#' + encodeURIComponent(tk);
+      });
+    })();
+    </script>
     
     <script>
     (function () {

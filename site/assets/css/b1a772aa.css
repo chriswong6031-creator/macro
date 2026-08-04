@@ -200,7 +200,7 @@ body.page-macro .mxqm-hist{margin:-4px 0 6px;font-size:11px;line-height:1.45;
   color:var(--ink-3,rgba(255,255,255,.42))}
 body.page-macro .mxqm-hist b{color:var(--ink-2,rgba(255,255,255,.72));font-weight:650;
   font-variant-numeric:tabular-nums}
-[data-theme="light"] body.page-macro .mxqm-hist{color:rgba(0,0,0,.44)}
+[data-theme="light"] body.page-macro .mxqm-hist{color:rgba(0,0,0,.6)}
 /* Goldilocks trim (2026-07-20): ONE quiet compressed line (grip + weakest support)
    replacing the deleted flip-strip section; + one-line footer. */
 body.page-macro .mxqm-hold{display:flex;align-items:baseline;gap:6px;margin:2px 0 4px;
@@ -210,7 +210,7 @@ body.page-macro .mxqm-hold .help{flex:0 0 auto}
 [data-theme="light"] body.page-macro .mxqm-hold{color:rgba(0,0,0,.62)}
 body.page-macro .mxqm-foot{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
   font-size:10.5px;line-height:1.45;color:var(--ink-3,rgba(255,255,255,.42))}
-[data-theme="light"] body.page-macro .mxqm-foot{color:rgba(0,0,0,.42)}
+[data-theme="light"] body.page-macro .mxqm-foot{color:rgba(0,0,0,.6)}
 body.page-macro .mxqm-wrap{margin:0 0 8px}
 body.page-macro .mxqm-svg-box{width:100%;max-width:300px;margin:0 auto}
 body.page-macro .mxqm-svg-box svg{width:100%;height:auto;display:block;overflow:visible}
@@ -242,7 +242,7 @@ body.page-macro .mxqm-arrowhead{fill:var(--warn,#f59e0b)}
   body.page-macro .mxqm-pulse{animation:none;opacity:.28}
   body.page-macro .mxqm-arrow{animation:none;stroke-dashoffset:0}
 }
-[data-theme="light"] body.page-macro .mxqm-axis-label{fill:rgba(0,0,0,.4)}
+[data-theme="light"] body.page-macro .mxqm-axis-label{fill:rgba(0,0,0,.58)}
 [data-theme="light"] body.page-macro .mxqm-quad-label{fill:rgba(0,0,0,.62)}
 [data-theme="light"] body.page-macro .mxqm-odds{fill:rgba(0,0,0,.6)}
 [data-theme="light"] body.page-macro .mxqm-odds.active{fill:rgba(0,0,0,.9)}
@@ -266,7 +266,7 @@ body.page-macro .rsx-ldr-idx-label{
 [data-theme="light"] body.page-macro .rsx-ldr-bar-ticker{color:rgba(0,0,0,.72)}
 [data-theme="light"] body.page-macro .rsx-ldr-bar-fill{background-color:#ef4444}
 [data-theme="light"] body.page-macro .rsx-ldr-idx-line{background:rgba(0,0,0,.3)}
-[data-theme="light"] body.page-macro .rsx-ldr-idx-label{color:rgba(0,0,0,.4)}
+[data-theme="light"] body.page-macro .rsx-ldr-idx-label{color:rgba(0,0,0,.58)}
 @media(max-width:640px){body.page-macro .mxfs-row{flex-direction:column;gap:1px}body.page-macro .mxfs-k{width:auto}
 /* the longer honest-stance pill text ("… — not all-clear") must wrap on narrow
    phones instead of bleeding past the card edge (pill is nowrap on desktop; nowrap removed
