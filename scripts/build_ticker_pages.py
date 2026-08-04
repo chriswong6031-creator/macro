@@ -3078,14 +3078,17 @@ def build_page_context(
     # Order: Dow 30 first (if applicable), then senior S&P index, then Russell 2000
     # (only tagged when senior group is sp600 or r2000 — large/mid caps excluded even
     # if a scrape error ever mis-includes them).
+    # S&P 500 membership is deliberately NOT chipped (operator 2026-08-04): it is
+    # the assumed baseline for a US large-cap dossier, so the chip cost a slot in
+    # the hero row without telling the reader anything they did not assume. The
+    # chips that survive are the ones that place a name AWAY from that default —
+    # Dow 30, mid/small-cap membership, Russell 2000.
     _all_grps = all_groups or {group}
     _d30 = dow30_set or set()
     index_chips: list[dict] = []
     if ticker in _d30:
         index_chips.append({"en": "Dow 30", "zh": "道琼斯30"})
-    if group == "sp500":
-        index_chips.append({"en": "S&P 500", "zh": "标普500"})
-    elif group == "sp400":
+    if group == "sp400":
         index_chips.append({"en": "S&P 400", "zh": "标普400中盘"})
     elif group == "sp600":
         index_chips.append({"en": "S&P 600", "zh": "标普600小盘"})
