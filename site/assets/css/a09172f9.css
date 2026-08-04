@@ -121,6 +121,10 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
 }
 @media (max-width:680px){
   .pvcard .pv-chart svg,.pvcard .pv-nochart{height:58px}
+
+  .pv-hd{align-items:flex-start}
+  .pv-idw{flex:1 1 auto;flex-wrap:wrap;row-gap:1px;overflow:visible}
+  .pv-nm{flex-basis:100%;width:100%}
   .pv-stl span{font-size:9px}
   .pv-zn{font-size:10px}
   /* narrow cards: trigger chip collapses to the bare ⚡ glyph (the board copy
