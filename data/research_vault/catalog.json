@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T10:38:26.717165+00:00",
-  "count": 728,
+  "generated_at": "2026-08-04T10:53:31.040692+00:00",
+  "count": 729,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -49,6 +49,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-kbj5h3kf27k-8e21ab",
+      "title": "JPM JPM US MACRO THEMA",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T10:24:20Z",
+      "summary_points": [
+        "**Yen Intervention Policy Shift**: US-Japan coordinated JPY intervention (first since 1998) to counter BoJ loosening, impacting US financial conditions via Treasury sales and altering rate/macro dynamics.",
+        "**Crude Market Range-Bound View**: $75-90 crude price range intact with vol compression; re-escalation remains a cheap tail hedge despite >5% drawdown.",
+        "**Critical Data & Positioning**: NFP (75k est, Fri) and 4.3% UE rate key for near-term positioning; CTA levels show US equities Long, US Treasuries Short.",
+        "**Fed/Yen Policy & Flows**: Weaker dollar supports US assets, but Fed’s bond market focus tightens financial conditions, weighing on stocks; FIMA Repo reduces US treasury pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-w1tihsut8gt-a94dcf",
       "title": "JPM JPM US Market Intell",
