@@ -23,7 +23,7 @@ does not enable the injected native-publish seam and no workflow schedules it.
 Both migration flags remain strict, mutually exclusive, and default false. This
 wave adds no activation, retention, coverage, UI/API, or Prophet authority.
 
-The next wave adds a manual-only isolated R2 conditional create/CAS/readback
+Wave 7 adds a manual-only isolated R2 conditional create/CAS/readback
 harness and one closed local review-receipt contract. Adversarial hardening now
 requires exact botocore HTTP 412 `PreconditionFailed` refusals, preserves closed
 stage/category evidence plus an ordered prefix of proven core witnesses, and
@@ -36,6 +36,20 @@ claimed. The reviewed harness invokes no List, Delete, HMAC, production
 publication, retention, UI/API, or Prophet operation; its same-process adapter
 is a reviewed-code target guard, not a security sandbox. Operator details live in
 `research/CAPITAL_STRUCTURE_SHARE_COUNT_R2_CONFORMANCE_HANDOFF.md`.
+
+Wave 8 hardens the separately configured production R2 head guard against a
+committed first attempt whose response is lost before an SDK retry surfaces a
+terminal conditional failure. Every exception caught by the head-PUT block now
+uses authenticated bounded read-back: only the exact frozen submitted canonical
+bytes prove success; an absent, unchanged, unreadable, or otherwise ambiguous
+result is indeterminate; and a recognized conditional-write failure plus a
+different authenticated head is a conflict. Tests pin v2 genesis/successor,
+v2-to-v3, v2/v3-to-v4, v4 genesis/successor, mutable caller inputs, transport
+failure, competing-writer recovery, and journal retention/cleanup. This closes
+only the production retry-classification code prerequisite. Publication remains
+default-off, native v4 remains unavailable from the production wrapper, and
+provider conformance, concurrent-writer, retention, coverage, UI/API, and
+Prophet authority remain unproven or disabled.
 
 ## 0. Acceptance boundary
 
@@ -332,11 +346,14 @@ The v2 path closes the previously missing source seam without weakening it:
     The receipt is deliberately not registered in Synapse because no existing
     storage locus truthfully represents an expiring GitHub review artifact and
     it has no consumer.
-    This is a sequential trace, not a concurrent linearizability proof, and it
-    says nothing about the separately configured production publisher's hidden
-    SDK retries. Activation also requires either a single-attempt production CAS
-    client or exact candidate reconciliation for every ambiguous/retried result,
-    plus an independent concurrent-writer race proof.
+    This is a sequential trace, not a concurrent-linearizability proof, and it
+    does not attest the separately configured production client or its
+    unit-tested post-PUT exception reconciliation. The production guard accepts
+    a caught conditional-PUT exception only after authenticated canonical
+    read-back exactly matches the frozen submitted candidate; absent, unchanged,
+    unreadable, or otherwise ambiguous evidence remains indeterminate. That
+    closes only the retry-classification code gate. Independent concurrent-writer
+    race proof remains required before activation.
 
 Outer publication v2 removes the former 512-receipt full-chain recovery cliff.
 It does not remove the upstream dependency: Company Facts source selection still
@@ -451,8 +468,9 @@ the correction chain.
    unavailable from production and unscheduled regardless of those migration
    flags.
    A passed create/CAS/readback receipt closes only that exact scoped provider
-   sequential trace; it does not establish concurrent linearizability or safe
-   production retry behavior and does not activate publication. Separately
+   sequential trace; it does not establish concurrent linearizability or itself
+   attest the separately unit-tested production exception-reconciliation
+   behavior, and it does not activate publication. Separately
    prove R2 atomic
    conditional delete on an isolated object, add a shared external publish/delete
    fence and exact race test, mint a verifier-only capability that cannot write
@@ -506,7 +524,11 @@ candidate artifact reread, two-conflict replay bound, recovery-only entry,
 direct-sibling/genesis convergence, mixed-protocol refusal, capsule-only drainage,
 scope-bound v3 and v4 authentication/migration, exact virtual-v2 anchors,
 distinct v3/v4 head and v1/v2 journal signature domains, null-to-v4 genesis and
-v4-to-v4 successor test-seam publication/recovery, corrected v1/v4 compatibility,
+v4-to-v4 successor test-seam publication/recovery, exact frozen-canonical-
+candidate reconciliation after head-PUT exceptions across v2 advance/successor,
+v3 migration, v2/v3-to-v4, and v4 genesis/successor—including unchanged,
+absent, outage, transport, authenticated-competitor, and restart-recovery cases—
+corrected v1/v4 compatibility,
 both old-v2-writer race orders, concurrent identical migration, mutually exclusive
 strict-default-false migration flags, strict legacy capsule sibling rejection, and
 legacy/v3/v4 coexistence refusal,

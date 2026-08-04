@@ -479,10 +479,16 @@ class R2ShareCountHeadGuard:
             )
         if observed != normalized or token != expected_token:
             raise ShareCountPublicationConflict("share-count external head compare-and-swap conflict")
-        _validate_head_transition(previous=observed, candidate=candidate, signer=self._signer)
-        body = _canonical_bytes(dict(candidate)) + b"\n"
-        if len(body) > MAX_HEAD_WITNESS_BYTES:
-            raise ShareCountPublicationTooLarge("share-count external head witness exceeds byte cap")
+        prior_body = self._freeze_head_witness_body(observed)
+        submitted_candidate, body = self._freeze_head_candidate(
+            candidate,
+            too_large_message="share-count external head witness exceeds byte cap",
+        )
+        _validate_head_transition(
+            previous=observed,
+            candidate=submitted_candidate,
+            signer=self._signer,
+        )
         arguments: dict[str, Any] = {"Bucket": self._bucket, "Key": self._key, "Body": body, "ContentType": "application/json"}
         arguments["IfNoneMatch" if token is None else "IfMatch"] = "*" if token is None else token
         try:
@@ -495,20 +501,16 @@ class R2ShareCountHeadGuard:
             self._client.put_object(**arguments)
             self._check_deadline("external head conditional PUT")
         except Exception as exc:  # noqa: BLE001
-            if _is_conditional_write_conflict(exc):
-                raise ShareCountPublicationConflict("share-count external head compare-and-swap conflict") from exc
-            # A transport failure after the server received the request is not a
-            # normal pre-CAS error.  Resolve only an exact read-back; otherwise
-            # retain the local signed recovery state for restart reconciliation.
-            try:
-                confirmed, _ = self.read()
-            except Exception as read_exc:  # noqa: BLE001
-                raise ShareCountPublishIndeterminate("share-count external head CAS outcome is indeterminate") from read_exc
-            if confirmed != dict(candidate):
-                raise ShareCountPublishIndeterminate("share-count external head CAS outcome is indeterminate") from exc
+            self._reconcile_head_put_exception(
+                exc=exc,
+                submitted_body=body,
+                prior_body=prior_body,
+                conflict_message="share-count external head compare-and-swap conflict",
+                indeterminate_message="share-count external head CAS outcome is indeterminate",
+            )
             return
         confirmed, _ = self.read()
-        if confirmed != dict(candidate):
+        if not self._head_matches_submitted_body(confirmed, submitted_body=body):
             raise ShareCountPublicationError("share-count external head read-back mismatch")
 
     def migrate_v2_to_v3(
@@ -526,21 +528,21 @@ class R2ShareCountHeadGuard:
             raise _ShareCountPreCasFailure(
                 "share-count external head v3 migration CAS was not invoked",
             ) from exc
-        if observed != dict(expected) or token != expected_token:
+        if observed is None or observed != dict(expected) or token != expected_token:
             raise ShareCountPublicationConflict(
                 "share-count external head v3 migration compare-and-swap conflict",
             )
+        prior_body = self._freeze_head_witness_body(observed)
+        submitted_candidate, body = self._freeze_head_candidate(
+            candidate,
+            too_large_message="share-count external head v3 witness exceeds byte cap",
+        )
         _validate_head_migration(
-            previous=expected,
-            candidate=candidate,
+            previous=observed,
+            candidate=submitted_candidate,
             signer=self._signer,
             expected_scope=scope,
         )
-        body = _canonical_bytes(dict(candidate)) + b"\n"
-        if len(body) > MAX_HEAD_WITNESS_BYTES:
-            raise ShareCountPublicationTooLarge(
-                "share-count external head v3 witness exceeds byte cap",
-            )
         arguments = {
             "Bucket": self._bucket,
             "Key": self._key,
@@ -558,23 +560,16 @@ class R2ShareCountHeadGuard:
             self._client.put_object(**arguments)
             self._check_deadline("external head v3 migration conditional PUT")
         except Exception as exc:  # noqa: BLE001
-            if _is_conditional_write_conflict(exc):
-                raise ShareCountPublicationConflict(
-                    "share-count external head v3 migration compare-and-swap conflict",
-                ) from exc
-            try:
-                confirmed, _ = self.read()
-            except Exception as read_exc:  # noqa: BLE001
-                raise ShareCountPublishIndeterminate(
-                    "share-count external head v3 migration outcome is indeterminate",
-                ) from read_exc
-            if confirmed != dict(candidate):
-                raise ShareCountPublishIndeterminate(
-                    "share-count external head v3 migration outcome is indeterminate",
-                ) from exc
+            self._reconcile_head_put_exception(
+                exc=exc,
+                submitted_body=body,
+                prior_body=prior_body,
+                conflict_message="share-count external head v3 migration compare-and-swap conflict",
+                indeterminate_message="share-count external head v3 migration outcome is indeterminate",
+            )
             return
         confirmed, _ = self.read()
-        if confirmed != dict(candidate):
+        if not self._head_matches_submitted_body(confirmed, submitted_body=body):
             raise ShareCountPublicationError(
                 "share-count external head v3 migration read-back mismatch",
             )
@@ -594,19 +589,25 @@ class R2ShareCountHeadGuard:
             raise _ShareCountPreCasFailure(
                 "share-count external head v4 migration CAS was not invoked",
             ) from exc
-        if observed != dict(expected) or token != expected_token:
+        if observed is None or observed != dict(expected) or token != expected_token:
             raise ShareCountPublicationConflict(
                 "share-count external head v4 migration compare-and-swap conflict",
             )
+        prior_body = self._freeze_head_witness_body(observed)
+        submitted_candidate, body = self._freeze_head_candidate(
+            candidate,
+            too_large_message="external head v4 migration witness exceeds byte cap",
+        )
         _validate_head_migration_v4(
-            previous=expected,
-            candidate=candidate,
+            previous=observed,
+            candidate=submitted_candidate,
             signer=self._signer,
             expected_scope=scope,
         )
         self._put_v4_head(
             expected_token=expected_token,
-            candidate=candidate,
+            body=body,
+            prior_body=prior_body,
             label="external head v4 migration",
         )
 
@@ -630,28 +631,93 @@ class R2ShareCountHeadGuard:
             raise ShareCountPublicationConflict(
                 "share-count external v4 head compare-and-swap conflict",
             )
+        prior_body = self._freeze_head_witness_body(observed)
+        submitted_candidate, body = self._freeze_head_candidate(
+            candidate,
+            too_large_message="external v4 head witness exceeds byte cap",
+        )
         _validate_head_transition_v4(
             previous=observed,
-            candidate=candidate,
+            candidate=submitted_candidate,
             signer=self._signer,
             expected_scope=scope,
         )
         self._put_v4_head(
             expected_token=expected_token,
-            candidate=candidate,
+            body=body,
+            prior_body=prior_body,
             label="external v4 head",
         )
+
+    @staticmethod
+    def _freeze_head_candidate(
+        candidate: Mapping[str, Any],
+        *,
+        too_large_message: str,
+    ) -> tuple[dict[str, Any], bytes]:
+        """Deep-snapshot the exact canonical witness bytes submitted to R2."""
+        body = _canonical_bytes(dict(candidate)) + b"\n"
+        if len(body) > MAX_HEAD_WITNESS_BYTES:
+            raise ShareCountPublicationTooLarge(too_large_message)
+        return _parse_canonical_json(
+            body,
+            label="external head submitted candidate",
+            max_bytes=MAX_HEAD_WITNESS_BYTES,
+        ), body
+
+    @staticmethod
+    def _head_matches_submitted_body(
+        confirmed: Mapping[str, Any] | None,
+        *,
+        submitted_body: bytes,
+    ) -> bool:
+        return (
+            confirmed is not None
+            and _canonical_bytes(confirmed) + b"\n" == submitted_body
+        )
+
+    @staticmethod
+    def _freeze_head_witness_body(head: Mapping[str, Any] | None) -> bytes | None:
+        return None if head is None else _canonical_bytes(head) + b"\n"
+
+    def _reconcile_head_put_exception(
+        self,
+        *,
+        exc: Exception,
+        submitted_body: bytes,
+        prior_body: bytes | None,
+        conflict_message: str,
+        indeterminate_message: str,
+    ) -> None:
+        """Resolve a possibly-retried conditional head PUT by exact read-back.
+
+        R2 client retries may expose a terminal 409/412 after an earlier request
+        committed but its response was lost.  ``read`` authenticates and bounds
+        the witness, so only its exact candidate proves the operation succeeded.
+        """
+        try:
+            confirmed, _ = self.read()
+        except Exception as read_exc:  # noqa: BLE001 - failed evidence is indeterminate
+            raise ShareCountPublishIndeterminate(indeterminate_message) from read_exc
+        if self._head_matches_submitted_body(confirmed, submitted_body=submitted_body):
+            return
+        confirmed_body = self._freeze_head_witness_body(confirmed)
+        if (
+            _is_conditional_write_conflict(exc)
+            and confirmed_body is not None
+            and confirmed_body != prior_body
+        ):
+            raise ShareCountPublicationConflict(conflict_message) from exc
+        raise ShareCountPublishIndeterminate(indeterminate_message) from exc
 
     def _put_v4_head(
         self,
         *,
         expected_token: str | None,
-        candidate: Mapping[str, Any],
+        body: bytes,
+        prior_body: bytes | None,
         label: str,
     ) -> None:
-        body = _canonical_bytes(dict(candidate)) + b"\n"
-        if len(body) > MAX_HEAD_WITNESS_BYTES:
-            raise ShareCountPublicationTooLarge(f"{label} witness exceeds byte cap")
         arguments: dict[str, Any] = {
             "Bucket": self._bucket,
             "Key": self._key,
@@ -669,17 +735,16 @@ class R2ShareCountHeadGuard:
             self._client.put_object(**arguments)
             self._check_deadline(f"{label} conditional PUT")
         except Exception as exc:  # noqa: BLE001
-            if _is_conditional_write_conflict(exc):
-                raise ShareCountPublicationConflict(f"{label} compare-and-swap conflict") from exc
-            try:
-                confirmed, _ = self.read()
-            except Exception as read_exc:  # noqa: BLE001
-                raise ShareCountPublishIndeterminate(f"{label} CAS outcome is indeterminate") from read_exc
-            if confirmed != dict(candidate):
-                raise ShareCountPublishIndeterminate(f"{label} CAS outcome is indeterminate") from exc
+            self._reconcile_head_put_exception(
+                exc=exc,
+                submitted_body=body,
+                prior_body=prior_body,
+                conflict_message=f"{label} compare-and-swap conflict",
+                indeterminate_message=f"{label} CAS outcome is indeterminate",
+            )
             return
         confirmed, _ = self.read()
-        if confirmed != dict(candidate):
+        if not self._head_matches_submitted_body(confirmed, submitted_body=body):
             raise ShareCountPublicationError(f"{label} read-back mismatch")
 
     def seal_artifact(self, *, key: str, body: bytes, max_bytes: int) -> None:

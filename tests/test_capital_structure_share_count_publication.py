@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+from collections.abc import Mapping
 import copy
 from datetime import datetime, timezone
 from io import BytesIO
@@ -2516,6 +2517,107 @@ class _FakeR2:
         self.objects[Key] = Body; self.etags[Key] = '"' + publication._sha(Body) + '"'
 
 
+def _synthetic_r2_412(message: str = "precondition") -> RuntimeError:
+    error = RuntimeError(message)
+    error.response = {
+        "Error": {"Code": "412"},
+        "ResponseMetadata": {"HTTPStatusCode": 412},
+    }
+    return error
+
+
+class _HeadPutFaultR2(_FakeR2):
+    """Inject one post/pre-write R2 head failure without disturbing artifacts."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.head_fault: str | None = None
+        self.fail_head_reads = False
+        self.after_head_commit = None
+        self.competing_head_body: bytes | None = None
+
+    def head_object(self, *, Bucket: str, Key: str):
+        if Key == publication.HEAD_GUARD_KEY and self.fail_head_reads:
+            raise RuntimeError("simulated head readback outage")
+        return super().head_object(Bucket=Bucket, Key=Key)
+
+    def put_object(self, *, Bucket: str, Key: str, Body: bytes, **kwargs):
+        fault = self.head_fault if Key == publication.HEAD_GUARD_KEY else None
+        if fault in {"prewrite_412", "prewrite_412_readback_failure"}:
+            self.put_calls.append({"Bucket": Bucket, "Key": Key, "Body": Body, **kwargs})
+            if fault == "prewrite_412_readback_failure":
+                self.fail_head_reads = True
+            raise _synthetic_r2_412()
+        if fault == "ambiguous_prewrite":
+            self.put_calls.append({"Bucket": Bucket, "Key": Key, "Body": Body, **kwargs})
+            raise RuntimeError("simulated lost request outcome")
+        if fault == "competing_412":
+            self.put_calls.append({"Bucket": Bucket, "Key": Key, "Body": Body, **kwargs})
+            assert self.competing_head_body is not None
+            self.objects[Key] = self.competing_head_body
+            self.etags[Key] = '"' + publication._sha(self.competing_head_body) + '"'
+            raise _synthetic_r2_412("simulated competing writer")
+        super().put_object(Bucket=Bucket, Key=Key, Body=Body, **kwargs)
+        if fault == "commit_then_412":
+            if callable(self.after_head_commit):
+                self.after_head_commit()
+            raise _synthetic_r2_412("simulated retry precondition")
+        if fault == "commit_then_412_readback_failure":
+            self.fail_head_reads = True
+            raise _synthetic_r2_412("simulated retry precondition")
+        if fault == "commit_then_transport":
+            raise RuntimeError("simulated lost successful response")
+
+
+class _OneShotExpectedHead(Mapping):
+    """Return the authenticated head once, then poison later caller reads."""
+
+    def __init__(self, head: dict) -> None:
+        self._head = dict(head)
+        self._last_key = next(reversed(self._head))
+        self._poisoned = False
+
+    def __iter__(self):
+        return iter(self._head)
+
+    def __len__(self) -> int:
+        return len(self._head)
+
+    def __getitem__(self, key):
+        if self._poisoned and key == "schema":
+            return "capital_structure.hostile_expected_mapping/v1"
+        value = self._head[key]
+        if key == self._last_key:
+            self._poisoned = True
+        return value
+
+
+def _r2_v2_successor_fixture(signer, previous: dict) -> tuple[dict, dict, bytes, bytes]:
+    ledger = b'{"successor":2}\n'
+    receipt, receipt_body = _synthetic_receipt(
+        signer,
+        2,
+        ledger=ledger,
+        ancestor_overrides={
+            0: {
+                "sequence": previous["sequence"],
+                "receipt_id": previous["receipt_id"],
+                "receipt_sha256": previous["receipt_sha256"],
+                "receipt_byte_length": previous["receipt_byte_length"],
+            },
+        },
+    )
+    return publication._head_witness(
+        receipt=receipt,
+        receipt_body=receipt_body,
+        signer=signer,
+    ), receipt, receipt_body, ledger
+
+
+def _r2_v2_successor_candidate(signer, previous: dict) -> dict:
+    return _r2_v2_successor_fixture(signer, previous)[0]
+
+
 def test_r2_guard_uses_head_then_bounded_ifmatch_get_and_conditional_put(tmp_path: Path) -> None:
     signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
     r2 = _FakeR2(); guard = publication.R2ShareCountHeadGuard(client=r2, bucket="fixture", signer=signer)
@@ -2523,6 +2625,403 @@ def test_r2_guard_uses_head_then_bounded_ifmatch_get_and_conditional_put(tmp_pat
     head, etag = guard.read()
     assert head is not None and etag is not None and result.sequence == 1
     assert publication.HEAD_GUARD_KEY in r2.objects
+
+
+def test_r2_v2_genesis_commit_then_retry_412_reconciles_exact_candidate_and_cleans_journal(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    r2.head_fault = "commit_then_412"
+    guard = publication.R2ShareCountHeadGuard(client=r2, bucket="fixture", signer=signer)
+    root = tmp_path / "r2-v2"
+
+    result = _publish(root, signer, guard)
+
+    head, _ = guard.read()
+    assert result.sequence == 1 and head is not None and head["schema"] == publication.WITNESS_V2_SCHEMA
+    assert not (root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME).exists()
+
+
+def test_r2_v2_successor_commit_then_retry_412_reconciles_exact_candidate_and_cleans_journal(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    guard = publication.R2ShareCountHeadGuard(client=r2, bucket="fixture", signer=signer)
+    root = tmp_path / "r2-v2-successor"
+    _publish(root, signer, guard)
+    r2.head_fault = "commit_then_412"
+
+    result = _publish(root, signer, guard, b'{"generation":2}\n', suffix="b")
+
+    head, _ = guard.read()
+    assert result.sequence == 2 and head is not None and head["sequence"] == 2
+    assert not (root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME).exists()
+
+
+def test_r2_v3_migration_commit_then_retry_412_reconciles_exact_candidate(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    guard = publication.R2ShareCountHeadGuard(
+        client=r2,
+        bucket="fixture",
+        signer=signer,
+        account_id="a" * 32,
+    )
+    root = tmp_path / "r2-v3"
+    _publish(root, signer, guard)
+    r2.head_fault = "commit_then_412"
+
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v3=True,
+    )
+
+    head, _ = guard.read()
+    assert recovered is not None and head is not None and head["schema"] == publication.WITNESS_V3_SCHEMA
+
+
+def test_r2_v3_migration_validates_the_authenticated_observed_head_not_mutable_expected(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _FakeR2()
+    guard = publication.R2ShareCountHeadGuard(
+        client=r2,
+        bucket="fixture",
+        signer=signer,
+        account_id="a" * 32,
+    )
+    _publish(tmp_path / "r2-v3-observed", signer, guard)
+    expected, token = guard.read()
+    assert expected is not None and token is not None
+    candidate = publication._migrated_head_witness_v3(
+        expected,
+        signer=signer,
+        guard_scope=guard.guard_scope,
+    )
+
+    guard.migrate_v2_to_v3(
+        expected=_OneShotExpectedHead(expected),
+        expected_token=token,
+        candidate=candidate,
+    )
+
+    head, _ = guard.read()
+    assert head == candidate
+
+
+def test_r2_v4_migration_validates_the_authenticated_observed_head_not_mutable_expected(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _FakeR2()
+    guard = publication.R2ShareCountHeadGuard(
+        client=r2,
+        bucket="fixture",
+        signer=signer,
+        account_id="a" * 32,
+    )
+    _publish(tmp_path / "r2-v4-observed", signer, guard)
+    expected, token = guard.read()
+    assert expected is not None and token is not None
+    candidate = publication._migrated_head_witness_v4(
+        expected,
+        signer=signer,
+        guard_scope=guard.guard_scope,
+    )
+
+    guard.migrate_v2_or_v3_to_v4(
+        expected=_OneShotExpectedHead(expected),
+        expected_token=token,
+        candidate=candidate,
+    )
+
+    head, _ = guard.read()
+    assert head == candidate
+
+
+def test_r2_native_v4_commit_then_retry_412_reconciles_exact_candidate_and_cleans_journal(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    r2.head_fault = "commit_then_412"
+    guard = publication.R2ShareCountHeadGuard(
+        client=r2,
+        bucket="fixture",
+        signer=signer,
+        account_id="a" * 32,
+    )
+    root = tmp_path / "r2-v4"
+
+    result = _publish(root, signer, guard, publish_head_v4=True)
+
+    head, _ = guard.read()
+    assert result.sequence == 1 and head is not None and head["schema"] == publication.WITNESS_V4_SCHEMA
+    assert not (root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME).exists()
+
+
+def test_r2_native_v4_successor_commit_then_retry_412_reconciles_exact_candidate_and_cleans_journal(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    guard = publication.R2ShareCountHeadGuard(
+        client=r2,
+        bucket="fixture",
+        signer=signer,
+        account_id="a" * 32,
+    )
+    root = tmp_path / "r2-v4-successor"
+    _publish(root, signer, guard, publish_head_v4=True)
+    r2.head_fault = "commit_then_412"
+
+    result = _publish(
+        root,
+        signer,
+        guard,
+        b'{"generation":2}\n',
+        suffix="b",
+        publish_head_v4=True,
+    )
+
+    head, _ = guard.read()
+    assert result.sequence == 2 and head is not None and head["sequence"] == 2
+    assert not (root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME).exists()
+
+
+@pytest.mark.parametrize("predecessor", ["v2", "v3"])
+def test_r2_v4_migration_commit_then_retry_412_reconciles_shared_head_write(
+    tmp_path: Path,
+    predecessor: str,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    guard = publication.R2ShareCountHeadGuard(
+        client=r2,
+        bucket="fixture",
+        signer=signer,
+        account_id="a" * 32,
+    )
+    root = tmp_path / f"r2-v4-migration-{predecessor}"
+    _publish(root, signer, guard)
+    if predecessor == "v3":
+        publication._recover_share_count_materialization_for_test(
+            root=root,
+            signer=signer,
+            head_guard=guard,
+            migrate_head_v3=True,
+        )
+    r2.head_fault = "commit_then_412"
+
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+        migrate_head_v4=True,
+    )
+
+    head, _ = guard.read()
+    assert recovered is not None and head is not None and head["schema"] == publication.WITNESS_V4_SCHEMA
+    assert head["transition"]["kind"] == "migration"
+    assert head["transition"]["from_schema"] == {
+        "v2": publication.WITNESS_V2_SCHEMA,
+        "v3": publication.WITNESS_V3_SCHEMA,
+    }[predecessor]
+
+
+def test_r2_prewrite_412_with_absent_readback_is_indeterminate_then_recovery_retries(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    r2.head_fault = "prewrite_412"
+    guard = publication.R2ShareCountHeadGuard(client=r2, bucket="fixture", signer=signer)
+    root = tmp_path / "r2-prewrite-conflict"
+
+    with pytest.raises(publication.ShareCountPublishIndeterminate, match="CAS outcome is indeterminate"):
+        _publish(root, signer, guard)
+
+    assert guard.read()[0] is None
+    journal = root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME
+    assert journal.exists()
+    r2.head_fault = None
+
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+    )
+
+    assert recovered is not None and recovered.sequence == 1
+    assert not journal.exists()
+
+
+def test_r2_prewrite_412_with_unchanged_predecessor_is_indeterminate_then_recovers(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    guard = publication.R2ShareCountHeadGuard(client=r2, bucket="fixture", signer=signer)
+    root = tmp_path / "r2-prewrite-unchanged"
+    _publish(root, signer, guard)
+    r2.head_fault = "prewrite_412"
+
+    with pytest.raises(publication.ShareCountPublishIndeterminate, match="CAS outcome is indeterminate"):
+        _publish(root, signer, guard, b'{"generation":2}\n', suffix="b")
+
+    selected, _ = guard.read()
+    assert selected is not None and selected["sequence"] == 1
+    journal = root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME
+    assert journal.exists()
+    r2.head_fault = None
+
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+    )
+
+    assert recovered is not None and recovered.sequence == 2
+    assert not journal.exists()
+
+
+def test_r2_typed_412_with_authenticated_competing_head_is_conflict_and_retains_journal(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    guard = publication.R2ShareCountHeadGuard(client=r2, bucket="fixture", signer=signer)
+    root = tmp_path / "r2-authenticated-competitor"
+    _publish(root, signer, guard)
+    expected, _ = guard.read()
+    assert expected is not None
+    competing, receipt, receipt_body, ledger = _r2_v2_successor_fixture(signer, expected)
+    guard.seal_artifact(
+        key=competing["receipt_object_key"],
+        body=receipt_body,
+        max_bytes=publication.MAX_RECEIPT_BYTES,
+    )
+    guard.seal_artifact(
+        key=competing["ledger_object_key"],
+        body=ledger,
+        max_bytes=publication.MAX_LEDGER_BYTES,
+    )
+    r2.head_fault = "competing_412"
+    r2.competing_head_body = publication._canonical_bytes(competing) + b"\n"
+
+    with pytest.raises(publication.ShareCountPublicationConflict, match="compare-and-swap conflict"):
+        _publish(root, signer, guard, b'{"loser":2}\n', suffix="b")
+
+    selected, _ = guard.read()
+    assert selected == competing
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+    )
+    assert recovered is not None and recovered.receipt_id == receipt["receipt_id"]
+    assert recovered.ledger_bytes == ledger
+    assert not (root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME).exists()
+
+
+def test_r2_ambiguous_prewrite_with_absent_readback_retains_journal(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    r2.head_fault = "ambiguous_prewrite"
+    guard = publication.R2ShareCountHeadGuard(client=r2, bucket="fixture", signer=signer)
+    root = tmp_path / "ambiguous-prewrite"
+
+    with pytest.raises(publication.ShareCountPublishIndeterminate, match="CAS outcome is indeterminate"):
+        _publish(root, signer, guard)
+
+    assert guard.read()[0] is None
+    assert (root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME).exists()
+
+
+def test_r2_typed_412_with_unreadable_readback_is_indeterminate_and_retains_journal(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    r2.head_fault = "prewrite_412_readback_failure"
+    guard = publication.R2ShareCountHeadGuard(client=r2, bucket="fixture", signer=signer)
+    root = tmp_path / "typed-412-readback-failure"
+
+    with pytest.raises(publication.ShareCountPublishIndeterminate, match="CAS outcome is indeterminate"):
+        _publish(root, signer, guard)
+
+    assert (root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME).exists()
+
+
+def test_r2_transport_after_committed_head_with_exact_readback_succeeds_and_cleans_journal(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    r2.head_fault = "commit_then_transport"
+    guard = publication.R2ShareCountHeadGuard(client=r2, bucket="fixture", signer=signer)
+    root = tmp_path / "transport-after-commit"
+
+    result = _publish(root, signer, guard)
+
+    assert result.sequence == 1
+    assert not (root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME).exists()
+
+
+def test_r2_typed_412_after_commit_with_readback_outage_retains_then_recovers(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    r2.head_fault = "commit_then_412_readback_failure"
+    guard = publication.R2ShareCountHeadGuard(client=r2, bucket="fixture", signer=signer)
+    root = tmp_path / "typed-412-after-commit-readback-outage"
+
+    with pytest.raises(publication.ShareCountPublishIndeterminate, match="CAS outcome is indeterminate"):
+        _publish(root, signer, guard)
+
+    journal = root / "data/capital_structure/share_counts/v2" / publication.JOURNAL_NAME
+    assert journal.exists()
+    r2.fail_head_reads = False
+    r2.head_fault = None
+    recovered = publication._recover_share_count_materialization_for_test(
+        root=root,
+        signer=signer,
+        head_guard=guard,
+    )
+
+    assert recovered is not None and recovered.sequence == 1
+    assert not journal.exists()
+
+
+def test_r2_reconciliation_uses_the_frozen_submitted_candidate_after_mutation(
+    tmp_path: Path,
+) -> None:
+    signer = publication.HmacShareCountSigner(b"k" * 32, key_id="test")
+    r2 = _HeadPutFaultR2()
+    guard = publication.R2ShareCountHeadGuard(client=r2, bucket="fixture", signer=signer)
+    _publish(tmp_path / "r2-seed", signer, guard)
+    expected, token = guard.read()
+    assert expected is not None and token is not None
+    candidate = _r2_v2_successor_candidate(signer, expected)
+    submitted_published_at = candidate["published_at"]
+    r2.head_fault = "commit_then_412"
+    r2.after_head_commit = lambda: candidate.__setitem__("published_at", "2026-08-03T00:00:01Z")
+
+    guard.advance(expected=expected, expected_token=token, candidate=candidate)
+
+    head, _ = guard.read()
+    assert head is not None and head["published_at"] == submitted_published_at
+    assert candidate["published_at"] != submitted_published_at
 
 
 def test_r2_v3_migration_uses_same_key_exact_token_and_old_reader_never_puts(
