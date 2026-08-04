@@ -70,7 +70,7 @@ stores accrue makes the rename more expensive, and until it lands a cross-market
 must special-case per market or alias on read — exactly the shape contamination §7
 exists to prevent.
 
-**LANDED 2026-08-04 (CN lane, PR TBD).** The CN rename shipped as its own CN-lane PR,
+**LANDED 2026-08-04 (CN lane, PR #4543).** The CN rename shipped as its own CN-lane PR,
 as filed above — no US file was touched by it. It was a column rename with receipts and
 no strategy, scoring, or lane-logic change: producer `engine/china_prophet_shadow.py`
 (record key, `_OBJECT_COLUMNS`, the keep-first dedup subset, docstring), the candidates
