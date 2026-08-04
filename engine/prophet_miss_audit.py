@@ -572,13 +572,16 @@ def name_score_series_reader(market: str = NAME_SCORE_MARKET) -> Callable[[str],
     """A per-ticker MEMOIZED close-series resolver, identical to the resolution half of
     ``engine.name_score_grader._fwd_return``.
 
-    WHY THIS EXISTS (runtime, not method). ``grade()`` resolves the series inside a
-    per-(row, horizon) loop, so a 72k-row ledger costs ~145k parquet reads — MEASURED at
-    13.4 minutes and rising with every night's stamp, which is a fifth of the whole render
-    budget for telemetry no gate reads. The ledger's 72k rows span only ~3k tickers, so
-    reading each name ONCE and reusing the series makes the same computation cost ~3s. The
-    read count is bounded by the UNIVERSE (stable), not by ledger depth (accruing), so this
-    stays cheap as the ledger grows.
+    WHY THIS EXISTS (runtime, not method). ``grade()`` originally resolved the series
+    inside a per-(row, horizon) loop, so a 72k-row ledger cost ~145k parquet reads —
+    MEASURED at 13.4 minutes and rising with every night's stamp, which is a fifth of the
+    whole render budget for telemetry no gate reads. The ledger's 72k rows span only ~3k
+    tickers, so reading each name ONCE and reusing the series makes the same computation
+    cost ~3s. The read count is bounded by the UNIVERSE (stable), not by ledger depth
+    (accruing), so this stays cheap as the ledger grows. ``grade()`` now carries the same
+    per-name memo (``name_score_grader._series_reader`` — same shape, added after this
+    adapter proved it); this reader stays the audit's OWN resolution so the anti-fork pin
+    compares two implementations rather than one through a pointer.
 
     It is a caching wrapper, NOT a second opinion: the group ladder
     (``name_score_grader._FWD_GROUP``), the ``close`` coercion, and the US dead-name
