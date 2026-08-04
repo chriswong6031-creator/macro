@@ -1,3 +1,4 @@
+{% from "_icons.html.j2" import icon %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
@@ -32,7 +33,29 @@
   .sc-top { margin:6px 2px 4px; }
   .sc-kicker { display:flex; align-items:center; gap:9px; }
   .sc-kicker h1 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.02em; display:flex; align-items:center; gap:9px; }
-  .sc-kicker .glyph { font-size:20px; filter:drop-shadow(0 0 12px color-mix(in srgb,var(--info) 55%,transparent)); }
+  /* ── icon system (shared _icons.html.j2 monoline set) ───────────────────────
+     Inline SVG, stroke=currentColor, so every glyph inherits its slot's ink and
+     rides the theme / zh swaps for free. Replaces the emoji that used to do
+     section-head duty (a colour-fixed, OS-dependent glyph in a typographic
+     system). Base + per-slot sizing lives here per the macro's header note. */
+  .ic-svg { width:1em; height:1em; display:inline-block; flex:none; fill:none;
+    stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.135em; }
+  .sc-kicker .sc-h1-ic { width:22px; height:22px; color:var(--info); stroke-width:1.7;
+    filter:drop-shadow(0 0 12px color-mix(in srgb,var(--info) 55%,transparent)); }
+  /* Section-head ink encodes the page's own three altitudes: the ACT sections
+     (what to do now · picks) carry the live info accent; the EXPLORE sections
+     below them stay muted. The icon is structure, not decoration. */
+  .sc-h2-ic { width:17px; height:17px; color:var(--muted); stroke-width:1.7; }
+  .sc-s1 .sc-h2-ic, .sc-s2 .sc-h2-ic { color:var(--info); }
+  /* leadership column heads: the mark carries the stance the column carries —
+     accelerating leaders take the up ink (and flip with 红涨绿跌), coiling
+     laggards take the info ink, exactly like their stage badges below. */
+  .sc-h3-ic { width:15px; height:15px; stroke-width:1.7; }
+  .sc-h3-ic.ic-run { color:var(--ink-up, var(--up)); }
+  .sc-h3-ic.ic-coil { color:var(--ink-info, var(--info)); }
+  .sc-search .sc-find-ic { width:14px; height:14px; color:var(--muted); }
+  .lc-filtered .lc-veto-ic { width:12px; height:12px; margin-right:2px; }
+  .nav-context-link .ic-svg { width:15px; height:15px; margin-right:1px; }
   .sc-asof { color:var(--muted); font-size:12px; margin-left:auto; font-family:var(--sc-num); }
   .sc-lede { color:var(--muted); font-size:12.5px; margin:5px 2px 0; max-width:82ch; line-height:1.5; }
   .sc-lede b { color:var(--text); font-weight:650; }
@@ -46,7 +69,12 @@
   .sc-tab .n { font-size:11px; font-weight:700; color:var(--muted); font-family:var(--sc-num); background:color-mix(in srgb,var(--text) 8%,transparent);
     padding:1px 6px; border-radius:6px; min-width:20px; text-align:center; }
   .sc-tab.on .n { color:var(--info); background:color-mix(in srgb,var(--info) 16%,transparent); }
-  .sc-tab .star-badge { font-size:12px; filter:drop-shadow(0 0 6px color-mix(in srgb,var(--warn) 70%,transparent)); }
+  /* rising-star tab badge — a DRAWN badge, not clip-art: gold stroke over a
+     translucent gold fill, so it reads as one of ours in both themes. */
+  .star-badge { display:inline-flex; align-items:center; line-height:0; }
+  .star-badge .ic-svg { width:13px; height:13px; stroke-width:1.55;
+    stroke:#e8b93c; fill:color-mix(in srgb,#e8b93c 20%,transparent);
+    filter:drop-shadow(0 0 6px color-mix(in srgb,#e8b93c 45%,transparent)); }
 
   /* ── the glass isle: shared surface for hero + section panels ──────────── */
   .isle { position:relative; background:var(--glass-bg); border:1px solid var(--glass-brd); border-radius:18px;
@@ -248,19 +276,159 @@
     .sc-seg, .gcard, .lcard, .sc-stagger { animation:none !important; opacity:1 !important; transform:none !important; }
     .sc-seg.entry::after, .sc-seg.headwind::after { animation:none !important; }
   }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     LIGHT MODE — designed, not inherited (2026-08-03)
+     The sc-* system was drawn dark-first, so light used to arrive as a token
+     swap: a glass isle over a tinted canvas reads as a pastel-blue FIELD, and
+     the ribbon's mid-luminance fills collapse into it (NEUTRAL disappeared
+     outright). Light is a first-class target here, with its own depth recipe:
+
+         canvas #e8ebf1  →  panel #ffffff  →  card #ffffff on a tinted column
+
+     Three rules of the port: (1) every selector is guarded on
+     html[data-theme="light"] AND scoped to this page, so dark stays
+     byte-identical; (2) theme.js injects html.soft-contrast[data-theme="light"]
+     LATE in <head> at specificity (0,2,1) — every rule below clears it on
+     SPECIFICITY, never on source order; (3) small coloured text rebinds the
+     STATE token to the estate's text-grade --ink-* twin on the element itself,
+     so the 红涨绿跌 swap keeps working (the ink tokens are already zh-aware) and
+     no fill anywhere changes hue.
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* 1 · canvas — one step deeper than the estate default so white reads as material.
+     --sc-l-buy / --sc-l-sell are the light board's two DIRECTIONAL inks, declared
+     once here and swapped once below: every rule that paints "this is the buy
+     side" reads the token, so the 红涨绿跌 convention has exactly one flip point
+     on this page instead of a hex to forget in each rule. */
+  html[data-theme="light"] body.page-subsectors { background:#e8ebf1; --sc-l-buy:#1f9d55; --sc-l-sell:#c0453e; }
+  html[data-theme="light"][data-lang="zh"] body.page-subsectors { --sc-l-buy:#c0453e; --sc-l-sell:#1f9d55; }
+
+  /* 2 · top-level panels — white material, hairline edge, one soft lift */
+  html[data-theme="light"] body.page-subsectors .isle,
+  html[data-theme="light"] body.page-subsectors .sc-tablecard {
+    background-color:#fff; border-color:#dde2ea;
+    box-shadow:0 1px 2px rgba(23,32,55,.05), 0 8px 24px -12px rgba(23,32,55,.10);
+  }
+  /* the hero keeps an info-blue PRESENCE, not an info-blue field: a 2px accent
+     rule along the top edge, and the breathing aurora dialled down to a hint. */
+  html[data-theme="light"] body.page-subsectors .sc-hero {
+    background-image:linear-gradient(90deg,
+      color-mix(in srgb,var(--info) 88%,#fff) 0%,
+      color-mix(in srgb,var(--info) 42%,#fff) 46%,
+      transparent 92%);
+    background-repeat:no-repeat; background-size:100% 2px;
+    background-position:0 0; background-origin:border-box;
+  }
+  html[data-theme="light"] body.page-subsectors .isle::before {
+    background:radial-gradient(120% 90% at 8% -10%, color-mix(in srgb,var(--info) 5%,transparent), transparent 62%);
+  }
+  html[data-theme="light"] body.page-subsectors .sc-hero::after {
+    background:radial-gradient(closest-side, color-mix(in srgb,var(--info) 6%,transparent), transparent 70%);
+    opacity:1; filter:blur(24px);
+  }
+  html[data-theme="light"] body.page-subsectors .sc-headline { border-right-color:#e3e8f0; }
+  @media (max-width:720px){
+    html[data-theme="light"] body.page-subsectors .sc-headline { border-bottom-color:#e3e8f0; }
+  }
+  html[data-theme="light"] body.page-subsectors .sc-honesty { border-top-color:#e3e8f0; }
+  html[data-theme="light"] body.page-subsectors .bd-chip { background:#f6f7fa; border-color:#dde2ea; }
+
+  /* 3 · the confluence ribbon — the signature, re-pitched for white.
+     Own hues (not the fill tokens): the tokens are tuned to sit on ink, and on
+     white NEUTRAL and LATE washed out entirely. 1px white gaps are drawn as a
+     shadow so no segment loses a pixel of width. */
+  html[data-theme="light"] body.page-subsectors .sc-ribbon {
+    background:#edf0f5; border-color:#dde2ea;
+  }
+  html[data-theme="light"] body.page-subsectors .sc-seg { color:#fff; }
+  html[data-theme="light"] body.page-subsectors .sc-seg + .sc-seg { box-shadow:-1px 0 0 0 #fff; }
+  html[data-theme="light"] body.page-subsectors .sc-seg.entry    { background:var(--sc-l-buy); box-shadow:none; }
+  html[data-theme="light"] body.page-subsectors .sc-seg.tailwind { background:color-mix(in srgb,var(--up) 55%,var(--info)); }
+  html[data-theme="light"] body.page-subsectors .sc-seg.late     { background:#b07a10; }
+  html[data-theme="light"] body.page-subsectors .sc-seg.headwind { background:var(--sc-l-sell); }
+  /* NEUTRAL is a real reading ("22 groups are doing nothing"), so it gets a
+     surface of its own instead of dissolving into the track. Ink deepened from
+     the drafted #57607a to clear 4.5:1 on the #aeb6c4 fill (it measured 3.06). */
+  html[data-theme="light"] body.page-subsectors .sc-seg.neutral  { background:#aeb6c4; color:#3c4457; }
+  html[data-theme="light"] body.page-subsectors .sc-seg.neutral .sc-seg-n,
+  html[data-theme="light"] body.page-subsectors .sc-seg.neutral .sc-seg-t { text-shadow:none; }
+  html[data-theme="light"] body.page-subsectors .sc-ribbon-legend i { box-shadow:inset 0 0 0 1px rgba(23,32,55,.16); }
+
+  /* 4 · best-timed entry — a green-railed inset, quiet enough to read as a note */
+  html[data-theme="light"] body.page-subsectors .sc-best {
+    background:color-mix(in srgb,var(--sc-l-buy) 6%,#fff);
+    border-color:color-mix(in srgb,var(--sc-l-buy) 25%,#dde2ea);
+    border-left:3px solid var(--sc-l-buy);
+  }
+  html[data-theme="light"] body.page-subsectors .sc-best.none {
+    background:#f6f7fa; border-color:#dde2ea; border-left-color:#c4cbd7;
+  }
+
+  /* 5 · the two-sided act board — in light the columns had no container at all,
+     so "buy-ready | don't chase" stopped reading as one instrument. Each column
+     gets a faint side-coded wash; the cards inside stay white. */
+  html[data-theme="light"] body.page-subsectors .sc-board > .sc-col {
+    padding:12px 12px 14px; border-radius:15px; border:1px solid #dde2ea;
+  }
+  html[data-theme="light"] body.page-subsectors .sc-board > .sc-col:first-child {
+    background:color-mix(in srgb,var(--sc-l-buy) 3%,#fff); border-color:color-mix(in srgb,var(--sc-l-buy) 15%,#dde2ea);
+  }
+  html[data-theme="light"] body.page-subsectors .sc-board > .sc-col:last-child {
+    background:color-mix(in srgb,var(--sc-l-sell) 3%,#fff); border-color:color-mix(in srgb,var(--sc-l-sell) 15%,#dde2ea);
+  }
+
+  /* 6 · nested cards — white on the wash, one hairline, the tinted left rail
+     (set inline per class) survives because border-color never touches it. */
+  html[data-theme="light"] body.page-subsectors .gcard,
+  html[data-theme="light"] body.page-subsectors .lcard,
+  html[data-theme="light"] body.page-subsectors .secstrip .s,
+  html[data-theme="light"] body.page-subsectors .ni-ew-chip {
+    background:#fff; border-color:#e3e8f0; box-shadow:0 1px 2px rgba(23,32,55,.05);
+  }
+  html[data-theme="light"] body.page-subsectors .gcard:hover,
+  html[data-theme="light"] body.page-subsectors .lcard:hover {
+    box-shadow:0 6px 18px -10px rgba(23,32,55,.28);
+  }
+  html[data-theme="light"] body.page-subsectors .empty {
+    background:#f6f7fa; border-color:#dde2ea; color:var(--muted);
+  }
+  html[data-theme="light"] body.page-subsectors .sc-search input { background:#f6f7fa; border-color:#dde2ea; }
+  html[data-theme="light"] body.page-subsectors table.sc-tbl tbody tr:hover td { background:#f4f6fa; }
+
+  /* 7 · small coloured text — the state palette is FILL-grade and drops to
+     3.0–3.6:1 on white at 10–12px. Rebinding --up/--down/--info/--orange to the
+     estate's text-grade --ink-* twins ON THESE ELEMENTS lifts every inline
+     `color:var(--up)` the renderer emits, keeps 红涨绿跌 intact (the ink tokens
+     carry their own zh twins), and leaves every fill in the page untouched. */
+  html[data-theme="light"] body.page-subsectors :is(.qp, .tfc, .g-act, .g-sig, .lc-meta, .lc-macro,
+    .pos, .neg, .pill, .rel, .sc-hero-verdict, .sc-best .bd, .bd-chip) {
+    --up:var(--ink-up); --down:var(--ink-down); --info:var(--ink-info);
+    --orange:var(--ink-orange); --warn:var(--ink-warn);
+  }
+  html[data-theme="light"] body.page-subsectors .lc-macro { color:var(--ink-down, var(--down)); }
+  html[data-theme="light"] body.page-subsectors .pill.neutral { color:var(--muted); border-color:#dde2ea; }
+  html[data-theme="light"] body.page-subsectors .tier.none { background:#c4cbd7; color:#2e3950; }
+
+  /* 8 · icons on white — a glow behind a stroke reads as a smudge, and the gold
+     badge needs a deeper stroke to stay a badge rather than a highlight. */
+  html[data-theme="light"] body.page-subsectors .sc-kicker .sc-h1-ic { filter:none; }
+  html[data-theme="light"] .star-badge .ic-svg {
+    stroke:#a8790f; fill:color-mix(in srgb,#e8b93c 25%,#fff); filter:none;
+  }
 </style>
 <link rel="stylesheet" href="macro-desk.css?v=b4966394">
 </head>
 <body class="macro-desk page-subsectors">
 {% set nav_context_links = [
-  {'href': 'subsector_rotation.html', 'icon': '🌀', 'en': 'Rotation map', 'zh': '轮动图'},
+  {'href': 'subsector_rotation.html', 'icon': icon('swirl'), 'en': 'Rotation map', 'zh': '轮动图'},
 ] %}
 {% include "_site_nav.html.j2" %}
 
 <div class="wrap">
   <div class="sc-top">
     <div class="sc-kicker">
-      <h1><span class="glyph">💫</span> {{ t('Subsector Confluence', '子行业汇聚') }}</h1>
+      <h1>{{ icon('spark', 'sc-h1-ic') }} {{ t('Subsector Confluence', '子行业汇聚') }}</h1>
       <div class="sc-asof" id="sc-asof"></div>
     </div>
     <p class="sc-lede">{{ t('Every sub-industry as its own basket, scored for entry <b>timing</b>. The read below is answer-first: the rotation backdrop, which groups just turned <b>buyable</b>, which are <b>late or fading</b>, and the stocks firing inside a group with the wind at its back. A timing map — <b>confirm before acting</b>.',
