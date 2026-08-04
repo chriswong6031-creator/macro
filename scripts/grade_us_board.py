@@ -57,9 +57,15 @@ SPINE COLUMNS (W0.1 B-b — §3.4, §5.1 sub-task 2):
   post_cushion_breach      — per-fire flag at horizon=21 (grading primitive)
   rate_pressure, quad_hard_label, fused_risk_label, vol_regime, risk_radar_state,
   regime_vector_degraded, vector_asof, staleness_hours  — PIT regime stamp
-  species_id               — null (multiple species bind this ledger; ambiguous)
-  archetype                — from board row payload at grade time; null if absent
+  archetype                — board row payload at grade time, else the PIT archetype
+    store (data/archetypes/history.parquet, greatest asof_date <= as_of); null when
+    the store does not classify the name.  Historical rows are filled by
+    _backfill_archetype at each row's own as_of (fill-null-only)
+  species_id               — RETIRED 2026-08-04 (_RETIRED_LEDGER_COLS): literal None on
+    every row since inception, because no species uniquely binds this ledger. No longer
+    written, and dropped from the store on merge
 All nullable; existing rows keep nulls (schema-union only; keep-FIRST on dedup key).
+Per-column coverage starts and the mechanisms that bound them: data/us_board_ledger/README.md.
 """
 from __future__ import annotations
 
@@ -456,6 +462,23 @@ def _excess_close_path_mae(
     return float(worst)
 
 
+def _archetype_pit(ticker, as_of) -> str | None:
+    """PIT archetype label for (ticker, as_of) — greatest asof_date <= as_of from
+    data/archetypes/history.parquet, via engine.neuralweb.context_api.archetype_asof.
+
+    The import is lazy on purpose: context_api pulls the fundamental-forensics chain at
+    module import, and the CI packs install minimal deps — the grader must not carry that
+    weight just to grade a board.  ImportError → None (column stays null, as before).
+    Nothing broader is caught: the reader is already fail-soft on an absent store, ticker,
+    or PIT-eligible row, so a genuine read failure stays LOUD instead of a silent null.
+    """
+    try:
+        from engine.neuralweb.context_api import archetype_asof
+    except ImportError:
+        return None
+    return archetype_asof(str(ticker), as_of)
+
+
 def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
                  _stored_df: pd.DataFrame | None = None) -> pd.DataFrame:
     """Grade all matured board rows, routing all forward metrics through engine.grading
@@ -468,7 +491,8 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
     4. SPINE COLUMNS: fwd_mfe_{H} for each H; terminal_state_clean15_126,
        terminal_state_clean8_21, post_cushion_breach (at horizon=21); all nullable.
     5. REGIME STAMP: PIT regime_vector fields stamped per as_of row.
-    6. SPECIES/ARCHETYPE: species_id=null (ambiguous ledger); archetype from row payload.
+    6. ARCHETYPE: from the row payload, else the PIT archetype store at this board's
+       as_of.  species_id is no longer emitted (retired 2026-08-04 — see module header).
     7. IN-BATCH TENURE (FIX-5): boards processed in ascending as_of order; a running
        in-memory presence map (union of stored + freshly-graded (as_of, ticker) pairs)
        is maintained and passed to _board_tenure so consecutive dates graded in the
@@ -564,8 +588,10 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
             etf_fwd = (forward_metrics(etf_al, as_of, horizons=tuple(HORIZONS))
                        if etf_al is not None else {})
 
-            # archetype: from the board row payload (never backfilled; null if absent)
-            archetype = feat.get("archetype")
+            # archetype: board row payload first, else the PIT archetype store at this
+            # board's own as_of.  The payload has never carried the field (0/2282 rows
+            # measured 2026-08-04), so the PIT leg is what actually populates it.
+            archetype = feat.get("archetype") or _archetype_pit(tk, as_of_str)
 
             for h in HORIZONS:
                 # maturity check: forward_metrics returns None for unmatured H
@@ -649,8 +675,8 @@ def grade_boards(boards: list[dict], names: pd.DataFrame, etfs: pd.DataFrame,
                     "regime_vector_degraded": regime_stamp.get("regime_vector_degraded"),
                     "vector_asof":            regime_stamp.get("vector_asof"),
                     "staleness_hours":        regime_stamp.get("staleness_hours"),
-                    # species/archetype (§3.4; species_id=null because ledger is ambiguous)
-                    "species_id": None,
+                    # archetype (§3.4) — payload first, else the PIT store (see above).
+                    # species_id is NOT emitted: retired 2026-08-04, _RETIRED_LEDGER_COLS.
                     "archetype":  archetype,
                 }
                 # excess vs SPY
@@ -995,6 +1021,23 @@ def snapshot_today() -> str | None:
 # --------------------------------------------------------------------------- #
 _DEDUP_KEYS = ["as_of", "ticker", "lane", "horizon"]
 
+# Columns retired from the ledger schema. Dropped by NAME (never by null-ness) from
+# every frame this script writes or returns, on BOTH merge exits — the legacy store
+# carries them, so a retirement that only stops writing them leaves the store-merge
+# carry path re-emitting the column forever.
+#   species_id (retired 2026-08-04): written as a literal None on every row since
+#   inception — no species uniquely binds this ledger, so it could never populate.
+#   Known consumers (engine/standout_audit.py, engine/neuralweb/query.py) read it
+#   through .get() and keep emitting null, unchanged.
+_RETIRED_LEDGER_COLS = ["species_id"]
+
+
+def _drop_retired(df: pd.DataFrame) -> pd.DataFrame:
+    """Shed _RETIRED_LEDGER_COLS from a ledger frame (no-op when absent)."""
+    cols = [c for c in _RETIRED_LEDGER_COLS if c in df.columns]
+    return df.drop(columns=cols) if cols else df
+
+
 # ---------------------------------------------------------------------------
 # P2 — board tenure stamping for H5 (PREREGISTRATION.md §2.4)
 # ---------------------------------------------------------------------------
@@ -1126,7 +1169,7 @@ def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
     to mature in this run.
 
     W0.1 B-b: schema-union — new spine columns (fwd_mfe_*, terminal_state_*,
-    post_cushion_breach, regime stamp, species_id, archetype) are added to the
+    post_cushion_breach, regime stamp, archetype) are added to the
     stored frame with NaN/None for legacy rows that predate this PR. Merge is
     keep-FRESH on the dedup key (as main always was): a fresh row replaces the
     stored row wholesale — safe because a grade is a deterministic re-computation
@@ -1137,7 +1180,10 @@ def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
     (no write needed).  This is the key guard against the empty:true regression."""
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     if RETRO_PARQUET.exists():
-        stored = pd.read_parquet(RETRO_PARQUET)
+        # shed retired columns at READ time so both exits below are covered — including
+        # the fresh.empty return, which would otherwise hand a retired column downstream
+        # on any night that matures no new rows
+        stored = _drop_retired(pd.read_parquet(RETRO_PARQUET))
     else:
         stored = pd.DataFrame()
 
@@ -1158,6 +1204,7 @@ def _merge_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
         mask = stored.apply(lambda r: tuple(r[k] for k in key_cols) not in fresh_keys, axis=1)
         merged = pd.concat([stored[mask], fresh], ignore_index=True)
 
+    merged = _drop_retired(merged)
     merged.to_parquet(RETRO_PARQUET, index=False)
     return merged
 
@@ -1201,6 +1248,43 @@ def _backfill_regime_stamps(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
             newly_stamped += 1
 
     return df, newly_stamped
+
+
+def _backfill_archetype(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+    """Backfill null `archetype` from the PIT archetype store (FIX-6 precedent).
+
+    Each row resolves at its OWN as_of (greatest asof_date <= as_of), so a backfilled
+    label is exactly what the row would have carried at grade time — the same PIT-honest
+    retro-stamp blessed for board_tenure_days.  Fill-null-only: a payload archetype is
+    never overwritten, and a row the store cannot cover stays null.
+    Returns (updated_df, n_newly_filled) so main() can print the still-null count.
+    """
+    if df.empty or not {"archetype", "ticker", "as_of"} <= set(df.columns):
+        return df, 0
+
+    null_mask = df["archetype"].isna()
+    if not null_mask.any():
+        return df, 0
+
+    df = df.copy()
+    # (ticker, as_of) → label.  archetype_asof caches the parquet read itself; this
+    # caches the per-row PIT scan, which repeats across lanes and horizons.
+    cache: dict[tuple, str | None] = {}
+    n_filled = 0
+    for idx in df.index[null_mask]:
+        tk = df.at[idx, "ticker"]
+        as_of = df.at[idx, "as_of"]
+        if tk is None or pd.isna(tk) or as_of is None or pd.isna(as_of):
+            continue
+        key = (str(tk), str(as_of))
+        if key not in cache:
+            cache[key] = _archetype_pit(key[0], key[1])
+        if cache[key] is None:
+            continue
+        df.at[idx, "archetype"] = cache[key]
+        n_filled += 1
+
+    return df, n_filled
 
 
 # --------------------------------------------------------------------------- #
@@ -1718,7 +1802,9 @@ def _merge_v2_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
     """
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     if V2_RETRO_PARQUET.exists():
-        stored = pd.read_parquet(V2_RETRO_PARQUET)
+        # v2 rows come from the same grade_boards rec dict, so the same retirement and
+        # the same legacy-carry path apply here (see _merge_into_store)
+        stored = _drop_retired(pd.read_parquet(V2_RETRO_PARQUET))
     else:
         stored = pd.DataFrame()
 
@@ -1736,6 +1822,7 @@ def _merge_v2_into_store(fresh: pd.DataFrame) -> pd.DataFrame:
         mask = stored.apply(lambda r: tuple(r[k] for k in key_cols) not in fresh_keys, axis=1)
         merged = pd.concat([stored[mask], fresh], ignore_index=True)
 
+    merged = _drop_retired(merged)
     merged.to_parquet(V2_RETRO_PARQUET, index=False)
     return merged
 
@@ -1856,6 +1943,19 @@ def main() -> None:
     if not args.quiet:
         print(f"[regime_stamp] {n_unstamped}/{len(full_df)} rows still unstamped "
               f"(regime_vector.parquet absent or no coverage for those as_of dates)")
+
+    # Backfill null archetype from the PIT archetype store at each row's own as_of.
+    # The board payload has never carried the field, so historical rows are all null
+    # until this pass runs (coverage map: data/us_board_ledger/README.md).
+    full_df, n_arch_filled = _backfill_archetype(full_df)
+    if n_arch_filled > 0:
+        full_df.to_parquet(RETRO_PARQUET, index=False)
+    n_arch_null = (int(full_df["archetype"].isna().sum())
+                   if "archetype" in full_df.columns else len(full_df))
+    if not args.quiet:
+        print(f"[archetype_stamp] backfilled {n_arch_filled} historical rows; "
+              f"{n_arch_null}/{len(full_df)} rows still null "
+              f"(no PIT archetype coverage)")
 
     track = build_track(full_df, boards, names)
     TRACK_JSON.parent.mkdir(parents=True, exist_ok=True)
