@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_share_count_r2_concurrency_receipt.schema.json",
+  "title": "Manual R2 concurrent-writer witness receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "receipt_id", "status", "failure", "manual_only", "created_at", "deadline_seconds", "round_count", "plan_commitment_sha256", "scope", "github_provenance", "execution_provenance", "worker_topology", "rounds", "output_authority", "nonclaims"],
+  "properties": {
+    "schema": {"const": "capital_structure.share_count_r2_concurrency_receipt/v1"},
+    "receipt_id": {"type": "string", "pattern": "^r2-concurrency-witness:cs-share-count-v1:[a-f0-9]{64}$"},
+    "status": {"enum": ["passed", "failed", "inconclusive"]},
+    "failure": {"oneOf": [{"$ref": "#/$defs/failure"}, {"type": "null"}]},
+    "manual_only": {"const": true},
+    "created_at": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "deadline_seconds": {"type": "number", "exclusiveMinimum": 0, "maximum": 240},
+    "round_count": {"const": 8},
+    "plan_commitment_sha256": {"oneOf": [{"$ref": "#/$defs/sha"}, {"type": "null"}]},
+    "scope": {"$ref": "#/$defs/scope"},
+    "github_provenance": {"$ref": "#/$defs/github"},
+    "execution_provenance": {"$ref": "#/$defs/execution"},
+    "worker_topology": {"oneOf": [{"$ref": "#/$defs/topology"}, {"type": "null"}]},
+    "rounds": {"oneOf": [{"$ref": "#/$defs/passedRounds"}, {"$ref": "#/$defs/incompleteRounds"}]},
+    "output_authority": {"$ref": "#/$defs/outputAuthority"},
+    "nonclaims": {"$ref": "#/$defs/nonclaims"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "passed"}}},
+      "then": {
+        "properties": {
+          "failure": {"type": "null"},
+          "plan_commitment_sha256": {"$ref": "#/$defs/sha"},
+          "scope": {"$ref": "#/$defs/admittedScope"},
+          "worker_topology": {"$ref": "#/$defs/topology"},
+          "rounds": {"$ref": "#/$defs/passedRounds"}
+        }
+      },
+      "else": {
+        "properties": {
+          "status": {"enum": ["failed", "inconclusive"]},
+          "failure": {"$ref": "#/$defs/failure"},
+          "worker_topology": {"type": "null"},
+          "rounds": {"$ref": "#/$defs/incompleteRounds"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "nullableSha": {"oneOf": [{"$ref": "#/$defs/sha"}, {"type": "null"}]},
+    "scope": {"oneOf": [{"$ref": "#/$defs/admittedScope"}, {"$ref": "#/$defs/unadmittedScope"}]},
+    "admittedScope": {"type": "object", "additionalProperties": false, "required": ["admitted", "endpoint_host", "bucket_sha256"], "properties": {"admitted": {"const": true}, "endpoint_host": {"type": "string", "pattern": "^[a-f0-9]{32}(\\.(eu|fedramp))?\\.r2\\.cloudflarestorage\\.com$"}, "bucket_sha256": {"$ref": "#/$defs/sha"}}},
+    "unadmittedScope": {"type": "object", "additionalProperties": false, "required": ["admitted", "endpoint_host", "bucket_sha256"], "properties": {"admitted": {"const": false}, "endpoint_host": {"type": "null"}, "bucket_sha256": {"type": "null"}}},
+    "github": {"type": "object", "additionalProperties": false, "required": ["repository", "workflow_ref", "run_id", "run_attempt", "commit_sha", "event_name", "actor"], "properties": {"repository": {"const": "chriswong6031-creator/macro"}, "workflow_ref": {"const": "chriswong6031-creator/macro/.github/workflows/capital-share-count-r2-concurrency.yml@refs/heads/main"}, "run_id": {"type": "string", "pattern": "^[1-9][0-9]{0,19}$"}, "run_attempt": {"type": "integer", "minimum": 1, "maximum": 1000}, "commit_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"}, "event_name": {"const": "workflow_dispatch"}, "actor": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$"}}},
+    "execution": {"type": "object", "additionalProperties": false, "required": ["source_archive_sha256", "dependency_lock_sha256", "dependency_lock_name"], "properties": {"source_archive_sha256": {"$ref": "#/$defs/sha"}, "dependency_lock_sha256": {"$ref": "#/$defs/sha"}, "dependency_lock_name": {"const": "capital-share-r2-conformance-macos-arm64-py312.lock"}}},
+    "topology": {"type": "object", "additionalProperties": false, "required": ["persistent_children", "independent_processes", "independent_sessions", "independent_clients", "retry_mode", "total_max_attempts", "needs_retry_hook_installed"], "properties": {"persistent_children": {"const": true}, "independent_processes": {"const": true}, "independent_sessions": {"const": true}, "independent_clients": {"const": true}, "retry_mode": {"const": "standard"}, "total_max_attempts": {"const": 1}, "needs_retry_hook_installed": {"const": true}}},
+    "attempt": {"type": "object", "additionalProperties": false, "required": ["issued_puts", "before_send_count", "needs_retry_attempts", "response_retry_attempts", "outcome", "http_status", "error_code", "error_status", "exact_client_error", "transport_start_offset_ns", "completed_offset_ns", "request_id_sha256"], "properties": {"issued_puts": {"const": 1}, "before_send_count": {"const": 1}, "needs_retry_attempts": {"const": [1]}, "response_retry_attempts": {"const": 0}, "outcome": {"enum": ["success", "conflict"]}, "http_status": {"oneOf": [{"const": 200}, {"type": "null"}]}, "error_code": {"oneOf": [{"const": "PreconditionFailed"}, {"type": "null"}]}, "error_status": {"oneOf": [{"const": 412}, {"type": "null"}]}, "exact_client_error": {"type": "boolean"}, "transport_start_offset_ns": {"type": "integer", "minimum": 0, "maximum": 240000000000}, "completed_offset_ns": {"type": "integer", "minimum": 0, "maximum": 240000000000}, "request_id_sha256": {"$ref": "#/$defs/nullableSha"}}, "allOf": [{"if": {"properties": {"outcome": {"const": "success"}}}, "then": {"properties": {"http_status": {"const": 200}, "error_code": {"type": "null"}, "error_status": {"type": "null"}, "exact_client_error": {"const": false}}}, "else": {"properties": {"http_status": {"type": "null"}, "error_code": {"const": "PreconditionFailed"}, "error_status": {"const": 412}, "exact_client_error": {"const": true}}}}]},
+    "attempts": {"type": "object", "additionalProperties": false, "required": ["left", "right"], "properties": {"left": {"$ref": "#/$defs/attempt"}, "right": {"$ref": "#/$defs/attempt"}}},
+    "genesis": {"type": "object", "additionalProperties": false, "required": ["absence_preflight_exact_typed_404", "transport_interval_overlap", "success_count", "typed_412_precondition_failed_count", "winner_candidate_sha256", "loser_candidate_sha256", "winner_etag_sha256", "verified_body_sha256", "worker_attempts"], "properties": {"absence_preflight_exact_typed_404": {"const": true}, "transport_interval_overlap": {"const": true}, "success_count": {"const": 1}, "typed_412_precondition_failed_count": {"const": 1}, "winner_candidate_sha256": {"$ref": "#/$defs/sha"}, "loser_candidate_sha256": {"$ref": "#/$defs/sha"}, "winner_etag_sha256": {"$ref": "#/$defs/sha"}, "verified_body_sha256": {"$ref": "#/$defs/sha"}, "worker_attempts": {"$ref": "#/$defs/attempts"}}},
+    "successor": {"type": "object", "additionalProperties": false, "required": ["commitment_sha256", "transport_interval_overlap", "success_count", "typed_412_precondition_failed_count", "winner_candidate_sha256", "loser_candidate_sha256", "e0_etag_sha256", "winner_etag_sha256", "verified_body_sha256", "etag_changed_from_e0", "worker_attempts"], "properties": {"commitment_sha256": {"$ref": "#/$defs/sha"}, "transport_interval_overlap": {"const": true}, "success_count": {"const": 1}, "typed_412_precondition_failed_count": {"const": 1}, "winner_candidate_sha256": {"$ref": "#/$defs/sha"}, "loser_candidate_sha256": {"$ref": "#/$defs/sha"}, "e0_etag_sha256": {"$ref": "#/$defs/sha"}, "winner_etag_sha256": {"$ref": "#/$defs/sha"}, "verified_body_sha256": {"$ref": "#/$defs/sha"}, "etag_changed_from_e0": {"const": true}, "worker_attempts": {"$ref": "#/$defs/attempts"}}},
+    "stale": {"type": "object", "additionalProperties": false, "required": ["http_status", "error_code", "final_etag_sha256", "final_body_sha256", "final_unchanged", "issued_puts", "before_send_count", "needs_retry_attempts", "response_retry_attempts", "request_id_sha256"], "properties": {"http_status": {"const": 412}, "error_code": {"const": "PreconditionFailed"}, "final_etag_sha256": {"$ref": "#/$defs/sha"}, "final_body_sha256": {"$ref": "#/$defs/sha"}, "final_unchanged": {"const": true}, "issued_puts": {"const": 1}, "before_send_count": {"const": 1}, "needs_retry_attempts": {"const": [1]}, "response_retry_attempts": {"const": 0}, "request_id_sha256": {"$ref": "#/$defs/nullableSha"}}},
+    "round": {"type": "object", "additionalProperties": false, "required": ["round", "key_sha256", "genesis", "successor", "stale"], "properties": {"round": {"type": "integer", "minimum": 1, "maximum": 8}, "key_sha256": {"$ref": "#/$defs/sha"}, "genesis": {"$ref": "#/$defs/genesis"}, "successor": {"$ref": "#/$defs/successor"}, "stale": {"$ref": "#/$defs/stale"}}},
+    "passedRounds": {"type": "array", "minItems": 8, "maxItems": 8, "items": {"$ref": "#/$defs/round"}},
+    "incompleteRounds": {"type": "object", "additionalProperties": false, "required": ["completed_rounds"], "properties": {"completed_rounds": {"type": "array", "maxItems": 8, "items": {"type": "integer", "minimum": 1, "maximum": 8}}}},
+    "failure": {"type": "object", "additionalProperties": false, "required": ["stage", "category"], "properties": {"stage": {"enum": ["setup", "absence_preflight", "genesis_race", "genesis_verify", "successor_race", "successor_verify", "stale_put", "stale_verify", "probe", "receipt"]}, "category": {"enum": ["configuration", "transport_or_deadline", "malformed_response", "readback_mismatch", "close_failure", "missing_or_duplicate_attempt_evidence", "sequential_transport_spans", "both_writers_succeeded", "lost_or_ambiguous_response", "wrong_conflict_response", "etag_not_new", "stale_write_succeeded", "post_hoc_rewrite", "worker_result_shape"]}}},
+    "outputAuthority": {"type": "object", "additionalProperties": false, "required": ["is_context_only", "concurrency_witness_authority", "provider_security_authority", "publication_authority", "share_count_ledger_authority", "retention_authority", "instrument_authority", "capacity_authority", "runway_authority", "risk_authority", "rank_authority", "sizing_authority", "entry_authority", "trade_authority", "prophet_authority"], "properties": {"is_context_only": {"const": true}, "concurrency_witness_authority": {"const": false}, "provider_security_authority": {"const": false}, "publication_authority": {"const": false}, "share_count_ledger_authority": {"const": false}, "retention_authority": {"const": false}, "instrument_authority": {"const": false}, "capacity_authority": {"const": false}, "runway_authority": {"const": false}, "risk_authority": {"const": false}, "rank_authority": {"const": false}, "sizing_authority": {"const": false}, "entry_authority": {"const": false}, "trade_authority": {"const": false}, "prophet_authority": {"const": false}}},
+    "nonclaims": {"type": "object", "additionalProperties": false, "required": ["not_a_share_count_source", "not_a_publication_authority", "not_a_provider_security_or_linearizability_audit", "not_a_server_simultaneity_proof", "not_a_provider_wide_or_future_behavior_proof", "not_a_failure_domain_or_fault_injection_proof", "not_a_multi_key_atomicity_proof", "not_a_production_configuration_or_activation_proof", "not_a_provider_durability_or_availability_proof", "not_a_credential_authentication_proof", "not_a_retention_or_deletion_proof", "not_a_production_retry_semantics_proof", "not_a_trading_or_investment_signal"], "properties": {"not_a_share_count_source": {"const": true}, "not_a_publication_authority": {"const": true}, "not_a_provider_security_or_linearizability_audit": {"const": true}, "not_a_server_simultaneity_proof": {"const": true}, "not_a_provider_wide_or_future_behavior_proof": {"const": true}, "not_a_failure_domain_or_fault_injection_proof": {"const": true}, "not_a_multi_key_atomicity_proof": {"const": true}, "not_a_production_configuration_or_activation_proof": {"const": true}, "not_a_provider_durability_or_availability_proof": {"const": true}, "not_a_credential_authentication_proof": {"const": true}, "not_a_retention_or_deletion_proof": {"const": true}, "not_a_production_retry_semantics_proof": {"const": true}, "not_a_trading_or_investment_signal": {"const": true}}}
+  }
+}

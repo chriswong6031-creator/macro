@@ -883,6 +883,10 @@ jobs:
           tests/test_capital_structure_share_count_publication.py
           tests/test_capital_structure_share_count_retention.py
           tests/test_capital_structure_share_count_materializer.py
+          tests/test_capital_structure_share_count_r2_conformance.py
+          tests/test_capital_structure_share_count_r2_operator.py
+          tests/test_capital_structure_share_count_r2_concurrency.py
+          tests/test_capital_structure_share_count_r2_concurrency_operator.py
           tests/test_sec_capital_structure.py
           tests/test_sec_capital_structure_companyfacts.py
           tests/test_nwqs_c_dilution.py -q
