@@ -990,6 +990,46 @@ def test_leaders_rows_keep_the_engines_order(prio_html):
     assert rendered == [r["ticker"] for r in shapes_fixture()["leaders"][:15]]
 
 
+def test_leaders_rows_are_terminal_routable(prio_html):
+    """Every leaders row must be reachable by theme.js's Terminal intercept.
+
+    That intercept is a capture-phase listener on `a[href]` — it re-points
+    hk_lookup.html#TKR (one of theme.js's TERMINAL_PAGES) at the Terminal portal.
+    A `<tr onclick="location.href=…">` is invisible to it, so these rows navigated
+    to the retired hk_lookup.html analyzer no matter what theme.js did (the same
+    defect fixed for us_stocks in #4489, reported here 2026-08-03). The pin is
+    two-sided: the anchor must exist AND the onclick form must be gone, on a
+    render that actually has rows (an empty strip would make the absence half
+    vacuous).
+    """
+    seg = _leaders_block(prio_html)
+    tickers = [r["ticker"] for r in shapes_fixture()["leaders"][:15]]
+    assert tickers, "fixture has no leaders — the assertions below are vacuous"
+
+    for ticker in tickers:
+        assert '<tr class="ts-row" data-tkr="%s">' % ticker in seg, (
+            "%s row is not carrying the ticker the delegated handler reads" % ticker)
+        assert '<a class="ts-tk-a" href="hk_lookup.html#%s">' % ticker in seg, (
+            "%s ticker is not an anchor — theme.js cannot see it" % ticker)
+
+    # The defect itself: no ts-row may navigate via an inline location.href.
+    assert "onclick=\"location.href='hk_lookup.html#" not in prio_html
+
+    # The delegated handler that covers clicks on the REST of the row. It lives
+    # just past the table, so it is outside `seg` — search the whole page.
+    assert "tr.ts-row[data-tkr]" in prio_html
+    assert "window.MDXTerminal" in prio_html
+
+
+def test_leaders_ticker_anchor_does_not_read_as_a_link(prio_html):
+    """The row is the affordance; the anchor exists only so theme.js can see it
+    (and so cmd-/middle-click keeps its native new-tab behaviour). Without this
+    rule every ticker in the strip turns blue and underlined."""
+    css = (Path(__file__).resolve().parents[1] / "templates" / "hk.html.j2").read_text()
+    assert ".ts-tk-a { color: inherit; text-decoration: none; }" in css
+    assert 'class="ts-tk-a"' in prio_html   # the rule has something to style
+
+
 def test_every_leaders_column_carries_a_c_class_so_none_escapes_the_mobile_budget(prio_html):
     """The c-* classes ARE the mobile contract (≤680px hides the tertiary set); a th
     or td without one silently escapes that budget."""

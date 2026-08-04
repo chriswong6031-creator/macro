@@ -408,15 +408,32 @@ class TestCommittedConfig:
         assert WR.dark_desk_policy(cfg) == "park"
         assert WR.severity_exception(cfg)["enabled"] is False
 
-    def test_the_brand_desk_ceiling_binds_on_the_day_that_caused_this(self):
-        """11 breaking items shipped to flagship on 2026-08-03. The committed
-        ceiling must be strictly under that, or this config change is decorative.
-        It must also be at or under `breaking.flagship_top_k_per_day`, or the
-        looser per-lane counter is still the one deciding."""
+    def test_the_wire_desks_are_deliberately_uncapped(self):
+        """POLICY REVERSED (operator, 2026-08-04: "remove caps").
+
+        This test used to require the brand ceiling to BIND (0 < cap < 11, the
+        11 that shipped on 2026-08-03). On 2026-08-04 every wire desk hit its
+        ceiling simultaneously and items were held with nowhere to route, so the
+        ceilings came off.
+
+        It is kept rather than deleted because the failure it now guards is
+        nastier than the one it used to: a wire desk reading 0 is a SILENT DEAD
+        LANE, and 0 is exactly what a dropped key or a `null` coerces to in a
+        config an operator hand-edits. So pin that the uncapped desks are
+        uncapped ON PURPOSE — explicitly negative, the documented sentinel --
+        and that the per-lane counter is still there to decide.
+        """
         cfg = self._cfg()
-        cap = WR.breaking_cap_for("flagship", cfg)
-        assert 0 < cap < 11, cap
-        assert cap <= int(cfg["breaking"]["flagship_top_k_per_day"]), cap
+        for desk in ("flagship", "mastermind_news"):
+            cap = WR.breaking_cap_for(desk, cfg)
+            assert cap < 0, (
+                f"{desk} must be UNLIMITED (negative sentinel), not {cap!r}. "
+                "A 0 here is a dead lane, not an absent cap."
+            )
+        # The per-LANE counter is a separate ceiling in daemon state and is what
+        # now decides for the flagship. If it ever goes missing, removing the
+        # per-account ceiling left the desk genuinely unbounded.
+        assert int(cfg["breaking"]["flagship_top_k_per_day"]) > 0
 
     def test_every_declared_wire_desk_has_a_ceiling_above_zero(self):
         """A wire desk whose ceiling is 0 is a lane that cannot emit. Persona

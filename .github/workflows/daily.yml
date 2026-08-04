@@ -2182,6 +2182,21 @@ jobs:
         # Context-only (never feeds a score); the ledger accrues forward from here. The commit
         # step below (git add data/ site/) lands both artifacts. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_us_board --nightly || true
+      - name: Prophet doors — accrue Door T (theme-relay) + Door R (re-arm) flags (shadow, zero authority)
+        # Prophet W3 shadow doors (research/PROPHET_DOORS_PREREG.md, frozen before first accrual).
+        # Evaluates both doors on the committed caches and appends to data/prophet_doors/flags.jsonl.
+        # Sole forward advancer of this ledger (nightly-only: --nightly AND COLLECT_LANE=nightly).
+        # PROSPECTIVE ONLY — no backfill; the ledger starts the night this merges. ZERO AUTHORITY:
+        # no board membership, no plan origination, no rank/gate/size, no site/ artifact. The
+        # commit step below (git add data/) lands the store. ~2.5 min. Idempotent per as_of.
+        run: python -m scripts.emit_prophet_doors --nightly || true
+      - name: Prophet doors — grade matured flags at H=10/21 vs SPY (policy-free marks)
+        # Grades data/prophet_doors/flags.jsonl into grades.jsonl via engine.grading.forward_metrics
+        # (next-bar fill, positional session horizons, excess vs SPY) — the SAME ruler grade_us_board
+        # uses, reused not forked. Policy-free: fixed-horizon marks only, no stops/exits. Graded rows
+        # are frozen (one-grader law). Runs after the emitter so tonight's flags are present.
+        # OUTCOMES ARE NOT TO BE READ before the prereg §4 trigger. Idempotent. Resilient.
+        run: python -m scripts.grade_prophet_doors --nightly || true
       - name: Bottom Ledger (accrue bottom-class flags + mature at H=60; policy-free instrument)
         # Bottom Ledger P1: the policy-free bottom-calling learning instrument (design PR #3182).
         # Sole forward advancer of this ledger (nightly-only). Accrues board buy-lane +
