@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T12:08:33.693230+00:00",
-  "count": 732,
+  "generated_at": "2026-08-04T12:23:45.785117+00:00",
+  "count": 733,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -148,6 +148,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-m4ubxqumixb-9af551",
+      "title": "JPM JPM International Ma",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T10:24:16Z",
+      "summary_points": [
+        "**AI Investment Mainstreaming**: JPM APAC AI Implementation survey (>300 responses) confirms AI investment mainstream, with spend as % of expenses/capex rising next 12 months; Communications (+2.5 pp), Energy (+2.8 pp), Tech Hardware (+2.4 pp) leading sector adoption.",
+        "**Hyperscaler AI Infrastructure Efficiency**: Hyperscalers deployed $357.5B cash capex for AI, sustaining 29.7% adjusted ROIC on $1.6T total investment—critical for tech/infrastructure positioning.",
+        "**China Fiscal Acceleration & RMB Undervaluation**: China’s 2H growth relies on accelerated fiscal deployment post-1H under-execution; CFR asserts RMB undervalued 30–35%, signaling potential currency upside.",
+        "**Book-to-Bill Surge as Demand Signal**: Hyperscaler Book-to-Bill spikes to 4.1 in Q226 (vs.",
+        "declining Revenue/Capex Intensity), signaling robust order flow and revenue growth potential."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
