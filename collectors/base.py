@@ -38,6 +38,47 @@ class FetchResult:
     probed_at: str | None = None   # set when this run was a half-open breaker probe
 
 
+@dataclass(frozen=True)
+class ColumnContract:
+    """What a single stored COLUMN owes, so a dead column cannot hide inside a
+    live frame.
+
+    ``detect_stale_series`` is frame-grain: it asks when the frame last had ANY
+    observation.  A multi-column series therefore stays "fresh" forever as long
+    as one column keeps ticking — which is exactly how china_connect/northbound
+    hid the death of ``net``/``buy``/``sell`` for ~2 years behind a still-live
+    ``turnover``.  A column contract makes each column answer for itself.
+
+    Exactly one mode must be set:
+
+    ``max_dark_days``
+        The column is LIVE and owed on a cadence.  Warn when its last non-null
+        observation is older than this many days (set it to a few cadences so
+        holidays and a late post do not cry wolf).
+    ``retired``
+        ISO date on which upstream disclosure ENDED.  The column is EXPECTED to
+        be all-null afterwards, so that steady state is SILENT — a retired
+        column must never warn nightly forever.  The only event worth surfacing
+        is the opposite one: a non-null value after the retirement date, meaning
+        upstream may have resumed and a human should adjudicate un-retiring it.
+
+    ``note`` is appended to the annotation, so the alarm text says what to do
+    rather than only what broke.
+    """
+
+    max_dark_days: int | None = None
+    retired: str | None = None
+    note: str = ""
+
+    def __post_init__(self) -> None:
+        if (self.max_dark_days is None) == (self.retired is None):
+            raise ValueError(
+                "ColumnContract needs exactly one of max_dark_days= (live column) "
+                f"or retired= (upstream disclosure ended); got max_dark_days="
+                f"{self.max_dark_days!r}, retired={self.retired!r}"
+            )
+
+
 class Adapter:
     """Subclass per source. fetch() returns the canonical DataFrame(s) and is
     allowed to raise — the runner handles failure."""
@@ -50,6 +91,11 @@ class Adapter:
     overwrite_overlap: bool = False  # True for dividend/split-ADJUSTED series (yfinance
     # auto_adjust=True): the fresh pull fully overwrites its own date span so a re-adjusted
     # history leaves no combine_first basis seam. See lib.store.upsert / masterplan §W6-CN.
+
+    # Opt-in per-COLUMN freshness contracts: {series_name: {column: ColumnContract}}.
+    # Empty = no column-grain checking (every existing adapter is unaffected). See
+    # ColumnContract and detect_dark_columns for why frame-grain staleness is not enough.
+    column_contracts: dict[str, dict[str, ColumnContract]] = {}
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         """Return {series_name: DataFrame indexed by date}. Raise on failure."""
@@ -192,6 +238,203 @@ def _write_stale_series(new_entries: list[dict]) -> None:
     store.write_status(status)
 
 
+def detect_dark_columns(
+    group: str,
+    series: str,
+    df: pd.DataFrame,
+    contracts: dict[str, ColumnContract],
+    today: date,
+) -> list[dict]:
+    """Column-grain contract check: which contracted COLUMNS have gone dark, and
+    which RETIRED ones have come back to life?
+
+    ``detect_stale_series`` cannot see either event.  It is frame-grain, so one
+    live column keeps the whole frame "fresh": china_connect/northbound reported
+    healthy every night for ~2 years while ``net``/``buy``/``sell`` were null,
+    because ``turnover`` was still ticking daily in the same frame.
+
+    PURE by construction — ``today`` is injected, never read from the wall clock,
+    so the caller owns the clock and tests can pin it.  Pass the MERGED store
+    frame, not the fetch window: the incremental fetch is a short recent slice
+    and cannot answer "when did this column last have a value".
+
+    Returns one dict per finding (empty list when everything is on contract):
+
+    ``{"kind": "dark", group, series, column, last_obs, age_days, max_dark_days, note}``
+        A live column is past its horizon.  ``last_obs``/``age_days`` are BOTH
+        ``None`` when the column is missing from the frame or has no non-null
+        value at all — an unbounded age, deliberately not a magic number that a
+        consumer could average or sort as if it were a real age.
+    ``{"kind": "resurrected", group, series, column, retired, last_obs, note}``
+        A retired column has a non-null value AFTER its retirement date.
+
+    A retired column that is simply all-null after retirement produces NOTHING —
+    that is the expected steady state, and an alarm that fires every night for a
+    permanent, known condition is an alarm nobody reads.
+
+    Per-column try/except (mirroring detect_stale_series): a weird dtype or a
+    non-datetime index can never crash the run.  This is an alarm, not a gate.
+    """
+    found: list[dict] = []
+    for column, contract in (contracts or {}).items():
+        try:
+            if contract.retired:
+                cutoff = pd.Timestamp(contract.retired)
+                if column not in df.columns:
+                    continue        # retired AND gone from the frame: expected
+                after = df.loc[df.index > cutoff, column].dropna()
+                if after.empty:
+                    continue        # expected steady state — stay silent
+                found.append({
+                    "kind": "resurrected",
+                    "group": group,
+                    "series": series,
+                    "column": column,
+                    "retired": contract.retired,
+                    "last_obs": str(pd.Timestamp(after.index.max()).date()),
+                    "note": contract.note,
+                })
+                continue
+            if contract.max_dark_days is None:
+                continue            # neither mode set — nothing to check
+            last_valid = df[column].last_valid_index() if column in df.columns else None
+            if last_valid is None:
+                # missing column or all-NaN: dark with an unbounded age
+                last_obs, age = None, None
+            else:
+                last_obs_date = pd.Timestamp(last_valid).date()
+                age = (today - last_obs_date).days
+                if age <= contract.max_dark_days:
+                    continue        # on contract
+                last_obs = str(last_obs_date)
+            log.warning(
+                "dark_column detected: %s/%s.%s last_obs=%s age=%s (max_dark_days=%d)",
+                group, series, column, last_obs, age, contract.max_dark_days,
+            )
+            found.append({
+                "kind": "dark",
+                "group": group,
+                "series": series,
+                "column": column,
+                "last_obs": last_obs,
+                "age_days": age,
+                "max_dark_days": contract.max_dark_days,
+                "note": contract.note,
+            })
+        except Exception:  # noqa: BLE001 — a column alarm must never crash the run
+            log.warning("column contract check failed for %s/%s.%s",
+                        group, series, column, exc_info=True)
+    return found
+
+
+def dark_column_annotation(entry: dict) -> str:
+    """Render one detect_dark_columns entry as a SINGLE GitHub Actions annotation
+    line.
+
+    The caller MUST emit this with a bare ``print(..., flush=True)``.  Routing it
+    through a logger prefixes the line ("WARNING ::warning …"), GitHub only parses
+    a workflow command when ``::`` sits at column 0, and the alarm silently
+    disappears — the failure mode guarded by tests/test_gh_annotation_line_start.py.
+    """
+    where = f"{entry['group']}/{entry['series']}.{entry['column']}"
+    pointer = entry.get("module") or f"collectors/{entry['group']}.py"
+    note = " ".join(str(entry.get("note") or "").split())
+    tail = f" {note} — see {pointer}" if note else f" — see {pointer}"
+    if entry.get("kind") == "resurrected":
+        return (
+            f"::notice title=retired-column-alive::{where} is RETIRED (upstream "
+            f"disclosure ended {entry.get('retired')}) but a non-null value landed "
+            f"{entry.get('last_obs')} — upstream may have resumed; a human should "
+            f"adjudicate un-retiring the column.{tail}"
+        )
+    if entry.get("last_obs") is None:
+        aged = ("NO non-null value anywhere in the stored series (column missing "
+                "or entirely null)")
+    else:
+        aged = (f"last value {entry.get('last_obs')} is {entry.get('age_days')}d old")
+    return (
+        f"::warning title=dark-column::{where} has gone dark: {aged}, past its "
+        f"{entry.get('max_dark_days')}d contract — the frame itself still looks fresh "
+        f"via its other columns, so the frame-grain staleness check cannot see this.{tail}"
+    )
+
+
+def _dark_column_note(entry: dict) -> str:
+    """Short human line for FetchResult.notes (the collect summary table)."""
+    where = f"{entry['series']}.{entry['column']}"
+    if entry.get("kind") == "resurrected":
+        return (f"retired column alive: {where} value on {entry.get('last_obs')} "
+                f"(retired {entry.get('retired')})")
+    return (f"dark column: {where} last={entry.get('last_obs')} "
+            f"age={entry.get('age_days')}d (contract {entry.get('max_dark_days')}d)")
+
+
+def _write_dark_columns(new_entries: list[dict]) -> None:
+    """Merge dark-column entries into run_status["dark_columns"], keyed by
+    group+series+column so repeated runs deduplicate and refresh detected_at.
+
+    Deliberately NOT run_status["stale_series"]: that key has its own (frame-grain)
+    shape and unknown consumers, so column entries go in their own bucket rather
+    than smuggling a different schema into an existing contract.
+    """
+    if not new_entries:
+        return
+    status = store.read_status()
+    existing: list[dict] = status.get("dark_columns", [])
+    by_key = {(e.get("group"), e.get("series"), e.get("column")): e for e in existing}
+    for entry in new_entries:
+        by_key[(entry["group"], entry["series"], entry["column"])] = {
+            **entry, "detected_at": datetime.now(timezone.utc).isoformat()
+        }
+    status["dark_columns"] = list(by_key.values())
+    store.write_status(status)
+
+
+def _contract_entries(adapter: Adapter, series: str, merged: pd.DataFrame,
+                      today: date) -> list[dict]:
+    """Run the column contracts an adapter declares for one series, if any.
+
+    Fully exception-isolated: the contract pass is an ALARM bolted onto a fetch
+    that already succeeded, so nothing in it may turn an 'ok' adapter into a
+    'failed' one.
+    """
+    try:
+        contracts = (getattr(adapter, "column_contracts", None) or {}).get(series)
+        if not contracts:
+            return []
+        entries = detect_dark_columns(adapter.group, series, merged, contracts, today)
+        module = f"{type(adapter).__module__.replace('.', '/')}.py"
+        for entry in entries:
+            entry.setdefault("module", module)
+        return entries
+    except Exception:  # noqa: BLE001 — never fail an adapter over its own alarm
+        log.warning("column contract pass failed for %s/%s", adapter.group, series,
+                    exc_info=True)
+        return []
+
+
+def _emit_dark_columns(entries: list[dict]) -> list[str]:
+    """Print one line-start annotation per entry, persist them, return short notes."""
+    notes: list[str] = []
+    if not entries:
+        return notes
+    try:
+        for entry in entries:
+            notes.append(_dark_column_note(entry))
+            # BARE print, never log.*: a logger's prefixing format pushes '::' off
+            # column 0 and GitHub drops the annotation entirely (see
+            # tests/test_gh_annotation_line_start.py). flush is load-bearing —
+            # stdout is block-buffered when piped in CI.
+            print(dark_column_annotation(entry), flush=True)
+    except Exception:  # noqa: BLE001
+        log.warning("dark-column annotation failed", exc_info=True)
+    try:
+        _write_dark_columns(entries)
+    except Exception:  # noqa: BLE001
+        log.warning("dark-column run_status write failed", exc_info=True)
+    return notes
+
+
 def _breaker_state() -> dict:
     return store.read_status().get("circuit_breaker", {})
 
@@ -231,6 +474,8 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
     try:
         frames = adapter.fetch(full_history=full_history)
         rows, last = 0, None
+        today = datetime.now(timezone.utc).date()
+        dark_found: list[dict] = []
         for series_name, df in frames.items():
             df = adapter.validate(series_name, df)
             merged = store.upsert(adapter.group, series_name, df,
@@ -239,6 +484,10 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
                                   overwrite_overlap=getattr(adapter, "overwrite_overlap", False))
             rows += len(df)
             last = max(filter(None, [last, merged.index.max()]))
+            # Column-grain contract check on the MERGED frame (store ground truth —
+            # the fetch window is a short recent slice and cannot say when a column
+            # last had a value). Opt-in: adapters declaring no contracts are untouched.
+            dark_found.extend(_contract_entries(adapter, series_name, merged, today))
         status = "ok"
         if last is not None:
             age = (datetime.now(timezone.utc).date() - last.date()).days
@@ -261,6 +510,8 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
                      for e in stale_found]
         else:
             notes = []
+        # Column-grain alarms: bare-print annotations + run_status["dark_columns"].
+        notes += _emit_dark_columns(dark_found)
         res = FetchResult(adapter.name, status, rows=rows,
                           last_date=str(last.date()) if last is not None else None,
                           notes=notes)
