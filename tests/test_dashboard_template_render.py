@@ -469,6 +469,27 @@ def test_deep_dive_dialog_still_has_cash_indices():
 # (chip on the card), and the sub-board lists ONLY names not carded above.
 # --------------------------------------------------------------------------- #
 
+
+def _ts_row(ticker: str) -> str:
+    """The clickable-row markup contract for the ⚡ trigger + 🏃 leaders tables.
+
+    The <tr> carries the ticker for the delegated Terminal handler; asserting on
+    this string is what the old `onclick="location.href='stock.html#…'"` pins
+    became. The onclick form is the DEFECT, not an implementation detail:
+    theme.js re-routes Terminal-covered analyzer links by intercepting <a href>
+    clicks in the capture phase, and an inline location.href assignment is
+    invisible to it — every row click landed on the retired stock.html analyzer.
+    See test_ts_rows_are_terminal_routable, which pins that directly.
+    """
+    return f'<tr class="ts-row" data-tkr="{ticker}">'
+
+
+def _ts_tkr_anchor(ticker: str) -> str:
+    """The ticker cell is a real anchor so theme.js can see it (and so
+    cmd-/middle-click keeps its native new-tab behaviour)."""
+    return f'<a class="ts-tk-a" href="stock.html#{ticker}">'
+
+
 def _setup_row(**overrides) -> dict:
     """One top_setups.buy row — field census from the sub-board table body.
     alpha/setup must be numeric ('%+.2f'|format crashes on Undefined); the
@@ -513,7 +534,7 @@ def test_trigger_chip_renders_for_carded_overlap_ticker():
     assert 'class="pv-trg"' in html            # chip rendered (fired = no -soon class)
     assert ">Triggered<" in html               # EN chip label (l-en span)
     assert ">已触发<" in html                   # ZH chip label (l-zh span)
-    assert "onclick=\"location.href='stock.html#ACME'\"" not in html  # no ts-row dupe
+    assert _ts_row("ACME") not in html          # no ts-row dupe
     assert "already on the board above" in html  # all-overlap empty state, not a bare table
 
 
@@ -551,8 +572,8 @@ def test_subboard_lists_only_residual_names():
         _setup_row(),  # ZORB — not on the card board
     ])
     html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
-    assert "onclick=\"location.href='stock.html#ZORB'\"" in html      # residual row shown
-    assert "onclick=\"location.href='stock.html#ACME'\"" not in html  # carded name filtered
+    assert _ts_row("ZORB") in html      # residual row shown
+    assert _ts_row("ACME") not in html  # carded name filtered
     assert "1 of today" in html  # bridge line: "1 of today's 2 triggers already appear…"
 
 
@@ -567,7 +588,7 @@ def test_subboard_unfiltered_when_standouts_absent():
     vm["action_board"]["notable"] = [_board_row(ticker="ZAPP", name="Zapp Co",
                                                 spark_svg="<svg></svg>")]
     html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
-    assert "onclick=\"location.href='stock.html#ZORB'\"" in html
+    assert _ts_row("ZORB") in html
 
 
 def test_no_triggers_empty_state_preserved():
@@ -708,8 +729,73 @@ def test_leaders_strip_renders_with_watch_dont_chase_stance():
     assert '🏃 <span class="l-en">Market leaders</span>' in html
     assert ">市场领跑股<" in html                                  # ZH header (bilingual law)
     assert _WAIT_CHIP in html and ">等待回调<" in html
-    assert "onclick=\"location.href='stock.html#RUNR'\"" in html   # row is clickable
+    assert _ts_row("RUNR") in html                                  # row is clickable
     assert "+2.31" in html                                         # α column formatted
+
+
+def test_ts_rows_are_terminal_routable():
+    """Both clickable tables (⚡ More fresh triggers, 🏃 Market leaders) must be
+    reachable by theme.js's Terminal intercept.
+
+    That intercept is a capture-phase listener on `a[href]` — it re-points
+    stock.html#TKR at the Terminal portal. A `<tr onclick="location.href=…">`
+    is invisible to it, so those rows navigated to the retired stock.html
+    analyzer no matter what theme.js did (reported 2026-08-03). The pin is
+    therefore two-sided: the anchor must exist AND the onclick form must be
+    gone, on a render that has rows in BOTH tables (an empty table would make
+    the absence half vacuous).
+    """
+    vm = _vm_with_leaders([_leader_row()])           # 🏃 RUNR
+    vm["top_setups"] = {"buy": [_setup_row()]}       # ⚡ ZORB (not carded -> residual)
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+
+    for ticker in ("RUNR", "ZORB"):
+        assert _ts_row(ticker) in html, f"{ticker} row missing — assertions below are vacuous"
+        assert _ts_tkr_anchor(ticker) in html, f"{ticker} ticker is not an anchor"
+
+    # The defect itself: no ts-row may navigate via an inline location.href.
+    assert "onclick=\"location.href='stock.html#" not in html
+
+    # The delegated handler that covers clicks on the REST of the row.
+    assert "tr.ts-row[data-tkr]" in html
+    assert "window.MDXTerminal" in html
+
+
+def test_risk_radar_link_targets_the_dialog():
+    """The stocks-page market-state strip links to the risk radar POPUP.
+
+    #sx-risk-v2 is the card wrapper, whose face is display:none on macro.html
+    (the band is its face) and whose tray only opens through mx5OpenDlg — so the
+    old anchor scrolled to an invisible element and nothing popped. macro.html's
+    alert-hash resolver opens any .mx5-dlg named by the hash, and dlg-risk is
+    that dialog.
+    """
+    vm = _vm_with_leaders([_leader_row()])
+    # The strip is gated on market_state; the base VM pins it None, which would
+    # make both assertions below vacuous.
+    vm["market_state"] = {"color": "yellow", "label_en": "mixed", "label_zh": "混合"}
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert 'class="stk-ctx-strip' in html   # strip rendered — absence is not vacuous
+    assert 'class="scx-more" href="macro.html#dlg-risk"' in html
+    assert 'href="macro.html#sx-risk-v2"' not in html
+
+
+def test_macro_alert_hash_waits_for_the_access_tier():
+    """macro.html must not resolve a #dlg-* deep link before tier_preview.js boots.
+
+    This block is inline in the body; tier_preview.js is `defer`, so at parse
+    time window.MMXAccessPreview is undefined — and mx5OpenDlg reads an absent
+    controller as anon, falling through to a hard location.href='/?signin=1…'
+    when MMOnboard is also not up yet. Every cold #dlg-* arrival therefore
+    bounced the visitor to the landing sign-in, signed in or not (measured
+    2026-08-03 against the rendered site). The fix waits for the tier event.
+    """
+    html = _env().get_template("dashboard.html.j2").render(**_vm_with_leaders(None),
+                                                           mode="macro")
+    assert "mmx-access-tier" in html
+    assert "_resolveAlertHashOnce" in html
+    # The unguarded parse-time call is the defect — it must be gone.
+    assert "\n    _resolveAlertHash();\n" not in html
 
 
 def test_leaders_strip_absent_when_key_missing():
