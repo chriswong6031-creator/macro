@@ -3561,10 +3561,6 @@
          name is here BECAUSE it fell hardest, and that is the same reason it can keep
          falling. Same fact, same 10 score points, honest framing. #}
       {% if _pc.get('reversal_member') %}{% set _fl.rows = _fl.rows + [('Among the deepest 3-month fallers in its sector — that is the setup here, and it is also the risk.', '属于行业内3个月跌幅最深的一批 — 这既是本形态的来源，也是它的风险。')] %}{% endif %}
-      {% set _ctx_en = (' · washed out (2W)' if n.washout_2w else '') ~ (' · coiled' if (n.get('coiled') and n.get('coiled').get('coiled')) else '') %}
-      {% set _ctx_zh = (' · 2周洗盘' if n.washout_2w else '') ~ (' · 蓄势' if (n.get('coiled') and n.get('coiled').get('coiled')) else '') %}
-      {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) ~ _ctx_en %}
-      {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) ~ _ctx_zh %}
       {% set _bz = es.buy_zone if es else none %}
       {% set _zk = ('active' if _verb in ('buy','near') else 'muted') if (_bz and _bz.high is not none) else 'confirm' %}
       {# ── MARKS ROW (G0.2 parity with the US board) ────────────────────────────
@@ -3633,7 +3629,7 @@
         'href': 'china_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'cn',
         'name': _nmp[0], 'name_zh': _nmp[-1], 'sec': n.sector, 'sec_zh': SECZH.get(n.sector, n.sector),
         'price_txt': ('%.2f'|format(n.price)) if n.price is not none else none,
-        'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+        'verb': _verb,
         'featured': _is_feat, 'marks': (_mk.rows[:2] if _cn_v2 else none),
         'edge': _edge_txt,
         'edge_label_en': 'Priority', 'edge_label_zh': '优先级',
@@ -3665,24 +3661,18 @@
       {# ═══ PROPHET CARD — RAN / LATE shelf (W1-C rule 2 kept: signal live, entry passed;
          honesty display, no BUY-family language — verb is WAIT, zone slot carries the
          "entry passed" note, stage sits at Trend). F6 muted_entry (gauge open but extended)
-         folds into the same WAIT verb with its own tooltip line. #}
+         folds into the same WAIT verb; the zone slot's "entry passed" note carries the
+         reason, since the verb chip no longer takes a tooltip. #}
       {% set c = n.conviction %}
-      {% set es = n.entry_signal %}
       {% set _nmp = (n.name or n.ticker).split(' / ') %}
       {% set _fl = namespace(rows=[]) %}
       {% if c %}{% for cau in (c.cautions or []) %}{% set _z = c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau %}{% set _fl.rows = _fl.rows + [(cau, _z)] %}{% endfor %}{% endif %}
       {% if n.extension and n.extension.extended %}{% set _fl.rows = _fl.rows + [('Already ran a lot — chase risk', '已经大涨 — 追高风险')] %}{% endif %}
-      {% set _hd_en = ('gauge open — but extended; not actionable' if n.get('muted_entry') else (es.headline if es else '')) %}
-      {% set _hd_zh = ('量表打开 — 但已延伸；当前不可操作' if n.get('muted_entry') else (es.headline_zh if es else '')) %}
-      {% set _ctx_en = (' · washed out (2W)' if n.washout_2w else '') ~ (' · coiled' if (n.get('coiled') and n.get('coiled').get('coiled')) else '') %}
-      {% set _ctx_zh = (' · 2周洗盘' if n.washout_2w else '') ~ (' · 蓄势' if (n.get('coiled') and n.get('coiled').get('coiled')) else '') %}
-      {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and _hd_en) else '') ~ _hd_en) ~ _ctx_en %}
-      {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and _hd_zh) else '') ~ _hd_zh) ~ _ctx_zh %}
       {{ pv.pv_card({
         'href': 'china_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'cn',
         'name': _nmp[0], 'name_zh': _nmp[-1], 'sec': n.sector, 'sec_zh': SECZH.get(n.sector, n.sector),
         'price_txt': ('%.2f'|format(n.price)) if n.price is not none else none,
-        'verb': 'wait', 'tip_en': _tip_en, 'tip_zh': _tip_zh,
+        'verb': 'wait',
         'edge': (c.score if (c and c.score is not none) else none),
         'edge_label_en': 'Readiness', 'edge_label_zh': '就绪度',
         'edge_tip_en': 'Buy-readiness 0–100, muted — this name is on the RAN/LATE shelf: entry timing passed.',
