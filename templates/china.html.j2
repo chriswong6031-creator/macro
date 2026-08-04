@@ -838,13 +838,15 @@
   /* State tint: red (Risk-off) */
   body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(239,68,68,.10) 0%,transparent 70%)}
   body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(239,68,68,.06) 0%,transparent 70%)}
-  /* Light-mode variants — much fainter */
-  [data-theme="light"] body.page-china .aurora::before{background:radial-gradient(ellipse,rgba(34,217,122,.05) 0%,transparent 70%)}
-  [data-theme="light"] body.page-china .aurora .au-a3{background:radial-gradient(ellipse,rgba(34,217,122,.03) 0%,transparent 70%)}
-  [data-theme="light"] body.page-china .aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(156,98,18,.05) 0%,transparent 70%)}
-  [data-theme="light"] body.page-china .aurora.au-yellow .au-a3{background:radial-gradient(ellipse,rgba(156,98,18,.035) 0%,transparent 70%)}
-  [data-theme="light"] body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%)}
-  [data-theme="light"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(220,38,38,.035) 0%,transparent 70%)}
+  /* LIGHT: no aurora. "Much fainter" was the wrong fix — an additive bloom that
+     reads as light on a black field reads as INK on paper, and a 90px-blurred
+     colour wash over a pale canvas is a stain, not atmosphere. It was most
+     obvious as the soft concentric wash sitting in the empty canvas below the
+     fold (the layer is position:fixed, so it spans the whole scroll). The state
+     it tints is already said out loud by the score, the verdict word and the
+     regime pill, so nothing is lost. Depth in light comes from the panel/canvas
+     value step and the shadow recipe. Dark keeps the aurora untouched. */
+  [data-theme="light"] body.page-china .aurora{display:none}
   /* Reduced-motion: no animations */
   @media(prefers-reduced-motion:reduce){body.page-china .aurora,body.page-china .aurora::before,body.page-china .aurora::after,body.page-china .aurora .au-a3{animation:none}}
   /* zh direction-convention mirrors (operator ruling 2026-07-21): the aurora state wash
@@ -857,10 +859,8 @@
   html[data-lang="zh"] body.page-china .aurora.au-yellow .au-a3{background:radial-gradient(ellipse,rgba(245,158,11,.06) 0%,transparent 70%)}
   html[data-lang="zh"] body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(34,217,122,.10) 0%,transparent 70%)}
   html[data-lang="zh"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(34,217,122,.06) 0%,transparent 70%)}
-  html[data-theme="light"][data-lang="zh"] body.page-china .aurora::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%)}
-  html[data-theme="light"][data-lang="zh"] body.page-china .aurora .au-a3{background:radial-gradient(ellipse,rgba(220,38,38,.03) 0%,transparent 70%)}
-  html[data-theme="light"][data-lang="zh"] body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(34,217,122,.05) 0%,transparent 70%)}
-  html[data-theme="light"][data-lang="zh"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(34,217,122,.035) 0%,transparent 70%)}
+  /* (the light+zh aurora mirrors are gone with the light aurora itself — the dark
+     zh mirrors above still bind, since 红涨绿跌 only has to hold where it renders) */
   html[data-lang="zh"] body.page-china .ms-green .cnx-big-score{text-shadow:0 0 36px rgba(239,68,68,.3)}
   html[data-lang="zh"] body.page-china .ms-red .cnx-big-score{text-shadow:0 0 36px rgba(34,217,122,.3)}
   /* The redesigned macro page lays out with its own .cnx-tiles/.rack grids, so the
@@ -902,16 +902,21 @@
     --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.25);
     --mx5-focus-ring:    0 0 0 2px color-mix(in srgb, var(--up) 55%, transparent);
   }
+  /* Round-3 depth pass — same recipe as body.page-macro, so the two dashboards
+     stay one product: opaque white panels on the deepened estate canvas, a soft
+     hairline, and a two-stop shadow (tight contact + wide ambient) carrying the
+     depth. The old 82%-white fill sat within ~1.07:1 of the canvas — the card
+     and the page were the same value, so nothing read as a card. */
   [data-theme="light"] body.page-china{
     --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
-    --mx5-glass-bg:      rgba(255,255,255,.82);
-    --mx5-pop-bg:        rgba(255,255,255,.97);
-    --mx5-glass-border:  rgba(0,0,0,.06);
-    --mx5-glass-shadow:  0 4px 24px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.95) inset;
-    --mx5-glass-hover:   0 8px 32px rgba(0,0,0,.13), 0 1px 0 rgba(255,255,255,.95) inset;
-    --mx5-hover-bg:      rgba(255,255,255,.92);
-    --mx5-hover-border:  rgba(0,0,0,.14);
-    --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.12);
+    --mx5-glass-bg:      #ffffff;
+    --mx5-pop-bg:        #ffffff;
+    --mx5-glass-border:  #dde2ea;
+    --mx5-glass-shadow:  0 1px 2px rgba(23,32,55,.05), 0 8px 24px -12px rgba(23,32,55,.10);
+    --mx5-glass-hover:   0 2px 4px rgba(23,32,55,.07), 0 14px 32px -14px rgba(23,32,55,.16);
+    --mx5-hover-bg:      #ffffff;
+    --mx5-hover-border:  #c3cbd9;
+    --mx5-hover-shadow:  0 2px 4px rgba(23,32,55,.07), 0 14px 32px -14px rgba(23,32,55,.16);
   }
   /* glass card */
   body.page-china .cnx-card{background:var(--mx5-glass-bg,rgba(16,22,30,.55));border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));border-radius:18px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.55),0 1.5px 0 rgba(255,255,255,.07) inset;padding:18px 20px;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s;margin-bottom:14px}
@@ -1192,12 +1197,13 @@
      glass tokens (same values as body.page-macro.mx4-grid) + override every
      hardcoded dark surface. All scoped to [data-theme="light"] so dark mode is
      untouched; colored chips (.hot/.turn) are excluded so their tints survive. */
-  [data-theme="light"] body.page-china{--mx5-glass-bg:rgba(255,255,255,.82);--mx5-glass-border:rgba(0,0,0,.06);--mx5-pop-bg:rgba(255,255,255,.97)}
+  [data-theme="light"] body.page-china{--mx5-glass-bg:#ffffff;--mx5-glass-border:#dde2ea;--mx5-pop-bg:#ffffff}
   /* base card + hover shadows are hardcoded dark (rgba(0,0,0,.55)/.25); light mode
      uses the EXACT body.page-macro.mx4-grid light tokens so the two dashboards
-     match (soft ambient shadow, not the heavy dark one). */
-  [data-theme="light"] body.page-china .cnx-card{box-shadow:0 4px 24px rgba(0,0,0,.09),0 1px 0 rgba(255,255,255,.95) inset}
-  [data-theme="light"] body.page-china .cnx-card[role="button"]:hover{background:rgba(255,255,255,.92);border-color:rgba(0,0,0,.14);box-shadow:0 6px 24px rgba(0,0,0,.12)}
+     match (the estate depth recipe: contact shadow + wide ambient, no inset sheen —
+     a bright inset line on an opaque white card reads as a seam, not a highlight). */
+  [data-theme="light"] body.page-china .cnx-card{box-shadow:0 1px 2px rgba(23,32,55,.05),0 8px 24px -12px rgba(23,32,55,.10)}
+  [data-theme="light"] body.page-china .cnx-card[role="button"]:hover{background:#ffffff;border-color:#c3cbd9;box-shadow:0 2px 4px rgba(23,32,55,.07),0 14px 32px -14px rgba(23,32,55,.16)}
   [data-theme="light"] body.page-china .cnx-pop{background:rgba(255,255,255,.98);border-color:rgba(0,0,0,.1);box-shadow:0 8px 32px rgba(0,0,0,.13)}
   [data-theme="light"] body.page-china .cnx-dlg-panel{background:rgba(255,255,255,.98);border-color:rgba(0,0,0,.1)}
   [data-theme="light"] body.page-china .cnx-dlg-backdrop{background:rgba(20,24,30,.34)}
@@ -1217,7 +1223,13 @@
   [data-theme="light"] body.page-china .cnx-chip.hot,[data-theme="light"] body.page-china .cnx-imp.high,[data-theme="light"] body.page-china .cnx-fq.stag{color:#b4232a}
   [data-theme="light"] body.page-china .cnx-chip.turn{color:#1f7a44}
   [data-theme="light"] body.page-china .cnx-tkr-btn{color:#2456a8}
-  [data-theme="light"] body.page-china .cnx-fq.refl{color:#9a6b0e}
+  /* The reflation pill keeps its own amber wash (rgba(212,160,23,.16) → #f8f0da on a
+     white card), so the ink has to clear 4.5:1 against THAT, not against white:
+     #9a6b0e measured 4.68 on white but only 4.12 on the chip it actually sits in.
+     #8a5f0c lands 4.96 there — and matches the weight of its sibling stagflation
+     pill (#b4232a, 5.12 on its own red wash), so the two regime states read as a
+     matched pair rather than one bold and one washed out. */
+  [data-theme="light"] body.page-china .cnx-fq.refl{color:#8a5f0c}
 
   /* ═══════════════════════════════════════════════════════════════════════
      PORTED US mx5-* SCORECARD COMPONENTS (A hero gauge · B path graph ·
@@ -1240,7 +1252,12 @@
   }
   /* Light mode: the gauge's white-alpha track/ticks/scale-labels vanish on white —
      repaint in dark ink. #mx5-score-numeral keeps its own id rule (state colour). */
-  [data-theme="light"] body.page-china .mx5-gauge-svg > text{fill:rgba(10,16,24,.42);}
+  /* Dial scale labels (0 / 50 / 100) are text, not decoration — they are what makes
+     the needle position mean anything. At .42 they composited to #989b9e = 2.79:1 on
+     a white card, under the 4.5 floor at 10px. .62 lands 5.37:1 and still reads a full
+     step quieter than the body copy, so the big score keeps the hierarchy.
+     (Identical twin rule on body.page-macro — the dial is the same component.) */
+  [data-theme="light"] body.page-china .mx5-gauge-svg > text{fill:rgba(10,16,24,.62);}
   [data-theme="light"] body.page-china .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
   [data-theme="light"] body.page-china .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
   /* Regime pill (sizes to content, never clips) */
@@ -1406,7 +1423,12 @@
     border-radius:12px;padding:16px 18px 12px;position:relative;overflow:hidden;cursor:pointer;
     transition:background .2s ease-out,border-color .2s ease-out,box-shadow .2s ease-out,transform .2s ease-out;
   }
-  [data-theme="light"] body.page-china .mx5-mkt-tile{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+  /* Index tiles — the exact twin of body.page-macro's futures strip, so the two
+     dashboards keep reading as one product. The dark "3% fill on glass" trick
+     inverts into a grey smudge (#f7f7f7) with a 1.10:1 edge on a white card; each
+     tile becomes its own white surface with the recipe hairline and one contact
+     shadow instead, and the grid gap does the separating. */
+  [data-theme="light"] body.page-china .mx5-mkt-tile{background:#ffffff;border-color:#dde2ea;box-shadow:0 1px 2px rgba(23,32,55,.05);}
   body.page-china .mx5-mkt-tile.up,
   body.page-china .mx5-mkt-tile.dn{border-color:var(--glass-border);}
   body.page-china .mx5-mkt-tile:hover,
