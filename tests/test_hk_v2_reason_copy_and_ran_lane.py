@@ -298,8 +298,16 @@ _PARAMETERISED = [
 ]
 
 
-@pytest.mark.parametrize("fn,name", _PARAMETERISED,
-                         ids=lambda v: getattr(v, "__qualname__", v))
+def _ids(value):
+    """`us_board_rank.build_ran_rows` and `hk_board_rank.build_ran_rows` share a
+    qualname, so a qualname-only id renders them as `..._0`/`..._1` and a mutation
+    report cannot say which module went red.  Qualify by module."""
+    if callable(value):
+        return f"{value.__module__.rsplit('.', 1)[-1]}.{value.__qualname__}"
+    return value
+
+
+@pytest.mark.parametrize("fn,name", _PARAMETERISED, ids=_ids)
 def test_the_new_flag_defaults_to_todays_behaviour(fn, name):
     """US/CN ride on the DEFAULT.  Flip any of these to False and every US/CN board
     silently changes membership — so the default is pinned here as well as being
@@ -309,8 +317,7 @@ def test_the_new_flag_defaults_to_todays_behaviour(fn, name):
     assert p.default is True, f"{fn.__qualname__}.{name} default moved off True"
 
 
-@pytest.mark.parametrize("fn,name", _PARAMETERISED,
-                         ids=lambda v: getattr(v, "__qualname__", v))
+@pytest.mark.parametrize("fn,name", _PARAMETERISED, ids=_ids)
 def test_the_new_flag_stays_keyword_only(fn, name):
     """Same discipline `reclaim_veto` carries: a positional policy flag is one
     argument-order slip away from silently re-gating a board."""
