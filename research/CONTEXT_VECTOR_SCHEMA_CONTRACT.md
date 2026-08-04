@@ -24,8 +24,8 @@ So this is the first draft of the US half, written to be conformed to, not impos
 | Since | 2026-07-30 | 2026-08-04 (this PR) |
 | Shape | 5,881 x 88 (4 nights) | 1,540 x 150 (1 night) |
 | Layout | one accreting file | monthly parts, read via `load_candidates()` |
-| Stamp column | **`date`** | **`stamp_date`** |
-| Keep-first key | `(date, ticker, board_definition)` | `(stamp_date, ticker, board_definition)` |
+| Stamp column | **`stamp_date`** | **`stamp_date`** |
+| Keep-first key | `(stamp_date, ticker, board_definition)` | `(stamp_date, ticker, board_definition)` |
 | Lane gate | `lane == "asia"` argument | `ledger_lane.nightly_advance_enabled()` |
 | Board definition | `china_prophet_v2` | `us_prophet_v1` |
 
@@ -69,6 +69,25 @@ Rationale for settling it now rather than later: this is the JOIN KEY. Every nig
 stores accrue makes the rename more expensive, and until it lands a cross-market study
 must special-case per market or alias on read — exactly the shape contamination §7
 exists to prevent.
+
+**LANDED 2026-08-04 (CN lane, PR #4543).** The CN rename shipped as its own CN-lane PR,
+as filed above — no US file was touched by it. It was a column rename with receipts and
+no strategy, scoring, or lane-logic change: producer `engine/china_prophet_shadow.py`
+(record key, `_OBJECT_COLUMNS`, the keep-first dedup subset, docstring), the candidates
+read path in `engine/cn_prophet_audit.py::miss_funnel`, and a one-time in-place rewrite
+of the committed store. The rewrite mirrored the writer's own whole-file
+`to_parquet(index=False)` so the parquet's pandas schema-metadata was rebuilt rather
+than left naming the old column, and was verified by re-reading from disk: 5,881 rows
+and 88 columns before and after, `stamp_date` value-identical to the old `date` column,
+`assert_frame_equal` clean on every other column, dtypes unchanged, and per-night counts
+identical across all four nights (2026-07-30 1,472 / 07-31 1,469 / 08-03 1,471 / 08-04
+1,469). Three neighbouring `date` schemas were deliberately NOT renamed, because they
+are separate artifact contracts with their own readers: the audit's forward log
+(`data/cn_prophet_audit/forward_log.parquet`, keep-first per `(date, board_definition)`),
+the `china_standout_track` board store, and the `by_date[].date` key in the audit's
+published `data/cn_prophet_audit/latest.json`. Regression pin:
+`tests/test_cn_prophet_candidates_schema.py` (committed-store schema + writer output),
+running in the `unrun-picks-boards` CI pack.
 
 ### 3.2-3.5 — still open
 
@@ -121,4 +140,5 @@ Per-column provenance, measured coverage and the three named debts live in
 No CN edits. No score, blend, or gate change in either market. No claim that either
 store has authority — both are display/shadow tier until an axis clears the §3
 bounded-authority ladder with its own preregistration. §3.1 was adjudicated 2026-08-04
-(`stamp_date` wins; CN rename filed to the CN lane). §3.2-3.6 remain open.
+(`stamp_date` wins) and is now DONE on both sides — the CN rename landed the same day in
+its own CN-lane PR (§3.1). §3.2-3.6 remain open.
