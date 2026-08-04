@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T11:38:30.775932+00:00",
-  "count": 731,
+  "generated_at": "2026-08-04T12:08:33.693230+00:00",
+  "count": 732,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -45,10 +45,30 @@
     "Week Ahead",
     "Weekly Preview",
     "William Blair",
+    "ZH AI",
     "ZKB",
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-rltimok3lrg-53fff6",
+      "title": "Marketdesk morning wrap",
+      "institution": "ZH AI",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T11:23:46Z",
+      "summary_points": [
+        "**Gold Technical Momentum**: BSADTest (1.3 > 95% critical value) confirms explosive upward trajectory; structural drivers (de-dollarization, central bank buying) override geopolitical noise; \"Buy on dips\" signal with $4,700 fair value target.",
+        "**AI Infrastructure Rotation**: Prioritize AI adopters with direct revenue streams (PLTR +93% rev, CWEI +18% earnings); avoid generic tech; focus on enablers (e.g., Coreweave) amid positive capex news and short squeeze risk.",
+        "**Sector Rotation Catalysts**: Quality rotation toward AI winners amid broad tech rotation; semiconductor shorts triggered by \"bubble\" technical breakdown; yield curve steepening signals fixed income structural shift."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-c6ihzscvcr3-118996",
       "title": "USA GS Economic Indicators Update",
