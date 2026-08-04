@@ -3054,8 +3054,8 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
     cards = [
         card("term", "▣", "Terminal", "交易终端", "Terminal", "终端", term, "Trading charts & stock workspace", "交易图表与个股工作台", "https://app.mastermind-x.com", ' rel="noopener"'),
         card("cyc", "◷", "Cycle Intelligence", "周期智能", "Cycle Intel", "周期", cyc, "Country cycle dashboards", "国家周期看板", "cycle.html"),
-        card("sec l-en", "▦", "US Sectors", "美股行业", "US Sectors", "美股行业", sec_us, "Sector Central rotation map", "行业轮动中心", "sector_central.html"),
-        card("sec l-zh", "▦", "CN Sectors", "中国行业", "CN Sectors", "中国行业", sec_cn, "Sector Central rotation map", "中国行业轮动中心", "sector_central_china.html"),
+        card("sec l-en", "▦", "US Sectors", "美股行业", "US Sectors", "美股行业", sec_us, "Sector Intelligence rotation map", "行业智慧轮动图", "sector_central.html"),
+        card("sec l-zh", "▦", "CN Sectors", "中国行业", "CN Sectors", "中国行业", sec_cn, "Sector Intelligence rotation map", "中国行业智慧轮动图", "sector_central_china.html"),
         card("rep", "◇", "Research Reports", "研究报告", "Reports", "报告", rep, "Read the latest research desk", "阅读最新研究", "reports.html"),
         card("btc crypto", "◈", "Crypto Cockpit", "加密驾驶舱", "Crypto", "加密", crypto, "Market state, flows & class allocation", "市场状态、资金流与资产配置", "crypto.html"),
         card("btc", "₿", "Bitcoin Vector", "比特币向量", "Bitcoin", "比特币", btc, "Risk, momentum & allocation", "风险、动量与配置", "vector.html"),
