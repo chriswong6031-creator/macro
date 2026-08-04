@@ -23,6 +23,17 @@ WHAT IT MEASURES (nightly, over the committed S&P-1500 close caches)
   D. SUMMARY — universe n, eligible-today n (both bases), excluder histogram, and the
      runner-sector vs eligible-sector histograms that show the mismatch.
 
+  E. NAME_SCORE SCORECARD — the forward grade of the per-name POTENTIAL score
+     (``engine/name_score_grader.py`` → ``data/name_score/us_calls.parquet``): rank-IC at
+     21d/63d with the per-date cross-section behind it, the buy-tier hit rate, and P@k
+     against each date's own graded cross-section. Wired here because the score is LIVE and
+     LOAD-BEARING while unmeasured — the board's displayed ``conviction.score`` IS
+     name_score's ``potential_score`` (a backward-compat overwrite in
+     ``scripts/build_stock_library.py``) — and the grader that already runs nightly was
+     consumed by NOTHING. Read-only telemetry: no threshold, no alarm, no gate; every null
+     is printed with a plain reason (roadmap
+     ``research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md`` §4.4 action 1).
+
 BASES (two, named — they are NOT interchangeable)
 
   ``tier_stream``  the vectorized per-day production twin of ``cascade``, on COMPLETED buckets.
@@ -76,18 +87,21 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
 
 from engine import confluence_tiers as ct
+from engine import grading
+from engine import name_score_grader as nsg
 from engine import signal_gate as sg
 from engine.confluence_tiers import (
     BUY_RSI_MAX, CONF_W, FRESH_TICKS, OB, OS,
     _rsi_macd, _since, _stoch_rsi_kd, _tf_bars, _ticks_since, _to_daily, _xup,
 )
 from engine.technicals import rsi
+from lib import store
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -114,6 +128,18 @@ STANDOUT_LANES = ("buy", "ran", "leaders")
 # annotation thresholds (ops alarms only — never a gate)
 CONVERSION_WARN = 0.05          # sighting -> plan conversion below this warns
 NEVER_ELIGIBLE_WARN = 0.40      # share of top-63d runners with ZERO eligible days
+
+# --- E. name_score scorecard (read-only mirror; NO alarm threshold lives here) ---
+NAME_SCORE_MARKET = "US"
+NAME_SCORE_LEDGER_REL = "data/name_score/us_calls.parquet"
+PK_K = (1, 3, 5, 10)     # the top-k depths reported
+# A P@k date needs a graded cross-section at least this wide, so a date on which the
+# forward join resolved a handful of names cannot masquerade as a ranking result.
+# STATED, not tuned; it admits dates, it gates nothing.
+PK_MIN_XS = 20
+# Disclosure rule (not a gate): a horizon graded on fewer than this many IC dates is
+# marked thin so no reader mistakes a two-date sample for a measurement.
+THIN_MIN_IC_DATES = 5
 
 # excluder vocabulary (stable strings — the histogram keys downstream reads)
 EXC_ELIGIBLE = "ELIGIBLE"
@@ -540,6 +566,280 @@ def theme_representation(root: Path, standouts: dict | None, rotation: dict | No
 
 
 # --------------------------------------------------------------------------- #
+# E. name_score scorecard — read-only mirror of the nightly grader's own outputs
+# --------------------------------------------------------------------------- #
+def name_score_series_reader(market: str = NAME_SCORE_MARKET) -> Callable[[str], pd.Series | None]:
+    """A per-ticker MEMOIZED close-series resolver, identical to the resolution half of
+    ``engine.name_score_grader._fwd_return``.
+
+    WHY THIS EXISTS (runtime, not method). ``grade()`` resolves the series inside a
+    per-(row, horizon) loop, so a 72k-row ledger costs ~145k parquet reads — MEASURED at
+    13.4 minutes and rising with every night's stamp, which is a fifth of the whole render
+    budget for telemetry no gate reads. The ledger's 72k rows span only ~3k tickers, so
+    reading each name ONCE and reusing the series makes the same computation cost ~3s. The
+    read count is bounded by the UNIVERSE (stable), not by ledger depth (accruing), so this
+    stays cheap as the ledger grows.
+
+    It is a caching wrapper, NOT a second opinion: the group ladder
+    (``name_score_grader._FWD_GROUP``), the ``close`` coercion, and the US dead-name
+    extension (``engine.grading.resolve_series``) are the grader's, and the forward return
+    itself is taken from ``engine.grading.grade_next_bar_return`` — the same call
+    ``_fwd_return`` makes. ``tests/test_prophet_miss_audit.py`` pins the whole block against
+    a live ``name_score_grader.grade()`` run on a synthetic ledger, so a drift in either
+    module fails the suite rather than shipping a second set of numbers.
+    """
+    m = (market or NAME_SCORE_MARKET).upper()
+    grp = nsg._FWD_GROUP.get(m, "china")
+    groups = (grp,) if isinstance(grp, str) else grp
+    cache: dict[str, pd.Series | None] = {}
+
+    def read(ticker: str) -> pd.Series | None:
+        t = str(ticker)
+        if t in cache:
+            return cache[t]
+        df = None
+        try:
+            for g in groups:
+                df = store.read(g, t)
+                if df is not None and "close" in df:
+                    break
+            s = (pd.to_numeric(df["close"], errors="coerce").dropna()
+                 if (df is not None and "close" in df) else None)
+        except Exception:  # noqa: BLE001 — a per-name read failure is a null, never fatal
+            s = None
+        if m == "US":
+            try:
+                s = grading.resolve_series(t, s)
+            except Exception:  # noqa: BLE001
+                pass
+        cache[t] = None if (s is None or s.empty) else s.sort_index()
+        return cache[t]
+
+    return read
+
+
+def grade_calls(calls: pd.DataFrame, *, market: str = NAME_SCORE_MARKET,
+                series_for: Callable[[str], pd.Series | None] | None = None,
+                horizons: tuple[int, ...] = nsg._HORIZONS_D,
+                ) -> tuple[dict[int, pd.DataFrame], dict]:
+    """Join each call to its forward return, per horizon. Returns (frames, coverage).
+
+    ``calls`` is the grader's own ledger frame AFTER ``_drop_frozen_echoes`` (the caller
+    quarantines and reports the echo count — a frozen-feed re-stamp is a fabricated
+    observation, never a graded call). A call with no resolvable series contributes to NO
+    horizon; a call whose horizon has not matured is absent from THAT horizon only — never
+    scored 0, never carried forward.
+    """
+    read = series_for or name_score_series_reader(market)
+    recs: dict[int, list[dict]] = {h: [] for h in horizons}
+    resolved: set[str] = set()
+    stamped: set[str] = set()
+    for _i, row in calls.iterrows():
+        t = str(row["ticker"])
+        stamped.add(t)
+        s = read(t)
+        if s is None:
+            continue
+        resolved.add(t)
+        d0 = str(pd.Timestamp(row["date"]).date())
+        for h in horizons:
+            fr = grading.grade_next_bar_return(s, d0, h)
+            if fr is None:
+                continue
+            recs[h].append({"date": str(row["date"]), "ticker": t, "score": row.get("score"),
+                            "tier": row.get("tier"), "fwd": fr})
+    frames = {h: pd.DataFrame(recs[h], columns=["date", "ticker", "score", "tier", "fwd"])
+              for h in horizons}
+    grp = nsg._FWD_GROUP.get((market or "").upper(), "china")
+    coverage = {
+        "group": grp if isinstance(grp, str) else list(grp),
+        "n_names_stamped": len(stamped),
+        "n_names_resolved": len(resolved),
+        "coverage_pct": (round(100.0 * len(resolved) / len(stamped), 1) if stamped else None),
+        "note": "the forward join resolves only names with a per-name close store; a stamped "
+                "name with no store is absent from every horizon, not scored zero",
+    }
+    return frames, coverage
+
+
+def precision_at_k(g: pd.DataFrame, *, ks: tuple[int, ...] = PK_K,
+                   min_xs: int = PK_MIN_XS) -> dict:
+    """P@k of the score's OWN ordering against each date's graded cross-section.
+
+    DEFINITIONS, stated (this block sets no threshold that gates anything):
+      * cohort      — one stamp date's graded calls; a date contributes only when its
+                      graded cross-section is >= ``min_xs`` wide.
+      * hit         — the call's forward return beats THAT DATE'S median graded forward
+                      return (date-demeaned by construction, so a market-wide up day cannot
+                      manufacture precision).
+      * P@k         — share of the top-k by score (ties broken on ticker, so the ordering is
+                      reproducible) that are hits, averaged over qualifying dates.
+      * base        — share of ALL that date's graded calls that are hits, averaged the same
+                      way. It is near 0.50 by construction (the median splits the cohort);
+                      it is REPORTED rather than assumed so the reader compares P@k to the
+                      cohort's own measured base, never to an asserted coin flip.
+      * lift        — mean P@k − mean base. Positive means the top of the score's ordering
+                      beat its own cohort; negative means it did not.
+
+    Every denominator is the MATURED cohort, never the resolved-winner subset. When no date
+    qualifies the result is ``None`` with a named reason — an absent measurement is not a
+    50% precision.
+    """
+    out: dict[str, Any] = {
+        "definition": (f"hit = forward return > that stamp date's median graded forward "
+                       f"return; dates with a graded cross-section < {min_xs} are excluded "
+                       f"from P@k (the exclusion is stated and counted below, not silent)"),
+        "min_cross_section": min_xs,
+        "n_dates_eligible": 0,
+        "n_dates_excluded_thin": 0,
+        "cross_section": None,
+        "by_k": {f"p_at_{k}": None for k in ks},
+    }
+    if g.empty:
+        out["null_reason"] = "no graded calls at this horizon"
+        return out
+    sizes: list[int] = []
+    cohorts: list[pd.DataFrame] = []
+    thin = 0
+    for _d, sub in g.groupby("date"):
+        if len(sub) < min_xs:
+            thin += 1
+            continue
+        med = float(sub["fwd"].median())
+        cohorts.append(sub.assign(hit=sub["fwd"] > med))
+        sizes.append(int(len(sub)))
+    out["n_dates_excluded_thin"] = thin
+    out["n_dates_eligible"] = len(cohorts)
+    if not cohorts:
+        out["null_reason"] = (f"no stamp date carries a graded cross-section of {min_xs}+ "
+                              f"names ({thin} date(s) too thin) — P@k is not computable, "
+                              f"which is not the same as 50%")
+        return out
+    out["cross_section"] = {"min": min(sizes), "median": int(np.median(sizes)),
+                            "max": max(sizes)}
+    bases = [float(c["hit"].mean()) for c in cohorts]
+    out["base_rate"] = round(float(np.mean(bases)), 3)
+    for k in ks:
+        vals = []
+        for c in cohorts:
+            top = c.sort_values(["score", "ticker"], ascending=[False, True]).head(k)
+            vals.append(float(top["hit"].mean()))
+        out["by_k"][f"p_at_{k}"] = {
+            "value": round(float(np.mean(vals)), 3),
+            "lift_vs_base": round(float(np.mean(vals) - np.mean(bases)), 3),
+            "n_dates": len(vals),
+            "n_picks": int(sum(min(k, len(c)) for c in cohorts)),
+        }
+    return out
+
+
+def horizon_scorecard(g: pd.DataFrame, h: int) -> dict:
+    """One horizon's read: rank-IC (the grader's own construction), buy-tier hit rate,
+    per-tier forward, and P@k. Nulls carry a plain reason; nothing here is a threshold."""
+    out: dict[str, Any] = {"horizon_d": h, "n_graded": int(len(g))}
+    if len(g) < 5:
+        out.update({
+            "rank_ic": None, "n_ic_dates": 0, "ic_cross_section": None,
+            "buy_tier_hit_rate": None, "by_tier": {}, "precision_at_k": None,
+            "thin": True,
+            "null_reason": (f"still accruing — {len(g)} call(s) have {h} sessions of forward "
+                            f"price past their next-bar fill; the grader reports 'accruing' "
+                            f"below 5"),
+        })
+        return out
+    ics: list[float] = []
+    ic_ns: list[int] = []
+    for _d, sub in g.groupby("date"):
+        # the grader's own per-date admission: a cross-section needs >= 5 DISTINCT scores
+        # before a Spearman correlation on it means anything.
+        if sub["score"].nunique() >= 5:
+            ics.append(float(sub["score"].rank().corr(sub["fwd"].rank())))
+            ic_ns.append(int(len(sub)))
+    buys = g[g["tier"].isin(nsg._BUY_TIERS)]
+    hit = float((buys["fwd"] > 0).mean()) if len(buys) else None
+    by_tier: dict[str, dict] = {}
+    for lab, sub in g.groupby("tier"):
+        if len(sub) >= 5:
+            by_tier[str(lab)] = {"n": int(len(sub)),
+                                 "mean_fwd": round(float(sub["fwd"].mean()), 4),
+                                 "pos_rate": round(float((sub["fwd"] > 0).mean()), 3)}
+    out.update({
+        "rank_ic": (round(float(np.mean(ics)), 4) if ics else None),
+        "n_ic_dates": len(ics),
+        "ic_cross_section": ({"min": min(ic_ns), "median": int(np.median(ic_ns)),
+                              "max": max(ic_ns)} if ic_ns else None),
+        "buy_tier_hit_rate": (round(hit, 3) if hit is not None else None),
+        "buy_tier_n": int(len(buys)),
+        "by_tier": by_tier,
+        "precision_at_k": precision_at_k(g),
+        "thin": len(ics) < THIN_MIN_IC_DATES,
+    })
+    if not ics:
+        out["null_reason"] = ("no stamp date carries 5+ distinct scores in its graded "
+                              "cross-section — rank-IC is not computable")
+    elif out["thin"]:
+        out["thin_reason"] = (f"{len(ics)} IC date(s) — below the {THIN_MIN_IC_DATES}-date "
+                              f"disclosure floor; read as a sample, not a measurement")
+    return out
+
+
+def name_score_scorecard(root: Path = ROOT, degraded: list[dict] | None = None, *,
+                         market: str = NAME_SCORE_MARKET,
+                         series_for: Callable[[str], pd.Series | None] | None = None) -> dict:
+    """The read-only ``name_score`` block. Fail-soft: any missing input degrades to nulls
+    with a named reason and a ``degraded`` row, never an exception into the nightly."""
+    deg = degraded if degraded is not None else []
+    m = (market or NAME_SCORE_MARKET).upper()
+    block: dict[str, Any] = {
+        "tier": "ops_telemetry",
+        "authority": "none — read-only mirror of engine/name_score_grader outputs; no rank, "
+                     "gate, size, or user-facing consumer",
+        "market": m,
+        "source": NAME_SCORE_LEDGER_REL,
+        "graded_by": "engine.grading.grade_next_bar_return (next-bar fill, survivorship-aware) "
+                     "via engine.name_score_grader's own forward-store ladder",
+        "scored_field": "score — name_score.potential_score, the number the US board displays "
+                        "as conviction.score (scripts/build_stock_library.py overwrites "
+                        "c['score'] with the potential score for backward compatibility)",
+        "available": False,
+    }
+    p = root / NAME_SCORE_LEDGER_REL
+    try:
+        calls = pd.read_parquet(p)
+    except Exception as exc:  # noqa: BLE001 — fail-soft, disclosed
+        deg.append({"input": NAME_SCORE_LEDGER_REL, "severity": "unexpected",
+                    "reason": f"unreadable: {exc} — name_score scorecard is null, not zero"})
+        block["null_reason"] = f"ledger unreadable: {exc}"
+        return block
+    if calls.empty or "date" not in calls.columns:
+        deg.append({"input": NAME_SCORE_LEDGER_REL, "severity": "unexpected",
+                    "reason": "ledger empty or missing the date column — scorecard is null"})
+        block["null_reason"] = "ledger empty or malformed"
+        return block
+
+    kept, n_frozen = nsg._drop_frozen_echoes(calls)
+    dates = sorted(str(d) for d in kept["date"].dropna().unique())
+    block.update({
+        "available": True,
+        "n_calls": int(len(kept)),
+        "n_frozen_echoes_excluded": int(n_frozen),
+        "n_stamp_dates": len(dates),
+        "stamp_dates": {"first": (dates[0] if dates else None),
+                        "last": (dates[-1] if dates else None)},
+    })
+    try:
+        frames, coverage = grade_calls(kept, market=m, series_for=series_for)
+    except Exception as exc:  # noqa: BLE001
+        deg.append({"input": NAME_SCORE_LEDGER_REL, "severity": "unexpected",
+                    "reason": f"forward join failed: {exc} — scorecard horizons are null"})
+        block["null_reason"] = f"forward join failed: {exc}"
+        return block
+    block["forward_store"] = coverage
+    block["by_horizon"] = {f"{h}d": horizon_scorecard(g, h) for h, g in frames.items()}
+    return block
+
+
+# --------------------------------------------------------------------------- #
 # build
 # --------------------------------------------------------------------------- #
 def _hist(values: list) -> dict:
@@ -589,7 +889,7 @@ def _runner_rows(px: pd.DataFrame, rets: pd.Series, windows: dict[str, dict],
 
 def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP21_N,
                 lookback: int = LOOKBACK, with_gate: bool = True,
-                with_cascade_basis: bool = True) -> dict:
+                with_cascade_basis: bool = True, with_name_score: bool = True) -> dict:
     """Compute the full audit document. Pure read: writes nothing."""
     degraded: list[dict] = []
     wide, sector, deg = load_universe(root)
@@ -630,6 +930,9 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
     rotation = _read_json(root, ROTATION_JSON, degraded,
                           "theme representation unavailable")
     themes = theme_representation(root, standouts, rotation, degraded)
+    name_score = (name_score_scorecard(root, degraded) if with_name_score else
+                  {"tier": "ops_telemetry", "available": False,
+                   "null_reason": "not computed (with_name_score=False)"})
 
     days = [r["days_eligible"] for r in runner_rows if r.get("days_eligible") is not None]
     never = sum(1 for d in days if d == 0)
@@ -663,6 +966,10 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
                                        "runner can be stream-eligible and absent from it.",
             "board_gate": "engine.signal_gate.gate per runner (gate_* fields) — the live "
                           "board's own basis, over a narrower universe than the board's.",
+            "name_score": "engine.name_score_grader's append-only PIT call ledger, forward-"
+                          "joined through engine.grading (next-bar fill, survivorship-aware). "
+                          "Read-only: this audit mirrors the grader's numbers, it does not "
+                          "change what the grader computes.",
         },
         "summary": summary,
         "top63_excluder_hist": _hist([r["excluder"] for r in runner_rows]),
@@ -674,12 +981,40 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
             _hist([e["sector"] for e in cascade_elig]) if cascade_elig is not None else None),
         "conversion": conversion,
         "themes": themes,
+        "name_score_scorecard": name_score,
         "top63_runners": runner_rows,
         "top21_runners": fast_rows,
         "eligible_today": cascade_elig,
         "degraded": degraded,
     }
     return doc
+
+
+def name_score_row_fields(doc: dict) -> dict:
+    """The name_score scorecard's HEADLINE figures, flattened for the forward-log row.
+
+    Deliberately compact — the full block lives in the artifact; the forward log only needs
+    the series a reader would plot: coverage, and each horizon's rank-IC with the number of
+    IC dates behind it. ``name_score_available`` is what keeps a null unambiguous once these
+    rows accumulate: available + null rank-IC is the ACCRUING state (the block carries the
+    plain reason); not-available means the ledger or the forward join failed that night, and
+    the artifact's ``degraded`` list names which.
+
+    Null-safe on every path, including a doc with no block at all — this row is written by
+    the nightly and must never be the thing that takes the lane down. ``n_ic_dates`` is
+    reported beside every rank-IC so a thin cell can never be read as a measurement.
+    """
+    ns = doc.get("name_score_scorecard") or {}
+    by_h = ns.get("by_horizon") or {}
+    out: dict = {
+        "name_score_available": bool(ns.get("available")),
+        "name_score_coverage_pct": (ns.get("forward_store") or {}).get("coverage_pct"),
+    }
+    for h in nsg._HORIZONS_D:
+        cell = by_h.get(f"{h}d") or {}
+        out[f"name_score_rank_ic_{h}d"] = cell.get("rank_ic")
+        out[f"name_score_ic_dates_{h}d"] = cell.get("n_ic_dates")
+    return out
 
 
 def summary_row(doc: dict) -> dict:
@@ -701,6 +1036,7 @@ def summary_row(doc: dict) -> dict:
         "converted_n": doc["conversion"]["converted_n"],
         "conversion_rate": doc["conversion"]["rate"],
         "excluder_family_hist": doc["top63_excluder_family_hist"],
+        **name_score_row_fields(doc),
         "degraded_n": len(doc["degraded"]),
     }
 
@@ -826,6 +1162,25 @@ def print_summary(doc: dict, *, wrote_artifact: bool, wrote_log: bool,
         for t in doc["themes"]["themes"]:
             print(f"  theme #{t['rank']} {t['theme']}: {t['n_members']} members, "
                   f"on board {t['present_counts']}")
+    ns = doc.get("name_score_scorecard") or {}
+    if ns.get("available"):
+        cov = ns.get("forward_store") or {}
+        print(f"  name_score ({ns.get('market')}): {ns.get('n_calls')} calls / "
+              f"{ns.get('n_stamp_dates')} stamp dates, forward store resolves "
+              f"{cov.get('n_names_resolved')}/{cov.get('n_names_stamped')} names "
+              f"({cov.get('coverage_pct')}%)")
+        for key, h in (ns.get("by_horizon") or {}).items():
+            if h.get("null_reason"):
+                print(f"    {key}: null — {h['null_reason']}")
+                continue
+            pk = (h.get("precision_at_k") or {}).get("by_k") or {}
+            p1 = (pk.get("p_at_1") or {}).get("value")
+            p5 = (pk.get("p_at_5") or {}).get("value")
+            print(f"    {key}: rank_ic={h.get('rank_ic')} over {h.get('n_ic_dates')} IC "
+                  f"date(s), n={h.get('n_graded')}, P@1={p1} P@5={p5}"
+                  f"{'  [THIN]' if h.get('thin') else ''}")
+    elif ns:
+        print(f"  name_score: null — {ns.get('null_reason')}")
     if doc["degraded"]:
         print(f"  DEGRADED ({len(doc['degraded'])}):")
         for d in doc["degraded"]:
