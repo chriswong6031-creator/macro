@@ -130,6 +130,7 @@ _ACTIVITY_WORDS: dict[str, str] = {
     # the copy — the state a dark gate is most dangerous in.
     "cold_read_reads": "posts read as a stranger would read them",
     "cold_read_unavailable": "not read — no local model reachable",
+    "cold_read_unread": "not read — the run's reading budget ran out",
     "held_cold_read": "held — a reader could not resolve it",
     "quarantined_cold_read": "pulled — a reader could not resolve it",
     # The 2026-08-02 clock gates. Both name the DEFECT the operator reported,
