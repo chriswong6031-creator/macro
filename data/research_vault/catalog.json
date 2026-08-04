@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T14:54:01.201198+00:00",
-  "count": 740,
+  "generated_at": "2026-08-04T15:09:04.776909+00:00",
+  "count": 741,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -50,6 +50,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-bgx046304qp-ce6913",
+      "title": "GS Peter Callahan Tech SPOT PLTR ON TKO",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:21:29Z",
+      "summary_points": [
+        "**PLTR Earnings & AI Focus**: PLTR +15% with revenue estimates up 11% (to $12.87bn), Q2 US Commercial accelerating 16 pts y/y to 149% y/y, CEO’s AI growth emphasis driving sentiment shift.",
+        "**SPOT Mixed Signals**: Q2 Revs +15% y/y, GMs beat +30bps, Oil beat +2.5%, but \"early inbounds\" pushback signals limit upside potential amid market sentiment concerns.",
+        "**TKO Guidance vs WWE Risk**: FY2026 guidance raised ($75M Rev, $25M EBITDA) on World Cup demand, yet WWE results below consensus due to event timing, creating execution risk.",
+        "**Tech Catalysts & Overbought Tech**: Optical names (LITE +12%, CIEN +9%) driven by FCC import reports; Hyperscalers (MSFT, AMZN) overbought (14-day RSI >70), semis vs hyperscalers debate intensifying."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-avscuti1dbn-a3cec1",
       "title": "GS Peter Callahan Tech SPOT PLTR ON TKO",
