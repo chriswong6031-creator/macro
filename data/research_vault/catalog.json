@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T00:06:57.291058+00:00",
-  "count": 697,
+  "generated_at": "2026-08-04T00:21:59.956233+00:00",
+  "count": 698,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -85,6 +85,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7c4zw3a911x-a5514a",
+      "title": "Shionogi (4507)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:43Z",
+      "summary_points": [
+        "**High leverage risk**: Net debt/equity 20.0x (3/26) and leverage 1.5x (3/26) indicate significant financing vulnerability despite positive cash flows.",
+        "**Patent cliff & growth catalysts**: Core HIV treatment dolutegravir patent expiry approaching; sustainable earnings depend on long-acting HIV formulations, edaravone sales, and Japan Tobacco synergies.",
+        "**Critical risks**: Downside in key drug sales, development delays, Xofluza/Xocova sales volatility (flu/COVID-19 linked), forex, pricing/tariffs, and reimbursement changes.",
+        "**Price target confidence**: Goldman Sachs target ¥3,500 consistently exceeds current price (e.g., ¥2,843 on 16-Jul-26), signaling strong analyst conviction and upside potential."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
