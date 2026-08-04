@@ -908,6 +908,18 @@ def _cn_era_label(date_from: str | None, date_to: str | None) -> tuple[str, str]
     return (f"previous board definition · {en_span}", f"上一版选股口径 · {zh_span}")
 
 
+# Stamps ADJUDICATED as known labelled cohorts — measurement shelves that share the
+# standout-track store under their own board_definition so their forward grades accrue
+# separately from both era records. Shelf rows still publish through `extra_records`
+# (labelled, never pooled — same path as an unknown stamp); membership here only
+# silences the unknown-stamp Actions alarm, which would otherwise fire every night for
+# an expected state and rot into noise. A stamp NOT in this set still warns and still
+# fails the era-partition test — that tripwire is how this set gets its next entry.
+_CN_ADJUDICATED_SHELF_STAMPS = frozenset({
+    "cn_reversal_watch_v1",   # washout reversal_watch shelf (#4393), first rows 2026-08-04
+})
+
+
 def _cn_unknown_era_label(stamp, date_from: str | None,
                           date_to: str | None) -> tuple[str, str]:
     """Bilingual label for a board_definition stamp the era split does not recognise.
@@ -1348,6 +1360,8 @@ def emit_cn_track_ledger(
                             orphan["board_definition"].astype(str), sort=True):
                         _stamp = str(_stamp)
                         unknown_slices[_stamp] = _grp.copy()
+                        if _stamp in _CN_ADJUDICATED_SHELF_STAMPS:
+                            continue   # known shelf: labelled block, no alarm
                         # Bare print, NOT log.* — a logger prefixes the line and
                         # GitHub only parses '::' at column 0 (CLAUDE.md). The opening
                         # literal stays on the `print(` line on purpose: the repo guard
