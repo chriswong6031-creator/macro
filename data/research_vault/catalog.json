@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T07:08:03.069284+00:00",
-  "count": 718,
+  "generated_at": "2026-08-04T07:37:54.973791+00:00",
+  "count": 719,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -49,6 +49,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-77y7nu4bes6-179a2d",
+      "title": "JPM US Market Intell | Afternoon Briefing 03 08",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T07:27:20Z",
+      "summary_points": [
+        "**Mag7 Earnings & Yield Dynamics**: Mag7 (AMZN, MSFT) earnings, short squeezes, and falling yields (2y/5y/10y/30y down 5-7bp) drove SPX/NDX gains; AI capex and consumer resilience support 47% EPS growth, but bond volatility remains near-term risk.",
+        "**Geopolitical Oil Volatility**: Oil down 5% (WTI $80.14) on Hormuz reopening/de-escalation, yet Iran tensions create uncertainty; critical for energy risk exposure and refining margins (record highs amid Iran war risk).",
+        "**Fed Dovish Shift & Yen Intervention**: Fed’s Williams signals easing inflation, pushing yields down; US-Japan coordinated Yen intervention (targeting EUR, not USD) limits BOJ rate hikes, adding policy volatility.",
+        "**Alibaba AI Model vs US Funding Gap**: Alibaba’s Qwen3.8-Max (2.4T params, $2/$6/million tokens) outperforms US models, narrowing US-China AI gap; US AI funding concentrates in closed labs (2/3 of $255.5B), risking open-weight monetization.",
+        "**Mag7 Hyperscalers Undervaluation**: Mag7 hyperscalers trade 2 standard deviations below 2018Q3 mean (forward P/E), with AI backlog growth >150% YoY vs capex ~80%, implying ~30% upside as revenue visibility improves."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-1rsmtymxklr-268f90",
       "title": "FX Comment",
