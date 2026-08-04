@@ -42,6 +42,17 @@ days for such classes. See ``_block`` for the two ladders (external: 2 consecuti
 or 3 cumulative; any code: 10 consecutive or 15 total; always requiring an explicit
 ``SHIP LOOP BLOCKED:`` evidence report). Repository rules remain the source of
 truth; this hook makes them executable.
+
+The ladders themselves were unreachable until 2026-08-04, so the brick they exist
+to prevent happened to them: the release condition demanded a payload flag the
+harness clears on any turn it did not itself start. Session 787452b5 filed a
+correct ``SHIP LOOP BLOCKED:`` report on ``live_stale`` with both external arms
+armed and was refused, because a background ``<task-notification>`` had started
+that turn and reset ``stop_hook_active`` to False. Re-entrancy now also counts as
+proven when this guard's own persisted ledger shows a prior block, and the report
+itself is recovered from ``transcript_path`` when ``last_assistant_message`` — an
+UNDOCUMENTED payload field — is absent. Both changes make the report DETECTABLE;
+neither makes it optional, and no counter moved.
 """
 
 from __future__ import annotations
@@ -1796,6 +1807,104 @@ def _live_gate(
     return False, f"{demanded}; production reports {', '.join(seen) or '<no usable field>'}"
 
 
+# How much of the tail of a transcript to scan for the final assistant message
+# before giving up and re-reading the whole file. Transcripts are JSONL whose bulk
+# is tool_result rows, so a few MB is many turns deep, but one pathological result
+# row can exceed it — hence the escalation rather than a hard cap.
+_TRANSCRIPT_TAIL_BYTES = 4 * 1024 * 1024
+
+
+def _jsonl_tail(path: Path, limit: int | None) -> tuple[list[str], bool]:
+    """Return (lines, whole_file) for the last `limit` bytes of a JSONL file.
+
+    A byte window almost always cuts mid-line, so the first line of a windowed read
+    is dropped as a fragment. `whole_file` reports whether the window covered the
+    entire file, which is how the caller knows a miss is final rather than an
+    artifact of the window.
+    """
+    with path.open("rb") as handle:
+        handle.seek(0, os.SEEK_END)
+        size = handle.tell()
+        start = 0 if limit is None else max(0, size - limit)
+        handle.seek(start)
+        data = handle.read()
+    if start:
+        _, _, data = data.partition(b"\n")
+    return data.decode("utf-8", "replace").splitlines(), start == 0
+
+
+def _last_assistant_text(lines: list[str]) -> str:
+    """The newest assistant message's visible text, or "" if the window holds none.
+
+    Only `text` blocks count. `thinking` blocks are excluded deliberately: the
+    harness's own `last_assistant_message` carries visible text only (measured
+    2026-08-04), and a report has to be something the operator can read in the
+    transcript, not reasoning the session never surfaced. Sidechain rows are
+    subagent turns, not this session's final word, so they are skipped too.
+    """
+    for line in reversed(lines):
+        line = line.strip()
+        if not line or '"assistant"' not in line:
+            continue
+        try:
+            row = json.loads(line)
+        except Exception:
+            continue
+        if not isinstance(row, dict) or row.get("type") != "assistant":
+            continue
+        if row.get("isSidechain"):
+            continue
+        message = row.get("message")
+        if not isinstance(message, dict):
+            continue
+        content = message.get("content")
+        if isinstance(content, str):
+            if content.strip():
+                return content
+            continue
+        if not isinstance(content, list):
+            continue
+        text = "".join(
+            str(block.get("text") or "")
+            for block in content
+            if isinstance(block, dict) and block.get("type") == "text"
+        )
+        if text.strip():
+            return text
+    return ""
+
+
+def _transcript_final_message(payload: dict[str, Any]) -> str:
+    """Recover the final assistant message from `transcript_path`.
+
+    `last_assistant_message` is NOT a documented field of the Stop hook payload
+    (documented: session_id, transcript_path, cwd, hook_event_name,
+    stop_hook_active). This harness does supply it, but a client that does not
+    would make the `SHIP LOOP BLOCKED:` report undetectable and the escape ladders
+    unreachable — the exact brick this guard exists to prevent. `transcript_path`
+    IS documented, so it is the durable source.
+
+    Fails CLOSED: any unreadable, missing, or textless transcript returns "", which
+    leaves the report unfiled and the session blocked.
+    """
+    raw = payload.get("transcript_path")
+    if not raw:
+        return ""
+    try:
+        path = Path(str(raw)).expanduser()
+    except Exception:
+        return ""
+    for limit in (_TRANSCRIPT_TAIL_BYTES, None):
+        try:
+            lines, whole_file = _jsonl_tail(path, limit)
+        except OSError:
+            return ""
+        text = _last_assistant_text(lines)
+        if text or whole_file:
+            return text
+    return ""
+
+
 def _block(
     path: Path,
     state: dict[str, Any],
@@ -1805,8 +1914,11 @@ def _block(
 ) -> None:
     """Block Stop, except when a reported blocker has ping-ponged past the ceiling.
 
-    Two escape ladders, both requiring an explicit `SHIP LOOP BLOCKED:` report with
-    stop_hook_active set, so a session cannot bail on the first attempt:
+    Two escape ladders, both requiring an explicit `SHIP LOOP BLOCKED:` report on a
+    re-entrant Stop, so a session cannot bail on the first attempt. The report is
+    read from `last_assistant_message` when the harness supplies it and recovered
+    from `transcript_path` when it does not; re-entrancy is proven by the payload's
+    `stop_hook_active` OR by this guard's own block ledger (see below):
 
     - EXTERNAL codes escape at 2 CONSECUTIVE or 3 CUMULATIVE external blocks. The
       cumulative arm is what the field forced: a session ping-ponging
@@ -1844,7 +1956,25 @@ def _block(
         state["external_blocks"] = external_blocks
     _save(path, state)
     final = str(payload.get("last_assistant_message") or "").lstrip()
-    reported = bool(payload.get("stop_hook_active")) and final.startswith("SHIP LOOP BLOCKED:")
+    if not final:
+        final = _transcript_final_message(payload).lstrip()
+    # Re-entrancy is proven by the guard's OWN ledger, not only by the payload flag.
+    # `stop_hook_active` describes how the CURRENT turn was started, not whether this
+    # guard has ever blocked: measured 2026-08-04, a turn started by a background
+    # `<task-notification>` arrives with the flag False even though the guard had
+    # already blocked three times. Session 787452b5 filed a correct, token-leading
+    # `SHIP LOOP BLOCKED:` report on such a turn with live_stale at count 5 — both
+    # external arms armed — and was refused anyway, because the flag alone vetoed it.
+    # A repository whose sessions routinely wait on background tasks hits that reset
+    # constantly, so the ladder was unreachable exactly when it was most needed.
+    #
+    # `total_blocks >= 2` is the durable form of the same fact and never widens a
+    # ladder: EVERY escape arm below already requires at least two blocks (external
+    # needs count >= 2 or external_blocks >= 3; any-code needs count >= 10 or
+    # total_blocks >= 15). So the first-attempt bailout the flag was guarding against
+    # stays impossible — on a first Stop total_blocks is 1 and no arm can fire.
+    reentrant = bool(payload.get("stop_hook_active")) or total_blocks >= 2
+    reported = reentrant and final.startswith("SHIP LOOP BLOCKED:")
     external_escape = code in EXTERNAL_BLOCKERS and (count >= 2 or external_blocks >= 3)
     any_code_escape = count >= 10 or total_blocks >= 15
     if reported and (external_escape or any_code_escape):
