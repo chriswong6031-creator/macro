@@ -341,6 +341,44 @@ def test_state_ink_uses_the_text_grade_token_with_a_fallback():
     assert "var(--ink-up,var(--up))" in src.replace(" ", "")
 
 
+def _panel_css() -> str:
+    src = (TMPL / "_theme_tape.html.j2").read_text()
+    style = "\n".join(re.findall(r"<style\b.*?</style>", src, flags=re.S | re.I))
+    return re.sub(r"/\*.*?\*/", " ", style, flags=re.S).replace(" ", "").replace("\n", "")
+
+
+def test_member_lists_wrap_atomically_and_cannot_swallow_a_name():
+    """Regression: the 390px roster lost "PCOR" and tore "+46" into "+" / "46".
+
+    The `.tt-n` spans are emitted with NO whitespace between them and a ticker is
+    `white-space:nowrap`, so as an inline run the list is one unbreakable word with
+    nowhere to wrap — it overran the phone and the frame cut the tail off. Flex takes
+    its break opportunities between ITEMS, so each member wraps whole regardless of
+    font metrics. `overflow-wrap:anywhere` was the bad patch: it made the run
+    breakable by splitting inside tokens, which is what tore the "+46" chip apart.
+    Measured after the fix at a genuine 390px viewport, every row expanded:
+    18 lists / 69 items / 0 overflowing / 0 split / page scrollWidth == 390.
+    """
+    css = _panel_css()
+    assert "display:flex" in css and "flex-wrap:wrap" in css, (
+        ".tt-names must be a flex container — an inline run has no break "
+        "opportunity between adjacent .tt-n spans and drops members off the line")
+    assert "overflow-wrap:anywhere" not in css, (
+        "anywhere splits INSIDE tokens and widows the '+' from its count")
+    assert ".tt-more{" in css and "white-space:nowrap" in css.split(".tt-more{")[1][:120], (
+        "the +N overflow chip must be one unbreakable token")
+
+
+def test_a_group_reason_takes_exactly_one_separator():
+    """The trailing separator and the reason's leading one printed "· ·"."""
+    css = _panel_css()
+    assert ".tt-n:not(:last-child)::after" in css, (
+        "the separator must TRAIL its name, or a wrapped line opens with an orphan "
+        "middot")
+    assert ".tt-names>.tt-why::before{content:none}" in css, (
+        "a group-level reason already has the previous name's trailing separator")
+
+
 def test_mobile_break_matches_the_board_and_hides_the_header_row():
     """#4344 — primary decisions never x-scroll on a phone."""
     src = (TMPL / "_theme_tape.html.j2").read_text()

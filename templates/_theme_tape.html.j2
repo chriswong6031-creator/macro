@@ -159,20 +159,29 @@
     align-items:baseline;padding:3px 0}
   body.page-stocks .tt-gk{font-size:10.5px;font-weight:700;color:var(--muted);text-align:right;
     line-height:1.5}
-  body.page-stocks .tt-names{font-size:12px;line-height:1.6;color:var(--text);min-width:0;
-    overflow-wrap:anywhere}
-  /* NOT nowrap. A ticker must never break, but a name carries its reason inside this
-     span ("AMZN · already extended — watch, don't chase"), and holding the PAIR on
-     one line made an opened row 516px wide inside a 390px phone — the page itself
-     scrolled sideways, which this panel is not allowed to cause. The unbreakable
-     unit is the symbol; the sentence after it wraps like any other sentence. */
-  body.page-stocks .tt-n{white-space:normal}
-  /* Two separators, one glyph, deliberately different widths. A mixed group reads
-     "AMZN · already extended — watch, don't chase · WMT · entry window has passed":
-     with equal spacing the eye cannot tell which middot ends a name and which
-     introduces its reason. The name boundary gets nearly twice the air, so the
-     rhythm itself groups each ticker with the reason that belongs to it. */
-  body.page-stocks .tt-n + .tt-n::before{content:"·";color:var(--muted);padding:0 9px;opacity:.6}
+  /* FLEX, and this is load-bearing — an inline run here loses members.
+     The .tt-n spans are emitted adjacent with no whitespace between them, and a
+     ticker is white-space:nowrap, so as an inline run the whole list is ONE
+     unbreakable word: it has no break opportunity to wrap at. On a 390px phone the
+     Software roster then overran the viewport and the screenshot came back with
+     "PCOR" sheared off and the "+" of "+46" stranded on the next line — members
+     silently deleted from a shipped surface. `overflow-wrap:anywhere` was the wrong
+     patch: it made the run breakable by splitting INSIDE tokens, which is what tore
+     "+46" apart. A flex line box takes its break opportunities between ITEMS instead
+     of inside text, so every member wraps whole, needs no whitespace in the markup,
+     and behaves the same whatever the font metrics resolve to.
+     min-width:0 lets an item that carries a long reason shrink and wrap its own
+     sentence rather than push the line wider than the container. */
+  body.page-stocks .tt-names{display:flex;flex-wrap:wrap;align-items:baseline;
+    row-gap:2px;font-size:12px;line-height:1.6;color:var(--text);min-width:0;
+    overflow-wrap:break-word}
+  body.page-stocks .tt-n{min-width:0}
+  /* The separator TRAILS its name rather than leading the next one, so a wrapped
+     line never opens with an orphan middot. :not(:last-child) keeps it off the end
+     of the list while still printing it before a group-level reason, which is a
+     sibling here — "PCOR · +46 · no fresh entry trigger today". */
+  body.page-stocks .tt-names > .tt-n:not(:last-child)::after{content:"·";
+    color:var(--muted);padding:0 5px 0 6px;opacity:.6}
   body.page-stocks .tt-sym{font-family:var(--font-mono,monospace);font-weight:700;letter-spacing:.02em;
     white-space:nowrap}
   /* The reason hangs off the name behind a middot, not a dash: the reason text has
@@ -183,7 +192,13 @@
      vocabulary scan reads. */
   body.page-stocks .tt-why{color:var(--muted);font-size:11px}
   body.page-stocks .tt-why::before{content:"·";padding:0 5px 0 4px;opacity:.5}
-  body.page-stocks .tt-more{color:var(--muted);font-weight:600}
+  /* A GROUP-level reason is a sibling of the names, so the last name's trailing
+     separator has already been printed and this one would double it ("+46 · ·
+     no fresh entry trigger today"). A PER-NAME reason lives inside its .tt-n, where
+     no separator precedes it, so it keeps its own. */
+  body.page-stocks .tt-names > .tt-why::before{content:none}
+  /* The overflow chip is one token: "+" must never be widowed from its count. */
+  body.page-stocks .tt-more{color:var(--muted);font-weight:600;white-space:nowrap}
 
   body.page-stocks .tt-rule{border:0;border-top:1px solid var(--line);margin:8px 0 10px}
   body.page-stocks .tt-foot{margin:0;font-size:12px;line-height:1.55;color:var(--muted);max-width:74ch}
