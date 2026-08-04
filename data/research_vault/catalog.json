@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T16:54:46.890921+00:00",
-  "count": 746,
+  "generated_at": "2026-08-04T17:09:59.076745+00:00",
+  "count": 747,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -145,6 +145,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bsl15sdecna-5116f0",
+      "title": "Baker Hughes Co. (BKR) See Long Term Growth Driven by Diversified OFSE Exposure and Increasing IET Order Growth",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:20:49Z",
+      "summary_points": [
+        "**IET Order Growth & OFSE Diversification**: Horizon 2 IET orders to exceed $45B with gas turbine expansion through 2028; diversified OFSE exposure (Latin America/Sub-Saharan Africa) ensures stable revenue/margins amid Middle East volatility.",
+        "**EBITDA Growth & Cash Flow**: Projected 11.7% EBITDA growth (12/28E) and EPS rise to $3.57, supported by improving free cash flow per share (2.55 to 2.92), despite operational cash flow decline.",
+        "**Zero Leverage Risk**: Net debt/EBITDA ratio at 0.0 across all periods, confirming no debt burden and robust capital structure.",
+        "**Price Target Upside**: $53.00 Baker Hughes (BKR) price target vs.",
+        "$45.72 closing price indicates significant potential upside, with consistent historical target revisions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
