@@ -252,6 +252,35 @@ _RESTATE_COVERAGE_MAX = 0.40
 #: nothing new at all.
 _RESTATE_MIN_NEW_TOKENS = 3
 
+#: DISCOURSE FILLER — words that are ABOUT a story rather than IN one, discounted
+#: from the new-token count.
+#:
+#: THE DEFECT (live, 2026-08-03). This gate is lexical: it counts content words
+#: line 2 has that line 1 does not. So it read
+#:
+#:     "On the wires: I'll have more to come on this separately, details etc."
+#:
+#: as ADDITIVE — six novel tokens, zero overlap with the headline — and shipped
+#: it as line 2 under a China PMI print. Every one of those words is novel and
+#: none of them is news; the gate was measuring NOVELTY and calling it SUBSTANCE.
+#: A line made only of these says nothing however unlike line 1 it looks.
+#:
+#: Deliberately short and meta-only. Anything with a straight-news reading stays
+#: OUT ("report", "data", "talks", "deal" are stories, not furniture), because
+#: over-filling this list would demote real second lines to the short form.
+_RESTATE_FILLER: frozenset[str] = frozenset({
+    "more", "come", "coming", "separately", "details", "etc", "soon",
+    "shortly", "follow", "following", "later", "below", "above", "here",
+    "link", "links", "thread", "story", "full", "update", "updates",
+    "tuned", "stay", "read", "click", "see", "info", "information",
+    "ll", "ve",  # contraction residue ("I'll" -> "i", "ll"; "we've" -> "we", "ve")
+    "note", "adds", "via", "watch",
+})
+# "us", "well", "report" and "data" were CONSIDERED AND REJECTED for this list:
+# each is a content word on a finance desk ("US CPI", "well positioned", "the
+# jobs report", "the data"), and discounting one would demote real second lines
+# to the short form. The bar for entry is "no straight-news reading exists".
+
 #: SUBSTANCE ESCAPE — line 2 may echo line 1 freely once it brings this many
 #: times the headline's own content in new material.
 #:
@@ -423,8 +452,31 @@ def restatement_verdict(
         return {"restates": False, "coverage": 0.0, "new_tokens": len(line2_set),
                 "new_data": (), "residue": residue, "reason": ""}
 
+    # THE SOURCE'S PAGE VOICE CARRIES NOTHING (2026-08-04). A residue that is the
+    # source author's first person, a pointer at their own earlier post, or their
+    # desk furniture is not a second fact — whatever its token count. This runs
+    # BEFORE the datum escape on purpose: "I'll have the numbers below, 3 of
+    # them" must not buy its way past a hygiene failure with a digit.
+    #
+    # Fail-SOFT (returns nothing on an import error) because the gate's own legs
+    # below still decide the shape, and the short form is always compliant.
+    try:
+        from engine.marketing import relay_hygiene as _rh  # noqa: PLC0415
+        _hygiene = _rh.body_defects(residue)
+    except Exception:  # noqa: BLE001
+        _hygiene = []
+    if _hygiene:
+        return {"restates": True, "coverage": 0.0, "new_tokens": len(line2_set),
+                "new_data": (), "residue": residue,
+                "reason": (f"line 2 is the source's own page voice "
+                           f"({_hygiene[0]}), not a second fact")}
+
     coverage = len(head_set & line2_set) / len(head_set)
-    new_tokens = len(line2_set - head_set)
+    # DISCOUNT DISCOURSE FILLER from the new-token count — novelty is not
+    # substance (see _RESTATE_FILLER). Coverage is measured on the FULL sets so
+    # the echo leg is untouched; only the "did line 2 bring anything" question
+    # is asked of the substantive remainder.
+    new_tokens = len((line2_set - head_set) - _RESTATE_FILLER)
     new_data = _new_datum_tokens(head_set, line2_set)
 
     if new_data:

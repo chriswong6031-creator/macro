@@ -47,6 +47,7 @@ _DEFAULT_DETECTORS: dict[str, bool] = {
     "promo_spam": True,
     "paywalled_stub": True,
     "non_story": True,
+    "relay_stub": True,
 }
 
 # Strong promo markers: a single hit DROPS the item, so the bar is "no
@@ -198,6 +199,16 @@ def check(item: dict, *, cfg: dict | None = None,
         if hit:
             return {"reason": "non_story", "detail": hit}
 
+    # RELAY STUB — the source's own page furniture (2026-08-04 postmortem). Runs
+    # LAST because it is the only detector that can also REPAIR: `check` answers
+    # the drop question alone, and `scrub` below is the half a caller uses to
+    # keep a story whose headline merely wore a pointer. Ordering it here keeps
+    # the cheap keyword screens ahead of a regex pass.
+    if _enabled(cfg, "relay_stub"):
+        hit = _relay_stub(item, cfg)
+        if hit:
+            return {"reason": "relay_stub", "detail": hit}
+
     return None
 
 
@@ -287,3 +298,53 @@ def _non_story(headline: str, cfg: dict) -> str:
         return ""
     hits = _terms_in(headline, _list_cfg(cfg, "non_story_terms", _NON_STORY_TERMS))
     return f"term:{hits[0]}" if hits else ""
+
+
+def _relay_stub(item: dict, cfg: dict) -> str:
+    """The source's own page furniture — a calendar post, a house wrap, an
+    author's first-person note. See engine.marketing.relay_hygiene for the rules
+    and the live posts that motivated each.
+
+    The SCRUB half is deliberately NOT applied here: `check` is a pure predicate
+    whose contract is "None means the item passes", and a detector that also
+    rewrote the item would make a P0 screen into an editor. Callers that want the
+    repair call :func:`scrub` first — press_lane does, so a headline wearing a
+    removable pointer is cleaned and kept rather than dropped.
+
+    Fail-SOFT on an import error, unlike the rest of this module's screens: a
+    missing hygiene module must not P0-drop the whole wire, and the post-time
+    backstop in press_lane still holds the line.
+    """
+    try:
+        from engine.marketing import relay_hygiene as _rh  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return ""
+    hcfg = cfg.get("relay_stub") if isinstance(cfg.get("relay_stub"), dict) else cfg
+    return _rh.headline_is_furniture(
+        str(item.get("headline") or ""),
+        source_name=str(item.get("source_name") or item.get("source") or ""),
+        url=str(item.get("url") or ""),
+        cfg=hcfg,
+    )
+
+
+def scrub(item: dict, *, cfg: dict | None = None) -> dict:
+    """Repair-then-judge: strip removable source pointers, then report a drop.
+
+    Returns ``relay_hygiene.clean_item``'s shape — ``{item, scrubbed, marks,
+    drop}``. This is the entry point a lane should use INSTEAD of calling
+    :func:`check` alone when it wants the repair: "More info on this - <story>"
+    becomes "<story>" and survives, where the bare predicate would have had to
+    choose between dropping a real story and posting a dangling reference.
+
+    Never raises; a broken hygiene import returns the item untouched.
+    """
+    cfg = cfg if isinstance(cfg, dict) else {}
+    if not _enabled(cfg, "relay_stub"):
+        return {"item": dict(item or {}), "scrubbed": False, "marks": [], "drop": ""}
+    try:
+        from engine.marketing import relay_hygiene as _rh  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return {"item": dict(item or {}), "scrubbed": False, "marks": [], "drop": ""}
+    hcfg = cfg.get("relay_stub") if isinstance(cfg.get("relay_stub"), dict) else cfg
+    return _rh.clean_item(item, cfg=hcfg)
