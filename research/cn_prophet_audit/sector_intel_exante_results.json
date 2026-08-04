@@ -1,0 +1,154 @@
+{
+ "as_of": "2026-08-04",
+ "coverage": {
+  "episodes": 407,
+  "covered": 84,
+  "uncovered_loser_rate": 0.362,
+  "covered_loser_rate": 0.131
+ },
+ "by_phase": {
+  "Downturn": {
+   "n": 4,
+   "loser_rate": 0.5,
+   "median_excess": -7.527
+  },
+  "Expansion": {
+   "n": 2,
+   "loser_rate": 0.5,
+   "median_excess": 6.955
+  },
+  "Peak": {
+   "n": 4,
+   "loser_rate": 0.25,
+   "median_excess": 7.817
+  },
+  "Recovery": {
+   "n": 9,
+   "loser_rate": 0.0,
+   "median_excess": 8.632
+  },
+  "Trough": {
+   "n": 65,
+   "loser_rate": 0.108,
+   "median_excess": 7.239
+  }
+ },
+ "by_phase_slope": {
+  "Downturn-": {
+   "n": 4,
+   "loser_rate": 0.5,
+   "median_excess": -7.527
+  },
+  "Expansion+": {
+   "n": 1,
+   "loser_rate": 1.0,
+   "median_excess": -10.272
+  },
+  "Expansion-": {
+   "n": 1,
+   "loser_rate": 0.0,
+   "median_excess": 24.181
+  },
+  "Peak+": {
+   "n": 4,
+   "loser_rate": 0.25,
+   "median_excess": 7.817
+  },
+  "Recovery+": {
+   "n": 7,
+   "loser_rate": 0.0,
+   "median_excess": 9.031
+  },
+  "Recovery-": {
+   "n": 2,
+   "loser_rate": 0.0,
+   "median_excess": 4.687
+  },
+  "Trough+": {
+   "n": 28,
+   "loser_rate": 0.036,
+   "median_excess": 8.319
+  },
+  "Trough-": {
+   "n": 37,
+   "loser_rate": 0.162,
+   "median_excess": 5.907
+  }
+ },
+ "by_rs_tercile": {
+  "bottom": {
+   "n": 24,
+   "loser_rate": 0.083,
+   "median_excess": 7.845
+  },
+  "mid": {
+   "n": 48,
+   "loser_rate": 0.146,
+   "median_excess": 6.224
+  },
+  "top": {
+   "n": 12,
+   "loser_rate": 0.167,
+   "median_excess": 8.925
+  }
+ },
+ "by_above200d": {
+  "False": {
+   "n": 65,
+   "loser_rate": 0.092,
+   "median_excess": 7.357
+  },
+  "True": {
+   "n": 19,
+   "loser_rate": 0.263,
+   "median_excess": 4.526
+  }
+ },
+ "by_basket": {
+  "Defense & Aerospace": {
+   "n": 5,
+   "loser_rate": 0.6,
+   "median_excess": -2.893
+  },
+  "Autos & NEV Makers": {
+   "n": 5,
+   "loser_rate": 0.4,
+   "median_excess": 1.882
+  },
+  "Software & AI Apps": {
+   "n": 5,
+   "loser_rate": 0.4,
+   "median_excess": 2.761
+  },
+  "Banks": {
+   "n": 11,
+   "loser_rate": 0.0,
+   "median_excess": 6.509
+  },
+  "SOE Blue Chips (中特估)": {
+   "n": 7,
+   "loser_rate": 0.0,
+   "median_excess": 7.357
+  },
+  "Home Appliances": {
+   "n": 6,
+   "loser_rate": 0.0,
+   "median_excess": 7.414
+  },
+  "Industrial Metals": {
+   "n": 7,
+   "loser_rate": 0.0,
+   "median_excess": 8.132
+  },
+  "Food & Beverage": {
+   "n": 7,
+   "loser_rate": 0.0,
+   "median_excess": 8.284
+  },
+  "Baijiu / Liquor": {
+   "n": 5,
+   "loser_rate": 0.0,
+   "median_excess": 9.284
+  }
+ }
+}

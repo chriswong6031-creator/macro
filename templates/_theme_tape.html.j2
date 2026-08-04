@@ -1,0 +1,313 @@
+{#- ═══════════════════════════════════════════════════════════════════════════════
+    THEME TAPE (#theme-tape / .tt-*) — us_stocks, mode == 'stocks'.
+    主题热度 — 热门主题与本榜的对应关系。
+
+    WHAT THIS IS.
+    Charter: research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md §W2.
+    Data:    engine/theme_tape.py (the whole join is Python; this file only lays out
+             a finished dict — no membership logic, no counting, no sorting here).
+
+    It closes ONE gap, and the operator named it: the rotation engine knows Software
+    is the hottest theme in the market, the member map exists, and the board said
+    nothing about either. This panel is the standing fix for detection-without-
+    narration (Mag-7 silence postmortem, 2026-08-03).
+
+    IT IS AN ACCOUNTING, NOT A LEADERBOARD — that distinction is the whole design.
+    Heat in, names out, remainder explained. Its value does not rest on the heat read
+    being predictive (it is not proven — see the null below); it rests on what the
+    board is DOING with those names, which is an observable fact. That is why a hot
+    theme with zero board names still gets a line, and the line says so. A panel that
+    only spoke when it had a pick would reproduce the silence it exists to fix.
+
+    DESIGN NOTE — why the ladder is a fixed grid and why only one figure is coloured.
+    The five state columns hold fixed positions under one persistent header, so the
+    eye can scan DOWN a column ("does anything have a live name today?") as easily as
+    across a row. A zero is printed as an en-dash in its slot rather than collapsed:
+    printed absence is the point of the panel, and a missing cell would break the
+    column scan. Colour appears on exactly ONE glyph — the `live` count, and only when
+    it is non-zero — via --ink-up, which flips under 红涨绿跌 at paint. Colouring all
+    five columns would re-encode a cohort STATE into signal furniture, which is
+    precisely the construction the 2026-07-23 ruling removed; the states are carried
+    by POSITION and by the header's words, never by hue.
+    The quiet remainder is written as a fraction ("54/60"), never a bare count: the
+    denominator is what makes it information instead of decoration (Law 3).
+    Zero animation, zero transition — so no reduced-motion block is required here.
+    Add one and you must gate it, naming the pseudos.
+
+    TIERS (docs/DESIGN_DOCTRINE.md):
+      1 GLANCE  eyebrow · one grid line + one stance line per theme · one footer
+      2 HOVER   the panel `?` carries the method AND the Law-5 null receipt;
+                per-theme receipts (relative strength, score) ride data-tip-*
+      3 STUDY   the expanded member list, and subsector_rotation.html for the
+                full 41-theme table
+    Every stance sentence is chosen MECHANICALLY from the counts by
+    engine/theme_tape.py `_stance_for` — no free-form text reaches this file, and the
+    verbs come from the doctrine's sanctioned stance vocabulary.
+    No translated text ever enters a title= attribute (CI-guarded); every tip is a
+    hand-written data-tip-* attribute, never piped through t()/help(), which emit
+    spans and would break attribute quoting.
+
+    TIER PREVIEW. The COUNTS are free — they are aggregate and they are the panel's
+    argument. The member NAMES are the product, so `.tt-names` collapses to a count
+    for anonymous and Free visitors through the same reversible data-mx-old-html
+    stash templates/tier_preview.js already uses for the themes-in-favour strip.
+
+    CONTEXT IT READS (fail-open; absence renders exactly like a quiet tape):
+      theme_tape  {as_of, board_as_of, rank_of, rows[], measuring, n_days}
+    ═══════════════════════════════════════════════════════════════════════════════ -#}
+
+{%- macro tt_t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro -%}
+
+{#- English ordinal for the theme's place in the rotation table. Capped at the
+    handful the panel can ever show; anything else degrades to "Nth", which is
+    still readable and never wrong. -#}
+{%- macro tt_ord(n) -%}
+{%- set _o = {1:'1st', 2:'2nd', 3:'3rd', 4:'4th', 5:'5th', 6:'6th', 7:'7th', 8:'8th'} -%}
+{{ _o.get(n, (n|string) ~ 'th') }}
+{%- endmacro -%}
+
+{%- set _tt = theme_tape if (theme_tape is defined and theme_tape is mapping) else none -%}
+{%- set _tt_rows = (_tt.get('rows') or []) if _tt else [] -%}
+
+{#- Honest-null gate (DO_NOT_REBUILD row 151 — no forced ranking in a dead tape).
+    engine/theme_tape.py returns None when nothing clears the constructive floor, so
+    reaching this guard with no rows means the tape is dead and the panel emits
+    NOTHING AT ALL — no shell, no <style>, no empty box. -#}
+{%- if _tt_rows -%}
+{%- set _tt_cols = [
+      ('live',       'live',       '可操作'),
+      ('setting_up', 'setting up', '形成中'),
+      ('ran',        'ran',        '已启动'),
+      ('leading',    'leading',    '领跑'),
+      ('watching',   'watching',   '观察中')
+    ] -%}
+  <style id="theme-tape-css">
+  /* ── THEME TAPE (W2) ───────────────────────────────────────────────────────
+     Every value resolves from an existing theme.css token. No new hex, theme.css
+     untouched, so light / dark / zh all repaint at color-mix time with nothing to
+     keep in sync. */
+  body.page-stocks #theme-tape{padding:15px 18px 14px}
+  body.page-stocks .tt-hd{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin:0 0 4px}
+  body.page-stocks .tt-eyebrow{margin:0;font-size:11px;font-weight:800;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted);line-height:1.2}
+  /* zh Hanzi read wrong under Latin display tracking — theme.css makes the same
+     call for headings; the eyebrow keeps its rhythm from weight and colour. */
+  html[data-lang="zh"] body.page-stocks .tt-eyebrow{letter-spacing:.06em}
+  body.page-stocks .tt-asof{margin-left:auto;font-family:var(--font-mono,monospace);font-size:10.5px;
+    color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  body.page-stocks .tt-sub{font-size:11.5px;line-height:1.5;color:var(--muted);margin:0 0 10px;max-width:74ch}
+
+  /* THE LADDER GRID. One template shared by the header and every row, so the
+     columns cannot drift apart. Fixed numeric widths (not max-content) are what
+     make the columns a COLUMN: max-content would size per row and the figures
+     would never line up. 58px clears "setting up" at 10px in both languages;
+     66px clears "54/60" at 12.5px mono. */
+  body.page-stocks .tt-cols,
+  body.page-stocks .tt-row{display:grid;grid-template-columns:minmax(0,1fr) repeat(5,58px) 66px;
+    gap:0 6px;align-items:baseline}
+  body.page-stocks .tt-cols{padding:0 0 5px;border-bottom:1px solid var(--line);margin:0 0 2px}
+  body.page-stocks .tt-k{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--muted);
+    text-align:right;line-height:1.25}
+  html[data-lang="zh"] body.page-stocks .tt-k{letter-spacing:0}
+  body.page-stocks .tt-k-quiet{text-align:right}
+
+  /* Each theme is one <details>. The summary holds BOTH glance lines, so the whole
+     row is the disclosure control — a large, obvious tap target on a phone. */
+  body.page-stocks .tt-i{border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+  body.page-stocks .tt-i:last-of-type{border-bottom:0}
+  body.page-stocks .tt-s{list-style:none;cursor:pointer;padding:9px 0 8px}
+  body.page-stocks .tt-s::-webkit-details-marker{display:none}
+  body.page-stocks .tt-s:focus-visible{outline:2px solid var(--ink-link,var(--link,var(--text)));
+    outline-offset:2px;border-radius:3px}
+  body.page-stocks .tt-nm{font-size:13px;font-weight:700;color:var(--text);min-width:0}
+  /* The caret is a pseudo, so it stays out of any copy a vocabulary scan reads and
+     needs no translation. It rotates by being replaced, not by a transform, so
+     there is nothing here for reduced-motion to gate. */
+  body.page-stocks .tt-s .tt-nm::before{content:"▸";color:var(--muted);font-size:10px;
+    margin-right:6px;display:inline-block;vertical-align:1px}
+  body.page-stocks .tt-i[open] .tt-s .tt-nm::before{content:"▾"}
+  body.page-stocks .tt-heat{display:block;font-size:11px;font-weight:400;color:var(--muted);
+    margin-top:2px;padding-left:16px}
+  /* THE FIGURES. Mono + tabular so the digits stack; the body face would ripple
+     the column. Words never take the mono face — the header above is body-face.
+     The right edge is set on the CELL, which is the grid item; setting it on the
+     figure inside would align nothing, because the figure is only as wide as it
+     needs to be. */
+  body.page-stocks .tt-c{text-align:right;min-width:0}
+  body.page-stocks .tt-v{font-family:var(--font-mono,monospace);font-size:13px;font-weight:700;
+    font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap}
+  /* The ONLY colour on the panel, and only ever on a non-zero `live` count — the
+     one cell that means "there is something to do today". --ink-* is the
+     text-grade form of the state palette (raw --up is fill-grade and misses the
+     contrast floor as light-theme text); the var() fallback keeps a cache-stale
+     theme.css rendering today's colour rather than an invalid declaration. */
+  body.page-stocks .tt-v.is-live{color:var(--ink-up,var(--up))}
+  /* A printed absence, at the weight of an absence. */
+  body.page-stocks .tt-v.is-zero{color:var(--muted);opacity:.5;font-weight:600}
+  body.page-stocks .tt-quiet{font-family:var(--font-mono,monospace);font-size:12.5px;font-weight:600;
+    font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+  body.page-stocks .tt-say{font-size:12.5px;line-height:1.5;color:var(--text);
+    padding-left:16px;margin-top:3px}
+  body.page-stocks .tt-stance{font-weight:650}
+
+  /* Tier 3 — the member list. Indented under the row it belongs to, and quiet: it
+     is a reference list, not a second board. */
+  body.page-stocks .tt-det{padding:2px 0 12px 16px}
+  body.page-stocks .tt-g{display:grid;grid-template-columns:74px minmax(0,1fr);gap:0 10px;
+    align-items:baseline;padding:3px 0}
+  body.page-stocks .tt-gk{font-size:10.5px;font-weight:700;color:var(--muted);text-align:right;
+    line-height:1.5}
+  /* FLEX, and this is load-bearing — an inline run here loses members.
+     The .tt-n spans are emitted adjacent with no whitespace between them, and a
+     ticker is white-space:nowrap, so as an inline run the whole list is ONE
+     unbreakable word: it has no break opportunity to wrap at. On a 390px phone the
+     Software roster then overran the viewport and the screenshot came back with
+     "PCOR" sheared off and the "+" of "+46" stranded on the next line — members
+     silently deleted from a shipped surface. `overflow-wrap:anywhere` was the wrong
+     patch: it made the run breakable by splitting INSIDE tokens, which is what tore
+     "+46" apart. A flex line box takes its break opportunities between ITEMS instead
+     of inside text, so every member wraps whole, needs no whitespace in the markup,
+     and behaves the same whatever the font metrics resolve to.
+     min-width:0 lets an item that carries a long reason shrink and wrap its own
+     sentence rather than push the line wider than the container. */
+  body.page-stocks .tt-names{display:flex;flex-wrap:wrap;align-items:baseline;
+    row-gap:2px;font-size:12px;line-height:1.6;color:var(--text);min-width:0;
+    overflow-wrap:break-word}
+  body.page-stocks .tt-n{min-width:0}
+  /* The separator TRAILS its name rather than leading the next one, so a wrapped
+     line never opens with an orphan middot. :not(:last-child) keeps it off the end
+     of the list while still printing it before a group-level reason, which is a
+     sibling here — "PCOR · +46 · no fresh entry trigger today". */
+  body.page-stocks .tt-names > .tt-n:not(:last-child)::after{content:"·";
+    color:var(--muted);padding:0 5px 0 6px;opacity:.6}
+  body.page-stocks .tt-sym{font-family:var(--font-mono,monospace);font-weight:700;letter-spacing:.02em;
+    white-space:nowrap}
+  /* The reason hangs off the name behind a middot, not a dash: the reason text has
+     its own em-dash inside it ("already extended — watch, don't chase"), and two
+     dashes in one phrase read as one muddled clause. A middot needs no translation,
+     so both languages take the same rule. It is a pseudo, not a text node, so it
+     keeps its spacing however the markup wraps and stays out of any copy a
+     vocabulary scan reads. */
+  body.page-stocks .tt-why{color:var(--muted);font-size:11px}
+  body.page-stocks .tt-why::before{content:"·";padding:0 5px 0 4px;opacity:.5}
+  /* A GROUP-level reason is a sibling of the names, so the last name's trailing
+     separator has already been printed and this one would double it ("+46 · ·
+     no fresh entry trigger today"). A PER-NAME reason lives inside its .tt-n, where
+     no separator precedes it, so it keeps its own. */
+  body.page-stocks .tt-names > .tt-why::before{content:none}
+  /* The overflow chip is one token: "+" must never be widowed from its count. */
+  body.page-stocks .tt-more{color:var(--muted);font-weight:600;white-space:nowrap}
+
+  body.page-stocks .tt-rule{border:0;border-top:1px solid var(--line);margin:8px 0 10px}
+  body.page-stocks .tt-foot{margin:0;font-size:12px;line-height:1.55;color:var(--muted);max-width:74ch}
+  body.page-stocks .tt-foot a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+
+  @media (max-width:900px){
+    body.page-stocks #theme-tape .tt-asof{margin-left:0}
+  }
+  /* ── phones (≤680px, the board's own mobile break, #4344) ───────────────────
+     The six-column alignment is a desktop luxury: it exists so a reader can scan
+     one column across five themes. On a phone you read one theme at a time, so
+     the ladder becomes a flowing line of "N label" pairs and the header row —
+     whose only job was to label those columns — is dropped. Each cell then shows
+     its own label, and a ZERO cell is removed entirely: a printed en-dash is
+     honest inside a column, but "0 watching" in a sentence is just noise.
+     Nothing here scrolls sideways; the row wraps. */
+  @media (max-width:680px){
+    body.page-stocks #theme-tape{padding:13px 14px}
+    body.page-stocks .tt-cols{display:none}
+    body.page-stocks .tt-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+    body.page-stocks .tt-nm{flex:1 0 100%}
+    body.page-stocks .tt-c{display:inline-flex;align-items:baseline;gap:4px}
+    body.page-stocks .tt-c.is-zero-cell{display:none}
+    body.page-stocks .tt-c .tt-ik{font-size:10.5px;font-weight:600;color:var(--muted);font-style:normal}
+    body.page-stocks .tt-v,body.page-stocks .tt-quiet{text-align:left;font-size:12.5px}
+    body.page-stocks .tt-g{grid-template-columns:minmax(0,1fr);gap:0}
+    body.page-stocks .tt-gk{text-align:left}
+  }
+  /* The per-cell label is redundant wherever the header row is visible. */
+  @media (min-width:681px){
+    body.page-stocks .tt-c .tt-ik{display:none}
+  }
+  </style>
+  <div class="panel span12" id="theme-tape">
+    <div class="tt-hd">
+      <h2 class="tt-eyebrow">{{ tt_t('Theme heat', '主题热度') }}</h2>
+      {#- Tier-2: the method AND the Law-5 receipt live here, together, so the panel
+          carries exactly one `?` and one footnote. -#}
+      <span class="help">?<span class="tip tip-wide"><span class="l-en">The market's fastest-accelerating themes, each one reconciled against this board: every member of the theme is placed in exactly one column, so the row adds up to the theme's whole membership. A name is counted at its most actionable state, and a name can sit in more than one theme. Scorecard: the rotation read grades its own calls nightly against realized member-equal-weight returns relative to SPY; after {{ _tt.get('n_days') or 0 }} graded days no horizon has cleared its significance bar, so treat the ordering as a place to look, not as an edge. Nothing on this panel ranks, gates or sizes anything — the board below is unchanged by it.</span><span class="l-zh">当前加速最快的主题，并逐一对照本榜：主题的每一只成分股都被归入且仅归入一列，因此整行相加等于该主题的全部成分股。同一只股票按其最可操作的状态计入，且可能同时属于多个主题。记分卡：轮动研判每晚以成分股等权、相对 SPY 的实际收益为自身研判评分；已评分 {{ _tt.get('n_days') or 0 }} 天，尚无周期通过显著性检验，因此这一排序只用于确定观察方向，不构成优势证据。本面板不参与任何排名、筛选或仓位决定，下方看板不受其影响。</span></span></span>
+      {%- if _tt.get('as_of') %}
+      <span class="tt-asof">{{ tt_t('as of ' ~ _tt.as_of, '截至 ' ~ _tt.as_of) }}</span>
+      {%- endif %}
+    </div>
+    <p class="tt-sub">{{ tt_t('The market’s hottest themes, and what this board is doing with their names.',
+                              '当前最热的主题，以及本榜对其成分股的处理。') }}</p>
+
+    {#- The header row is the ONLY label source where it is visible; each cell also
+        carries its own label for the phone layout, and exactly one of the two is in
+        the accessibility tree at any breakpoint (the other is display:none). -#}
+    <div class="tt-cols">
+      <span></span>
+      {%- for _k, _en, _zh in _tt_cols %}<span class="tt-k">{{ tt_t(_en, _zh) }}</span>{% endfor %}
+      <span class="tt-k tt-k-quiet">{{ tt_t('quiet', '未触发') }}</span>
+    </div>
+
+    {%- for _r in _tt_rows %}
+    {%- set _c = _r.get('counts') or {} %}
+    <details class="tt-i">
+      <summary class="tt-s">
+        <div class="tt-row"
+             data-tip-en="{{ _r.name }} — {{ tt_ord(_r.rank) }} of {{ _tt.get('rank_of') or 0 }} themes by acceleration{% if _r.get('rs_1m') is not none %}, {{ '%+.1f'|format(_r.rs_1m|float)|replace('-', '−') }}% against the market over the past month{% endif %}{% if _r.get('rs_1w') is not none %} and {{ '%+.1f'|format(_r.rs_1w|float)|replace('-', '−') }}% over the past week{% endif %}. {{ _r.n_on_board }} of its {{ _r.n_members }} members are on this board. Display context only — this changes no ranking below."
+             data-tip-zh="{{ _r.name }} — 按加速度在 {{ _tt.get('rank_of') or 0 }} 个主题中排名第 {{ _r.rank }}{% if _r.get('rs_1m') is not none %}，过去一个月相对大盘 {{ '%+.1f'|format(_r.rs_1m|float)|replace('-', '−') }}%{% endif %}{% if _r.get('rs_1w') is not none %}，过去一周 {{ '%+.1f'|format(_r.rs_1w|float)|replace('-', '−') }}%{% endif %}。其 {{ _r.n_members }} 只成分股中有 {{ _r.n_on_board }} 只在本榜上。仅为展示参考，不改变下方任何排序。">
+          <span class="tt-nm">{{ tt_t(_r.name, _r.name_zh) }}
+            <span class="tt-heat">{{ tt_t(tt_ord(_r.rank) ~ ' of ' ~ (_tt.get('rank_of') or 0),
+                                          '第 ' ~ _r.rank ~ ' 名，共 ' ~ (_tt.get('rank_of') or 0)) }}{% if _r.get('heat_en') %} · {{ tt_t(_r.heat_en, _r.heat_zh) }}{% endif %}</span>
+          </span>
+          {%- for _k, _en, _zh in _tt_cols %}
+          {%- set _n = _c.get(_k) or 0 %}
+          <span class="tt-c{% if not _n %} is-zero-cell{% endif %}"><b class="tt-v{% if _n and _k == 'live' %} is-live{% endif %}{% if not _n %} is-zero{% endif %}">{% if _n %}{{ _n }}{% else %}–{% endif %}</b><i class="tt-ik">{{ tt_t(_en, _zh) }}</i></span>
+          {%- endfor %}
+          <span class="tt-c"><b class="tt-quiet">{{ _c.get('quiet') or 0 }}/{{ _r.n_members }}</b><i class="tt-ik">{{ tt_t('quiet', '未触发') }}</i></span>
+        </div>
+        {#- Law 1 — the stance. Selected mechanically from the counts above by
+            engine/theme_tape.py; this file only prints the pair it was handed. -#}
+        <div class="tt-say"><span class="tt-stance">{{ tt_t(_r.say_en, _r.say_zh) }}</span></div>
+      </summary>
+      <div class="tt-det">
+        {%- for _k, _en, _zh in _tt_cols %}
+        {%- set _mem = (_r.get('members') or {}).get(_k) or [] %}
+        {%- set _shared = (_r.get('shared_why') or {}).get(_k) %}
+        {%- if _mem %}
+        <div class="tt-g">
+          <span class="tt-gk">{{ tt_t(_en, _zh) }}</span>
+          <span class="tt-names">{% for _m in _mem %}<span class="tt-n"><span class="tt-sym">{{ _m.t }}</span>{% if _m.get('why_en') %}<span class="tt-why">{{ tt_t(_m.why_en, _m.why_zh) }}</span>{% endif %}</span>{% endfor %}{% if _shared %}<span class="tt-why">{{ tt_t(_shared[0], _shared[1]) }}</span>{% endif %}</span>
+        </div>
+        {%- endif %}
+        {%- endfor %}
+        {#- The remainder. ONE shared reason, stated once, never invented per name:
+            the board has no row for these, so there is no per-name verdict to
+            report — saying otherwise would be a fabricated rejection. -#}
+        {%- if _r.get('quiet_sample') %}
+        <div class="tt-g">
+          <span class="tt-gk">{{ tt_t('quiet', '未触发') }}</span>
+          <span class="tt-names">{% for _q in _r.quiet_sample %}<span class="tt-n"><span class="tt-sym">{{ _q }}</span></span>{% endfor %}{% if _r.get('quiet_more') %}<span class="tt-n tt-more">+{{ _r.quiet_more }}</span>{% endif %}<span class="tt-why">{{ tt_t('no fresh entry trigger today', '今日无新入场触发') }}</span></span>
+        </div>
+        {%- endif %}
+      </div>
+    </details>
+    {%- endfor %}
+
+    {#- ONE footnote, merged (Law 4). It carries the plain-word null first, because
+        that is the thing a reader most needs to know before acting on an ordering,
+        then the overlap fact — which exists because a mega-cap really does sit in
+        five of today's themes, and a reader who sees the same ticker on five lines
+        deserves to know why rather than to suspect a bug. -#}
+    <hr class="tt-rule">
+    <p class="tt-foot">
+      <span class="l-en">{% if _tt.get('measuring') %}Theme heat is a read still being measured — it points you at where to look, not at what to buy; the picks below are unchanged by it. {% endif %}A large company can sit in several themes, so the same ticker may appear on more than one line. <a href="subsector_rotation.html">All {{ _tt.get('rank_of') or 0 }} themes →</a></span>
+      <span class="l-zh">{% if _tt.get('measuring') %}主题热度仍在检验中 — 它指出值得关注的方向，而非买入对象；下方选股不受其影响。{% endif %}大型公司可能同时属于多个主题，因此同一代码可能出现在多行中。<a href="subsector_rotation.html">查看全部 {{ _tt.get('rank_of') or 0 }} 个主题 →</a></span>
+    </p>
+  </div>
+{%- endif -%}

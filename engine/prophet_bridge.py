@@ -24,7 +24,15 @@ OURS: selection rule documented here; all levels are display-only.
         gate_go == False → act_level >= 2  OR  conviction.score >= 60 (caution mode)
    Reason: gate_go=False is a macro-caution flag; tighten score threshold, but
    don't eliminate imminent-entry (act_level>=2) setups entirely.
-3. Sort: descending by conviction.score; ties broken by act_level descending.
+3. Sort: descending by the us_prophet_v1 priority score (row["prophet"]["score"]);
+   ties broken by act_level descending, then ticker ascending.  Rows with no
+   numeric priority score (pre-v1 artifacts) sort BELOW every scored row and,
+   among themselves, by the legacy key (conviction.score descending).
+   W1 2026-08-03, operator-signed: ORDERING ONLY — the filters in step 2 and the
+   cap in step 4 are byte-identical to the pre-W1 rule, so the ADMITTED population
+   for a given artifact does not move.  Where that population overflows the cap,
+   re-ordering necessarily re-slices which tail rows survive step 4 — that IS the
+   signed-off change.  See select_candidates() for the ruling citation.
 4. Take up to N_CANDIDATES (default 12; raised from 6, operator gate-width order
    2026-07-28 — the 6-cap plus a wider board was starving nightly plan intake).
 5. Exclude entries where entry_signal is null.
@@ -48,6 +56,17 @@ ID STABILITY
   signal_date = us_standouts as_of field (or hold.anchor if present).
   Plans persist across runs until invalidated/expired/T2-hit.
   Re-origination is suppressed when the ID already exists in existing_ids.
+
+RE-ORIGINATION BLOCK WHILE ACTIVE (W1 2026-08-03, operator-signed)
+-------------------------------------------------------------------
+  The ID carries signal_date, so a NEW signal_date on a name that was already
+  live used to originate a SECOND plan for it and burn another of the 12 slots
+  (CLF/PI/BDC each did this within one week; 10 ticker+direction pairs held
+  duplicate open plans as of 2026-08-03).  ``originate_plans(active_keys=...)``
+  now skips a candidate whose ``<TICKER>-<DIRECTION>`` key already has an OPEN
+  plan.  Closure is exactly what the forward ledger says — a closed plan frees
+  the slot on the next run.  ``active_keys=None`` (the default) disables the
+  block entirely, so every pre-W1 caller keeps its old behaviour.
 
 OPTION RESOLUTION (display-only)
 ---------------------------------
@@ -215,6 +234,71 @@ def compute_geometry(
 # Pick selection
 # ---------------------------------------------------------------------------
 
+def _priority_score(row: dict) -> float | None:
+    """The us_prophet_v1 board priority score for a buy row, or None.
+
+    ``row["prophet"]["score"]`` is stamped by ``engine.us_board_rank`` (#4331) and is
+    the key the BOARD is already ordered by.  Returns None — not 0 — for a row that
+    predates the score or carries a non-numeric / non-finite value, so a legacy row
+    lands in the fallback tier of the sort key instead of at the bottom of the scored
+    one.  ``bool`` is rejected explicitly: ``isinstance(True, int)`` is True in Python,
+    and a stray ``"score": true`` must not read as 1.0.
+    """
+    block = row.get("prophet")
+    if not isinstance(block, dict):
+        return None
+    score = block.get("score")
+    if isinstance(score, bool) or not isinstance(score, (int, float)):
+        return None
+    value = float(score)
+    return value if math.isfinite(value) else None
+
+
+def _conviction_score(row: dict) -> float:
+    """The legacy (pre-W1) primary sort leg: ``conviction.score``, 0.0 when unreadable."""
+    score = (row.get("conviction") or {}).get("score", 0)
+    if isinstance(score, bool) or not isinstance(score, (int, float)):
+        return 0.0
+    value = float(score)
+    return value if math.isfinite(value) else 0.0
+
+
+def _selection_sort_key(row: dict):
+    """Total order over admitted candidates. ORDERING ONLY — never admission.
+
+    Legs, in precedence order:
+      1. tier      — 0 when the row carries a us_prophet_v1 priority score, else 1.
+                     Every scored row therefore outranks every legacy row.
+      2. rank      — priority score desc within tier 0; conviction.score desc within
+                     tier 1 (the verbatim pre-W1 primary key).
+      3. act_level — descending (unchanged).
+      4. ticker    — ascending.
+
+    The ticker leg is load-bearing, not cosmetic: without it a tie on the legs above is
+    resolved by the ARTIFACT's incoming buy[] order, so the same board re-emitted in a
+    different order would originate a different set of plans and the intake would not be
+    provably deterministic.  Ticker is the only stable per-row identity here, so it is
+    the final key (tests/test_prophet_bridge_order_invariance.py).
+    """
+    priority = _priority_score(row)
+    return (
+        0 if priority is not None else 1,
+        -(priority if priority is not None else _conviction_score(row)),
+        -((row.get("entry_signal") or {}).get("act_level") or 0),
+        str(row.get("ticker") or ""),
+    )
+
+
+def plan_key(ticker: str, direction: str) -> str:
+    """``<TICKER>-<DIRECTION>`` — the identity the re-origination block is keyed on.
+
+    Deliberately NOT the plan id: the id also carries signal_date, which is exactly
+    why a fresh signal on a name that was already live used to originate a second
+    plan for it.  See the RE-ORIGINATION BLOCK note in the module docstring.
+    """
+    return f"{str(ticker or '').strip().upper()}-{str(direction or '').strip().upper()}"
+
+
 def select_candidates(
     standouts: dict,
     n: int = N_CANDIDATES,
@@ -223,9 +307,13 @@ def select_candidates(
     Apply the pre-registered pick rule to us_standouts.json and return
     a filtered, sorted list of at most n buy entries.
 
-    OURS (pre-registered pick rule):
+    OURS (pre-registered pick rule — ADMISSION, unchanged by W1):
       gate_go=True  → act_level >= 2 AND band != 'low'
       gate_go=False → (act_level >= 2 OR score >= 60) AND band != 'low'
+
+    ORDER (W1 2026-08-03, scored + operator-signed): the us_prophet_v1 priority score,
+    then act_level, then ticker — see the sort block below for the ruling citation and
+    the legacy fallback.  Admission and the cap are untouched.
     """
     gate_go: bool = standouts.get("gate_go", False)
     # buy[] ONLY. standouts["leaders"] (2026-07-28 leaders strip) is deliberately
@@ -259,17 +347,27 @@ def select_candidates(
 
         selected.append(b)
 
-    # Sort: score desc, then act_level desc, then ticker asc.
-    # The ticker leg is load-bearing, not cosmetic: without it a (score, act_level)
-    # tie is resolved by the ARTIFACT's incoming buy[] order, so the same board
-    # re-emitted in a different order would originate a different set of plans and
-    # the intake would not be provably deterministic. Ticker is the only stable
-    # per-row identity here, so it is the final key.
-    selected.sort(key=lambda x: (
-        -(x.get("conviction") or {}).get("score", 0),
-        -((x.get("entry_signal") or {}).get("act_level") or 0),
-        str(x.get("ticker") or ""),
-    ))
+    # Sort: us_prophet_v1 priority score desc, act_level desc, ticker asc.
+    #
+    # W1 2026-08-03 (SCORED, operator-signed): the primary key moved from raw
+    # conviction.score to row["prophet"]["score"] — the SAME us_prophet_v1 priority
+    # score the board is ranked by (engine/us_board_rank.py, #4331; weights
+    # signal 30 / entry 25 / edge 25 / runway 10 / quality 10).
+    # research/US_BOARD_MEASUREMENT.md graded conviction/board order ANTI-predictive
+    # (retro P@1 0.20 vs alpha-order 0.60) and its Grade-A "Primary sort key" ruling is
+    # "order by residual alpha (or an alpha+timing blend at the very top)"; the priority
+    # score IS that ratified blend, so intake and board now share ONE ranking system.
+    #
+    # ORDERING ONLY.  The admission block above is untouched, so for any given artifact
+    # the SELECTED SET is byte-identical to the pre-W1 rule — only its order (and hence,
+    # when the board overflows the cap, which tail rows survive [:n]) moves.  DNR row 49
+    # is not re-opened: no new blend is constructed here and the graded buy population is
+    # unchanged.  Pinned by tests/test_prophet_w1_intake_repair.py.
+    #
+    # Legacy self-heal: a row with no numeric prophet.score sorts BELOW every scored row
+    # and, among its own kind, by the OLD key — so a pre-v1 artifact selects exactly what
+    # it selects today.  Key legs and the load-bearing ticker leg: _selection_sort_key.
+    selected.sort(key=_selection_sort_key)
     return selected[:n]
 
 
@@ -1548,6 +1646,8 @@ def originate_plans(
     asof: str,
     existing_ids: set[str],
     thetadata_store: str | None = None,
+    active_keys: set[str] | None = None,
+    intake_stats: dict | None = None,
 ) -> list[dict]:
     """
     Read us_standouts.json, apply the pick rule, and return new
@@ -1559,6 +1659,15 @@ def originate_plans(
     asof           : ISO-8601 date string — sole time anchor
     existing_ids   : set of plan IDs already persisted (duplicate suppression)
     thetadata_store: path to ThetaData EOD store root
+    active_keys    : W1 re-origination block — ``<TICKER>-<DIRECTION>`` keys
+                     (``plan_key()``) that already have an OPEN plan.  A candidate
+                     matching one is skipped no matter how fresh its signal_date is;
+                     a plan that has CLOSED is absent from this set, so the name
+                     becomes originatable again.  ``None`` disables the block.
+    intake_stats   : optional out-dict.  When supplied it is populated with
+                     ``reorigination_blocked`` (int) and
+                     ``reorigination_blocked_keys`` (sorted list) so the caller can
+                     disclose the skips in its artifact.  Never read, only written.
 
     Returns
     -------
@@ -1624,6 +1733,7 @@ def originate_plans(
         _government_revenue_map = {}
 
     plans: list[dict] = []
+    blocked_keys: list[str] = []
     for b in candidates:
         ticker: str = b["ticker"]
         direction = "BULL"  # all dir="up" entries
@@ -1638,6 +1748,20 @@ def originate_plans(
 
         if plan_id in existing_ids:
             log.info("prophet_bridge: suppressing duplicate %s", plan_id)
+            continue
+
+        # ── W1 re-origination block ───────────────────────────────────────────
+        # Checked AFTER the id check so the count below is the NEW failure mode —
+        # a fresh signal_date on a name that is already live — and not the
+        # same-id duplicate suppression that has always been in force.
+        key = plan_key(ticker, direction)
+        if active_keys and key in active_keys:
+            blocked_keys.append(key)
+            log.info(
+                "prophet_bridge: re-origination blocked for %s (would have been %s) — "
+                "an open plan on the same ticker+direction is still active",
+                key, plan_id,
+            )
             continue
 
         es = b.get("entry_signal") or {}
@@ -1831,5 +1955,15 @@ def originate_plans(
             geo["t2"],
             "Y" if opt else "N",
         )
+
+    # ── W1 disclosure: how many slots the active-plan block protected this run ──
+    log.info(
+        "prophet_bridge: re-origination block skipped %d candidate(s)%s",
+        len(blocked_keys),
+        f" ({', '.join(sorted(set(blocked_keys)))})" if blocked_keys else "",
+    )
+    if intake_stats is not None:
+        intake_stats["reorigination_blocked"] = len(blocked_keys)
+        intake_stats["reorigination_blocked_keys"] = sorted(set(blocked_keys))
 
     return plans

@@ -250,6 +250,41 @@
         '<span class="l-zh">榜上 ' + n + ' 只股票</span>';
     });
   }
+  // ── theme tape member lists ───────────────────────────────────────────────
+  // Same law as the themes-in-favour strip above, one panel higher up the page.
+  // The tape's COUNTS are aggregate and stay free — they are the panel's whole
+  // argument ("6 of Software's 60 names are on this board"), and a count names
+  // nobody. The member LISTS inside an expanded row are the product: ticker plus
+  // the board state it sits in, which is exactly what the gated cards below sell.
+  // They are in the DOM whether or not the <details> is open, so the collapse has
+  // to rewrite them rather than rely on the disclosure being shut.
+  // Reversible through the same data-mx-old-html stash, because a visitor who
+  // upgrades in-page must get the names back without a reload.
+  function applyTapeMembers() {
+    var gated = isFinite(state.cap);
+    document.querySelectorAll("#theme-tape .tt-names").forEach(function (list) {
+      var stashed = list.getAttribute("data-mx-old-html");
+      if (!gated) {
+        if (stashed !== null) {
+          list.innerHTML = stashed;
+          list.removeAttribute("data-mx-old-html");
+        }
+        return;
+      }
+      if (stashed !== null) return;
+      var n = 0;
+      list.querySelectorAll(".tt-n").forEach(function (el) {
+        if (el.classList.contains("tt-more")) {
+          var extra = parseInt(String(el.textContent || "").replace(/[^0-9]/g, ""), 10);
+          if (extra > 0) n += extra;
+        } else { n += 1; }
+      });
+      list.setAttribute("data-mx-old-html", list.innerHTML);
+      list.innerHTML =
+        '<span class="l-en">' + n + (n === 1 ? " name" : " names") + '</span>' +
+        '<span class="l-zh">' + n + " 只股票</span>";
+    });
+  }
   function placeSurfaceGates(surfaces) {
     [
       { key: "action", selector: "#action-board" },
@@ -272,9 +307,10 @@
         if (surface) surfaces[surface] = true;
       });
       placeSurfaceGates(surfaces);
-      // Unconditional: the strip leaks even when the grid itself is short enough that
-      // no group tripped the cap.
+      // Unconditional: these two leak even when the grid itself is short enough that
+      // no group tripped the cap — they are separate markup, not capped rows.
       applyThemeTickers();
+      applyTapeMembers();
     } finally {
       applying = false;
       if (observer && document.body) observer.observe(document.body, { childList: true, subtree: true });
