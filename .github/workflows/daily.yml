@@ -2193,6 +2193,20 @@ jobs:
         # sibling forward ledger, the committed store is what lets cohorts accrue night to
         # night. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_bottom_calls --nightly || true
+      - name: Prophet miss-audit (why don't the winners surface? ops telemetry, ZERO authority)
+        # Prophet US trend-intelligence W0 (masterplan
+        # research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md): the nightly
+        # measurement the program grades itself against — per-runner dominant-excluder
+        # attribution, the trailing-63-session eligibility window, sighting->plan conversion,
+        # and theme-representation counts. Reads the committed close caches + the board/plan
+        # artifacts through the PRODUCTION tier paths (confluence_tiers.tier_stream/cascade,
+        # signal_gate); computes nothing the board reads back. Sole forward advancer of
+        # data/prophet_miss_audit/forward_log.jsonl (nightly-only, like the Bottom Ledger
+        # above), idempotent on price_through. Both it and data/prophet_miss_audit/latest.json
+        # are landed by the "commit engine outputs" step below (git add data/). ~2-3 min on
+        # ~1,500 names. ZERO authority: no rank/gate/size/membership consumer, ever
+        # (tests/test_prophet_miss_audit.py pins that nothing else imports it). Resilient.
+        run: python -m scripts.run_prophet_miss_audit --nightly || true
       - name: Options-state stamp on board ledger (Options Alpha W1.3; context-only)
         # Stamps the freshly-graded + accumulated retro_grades.parquet with the eight nullable
         # opt_* options-state columns (PIT: only positioning data with as-of ≤ each fire's as_of).
