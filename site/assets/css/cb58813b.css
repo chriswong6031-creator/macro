@@ -43,6 +43,28 @@
   body.page-stocks .tt-s .tt-nm::before{content:"▸";color:var(--muted);font-size:10px;
     margin-right:6px;display:inline-block;vertical-align:1px}
   body.page-stocks .tt-i[open] .tt-s .tt-nm::before{content:"▾"}
+  /* THE FORESIGHT WORD (W5a). The one new object on the panel, and deliberately
+     the quietest thing on it: an outline, no fill, no colour, and the type of
+     `.tt-k` above copied exactly — 10px / 700 / .05em / --muted, lower case and
+     all. This IS a column label; it just rides the name instead of the header,
+     so it should speak in the voice the panel already uses to label things.
+     Only the hairline box is new, and it is what separates a label from the
+     name it sits beside.
+     It takes no hue ON PURPOSE. The desk reads filings and language, so its word
+     is EARLIER and less confirmed than any board state on the row beside it;
+     giving it colour would paint the least-proven thing on the panel as the
+     loudest, and would re-open the cohort-state-as-signal-furniture construction
+     the 2026-07-23 ruling removed.
+     Case is load-bearing too, and was A/B'd rather than assumed: set in caps the
+     chip reads as a machine token, and "re-rating" in caps is character-for-
+     character the desk's internal enum value on a glance-tier surface — the
+     exact construction Doctrine Law 2 bans. Lower case reads as the English word
+     it is. */
+  body.page-stocks .tt-fs{display:inline-block;vertical-align:1px;margin-left:7px;
+    padding:1px 5px;border:1px solid color-mix(in srgb,var(--line) 80%,transparent);
+    border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.05em;
+    color:var(--muted);white-space:nowrap}
+  html[data-lang="zh"] body.page-stocks .tt-fs{letter-spacing:0}
   body.page-stocks .tt-heat{display:block;font-size:11px;font-weight:400;color:var(--muted);
     margin-top:2px;padding-left:16px}
   /* THE FIGURES. Mono + tabular so the digits stack; the body face would ripple
@@ -86,8 +108,21 @@
      of inside text, so every member wraps whole, needs no whitespace in the markup,
      and behaves the same whatever the font metrics resolve to.
      min-width:0 lets an item that carries a long reason shrink and wrap its own
-     sentence rather than push the line wider than the container. */
-  body.page-stocks .tt-names{display:flex;flex-wrap:wrap;align-items:baseline;
+     sentence rather than push the line wider than the container.
+
+     `.tt-load` (the foresight shelf) shares this exact declaration rather than
+     restating it: it is the same kind of object — a wrapped list of names — and
+     two copies of a fix this hard-won would drift. It needs its OWN class and
+     cannot simply be a `.tt-names`, because tier_preview.js collapses every
+     `#theme-tape .tt-names` to "N names / N 只股票" for anonymous and Free
+     visitors. That is right for a member roster and wrong twice over here: the
+     list holds THEMES, not stocks, so the Chinese collapse would be factually
+     false, and the shelf is this panel's disclosure — the thing it must say
+     when nothing on the heat list is loading. Aggregates stay free on this
+     panel (`.tt-v`, `.tt-row`, `.tt-quiet` are all off the gate's list); the
+     shelf is an aggregate. */
+  body.page-stocks .tt-names,
+  body.page-stocks .tt-load{display:flex;flex-wrap:wrap;align-items:baseline;
     row-gap:2px;font-size:12px;line-height:1.6;color:var(--text);min-width:0;
     overflow-wrap:break-word}
   body.page-stocks .tt-n{min-width:0}
@@ -95,7 +130,8 @@
      line never opens with an orphan middot. :not(:last-child) keeps it off the end
      of the list while still printing it before a group-level reason, which is a
      sibling here — "PCOR · +46 · no fresh entry trigger today". */
-  body.page-stocks .tt-names > .tt-n:not(:last-child)::after{content:"·";
+  body.page-stocks .tt-names > .tt-n:not(:last-child)::after,
+  body.page-stocks .tt-load > .tt-n:not(:last-child)::after{content:"·";
     color:var(--muted);padding:0 5px 0 6px;opacity:.6}
   body.page-stocks .tt-sym{font-family:var(--font-mono,monospace);font-weight:700;letter-spacing:.02em;
     white-space:nowrap}
@@ -114,6 +150,45 @@
   body.page-stocks .tt-names > .tt-why::before{content:none}
   /* The overflow chip is one token: "+" must never be widowed from its count. */
   body.page-stocks .tt-more{color:var(--muted);font-weight:600;white-space:nowrap}
+
+  /* ── THE SHELF (W5a) ──────────────────────────────────────────────────────
+     Themes the desk stages that the heat list did not surface — on most days
+     this is the whole of the foresight layer, because the desk reads filings
+     and language while the tape reads price, so it sees a theme tighten long
+     before the tape has anything to say about it. It sits ALWAYS-VISIBLE rather
+     than inside a <details> for exactly that reason: folded away on a day when
+     no hot theme carries a word, the panel would know that four themes were
+     loading and show a reader nothing — which is the detection-without-
+     narration defect this panel exists to close, reintroduced one level down.
+     It is separated by the same hairline the theme rows use between each other
+     (`.tt-i`), not by a second `.tt-rule`, because it is one more line of the
+     same accounting and not a new section: two rules would announce a second
+     panel. Reuses `.tt-g` / `.tt-gk` verbatim, so the label column lines up
+     with the member groups inside the rows above and inherits their phone
+     layout with nothing new to keep in sync. */
+  body.page-stocks .tt-shelf{border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent);
+    padding:9px 0 2px;margin-top:2px}
+  body.page-stocks .tt-shelf-hd{margin:0 0 5px;font-size:10px;font-weight:800;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--muted);line-height:1.2}
+  html[data-lang="zh"] body.page-stocks .tt-shelf-hd{letter-spacing:.06em}
+  /* The chip in the label column is the same object as the chip on a row above,
+     down to the class — a reader learns the word once and meets it in both
+     places. Left-aligned here because the column is a label column, and a
+     right-aligned outline box next to a left-aligned list reads as a stray. */
+  body.page-stocks .tt-shelf .tt-gk{text-align:left}
+  body.page-stocks .tt-shelf .tt-fs{margin-left:0}
+  /* The shared reason, and the only place the panel's second null is stated.
+     One line, once, under both groups — never repeated per group and never per
+     name (Law 4: a constant belongs in one place). */
+  body.page-stocks .tt-shelf-why{margin:5px 0 0;font-size:11px;line-height:1.55;
+    color:var(--muted);max-width:74ch}
+  /* The stance is one token, like the "+46" chip is. Measured at 1280px the
+     line broke after "Watch" and left "— don't chase." stranded on its own row,
+     which reads as a fragment rather than an instruction — the one sentence on
+     this shelf a reader is meant to act on, snapped in half. Held whole, the
+     line breaks BEFORE it instead, and the disclosure and the stance land on
+     one line each. */
+  body.page-stocks .tt-shelf-why .tt-nb{white-space:nowrap}
 
   body.page-stocks .tt-rule{border:0;border-top:1px solid var(--line);margin:8px 0 10px}
   body.page-stocks .tt-foot{margin:0;font-size:12px;line-height:1.55;color:var(--muted);max-width:74ch}
