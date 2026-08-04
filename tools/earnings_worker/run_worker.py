@@ -10,8 +10,8 @@ operator's Windows PC OUTSIDE the nightly render pipeline.  Its job:
      ticker modes remain available for diagnostics.
   2. Fetch only queued Terminal gzip bodies and map speaker/role segments
      directly into the scorer without copying the transcript corpus.
-  3. Score it via engine.earnings_qual.score_text against the LOCAL
-     OpenAI-compatible endpoint (llama.cpp / LM Studio / vLLM serving Qwen3-14B).
+  3. Score it via engine.earnings_qual.score_text against the private
+     OpenAI-compatible endpoint (Ollama serving Qwen3.5-9B by default).
   4. Upsert the rows into data/earnings_calls/scores.parquet (atomic, dedup).
   5. Publish scores.parquet + manifest.json to R2 (scripts.publish_earnings_r2).
 
@@ -32,7 +32,7 @@ FAIL-OPEN:
 USAGE (see README.md for the full Windows setup)
 ------------------------------------------------
   python run_worker.py --tickers NVDA,AAPL --transcripts-dir D:/earnings/transcripts
-  python run_worker.py --queue --limit 64 --base-url http://localhost:8000/v1 --model qwen3-14b
+  python run_worker.py --queue --limit 64 --base-url http://localhost:11434/v1 --model qwen3.5:9b
   python run_worker.py --transcripts-dir D:/earnings/transcripts --auto   # score whatever is un-scored
   python run_worker.py --terminal-auto --bootstrap-since 2026-07-24       # one-time recent catch-up
   python run_worker.py --terminal-auto                                    # every later scheduled run

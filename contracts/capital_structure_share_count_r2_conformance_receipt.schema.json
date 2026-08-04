@@ -1,0 +1,361 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_share_count_r2_conformance_receipt.schema.json",
+  "title": "Manual-only R2 share-count CAS conformance receipt",
+  "description": "A closed, non-authoritative audit record of one manual conditional-write conformance run against a fresh isolated object key. It does not publish a share-count head, authenticate credentials, or establish provider-wide guarantees.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "receipt_id",
+    "status",
+    "failure",
+    "manual_only",
+    "created_at",
+    "deadline_seconds",
+    "scope",
+    "github_provenance",
+    "execution_provenance",
+    "steps",
+    "output_authority",
+    "nonclaims"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.share_count_r2_conformance_receipt/v1"},
+    "receipt_id": {"type": "string", "pattern": "^r2-cas-conformance:cs-share-count-v1:[a-f0-9]{64}$"},
+    "status": {"enum": ["passed", "failed", "inconclusive"]},
+    "failure": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/failure"}
+      ]
+    },
+    "manual_only": {"const": true},
+    "created_at": {"type": "string", "format": "date-time"},
+    "deadline_seconds": {"type": "number", "exclusiveMinimum": 0, "maximum": 90},
+    "scope": {"$ref": "#/$defs/scope"},
+    "github_provenance": {"$ref": "#/$defs/github_provenance"},
+    "execution_provenance": {"$ref": "#/$defs/execution_provenance"},
+    "steps": {"$ref": "#/$defs/steps"},
+    "output_authority": {"$ref": "#/$defs/output_authority"},
+    "nonclaims": {"$ref": "#/$defs/nonclaims"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["admitted", "endpoint_host", "bucket_sha256", "key_sha256"],
+      "properties": {
+        "admitted": {"type": "boolean"},
+        "endpoint_host": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{32}\\.(?:(?:eu|fedramp)\\.)?r2\\.cloudflarestorage\\.com$"
+        },
+        "bucket_sha256": {
+          "oneOf": [
+            {"$ref": "#/$defs/sha256"},
+            {"type": "null"}
+          ]
+        },
+        "key_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"admitted": {"const": true}},
+            "required": ["admitted"]
+          },
+          "then": {
+            "properties": {
+              "endpoint_host": {"type": "string"},
+              "bucket_sha256": {"$ref": "#/$defs/sha256"}
+            }
+          },
+          "else": {
+            "properties": {
+              "endpoint_host": {"type": "null"},
+              "bucket_sha256": {"type": "null"}
+            }
+          }
+        }
+      ]
+    },
+    "github_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "workflow_ref", "run_id", "run_attempt", "commit_sha", "event_name", "actor"],
+      "properties": {
+        "repository": {"const": "chriswong6031-creator/macro"},
+        "workflow_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/\\.github/workflows/capital-share-count-r2-conformance\\.yml@refs/heads/main$"
+        },
+        "run_id": {"type": "string", "pattern": "^[1-9][0-9]{0,19}$"},
+        "run_attempt": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "commit_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+        "event_name": {"const": "workflow_dispatch"},
+        "actor": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$"}
+      }
+    },
+    "execution_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_archive_sha256", "dependency_lock_sha256"],
+      "properties": {
+        "source_archive_sha256": {"$ref": "#/$defs/sha256"},
+        "dependency_lock_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "put_success": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["http_status"],
+      "properties": {"http_status": {"const": 200}}
+    },
+    "head": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["http_status", "content_length", "content_type", "etag_sha256", "metadata_sha256"],
+      "properties": {
+        "http_status": {"const": 200},
+        "content_length": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "content_type": {"const": "application/json"},
+        "etag_sha256": {"$ref": "#/$defs/sha256"},
+        "metadata_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "readback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["http_status", "content_length", "content_type", "etag_sha256", "metadata_sha256", "range", "exact_range_verified", "body_sha256"],
+      "properties": {
+        "http_status": {"const": 206},
+        "content_length": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "content_type": {"const": "application/json"},
+        "etag_sha256": {"$ref": "#/$defs/sha256"},
+        "metadata_sha256": {"$ref": "#/$defs/sha256"},
+        "range": {"type": "string", "pattern": "^bytes 0-[0-9]+/[1-9][0-9]*$"},
+        "exact_range_verified": {"const": true},
+        "body_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "head_a": {
+      "allOf": [
+        {"$ref": "#/$defs/head"},
+        {"properties": {"content_length": {"const": 81}}}
+      ]
+    },
+    "head_b": {
+      "allOf": [
+        {"$ref": "#/$defs/head"},
+        {"properties": {"content_length": {"const": 94}}}
+      ]
+    },
+    "readback_a": {
+      "allOf": [
+        {"$ref": "#/$defs/readback"},
+        {
+          "properties": {
+            "content_length": {"const": 81},
+            "range": {"const": "bytes 0-80/81"},
+            "body_sha256": {"const": "217be65228be15bc77d7cc76b271309c97a246588991816ef1c9c48e45f6e05b"}
+          }
+        }
+      ]
+    },
+    "readback_b": {
+      "allOf": [
+        {"$ref": "#/$defs/readback"},
+        {
+          "properties": {
+            "content_length": {"const": 94},
+            "range": {"const": "bytes 0-93/94"},
+            "body_sha256": {"const": "b09400499baa2ab0958f490ac9f207e11c16e85a7096e572ab39db9ad88fcb2d"}
+          }
+        }
+      ]
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["http_status", "error_code"],
+      "properties": {
+        "http_status": {"const": 412},
+        "error_code": {"const": "PreconditionFailed"}
+      }
+    },
+    "passed_steps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "create_a",
+        "head_a",
+        "get_a",
+        "duplicate_create",
+        "head_a_after_duplicate",
+        "get_a_after_duplicate",
+        "update_b",
+        "head_b",
+        "stale_get",
+        "stale_put",
+        "get_b"
+      ],
+      "properties": {
+        "create_a": {"$ref": "#/$defs/put_success"},
+        "head_a": {"$ref": "#/$defs/head_a"},
+        "get_a": {"$ref": "#/$defs/readback_a"},
+        "duplicate_create": {"$ref": "#/$defs/conflict"},
+        "head_a_after_duplicate": {"$ref": "#/$defs/head_a"},
+        "get_a_after_duplicate": {"$ref": "#/$defs/readback_a"},
+        "update_b": {"$ref": "#/$defs/put_success"},
+        "head_b": {"$ref": "#/$defs/head_b"},
+        "stale_get": {"$ref": "#/$defs/conflict"},
+        "stale_put": {"$ref": "#/$defs/conflict"},
+        "get_b": {"$ref": "#/$defs/readback_b"}
+      }
+    },
+    "partial_steps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["completed_steps"],
+      "properties": {
+        "completed_steps": {
+          "type": "array",
+          "maxItems": 11,
+          "prefixItems": [
+            {"const": "create_a"},
+            {"const": "head_a"},
+            {"const": "get_a"},
+            {"const": "duplicate_create"},
+            {"const": "head_a_after_duplicate"},
+            {"const": "get_a_after_duplicate"},
+            {"const": "update_b"},
+            {"const": "head_b"},
+            {"const": "stale_get"},
+            {"const": "stale_put"},
+            {"const": "get_b"}
+          ],
+          "items": false
+        }
+      }
+    },
+    "steps": {
+      "oneOf": [
+        {"$ref": "#/$defs/passed_steps"},
+        {"$ref": "#/$defs/partial_steps"}
+      ]
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "category"],
+      "properties": {
+        "stage": {
+          "enum": [
+            "setup", "probe", "create_a", "head_a", "get_a", "duplicate_create",
+            "head_a_after_duplicate", "get_a_after_duplicate", "update_b",
+            "head_b", "stale_get", "stale_put", "get_b", "receipt"
+          ]
+        },
+        "category": {
+          "enum": [
+            "configuration", "deadline", "transport", "unexpected_status",
+            "malformed_response", "readback_mismatch", "close_failure",
+            "protocol_violation", "unknown"
+          ]
+        }
+      }
+    },
+    "output_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_context_only",
+        "conformance_authority",
+        "share_count_ledger_authority",
+        "publication_authority",
+        "retention_authority",
+        "instrument_authority",
+        "capacity_authority",
+        "runway_authority",
+        "risk_authority",
+        "rank_authority",
+        "sizing_authority",
+        "entry_authority",
+        "trade_authority",
+        "prophet_authority"
+      ],
+      "properties": {
+        "is_context_only": {"const": true},
+        "conformance_authority": {"const": false},
+        "share_count_ledger_authority": {"const": false},
+        "publication_authority": {"const": false},
+        "retention_authority": {"const": false},
+        "instrument_authority": {"const": false},
+        "capacity_authority": {"const": false},
+        "runway_authority": {"const": false},
+        "risk_authority": {"const": false},
+        "rank_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "entry_authority": {"const": false},
+        "trade_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    },
+    "nonclaims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "not_a_share_count_source",
+        "not_a_publication_authority",
+        "not_a_provider_security_audit",
+        "not_a_provider_durability_or_availability_proof",
+        "not_a_credential_authentication_proof",
+        "not_a_retention_or_deletion_proof",
+        "not_a_concurrent_linearizability_proof",
+        "not_a_production_retry_semantics_proof",
+        "not_a_python_sandbox_or_credential_isolation_proof",
+        "not_a_trading_or_investment_signal"
+      ],
+      "properties": {
+        "not_a_share_count_source": {"const": true},
+        "not_a_publication_authority": {"const": true},
+        "not_a_provider_security_audit": {"const": true},
+        "not_a_provider_durability_or_availability_proof": {"const": true},
+        "not_a_credential_authentication_proof": {"const": true},
+        "not_a_retention_or_deletion_proof": {"const": true},
+        "not_a_concurrent_linearizability_proof": {"const": true},
+        "not_a_production_retry_semantics_proof": {"const": true},
+        "not_a_python_sandbox_or_credential_isolation_proof": {"const": true},
+        "not_a_trading_or_investment_signal": {"const": true}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"status": {"const": "passed"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "failure": {"type": "null"},
+          "steps": {"$ref": "#/$defs/passed_steps"},
+          "scope": {
+            "allOf": [
+              {"$ref": "#/$defs/scope"},
+              {"properties": {"admitted": {"const": true}}}
+            ]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "failure": {"$ref": "#/$defs/failure"},
+          "steps": {"$ref": "#/$defs/partial_steps"}
+        }
+      }
+    }
+  ]
+}

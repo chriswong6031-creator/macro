@@ -194,7 +194,7 @@
   {
    "artifact": "site/factordata/china_standouts.json",
    "kind": "board",
-   "schema_version": "2.0.0",
+   "schema_version": "2.1.0",
    "schema_fields": [
     "actionable",
     "as_of",
@@ -226,6 +226,8 @@
     "definition_change",
     "dispersion_regime",
     "qvix_regime",
+    "reversal_ledger",
+    "reversal_watch",
     "watch"
    ],
    "schema_item_fields": [

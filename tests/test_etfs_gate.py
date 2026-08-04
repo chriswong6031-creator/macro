@@ -595,11 +595,7 @@ def test_etfs_is_public_in_exactly_one_access_class():
     policy = yaml.safe_load((ROOT / "config" / "site_access.yml").read_text())
     classes = [name for name in ("public", "free_registered", "deny")
                if "/etfs.html" in (policy.get(name, {}).get("exact") or [])]
-    # TEMPORARILY reverted to gated (2026-08-03): the public flip deployed ahead of
-    # the free-shell bake and leaked the full board anonymously (~1h). Re-flip PR
-    # flips this pin back to ["public"] ONLY alongside/after the committed shell
-    # (masterplan gate 6b).
-    assert classes == [], f"/etfs.html is classified {classes}, expected [] until the re-flip"
+    assert classes == ["public"], f"/etfs.html is classified {classes}, expected ['public']"
 
 
 def test_the_payload_prefix_is_still_enforced_early():
@@ -620,11 +616,9 @@ def test_all_three_boundary_mirrors_agree():
     imports app/regwall.py's own list."""
     caddy = (ROOT / "app" / "deploy" / "Caddyfile").read_text()
     policy = yaml.safe_load((ROOT / "config" / "site_access.yml").read_text())
-    assert "/etfs.html" not in policy["public"]["exact"]  # gated until gate-6b re-flip
-    # Reverted state: /etfs.html must be ABSENT from every matcher list until the
-    # gate-6b re-flip (a half-revert leaving it in some lists is the same
-    # two-of-three drift this test exists to catch, in the other direction).
+    assert "/etfs.html" in policy["public"]["exact"]
+    # every matcher list that names the W1a shells must also name this one
     lists = [ln for ln in caddy.splitlines() if "/special_situations.html" in ln]
     assert lists, "Caddyfile matcher lists not found — did the file change shape?"
     for line in lists:
-        assert "/etfs.html" not in line, f"Caddy matcher still names /etfs.html: {line.strip()[:90]}"
+        assert "/etfs.html" in line, f"Caddy matcher missing /etfs.html: {line.strip()[:90]}"

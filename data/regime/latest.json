@@ -47,15 +47,15 @@
   "flip_condition": {
     "axis": "growth",
     "component": "copper_gold",
-    "z": 1.12,
+    "z": 1.13,
     "threshold": 0.45,
-    "margin": 0.67,
+    "margin": 0.68,
     "label_unsupported": false,
     "displayed_quad": "Q2",
     "raw_quad": "Q2",
-    "note": "growth axis flips risk: copper_gold slope z=1.12 is the closest supporter to its +/-0.45 cutoff"
+    "note": "growth axis flips risk: copper_gold slope z=1.13 is the closest supporter to its +/-0.45 cutoff"
   },
-  "flip_margin": 0.67,
+  "flip_margin": 0.68,
   "sector_rs": [
     {
       "ticker": "XLV",
@@ -221,11 +221,11 @@
     },
     {
       "ticker": "GC=F",
-      "rs": 5.425713034788679,
-      "mom_20d_pct": -1.9,
-      "mom_60d_pct": -14.96,
+      "rs": 5.4208300288432145,
+      "mom_20d_pct": -1.99,
+      "mom_60d_pct": -15.04,
       "above_200d_trend": false,
-      "pctile_252d": 10.3,
+      "pctile_252d": 9.9,
       "rank": 19
     }
   ],
@@ -272,7 +272,7 @@
     },
     "copper_gold": {
       "level": 0.0016,
-      "chg_20d_pct": 7.05
+      "chg_20d_pct": 7.1
     }
   },
   "alerts": [
@@ -517,7 +517,7 @@
       "skew_pctile": 0.2390873015873016,
       "stock_bond_corr": 0.49547592480280034,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 1.0309699206028053,
+      "roro": 1.0280800129248477,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.9025413899374629,
       "news_sentiment": 0.015339049510657787,
@@ -8831,12 +8831,12 @@
       "Commodities",
       "Dollar"
     ],
-    "absorption_ratio": 0.404,
+    "absorption_ratio": 0.403,
     "absorption_pctile_5y": 0.82,
     "absorption_floor": 0.167,
-    "mean_abs_corr": 0.265,
+    "mean_abs_corr": 0.264,
     "pc1_loadings": {
-      "US": 0.53,
+      "US": 0.52,
       "Crypto": 0.39,
       "China": 0.28,
       "HK": 0.21,
@@ -8858,23 +8858,23 @@
     "corr_matrix": {
       "US": {
         "US": 1.0,
-        "Crypto": 0.42,
+        "Crypto": 0.41,
         "China": 0.31,
         "HK": 0.15,
         "Commodities": 0.56,
         "Dollar": 0.41
       },
       "Crypto": {
-        "US": 0.42,
+        "US": 0.41,
         "Crypto": 1.0,
-        "China": -0.03,
-        "HK": 0.04,
+        "China": -0.02,
+        "HK": 0.03,
         "Commodities": 0.29,
         "Dollar": 0.43
       },
       "China": {
         "US": 0.31,
-        "Crypto": -0.03,
+        "Crypto": -0.02,
         "China": 1.0,
         "HK": 0.3,
         "Commodities": 0.33,
@@ -8882,7 +8882,7 @@
       },
       "HK": {
         "US": 0.15,
-        "Crypto": 0.04,
+        "Crypto": 0.03,
         "China": 0.3,
         "HK": 1.0,
         "Commodities": 0.14,
@@ -9009,7 +9009,7 @@
       0.422,
       0.412,
       0.406,
-      0.404
+      0.403
     ],
     "absorption_spark_asof": "2026-08-07",
     "evidence": "Absorption ratio = PC1 variance share (Kritzman-Page 2010): high/rising absorption marks a fragile one-factor regime that has historically led drawdowns. Daily closes across US/Asia/24-7 crypto carry a timezone lead/lag \u2014 a coarse regime gauge, not a hedge ratio."
@@ -9053,16 +9053,16 @@
     "dir_sign": -1,
     "confidence": "medium",
     "confidence_zh": "\u4e2d",
-    "strength": 0.81,
-    "dominance_ratio": 1.21,
+    "strength": 0.8,
+    "dominance_ratio": 1.24,
     "agreement": 0.72,
     "runner_up": "usd_shock",
     "runner_up_label": "USD shock",
     "runner_up_label_zh": "\u7f8e\u5143\u51b2\u51fb",
-    "headline": "Mixed \u2014 Fed repricing + USD shock jointly leading (2y yield -1.1\u03c3, US dollar -2.1\u03c3, rate-path (2y\u2212FF) -1.0\u03c3); no single dominant driver.",
+    "headline": "Mixed \u2014 Fed repricing + USD shock jointly leading (2y yield -1.1\u03c3, US dollar -2.0\u03c3, rate-path (2y\u2212FF) -1.0\u03c3); no single dominant driver.",
     "evidence": [
       "2y yield -1.1\u03c3",
-      "US dollar -2.1\u03c3",
+      "US dollar -2.0\u03c3",
       "rate-path (2y\u2212FF) -1.0\u03c3"
     ],
     "evidence_legs": [
@@ -9074,7 +9074,7 @@
       {
         "en": "US dollar",
         "zh": "\u7f8e\u5143",
-        "z": -2.1
+        "z": -2.0
       },
       {
         "en": "rate-path (2y\u2212FF)",
@@ -9091,8 +9091,8 @@
         "label": "Fed repricing",
         "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
         "family": "rates",
-        "projection": -0.81,
-        "strength": 0.81,
+        "projection": -0.8,
+        "strength": 0.8,
         "direction": "dovish repricing \u2014 cuts priced in, front-end down"
       },
       {
@@ -9100,8 +9100,8 @@
         "label": "USD shock",
         "label_zh": "\u7f8e\u5143\u51b2\u51fb",
         "family": "fx",
-        "projection": -0.67,
-        "strength": 0.67,
+        "projection": -0.64,
+        "strength": 0.64,
         "direction": "dollar falling \u2014 risk tailwind, commodities & EM bid"
       },
       {
@@ -9109,8 +9109,8 @@
         "label": "Liquidity impulse",
         "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
         "family": "liquidity",
-        "projection": -0.56,
-        "strength": 0.56,
+        "projection": -0.57,
+        "strength": 0.57,
         "direction": "net liquidity draining \u2014 risk headwind"
       },
       {
@@ -9145,8 +9145,8 @@
         "label": "Crypto liquidity",
         "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
         "family": "crypto",
-        "projection": 0.19,
-        "strength": 0.19,
+        "projection": 0.12,
+        "strength": 0.12,
         "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
       },
       {
@@ -9208,15 +9208,15 @@
         },
         "risk_contrib": {
           "US": 0.133,
-          "Crypto": 0.367,
+          "Crypto": 0.366,
           "China": 0.119,
           "HK": 0.097,
           "Commodities": 0.25,
           "Dollar": 0.034
         },
-        "port_vol_ann": 0.136,
+        "port_vol_ann": 0.135,
         "diversification_ratio": 1.65,
-        "max_risk_contrib": 0.367
+        "max_risk_contrib": 0.366
       },
       "inverse_vol": {
         "scheme": "inverse_vol",
@@ -9229,8 +9229,8 @@
           "Dollar": 0.431
         },
         "risk_contrib": {
-          "US": 0.206,
-          "Crypto": 0.126,
+          "US": 0.205,
+          "Crypto": 0.125,
           "China": 0.152,
           "HK": 0.141,
           "Commodities": 0.203,
@@ -9238,7 +9238,7 @@
         },
         "port_vol_ann": 0.092,
         "diversification_ratio": 1.66,
-        "max_risk_contrib": 0.206
+        "max_risk_contrib": 0.205
       },
       "erc": {
         "scheme": "erc",
@@ -9405,7 +9405,7 @@
   },
   "fed_path": {
     "asof": "2026-08-03",
-    "built": "2026-08-03T21:20:15.160017+00:00",
+    "built": "2026-08-03T22:46:20.989289+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -9553,7 +9553,7 @@
         "zh": "\u76c8\u4e8f\u5e73\u8861\u5927\u81f4\u5e73\u7a33\u2014\u2014\u65e0\u53ef\u64cd\u4f5c\u53d8\u52a8\u3002"
       },
       "costate": {
-        "oil_chg_20d_pct": 16.8,
+        "oil_chg_20d_pct": 16.7,
         "real10y_chg_20d_bp": 17.0,
         "nom10y_chg_20d_bp": 20.0,
         "hy_oas_z": -0.4,
@@ -14570,12 +14570,12 @@
         "insider_cluster": [],
         "gov_accel": [],
         "context": {
-          "13f_add": [
-            "NVDA"
-          ],
           "patent_cluster": [
             "NVDA",
             "QCOM"
+          ],
+          "13f_add": [
+            "NVDA"
           ],
           "congress_cluster": [
             "AMD"
@@ -14583,7 +14583,7 @@
         },
         "n_leading": 0,
         "leading_members": [],
-        "summary": "1 13f add \u00b7 2 patent cluster \u00b7 1 congress cluster"
+        "summary": "2 patent cluster \u00b7 1 13f add \u00b7 1 congress cluster"
       },
       "semicap_equipment": {
         "name": "Semiconductor Equipment (WFE)",
@@ -15229,7 +15229,7 @@
         "guidance_net": null,
         "guidance_raisers": null,
         "guidance_cutters": null,
-        "altdata_summary": "1 13f add \u00b7 2 patent cluster \u00b7 1 congress cluster",
+        "altdata_summary": "2 patent cluster \u00b7 1 13f add \u00b7 1 congress cluster",
         "n_altdata_leading": 0,
         "altdata_members": [],
         "glut_band": "STABLE",
@@ -17903,73 +17903,75 @@
   },
   "vol_regime": {
     "available": true,
-    "asof": "2026-07-31",
+    "asof": "2026-08-03",
     "regime": "normalizing",
-    "risk_score": 0.071,
+    "risk_score": 0.087,
     "scored_score": null,
     "scored_active": false,
-    "vix": 15.99,
-    "ts_slope": 0.841,
+    "vix": 15.86,
+    "ts_slope": 0.838,
     "ts_slope_state": "contango",
-    "ts9": 0.816,
-    "move": 83.0,
-    "move_pctile": 0.451,
-    "move_vix": 5.192,
-    "vrp": 3.53,
-    "vrp_pctile": 0.207,
-    "vrp_chg_21d": 0.12,
-    "vrp_state": "normal",
-    "skew": 141.2,
-    "skew_cost_pctile": 0.237,
-    "insurance_cost": "normal",
-    "downside_vrp": 3.676,
-    "vvix": 91.6,
-    "vvix_vix": 5.731,
-    "vvix_pctile": 0.167,
-    "vvix_vix_pctile": 0.569,
-    "vvix_state": "normal",
-    "vol_target_scalar": 0.75,
-    "fragility_confluence": 0,
-    "flags": [],
+    "ts9": 0.837,
+    "move": 80.5,
+    "move_pctile": 0.412,
+    "move_vix": 5.075,
+    "vrp": 3.28,
+    "vrp_pctile": 0.183,
+    "vrp_chg_21d": -1.66,
+    "vrp_state": "thin (vol underpriced \u2014 fragile)",
+    "skew": null,
+    "skew_cost_pctile": 0.0,
+    "insurance_cost": "cheap (convexity on sale)",
+    "downside_vrp": null,
+    "vvix": null,
+    "vvix_vix": null,
+    "vvix_pctile": 0.0,
+    "vvix_vix_pctile": 0.0,
+    "vvix_state": "complacent (vol-of-vol cheap vs vol \u2014 historically precedes rising vol)",
+    "vol_target_scalar": 0.76,
+    "fragility_confluence": 1,
+    "flags": [
+      "vrp_collapse"
+    ],
     "legs": {
       "ts_slope": {
-        "z": 0.808,
+        "z": 0.844,
         "scored": false,
         "sign": null,
         "eligible": true
       },
       "move": {
-        "z": 0.248,
+        "z": 0.386,
         "scored": false,
         "sign": null,
         "eligible": true
       },
       "vrp": {
-        "z": -0.526,
+        "z": -0.578,
         "scored": false,
         "sign": null,
         "eligible": true
       },
       "ts9": {
-        "z": 1.088,
+        "z": 0.867,
         "scored": false,
         "sign": null,
         "eligible": false
       },
       "skew_cost": {
-        "z": -0.698,
+        "z": null,
         "scored": false,
         "sign": null,
         "eligible": false
       },
       "downside_vrp": {
-        "z": 2.5,
+        "z": null,
         "scored": false,
         "sign": null,
         "eligible": false
       },
       "vvix": {
-        "z": 0.226,
+        "z": null,
         "scored": false,
         "sign": null,
         "eligible": false
@@ -18025,14 +18027,6 @@
         "detail_zh": "\u8de8\u8d44\u4ea7\u80cc\u79bb"
       },
       {
-        "key": "dealer_gamma",
-        "intensity": 0.1,
-        "weight": 0.9,
-        "contribution": 0.09,
-        "detail_en": "SPX: dealers long gamma (stabilizing)",
-        "detail_zh": "\u505a\u5e02\u5546Gamma"
-      },
-      {
         "key": "macro_backdrop",
         "intensity": 0.293,
         "weight": 0.3,
@@ -18076,9 +18070,9 @@
       },
       "dealer_gamma": {
         "available": true,
-        "intensity": 0.1,
+        "intensity": 0.0,
         "weight": 0.9,
-        "contribution": 0.09,
+        "contribution": 0.0,
         "detail_en": "SPX: dealers long gamma (stabilizing)",
         "detail_zh": "\u505a\u5e02\u5546Gamma"
       },
@@ -18944,7 +18938,7 @@
       "phase": null
     },
     "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-    "_timing_s": 2.29,
+    "_timing_s": 1.97,
     "forward_log": {
       "market": "us",
       "n_graded": 0,
@@ -20714,7 +20708,7 @@
       ]
     },
     "n_roster": 13,
-    "_timing_s": 2.19
+    "_timing_s": 2.2
   },
   "vol_shock": {
     "score": 40.2,
@@ -20772,8 +20766,8 @@
         "products_disagree": {
           "spy_regime": "long",
           "spx_regime": "long",
-          "spy_asof": "2026-08-02",
-          "spx_asof": "2026-08-02",
+          "spy_asof": "2026-08-03",
+          "spx_asof": "2026-08-03",
           "disagree": false,
           "note": "SPY and SPX agree on the gamma-regime sign today."
         }
@@ -20782,7 +20776,7 @@
         "key": "vix_term",
         "label": "VIX term structure (inversion)",
         "label_zh": "VIX \u671f\u9650\u7ed3\u6784\uff08\u5012\u6302\uff09",
-        "value": 0.841,
+        "value": 0.838,
         "weight": 0.8,
         "available": true,
         "sub": 0.0,
@@ -20876,8 +20870,8 @@
     "gex_products_disagree": {
       "spy_regime": "long",
       "spx_regime": "long",
-      "spy_asof": "2026-08-02",
-      "spx_asof": "2026-08-02",
+      "spy_asof": "2026-08-03",
+      "spx_asof": "2026-08-03",
       "disagree": false,
       "note": "SPY and SPX agree on the gamma-regime sign today."
     },
@@ -23432,22 +23426,22 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4110.9,
+        "price": 4107.2,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -1.0,
-        "pct_vs_200dma": -8.2,
+        "pct_vs_50dma": -1.1,
+        "pct_vs_200dma": -8.3,
         "rsi14": 51.0,
         "macd_pos": true,
-        "off_52w_high_pct": -22.7,
+        "off_52w_high_pct": -22.8,
         "season_this": "Aug: +2.0% avg, up 73% of years (n=26)",
         "season_this_zh": "8\u6708\uff1a\u5e73\u5747 +2.0%\uff0c73% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -12.1
+        "mom_60d_pct": -12.2
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 80.06,
+        "price": 80.03,
         "above50": false,
         "above200": true,
         "pct_vs_50dma": -0.2,
@@ -23465,7 +23459,7 @@
         "price": 6.54,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 3.7,
+        "pct_vs_50dma": 3.6,
         "pct_vs_200dma": 12.0,
         "rsi14": 62.0,
         "macd_pos": true,
@@ -23477,12 +23471,12 @@
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 99.96,
+        "price": 99.99,
         "above50": false,
         "above200": true,
         "pct_vs_50dma": -0.6,
         "pct_vs_200dma": 0.8,
-        "rsi14": 37.0,
+        "rsi14": 38.0,
         "macd_pos": false,
         "off_52w_high_pct": -1.6,
         "season_this": "Aug: +0.2% avg, up 50% of years (n=56)",
@@ -23563,7 +23557,7 @@
   },
   "freshness": {
     "asof": "2026-08-03",
-    "built_at": "2026-08-03T21:20:47Z",
+    "built_at": "2026-08-03T22:46:54Z",
     "age_days": 0,
     "age_sessions": 0,
     "max_age_sessions": 1,
@@ -27134,7 +27128,7 @@
     "favor_entries": false,
     "cap_leadership": false,
     "vol_regime": "normalizing",
-    "vol_ts_slope": 0.841,
+    "vol_ts_slope": 0.838,
     "vol_ts_slope_state": "contango",
     "subsector_rotation_sides": null,
     "donor_unwind_state": null,

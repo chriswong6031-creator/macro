@@ -57,21 +57,27 @@ carries overflow and makes repeated scheduled runs safe.
 
 ## Hardware / model
 
-- **GPU:** RTX 5070, 12 GB VRAM.
-- **Model:** **Qwen3-14B, Q4_K_M** GGUF (~9 GB) — fits fully on the GPU. This is
-  the default. Quality-upgrade path (given 64 GB system RAM): **Qwen3-30B-A3B**
-  (MoE) with partial CPU offload — slower, higher quality; only if you want it.
-- Anything that speaks the **OpenAI Chat Completions** API works: **LM Studio**,
-  **llama.cpp** (`llama-server`), or **vLLM**.
+- **GPU:** RTX 5070 Ti, 16 GB VRAM.
+- **Model:** **Qwen3.5-9B, Q4_K_M** through Ollama. It stays fully on the GPU,
+  supports text and image input, and is the deployed default.
+- Any server that speaks the **OpenAI Chat Completions** API still works, but
+  Ollama is the canonical local runtime for this machine.
 
-### Option A — LM Studio (easiest)
+### Option A — Ollama (deployed)
 
-1. Install LM Studio, download **Qwen3-14B-Instruct (Q4_K_M GGUF)**.
-2. Set GPU offload to **max** (all layers on GPU — the Q4 14B fits in 12 GB).
-3. Start the **Local Server** (Developer tab → Start Server). Default endpoint:
-   `http://localhost:1234/v1`. Note the **model id** shown in the server panel.
+```powershell
+ollama pull qwen3.5:9b
+ollama serve
+```
 
-### Option B — llama.cpp (`llama-server`)
+Local endpoint: `http://localhost:11434/v1`. Remote callers use a private
+Tailscale TCP Serve route to the same localhost service; port 11434 is never
+opened to the public internet or LAN.
+
+### Option B — LM Studio / llama.cpp
+
+LM Studio normally serves `http://localhost:1234/v1`. A direct llama.cpp setup
+can use:
 
 ```powershell
 # after building/installing llama.cpp with CUDA support:
@@ -82,8 +88,8 @@ llama-server ^
   --host 127.0.0.1 --port 8000
 ```
 
-Endpoint: `http://localhost:8000/v1`, model id: the filename LM/llama reports
-(pass whatever the server advertises via `--model` on the worker).
+Endpoint: `http://localhost:8000/v1`; pass the model id advertised by the
+selected server via `--model` on the worker.
 
 ---
 
@@ -120,7 +126,7 @@ Optional endpoint overrides (avoid editing the repo config on the PC):
 | Variable | Purpose |
 |---|---|
 | `EARNINGS_LLM_BASE_URL` | local endpoint, e.g. `http://localhost:1234/v1` |
-| `EARNINGS_LLM_MODEL` | local model id, e.g. `qwen3-14b` |
+| `EARNINGS_LLM_MODEL` | local model id, e.g. `qwen3.5:9b` |
 | `LOCAL_LLM_API_KEY` | only if your server requires a bearer token |
 | `EARNINGS_PROVIDER_ORDER` | optional waterfall, e.g. `openai_compat,deepseek,kimi,codex,anthropic`; `codex` explicitly uses the attached Terra subscription rung |
 | `DEEPSEEK_API_KEY` | enables the low-cost DeepSeek fallback |
@@ -136,11 +142,11 @@ Optional endpoint overrides (avoid editing the repo config on the PC):
 # First migration run: score a deliberate recent slice. This requires the
 # Terminal index dates extension and persists the forward cursor.
 python run_worker.py --terminal-auto --bootstrap-since 2026-07-24 ^
-  --base-url http://localhost:1234/v1 --model qwen3-14b
+  --base-url http://localhost:11434/v1 --model qwen3.5:9b
 
 # Every scheduled run after that: discover and score only new/corrected calls.
 python run_worker.py --terminal-auto ^
-  --base-url http://localhost:1234/v1 --model qwen3-14b
+  --base-url http://localhost:11434/v1 --model qwen3.5:9b
 
 # Zero-touch fallback when the local endpoint is asleep or the queue spikes.
 python run_worker.py --terminal-auto ^

@@ -152,11 +152,16 @@ def verdict(result: dict | None) -> dict:
     return v
 
 
-def gate(ticker: str, daily_close) -> dict:
+def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     """analyze() the close series, then return the verdict PLUS the raw analyze() result
-    (the §7 site/signals/<T>.json payload) under "result". Never raises on thin/bad data."""
+    (the §7 site/signals/<T>.json payload) under "result". Never raises on thin/bad data.
+
+    ``reclaim_veto`` passes through to :func:`engine.signal_quality._buy_filter`. DEFAULT
+    True keeps every existing caller (US, CN, and the ~12 modules importing this) on the
+    validated policy byte-for-byte; HK passes False per the 2026-08-03 operator ruling —
+    see that function's docstring for the mechanism."""
     try:
-        res = analyze(ticker, daily_close)
+        res = analyze(ticker, daily_close, reclaim_veto=reclaim_veto)
     except Exception:
         res = None
     v = verdict(res)

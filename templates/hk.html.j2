@@ -3467,9 +3467,14 @@
      would have deleted the entire surface built for exactly that night. A pre-v1
      artifact keeps the old rule: without the display lanes there is genuinely
      nothing to show, and rendering an empty panel would be worse than none. #}
+  {# The sentinel asks "is this a PRIORITY-ERA artifact", never "is this exactly v1".
+     Pinning the literal broke on the very first era bump (v1 -> v2, 2026-08-03): the
+     stamp moved, this test stopped matching, and the whole layer went dark on a board
+     that was emitting every field it needed. Match the family prefix so future era
+     bumps are ledger events, not render outages. #}
   {% if mode == 'stocks' and setups and (setups.buy
-        or setups.get('board_definition') == 'hk_prophet_v1'
-        or setups.get('rank_by') == 'hk_prophet_v1') %}
+        or (setups.get('board_definition') or '').startswith('hk_prophet_v')
+        or (setups.get('rank_by') or '').startswith('hk_prophet_v')) %}
   {# ── W8-G: JSON data block — feeds StockTable.init(); one row per buy name in system order ── #}
   {% set _hk_st_rows = [] %}
   {% for _hn in setups.buy %}
@@ -3525,7 +3530,7 @@
      artifact written between the two stamps still lights the layer. #}
   {%- set _hkb = setups.buy or [] -%}
   {%- set _hk_def = setups.get('board_definition') or setups.get('rank_by') -%}
-  {%- set _hsg = namespace(any=(_hk_def == 'hk_prophet_v1')) -%}
+  {%- set _hsg = namespace(any=(_hk_def or '').startswith('hk_prophet_v')) -%}
   {%- set _hk_ran = (setups.get('ran') or []) if _hsg.any else [] -%}
   {%- set _hk_ldrs = (setups.get('leaders') or []) if _hsg.any else [] -%}
   {%- set _hk_veto = (setups.get('vetoed') or []) if _hsg.any else [] -%}
@@ -3656,7 +3661,7 @@
   <div class="panel span12" id="standouts">
     <h2>⚡ {{ t('Prophet — HK stock signals', '先知 — 港股信号') }}
       <span class="note" style="text-transform:none">· {% if _hsg.any %}{{ t('Ranked by readiness — what to act on, and what to leave alone', '按就绪度排序 —— 哪些可以动手，哪些放着别碰') }}{% else %}{{ t('Bottoming names, ranked by flow, value and strength', '筑底个股，按资金、价值与强度排序') }}{% endif %}</span>
-      {% if _hsg.any %}{{ help("Every HK name we track that has a live read, in one board ordered by readiness — live entries first, then setups still forming, then names that already ran, then names an entry check is blocking. Priority 0–100 is a transparent readiness rank (" ~ _wtxt_en ~ "), used only to order the board: it is not a win probability and not a return forecast. The green cards are the picks — a separate gate on top of the order (fresh signal, entry window open, edge above zero, price not extended, capped per sector). Leader-cohort chips are context from a display-only read; they earn a name no points here. The hk_prophet_v1 forward record is accruing separately.", "我们跟踪的每只有效港股都在同一张榜单上，按可操作就绪度排序 —— 先是入场窗口已打开的，然后是形态仍在形成的，接着是已经启动的，最后是被入场检查挡住的。优先级 0–100 是透明的就绪度排序（" ~ _wtxt_zh ~ "），仅用于给本榜排序：它不是胜率，也不是收益预测。发绿光的卡片是精选 —— 那是排序之上的另一道门槛（信号新鲜、入场窗口已打开、优势为正、价格未过度拉伸，并受行业名额限制）。龙头组合标签来自仅供展示的读数，不为个股加分。hk_prophet_v1 的前瞻记录将单独积累。") }}{% else %}{{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.", "显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。") }}{% endif %}
+      {% if _hsg.any %}{{ help("Every HK name we track that has a live read, in one board ordered by readiness — live entries first, then setups still forming, then names that already ran, then names an entry check is blocking. Priority 0–100 is a transparent readiness rank (" ~ _wtxt_en ~ "), used only to order the board: it is not a win probability and not a return forecast. The green cards are the picks — a separate gate on top of the order (fresh signal, entry window open, edge above zero, price not extended, capped per sector). Leader-cohort chips are context from a display-only read; they earn a name no points here. The " ~ _hk_def ~ " forward record is accruing separately.", "我们跟踪的每只有效港股都在同一张榜单上，按可操作就绪度排序 —— 先是入场窗口已打开的，然后是形态仍在形成的，接着是已经启动的，最后是被入场检查挡住的。优先级 0–100 是透明的就绪度排序（" ~ _wtxt_zh ~ "），仅用于给本榜排序：它不是胜率，也不是收益预测。发绿光的卡片是精选 —— 那是排序之上的另一道门槛（信号新鲜、入场窗口已打开、优势为正、价格未过度拉伸，并受行业名额限制）。龙头组合标签来自仅供展示的读数，不为个股加分。" ~ _hk_def ~ " 的前瞻记录将单独积累。") }}{% else %}{{ help("Shows HK names whose weekly, 3-day and daily cycles are turning up, then ranks them by three cleaner edges — southbound flow, A/H value, and strength after removing global-risk beta. Entry-open group first, then setting-up. A screen, not a promise.", "显示周线、3日、日线开始转上的港股，再按三条较干净的优势排序 —— 南向资金、A/H 价值、剥离全球风险贝塔后的强度。入场开启组优先，蓄势中次之。这是筛选，不是承诺。") }}{% endif %}
       {# W8-G: grid/table view toggle #}
       <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
         <button id="st-btn-grid" aria-selected="true" onclick="StockTable._setView('grid')">⊞ <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>
@@ -3979,7 +3984,22 @@
     {# Board-order framing footnote. One line, once — the per-card Priority tooltip
        carries the same arithmetic on Tier 2. #}
     {% if _hsg.any %}
-    <p class="pb-fn"><span class="l-en">Priority = {{ _wtxt_en|replace(' · ', ' + ') }}. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability. The hk_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝{{ _wtxt_zh|replace(' · ', '＋') }}。它衡量的是一只股票的可操作就绪度，用于给本榜排序 —— 并非胜率。hk_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
+    <p class="pb-fn"><span class="l-en">Priority = {{ _wtxt_en|replace(' · ', ' + ') }}. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability. The {{ _hk_def }} forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝{{ _wtxt_zh|replace(' · ', '＋') }}。它衡量的是一只股票的可操作就绪度，用于给本榜排序 —— 并非胜率。{{ _hk_def }} 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
+    {# ADMISSION CHANGE DISCLOSURE (hk_prophet_v2, 2026-08-03).  The board admits more
+       names than it did yesterday and a reader is owed the reason and the cost in the
+       same breath — plain words, no internal vocabulary, no claim that the change is
+       an improvement, because the period that motivated it is not yet gradeable. #}
+    <p class="pb-fn"><span class="l-en"><b>What changed:</b> until 3 Aug this board also
+      required a name trading below its 200-day average to close back above that average
+      within two sessions. A name far below the line cannot do that, so its buy signals
+      were refused until it had already recovered — which is why setups like Xiaomi and
+      Alibaba never appeared during their July run. That requirement is gone; a name now
+      needs its signal plus one session of follow-through. Expect roughly a third more
+      names here, and deeper drawdowns on some of them.</span><span class="l-zh"><b>变更说明：</b>
+      8月3日之前，本榜还要求股价低于200日均线的个股必须在两个交易日内重新收于该均线之上。
+      远低于均线的个股根本做不到，因此其买入信号会被拒绝，直到股价已经涨回 —— 这正是小米、
+      阿里巴巴等形态在7月上涨期间从未出现在榜单上的原因。该要求已取消；现在个股只需要信号
+      加上一个交易日的跟进确认。预计本榜个股数量将增加约三分之一，其中部分个股的回撤会更深。</span></p>
     {% endif %}
     {# 🏃 LEADERS STRIP — the strongest HK runners, which the entry-gated board above
        structurally cannot show: the gate admits a name only on a fresh cross, and a

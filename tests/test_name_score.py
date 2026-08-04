@@ -203,3 +203,94 @@ def test_grade_quarantines_frozen_echo_runs(tmp_path, monkeypatch):
     out = gr.grade("US")
     assert out["available"] is True and out["n_frozen_excluded"] == 4
     assert out["n_calls"] == 11                    # 15 rows − 4 quarantined
+
+
+# --- us_calls ledger-integrity disclosures (2026-08-03 adjudication follow-up) ----
+def test_append_discloses_universe_shrink_without_blocking(tmp_path, monkeypatch, capsys):
+    """2026-07-25: the weekly lane stamped 1,704 US names between 2,966-name nightly
+    stamps (its runner restored no russell cache) and nothing surfaced — keep-FIRST
+    PIT makes such a stamp permanently thin. An adjacent-stamp collapse (>20%) is
+    disclosed as a line-start GitHub annotation at the write; admission is NEVER
+    refused for coverage (a thin stamp still beats a missing one)."""
+    monkeypatch.setattr(gr.config, "data_dir", lambda: tmp_path)
+
+    def batch(n, off=0):
+        return [{"ticker": f"T{i:03d}", "score": 10, "tier": "watch", "fuel": 0.5,
+                 "trigger": 0.2, "level": 50.0 + i + off} for i in range(n)]
+
+    assert gr.append_name_calls(batch(40), market="US", asof="2026-07-22") == 40
+    capsys.readouterr()
+    # collapse 40 -> 20: disclosed, and every row still lands (no coverage gate)
+    assert gr.append_name_calls(batch(20, off=100), market="US", asof="2026-07-25") == 60
+    out = capsys.readouterr().out
+    line = next((ln for ln in out.splitlines() if "universe shrink" in ln), "")
+    assert line.startswith("::warning")            # annotation law: bare line-start print
+    assert "admits 20 names vs 40 on 2026-07-22" in line
+    # recovery and ordinary drift never warn (36 vs 40 = -10%, inside the band)
+    gr.append_name_calls(batch(40, off=200), market="US", asof="2026-07-26")
+    gr.append_name_calls(batch(36, off=300), market="US", asof="2026-07-27")
+    assert "universe shrink" not in capsys.readouterr().out
+    # same-day re-run of the thin stamp: first write already disclosed — silent
+    gr.append_name_calls(batch(20, off=400), market="US", asof="2026-07-25")
+    assert "universe shrink" not in capsys.readouterr().out
+    # a young/tiny ledger (prev stamp under the floor) never warns
+    monkeypatch.setattr(gr.config, "data_dir", lambda: tmp_path / "young")
+    gr.append_name_calls(batch(10), market="HK", asof="2026-07-22")
+    gr.append_name_calls(batch(3, off=50), market="HK", asof="2026-07-23")
+    assert "universe shrink" not in capsys.readouterr().out
+
+
+def test_universe_missing_or_unreadable_source_annotates(tmp_path, monkeypatch, capsys):
+    """universe() used to skip a missing/corrupt breadth source group with a
+    logger-only warning — invisible in Actions (the repo annotation law: GitHub
+    silently drops logger-prefixed ::warning lines). The skip must be a bare
+    line-start annotation so a lane assembling a shrunken universe says so."""
+    from scripts import build_stock_library as bsl
+    monkeypatch.setattr(bsl.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(bsl.config, "load", lambda: {
+        "yahoo": {"tickers": {"sectors": [], "extras": []}}, "stock_search": {}})
+    # breadth present-but-corrupt (both files exist, unreadable); other three absent
+    bdir = tmp_path / "breadth"
+    bdir.mkdir()
+    (bdir / "_closes_cache.parquet").write_bytes(b"not a parquet")
+    (bdir / "constituents.parquet").write_bytes(b"also not a parquet")
+    out_universe = bsl.universe()
+    assert out_universe == []
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::warning")]
+    unreadable = [ln for ln in lines if "universe source unreadable" in ln and "breadth" in ln]
+    missing = [ln for ln in lines if "universe source missing" in ln]
+    assert len(unreadable) == 1
+    assert len(missing) == 3            # smallcap_breadth, midcap_breadth, russell_breadth
+    assert all(ln.startswith("::warning") for ln in lines)
+
+
+def test_grade_discloses_ic_cross_section_and_pit_stamp_gaps(tmp_path, monkeypatch):
+    """The rank-IC denominators must be self-disclosing: per-date graded cross-section
+    (today bounded by the deep-store subset, so a thin display stamp moves nothing —
+    if store coverage ever widens, min << max is the tell) and PIT stamp gaps (US
+    2026-07-13/23/24 vanished with the wedged nightlies and can never be backfilled).
+    Gap detection is cadence-aware: only weekdays this ledger has stamped count, so
+    the weekday-only CN ledger never miscounts weekends."""
+    monkeypatch.setattr(gr.config, "data_dir", lambda: tmp_path)
+    sdir = tmp_path / "stocks"
+    sdir.mkdir(parents=True)
+    bars = pd.date_range("2026-06-25", periods=45, freq="D")
+    for i, t in enumerate(["G1", "G2", "G3", "G4", "G5"]):
+        pd.DataFrame({"close": [100.0 + 10 * i + 0.1 * j for j in range(len(bars))]},
+                     index=bars).to_parquet(sdir / f"{t}.parquet")
+    # stamps Wed 07-01, Thu 07-02, Thu 07-09 -> stamped weekdays {Wed, Thu}: the
+    # missing Wed 07-08 is a PIT gap; the interior Fri..Tue are not (never-stamped dows)
+    rows = []
+    for di, d in enumerate(("2026-07-01", "2026-07-02", "2026-07-09")):
+        for i, t in enumerate(["G1", "G2", "G3", "G4", "G5"]):
+            rows.append({"date": d, "ticker": t, "score": 10 + 10 * i, "tier": "watch",
+                         "fuel": 0.5, "trigger": 0.2,
+                         "level": 100.0 + i + 0.31 * di})   # levels vary — no echo runs
+    (tmp_path / "name_score").mkdir()
+    pd.DataFrame(rows).to_parquet(tmp_path / "name_score" / "us_calls.parquet", index=False)
+    out = gr.grade("US")
+    assert out["available"] is True
+    assert out["n_stamp_gaps"] == 1 and out["stamp_gap_dates"] == ["2026-07-08"]
+    h21 = out["by_horizon"]["21d"]
+    assert h21["n_ic_dates"] == 3
+    assert h21["ic_cross_section"] == {"min": 5, "median": 5, "max": 5}

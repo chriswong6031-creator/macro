@@ -421,6 +421,12 @@ jobs:
           path: data/midcap_breadth/_closes_cache.parquet
           key: midcap-closes-render-${{ github.run_id }}
           restore-keys: midcap-closes-
+      - name: restore Russell 2000 breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/russell_breadth/_closes_cache.parquet
+          key: russell-closes-render-${{ github.run_id }}
+          restore-keys: russell-closes-
       - name: restore china breadth close cache
         uses: actions/cache/restore@v4
         with:

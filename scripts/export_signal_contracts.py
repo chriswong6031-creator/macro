@@ -285,7 +285,7 @@ ARTIFACT_MANIFEST = [
      "note": "US Buy Board — sizes the autonomous book's US candidate universe"},
     {"artifact": "site/factordata/china_standouts.json",
      "kind": "board",
-     "schema_version": "2.0.0",
+     "schema_version": "2.1.0",
      "schema_fields": [
          "actionable", "as_of", "board_definition", "buy", "cap_composition",
          "coverage", "eligible", "execution_coverage", "forming", "laggards",
@@ -296,13 +296,17 @@ ARTIFACT_MANIFEST = [
      "optional_fields": [
          # data_outage — W0.7 board-width guard stamp, present only on a collapsed
          # board (>40% day-over-day buy-count drop); conditional-by-design.
+         # reversal_watch — the measurement-only washout shelf; present on normal
+         # builds but absent from the explicit zero-universe outage shell.
+         # reversal_ledger — fail-soft companion ledger; absent when its isolated
+         # emitter cannot produce a document.
          # watch — compatibility union of the explicit v2 secondary lanes
          # (more_actionable + late_or_unfillable + forming).  New consumers must use
          # the explicit lanes; the alias keeps older bots/microstructure collectors
          # lossless during migration.
          # (List order is alphabetical — test_contract_drift asserts optional_fields sorted.)
          "board_track", "data_outage", "definition_change", "dispersion_regime",
-         "qvix_regime", "watch",
+         "qvix_regime", "reversal_ledger", "reversal_watch", "watch",
      ],
      "schema_item_fields": [
          "ab_tier", "adv_yi", "align_tier", "alpha", "alpha_entry",
