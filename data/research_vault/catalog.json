@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T00:37:02.225120+00:00",
-  "count": 699,
+  "generated_at": "2026-08-04T01:07:11.210578+00:00",
+  "count": 700,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -86,6 +86,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hmvmaer1in7-0c4f6b",
+      "title": "Equities Tactical Top Picks",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:44:47Z",
+      "summary_points": [
+        "**New Tactical Additions**: Sonova Hldg N (242 CHF target vs current 223 CHF, 2.3% return) and Trane Tech Rg (570 USD target vs current 483.34 USD, -5.8% return) signal upside potential despite near-term underperformance.",
+        "**Regional Performance Divergence**: Switzerland leads (Roche +14.0%, Alcon +9.2%), while APAC lags (-8.7% absolute, -5.1% relative) due to China-US tensions impacting Alibaba.",
+        "**Closed Ideas Alpha**: -8.8% annualized alpha and 0.3% absolute return indicate significant underperformance against benchmarks.",
+        "**APAC Geopolitical Risk**: Alibaba faces heightened exposure to China-US tensions, driving severe underperformance (-8.7% absolute return).",
+        "**Sonova Fundamentals**: Hearing aids (90% sales) insulate from sector pressures; AI software upgrades to boost recurring revenue (UBS forecasts above consensus)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 26,
       "language": "en",
       "needs_metadata": false
     },
