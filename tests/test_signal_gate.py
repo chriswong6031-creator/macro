@@ -80,7 +80,12 @@ class TestNearMissAnnotation:
                             "quality": "take"}],
                "state": "long-bias", "above200": True, "weekly_bull": True,
                "early_now": False, "asof": "2025-02-01"}
-        monkeypatch.setattr(sg, "analyze", lambda t, c: res)
+        # `**kw` is load-bearing: gate() forwards keyword policy flags (reclaim_veto,
+        # 2026-08-03) and wraps the call in a broad `except`, so a stub whose signature
+        # drifts from the real one raises TypeError, gets swallowed, and the verdict
+        # silently degrades to "insufficient history" — the behaviour under test
+        # vanishes while looking like a logic bug.  Absorb any kwarg.
+        monkeypatch.setattr(sg, "analyze", lambda t, c, **kw: res)
         monkeypatch.setattr(ct, "cascade",
                             lambda close, take_active=False, take_date=None: {
                                 "not_topped": not topped, "tier": None,
@@ -112,7 +117,12 @@ class TestNearMissAnnotation:
                             "quality": "take"}],
                "state": "long-bias", "above200": True, "weekly_bull": True,
                "early_now": False, "asof": "2025-02-01"}
-        monkeypatch.setattr(sg, "analyze", lambda t, c: res)
+        # `**kw` is load-bearing: gate() forwards keyword policy flags (reclaim_veto,
+        # 2026-08-03) and wraps the call in a broad `except`, so a stub whose signature
+        # drifts from the real one raises TypeError, gets swallowed, and the verdict
+        # silently degrades to "insufficient history" — the behaviour under test
+        # vanishes while looking like a logic bug.  Absorb any kwarg.
+        monkeypatch.setattr(sg, "analyze", lambda t, c, **kw: res)
         monkeypatch.setattr(ct, "cascade",
                             lambda close, take_active=False, take_date=None: {
                                 "not_topped": True, "tier": "T1", "ticks": 1,

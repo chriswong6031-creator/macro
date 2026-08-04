@@ -842,10 +842,13 @@ def _board_ledger_calls(buys: list[dict], watch: list[dict], *,
             # Inclusion-gate version — enables Q4/W7 grading to split pre/post cascade-swap.
             "gate_ver": "cascade_v1",
             # ERA FENCE (masterplan §3 / CN G5). hk_prophet_v1 re-sorted the buy
-            # lane, so `board_pos` stopped meaning what it meant on 2026-08-01.
-            # The stamp lets board_ledger.scorecard scope its rank statistics to
-            # ONE selection instrument instead of pooling two boards; rows
-            # written before this stamp read as legacy and keep their own pool.
+            # lane, so `board_pos` stopped meaning what it meant on 2026-08-01;
+            # hk_prophet_v2 (2026-08-03) then changed ADMISSION itself by dropping
+            # the 200-day reclaim requirement, which is the sharper break of the two
+            # — a wider lane is a different instrument, not a re-ordering of the same
+            # one. The stamp lets board_ledger.scorecard scope its rank statistics to
+            # ONE selection instrument instead of pooling three; rows written before
+            # each stamp read as legacy and keep their own pool.
             "board_definition": hk_board_rank.BOARD_DEFINITION,
         })
     return calls
@@ -1647,9 +1650,9 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     )
     _stage_ct = hk_board_rank.stage_counts(buys)
     _ranking = hk_board_rank.ranking_block(buys, theme_asof=as_of)
-    log.info("hk_prophet_v1: %d buy rows scored — stages %s, featured %d "
-             "(cap %d, sector cap %d)", len(buys), _stage_ct,
-             _ranking["featured_count"], hk_board_rank.FEATURED_CAP,
+    log.info("%s: %d buy rows scored — stages %s, featured %d "
+             "(cap %d, sector cap %d)", hk_board_rank.BOARD_DEFINITION, len(buys),
+             _stage_ct, _ranking["featured_count"], hk_board_rank.FEATURED_CAP,
              hk_board_rank.SECTOR_CAP)
 
     # days_since_signal on the non-buy conviction lanes: one field, one meaning
