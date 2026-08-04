@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T01:07:11.210578+00:00",
-  "count": 700,
+  "generated_at": "2026-08-04T01:22:11.607214+00:00",
+  "count": 701,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -188,6 +188,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-htltc4jhgg9-0eeb8d",
+      "title": "Tracking U.S",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:26:38Z",
+      "summary_points": [
+        "**West Coast/East Coast Backlog Disparity**: West Coast container backlog unchanged at 1, East Coast at 5, signaling persistent congestion in key U.S.",
+        "trade corridors and elevated freight costs.",
+        "**Ocean Shipping Rates Reversal**: Weekly container shipping rates down 12% WoW ($6.21k vs $7.07k), reversing prior week’s +204% YoY spike, indicating near-term cost relief for importers.",
+        "**June Congestion Deterioration**: Monthly bottleneck metrics worsened vs May, contradicting easing narratives and signaling escalating supply chain pressures through mid-2026.",
+        "**PMI Supplier Delivery Times**: At 42.6 (below 50 threshold), confirming worsening delivery delays and systemic logistical bottlenecks critical for manufacturing sector positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
