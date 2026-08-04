@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T10:23:17.732756+00:00",
-  "count": 727,
+  "generated_at": "2026-08-04T10:38:26.717165+00:00",
+  "count": 728,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -49,6 +49,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-w1tihsut8gt-a94dcf",
+      "title": "JPM JPM US Market Intell",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T10:24:17Z",
+      "summary_points": [
+        "**HY Default Forecast**: Nelson Jantzen raises FY26 HY bonds default rate to 2.25% (from 1.75%) and Leveraged Loans to 2.25% (from 3.0%), signaling heightened credit risk.",
+        "**AI Productivity Shift**: AI adoption driven by labor productivity (not cost reduction), with 47% citing organizational capability as top hurdle; Tech Hardware/Semis lead spending growth (+2.4 pp).",
+        "**MAG7 Valuation Signal**: Forward P/E at 17.4860 (vs.",
+        "median 23.5684) indicates potential undervaluation or correction in tech equities.",
+        "**Semis/Korea ETF Inflows**: Record inflows (~$9.4Bn) into Semis (SMH/SOXX/SOXL) and Korea ETFs, driven by aggressive dip-buying and AI momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-iim2137xn3o-bf11aa",
       "title": "JPM Europe Equity Research | Today’s Morning Meeting",
