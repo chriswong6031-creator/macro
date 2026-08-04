@@ -2289,6 +2289,9 @@ function renderBTable(){
 
 // ---- 02 chart -------------------------------------------------------------
 let chart=null, chartMode='rel', chartRange=parseInt(localStorage.getItem('fw-brange')||'252',10)||252, hidden={};
+/* Set when renderChart() is asked to draw while #chart is still inside a display:none
+   view; si:view clears it the moment Explore is really on screen. See renderChart(). */
+let _chartDeferred=false;
 function chartSets(){
   const sets=Object.entries(CHART.baskets).map(([id,levels])=>{ const b=(BASKETS.baskets||[]).find(x=>x.id===id);
     return {key:id,label:b?b.name:id,color:colorOf[id]||'#888',levels}; });
@@ -2316,6 +2319,14 @@ function _xhTip(){
 }
 function renderChart(){
   const el=document.getElementById('chart'); if(typeof LightweightCharts==='undefined'){ el.innerHTML='<p class="muted">The charting library failed to load — the rest of the page is unaffected.</p>'; return; }
+  /* Under the workspace shell #chart starts inside a display:none view, where it measures
+     0 wide — and the basket payload lands (calling us) long before anyone opens Explore.
+     lightweight-charts binds autoSize at CREATION: a chart born zero-wide never recovers.
+     Measured on the shipped page 2026-08-04: with Explore open, #chart was 0px wide and
+     all seven canvases sat at the library's 300px default inside a ~950px slot, and
+     neither a window resize event nor a container width nudge moved them. So do not
+     create it yet — mark the draw deferred and let the si:view handler run us again. */
+  if(!chart && !el.clientWidth){ _chartDeferred=true; return; }
   if(!chart){ chart=LightweightCharts.createChart(el,chartOpts()); }
   (chart.__series||[]).forEach(s=>chart.removeSeries(s)); chart.__series=[];
   const start=rangeStart(CHART.dates);
@@ -2719,6 +2730,11 @@ function boot(){
   const rvxRerender=()=>{ try{ renderVerdictHero(); renderActBoard(); renderRotationMap(); renderRotBoard(); renderInternals(); }catch(e){} };
   document.addEventListener('langchange',()=>{ rvxRerender(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
   document.addEventListener('themechange',()=>{ renderRotationMap(); renderRotBoard(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
+  /* The overlay chart could not be built while Explore was hidden (see renderChart);
+     build it the first time the view is actually on screen. */
+  document.addEventListener('si:view',(e)=>{
+    if(e&&e.detail==='explore'&&_chartDeferred){ _chartDeferred=false; renderChart(); }
+  });
 }
 boot();
 try{ __siWireScope(); __siWireTrace(); }catch(e){ console.warn('si glue', e); }
@@ -2769,7 +2785,13 @@ if(document.readyState!=='loading') __siBoot(); else document.addEventListener('
 
 {# ── __siDonorJs: transplanted sector_central engines (conviction board, cycle loader,
    heatmap scorecard, index leadership) + the whole-market rotation app ── #}
-<script src="sector_central_data.js"></script>
+{# data-sync, not defer: optimize_assets marks every <script src> `defer` unless it opts
+   out, and a deferred payload executes AFTER the inline bootstrap below — which reads
+   window.SECTOR_CENTRAL on its first line and returns when it is missing. Measured
+   in-browser 2026-08-04: #board rendered 0 bytes and #regime 0 bytes on the shipped
+   page while the payload itself was present and complete, because the two ran in the
+   wrong order. Pinned by tests/test_sector_central_data_is_sync.py. #}
+<script data-sync src="sector_central_data.js"></script>
 <script>
 (function(){
   "use strict";
