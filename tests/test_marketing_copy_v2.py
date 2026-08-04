@@ -1816,6 +1816,24 @@ def test_every_exemplar_would_survive_its_own_shape_gate():
 
 CODEX_FIRST_ORDER = ["codex", "oauth", "anthropic", "deepseek"]
 
+#: The ONE rung that may follow the hosted waterfall, and only at the very end.
+#:
+#: A local model is not a peer of the hosted rungs — it is what runs when all of
+#: them have failed, and the alternative at that point is not a better sentence
+#: but breaking_summary's deterministic relay of a raw source headline (the
+#: 2026-08-04 "More info on this - ..." postmortem). Pinned as a TAIL rather than
+#: folded into the list above so the ruling this file exists to protect —
+#: codex leads, then oauth, anthropic, deepseek — is still asserted exactly, and
+#: a local model can never be promoted ahead of a hosted one by a config edit.
+LOCAL_TAIL = ["ollama"]
+
+
+def assert_codex_first(order, lane=""):
+    """The hosted waterfall is exact; an optional local rung may trail it."""
+    order = list(order or [])
+    assert order[:len(CODEX_FIRST_ORDER)] == CODEX_FIRST_ORDER, lane
+    assert order[len(CODEX_FIRST_ORDER):] in ([], LOCAL_TAIL), lane
+
 
 def _capture_provider_cfg(monkeypatch) -> list[dict]:
     """Replace build_providers with a recorder that mutes the lane.
@@ -1851,7 +1869,7 @@ def test_the_copywriter_v1_site_asks_for_codex_first_on_sol(monkeypatch, capsys)
 
     assert seen, "write_posts_llm never reached the provider waterfall"
     cfg = seen[0]
-    assert cfg["provider_order"] == CODEX_FIRST_ORDER
+    assert_codex_first(cfg["provider_order"])
     assert cfg["codex_source_model"] == "gpt-5.6-sol"
     assert cfg["codex_reasoning_effort"] == "medium"
     assert cfg["oauth_pool_lane"] == "marketing-copywriter"
@@ -1867,7 +1885,7 @@ def test_the_copywriter_v2_site_asks_for_codex_first_on_sol(monkeypatch, capsys)
 
     assert seen, "write_posts_llm_v2 never reached the provider waterfall"
     cfg = seen[0]
-    assert cfg["provider_order"] == CODEX_FIRST_ORDER
+    assert_codex_first(cfg["provider_order"])
     assert cfg["codex_source_model"] == "gpt-5.6-sol"
     assert cfg["codex_reasoning_effort"] == "medium"
     assert cfg["oauth_pool_lane"] == "marketing-copywriter"
@@ -1887,7 +1905,7 @@ def test_the_critic_asks_for_codex_first_on_terra(monkeypatch, capsys):
 
     assert seen, "the critic never reached the provider waterfall"
     cfg = seen[0]
-    assert cfg["provider_order"] == CODEX_FIRST_ORDER
+    assert_codex_first(cfg["provider_order"])
     assert cfg["codex_source_model"] == "gpt-5.6-terra"
     assert cfg["codex_reasoning_effort"] == "medium"
     assert cfg["oauth_pool_lane"] == "marketing-critic"
@@ -1925,7 +1943,7 @@ def test_copy_review_asks_for_codex_first_and_keeps_its_own_pool_lane(monkeypatc
 
     assert seen, "copy_review never reached the provider waterfall"
     cfg = seen[0]
-    assert cfg["provider_order"] == CODEX_FIRST_ORDER
+    assert_codex_first(cfg["provider_order"])
     assert cfg["codex_source_model"] == "gpt-5.6-sol"
     assert cfg["codex_reasoning_effort"] == "medium"
     assert cfg["usage_lane"] == "marketing-copy-review"
@@ -2075,7 +2093,7 @@ def _marketing_llm_blocks() -> dict[str, dict]:
 def test_every_marketing_lane_config_is_codex_first_on_its_ruled_tier(
         lane, source_model, effort):
     block = _marketing_llm_blocks()[lane]
-    assert block.get("provider_order") == CODEX_FIRST_ORDER, lane
+    assert_codex_first(block.get("provider_order"), lane)
     assert block.get("codex_source_model") == source_model, lane
     assert block.get("codex_reasoning_effort") == effort, lane
     assert block.get("oauth_pool_lane") == lane, lane

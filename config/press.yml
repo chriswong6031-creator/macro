@@ -533,7 +533,7 @@ research_triage:
     max_peers: 60
 
   # ── P0 garbage gate (reused from engine/marketing/garbage_gate.py) ────────
-  # Same five detectors, same reason strings. A gated report is excluded from
+  # Same six detectors, same reason strings. A gated report is excluded from
   # the ranking and therefore from the veto head, so it costs zero tokens — but
   # its deterministic components are still computed and printed.
   garbage_gate:
@@ -544,6 +544,11 @@ research_triage:
       promo_spam: true
       paywalled_stub: true
       non_story: true
+      # RELAY STUB (2026-08-04) — the source's own page furniture. Armed on the
+      # research lane for the same reason as the wire lane: a research report
+      # from a blog carries the same "written for a reader already on our page"
+      # conventions, and a triaged report inherits the headline verbatim.
+      relay_stub: true
     source_blocklist: []
     promo_weak_min: 2
     require_marker: true

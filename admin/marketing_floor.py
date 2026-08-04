@@ -113,6 +113,12 @@ _ACTIVITY_WORDS: dict[str, str] = {
     "quarantined_unknown_cashtag": "pulled — named a ticker no price store knows",
     "quarantined_voice_laws": "pulled — reads machine-written",
     "quarantined_run_duplicate": "pulled — repeats a post already sent today",
+    # The 2026-08-04 relay gate. Names what the READER would have seen, not the
+    # rule: the post that forced it said "More info on this - ..." with no
+    # "this" anywhere, because that is how the source's own site writes a
+    # follow-up to its own earlier post. A count here means the wire is relaying
+    # a publisher's page furniture rather than the news on it.
+    "quarantined_relay_hygiene": "pulled — repeats the source's page, not its news",
     # The 2026-08-02 clock gates. Both name the DEFECT the operator reported,
     # not the check: he wrote down "Friday's move called today on a Saturday"
     # and "six posts off one stale breadth read", so those are the words. A
