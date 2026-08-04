@@ -12,6 +12,31 @@ MARKET_JS = (ROOT / "templates" / "nav_market.js").read_text(encoding="utf-8")
 REFRESH_CSS = (ROOT / "templates" / "navigation-refresh.css").read_text(encoding="utf-8")
 
 
+def media_block_containing(css: str, opener: str, marker: str) -> str:
+    """The top-level `@media` block opened by `opener` that contains `marker`.
+
+    Selecting it by CONTENT rather than by position: these tests used to take
+    the LAST block of a given kind, which quietly asserted "no one may ever
+    append another mobile / reduced-motion block to this stylesheet". Adding
+    one (the folded-country sheet, 2026-08-04) broke tests that had nothing to
+    do with it. Top-level blocks close on a column-0 `}`; every rule inside is
+    indented, so `\\n}` bounds a block exactly.
+    """
+    blocks: list[str] = []
+    idx = 0
+    while (i := css.find(opener, idx)) >= 0:
+        j = css.find("\n}", i + len(opener))
+        blocks.append(css[i: j if j >= 0 else len(css)])
+        idx = i + len(opener)
+    for block in blocks:
+        if marker in block:
+            return block
+    raise AssertionError(
+        f"no `{opener}` block in this stylesheet contains {marker!r} "
+        f"({len(blocks)} block(s) searched)"
+    )
+
+
 def test_public_research_menu_is_product_focused() -> None:
     for internal_page in (
         "measurement.html",
@@ -264,11 +289,13 @@ def test_mobile_navigation_is_a_full_height_accordion_with_full_width_search() -
 
 
 def test_mobile_ticker_input_does_not_trigger_ios_focus_zoom() -> None:
-    final_mobile_rules = REFRESH_CSS.rsplit("@media (max-width: 900px)", 1)[1]
-    assert "iOS Safari zooms the page" in final_mobile_rules
+    mobile_rules = media_block_containing(
+        REFRESH_CSS, "@media (max-width: 900px)", ".ticker-search .ticker-input"
+    )
+    assert "iOS Safari zooms the page" in mobile_rules
     assert (
         ".ticker-search .ticker-input { font-size: 16px; }"
-        in final_mobile_rules
+        in mobile_rules
     )
 
 

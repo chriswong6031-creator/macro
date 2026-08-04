@@ -246,7 +246,13 @@ def test_switching_menus_cross_fades_over_one_morphing_plate() -> None:
 
 def test_panel_choreography_is_killed_by_name_under_reduced_motion() -> None:
     """Repo law: a reduced-motion kill block names its pseudo-elements."""
-    block = TEMPLATE_CSS.split("@media (prefers-reduced-motion: reduce) {")[-1]
+    from tests.test_navigation_refresh import media_block_containing
+
+    block = media_block_containing(
+        TEMPLATE_CSS,
+        "@media (prefers-reduced-motion: reduce) {",
+        ".site-nav .nav-dd-menu.mega-menu.nav-panel-in",
+    )
     for selector in (
         ".site-nav .nav-dd-menu.mega-menu.nav-panel-in",
         ".site-nav .nav-dd-menu.mega-menu.nav-panel-out",
