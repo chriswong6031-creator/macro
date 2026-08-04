@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T01:22:11.607214+00:00",
-  "count": 701,
+  "generated_at": "2026-08-04T01:37:23.104490+00:00",
+  "count": 702,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -9,6 +9,7 @@
     "Apollo",
     "BTIG",
     "Bank of America",
+    "BlackRock",
     "Blackrock",
     "Cantor",
     "Citi",
@@ -86,6 +87,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rrbhgy7uy8l-6388e5",
+      "title": "Weekly investment commentary en us 20260803 a quiet august not for investors",
+      "institution": "BlackRock",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-03T22:51:52Z",
+      "summary_points": [
+        "**U.S.",
+        "Treasury Yield Surge**: 10-year yield hits 19-year high (5.28%), real yields at 2.2%, signaling persistent inflation and elevated borrowing costs amid supply scarcity.",
+        "**Geopolitical & Supply Shock Impact**: Middle East conflict drives oil volatility and intensifies capital competition; bonds shift from ballast to income asset due to supply-driven scarcity and fiscal deficits.",
+        "**Key Yield Repricing Drivers**: AI capex ($720B hyperscaler boom), fiscal deficits, Middle East energy shocks, and Fed policy uncertainty accelerate bond yield rises, reducing bonds' ballast efficacy.",
+        "**Critical Labor Data for Fed Policy**: Upcoming U.S."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
