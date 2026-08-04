@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T18:21:31.514267+00:00",
-  "count": 750,
+  "generated_at": "2026-08-04T18:40:02.746167+00:00",
+  "count": 751,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -148,6 +148,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-v9aboqngsos-359ffd",
+      "title": "Euro Area Data Update Strong Registered Employment Growth in Spain",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:21:37Z",
+      "summary_points": [
+        "**Spain Employment Proxy Overstated**: Immigrant regularization, not genuine labor momentum, drives social security affiliation growth (+0.4%mo), masking underlying weakness.",
+        "**Foreign Labor Surge in Spain**: 14% YoY growth in foreign workers (Exhibit 4) signals robust labor market expansion and demographic tailwinds.",
+        "**Italy Tourism Momentum**: Nonresident overnight stays surge in June (Exhibit 3), confirming strong tourism demand as a key demand driver.",
+        "**Euro Area Q2 GDP Tracking**: EMU4 growth at ~0.3% (quarter ago) with upward revisions; methodology shift to realized growth in non-EMU4 economies post-flash."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
