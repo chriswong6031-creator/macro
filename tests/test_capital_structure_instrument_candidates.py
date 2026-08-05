@@ -31,6 +31,19 @@ from scripts.compile_capital_structure_instrument_candidate_terms import (
     DOCUMENT_TERM_COLUMNS,
     compile_from_disk,
 )
+from engine.capital_structure.source_ledger_io import (
+    encode_source_ledger,
+    read_source_ledger,
+    source_ledger_path,
+)
+
+
+def _write_ledger(path, records):
+    """Write a source-manifest ledger fixture, bypassing the validating writer.
+
+    Fixtures deliberately include ledgers the identity law rejects.
+    """
+    path.write_bytes(encode_source_ledger(list(records)))
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -625,7 +638,7 @@ def test_offline_compiler_requires_the_exact_direct_ledger_and_writes_canonical_
     direct, manifests, _ = _direct_authority()
     raw = FIXTURE.read_bytes()
     manifest = manifests[0]
-    pd.DataFrame(manifests).to_parquet(tmp_path / "source_manifest.parquet", index=False)
+    _write_ledger(source_ledger_path(tmp_path), manifests)
     _direct_frame(direct).to_parquet(tmp_path / "document_term_observations.parquet", index=False)
     result = compile_from_disk(
         root=tmp_path,
@@ -649,7 +662,7 @@ def test_offline_compiler_rejects_a_self_consistent_direct_issuer_mutation(tmp_p
     tampered = deepcopy(direct)
     tampered[0]["issuer_id"] = "sec:cik:9999999999"
     tampered[0]["observation_id"] = observation_id_for(tampered[0])
-    pd.DataFrame(manifests).to_parquet(tmp_path / "source_manifest.parquet", index=False)
+    _write_ledger(source_ledger_path(tmp_path), manifests)
     _direct_frame(tampered).to_parquet(tmp_path / "document_term_observations.parquet", index=False)
 
     with pytest.raises(ValueError, match="issuer_id is detached from source manifest"):
@@ -741,7 +754,7 @@ def test_rehashed_direct_and_manifest_envelopes_fail_closed_on_pure_disk_and_pit
 
         root = tmp_path / label
         root.mkdir()
-        pd.DataFrame(authority_manifests).to_parquet(root / "source_manifest.parquet", index=False)
+        _write_ledger(source_ledger_path(root), authority_manifests)
         _direct_frame(tampered).to_parquet(root / "document_term_observations.parquet", index=False)
         with pytest.raises(ValueError, match=error):
             compile_from_disk(
@@ -763,7 +776,7 @@ def test_historical_source_as_of_rollback_is_rejected_by_pure_and_disk_compilers
 
     raw = FIXTURE.read_bytes()
     manifest = manifests[0]
-    pd.DataFrame(manifests).to_parquet(tmp_path / "source_manifest.parquet", index=False)
+    _write_ledger(source_ledger_path(tmp_path), manifests)
     _direct_frame(direct_v2).to_parquet(tmp_path / "document_term_observations.parquet", index=False)
     candidate_frame = pd.DataFrame([
         {

@@ -5,7 +5,7 @@
   },
   "glp1_incretin_mechanism": {
     "last_ingest": "2026-08-05",
-    "api_total": 93
+    "api_total": 94
   },
   "liquid_biopsy": {
     "last_ingest": "2026-08-05",
@@ -17,15 +17,15 @@
   },
   "gene_editing_crispr": {
     "last_ingest": "2026-08-05",
-    "api_total": 90
+    "api_total": 91
   },
   "adc_antibody_drug_conjugate": {
     "last_ingest": "2026-08-05",
-    "api_total": 425
+    "api_total": 426
   },
   "car_t_cell_therapy": {
     "last_ingest": "2026-08-05",
-    "api_total": 718
+    "api_total": 719
   },
   "obesity_device": {
     "last_ingest": "2026-08-05",
