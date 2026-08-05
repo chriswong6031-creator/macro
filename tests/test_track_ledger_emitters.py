@@ -183,7 +183,16 @@ class TestUSEmitLedger:
             by_t.setdefault(r["t"], []).append(r)
         assert all(r["st"] in tl.STATUS_VOCAB for r in d["rows"])
         assert all(r["st"] == "stopped" for r in by_t["BBB"])   # steady faller
-        assert "CCC" not in by_t                                # no price → skip
+        # ROW-PERSISTENCE LAW (2026-08-05). This assertion used to read
+        # `"CCC" not in by_t  # no price → skip` — it pinned the defect. An admission
+        # the desk can no longer price is still an admission the desk made, and
+        # deleting the row made it indistinguishable from a name never picked (VALE:
+        # five board dates in the buy lane, zero rows anywhere). CCC now publishes as
+        # an unscored row carrying its reason, in no summary number.
+        assert "CCC" in by_t, "an unpriceable admission was deleted from the book"
+        assert all(r["st"] == "unscored" for r in by_t["CCC"])
+        assert all(r["xr"] == "no price data" for r in by_t["CCC"])
+        assert all(r["p"] is None and r["e"] is None for r in by_t["CCC"])
 
     def test_reentry_becomes_two_episodes(self, monkeypatch, tmp_path):
         """A name that leaves and returns must be TWO episodes with TWO entries.
@@ -216,15 +225,25 @@ class TestUSEmitLedger:
 
         Rule 2 of engine/track_scoring — exclusion by AGE is symmetric (it cannot know
         which way a trade went); exclusion by OUTCOME is not.
+
+        Rows partition THREE ways, not two: matured, in-flight, and unscored (an
+        admission with no usable price, published so it is never lost — see
+        test_status_vocabulary_and_marking). An unscored row is in neither count; it is
+        a disclosure, not a result, so folding it into n_inflight would overstate how
+        much of the book is still live.
         """
         d = _run_us_emit(monkeypatch, tmp_path)
         s = d["summary"]
         matured = [r for r in d["rows"] if r["m"]]
-        inflight = [r for r in d["rows"] if not r["m"]]
+        unscored = [r for r in d["rows"] if r["st"] == "unscored"]
+        inflight = [r for r in d["rows"] if not r["m"] and r["st"] != "unscored"]
+        assert len(matured) + len(inflight) + len(unscored) == len(d["rows"])
         assert s["n_matured"] == len(matured)
         assert s["n_inflight"] == len(inflight)
+        assert s["n_skipped_no_price"] == len(unscored)
         assert all(r["st"] == "onboard" for r in inflight)
         assert all(r["p"] is not None for r in matured)
+        assert all(r["p"] is None for r in unscored)
 
     def test_horizon_is_forced_never_extended(self, monkeypatch, tmp_path):
         """Rule 1: the rule legs may shorten a hold, never extend it past the horizon."""

@@ -2,59 +2,59 @@
   "schema": "master_brief.v2",
   "lens": "macro",
   "is_context_only": true,
-  "generated_at": "2026-08-04T03:30:12.175378+00:00",
+  "generated_at": "2026-08-05T08:38:34.545907+00:00",
   "model": "deepseek-v4-pro",
-  "state_asof": "2026-08-03",
+  "state_asof": "2026-08-04",
   "tldr": [
-    "Regime drifting: Growth cooling turns Reflation toward Stagflation risk.",
-    "Bonds cautious: Credit widening late-cycle \u2014 bonds see risk equities don't price.",
-    "Dollar headwind: Strong dollar biting US stocks, EM, gold, and Bitcoin.",
+    "Tape driver: AI chips \u2014 narrow tech-led.",
+    "Regime: Reflation holding, growth firming.",
+    "Bonds cautious: credit spreads widening quietly.",
     "What to do: Watch \u2014 don't chase."
   ],
-  "summary": "Reflation shifting to Stagflation; bonds and dollar warn while equities stay risk-on.",
-  "regime_read": "The US economy sits in Reflation, but growth is cooling and inflation warming \u2014 the map's arrow points toward Stagflation. Today's dominant driver is a mixed dovish repricing in rates: front-end yields and the dollar fell, yet the move lacks conviction. Meanwhile, the bond desk flags late-cycle credit widening, and a strengthening dollar creates headwinds for equities, emerging markets, gold, and Bitcoin. Stocks show reflation, but bonds and the dollar are waving yellow flags.",
+  "summary": "US in Reflation with AI leadership, but bonds and a strong dollar are flashing caution as credit spreads widen.",
+  "regime_read": "The US sits in the 'Reflation' zone on the macro map (growth and inflation both above trend). Growth is barely positive but has firmed over the past week, reducing the immediate risk of sliding into stagflation. The dominant engine remains AI and semiconductor stocks, which continue to lead a narrow market.\n\nInflation has been warming over the past month, keeping the Federal Reserve on hold. The overall financial backdrop is calm, but the dollar's strength and gently widening high-yield credit spreads inject a note of caution not yet visible in the stock market's mood.",
   "conflicts": [
-    "Bonds vs equities: Credit widening late-cycle \u2014 equities still reading reflation, ignoring rising caution.",
-    "Dollar drag: Stocks are risk-on, but the strong dollar is pressing US and EM equities \u2014 tension if dollar strength persists."
+    "Bonds vs. stocks: High-yield spreads are gently widening while equities stay calm \u2014 a split that can signal late-cycle tension.",
+    "Dollar drag: A strengthening dollar is creating headwinds for US equities, gold, and Bitcoin, contradicting the risk-on posture in the stock tape."
   ],
   "rotation_check": null,
   "transmission": [
-    "If growth data keeps softening \u2192 regime flips from Reflation to Stagflation, pressuring risk assets.",
-    "If the dollar keeps climbing \u2192 US equities and commodities face mounting headwinds, forcing risk-off."
+    "If high-yield spreads keep widening \u2192 the equity market's current calm could crack.",
+    "If the dollar keeps strengthening \u2192 gold, copper, and Bitcoin face more downward pressure, eventually spilling into broader risk assets."
   ],
   "watch_items": [
-    "Jobs report (Aug 7): Weak payrolls would accelerate drift to Stagflation.",
-    "CPI (Aug 12): A hot inflation print cements stagflation worry.",
-    "2-year yield: A reversal higher in front-end yields kills the dovish repricing.",
-    "Dollar index: A break above recent highs risks a broader sell-off."
+    "NFP Aug 7: A weak jobs report would test growth's fragile footing.",
+    "CPI Aug 12: A cold inflation print could undermine the reflation backdrop.",
+    "AI chips: Any break in semis leadership removes the tape's main engine.",
+    "Credit: HY OAS breaking above 3% would escalate caution."
   ],
-  "confidence": "low",
+  "confidence": "medium",
   "theses": [],
-  "raw_text": "{\n  \"tldr\": [\n    \"Regime drifting: Growth cooling turns Reflation toward Stagflation risk.\",\n    \"Bonds cautious: Credit widening late-cycle \u2014 bonds see risk equities don't price.\",\n    \"Dollar headwind: Strong dollar biting US stocks, EM, gold, and Bitcoin.\",\n    \"What to do: Watch \u2014 don't chase.\"\n  ],\n  \"summary\": \"Reflation shifting to Stagflation; bonds and dollar warn while equities stay risk-on.\",\n  \"regime_read\": \"The US economy sits in Reflation, but growth is cooling and inflation warming \u2014 the map's arrow points toward Stagflation. Today's dominant driver is a mixed dovish repricing in rates: front-end yields and the dollar fell, yet the move lacks conviction. Meanwhile, the bond desk flags late-cycle credit widening, and a strengthening dollar creates headwinds for equities, emerging markets, gold, and Bitcoin. Stocks show reflation, but bonds and the dollar are waving yellow flags.\",\n  \"conflicts\": [\n    \"Bonds vs equities: Credit widening late-cycle \u2014 equities still reading reflation, ignoring rising caution.\",\n    \"Dollar drag: Stocks are risk-on, but the strong dollar is pressing US and EM equities \u2014 tension if dollar strength persists.\"\n  ],\n  \"transmission\": [\n    \"If growth data keeps softening \u2192 regime flips from Reflation to Stagflation, pressuring risk assets.\",\n    \"If the dollar keeps climbing \u2192 US equities and commodities face mounting headwinds, forcing risk-off.\"\n  ],\n  \"watch_items\": [\n    \"Jobs report (Aug 7): Weak payrolls would accelerate drift to Stagflation.\",\n    \"CPI (Aug 12): A hot inflation print cements stagflation worry.\",\n    \"2-year yield: A reversal higher in front-end yields kills the dovish repricing.\",\n    \"Dollar index: A break above recent highs risks a broader sell-off.\"\n  ],\n  \"confidence\": \"low\",\n  \"forward_watch\": [\n    {\n      \"date\": \"2026-08-06\",\n      \"label\": \"claims\",\n      \"kind\": \"claims\",\n      \"note\": \"Benchmark naive prior 197.0 \u2014 no shock signal.\"\n    },\n    {\n      \"date\": \"2026-08-07\",\n      \"label\": \"Jobs report (nonfarm payrolls)\",\n      \"kind\": \"NFP\",\n      \"note\": \"Median projection -1.5756, wide bands \u2014 high uncertainty.\"\n    },\n    {\n      \"date\": \"2026-08-12\",\n      \"label\": \"CPI (consumer prices)\",\n      \"kind\": \"CPI\",\n      \"note\": \"p_cold 0.75 \u2014 a cold print likely, reinforcing dovish tilt.\"\n    }\n  ],\n  \"forward_read\": \"Key data ahead: claims (Aug 6) benchmark 197.0, no alarm. NFP (Aug 7) p50 -1.5756, wide bands. CPI (Aug 12) p_cold 0.75 \u2014 a downside surprise would support the dovish repricing.\"\n}",
+  "raw_text": "{\n  \"tldr\": [\n    \"Tape driver: AI chips \u2014 narrow tech-led.\",\n    \"Regime: Reflation holding, growth firming.\",\n    \"Bonds cautious: credit spreads widening quietly.\",\n    \"What to do: Watch \u2014 don't chase.\"\n  ],\n  \"summary\": \"US in Reflation with AI leadership, but bonds and a strong dollar are flashing caution as credit spreads widen.\",\n  \"regime_read\": \"The US sits in the 'Reflation' zone on the macro map (growth and inflation both above trend). Growth is barely positive but has firmed over the past week, reducing the immediate risk of sliding into stagflation. The dominant engine remains AI and semiconductor stocks, which continue to lead a narrow market.\\n\\nInflation has been warming over the past month, keeping the Federal Reserve on hold. The overall financial backdrop is calm, but the dollar's strength and gently widening high-yield credit spreads inject a note of caution not yet visible in the stock market's mood.\",\n  \"conflicts\": [\n    \"Bonds vs. stocks: High-yield spreads are gently widening while equities stay calm \u2014 a split that can signal late-cycle tension.\",\n    \"Dollar drag: A strengthening dollar is creating headwinds for US equities, gold, and Bitcoin, contradicting the risk-on posture in the stock tape.\"\n  ],\n  \"transmission\": [\n    \"If high-yield spreads keep widening \u2192 the equity market's current calm could crack.\",\n    \"If the dollar keeps strengthening \u2192 gold, copper, and Bitcoin face more downward pressure, eventually spilling into broader risk assets.\"\n  ],\n  \"watch_items\": [\n    \"NFP Aug 7: A weak jobs report would test growth's fragile footing.\",\n    \"CPI Aug 12: A cold inflation print could undermine the reflation backdrop.\",\n    \"AI chips: Any break in semis leadership removes the tape's main engine.\",\n    \"Credit: HY OAS breaking above 3% would escalate caution.\"\n  ],\n  \"confidence\": \"medium\",\n  \"forward_watch\": [\n    {\n      \"date\": \"2026-08-07\",\n      \"label\": \"Jobs report (nonfarm payrolls)\",\n      \"kind\": \"NFP\",\n      \"note\": \"Model midpoint -1.5756, but range spans -421.3089 to +337.0669.\"\n    },\n    {\n      \"date\": \"2026-08-12\",\n      \"label\": \"CPI (consumer prices)\",\n      \"kind\": \"CPI\",\n      \"note\": \"Model point estimate -0.0451%, 75% cold probability vs market implied 0.2%.\"\n    },\n    {\n      \"date\": \"2026-08-13\",\n      \"label\": \"PPI (producer prices)\",\n      \"kind\": \"PPI\",\n      \"note\": \"Producer prices release \u2014 could confirm or challenge the CPI picture.\"\n    }\n  ],\n  \"forward_read\": \"The looming jobs report (Aug 7) has models pointing to essentially flat payrolls, but the uncertainty is enormous \u2014 outcomes from a deep loss to a solid gain are all within the band. The CPI report the following week (Aug 12) looks biased toward a cold reading (-0.0451% at the model point), which would be a downside surprise relative to the market's implied 0.2% month-on-month. A cold inflation number, if confirmed by PPI the next day, would challenge the reflation backdrop that has supported the rotation toward value and energy.\"\n}",
   "degraded_reason": null,
   "disclaimer": "Context only \u2014 not a signal. This is an AI-generated SYNTHESIS of the dashboards' own deterministic outputs. It does not feed any score, signal or allocation, and it can be wrong or overconfident. Use it as a research read; verify every claim against the underlying dashboard it cites. Effective sample sizes on macro regimes are small \u2014 treat cross-asset 'reads' as odds, not forecasts.",
   "style_flags": [],
   "forward_watch": [
     {
-      "date": "2026-08-06",
-      "label": "claims",
-      "kind": "claims",
-      "note": "Benchmark naive prior 197.0 \u2014 no shock signal."
-    },
-    {
       "date": "2026-08-07",
       "label": "Jobs report (nonfarm payrolls)",
       "kind": "NFP",
-      "note": "Median projection -1.5756, wide bands \u2014 high uncertainty."
+      "note": "Model midpoint -1.5756, but range spans -421.3089 to +337.0669."
     },
     {
       "date": "2026-08-12",
       "label": "CPI (consumer prices)",
       "kind": "CPI",
-      "note": "Probability of a cool inflation reading is 0.75 \u2014 a cold print likely, reinforcing dovish tilt."
+      "note": "Model point estimate -0.0451%, 75% cold probability vs market implied 0.2%."
+    },
+    {
+      "date": "2026-08-13",
+      "label": "PPI (producer prices)",
+      "kind": "PPI",
+      "note": "Producer prices release \u2014 could confirm or challenge the CPI picture."
     }
   ],
-  "forward_read": "Key data ahead: claims (Aug 6) benchmark 197.0, no alarm. NFP (Aug 7) p50 -1.5756, wide bands. CPI (Aug 12) probability of a lower-than-expected inflation print is 0.75 \u2014 a downside surprise would support the dovish repricing.",
+  "forward_read": "The looming jobs report (Aug 7) has models pointing to essentially flat payrolls, but the uncertainty is enormous \u2014 outcomes from a deep loss to a solid gain are all within the band. The CPI report the following week (Aug 12) looks biased toward a cold reading (-0.0451% at the model point), which would be a downside surprise relative to the market's implied 0.2% month-on-month. A cold inflation number, if confirmed by PPI the next day, would challenge the reflation backdrop that has supported the rotation toward value and energy.",
   "nw_context_used": true,
   "cortex_status": "degraded",
   "refresh_days": 1,
@@ -103,34 +103,34 @@
       "key": "driver",
       "label_en": "What's moving markets",
       "label_zh": "\u5f53\u524d\u4e3b\u5bfc",
-      "value_en": "Fed repricing",
-      "value_zh": "Fed repricing",
+      "value_en": "AI / semis",
+      "value_zh": "AI / semis",
       "tone": "info"
     }
   ],
   "zh": {
-    "summary": "\u518d\u901a\u80c0\u8f6c\u5411\u6ede\u80c0\uff1b\u503a\u5238\u548c\u7f8e\u5143\u53d1\u51fa\u8b66\u544a\uff0c\u800c\u80a1\u5e02\u4ecd\u4fdd\u6301\u98ce\u9669\u504f\u597d\u3002",
-    "regime_read": "\u7f8e\u56fd\u7ecf\u6d4e\u5904\u4e8e\u518d\u901a\u80c0\u9636\u6bb5\uff0c\u4f46\u589e\u957f\u6b63\u5728\u964d\u6e29\uff0c\u901a\u80c0\u5347\u6e29\u2014\u2014\u5730\u56fe\u4e0a\u7684\u7bad\u5934\u6307\u5411\u6ede\u80c0\u3002\u4eca\u65e5\u7684\u4e3b\u5bfc\u56e0\u7d20\u662f\u5229\u7387\u5e02\u573a\u4e2d\u6df7\u6742\u7684\u9e3d\u6d3e\u91cd\u65b0\u5b9a\u4ef7\uff1a\u524d\u7aef\u6536\u76ca\u7387\u548c\u7f8e\u5143\u4e0b\u8dcc\uff0c\u4f46\u8fd9\u4e00\u8d70\u52bf\u7f3a\u4e4f\u4fe1\u5fc3\u3002\u4e0e\u6b64\u540c\u65f6\uff0c\u503a\u5238\u90e8\u95e8\u6307\u51fa\u5468\u671f\u665a\u671f\u7684\u4fe1\u7528\u5229\u5dee\u6269\u5927\uff0c\u800c\u7f8e\u5143\u8d70\u5f3a\u5bf9\u80a1\u5e02\u3001\u65b0\u5174\u5e02\u573a\u3001\u9ec4\u91d1\u548c\u6bd4\u7279\u5e01\u6784\u6210\u9006\u98ce\u3002\u80a1\u7968\u663e\u793a\u518d\u901a\u80c0\uff0c\u4f46\u503a\u5238\u548c\u7f8e\u5143\u6b63\u6325\u821e\u9ec4\u65d7\u3002",
+    "summary": "\u7f8e\u56fd\u5904\u4e8e\u518d\u901a\u80c0\u9636\u6bb5\uff0c\u7531AI\u9886\u6da8\uff0c\u4f46\u503a\u5238\u548c\u5f3a\u52bf\u7f8e\u5143\u6b63\u53d1\u51fa\u8b66\u793a\uff0c\u4fe1\u8d37\u5229\u5dee\u5728\u6269\u5927\u3002",
+    "regime_read": "\u7f8e\u56fd\u5728\u5b8f\u89c2\u5730\u56fe\u4e0a\u5904\u4e8e\u201c\u518d\u901a\u80c0\u201d\u533a\u57df\uff08\u589e\u957f\u548c\u901a\u80c0\u5747\u9ad8\u4e8e\u8d8b\u52bf\uff09\u3002\u589e\u957f\u52c9\u5f3a\u4e3a\u6b63\uff0c\u4f46\u8fc7\u53bb\u4e00\u5468\u6709\u6240\u8d70\u5f3a\uff0c\u964d\u4f4e\u4e86\u6ed1\u5165\u6ede\u80c0\u7684\u5373\u65f6\u98ce\u9669\u3002\u4e3b\u5bfc\u5f15\u64ce\u4ecd\u7136\u662fAI\u548c\u534a\u5bfc\u4f53\u80a1\uff0c\u5b83\u4eec\u7ee7\u7eed\u5f15\u9886\u4e00\u4e2a\u72ed\u7a84\u7684\u5e02\u573a\u3002\u8fc7\u53bb\u4e00\u4e2a\u6708\u901a\u80c0\u4e00\u76f4\u5728\u5347\u6e29\uff0c\u4f7f\u7f8e\u8054\u50a8\u6309\u5175\u4e0d\u52a8\u3002\u6574\u4f53\u91d1\u878d\u80cc\u666f\u5e73\u9759\uff0c\u4f46\u7f8e\u5143\u8d70\u5f3a\u548c\u9ad8\u6536\u76ca\u4fe1\u8d37\u5229\u5dee\u6e29\u548c\u6269\u5927\uff0c\u6ce8\u5165\u4e86\u80a1\u5e02\u60c5\u7eea\u4e2d\u5c1a\u4e0d\u53ef\u89c1\u7684\u8c28\u614e\u60c5\u7eea\u3002",
     "rotation_check": null,
     "tldr": [
-      null,
-      null,
-      "\u7f8e\u5143\u9006\u98ce\uff1a\u5f3a\u52bf\u7f8e\u5143\u51b2\u51fb\u7f8e\u80a1\u3001\u65b0\u5174\u5e02\u573a\u3001\u9ec4\u91d1\u548c\u6bd4\u7279\u5e01\u3002",
-      "\u8be5\u600e\u4e48\u505a\uff1a\u89c2\u671b\u2014\u2014\u4e0d\u8981\u8ffd\u6da8\u3002"
+      "\u5e02\u573a\u9a71\u52a8\u56e0\u7d20\uff1aAI\u82af\u7247\u2014\u2014\u4ee5\u79d1\u6280\u4e3a\u4e3b\u5bfc\u7684\u7a84\u5e45\u884c\u60c5\u3002",
+      "\u5e02\u573a\u673a\u5236\uff1a\u518d\u901a\u80c0\u6301\u7eed\uff0c\u589e\u957f\u4f01\u7a33\u3002",
+      "\u503a\u5238\u5e02\u573a\u8c28\u614e\uff1a\u4fe1\u7528\u5229\u5dee\u6084\u7136\u8d70\u9614\u3002",
+      "\u64cd\u4f5c\u5efa\u8bae\uff1a\u89c2\u671b\uff0c\u52ff\u8ffd\u9ad8\u3002"
     ],
     "conflicts": [
-      "\u503a\u5238\u4e0e\u80a1\u5e02\uff1a\u5468\u671f\u665a\u671f\u4fe1\u7528\u5229\u5dee\u6269\u5927\u2014\u2014\u80a1\u5e02\u4ecd\u89e3\u8bfb\u4e3a\u518d\u901a\u80c0\uff0c\u5ffd\u89c6\u65e5\u76ca\u4e0a\u5347\u7684\u8b66\u60d5\u3002",
-      "\u7f8e\u5143\u62d6\u7d2f\uff1a\u80a1\u5e02\u98ce\u9669\u504f\u597d\u8f83\u9ad8\uff0c\u4f46\u5f3a\u52bf\u7f8e\u5143\u6b63\u538b\u5236\u7f8e\u80a1\u548c\u65b0\u5174\u5e02\u573a\u80a1\u5e02\u2014\u2014\u82e5\u7f8e\u5143\u5f3a\u52bf\u6301\u7eed\uff0c\u5c06\u51fa\u73b0\u7d27\u5f20\u5c40\u52bf\u3002"
+      "\u503a\u5238 vs. \u80a1\u7968\uff1a\u9ad8\u6536\u76ca\u5229\u5dee\u6e29\u548c\u6269\u5927\uff0c\u800c\u80a1\u5e02\u4fdd\u6301\u5e73\u9759\u2014\u2014\u8fd9\u79cd\u5206\u5316\u53ef\u80fd\u9884\u793a\u7740\u5468\u671f\u540e\u671f\u7684\u7d27\u5f20\u3002",
+      "\u7f8e\u5143\u62d6\u7d2f\uff1a\u7f8e\u5143\u8d70\u5f3a\u6b63\u5728\u7ed9\u7f8e\u56fd\u80a1\u5e02\u3001\u9ec4\u91d1\u548c\u6bd4\u7279\u5e01\u5e26\u6765\u963b\u529b\uff0c\u4e0e\u80a1\u7968\u884c\u60c5\u4e2d\u7684\u98ce\u9669\u504f\u597d\u59ff\u6001\u76f8\u77db\u76fe\u3002"
     ],
     "transmission": [
-      "\u5982\u679c\u589e\u957f\u6570\u636e\u6301\u7eed\u8d70\u8f6f\u2192\u4f53\u5236\u4ece\u518d\u901a\u80c0\u8f6c\u5411\u6ede\u80c0\uff0c\u65bd\u538b\u98ce\u9669\u8d44\u4ea7\u3002",
-      "\u5982\u679c\u7f8e\u5143\u6301\u7eed\u6500\u5347\u2192\u7f8e\u80a1\u548c\u5927\u5b97\u5546\u54c1\u9762\u4e34\u4e0d\u65ad\u52a0\u5927\u7684\u9006\u98ce\uff0c\u8feb\u4f7f\u5e02\u573a\u8f6c\u5411\u907f\u9669\u3002"
+      "\u5982\u679c\u9ad8\u6536\u76ca\u5229\u5dee\u7ee7\u7eed\u6269\u5927\u2192\u80a1\u5e02\u5f53\u524d\u7684\u5e73\u9759\u53ef\u80fd\u7834\u88c2\u3002",
+      "\u5982\u679c\u7f8e\u5143\u7ee7\u7eed\u8d70\u5f3a\u2192\u9ec4\u91d1\u3001\u94dc\u548c\u6bd4\u7279\u5e01\u5c06\u9762\u4e34\u66f4\u5927\u4e0b\u884c\u538b\u529b\uff0c\u6700\u7ec8\u8513\u5ef6\u81f3\u66f4\u5e7f\u6cdb\u7684\u98ce\u9669\u8d44\u4ea7\u3002"
     ],
     "watch_items": [
-      null,
-      null,
-      null,
-      null
+      "NFP 8\u67087\u65e5\uff1a\u75b2\u5f31\u7684\u5c31\u4e1a\u62a5\u544a\u5c06\u8003\u9a8c\u589e\u957f\u6001\u52bf\u7684\u8106\u5f31\u57fa\u7840\u3002",
+      "CPI 8\u670812\u65e5\uff1a\u901a\u80c0\u6570\u636e\u4f4e\u8ff7\u53ef\u80fd\u524a\u5f31\u518d\u901a\u80c0\u80cc\u666f\u3002",
+      "AI\u82af\u7247\uff1a\u534a\u5bfc\u4f53\u677f\u5757\u9886\u5bfc\u5730\u4f4d\u82e5\u51fa\u73b0\u4efb\u4f55\u88c2\u75d5\uff0c\u5c06\u79fb\u9664\u5e02\u573a\u7684\u4e3b\u8981\u5f15\u64ce\u3002",
+      "\u4fe1\u8d37\uff1aHY OAS\u7a81\u78343%\u5c06\u52a0\u5267\u8c28\u614e\u60c5\u7eea\u3002"
     ]
   }
 }

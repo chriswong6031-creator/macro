@@ -1,15 +1,15 @@
 {
   "schema": "macro_snapshot.v1.2",
-  "asof": "2026-08-04",
+  "asof": "2026-08-05",
   "oldest_component_asof": "2026-07-31",
-  "macro_context_id": "85f210a2265b66a6",
+  "macro_context_id": "ac481c9201da0a7f",
   "labels": {
     "us": {
       "us_quad": "Q2",
       "us_transition_state": "TRANSITIONING",
       "us_fused_risk": "caution",
       "us_vol_regime": "normalizing",
-      "us_risk_radar": "watch",
+      "us_risk_radar": "caution",
       "us_rate_pressure": "pressure",
       "us_business_cycle_phase": "recovery",
       "us_liquidity_quality": "contracting",
@@ -23,7 +23,7 @@
       "cross_asset_verdict": "diverge"
     },
     "market": {
-      "market_state_verdict": "RISK_ON"
+      "market_state_verdict": "MIXED"
     },
     "transmission": {
       "yield_curve_regime": "bear_steepener",
@@ -59,20 +59,20 @@
     "commodity": {
       "commodity_regime": "Goldilocks",
       "commodity_favored": "Gold, Copper",
-      "commodity_mtf_grade": "BUY-THE-DIP",
-      "commodity_ladder": "TOP WATCH",
+      "commodity_mtf_grade": "TREND-FOLLOW",
+      "commodity_ladder": "FRESH BUY",
       "commodity_shock_state": "normal",
       "commodity_confluence_state": "Neutral",
       "commodity_breadth_bucket": "broad",
       "gold_action": "HOLD",
-      "silver_action": "SELL",
+      "silver_action": "HOLD",
       "copper_action": "BUY",
-      "oil_action": "STRONG SELL"
+      "oil_action": "SELL"
     },
     "china": {
       "china_quad": "Q3",
       "china_property_regime": "Deep contraction (easing)",
-      "china_fe_band": "Greed"
+      "china_fe_band": "Neutral"
     },
     "hk": {
       "hk_quad": "Q1",
@@ -98,16 +98,16 @@
     }
   },
   "sources": {
-    "data/regime/latest.json": "2026-08-03",
-    "data/market_state/latest.json": "2026-08-03",
-    "data/transmission/latest.json": "2026-08-03",
-    "data/forex/latest.json": "2026-08-04",
-    "data/bonds/bond_health.json": "2026-08-03",
-    "data/commodity/latest.json": "2026-08-03",
-    "data/china_regime/latest.json": "2026-08-03",
-    "data/hk_regime/latest.json": "2026-08-03",
+    "data/regime/latest.json": "2026-08-04",
+    "data/market_state/latest.json": "2026-08-04",
+    "data/transmission/latest.json": "2026-08-04",
+    "data/forex/latest.json": "2026-08-05",
+    "data/bonds/bond_health.json": "2026-08-04",
+    "data/commodity/latest.json": "2026-08-05",
+    "data/china_regime/latest.json": "2026-08-04",
+    "data/hk_regime/latest.json": "2026-08-04",
     "data/canada_regime/latest.json": "2026-07-31",
-    "data/dispersion/regime.json": "2026-08-03",
+    "data/dispersion/regime.json": "2026-08-05",
     "data/intl_regime/AU_history.parquet": "2026-07-31",
     "data/intl_regime/EZ_history.parquet": "2026-07-31",
     "data/intl_regime/GB_history.parquet": "2026-07-31",

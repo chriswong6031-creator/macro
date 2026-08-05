@@ -1,0 +1,107 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "CPRI-2026-06-30-watch",
+  "ticker": "CPRI",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "CPRI",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "CPRI",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "premature_stop_noise",
+    "sector": "Consumer Discretionary",
+    "excess_spy": -0.14247971190366415,
+    "excess_sector": -0.12384048939804426,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "CPRI was on the watch list, had a negative excess return and was stopped on premature noise, indicating both an outcome failure and a process fault.",
+    "root_cause": "CPRI was on the watch list, had a negative excess return and was stopped on premature noise, indicating both an outcome failure and a process fault.",
+    "mitigation_verdict": "mitigable_process",
+    "lesson": "The stop engine fired prematurely, but the underlying idea also had a negative outcome, showing the stop masked a real break.",
+    "engines_credit": "The signal engine failed to identify an idiosyncratic break; the stop engine added noise on top.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Idiosyncratic negative break appeared post-entry, making the position lose value.",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "If no premature stop, the position would have incurred a larger loss, so stop prevented further damage.",
+        "evidence_refs": [
+          "Pick data: idio_break, negative excess return"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "entry_timing",
+        "factor": "",
+        "mechanism": "Entry was on the watch list at a time when stock-specific conditions were deteriorating.",
+        "evidence_status": "unknown",
+        "timing_status": "known_at_entry",
+        "counterfactual": "If entry had been avoided, no loss would have occurred.",
+        "evidence_refs": [
+          "Pick data: lane=watch"
+        ]
+      },
+      {
+        "order": 3,
+        "layer": "path_risk",
+        "factor": "",
+        "mechanism": "Premature stop was triggered by noise, classifying the exit as an avoidable process fault.",
+        "evidence_status": "claimed",
+        "timing_status": "hindsight_only",
+        "counterfactual": "If no premature stop, the position would have remained open, but the loss would be larger.",
+        "evidence_refs": [
+          "Pick data: process_fault=premature_stop_noise"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "The stop may have been correctly placed, and the negative move was not just noise but a strong break that would have stopped out anyway.",
+      "The outcome could be due to a Consumer Discretionary sector-wide selloff."
+    ],
+    "missing_evidence": [
+      "Intraday data around the stop trigger",
+      "Consumer Discretionary sector performance post-entry",
+      "Company-specific news on 2026-06-30"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "break_stop_noise_ratio",
+        "feature": "Ratio of premature stop exits on breaking names vs non-breaking names",
+        "measurement": "Compute for each stop outcome, the frequency of process_fault=premature_stop_noise for idio_break vs idio_alpha picks",
+        "expected_direction": "Breaks should have lower ratio (stops are justified), while alpha picks have higher ratio (stops are noise)",
+        "falsifier": "If ratio is similar, stop noise is not differentiated by outcome type.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-05",
+  "asof": "2026-08-05",
+  "ts": "2026-08-05T09:23:44+00:00"
+}

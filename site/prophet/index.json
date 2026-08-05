@@ -1,11 +1,25 @@
 {
   "schema": "prophet.index/v1",
-  "asof": "2026-08-03",
+  "asof": "2026-08-05",
   "cadence": "nightly-EOD",
   "authority_tier": "display",
   "gate_go": false,
-  "plan_count": 98,
-  "active_count": 72,
+  "plan_count": 103,
+  "active_count": 76,
+  "open_count": 60,
+  "active_count_by_age": {
+    "le_7d": 12,
+    "d8_21d": 24,
+    "gt_21d": 40,
+    "unknown": 0
+  },
+  "intake": {
+    "sort_key": "us_prophet_v1 priority score desc, act_level desc, ticker asc",
+    "reorigination_blocked": 0,
+    "reorigination_blocked_keys": [],
+    "open_plan_keys": 71,
+    "basis": "Ordering only \u2014 admission filters, band gate and the 12-candidate cap are unchanged. Candidates are ranked by the same us_prophet_v1 priority score the board is ranked by, and an open plan on the same ticker+direction blocks re-origination until it closes in the forward ledger."
+  },
   "plans": [
     {
       "id": "TNDM-BULL-20260624",
@@ -23,25 +37,29 @@
       "_conviction_score": 100,
       "_signal_date": "2026-06-24",
       "phase": "triggered_pre_t1",
-      "management_confidence": 80.5,
+      "age_days": 42,
+      "closed": false,
+      "pulse": "42d \u00b7 triggered \u00b7 advancing cleanly",
+      "pulse_zh": "42\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u987a\u5229\u63a8\u8fdb",
+      "management_confidence": 80.7,
       "recommended_action": "hold",
       "last_price": 19.5,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 80.5,
+        "management_confidence": 80.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 67.5,
           "pace": 89.2,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 2.486,
           "dist_to_t1_r": 0.014,
           "dist_to_t2_r": 1.514,
-          "horizon_pct_used": 88.9,
+          "horizon_pct_used": 93.3,
           "p1": 0.9906,
           "p2": 0.4953,
           "p3": null,
@@ -91,25 +109,29 @@
       "_conviction_score": 90,
       "_signal_date": "2026-07-01",
       "phase": "triggered_pre_t1",
-      "management_confidence": 32.8,
+      "age_days": 35,
+      "closed": false,
+      "pulse": "35d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "35\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 32.5,
       "recommended_action": "hold",
       "last_price": 123.06,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 32.8,
+        "management_confidence": 32.5,
         "recommended_action": "hold",
         "components": {
           "validity": 65.7,
           "progress": 0.0,
-          "pace": 2.0,
+          "pace": 1.1,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 0.733,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 73.3,
+          "horizon_pct_used": 77.8,
           "p1": -0.1783,
           "p2": -0.0891,
           "p3": null,
@@ -159,25 +181,29 @@
       "_conviction_score": 89,
       "_signal_date": "2026-07-03",
       "phase": "triggered_pre_t1",
-      "management_confidence": 62.1,
+      "age_days": 33,
+      "closed": false,
+      "pulse": "33d \u00b7 triggered \u00b7 on track",
+      "pulse_zh": "33\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
+      "management_confidence": 61.6,
       "recommended_action": "hold",
       "last_price": 34.3,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 62.1,
+        "management_confidence": 61.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 36.1,
-          "pace": 41.8,
+          "pace": 40.7,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.646,
           "dist_to_t1_r": 0.854,
           "dist_to_t2_r": 2.354,
-          "horizon_pct_used": 68.9,
+          "horizon_pct_used": 73.3,
           "p1": 0.4304,
           "p2": 0.2152,
           "p3": null,
@@ -227,25 +253,29 @@
       "_conviction_score": 87,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 64.8,
+      "age_days": 30,
+      "closed": false,
+      "pulse": "30d \u00b7 triggered \u00b7 on track",
+      "pulse_zh": "30\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
+      "management_confidence": 64.5,
       "recommended_action": "hold",
       "last_price": 184.02,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 64.8,
+        "management_confidence": 64.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 42.3,
-          "pace": 52.8,
+          "pace": 51.5,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.796,
           "dist_to_t1_r": 0.704,
           "dist_to_t2_r": 2.204,
-          "horizon_pct_used": 62.2,
+          "horizon_pct_used": 66.7,
           "p1": 0.5307,
           "p2": 0.2654,
           "p3": null,
@@ -295,25 +325,29 @@
       "_conviction_score": 87,
       "_signal_date": "2026-07-01",
       "phase": "triggered_pre_t1",
-      "management_confidence": 60.7,
+      "age_days": 35,
+      "closed": false,
+      "pulse": "35d \u00b7 triggered \u00b7 on track",
+      "pulse_zh": "35\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
+      "management_confidence": 60.4,
       "recommended_action": "hold",
       "last_price": 36.33,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 60.7,
+        "management_confidence": 60.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 34.7,
-          "pace": 38.7,
+          "pace": 37.8,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.611,
           "dist_to_t1_r": 0.889,
           "dist_to_t2_r": 2.389,
-          "horizon_pct_used": 73.3,
+          "horizon_pct_used": 77.8,
           "p1": 0.4073,
           "p2": 0.2037,
           "p3": null,
@@ -363,25 +397,29 @@
       "_conviction_score": 86,
       "_signal_date": "2026-06-29",
       "phase": "triggered_pre_t1",
-      "management_confidence": 60.2,
+      "age_days": 37,
+      "closed": false,
+      "pulse": "37d \u00b7 triggered \u00b7 on track",
+      "pulse_zh": "37\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
+      "management_confidence": 59.9,
       "recommended_action": "hold",
       "last_price": 36.33,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 60.2,
+        "management_confidence": 59.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 34.2,
-          "pace": 37.1,
+          "pace": 36.4,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.599,
           "dist_to_t1_r": 0.901,
           "dist_to_t2_r": 2.401,
-          "horizon_pct_used": 77.8,
+          "horizon_pct_used": 82.2,
           "p1": 0.3995,
           "p2": 0.1998,
           "p3": null,
@@ -431,25 +469,29 @@
       "_conviction_score": 84,
       "_signal_date": "2026-07-07",
       "phase": "triggered_pre_t1",
-      "management_confidence": 44.5,
+      "age_days": 29,
+      "closed": false,
+      "pulse": "29d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "29\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 44.1,
       "recommended_action": "hold",
       "last_price": 43.86,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 44.5,
+        "management_confidence": 44.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 8.0,
-          "pace": 10.9,
+          "pace": 9.5,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.087,
           "dist_to_t1_r": 1.413,
           "dist_to_t2_r": 2.913,
-          "horizon_pct_used": 60.0,
+          "horizon_pct_used": 64.4,
           "p1": 0.0579,
           "p2": 0.0289,
           "p3": null,
@@ -499,6 +541,10 @@
       "_conviction_score": 83,
       "_signal_date": "2026-05-26",
       "phase": "overtime",
+      "age_days": 71,
+      "closed": true,
+      "pulse": "closed \u00b7 timed out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u5230\u671f\u672a\u8fbe\u6807",
       "management_confidence": 40.0,
       "recommended_action": "trim",
       "last_price": 18.0,
@@ -511,13 +557,13 @@
           "progress": 0.0,
           "pace": 0.0,
           "retention": 0.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 0.993,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 153.3,
+          "horizon_pct_used": 157.8,
           "p1": -0.0045,
           "p2": -0.0022,
           "p3": null,
@@ -592,25 +638,29 @@
       "_conviction_score": 83,
       "_signal_date": "2026-08-03",
       "phase": "pre_trigger",
-      "management_confidence": 50.6,
+      "age_days": 2,
+      "closed": false,
+      "pulse": "2d \u00b7 pre-trigger \u00b7 awaiting trigger",
+      "pulse_zh": "2\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
+      "management_confidence": 50.4,
       "recommended_action": "wait",
       "last_price": 16.31,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 50.6,
+        "management_confidence": 50.4,
         "recommended_action": "wait",
         "components": {
           "validity": 37.5,
           "progress": 0.0,
           "pace": 100.0,
           "retention": 50.0,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": 0.483,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 0.0,
+          "horizon_pct_used": 4.4,
           "p1": -0.3443,
           "p2": -0.1722,
           "p3": null,
@@ -670,25 +720,29 @@
       "_conviction_score": 81,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 57.5,
+      "age_days": 30,
+      "closed": false,
+      "pulse": "30d \u00b7 triggered \u00b7 on track",
+      "pulse_zh": "30\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
+      "management_confidence": 57.1,
       "recommended_action": "hold",
       "last_price": 250.41,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 57.5,
+        "management_confidence": 57.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 28.1,
-          "pace": 32.7,
+          "pace": 31.3,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.461,
           "dist_to_t1_r": 1.039,
           "dist_to_t2_r": 2.539,
-          "horizon_pct_used": 62.2,
+          "horizon_pct_used": 66.7,
           "p1": 0.3072,
           "p2": 0.1536,
           "p3": null,
@@ -738,25 +792,29 @@
       "_conviction_score": 81,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 60.8,
+      "age_days": 30,
+      "closed": false,
+      "pulse": "30d \u00b7 triggered \u00b7 on track",
+      "pulse_zh": "30\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
+      "management_confidence": 60.4,
       "recommended_action": "hold",
       "last_price": 316.07,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 60.8,
+        "management_confidence": 60.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 34.4,
-          "pace": 41.3,
+          "pace": 40.0,
           "retention": 50.0,
-          "overlay": 64.0
+          "overlay": 56.0
         },
         "geometry": {
           "dist_to_stop_r": 1.604,
           "dist_to_t1_r": 0.896,
           "dist_to_t2_r": 2.396,
-          "horizon_pct_used": 62.2,
+          "horizon_pct_used": 66.7,
           "p1": 0.4029,
           "p2": 0.2014,
           "p3": null,
@@ -806,25 +864,29 @@
       "_conviction_score": 80,
       "_signal_date": "2026-07-03",
       "phase": "triggered_pre_t1",
-      "management_confidence": 62.8,
+      "age_days": 33,
+      "closed": false,
+      "pulse": "33d \u00b7 triggered \u00b7 on track",
+      "pulse_zh": "33\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
+      "management_confidence": 62.4,
       "recommended_action": "hold",
       "last_price": 29.15,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 62.8,
+        "management_confidence": 62.4,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 37.6,
-          "pace": 43.9,
+          "pace": 42.8,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.68,
           "dist_to_t1_r": 0.82,
           "dist_to_t2_r": 2.32,
-          "horizon_pct_used": 68.9,
+          "horizon_pct_used": 73.3,
           "p1": 0.4533,
           "p2": 0.2266,
           "p3": null,
@@ -874,25 +936,29 @@
       "_conviction_score": 80,
       "_signal_date": "2026-07-09",
       "phase": "triggered_pre_t1",
-      "management_confidence": 41.0,
+      "age_days": 27,
+      "closed": false,
+      "pulse": "27d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "27\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 40.1,
       "recommended_action": "hold",
       "last_price": 22.12,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 41.0,
+        "management_confidence": 40.1,
         "recommended_action": "hold",
         "components": {
           "validity": 91.8,
           "progress": 0.0,
-          "pace": 7.2,
+          "pace": 5.7,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 0.938,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 55.6,
+          "horizon_pct_used": 60.0,
           "p1": -0.0411,
           "p2": -0.0206,
           "p3": null,
@@ -942,25 +1008,29 @@
       "_conviction_score": 79,
       "_signal_date": "2026-07-09",
       "phase": "triggered_pre_t1",
-      "management_confidence": 62.2,
+      "age_days": 27,
+      "closed": false,
+      "pulse": "27d \u00b7 triggered \u00b7 advancing cleanly",
+      "pulse_zh": "27\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u987a\u5229\u63a8\u8fdb",
+      "management_confidence": 62.1,
       "recommended_action": "hold",
       "last_price": 128.09,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 62.2,
+        "management_confidence": 62.1,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 49.3,
-          "pace": 65.7,
+          "pace": 64.3,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.976,
           "dist_to_t1_r": 0.524,
           "dist_to_t2_r": 2.024,
-          "horizon_pct_used": 55.6,
+          "horizon_pct_used": 60.0,
           "p1": 0.6506,
           "p2": 0.3253,
           "p3": null,
@@ -1010,25 +1080,29 @@
       "_conviction_score": 79,
       "_signal_date": "2026-07-03",
       "phase": "triggered_pre_t1",
-      "management_confidence": 45.5,
+      "age_days": 33,
+      "closed": false,
+      "pulse": "33d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "33\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 45.2,
       "recommended_action": "hold",
       "last_price": 151.36,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 45.5,
+        "management_confidence": 45.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 10.5,
-          "pace": 10.6,
+          "pace": 9.5,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.125,
           "dist_to_t1_r": 1.375,
           "dist_to_t2_r": 2.875,
-          "horizon_pct_used": 68.9,
+          "horizon_pct_used": 73.3,
           "p1": 0.0832,
           "p2": 0.0416,
           "p3": null,
@@ -1078,6 +1152,10 @@
       "_conviction_score": 77,
       "_signal_date": "2026-03-18",
       "phase": "overtime",
+      "age_days": 140,
+      "closed": true,
+      "pulse": "closed \u00b7 timed out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u5230\u671f\u672a\u8fbe\u6807",
       "management_confidence": 32.7,
       "recommended_action": "trim",
       "last_price": 101.43,
@@ -1090,13 +1168,13 @@
           "progress": 19.7,
           "pace": 0.0,
           "retention": 78.6,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.288,
           "dist_to_t1_r": 1.212,
           "dist_to_t2_r": 2.712,
-          "horizon_pct_used": 306.7,
+          "horizon_pct_used": 311.1,
           "p1": 0.1918,
           "p2": 0.0959,
           "p3": null,
@@ -1146,25 +1224,29 @@
       "_conviction_score": 77,
       "_signal_date": "2026-07-29",
       "phase": "triggered_pre_t1",
-      "management_confidence": 64.8,
+      "age_days": 7,
+      "closed": false,
+      "pulse": "7d \u00b7 triggered \u00b7 needs follow-through",
+      "pulse_zh": "7\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
+      "management_confidence": 64.0,
       "recommended_action": "hold",
       "last_price": 151.36,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 64.8,
+        "management_confidence": 64.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 6.9,
-          "pace": 100.0,
+          "pace": 94.2,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.071,
           "dist_to_t1_r": 1.429,
           "dist_to_t2_r": 2.929,
-          "horizon_pct_used": 11.1,
+          "horizon_pct_used": 15.6,
           "p1": 0.0474,
           "p2": 0.0237,
           "p3": null,
@@ -1224,25 +1306,29 @@
       "_conviction_score": 77,
       "_signal_date": "2026-07-30",
       "phase": "pre_trigger",
-      "management_confidence": 67.9,
+      "age_days": 6,
+      "closed": false,
+      "pulse": "6d \u00b7 pre-trigger \u00b7 awaiting trigger",
+      "pulse_zh": "6\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
+      "management_confidence": 67.5,
       "recommended_action": "wait",
       "last_price": 151.36,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 67.9,
+        "management_confidence": 67.5,
         "recommended_action": "wait",
         "components": {
           "validity": 99.9,
           "progress": 0.0,
-          "pace": 98.5,
+          "pace": 93.5,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 0.999,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 8.9,
+          "horizon_pct_used": 13.3,
           "p1": -0.0005,
           "p2": -0.0002,
           "p3": null,
@@ -1302,25 +1388,29 @@
       "_conviction_score": 75,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 59.7,
+      "age_days": 30,
+      "closed": false,
+      "pulse": "30d \u00b7 triggered \u00b7 on track",
+      "pulse_zh": "30\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u6309\u8ba1\u5212\u63a8\u8fdb",
+      "management_confidence": 59.2,
       "recommended_action": "hold",
       "last_price": 29.15,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 59.7,
+        "management_confidence": 59.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 31.6,
-          "pace": 37.3,
+          "pace": 36.0,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.539,
           "dist_to_t1_r": 0.961,
           "dist_to_t2_r": 2.461,
-          "horizon_pct_used": 62.2,
+          "horizon_pct_used": 66.7,
           "p1": 0.3592,
           "p2": 0.1796,
           "p3": null,
@@ -1370,25 +1460,29 @@
       "_conviction_score": 75,
       "_signal_date": "2026-07-15",
       "phase": "triggered_pre_t1",
-      "management_confidence": 27.9,
+      "age_days": 21,
+      "closed": false,
+      "pulse": "21d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "21\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 26.1,
       "recommended_action": "hold",
       "last_price": 286.77,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 27.9,
+        "management_confidence": 26.1,
         "recommended_action": "hold",
         "components": {
           "validity": 10.7,
           "progress": 0.0,
-          "pace": 24.9,
+          "pace": 16.2,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 0.212,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 42.2,
+          "horizon_pct_used": 46.7,
           "p1": -0.5254,
           "p2": -0.2627,
           "p3": null,
@@ -1438,6 +1532,10 @@
       "_conviction_score": 75,
       "_signal_date": "2026-07-10",
       "phase": "invalidated",
+      "age_days": 26,
+      "closed": true,
+      "pulse": "closed \u00b7 stopped out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u6b62\u635f\u79bb\u573a",
       "management_confidence": 13.5,
       "recommended_action": "invalidated",
       "last_price": 147.61,
@@ -1450,13 +1548,13 @@
           "progress": 0.0,
           "pace": 0.0,
           "retention": 8.4,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": -2.435,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 53.3,
+          "horizon_pct_used": 57.8,
           "p1": -2.2898,
           "p2": -1.1449,
           "p3": null,
@@ -1505,6 +1603,10 @@
       "_conviction_score": 74,
       "_signal_date": "2026-04-15",
       "phase": "overtime",
+      "age_days": 112,
+      "closed": true,
+      "pulse": "closed \u00b7 hit first target",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u8fbe\u5230\u9996\u4e2a\u76ee\u6807",
       "management_confidence": 41.5,
       "recommended_action": "trim",
       "last_price": 17.18,
@@ -1517,13 +1619,13 @@
           "progress": 8.7,
           "pace": 0.0,
           "retention": 13.5,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.097,
           "dist_to_t1_r": 1.403,
           "dist_to_t2_r": 2.903,
-          "horizon_pct_used": 244.4,
+          "horizon_pct_used": 248.9,
           "p1": 0.0645,
           "p2": 0.0323,
           "p3": null,
@@ -1573,25 +1675,29 @@
       "_conviction_score": 73,
       "_signal_date": "2026-07-01",
       "phase": "triggered_pre_t1",
-      "management_confidence": 39.4,
+      "age_days": 35,
+      "closed": false,
+      "pulse": "35d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "35\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 38.8,
       "recommended_action": "hold",
       "last_price": 172.62,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 39.4,
+        "management_confidence": 38.8,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 0.2,
-          "pace": 2.1,
+          "pace": 1.2,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.001,
           "dist_to_t1_r": 1.499,
           "dist_to_t2_r": 2.999,
-          "horizon_pct_used": 73.3,
+          "horizon_pct_used": 77.8,
           "p1": 0.0005,
           "p2": 0.0003,
           "p3": null,
@@ -1641,25 +1747,29 @@
       "_conviction_score": 72,
       "_signal_date": "2026-06-25",
       "phase": "triggered_pre_t1",
-      "management_confidence": 33.2,
+      "age_days": 41,
+      "closed": false,
+      "pulse": "41d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "41\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 32.8,
       "recommended_action": "hold",
       "last_price": 3016.25,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 33.2,
+        "management_confidence": 32.8,
         "recommended_action": "hold",
         "components": {
           "validity": 67.8,
           "progress": 0.0,
-          "pace": 0.1,
+          "pace": 0.0,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 0.75,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 86.7,
+          "horizon_pct_used": 91.1,
           "p1": -0.1666,
           "p2": -0.0833,
           "p3": null,
@@ -1709,25 +1819,29 @@
       "_conviction_score": 72,
       "_signal_date": "2026-06-26",
       "phase": "triggered_pre_t1",
-      "management_confidence": 75.1,
+      "age_days": 40,
+      "closed": false,
+      "pulse": "40d \u00b7 triggered \u00b7 advancing cleanly",
+      "pulse_zh": "40\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u987a\u5229\u63a8\u8fdb",
+      "management_confidence": 74.9,
       "recommended_action": "hold",
       "last_price": 582.74,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 75.1,
+        "management_confidence": 74.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 60.6,
-          "pace": 77.4,
+          "pace": 77.2,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 2.286,
           "dist_to_t1_r": 0.214,
           "dist_to_t2_r": 1.714,
-          "horizon_pct_used": 84.4,
+          "horizon_pct_used": 88.9,
           "p1": 0.8571,
           "p2": 0.4286,
           "p3": null,
@@ -1777,25 +1891,29 @@
       "_conviction_score": 71,
       "_signal_date": "2026-07-08",
       "phase": "triggered_pre_t1",
-      "management_confidence": 52.5,
+      "age_days": 28,
+      "closed": false,
+      "pulse": "28d \u00b7 triggered \u00b7 needs follow-through",
+      "pulse_zh": "28\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
+      "management_confidence": 51.9,
       "recommended_action": "hold",
       "last_price": 263.2,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 52.5,
+        "management_confidence": 51.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 18.7,
-          "pace": 22.6,
+          "pace": 21.1,
           "retention": 50.0,
-          "overlay": 64.0
+          "overlay": 56.0
         },
         "geometry": {
           "dist_to_stop_r": 1.269,
           "dist_to_t1_r": 1.231,
           "dist_to_t2_r": 2.731,
-          "horizon_pct_used": 57.8,
+          "horizon_pct_used": 62.2,
           "p1": 0.179,
           "p2": 0.0895,
           "p3": null,
@@ -1845,25 +1963,29 @@
       "_conviction_score": 70,
       "_signal_date": "2026-07-29",
       "phase": "triggered_pre_t1",
-      "management_confidence": 71.0,
+      "age_days": 7,
+      "closed": false,
+      "pulse": "7d \u00b7 triggered \u00b7 needs follow-through",
+      "pulse_zh": "7\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
+      "management_confidence": 70.8,
       "recommended_action": "hold",
       "last_price": 124.05,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 71.0,
+        "management_confidence": 70.8,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 22.2,
           "pace": 100.0,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.338,
           "dist_to_t1_r": 1.162,
           "dist_to_t2_r": 2.662,
-          "horizon_pct_used": 11.1,
+          "horizon_pct_used": 15.6,
           "p1": 0.2252,
           "p2": 0.1126,
           "p3": null,
@@ -1923,25 +2045,29 @@
       "_conviction_score": 70,
       "_signal_date": "2026-06-23",
       "phase": "pre_trigger",
-      "management_confidence": 38.7,
+      "age_days": 43,
+      "closed": true,
+      "pulse": "closed \u00b7 stopped out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u6b62\u635f\u79bb\u573a",
+      "management_confidence": 38.5,
       "recommended_action": "wait",
       "last_price": 70.36,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 38.7,
+        "management_confidence": 38.5,
         "recommended_action": "wait",
         "components": {
           "validity": 37.5,
           "progress": 0.0,
           "pace": 0.0,
           "retention": 50.0,
-          "overlay": 58.0
+          "overlay": 50.0
         },
         "geometry": {
           "dist_to_stop_r": 0.484,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 91.1,
+          "horizon_pct_used": 95.6,
           "p1": -0.3443,
           "p2": -0.1722,
           "p3": null,
@@ -1991,6 +2117,10 @@
       "_conviction_score": 68,
       "_signal_date": "2026-06-26",
       "phase": "pre_trigger",
+      "age_days": 40,
+      "closed": false,
+      "pulse": "40d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "40\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
       "management_confidence": 52.0,
       "recommended_action": "wait",
       "last_price": 12.76,
@@ -2001,15 +2131,15 @@
         "components": {
           "validity": 100.0,
           "progress": 0.0,
-          "pace": 0.2,
+          "pace": 0.0,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.0,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 84.4,
+          "horizon_pct_used": 88.9,
           "p1": 0.0,
           "p2": 0.0,
           "p3": null,
@@ -2069,25 +2199,29 @@
       "_conviction_score": 68,
       "_signal_date": "2026-07-02",
       "phase": "pre_trigger",
-      "management_confidence": 49.0,
+      "age_days": 34,
+      "closed": false,
+      "pulse": "34d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "34\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
+      "management_confidence": 48.6,
       "recommended_action": "wait",
       "last_price": 10.11,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 49.0,
+        "management_confidence": 48.6,
         "recommended_action": "wait",
         "components": {
           "validity": 72.8,
           "progress": 0.0,
-          "pace": 2.5,
+          "pace": 1.5,
           "retention": 50.0,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": 0.791,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 71.1,
+          "horizon_pct_used": 75.6,
           "p1": -0.1395,
           "p2": -0.0698,
           "p3": null,
@@ -2137,6 +2271,10 @@
       "_conviction_score": 68,
       "_signal_date": "2026-06-30",
       "phase": "pre_trigger",
+      "age_days": 36,
+      "closed": false,
+      "pulse": "36d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "36\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
       "management_confidence": 52.0,
       "recommended_action": "wait",
       "last_price": 26.43,
@@ -2147,15 +2285,15 @@
         "components": {
           "validity": 100.0,
           "progress": 0.0,
-          "pace": 1.5,
+          "pace": 0.8,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.0,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 75.6,
+          "horizon_pct_used": 80.0,
           "p1": 0.0,
           "p2": 0.0,
           "p3": null,
@@ -2215,6 +2353,10 @@
       "_conviction_score": 67,
       "_signal_date": "2026-07-02",
       "phase": "invalidated",
+      "age_days": 34,
+      "closed": true,
+      "pulse": "closed \u00b7 stopped out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u6b62\u635f\u79bb\u573a",
       "management_confidence": 12.0,
       "recommended_action": "invalidated",
       "last_price": 146.26,
@@ -2227,13 +2369,13 @@
           "progress": 0.0,
           "pace": 0.0,
           "retention": 0.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": -0.685,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 71.1,
+          "horizon_pct_used": 75.6,
           "p1": -1.1232,
           "p2": -0.5616,
           "p3": null,
@@ -2282,6 +2424,10 @@
       "_conviction_score": 67,
       "_signal_date": "2026-07-09",
       "phase": "invalidated",
+      "age_days": 27,
+      "closed": true,
+      "pulse": "closed \u00b7 stopped out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u6b62\u635f\u79bb\u573a",
       "management_confidence": 13.2,
       "recommended_action": "invalidated",
       "last_price": 147.61,
@@ -2294,13 +2440,13 @@
           "progress": 0.0,
           "pace": 0.0,
           "retention": 0.0,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": -2.196,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 55.6,
+          "horizon_pct_used": 60.0,
           "p1": -2.1309,
           "p2": -1.0654,
           "p3": null,
@@ -2349,6 +2495,10 @@
       "_conviction_score": 64,
       "_signal_date": "2026-07-13",
       "phase": "pre_trigger",
+      "age_days": 23,
+      "closed": true,
+      "pulse": "closed \u00b7 stopped out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u6b62\u635f\u79bb\u573a",
       "management_confidence": 30.6,
       "recommended_action": "wait",
       "last_price": 7.59,
@@ -2359,15 +2509,15 @@
         "components": {
           "validity": 0.0,
           "progress": 0.0,
-          "pace": 16.2,
+          "pace": 10.1,
           "retention": 50.0,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": 0.017,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 46.7,
+          "horizon_pct_used": 51.1,
           "p1": -0.6552,
           "p2": -0.3276,
           "p3": null,
@@ -2417,25 +2567,29 @@
       "_conviction_score": 63,
       "_signal_date": "2026-07-30",
       "phase": "pre_trigger",
-      "management_confidence": 67.9,
+      "age_days": 6,
+      "closed": false,
+      "pulse": "6d \u00b7 pre-trigger \u00b7 awaiting trigger",
+      "pulse_zh": "6\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
+      "management_confidence": 67.4,
       "recommended_action": "wait",
       "last_price": 124.05,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 67.9,
+        "management_confidence": 67.4,
         "recommended_action": "wait",
         "components": {
           "validity": 99.8,
           "progress": 0.0,
-          "pace": 98.5,
+          "pace": 93.5,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 0.998,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 8.9,
+          "horizon_pct_used": 13.3,
           "p1": -0.0012,
           "p2": -0.0006,
           "p3": null,
@@ -2495,25 +2649,29 @@
       "_conviction_score": 63,
       "_signal_date": "2026-07-21",
       "phase": "triggered_pre_t1",
-      "management_confidence": 51.2,
+      "age_days": 15,
+      "closed": false,
+      "pulse": "15d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 49.2,
       "recommended_action": "hold",
       "last_price": 33.97,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 51.2,
+        "management_confidence": 49.2,
         "recommended_action": "hold",
         "components": {
           "validity": 84.6,
           "progress": 0.0,
-          "pace": 58.8,
+          "pace": 46.9,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 0.883,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 28.9,
+          "horizon_pct_used": 33.3,
           "p1": -0.0778,
           "p2": -0.0389,
           "p3": null,
@@ -2521,7 +2679,7 @@
           "mfe_r": 0.339,
           "mae_r": -0.297
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($39.79).",
@@ -2563,25 +2721,29 @@
       "_conviction_score": 62,
       "_signal_date": "2026-07-22",
       "phase": "triggered_pre_t1",
-      "management_confidence": 57.8,
+      "age_days": 14,
+      "closed": false,
+      "pulse": "14d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "14\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 55.9,
       "recommended_action": "hold",
       "last_price": 128.09,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 57.8,
+        "management_confidence": 55.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 5.0,
-          "pace": 67.5,
+          "pace": 55.6,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.047,
           "dist_to_t1_r": 1.453,
           "dist_to_t2_r": 2.953,
-          "horizon_pct_used": 26.7,
+          "horizon_pct_used": 31.1,
           "p1": 0.031,
           "p2": 0.0155,
           "p3": null,
@@ -2589,7 +2751,7 @@
           "mfe_r": 0.047,
           "mae_r": -0.07
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($177.72).",
@@ -2641,25 +2803,29 @@
       "_conviction_score": 62,
       "_signal_date": "2026-07-24",
       "phase": "pre_trigger",
-      "management_confidence": 60.2,
+      "age_days": 12,
+      "closed": false,
+      "pulse": "12d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "12\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
+      "management_confidence": 59.0,
       "recommended_action": "wait",
       "last_price": 13.42,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 60.2,
+        "management_confidence": 59.0,
         "recommended_action": "wait",
         "components": {
           "validity": 79.7,
           "progress": 0.0,
-          "pace": 75.9,
+          "pace": 64.7,
           "retention": 50.0,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": 0.845,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 22.2,
+          "horizon_pct_used": 26.7,
           "p1": -0.103,
           "p2": -0.0515,
           "p3": null,
@@ -2719,25 +2885,29 @@
       "_conviction_score": 62,
       "_signal_date": "2026-06-05",
       "phase": "overtime",
-      "management_confidence": 32.2,
+      "age_days": 61,
+      "closed": true,
+      "pulse": "closed \u00b7 timed out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u5230\u671f\u672a\u8fbe\u6807",
+      "management_confidence": 31.3,
       "recommended_action": "trim",
       "last_price": 80.29,
       "state": {
         "phase": "overtime",
-        "management_confidence": 32.2,
+        "management_confidence": 31.3,
         "recommended_action": "trim",
         "components": {
           "validity": 38.9,
           "progress": 0.0,
-          "pace": 11.3,
+          "pace": 8.7,
           "retention": 0.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 0.497,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 131.1,
+          "horizon_pct_used": 135.6,
           "p1": -0.3353,
           "p2": -0.1677,
           "p3": null,
@@ -2787,25 +2957,29 @@
       "_conviction_score": 61,
       "_signal_date": "2026-07-22",
       "phase": "triggered_pre_t1",
-      "management_confidence": 70.4,
+      "age_days": 14,
+      "closed": false,
+      "pulse": "14d \u00b7 triggered \u00b7 needs follow-through",
+      "pulse_zh": "14\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
+      "management_confidence": 68.7,
       "recommended_action": "hold",
       "last_price": 310.23,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 70.4,
+        "management_confidence": 68.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 25.9,
-          "pace": 89.6,
+          "pace": 77.7,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.415,
           "dist_to_t1_r": 1.085,
           "dist_to_t2_r": 2.585,
-          "horizon_pct_used": 26.7,
+          "horizon_pct_used": 31.1,
           "p1": 0.2767,
           "p2": 0.1384,
           "p3": null,
@@ -2813,7 +2987,7 @@
           "mfe_r": 0.415,
           "mae_r": -0.0
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($375.91).",
@@ -2865,25 +3039,29 @@
       "_conviction_score": 61,
       "_signal_date": "2026-07-24",
       "phase": "triggered_pre_t1",
-      "management_confidence": 63.5,
+      "age_days": 12,
+      "closed": false,
+      "pulse": "12d \u00b7 triggered \u00b7 needs follow-through",
+      "pulse_zh": "12\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
+      "management_confidence": 61.7,
       "recommended_action": "hold",
       "last_price": 101.015,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 63.5,
+        "management_confidence": 61.7,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 10.7,
-          "pace": 83.6,
+          "pace": 72.4,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.127,
           "dist_to_t1_r": 1.373,
           "dist_to_t2_r": 2.873,
-          "horizon_pct_used": 22.2,
+          "horizon_pct_used": 26.7,
           "p1": 0.0848,
           "p2": 0.0424,
           "p3": null,
@@ -2891,7 +3069,7 @@
           "mfe_r": 0.208,
           "mae_r": 0.0
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($156.51).",
@@ -2943,6 +3121,10 @@
       "_conviction_score": 60,
       "_signal_date": "2026-06-04",
       "phase": "overtime",
+      "age_days": 62,
+      "closed": true,
+      "pulse": "closed \u00b7 timed out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u5230\u671f\u672a\u8fbe\u6807",
       "management_confidence": 40.0,
       "recommended_action": "trim",
       "last_price": 19.94,
@@ -2953,15 +3135,15 @@
         "components": {
           "validity": 92.6,
           "progress": 0.0,
-          "pace": 10.0,
+          "pace": 7.3,
           "retention": 0.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 0.945,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 133.3,
+          "horizon_pct_used": 137.8,
           "p1": -0.0369,
           "p2": -0.0185,
           "p3": null,
@@ -3021,25 +3203,29 @@
       "_conviction_score": 60,
       "_signal_date": "2026-07-24",
       "phase": "pre_trigger",
-      "management_confidence": 61.2,
+      "age_days": 12,
+      "closed": false,
+      "pulse": "12d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "12\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
+      "management_confidence": 59.7,
       "recommended_action": "wait",
       "last_price": 35.74,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 61.2,
+        "management_confidence": 59.7,
         "recommended_action": "wait",
         "components": {
           "validity": 80.6,
           "progress": 0.0,
-          "pace": 75.9,
+          "pace": 64.7,
           "retention": 50.0,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": 0.852,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 22.2,
+          "horizon_pct_used": 26.7,
           "p1": -0.0987,
           "p2": -0.0493,
           "p3": null,
@@ -3099,25 +3285,29 @@
       "_conviction_score": 60,
       "_signal_date": "2026-07-20",
       "phase": "triggered_pre_t1",
-      "management_confidence": 76.4,
+      "age_days": 16,
+      "closed": false,
+      "pulse": "16d \u00b7 triggered \u00b7 advancing cleanly",
+      "pulse_zh": "16\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u987a\u5229\u63a8\u8fdb",
+      "management_confidence": 77.0,
       "recommended_action": "hold",
       "last_price": 464.72,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 76.4,
+        "management_confidence": 77.0,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 51.6,
           "pace": 100.0,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 2.039,
           "dist_to_t1_r": 0.461,
           "dist_to_t2_r": 1.961,
-          "horizon_pct_used": 31.1,
+          "horizon_pct_used": 35.6,
           "p1": 0.693,
           "p2": 0.3465,
           "p3": null,
@@ -3167,25 +3357,29 @@
       "_conviction_score": 60,
       "_signal_date": "2026-07-24",
       "phase": "pre_trigger",
-      "management_confidence": 63.4,
+      "age_days": 12,
+      "closed": false,
+      "pulse": "12d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "12\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
+      "management_confidence": 62.6,
       "recommended_action": "wait",
       "last_price": 37.08,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 63.4,
+        "management_confidence": 62.6,
         "recommended_action": "wait",
         "components": {
           "validity": 93.5,
           "progress": 0.0,
-          "pace": 75.9,
+          "pace": 64.7,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 0.951,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 22.2,
+          "horizon_pct_used": 26.7,
           "p1": -0.0326,
           "p2": -0.0163,
           "p3": null,
@@ -3245,25 +3439,29 @@
       "_conviction_score": 60,
       "_signal_date": "2026-07-16",
       "phase": "triggered_pre_t1",
-      "management_confidence": 43.8,
+      "age_days": 20,
+      "closed": false,
+      "pulse": "20d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 41.8,
       "recommended_action": "hold",
       "last_price": 14.66,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 43.8,
+        "management_confidence": 41.8,
         "recommended_action": "hold",
         "components": {
           "validity": 78.9,
           "progress": 0.0,
-          "pace": 29.9,
+          "pace": 20.3,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 0.839,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 40.0,
+          "horizon_pct_used": 44.4,
           "p1": -0.1075,
           "p2": -0.0538,
           "p3": null,
@@ -3271,7 +3469,7 @@
           "mfe_r": 0.864,
           "mae_r": -0.244
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($19.30).",
@@ -3313,25 +3511,29 @@
       "_conviction_score": 58,
       "_signal_date": "2026-07-29",
       "phase": "pre_trigger",
-      "management_confidence": 54.0,
+      "age_days": 7,
+      "closed": false,
+      "pulse": "7d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "7\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
+      "management_confidence": 52.8,
       "recommended_action": "wait",
       "last_price": 54.84,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 54.0,
+        "management_confidence": 52.8,
         "recommended_action": "wait",
         "components": {
           "validity": 46.2,
           "progress": 0.0,
-          "pace": 96.4,
+          "pace": 90.0,
           "retention": 50.0,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": 0.564,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 11.1,
+          "horizon_pct_used": 15.6,
           "p1": -0.2903,
           "p2": -0.1452,
           "p3": null,
@@ -3391,25 +3593,29 @@
       "_conviction_score": 57,
       "_signal_date": "2026-07-24",
       "phase": "triggered_pre_t1",
-      "management_confidence": 66.6,
+      "age_days": 12,
+      "closed": false,
+      "pulse": "12d \u00b7 triggered \u00b7 needs follow-through",
+      "pulse_zh": "12\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
+      "management_confidence": 64.9,
       "recommended_action": "hold",
       "last_price": 14.72,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 66.6,
+        "management_confidence": 64.9,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 15.8,
-          "pace": 88.8,
+          "pace": 77.6,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.215,
           "dist_to_t1_r": 1.285,
           "dist_to_t2_r": 2.785,
-          "horizon_pct_used": 22.2,
+          "horizon_pct_used": 26.7,
           "p1": 0.1433,
           "p2": 0.0716,
           "p3": null,
@@ -3417,7 +3623,7 @@
           "mfe_r": 0.215,
           "mae_r": -0.0
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($17.65).",
@@ -3469,25 +3675,29 @@
       "_conviction_score": 56,
       "_signal_date": "2026-07-17",
       "phase": "triggered_pre_t1",
-      "management_confidence": 44.6,
+      "age_days": 19,
+      "closed": false,
+      "pulse": "19d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "19\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 42.5,
       "recommended_action": "hold",
       "last_price": 205.69,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 44.6,
+        "management_confidence": 42.5,
         "recommended_action": "hold",
         "components": {
           "validity": 78.1,
           "progress": 0.0,
-          "pace": 35.3,
+          "pace": 24.9,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 0.833,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 37.8,
+          "horizon_pct_used": 42.2,
           "p1": -0.1116,
           "p2": -0.0558,
           "p3": null,
@@ -3495,7 +3705,7 @@
           "mfe_r": 0.268,
           "mae_r": -0.307
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($238.66).",
@@ -3537,25 +3747,29 @@
       "_conviction_score": 55,
       "_signal_date": "2026-07-30",
       "phase": "pre_trigger",
-      "management_confidence": 67.7,
+      "age_days": 6,
+      "closed": false,
+      "pulse": "6d \u00b7 pre-trigger \u00b7 awaiting trigger",
+      "pulse_zh": "6\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
+      "management_confidence": 67.2,
       "recommended_action": "wait",
       "last_price": 6.03,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 67.7,
+        "management_confidence": 67.2,
         "recommended_action": "wait",
         "components": {
           "validity": 100.0,
           "progress": 0.0,
-          "pace": 98.5,
+          "pace": 93.5,
           "retention": 50.0,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": 1.0,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 8.9,
+          "horizon_pct_used": 13.3,
           "p1": 0.0,
           "p2": 0.0,
           "p3": null,
@@ -3615,25 +3829,29 @@
       "_conviction_score": 55,
       "_signal_date": "2026-07-21",
       "phase": "triggered_pre_t1",
-      "management_confidence": 69.5,
+      "age_days": 15,
+      "closed": false,
+      "pulse": "15d \u00b7 triggered \u00b7 needs follow-through",
+      "pulse_zh": "15\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
+      "management_confidence": 67.6,
       "recommended_action": "hold",
       "last_price": 251.07,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 69.5,
+        "management_confidence": 67.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 26.3,
-          "pace": 84.2,
+          "pace": 72.2,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.423,
           "dist_to_t1_r": 1.077,
           "dist_to_t2_r": 2.577,
-          "horizon_pct_used": 28.9,
+          "horizon_pct_used": 33.3,
           "p1": 0.282,
           "p2": 0.141,
           "p3": null,
@@ -3641,7 +3859,7 @@
           "mfe_r": 0.465,
           "mae_r": 0.0
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($289.95).",
@@ -3683,25 +3901,29 @@
       "_conviction_score": 54,
       "_signal_date": "2026-07-30",
       "phase": "pre_trigger",
-      "management_confidence": 67.8,
+      "age_days": 6,
+      "closed": false,
+      "pulse": "6d \u00b7 pre-trigger \u00b7 awaiting trigger",
+      "pulse_zh": "6\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
+      "management_confidence": 67.3,
       "recommended_action": "wait",
       "last_price": 46.08,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 67.8,
+        "management_confidence": 67.3,
         "recommended_action": "wait",
         "components": {
           "validity": 100.0,
           "progress": 0.0,
-          "pace": 98.5,
+          "pace": 93.5,
           "retention": 50.0,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": 1.0,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 8.9,
+          "horizon_pct_used": 13.3,
           "p1": 0.0,
           "p2": 0.0,
           "p3": null,
@@ -3761,25 +3983,29 @@
       "_conviction_score": 53,
       "_signal_date": "2026-07-20",
       "phase": "triggered_pre_t1",
-      "management_confidence": 63.6,
+      "age_days": 16,
+      "closed": false,
+      "pulse": "16d \u00b7 triggered \u00b7 needs follow-through",
+      "pulse_zh": "16\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
+      "management_confidence": 61.8,
       "recommended_action": "hold",
       "last_price": 53.29,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 63.6,
+        "management_confidence": 61.8,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 19.3,
-          "pace": 69.6,
+          "pace": 57.7,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.279,
           "dist_to_t1_r": 1.221,
           "dist_to_t2_r": 2.721,
-          "horizon_pct_used": 31.1,
+          "horizon_pct_used": 35.6,
           "p1": 0.1861,
           "p2": 0.0931,
           "p3": null,
@@ -3787,7 +4013,7 @@
           "mfe_r": 0.279,
           "mae_r": -0.074
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($58.93).",
@@ -3839,25 +4065,29 @@
       "_conviction_score": 53,
       "_signal_date": "2026-07-23",
       "phase": "triggered_pre_t1",
-      "management_confidence": 66.0,
+      "age_days": 13,
+      "closed": false,
+      "pulse": "13d \u00b7 triggered \u00b7 needs follow-through",
+      "pulse_zh": "13\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
+      "management_confidence": 64.2,
       "recommended_action": "hold",
       "last_price": 47.42,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 66.0,
+        "management_confidence": 64.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 15.8,
-          "pace": 83.3,
+          "pace": 71.7,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.215,
           "dist_to_t1_r": 1.285,
           "dist_to_t2_r": 2.785,
-          "horizon_pct_used": 24.4,
+          "horizon_pct_used": 28.9,
           "p1": 0.1433,
           "p2": 0.0716,
           "p3": null,
@@ -3865,7 +4095,7 @@
           "mfe_r": 0.215,
           "mae_r": -0.0
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($68.41).",
@@ -3917,25 +4147,29 @@
       "_conviction_score": 53,
       "_signal_date": "2026-03-27",
       "phase": "overtime",
-      "management_confidence": 36.9,
+      "age_days": 131,
+      "closed": true,
+      "pulse": "closed \u00b7 timed out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u5230\u671f\u672a\u8fbe\u6807",
+      "management_confidence": 36.8,
       "recommended_action": "trim",
       "last_price": 28.31,
       "state": {
         "phase": "overtime",
-        "management_confidence": 36.9,
+        "management_confidence": 36.8,
         "recommended_action": "trim",
         "components": {
           "validity": 68.8,
           "progress": 0.0,
           "pace": 0.0,
           "retention": 46.3,
-          "overlay": 58.0
+          "overlay": 50.0
         },
         "geometry": {
           "dist_to_stop_r": 0.758,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 286.7,
+          "horizon_pct_used": 291.1,
           "p1": -0.1613,
           "p2": -0.0806,
           "p3": null,
@@ -3995,25 +4229,29 @@
       "_conviction_score": 52,
       "_signal_date": "2026-07-23",
       "phase": "pre_trigger",
-      "management_confidence": 50.0,
+      "age_days": 13,
+      "closed": false,
+      "pulse": "13d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "13\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
+      "management_confidence": 48.6,
       "recommended_action": "wait",
       "last_price": 175.05,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 50.0,
+        "management_confidence": 48.6,
         "recommended_action": "wait",
         "components": {
           "validity": 43.8,
           "progress": 0.0,
-          "pace": 70.5,
+          "pace": 58.8,
           "retention": 50.0,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": 0.542,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 24.4,
+          "horizon_pct_used": 28.9,
           "p1": -0.3052,
           "p2": -0.1526,
           "p3": null,
@@ -4073,6 +4311,10 @@
       "_conviction_score": 52,
       "_signal_date": "2026-07-09",
       "phase": "invalidated",
+      "age_days": 27,
+      "closed": true,
+      "pulse": "closed \u00b7 stopped out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u6b62\u635f\u79bb\u573a",
       "management_confidence": 11.8,
       "recommended_action": "invalidated",
       "last_price": 210.42,
@@ -4085,13 +4327,13 @@
           "progress": 0.0,
           "pace": 0.0,
           "retention": 38.3,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": -0.707,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 55.6,
+          "horizon_pct_used": 60.0,
           "p1": -1.1383,
           "p2": -0.5691,
           "p3": null,
@@ -4140,25 +4382,29 @@
       "_conviction_score": 51,
       "_signal_date": "2026-06-09",
       "phase": "overtime",
-      "management_confidence": 39.9,
+      "age_days": 57,
+      "closed": true,
+      "pulse": "closed \u00b7 timed out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u5230\u671f\u672a\u8fbe\u6807",
+      "management_confidence": 39.7,
       "recommended_action": "trim",
       "last_price": 45.82,
       "state": {
         "phase": "overtime",
-        "management_confidence": 39.9,
+        "management_confidence": 39.7,
         "recommended_action": "trim",
         "components": {
           "validity": 64.4,
           "progress": 0.0,
-          "pace": 16.7,
+          "pace": 14.0,
           "retention": 48.3,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 0.722,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 122.2,
+          "horizon_pct_used": 126.7,
           "p1": -0.1854,
           "p2": -0.0927,
           "p3": null,
@@ -4218,6 +4464,10 @@
       "_conviction_score": 51,
       "_signal_date": "2026-05-22",
       "phase": "overtime",
+      "age_days": 75,
+      "closed": true,
+      "pulse": "closed \u00b7 timed out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u5230\u671f\u672a\u8fbe\u6807",
       "management_confidence": 40.0,
       "recommended_action": "trim",
       "last_price": 19.14,
@@ -4230,13 +4480,13 @@
           "progress": 1.6,
           "pace": 0.0,
           "retention": 18.2,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.01,
           "dist_to_t1_r": 1.49,
           "dist_to_t2_r": 2.99,
-          "horizon_pct_used": 162.2,
+          "horizon_pct_used": 166.7,
           "p1": 0.0069,
           "p2": 0.0034,
           "p3": null,
@@ -4296,25 +4546,29 @@
       "_conviction_score": 51,
       "_signal_date": "2026-07-24",
       "phase": "triggered_pre_t1",
-      "management_confidence": 66.3,
+      "age_days": 12,
+      "closed": false,
+      "pulse": "12d \u00b7 triggered \u00b7 needs follow-through",
+      "pulse_zh": "12\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u9700\u8981\u8ddf\u8fdb\u786e\u8ba4",
+      "management_confidence": 64.6,
       "recommended_action": "hold",
       "last_price": 47.42,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 66.3,
+        "management_confidence": 64.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 14.8,
-          "pace": 87.7,
+          "pace": 76.5,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.196,
           "dist_to_t1_r": 1.304,
           "dist_to_t2_r": 2.804,
-          "horizon_pct_used": 22.2,
+          "horizon_pct_used": 26.7,
           "p1": 0.1305,
           "p2": 0.0653,
           "p3": null,
@@ -4322,7 +4576,7 @@
           "mfe_r": 0.196,
           "mae_r": 0.0
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($67.08).",
@@ -4359,6 +4613,88 @@
       }
     },
     {
+      "id": "MDB-BULL-20260803",
+      "asset": "MDB",
+      "direction": "BULL",
+      "entry": 380.0,
+      "invalidation": 219.17,
+      "targets": [
+        621.245,
+        862.49
+      ],
+      "trigger": 387.0,
+      "option_contract": null,
+      "_r_unit": 160.83,
+      "_conviction_score": 51,
+      "_signal_date": "2026-08-03",
+      "phase": "pre_trigger",
+      "age_days": 2,
+      "closed": false,
+      "pulse": "2d \u00b7 pre-trigger \u00b7 awaiting trigger",
+      "pulse_zh": "2\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
+      "management_confidence": 58.5,
+      "recommended_action": "wait",
+      "last_price": 337.48,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 58.5,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 66.1,
+          "progress": 0.0,
+          "pace": 100.0,
+          "retention": 50.0,
+          "overlay": 53.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.736,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 4.4,
+          "p1": -0.1763,
+          "p2": -0.0881,
+          "p3": null,
+          "move_r": -0.264,
+          "mfe_r": 0.0,
+          "mae_r": -0.264
+        },
+        "change_reason": ""
+      },
+      "what_to_do_now": [
+        "Watch for price to reach the trigger level ($387.00) before entering. No position until trigger is confirmed.",
+        "Keep size small on initial entry; the buy zone extends from trigger up to $621.25 (T1). There is no need to rush.",
+        "If trigger confirms, scale in gradually. Invalidation is $219.17; exit on a close below that level."
+      ],
+      "profit_plan": [
+        {
+          "level": 621.245,
+          "label": "T1",
+          "action": "Scale out 40%, trail stop to entry",
+          "status": "ACTIVE"
+        },
+        {
+          "level": 862.49,
+          "label": "T2",
+          "action": "Close remaining 60%, exit full position",
+          "status": "PENDING"
+        }
+      ],
+      "thesis": "MDB \u2014 conviction 51/100 (neutral) Entry grade: light. Drivers: entry; tailwind. Cautions: Its Non-AI Software basket is below its long-term trend. Size down: the tape is rewarding leaders, and this basket is not one.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. Options positioning (as of 2026-08-04): the heaviest call open interest sat at $400.00, about 5.3% above the entry \u2014 dealer hedging tends to add friction into that level, which is a place price stalls, not a target. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "MDB \u2014 \u786e\u4fe1\u5ea6 51/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: entry; tailwind\u3002 \u6ce8\u610f\u4e8b\u9879: \u6240\u5c5e \u975eAI\u8f6f\u4ef6 \u7bee\u5b50\u5df2\u8dcc\u7834\u957f\u671f\u8d8b\u52bf\u3002\u51cf\u5c0f\u4ed3\u4f4d\uff1a\u5f53\u524d\u884c\u60c5\u5956\u52b1\u9886\u5148\u677f\u5757\uff0c\u8be5\u7bee\u5b50\u5e76\u4e0d\u5728\u5176\u4e2d\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u671f\u6743\u6301\u4ed3\uff08\u622a\u81f32026-08-04\uff09\uff1a\u6700\u91cd\u7684\u770b\u6da8\u6301\u4ed3\u4f4d\u4e8e $400.00\uff0c\u7ea6\u5728\u5165\u573a\u4ef7\u4e0a\u65b95.3% \u2014 \u505a\u5e02\u5546\u5bf9\u51b2\u901a\u5e38\u5728\u8be5\u4ef7\u4f4d\u5f62\u6210\u963b\u529b\uff1b\u90a3\u662f\u4ef7\u683c\u5bb9\u6613\u505c\u6ede\u4e4b\u5904\uff0c\u5e76\u975e\u76ee\u6807\u4ef7\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": {
+        "leash": 1.0,
+        "eligible": false,
+        "stage_at_entry": 4,
+        "ec_sent": null,
+        "ec_call_date": null,
+        "bear_gate": false,
+        "provisional": true,
+        "demoted": false,
+        "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
+      }
+    },
+    {
       "id": "CASY-BULL-20260727",
       "asset": "CASY",
       "direction": "BULL",
@@ -4374,25 +4710,29 @@
       "_conviction_score": 50,
       "_signal_date": "2026-07-27",
       "phase": "pre_trigger",
-      "management_confidence": 67.4,
+      "age_days": 9,
+      "closed": false,
+      "pulse": "9d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "9\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
+      "management_confidence": 66.6,
       "recommended_action": "wait",
       "last_price": 871.0,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 67.4,
+        "management_confidence": 66.6,
         "recommended_action": "wait",
         "components": {
           "validity": 100.0,
           "progress": 0.0,
-          "pace": 90.0,
+          "pace": 81.1,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.0,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 15.6,
+          "horizon_pct_used": 20.0,
           "p1": 0.0,
           "p2": 0.0,
           "p3": null,
@@ -4452,6 +4792,10 @@
       "_conviction_score": 50,
       "_signal_date": "2026-06-01",
       "phase": "overtime",
+      "age_days": 65,
+      "closed": true,
+      "pulse": "closed \u00b7 timed out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u5230\u671f\u672a\u8fbe\u6807",
       "management_confidence": 40.0,
       "recommended_action": "trim",
       "last_price": 67.16,
@@ -4462,15 +4806,15 @@
         "components": {
           "validity": 78.2,
           "progress": 0.0,
-          "pace": 6.0,
+          "pace": 3.3,
           "retention": 45.9,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": 0.834,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 140.0,
+          "horizon_pct_used": 144.4,
           "p1": -0.1109,
           "p2": -0.0555,
           "p3": null,
@@ -4530,25 +4874,29 @@
       "_conviction_score": 50,
       "_signal_date": "2026-07-27",
       "phase": "pre_trigger",
-      "management_confidence": 67.3,
+      "age_days": 9,
+      "closed": false,
+      "pulse": "9d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "9\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
+      "management_confidence": 66.5,
       "recommended_action": "wait",
       "last_price": 147.81,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 67.3,
+        "management_confidence": 66.5,
         "recommended_action": "wait",
         "components": {
           "validity": 99.8,
           "progress": 0.0,
-          "pace": 90.0,
+          "pace": 81.1,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 0.998,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 15.6,
+          "horizon_pct_used": 20.0,
           "p1": -0.0012,
           "p2": -0.0006,
           "p3": null,
@@ -4608,6 +4956,10 @@
       "_conviction_score": 50,
       "_signal_date": "2026-05-18",
       "phase": "overtime",
+      "age_days": 79,
+      "closed": true,
+      "pulse": "closed \u00b7 timed out",
+      "pulse_zh": "\u5df2\u7ed3 \u00b7 \u5230\u671f\u672a\u8fbe\u6807",
       "management_confidence": 40.0,
       "recommended_action": "trim",
       "last_price": 325.7,
@@ -4620,13 +4972,13 @@
           "progress": 0.0,
           "pace": 0.0,
           "retention": 0.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 0.92,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 171.1,
+          "horizon_pct_used": 175.6,
           "p1": -0.0535,
           "p2": -0.0267,
           "p3": null,
@@ -4686,25 +5038,29 @@
       "_conviction_score": 49,
       "_signal_date": "2026-07-24",
       "phase": "pre_trigger",
-      "management_confidence": 61.2,
+      "age_days": 12,
+      "closed": false,
+      "pulse": "12d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "12\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
+      "management_confidence": 59.9,
       "recommended_action": "wait",
       "last_price": 36.32,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 61.2,
+        "management_confidence": 59.9,
         "recommended_action": "wait",
         "components": {
           "validity": 82.5,
           "progress": 0.0,
-          "pace": 75.9,
+          "pace": 64.7,
           "retention": 50.0,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": 0.868,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 22.2,
+          "horizon_pct_used": 26.7,
           "p1": -0.0883,
           "p2": -0.0442,
           "p3": null,
@@ -4764,25 +5120,29 @@
       "_conviction_score": 49,
       "_signal_date": "2026-07-30",
       "phase": "pre_trigger",
-      "management_confidence": 67.9,
+      "age_days": 6,
+      "closed": false,
+      "pulse": "6d \u00b7 pre-trigger \u00b7 awaiting trigger",
+      "pulse_zh": "6\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
+      "management_confidence": 67.5,
       "recommended_action": "wait",
       "last_price": 160.52,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 67.9,
+        "management_confidence": 67.5,
         "recommended_action": "wait",
         "components": {
           "validity": 100.0,
           "progress": 0.1,
-          "pace": 98.5,
+          "pace": 93.6,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.0,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 8.9,
+          "horizon_pct_used": 13.3,
           "p1": 0.0003,
           "p2": 0.0001,
           "p3": null,
@@ -4842,25 +5202,29 @@
       "_conviction_score": 48,
       "_signal_date": "2026-07-13",
       "phase": "triggered_pre_t1",
-      "management_confidence": 46.7,
+      "age_days": 23,
+      "closed": false,
+      "pulse": "23d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "23\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 45.2,
       "recommended_action": "hold",
       "last_price": 35.62,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 46.7,
+        "management_confidence": 45.2,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 4.9,
-          "pace": 18.9,
+          "pace": 12.8,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.045,
           "dist_to_t1_r": 1.455,
           "dist_to_t2_r": 2.955,
-          "horizon_pct_used": 46.7,
+          "horizon_pct_used": 51.1,
           "p1": 0.0299,
           "p2": 0.0149,
           "p3": null,
@@ -4895,6 +5259,88 @@
       "stage_tilt": null
     },
     {
+      "id": "ZWS-BULL-20260727",
+      "asset": "ZWS",
+      "direction": "BULL",
+      "entry": 50.51,
+      "invalidation": 42.29,
+      "targets": [
+        62.84,
+        75.17
+      ],
+      "trigger": 50.9,
+      "option_contract": null,
+      "_r_unit": 8.22,
+      "_conviction_score": 48,
+      "_signal_date": "2026-07-27",
+      "phase": "pre_trigger",
+      "age_days": 9,
+      "closed": false,
+      "pulse": "9d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "9\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
+      "management_confidence": 65.5,
+      "recommended_action": "wait",
+      "last_price": 50.51,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 65.5,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 100.0,
+          "progress": 0.0,
+          "pace": 81.1,
+          "retention": 50.0,
+          "overlay": 53.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.0,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 20.0,
+          "p1": -0.0,
+          "p2": -0.0,
+          "p3": null,
+          "move_r": -0.0,
+          "mfe_r": 0.0,
+          "mae_r": -0.0
+        },
+        "change_reason": ""
+      },
+      "what_to_do_now": [
+        "Watch for price to reach the trigger level ($50.90) before entering. No position until trigger is confirmed.",
+        "Keep size small on initial entry; the buy zone extends from trigger up to $62.84 (T1). There is no need to rush.",
+        "If trigger confirms, scale in gradually. Invalidation is $42.29; exit on a close below that level."
+      ],
+      "profit_plan": [
+        {
+          "level": 62.84,
+          "label": "T1",
+          "action": "Scale out 40%, trail stop to entry",
+          "status": "ACTIVE"
+        },
+        {
+          "level": 75.17,
+          "label": "T2",
+          "action": "Close remaining 60%, exit full position",
+          "status": "PENDING"
+        }
+      ],
+      "thesis": "ZWS \u2014 conviction 48/100 (constructive) Entry grade: strong. Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "ZWS \u2014 \u786e\u4fe1\u5ea6 48/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": {
+        "leash": 1.0,
+        "eligible": false,
+        "stage_at_entry": 3,
+        "ec_sent": null,
+        "ec_call_date": null,
+        "bear_gate": false,
+        "provisional": true,
+        "demoted": false,
+        "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
+      }
+    },
+    {
       "id": "BA-BULL-20260702",
       "asset": "BA",
       "direction": "BULL",
@@ -4918,25 +5364,29 @@
       "_conviction_score": 46,
       "_signal_date": "2026-07-02",
       "phase": "pre_trigger",
-      "management_confidence": 47.8,
+      "age_days": 34,
+      "closed": false,
+      "pulse": "34d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "34\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
+      "management_confidence": 47.5,
       "recommended_action": "wait",
       "last_price": 216.14,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 47.8,
+        "management_confidence": 47.5,
         "recommended_action": "wait",
         "components": {
           "validity": 68.9,
           "progress": 0.0,
-          "pace": 2.5,
+          "pace": 1.5,
           "retention": 50.0,
-          "overlay": 55.0
+          "overlay": 47.0
         },
         "geometry": {
           "dist_to_stop_r": 0.759,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 71.1,
+          "horizon_pct_used": 75.6,
           "p1": -0.1607,
           "p2": -0.0804,
           "p3": null,
@@ -4971,6 +5421,88 @@
       "stage_tilt": null
     },
     {
+      "id": "NUE-BULL-20260731",
+      "asset": "NUE",
+      "direction": "BULL",
+      "entry": 257.3,
+      "invalidation": 155.27,
+      "targets": [
+        410.345,
+        563.39
+      ],
+      "trigger": 259.9,
+      "option_contract": null,
+      "_r_unit": 102.03,
+      "_conviction_score": 46,
+      "_signal_date": "2026-07-31",
+      "phase": "pre_trigger",
+      "age_days": 5,
+      "closed": false,
+      "pulse": "5d \u00b7 pre-trigger \u00b7 awaiting trigger",
+      "pulse_zh": "5\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
+      "management_confidence": 67.2,
+      "recommended_action": "wait",
+      "last_price": 257.29,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 67.2,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 100.0,
+          "progress": 0.0,
+          "pace": 96.4,
+          "retention": 50.0,
+          "overlay": 50.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.0,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 11.1,
+          "p1": -0.0001,
+          "p2": -0.0,
+          "p3": null,
+          "move_r": -0.0,
+          "mfe_r": 0.0,
+          "mae_r": -0.0
+        },
+        "change_reason": ""
+      },
+      "what_to_do_now": [
+        "Watch for price to reach the trigger level ($259.90) before entering. No position until trigger is confirmed.",
+        "Keep size small on initial entry; the buy zone extends from trigger up to $410.35 (T1). There is no need to rush.",
+        "If trigger confirms, scale in gradually. Invalidation is $155.27; exit on a close below that level."
+      ],
+      "profit_plan": [
+        {
+          "level": 410.345,
+          "label": "T1",
+          "action": "Scale out 40%, trail stop to entry",
+          "status": "ACTIVE"
+        },
+        {
+          "level": 563.39,
+          "label": "T2",
+          "action": "Close remaining 60%, exit full position",
+          "status": "PENDING"
+        }
+      ],
+      "thesis": "NUE \u2014 conviction 46/100 (constructive) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions. Cautions: Trades 35% above its long-term trend line. Buying here is chasing.; Its market cycle still argues for waiting (bottoming).. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "NUE \u2014 \u786e\u4fe1\u5ea6 46/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions\u3002 \u6ce8\u610f\u4e8b\u9879: \u80a1\u4ef7\u9ad8\u4e8e\u957f\u671f\u8d8b\u52bf\u7ebf 35%\u3002\u6b64\u4ef7\u4f4d\u4e70\u5165\u5c5e\u4e8e\u8ffd\u9ad8\u3002; \u6240\u5904\u7684\u5e02\u573a\u5468\u671f\u4ecd\u5efa\u8bae\u7b49\u5f85\uff08\u7b51\u5e95\u4e2d\uff09\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": {
+        "leash": 1.0,
+        "eligible": false,
+        "stage_at_entry": 2,
+        "ec_sent": null,
+        "ec_call_date": null,
+        "bear_gate": false,
+        "provisional": true,
+        "demoted": false,
+        "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
+      }
+    },
+    {
       "id": "TPR-BULL-20260722",
       "asset": "TPR",
       "direction": "BULL",
@@ -4986,25 +5518,29 @@
       "_conviction_score": 46,
       "_signal_date": "2026-07-22",
       "phase": "pre_trigger",
-      "management_confidence": 65.5,
+      "age_days": 14,
+      "closed": false,
+      "pulse": "14d \u00b7 pre-trigger \u00b7 approaching trigger",
+      "pulse_zh": "14\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u63a5\u8fd1\u89e6\u53d1",
+      "management_confidence": 59.4,
       "recommended_action": "wait",
       "last_price": 152.37,
       "state": {
         "phase": "pre_trigger",
-        "management_confidence": 65.5,
+        "management_confidence": 59.4,
         "recommended_action": "wait",
         "components": {
           "validity": 100.0,
           "progress": 5.8,
-          "pace": 68.1,
+          "pace": 56.2,
           "retention": 50.0,
-          "overlay": 58.0
+          "overlay": 50.0
         },
         "geometry": {
           "dist_to_stop_r": 1.057,
           "dist_to_t1_r": 1.443,
           "dist_to_t2_r": 2.943,
-          "horizon_pct_used": 26.7,
+          "horizon_pct_used": 31.1,
           "p1": 0.038,
           "p2": 0.019,
           "p3": null,
@@ -5012,7 +5548,7 @@
           "mfe_r": 0.065,
           "mae_r": -0.031
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($152.60) before entering. No position until trigger is confirmed.",
@@ -5064,25 +5600,29 @@
       "_conviction_score": 43,
       "_signal_date": "2026-07-16",
       "phase": "triggered_pre_t1",
-      "management_confidence": 48.1,
+      "age_days": 20,
+      "closed": false,
+      "pulse": "20d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 46.4,
       "recommended_action": "hold",
       "last_price": 62.65,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 48.1,
+        "management_confidence": 46.4,
         "recommended_action": "hold",
         "components": {
           "validity": 99.6,
           "progress": 0.0,
-          "pace": 29.9,
+          "pace": 20.3,
           "retention": 50.0,
-          "overlay": 64.0
+          "overlay": 56.0
         },
         "geometry": {
           "dist_to_stop_r": 0.997,
           "dist_to_t1_r": 1.5,
           "dist_to_t2_r": 3.0,
-          "horizon_pct_used": 40.0,
+          "horizon_pct_used": 44.4,
           "p1": -0.002,
           "p2": -0.001,
           "p3": null,
@@ -5090,7 +5630,7 @@
           "mfe_r": 0.105,
           "mae_r": -0.161
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($77.32).",
@@ -5132,25 +5672,29 @@
       "_conviction_score": 42,
       "_signal_date": "2026-07-02",
       "phase": "triggered_pre_t1",
-      "management_confidence": 42.8,
+      "age_days": 34,
+      "closed": false,
+      "pulse": "34d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "34\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 42.5,
       "recommended_action": "hold",
       "last_price": 105.25,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 42.8,
+        "management_confidence": 42.5,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 5.0,
-          "pace": 5.3,
+          "pace": 4.3,
           "retention": 50.0,
-          "overlay": 61.0
+          "overlay": 53.0
         },
         "geometry": {
           "dist_to_stop_r": 1.046,
           "dist_to_t1_r": 1.454,
           "dist_to_t2_r": 2.954,
-          "horizon_pct_used": 71.1,
+          "horizon_pct_used": 75.6,
           "p1": 0.0306,
           "p2": 0.0153,
           "p3": null,
@@ -5200,25 +5744,29 @@
       "_conviction_score": 39,
       "_signal_date": "2026-07-16",
       "phase": "triggered_pre_t1",
-      "management_confidence": 49.4,
+      "age_days": 20,
+      "closed": false,
+      "pulse": "20d \u00b7 triggered \u00b7 stalling",
+      "pulse_zh": "20\u5929 \u00b7 \u5df2\u89e6\u53d1 \u00b7 \u505c\u6ede",
+      "management_confidence": 47.6,
       "recommended_action": "hold",
       "last_price": 78.68,
       "state": {
         "phase": "triggered_pre_t1",
-        "management_confidence": 49.4,
+        "management_confidence": 47.6,
         "recommended_action": "hold",
         "components": {
           "validity": 100.0,
           "progress": 3.0,
-          "pace": 31.3,
+          "pace": 21.7,
           "retention": 50.0,
-          "overlay": 67.0
+          "overlay": 59.0
         },
         "geometry": {
           "dist_to_stop_r": 1.024,
           "dist_to_t1_r": 1.476,
           "dist_to_t2_r": 2.976,
-          "horizon_pct_used": 40.0,
+          "horizon_pct_used": 44.4,
           "p1": 0.0159,
           "p2": 0.0079,
           "p3": null,
@@ -5226,7 +5774,7 @@
           "mfe_r": 0.082,
           "mae_r": -0.115
         },
-        "change_reason": ""
+        "change_reason": "Moving Away from Stop"
       },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($101.61).",
@@ -5251,6 +5799,88 @@
       "thesis_zh": "CUBI \u2014 \u786e\u4fe1\u5ea6 39/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: entry; tailwind\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8; 6\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
       "horizon_days": 45,
       "stage_tilt": null
+    },
+    {
+      "id": "SYY-BULL-20260731",
+      "asset": "SYY",
+      "direction": "BULL",
+      "entry": 85.24,
+      "invalidation": 83.45,
+      "targets": [
+        87.9251,
+        90.6101
+      ],
+      "trigger": 85.78,
+      "option_contract": null,
+      "_r_unit": 1.79,
+      "_conviction_score": 38,
+      "_signal_date": "2026-07-31",
+      "phase": "pre_trigger",
+      "age_days": 5,
+      "closed": false,
+      "pulse": "5d \u00b7 pre-trigger \u00b7 awaiting trigger",
+      "pulse_zh": "5\u5929 \u00b7 \u89e6\u53d1\u524d \u00b7 \u7b49\u5f85\u89e6\u53d1",
+      "management_confidence": 66.9,
+      "recommended_action": "wait",
+      "last_price": 85.24,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 66.9,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 100.0,
+          "progress": 0.0,
+          "pace": 96.4,
+          "retention": 50.0,
+          "overlay": 53.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.0,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 11.1,
+          "p1": -0.0,
+          "p2": -0.0,
+          "p3": null,
+          "move_r": -0.0,
+          "mfe_r": 0.0,
+          "mae_r": -0.0
+        },
+        "change_reason": ""
+      },
+      "what_to_do_now": [
+        "Watch for price to reach the trigger level ($85.78) before entering. No position until trigger is confirmed.",
+        "Keep size small on initial entry; the buy zone extends from trigger up to $87.93 (T1). There is no need to rush.",
+        "If trigger confirms, scale in gradually. Invalidation is $83.45; exit on a close below that level."
+      ],
+      "profit_plan": [
+        {
+          "level": 87.9251,
+          "label": "T1",
+          "action": "Scale out 40%, trail stop to entry",
+          "status": "ACTIVE"
+        },
+        {
+          "level": 90.6101,
+          "label": "T2",
+          "action": "Close remaining 60%, exit full position",
+          "status": "PENDING"
+        }
+      ],
+      "thesis": "SYY \u2014 conviction 38/100 (neutral) Entry grade: strong. Drivers: entry. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "SYY \u2014 \u786e\u4fe1\u5ea6 38/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: entry\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": {
+        "leash": 1.0,
+        "eligible": false,
+        "stage_at_entry": 2,
+        "ec_sent": null,
+        "ec_call_date": null,
+        "bear_gate": false,
+        "provisional": true,
+        "demoted": false,
+        "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
+      }
     }
   ],
   "note": "DISPLAY-ONLY. All plans are display-tier artifacts. No signal has passed a forward ledger gate. The word 'validated' is forbidden in user-facing text. Nightly is the sole advancer of the forward ledger."
