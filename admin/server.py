@@ -35,7 +35,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                codex_panel,
                config_store,
                content, context_lobe, email_center, entitlements, experiments,
-               flags, ga4, github_api, github_config, gitops, health, long_hold,
+               flags, ga4, github_api, github_config, gitops, health, key_alerts, long_hold,
                live_runs,
                marketing,
                marketing_floor,
@@ -373,6 +373,7 @@ def _summary_payload() -> dict:
         "system": _safe(system.snapshot),
         "services": _safe(services.status),
         "experiments": _safe(experiments.alert_summary),
+        "key_alerts": _safe(key_alerts.panel),
     }
     if isinstance(result["health"], dict) and "error" not in result["health"]:
         result["health"] = {

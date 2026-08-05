@@ -697,6 +697,48 @@ function meter(label, pct, valText, cls) {
 
 const RENDER = {};
 
+/* ---- KEY ALERTS (landing rail) ------------------------------------------ */
+/* The "needs your eyes" rail: cascades not dormant, FIRED tripwires, high-priority
+   triage rows — each with a one-click "Brief for Fable" copy button so checking in
+   with a Claude session starts from the alert's full context instead of a blank page. */
+const KA_KIND = { cascade: ["⛓", "Cascade"], tripwire: ["⚡", "Tripwire"], triage: ["🚨", "Alert"] };
+const KA_TONE = (it) => {
+  const s = String(it.state || "").toLowerCase();
+  if (s === "expressed" || s === "failed" || s === "fired") return "var(--bad)";
+  if (s === "propagating") return "var(--warn)";
+  return "var(--muted)";
+};
+function renderKeyAlerts(ka) {
+  if (!ka || ka.error || !Array.isArray(ka.items)) return "";
+  if (!ka.items.length) {
+    return `<div class="section">Key alerts</div>
+      <div class="card"><div class="sub">Nothing needs your eyes right now — no active cascades, fired tripwires, or high-priority alerts.</div></div>`;
+  }
+  const rows = ka.items.map((it, i) => {
+    const [icon, kind] = KA_KIND[it.kind] || ["•", it.kind || ""];
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
+      <span title="${esc(kind)}">${icon}</span>
+      <span style="min-width:86px"><b style="color:${KA_TONE(it)}">${esc(it.state || "")}</b></span>
+      <span style="flex:1;min-width:0"><b>${esc(it.title || "")}</b>
+        <span class="sub" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.detail || "")}${it.asof ? " · " + esc(String(it.asof).slice(0, 10)) : ""}</span></span>
+      <button class="btn" data-ka-copy="${i}" title="Copy a ready-to-paste briefing prompt for a Fable session">📋 Brief for Fable</button>
+    </div>`;
+  }).join("");
+  const more = ka.truncated ? `<div class="sub" style="margin-top:6px">${ka.total - ka.items.length} more below the cap — see the Alerts tab.</div>` : "";
+  return `<div class="section">Key alerts — check in with Fable</div><div class="card">${rows}${more}</div>`;
+}
+function wireKeyAlertCopies(ka) {
+  if (!ka || !Array.isArray(ka.items)) return;
+  document.querySelectorAll("[data-ka-copy]").forEach(btn => {
+    btn.onclick = async () => {
+      const it = ka.items[Number(btn.dataset.kaCopy)];
+      if (!it || !it.brief_prompt) return;
+      try { await navigator.clipboard.writeText(it.brief_prompt); toast("Briefing copied — paste it into a Fable session"); }
+      catch (e) { toast("Copy failed — clipboard blocked", true); }
+    };
+  });
+}
+
 /* ---- OVERVIEW ----------------------------------------------------------- */
 RENDER.overview = async () => {
   const v = $("#view"), s = SUMMARY;
@@ -714,8 +756,10 @@ RENDER.overview = async () => {
       ${card("Analytics", `<div class="big" style="color:var(--ok);font-size:18px">Umami live</div><div class="sub">${m.integrations && m.integrations.umami ? "API connected" : "tag on every page"}</div>`)}
       ${card("Experiments", `<div class="big" style="color:${(s.experiments && s.experiments.ready_count) ? "var(--ok)" : "var(--text)"}">${(s.experiments && s.experiments.ready_count) || 0}<span class="sub"> ready</span></div><div class="sub">${s.experiments && s.experiments.soonest && s.experiments.soonest.days_until > 0 ? "next in " + s.experiments.soonest.days_until + "d" : (s.experiments && s.experiments.n ? s.experiments.n + " tracked" : "—")}</div>`)}
     </div>
+    ${renderKeyAlerts(s.key_alerts)}
     <div class="section">Quick actions</div>
     <div id="qa"></div>`;
+  wireKeyAlertCopies(s.key_alerts);
   const qa = $("#qa");
   const rebuild = h(`<button class="btn primary">▶ Rebuild &amp; deploy now</button>`);
   rebuild.onclick = () => dispatch("daily.yml"); rebuild.disabled = !m.has_token; qa.appendChild(rebuild);
