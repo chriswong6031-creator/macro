@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T22:04:41.114911+00:00",
-  "count": 824,
+  "generated_at": "2026-08-05T22:26:19.991680+00:00",
+  "count": 831,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -56,6 +56,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-vfkv0wexe0j-21d1a6",
+      "title": "Markets Cannot Agree To Disagree Once Warsh Stops Subsidizing Term Yields",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-05T16:17:55Z",
+      "summary_points": [
+        "**Warsh's Term Yield Subsidy End**: Triggers equity sell-off via forced consensus on overvaluation; Persian Gulf geopolitics amplify yield curve risks and equity downside.",
+        "**Term Premium & Equity Performance**: Falling net national saving + shrinking reserves raise term premium, inversely correlating with S&P 500; 10Y UST projected to hit 6% by 2027 signaling equity stress.",
+        "**Foreign Capital & CAPEX Financing**: US CAPEX boom relies on foreign capital to finance disinflation, draining domestic savings; sustains term premium pressures as reserves shrink."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-aptdlhriifn-db0028",
       "title": "Global daily weve been here before",
@@ -155,6 +174,67 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mqtarg4r7bg-e2afbc",
+      "title": "India Services PMI New business index at 4.5 year low even as new export orders remain strong",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:07:44Z",
+      "summary_points": [
+        "**India Services PMI at 4.5-yr Low with Export Resilience**: Services PMI fell to 53.3 (4.5-yr low), new business at 52.5 (4.5-yr low), yet new export orders held at 53.7 (gains from UAE, UK, US), offsetting domestic weakness.",
+        "**Input-Output Price Divergence Signals Pricing Power Shift**: Input price index eased to 53.3 (vs 53.8), while output price index surged to 53.0 (3-mo high), indicating firms passing costs to consumers.",
+        "**Sector-Specific Cost Pressures Intensify**: Real estate/business services drove output price surge (53.0), contrasting with consumer services facing higher input costs amid sectoral divergence."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ckgizzfmuhv-f4db44",
+      "title": "BioNTech (BNTX) COVID Driven Revenue Misses, Guidance Lowered Amidst Leadership Transition and Incremental Pipeline Updates",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:07:39Z",
+      "summary_points": [
+        "**Revenue Miss & Guidance Cut**: €106m revenue vs.",
+        "€160m consensus (2026), guidance lowered to €1.6bn (vs.",
+        "€1.9bn); 80% cut driven by weaker global COVID vaccine demand and Germany’s on-stock use.",
+        "**Critical Oncology Catalysts**: Gotistobart Ph3 interim (PRESEVERE-003) late 2026 (25% 12-mo PFS vs docetaxel, 54% death risk reduction); Punitamig bispecific data at World Lung/ESMO (first PD-L1xVEGF bispecific + ADC).",
+        "**Downside Risk Concentration**: BNT327 clinical failure (efficacy/safety), Summit Therapeutics’ ionescimab competitive threat, and oncology pipeline execution risks directly jeopardize growth forecasts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-begnk76zdw6-13b84f",
+      "title": "Bayer AG (BAYGn.DE) Financial performance remains strong, we still see multiple routes to upside",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:07:38Z",
+      "summary_points": [
+        "**Valuation Discount**: P/E ratio at 8.6x for 12/28E (Ratios & Valuation), indicating significant undervaluation versus peers amid strong growth fundamentals.",
+        "**SOTP Break-up Potential**: Upside catalyst driven by Pharma growth (Nubeqa/Kerendia), glyphosate litigation resolution, and structural SOTP valuation.",
+        "**Pharma Catalysts**: Nubeqa Ph3 ARATEST-PC trial (completion July 2027) and Kerendia Ph3 RDEFINE-HF trial (completion Nov 2027) underpin near-term growth momentum.",
+        "**Growth Momentum**: Projected 41.4% EBIT growth for 12/28E (Growth & Margins), with GSe estimates 3-9% ahead on EBITDA vs.",
+        "consensus for FY28-30."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
@@ -503,6 +583,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gx0jvehktwe-b40579",
+      "title": "Ramaco Resources Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:18Z",
+      "summary_points": [
+        "**Revenue Beat vs.",
+        "Lowered 2026 Guidance**: METC beat Q2 revenue/adj.",
+        "EBITDA (1.06m tons sold vs.",
+        "9-1.0m guidance, $116/ton vs.",
+        "$115 estimate) but cut 2026 production guidance to 0.95m-1.0m tons (from 1.18m) due to strategic shift to low-vol met coal and elevated fuel costs from Iran conflict."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
@@ -1077,6 +1178,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-wj9vbhi8grl-0f693d",
+      "title": "calendarAugust2026",
+      "institution": "ScotiaBank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:55:41Z",
+      "summary_points": [
+        "**Key Data Overlap Risk**: Aug 4 CPI and Aug 5 Employment Report create high volatility risk due to overlapping releases, directly impacting Fed policy trajectory.",
+        "**FOMC Minutes as Primary Catalyst**: Aug 18 FOMC Minutes will dominate rate expectation shifts, superseding other data points in market relevance.",
+        "**Supporting Data Context**: Aug 7 Retail Sales and Aug 24 Consumer Confidence provide essential backdrop for Fed policy adjustments post-Minutes.",
+        "**Fed Policy Pivot Timing**: Critical window for rate path reassessment hinges on these August data releases and minutes, dictating near-term market positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-8x5pbppqzbk-b0ab30",
       "title": "dailypoints20260804",
       "institution": "ScotiaBank",
@@ -1132,6 +1253,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-v6jfzeeoxqq-fe7e79",
+      "title": "MRB Theme A New Phase Of Global LeaderShift August 4 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-05T01:52:13Z",
+      "summary_points": [
+        "**Global LeaderShift Acceleration**: IMF data shows EM GDP growth accelerating while DM decelerates, with EM projected to overtake DM in nominal GDP by 2035 driven by China’s structural growth and policy divergence.",
+        "**China’s High-Tech Value Chain Dominance**: China transitioned from labor-intensive to high-tech manufacturing (EVs, semiconductors), dominating global high-tech segments and forcing U.S.",
+        "into niche production, signaling irreversible economic leadership shift.",
+        "**U.S.",
+        "Dollar Overvaluation Risk**: USD 15% above PPP fair value (IMF), with 25-30% depreciation risk in secular bear markets, eroding USD value and U.S."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
