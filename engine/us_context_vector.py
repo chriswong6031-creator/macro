@@ -110,18 +110,6 @@ def _part_path(stamp_date: str, root: Any = None):
     return _store_dir(root) / f"{str(stamp_date)[:7]}.parquet"
 
 
-def _read_part(part, columns: list[str] | None):
-    """One part, optionally projected.  A part that predates a requested column
-    rejects the projection, so that case falls back to a full read + reindex —
-    the column reads back null for that month rather than raising."""
-    if columns is None:
-        return pd.read_parquet(part)
-    try:
-        return pd.read_parquet(part, columns=columns).reindex(columns=columns)
-    except Exception:  # noqa: BLE001 — missing column in an older part
-        return pd.read_parquet(part).reindex(columns=columns)
-
-
 def load_candidates(root: Any = None, *, months: Iterable[str] | None = None,
                     columns: Iterable[str] | None = None):
     """Read the store as ONE frame — the only supported way to consume it.
@@ -139,15 +127,17 @@ def load_candidates(root: Any = None, *, months: Iterable[str] | None = None,
     needs one quarter never reads the whole store.
 
     ``columns`` projects at the parquet level.  The store is ~150 columns wide
-    and accrues ~33k rows a month, so the §W7 full-population forward grader —
-    which walks the whole store nightly for three identity columns to find rows
-    it has not graded — must not have to materialise the other 147.  The
-    projection is reindexed to the requested order, so asking for a column a
-    part predates yields nulls for that part rather than an error: the same
-    forward-only self-healing as above.  This parameter is what lets that
-    consumer honour "never glob the parts".  (Named by role, not by module: the
-    grader's own suite greps every other module for its literal name to pin its
-    zero-authority fence, so a mention here would read as a dependency.)
+    and, once the scan tier widens the universe (roadmap §4.5), accrues on the
+    order of 180k rows a month — so the §W7 full-population forward grader,
+    which walks the whole store nightly for a handful of identity columns to
+    find rows it has not graded, must not have to materialise the other ~145.
+    A part that predates a requested column rejects the projection, so that
+    case falls back to a full read and the column reads back null for that
+    month: the same forward-only self-healing as above, never an error.  This
+    parameter is what lets that consumer honour "never glob the parts".
+    (Named by role, not by module: the grader's own suite greps every other
+    module for its literal name to pin its zero-authority fence, so a mention
+    here would read as a dependency.)
     """
     store = _store_dir(root)
     if not store.exists():
@@ -159,7 +149,14 @@ def load_candidates(root: Any = None, *, months: Iterable[str] | None = None,
         if wanted is not None and part.stem not in wanted:
             continue
         try:
-            frames.append(_read_part(part, wanted_cols))
+            if wanted_cols is None:
+                frames.append(pd.read_parquet(part))
+            else:
+                try:
+                    frame = pd.read_parquet(part, columns=wanted_cols)
+                except Exception:  # noqa: BLE001 — column absent from an older part
+                    frame = pd.read_parquet(part)
+                frames.append(frame.reindex(columns=wanted_cols))
         except Exception as exc:  # noqa: BLE001 — one bad part must not blind the rest
             log.warning("us_context_vector: part %s unreadable (%s)", part.name, exc)
     if not frames:

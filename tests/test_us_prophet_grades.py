@@ -27,6 +27,7 @@ so nothing reads the repo's real ``data/`` tree (MM_DATA_GUARD).
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -39,7 +40,9 @@ from engine import us_prophet_grades as upg
 REPO = Path(__file__).resolve().parents[1]
 
 BOARD_DEF = "us_prophet_v1"
-SESSIONS = 90
+# long enough that the WHOLE ladder (H=63 + a next-bar fill) matures for the latest fixture
+# stamp — otherwise the long-horizon assertions would silently test nothing.
+SESSIONS = 160
 
 
 # --------------------------------------------------------------------------- #
@@ -82,17 +85,27 @@ def _write_candidates(root: Path, rows: list[dict]) -> None:
 
 
 def _candidate_rows(dates: list[str], tickers=("AAA", "BBB", "CCC"),
-                    scores: dict[str, float] | None = None) -> list[dict]:
+                    scores: dict[str, float] | None = None,
+                    cohorts: dict[str, str] | None = None,
+                    labels: dict[str, str] | None = None,
+                    cohort_column: str = "universe_tier",
+                    label_column: str = "cycle_state") -> list[dict]:
     scores = scores or {"AAA": 88.0, "BBB": 41.0, "CCC": 65.0}
-    return [
-        {
-            "stamp_date": d, "ticker": t, "board_definition": BOARD_DEF,
-            "lane": "buy", "sector": "Information Technology",
-            "eligible": True, "prophet_score": scores.get(t),
-            "prophet_signal": 0.8, "prophet_edge": 0.5,
-        }
-        for d in dates for t in tickers
-    ]
+    rows = []
+    for d in dates:
+        for t in tickers:
+            row = {
+                "stamp_date": d, "ticker": t, "board_definition": BOARD_DEF,
+                "lane": "buy", "sector": "Information Technology",
+                "eligible": True, "prophet_score": scores.get(t),
+                "prophet_signal": 0.8, "prophet_edge": 0.5,
+            }
+            if cohorts is not None:
+                row[cohort_column] = cohorts.get(t)
+            if labels is not None:
+                row[label_column] = labels.get(t)
+            rows.append(row)
+    return rows
 
 
 @pytest.fixture
@@ -140,8 +153,9 @@ def _run(store, **kw):
 
 
 def _part_digests(root: Path) -> dict[str, str]:
-    return {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted(upg._store_dir(root).glob("*.parquet"))}
+    store = upg._store_dir(root)
+    return {str(p.relative_to(store)): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in sorted(store.glob("*/*.parquet"))}
 
 
 # --------------------------------------------------------------------------- #
@@ -221,41 +235,56 @@ class TestIdempotence:
 
 class TestMonthlyPartLayout:
 
-    def test_part_is_keyed_by_the_grading_run_month_not_the_stamp_month(
-            self, two_month_store):
-        """Run-month partitioning is what makes closed parts permanent: a June stamp graded
-        in an August run belongs to August's part, so June's part is never reopened."""
+    def test_part_is_keyed_by_the_grading_run_not_the_stamp(self, two_month_store):
+        """Run-keying is what makes closed parts permanent: a June stamp graded in an
+        October run belongs to October's part, so June's is never reopened."""
         doc = _run(two_month_store)
-        parts = sorted(p.name for p in
-                       upg._store_dir(two_month_store["root"]).glob("*.parquet"))
-        run_month = str(doc["graded_asof"])[:7]
-        assert parts == [f"{run_month}.parquet"]
+        store = upg._store_dir(two_month_store["root"])
+        parts = sorted(str(p.relative_to(store)) for p in store.glob("*/*.parquet"))
+        run_day = str(doc["graded_asof"])[:10]
+        assert parts == [f"{run_day[:7]}/{run_day}.parquet"], (
+            "one run writes exactly one day part, inside its month directory")
         stamped = upg.load_grades(two_month_store["root"])["stamp_date"]
-        assert {str(s)[:7] for s in stamped} - {run_month}, (
+        assert {str(s)[:7] for s in stamped} - {run_day[:7]}, (
             "the fixture must grade at least one stamp month other than the run month, "
             "or this test cannot see the difference between the two keyings")
 
     def test_earlier_parts_stay_byte_identical(self, two_month_store):
-        """A later run must not rewrite a single byte of any earlier part."""
-        idx = _calendar()
+        """A later run must not rewrite a single byte of any earlier part.
+
+        With a day-grained write this is absolute, not merely usual: a run never opens a
+        file another run wrote.
+        """
         root = two_month_store["root"]
         # first run on a SHORT panel: only the earliest stamps have matured
         short = two_month_store["panel"].iloc[: 4 + max(upg.HORIZONS) + 2]
-        upg.run(root, panel=short, bench=two_month_store["bench"].iloc[:len(short)])
+        first = upg.run(root, panel=short,
+                        bench=two_month_store["bench"].iloc[:len(short)])
         first_parts = _part_digests(root)
-        assert first_parts, "the short run must have written a part"
+        assert first_parts and first["new_grades"] > 0, "the short run must have written"
 
-        # second run on the FULL panel, from a later month — new rows, new part
+        # second run on the FULL panel, from a later date — new rows, new part
         full = two_month_store["panel"]
-        assert str(full.index[-1].date())[:7] != str(short.index[-1].date())[:7], (
-            "the two runs must land in different months or the isolation claim is untested")
-        upg.run(root, panel=full, bench=two_month_store["bench"])
+        assert str(full.index[-1].date()) != str(short.index[-1].date()), (
+            "the two runs must land on different dates or the isolation claim is untested")
+        second = upg.run(root, panel=full, bench=two_month_store["bench"])
+        assert second["new_grades"] > 0, "the later run must have graded something new"
 
         after = _part_digests(root)
         for name, digest in first_parts.items():
             assert after[name] == digest, f"part {name} was rewritten by a later run"
         assert len(after) > len(first_parts), "the later run must have opened its own part"
-        assert idx is not None
+
+    def test_a_rerun_on_the_same_day_rewrites_only_that_day(self, two_month_store):
+        """The one file a run may reopen is its OWN day — and even then keep-first holds."""
+        root = two_month_store["root"]
+        short = two_month_store["panel"].iloc[: 4 + max(upg.HORIZONS) + 2]
+        upg.run(root, panel=short, bench=two_month_store["bench"].iloc[:len(short)])
+        upg.run(root, panel=two_month_store["panel"], bench=two_month_store["bench"])
+        before = _part_digests(root)
+        upg.run(root, panel=two_month_store["panel"], bench=two_month_store["bench"])
+        assert _part_digests(root) == before, (
+            "an idempotent re-run must not change a single byte anywhere")
 
     def test_load_grades_spans_parts_in_chronological_order(self, two_month_store):
         root = two_month_store["root"]
@@ -276,15 +305,22 @@ class TestAntiFork:
 
     def test_grade_row_matches_the_doors_grader_mark_for_mark(self):
         """Two wrappers, one ruler.  If either drifts, this fails instead of shipping two
-        sets of numbers under the name 'excess vs SPY'."""
+        sets of numbers under the name 'excess vs SPY'.
+
+        Pinned on the SHARED horizons — this grader's ladder is a superset (H=42/63 were
+        added by the 2026-08-05 basing ruling), and a longer ladder is not a different
+        ruler.
+        """
         from scripts import grade_prophet_doors as gpd
 
         idx = _calendar()
         close, bench = _panel(idx)["AAA"], _bench(idx)
         stamp = str(idx[3].date())
+        shared = tuple(h for h in upg.HORIZONS if h in gpd.HORIZONS)
+        assert shared, "the two graders must share at least one horizon to be comparable"
 
-        mine = upg.grade_row(close, bench, stamp, upg.HORIZONS)
-        theirs = gpd.grade_flag(close, bench, stamp, upg.HORIZONS)
+        mine = upg.grade_row(close, bench, stamp, shared)
+        theirs = gpd.grade_flag(close, bench, stamp, shared)
 
         assert set(mine) == set(theirs) and mine, "both must mature the same horizons"
         for horizon in mine:
@@ -293,10 +329,14 @@ class TestAntiFork:
                 assert mine[horizon][field] == theirs[horizon][field], (
                     f"H={horizon} field {field} drifted from the doors grader")
 
-    def test_benchmark_and_horizons_match_the_doors_grader(self):
+    def test_the_ladder_is_a_superset_of_the_doors_grader(self):
         from scripts import grade_prophet_doors as gpd
         assert upg.BENCH == gpd.BENCH
-        assert upg.HORIZONS == gpd.HORIZONS
+        assert set(gpd.HORIZONS) <= set(upg.HORIZONS), (
+            "the incumbent horizons must survive — the ladder ADDS maturities, it never "
+            "replaces the reads the existing record is built on")
+        assert upg.HORIZONS == (10, 21, 42, 63)
+        assert tuple(sorted(upg.HORIZONS)) == upg.HORIZONS, "ladder must be ascending"
 
 
 # --------------------------------------------------------------------------- #
@@ -404,20 +444,33 @@ class TestPriorityScoreScorecard:
         assert block["tier"] == "ops_telemetry"
         assert block["available"] is False
         assert block["null_reason"], "an absent measurement must say WHY it is absent"
-        assert "by_horizon" not in block or not block["by_horizon"]
+        assert "by_cohort" not in block or not block["by_cohort"]
 
     def test_populated_store_reports_every_required_leg(self, two_month_store):
         _run(two_month_store)
         block = pma.priority_score_scorecard(two_month_store["root"])
         assert block["available"] is True
         assert block["authority"].startswith("none")
-        for horizon in ("10d", "21d"):
-            leg = block["by_horizon"][horizon]
+        legs = block["by_cohort"]["unsplit"]
+        assert set(legs) == {f"{h}d" for h in upg.HORIZONS}, (
+            "every horizon in the ladder must be reported, not just the incumbent two")
+        for horizon in legs:
+            leg = legs[horizon]
             assert set(leg) >= {"horizon_d", "n_graded", "n_scored", "rank_ic",
-                                "precision_at_k", "deciles", "population"}
+                                "precision_at_k", "deciles", "population",
+                                "by_signal_class"}
             # every null carries a reason; no statistic is asserted from nothing
             if leg["rank_ic"] is None:
                 assert leg.get("null_reason")
+
+    def test_there_is_no_pooled_leg_for_a_reader_to_misquote(self, two_month_store):
+        """'Never pooled' has to be structural: if no cross-cohort rank-IC exists, none can
+        be quoted."""
+        _run(two_month_store)
+        block = pma.priority_score_scorecard(two_month_store["root"])
+        assert "by_horizon" not in block, (
+            "a top-level horizon leg would be a pooled read across cohorts")
+        assert "rank_ic" not in block and "precision_at_k" not in block
 
     def test_score_coverage_is_disclosed_not_imputed(self, two_month_store):
         """The builder computes the priority legs on the BUY LANE only, so most rows have
@@ -438,14 +491,14 @@ class TestPriorityScoreScorecard:
         """Three names cannot carry 5 distinct scores, so rank-IC is NOT computable — the
         block must name that, not print a correlation over three points."""
         _run(two_month_store)
-        leg = pma.priority_score_scorecard(two_month_store["root"])["by_horizon"]["10d"]
+        leg = pma.priority_score_scorecard(two_month_store["root"])["by_cohort"]["unsplit"]["10d"]
         assert leg["rank_ic"] is None
         assert "5+ distinct" in leg["null_reason"]
         assert leg["thin"] is True
 
     def test_thin_cohorts_are_marked_thin(self, wide_store):
         _run(wide_store)
-        leg = pma.priority_score_scorecard(wide_store["root"])["by_horizon"]["10d"]
+        leg = pma.priority_score_scorecard(wide_store["root"])["by_cohort"]["unsplit"]["10d"]
         assert leg["rank_ic"] is not None, "the wide fixture must reach the measured path"
         assert leg["thin"] is True, (
             "three stamp dates must read as a sample, not a measurement")
@@ -455,7 +508,7 @@ class TestPriorityScoreScorecard:
         """The arithmetic against a known answer: the fixture's score ranks the forward
         outcome exactly, so a scrambled join or an inverted decile cut fails here."""
         _run(wide_store)
-        leg = pma.priority_score_scorecard(wide_store["root"])["by_horizon"]["21d"]
+        leg = pma.priority_score_scorecard(wide_store["root"])["by_cohort"]["unsplit"]["21d"]
         assert leg["rank_ic"] == pytest.approx(1.0, abs=1e-6)
         deciles = leg["deciles"]
         assert deciles["n_dates_eligible"] == 3 and deciles["n_dates_excluded_thin"] == 0
@@ -477,14 +530,14 @@ class TestPriorityScoreScorecard:
         """The capability full-population grading buys: the comparator is that night's
         entire universe, stated in the definition string, not the ranked cohort alone."""
         _run(wide_store)
-        leg = pma.priority_score_scorecard(wide_store["root"])["by_horizon"]["21d"]
+        leg = pma.priority_score_scorecard(wide_store["root"])["by_cohort"]["unsplit"]["21d"]
         assert "FULL-population median" in leg["precision_at_k"]["definition"]
         assert "FULL graded population" in leg["deciles"]["definition"]
 
     def test_lane_breakdown_needs_its_own_floor(self, wide_store):
         _run(wide_store)
         pop = pma.priority_score_scorecard(
-            wide_store["root"])["by_horizon"]["21d"]["population"]
+            wide_store["root"])["by_cohort"]["unsplit"]["21d"]["population"]
         assert pop["n"] == WIDE_N * 3
         assert pop["by_lane"]["buy"]["n"] == WIDE_N * 3
         assert pop["mean_excess"] is not None and pop["pos_rate"] is not None
@@ -494,7 +547,7 @@ class TestPriorityScoreScorecard:
         graded row, not by the scored subset."""
         _run(two_month_store)
         block = pma.priority_score_scorecard(two_month_store["root"])
-        leg = block["by_horizon"]["21d"]
+        leg = block["by_cohort"]["unsplit"]["21d"]
         graded = upg.load_grades(two_month_store["root"])
         n_21 = int((graded["horizon"] == 21).sum())
         assert leg["population"]["n"] == n_21 > 0
@@ -522,14 +575,213 @@ class TestPriorityScoreScorecard:
         row = pma.summary_row(doc)
         assert row["priority_score_available"] is True
         assert row["priority_score_n_rows"] == block["score_coverage"]["n_rows"]
-        for horizon in pma.PRIORITY_HORIZONS:
-            assert f"priority_rank_ic_{horizon}d" in row
-            assert f"priority_pop_n_{horizon}d" in row
+        assert row["priority_cohort_split_available"] is False
+        # the log's columns are FIXED per (cohort, horizon, class) — a column set that
+        # depended on tonight's data would not be a series anyone could plot
+        for cohort in ("curated", "scan", "unsplit"):
+            for horizon in pma.PRIORITY_HORIZONS:
+                assert f"priority_{cohort}_rank_ic_{horizon}d" in row
+                assert f"priority_{cohort}_n_{horizon}d" in row
+                assert f"priority_{cohort}_basing_mean_excess_{horizon}d" in row
+        assert row["priority_unsplit_n_21d"] > 0
+        assert row["priority_curated_n_21d"] is None, (
+            "a cohort with no rows must be a NULL column, never 0")
 
     def test_row_fields_are_null_safe_on_a_document_with_no_block(self):
         row = pma.priority_score_row_fields({})
         assert row["priority_score_available"] is False
         assert row["priority_score_n_rows"] is None
+
+
+# --------------------------------------------------------------------------- #
+# 7b. cohort discriminator (scan tier) + signal class (basing vs momentum)
+# --------------------------------------------------------------------------- #
+
+class TestCohortDiscriminator:
+
+    def test_absent_column_is_disclosed_and_never_called_curated(self, two_month_store):
+        """The column has not landed yet. The run must SAY so — a store with no split is
+        one 'unsplit' population, never a population labelled 'curated' by default."""
+        doc = _run(two_month_store)
+        disc = doc["discriminator"]
+        assert disc["available"] is False and disc["column"] is None
+        assert "universe_tier" in disc["reason"]
+        assert set(doc["by_cohort"]) == {"unsplit"}
+        block = pma.priority_score_scorecard(two_month_store["root"])
+        assert block["cohort_split"]["available"] is False
+        assert "curated" not in block["by_cohort"]
+
+    def test_a_present_column_splits_the_record(self, two_month_store):
+        rows = _candidate_rows(two_month_store["dates"],
+                               cohorts={"AAA": "curated", "BBB": "scan", "CCC": "scan"})
+        _write_candidates(two_month_store["root"], rows)
+        doc = _run(two_month_store)
+        assert doc["discriminator"]["column"] == "universe_tier"
+        assert doc["by_cohort"]["curated"] * 2 == doc["by_cohort"]["scan"]
+        graded = upg.load_grades(two_month_store["root"])
+        assert set(graded.loc[graded["ticker"] == "BBB", "universe_tier"]) == {"scan"}
+
+        block = pma.priority_score_scorecard(two_month_store["root"])
+        assert block["cohort_split"]["available"] is True
+        assert set(block["by_cohort"]) == {"curated", "scan"}
+        for cohort in ("curated", "scan"):
+            assert set(block["by_cohort"][cohort]) == {f"{h}d" for h in upg.HORIZONS}
+
+    def test_a_name_match_with_wrong_values_is_REJECTED(self, two_month_store):
+        """A column that merely shares the name must not mis-cohort the whole store."""
+        rows = _candidate_rows(two_month_store["dates"],
+                               cohorts={"AAA": "sector_a", "BBB": "sector_b",
+                                        "CCC": "sector_c"})
+        _write_candidates(two_month_store["root"], rows)
+        doc = _run(two_month_store)
+        assert doc["discriminator"]["available"] is False
+        assert "REJECTED" in doc["discriminator"]["reason"]
+        assert set(doc["by_cohort"]) == {"unsplit"}
+
+    def test_unrecognised_values_are_nulled_and_counted_not_guessed(self, two_month_store):
+        rows = _candidate_rows(two_month_store["dates"],
+                               cohorts={"AAA": "curated", "BBB": "scan", "CCC": "mystery"})
+        _write_candidates(two_month_store["root"], rows)
+        doc = _run(two_month_store)
+        assert doc["discriminator"]["available"] is True
+        assert doc["discriminator"]["n_unrecognised"] > 0
+        assert doc["by_cohort"]["unsplit"] > 0, "an unknown value is null, never 'curated'"
+        assert all(isinstance(k, str) for k in doc["by_cohort"]), (
+            "a NaN cohort key would mean the null never reached the 'unsplit' bucket "
+            "(NaN is truthy, so `cohort or 'unsplit'` silently keeps it)")
+        graded = upg.load_grades(two_month_store["root"])
+        assert graded.loc[graded["ticker"] == "CCC", "universe_tier"].isna().all()
+
+    def test_normalize_cohort_vocabulary(self):
+        assert upg.normalize_cohort(" CURATED ") == "curated"
+        assert upg.normalize_cohort("Scan") == "scan"
+        assert upg.normalize_cohort("something_else") is None
+        assert upg.normalize_cohort(None) is None
+
+
+class TestSignalClass:
+
+    def test_the_map_covers_the_whole_live_cycle_vocabulary(self):
+        """A label the board can actually print must never fall through to 'other' by
+        accident — the map is a prereg, so its coverage is pinned against the live source."""
+        from engine.cycles import STATE_DISPLAY
+        for state, display in STATE_DISPLAY.items():
+            assert state.upper() in upg.SIGNAL_CLASS_BY_LABEL, f"state {state} unmapped"
+            assert display["label"].upper() in upg.SIGNAL_CLASS_BY_LABEL, (
+                f"display label {display['label']} unmapped")
+
+    def test_basing_and_momentum_are_the_operators_split(self):
+        assert upg.classify_signal("BOTTOMING")[0] == upg.CLASS_BASING
+        assert upg.classify_signal("TURN SIGNALED")[0] == upg.CLASS_BASING
+        assert upg.classify_signal("NEARING A LOW")[0] == upg.CLASS_BASING
+        assert upg.classify_signal("UPTREND")[0] == upg.CLASS_MOMENTUM
+        assert upg.classify_signal("FRESH BUY")[0] == upg.CLASS_MOMENTUM
+        assert upg.classify_signal("DOWNTREND")[0] == upg.CLASS_OTHER
+
+    def test_an_unmapped_label_keeps_its_label(self):
+        """A vocabulary that grows must be VISIBLE in the store, not absorbed."""
+        assert upg.classify_signal("SOME NEW STATE") == (upg.CLASS_OTHER, "SOME NEW STATE")
+        assert upg.classify_signal(None) == (upg.CLASS_OTHER, None)
+        assert upg.classify_signal("  bottoming  ")[0] == upg.CLASS_BASING
+
+    def test_chartered_horizons_are_fixed_and_inside_the_ladder(self):
+        """The prereg: basing is headlined at a LONG horizon, momentum at a short one, and
+        both were fixed before any H=42/63 data existed to peek at."""
+        assert upg.CHARTERED_HORIZON[upg.CLASS_BASING]["primary"] == 63
+        assert upg.CHARTERED_HORIZON[upg.CLASS_MOMENTUM]["primary"] == 10
+        for signal_class in upg.SIGNAL_CLASSES:
+            charter = upg.CHARTERED_HORIZON[signal_class]
+            assert charter["primary"] in upg.HORIZONS
+            assert charter["supporting"] in upg.HORIZONS
+
+    def test_absent_label_column_is_disclosed_not_a_measured_other(self, two_month_store):
+        doc = _run(two_month_store)
+        sig = doc["signal_labels"]
+        assert sig["available"] is False and sig["column"] is None
+        assert "cycle_state" in sig["reason"]
+        assert doc["by_signal_class"] == {"other": doc["new_grades"]}
+        graded = upg.load_grades(two_month_store["root"])
+        assert graded["signal_label"].isna().all(), (
+            "no label resolved means a NULL label, not a fabricated one")
+
+    def test_a_present_label_column_classes_and_is_carried_through(self, two_month_store):
+        rows = _candidate_rows(two_month_store["dates"],
+                               labels={"AAA": "BOTTOMING", "BBB": "UPTREND",
+                                       "CCC": "SOME NEW STATE"})
+        _write_candidates(two_month_store["root"], rows)
+        doc = _run(two_month_store)
+        assert doc["signal_labels"]["column"] == "cycle_state"
+        assert doc["signal_labels"]["n_unmapped_labels"] > 0
+        graded = upg.load_grades(two_month_store["root"])
+        by_ticker = graded.set_index("ticker")["signal_class"].to_dict()
+        assert by_ticker["AAA"] == "basing" and by_ticker["BBB"] == "momentum"
+        assert by_ticker["CCC"] == "other"
+        assert set(graded.loc[graded["ticker"] == "CCC", "signal_label"]) == {
+            "SOME NEW STATE"}, "the unmapped label must survive onto the row"
+
+    def test_the_scorecard_reports_each_class_at_every_horizon(self, two_month_store):
+        """The whole point of the ladder: basing at H=63 beside momentum at H=10, with ns."""
+        rows = _candidate_rows(two_month_store["dates"],
+                               labels={"AAA": "BOTTOMING", "BBB": "BOTTOMING",
+                                       "CCC": "UPTREND"})
+        _write_candidates(two_month_store["root"], rows)
+        _run(two_month_store)
+        legs = pma.priority_score_scorecard(two_month_store["root"])["by_cohort"]["unsplit"]
+        for horizon in (f"{h}d" for h in upg.HORIZONS):
+            classes = legs[horizon]["by_signal_class"]
+            assert set(classes) == {"basing", "momentum"}
+            assert classes["basing"]["n"] == 2 * classes["momentum"]["n"] > 0
+
+    def test_a_thin_class_gets_a_reason_not_a_number(self, two_month_store):
+        rows = _candidate_rows(two_month_store["dates"],
+                               labels={"AAA": "BOTTOMING", "BBB": "UPTREND",
+                                       "CCC": "UPTREND"})
+        _write_candidates(two_month_store["root"], rows)
+        _run(two_month_store)
+        legs = pma.priority_score_scorecard(two_month_store["root"])["by_cohort"]["unsplit"]
+        basing = legs["10d"]["by_signal_class"]["basing"]
+        assert basing["n"] < pma.PRIORITY_MIN_LANE_N
+        assert basing.get("null_reason") and "mean_excess" not in basing
+
+    def test_a_degenerate_cross_section_is_a_null_not_a_nan(self, tmp_path):
+        """Zero variance in the forward returns makes Spearman UNDEFINED.
+
+        Averaging that NaN in would poison the horizon, and `json.dumps` emits a bare
+        `NaN` for it — invalid JSON that a strict reader rejects, i.e. one degenerate
+        night could take down the whole nightly artifact. An undefined correlation is a
+        missing observation, never a 0.0 correlation.
+        """
+        idx = _calendar()
+        tickers = [f"D{i:02d}" for i in range(WIDE_N)]
+        # every name on an IDENTICAL path -> identical forward returns -> zero variance
+        flat = pd.DataFrame(
+            {t: [100.0 * (1.0 + 0.0005 * s) for s in range(len(idx))] for t in tickers},
+            index=idx)
+        dates = [str(d.date()) for d in idx[:3]]
+        scores = {t: float(10 + 3 * i) for i, t in enumerate(tickers)}
+        _write_candidates(tmp_path, _candidate_rows(dates, tuple(tickers), scores))
+        upg.run(tmp_path, panel=flat, bench=_bench(idx))
+
+        block = pma.priority_score_scorecard(tmp_path)
+        leg = block["by_cohort"]["unsplit"]["21d"]
+        assert leg["rank_ic"] is None, "an undefined correlation must be null, never NaN"
+        assert leg["n_ic_dates"] == 0 and leg["n_ic_dates_degenerate"] > 0
+        assert "zero variance" in leg["null_reason"]
+
+        # the whole block must survive a STRICT json round-trip
+        text = json.dumps(block, allow_nan=False, default=str)
+        assert "NaN" not in text and "Infinity" not in text
+        json.loads(text)
+
+    def test_the_prereg_reaches_the_artifact(self, two_month_store):
+        """The map has to be IN the nightly artifact — a prereg nobody can read later is
+        not a prereg."""
+        _run(two_month_store)
+        block = pma.priority_score_scorecard(two_month_store["root"])
+        assert block["chartered_horizon"] == upg.CHARTERED_HORIZON
+        assert block["horizon_ladder"] == list(upg.HORIZONS)
+        note = block["chartered_horizon_note"]
+        assert "PRE-REGISTERED" in note and "flatters" in note
 
 
 # --------------------------------------------------------------------------- #

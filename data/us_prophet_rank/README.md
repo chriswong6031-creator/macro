@@ -63,9 +63,40 @@ the grade store at all.
 
 ## `grades/` — the forward record (§W7)
 
-One row per **(candidate row, horizon)**: `stamp_date`, `ticker`, `board_definition`,
+`grades/YYYY-MM/YYYY-MM-DD.parquet`. One row per **(candidate row, horizon)** across the
+**H=10 / 21 / 42 / 63** session ladder: `stamp_date`, `ticker`, `board_definition`,
 `horizon`, `graded_asof`, `entry_price`, `fill_date`, `mark_date`, `fwd_ret`, `bench`,
-`bench_ret`, `excess_spy`, `fwd_mfe`, `fwd_mdd`.
+`bench_ret`, `excess_spy`, `fwd_mfe`, `fwd_mdd`, plus two conditioning columns:
+
+| Column | Values | Why |
+|---|---|---|
+| `universe_tier` | `curated` · `scan` · null | curated names are board-admissible; scan names are seen and stamped over the widened universe and **never admitted** (roadmap §4.5). Two populations, **never pooled** — including the median a "hit" is measured against |
+| `signal_class` (+ `signal_label`) | `basing` · `momentum` · `other` | a basing pick and a momentum pick are different bets. Operator ruling 2026-08-05: *"they take time to base… but our board only measures for 10 day results??"* Mapped from the board's **existing** cycle vocabulary (`engine/cycles.py::STATE_DISPLAY`) — nothing new is stamped. An unmapped label classes `other` with the label **preserved** |
+
+Both columns are **resolved from the candidates store by name and then VALIDATED by value**;
+a name match alone is never trusted. Neither has landed in that store yet (a sibling lane
+owns writing them), so today every row carries a null cohort and `signal_class='other'` with
+a null label — and the run prints a `::warning` naming exactly what is missing. The scorecard
+reports that state as `unsplit` / unavailable rather than calling it `curated`.
+
+### The chartered-horizon prereg (fixed BEFORE any long-horizon data matured)
+
+| class | headline horizon | supporting |
+|---|---|---|
+| `basing` | **H=63** | H=21 |
+| `momentum` | **H=10** | H=21 |
+| `other` | H=10 | H=21 |
+
+Every class is graded and reported at **every** horizon in the ladder, so nothing is hidden.
+This map only fixes which horizon is each class's *headline* read — because "grade each class
+at the horizon that flatters it, chosen after seeing the results" is precisely the sin it
+exists to make impossible. It ships in the nightly artifact
+(`priority_score_scorecard.chartered_horizon`) so it can be audited later. **PROPOSED pending
+commissioner adjudication.**
+
+The existing **H=10 headline record is untouched** (era law). The class-conditional view
+accrues beside it as measurement; any future redefinition of the headline is its own dated
+operator adjudication, once the long-horizon data exists.
 
 | Rule | Mechanism |
 |---|---|
@@ -75,24 +106,34 @@ One row per **(candidate row, horizon)**: `stamp_date`, `ticker`, `board_definit
 | Policy-free | fixed-horizon marks only: no stops, exits, hold rules or sizing. The row is measured as an origination+ranking observation, not as a trade |
 | Maturity, never short marks | an unmatured horizon is **absent** from the run and graded on a later night; it is never scored 0 |
 | Null is not zero | a missing SPY cache nulls `excess_spy` and prints a `::warning`; absolute marks still grade |
-| Monthly parts, keyed by the **run** month | see below |
+| Month-grouped **daily** parts, keyed by the run | see below |
 
-### Why the parts are keyed by `graded_asof`, not `stamp_date`
+### Why the parts are keyed by `graded_asof`, and why day grain
 
-Grading is a monotone forward process, so keying the part by the run's own as-of date means
-a nightly opens exactly **one** part and every earlier part is byte-identical forever.
-Keying by stamp month instead would reopen the previous month's part every night for ~3
-weeks while its rows matured. Measured on a real-shaped month (1,579 names × 21 sessions ×
-2 horizons = 66,318 rows, random-noise floats so the figure is an upper bound):
+Two separate decisions:
 
-| Layout | month-end part | git blobs / month | / year |
-|---|---|---|---|
-| **run-month parts (shipped)** | 4.26 MB | 46.8 MB | **0.56 GB** |
-| stamp-month parts | 4.26 MB | ~136 MB | ~1.63 GB |
-| one accreting file | 51 MB (year-end) | — | ~3.65 GB |
+**Keyed by the run, not the stamp.** Grading is a monotone forward process, so the run's own
+as-of date means a nightly touches exactly one part and every earlier part is frozen. Stamp
+keying would reopen the previous month's part nightly for ~3 weeks while its rows matured.
 
-On disk after one year: ~51 MB across 12 parts. Each row still carries `stamp_date` and
-`mark_date`, so a study joins by stamp month regardless of which part the row lives in.
+**Day grain inside a month directory, not one monthly file.** A parquet cannot be appended in
+place, so a single monthly file is *rewritten* nightly and git stores a whole new blob each
+time. That was tolerable at 1,579 names × 2 horizons. It is not once the H=42/63 ladder
+doubles the rows and the scan tier multiplies the names by ~6.5. Measured on real-shaped
+months (random-noise floats, so these are upper bounds):
+
+| Scale | rows/month | month-end | **day parts (shipped)** | one monthly file |
+|---|---|---|---|---|
+| curated only (~1,579) | 132,636 | 8.65 MB | **0.10 GB/yr** | 1.14 GB/yr (11x) |
+| with scan tier (~10.3k) | 865,200 | 47.7 MB | **0.57 GB/yr** | 6.30 GB/yr (11x) |
+
+On disk after one year: ~104 MB (curated) / ~573 MB (with scan). A new file per run costs
+exactly the store's own size — there is no rewrite churn at all — and it makes "every earlier
+part is byte-identical forever" absolute rather than merely usual. `load_grades()` and the
+`months=` filter are unchanged; parts remain a storage detail.
+
+Each row still carries `stamp_date` and `mark_date`, so a study joins by stamp month
+regardless of which part the row physically lives in.
 
 ## Measured facts (2026-08-04, this Mac Studio, 1,540-name universe)
 

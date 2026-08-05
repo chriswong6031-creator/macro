@@ -16,9 +16,13 @@ Read §1 before anything else. It contains the one fact that decides the whole l
 
 ## §0 ACCEPTANCE GATES (binding on the surface build; inline these in the spawn prompt)
 
-- **A0.1** The list shows the **whole analyzed universe** (~1,579 names in this checkout,
-  ~2,932 on the host) with every row reachable — not a capped slice. "Show all picks" means
-  all, with pagination/virtualisation, not a longer top-N.
+- **A0.1** The list shows the **whole analyzed universe** with every row reachable — not a
+  capped slice. "Show all picks" means all, with pagination/virtualisation, not a longer
+  top-N. Two cohorts (§1.5): ~1,579 curated names and, once the scan tier lands, ~8.7k scan
+  names beside them.
+- **A0.1b** The **curated / scan discriminator is named on every row** in any view that
+  mixes them, and a scan row never reads as a pick (§1.5). Getting this wrong is the one
+  failure that would make the surface actively dishonest.
 - **A0.2** Every row carries a **stance or a state in plain words** (Doctrine Law 1/2). A
   row that is on no lane still says why in plain words. No raw slugs, no untranslated stats,
   no internal study names on the glance tier.
@@ -57,6 +61,45 @@ ordered the region they are in.
 
 ---
 
+## §1.5 THE SECOND CONSTRAINT: TWO COHORTS, AND ONE OF THEM CAN NEVER BE PICKED
+
+Operator ratification 2026-08-05 widened the analyzed universe to a **scan tier** (roadmap
+§4.5, owned by a sibling lane). That splits the list into two populations with a hard
+difference:
+
+| cohort | what it is | can it ever be a pick? |
+|---|---|---|
+| `curated` (~1,579) | fully analyzed, board-admissible | **yes** |
+| `scan` (~8.7k) | seen and stamped over the widened universe | **never** — admission is untouched |
+
+**Plain-word labels (frozen; restyle, don't reword):**
+
+| cohort | Tier 1 English | Tier 1 中文 | chip |
+|---|---|---|---|
+| `curated` | Full coverage — can be picked | 完整覆盖 — 可入选 | Covered |
+| `scan` | Wide scan — never picked | 广度扫描 — 不入选 | Scan only |
+
+Rules, and A0.1b makes them binding:
+
+1. **Default view = the curated cohort.** That is already the full ranked list of everything
+   that *can* be picked (~1,579, versus the 12 the operator was complaining about). The scan
+   cohort is reached by an explicit, **counted** control — "+8,712 scanned names — seen, never
+   picked" — not by silently appending 8.7k rows to the same scroll.
+2. **In any combined view the cohort chip is mandatory on every row.** No exceptions, no
+   "obvious from context", no colour-only encoding.
+3. **Rank is per cohort.** "Rank 4 of 1,579 covered" and "rank 4 of 8,712 scanned" are
+   different claims; a single global rank would silently merge them. Print the denominator.
+4. **Never interleave cohorts inside one ordering.** Cohorts are sections, not a sort key.
+5. **The scan cohort is LISTED, not ranked, unless its `alpha` coverage is measured first.**
+   Scan names sit outside the builder's `cand` list, so they very likely carry no `alpha` and
+   certainly no priority score. Ordering 8.7k rows by a column that is null for all of them
+   would be a fake ranking. Default: order the scan cohort by `eligible` desc then `ticker`
+   asc, labelled **"not ranked — scan tier carries no score; ordered by gate state, then
+   alphabetically."** The surface build measures the real coverage first (§4) and only ranks
+   this cohort if the data supports it.
+
+---
+
 ## §2 DATA SOURCE
 
 One source of truth: the **US Context Vector store**, read through its own reader — never by
@@ -90,6 +133,7 @@ no new composite, no derived rank beyond the ordering rules in §4 (glass-box la
 | `name` | `name` | Display name; prettified fallback if null — never render the slug alone. |
 | `sector` | `sector` | Display name, never a `us_sector_*` slug. |
 | `tier` | *computed by §4* | `A` / `B` / `C` — which ordering region the row is in. |
+| `cohort` | `universe_tier` | `curated` / `scan`. **Mandatory chip in any combined view** (§1.5). Null until the sibling lane lands the column — render as `curated` ONLY if the store says so, never by default. |
 | `state` | *derived, §5* | The plain-word why-state. One of the fixed vocabulary in §5.1. |
 | `lane` | `lane` | `buy` / `watch` / `leaders` / `laggards` / `not_on_board`. Drives filters (§7), not the label. |
 
@@ -118,7 +162,9 @@ raw statistics. These belong in hover/popover/detail (Doctrine Law 2/3), never o
 
 ## §4 ORDERING (frozen; the surface must print which rule is in force)
 
-Three tiers, concatenated. `rank` runs continuously 1..N across all three.
+Three tiers, concatenated **within each cohort** (§1.5 rule 3-4). `rank` runs continuously
+1..N across the three tiers of that cohort, and the denominator printed beside it is that
+cohort's own count.
 
 | Tier | Membership | Ordering key | Printed as |
 |---|---|---|---|
@@ -145,9 +191,10 @@ only)** — which is precisely why `alpha` is the fallback key and `prophet_scor
 `sig_verdict` — every *analyzed* name — which can be wider than `cand`. The exact
 store-side `alpha` coverage is therefore unmeasured until the first real stamp lands (the
 store was empty at contract time). **The surface build must print the measured
-`alpha`-null count in its PR body** and confirm the unranked bucket is a small tail, not a
-silent majority. If it is not a small tail, the ordering rule is what changes — not the
-labelling.
+`alpha`-null count PER COHORT in its PR body** and confirm the unranked bucket is a small
+tail, not a silent majority. If it is not a small tail, the ordering rule is what changes —
+not the labelling. Expect this to bite hardest on the scan cohort, which §1.5 rule 5 already
+treats as unranked by default for exactly this reason.
 
 **Ties and stability.** `ticker` ASC is the tiebreak everywhere, so the order is reproducible
 night to night and a screenshot can be re-derived from the store.
@@ -200,16 +247,24 @@ closed-plan warning is the precedent).
 
 | Record | What it is | Honest label (EN) | 中文 |
 |---|---|---|---|
-| **Curated** | the picks the system actually made — board buy lane / plans | "Our picks" | 我们的选股 |
-| **All picks** | every name we ranked, graded the same way | "Every name we ranked" | 全部评分名单 |
+| **Curated picks** | the picks the system actually made — board buy lane / plans | "Our picks" | 我们的选股 |
+| **All curated** | every board-admissible name we ranked, graded the same way | "Every name we ranked" | 全部评分名单 |
+| **Scan** | the wide-scan names, graded but never pickable | "Names we only watch" | 仅观察名单 |
 
 Rules:
-- The all-picks record is **new and still accruing** — H=10 marks land ~11 sessions after a
-  stamp, H=21 ~22. Until it has depth, the surface says so in plain words ("still building
-  — first results in a few weeks"), and prints **no** headline rate.
-- Neither record may be described with the word *validated* (CI-guarded).
-- The curated record's population is **unchanged** by this program. Do not recompute it, do
-  not re-label it, do not merge the two.
+- **Three records, three labels, never one number.** The scan record in particular must
+  never be presented as the system's performance — those names were never picked.
+- The new records are **still accruing** — H=10 marks land ~11 sessions after a stamp, H=21
+  ~22, **H=42 ~43 and H=63 ~64**. Until a record has depth the surface says so in plain
+  words ("still building — first results in a few weeks") and prints **no** headline rate.
+- **Basing and momentum picks are not comparable at the same horizon.** If the surface shows
+  any class-conditional read, it shows each class at its **chartered** horizon (basing H=63,
+  momentum H=10 — pre-registered in `engine/us_prophet_grades.CHARTERED_HORIZON` and carried
+  in the nightly artifact) and says which horizon each number came from. Never let a reader
+  compare a basing H=10 number against a momentum H=10 number as if they were one league.
+- The **H=10 headline record is unchanged** by this program (era law). Do not recompute it,
+  do not re-label it, do not merge any of these.
+- No record may be described with the word *validated* (CI-guarded).
 
 ---
 
@@ -229,16 +284,19 @@ row 812 are both "on the board".
 
 ---
 
-## §8 SCALE — 1,579 ROWS MUST STAY USABLE
+## §8 SCALE — UP TO ~10,300 ROWS MUST STAY USABLE
 
-- **Paginate or virtualise.** Page size 50 default. Never render 1,579 DOM rows at once, and
-  never truncate silently — the total count is always visible ("1,579 names ranked").
-- **Tier A is the landing region.** The page opens at rank 1; the tier boundary between A and
-  B is a visible, labelled divider carrying the §4 ordering sentence for the region below it.
-- **Search by ticker/name** jumps to the row and shows its rank in context, so a user asking
-  "where is PLTR?" gets an answer instead of a scroll.
-- **Mobile (375px):** ticker, name, state, rank. Score and legs demote to the detail sheet.
-  Do not compress jargon to fit — demote (Doctrine Law 4).
+- **Virtualise; pagination alone is not enough at 8.7k.** Page size 50 default. Never render
+  the full row set into the DOM, and never truncate silently — the count is always visible,
+  **per cohort** ("1,579 names ranked · 8,712 scanned").
+- **Tier A of the curated cohort is the landing region.** The page opens at rank 1; every
+  tier boundary is a visible, labelled divider carrying the §4 ordering sentence for the
+  region below it, and every cohort boundary carries the §1.5 label.
+- **Search by ticker/name** jumps to the row and shows its rank *and cohort* in context, so
+  a user asking "where is PLTR?" gets an answer instead of a scroll — and learns immediately
+  if the answer is "in the scan tier, which we never pick from".
+- **Mobile (375px):** ticker, name, state, rank, cohort chip. Score and legs demote to the
+  detail sheet. Do not compress jargon to fit — demote (Doctrine Law 4).
 
 ---
 
@@ -247,7 +305,11 @@ row 812 are both "on the board".
 - Not compute a score, a composite, a blend, or any ordering key other than §4.
 - Not change membership, admission, plan intake, or any gate. This is a VIEW.
 - Not present the all-picks graded record as the system's track record, or pool it with the
-  curated one.
+  curated one — and never present the **scan** record as performance at all.
+- Not render a scan row in a way that could read as a pick (§1.5, gate A0.1b).
+- Not treat a missing `universe_tier` as `curated`. Unknown is unknown.
+- Not compare classes across horizons, or quote a class at a horizon other than its
+  chartered one without saying which horizon it is (§6).
 - Not print a headline hit-rate from a cohort the scorecard marks `thin`.
 - Not show a null as a zero — "not scored" and "0" are different facts.
 - Not use LLM-generated text for any state, score, or reason. The §5 vocabulary is fixed.

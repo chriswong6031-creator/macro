@@ -11255,7 +11255,7 @@ artifacts:
 
   # --- us-prophet-grades: full-population forward grades (§W7, operator 2026-08-05) ---
   us-prophet-grades:
-    path: data/us_prophet_rank/grades/YYYY-MM.parquet
+    path: data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet
     format: parquet
     producer: engine/us_prophet_grades.py
     known_extra_writers: []
@@ -11276,18 +11276,28 @@ artifacts:
       trend-intelligence masterplan §W7; operator order 2026-08-05 — "we should be
       remembering the score that we give picks … so that we can later assess how robust and
       correct our scoring system is"). Grades EVERY row of the us-context-vector store —
-      ~1,579 names a night, not the ~12 that become plans — at H=10 and H=21 SESSIONS,
-      excess vs SPY, one row per (candidate, horizon).
+      ~1,579 names a night today and ~10.3k once the scan tier lands, not the ~12 that
+      become plans — across the H=10/21/42/63 SESSION ladder, excess vs SPY, one row per
+      (candidate, horizon). H=42/63 were added by operator ruling 2026-08-05: basing-class
+      picks are structurally punished by a 10-session headline. Every row carries two
+      conditioning columns, universe_tier (curated vs scan, roadmap §4.5) and signal_class
+      (basing/momentum/other, mapped from engine/cycles.py's EXISTING vocabulary — nothing
+      new is stamped), so the scorecard reports those populations SEPARATELY and never
+      pools them. Both columns are resolved from the candidates store by name and then
+      VALIDATED by value; neither has landed there yet, so today they read null with a
+      printed warning rather than a silent default.
       RULER REUSED, NOT FORKED: engine.grading.forward_metrics, the same next-bar-fill,
       positional-horizon function grade_us_board and grade_prophet_doors use; pinned
       mark-for-mark against scripts/grade_prophet_doors.py by tests/test_us_prophet_grades.py.
       POLICY-FREE: fixed-horizon marks only — no stops, exits, hold rules or sizing.
       ONE-GRADER LAW: a graded (stamp_date, ticker, board_definition, horizon) is FROZEN;
       a re-run appends nothing, so the store is idempotent per night.
-      MONTHLY PARTS keyed by the GRADING RUN's month (graded_asof), not the stamp month:
-      grading is a monotone forward process, so a nightly opens exactly one part and every
-      earlier part is byte-identical forever (stamp-month keying would rewrite the prior
-      part nightly for ~3 weeks while its rows matured — ~2.9x the git blob churn).
+      MONTH-GROUPED DAILY PARTS keyed by the GRADING RUN (graded_asof), not the stamp
+      month: grading is a monotone forward process, so a nightly writes a NEW file and
+      rewrites nothing, and every earlier part is byte-identical forever. Day grain rather
+      than one monthly file because a parquet cannot be appended in place — measured, a
+      monthly file costs 11x the git history at both scales (1.14 GB/yr curated-only,
+      6.30 GB/yr with the scan tier, vs 0.10 / 0.57 GB/yr for day parts).
       Each row still carries stamp_date and mark_date, so a study joins by stamp month
       regardless of which part the row physically lives in.
       NIGHTLY IS THE SOLE ADVANCER: ledger_lane.nightly_advance_enabled() (COLLECT_LANE=nightly)

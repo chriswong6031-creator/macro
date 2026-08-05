@@ -160,9 +160,11 @@ THIN_MIN_IC_DATES = 5
 # us_prophet_v1 priority score; the grade store now carries an outcome for EVERY stamped
 # name, so this block can ask both "is the ordering right?" (rank-IC / P@k / deciles over
 # the scored rows) and "does the board beat the universe at all?" (the population leg).
-PRIORITY_GRADES_REL = "data/us_prophet_rank/grades/YYYY-MM.parquet"
+PRIORITY_GRADES_REL = "data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet"
 PRIORITY_CANDIDATES_REL = "data/us_prophet_rank/candidates/YYYY-MM.parquet"
-PRIORITY_HORIZONS = (10, 21)
+#: Mirrors engine.us_prophet_grades.HORIZONS — imported there, restated here only as the
+#: forward-log row's column set (the log is flat and its columns must be stable).
+PRIORITY_HORIZONS = (10, 21, 42, 63)
 PRIORITY_PK_K = (1, 5, 10, 25)   # the depths the ranked all-picks surface actually shows
 # A decile table needs a cross-section wide enough that a decile is not one name. STATED,
 # not tuned; it excludes dates from a table, it gates nothing.
@@ -919,11 +921,13 @@ def _score_deciles(g: pd.DataFrame, *, min_xs: int = PRIORITY_DECILE_MIN_XS) -> 
       * decile     — 1 = lowest priority score of that date's scored cross-section,
                      10 = highest.  Cut per date, so a day when every score is high cannot
                      masquerade as a top decile.
-      * hit        — excess vs SPY above that date's median excess across the FULL graded
-                     population (every stamped name, not just the scored ones).  That
-                     comparator is the point of grading the whole universe: it asks "did
-                     this name beat a name drawn at random that night", which the
-                     12-plans-a-night record could never answer.
+      * hit        — excess vs SPY above that date's median excess across the graded
+                     population OF THE SAME COHORT.  That comparator is the point of
+                     grading the whole universe: it asks "did this name beat a name drawn
+                     at random that night", which the 12-plans-a-night record could never
+                     answer.  It is taken WITHIN the cohort because curated and scan names
+                     are different populations — judging a curated pick against a median
+                     dominated by scan names would flatter it by construction.
       * loser_rate — share of the decile with excess < 0.  The operator's question in its
                      bluntest form: are high-scored names losing money against SPY?
       * lift       — top decile mean excess − bottom decile mean excess.
@@ -1001,8 +1005,9 @@ def _priority_precision_at_k(g: pd.DataFrame, *, ks: tuple[int, ...] = PRIORITY_
     """
     out: dict[str, Any] = {
         "definition": (f"hit = excess vs SPY above that stamp date's FULL-population median "
-                       f"excess (every graded name, not just the ranked ones); dates whose "
-                       f"scored cross-section is < {min_xs} are excluded and counted"),
+                       f"excess WITHIN THIS COHORT (every graded name in it, not just the "
+                       f"ranked ones); dates whose scored cross-section is < {min_xs} are "
+                       f"excluded and counted"),
         "min_cross_section": min_xs,
         "n_dates_eligible": 0, "n_dates_excluded_thin": 0,
         "cross_section": None, "base_rate": None,
@@ -1052,10 +1057,41 @@ def _priority_precision_at_k(g: pd.DataFrame, *, ks: tuple[int, ...] = PRIORITY_
     return out
 
 
+def _class_legs(g: pd.DataFrame) -> dict:
+    """Per signal class, the population read at THIS horizon — basing beside momentum.
+
+    Operator ruling 2026-08-05: a basing pick and a momentum pick are different bets, and a
+    single 10-session headline grades the wait instead of the call.  Every class is reported
+    at EVERY horizon in the ladder, so nothing is hidden; ``chartered_horizon`` (fixed in
+    :mod:`engine.us_prophet_grades` BEFORE any long-horizon data matured) says which one is
+    that class's HEADLINE read, so no one can pick the flattering horizon after the fact.
+    """
+    out: dict[str, Any] = {}
+    if "signal_class" not in g.columns:
+        return out
+    for label, sub in g.groupby(g["signal_class"].fillna("unclassified")):
+        vals = pd.to_numeric(sub["excess_spy"], errors="coerce").dropna()
+        leg: dict[str, Any] = {"n": int(len(sub)), "n_excess": int(len(vals))}
+        if len(vals) < PRIORITY_MIN_LANE_N:
+            leg["null_reason"] = (f"{len(vals)} graded row(s) with an excess mark — below "
+                                  f"the {PRIORITY_MIN_LANE_N}-row floor for a printed read")
+        else:
+            leg.update({
+                "mean_excess": round(float(vals.mean()), 5),
+                "median_excess": round(float(vals.median()), 5),
+                "pos_rate": round(float((vals > 0).mean()), 4),
+                "loser_rate": round(float((vals < 0).mean()), 4),
+            })
+        out[str(label)] = leg
+    return out
+
+
 def priority_horizon_scorecard(g: pd.DataFrame, h: int) -> dict:
     """One horizon's read of the priority score: rank-IC, P@k, deciles, population.
 
-    Nulls carry a plain reason; nothing here is a threshold and nothing gates on it.
+    Computed on ONE cohort's rows — the caller splits curated from scan before calling, so
+    nothing here ever pools the two.  Nulls carry a plain reason; nothing here is a
+    threshold and nothing gates on it.
     """
     scored = g[g["prophet_score"].notna() & g["excess_spy"].notna()]
     out: dict[str, Any] = {
@@ -1064,6 +1100,7 @@ def priority_horizon_scorecard(g: pd.DataFrame, h: int) -> dict:
         "n_scored": int(len(scored)),
         "n_dates": int(g["stamp_date"].nunique()) if len(g) else 0,
         "population": _population_leg(g),
+        "by_signal_class": _class_legs(g),
     }
     if len(scored) < PRIORITY_MIN_SCORED:
         out.update({
@@ -1078,13 +1115,25 @@ def priority_horizon_scorecard(g: pd.DataFrame, h: int) -> dict:
         return out
     ics: list[float] = []
     ic_ns: list[int] = []
+    degenerate = 0
     for _date, sub in scored.groupby("stamp_date"):
-        if sub["prophet_score"].nunique() >= 5:
-            ics.append(float(sub["prophet_score"].rank().corr(sub["excess_spy"].rank())))
-            ic_ns.append(int(len(sub)))
+        if sub["prophet_score"].nunique() < 5:
+            continue
+        value = float(sub["prophet_score"].rank().corr(sub["excess_spy"].rank()))
+        # A cross-section whose forward returns are all identical has ZERO variance, so
+        # Spearman is undefined and pandas returns NaN. Averaging that NaN in would poison
+        # the whole horizon, and json.dumps would then emit a bare `NaN` — invalid JSON
+        # that a strict reader rejects. Drop the date and COUNT it: an undefined
+        # correlation is a missing observation, never a 0.0 correlation.
+        if not np.isfinite(value):
+            degenerate += 1
+            continue
+        ics.append(value)
+        ic_ns.append(int(len(sub)))
     out.update({
         "rank_ic": (round(float(np.mean(ics)), 4) if ics else None),
         "n_ic_dates": len(ics),
+        "n_ic_dates_degenerate": degenerate,
         "ic_cross_section": ({"min": min(ic_ns), "median": int(np.median(ic_ns)),
                               "max": max(ic_ns)} if ic_ns else None),
         "precision_at_k": _priority_precision_at_k(g),
@@ -1092,8 +1141,13 @@ def priority_horizon_scorecard(g: pd.DataFrame, h: int) -> dict:
         "thin": len(ics) < THIN_MIN_IC_DATES,
     })
     if not ics:
-        out["null_reason"] = ("no stamp date carries 5+ distinct priority scores in its "
-                              "graded cross-section — rank-IC is not computable")
+        out["null_reason"] = (
+            f"no stamp date yields a defined rank-IC — {degenerate} date(s) had 5+ distinct "
+            f"scores but zero variance in their forward returns (correlation undefined), "
+            f"and the rest carry fewer than 5 distinct scores. Not computable is not zero"
+            if degenerate else
+            "no stamp date carries 5+ distinct priority scores in its graded "
+            "cross-section — rank-IC is not computable")
     elif out["thin"]:
         out["thin_reason"] = (f"{len(ics)} IC date(s) — below the {THIN_MIN_IC_DATES}-date "
                               f"disclosure floor; read as a sample, not a measurement")
@@ -1123,8 +1177,6 @@ def priority_score_scorecard(root: Path = ROOT, degraded: list[dict] | None = No
                         "beside it in the candidates store; no composite is built here)",
         "graded_by": "engine.us_prophet_grades — engine.grading.forward_metrics (next-bar "
                      "fill, positional session horizons), excess vs SPY",
-        "population": "EVERY stamped candidate row is graded (~1,579/night), not only the "
-                      "~12 that become plans — operator order 2026-08-05",
         "available": False,
     }
     try:
@@ -1134,6 +1186,12 @@ def priority_score_scorecard(root: Path = ROOT, degraded: list[dict] | None = No
                     "reason": f"grade store module unavailable: {exc}"})
         block["null_reason"] = f"grade store module unavailable: {exc}"
         return block
+    block["population"] = (
+        "EVERY stamped candidate row is graded, not only the ~12 that become plans "
+        "(operator order 2026-08-05). Two populations are carried separately and never "
+        "pooled: CURATED (board-admissible) and SCAN (seen and stamped, never admitted). "
+        "Within each, basing and momentum picks are reported separately at every horizon "
+        "in the ladder")
     try:
         block["store"] = upg.coverage(root)
         frame = upg.load_graded_frame(root, score_columns=["lane", "sector"])
@@ -1150,8 +1208,20 @@ def priority_score_scorecard(root: Path = ROOT, degraded: list[dict] | None = No
         return block
 
     scored_mask = frame["prophet_score"].notna()
+    cohort_col = upg.DISCRIMINATOR_COLUMN
+    cohorts = (frame[cohort_col] if cohort_col in frame.columns
+               else pd.Series([None] * len(frame), index=frame.index))
+    split_available = bool(cohorts.notna().any())
     block.update({
         "available": True,
+        "horizon_ladder": list(upg.HORIZONS),
+        "chartered_horizon": dict(upg.CHARTERED_HORIZON),
+        "chartered_horizon_note": (
+            "PRE-REGISTERED before any H=42/63 data matured (operator ruling 2026-08-05). "
+            "Every class is graded and reported at EVERY horizon below, so nothing is "
+            "hidden; this map only fixes which horizon is each class's HEADLINE read, so "
+            "that 'grade each class at the horizon that flatters it, chosen after seeing "
+            "the results' is impossible. PROPOSED pending commissioner adjudication"),
         "score_coverage": {
             "n_rows": int(len(frame)),
             "n_scored": int(scored_mask.sum()),
@@ -1161,12 +1231,49 @@ def priority_score_scorecard(root: Path = ROOT, degraded: list[dict] | None = No
                     "coverage fact, never a zero score — the ranking legs below are "
                     "computed on the scored subset and the population leg on everything",
         },
-        "by_horizon": {
-            f"{int(h)}d": priority_horizon_scorecard(sub, int(h))
-            for h, sub in frame.groupby("horizon")
+        "cohort_split": {
+            "available": split_available,
+            "column": cohort_col,
+            "n_by_cohort": {str(k): int(v)
+                            for k, v in cohorts.value_counts(dropna=True).to_dict().items()},
+            "n_unsplit": int(cohorts.isna().sum()),
+            "note": ("curated and scan are DIFFERENT POPULATIONS and are never pooled: "
+                     "every statistic below is computed inside one cohort, including the "
+                     "median a hit is measured against. Rows graded before the scan-tier "
+                     "discriminator landed carry no cohort and are reported under "
+                     "'unsplit' — never folded into 'curated'"
+                     if split_available else
+                     "the scan-tier discriminator has not landed in the candidates store "
+                     "yet, so every graded row is one UNSPLIT population. It is labelled "
+                     "'unsplit' rather than 'curated' because calling it curated would "
+                     "assert a split that has not been measured"),
         },
     })
-    return block
+    # NEVER POOLED: the horizon legs are computed per cohort. There is deliberately no
+    # top-level pooled rank-IC or P@k for a reader to misquote across populations.
+    by_cohort: dict[str, Any] = {}
+    for name, sub in frame.groupby(cohorts.fillna("unsplit")):
+        by_cohort[str(name)] = {
+            f"{int(h)}d": priority_horizon_scorecard(part, int(h))
+            for h, part in sub.groupby("horizon")
+        }
+    block["by_cohort"] = by_cohort
+    # Belt on top of the per-leg braces: nothing non-finite may leave this block. A bare
+    # NaN/Infinity is what json.dumps emits for these, and that is INVALID JSON — a strict
+    # reader downstream would reject the whole nightly artifact over one degenerate
+    # cross-section. _num() is the module's existing numpy->JSON-safe coercion.
+    return _scrub_non_finite(block)
+
+
+def _scrub_non_finite(value: Any) -> Any:
+    """Recursively replace NaN/Infinity with None so the artifact stays strict JSON."""
+    if isinstance(value, dict):
+        return {k: _scrub_non_finite(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_scrub_non_finite(v) for v in value]
+    if isinstance(value, (float, np.floating, np.integer, np.bool_)):
+        return _num(value)
+    return value
 
 
 def priority_score_row_fields(doc: dict) -> dict:
@@ -1179,18 +1286,28 @@ def priority_score_row_fields(doc: dict) -> dict:
     ``degraded`` list names which. Null-safe on every path, including a doc with no block.
     """
     ps = doc.get("priority_score_scorecard") or {}
-    by_h = ps.get("by_horizon") or {}
+    by_cohort = ps.get("by_cohort") or {}
+    split = ps.get("cohort_split") or {}
     out: dict = {
         "priority_score_available": bool(ps.get("available")),
         "priority_score_n_rows": (ps.get("score_coverage") or {}).get("n_rows"),
         "priority_score_coverage_pct": (ps.get("score_coverage") or {}).get("coverage_pct"),
+        "priority_cohort_split_available": bool(split.get("available")),
     }
-    for h in PRIORITY_HORIZONS:
-        cell = by_h.get(f"{h}d") or {}
-        out[f"priority_rank_ic_{h}d"] = cell.get("rank_ic")
-        out[f"priority_ic_dates_{h}d"] = cell.get("n_ic_dates")
-        out[f"priority_n_scored_{h}d"] = cell.get("n_scored")
-        out[f"priority_pop_n_{h}d"] = (cell.get("population") or {}).get("n")
+    # One flat column set per (cohort, horizon). The cohort names are FIXED here — a log
+    # whose columns depend on tonight's data is not a series anyone can plot.
+    for cohort in ("curated", "scan", "unsplit"):
+        legs = by_cohort.get(cohort) or {}
+        for h in PRIORITY_HORIZONS:
+            cell = legs.get(f"{h}d") or {}
+            out[f"priority_{cohort}_rank_ic_{h}d"] = cell.get("rank_ic")
+            out[f"priority_{cohort}_n_{h}d"] = cell.get("n_graded")
+            classes = cell.get("by_signal_class") or {}
+            for signal_class in ("basing", "momentum"):
+                leg = classes.get(signal_class) or {}
+                out[f"priority_{cohort}_{signal_class}_n_{h}d"] = leg.get("n")
+                out[f"priority_{cohort}_{signal_class}_mean_excess_{h}d"] = leg.get(
+                    "mean_excess")
     return out
 
 
@@ -1552,22 +1669,32 @@ def print_summary(doc: dict, *, wrote_artifact: bool, wrote_log: bool,
     ps = doc.get("priority_score_scorecard") or {}
     if ps.get("available"):
         cov = ps.get("score_coverage") or {}
+        split = ps.get("cohort_split") or {}
         print(f"  priority_score: {cov.get('n_rows')} graded row(s), "
-              f"{cov.get('n_scored')} carry a stamped score ({cov.get('coverage_pct')}%)")
-        for key, h in (ps.get("by_horizon") or {}).items():
-            pop = h.get("population") or {}
-            if h.get("null_reason"):
-                print(f"    {key}: null — {h['null_reason']} "
-                      f"(population n={pop.get('n')}, mean excess {pop.get('mean_excess')})")
-                continue
-            pk = (h.get("precision_at_k") or {}).get("by_k") or {}
-            dec = h.get("deciles") or {}
-            print(f"    {key}: rank_ic={h.get('rank_ic')} over {h.get('n_ic_dates')} IC "
-                  f"date(s), scored n={h.get('n_scored')} of {h.get('n_graded')} graded, "
-                  f"P@1={(pk.get('p_at_1') or {}).get('value')} "
-                  f"P@10={(pk.get('p_at_10') or {}).get('value')}, "
-                  f"d10-d1={dec.get('top_minus_bottom_excess')}"
-                  f"{'  [THIN]' if h.get('thin') else ''}")
+              f"{cov.get('n_scored')} carry a stamped score ({cov.get('coverage_pct')}%); "
+              f"cohorts {split.get('n_by_cohort') or 'UNSPLIT'}")
+        for cohort, legs in (ps.get("by_cohort") or {}).items():
+            print(f"    [{cohort}]")
+            for key, h in legs.items():
+                pop = h.get("population") or {}
+                classes = h.get("by_signal_class") or {}
+                class_txt = " ".join(
+                    f"{c}:n={v.get('n')}/x={v.get('mean_excess')}"
+                    for c, v in sorted(classes.items()))
+                if h.get("null_reason"):
+                    print(f"      {key}: null — {h['null_reason']} "
+                          f"(population n={pop.get('n')}, mean excess "
+                          f"{pop.get('mean_excess')}) {class_txt}")
+                    continue
+                pk = (h.get("precision_at_k") or {}).get("by_k") or {}
+                dec = h.get("deciles") or {}
+                print(f"      {key}: rank_ic={h.get('rank_ic')} over "
+                      f"{h.get('n_ic_dates')} IC date(s), scored n={h.get('n_scored')} of "
+                      f"{h.get('n_graded')} graded, "
+                      f"P@1={(pk.get('p_at_1') or {}).get('value')} "
+                      f"P@10={(pk.get('p_at_10') or {}).get('value')}, "
+                      f"d10-d1={dec.get('top_minus_bottom_excess')}"
+                      f"{'  [THIN]' if h.get('thin') else ''} {class_txt}")
     elif ps:
         print(f"  priority_score: null — {ps.get('null_reason')}")
     if doc["degraded"]:

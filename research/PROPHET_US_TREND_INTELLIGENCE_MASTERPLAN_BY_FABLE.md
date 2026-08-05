@@ -426,13 +426,78 @@ by this operator order** — it accrues in its own store, under its own schema
 proposal to *pool* the two, or to let the all-picks record confer board rights, remains
 forbidden and needs its own adjudication.
 
+#### W7.2b — The universe widens: curated + scan, two cohorts, never pooled
+
+Two further operator ratifications on 2026-08-05 change what this program grades. **Both are
+recorded by the sibling lanes that own them, in their own dated subsections — this plan
+cross-references rather than restates them:** the §4.5 scan-tier full universe
+(`research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md` §4.5 — *"a liquidity-floored
+SCAN tier … board ADMISSION untouched … see everything, admit selectively"*), and the
+measured lowering of the 200-bar indicator floor (owned by the signal-engine lane;
+`confluence_tiers.MIN_HISTORY` and the floor constants are that lane's files, not this one's).
+
+For W7 the consequence is exactly one thing: **the record now has two populations, and they
+are never pooled.**
+
+- **CURATED** — fully analyzed, board-admissible. Its graded record is the one that already
+  exists and it is unchanged (§W7.2).
+- **SCAN** — seen and stamped over the widened universe, **never board-admitted**. A new,
+  separately labeled cohort, and the reason the scan tier exists at all: "see everything,
+  admit selectively" only pays if what we see is graded.
+
+Every grade row carries a `universe_tier` discriminator, and every statistic in the scorecard
+— including **the median a "hit" is measured against** — is computed *inside* one cohort.
+That last point is not pedantry: judging a curated pick against a median dominated by
+thousands of scan names would flatter it by construction, which is the same
+comparing-across-measures error that once manufactured a −69% "miss" out of a +0.7% beat.
+
+#### W7.2c — Horizons: a 10-day headline grades the wait, not the call
+
+Operator ruling 2026-08-05, on VALE (admitted "bottoming") and NEM: *"they take time to
+base… but our board only measures for 10 day results??"* A basing-class pick and a
+momentum-class pick are different bets, and one 10-session ruler systematically punishes the
+first. The lawful fix is measurement, not a re-labelling of the record:
+
+1. **The ladder widens to H=10 / 21 / 42 / 63.** H=63 covers a quarter, which is where the
+   metals-cycle intuition lives. Adding maturities changes nothing else — same ruler, same
+   freeze key, same idempotency; a longer horizon simply matures later.
+2. **Signal class comes from labels that already exist.** `engine/cycles.py::STATE_DISPLAY`
+   is the board's own vocabulary (BOTTOMING / NEARING A LOW / UPTREND / BUY ZONE / …); W7
+   maps it to `basing` / `momentum` / `other` and carries the class onto each grade row.
+   **Nothing new is stamped anywhere.** An unmapped label classes `other` with the original
+   label preserved on the row, so a vocabulary that grows stays visible in the store.
+3. **The chartered-horizon map is PRE-REGISTERED — fixed now, before any H=42/63 data
+   exists.**
+
+   | class | headline horizon | supporting |
+   |---|---|---|
+   | `basing` | **H=63** | H=21 |
+   | `momentum` | **H=10** | H=21 |
+   | `other` | H=10 | H=21 |
+
+   Every class is graded and reported at *every* horizon, so nothing is hidden. The map fixes
+   only which horizon is a class's **headline** read — because "grade each class at the
+   horizon that flatters it, chosen after seeing the results" is precisely the sin this
+   design must make impossible. It ships inside the nightly artifact
+   (`priority_score_scorecard.chartered_horizon`) so it can be audited against later.
+   **PROPOSED pending commissioner adjudication.**
+4. **The headline record is UNTOUCHED (era law).** The existing H=10 record continues exactly
+   as it is; the class-conditional view accrues *beside* it as measurement. **Any future
+   redefinition of the headline horizon is its own dated operator adjudication, taken only
+   once the long-horizon data actually exists** — never as a side effect of this wave.
+
+The display half — a "still basing — day n of its chartered window" state, so a −10% day-8
+basing row reads fairly — is **not** in this wave; it belongs to the track-dialog lane and
+follows separately.
+
 #### W7.3 — What was built (this wave)
 
 1. **Full-population forward grader** — `engine/us_prophet_grades.py` +
    `scripts/grade_us_prophet_candidates.py --nightly`, declared in `config/dag.yml` between
    `build_site` (which stamps tonight's candidate rows) and `run_prophet_miss_audit` (which
-   reads the result). Grades **every stamped row** at **H=10 and H=21 sessions, excess vs
-   SPY** as rows mature: ~1,579 graded rows a night instead of ~12. Nightly-lane-gated
+   reads the result). Grades **every stamped row** across the **H=10/21/42/63 ladder, excess
+   vs SPY** as rows mature: ~6.3k graded rows a night instead of ~12 today, ~41k once the
+   scan tier lands. Nightly-lane-gated
    (`ledger_lane.nightly_advance_enabled` is the first statement of the append,
    mutation-checked in the suite), idempotent (a graded
    `(stamp_date, ticker, board_definition, horizon)` is frozen), policy-free (fixed-horizon
@@ -442,9 +507,12 @@ forbidden and needs its own adjudication.
 2. **Scoring-robustness scorecard** — the W0 miss-audit artifact gains a
    `priority_score_scorecard` block (same ops-telemetry tier and anti-fork idiom as
    #4537's `name_score_scorecard`: it *reads* the grade store, it recomputes nothing).
-   Per horizon: rank-IC by date, P@k at k=1/5/10/25, a decile lift table, and the
-   **loser rate by score decile** — the operator's "it would be a disaster if high-scored
-   names underperform", answered nightly with ns and nulls printed while maturity accrues.
+   Structured **cohort → horizon → class**, so nothing pools: per cohort and horizon,
+   rank-IC by date, P@k at k=1/5/10/25, a decile lift table, and the **loser rate by score
+   decile** — the operator's "it would be a disaster if high-scored names underperform" —
+   plus a per-signal-class read at every horizon so basing at H=63 sits beside momentum at
+   H=10 with their ns. There is deliberately **no top-level pooled leg** for a reader to
+   misquote across populations. Nulls are printed with plain reasons while maturity accrues.
 3. **A comparator the plan-only record could never have.** Because every name is graded, a
    pick's *hit* is judged against **that night's whole universe median**, not against the
    picks alone. "Did this beat a name drawn at random that night" is now a computable
