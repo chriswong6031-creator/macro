@@ -150,7 +150,7 @@ def test_board_universe_toggle_survives_on_mobile() -> None:
 
 VIEW_ORGANS = {
     "overview": ('id="theme-context-hero"', 'id="regime"', 'id="actnow-section"',
-                 'id="sc-board"', 'id="board"', 'id="grader"'),
+                 '_china_act_now_board.html.j2'),   # V2 four-lane act-now board (replaced the conviction board)
     "map": ('id="si-map"', 'id="sc-cyclemap"', 'id="sc-tabs"', 'id="sc-desk-table"'),
     "moving": ('id="si-movement"', 'id="rc-events-cn"', 'id="rotation-app"'),
     "explore": ('id="si-explore"', 'id="table-section"', 'id="chart-section"',
@@ -173,10 +173,7 @@ def test_organ_lives_in_its_view(view: str, organs: tuple) -> None:
 # chat citations, dashboard cards, and the 22 basket detail back-links.
 LEGACY_ANCHORS = {
     "actnow-section": "overview",
-    "sc-board": "overview",
-    "board": "overview",
     "regime": "overview",
-    "grader": "overview",
     "si-map": "map",
     "sc-cyclemap": "map",
     "sc-desk-table": "map",

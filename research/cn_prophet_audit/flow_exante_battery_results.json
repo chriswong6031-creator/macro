@@ -1,0 +1,588 @@
+{
+ "as_of": "2026-08-04",
+ "instrument": "flow/positioning ex-ante separation battery (single-axis, no blending)",
+ "frame": {
+  "episodes": 407,
+  "tickers": 342,
+  "admission_dates": 12,
+  "span": [
+   "2026-06-30",
+   "2026-07-17"
+  ],
+  "loser_definition": "excess <= 0 (CSI300-relative), mirrors v1_loser_audit",
+  "base_loser_rate": 0.314
+ },
+ "honesty": {
+  "era": "ONE era only (18 calendar days, 12 admission dates) — in-sample, no out-of-sample split exists on this frame.",
+  "clustering": "407 episodes sit on 12 admission dates; every bucket spread is reported both raw and date-demeaned, and the verdict rule REQUIRES the spread to survive date-demeaning.",
+  "multiplicity": "16 features tested with no multiplicity correction; a SEPARATES verdict here is a DISPLAY-TIER candidate, not a promotion. Promotion requires shadow accrual + pre-registration.",
+  "no_promotion_claim": "Nothing here promotes any signal to rank/size/gate authority."
+ },
+ "verdict_rule": {
+  "SEPARATES": "both compared buckets n>=15 AND Wilson-95% loser-rate CIs disjoint AND median-excess spread keeps its sign after date-demeaning",
+  "NULL": "anything else (thin buckets reported as NULL/underpowered)",
+  "UNUSABLE": "coverage < 40 episodes, or the store admits no PIT join"
+ },
+ "features": {
+  "lhb_appeared_3d": {
+   "store": "china_lhb/events",
+   "coverage": 407,
+   "buckets": {
+    "False": {
+     "n": 387,
+     "loser_rate": 0.307,
+     "loser_ci95": [
+      0.264,
+      0.355
+     ],
+     "median_excess": 4.624,
+     "median_excess_date_demeaned": 0.681,
+     "thin": false
+    },
+    "True": {
+     "n": 20,
+     "loser_rate": 0.45,
+     "loser_ci95": [
+      0.258,
+      0.658
+     ],
+     "median_excess": 1.526,
+     "median_excess_date_demeaned": 0.114,
+     "thin": false
+    }
+   },
+   "verdict": {
+    "verdict": "NULL",
+    "compared": [
+     "False",
+     "True"
+    ],
+    "d_loser_rate": 0.143,
+    "d_median_excess": -3.098,
+    "d_median_excess_date_demeaned": -0.567,
+    "ci_disjoint": false,
+    "date_effect_survives": true,
+    "reason": "CIs overlap",
+    "note": "PRIOR-KILLED CONSTRUCTION (raw hot-money appearance flag, wrong-sign -1.43%/21d). Reported as replication/context only — NOT a new hypothesis. Trailing 3 sessions."
+   },
+   "prior_killed_construction": true
+  },
+  "lhb_net_buy_sign_3d": {
+   "store": "china_lhb/events",
+   "coverage": 20,
+   "verdict": {
+    "verdict": "UNUSABLE",
+    "reason": "coverage 20 < 40 episodes"
+   },
+   "prior_killed_construction": false,
+   "note": "NEW axis: direction of the LHB tape, not the fact of appearing. Trailing 3 sessions."
+  },
+  "lhb_net_buy_magnitude_3d": {
+   "store": "china_lhb/events",
+   "coverage": 20,
+   "verdict": {
+    "verdict": "UNUSABLE",
+    "reason": "coverage 20 < 40 episodes"
+   },
+   "prior_killed_construction": false,
+   "note": "NEW axis: size of the trailing-3-session LHB net flow."
+  },
+  "lhb_reason_class_3d": {
+   "store": "china_lhb/events",
+   "coverage": 20,
+   "verdict": {
+    "verdict": "UNUSABLE",
+    "reason": "coverage 20 < 40 episodes"
+   },
+   "prior_killed_construction": false,
+   "note": "NEW axis: WHY the name hit the board (a name on the list for FALLING is a different animal from one on it for a limit-up chase). Trailing 3 sessions."
+  },
+  "lhb_appeared_10d": {
+   "store": "china_lhb/events",
+   "coverage": 407,
+   "buckets": {
+    "False": {
+     "n": 376,
+     "loser_rate": 0.301,
+     "loser_ci95": [
+      0.256,
+      0.349
+     ],
+     "median_excess": 4.641,
+     "median_excess_date_demeaned": 0.701,
+     "thin": false
+    },
+    "True": {
+     "n": 31,
+     "loser_rate": 0.484,
+     "loser_ci95": [
+      0.32,
+      0.652
+     ],
+     "median_excess": 0.976,
+     "median_excess_date_demeaned": -0.953,
+     "thin": false
+    }
+   },
+   "verdict": {
+    "verdict": "NULL",
+    "compared": [
+     "False",
+     "True"
+    ],
+    "d_loser_rate": 0.183,
+    "d_median_excess": -3.665,
+    "d_median_excess_date_demeaned": -1.654,
+    "ci_disjoint": false,
+    "date_effect_survives": true,
+    "reason": "CIs overlap",
+    "note": "PRIOR-KILLED CONSTRUCTION (raw hot-money appearance flag, wrong-sign -1.43%/21d). Reported as replication/context only — NOT a new hypothesis. Trailing 10 sessions."
+   },
+   "prior_killed_construction": true
+  },
+  "lhb_net_buy_sign_10d": {
+   "store": "china_lhb/events",
+   "coverage": 31,
+   "verdict": {
+    "verdict": "UNUSABLE",
+    "reason": "coverage 31 < 40 episodes"
+   },
+   "prior_killed_construction": false,
+   "note": "NEW axis: direction of the LHB tape, not the fact of appearing. Trailing 10 sessions."
+  },
+  "lhb_net_buy_magnitude_10d": {
+   "store": "china_lhb/events",
+   "coverage": 31,
+   "verdict": {
+    "verdict": "UNUSABLE",
+    "reason": "coverage 31 < 40 episodes"
+   },
+   "prior_killed_construction": false,
+   "note": "NEW axis: size of the trailing-10-session LHB net flow."
+  },
+  "lhb_reason_class_10d": {
+   "store": "china_lhb/events",
+   "coverage": 31,
+   "verdict": {
+    "verdict": "UNUSABLE",
+    "reason": "coverage 31 < 40 episodes"
+   },
+   "prior_killed_construction": false,
+   "note": "NEW axis: WHY the name hit the board (a name on the list for FALLING is a different animal from one on it for a limit-up chase). Trailing 10 sessions."
+  },
+  "lhb_inst_seats_ge2": {
+   "store": "china_lhb/detail",
+   "coverage": 27,
+   "verdict": {
+    "verdict": "UNUSABLE",
+    "reason": "coverage 27 < 40 episodes"
+   },
+   "prior_killed_construction": false,
+   "note": "NEW axis (surviving accruing construction cnlab_lhb_inst): buyer-side composition — institutional seats vs branch desks."
+  },
+  "lhb_inst_net_sign": {
+   "store": "china_lhb/detail",
+   "coverage": 27,
+   "verdict": {
+    "verdict": "UNUSABLE",
+    "reason": "coverage 27 < 40 episodes"
+   },
+   "prior_killed_construction": false,
+   "note": "NEW axis: sign of the institutional-seat net flow."
+  },
+  "margin_balance_change_tercile": {
+   "store": "china_margin_detail",
+   "coverage": 333,
+   "buckets": {
+    "high": {
+     "n": 111,
+     "loser_rate": 0.306,
+     "loser_ci95": [
+      0.228,
+      0.397
+     ],
+     "median_excess": 4.526,
+     "median_excess_date_demeaned": 0.996,
+     "thin": false
+    },
+    "low": {
+     "n": 111,
+     "loser_rate": 0.297,
+     "loser_ci95": [
+      0.22,
+      0.388
+     ],
+     "median_excess": 5.086,
+     "median_excess_date_demeaned": 0.63,
+     "thin": false
+    },
+    "mid": {
+     "n": 111,
+     "loser_rate": 0.225,
+     "loser_ci95": [
+      0.157,
+      0.311
+     ],
+     "median_excess": 5.073,
+     "median_excess_date_demeaned": 0.901,
+     "thin": false
+    }
+   },
+   "verdict": {
+    "verdict": "NULL",
+    "compared": [
+     "low",
+     "high"
+    ],
+    "d_loser_rate": 0.009,
+    "d_median_excess": -0.56,
+    "d_median_excess_date_demeaned": 0.366,
+    "ci_disjoint": false,
+    "date_effect_survives": false,
+    "reason": "CIs overlap",
+    "note": "REQUESTED 5/20-session margin velocity is UNAVAILABLE — the store carries only a paired (date, prior_date) delta with a ~29-day gap, so this axis is a MONTHLY margin-balance change, disclosed as such."
+   },
+   "prior_killed_construction": false
+  },
+  "margin_balance_change_sign": {
+   "store": "china_margin_detail",
+   "coverage": 333,
+   "buckets": {
+    "falling": {
+     "n": 241,
+     "loser_rate": 0.253,
+     "loser_ci95": [
+      0.202,
+      0.312
+     ],
+     "median_excess": 4.958,
+     "median_excess_date_demeaned": 0.919,
+     "thin": false
+    },
+    "rising": {
+     "n": 92,
+     "loser_rate": 0.337,
+     "loser_ci95": [
+      0.249,
+      0.438
+     ],
+     "median_excess": 4.592,
+     "median_excess_date_demeaned": 0.802,
+     "thin": false
+    }
+   },
+   "verdict": {
+    "verdict": "NULL",
+    "compared": [
+     "falling",
+     "rising"
+    ],
+    "d_loser_rate": 0.084,
+    "d_median_excess": -0.366,
+    "d_median_excess_date_demeaned": -0.117,
+    "ci_disjoint": false,
+    "date_effect_survives": true,
+    "reason": "CIs overlap",
+    "note": "Monthly (~29d) margin-balance direction."
+   },
+   "prior_killed_construction": false
+  },
+  "holder_count_change_sign": {
+   "store": "china_holder_counts",
+   "coverage": 339,
+   "buckets": {
+    "concentrating": {
+     "n": 165,
+     "loser_rate": 0.352,
+     "loser_ci95": [
+      0.283,
+      0.427
+     ],
+     "median_excess": 4.048,
+     "median_excess_date_demeaned": -0.294,
+     "thin": false
+    },
+    "dispersing": {
+     "n": 174,
+     "loser_rate": 0.27,
+     "loser_ci95": [
+      0.21,
+      0.341
+     ],
+     "median_excess": 4.739,
+     "median_excess_date_demeaned": 0.99,
+     "thin": false
+    }
+   },
+   "verdict": {
+    "verdict": "NULL",
+    "compared": [
+     "concentrating",
+     "dispersing"
+    ],
+    "d_loser_rate": -0.082,
+    "d_median_excess": 0.691,
+    "d_median_excess_date_demeaned": 1.284,
+    "ci_disjoint": false,
+    "date_effect_survives": true,
+    "reason": "CIs overlap",
+    "note": "PIT rule applied: only records with notice_date <= admission. DISCLOSURE LAG is severe — median 99 days between the reported period end and admission (n_lag=339); these are periodic disclosures, so the 'positioning' is up to a quarter stale."
+   },
+   "prior_killed_construction": false
+  },
+  "holder_count_change_tercile": {
+   "store": "china_holder_counts",
+   "coverage": 339,
+   "buckets": {
+    "high": {
+     "n": 113,
+     "loser_rate": 0.31,
+     "loser_ci95": [
+      0.232,
+      0.4
+     ],
+     "median_excess": 5.229,
+     "median_excess_date_demeaned": 1.092,
+     "thin": false
+    },
+    "low": {
+     "n": 113,
+     "loser_rate": 0.363,
+     "loser_ci95": [
+      0.28,
+      0.455
+     ],
+     "median_excess": 4.048,
+     "median_excess_date_demeaned": -0.846,
+     "thin": false
+    },
+    "mid": {
+     "n": 113,
+     "loser_rate": 0.257,
+     "loser_ci95": [
+      0.185,
+      0.344
+     ],
+     "median_excess": 3.917,
+     "median_excess_date_demeaned": 0.453,
+     "thin": false
+    }
+   },
+   "verdict": {
+    "verdict": "NULL",
+    "compared": [
+     "low",
+     "high"
+    ],
+    "d_loser_rate": -0.053,
+    "d_median_excess": 1.181,
+    "d_median_excess_date_demeaned": 1.938,
+    "ci_disjoint": false,
+    "date_effect_survives": true,
+    "reason": "CIs overlap",
+    "note": "Magnitude of the last disclosed holder-count change; same lag caveat."
+   },
+   "prior_killed_construction": false
+  },
+  "turnover_pctile_60d": {
+   "store": "china_stocks (volume-derived)",
+   "coverage": 407,
+   "buckets": {
+    "p0_50": {
+     "n": 96,
+     "loser_rate": 0.177,
+     "loser_ci95": [
+      0.114,
+      0.265
+     ],
+     "median_excess": 5.978,
+     "median_excess_date_demeaned": 2.808,
+     "thin": false
+    },
+    "p50_90": {
+     "n": 205,
+     "loser_rate": 0.322,
+     "loser_ci95": [
+      0.262,
+      0.389
+     ],
+     "median_excess": 4.715,
+     "median_excess_date_demeaned": 0.63,
+     "thin": false
+    },
+    "p90_100": {
+     "n": 106,
+     "loser_rate": 0.425,
+     "loser_ci95": [
+      0.335,
+      0.52
+     ],
+     "median_excess": 1.695,
+     "median_excess_date_demeaned": -1.88,
+     "thin": false
+    }
+   },
+   "verdict": {
+    "verdict": "SEPARATES",
+    "compared": [
+     "p0_50",
+     "p90_100"
+    ],
+    "d_loser_rate": 0.248,
+    "d_median_excess": -4.283,
+    "d_median_excess_date_demeaned": -4.688,
+    "ci_disjoint": true,
+    "date_effect_survives": true,
+    "reason": "loser-rate CIs disjoint and spread survives date-demeaning",
+    "note": "THE crowding axis: admission-day volume percentile vs the name's own trailing 60 sessions. Fully PIT (uses only bars dated <= admission)."
+   },
+   "prior_killed_construction": false
+  },
+  "volume_ratio_20d": {
+   "store": "china_stocks (volume-derived)",
+   "coverage": 407,
+   "buckets": {
+    "high": {
+     "n": 136,
+     "loser_rate": 0.456,
+     "loser_ci95": [
+      0.375,
+      0.54
+     ],
+     "median_excess": 2.077,
+     "median_excess_date_demeaned": -1.679,
+     "thin": false
+    },
+    "low": {
+     "n": 136,
+     "loser_rate": 0.221,
+     "loser_ci95": [
+      0.159,
+      0.297
+     ],
+     "median_excess": 5.771,
+     "median_excess_date_demeaned": 1.95,
+     "thin": false
+    },
+    "mid": {
+     "n": 135,
+     "loser_rate": 0.267,
+     "loser_ci95": [
+      0.199,
+      0.347
+     ],
+     "median_excess": 4.393,
+     "median_excess_date_demeaned": 0.619,
+     "thin": false
+    }
+   },
+   "verdict": {
+    "verdict": "SEPARATES",
+    "compared": [
+     "low",
+     "high"
+    ],
+    "d_loser_rate": 0.235,
+    "d_median_excess": -3.694,
+    "d_median_excess_date_demeaned": -3.629,
+    "ci_disjoint": true,
+    "date_effect_survives": true,
+    "reason": "loser-rate CIs disjoint and spread survives date-demeaning",
+    "note": "Admission-day volume / own 20-session median volume. Correlated with the percentile axis by construction — reported as a second cut of the same crowding leg, not an independent store."
+   },
+   "prior_killed_construction": false
+  }
+ },
+ "redundancy_check": {
+  "axis": "turnover_pctile_60d",
+  "corr_with_day0_ret": 0.261,
+  "corr_with_setup_score": 0.172,
+  "engine_extended_flag_fires": 9,
+  "mean_pctile_extended_true": 0.717,
+  "mean_pctile_extended_false": 0.686,
+  "mean_pctile_washout_true": 0.794,
+  "mean_pctile_washout_false": 0.665,
+  "within_non_extended": {
+   "p0_50": {
+    "n": 94,
+    "loser_rate": 0.16,
+    "loser_ci95": [
+     0.099,
+     0.247
+    ],
+    "median_excess": 6.086,
+    "median_excess_date_demeaned": 3.176,
+    "thin": false
+   },
+   "p50_90": {
+    "n": 203,
+    "loser_rate": 0.32,
+    "loser_ci95": [
+     0.26,
+     0.387
+    ],
+    "median_excess": 4.715,
+    "median_excess_date_demeaned": 0.63,
+    "thin": false
+   },
+   "p90_100": {
+    "n": 101,
+    "loser_rate": 0.416,
+    "loser_ci95": [
+     0.325,
+     0.513
+    ],
+    "median_excess": 2.02,
+    "median_excess_date_demeaned": -1.773,
+    "thin": false
+   }
+  },
+  "reading": "The crowding axis is NOT a restatement of anything the chain already consumes: correlation with the day-0 move and with the engine's own setup score is weak, the `extended` veto fires on only 9/407 episodes (effectively dormant), and the loser gradient holds inside the non-extended subset. Washout admissions do arrive on heavier volume, which is where the axis and the existing washout leg overlap most."
+ },
+ "unusable_stores": [
+  {
+   "store": "data/china_connect/northbound.parquet",
+   "axis_requested": "trailing 5/20-session per-name northbound net-buy streak/z",
+   "reason": "NO per-name dimension (columns are market-level net/buy/sell/turnover/hold_mktcap only), AND the series is a frozen placeholder — `net` has ZERO non-null values after 2024-08-16, i.e. it is null across the entire 2026-06-30..2026-07-17 admission window (51 window rows, 0 non-null).",
+   "todo": "Per-name northbound holdings (沪深港通持股) must be collected before any name-level positioning axis exists; the market-level feed itself needs un-freezing (dead ~2 years)."
+  },
+  {
+   "store": "data/china_margin/balance.parquet",
+   "axis_requested": "market-level margin balance as a name axis",
+   "reason": "market-level only (no ticker); with 12 admission dates it is a date-level constant, indistinguishable from the admission-date effect. Not a name axis.",
+   "todo": "none — correctly market-level; use as regime context, never as a name feature."
+  },
+  {
+   "store": "data/china_block_trades/detail.parquet",
+   "axis_requested": "block trade within trailing 10 sessions + discount/premium sign",
+   "reason": "SNAPSHOT-ONLY, look-ahead by construction: 330 rows carrying a single asof=2026-08-03 — i.e. the store was observed AFTER every episode's admission (2026-06-30..2026-07-17) and holds no accruing history. Joining it PIT is impossible; joining it as-is would leak. `data/china_block_tape/` does not exist.",
+   "todo": "Convert the block-trade collector from snapshot-overwrite to append-only daily accrual (per-trade date + premium/discount). Until then the deep-DISCOUNT leg (the probationary +3.45%/21d construction) cannot be tested on any historical frame."
+  },
+  {
+   "store": "data/china_buyback/buyback.parquet",
+   "axis_requested": "active buyback program flag at admission",
+   "reason": "SNAPSHOT-ONLY with NO announcement/disclosure date: 5436 rows, single asof=2026-08-03, and the only temporal field is a mutable `progress` string (完成实施/实施中/董事会预案). There is no column that says WHEN a program became known, so no PIT join exists — a program announced after admission is indistinguishable from one active before it.",
+   "todo": "Collect the announcement date (公告日) and status-transition dates per program, append-only. That single column would make this store testable."
+  }
+ ],
+ "ranked_separators": [
+  {
+   "feature": "turnover_pctile_60d",
+   "store": "china_stocks (volume-derived)",
+   "d_loser_rate": 0.248,
+   "compared": [
+    "p0_50",
+    "p90_100"
+   ]
+  },
+  {
+   "feature": "volume_ratio_20d",
+   "store": "china_stocks (volume-derived)",
+   "d_loser_rate": 0.235,
+   "compared": [
+    "low",
+    "high"
+   ]
+  }
+ ]
+}

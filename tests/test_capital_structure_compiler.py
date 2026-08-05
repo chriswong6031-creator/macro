@@ -19,6 +19,19 @@ from scripts.compile_capital_structure_events import (
     compile_from_disk,
     compile_manifest_records,
 )
+from engine.capital_structure.source_ledger_io import (
+    encode_source_ledger,
+    read_source_ledger,
+    source_ledger_path,
+)
+
+
+def _write_ledger(path, records):
+    """Write a source-manifest ledger fixture, bypassing the validating writer.
+
+    Fixtures deliberately include ledgers the identity law rejects.
+    """
+    path.write_bytes(encode_source_ledger(list(records)))
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -328,7 +341,7 @@ def test_disk_compiler_is_network_free_and_idempotent(tmp_path, monkeypatch):
         "0000000001-26-000001", "S-3",
         accepted_at="2026-08-01T10:00:00Z", first_seen_at="2026-08-01T10:00:03Z",
     )
-    pd.DataFrame(records).to_parquet(tmp_path / "source_manifest.parquet", index=False)
+    _write_ledger(source_ledger_path(tmp_path), records)
 
     def explode(*args, **kwargs):
         raise AssertionError("offline compiler attempted network access")
@@ -499,7 +512,7 @@ def test_existing_event_ledger_rejects_null_json_instead_of_overwriting_history(
         "0000000001-26-000001", "S-3",
         accepted_at="2026-08-01T10:00:00Z", first_seen_at="2026-08-01T10:00:03Z",
     )
-    pd.DataFrame(records).to_parquet(tmp_path / "source_manifest.parquet", index=False)
+    _write_ledger(source_ledger_path(tmp_path), records)
     compile_from_disk(root=tmp_path, generated_at="2026-08-01T12:00:00Z")
     frame = pd.read_parquet(tmp_path / "event_versions.parquet")
     assert frame.columns.tolist() == EVENT_COLUMNS
@@ -513,7 +526,7 @@ def test_generation_receipt_rejects_tampered_or_partial_prior_artifacts(tmp_path
         "0000000001-26-000001", "S-3",
         accepted_at="2026-08-01T10:00:00Z", first_seen_at="2026-08-01T10:00:03Z",
     )
-    pd.DataFrame(records).to_parquet(tmp_path / "source_manifest.parquet", index=False)
+    _write_ledger(source_ledger_path(tmp_path), records)
     compile_from_disk(root=tmp_path, generated_at="2026-08-01T12:00:00Z")
     event_path = tmp_path / "event_versions.parquet"
     event_path.write_bytes(event_path.read_bytes() + b"tamper")
@@ -531,7 +544,7 @@ def test_ok_marker_with_all_artifacts_deleted_is_not_treated_as_virgin(tmp_path)
         "0000000001-26-000001", "S-3",
         accepted_at="2026-08-01T10:00:00Z", first_seen_at="2026-08-01T10:00:03Z",
     )
-    pd.DataFrame(records).to_parquet(tmp_path / "source_manifest.parquet", index=False)
+    _write_ledger(source_ledger_path(tmp_path), records)
     compile_from_disk(root=tmp_path, generated_at="2026-08-01T12:00:00Z")
     for name in ("event_versions.parquet", "event_edges.parquet", "review_queue.parquet"):
         (tmp_path / name).unlink()
@@ -545,8 +558,8 @@ def test_accession_failure_blocks_partial_publish_and_preserves_prior_generation
         "0000000001-26-000001", "S-3",
         accepted_at="2026-08-01T10:00:00Z", first_seen_at="2026-08-01T10:00:03Z",
     )
-    source_path = tmp_path / "source_manifest.parquet"
-    pd.DataFrame(good).to_parquet(source_path, index=False)
+    source_path = source_ledger_path(tmp_path)
+    _write_ledger(source_path, good)
     compile_from_disk(root=tmp_path, generated_at="2026-08-01T12:00:00Z")
     artifact_names = (
         "event_versions.parquet", "event_edges.parquet", "review_queue.parquet", "telemetry.json",
@@ -559,7 +572,7 @@ def test_accession_failure_blocks_partial_publish_and_preserves_prior_generation
     )
     bad[1]["parser"]["eligibility"] = "not-a-valid-state"
     _resign_bundle(bad)
-    pd.DataFrame([*good, *bad]).to_parquet(source_path, index=False)
+    _write_ledger(source_path, [*good, *bad])
 
     with pytest.raises(CapitalStructureCompileDegraded) as exc_info:
         compile_from_disk(root=tmp_path, generated_at="2026-08-02T12:00:00Z")
@@ -573,16 +586,15 @@ def test_empty_source_manifest_cannot_orphan_persisted_event_lineage(tmp_path):
         "0000000001-26-000001", "S-3",
         accepted_at="2026-08-01T10:00:00Z", first_seen_at="2026-08-01T10:00:03Z",
     )
-    source_path = tmp_path / "source_manifest.parquet"
-    source_frame = pd.DataFrame(records)
-    source_frame.to_parquet(source_path, index=False)
+    source_path = source_ledger_path(tmp_path)
+    _write_ledger(source_path, records)
     compile_from_disk(root=tmp_path, generated_at="2026-08-01T12:00:00Z")
     artifact_names = (
         "event_versions.parquet", "event_edges.parquet", "review_queue.parquet", "telemetry.json",
     )
     before = {name: (tmp_path / name).read_bytes() for name in artifact_names}
 
-    source_frame.iloc[0:0].to_parquet(source_path, index=False)
+    _write_ledger(source_path, [])
     with pytest.raises(ValueError, match="source ledger truncated below committed prefix"):
         compile_from_disk(root=tmp_path, generated_at="2026-08-02T12:00:00Z")
 
@@ -597,8 +609,8 @@ def test_source_receipt_rejects_mutation_or_reorder_inside_committed_prefix(
         "0000000001-26-000001", "S-3",
         accepted_at="2026-08-01T10:00:00Z", first_seen_at="2026-08-01T10:00:03Z",
     )
-    source_path = tmp_path / "source_manifest.parquet"
-    pd.DataFrame(records).to_parquet(source_path, index=False)
+    source_path = source_ledger_path(tmp_path)
+    _write_ledger(source_path, records)
     compile_from_disk(root=tmp_path, generated_at="2026-08-01T12:00:00Z")
 
     changed = deepcopy(records)
@@ -607,10 +619,45 @@ def test_source_receipt_rejects_mutation_or_reorder_inside_committed_prefix(
         _resign_bundle(changed)
     else:
         changed.reverse()
-    pd.DataFrame(changed).to_parquet(source_path, index=False)
+    _write_ledger(source_path, changed)
 
     with pytest.raises(ValueError, match="mutated or reordered inside committed prefix"):
         compile_from_disk(root=tmp_path, generated_at="2026-08-02T12:00:00Z")
+
+
+def test_new_bundle_schema_growth_cannot_invalidate_retained_manifests(tmp_path):
+    """Reproduces the nightly failure first seen 2026-08-05, end to end.
+
+    The retained rows predate ``filing.file_number_provenance``; the appended
+    bundle carries it.  Under the old parquet ledger, pyarrow back-filled that
+    nested key as null into every retained row, so their stored manifest IDs no
+    longer matched their bodies and this compile raised ManifestIdentityError --
+    discarding the whole night's collection.
+    """
+    retained = _bundle(
+        "0000000001-26-000001", "S-3",
+        accepted_at="2026-08-01T10:00:00Z", first_seen_at="2026-08-01T10:00:03Z",
+        include_file_number_provenance=False,
+    )
+    source_path = source_ledger_path(tmp_path)
+    _write_ledger(source_path, retained)
+    first = compile_from_disk(root=tmp_path, generated_at="2026-08-01T12:00:00Z")
+    assert first["status"] == "ok"
+
+    grown = _bundle(
+        "0000000002-26-000001", "S-3",
+        accepted_at="2026-08-02T10:00:00Z", first_seen_at="2026-08-02T10:00:03Z",
+        include_file_number_provenance=True,
+    )
+    assert "file_number_provenance" not in retained[0]["filing"]
+    assert "file_number_provenance" in grown[0]["filing"]
+    _write_ledger(source_path, [*retained, *grown])
+
+    second = compile_from_disk(root=tmp_path, generated_at="2026-08-02T12:00:00Z")
+    assert second["status"] == "ok"
+    assert second["events"] == 2
+    # The retained prefix is still readable as the IDs it was written with.
+    assert read_source_ledger(source_path)[0] == retained[0]
 
 
 def test_prior_policy_receipt_can_migrate_via_valid_append_and_new_generation(tmp_path):
@@ -618,8 +665,8 @@ def test_prior_policy_receipt_can_migrate_via_valid_append_and_new_generation(tm
         "0000000001-26-000001", "S-3",
         accepted_at="2026-08-01T10:00:00Z", first_seen_at="2026-08-01T10:00:03Z",
     )
-    source_path = tmp_path / "source_manifest.parquet"
-    pd.DataFrame(first).to_parquet(source_path, index=False)
+    source_path = source_ledger_path(tmp_path)
+    _write_ledger(source_path, first)
     compile_from_disk(root=tmp_path, generated_at="2026-08-01T12:00:00Z")
 
     telemetry_path = tmp_path / "telemetry.json"
@@ -637,7 +684,7 @@ def test_prior_policy_receipt_can_migrate_via_valid_append_and_new_generation(tm
         "0000000002-26-000001", "S-3",
         accepted_at="2026-08-02T10:00:00Z", first_seen_at="2026-08-02T10:00:03Z",
     )
-    pd.DataFrame([*first, *appended]).to_parquet(source_path, index=False)
+    _write_ledger(source_path, [*first, *appended])
     summary = compile_from_disk(root=tmp_path, generated_at="2026-08-02T12:00:00Z")
     current = json.loads(telemetry_path.read_text())
 
@@ -653,8 +700,8 @@ def test_missing_source_manifest_cannot_replace_verified_prior_generation(tmp_pa
         "0000000001-26-000001", "S-3",
         accepted_at="2026-08-01T10:00:00Z", first_seen_at="2026-08-01T10:00:03Z",
     )
-    source_path = tmp_path / "source_manifest.parquet"
-    pd.DataFrame(records).to_parquet(source_path, index=False)
+    source_path = source_ledger_path(tmp_path)
+    _write_ledger(source_path, records)
     compile_from_disk(root=tmp_path, generated_at="2026-08-01T12:00:00Z")
     before = (tmp_path / "telemetry.json").read_bytes()
     source_path.unlink()
@@ -684,11 +731,7 @@ def test_no_source_run_emits_strict_zero_telemetry(tmp_path):
 
 
 def test_existing_valid_empty_source_manifest_is_no_source_not_green_generation(tmp_path):
-    template = pd.DataFrame(_bundle(
-        "0000000001-26-000001", "S-3",
-        accepted_at="2026-08-01T10:00:00Z", first_seen_at="2026-08-01T10:00:03Z",
-    ))
-    template.iloc[0:0].to_parquet(tmp_path / "source_manifest.parquet", index=False)
+    _write_ledger(source_ledger_path(tmp_path), [])
 
     summary = compile_from_disk(root=tmp_path, generated_at="2026-08-01T12:00:00Z")
     telemetry = json.loads((tmp_path / "telemetry.json").read_text())
@@ -705,8 +748,8 @@ def test_generation_receipt_hashes_artifacts_and_failed_promotion_rolls_back(tmp
         accepted_at="2026-08-01T10:00:00Z", first_seen_at="2026-08-01T10:00:03Z",
         content_marker="v1",
     )
-    source_path = tmp_path / "source_manifest.parquet"
-    pd.DataFrame(records).to_parquet(source_path, index=False)
+    source_path = source_ledger_path(tmp_path)
+    _write_ledger(source_path, records)
     compile_from_disk(root=tmp_path, generated_at="2026-08-01T12:00:00Z")
     artifact_names = [
         "event_versions.parquet", "event_edges.parquet", "review_queue.parquet", "telemetry.json",
@@ -726,7 +769,7 @@ def test_generation_receipt_hashes_artifacts_and_failed_promotion_rolls_back(tmp
         content_marker="v2",
     )
     _set_bundle_version(changed, 2)
-    pd.DataFrame([*records, *changed]).to_parquet(source_path, index=False)
+    _write_ledger(source_path, [*records, *changed])
     from scripts import compile_capital_structure_events as compiler
 
     real_replace = compiler.os.replace
