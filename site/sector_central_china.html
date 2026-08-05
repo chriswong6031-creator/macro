@@ -52,31 +52,654 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="theme.css?v=315a84eb">
-<link rel="stylesheet" href="dashboard-icons.css?v=be32e541">
-<script defer src="dashboard-icons.js?v=e096076e"></script>
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="dashboard-icons.css">
+<script defer src="dashboard-icons.js"></script>
 <link rel="stylesheet" href="cycle.css?v=4">
-<link rel="stylesheet" href="sector_cycles.css?v=f67e9e6a">
+<link rel="stylesheet" href="sector_cycles.css">
 
-<link rel="prefetch" href="sector_cycles_china_data.js?v=ffbd01cc" as="script">
-<link rel="prefetch" href="mm_charts.js?v=244eb769" as="script">
-<link rel="prefetch" href="sector_cycles.js?v=bc35b288" as="script">
-<link rel="prefetch" href="sector_cycles_china_series_data.js?v=32410f71" as="script">
-<link rel="prefetch" href="sector_cycles_china_narr_data.js?v=df4eb7da" as="script">
-<link rel="prefetch" href="sector_cycles_china_dna_data.js?v=ea6c6a47" as="script">
-<link rel="prefetch" href="subsector_rotation.js?v=be121ce4" as="script">
+<link rel="prefetch" href="sector_cycles_china_data.js" as="script">
+<link rel="prefetch" href="mm_charts.js" as="script">
+<link rel="prefetch" href="sector_cycles.js" as="script">
+<link rel="prefetch" href="sector_cycles_china_series_data.js" as="script">
+<link rel="prefetch" href="sector_cycles_china_narr_data.js" as="script">
+<link rel="prefetch" href="sector_cycles_china_dna_data.js" as="script">
+<link rel="prefetch" href="subsector_rotation.js" as="script">
 
-<link rel="preload" href="sector_central_china_data.js?v=e6080aac" as="script">
-<link rel="stylesheet" href="assets/css/2138e883.css?v=2138e883">
-<link rel="stylesheet" href="assets/css/175d34c3.css?v=175d34c3">
+<link rel="preload" href="sector_central_china_data.js" as="script">
+<style>
+  /* ══════════════════════════════════════════════════════════════════════════
+     SI WORKSPACE shell — persistent rail + four hash-routed views. Ported from
+     the US sibling (templates/sector_central.html.j2 §1/§1b) so the two Sector
+     Intelligence desks read as ONE product: same grid, same rail geometry, same
+     breakpoints, same mobile switcher. The V1 horizontal anchor rail (.si-rail)
+     it replaces is retired — an anchor strip that scrolls a 12,000px document is
+     not navigation, it is a table of contents.
 
-<link rel="stylesheet" href="assets/css/38be3b2c.css?v=38be3b2c">
-<link rel="stylesheet" href="macro-desk.css?v=b4966394">
-<link rel="stylesheet" href="assets/css/7529bbc4.css?v=7529bbc4">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
-<link rel="preload" as="style" href="assets/css/eb9ca676.css?v=eb9ca676">
-<link rel="preload" as="style" href="assets/css/ee332d19.css?v=ee332d19">
+     Var-native by law: not one literal colour in this block. Every tone comes
+     from a theme.css var or a color-mix over one, so light mode is designed
+     rather than inherited.
+     ══════════════════════════════════════════════════════════════════════════ */
+  .si-shell { display:grid; grid-template-columns:var(--si-rail-w, 200px) minmax(0,1fr); align-items:start;
+    /* Cancels body's own 18px bottom padding (declared in the donor block below) so the shell
+       reaches the document bottom. The rail is sticky WITHIN the shell and a full 100vh tall,
+       so any slack left below the shell is slack the rail gets shoved up by at maximum scroll —
+       which clips the top buttons off screen exactly when a reader is deepest into a view. */
+    margin-bottom:-18px; }
+  .si-side { position:sticky; top:0; align-self:start; height:100vh; box-sizing:border-box; z-index:30;
+    display:flex; flex-direction:column; gap:2px; padding:12px;
+    background:var(--panel); border-right:1px solid var(--line); }
+  .si-view-btn { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:9px;
+    border-left:3px solid transparent; text-decoration:none; line-height:1.25;
+    font-size:13px; font-weight:600; color:var(--muted); }
+  .si-vb-g { flex:none; font-size:18px; line-height:1; }
+  .si-view-btn:hover { color:var(--text); background:color-mix(in srgb, var(--link) 6%, transparent); }
+  .si-view-btn.on { color:var(--text); background:color-mix(in srgb, var(--link) 11%, var(--panel));
+    border-left-color:var(--link); }
+  .si-side-out { display:flex; align-items:center; gap:10px; margin-top:8px; padding:11px 10px 0;
+    border-top:1px solid var(--line); text-decoration:none;
+    font-size:12.5px; font-weight:600; color:var(--muted); }
+  .si-side-out:hover { color:var(--link); }
+  /* provenance lives with the navigation — visible from every view */
+  .si-side-foot { margin-top:auto; padding-top:10px; border-top:1px solid var(--line);
+    display:flex; flex-direction:column; gap:3px;
+    font-size:10.5px; line-height:1.45; color:var(--muted); }
+  .si-stage { min-width:0; padding-left:20px; }
+  .si-view { display:none; }
+  .si-view.on { display:block; }
+
+  /* One plain-word line per view, with a ? receipt naming its inputs. */
+  .si-view-read { display:flex; align-items:flex-start; gap:9px; margin:0 0 16px; padding:9px 13px;
+    font-size:13.5px; line-height:1.5; color:var(--text);
+    background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--link);
+    border-radius:10px; }
+  .si-view-read[hidden] { display:none; }
+  .si-vr-g { flex:none; font-size:15px; line-height:1.4; }
+  .si-vr-t { flex:1 1 auto; min-width:0; }
+  .si-vr-q { flex:none; display:inline-flex; align-items:center; justify-content:center;
+    width:16px; height:16px; border:1px solid var(--line); border-radius:50%;
+    font-size:9.5px; font-weight:700; color:var(--muted); cursor:help; }
+
+  /* What-changed strip — overview only, ≤3 chips, existing tc-chip idiom. */
+  .si-changed { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin:18px 0 0; }
+  .si-changed-l { font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); }
+
+  /* ≤1100px — rail narrows to a 56px icon rail; labels drop out. */
+  @media (max-width:1100px) {
+    .si-shell { --si-rail-w:56px; }
+    .si-view-btn { justify-content:center; gap:0; padding:9px 0; }
+    .si-view-btn .si-vb-l, .si-side-out .si-vb-l { display:none; }
+    .si-side-out { justify-content:center; padding:11px 0 0; }
+    .si-side-foot { display:none; }
+    .si-stage { padding-left:12px; }
+  }
+  /* <768px — the rail becomes a sticky TOP segmented switcher: four equal tabs,
+     icon over a 10.5px label, accent on border-bottom. Never a hamburger. */
+  @media (max-width:767px) {
+    .si-shell { display:block; }
+    .si-side { position:sticky; top:0; height:auto; flex-direction:row; gap:0; padding:0;
+      margin:0 -18px 14px; overflow-x:auto;
+      border-right:0; border-bottom:1px solid var(--line); }
+    .si-view-btn { flex:1 1 0; min-width:0; flex-direction:column; gap:3px; justify-content:center;
+      padding:8px 2px; text-align:center; border-radius:0;
+      border-left:0; border-bottom:3px solid transparent; }
+    .si-view-btn .si-vb-l { display:block; font-size:10.5px; font-weight:600; }
+    .si-view-btn.on { border-left:0; border-bottom-color:var(--link); }
+    .si-side-out { display:none; }
+    .si-stage { padding-left:0; }
+  }
+
+  /* ── section heads inside a view ── */
+  .si-sec { margin-top:30px; }
+  .si-sec-h h2 { font-size:17px; font-weight:760; margin:0; }
+  .si-sec-h .si-sec-sub { font-size:12.5px; color:var(--muted); }
+  .sr-foot { color:var(--muted); font-size:11px; margin:16px 2px 0; line-height:1.6; }
+  .si-links { display:flex; gap:9px; flex-wrap:wrap; margin:16px 0 4px; }
+  .si-links a { font-size:12.5px; border:1px solid var(--line); border-radius:9px; padding:7px 12px;
+    background:var(--panel2, var(--panel)); }
+  .si-links a:hover { border-color: var(--muted); }
+</style>
+<style>
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.55 Inter, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; }
+  a { color: inherit; text-decoration: none; }
+  .scc-wrap { max-width: 1320px; margin: 0 auto; padding: 16px 22px 60px; }
+  .scc-hd { margin: 14px 0 6px; }
+  .scc-kick { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .scc-title { font-size: clamp(22px, 3vw, 34px); font-weight: 800; letter-spacing: -.02em; margin: 4px 0 6px; }
+  .scc-sub { color: var(--muted); max-width: 90ch; font-size: 13.5px; }
+  /* regime banner */
+  .regime { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 10px; margin: 14px 0; }
+  @media (max-width: 880px) { .regime { grid-template-columns: 1fr 1fr; } }
+  .rg-cell { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--panel); }
+  .rg-cell.lead { border-width: 1.5px; }
+  .rg-k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .rg-v { font-size: 19px; font-weight: 760; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .rg-d { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+  .rg-on { color: var(--up); } .rg-off { color: var(--down); } .rg-mix { color: var(--warn); }
+  .rg-bar { height: 7px; border-radius: 5px; margin-top: 7px; overflow: hidden; background: var(--line); }
+  .rg-bar i { display: block; height: 100%; }
+  /* W0.4: regime-cap notice — shown when the gate pins the top tier unreachable */
+  .rg-cap-notice { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 9px;
+    font-size: 13px; line-height: 1.5; padding: 10px 14px; margin-top: 2px;
+    border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line));
+    border-left: 3px solid var(--warn); border-radius: 11px;
+    background: color-mix(in srgb, var(--warn) 6%, var(--panel)); color: var(--text); }
+  .rg-cap-notice .rg-cap-ic { flex: none; color: var(--warn); font-size: 15px; margin-top: 1px; }
+  .rg-cap-notice b { color: var(--warn); }
+  /* W0.4: staleness warning — shown when a regime-leg input file is overdue */
+  .rg-stale-notice { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 9px;
+    font-size: 12.5px; line-height: 1.5; padding: 9px 14px; margin-top: 2px;
+    border: 1px solid color-mix(in srgb, var(--down) 40%, var(--line));
+    border-left: 3px solid var(--down); border-radius: 11px;
+    background: color-mix(in srgb, var(--down) 5%, var(--panel)); color: var(--text); }
+  .rg-stale-notice .rg-stale-ic { flex: none; color: var(--down); font-size: 15px; margin-top: 1px; }
+  /* plain-language headline row spanning the full regime grid */
+  .regime .rg-headline-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px;
+    font-size: 14.5px; font-weight: 650; line-height: 1.4; padding: 11px 14px; border: 1px solid var(--line);
+    border-radius: 12px; background: var(--panel); }
+  .rg-headline-row .rg-hl-ic { font-size: 16px; flex: none; }
+  .rg-headline-row.rg-hl-on { border-color: color-mix(in srgb, var(--up) 42%, var(--line)); }
+  .rg-headline-row.rg-hl-on .rg-hl-ic { color: var(--up); }
+  .rg-headline-row.rg-hl-off { border-color: color-mix(in srgb, var(--down) 42%, var(--line)); }
+  .rg-headline-row.rg-hl-off .rg-hl-ic { color: var(--down); }
+  .rg-headline-row.rg-hl-mix .rg-hl-ic { color: var(--warn); }
+  /* in zh the up/down colour convention flips (red = up) — match it for banner + badges */
+  html[data-lang="zh"] .rg-headline-row.rg-hl-on { border-color: color-mix(in srgb, var(--down) 42%, var(--line)); }
+  html[data-lang="zh"] .rg-headline-row.rg-hl-on .rg-hl-ic { color: var(--down); }
+  html[data-lang="zh"] .rg-headline-row.rg-hl-off { border-color: color-mix(in srgb, var(--up) 42%, var(--line)); }
+  html[data-lang="zh"] .rg-headline-row.rg-hl-off .rg-hl-ic { color: var(--up); }
+  html[data-lang="zh"] .rg-v.rg-on { color: var(--down); } html[data-lang="zh"] .rg-v.rg-off { color: var(--up); }
+  html[data-lang="zh"] .conv-badge.tier-up { color: var(--down); background: color-mix(in srgb, var(--down) 14%, transparent); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
+  html[data-lang="zh"] .conv-badge.tier-down { color: var(--up); background: color-mix(in srgb, var(--up) 14%, transparent); border-color: color-mix(in srgb, var(--up) 40%, var(--line)); }
+  /* collapse the redundant inner chart title on the hub */
+  .scc-page #sc-hero-title { display: none; }
+  
+  /* the full sector table, relocated BELOW the cycle map + collapsible on mobile */
+  .scc-tbl-details { margin: 18px 0 6px; border: 1px solid var(--line); border-radius: 13px; background: var(--panel); padding: 4px 6px 8px; }
+  .scc-tbl-details > summary { list-style: none; cursor: pointer; padding: 10px 10px; font-size: 14px; font-weight: 720;
+    display: flex; align-items: center; gap: 8px; }
+  .scc-tbl-details > summary::-webkit-details-marker { display: none; }
+  .scc-tbl-details > summary::after { content: "▾"; margin-left: auto; color: var(--muted); transition: transform .2s; }
+  .scc-tbl-details[open] > summary::after { transform: rotate(180deg); }
+  .scc-tbl-details > summary small { font-weight: 400; color: var(--muted); font-size: 12px; }
+  /* tabs */
+  .scc-tabs { display: flex; gap: 8px; margin: 6px 0 14px; }
+  .scc-tab { font-size: 13px; font-weight: 600; border: 1px solid var(--line); border-radius: 9px; padding: 7px 14px;
+    background: transparent; color: var(--muted); cursor: pointer; }
+  .scc-tab.on { color: var(--text); background: var(--panel); border-color: var(--muted); }
+  /* board */
+  .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 13px; }
+  .card { border: 1px solid var(--line); border-left: 4px solid var(--c, var(--muted)); border-radius: 13px;
+    padding: 13px 15px; background: var(--panel); }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .card-nm { font-size: 15.5px; font-weight: 720; } .card-sub { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+  .conv { text-align: right; flex: 0 0 auto; }
+  .conv-badge { font-size: 11.5px; font-weight: 800; letter-spacing: .03em; padding: 3px 9px; border-radius: 7px; }
+  .conv-score { font-size: 23px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.05; margin-top: 3px; }
+  .conv-sub { font-size: 10.5px; color: var(--muted); }
+  .tier-up { color: var(--up); background: color-mix(in srgb, var(--up) 14%, transparent); border: 1px solid color-mix(in srgb, var(--up) 40%, var(--line)); }
+  .tier-down { color: var(--down); background: color-mix(in srgb, var(--down) 14%, transparent); border: 1px solid color-mix(in srgb, var(--down) 40%, var(--line)); }
+  .tier-flat { color: var(--muted); background: var(--panel2, transparent); border: 1px solid var(--line); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 9px 0; }
+  .chip2 { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; }
+  .chip2 b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .chip2.early { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
+  .mini-cyc { margin: 7px 0 5px; position: relative; }
+  .mini-cyc-cap { font-size: 10px; color: var(--muted); margin-bottom: 2px; letter-spacing: .02em; }
+  .mini-cyc svg { display: block; width: 100%; height: 52px; }
+  /* empty basket slots reserve a rendered .mini-cyc's height (cap ~14px + svg 52px) so the card
+     doesn't reflow when the series arrays hydrate and the sparkline fills in (sc:cycles-data). */
+  .mini-cyc-slot { margin: 7px 0 5px; min-height: 66px; }
+  .mc-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+  .mc-read { position: absolute; font-size: 8px; font-variant-numeric: tabular-nums; pointer-events: none; transform: translateY(-50%); white-space: nowrap; }
+  .mc-x { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--muted); opacity: 0.5; pointer-events: none; display: none; }
+  .mc-hov { position: absolute; width: 7px; height: 7px; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; }
+  .conflu { font-size: 10.5px; color: var(--muted); margin-top: 8px; }
+  .conflu b.high { color: var(--up); } .conflu b.moderate { color: var(--warn); } .conflu b\.low\/mixed { color: var(--muted); }
+  /* grader */
+  .grader { margin-top: 26px; border: 1px solid var(--line); border-radius: 13px; padding: 14px 16px; background: var(--panel); }
+  .grader h2 { font-size: 15px; margin: 0 0 4px; }
+  .gr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
+  .gr-cell { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--panel2, transparent); }
+  .muted { color: var(--muted); } .sm { font-size: 12px; }
+  footer { color: var(--muted); font-size: 11.5px; margin-top: 30px; border-top: 1px solid var(--line); padding-top: 12px; max-width: 95ch; }
+  /* embedded cycle-map section */
+  .scc-cycle { margin: 18px 0 6px; }
+  .scc-section-h { margin: 0 0 8px; }
+  .scc-section-h h2 { font-size: 17px; font-weight: 760; margin: 0; }
+  .scc-section-h .scc-section-sub { font-size: 12.5px; color: var(--muted); }
+  /* ══ SECTION ISLANDS — one container per section, never a container in a container ══
+     Operator 2026-08-04. Every section on this page now wears the SAME chrome as the
+     Overview verdict hero (.rvx-hero, ~L614): var(--panel) fill, a TRANSPARENT 1px
+     border (keeps the box model, drops the drawn frame) and a soft two-stop drop
+     shadow. That is the macro.html island idiom — borderless, lifted, flat.
+
+     The tokens live here so a section can opt in with one class-free selector, and
+     so the light/dark shadow stays in ONE place instead of per-section literals. */
+  .scc-tbl-details {
+    background: var(--panel);
+    border: 1px solid transparent;
+    border-radius: 18px;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+                0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent);
+  }
+  /* The cycle stage's island + the flattening of .cyc-hero/.cyc-detail live in
+     macro-desk.css, NOT here: `body.macro-desk.page-sector-central .scc-cycle …`
+     (0,4,1) out-specificities anything this sheet can say about those elements,
+     so a copy here would be dead CSS that reads as the live rule. */
+  /* embedded live sector desk table — the wrapper is INSIDE .scc-tbl-details, which
+     is already the island, so it carries no frame of its own (container-in-container). */
+  .scc-desk-tblwrap { overflow-x: auto; border: 0; border-radius: 0; }
+  table.scc-desk-tbl { border-collapse: collapse; width: 100%; min-width: 920px; font-size: 12.5px; }
+  table.scc-desk-tbl th, table.scc-desk-tbl td { padding: 8px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+  table.scc-desk-tbl th { font-size: 10px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 700; position: sticky; top: 0; background: var(--panel); cursor: pointer; user-select: none; }
+  table.scc-desk-tbl th:first-child, table.scc-desk-tbl td:first-child { text-align: left; position: sticky; left: 0; background: var(--panel); }
+  table.scc-desk-tbl tbody tr:hover td { background: color-mix(in srgb, var(--link) 6%, transparent); }
+  .scc-desk-tbl .nm { font-weight: 700; } .scc-desk-tbl .nm small { display: block; font-weight: 400; color: var(--muted); font-size: 10px; }
+  .scc-desk-tbl .nm a { color: inherit; border-bottom: 1px dotted color-mix(in srgb, var(--link) 45%, transparent); }
+  .scc-desk-tbl .nm a:hover { color: var(--link); border-bottom-color: var(--link); }
+  .scc-desk-tbl .up { color: var(--up); } .scc-desk-tbl .dn { color: var(--down); } .scc-desk-tbl .na { color: var(--muted); }
+  html[data-lang="zh"] .scc-desk-tbl .up { color: var(--down); } html[data-lang="zh"] .scc-desk-tbl .dn { color: var(--up); }
+  .scc-mbar { width: 60px; height: 7px; border-radius: 999px; position: relative; display: inline-block; vertical-align: middle;
+    background: linear-gradient(90deg, color-mix(in srgb,var(--down) 55%,transparent), color-mix(in srgb,var(--muted) 20%,transparent), color-mix(in srgb,var(--up) 55%,transparent)); }
+  html[data-lang="zh"] .scc-mbar { background: linear-gradient(90deg, color-mix(in srgb,var(--up) 55%,transparent), color-mix(in srgb,var(--muted) 20%,transparent), color-mix(in srgb,var(--down) 55%,transparent)); }
+  .scc-mbar i { position: absolute; top: 50%; width: 9px; height: 9px; border-radius: 50%; background: var(--panel); border: 2px solid var(--text); transform: translate(-50%,-50%); }
+  .scc-cyc { font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: var(--panel2, var(--panel)); border: 1px solid var(--line); }
+  .poskey { margin-top: 9px; font-size: 11.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .poskey .pk { display: inline-block; width: 18px; height: 8px; border-radius: 999px; }
+  .poskey .pk-lo { background: color-mix(in srgb, var(--down) 70%, transparent); } .poskey .pk-hi { background: color-mix(in srgb, var(--up) 70%, transparent); }
+  html[data-lang="zh"] .poskey .pk-lo { background: color-mix(in srgb, var(--up) 70%, transparent); } html[data-lang="zh"] .poskey .pk-hi { background: color-mix(in srgb, var(--down) 70%, transparent); }
+  /* conviction board head + linked toggle (kept prominent so it isn't missed) */
+  .scc-boardhead { margin-top: 26px; }
+  .scc-tabs-board { gap: 10px; margin: 10px 0 14px; }
+  .scc-tabs-board .scc-tab { font-size: 13.5px; padding: 9px 16px; border-radius: 10px; border-width: 1.5px; }
+  .scc-tabs-board .scc-tab.on { background: color-mix(in srgb, var(--link) 12%, var(--panel)); border-color: var(--link); color: var(--text); }
+  .scc-tabs-board .scc-tab i { font-style: normal; font-variant-numeric: tabular-nums; color: var(--muted); margin-left: 2px; }
+  /* conviction card name link */
+  .card-nm a { color: inherit; border-bottom: 1px dotted color-mix(in srgb, var(--link) 45%, transparent); transition: color .15s, border-color .15s; }
+  .card-nm a:hover { color: var(--link); border-bottom-color: var(--link); }
+  /* mobile: pack the live-desk quick-read chips 2-up so they don't push the chart down */
+  @media (max-width: 880px) {
+    .scc-rail { gap: 7px; }
+    .scc-rail a { font-size: 12px; padding: 8px 10px; }
+  }
+</style>
+
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1340px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:21px; margin:0; }
+  h2 { font-size:15px; margin:30px 0 4px; display:flex; align-items:center; gap:8px; }
+  h2 .idx { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
+  h3.cat { font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:20px 0 9px; border-bottom:1px solid var(--line); padding-bottom:5px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:14px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:6px; margin-top:8px; }
+  .panel.pad { padding:14px; }
+  .story { font-size:14.5px; margin:8px 0 4px; line-height:1.5; }
+  .story b { font-weight:650; }
+  .tagline { color:var(--muted); font-size:12.5px; max-width:90ch; margin:4px 0 0; }
+  .sub { color:var(--muted); font-size:12.5px; margin:2px 0 8px; max-width:92ch; }
+  .chartbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin:8px 0 2px; }
+  .tabs { display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .tabs button,.tabs .tab { border:0; background:var(--panel); color:var(--muted); font-size:12px; padding:5px 11px; cursor:pointer; border-right:1px solid var(--line); }
+  .tabs button:last-child { border-right:0; }
+  .tabs button.on { background:var(--panel2); color:var(--text); font-weight:650; }
+  .tabs .rangeN { width:74px; background:var(--panel); color:var(--text); border:0; border-left:1px solid var(--line); padding:5px 8px; font-size:12px; }
+  .ts { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { padding:6px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { color:var(--muted); font-weight:500; text-align:right; cursor:pointer; user-select:none; }
+  th:first-child,td:first-child { text-align:left; }
+  td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  th.sel { color:var(--text); }
+  .bname { font-weight:600; }
+  .blink { font-weight:650; color:inherit; text-decoration:none; }
+  .blink:hover { color:var(--link); text-decoration:underline; text-underline-offset:2px; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; vertical-align:middle; }
+  #chart { height:420px; width:100%; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; max-height:156px; overflow:auto; padding-right:3px; }
+  .lchip { display:inline-flex; align-items:center; gap:6px; font-size:12px; cursor:pointer; color:var(--text); }
+  .lchip.off { opacity:.34; }
+  .lchip .lv { color:var(--muted); font-variant-numeric:tabular-nums; }
+  .toolbar { display:flex; align-items:center; gap:10px; margin:10px 0 4px; flex-wrap:wrap; }
+  .toolbar .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .finder { display:grid; grid-template-columns:minmax(220px,1fr) auto; gap:10px; align-items:center; margin:14px 0 8px; }
+  .finder input { width:100%; border:1px solid var(--line); background:var(--panel); color:var(--text); border-radius:9px; padding:9px 11px; font-size:13px; outline:none; }
+  .finder input:focus { border-color:var(--link); box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 16%,transparent); }
+  .finder .count { color:var(--muted); font-size:12px; white-space:nowrap; }
+  .catbar { display:flex; flex-wrap:wrap; gap:6px; margin:9px 0 4px; }
+  .catbar button { border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:8px; padding:5px 9px; font-size:12px; cursor:pointer; }
+  .catbar button.on { background:var(--panel2); color:var(--text); font-weight:650; border-color:color-mix(in srgb,var(--link) 32%,var(--line)); }
+  .chart-note { font-size:12px; color:var(--muted); margin:6px 0 0; }
+  .see-more-wrap { display:flex; justify-content:center; padding:10px 0 4px; }
+  .see-more { border:1px solid var(--line); background:var(--panel2); color:var(--text); border-radius:8px; padding:7px 12px; font-size:12px; font-weight:650; cursor:pointer; }
+  .see-more:hover { border-color:var(--muted); }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:13px; }
+  .cards .card { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--c,#888); border-radius:10px; padding:12px 13px; cursor:pointer; transition:border-color .15s; }
+  .cards .card:hover { border-color:var(--muted); }
+  .cards .card .nm { font-weight:650; font-size:14px; }
+  .cards .card .nm .blink { font-size:14px; }
+  .cards .card .meta { color:var(--muted); font-size:11.5px; margin:3px 0 6px; }
+  .cards .card .th { font-size:12px; line-height:1.45; color:var(--text); opacity:.9; margin-bottom:9px; min-height:50px; }
+  .cards .card .perf { display:flex; align-items:center; gap:16px; }
+  .cards .card .kpi .v { font-size:16px; font-weight:650; font-variant-numeric:tabular-nums; }
+  .cards .card .kpi .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .cards .card .spark { margin-left:auto; }
+  .detail { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:13px 15px; margin-top:12px; scroll-margin-top:14px; }
+  .detail h4 { margin:0 0 4px; font-size:15px; display:flex; align-items:center; gap:8px; }
+  .detail h4 .blink { font-size:15px; }
+  .detail .th { color:var(--text); opacity:.92; font-size:12.5px; line-height:1.5; margin:0 0 9px; max-width:95ch; }
+  .kpirow { display:flex; flex-wrap:wrap; gap:18px; margin:8px 0 10px; }
+  .kpirow .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .kpirow .v { font-size:15px; font-weight:650; font-variant-numeric:tabular-nums; }
+  .refline { font-size:12px; color:var(--muted); margin:2px 0 9px; }
+  .why { color:var(--muted); font-size:12px; white-space:normal; max-width:46ch; }
+  details > summary { cursor:pointer; font-size:12.5px; color:var(--muted); margin:6px 0; }
+  .warn { display:inline-block; font-size:11px; padding:1px 7px; margin:2px 5px 2px 0; border-radius:7px; background:rgba(250,204,21,.12); border:1px solid rgba(250,204,21,.4); color:var(--warn); }
+  .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .clog { margin:6px 0 0; padding-left:18px; font-size:12px; color:var(--muted); }
+  .clog li { margin:2px 0; }
+  footer { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; max-width:95ch; }
+  .pfx { color:var(--muted); }
+  .asof { font-size:12px; color:var(--muted); margin-left:auto; }
+  @media (max-width:640px){
+    .finder { grid-template-columns:1fr; }
+    .finder .count { white-space:normal; }
+    #chart { height:360px; }
+  }
+  /* W5-B Reversal Sleeve strategy card */
+  .sleeve-strategy-card { border:1px solid color-mix(in srgb,var(--up) 35%,var(--line));
+    border-left:3px solid var(--up); border-radius:10px; background:var(--panel); padding:13px 15px;
+    margin:24px 0 0; max-width:720px; }
+  .sleeve-strategy-card .sc-head { font-size:14px; font-weight:700; margin:0 0 3px; }
+  .sleeve-strategy-card .sc-sub { font-size:12px; color:var(--muted); margin:0 0 8px; line-height:1.5; max-width:64ch; }
+  .sleeve-strategy-card .sc-stats { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }
+  .sleeve-strategy-card .sc-stat { font-size:11.5px; color:var(--muted); padding:3px 9px;
+    border:1px solid var(--line); border-radius:7px; background:var(--bg); }
+  .sleeve-strategy-card .sc-stat b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .sleeve-strategy-card .sc-link { display:inline-block; font-size:12.5px; font-weight:650;
+    color:var(--up); text-decoration:none; margin-top:6px; }
+  .sleeve-strategy-card .sc-link:hover { text-decoration:underline; }
+  .sleeve-strategy-card .sc-note { font-size:11px; color:var(--muted); margin:5px 0 0; }
+  .sleeve-strategy-card .sc-tag { display:inline-block; font-size:10.5px; font-weight:700;
+    letter-spacing:.04em; border:1px solid var(--line); border-radius:5px; padding:1px 6px;
+    color:var(--muted); margin-right:6px; vertical-align:2px; }
+  /* ---- cross-market AI-semis confirmer chip (lite/THS page; display-only) ---- */
+  .semis-chip { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 10px; background:var(--panel2);
+    border:1px solid var(--line); border-radius:9px; padding:8px 12px; margin:10px 0 0; font-size:12.5px; }
+  .semis-chip .sx-tag { font-size:10.5px; color:var(--muted); font-style:italic; }
+  .semis-badge { display:inline-block; font-size:10px; font-weight:650; border:1px solid var(--line);
+    border-radius:6px; padding:0 6px; margin-left:6px; color:var(--muted); vertical-align:1px; }
+  .semis-badge.on { color:var(--up); border-color:color-mix(in srgb, var(--up) 40%, var(--line)); }
+  /* ---- score badge ---- */
+  .score-badge { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:700;
+    padding:1px 7px; border-radius:7px; border:1px solid var(--line); font-variant-numeric:tabular-nums;
+    vertical-align:1px; margin-left:6px; }
+  .score-badge.strong { color:#4ade80; border-color:color-mix(in srgb,#4ade80 40%,var(--line)); background:color-mix(in srgb,#4ade80 8%,transparent); }
+  .score-badge.neutral { color:var(--muted); border-color:var(--line); }
+  .score-badge.weak { color:#f87171; border-color:color-mix(in srgb,#f87171 40%,var(--line)); background:color-mix(in srgb,#f87171 8%,transparent); }
+  /* ---- turn-state chip ---- */
+  .turn-chip { display:inline-block; font-size:10.5px; font-weight:600; padding:1px 6px; border-radius:6px;
+    border:1px solid var(--line); margin-left:5px; vertical-align:1px; }
+  .turn-chip.washed_out { color:#60a5fa; border-color:color-mix(in srgb,#60a5fa 40%,var(--line)); }
+  .turn-chip.basing     { color:#facc15; border-color:color-mix(in srgb,#facc15 40%,var(--line)); }
+  .turn-chip.turning    { color:#fb923c; border-color:color-mix(in srgb,#fb923c 40%,var(--line)); }
+  .turn-chip.confirmed  { color:#4ade80; border-color:color-mix(in srgb,#4ade80 40%,var(--line)); }
+  /* ---- signal tier chip ---- */
+  .sig-fresh { color:#4ade80; font-size:8px; vertical-align:middle; margin-left:2px; }
+  .sig-chip { display:inline-block; font-size:10px; font-weight:700; padding:0 5px;
+    border-radius:5px; vertical-align:1px; color:var(--up);
+    border:1px solid color-mix(in srgb,var(--up) 40%,var(--line)); margin-left:4px; }
+  /* ---- entry radar strip ---- */
+  .entry-radar { background:var(--panel); border:1px solid var(--line); border-left:3px solid #fb923c;
+    border-radius:10px; padding:12px 15px; margin:0 0 20px; }
+  .entry-radar .er-head { font-size:14px; font-weight:700; margin:0 0 2px; display:flex; align-items:center; gap:8px; }
+  .entry-radar .er-sub { font-size:12px; color:var(--muted); margin:0 0 10px; line-height:1.5; }
+  .entry-radar .er-items { display:flex; flex-direction:column; gap:7px; }
+  .entry-radar .er-item { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; font-size:13px; }
+  .entry-radar .er-reco { font-size:11px; color:var(--muted); }
+  .entry-radar .er-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; border-top:1px solid var(--line); padding-top:7px; }
+  .entry-radar .er-empty { color:var(--muted); font-size:12.5px; font-style:italic; padding:4px 0; }
+  /* ---- overlap chips ---- */
+  .overlap-row { margin:6px 0 2px; display:flex; flex-wrap:wrap; gap:5px; align-items:center; font-size:11.5px; }
+  .overlap-chip { display:inline-block; padding:1px 8px; border:1px solid var(--line); border-radius:7px;
+    background:var(--panel2); font-size:11px; cursor:pointer; color:inherit; }
+  .overlap-chip:hover { border-color:var(--muted); }
+
+  /* ── Theme-context chip family (retained from the aurora-glass hero the rvx hero
+       replaced): the What-changed strip, the client-injected policy-lever chip and the
+       strength/breaking chips all still draw from it. The glass panel + drifting aurora
+       blobs that used to wrap them are gone with the hero markup — the page-level
+       .rvx-aurora backdrop and the hero's own radial wash do that work now. ── */
+  .tc-chips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; }
+  .tc-chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; padding:3px 9px;
+    border-radius:20px; border:1px solid; white-space:nowrap; text-decoration:none; color:inherit; }
+  .tc-chip:hover { opacity:.85; }
+  .tc-chip.up  { background:rgba(74,222,128,.12); border-color:rgba(74,222,128,.35); color:var(--up); }
+  .tc-chip.dn  { background:rgba(248,113,113,.10); border-color:rgba(248,113,113,.30); color:var(--down); }
+  .tc-chip.was1{ font-size:9.5px; padding:0 5px; opacity:.75; border-radius:5px; margin-left:3px;
+                 background:rgba(248,113,113,.08); border-color:rgba(248,113,113,.25); color:var(--down); }
+  .tc-chip.mig { background:rgba(93,139,255,.10); border-color:rgba(93,139,255,.25); color:var(--link); }
+  .tc-chip.aln { background:rgba(74,222,128,.08); border-color:rgba(74,222,128,.25); color:var(--up); }
+  .tc-chip.rcpt{ background:var(--panel2); border-color:var(--line); color:var(--muted); }
+  .tc-receipt-tip { cursor:default; }
+  .tc-days  { font-size:11px; color:var(--muted); align-self:center; }
+  .tc-pb-link { display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--link);
+    border:1px solid var(--line); border-radius:20px; padding:3px 10px; margin-top:4px; text-decoration:none; }
+  .tc-pb-link:hover { border-color:var(--link); }
+  /* leg-toggle (All / None legend buttons) */
+  .leg-toggle { font-size:11px; padding:2px 8px; border:1px solid var(--line); border-radius:6px;
+    background:var(--panel2); color:var(--muted); cursor:pointer; margin-right:6px; }
+  .leg-toggle:hover { color:var(--text); border-color:var(--muted); }
+  /* ── zh 红涨绿跌: direction-coded chip TINTS swap with the text vars ── */
+  html[data-lang="zh"] .tc-chip.up,
+  html[data-lang="zh"] .tc-chip.aln { background:rgba(224,85,85,.10); border-color:rgba(224,85,85,.35); }
+  html[data-lang="zh"] .tc-chip.dn,
+  html[data-lang="zh"] .tc-chip.was1 { background:rgba(69,184,115,.10); border-color:rgba(69,184,115,.35); }
+  /* zh 红涨绿跌 (operator ruling 2026-07-21): strong=bullish→red; confirmed=basing→turning→red */
+  html[data-lang="zh"] .score-badge.strong { color:#e06464; border-color:color-mix(in srgb,#e06464 40%,var(--line)); background:color-mix(in srgb,#e06464 8%,transparent); }
+  html[data-lang="zh"] .turn-chip.confirmed { color:#e06464; border-color:color-mix(in srgb,#e06464 40%,var(--line)); }
+  html[data-lang="zh"] .sig-fresh { color:#e06464; }
+  /* --red is not defined on this theme.css page (it's a vector-family token) — literal hex */
+  html[data-lang="zh"] .sig-chip { color:#e06464; border-color:color-mix(in srgb,#e06464 40%,var(--line)); }
+  /* category filter chips for performance table */
+  .cat-filter-bar { display:flex; flex-wrap:wrap; gap:6px; margin:9px 0 4px; }
+  .cat-filter-bar button { border:1px solid var(--line); background:var(--panel); color:var(--muted);
+    border-radius:8px; padding:5px 9px; font-size:12px; cursor:pointer; }
+  .cat-filter-bar button.on { background:var(--panel2); color:var(--text); font-weight:650;
+    border-color:color-mix(in srgb,var(--link) 32%,var(--line)); }
+</style>
+<link rel="stylesheet" href="macro-desk.css?v=e46e15d5">
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   ROTATION-MAP DESIGN LAYER (rvx-) — ported from the US Sector Intelligence
+   page so both desks speak one visual language: state-tinted aurora, glass
+   containers, a verdict hero whose headline IS the read. Every class is
+   prefixed rvx- and every token --rvx-*, so nothing collides with the China
+   page's retained scc-/tc-/board styles above.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --rvx-num: ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono",Menlo,Consolas,monospace;
+  --rvx-hair: color-mix(in srgb,var(--text) 9%,transparent);
+  --rvx-hair2: color-mix(in srgb,var(--text) 15%,transparent);
+  --rvx-lead:#3da564; --rvx-weak:#e0a030; --rvx-improve:#4f86e0; --rvx-lag:#d15656;
+}
+.rvx-mut{color:var(--muted)}
+
+/* aurora backdrop — fixed radial blooms behind the whole workspace */
+.rvx-aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.rvx-aurora b{position:absolute;border-radius:50%;filter:blur(90px);opacity:.42;animation:rvxDrift 26s ease-in-out infinite}
+.rvx-aurora .a1{width:600px;height:600px;left:-150px;top:-160px;background:radial-gradient(circle,#1c3a63 0%,transparent 68%)}
+.rvx-aurora .a2{width:540px;height:540px;right:-120px;top:-70px;background:radial-gradient(circle,#4a3a1a 0%,transparent 66%);opacity:.36;animation-delay:-9s}
+.rvx-aurora .a3{width:680px;height:520px;left:34%;bottom:-280px;background:radial-gradient(circle,#22304d 0%,transparent 70%);opacity:.34;animation-delay:-15s}
+html[data-theme="light"] .rvx-aurora b{opacity:.22}
+@keyframes rvxDrift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(24px,20px) scale(1.06)}}
+
+.rvx-reveal{opacity:0;transform:translateY(12px);animation:rvxReveal .7s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes rvxReveal{to{opacity:1;transform:none}}
+
+/* ── VERDICT HERO ── */
+.rvx-hero{margin-top:16px;padding:24px 26px;position:relative;overflow:hidden;border-radius:20px;border:1px solid var(--rvx-hair2);
+  background:radial-gradient(120% 140% at 8% 0%,var(--rvx-hero-a,color-mix(in srgb,var(--info) 12%,transparent)) 0%,transparent 42%),
+    radial-gradient(120% 160% at 100% 20%,var(--rvx-hero-b,color-mix(in srgb,var(--warn) 10%,transparent)) 0%,transparent 46%),
+    color-mix(in srgb,var(--panel) 80%,transparent);
+  box-shadow:0 30px 80px -42px rgba(0,0,0,.7),inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent);backdrop-filter:blur(10px)}
+.rvx-hero.strain{--rvx-hero-a:color-mix(in srgb,var(--down) 13%,transparent)}
+.rvx-hero.steady{--rvx-hero-a:color-mix(in srgb,var(--up) 12%,transparent)}
+.rvx-eyebrow{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700}
+/* the page's <h1> IS the eyebrow: it keeps the document outline honest for screen
+   readers and search while reading as the small caps label the design calls for */
+.rvx-eyebrow h1{font:inherit;letter-spacing:inherit;margin:0;color:inherit}
+.rvx-eyebrow .as-of{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500}
+/* the 20-day extremes line under the verdict — a receipt, never the headline */
+.rvx-story{font-size:12.5px;line-height:1.55;color:var(--muted);margin:15px 0 0;max-width:96ch}
+.rvx-story:empty{display:none}
+.rvx-story b{color:var(--text);font-weight:650}
+.rvx-hgrid{display:grid;grid-template-columns:1.4fr .95fr;gap:24px;margin-top:13px;align-items:center}
+.rvx-vword{font-size:38px;line-height:1.05;font-weight:800;letter-spacing:-.028em;margin:2px 0 8px}
+.rvx-vword .ac{background:linear-gradient(90deg,var(--warn),var(--up));-webkit-background-clip:text;background-clip:text;color:transparent}
+.rvx-hero.strain .rvx-vword .ac{background:linear-gradient(90deg,var(--warn),var(--down));-webkit-background-clip:text;background-clip:text}
+.rvx-vsub{font-size:15px;color:color-mix(in srgb,var(--text) 88%,transparent);max-width:48ch;margin:0}
+.rvx-stance{display:inline-flex;align-items:center;gap:8px;margin-top:15px;padding:7px 13px;border-radius:11px;
+  background:color-mix(in srgb,var(--warn) 14%,transparent);font-weight:600;font-size:13px}
+.rvx-hero.steady .rvx-stance{background:color-mix(in srgb,var(--up) 13%,transparent)}
+.rvx-stance-days{opacity:.72;font-weight:500}
+.rvx-chips{display:flex;flex-wrap:wrap;gap:5px 15px;margin-top:12px;align-items:center}
+.rvx-chips.ctx{gap:7px 20px}
+.rvx-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;text-decoration:none;color:var(--text)}
+/* ONE family for the hero rows: quiet ink + a state dot, no boxes. */
+.rvx-chips.ctx :is(.rvx-chip,.tc-chip){border:0;background:transparent;padding:2px 0;font-size:12px;gap:7px;
+  display:inline-flex;align-items:center}
+.rvx-chips.ctx :is(.rvx-chip,.tc-chip)::before{content:'';width:7px;height:7px;border-radius:50%;
+  background:currentColor;opacity:.5;flex:none}
+.rvx-chips.ctx > .rvx-chip{color:var(--muted)}
+.rvx-chips:not(.ctx) .rvx-chip{color:var(--muted);gap:5px}
+a.rvx-chip{color:var(--link)}
+/* strength / breaking name chips keep their tinted pill treatment inside the hero */
+.rvx-names{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.rvx-names-l{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+/* handoff */
+.rvx-hocard{border:1px solid var(--rvx-hair2);border-radius:14px;overflow:hidden;background:color-mix(in srgb,var(--panel2) 32%,transparent)}
+.rvx-hocard .cap{font-size:10px;letter-spacing:.09em;color:var(--muted);padding:10px 16px 0;font-weight:700}
+.rvx-handoff{display:flex;align-items:stretch}
+.rvx-hocol{flex:1;padding:13px 16px;min-width:0}
+.rvx-hocol .lbl{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.rvx-hocol .nm{font-size:16px;font-weight:750;margin:4px 0 2px;line-height:1.28;letter-spacing:-.012em}
+.rvx-hocol .meta{font-size:11.5px;color:var(--muted)}
+.rvx-hocol.out .nm{color:var(--rvx-weak)} .rvx-hocol.in .nm{color:var(--rvx-lead)}
+.rvx-hoarrow{flex:none;width:54px;display:grid;place-items:center}
+.rvx-hoarrow svg{width:54px;height:28px;overflow:visible}
+.rvx-hoarrow path.ln{stroke:url(#rvxHo);stroke-width:2;fill:none;stroke-linecap:round;stroke-dasharray:58;stroke-dashoffset:58;animation:rvxHoDraw 1.1s ease-out .5s forwards}
+.rvx-hoarrow path.hd{fill:var(--rvx-lead);opacity:0;animation:rvxHoHead .3s ease-out 1.5s forwards}
+@keyframes rvxHoDraw{to{stroke-dashoffset:0}} @keyframes rvxHoHead{to{opacity:1}}
+@media (max-width:900px){ .rvx-hgrid{grid-template-columns:1fr;gap:16px} .rvx-vword{font-size:31px} .rvx-hero{padding:20px} }
+/* The reveal + draw-on animations are the page's only motion; honour the OS setting.
+   Named individually (not a blanket *) so a future organ's animation is a deliberate add. */
+@media (prefers-reduced-motion:reduce){
+  .rvx-aurora b,.rvx-reveal,.rvx-hoarrow path.ln,.rvx-hoarrow path.hd{animation:none!important}
+  .rvx-reveal{opacity:1;transform:none}
+  .rvx-hoarrow path.ln{stroke-dashoffset:0} .rvx-hoarrow path.hd{opacity:1}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LIGHT-MODE ORGAN LAYER — the shell was designed for both themes; the organs
+   inside it were not (they accreted against the dark canvas). Same two-step the
+   US page uses: the inks are COMPUTED on the page body and REBOUND one level
+   down on .si-stage/.si-side, because a custom property may not reference
+   itself on the element that declares it (`--up: color-mix(… var(--up) …)` is a
+   cycle and silently no-ops). Every rule is gated on light AND on this page's
+   body class, so dark renders unchanged and the site nav keeps estate colours.
+   ══════════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] body.page-sector-central {
+  --si-ink-up:     color-mix(in srgb, var(--up)     62%, var(--text));
+  --si-ink-down:   color-mix(in srgb, var(--down)   84%, var(--text));
+  --si-ink-warn:   color-mix(in srgb, var(--warn)   62%, var(--text));
+  --si-ink-link:   color-mix(in srgb, var(--link)   88%, var(--text));
+  --si-edge:     color-mix(in srgb, var(--text) 14%, var(--line));
+}
+/* zh 红涨绿跌 — theme.css swaps --up/--down at the token level, so the mix that
+   darkens a green must follow the green, not the name. Red clears AA with far
+   less mixing; one percentage for both would print a dour maroon. */
+html[data-theme="light"][data-lang="zh"] body.page-sector-central {
+  --si-ink-up:   color-mix(in srgb, var(--up)   84%, var(--text));  /* red   */
+  --si-ink-down: color-mix(in srgb, var(--down) 62%, var(--text));  /* green */
+}
+html[data-theme="light"] .si-stage,
+html[data-theme="light"] .si-side {
+  --up: var(--si-ink-up); --down: var(--si-ink-down); --warn: var(--si-ink-warn);
+  --link: var(--si-ink-link); --info: var(--si-ink-link);
+  --line: var(--si-edge);
+}
+
+/* ── macro-desk composure: the estate's container recipe ────────────────────
+   Drop shadow does the definition, borders stay TRANSPARENT (layout-stable,
+   invisible), and the stage itself stays transparent so the aurora runs
+   unbroken beneath every panel. A flat stage fill painted over the gradient is
+   a hard seam — never reintroduce one. */
+.si-stage { background:transparent; }
+.si-vb-g { width:19px; height:19px; flex:none; }
+.si-vr-g { width:16px; height:16px; flex:none; margin-top:1px; color:var(--link); }
+.si-view-btn .si-vb-g { color:var(--muted); }
+.si-view-btn.on .si-vb-g, .si-view-btn:hover .si-vb-g { color:var(--link); }
+.si-side-out .si-vb-g { color:var(--muted); }
+.si-side { padding:14px 11px; }
+.si-view-btn { font-size:13px; padding:8.5px 11px; }
+.si-side-out { white-space:nowrap; }
+/* rail: dark = translucent over the aurora (the estate's sticky idiom); light =
+   COMPLETELY open — on a near-white canvas a column fill reads as a flat cut. */
+.si-side { background:color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border-right:1px solid color-mix(in srgb, var(--line) 38%, transparent); }
+html[data-theme="light"] .si-side { background:transparent; border-right:0;
+  backdrop-filter:none; -webkit-backdrop-filter:none; }
+.rvx-hero, .rvx-hocard, .si-view-read {
+  background:var(--desk-tile, var(--panel));
+  border:1px solid transparent;
+  border-radius:var(--desk-r-lg, 14px);
+  box-shadow:var(--card-shadow, 0 1px 2px color-mix(in srgb, var(--text) 6%, transparent)); }
+.rvx-hero { border-radius:20px; }
+html[data-theme="light"] .rvx-hero,
+html[data-theme="light"] .si-view-read {
+  background:var(--panel);
+  box-shadow:0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+             0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent); }
+html[data-theme="light"] .rvx-hocard {
+  background:linear-gradient(100deg,
+    color-mix(in srgb, var(--si-ink-warn, var(--warn)) 6%, var(--panel)) 0%,
+    var(--panel) 46%,
+    color-mix(in srgb, var(--si-ink-up, var(--up)) 8%, var(--panel)) 100%);
+  box-shadow:0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+             0 12px 32px -14px color-mix(in srgb, var(--text) 10%, transparent); }
+html[data-theme="light"] .rvx-hocol.out .nm { color:var(--si-ink-warn, var(--warn)); }
+html[data-theme="light"] .rvx-hocol.in .nm  { color:var(--si-ink-up, var(--up)); }
+html[data-theme="light"] .rvx-hero .rvx-vword .ac {
+  background:linear-gradient(94deg, var(--si-ink-up, var(--up)),
+    color-mix(in srgb, var(--si-ink-up, var(--up)) 52%, var(--link)));
+  -webkit-background-clip:text; background-clip:text; }
+html[data-theme="light"] .rvx-hero.strain .rvx-vword .ac {
+  background:linear-gradient(94deg, var(--si-ink-warn, var(--warn)), var(--si-ink-down, var(--down)));
+  -webkit-background-clip:text; background-clip:text; }
+
+/* — the macro rail-tick on every workspace section head — */
+.si-sec-h h2, .scc-section-h h2 { display:flex; align-items:center; gap:11px; }
+.si-sec-h h2::before, .scc-section-h h2::before { content:""; flex:none; width:3px; height:18px;
+  border-radius:2px;
+  background:linear-gradient(180deg, var(--link), color-mix(in srgb, var(--link) 35%, transparent)); }
+
+/* typeface: SF first (Apple system faces), Inter everywhere else — operator
+   directive for the sector pages */
+body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
+  Roboto, Helvetica, sans-serif; }
+
+/* the hero IS the overview's read — no echo line beneath it */
+.si-view[data-view="overview"] .si-view-read { display:none; }
+</style>
 </head>
 <body class="macro-desk page-sector-central">
 <div class="rvx-aurora" aria-hidden="true"><b class="a1"></b><b class="a2"></b><b class="a3"></b></div>
@@ -86,7 +709,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -233,6 +856,8 @@
             <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
             <div class="item-grid nav-mega-item-grid">
               <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
+              
+              <a class="mega-item nm-feat" href="watchlist.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M25 7a17 17 0 0 1 16 16"/><circle cx="21" cy="26" r="14"/><circle class="ghost" cx="21" cy="26" r="6"/><path class="accent" d="M21 12a14 14 0 0 1 12.1 7L21 26Z"/><path d="M21 12v14l12.1-7"/><circle class="soft-fill" cx="21" cy="26" r="3.2"/><path class="accent" d="M39 41v-9M44 41v-15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Mastermind Portfolio</span><span class="l-zh">Mastermind 组合</span></span><span class="item-desc d"><span class="l-en">Your holdings with tonight’s signals</span><span class="l-zh">你的持仓与今晚信号</span></span></span></a>
               <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
               <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
               <a class="mega-item nm-feat" data-nav-file="earnings_wire" href="stocks/earnings/index.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 7h25l7 7v27H8z"/><path d="M6 5h25l7 7v27H6zM31 5v8h7"/><path class="accent" d="M12 29h5l3-7 5 12 4-9 3 4h3"/><path d="M12 16h14M12 20h9"/><circle class="soft-fill" cx="34" cy="29" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Earnings Wire</span><span class="l-zh">财报情报线</span></span><span class="item-desc d"><span class="l-en">Verified calls, weekly intelligence and company context</span><span class="l-zh">已核验电话会、每周情报与公司语境</span></span></span></a>
@@ -293,10 +918,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -343,7 +968,7 @@
   
   
   
-  <section id="theme-context-hero" class="rvx-hero rvx-reveal strain">
+  <section id="theme-context-hero" class="rvx-hero rvx-reveal ">
     <div class="rvx-eyebrow">
       <h1>🇨🇳 <span class="l-en">China Sector Intelligence</span><span class="l-zh">中国行业智慧</span></h1>
       <span class="as-of"><span class="l-en">as of</span><span class="l-zh">截至</span> <span id="asof">—</span></span>
@@ -351,11 +976,11 @@
     <div class="rvx-hgrid">
       <div>
         <div class="rvx-vword">
-          <span class="l-en">Leadership under</span><span class="l-zh">领涨</span> <span class="ac"><span class="l-en">strain</span><span class="l-zh">承压</span></span>
+          <span class="l-en">Money is</span><span class="l-zh">资金正在</span> <span class="ac"><span class="l-en">rotating</span><span class="l-zh">轮动</span></span>
           
         </div>
         <p class="rvx-vsub"><span class="l-en">Money is moving into Financials &amp; Value and out of Advanced Manufacturing.</span><span class="l-zh">资金正流入金融与价值，流出先进制造。</span></p>
-        <span class="rvx-stance">⚑ <span class="l-en">Leadership under strain — watch, don&#39;t chase.</span><span class="l-zh">领涨承压——观望，勿追高。</span><span class="rvx-stance-days"> · <span class="l-en">1 day in</span><span class="l-zh">已持续 1 天</span></span></span>
+        <span class="rvx-stance">⚑ <span class="l-en">Rotation under way — favour the fresh leaders, not the old one.</span><span class="l-zh">轮动进行中——关注新领涨主题，勿追旧龙头。</span><span class="rvx-stance-days"> · <span class="l-en">1 day in</span><span class="l-zh">已持续 1 天</span></span></span>
       </div>
       
       <div class="rvx-hocard">
@@ -363,13 +988,13 @@
         <div class="rvx-handoff">
           <div class="rvx-hocol out">
             <div class="lbl"><span class="l-en">Losing the lead</span><span class="l-zh">失去领先</span></div>
-            <div class="nm"><span class="l-en">Industrial Metals</span><span class="l-zh">有色金属</span></div>
+            <div class="nm"><span class="l-en">AI Compute &amp; Optics</span><span class="l-zh">AI算力与光模块</span></div>
             <div class="meta"><span class="l-en">was #1</span><span class="l-zh">原第一</span></div>
           </div>
           <div class="rvx-hoarrow"><svg viewBox="0 0 46 28" aria-hidden="true"><defs><linearGradient id="rvxHo" x1="0" x2="1"><stop offset="0" stop-color="var(--rvx-weak)"/><stop offset="1" stop-color="var(--rvx-lead)"/></linearGradient></defs><path class="ln" d="M3 14 H37"/><path class="hd" d="M33 8 L43 14 L33 20 Z"/></svg></div>
           <div class="rvx-hocol in">
             <div class="lbl"><span class="l-en">Taking the lead</span><span class="l-zh">接过领先</span></div>
-            <div class="nm"><span class="l-en">Home Appliances</span><span class="l-zh">家电</span> · <span class="l-en">Food &amp; Beverage</span><span class="l-zh">食品饮料</span></div>
+            <div class="nm"><span class="l-en">Software &amp; AI Apps</span><span class="l-zh">软件与AI应用</span> · <span class="l-en">Home Appliances</span><span class="l-zh">家电</span></div>
             <div class="meta"><span class="l-en">confirming strength</span><span class="l-zh">强势确认中</span></div>
           </div>
         </div>
@@ -381,6 +1006,11 @@
     <div style="margin:16px 0 0">
       <span class="rvx-names-l"><span class="l-en">Strength now</span><span class="l-zh">当前强势</span></span>
       <div class="rvx-names">
+        
+        
+        <a class="tc-chip up" href="basket_china/cn_software.html"
+          data-tip-en="desk score 69/100" data-tip-zh="评分 69/100"><span class="l-en">Software &amp; AI Apps</span><span class="l-zh">软件与AI应用</span></a>
+        
         
         
         <a class="tc-chip up" href="basket_china/cn_appliances.html"
@@ -407,11 +1037,6 @@
           data-tip-en="desk score 55/100" data-tip-zh="评分 55/100"><span class="l-en">Gold Miners</span><span class="l-zh">黄金</span></a>
         
         
-        
-        <a class="tc-chip up" href="basket_china/cn_insurers.html"
-          data-tip-en="desk score 55/100" data-tip-zh="评分 55/100"><span class="l-en">Insurers</span><span class="l-zh">保险</span></a>
-        
-        
       </div>
     </div>
     
@@ -426,7 +1051,7 @@
         
         
         
-        <a class="tc-chip dn" href="basket_china/cn_ai_compute.html"><span class="l-en">AI Compute &amp; Optics</span><span class="l-zh">AI算力与光模块</span></a>
+        <a class="tc-chip dn" href="basket_china/cn_ai_compute.html"><span class="l-en">AI Compute &amp; Optics</span><span class="l-zh">AI算力与光模块</span> <span class="tc-chip was1"><span class="l-en">was #1</span><span class="l-zh">原第一</span></span></a>
         
         
         
@@ -446,8 +1071,12 @@
 
     <div class="rvx-chips">
       <span class="rvx-chip"
-            data-tip-en="Trailing-momentum rank names Industrial Metals first; skips the most recent ~3 weeks by construction; suggested weights unchanged. Shape read only — not a forecast."
-            data-tip-zh="趋势动量排名以有色金属居首；设计上跳过最近约3周数据；建议权重不变。仅为形态读数，非预测。">ⓘ <span class="l-en">How this works</span><span class="l-zh">原理说明</span></span>
+            data-tip-en="Trailing-momentum rank names AI Compute &amp; Optics first; skips the most recent ~3 weeks by construction; suggested weights unchanged. Shape read only — not a forecast."
+            data-tip-zh="趋势动量排名以AI算力与光模块居首；设计上跳过最近约3周数据；建议权重不变。仅为形态读数，非预测。">ⓘ <span class="l-en">How this works</span><span class="l-zh">原理说明</span></span>
+      
+      <span class="rvx-chip" style="color:var(--up)"
+            data-tip-en="Sector rotation events agree with strength themes."
+            data-tip-zh="行业轮动事件与强势主题一致。">✓ <span class="l-en">sector rotation agrees</span><span class="l-zh">板块轮动一致</span></span>
       
       <a class="rvx-chip" href="allocation_china.html"><span class="l-en">Open the playbook →</span><span class="l-zh">打开操盘手册 →</span></a>
     </div>
@@ -476,8 +1105,8 @@
   
   <div class="si-changed">
     <span class="si-changed-l"><span class="l-en">What changed</span><span class="l-zh">最新变化</span></span>
-    <span class="tc-chip"><span class="l-en">Leadership is now under strain — it was rotating.</span><span class="l-zh">领涨格局转为承压 — 此前为轮动中。</span></span>
-    <span class="tc-chip"><span class="l-en">Industrial Metals is the one losing the lead now — that changed this session.</span><span class="l-zh">有色金属 成为失去领先的一方 — 本时段刚变化。</span></span>
+    <span class="tc-chip"><span class="l-en">Leadership is now rotating — it was under strain.</span><span class="l-zh">领涨格局转为轮动中 — 此前为承压。</span></span>
+    <span class="tc-chip"><span class="l-en">AI Compute &amp; Optics is the one losing the lead now — that changed this session.</span><span class="l-zh">AI算力与光模块 成为失去领先的一方 — 本时段刚变化。</span></span>
     <span class="tc-chip"><span class="l-en">Held for 1 day.</span><span class="l-zh">已持续 1 天。</span></span>
   </div>
 
@@ -565,9 +1194,33 @@
   <!-- Fetched from marketdata/rotation_events_china.json. Absent file = graceful note. -->
   <!-- DISPLAY/CONTEXT TIER only — no rank, gate, size, or stance change.              -->
   <div id="rc-events-cn" aria-label="China rotation events">
-<link rel="stylesheet" href="assets/css/eb9ca676.css?v=eb9ca676">
+<style>
+  #rc-events-cn { margin:18px 2px 22px; }
+  #rc-events-cn h2 { font-size:17px; font-weight:800; letter-spacing:-.015em; margin:0 0 4px; }
+  .rc-sub-cn { color:var(--muted); font-size:12px; margin:0 0 10px; max-width:84ch; line-height:1.5; }
+  .rc-grid-cn { display:flex; flex-wrap:wrap; gap:10px; }
+  .rc-card-cn { flex:1 1 300px; min-width:260px; border-radius:12px; border:1px solid var(--line);
+    background:var(--panel); padding:12px 14px; }
+  .rc-card-cn.rc-major { border-left:4px solid var(--warn); }
+  .rc-hd-cn { display:flex; align-items:baseline; gap:7px; margin-bottom:5px; flex-wrap:wrap; }
+  .rc-title-cn { font-weight:800; font-size:13.5px; }
+  .rc-sev-cn { font-size:9.5px; font-weight:700; text-transform:uppercase; padding:2px 7px; border-radius:6px;
+    background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); letter-spacing:.04em; }
+  .rc-sev-cn.major { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }
+  .rc-sev-cn.notable { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  .rc-day-cn { font-size:11px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; }
+  .rc-copy-cn { font-size:12.5px; line-height:1.55; }
+  .rc-receipts-cn { margin-top:6px; font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .rc-stale-cn { font-style:italic; }
+  .rc-quiet-cn { color:var(--muted); font-size:12.5px; padding:8px 0; }
+  .rc-connect { margin-top:10px; font-size:11px; color:var(--muted); line-height:1.6; }
+  .rc-connect b { color:var(--text); }
+  .rc-connect .rc-nb-disc { font-style:italic; }
+  .rc-caveat-cn { margin-top:10px; font-size:10.5px; color:var(--muted); line-height:1.55; }
+</style>
     <h2>⟲ <span class="l-en">China Rotation Events</span><span class="l-zh">中国轮动事件</span></h2>
-    <p class="rc-sub-cn"><span class="l-en">First-class leadership handoffs across curated A-share baskets: blowoff-crash on one basket leg + fresh-low turn on a peer leg + pair ratio confirming. Port of the US Rotation Command detector (RC-R14). Display-tier context with receipts — ledgered, expected-NULL, never a buy list. Binding kills: no cycle-position confluence, no A-share reversal gating by rotation state, no Connect flow as a detector input.</span><span class="l-zh">精选A股篮子间的领导权交接事件：某篮子冲顶崩落 + 同类篮子自新低回升 + 两者比值确认。美国 Rotation Command 检测器的 A 股移植（RC-R14）。展示层上下文（含依据）——已入账、预期无效应声明，绝非买入清单。约束条款：不做周期位置叠加，不以轮动状态门控A股反转信号，沪深港通资金不作为检测器输入。</span></p>
+    
+    <p class="rc-sub-cn"><span class="l-en">When one theme tops out as a peer turns up off a low — and the pair confirms it. Context, not a buy list.</span><span class="l-zh">一个主题冲顶回落、同类主题自低位转强，且两者比值确认时记录。仅为背景，不是买入清单。</span></p>
     <div id="rc-events-cn-content"><p class="rc-quiet-cn">
       <span class="l-en">Loading…</span><span class="l-zh">加载中…</span></p></div>
 <script>
@@ -637,16 +1290,22 @@ function renderCn(ev, partJson){
     connectHtml += t('Southbound flow: —','南向资金：—')+' · ';
   }
   // Honest northbound disclosure
+  /* Operator 2026-08-04: shortened. The fact a reader needs is that northbound
+     daily flow stopped being published — the "turnover still shown / proxy
+     probationary" half described our own plumbing, not the market. */
   connectHtml += '<span class="rc-nb-disc">'
-    +t('Northbound daily flow disclosure ended Aug 2024 — turnover still shown / proxy probationary',
-       '北向每日净买入披露已于2024年8月停止——换手额仍有公布，代理指标为试用状态')
+    +t('Northbound daily flow is no longer published (since Aug 2024)',
+       '北向每日净买入自2024年8月起已停止披露')
     +'</span>';
   connectHtml += '</div>';
   html += connectHtml;
 
+  /* Operator 2026-08-04: compressed from four clauses of internal governance
+     vocabulary. The disclosure that has to survive is the honest one: nothing
+     here ranks or sizes anything, and the track record is still accruing. */
   html+='<div class="rc-caveat-cn">'
-    +t('Display/context tier — no rank, gate, or size anywhere. Events + outcomes accrue to an append-only ledger (expected-NULL until RC-R9 studies mature). Connect flows shown as context receipts only — never a detector input, confirmation criterion, or gate. as-of: ',
-       '仅展示/上下文层——不排名、不设门控、不调仓位。事件与结果计入只增账本（在RC-R9研究成熟前为预期无效应声明）。沪深港通资金仅作上下文凭据展示——从不作为检测器输入、确认标准或门控条件。截至：')
+    +t('Nothing here ranks or sizes a position. Every event is logged and graded over time — the track record is still building. As of ',
+       '此处不对任何标的排名或定仓位。每个事件都会记录并持续评分——历史成绩仍在累积。截至 ')
     +esc((ev&&ev.as_of)||'—')+'</div>';
   el.innerHTML=html;
 }
@@ -671,9 +1330,7 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
 </script>
   </div>
   <div id="rotation-app"></div>
-  <div class="sr-foot">
-    <span class="l-en">Subsectors are the 同花顺 concept boards (reliable set ≥ 6 priced members); Themes are our curated A-share thematic baskets — both equal-weighted, refreshed nightly. Relative strength is measured cross-sectionally vs the median basket. On the rotation map the horizontal axis is strength vs. the market (right = stronger) and the vertical axis is whether that strength is heating up or cooling (up = heating); each trail traces where a basket has been and the arrow points where it is heading, so a longer trail is a faster mover. Click a quadrant to zoom in. Benchmark context is CSI 300. Research context only — not investment advice.</span><span class="l-zh">「子行业」为同花顺概念板块（可靠集 ≥ 6 只可定价成分）；「主题」为我们精选的 A 股主题篮子——均为等权，每晚刷新。相对强度以横截面方式相对中位数篮子衡量。轮动图中，横轴为相对大盘的强弱（越靠右越强），纵轴为该强度在升温还是降温（越靠上越热）；每条轨迹描绘篮子的来路，箭头指向去向，轨迹越长移动越快。点击象限可放大。基准参考为沪深300。仅供研究参考，非投资建议。</span>
-  </div>
+  
   </section>
   </section>
 
@@ -686,7 +1343,228 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
     </div>
   
   
-<link rel="stylesheet" href="assets/css/ee332d19.css?v=ee332d19">
+<style>
+  /* ---- Theme Rotation Desk ---- */
+  .mctx { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; font-size:12.5px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:8px 12px; margin:6px 0 12px; }
+  .mctx b { font-weight:650; }
+  .mctx .mc-k { color:var(--muted); }
+  .desk { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:13px; }
+  .tcard { background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--tc,#888);
+    border-radius:11px; padding:12px 13px 11px; scroll-margin-top:14px; transition:border-color .15s; }
+  .tcard:hover { border-color:var(--muted); }
+  .tcard .top { display:flex; align-items:center; gap:8px; }
+  .tcard .nm { font-weight:660; font-size:14.5px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tcard .sc { font-size:23px; font-weight:720; font-variant-numeric:tabular-nums; line-height:1; }
+  .tcard .sc small { font-size:11px; color:var(--muted); font-weight:500; }
+  .tlabel { font-size:10px; font-weight:700; letter-spacing:.05em; padding:2px 7px; border-radius:6px; text-transform:uppercase; white-space:nowrap; }
+  .treco { font-size:11px; font-weight:700; letter-spacing:.03em; padding:2px 9px; border-radius:7px; white-space:nowrap; }
+  .tcard .subrow { display:flex; align-items:center; gap:10px; margin:8px 0 7px; font-size:12px; color:var(--muted); }
+  .tcard .subrow .spark { margin-left:auto; }
+  .cbar { display:flex; height:7px; border-radius:5px; overflow:hidden; background:var(--line); margin:7px 0 6px; }
+  .cbar i { display:block; height:100%; }
+  .clegend { display:flex; flex-wrap:wrap; gap:3px 11px; font-size:10.5px; color:var(--muted); margin-bottom:6px; }
+  .clegend span b { color:var(--text); font-variant-numeric:tabular-nums; font-weight:600; }
+  .clegend .sw { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:3px; vertical-align:middle; }
+  .treason { font-size:11.5px; color:var(--text); opacity:.85; line-height:1.4; margin:2px 0 6px; }
+  .tstats { display:flex; flex-wrap:wrap; gap:4px 6px; font-size:10.5px; }
+  .tpill { background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--muted); }
+  .tpill b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .tcard details > summary { font-size:11.5px; margin:6px 0 0; }
+  .tcard .why { font-size:11.5px; color:var(--muted); margin:5px 0 0; max-width:none; }
+  .tmore > summary { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
+    cursor:pointer; list-style:none; user-select:none; margin:6px 0 0; display:flex; align-items:center; gap:4px; }
+  .tmore > summary::-webkit-details-marker { display:none; }
+  .tmore > summary::before { content:'▾'; display:inline-block; transition:transform .18s; }
+  .tmore[open] > summary::before { transform:rotate(-180deg); }
+  .tglyph { margin:3px 0 0; }
+
+  /* ---- mobile: 2-up compact desk cards ----
+     On phones the desk would otherwise stack one big card per row and scroll on and on.
+     Pack two smaller cards per row + shrink type/padding so more fits per screen; the
+     3-row cap (data-showmore-rows) then keeps the initial list short. Decorative micro-
+     tags (shape-read labels) are dropped here to keep the dense card legible when narrow. */
+  @media (max-width:680px){
+    .desk { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .desk .tcard { padding:9px 9px 8px; border-left-width:3px; border-radius:9px; }
+    .desk .tcard .top { gap:5px; }
+    .desk .tcard .nm { font-size:12.5px; }
+    .desk .tcard .sc { font-size:17px; } .desk .tcard .sc small { font-size:9px; }
+    .desk .tlabel { font-size:8.5px; letter-spacing:.02em; padding:1px 5px; }
+    .desk .treco { font-size:8.5px; padding:1px 5px; }
+    .desk .tcard .subrow { flex-wrap:wrap; gap:4px 7px; margin:6px 0 5px; font-size:10.5px; }
+    .desk .tcard .subrow .spark svg { width:52px; height:18px; }
+    .desk .cbar { height:6px; margin:6px 0 5px; }
+    .desk .termstrip { font-size:9.5px; gap:3px 5px; }
+    .desk .tsc { padding:1px 4px; }
+    .desk .termstrip .tspat, .desk .termstrip .tstag, .desk .flipcap .tstag { display:none; }
+    .desk .flipcap { font-size:9.5px; }
+    .desk .txrow { gap:3px 5px; margin:2px 0 5px; font-size:9.5px; }
+    .desk .tflag { font-size:9px; padding:1px 4px; }
+    .desk .tstats { font-size:9.5px; gap:3px 5px; } .desk .tpill { padding:1px 5px; }
+    .desk .treason { font-size:10.5px; line-height:1.35; }
+    .desk .tcard details > summary { font-size:10.5px; }
+    .desk .tcard .why { font-size:10.5px; }
+    .desk .detail-link { font-size:10.5px; margin-top:6px; padding-top:6px; }
+  }
+
+  /* ---- 5-day rotation ---- */
+  .rotwrap { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:640px){ .rotwrap{ grid-template-columns:1fr; } }
+  .rotcol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 12px; }
+  .rotcol h4 { margin:0 0 6px; font-size:13px; display:flex; align-items:center; gap:6px; }
+  .rotrow { display:flex; align-items:center; gap:8px; padding:5px 0; border-top:1px solid var(--line); font-size:12.5px; }
+  .rotrow:first-of-type { border-top:0; }
+  .rotrow .rn { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rotrow .rv { font-variant-numeric:tabular-nums; font-weight:650; }
+  .rotrow .rk { font-size:10.5px; color:var(--muted); width:34px; text-align:right; }
+
+  /* ---- impulse / extremes scorecards ---- */
+  .scards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:13px; }
+  .scard { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:13px 15px; }
+  .scard .sk { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .scard .bigrow { display:flex; align-items:baseline; gap:14px; margin:7px 0 8px; }
+  .scard .big { font-size:30px; font-weight:720; font-variant-numeric:tabular-nums; line-height:1; }
+  .scard .big.dn { color:var(--down); } .scard .big.up { color:var(--up); }
+  .scard .sublbl { font-size:11px; color:var(--muted); }
+  .duo { display:flex; height:9px; border-radius:6px; overflow:hidden; background:var(--line); margin-top:4px; }
+  .duo i { height:100%; display:block; }
+  .scard .net { font-size:12.5px; font-variant-numeric:tabular-nums; margin-top:7px; }
+  .scard.clk { cursor:pointer; transition:border-color .15s, transform .08s; }
+  .scard.clk:hover { border-color:var(--muted); }
+  .scard.clk:active { transform:translateY(1px); }
+  .scm-hint { font-size:10.5px; color:var(--link); margin-top:9px; opacity:.9; }
+  /* ---- scorecard detail popup ---- */
+  .scmodal { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; display:none;
+    align-items:flex-start; justify-content:center; padding:6vh 14px; }
+  .scmodal.open { display:flex; }
+  .scm-card { background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45); width:min(760px,96vw); max-height:84vh; overflow:auto;
+    padding:16px 18px 18px; position:relative; }
+  .scm-x { position:absolute; top:10px; right:12px; background:none; border:0; color:var(--muted);
+    font-size:17px; cursor:pointer; line-height:1; }
+  .scm-x:hover { color:var(--text); }
+  .scm-hd { font-size:16px; font-weight:740; margin:0 24px 2px 0; }
+  .scm-sub { font-size:12px; color:var(--muted); margin:0 0 12px; }
+  .scm-2col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .scm-3col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  @media (max-width:620px){ .scm-2col,.scm-3col { grid-template-columns:1fr; } }
+  .scm-col { min-width:0; }
+  .scm-colh { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);
+    padding-bottom:6px; border-bottom:1px solid var(--line); margin-bottom:2px; }
+  .scm-colh b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .scm-colh.up { color:var(--up); } .scm-colh.dn { color:var(--down); }
+  .scm-row { display:flex; align-items:center; gap:8px; padding:5px 2px; border-bottom:1px solid var(--line); font-size:12.5px; color:inherit; }
+  .scm-row:last-child { border-bottom:0; }
+  a.scm-row:hover { background:var(--panel2); }
+  .scm-nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:620; }
+  .scm-tk { color:var(--muted); font-weight:400; font-size:11px; margin-left:5px; }
+  .scm-th { font-size:10.5px; color:var(--muted); border:1px solid var(--line); border-radius:5px;
+    padding:0 6px; white-space:nowrap; max-width:130px; overflow:hidden; text-overflow:ellipsis; }
+  a.scm-th:hover { color:var(--link); border-color:var(--link); }
+  .scm-r { font-variant-numeric:tabular-nums; font-weight:700; min-width:46px; text-align:right; }
+  .scm-empty { color:var(--muted); font-size:12px; padding:8px 2px; }
+
+  .sect-tag { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
+  /* ---- card textures + detail link ---- */
+  .tcard .nm { color:inherit; } .tcard a.nm:hover { color:var(--link); }
+  .txrow { display:flex; flex-wrap:wrap; gap:4px 6px; margin:2px 0 6px; }
+  .tpill.warn { color:var(--warn); } .tpill.neg { color:var(--down); }
+  .tflag { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; }
+  .tflag.up { color:var(--up); border-color:var(--up); } .tflag.dn { color:var(--down); border-color:var(--down); } .tflag.wn { color:var(--warn); border-color:var(--warn); }
+  .detail-link { display:inline-block; margin-top:8px; font-size:11.5px; color:var(--link); border-top:1px solid var(--line); padding-top:7px; width:100%; }
+  .detail-link:hover { text-decoration:underline; }
+  /* ---- concentration ---- */
+  .adgrid { display:flex; gap:14px; }
+  .adc { text-align:center; } .adc .k { font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .adc .v { font-size:17px; font-weight:700; font-variant-numeric:tabular-nums; }
+  /* ---- what to act on now ---- */
+  .anwrap { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+  .anwrap.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .anwrap.four  { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  @media (max-width:1200px){ .anwrap.four{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (max-width:980px){ .anwrap.three,.anwrap.four{ grid-template-columns:1fr; } }
+  @media (max-width:680px){ .anwrap{ grid-template-columns:1fr; } }
+  .ancol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 13px; min-width:0; }
+  .anh { margin:0 0 4px; font-size:13px; } .anh.buy { color:var(--up); } .anh.red { color:var(--down); }
+  .anh.wait { color:var(--warn); }
+  /* The row must never bleed past its column. A "Reduce / avoid" row can carry TWO
+     nowrap chips (the verb badge + a state tag like "AVOID · TURNING") beside a long
+     theme name, and flex cannot shrink a nowrap chip below its min-content width — so
+     the row overflowed the .ancol edge instead of reflowing (operator 2026-08-04).
+     Wrapping is the fix: the chips keep their shape and drop to a second line.
+     min-width:0 alone does NOT cover this — it lets the *text* children shrink, but
+     the chips still floor the row at their own min-content. */
+  .anrow { display:flex; flex-wrap:wrap; align-items:center; gap:9px; row-gap:4px; padding:7px 4px; border-top:1px solid var(--line); border-radius:7px; color:inherit; min-width:0; }
+  .anrow:hover { background:var(--panel2); }
+  .anverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; flex:0 0 auto; max-width:100%; }
+  .anrow .rn { font-weight:650; white-space:nowrap; min-width:0; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; }
+  /* keeps the score at the right edge of whichever line it lands on */
+  .anrow .ansc { margin-left:auto; }
+  .anwhy { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ansc { font-variant-numeric:tabular-nums; font-weight:700; }
+  /* ---- W4 Velocity / Heat pills (DESCRIPTIVE — rank/score trajectory, not a forecast) ---- */
+  /* heat-pill: inline chip next to the label on each theme card */
+  .heat-pill { font-size:9.5px; font-weight:700; letter-spacing:.04em; padding:1px 5px; border-radius:5px;
+    white-space:nowrap; border:1px solid; margin-left:3px; }
+  .heat-pill.heating { color:var(--up); border-color:var(--up); background:rgba(34,197,94,.10); }
+  .heat-pill.hot     { color:var(--orange); border-color:var(--orange); background:color-mix(in srgb, var(--orange) 12%, transparent); }
+  .heat-pill.cooling { color:var(--warn); border-color:var(--warn); background:rgba(251,146,60,.10); }
+  .heat-pill.broken  { color:var(--down); border-color:var(--down); background:rgba(248,113,113,.10); opacity:.8; }
+  /* heat-dot: compact no-text indicator used in rotrow / lead row contexts */
+  .heat-dot { width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0;
+    vertical-align:middle; margin-right:4px; border:0; padding:0; font-size:0; }
+  /* rotation subtitle */
+  .rot-sub { font-size:11.5px; color:var(--muted); margin:4px 0 8px; font-style:italic; }
+  /* 20d rank trajectory context appended in rk span */
+  .rk20 { font-size:9.5px; opacity:.72; font-variant-numeric:tabular-nums; }
+  /* act-now merged pulse strip */
+  .pulse-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; font-size:12px;
+    padding:7px 10px; border:1px solid var(--line); border-radius:9px;
+    background:var(--panel2); margin:0 0 10px; }
+  .pulse-grp { white-space:normal; }
+  .pulse-grp a { color:var(--link); text-decoration:none; }
+  .pulse-grp a:hover { text-decoration:underline; }
+  .pulse-size { border:1px solid color-mix(in srgb, var(--warn) 45%, var(--line));
+    border-left:3px solid var(--warn); border-radius:7px; padding:2px 8px;
+    background:color-mix(in srgb, var(--warn) 8%, transparent); cursor:default; }
+
+  /* ---- Leadership Health (display-only shape/fragility reads) ---- */
+  .tflag.mut { color:var(--muted); border-color:var(--line); font-weight:600; }
+  .flipcap { font-size:10.5px; color:var(--warn); margin:3px 0 0; font-variant-numeric:tabular-nums; }
+  .termstrip { display:flex; flex-wrap:wrap; align-items:center; gap:4px 7px; margin:2px 0 6px; font-size:10.5px; }
+  .tsc { background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--muted); }
+  .tsc b { font-variant-numeric:tabular-nums; font-weight:650; }
+  .tsc.pos b { color:var(--up); } .tsc.neg b { color:var(--down); }
+  .tspat { font-weight:650; color:var(--text); opacity:.85; }
+  .tstag { color:var(--muted); font-size:9.5px; border:1px solid var(--line); border-radius:5px; padding:0 4px; }
+  /* sleeve-size chip (CN drawdown radar; payload-gated, display-only).
+     NB: this is a CSS comment, so it ships INSIDE <style> in the rendered page and
+     scripts/check_validated_claims.py reads it as page text — the word it used to
+     start with is the CI-enforced one. Keep claim vocabulary out of CSS comments;
+     the  sibling below is Jinja and never reaches the output. */
+  .sleeve-chip { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 10px; background:var(--panel2);
+    border:1px solid var(--line); border-radius:9px; padding:8px 12px; margin:8px 0 2px; font-size:12.5px; }
+  .sleeve-chip .sl-main b { font-weight:680; }
+  .sleeve-chip .sl-tag { font-size:10.5px; font-style:italic; }
+
+  /* ---- W8-R5 CN basket turn-state chips (display-tier, expected-NULL; FT-R1) ---- */
+  /* Tape-state chip: inline, descriptive, no forward verbs. */
+  .tape-chip { font-size:9.5px; font-weight:700; letter-spacing:.04em; padding:1px 6px;
+    border-radius:5px; white-space:nowrap; border:1px solid; margin-left:3px; cursor:default; }
+  .tape-chip.TURNING  { color:var(--up);   border-color:var(--up);   background:rgba(34,197,94,.10); }
+  .tape-chip.CONFIRMED{ color:var(--up);   border-color:var(--up);   background:rgba(34,197,94,.16); }
+  .tape-chip.WASHED_OUT{ color:var(--warn);border-color:var(--warn); background:rgba(251,146,60,.10); }
+  .tape-chip.BASING   { color:var(--warn); border-color:var(--warn); background:rgba(251,146,60,.08); }
+  .tape-chip.FALLING  { color:var(--down); border-color:var(--down); background:rgba(248,113,113,.10); }
+  /* Dual-read chip: when trend DISAGREES with tape turn (FT-R1 — never merged) */
+  .dual-chip { display:inline-flex; align-items:center; gap:3px; font-size:9.5px; font-weight:700;
+    letter-spacing:.03em; padding:1px 6px; border-radius:5px; border:1px solid var(--warn);
+    background:rgba(251,146,60,.10); color:var(--text); cursor:default; white-space:nowrap; }
+  .dual-chip .dc-trend { color:var(--down); }
+  .dual-chip .dc-sep   { color:var(--muted); font-weight:400; }
+  .dual-chip .dc-tape  { color:var(--up); }
+</style>
   
   <div id="sleeve-chip"></div>
   <section id="actnow-section" style="margin-top:6px">
@@ -737,7 +1615,7 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
   
   
 <section id="forming-narratives"></section>
-<script src="forming_narratives.js?v=67d967b6" defer></script>
+<script src="forming_narratives.js"></script>
 <script>renderFormingNarratives({ base: "chinabasketdata/" });</script>
   
   <div id="content">
@@ -825,7 +1703,7 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
 </div>
 
 
-<script data-sync src="sector_central_china_data.js?v=e6080aac"></script>
+<script data-sync src="sector_central_china_data.js"></script>
 <script>
 (function(){
   "use strict";
@@ -1192,8 +2070,8 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
 })();
 </script>
 
-<script src="lightweight-charts.js?v=46fc6953" defer></script>
-<script src="baskets_desk.js?v=b3b92683" defer></script>
+<script src="lightweight-charts.js"></script>
+<script src="baskets_desk.js"></script>
 <script>
 /* Payload externalized (consolidation gate 5): fetched from chinabasketdata/baskets.json —
    the single envelope carrying baskets + chart + story + theme_intel (W1 pins inline≡fetched). */
@@ -1773,8 +2651,8 @@ if(document.readyState!=='loading') boot(); else document.addEventListener('DOMC
 </script>
 
 <script>window.SR_CFG={json:'marketdata/subsector_rotation_china.json',detailDir:'rotation_china/',pageHref:'sector_central_china.html'};</script>
-<script src="theme.js?v=37ffbce3" defer></script>
+<script src="theme.js"></script>
 
-<script src="si_workspace_china.js?v=49caf6df" defer></script>
+<script src="si_workspace_china.js"></script>
 </body>
 </html>

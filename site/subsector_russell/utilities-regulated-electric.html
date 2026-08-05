@@ -34,10 +34,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Utilities - Regulated Electric — Subsector Confluence</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="../theme.css?v=315a84eb">
-<link rel="stylesheet" href="../assets/css/44eeb90b.css?v=44eeb90b">
-<link rel="preload" as="style" href="../product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="../navigation-refresh.css?v=073377a0">
+<link rel="stylesheet" href="../theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 'Inter',-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:20px 0 30px; }
+  a { text-decoration:none; color:inherit; }
+  .wrap { padding:14px 16px; }
+  @media (min-width:1100px){ .wrap{ padding:16px max(28px,calc((100vw - 1320px)/2)); } }
+  .back { color:var(--muted); font-size:12.5px; display:inline-block; margin:2px 2px 12px; }
+  .dh { display:flex; flex-wrap:wrap; align-items:flex-start; gap:8px 18px; margin:2px 2px 6px; }
+  .dh h1 { font-size:22px; margin:0; font-weight:800; letter-spacing:-.015em; }
+  .dh .sct { color:var(--muted); font-size:12px; margin-top:3px; text-transform:uppercase; letter-spacing:.03em; }
+  .dh .badges { display:flex; gap:7px; align-items:center; margin-left:auto; flex-wrap:wrap; }
+  .tier { font-weight:800; font-size:12px; padding:2px 8px; border-radius:6px; color:#fff; }
+  .tier.T1{ background:var(--up); } .tier.T2{ background:#3da564; } .tier.T3{ background:var(--info); } .tier.T4{ background:#6b7cc4; } .tier.none{ background:var(--g-mid); color:var(--muted); }
+  .pill { font-size:11px; font-weight:700; padding:2px 9px; border-radius:10px; border:1px solid var(--line); }
+  .pill.buy{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,transparent); }
+  .pill.avoid{ color:var(--down); border-color:color-mix(in srgb,var(--down) 45%,transparent); }
+  .pill.neutral{ color:var(--muted); } .pill.tactical,.pill.late{ color:var(--orange); }
+  .action { color:var(--text); font-size:13px; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--link); border-radius:9px; padding:9px 12px; margin:10px 2px 4px; max-width:108ch; }
+  .stats { display:flex; flex-wrap:wrap; gap:6px 18px; color:var(--muted); font-size:11.5px; margin:8px 2px 14px; }
+  .stats b { color:var(--text); font-weight:600; }
+  .chart-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:8px; margin:6px 0 18px; }
+  #chart-host { width:100%; min-height:420px; }
+  h2 { font-size:15px; font-weight:700; margin:18px 2px 8px; }
+  table.tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.tbl th { text-align:left; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; padding:6px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  table.tbl td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  table.tbl tr:hover td { background:var(--panel); }
+  .tk { font-weight:700; } .num { font-variant-numeric:tabular-nums; } .pos{ color:var(--up); } .neg{ color:var(--down); }
+  tr.buyable td { background:color-mix(in srgb,var(--up) 7%,transparent); }
+  .foot { color:var(--muted); font-size:11px; margin:22px 2px 0; line-height:1.6; max-width:108ch; border-top:1px solid var(--line); padding-top:12px; }
+</style>
 </head>
 <body>
 
@@ -47,7 +75,7 @@
 
 
 
-    <link rel="stylesheet" href="../navigation-refresh.css?v=073377a0">
+    <link rel="stylesheet" href="../navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="../start.html" aria-label="MASTERMINDX — Home">
@@ -194,6 +222,8 @@
             <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
             <div class="item-grid nav-mega-item-grid">
               <a class="mega-item nm-feat" href="../intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
+              
+              <a class="mega-item nm-feat" href="../watchlist.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M25 7a17 17 0 0 1 16 16"/><circle cx="21" cy="26" r="14"/><circle class="ghost" cx="21" cy="26" r="6"/><path class="accent" d="M21 12a14 14 0 0 1 12.1 7L21 26Z"/><path d="M21 12v14l12.1-7"/><circle class="soft-fill" cx="21" cy="26" r="3.2"/><path class="accent" d="M39 41v-9M44 41v-15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Mastermind Portfolio</span><span class="l-zh">Mastermind 组合</span></span><span class="item-desc d"><span class="l-en">Your holdings with tonight’s signals</span><span class="l-zh">你的持仓与今晚信号</span></span></span></a>
               <a class="mega-item nm-feat" href="../reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
               <a class="mega-item nm-feat" href="../research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
               <a class="mega-item nm-feat" data-nav-file="earnings_wire" href="../stocks/earnings/index.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 7h25l7 7v27H8z"/><path d="M6 5h25l7 7v27H6zM31 5v8h7"/><path class="accent" d="M12 29h5l3-7 5 12 4-9 3 4h3"/><path d="M12 16h14M12 20h9"/><circle class="soft-fill" cx="34" cy="29" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Earnings Wire</span><span class="l-zh">财报情报线</span></span><span class="item-desc d"><span class="l-en">Verified calls, weekly intelligence and company context</span><span class="l-zh">已核验电话会、每周情报与公司语境</span></span></span></a>
@@ -254,10 +284,10 @@
     </div>
   </div>
   
-  <script src="../logo_config.js?v=b37d33d3" defer></script>
-  <script src="../stock-logos.js?v=cc29be53" defer></script>
-  <script src="../live_config.js?v=52943e92" defer></script>
-  <script src="../live.js?v=e19f6af3" defer></script>
+  <script src="../logo_config.js"></script>
+  <script src="../stock-logos.js"></script>
+  <script src="../live_config.js"></script>
+  <script src="../live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -289,10 +319,10 @@
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
 
-<script src="../lightweight-charts-v5.js?v=c0992580" defer></script>
-<script src="../chart.js?v=f8f558cb" defer></script>
+<script src="../lightweight-charts-v5.js"></script>
+<script src="../chart.js"></script>
 <script>
-const DETAIL = {"group":{"key":"utilities-regulated-electric","kind":"subsector","label":"Utilities - Regulated Electric","label_zh":null,"sector":"Utilities","sector_zh":null,"n_members":6,"n_priced":6,"reliability":"med","coverage_pct":0.167,"n_live":6,"start":"2014-01-03","as_of":"2026-08-03","price_level":3.0567,"class":"neutral","entry":{"tier":null,"weight":0.0,"tier_sub":null,"ticks":9,"bars_to_cross":null,"fresh_bars":null,"eligible":false,"buyable":false,"above200":false,"reason":"flat: sell"},"regime":{"state":"BELOW_TREND","side":"avoid","label":"BELOW TREND","label_zh":"\u8d8b\u52bf\u4e0b\u65b9","action":"Below the 200-day \u2014 bottoming buys here are knives; wait for a reclaim.","action_zh":"\u5904\u4e8e200\u65e5\u7ebf\u4e0b\u65b9\u2014\u2014\u6b64\u5904\u6284\u5e95\u5982\u63a5\u98de\u5200\uff1b\u7b49\u5f85\u6536\u590d\u3002","color":"var(--muted)","conviction":1,"rsi_3d":45.0,"stoch_3d":38.0,"rsi_d":38.0,"stoch_d":0.0,"days_to_cross":null,"rs_60d":-9.1,"signal_line":"MACD \u2193, StochRSI \u219380","tailwind":false,"headwind":false,"ok":true},"members":[{"ticker":"TXNM","name_zh":null,"price":57.6,"ret_20d":1.7,"vs_basket":4.4,"stock_tier":null,"stock_weight":0.0,"stock_ticks":5,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"long-bias"},{"ticker":"NWE","name_zh":null,"price":68.74,"ret_20d":-1.4,"vs_basket":1.4,"stock_tier":null,"stock_weight":0.0,"stock_ticks":9,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"short-bias"},{"ticker":"HE","name_zh":null,"price":12.92,"ret_20d":-3.7,"vs_basket":-1.0,"stock_tier":null,"stock_weight":0.0,"stock_ticks":9,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"},{"ticker":"GNE","name_zh":null,"price":13.91,"ret_20d":-3.9,"vs_basket":-1.1,"stock_tier":null,"stock_weight":0.0,"stock_ticks":2,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"short-bias"},{"ticker":"MGEE","name_zh":null,"price":79.53,"ret_20d":-4.1,"vs_basket":-1.4,"stock_tier":null,"stock_weight":0.0,"stock_ticks":12,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"short-bias"},{"ticker":"POR","name_zh":null,"price":49.33,"ret_20d":-5.1,"vs_basket":-2.4,"stock_tier":null,"stock_weight":0.0,"stock_ticks":12,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"short-bias"}],"chart_key":"utilities-regulated-electric","has_signals":true},"kind":"subsector","kind_label_en":"Russell-2000 sub-industry","kind_label_zh":"\u7f57\u7d202000\u5b50\u884c\u4e1a","as_of":"2026-08-03","ohlc_dir":"subsectorohlc_russell","sig_dir":"subsector_signals_russell","back":"../subsectors.html","stock_base":"../stock.html#","generated_utc":"2026-08-05 01:24"};
+const DETAIL = {"group":{"key":"utilities-regulated-electric","kind":"subsector","label":"Utilities - Regulated Electric","label_zh":null,"sector":"Utilities","sector_zh":null,"n_members":6,"n_priced":6,"reliability":"med","coverage_pct":0.167,"n_live":6,"start":"2014-01-03","as_of":"2026-08-03","price_level":3.0567,"class":"neutral","entry":{"tier":null,"weight":0.0,"tier_sub":null,"ticks":9,"bars_to_cross":null,"fresh_bars":null,"eligible":false,"buyable":false,"above200":false,"reason":"flat: sell"},"regime":{"state":"BELOW_TREND","side":"avoid","label":"BELOW TREND","label_zh":"\u8d8b\u52bf\u4e0b\u65b9","action":"Below the 200-day \u2014 bottoming buys here are knives; wait for a reclaim.","action_zh":"\u5904\u4e8e200\u65e5\u7ebf\u4e0b\u65b9\u2014\u2014\u6b64\u5904\u6284\u5e95\u5982\u63a5\u98de\u5200\uff1b\u7b49\u5f85\u6536\u590d\u3002","color":"var(--muted)","conviction":1,"rsi_3d":45.0,"stoch_3d":38.0,"rsi_d":38.0,"stoch_d":0.0,"days_to_cross":null,"rs_60d":-9.1,"signal_line":"MACD \u2193, StochRSI \u219380","tailwind":false,"headwind":false,"ok":true},"members":[{"ticker":"TXNM","name_zh":null,"price":57.6,"ret_20d":1.7,"vs_basket":4.4,"stock_tier":null,"stock_weight":0.0,"stock_ticks":5,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"long-bias"},{"ticker":"NWE","name_zh":null,"price":68.74,"ret_20d":-1.4,"vs_basket":1.4,"stock_tier":null,"stock_weight":0.0,"stock_ticks":9,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"short-bias"},{"ticker":"HE","name_zh":null,"price":12.92,"ret_20d":-3.7,"vs_basket":-1.0,"stock_tier":null,"stock_weight":0.0,"stock_ticks":9,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"},{"ticker":"GNE","name_zh":null,"price":13.91,"ret_20d":-3.9,"vs_basket":-1.1,"stock_tier":null,"stock_weight":0.0,"stock_ticks":2,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"short-bias"},{"ticker":"MGEE","name_zh":null,"price":79.53,"ret_20d":-4.1,"vs_basket":-1.4,"stock_tier":null,"stock_weight":0.0,"stock_ticks":12,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"short-bias"},{"ticker":"POR","name_zh":null,"price":49.33,"ret_20d":-5.1,"vs_basket":-2.4,"stock_tier":null,"stock_weight":0.0,"stock_ticks":12,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"short-bias"}],"chart_key":"utilities-regulated-electric","has_signals":true},"kind":"subsector","kind_label_en":"Russell-2000 sub-industry","kind_label_zh":"\u7f57\u7d202000\u5b50\u884c\u4e1a","as_of":"2026-08-03","ohlc_dir":"subsectorohlc_russell","sig_dir":"subsector_signals_russell","back":"../subsectors.html","stock_base":"../stock.html#","generated_utc":"2026-08-05 05:56"};
 const CHART_KEY = "utilities-regulated-electric";
 const HAS_SIGNALS = true;
 const L = (en, zh) => `<span class="l-en">${en}</span><span class="l-zh">${zh == null ? en : zh}</span>`;
@@ -356,6 +386,6 @@ function render() {
 render();
 document.addEventListener('langchange', render);
 </script>
-<script src="../theme.js?v=37ffbce3" defer></script>
+<script src="../theme.js"></script>
 </body>
 </html>
