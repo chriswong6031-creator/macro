@@ -199,22 +199,48 @@ today and `data/china_stocks` is only 7 weeks old (first commit 2026-06-14).
 800th = 243.5亿, 1500th = 124.0亿, 2000th = 88.2亿. History depth is **not** a
 constraint: 96–99% of already-collected names in *every* band carry ≥300 bars.
 
+**Baseline note — cost everything against 1,713, not 1,518.** The committed panel
+is 1,518, but that file predates #4577. With the authoritative CSIndex lists
+(fetched 2026-08-05), `top-800 ∪ CSI 300 ∪ CSI 1000` = **1,713**, so #4577 alone
+moves the panel **+195** the next time `china_universe` runs. Every figure below
+is net of that.
+
 ### §7.3 The options, costed
+
+Set arithmetic is measured against the authoritative constituent lists, not
+estimated. CSI 2000 ∩ CSI 300 = **0**, ∩ CSI 1000 = **0**, ∩ Sina top-800 = **6** —
+the index's published exclusion of CSI 800 + CSI 1000 holds empirically.
 
 | option | +names | panel | asia lane | (upper) | tree | pack/yr |
 |---|---|---|---|---|---|---|
-| (a) `size` 800→1500 | +382 | 1,900 | +7.2 m | +10.1 m | +98 MB | +6.2 GB |
-| (a) `size` 800→2000 | +657 | 2,175 | +12.4 m | +17.4 m | +168 MB | +10.6 GB |
-| (b) ∪ CSI 2000 | +1,346…2,000 | ~2,900–3,500 | +26…38 m | +37…53 m | +359…512 MB | **+22…32 GB** |
-| (c) +66 theme `extra_tickers` | +66 | 1,584 | +1.2 m | +1.8 m | +17 MB | +1.1 GB |
-| (d) as-is | 0 | 1,518 | — | — | — | — |
+| (a) `size` 800→1200 | +206 | 1,919 | +3.9 m | +5.5 m | +53 MB | +3.3 GB |
+| (a) `size` 800→1500 | +297 | 2,010 | +5.6 m | +7.9 m | +76 MB | +4.8 GB |
+| (a) `size` 800→2000 | +496 | 2,209 | +9.3 m | +13.2 m | +127 MB | +8.0 GB |
+| (b) ∪ CSI 2000 | **+1,994** | 3,707 | **+37.5 m** | +52.9 m | +510 MB | **+32.2 GB** |
+| (c) +66 theme `extra_tickers` | +66 | 1,779 | +1.2 m | +1.8 m | +17 MB | +1.1 GB |
+| (d) as-is | 0 | 1,713 | — | — | — | — |
 
-(b) is bounded, not guessed: `ak.index_stock_cons_csindex('932000')` returns
-**2,000 unique yfinance-mappable tickers** (probed 2026-08-05), and CSI 2000
-excludes CSI 800 + CSI 1000 by construction, so its overlap with the panel is only
-whatever the Sina top-800 catches — at most the 654 panel names ranked >1000.
+(b) lands at the very top of its plausible range: 1,994 of CSI 2000's 2,000
+mappable members are net-new. It is the only option that cannot fit the asia lane's
+65.9 min of slack alongside the lane's own known variance.
 
-### §7.4 The consumer audit — this is the finding, not the cost
+### §7.4 #4577 already lands this era break tonight (measured, small, unstamped)
+
+The +195 CSI 1000 members #4577 restores are *mid-caps below the Sina top-800* —
+the same cohort direction as option (a), at ~2/3 of (a)@1500's size. Removing 195
+names of exactly that shape from the live panel and recomputing (5 trials):
+
+| | median rev_z shift | quintile Jaccard | top-16 retained |
+|---|---|---|---|
+| #4577's +195 | **−0.029** (range −0.025…−0.037, all 5 negative) | 0.931 | 13/16 |
+
+So the discontinuity this section warns about for option (a) is **already scheduled
+for tonight's asia-close**, at about 1/6 the magnitude of the 800→1,518 step. It is
+small enough not to be an incident and one-directional enough not to be noise.
+Record it: whoever later finds a step in `cn_reversal_watch_v1` continuity dated
+2026-08-05/06 should find this line rather than hunt a phantom.
+
+### §7.5 The consumer audit — this is the finding, not the cost
 
 **A cap-ordered deepening re-bases the reversal signal for every name already
 covered.** `engine.china_reversal` scores `rev_z` as a within-*sector* z of the
@@ -259,7 +285,7 @@ Two more consumer facts:
   flagged this in miniature — it is live *today*: 9 names rank inside the fake
   `A-share` sector against `sector_n=9`, one of them flagged `deepest_quintile`.
 
-### §7.5 Recommendation (operator ratifies)
+### §7.6 Recommendation (operator ratifies)
 
 **Ship (c) now; hold (a) behind an era stamp; reject (b).**
 
@@ -269,24 +295,31 @@ Two more consumer facts:
   300139.SZ, the two highest-turnover ones, which (a)@1500 partly misses (ranks
   1,447 and 1,522). It has a real weakness worth saying plainly: it fixes only the
   themes someone thought to sweep. This one sweep was metals.
-- **(a)@1500** is the affordable structural answer (+7.2 min, +6.2 GB/yr) but is a
-  **cap-ordered** move, so it must land with the `cn_reversal_watch_v1` ledger
-  era-stamped and the discontinuity disclosed — not as a config bump.
-- **(b)** costs 26–38 min/night on a lane whose cap has killed runs before, more
-  than doubles the repo's annual pack growth, spends 15.8 nights with wrong
-  sectors feeding the reversal grouping, and buys the least-liquid tier. Reject on
-  cost.
+- **(a)@1500** is the affordable structural answer (**+5.6 min, +4.8 GB/yr** net of
+  #4577) but is a **cap-ordered** move, so it must land with the
+  `cn_reversal_watch_v1` ledger era-stamped and the discontinuity disclosed — not
+  as a config bump. §7.4 shows what that stamp should look like: #4577's own +195
+  is the same move at −0.029, and it is going out unstamped tonight.
+- **(b)** costs **+37.5 min/night** on a lane whose cap has killed runs before —
+  more than half its 65.9 min of slack, before the lane's own variance. It adds
+  **+32.2 GB/yr** of pack growth against a 26.65 GiB pack, spends 15.8 nights with
+  wrong sectors feeding the reversal grouping, and buys the least-liquid tier.
+  Reject on cost.
 - **(d)** leaves a gap the operator has now documented twice. Not recommended
   alone, but the honest-disclosure half of (d) should ship *with* (c) regardless:
   the panel's reach is a stated denominator, per §0 gate 1.
 
-### §7.6 Two defects found while measuring (not fixed here)
+### §7.7 Two defects found while measuring (not fixed here)
 
-1. **The CSIndex fallback is silent and lossy, and it fired today.** A live probe
-   of `_index_rows(ak, '000300')` returned `src=index_stock_cons` — the legacy
-   endpoint — yielding **288 unique of 300**. #4577 fixed the source but the
-   fallback still degrades quietly on any CSIndex slowness, so membership can
-   flicker night to night. (b) would add a third index fetch on that same host.
+1. **The CSIndex fallback is silent and lossy, and it fired TWICE today** — in two
+   independent probes, both on `000300`, both returning `src=index_stock_cons`
+   (the legacy endpoint) at **288 unique of 300**. The second probe recovered only
+   because the harness retried; `_index_rows` itself does not retry, it just
+   `log.warning`s and returns the short list. So #4577 fixed the *source* while
+   leaving a degraded path that fires on ordinary CSIndex flakiness and shrinks
+   the universe by ~12 names without an alarm — and a name dropping out freezes its
+   `closes` column and marks `dropped.parquet`. This is not hypothetical: two
+   observations in one afternoon. (b) would add a third fetch on that same host.
 2. **`ak.index_stock_cons_csindex` calls `requests.get(url)` with no timeout.**
    A probe here hung **742 s** before erroring. Nothing bounds a CSIndex stall
    inside `china_universe` except the job cap.
