@@ -2255,6 +2255,9 @@ def main() -> int:
     # composite z (set once all names are profiled), not a per-name logistic skin.
     profiles: dict[str, dict] = {}
     entry_sig: dict[str, dict] = {}             # entry-timing gauge per name (board rows)
+    entry_sig_null: dict[str, str] = {}         # gauge disclosed-null reason per name — a board
+                                                # row must carry entry_signal OR this reason, so
+                                                # the forward ledger never grades a silent null
     risk_sig: dict[str, dict] = {}              # vol-managed sizing per name (board rows)
     disp_map: dict[str, dict] = {}              # price / off-high / sparkline per name
     _liq_map: dict[str, dict] = {}              # P0.3 liquidity/capacity hygiene (display-only, R10)
@@ -2661,8 +2664,15 @@ def main() -> int:
                                      buyable=signal_gate.is_buyable(sig_verdict.get(ticker)))
             if es:
                 rec["entry_signal"] = es
+            else:
+                # gauge self-gated (no ladder state / <60 closes): record WHY, so the
+                # board row — and the graded ledger row downstream — carries a named
+                # null instead of a silent one (the 06-15..17 boards graded 442 rows
+                # entry_status=None with no cause on record).
+                entry_sig_null[ticker] = entry_signal.null_reason(close, rec)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("entry-signal for %s failed (%s)", ticker, e)
+            entry_sig_null[ticker] = f"gauge_error:{type(e).__name__}"
         # ---- Confluence cascade verdict (T1->T4) on the per-stock JSON ---------
         # The owner's MACD-2D x StochRSI-3D gate (already computed above as sig_verdict),
         # persisted per name so the theme/basket-detail Holdings table can surface a fresh
@@ -3829,6 +3839,14 @@ def main() -> int:
             r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
             if entry_sig.get(t):
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
+            else:
+                # entry_status disclosure law: a board row never ships a SILENT gauge
+                # absence — the graded ledger stamps entry_status from this row, and an
+                # unexplained null there poisons the by_entry_status stratification
+                # (43.9% of matured buy rows, the worst-performing cell, battery §1).
+                # "not_assessed" = the name never reached the gauge loop (unreachable
+                # today; disclosed if a future path adds board rows outside `uni`).
+                r["entry_signal_null_reason"] = entry_sig_null.get(t, "not_assessed")
             if risk_sig.get(t):
                 r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
             if composite_pt.get(t):
@@ -4151,6 +4169,14 @@ def main() -> int:
                  "theme-confirmed)", len(wide["ran"]), us_board_rank.RAN_CAP,
                  us_board_rank.RAN_TICKS_MIN, us_board_rank.RAN_TICKS_MAX,
                  sum(1 for r in wide["ran"] if r.get("theme_confirmed")))
+        # entry_status disclosure law: ran rows carry NO entry_signal BY DESIGN
+        # (§3.5 above — context rows, "wait for the next entry"). The grader still
+        # grades this lane (LANES includes "ran"), so stamp the machine-readable
+        # reason: the ledger then records entry_status=None + "lane_not_stamped"
+        # instead of a silent null. Display code reads only named fields — no UI
+        # change; the §3.5 no-gauge design is untouched.
+        for _r_rn in wide["ran"]:
+            _r_rn["entry_signal_null_reason"] = "lane_not_stamped"
 
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
