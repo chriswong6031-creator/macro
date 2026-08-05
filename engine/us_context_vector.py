@@ -900,7 +900,7 @@ def append_candidates(
     Best-effort telemetry: returns 0 on any refusal or failure and never raises,
     so a broken context input cannot break the nightly stock library.
     """
-    if False:
+    if not ledger_lane.nightly_advance_enabled():
         log.info("us_context_vector append gated — not the US nightly lane")
         return 0
 
