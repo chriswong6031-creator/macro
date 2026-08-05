@@ -861,8 +861,15 @@ jobs:
       - name: install capital-structure test deps
         run: pip install pytest pandas numpy pyarrow jsonschema==4.26.0 requests pyyaml jinja2 fastapi httpx boto3
       - name: capital-structure contracts, compilers, projection, graph, source store, and legacy boundary
+        # test_daily_collect_commit_path.py rides HERE on purpose: it names the set
+        # of collect-job steps allowed to fail before "commit data", and every entry
+        # in that allowlist is a capital-structure step. Its sibling pin
+        # (test_capital_structure_compiler.py::test_nightly_order_and_render_network
+        # _firewall_are_pinned) asserts the same step stays fatal, so the two must
+        # move together — co-locating means a change to either surfaces the other.
         run: >
           python -m pytest
+          tests/test_daily_collect_commit_path.py
           tests/test_capital_structure_compiler.py
           tests/test_capital_structure_contracts.py
           tests/test_capital_structure_document_terms.py
