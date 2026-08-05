@@ -158,9 +158,12 @@ def main() -> int:
                 "oversold_candidate": bool(r is not None and r <= ww.RSI_OVERSOLD),
             })
 
+        # Sorted: `lanes[...]` is a set, so insertion order varies run to run and an
+        # unsorted dict would make this artifact produce a phantom git diff every time.
         label_mix: dict[str, int] = {}
-        for t in lanes["washout_watch"]:
+        for t in sorted(lanes["washout_watch"]):
             label_mix[cyc.get(t) or "?"] = label_mix.get(cyc.get(t) or "?", 0) + 1
+        label_mix = dict(sorted(label_mix.items()))
 
         per_day.append({
             "as_of": as_of,
@@ -224,7 +227,7 @@ def main() -> int:
     cyc = {r["ticker"]: r.get("cycle") for r in sb["modes"]["all"]}
     in_lane = {r["ticker"] for r in (st.get("washout_watch") or [])}
     band_a, deep_c, naive_c, deep_labels = [], [], 0, {}
-    for t in cyc:
+    for t in sorted(cyc):
         r = rsi_asof(t, as_of)
         if r is not None and 40 < r <= 50:
             band_a.append(t)
@@ -246,7 +249,7 @@ def main() -> int:
                             for _ in range(d["bottom_watch_invisible"])),
         "option_c_deep_below_200dma": len(deep_c),
         "option_c_new": len([t for t in deep_c if t not in in_lane]),
-        "option_c_labels": deep_labels,
+        "option_c_labels": dict(sorted(deep_labels.items())),
         "option_c_naive_unit_bug_admits": naive_c,
     }
 
