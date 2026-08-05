@@ -175,3 +175,96 @@ def test_commit_step_still_precedes_its_push_and_salvage(collect_steps):
         "the local commit must precede the network publish, and the salvage push "
         "must follow both (2026-07-17 postmortem)"
     )
+
+
+# --------------------------------------------------------------------------
+# The R2 publishes are NOT part of the checkpoint the veto set protects.
+# --------------------------------------------------------------------------
+# The allowlist above bounds which steps may discard the night's GIT commit.
+# The R2 store publishes sit after that commit and answer to a different law:
+# they carry the day's upserted increments back to an R2-CANONICAL store, and
+# the engine job's `audit_r2 --strict` anchor goes red within 26h if they do
+# not run.  They were nevertheless collateral damage of every veto, because a
+# step `if:` that names no status function inherits an implicit success().
+#
+# Run 30960328285 is the cost: the massive_stock_day publish had been in the
+# workflow for three nights and had never once executed.  These tests pin the
+# decoupling so a future edit cannot silently re-attach them to the veto.
+
+R2_PUBLISH_STEPS = {
+    "publish attention store back to R2": "steps.attention_restore.outcome",
+    "publish massive_stock_day store back to R2": "steps.massive_restore.outcome",
+}
+
+_STATUS_FUNCS = ("always(", "failure(", "cancelled(", "!cancelled(")
+
+
+@pytest.mark.parametrize("step_name,restore_gate", sorted(R2_PUBLISH_STEPS.items()))
+def test_r2_publish_survives_a_veto_but_keeps_its_restore_gate(
+    collect_steps, step_name, restore_gate
+):
+    """Each R2 publish must run after an earlier red AND stay restore-gated.
+
+    Two failure modes, opposite directions:
+      * no status function -> implicit success() -> skipped by any earlier red,
+        which is how the store froze (nothing published 2026-07-30 -> 08-05);
+      * no restore gate -> a failed/partial restore leaves a shallow tree that
+        would overwrite the deep store on R2. The gate is the fence; keep both.
+    """
+    step = collect_steps[_index_of(collect_steps, step_name)]
+    cond = str(step.get("if") or "")
+
+    assert cond, f"{step_name!r} lost its `if:` entirely — the restore fence is gone"
+    assert any(fn in cond for fn in _STATUS_FUNCS), (
+        f"{step_name!r} has `if: {cond}`, which contains no status-check function, so "
+        "GitHub ANDs an implicit success() onto it and ANY earlier failure in the ~3h "
+        "collect job skips the publish. The R2 store then goes stale and the engine "
+        "job's audit_r2 anchor reds within 26h. Use `always() && <restore gate>`."
+    )
+    assert restore_gate in cond, (
+        f"{step_name!r} dropped its restore gate ({restore_gate}). Without it a failed "
+        "or partial R2 restore leaves a shallow local tree that this step would publish "
+        "OVER the deep canonical store."
+    )
+
+
+@pytest.mark.parametrize("step_name", sorted(R2_PUBLISH_STEPS))
+def test_r2_publish_runs_after_the_commit_checkpoint(collect_steps, step_name):
+    """Publishing must never delay the local commit (2026-07-17 postmortem)."""
+    assert _index_of(collect_steps, COMMIT_STEP) < _index_of(collect_steps, step_name), (
+        f"{step_name!r} moved ahead of {COMMIT_STEP!r}; a slow upload would then sit "
+        "between the collection and the checkpoint that preserves it"
+    )
+
+
+def test_store_tripwire_still_fires_on_a_lost_night(collect_steps):
+    """The massive_store content audit must run even when the night is discarded.
+
+    `continue-on-error: true` stops this step from FAILING the job; it does not
+    stop an earlier failure from SKIPPING it. Through 08-02..08-05 the tripwire
+    was dark on exactly the nights that needed it, and the freeze surfaced six
+    days later as the engine job's R2 staleness anchor instead.
+    """
+    step = collect_steps[_index_of(collect_steps, "audit massive_stock_day store")]
+    cond = str(step.get("if") or "")
+
+    assert any(fn in cond for fn in _STATUS_FUNCS), (
+        "the massive_store tripwire has `if: "
+        f"{cond or '<none>'}`, so an earlier red in the collect job skips it and the "
+        "store's freshness alarm goes dark on precisely the nights it matters."
+    )
+    assert step.get("continue-on-error") is True, (
+        "the tripwire now runs under always(); without continue-on-error a content "
+        "fail would red the collect job it was designed never to block."
+    )
+
+
+@pytest.mark.parametrize("step_name", sorted(R2_PUBLISH_STEPS))
+def test_r2_publish_is_itself_non_fatal(collect_steps, step_name):
+    """A failed upload must not red the collect job — the anchor alarm carries it."""
+    step = collect_steps[_index_of(collect_steps, step_name)]
+    assert _is_non_fatal(step), (
+        f"{step_name!r} can now fail the collect job. It runs under always(), so a "
+        "publish failure would red an otherwise-successful night. Keep the house "
+        '`|| echo "::warning::..."` guard.'
+    )
