@@ -438,6 +438,26 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
                         therefore `armed`) additionally requires the flatness
                         gate to pass.
     armed             : basing AND (stoch_curl OR macd_curl).
+
+    armed_recent      : W-C(2) DISPLAY-TIER state, NOT part of the v1.1 prereg
+                        construction.  `armed`'s 3-bar stoch window closes fast:
+                        silver on 2026-08-03 was basing with days_in_base=23 yet
+                        armed=False purely because the curl had aged out (%K had
+                        already traversed to 55).  armed_recent = basing AND
+                        (stoch_curl_recent OR stoch_traverse), where
+                          stoch_curl_recent : the same %K-over-%D-while-oversold
+                            cross, scanned over `armed_recent_lookback` bars
+                            instead of `stoch_curl_lookback`;
+                          stoch_traverse    : within the last
+                            `armed_recent_lookback` bars %K was below
+                            `stoch_oversold` and LATER rose above
+                            `armed_recent_traverse_high` (the curl already
+                            happened and ran).
+                        `armed` is computed from the untouched 3-bar
+                        `stoch_curl`; armed_recent never feeds it, and neither
+                        feeds any score.  Note armed_recent is NOT a superset of
+                        armed: a macd_curl-only arming has armed=True with
+                        armed_recent=False by construction.
     """
     acfg = cfg.get("technical_arming", {})
     # --- parameters (v1-frozen unless noted as v1.1 additions) ---------------
@@ -461,6 +481,9 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
     # v1.1: scale-invariant minimum per-diff for the MACD rising test
     # each positive diff must exceed (macd_rise_min_frac × rolling mean |histogram|)
     macd_rise_min_frac = float(acfg.get("macd_rise_min_frac", 0.02))
+    # W-C(2) display-tier: wider window for `armed_recent` (never touches `armed`)
+    armed_recent_lookback = int(acfg.get("armed_recent_lookback", 10))
+    armed_recent_traverse_high = float(acfg.get("armed_recent_traverse_high", 50.0))
 
     params = {
         "stoch_k_period": k_period, "stoch_smooth_k": smooth_k,
@@ -475,6 +498,9 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
         "base_flat_max_abs_return": base_flat_max_abs_return,
         "macd_rise_min_frac": macd_rise_min_frac,
         "version": "v1.1",
+        # W-C(2) display-tier additions — outside the v1.1 prereg construction
+        "armed_recent_lookback": armed_recent_lookback,
+        "armed_recent_traverse_high": armed_recent_traverse_high,
     }
 
     null_result = {
@@ -482,7 +508,10 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
         "stoch_curl": False, "macd_curl": False,
         "basing": False, "days_in_base": 0,
         "flatness": None,
-        "armed": False, "params": params,
+        "armed": False,
+        "stoch_curl_recent": False, "stoch_traverse": False,
+        "armed_recent": False,
+        "params": params,
     }
 
     close = px["close"].dropna()
@@ -511,6 +540,41 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
                 np.isfinite(k_prev) and np.isfinite(d_prev)):
             if k_now > d_now and k_prev <= d_prev and k_now < stoch_oversold:
                 stoch_curl = True
+                break
+
+    # --- W-C(2) DISPLAY-TIER: the same curl test over a wider window ----------
+    # Deliberately a SEPARATE scan, not a widening of the loop above: the strict
+    # `stoch_curl` (and therefore `armed`) is the prereg-referenced construction
+    # and must stay bit-for-bit what the gauntlet will grade.
+    stoch_curl_recent = False
+    look_recent = min(armed_recent_lookback, len(k) - 1)
+    for i in range(1, look_recent + 1):
+        idx = -(i)
+        k_now = k.iloc[idx] if pd.notna(k.iloc[idx]) else np.nan
+        d_now = d.iloc[idx] if pd.notna(d.iloc[idx]) else np.nan
+        k_prev = k.iloc[idx - 1] if pd.notna(k.iloc[idx - 1]) else np.nan
+        d_prev = d.iloc[idx - 1] if pd.notna(d.iloc[idx - 1]) else np.nan
+        if (np.isfinite(k_now) and np.isfinite(d_now) and
+                np.isfinite(k_prev) and np.isfinite(d_prev)):
+            if k_now > d_now and k_prev <= d_prev and k_now < stoch_oversold:
+                stoch_curl_recent = True
+                break
+
+    # --- W-C(2) DISPLAY-TIER: %K traversal <oversold -> >traverse_high --------
+    # Catches the case the 3-bar window structurally cannot see: the curl fired
+    # and then RAN, so by the time the page renders %K is already mid-range.
+    # Requires the oversold reading to precede the high reading (direction).
+    stoch_traverse = False
+    if armed_recent_lookback > 0:
+        k_win = k.dropna().iloc[-armed_recent_lookback:]
+        seen_oversold = False
+        for v in k_win.to_numpy(dtype=float):
+            if not np.isfinite(v):
+                continue
+            if v < stoch_oversold:
+                seen_oversold = True
+            if seen_oversold and v > armed_recent_traverse_high:
+                stoch_traverse = True
                 break
 
     # --- MACD curl: histogram rising for `macd_consec` consecutive bars while < 0
@@ -583,6 +647,9 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
 
     basing = bool(days_in_base >= base_min_days and dd_120 <= drawdown_min and flat_ok)
     armed = bool(basing and (stoch_curl or macd_curl))
+    # W-C(2) display-tier — reads only the wide-window stoch legs, never macd_curl,
+    # and never feeds `armed` above.
+    armed_recent = bool(basing and (stoch_curl_recent or stoch_traverse))
 
     return {
         "stoch_k": round(stoch_k_last, 2) if stoch_k_last is not None else None,
@@ -593,6 +660,10 @@ def technical_arming(px: pd.DataFrame, cfg: dict) -> dict:
         "days_in_base": days_in_base,
         "flatness": round(flatness, 4) if flatness is not None else None,
         "armed": armed,
+        # --- W-C(2) display-tier (never scored) ------------------------------
+        "stoch_curl_recent": stoch_curl_recent,
+        "stoch_traverse": stoch_traverse,
+        "armed_recent": armed_recent,
         "params": params,
     }
 

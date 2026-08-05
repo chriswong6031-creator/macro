@@ -311,6 +311,128 @@ def test_params_block_present_and_versioned() -> None:
     # v1.1 addition keys must also be present
     assert "base_flat_max_abs_return" in p, "params missing v1.1 key: base_flat_max_abs_return"
     assert "macd_rise_min_frac" in p, "params missing v1.1 key: macd_rise_min_frac"
+    # W-C(2) display-tier additions
+    assert "armed_recent_lookback" in p
+    assert "armed_recent_traverse_high" in p
+
+
+# ---------------------------------------------------------------------------
+# W-C(2): armed_recent — display-tier wide-window arming
+#
+# The strict `armed` 3-bar stoch window closes fast: silver on 2026-08-03 was
+# basing with days_in_base=23 and armed=False purely because the curl had aged
+# out.  `armed_recent` widens the window to 10 bars (curl) and adds a %K
+# <30 -> >50 traversal leg.  `armed` must stay bit-for-bit unchanged.
+# ---------------------------------------------------------------------------
+
+def _aged_curl_px(dip_at: int = -12, recover: int = 6, top: float = 1.004,
+                  decline_to: float = 0.55) -> pd.DataFrame:
+    """A basing frame whose stoch curl sits a controllable number of bars back.
+
+    260 bars of decline (supplies the 120d drawdown), then a 40-bar flat base
+    into which a fresh low is carved at `dip_at` and recovered over `recover`
+    bars.  The resulting cross lands at roughly ``-dip_at - 3`` bars back, so
+    the caller can place it inside or outside either window.
+    """
+    n = 300
+    idx = pd.date_range("2015-01-01", periods=n, freq="B")
+    dec = 100.0 * np.exp(np.linspace(0, np.log(decline_to), 260))
+    base_lvl = float(dec[-1])
+    rng = np.random.default_rng(11)
+    base = np.full(40, base_lvl) + rng.normal(0, 0.05, 40)
+    lo = 40 + dip_at
+    base[lo - 3:lo + 1] = base_lvl * 0.972
+    base[lo + 1:lo + 1 + recover] = np.linspace(base_lvl * 0.972, base_lvl * top, recover)
+    base[lo + 1 + recover:] = base_lvl * top
+    close = pd.Series(np.concatenate([dec, base]), index=idx)
+    return _px(close)
+
+
+def _cross_bars_back(px: pd.DataFrame) -> list[int]:
+    """Bars-back positions of every oversold %K-over-%D cross in the last 20 bars."""
+    k, d = _stoch_kd(px["close"], 14, 3, 3)
+    out = []
+    for i in range(1, 21):
+        j = -i
+        if (k.iloc[j] > d.iloc[j] and k.iloc[j - 1] <= d.iloc[j - 1] and k.iloc[j] < 30):
+            out.append(i - 1)
+    return out
+
+
+def test_armed_recent_fires_on_aged_curl_while_armed_stays_false() -> None:
+    """The motivating case: a curl too old for the 3-bar window, inside 10 bars."""
+    px = _aged_curl_px(dip_at=-12)
+    # the fixture must actually place the curl outside the strict window,
+    # otherwise this test would pass vacuously
+    assert _cross_bars_back(px) == [9], f"fixture drifted: {_cross_bars_back(px)}"
+    r = technical_arming(px, CFG)
+    assert r["basing"] is True
+    assert r["stoch_curl"] is False, "3-bar window must not see a 9-bar-old curl"
+    assert r["macd_curl"] is False, "fixture must isolate the stoch leg"
+    assert r["armed"] is False, "strict armed must stay False"
+    assert r["stoch_curl_recent"] is True
+    assert r["armed_recent"] is True
+
+
+def test_armed_recent_traverse_leg_fires_without_a_recent_cross() -> None:
+    """Curl 10 bars back (outside BOTH curl windows) — the traversal leg carries it."""
+    px = _aged_curl_px(dip_at=-13)
+    assert _cross_bars_back(px) == [10], f"fixture drifted: {_cross_bars_back(px)}"
+    r = technical_arming(px, CFG)
+    assert r["stoch_curl"] is False
+    assert r["stoch_curl_recent"] is False, "cross is outside the 10-bar window"
+    assert r["stoch_traverse"] is True, "%K went <30 then >50 inside the window"
+    assert r["armed"] is False
+    assert r["armed_recent"] is True
+
+
+def test_strict_armed_unchanged_on_a_fresh_curl() -> None:
+    """A curl INSIDE the 3-bar window still arms — the prereg construction is intact."""
+    px = _aged_curl_px(dip_at=-4, recover=3)
+    assert _cross_bars_back(px) == [1], f"fixture drifted: {_cross_bars_back(px)}"
+    r = technical_arming(px, CFG)
+    assert r["stoch_curl"] is True
+    assert r["armed"] is True
+
+
+@pytest.mark.parametrize("dip_at,expect_armed", [
+    (-4, True),    # cross 1 bar back  — inside the strict 3-bar window
+    (-5, True),    # cross 2 bars back — inside
+    (-6, False),   # cross 3 bars back — outside strict, inside recent
+    (-8, False),   # cross 5 bars back
+    (-12, False),  # cross 9 bars back — last bar inside the recent window
+])
+def test_armed_window_boundary_family(dip_at: int, expect_armed: bool) -> None:
+    """Walks the curl back one bar at a time across BOTH window boundaries.
+
+    Pins that widening the display window never widened `armed` itself.
+    """
+    recover = min(6, max(2, 40 - (40 + dip_at + 1)))
+    px = _aged_curl_px(dip_at=dip_at, recover=recover)
+    r = technical_arming(px, CFG)
+    assert r["armed"] is expect_armed, f"armed drifted at dip_at={dip_at}"
+    assert r["armed_recent"] is True, f"armed_recent must hold at dip_at={dip_at}"
+
+
+def test_armed_recent_requires_basing() -> None:
+    """Same curl, shallow drawdown -> basing False -> armed_recent False.
+
+    Breaks ONLY the basing leg, so the conjunction is pinned rather than the
+    stoch legs being trivially absent.
+    """
+    px = _aged_curl_px(dip_at=-12, decline_to=0.97)
+    r = technical_arming(px, CFG)
+    assert r["basing"] is False, "fixture must break basing, not the curl"
+    assert r["stoch_curl_recent"] is True, "the curl must still be there"
+    assert r["armed_recent"] is False
+
+
+def test_armed_recent_present_in_null_result() -> None:
+    """Too-short series returns the display keys as False, never missing."""
+    r = technical_arming(_px(_close(30)), CFG)
+    assert r["armed_recent"] is False
+    assert r["stoch_curl_recent"] is False
+    assert r["stoch_traverse"] is False
 
 
 # ---------------------------------------------------------------------------
@@ -568,10 +690,20 @@ if __name__ == "__main__":
         test_genuine_flat_base_then_curl_arms,
         test_linear_decline_macd_curl_false,
         test_oil_wti_episode_report,
+        # W-C(2) armed_recent
+        test_armed_recent_fires_on_aged_curl_while_armed_stays_false,
+        test_armed_recent_traverse_leg_fires_without_a_recent_cross,
+        test_strict_armed_unchanged_on_a_fresh_curl,
+        test_armed_recent_requires_basing,
+        test_armed_recent_present_in_null_result,
     ]
     for fn in tests:
         fn()
         print(f"PASS {fn.__name__}")
+    # parametrized armed/armed_recent window boundary family
+    for _dip, _exp in [(-4, True), (-5, True), (-6, False), (-8, False), (-12, False)]:
+        test_armed_window_boundary_family(_dip, _exp)
+        print(f"PASS test_armed_window_boundary_family[dip_at={_dip}]")
     # parametrized falling-knife seeds
     for seed in [1, 5, 42, 99, 137]:
         test_falling_knife_never_arms(seed)
