@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T04:55:51.862035+00:00",
-  "count": 780,
+  "generated_at": "2026-08-05T05:11:07.219376+00:00",
+  "count": 781,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -53,6 +53,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-xmsgejfidgp-00b2d4",
+      "title": "Ternium (TX) 2Q26 Solid Beat",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:21:39Z",
+      "summary_points": [
+        "**Q2 EBITDA Beat & Mexico Infrastructure Tailwinds**: Ternium's Q2 2026 EBITDA of $717M (+50% q/q, 78% y/y) beat consensus by 18%/14%, driven by Mexico infrastructure projects (PEMEX, CFE) and steel substitution amid trade restrictions since 2025, supporting Q3 volume/margin guidance.",
+        "**Sustained Pricing Momentum & Policy Support**: Mexico HRC prices up 30% YTD (vs.",
+        "10% historical premium) with trade barriers ensuring sustained earnings; reiterated Buy with 16-20% FCFF growth (2027-28) and 3.9-3.3x EV/EBITDA.",
+        "**Valuation Upside & Key Risks**: Goldman Sachs sets $59.00 price target (17.2% upside from $50.34) but highlights risks: USMCA uncertainties slowing Mexico growth, raw material cost surges, and operational risks (Usiminas competition, Pesquiera capex, CSN litigation).",
+        "**Price Target Divergence & Flow Catalyst**: $59 target significantly above current price ($44.78), signaling strong analyst bullishness; active coverage (\"Covered by Marco Fid\") indicates institutional flow potential amid historical target premium."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-susgn3akbum-7ad578",
       "title": "BP Plc (BP)",
