@@ -1,0 +1,68 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "DINO-2026-06-30-watch",
+  "ticker": "DINO",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "DINO",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "DINO",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Energy",
+    "excess_spy": 0.25890897972034943,
+    "excess_sector": 0.13298466708973922,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "DINO, on the watch list, had a clean liftoff and strong positive excess return. A successful pick with no fault.",
+    "root_cause": "DINO, on the watch list, had a clean liftoff and strong positive excess return. A successful pick with no fault.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "Watch-list names in Energy can produce clean liftoffs with the right timing signals.",
+    "engines_credit": "The rotation model and the watch-list signal engine both made correct calls.",
+    "causal_chain": [],
+    "alternate_explanations": [
+      "A temporary Energy sector rally may have contributed to DINO's performance."
+    ],
+    "missing_evidence": [
+      "Energy sector performance post-entry",
+      "company-specific news or earnings"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "sector_liftoff_correlation",
+        "feature": "Correlation between sector move and stock excess return for clean liftoffs",
+        "measurement": "Compute correlation across sector and stock 5-day returns post-liftoff",
+        "expected_direction": "Higher correlation suggests sector beta rather than alpha",
+        "falsifier": "If correlation is low (<0.2), company-specific timing is the main driver.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-05",
+  "asof": "2026-08-05",
+  "ts": "2026-08-05T09:23:44+00:00"
+}

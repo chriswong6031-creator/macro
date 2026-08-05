@@ -41,22 +41,31 @@
 
 <main class="sx-wrap" id="sx-root" data-state="{{ v.state }}" data-a="{{ v.win.a }}" data-b="{{ v.win.b }}">
 
-  <p class="sx-eyebrow">{{ t('Calendar Clock', '日历时钟') }}</p>
-
-  <div class="sx-head">
-    <div class="sx-head-l">
-      <h1 class="sx-h1"><span id="sx-name">{{ v.name }}</span> <span class="sx-tick" id="sx-sym">{{ v.symbol }}</span></h1>
+  <header class="sx-mast">
+    <div class="sx-mast-id">
+      <p class="sx-eyebrow">{{ t('Calendar Clock', '日历时钟') }}</p>
+      <h1 class="sx-h1"><span class="sx-tick" id="sx-sym">{{ v.symbol }}</span> <span class="sx-name" id="sx-name">{{ v.name }}</span></h1>
     </div>
     <div class="sx-pick">
-      <input type="text" id="sx-search" role="combobox" autocomplete="off" aria-expanded="false"
-             aria-controls="sx-results" aria-autocomplete="list" aria-label="Search a symbol"
-             placeholder="Search a symbol…" data-ph-zh="搜索代码…">
-      <ul class="sx-pop" id="sx-results" role="listbox" aria-label="Symbol results" hidden></ul>
+      {# The results list hangs off the FIELD, not off the whole picker: with
+         .sx-pick as the containing block it opened below the shortcut row, which
+         left "Jump to" stranded between the input and its own results. #}
+      <div class="sx-pick-box">
+        <div class="sx-pick-field">
+          <svg class="sx-pick-ic" viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg>
+          <input type="text" id="sx-search" role="combobox" autocomplete="off" aria-expanded="false"
+                 aria-controls="sx-results" aria-autocomplete="list" aria-label="Search a symbol"
+                 placeholder="Search a symbol…" data-ph-zh="搜索代码…">
+          <span class="sx-pick-kbd" aria-hidden="true">/</span>
+        </div>
+        <ul class="sx-pop" id="sx-results" role="listbox" aria-label="Symbol results" hidden></ul>
+      </div>
       <div class="sx-quick" id="sx-quick">
-        {% for s in ['SPY', 'QQQ', 'XBI', 'IBB', 'XLV'] %}<button type="button" class="gbtn gbtn-sm gbtn-pill" data-sym="{{ s }}">{{ s }}</button>{% endfor %}
+        <span class="sx-quick-lab">{{ t('Jump to', '快速切换') }}</span>
+        {% for s in ['SPY', 'QQQ', 'XBI', 'IBB', 'XLV'] %}<button type="button" class="gbtn gbtn-sm" data-sym="{{ s }}">{{ s }}</button>{% endfor %}
       </div>
     </div>
-  </div>
+  </header>
 
   {# ── the answer, before any evidence ─────────────────────────────────── #}
   <p class="sx-verdict" id="sx-verdict">
@@ -139,23 +148,32 @@
       {{ help('Drag either handle, or the shaded band, to move the window. With a handle focused the arrow keys move it one day, Shift and an arrow moves it seven, and Home or End jumps to the month edge.', '拖动任一手柄或阴影区域即可移动窗口。手柄获得焦点后，方向键每次移动一天，Shift 加方向键移动七天，Home 或 End 跳到月份边界。') }}
     </div>
 
+    {# Each group is one segmented control (one recessed track, one raised
+       selection). The `?` help sits OUTSIDE the track: it is not a choice, and
+       a non-button child inside a role="group" of buttons reads as one. #}
     <div class="sx-ctrls">
-      <span class="sx-seg" id="sx-central" role="group" aria-label="Central line">
-        <button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="median" aria-pressed="true">{{ t('Median', '中位数') }}</button>
-        <button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="mean" aria-pressed="false">{{ t('Mean', '均值') }}</button>
-      </span>
-      <span class="sx-seg" id="sx-panel" role="group" aria-label="Panel">
-        <button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="raw" aria-pressed="true">{{ t('Raw', '原始') }}</button>
-        <button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="neutral" aria-pressed="false"{% if not v.has_neutral %} disabled{% endif %}>{{ t('Vs market', '相对大盘') }}</button>
-        <button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="detrended" aria-pressed="false">{{ t('Detrended', '去趋势') }}</button>
+      <div class="sx-ctrl">
+        <span class="sx-seg" id="sx-central" role="group" aria-label="Central line">
+          <button type="button" class="gbtn gbtn-sm" data-v="median" aria-pressed="true">{{ t('Median', '中位数') }}</button>
+          <button type="button" class="gbtn gbtn-sm" data-v="mean" aria-pressed="false">{{ t('Mean', '均值') }}</button>
+        </span>
+      </div>
+      <div class="sx-ctrl">
+        <span class="sx-seg" id="sx-panel" role="group" aria-label="Panel">
+          <button type="button" class="gbtn gbtn-sm" data-v="raw" aria-pressed="true">{{ t('Raw', '原始') }}</button>
+          <button type="button" class="gbtn gbtn-sm" data-v="neutral" aria-pressed="false"{% if not v.has_neutral %} disabled{% endif %}>{{ t('Vs market', '相对大盘') }}</button>
+          <button type="button" class="gbtn gbtn-sm" data-v="detrended" aria-pressed="false">{{ t('Detrended', '去趋势') }}</button>
+        </span>
         {{ help('Vs market removes a market leg sized to this name, so what is left is only what this name did beyond the market. Detrended removes each year’s own drift, so only the shape inside the year is compared — it carries no search accounting, so it shows no verdict.', '相对大盘：按该股对大盘的敏感度剔除大盘部分，剩下的只是该股超出大盘的表现。去趋势：剔除每年自身的整体涨跌，只比较年内形状 — 该视图没有搜索校正，因此不给结论。') }}
-      </span>
-      <span class="sx-seg" id="sx-lookback" role="group" aria-label="Years">
-        {# The default view is the whole shipped panel, which IS Max — the numbered
-           pills are sub-slices of it, so none of them starts pressed. #}
-        {% for lb in [10, 15, 25] %}<button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="{{ lb }}" aria-pressed="false">{{ t(lb ~ 'y', lb ~ '年') }}</button>{% endfor %}
-        <button type="button" class="gbtn gbtn-sm gbtn-pill" data-v="0" aria-pressed="true">{{ t('Max', '全部') }}</button>
-      </span>
+      </div>
+      <div class="sx-ctrl">
+        <span class="sx-seg" id="sx-lookback" role="group" aria-label="Years">
+          {# The default view is the whole shipped panel, which IS Max — the numbered
+             segments are sub-slices of it, so none of them starts pressed. #}
+          {% for lb in [10, 15, 25] %}<button type="button" class="gbtn gbtn-sm" data-v="{{ lb }}" aria-pressed="false">{{ t(lb ~ 'y', lb ~ '年') }}</button>{% endfor %}
+          <button type="button" class="gbtn gbtn-sm" data-v="0" aria-pressed="true">{{ t('Max', '全部') }}</button>
+        </span>
+      </div>
     </div>
   </section>
 

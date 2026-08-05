@@ -8,7 +8,7 @@
   "scope_en": "United Kingdom national economy; FTSE 100 and FTSE 250 are market context.",
   "scope_zh": "英国全国经济；富时100与富时250仅作市场背景。",
   "asof": "2026-07-31",
-  "built": "2026-08-04 03:26 UTC",
+  "built": "2026-08-05 15:37 UTC",
   "regime": {
     "quad": "Q2",
     "name": "Reflation",
@@ -559,7 +559,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2025-03",
-      "age_days": 521,
+      "age_days": 522,
       "state": "stale",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -567,7 +567,7 @@
     {
       "metric": "gdp",
       "asof": "2026-01",
-      "age_days": 215,
+      "age_days": 216,
       "state": "stale",
       "label_en": "Growth",
       "label_zh": "增长"
@@ -575,7 +575,7 @@
     {
       "metric": "unemployment",
       "asof": "2026-02",
-      "age_days": 184,
+      "age_days": 185,
       "state": "stale",
       "label_en": "Labour",
       "label_zh": "就业"
@@ -583,7 +583,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-06",
-      "age_days": 64,
+      "age_days": 65,
       "state": "fresh",
       "label_en": "Rates",
       "label_zh": "利率"

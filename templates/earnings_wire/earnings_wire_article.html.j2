@@ -4,6 +4,20 @@
 {% block head_extra %}
 <link rel="stylesheet" href="assets/earnings-wire.css">
 <link rel="alternate" type="application/rss+xml" title="MastermindX Earnings Wire" href="feed.xml">
+{#- Pre-paint gate suppression. The member gate ships in the HTML and is removed by
+    earnings-wire.js AFTER auth settles and the payload fetch returns — so an entitled
+    reader watched their own paywall paint, sit there, and vanish (operator 2026-08-04).
+    The real entitlement answer needs a round trip, but "does this browser hold a
+    session at all" does not: theme.js keeps the Supabase session in a COOKIE, which is
+    readable synchronously here, before first paint. So we hide the gate for exactly
+    the window between paint and the verdict, and let earnings-wire.js settle it.
+
+    Fail-safe in both directions: no cookie (anonymous readers, crawlers) means nothing
+    happens at all and the gate paints as it always has; a cookie with no entitlement
+    behind it gets the gate back the moment the fetch fails. The timer is the third
+    leg — if earnings-wire.js never loads, a stale cookie still cannot hide the paywall
+    for longer than it takes to notice. -#}
+<script>(function(){try{if(!/(?:^|;\s*)sb-[^=;]*-auth-token(?:\.\d+)?=/.test(document.cookie))return;var d=document.documentElement;d.setAttribute('data-earnings-member','pending');setTimeout(function(){if(d.getAttribute('data-earnings-member')==='pending')d.removeAttribute('data-earnings-member');},8000);}catch(e){}})();</script>
 {% endblock %}
 {% block jsonld %}<script type="application/ld+json">{{ jsonld|safe }}</script>{% endblock %}
 {% block breadcrumb %}{% endblock %}
