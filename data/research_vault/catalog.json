@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T12:00:37.031241+00:00",
-  "count": 801,
+  "generated_at": "2026-08-05T12:32:20.897604+00:00",
+  "count": 802,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -54,6 +54,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-tuzf6phivwb-05e448",
+      "title": "JPM International Market Intelligence Morning Briefing Aug 5",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T10:52:47Z",
+      "summary_points": [
+        "**AI/MOMO Correction Over, Tech Reversal Likely**: Secular/cyclical convergence intact; EPS downgrades anticipated but reversal of July tech correction probable amid scaling laws, token demand, and profitability.",
+        "**Hyperscaler Capex Growth Peak & Total Spend**: Capex YoY growth peaks at 103% (2026E, $901B) before moderating to 65% (2027E, $1489B), signaling sustained tech investment despite growth rate decline.",
+        "**FX Intervention Thresholds & TOPIX Sensitivity**: USD/JPY <158.7 sustains long JPY positions; TOPIX companies face 0.8%+ operating profit sensitivity to USD/JPY moves, critical for Asian equity allocation.",
+        "**US LABOR SHARE DYNAMICS**: Labor share at 53.7 cents (Q1 2026) near all-time low; AI-driven decline expected to push below 50% by decade-end, signaling structural earnings reallocation risk.",
+        "**European Earnings Momentum**: MSCI Europe earnings-per-share growth and beat rate at 3-year highs, with Q1 2026 showing strongest jump since 2023."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-dux27ovxk3q-862454",
       "title": "EOG Resources Inc. (EOG) First Take In Line Quarter vs GS and Consensus, Focus on Outlook for Future UAE Development and Sh...",
