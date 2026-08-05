@@ -22,9 +22,17 @@ The pure assembly (snapshot → the JSON the frontend reads) lives in
 network.
 
 PIT ARCHIVAL (added 2026-07-04, append-only, zero breaking changes):
-* ``data/themes_heatmap/member_perf_history.jsonl`` — one line per calendar day,
+* ``data/themes_heatmap/member_perf_history.jsonl`` — one line per NYSE **session**,
   compact JSON: {"asof": "YYYY-MM-DD", "subsectors": {...}, "members": {...}}.
   Idempotent: if the asof date already exists in the file the append is skipped.
+  It used to be one line per CALENDAR day, which is not the same thing: daily.yml
+  fires ~22:30 UTC every night INCLUDING weekends, and Finviz themes perf is EOD,
+  so a Saturday and a Sunday run each re-fetched Friday's unchanged board and
+  stamped it under a fresh weekend date. Stamping the SESSION (see ``_asof_stamp``)
+  makes those re-fetches dedupe upstream — every downstream consumer of
+  ``asof`` inherits the fix. It is also self-healing in the other direction: a
+  Saturday fetch that follows a FAILED Friday fetch archives Friday's board under
+  Friday, so the recovered day lands on the session it actually describes.
 * ``data/themes_heatmap/tree_history.jsonl`` — one line per *change* in the tree,
   keyed by sha256(sort_keys JSON); appended only when the tree hash changes (or
   the file is empty). Format: {"asof": "YYYY-MM-DD", "sha256": "...", "tree": [...]}.
@@ -41,10 +49,20 @@ import sys
 import time
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# daily.yml runs this in FILE mode (``python scripts/fetch_finviz_themes.py``), so
+# sys.path[0] is scripts/, NOT the repo root — and this module was stdlib-only until
+# the session stamp below. Put ROOT on the path before the first ``lib`` import or
+# the nightly dies on ImportError at collection time.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from lib import nyse_calendar  # noqa: E402 — must follow the sys.path bootstrap above
+
 OUT_DIR = ROOT / "data" / "themes_heatmap"
 TREE_PATH = OUT_DIR / "themes_tree.json"
 PERF_PATH = OUT_DIR / "perf_snapshot.json"
@@ -102,6 +120,25 @@ def fetch_member_perf(tickers: list[str], chunk: int = 120) -> dict[str, dict[st
                 out.setdefault(k, {})[tf] = round(float(v), 2)
             time.sleep(0.25)
     return out
+
+
+def _asof_stamp(now_utc: datetime | None = None) -> str:
+    """The NYSE SESSION this EOD board describes, as ``YYYY-MM-DD``.
+
+    NOT the calendar day the fetch ran. daily.yml fires ~22:30 UTC every night
+    including weekends and holidays, and Finviz themes perf is end-of-day, so a
+    Saturday or Sunday run re-fetches Friday's UNCHANGED board. Stamped from the
+    clock, each of those nights minted a fresh ``asof`` that no downstream dedup
+    could recognise as a duplicate — ``build_subsector_rotation`` reads this field
+    and hands it to ``engine.subsector_track_record.snapshot()``, whose (date,key)
+    idempotency then saw a brand-new day and appended a full 269-row set, so
+    ``compute()`` graded one Friday's calls as up to THREE independent IC days.
+
+    ``session_date`` maps the instant to its ET-calendar session: a post-close
+    weekday run stamps that weekday, a weekend/holiday run stamps the last
+    completed session, and it is UTC-midnight-rollover safe (TS-R2).
+    """
+    return nyse_calendar.session_date(now_utc).isoformat()
 
 
 # --------------------------------------------------------------------------- #
@@ -242,12 +279,15 @@ def main() -> None:
     mem_perf = fetch_member_perf(members)
     print(f"  {len(mem_perf)}/{len(members)} members covered")
 
-    asof = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    asof = _asof_stamp()
     snap = {
         "source": "finviz-themes",
-        # Finviz themes perf is end-of-day; stamp the fetch date so the rotation
-        # build + its forward track-record date each call by the true data day
-        # (build_subsector_rotation reads snap["asof"]).
+        # Finviz themes perf is end-of-day; stamp the NYSE SESSION the board
+        # describes — never the calendar day of the fetch — so the rotation build
+        # and its forward track-record date each call by the true data day
+        # (build_subsector_rotation reads snap["asof"]). See _asof_stamp: the
+        # weekend runs of a 7-nights-a-week schedule re-describe Friday's board,
+        # and a clock stamp made every one of them look like a new session.
         "asof": asof,
         "timeframes": list(ST_TO_TF.values()),
         "subsector_perf": sub_perf,

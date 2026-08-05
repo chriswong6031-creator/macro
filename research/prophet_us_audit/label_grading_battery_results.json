@@ -1,0 +1,2340 @@
+{
+ "instrument": "US label-grading battery (CN->US handoff \u00a71)",
+ "repro_asof": "2026-07-31",
+ "loser_def_pp": -3.0,
+ "horizons": {
+  "primary": 10,
+  "supporting": 21
+ },
+ "direction_fence": "CN's tape mean-reverts; the US tape measured confirmation-positive. No direction is assumed anywhere in this instrument \u2014 the numbers below decide, and thin cells are called thin rather than read.",
+ "scope": "MEASUREMENT ONLY \u2014 no gate/board/engine change follows from this file",
+ "section_1_by_entry_status": {
+  "question": "is the entry_signal.assess ladder correctly ordered FOR this tape?",
+  "gauge_source": "engine/entry_signal.py (_STATUS_BY_URGENCY, l.24-33); wired for US rows at scripts/build_stock_library.py:2657-2659",
+  "frame": "data/us_board_ledger/retro_grades.parquet, lane=='buy'",
+  "loser_def": "excess_spy < -3.0pp at the horizon",
+  "H10_primary": {
+   "rows": 403,
+   "names": 243,
+   "admission_dates": 10,
+   "date_range": [
+    "2026-06-16",
+    "2026-07-16"
+   ],
+   "status_census": {
+    "<NULL>": 177,
+    "await_confluence": 90,
+    "hold": 47,
+    "buy_soon": 31,
+    "wait_pullback": 27,
+    "partial": 14,
+    "buy_now": 9,
+    "extended": 8
+   },
+   "base": {
+    "n": 403,
+    "names": 243,
+    "loser_rate_pct": 25.8,
+    "win_rate_pct": 62.3,
+    "median_excess_spy_pp": 1.81,
+    "median_excess_dm_pp": 0.36,
+    "per_name_first_median_pp": 1.85,
+    "mean_excess_spy_pp": 1.44,
+    "p25_pp": -3.2,
+    "p75_pp": 6.0
+   },
+   "by_entry_status": {
+    "<NULL>": {
+     "n": 177,
+     "names": 102,
+     "loser_rate_pct": 35.0,
+     "win_rate_pct": 56.5,
+     "median_excess_spy_pp": 1.48,
+     "median_excess_dm_pp": 0.53,
+     "per_name_first_median_pp": 1.37,
+     "mean_excess_spy_pp": 0.75,
+     "p25_pp": -4.9,
+     "p75_pp": 6.0,
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Financials": 22.6,
+       "Industrials": 18.6,
+       "Consumer Discretionary": 13.6,
+       "Information Technology": 11.9
+      },
+      "max_single_sector_pct": 22.6
+     }
+    },
+    "await_confluence": {
+     "n": 90,
+     "names": 69,
+     "loser_rate_pct": 23.3,
+     "win_rate_pct": 63.3,
+     "median_excess_spy_pp": 1.76,
+     "median_excess_dm_pp": 0.81,
+     "per_name_first_median_pp": 2.19,
+     "mean_excess_spy_pp": 1.46,
+     "p25_pp": -2.5,
+     "p75_pp": 5.9,
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Financials": 18.9,
+       "Industrials": 13.3,
+       "Consumer Discretionary": 13.3,
+       "Information Technology": 13.3
+      },
+      "max_single_sector_pct": 18.9
+     }
+    },
+    "buy_now": {
+     "n": 9,
+     "names": 9,
+     "loser_rate_pct": 33.3,
+     "win_rate_pct": 44.4,
+     "median_excess_spy_pp": -0.48,
+     "median_excess_dm_pp": -1.82,
+     "per_name_first_median_pp": -0.48,
+     "mean_excess_spy_pp": -1.48,
+     "p25_pp": -4.6,
+     "p75_pp": 1.9,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=9 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Consumer Discretionary": 33.3,
+       "Industrials": 22.2,
+       "Information Technology": 22.2,
+       "Utilities": 11.1
+      },
+      "max_single_sector_pct": 33.3
+     }
+    },
+    "buy_soon": {
+     "n": 31,
+     "names": 20,
+     "loser_rate_pct": 9.7,
+     "win_rate_pct": 67.7,
+     "median_excess_spy_pp": 3.06,
+     "median_excess_dm_pp": 0.52,
+     "per_name_first_median_pp": 3.19,
+     "mean_excess_spy_pp": 3.83,
+     "p25_pp": -0.7,
+     "p75_pp": 7.4,
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Industrials": 22.6,
+       "Health Care": 22.6,
+       "Financials": 22.6,
+       "Utilities": 12.9
+      },
+      "max_single_sector_pct": 22.6
+     }
+    },
+    "extended": {
+     "n": 8,
+     "names": 7,
+     "loser_rate_pct": 0.0,
+     "win_rate_pct": 75.0,
+     "median_excess_spy_pp": 4.65,
+     "median_excess_dm_pp": 2.89,
+     "per_name_first_median_pp": 2.35,
+     "mean_excess_spy_pp": 5.17,
+     "p25_pp": 1.3,
+     "p75_pp": 7.6,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=8 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Real Estate": 50.0,
+       "Industrials": 25.0,
+       "Energy": 12.5,
+       "Materials": 12.5
+      },
+      "max_single_sector_pct": 50.0
+     }
+    },
+    "hold": {
+     "n": 47,
+     "names": 40,
+     "loser_rate_pct": 17.0,
+     "win_rate_pct": 74.5,
+     "median_excess_spy_pp": 2.32,
+     "median_excess_dm_pp": 0.12,
+     "per_name_first_median_pp": 2.3,
+     "mean_excess_spy_pp": 1.85,
+     "p25_pp": -0.1,
+     "p75_pp": 6.0,
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Utilities": 21.3,
+       "Real Estate": 12.8,
+       "Materials": 12.8,
+       "Information Technology": 8.5
+      },
+      "max_single_sector_pct": 21.3
+     }
+    },
+    "partial": {
+     "n": 14,
+     "names": 13,
+     "loser_rate_pct": 28.6,
+     "win_rate_pct": 64.3,
+     "median_excess_spy_pp": 1.19,
+     "median_excess_dm_pp": -0.92,
+     "per_name_first_median_pp": 0.9,
+     "mean_excess_spy_pp": 1.65,
+     "p25_pp": -3.9,
+     "p75_pp": 2.0,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=14 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Financials": 28.6,
+       "Industrials": 28.6,
+       "Consumer Discretionary": 14.3,
+       "Utilities": 14.3
+      },
+      "max_single_sector_pct": 28.6
+     }
+    },
+    "wait_pullback": {
+     "n": 27,
+     "names": 24,
+     "loser_rate_pct": 11.1,
+     "win_rate_pct": 70.4,
+     "median_excess_spy_pp": 1.36,
+     "median_excess_dm_pp": -0.2,
+     "per_name_first_median_pp": 1.28,
+     "mean_excess_spy_pp": 2.2,
+     "p25_pp": -0.4,
+     "p75_pp": 5.3,
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Industrials": 29.6,
+       "Health Care": 18.5,
+       "Utilities": 14.8,
+       "Energy": 14.8
+      },
+      "max_single_sector_pct": 29.6
+     }
+    }
+   },
+   "ranked_non_thin_by_per_name_median": [
+    {
+     "status": "buy_soon",
+     "n": 31,
+     "per_name_first_median_pp": 3.19,
+     "median_excess_spy_pp": 3.06,
+     "loser_rate_pct": 9.7
+    },
+    {
+     "status": "hold",
+     "n": 47,
+     "per_name_first_median_pp": 2.3,
+     "median_excess_spy_pp": 2.32,
+     "loser_rate_pct": 17.0
+    },
+    {
+     "status": "await_confluence",
+     "n": 90,
+     "per_name_first_median_pp": 2.19,
+     "median_excess_spy_pp": 1.76,
+     "loser_rate_pct": 23.3
+    },
+    {
+     "status": "wait_pullback",
+     "n": 27,
+     "per_name_first_median_pp": 1.28,
+     "median_excess_spy_pp": 1.36,
+     "loser_rate_pct": 11.1
+    }
+   ],
+   "headline": {
+    "best_status": "buy_soon",
+    "worst_status": "wait_pullback",
+    "delta_per_name_median_pp": 1.91,
+    "half_split_best": {
+     "split_at": "2026-07-10",
+     "distinct_dates": 7,
+     "first_half": {
+      "n": 21,
+      "names": 15,
+      "loser_rate_pct": 9.5,
+      "win_rate_pct": 66.7,
+      "median_excess_spy_pp": 2.53,
+      "median_excess_dm_pp": 0.96,
+      "per_name_first_median_pp": 2.53,
+      "mean_excess_spy_pp": 3.62,
+      "p25_pp": -0.9,
+      "p75_pp": 7.1
+     },
+     "second_half": {
+      "n": 10,
+      "names": 8,
+      "loser_rate_pct": 10.0,
+      "win_rate_pct": 70.0,
+      "median_excess_spy_pp": 4.24,
+      "median_excess_dm_pp": 0.47,
+      "per_name_first_median_pp": 5.21,
+      "mean_excess_spy_pp": 4.29,
+      "p25_pp": -0.1,
+      "p75_pp": 8.5,
+      "thin": true,
+      "thin_note": "THIN CELL \u2014 n=10 < 20; directional read only"
+     },
+     "sign_flip_across_halves": false,
+     "per_name_median_gap_pp": 2.68
+    },
+    "half_split_worst": {
+     "split_at": "2026-07-02",
+     "distinct_dates": 6,
+     "first_half": {
+      "n": 17,
+      "names": 16,
+      "loser_rate_pct": 11.8,
+      "win_rate_pct": 70.6,
+      "median_excess_spy_pp": 1.22,
+      "median_excess_dm_pp": -0.94,
+      "per_name_first_median_pp": 1.25,
+      "mean_excess_spy_pp": 1.38,
+      "p25_pp": -0.7,
+      "p75_pp": 4.8,
+      "thin": true,
+      "thin_note": "THIN CELL \u2014 n=17 < 20; directional read only"
+     },
+     "second_half": {
+      "n": 10,
+      "names": 8,
+      "loser_rate_pct": 10.0,
+      "win_rate_pct": 70.0,
+      "median_excess_spy_pp": 4.19,
+      "median_excess_dm_pp": 1.56,
+      "per_name_first_median_pp": 2.73,
+      "mean_excess_spy_pp": 3.61,
+      "p25_pp": 0.3,
+      "p75_pp": 7.6,
+      "thin": true,
+      "thin_note": "THIN CELL \u2014 n=10 < 20; directional read only"
+     },
+     "sign_flip_across_halves": false,
+     "per_name_median_gap_pp": 1.48
+    }
+   },
+   "implied_filter_cost": {
+    "filter": "drop_status_wait_pullback",
+    "n_removed": 27,
+    "losers_removed": 3,
+    "winners_removed_gt0": 19,
+    "removed_median_excess_pp": 1.36,
+    "kept_n": 376,
+    "kept_win_rate_pct": 61.7,
+    "kept_loser_rate_pct": 26.9,
+    "kept_median_excess_pp": 1.83,
+    "base_median_excess_pp": 1.81,
+    "base_win_rate_pct": 62.3
+   },
+   "confirmation_cells": {
+    "buy_now": {
+     "n": 9,
+     "names": 9,
+     "loser_rate_pct": 33.3,
+     "win_rate_pct": 44.4,
+     "median_excess_spy_pp": -0.48,
+     "median_excess_dm_pp": -1.82,
+     "per_name_first_median_pp": -0.48,
+     "mean_excess_spy_pp": -1.48,
+     "p25_pp": -4.6,
+     "p75_pp": 1.9,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=9 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Consumer Discretionary": 33.3,
+       "Industrials": 22.2,
+       "Information Technology": 22.2,
+       "Utilities": 11.1
+      },
+      "max_single_sector_pct": 33.3
+     }
+    },
+    "partial": {
+     "n": 14,
+     "names": 13,
+     "loser_rate_pct": 28.6,
+     "win_rate_pct": 64.3,
+     "median_excess_spy_pp": 1.19,
+     "median_excess_dm_pp": -0.92,
+     "per_name_first_median_pp": 0.9,
+     "mean_excess_spy_pp": 1.65,
+     "p25_pp": -3.9,
+     "p75_pp": 2.0,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=14 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Financials": 28.6,
+       "Industrials": 28.6,
+       "Consumer Discretionary": 14.3,
+       "Utilities": 14.3
+      },
+      "max_single_sector_pct": 28.6
+     }
+    },
+    "buy_soon": {
+     "n": 31,
+     "names": 20,
+     "loser_rate_pct": 9.7,
+     "win_rate_pct": 67.7,
+     "median_excess_spy_pp": 3.06,
+     "median_excess_dm_pp": 0.52,
+     "per_name_first_median_pp": 3.19,
+     "mean_excess_spy_pp": 3.83,
+     "p25_pp": -0.7,
+     "p75_pp": 7.4,
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Industrials": 22.6,
+       "Health Care": 22.6,
+       "Financials": 22.6,
+       "Utilities": 12.9
+      },
+      "max_single_sector_pct": 22.6
+     }
+    },
+    "await_confluence": {
+     "n": 90,
+     "names": 69,
+     "loser_rate_pct": 23.3,
+     "win_rate_pct": 63.3,
+     "median_excess_spy_pp": 1.76,
+     "median_excess_dm_pp": 0.81,
+     "per_name_first_median_pp": 2.19,
+     "mean_excess_spy_pp": 1.46,
+     "p25_pp": -2.5,
+     "p75_pp": 5.9,
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Financials": 18.9,
+       "Industrials": 13.3,
+       "Consumer Discretionary": 13.3,
+       "Information Technology": 13.3
+      },
+      "max_single_sector_pct": 18.9
+     }
+    }
+   }
+  },
+  "H21_supporting": {
+   "rows": 34,
+   "names": 34,
+   "admission_dates": 1,
+   "date_range": [
+    "2026-07-01",
+    "2026-07-01"
+   ],
+   "status_census": {
+    "hold": 18,
+    "wait_pullback": 8,
+    "await_confluence": 4,
+    "buy_soon": 3,
+    "buy_now": 1
+   },
+   "base": {
+    "n": 34,
+    "names": 34,
+    "loser_rate_pct": 23.5,
+    "win_rate_pct": 47.1,
+    "median_excess_spy_pp": -0.56,
+    "median_excess_dm_pp": -2.01,
+    "per_name_first_median_pp": -0.56,
+    "mean_excess_spy_pp": 1.45,
+    "p25_pp": -2.5,
+    "p75_pp": 3.9
+   },
+   "demean_degenerate": "ALL rows share ONE admission date \u2014 the date-demeaned column is a within-single-cohort deviation, not a cross-date control. Read raw.",
+   "by_entry_status": {
+    "await_confluence": {
+     "n": 4,
+     "names": 4,
+     "loser_rate_pct": 25.0,
+     "win_rate_pct": 50.0,
+     "median_excess_spy_pp": 0.39,
+     "median_excess_dm_pp": -1.06,
+     "per_name_first_median_pp": 0.39,
+     "mean_excess_spy_pp": -1.76,
+     "p25_pp": -5.2,
+     "p75_pp": 3.8,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=4 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Industrials": 50.0,
+       "Consumer Discretionary": 25.0,
+       "Health Care": 25.0
+      },
+      "max_single_sector_pct": 50.0
+     }
+    },
+    "buy_now": {
+     "n": 1,
+     "names": 1,
+     "loser_rate_pct": 0.0,
+     "win_rate_pct": 100.0,
+     "median_excess_spy_pp": 0.53,
+     "median_excess_dm_pp": -0.92,
+     "per_name_first_median_pp": 0.53,
+     "mean_excess_spy_pp": 0.53,
+     "p25_pp": 0.5,
+     "p75_pp": 0.5,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=1 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Industrials": 100.0
+      },
+      "max_single_sector_pct": 100.0
+     }
+    },
+    "buy_soon": {
+     "n": 3,
+     "names": 3,
+     "loser_rate_pct": 0.0,
+     "win_rate_pct": 66.7,
+     "median_excess_spy_pp": 10.05,
+     "median_excess_dm_pp": 8.6,
+     "per_name_first_median_pp": 10.05,
+     "mean_excess_spy_pp": 12.74,
+     "p25_pp": 4.5,
+     "p75_pp": 19.6,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=3 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Industrials": 33.3,
+       "Health Care": 33.3,
+       "Financials": 33.3
+      },
+      "max_single_sector_pct": 33.3
+     }
+    },
+    "hold": {
+     "n": 18,
+     "names": 18,
+     "loser_rate_pct": 27.8,
+     "win_rate_pct": 33.3,
+     "median_excess_spy_pp": -1.44,
+     "median_excess_dm_pp": -2.89,
+     "per_name_first_median_pp": -1.44,
+     "mean_excess_spy_pp": 0.58,
+     "p25_pp": -3.2,
+     "p75_pp": 3.1,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=18 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Utilities": 38.9,
+       "Information Technology": 11.1,
+       "Financials": 11.1,
+       "Materials": 11.1
+      },
+      "max_single_sector_pct": 38.9
+     }
+    },
+    "wait_pullback": {
+     "n": 8,
+     "names": 8,
+     "loser_rate_pct": 25.0,
+     "win_rate_pct": 62.5,
+     "median_excess_spy_pp": 0.61,
+     "median_excess_dm_pp": -0.84,
+     "per_name_first_median_pp": 0.61,
+     "mean_excess_spy_pp": 0.9,
+     "p25_pp": -2.4,
+     "p75_pp": 2.8,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=8 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Industrials": 50.0,
+       "Utilities": 25.0,
+       "Financials": 12.5,
+       "Energy": 12.5
+      },
+      "max_single_sector_pct": 50.0
+     }
+    }
+   },
+   "ranked_non_thin_by_per_name_median": [],
+   "confirmation_cells": {
+    "buy_now": {
+     "n": 1,
+     "names": 1,
+     "loser_rate_pct": 0.0,
+     "win_rate_pct": 100.0,
+     "median_excess_spy_pp": 0.53,
+     "median_excess_dm_pp": -0.92,
+     "per_name_first_median_pp": 0.53,
+     "mean_excess_spy_pp": 0.53,
+     "p25_pp": 0.5,
+     "p75_pp": 0.5,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=1 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Industrials": 100.0
+      },
+      "max_single_sector_pct": 100.0
+     }
+    },
+    "partial": {
+     "n": 0
+    },
+    "buy_soon": {
+     "n": 3,
+     "names": 3,
+     "loser_rate_pct": 0.0,
+     "win_rate_pct": 66.7,
+     "median_excess_spy_pp": 10.05,
+     "median_excess_dm_pp": 8.6,
+     "per_name_first_median_pp": 10.05,
+     "mean_excess_spy_pp": 12.74,
+     "p25_pp": 4.5,
+     "p75_pp": 19.6,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=3 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Industrials": 33.3,
+       "Health Care": 33.3,
+       "Financials": 33.3
+      },
+      "max_single_sector_pct": 33.3
+     }
+    },
+    "await_confluence": {
+     "n": 4,
+     "names": 4,
+     "loser_rate_pct": 25.0,
+     "win_rate_pct": 50.0,
+     "median_excess_spy_pp": 0.39,
+     "median_excess_dm_pp": -1.06,
+     "per_name_first_median_pp": 0.39,
+     "mean_excess_spy_pp": -1.76,
+     "p25_pp": -5.2,
+     "p75_pp": 3.8,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=4 < 20; directional read only",
+     "sector_mix": {
+      "coverage_pct": 100.0,
+      "top_sectors_pct": {
+       "Industrials": 50.0,
+       "Consumer Discretionary": 25.0,
+       "Health Care": 25.0
+      },
+      "max_single_sector_pct": 50.0
+     }
+    }
+   }
+  },
+  "H5_maturity_crosscheck": {
+   "why": "H=5 and H=10 are NOT nested samples \u2014 a row matures at H=5 ten sessions earlier, so the H=10 frame carries only the earlier boards and its per-status cells are thinner. Reported so a thin H=10 cell is never quoted without the larger-sample read of the same label beside it. H=5 is NOT a deliverable horizon of this battery.",
+   "rows": 969,
+   "by_entry_status": {
+    "<NULL>": {
+     "n": 265,
+     "names": 143,
+     "loser_rate_pct": 11.7,
+     "win_rate_pct": 74.0,
+     "median_excess_spy_pp": 3.64,
+     "median_excess_dm_pp": 0.72,
+     "per_name_first_median_pp": 3.91,
+     "mean_excess_spy_pp": 3.28,
+     "p25_pp": -0.1,
+     "p75_pp": 6.4
+    },
+    "await_confluence": {
+     "n": 92,
+     "names": 71,
+     "loser_rate_pct": 26.1,
+     "win_rate_pct": 52.2,
+     "median_excess_spy_pp": 0.23,
+     "median_excess_dm_pp": -0.32,
+     "per_name_first_median_pp": 0.02,
+     "mean_excess_spy_pp": 0.06,
+     "p25_pp": -3.1,
+     "p75_pp": 2.8
+    },
+    "blocked": {
+     "n": 5,
+     "names": 4,
+     "loser_rate_pct": 0.0,
+     "win_rate_pct": 40.0,
+     "median_excess_spy_pp": -1.77,
+     "median_excess_dm_pp": -4.07,
+     "per_name_first_median_pp": 1.32,
+     "mean_excess_spy_pp": 2.45,
+     "p25_pp": -1.8,
+     "p75_pp": 4.4,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=5 < 20; directional read only"
+    },
+    "bounce_wait": {
+     "n": 53,
+     "names": 38,
+     "loser_rate_pct": 20.8,
+     "win_rate_pct": 54.7,
+     "median_excess_spy_pp": 0.26,
+     "median_excess_dm_pp": -2.25,
+     "per_name_first_median_pp": -0.03,
+     "mean_excess_spy_pp": 1.74,
+     "p25_pp": -2.3,
+     "p75_pp": 4.0
+    },
+    "buy_now": {
+     "n": 59,
+     "names": 51,
+     "loser_rate_pct": 10.2,
+     "win_rate_pct": 66.1,
+     "median_excess_spy_pp": 1.65,
+     "median_excess_dm_pp": 1.15,
+     "per_name_first_median_pp": 1.6,
+     "mean_excess_spy_pp": 1.62,
+     "p25_pp": -0.5,
+     "p75_pp": 3.9
+    },
+    "buy_soon": {
+     "n": 88,
+     "names": 65,
+     "loser_rate_pct": 23.9,
+     "win_rate_pct": 54.5,
+     "median_excess_spy_pp": 0.24,
+     "median_excess_dm_pp": 0.11,
+     "per_name_first_median_pp": 1.17,
+     "mean_excess_spy_pp": 1.09,
+     "p25_pp": -2.8,
+     "p75_pp": 4.5
+    },
+    "extended": {
+     "n": 36,
+     "names": 27,
+     "loser_rate_pct": 22.2,
+     "win_rate_pct": 52.8,
+     "median_excess_spy_pp": 0.91,
+     "median_excess_dm_pp": -0.61,
+     "per_name_first_median_pp": 1.45,
+     "mean_excess_spy_pp": 0.53,
+     "p25_pp": -2.6,
+     "p75_pp": 4.4
+    },
+    "hold": {
+     "n": 223,
+     "names": 167,
+     "loser_rate_pct": 15.7,
+     "win_rate_pct": 54.3,
+     "median_excess_spy_pp": 0.59,
+     "median_excess_dm_pp": 0.15,
+     "per_name_first_median_pp": 0.63,
+     "mean_excess_spy_pp": 0.58,
+     "p25_pp": -1.7,
+     "p75_pp": 2.9
+    },
+    "partial": {
+     "n": 71,
+     "names": 54,
+     "loser_rate_pct": 16.9,
+     "win_rate_pct": 67.6,
+     "median_excess_spy_pp": 1.43,
+     "median_excess_dm_pp": 0.49,
+     "per_name_first_median_pp": 1.44,
+     "mean_excess_spy_pp": 1.32,
+     "p25_pp": -1.4,
+     "p75_pp": 3.7
+    },
+    "topping": {
+     "n": 1,
+     "names": 1,
+     "loser_rate_pct": 0.0,
+     "win_rate_pct": 100.0,
+     "median_excess_spy_pp": 8.88,
+     "median_excess_dm_pp": 6.6,
+     "per_name_first_median_pp": 8.88,
+     "mean_excess_spy_pp": 8.88,
+     "p25_pp": 8.9,
+     "p75_pp": 8.9,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=1 < 20; directional read only"
+    },
+    "wait_pullback": {
+     "n": 66,
+     "names": 56,
+     "loser_rate_pct": 22.7,
+     "win_rate_pct": 45.5,
+     "median_excess_spy_pp": -0.27,
+     "median_excess_dm_pp": -0.76,
+     "per_name_first_median_pp": -0.55,
+     "mean_excess_spy_pp": -0.46,
+     "p25_pp": -2.2,
+     "p75_pp": 2.7
+    },
+    "watch": {
+     "n": 10,
+     "names": 9,
+     "loser_rate_pct": 30.0,
+     "win_rate_pct": 60.0,
+     "median_excess_spy_pp": 0.52,
+     "median_excess_dm_pp": 0.42,
+     "per_name_first_median_pp": 0.3,
+     "mean_excess_spy_pp": -0.52,
+     "p25_pp": -4.0,
+     "p75_pp": 1.4,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=10 < 20; directional read only"
+    }
+   },
+   "statuses_whose_sign_differs_vs_H10": [
+    {
+     "status": "buy_now",
+     "H5": {
+      "n": 59,
+      "per_name_first_median_pp": 1.6,
+      "loser_rate_pct": 10.2
+     },
+     "H10": {
+      "n": 9,
+      "per_name_first_median_pp": -0.48,
+      "loser_rate_pct": 33.3
+     }
+    },
+    {
+     "status": "wait_pullback",
+     "H5": {
+      "n": 66,
+      "per_name_first_median_pp": -0.55,
+      "loser_rate_pct": 22.7
+     },
+     "H10": {
+      "n": 27,
+      "per_name_first_median_pp": 1.28,
+      "loser_rate_pct": 11.1
+     }
+    }
+   ]
+  }
+ },
+ "universe": {
+  "names": 1493,
+  "sessions": 777,
+  "range": [
+   "2023-06-27",
+   "2026-07-31"
+  ],
+  "min_history_sessions": 260,
+  "provenance": {
+   "cache_names": 1540,
+   "universe_after_min_history": 1493,
+   "names_deepened_from_yahoo_for_weekly_leg": 324,
+   "splice_scope": "WEEKLY leg only \u2014 the 3D/2D oscillator legs are computed on the unspliced production cache series so their resample phase matches the gate they grade",
+   "splice_rule": "cache value wins on any overlapping date; data/yahoo/<T>.parquet fills earlier history only"
+  },
+  "sector_map_coverage_pct": 38.5
+ },
+ "section_2_veto_labels": {
+  "question": "is any veto/exclusion label mispriced as a TIMING label?",
+  "construction": "full universe from the three closes caches; each label graded forward from the session on which it fired (the veto day)",
+  "eval_window": [
+   "2026-01-15",
+   "2026-07-17"
+  ],
+  "window_note": "last 126 sessions with full H=10 forward coverage; H=21 stats use the subset of those days that also carry 21 forward sessions (n reported separately per horizon)",
+  "leg_diagnostics": {
+   "universe_names": 1493,
+   "sessions": 777,
+   "in_range_name_days": 939611,
+   "fire_counts_name_days": {
+    "stoch_ob": 244829,
+    "stoch_bear": 387619,
+    "macd_bear": 292254,
+    "rsi_ge_cap": 139415,
+    "has_cross": 541741,
+    "eligible": 70972,
+    "above200": 377848,
+    "weekly_bull": 255955
+   },
+   "fire_rate_pct_of_in_range": {
+    "stoch_ob": 26.1,
+    "stoch_bear": 41.3,
+    "macd_bear": 31.1,
+    "rsi_ge_cap": 14.8,
+    "has_cross": 57.7,
+    "eligible": 7.6,
+    "above200": 40.2,
+    "weekly_bull": 27.2
+   },
+   "names_firing_at_least_once": {
+    "stoch_ob": 1493,
+    "stoch_bear": 1493,
+    "macd_bear": 1493,
+    "rsi_ge_cap": 1470,
+    "has_cross": 1489,
+    "eligible": 1491,
+    "above200": 1466,
+    "weekly_bull": 1253
+   },
+   "dead_legs": [],
+   "weekly_leg_computability": {
+    "names_computable": 1254,
+    "names_not_computable": 239,
+    "why": "_rsi_macd needs RSI_LEN(14)+BASE_LEN(60)=74 W-FRI bars before its first non-NaN; a shorter series yields an all-NaN weekly leg that .fillna(False) would render as a real bearish read. Cohorts depending on this leg are restricted to the computable names and say so."
+   },
+   "equality_spot_check": {
+    "basis": "inline ~(stoch_ob|stoch_bear|macd_bear) vs confluence_tiers.tier_stream not_topped, IN-RANGE cells only",
+    "cells": 939611,
+    "mismatches": 0,
+    "mismatch_pct": 0.0,
+    "residual_note": "a small residual is expected on each name's warm-up head, where tier_stream returns an empty frame (series shorter than MIN_HISTORY=200) and the inline legs still evaluate"
+   }
+  },
+  "w52_boundary": "FRESHNESS SCOPE \u2014 this section grades ALL freshness-expiry prints as a label, regardless of whether the other legs passed. The expired-with-ALL-OTHER-LEGS-PASSING counterfactual is a DIFFERENT construction and is owned by the in-flight W5.2 instrument (fresh_ticks_extension_replay.py, sibling lane). Nothing here duplicates, replaces or pre-empts that measurement.",
+  "by_horizon": {
+   "H10": {
+    "not_topped:stoch_ob": {
+     "n": 58340,
+     "names": 1486,
+     "loser_rate_pct": 33.0,
+     "win_rate_pct": 50.4,
+     "median_excess_spy_pp": 0.06,
+     "median_excess_dm_pp": 0.11,
+     "per_name_first_median_pp": -0.15,
+     "mean_excess_spy_pp": 0.34,
+     "p25_pp": -4.7,
+     "p75_pp": 4.9,
+     "fire_cells_in_window": 58446,
+     "sector_mix": {
+      "coverage_pct": 37.5,
+      "top_sectors_pct": {
+       "unknown": 62.5,
+       "Financials": 6.9,
+       "Consumer Discretionary": 5.3,
+       "Industrials": 5.3
+      },
+      "max_single_sector_pct": 62.5
+     },
+     "onset_only": {
+      "n": 3791,
+      "names": 1486,
+      "loser_rate_pct": 35.6,
+      "win_rate_pct": 46.0,
+      "median_excess_spy_pp": -0.6,
+      "median_excess_dm_pp": -0.18,
+      "per_name_first_median_pp": -0.38,
+      "mean_excess_spy_pp": -0.4,
+      "p25_pp": -4.9,
+      "p75_pp": 3.7
+     }
+    },
+    "not_topped:stoch_bear": {
+     "n": 90477,
+     "names": 1493,
+     "loser_rate_pct": 31.3,
+     "win_rate_pct": 51.9,
+     "median_excess_spy_pp": 0.32,
+     "median_excess_dm_pp": -0.08,
+     "per_name_first_median_pp": 0.37,
+     "mean_excess_spy_pp": 0.38,
+     "p25_pp": -4.4,
+     "p75_pp": 4.9,
+     "fire_cells_in_window": 90615,
+     "sector_mix": {
+      "coverage_pct": 38.6,
+      "top_sectors_pct": {
+       "unknown": 61.4,
+       "Financials": 7.5,
+       "Consumer Discretionary": 5.8,
+       "Industrials": 5.1
+      },
+      "max_single_sector_pct": 61.4
+     },
+     "onset_only": {
+      "n": 8414,
+      "names": 1493,
+      "loser_rate_pct": 32.9,
+      "win_rate_pct": 51.3,
+      "median_excess_spy_pp": 0.2,
+      "median_excess_dm_pp": 0.17,
+      "per_name_first_median_pp": 0.13,
+      "mean_excess_spy_pp": 0.21,
+      "p25_pp": -4.6,
+      "p75_pp": 4.8
+     }
+    },
+    "not_topped:macd_bear": {
+     "n": 85889,
+     "names": 1493,
+     "loser_rate_pct": 32.0,
+     "win_rate_pct": 50.3,
+     "median_excess_spy_pp": 0.04,
+     "median_excess_dm_pp": -0.03,
+     "per_name_first_median_pp": 0.28,
+     "mean_excess_spy_pp": 0.17,
+     "p25_pp": -4.4,
+     "p75_pp": 4.4,
+     "fire_cells_in_window": 86065,
+     "sector_mix": {
+      "coverage_pct": 39.5,
+      "top_sectors_pct": {
+       "unknown": 60.5,
+       "Financials": 6.7,
+       "Consumer Discretionary": 5.7,
+       "Industrials": 5.3
+      },
+      "max_single_sector_pct": 60.5
+     },
+     "onset_only": {
+      "n": 3735,
+      "names": 1493,
+      "loser_rate_pct": 30.8,
+      "win_rate_pct": 52.3,
+      "median_excess_spy_pp": 0.32,
+      "median_excess_dm_pp": 0.14,
+      "per_name_first_median_pp": -0.05,
+      "mean_excess_spy_pp": 0.41,
+      "p25_pp": -4.2,
+      "p75_pp": 4.9
+     }
+    },
+    "not_topped:any_leg": {
+     "n": 160969,
+     "names": 1493,
+     "loser_rate_pct": 32.4,
+     "win_rate_pct": 50.4,
+     "median_excess_spy_pp": 0.06,
+     "median_excess_dm_pp": -0.01,
+     "per_name_first_median_pp": 0.13,
+     "mean_excess_spy_pp": 0.24,
+     "p25_pp": -4.5,
+     "p75_pp": 4.7,
+     "fire_cells_in_window": 161260,
+     "sector_mix": {
+      "coverage_pct": 38.6,
+      "top_sectors_pct": {
+       "unknown": 61.4,
+       "Financials": 7.1,
+       "Consumer Discretionary": 5.6,
+       "Industrials": 5.2
+      },
+      "max_single_sector_pct": 61.4
+     },
+     "onset_only": {
+      "n": 5658,
+      "names": 1493,
+      "loser_rate_pct": 34.4,
+      "win_rate_pct": 47.9,
+      "median_excess_spy_pp": -0.34,
+      "median_excess_dm_pp": 0.01,
+      "per_name_first_median_pp": -0.27,
+      "mean_excess_spy_pp": -0.26,
+      "p25_pp": -4.8,
+      "p75_pp": 4.1
+     }
+    },
+    "freshness_expired:all_prints": {
+     "n": 129659,
+     "names": 1473,
+     "loser_rate_pct": 32.4,
+     "win_rate_pct": 50.7,
+     "median_excess_spy_pp": 0.12,
+     "median_excess_dm_pp": 0.0,
+     "per_name_first_median_pp": 0.21,
+     "mean_excess_spy_pp": 0.3,
+     "p25_pp": -4.6,
+     "p75_pp": 4.8,
+     "fire_cells_in_window": 129939,
+     "sector_mix": {
+      "coverage_pct": 37.6,
+      "top_sectors_pct": {
+       "unknown": 62.4,
+       "Financials": 7.5,
+       "Consumer Discretionary": 6.2,
+       "Industrials": 5.0
+      },
+      "max_single_sector_pct": 62.4
+     },
+     "onset_only": {
+      "n": 3813,
+      "names": 1473,
+      "loser_rate_pct": 37.8,
+      "win_rate_pct": 45.6,
+      "median_excess_spy_pp": -0.71,
+      "median_excess_dm_pp": -0.04,
+      "per_name_first_median_pp": -0.78,
+      "mean_excess_spy_pp": -0.55,
+      "p25_pp": -5.4,
+      "p75_pp": 4.1
+     }
+    },
+    "rsi_cap_ge65": {
+     "n": 33615,
+     "names": 1182,
+     "loser_rate_pct": 32.4,
+     "win_rate_pct": 50.5,
+     "median_excess_spy_pp": 0.08,
+     "median_excess_dm_pp": 0.09,
+     "per_name_first_median_pp": -0.71,
+     "mean_excess_spy_pp": 0.39,
+     "p25_pp": -4.6,
+     "p75_pp": 4.7,
+     "fire_cells_in_window": 33693,
+     "sector_mix": {
+      "coverage_pct": 39.4,
+      "top_sectors_pct": {
+       "unknown": 60.6,
+       "Industrials": 6.2,
+       "Financials": 5.9,
+       "Information Technology": 5.2
+      },
+      "max_single_sector_pct": 60.6
+     },
+     "onset_only": {
+      "n": 3058,
+      "names": 1182,
+      "loser_rate_pct": 33.4,
+      "win_rate_pct": 48.0,
+      "median_excess_spy_pp": -0.32,
+      "median_excess_dm_pp": -0.06,
+      "per_name_first_median_pp": -0.4,
+      "mean_excess_spy_pp": 0.0,
+      "p25_pp": -4.6,
+      "p75_pp": 4.0
+     }
+    },
+    "CONTROL:eligible_admitted": {
+     "n": 18625,
+     "names": 1474,
+     "loser_rate_pct": 33.7,
+     "win_rate_pct": 48.7,
+     "median_excess_spy_pp": -0.26,
+     "median_excess_dm_pp": 0.08,
+     "per_name_first_median_pp": 0.13,
+     "mean_excess_spy_pp": 0.1,
+     "p25_pp": -4.8,
+     "p75_pp": 4.7,
+     "fire_cells_in_window": 18678,
+     "sector_mix": {
+      "coverage_pct": 38.8,
+      "top_sectors_pct": {
+       "unknown": 61.2,
+       "Financials": 8.9,
+       "Consumer Discretionary": 5.9,
+       "Industrials": 5.5
+      },
+      "max_single_sector_pct": 61.2
+     },
+     "onset_only": {
+      "n": 3595,
+      "names": 1474,
+      "loser_rate_pct": 35.1,
+      "win_rate_pct": 47.6,
+      "median_excess_spy_pp": -0.52,
+      "median_excess_dm_pp": -0.11,
+      "per_name_first_median_pp": -0.28,
+      "mean_excess_spy_pp": -0.21,
+      "p25_pp": -4.9,
+      "p75_pp": 4.2
+     }
+    },
+    "not_topped:stoch_ob_ONLY": {
+     "n": 33803,
+     "names": 1486,
+     "loser_rate_pct": 33.6,
+     "win_rate_pct": 49.4,
+     "median_excess_spy_pp": -0.1,
+     "median_excess_dm_pp": 0.16,
+     "per_name_first_median_pp": -0.54,
+     "mean_excess_spy_pp": 0.22,
+     "p25_pp": -4.7,
+     "p75_pp": 4.6,
+     "fire_cells_in_window": 33868,
+     "sector_mix": {
+      "coverage_pct": 37.5,
+      "top_sectors_pct": {
+       "unknown": 62.5,
+       "Financials": 6.9,
+       "Industrials": 5.2,
+       "Consumer Discretionary": 5.2
+      },
+      "max_single_sector_pct": 62.5
+     },
+     "onset_only": {
+      "n": 4711,
+      "names": 1486,
+      "loser_rate_pct": 35.1,
+      "win_rate_pct": 47.3,
+      "median_excess_spy_pp": -0.44,
+      "median_excess_dm_pp": -0.05,
+      "per_name_first_median_pp": -0.37,
+      "mean_excess_spy_pp": -0.2,
+      "p25_pp": -4.9,
+      "p75_pp": 4.0
+     }
+    },
+    "not_topped:stoch_bear_ONLY": {
+     "n": 17543,
+     "names": 1374,
+     "loser_rate_pct": 32.3,
+     "win_rate_pct": 51.4,
+     "median_excess_spy_pp": 0.25,
+     "median_excess_dm_pp": -0.3,
+     "per_name_first_median_pp": 0.41,
+     "mean_excess_spy_pp": 0.3,
+     "p25_pp": -4.5,
+     "p75_pp": 5.2,
+     "fire_cells_in_window": 17566,
+     "sector_mix": {
+      "coverage_pct": 37.7,
+      "top_sectors_pct": {
+       "unknown": 62.3,
+       "Financials": 9.7,
+       "Consumer Discretionary": 6.1,
+       "Industrials": 4.4
+      },
+      "max_single_sector_pct": 62.3
+     },
+     "onset_only": {
+      "n": 3456,
+      "names": 1374,
+      "loser_rate_pct": 33.1,
+      "win_rate_pct": 51.4,
+      "median_excess_spy_pp": 0.21,
+      "median_excess_dm_pp": -0.25,
+      "per_name_first_median_pp": 0.16,
+      "mean_excess_spy_pp": 0.19,
+      "p25_pp": -4.5,
+      "p75_pp": 5.0
+     }
+    },
+    "not_topped:macd_bear_ONLY": {
+     "n": 36590,
+     "names": 1489,
+     "loser_rate_pct": 34.0,
+     "win_rate_pct": 47.7,
+     "median_excess_spy_pp": -0.34,
+     "median_excess_dm_pp": 0.01,
+     "per_name_first_median_pp": -0.07,
+     "mean_excess_spy_pp": -0.06,
+     "p25_pp": -4.8,
+     "p75_pp": 4.1,
+     "fire_cells_in_window": 36666,
+     "sector_mix": {
+      "coverage_pct": 39.8,
+      "top_sectors_pct": {
+       "unknown": 60.2,
+       "Financials": 6.4,
+       "Consumer Discretionary": 5.6,
+       "Industrials": 5.5
+      },
+      "max_single_sector_pct": 60.2
+     },
+     "onset_only": {
+      "n": 4535,
+      "names": 1489,
+      "loser_rate_pct": 31.5,
+      "win_rate_pct": 50.9,
+      "median_excess_spy_pp": 0.15,
+      "median_excess_dm_pp": -0.06,
+      "per_name_first_median_pp": 0.43,
+      "mean_excess_spy_pp": 0.06,
+      "p25_pp": -4.6,
+      "p75_pp": 4.4
+     }
+    }
+   },
+   "H21": {
+    "not_topped:stoch_ob": {
+     "n": 51690,
+     "names": 1483,
+     "loser_rate_pct": 38.1,
+     "win_rate_pct": 50.5,
+     "median_excess_spy_pp": 0.13,
+     "median_excess_dm_pp": 0.19,
+     "per_name_first_median_pp": -0.47,
+     "mean_excess_spy_pp": 0.82,
+     "p25_pp": -6.8,
+     "p75_pp": 7.4,
+     "fire_cells_in_window": 58446,
+     "sector_mix": {
+      "coverage_pct": 38.2,
+      "top_sectors_pct": {
+       "unknown": 61.8,
+       "Financials": 6.8,
+       "Industrials": 5.5,
+       "Consumer Discretionary": 5.5
+      },
+      "max_single_sector_pct": 61.8
+     },
+     "onset_only": {
+      "n": 3433,
+      "names": 1483,
+      "loser_rate_pct": 41.4,
+      "win_rate_pct": 49.1,
+      "median_excess_spy_pp": -0.27,
+      "median_excess_dm_pp": -0.21,
+      "per_name_first_median_pp": -0.21,
+      "mean_excess_spy_pp": -0.13,
+      "p25_pp": -8.1,
+      "p75_pp": 7.0
+     }
+    },
+    "not_topped:stoch_bear": {
+     "n": 82364,
+     "names": 1493,
+     "loser_rate_pct": 36.6,
+     "win_rate_pct": 51.5,
+     "median_excess_spy_pp": 0.39,
+     "median_excess_dm_pp": -0.02,
+     "per_name_first_median_pp": 0.32,
+     "mean_excess_spy_pp": 0.88,
+     "p25_pp": -6.3,
+     "p75_pp": 7.2,
+     "fire_cells_in_window": 90615,
+     "sector_mix": {
+      "coverage_pct": 38.9,
+      "top_sectors_pct": {
+       "unknown": 61.1,
+       "Financials": 7.6,
+       "Consumer Discretionary": 5.7,
+       "Industrials": 5.0
+      },
+      "max_single_sector_pct": 61.1
+     },
+     "onset_only": {
+      "n": 7547,
+      "names": 1493,
+      "loser_rate_pct": 37.6,
+      "win_rate_pct": 52.0,
+      "median_excess_spy_pp": 0.56,
+      "median_excess_dm_pp": 0.13,
+      "per_name_first_median_pp": 0.62,
+      "mean_excess_spy_pp": 0.82,
+      "p25_pp": -7.0,
+      "p75_pp": 7.5
+     }
+    },
+    "not_topped:macd_bear": {
+     "n": 79600,
+     "names": 1491,
+     "loser_rate_pct": 40.5,
+     "win_rate_pct": 47.6,
+     "median_excess_spy_pp": -0.59,
+     "median_excess_dm_pp": -0.07,
+     "per_name_first_median_pp": -0.06,
+     "mean_excess_spy_pp": -0.02,
+     "p25_pp": -7.4,
+     "p75_pp": 6.2,
+     "fire_cells_in_window": 86065,
+     "sector_mix": {
+      "coverage_pct": 39.2,
+      "top_sectors_pct": {
+       "unknown": 60.8,
+       "Financials": 6.8,
+       "Consumer Discretionary": 5.6,
+       "Industrials": 5.3
+      },
+      "max_single_sector_pct": 60.8
+     },
+     "onset_only": {
+      "n": 3440,
+      "names": 1491,
+      "loser_rate_pct": 34.8,
+      "win_rate_pct": 54.9,
+      "median_excess_spy_pp": 1.24,
+      "median_excess_dm_pp": 0.58,
+      "per_name_first_median_pp": 0.66,
+      "mean_excess_spy_pp": 1.69,
+      "p25_pp": -5.9,
+      "p75_pp": 8.2
+     }
+    },
+    "not_topped:any_leg": {
+     "n": 146792,
+     "names": 1493,
+     "loser_rate_pct": 39.2,
+     "win_rate_pct": 49.0,
+     "median_excess_spy_pp": -0.24,
+     "median_excess_dm_pp": -0.01,
+     "per_name_first_median_pp": -0.16,
+     "mean_excess_spy_pp": 0.36,
+     "p25_pp": -7.1,
+     "p75_pp": 6.7,
+     "fire_cells_in_window": 161260,
+     "sector_mix": {
+      "coverage_pct": 38.7,
+      "top_sectors_pct": {
+       "unknown": 61.3,
+       "Financials": 7.1,
+       "Consumer Discretionary": 5.6,
+       "Industrials": 5.2
+      },
+      "max_single_sector_pct": 61.3
+     },
+     "onset_only": {
+      "n": 5151,
+      "names": 1493,
+      "loser_rate_pct": 39.3,
+      "win_rate_pct": 51.4,
+      "median_excess_spy_pp": 0.36,
+      "median_excess_dm_pp": 0.0,
+      "per_name_first_median_pp": 0.31,
+      "mean_excess_spy_pp": 0.39,
+      "p25_pp": -7.7,
+      "p75_pp": 7.6
+     }
+    },
+    "freshness_expired:all_prints": {
+     "n": 116176,
+     "names": 1448,
+     "loser_rate_pct": 38.2,
+     "win_rate_pct": 50.3,
+     "median_excess_spy_pp": 0.07,
+     "median_excess_dm_pp": 0.05,
+     "per_name_first_median_pp": 0.44,
+     "mean_excess_spy_pp": 0.6,
+     "p25_pp": -6.9,
+     "p75_pp": 7.1,
+     "fire_cells_in_window": 129939,
+     "sector_mix": {
+      "coverage_pct": 37.7,
+      "top_sectors_pct": {
+       "unknown": 62.3,
+       "Financials": 7.5,
+       "Consumer Discretionary": 6.3,
+       "Industrials": 5.0
+      },
+      "max_single_sector_pct": 62.3
+     },
+     "onset_only": {
+      "n": 3460,
+      "names": 1448,
+      "loser_rate_pct": 39.5,
+      "win_rate_pct": 49.3,
+      "median_excess_spy_pp": -0.19,
+      "median_excess_dm_pp": 0.11,
+      "per_name_first_median_pp": -0.25,
+      "mean_excess_spy_pp": 0.43,
+      "p25_pp": -7.3,
+      "p75_pp": 7.2
+     }
+    },
+    "rsi_cap_ge65": {
+     "n": 30567,
+     "names": 1124,
+     "loser_rate_pct": 38.6,
+     "win_rate_pct": 49.4,
+     "median_excess_spy_pp": -0.15,
+     "median_excess_dm_pp": -0.0,
+     "per_name_first_median_pp": -1.92,
+     "mean_excess_spy_pp": 0.55,
+     "p25_pp": -6.8,
+     "p75_pp": 6.8,
+     "fire_cells_in_window": 33693,
+     "sector_mix": {
+      "coverage_pct": 39.7,
+      "top_sectors_pct": {
+       "unknown": 60.3,
+       "Industrials": 6.6,
+       "Information Technology": 5.6,
+       "Financials": 5.4
+      },
+      "max_single_sector_pct": 60.3
+     },
+     "onset_only": {
+      "n": 2733,
+      "names": 1124,
+      "loser_rate_pct": 38.0,
+      "win_rate_pct": 50.2,
+      "median_excess_spy_pp": 0.04,
+      "median_excess_dm_pp": 0.26,
+      "per_name_first_median_pp": -0.47,
+      "mean_excess_spy_pp": 0.74,
+      "p25_pp": -7.1,
+      "p75_pp": 7.3
+     }
+    },
+    "CONTROL:eligible_admitted": {
+     "n": 16962,
+     "names": 1455,
+     "loser_rate_pct": 44.2,
+     "win_rate_pct": 45.2,
+     "median_excess_spy_pp": -1.38,
+     "median_excess_dm_pp": 0.11,
+     "per_name_first_median_pp": -1.22,
+     "mean_excess_spy_pp": -0.64,
+     "p25_pp": -8.5,
+     "p75_pp": 6.2,
+     "fire_cells_in_window": 18678,
+     "sector_mix": {
+      "coverage_pct": 38.1,
+      "top_sectors_pct": {
+       "unknown": 61.9,
+       "Financials": 9.0,
+       "Consumer Discretionary": 6.0,
+       "Industrials": 5.5
+      },
+      "max_single_sector_pct": 61.9
+     },
+     "onset_only": {
+      "n": 3281,
+      "names": 1455,
+      "loser_rate_pct": 43.1,
+      "win_rate_pct": 46.8,
+      "median_excess_spy_pp": -0.97,
+      "median_excess_dm_pp": 0.04,
+      "per_name_first_median_pp": -0.77,
+      "mean_excess_spy_pp": -0.34,
+      "p25_pp": -8.4,
+      "p75_pp": 6.8
+     }
+    },
+    "not_topped:stoch_ob_ONLY": {
+     "n": 30200,
+     "names": 1482,
+     "loser_rate_pct": 39.3,
+     "win_rate_pct": 49.3,
+     "median_excess_spy_pp": -0.19,
+     "median_excess_dm_pp": 0.21,
+     "per_name_first_median_pp": -0.92,
+     "mean_excess_spy_pp": 0.46,
+     "p25_pp": -7.2,
+     "p75_pp": 7.0,
+     "fire_cells_in_window": 33868,
+     "sector_mix": {
+      "coverage_pct": 38.2,
+      "top_sectors_pct": {
+       "unknown": 61.8,
+       "Financials": 6.8,
+       "Consumer Discretionary": 5.5,
+       "Industrials": 5.5
+      },
+      "max_single_sector_pct": 61.8
+     },
+     "onset_only": {
+      "n": 4283,
+      "names": 1482,
+      "loser_rate_pct": 40.0,
+      "win_rate_pct": 49.5,
+      "median_excess_spy_pp": -0.12,
+      "median_excess_dm_pp": -0.08,
+      "per_name_first_median_pp": -0.41,
+      "mean_excess_spy_pp": 0.19,
+      "p25_pp": -7.7,
+      "p75_pp": 7.0
+     }
+    },
+    "not_topped:stoch_bear_ONLY": {
+     "n": 16221,
+     "names": 1329,
+     "loser_rate_pct": 36.3,
+     "win_rate_pct": 51.9,
+     "median_excess_spy_pp": 0.45,
+     "median_excess_dm_pp": -0.33,
+     "per_name_first_median_pp": 0.48,
+     "mean_excess_spy_pp": 0.79,
+     "p25_pp": -6.4,
+     "p75_pp": 7.3,
+     "fire_cells_in_window": 17566,
+     "sector_mix": {
+      "coverage_pct": 37.9,
+      "top_sectors_pct": {
+       "unknown": 62.1,
+       "Financials": 9.8,
+       "Consumer Discretionary": 6.0,
+       "Information Technology": 4.4
+      },
+      "max_single_sector_pct": 62.1
+     },
+     "onset_only": {
+      "n": 3101,
+      "names": 1329,
+      "loser_rate_pct": 36.3,
+      "win_rate_pct": 52.7,
+      "median_excess_spy_pp": 0.66,
+      "median_excess_dm_pp": -0.28,
+      "per_name_first_median_pp": 0.95,
+      "mean_excess_spy_pp": 1.12,
+      "p25_pp": -6.5,
+      "p75_pp": 8.0
+     }
+    },
+    "not_topped:macd_bear_ONLY": {
+     "n": 34137,
+     "names": 1483,
+     "loser_rate_pct": 45.5,
+     "win_rate_pct": 42.9,
+     "median_excess_spy_pp": -1.83,
+     "median_excess_dm_pp": -0.21,
+     "per_name_first_median_pp": -1.27,
+     "mean_excess_spy_pp": -1.0,
+     "p25_pp": -8.8,
+     "p75_pp": 5.2,
+     "fire_cells_in_window": 36666,
+     "sector_mix": {
+      "coverage_pct": 39.0,
+      "top_sectors_pct": {
+       "unknown": 61.0,
+       "Financials": 6.4,
+       "Industrials": 5.6,
+       "Consumer Discretionary": 5.6
+      },
+      "max_single_sector_pct": 61.0
+     },
+     "onset_only": {
+      "n": 4196,
+      "names": 1483,
+      "loser_rate_pct": 40.9,
+      "win_rate_pct": 47.4,
+      "median_excess_spy_pp": -0.62,
+      "median_excess_dm_pp": -0.05,
+      "per_name_first_median_pp": -0.1,
+      "mean_excess_spy_pp": 0.04,
+      "p25_pp": -7.5,
+      "p75_pp": 6.4
+     }
+    }
+   }
+  },
+  "ranked_labels_H10_by_per_name_median": [
+   {
+    "label": "not_topped:stoch_bear_ONLY",
+    "n": 17543,
+    "per_name_first_median_pp": 0.41,
+    "median_excess_spy_pp": 0.25,
+    "median_excess_dm_pp": -0.3,
+    "loser_rate_pct": 32.3
+   },
+   {
+    "label": "not_topped:stoch_bear",
+    "n": 90477,
+    "per_name_first_median_pp": 0.37,
+    "median_excess_spy_pp": 0.32,
+    "median_excess_dm_pp": -0.08,
+    "loser_rate_pct": 31.3
+   },
+   {
+    "label": "not_topped:macd_bear",
+    "n": 85889,
+    "per_name_first_median_pp": 0.28,
+    "median_excess_spy_pp": 0.04,
+    "median_excess_dm_pp": -0.03,
+    "loser_rate_pct": 32.0
+   },
+   {
+    "label": "freshness_expired:all_prints",
+    "n": 129659,
+    "per_name_first_median_pp": 0.21,
+    "median_excess_spy_pp": 0.12,
+    "median_excess_dm_pp": 0.0,
+    "loser_rate_pct": 32.4
+   },
+   {
+    "label": "not_topped:any_leg",
+    "n": 160969,
+    "per_name_first_median_pp": 0.13,
+    "median_excess_spy_pp": 0.06,
+    "median_excess_dm_pp": -0.01,
+    "loser_rate_pct": 32.4
+   },
+   {
+    "label": "not_topped:macd_bear_ONLY",
+    "n": 36590,
+    "per_name_first_median_pp": -0.07,
+    "median_excess_spy_pp": -0.34,
+    "median_excess_dm_pp": 0.01,
+    "loser_rate_pct": 34.0
+   },
+   {
+    "label": "not_topped:stoch_ob",
+    "n": 58340,
+    "per_name_first_median_pp": -0.15,
+    "median_excess_spy_pp": 0.06,
+    "median_excess_dm_pp": 0.11,
+    "loser_rate_pct": 33.0
+   },
+   {
+    "label": "not_topped:stoch_ob_ONLY",
+    "n": 33803,
+    "per_name_first_median_pp": -0.54,
+    "median_excess_spy_pp": -0.1,
+    "median_excess_dm_pp": 0.16,
+    "loser_rate_pct": 33.6
+   },
+   {
+    "label": "rsi_cap_ge65",
+    "n": 33615,
+    "per_name_first_median_pp": -0.71,
+    "median_excess_spy_pp": 0.08,
+    "median_excess_dm_pp": 0.09,
+    "loser_rate_pct": 32.4
+   }
+  ],
+  "control_admitted_H10": {
+   "n": 18625,
+   "per_name_first_median_pp": 0.13,
+   "median_excess_spy_pp": -0.26,
+   "median_excess_dm_pp": 0.08,
+   "loser_rate_pct": 33.7,
+   "note": "the cohort the gate ADMITTED \u2014 the bar any veto label must clear before 'this veto is mispriced' means anything"
+  },
+  "half_split_labels_beating_control": {
+   "not_topped:stoch_bear_ONLY": {
+    "split_at": "2026-04-14",
+    "distinct_dates": 126,
+    "first_half": {
+     "n": 8819,
+     "names": 1069,
+     "loser_rate_pct": 35.0,
+     "win_rate_pct": 49.2,
+     "median_excess_spy_pp": -0.16,
+     "median_excess_dm_pp": -0.79,
+     "per_name_first_median_pp": -0.24,
+     "mean_excess_spy_pp": -0.14,
+     "p25_pp": -5.2,
+     "p75_pp": 4.8
+    },
+    "second_half": {
+     "n": 8724,
+     "names": 1093,
+     "loser_rate_pct": 29.6,
+     "win_rate_pct": 53.6,
+     "median_excess_spy_pp": 0.67,
+     "median_excess_dm_pp": 0.17,
+     "per_name_first_median_pp": 0.47,
+     "mean_excess_spy_pp": 0.74,
+     "p25_pp": -3.9,
+     "p75_pp": 5.6
+    },
+    "sign_flip_across_halves": true,
+    "per_name_median_gap_pp": 0.71
+   },
+   "not_topped:stoch_bear": {
+    "split_at": "2026-04-14",
+    "distinct_dates": 126,
+    "first_half": {
+     "n": 45426,
+     "names": 1493,
+     "loser_rate_pct": 32.8,
+     "win_rate_pct": 50.7,
+     "median_excess_spy_pp": 0.12,
+     "median_excess_dm_pp": -0.3,
+     "per_name_first_median_pp": 0.22,
+     "mean_excess_spy_pp": 0.08,
+     "p25_pp": -4.7,
+     "p75_pp": 4.6
+    },
+    "second_half": {
+     "n": 45051,
+     "names": 1493,
+     "loser_rate_pct": 29.9,
+     "win_rate_pct": 53.1,
+     "median_excess_spy_pp": 0.52,
+     "median_excess_dm_pp": 0.12,
+     "per_name_first_median_pp": 0.66,
+     "mean_excess_spy_pp": 0.67,
+     "p25_pp": -4.0,
+     "p75_pp": 5.2
+    },
+    "sign_flip_across_halves": false,
+    "per_name_median_gap_pp": 0.44
+   },
+   "not_topped:macd_bear": {
+    "split_at": "2026-04-08",
+    "distinct_dates": 126,
+    "first_half": {
+     "n": 43743,
+     "names": 1463,
+     "loser_rate_pct": 31.4,
+     "win_rate_pct": 50.4,
+     "median_excess_spy_pp": 0.06,
+     "median_excess_dm_pp": 0.11,
+     "per_name_first_median_pp": 0.23,
+     "mean_excess_spy_pp": 0.17,
+     "p25_pp": -4.3,
+     "p75_pp": 4.2
+    },
+    "second_half": {
+     "n": 42146,
+     "names": 1441,
+     "loser_rate_pct": 32.6,
+     "win_rate_pct": 50.1,
+     "median_excess_spy_pp": 0.02,
+     "median_excess_dm_pp": -0.19,
+     "per_name_first_median_pp": 0.55,
+     "mean_excess_spy_pp": 0.17,
+     "p25_pp": -4.6,
+     "p75_pp": 4.6
+    },
+    "sign_flip_across_halves": false,
+    "per_name_median_gap_pp": 0.32
+   },
+   "freshness_expired:all_prints": {
+    "split_at": "2026-04-30",
+    "distinct_dates": 126,
+    "first_half": {
+     "n": 65792,
+     "names": 1289,
+     "loser_rate_pct": 36.5,
+     "win_rate_pct": 46.4,
+     "median_excess_spy_pp": -0.59,
+     "median_excess_dm_pp": 0.05,
+     "per_name_first_median_pp": -0.71,
+     "mean_excess_spy_pp": -0.33,
+     "p25_pp": -5.4,
+     "p75_pp": 4.2
+    },
+    "second_half": {
+     "n": 63867,
+     "names": 1473,
+     "loser_rate_pct": 28.2,
+     "win_rate_pct": 55.1,
+     "median_excess_spy_pp": 0.84,
+     "median_excess_dm_pp": -0.03,
+     "per_name_first_median_pp": 0.97,
+     "mean_excess_spy_pp": 0.95,
+     "p25_pp": -3.7,
+     "p75_pp": 5.4
+    },
+    "sign_flip_across_halves": true,
+    "per_name_median_gap_pp": 1.68
+   }
+  },
+  "widening_cost_vs_control_H10": {
+   "not_topped:stoch_ob": {
+    "n_admitted_if_widened": 58340,
+    "loser_rate_pct": 33.0,
+    "win_rate_pct": 50.4,
+    "median_excess_spy_pp": 0.06,
+    "vs_control_per_name_median_pp": -0.28
+   },
+   "not_topped:stoch_bear": {
+    "n_admitted_if_widened": 90477,
+    "loser_rate_pct": 31.3,
+    "win_rate_pct": 51.9,
+    "median_excess_spy_pp": 0.32,
+    "vs_control_per_name_median_pp": 0.24
+   },
+   "not_topped:macd_bear": {
+    "n_admitted_if_widened": 85889,
+    "loser_rate_pct": 32.0,
+    "win_rate_pct": 50.3,
+    "median_excess_spy_pp": 0.04,
+    "vs_control_per_name_median_pp": 0.15
+   },
+   "not_topped:any_leg": {
+    "n_admitted_if_widened": 160969,
+    "loser_rate_pct": 32.4,
+    "win_rate_pct": 50.4,
+    "median_excess_spy_pp": 0.06,
+    "vs_control_per_name_median_pp": 0.0
+   },
+   "freshness_expired:all_prints": {
+    "n_admitted_if_widened": 129659,
+    "loser_rate_pct": 32.4,
+    "win_rate_pct": 50.7,
+    "median_excess_spy_pp": 0.12,
+    "vs_control_per_name_median_pp": 0.08
+   },
+   "rsi_cap_ge65": {
+    "n_admitted_if_widened": 33615,
+    "loser_rate_pct": 32.4,
+    "win_rate_pct": 50.5,
+    "median_excess_spy_pp": 0.08,
+    "vs_control_per_name_median_pp": -0.84
+   },
+   "not_topped:stoch_ob_ONLY": {
+    "n_admitted_if_widened": 33803,
+    "loser_rate_pct": 33.6,
+    "win_rate_pct": 49.4,
+    "median_excess_spy_pp": -0.1,
+    "vs_control_per_name_median_pp": -0.67
+   },
+   "not_topped:stoch_bear_ONLY": {
+    "n_admitted_if_widened": 17543,
+    "loser_rate_pct": 32.3,
+    "win_rate_pct": 51.4,
+    "median_excess_spy_pp": 0.25,
+    "vs_control_per_name_median_pp": 0.28
+   },
+   "not_topped:macd_bear_ONLY": {
+    "n_admitted_if_widened": 36590,
+    "loser_rate_pct": 34.0,
+    "win_rate_pct": 47.7,
+    "median_excess_spy_pp": -0.34,
+    "vs_control_per_name_median_pp": -0.2
+   }
+  }
+ },
+ "section_3_ran_lane": {
+  "question": "how does the US ran cohort grade from its own anchor?",
+  "census": {
+   "ledger_lanes": {
+    "buy": 1406,
+    "watch": 558,
+    "laggards": 318
+   },
+   "snapshot_lanes": {
+    "buy": {
+     "name_rows": 750,
+     "dates": 17,
+     "range": [
+      "2026-06-30",
+      "2026-07-31"
+     ]
+    },
+    "watch": {
+     "name_rows": 504,
+     "dates": 17,
+     "range": [
+      "2026-06-30",
+      "2026-07-31"
+     ]
+    },
+    "laggards": {
+     "name_rows": 199,
+     "dates": 17,
+     "range": [
+      "2026-06-30",
+      "2026-07-31"
+     ]
+    },
+    "leaders": {
+     "name_rows": 60,
+     "dates": 4,
+     "range": [
+      "2026-07-28",
+      "2026-07-31"
+     ]
+    }
+   },
+   "COVERAGE_DEBT": "The production 'ran' ARRAY has NO point-in-time history at all: it is absent from every row of retro_grades.parquet and from every snapshot in snapshots.jsonl. scripts/grade_us_board.py:164-168 records why \u2014 the lane was added 2026-08-02 as a NEW forward cohort, and the snapshot store ends 2026-07-31. 'leaders' is in the same position for a shorter reason: 4 board dates (2026-07-28..07-31), none of them matured at H=10 as of this run. WHAT MUST ACCRUE: ~10 further board sessions carrying the `ran` key, plus H=10 maturity on the earliest of them \u2014 roughly 4 trading weeks from 2026-08-02 \u2014 before 3b can be graded on PRODUCTION rows rather than the reconstruction below."
+  },
+  "ran_statuses_source": {
+   "value": [
+    "extended",
+    "hold",
+    "topping"
+   ],
+   "source": "engine/us_board_rank.py:136 _RAN_STATUSES (bucketed by stage_of, l.419)"
+  },
+  "a_stage_ran_from_ledger": {
+   "basis": "BUY-lane ledger rows whose entry_status buckets to STAGE_RAN; anchor = the board admission date on the row (its own entry)",
+   "H10": {
+    "n": 55,
+    "names": 47,
+    "loser_rate_pct": 14.5,
+    "win_rate_pct": 74.5,
+    "median_excess_spy_pp": 2.35,
+    "median_excess_dm_pp": 0.62,
+    "per_name_first_median_pp": 2.32,
+    "mean_excess_spy_pp": 2.33,
+    "p25_pp": -0.1,
+    "p75_pp": 6.4,
+    "per_status": {
+     "extended": {
+      "n": 8,
+      "names": 7,
+      "loser_rate_pct": 0.0,
+      "win_rate_pct": 75.0,
+      "median_excess_spy_pp": 4.65,
+      "median_excess_dm_pp": 2.89,
+      "per_name_first_median_pp": 2.35,
+      "mean_excess_spy_pp": 5.17,
+      "p25_pp": 1.3,
+      "p75_pp": 7.6,
+      "thin": true,
+      "thin_note": "THIN CELL \u2014 n=8 < 20; directional read only"
+     },
+     "hold": {
+      "n": 47,
+      "names": 40,
+      "loser_rate_pct": 17.0,
+      "win_rate_pct": 74.5,
+      "median_excess_spy_pp": 2.32,
+      "median_excess_dm_pp": 0.12,
+      "per_name_first_median_pp": 2.3,
+      "mean_excess_spy_pp": 1.85,
+      "p25_pp": -0.1,
+      "p75_pp": 6.0
+     }
+    },
+    "rest_of_buy_lane": {
+     "n": 348,
+     "names": 213,
+     "loser_rate_pct": 27.6,
+     "win_rate_pct": 60.3,
+     "median_excess_spy_pp": 1.61,
+     "median_excess_dm_pp": 0.35,
+     "per_name_first_median_pp": 1.6,
+     "mean_excess_spy_pp": 1.3,
+     "p25_pp": -3.6,
+     "p75_pp": 5.9
+    },
+    "half_split": {
+     "split_at": "2026-07-02",
+     "distinct_dates": 7,
+     "first_half": {
+      "n": 34,
+      "names": 31,
+      "loser_rate_pct": 14.7,
+      "win_rate_pct": 79.4,
+      "median_excess_spy_pp": 2.58,
+      "median_excess_dm_pp": 0.42,
+      "per_name_first_median_pp": 2.37,
+      "mean_excess_spy_pp": 2.26,
+      "p25_pp": 0.7,
+      "p75_pp": 5.9
+     },
+     "second_half": {
+      "n": 21,
+      "names": 19,
+      "loser_rate_pct": 14.3,
+      "win_rate_pct": 66.7,
+      "median_excess_spy_pp": 1.92,
+      "median_excess_dm_pp": 0.89,
+      "per_name_first_median_pp": 1.89,
+      "mean_excess_spy_pp": 2.45,
+      "p25_pp": -1.0,
+      "p75_pp": 6.8
+     },
+     "sign_flip_across_halves": false,
+     "per_name_median_gap_pp": 0.48
+    },
+    "sector_mix": {
+     "coverage_pct": 100.0,
+     "top_sectors_pct": {
+      "Real Estate": 18.2,
+      "Utilities": 18.2,
+      "Materials": 12.7,
+      "Industrials": 10.9
+     },
+     "max_single_sector_pct": 18.2
+    }
+   },
+   "H21": {
+    "n": 18,
+    "names": 18,
+    "loser_rate_pct": 27.8,
+    "win_rate_pct": 33.3,
+    "median_excess_spy_pp": -1.44,
+    "median_excess_dm_pp": -2.89,
+    "per_name_first_median_pp": -1.44,
+    "mean_excess_spy_pp": 0.58,
+    "p25_pp": -3.2,
+    "p75_pp": 3.1,
+    "thin": true,
+    "thin_note": "THIN CELL \u2014 n=18 < 20; directional read only",
+    "per_status": {
+     "hold": {
+      "n": 18,
+      "names": 18,
+      "loser_rate_pct": 27.8,
+      "win_rate_pct": 33.3,
+      "median_excess_spy_pp": -1.44,
+      "median_excess_dm_pp": -2.89,
+      "per_name_first_median_pp": -1.44,
+      "mean_excess_spy_pp": 0.58,
+      "p25_pp": -3.2,
+      "p75_pp": 3.1,
+      "thin": true,
+      "thin_note": "THIN CELL \u2014 n=18 < 20; directional read only"
+     }
+    },
+    "rest_of_buy_lane": {
+     "n": 16,
+     "names": 16,
+     "loser_rate_pct": 18.8,
+     "win_rate_pct": 62.5,
+     "median_excess_spy_pp": 0.7,
+     "median_excess_dm_pp": -0.75,
+     "per_name_first_median_pp": 0.7,
+     "mean_excess_spy_pp": 2.43,
+     "p25_pp": -1.9,
+     "p75_pp": 4.6,
+     "thin": true,
+     "thin_note": "THIN CELL \u2014 n=16 < 20; directional read only"
+    },
+    "half_split": {
+     "note": "UNRUNNABLE \u2014 all observations share a single date; a time half-split cannot test this cohort",
+     "n": 18,
+     "distinct_dates": 1
+    },
+    "sector_mix": {
+     "coverage_pct": 100.0,
+     "top_sectors_pct": {
+      "Utilities": 38.9,
+      "Information Technology": 11.1,
+      "Financials": 11.1,
+      "Materials": 11.1
+     },
+     "max_single_sector_pct": 38.9
+    }
+   }
+  },
+  "b_ran_array_reconstructed": {
+   "basis": "close-only PIT reconstruction of engine/us_board_rank.ran_admits (l.1055) from its published rules; graded from the LANE-ENTRY day (first session of each contiguous run), which is the lane's own anchor",
+   "rules_applied": {
+    "eligible_is_False": "engine.confluence_tiers.tier_stream eligible column",
+    "ticks_window": [
+     3,
+     15
+    ],
+    "above200": "close > 200d MA (daily grid)",
+    "weekly_bull": "W-FRI RSI-MACD m>=s, shifted 1 \u2014 the identical formula the live verdict uses at engine/signal_quality.py:95-97"
+   },
+   "PROXY_CAVEATS": [
+    "tier_stream's `eligible` is the close-only twin of the production verdict; the live board's T1 comes from the \u00a77 held master, of which the raw-3D-cross fallback used here is a superset (confluence_tiers.tier_stream docstring).",
+    "the production array also EXCLUDES names already on buy/watch/leaders/laggards (scripts/build_stock_library.py:4138-4141) and caps at RAN_CAP=12; neither is applied here, so this cohort is a SUPERSET.",
+    "the `dir == 'down'` leg of ran_admits reads a board row field with no close-only twin and is not applied.",
+    "above200/weekly_bull are computed on the DAILY grid; production samples the same formulas onto the 3B grid (signal_quality l.95-99)."
+   ],
+   "weekly_leg_universe_bound": {
+    "names_in_scope": 1254,
+    "names_excluded_leg_uncomputable": 239,
+    "note": "the ran gate REQUIRES weekly_bull, so names whose weekly leg cannot be computed are out of scope for 3b rather than counted as bearish"
+   },
+   "H10": {
+    "n": 2314,
+    "names": 988,
+    "loser_rate_pct": 32.3,
+    "win_rate_pct": 52.0,
+    "median_excess_spy_pp": 0.35,
+    "median_excess_dm_pp": 0.37,
+    "per_name_first_median_pp": 0.64,
+    "mean_excess_spy_pp": 0.63,
+    "p25_pp": -4.5,
+    "p75_pp": 5.2,
+    "lane_entry_events_in_window": 2315,
+    "lane_days_in_window": 32105,
+    "sector_mix": {
+     "coverage_pct": 38.8,
+     "top_sectors_pct": {
+      "unknown": 61.2,
+      "Financials": 10.0,
+      "Consumer Discretionary": 6.7,
+      "Industrials": 4.9
+     },
+     "max_single_sector_pct": 61.2
+    },
+    "half_split": {
+     "split_at": "2026-05-01",
+     "distinct_dates": 121,
+     "first_half": {
+      "n": 1257,
+      "names": 727,
+      "loser_rate_pct": 37.6,
+      "win_rate_pct": 47.2,
+      "median_excess_spy_pp": -0.34,
+      "median_excess_dm_pp": 0.68,
+      "per_name_first_median_pp": -0.27,
+      "mean_excess_spy_pp": 0.12,
+      "p25_pp": -5.3,
+      "p75_pp": 4.9
+     },
+     "second_half": {
+      "n": 1057,
+      "names": 677,
+      "loser_rate_pct": 26.0,
+      "win_rate_pct": 57.8,
+      "median_excess_spy_pp": 1.18,
+      "median_excess_dm_pp": 0.12,
+      "per_name_first_median_pp": 1.6,
+      "mean_excess_spy_pp": 1.24,
+      "p25_pp": -3.2,
+      "p75_pp": 5.5
+     },
+     "sign_flip_across_halves": true,
+     "per_name_median_gap_pp": 1.87
+    },
+    "control_admitted": {
+     "n": 18625,
+     "names": 1474,
+     "loser_rate_pct": 33.7,
+     "win_rate_pct": 48.7,
+     "median_excess_spy_pp": -0.26,
+     "median_excess_dm_pp": 0.08,
+     "per_name_first_median_pp": 0.13,
+     "mean_excess_spy_pp": 0.1,
+     "p25_pp": -4.8,
+     "p75_pp": 4.7
+    }
+   },
+   "H21": {
+    "n": 2039,
+    "names": 929,
+    "loser_rate_pct": 36.1,
+    "win_rate_pct": 51.0,
+    "median_excess_spy_pp": 0.21,
+    "median_excess_dm_pp": 0.73,
+    "per_name_first_median_pp": 0.36,
+    "mean_excess_spy_pp": 1.23,
+    "p25_pp": -6.1,
+    "p75_pp": 7.2,
+    "lane_entry_events_in_window": 2315,
+    "lane_days_in_window": 32105,
+    "sector_mix": {
+     "coverage_pct": 39.2,
+     "top_sectors_pct": {
+      "unknown": 60.8,
+      "Financials": 9.7,
+      "Consumer Discretionary": 7.0,
+      "Industrials": 5.1
+     },
+     "max_single_sector_pct": 60.8
+    },
+    "half_split": {
+     "split_at": "2026-04-24",
+     "distinct_dates": 110,
+     "first_half": {
+      "n": 1065,
+      "names": 665,
+      "loser_rate_pct": 40.8,
+      "win_rate_pct": 45.9,
+      "median_excess_spy_pp": -0.89,
+      "median_excess_dm_pp": 0.61,
+      "per_name_first_median_pp": -1.05,
+      "mean_excess_spy_pp": 0.38,
+      "p25_pp": -7.4,
+      "p75_pp": 6.0
+     },
+     "second_half": {
+      "n": 974,
+      "names": 639,
+      "loser_rate_pct": 30.9,
+      "win_rate_pct": 56.6,
+      "median_excess_spy_pp": 1.67,
+      "median_excess_dm_pp": 0.8,
+      "per_name_first_median_pp": 1.54,
+      "mean_excess_spy_pp": 2.15,
+      "p25_pp": -4.9,
+      "p75_pp": 8.4
+     },
+     "sign_flip_across_halves": true,
+     "per_name_median_gap_pp": 2.59
+    },
+    "control_admitted": {
+     "n": 16962,
+     "names": 1455,
+     "loser_rate_pct": 44.2,
+     "win_rate_pct": 45.2,
+     "median_excess_spy_pp": -1.38,
+     "median_excess_dm_pp": 0.11,
+     "per_name_first_median_pp": -1.22,
+     "mean_excess_spy_pp": -0.64,
+     "p25_pp": -8.5,
+     "p75_pp": 6.2
+    }
+   },
+   "eval_window": [
+    "2026-01-15",
+    "2026-07-17"
+   ],
+   "gate_equality_spot_check": {
+    "sampled_cells": 4000,
+    "agree": 4000,
+    "disagree": 0,
+    "basis": "vectorized mask vs engine.us_board_rank.ran_admits called on a reconstructed verdict for the same cell"
+   }
+  }
+ },
+ "readout": {
+  "note": "derived from the tables above; no value is hand-entered",
+  "section_1": {
+   "n": 403,
+   "names": 243,
+   "dates": 10,
+   "base_per_name_median_pp": 1.85,
+   "base_loser_rate_pct": 25.8,
+   "non_thin_order_best_to_worst": [
+    "buy_soon",
+    "hold",
+    "await_confluence",
+    "wait_pullback"
+   ],
+   "buy_now_cell": {
+    "n": 9,
+    "loser_rate_pct": 33.3,
+    "median_excess_spy_pp": -0.48,
+    "per_name_first_median_pp": -0.48,
+    "thin": true
+   },
+   "thin_cells_whose_sign_differs_at_H5": [
+    "buy_now",
+    "wait_pullback"
+   ],
+   "null_status_rows": 177,
+   "null_status_share_pct": 43.9,
+   "headline_delta_pp": 1.91
+  },
+  "section_2": {
+   "eval_window": [
+    "2026-01-15",
+    "2026-07-17"
+   ],
+   "control_admitted_per_name_median_pp": 0.13,
+   "control_admitted_loser_rate_pct": 33.7,
+   "labels_beating_control_H10": [
+    "not_topped:stoch_bear_ONLY",
+    "not_topped:stoch_bear",
+    "not_topped:macd_bear",
+    "freshness_expired:all_prints"
+   ],
+   "of_which_sign_flip_across_halves": [
+    "not_topped:stoch_bear_ONLY",
+    "freshness_expired:all_prints"
+   ],
+   "max_edge_over_control_pp": 0.28,
+   "dead_legs": [],
+   "leg_replication_mismatches": 0
+  },
+  "section_3": {
+   "a_stage_ran": {
+    "n": 55,
+    "names": 47,
+    "loser_rate_pct": 14.5,
+    "per_name_first_median_pp": 2.32,
+    "vs_rest_of_buy_lane": {
+     "rest_n": 348,
+     "rest_loser_rate_pct": 27.6,
+     "rest_per_name_median_pp": 1.6,
+     "delta_per_name_median_pp": 0.72
+    },
+    "half_split_sign_flip": false
+   },
+   "b_reconstructed_ran_array": {
+    "lane_entry_events": 2315,
+    "names": 988,
+    "per_name_first_median_pp": 0.64,
+    "control_per_name_median_pp": 0.13,
+    "half_split_sign_flip": true,
+    "gate_spot_check_disagree": 0
+   },
+   "production_ran_array_pit_rows": 0
+  }
+ }
+}

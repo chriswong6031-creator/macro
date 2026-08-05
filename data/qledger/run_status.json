@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-08-04T12:27:16.151549+00:00",
-  "as_of": "2026-08-04",
-  "n_open": 37184,
-  "n_graded_today": 5172,
-  "n_blocked_by_coverage": 29626,
+  "generated_at": "2026-08-05T13:11:29.160571+00:00",
+  "as_of": "2026-08-05",
+  "n_open": 38260,
+  "n_graded_today": 1496,
+  "n_blocked_by_coverage": 29807,
   "n_ungradeable": 0,
-  "n_already_graded": 35192,
+  "n_already_graded": 40658,
   "dry_run": false,
   "w6_readiness": {
     "n_families_ready": 0,
-    "n_families_approaching": 7,
+    "n_families_approaching": 8,
     "families_ready": [],
     "families_approaching": [
       "cn_importance_v0@5d",
@@ -17,15 +17,16 @@
       "cn_importance_v0_pit@5d",
       "cn_importance_v0_pit@21d",
       "radar@5d",
+      "radar@21d",
       "us_importance_v0@5d",
       "us_importance_v0_pit@5d"
     ],
     "grader_quiet_days": 0
   },
   "regime_stamp_backfill": {
-    "n_claims": 37185,
+    "n_claims": 38261,
     "n_backfilled": 0,
-    "n_unstamped": 5805,
-    "n_precoverage": 3665
+    "n_unstamped": 5813,
+    "n_precoverage": 3673
   }
 }
