@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T18:18:44.370700+00:00",
-  "count": 819,
+  "generated_at": "2026-08-05T18:33:49.112183+00:00",
+  "count": 820,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -55,6 +55,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-aptdlhriifn-db0028",
+      "title": "Global daily weve been here before",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T13:44:46Z",
+      "summary_points": [
+        "**Strait of Hormuz Deal & Fee Dispute**: US-Iran-Oman agreement to reopen Strait (Brent ↓ $79/barrel, S&P 500 record high) faces 7% transit fee demand by Iran vs.",
+        "US 5%, threatening US credibility on navigation freedom and nuclear concessions.",
+        "**Italian/Spanish PMI Outperformance**: Italian (52.5) and Spanish (58.3) global services PMIs beat consensus, contrasting with France/Germany below 50, amid Middle East tensions distorting final prints.",
+        "**US-China Tech Ban Draft**: White House drafting import ban on Chinese transceivers for datacenters over supply chain security/cybersecurity risks, despite Chinese firms remaining connected to US datacenters post-FCC bans."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-m40kw7oiwgi-10a417",
       "title": "Gerdau (GGBR4.SA) 2Q26 Strong, 3Q26 To Be Better",
