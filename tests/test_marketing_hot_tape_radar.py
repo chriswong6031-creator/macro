@@ -2163,7 +2163,13 @@ class TestCIWiring:
         from engine.marketing import chart_render as CR
 
         assert RADAR.PRICE_SUBDIRS == CR.HOT_TAPE_PRICE_SUBDIRS
-        assert CR._PRICE_SUBDIRS == ("data/baskets/ohlcv", "data/stocks")
+        # The second assertion used to pin the literal ("data/baskets/ohlcv",
+        # "data/stocks"). The 2026-08-04 regional fix appended five curated non-US
+        # trees to the default so the brain could see a HK / A-share / TSX candle;
+        # what this line is actually for is that massive_stock_day stays OUT of the
+        # default and the US trees keep the front of the order.
+        assert "data/massive_stock_day" not in CR._PRICE_SUBDIRS
+        assert CR._PRICE_SUBDIRS[:2] == ("data/baskets/ohlcv", "data/stocks")
 
     def test_the_radar_lane_never_writes_a_forward_ledger(self):
         """Ledger law: outbox + the two hot-tape ledgers, nothing else."""

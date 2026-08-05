@@ -252,7 +252,38 @@ def rasterize_svg(
 #
 # Bonus: the baskets parquet carries a REAL `open` column, which data/stocks/
 # does not — those candles no longer need the prev-close proxy.
-_PRICE_SUBDIRS = ("data/baskets/ohlcv", "data/stocks")
+_US_PRICE_SUBDIRS = ("data/baskets/ohlcv", "data/stocks")
+
+# Non-US curated trees, searched AFTER the US ones (2026-08-04).
+#
+# WHY THIS IS NOT THE massive_stock_day MISTAKE (see the note below): that store
+# is keyed by BARE US tickers, so putting it in the default order let ~20k stale,
+# unadjusted files SHADOW curated US bars. These trees cannot shadow anything —
+# every name in them is exchange-qualified (`0700.HK`, `600519.SS`, `XIU.TO`) or
+# underscore-prefixed (`_HSI`, `_GSPTSE`), both of which are unreachable as US
+# tickers, and the US trees are still searched first regardless. They are also
+# nightly-fresh and git-tracked, so they ship to the VPS the brain runs on.
+#
+# The one bare name in the set is data/hk/EEM.parquet (the EM ETF, carried as an
+# HK benchmark). It exists in NEITHER US tree, so it shadows nothing — it simply
+# stops being "no data".
+#
+# WHAT THIS FIXES: the Mastermind brain's whole chart surface — chart_digest (the
+# Eyes), measure_line, render_inline_chart, the shareable cards — hangs off this
+# ladder. Until now every one of them answered "no data" for EVERY Hong Kong,
+# mainland-China and Canadian symbol, while the very same repo carried 1,678 A-share
+# and 158 HK per-name OHLCV parquets updated that same night. The brain could quote
+# a Tencent return (a different, region-aware ladder feeds get_symbol_context) but
+# could not see a single Tencent candle.
+_REGIONAL_PRICE_SUBDIRS = (
+    "data/china_stocks",   # 1,678 A-shares, real OHLCV
+    "data/hk_stocks",      # 158 HK names, real OHLCV
+    "data/china",          # SSE/SZSE composites + A-share sector ETFs (close+volume)
+    "data/hk",             # HSI / HSCEI / HSTECH / 2800.HK … (close+volume)
+    "data/canada",         # S&P/TSX composite + iShares sector ETFs (close+volume)
+)
+
+_PRICE_SUBDIRS = (*_US_PRICE_SUBDIRS, *_REGIONAL_PRICE_SUBDIRS)
 
 # data/massive_stock_day/ is OPT-IN, for the Hot Tape radar ONLY (2026-07-28,
 # masterplan §3.5). The intraday radar posts on whatever the tape hands it, so
@@ -270,17 +301,114 @@ _PRICE_SUBDIRS = ("data/baskets/ohlcv", "data/stocks")
 HOT_TAPE_PRICE_SUBDIRS = (*_PRICE_SUBDIRS, "data/massive_stock_day")
 
 
+# Benchmark store names the symbol sanitizers cannot produce. Both the gateway's
+# _safe_symbol and chart_perception's _clean_symbol strip everything outside
+# [A-Z0-9.-], so a user (or the model) asking for "_HSI" or "USDCAD_X" arrives here
+# as "HSI" / "USDCADX" and misses the file by exactly one underscore.
+#
+# HONESTY RULE — this maps a name to the SAME instrument under a different spelling,
+# never to a proxy. There is deliberately no CSI300 entry: the only CSI300-shaped
+# series in the tree is data/china/510300.SS, which is the ETF, not the index. An
+# ETF is not the index, so it stays reachable under its own ticker and is never
+# served as an index alias (same rule market_packet's _INDEX_ETF_FALLBACK applies).
+_PRICE_SYMBOL_ALIASES = {
+    # Hong Kong
+    "HSI": "_HSI", "HANGSENG": "_HSI",
+    "HSCE": "_HSCE", "HSCEI": "_HSCE",
+    "HSCC": "_HSCC", "HSIL": "_HSIL",
+    # Mainland China
+    "SSEC": "000001.SS", "SHCOMP": "000001.SS",
+    "SZSC": "399001.SZ", "SZCOMP": "399001.SZ",
+    # Canada
+    "GSPTSE": "_GSPTSE", "TSX": "_GSPTSE",
+    # FX carried alongside the regional boards
+    "USDCADX": "USDCAD_X", "USDCAD": "USDCAD_X",
+    "USDCNYX": "CNY_X", "USDCNY": "CNY_X", "CNYX": "CNY_X",
+    "USDHKDX": "HKD_X", "USDHKD": "HKD_X", "HKDX": "HKD_X",
+    "CNHF": "CNH_F",
+}
+
+
+def resolve_price_symbol(ticker: str) -> str:
+    """Map a user/model spelling onto the store's own filename for the SAME instrument.
+
+    Leading '^' (Yahoo index convention) is dropped, then the alias table above is
+    consulted. Anything unknown passes through untouched.
+    """
+    raw = str(ticker or "").strip().upper().lstrip("^")
+    return _PRICE_SYMBOL_ALIASES.get(raw, str(ticker or "").strip())
+
+
 def _price_parquet(
     ticker: str,
     root: Path | str,
     subdirs: "tuple[str, ...] | None" = None,
 ) -> Path | None:
     """First existing daily-bar parquet for *ticker*, in Prophet's search order."""
+    names = [ticker]
+    resolved = resolve_price_symbol(ticker)
+    if resolved and resolved != ticker:
+        names.append(resolved)
     for sub in (subdirs or _PRICE_SUBDIRS):
-        p = Path(root) / sub / f"{ticker}.parquet"
-        if p.exists():
-            return p
+        for name in names:
+            p = Path(root) / sub / f"{name}.parquet"
+            if p.exists():
+                return p
     return None
+
+
+# Wide close-MATRIX stores: one parquet, one column per symbol, close only.
+#
+# These are the only daily history that exists for a whole region: Canada has NO
+# per-name price parquet at all (data/canada_stocks/ holds a signal count and
+# nothing else), so all 218 TSX names — RY.TO, SHOP.TO, ENB.TO — live here and
+# nowhere else. China/HK/intl matrices cover the tail beyond their per-name trees.
+#
+# Keyed by ticker SUFFIX so a lookup costs one dict hit, and only consulted after
+# every per-name tree has missed. Same ladder the gateway's _load_symbol_closes
+# already used for returns/SMA/RSI — this is what stops the chart surface and the
+# technicals surface from disagreeing about which symbols exist.
+_WIDE_CLOSE_MATRICES = {
+    "TO": "data/canada_search/closes.parquet",
+    "V": "data/canada_search/closes.parquet",
+    "SS": "data/china_search/closes.parquet",
+    "SZ": "data/china_search/closes.parquet",
+    "HK": "data/hk_search/closes_deep.parquet",
+}
+# Every other exchange suffix (.T Tokyo, .L London, .DE Frankfurt, …) — 999 names.
+_WIDE_CLOSE_INTL = "data/intl_search/closes.parquet"
+
+
+def _wide_close_series(ticker: str, root: Path | str, n: int):
+    """(dates, closes) for *ticker* from its region's wide close matrix, else None.
+
+    Only exchange-qualified tickers can reach a matrix — a bare US ticker has no
+    suffix and returns None here, so this can never shadow a curated US name.
+    """
+    if "." not in ticker:
+        return None
+    suffix = ticker.rsplit(".", 1)[-1].upper()
+    rel = _WIDE_CLOSE_MATRICES.get(suffix, _WIDE_CLOSE_INTL)
+    path = Path(root) / rel
+    if not path.exists():
+        return None
+    try:
+        import pandas as pd  # noqa: PLC0415 — only on the wide-store path
+    except ImportError:
+        return None
+    try:
+        # columns=[ticker] keeps this to one column of a 1,600-wide frame; a symbol
+        # the matrix does not carry raises, which is the miss.
+        frame = pd.read_parquet(path, columns=[ticker])
+    except Exception:  # noqa: BLE001 — absent column / unreadable file = miss
+        return None
+    try:
+        series = frame[ticker].sort_index().dropna()
+    except Exception:  # noqa: BLE001
+        return None
+    if len(series) < 2:
+        return None
+    return [str(d)[:10] for d in series.index[-n:]], [float(x) for x in series.iloc[-n:]]
 
 
 def _parquet_rows_pyarrow(path: Path) -> tuple[list[str], dict[str, list]] | None:
@@ -373,6 +501,38 @@ def _load_ohlcv_pyarrow(
             closes_raw[-n:], vols_raw[-n:])
 
 
+def bar_basis(ticker: str, root: Path | str,
+              subdirs: "tuple[str, ...] | None" = None) -> str:
+    """Are this symbol's bars real intrabar ranges, or close-to-close bodies?
+
+    Returns ``"intrabar"`` when the source carries true high/low columns, and
+    ``"close_to_close"`` when ``load_ohlcv`` had to synthesize the wicks from
+    consecutive closes (every wide-matrix name, the close-only index/ETF trees,
+    the crypto feed). ``"none"`` when the symbol has no bars at all.
+
+    WHY THIS IS PUBLISHED RATHER THAN LEFT IMPLICIT: a synthesized bar has
+    ``high = max(prev_close, close)`` and ``low = min(prev_close, close)``, so
+    ``low[i] > high[i-1]`` is ARITHMETICALLY IMPOSSIBLE. Every gap detector run
+    over such bars returns an empty list — not because the tape has no gaps but
+    because these bars cannot express one. Reported bare, that empty list reads
+    as the finding "no unfilled gaps". Callers use this to print the null instead.
+    """
+    path = _price_parquet(ticker, root, subdirs)
+    if path is None:
+        if (Path(root) / "data" / "yahoo" / f"{ticker}-USD.parquet").exists():
+            return "close_to_close"
+        return "close_to_close" if _wide_close_series(ticker, root, 2) else "none"
+    try:
+        import pandas as pd  # noqa: PLC0415
+    except ImportError:
+        return "intrabar"
+    try:
+        cols = set(pd.read_parquet(path).columns)
+    except Exception:  # noqa: BLE001
+        return "none"
+    return "intrabar" if {"high", "low"}.issubset(cols) else "close_to_close"
+
+
 def load_closes(
     ticker: str,
     root: Path | str,
@@ -390,7 +550,8 @@ def load_closes(
     try:
         path = _price_parquet(ticker, root, subdirs)
         if path is None:
-            return None
+            # Region's wide close matrix — the only history a TSX single name has.
+            return _wide_close_series(ticker, root, n)
         try:
             import pandas as pd  # only import when needed
         except ImportError:
@@ -933,9 +1094,25 @@ def load_ohlcv(
         if path is None:
             # Crypto convention in data/yahoo/: <SYMBOL>-USD.parquet (BTC-USD, …).
             crypto_path = Path(root) / "data" / "yahoo" / f"{ticker}-USD.parquet"
-            if not crypto_path.exists():
-                return None
-            path = crypto_path
+            if crypto_path.exists():
+                path = crypto_path
+            else:
+                # Last resort: the region's wide close matrix (the ONLY history that
+                # exists for a TSX single name). Close-only, so bars come back as
+                # close-to-close bodies with no volume — see bar_basis().
+                wide = _wide_close_series(ticker, root, n + 1)
+                if wide is None:
+                    return None
+                w_dates, w_closes = wide
+                w_opens = [w_closes[0]] + w_closes[:-1]
+                return (
+                    w_dates[-n:],
+                    w_opens[-n:],
+                    [max(o, c) for o, c in zip(w_opens, w_closes)][-n:],
+                    [min(o, c) for o, c in zip(w_opens, w_closes)][-n:],
+                    w_closes[-n:],
+                    [0.0] * len(w_dates[-n:]),
+                )
         try:
             import pandas as pd  # only import when needed
         except ImportError:
