@@ -145,9 +145,50 @@ class TestSignalLeg:
 
 
 class TestEntryLeg:
-    def test_map_is_the_china_map_verbatim(self):
+    def test_map_deliberately_diverged_from_china_at_cn_prophet_v3(self):
+        """The US and CN entry ladders are no longer the same map — ON PURPOSE.
+
+        This test used to assert ``ubr._ENTRY_VALUE == cn._ENTRY_VALUE`` on the
+        premise that the entry-status vocabulary is market-independent.  The CN
+        V1 loser audit refuted the premise for the VALUES (not the vocabulary):
+        in the A-share mean-reversion tape the gauge's patience statuses were the
+        era's best cohort (bounce_wait 6.9% loser rate, wait_pullback 7.7%) and
+        its action statuses the worst (buy_soon 46.7%, partial 41.4%, buy_now
+        30.0%) — see the CN masterplan §2.3/§2.11.  cn_prophet_v3 re-ordered CN's
+        ladder to that measured order (operator-ratified 2026-08-04).
+
+        That evidence is CN-tape evidence and does NOT transfer to the US trend
+        tape, whose own audit found the mirror-image failure surface.  So the US
+        map stays where it is, and this test's job flips: it now pins the US map
+        as its own frozen constant and pins that the fork is real, so neither
+        side can be "re-synced" into the other by accident.
+        """
         from engine import china_board_rank as cn
-        assert ubr._ENTRY_VALUE == cn._ENTRY_VALUE
+
+        assert ubr._ENTRY_VALUE == {
+            "buy_now": 1.0,
+            "partial": 0.9,
+            "buy_soon": 0.8,
+            "hold": 0.65,
+            "wait_pullback": 0.55,
+            "later": 0.55,
+            "await": 0.45,
+            "await_confluence": 0.45,
+            "watch": 0.4,
+            "bounce_wait": 0.35,
+            "extended": 0.0,
+            "topping": 0.0,
+            "blocked": 0.0,
+            "exit": 0.0,
+            "avoid": 0.0,
+        }
+        # The VOCABULARY is still shared — one status set, two orderings.
+        assert set(ubr._ENTRY_VALUE) == set(cn._ENTRY_VALUE)
+        # The ORDERING is the fork: US leads on the confirmed window, CN on the
+        # early one. If these ever coincide again it is a regression, not a merge.
+        assert max(ubr._ENTRY_VALUE, key=ubr._ENTRY_VALUE.get) == "buy_now"
+        assert max(cn._ENTRY_VALUE, key=cn._ENTRY_VALUE.get) == "bounce_wait"
+        assert ubr._ENTRY_VALUE != cn._ENTRY_VALUE
 
     @pytest.mark.parametrize("status,expected", [
         ("buy_now", 1.0), ("partial", 0.9), ("buy_soon", 0.8), ("hold", 0.65),
@@ -412,8 +453,11 @@ class TestBasingStage:
         assert ubr.stage_for(row, {"status": "wait_pullback"}) == "blocked"
 
     def test_the_default_is_the_pre_basing_behaviour(self):
-        """No opt-in, no change: the HK board delegates to this same function and its
-        template has no basing shelf, so its rendering must stay byte-identical."""
+        """No opt-in, no change: the default protects any caller that has not built
+        the shelf, so its rendering stays byte-identical.  Both boards now opt in
+        EXPLICITLY at their own builders (US 2026-08-05, HK the same day), which is
+        why the opt-in is a parameter and not a flag day — the delegating HK module
+        below still reads `blocked` when nobody asks for the shelf."""
         row = {"state": "BOTTOM WATCH", "label": "NEARING A LOW", "dir": "down"}
         assert ubr.stage_for(row, {"status": "wait_pullback"}) == "blocked"
         from engine import hk_board_rank as hbr
