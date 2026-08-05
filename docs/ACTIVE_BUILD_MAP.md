@@ -2,33 +2,194 @@
 
 # Active Build Map
 
-Generated: 2026-08-04T01:04:38.208568+00:00  |  Open PRs: 4  |  Merged (window): 500  |  base: `6b666e1a385cc66574c67277b7b741bfb7c2a3d2`
+Generated: 2026-08-05T06:28:35.566610+00:00  |  Open PRs: 43  |  Merged (window): 500  |  base: `ced79b0e91eb94a7860aa69fa9108f10909e32b2`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #4469 | publish-time lane: fix the four defects that shipped on the flagship today | `claude/theme-mover-quality` | 2026-08-04 | — |
-| #4468 | Fix Chinese unit leaking into US track record | `fix/us-hold-english-20260803` | 2026-08-04 | — |
-| #4465 | ci: register tests/test_copywriter.py in the marketing lane (unrun-suite rot) | `ci/wire-test-copywriter` | 2026-08-04 | — |
-| #4462 | mover copy: trend-context stance — no more 'let it settle' on washed-out reversals (FSLR postmortem) | `claude/mover-copy-context` | 2026-08-03 | — |
+| #4574 | fix(basket-turn): stamp forward-ledger sessions from the data plane, not the calendar (#4568 sibling) | `claude/wizardly-khorana-317193` | 2026-08-05 | ⚠ protected:1 |
+| #4573 | fix(market_structure): un-clip four charts — SVGs were sized by viewBox ratio, not by their wrapper | `claude/market-structure-chart-fixes-735983` | 2026-08-05 | — |
+| #4572 | fix(nav+macro+china): nav layer law, quad-map collision, China desk containers | `claude/macro-zindex-mastermind-3ccf88` | 2026-08-05 | — |
+| #4571 | research(cn-prophet): rank-feature battery + S-COIL port test — what orders the admitted pool | `claude/cn-rank-feature-battery` | 2026-08-05 | — |
+| #4570 | feat(cn-prophet): W0 rank-effectiveness block — the score grades itself nightly (multi-horizon, multi-metric, per-component) | `claude/cn-prophet-rank-effectiveness` | 2026-08-05 | — |
+| #4566 | fix(gc): un-invert _branch_merged_into_main — merge-base --is-ancestor, not empty <branch>..origin/main | `claude/confident-pare-8dca01` | 2026-08-05 | — |
+| #4565 | feat(hk): committed G1 fixture regenerator with adjustment-signature receipts | `claude/awesome-panini-283531` | 2026-08-05 | — |
+| #4564 | research: W8 Ignition Layer charter + retro stand-in battery | `claude/w8-ignition-layer-charter` | 2026-08-05 | — |
+| #4563 | ops: fleet worktree GC — report-first sweeper, measured packet, ratification-gated deletion | `claude/eloquent-bouman-b8af29` | 2026-08-05 | — |
+| #4562 | governance(registry): stable Key column for DO_NOT_REBUILD rows — citations rewritten to DNR:<KEY> | `claude/pensive-newton-83c472` | 2026-08-05 | ⚠ CONFLICTING / ⚠ protected:4 |
+| #4561 | feat(prophet-us): §4.5 scan tier — see everything, admit selectively | `claude/prophet-us-scan-tier` | 2026-08-05 | ⚠ protected:3 |
+| #4558 | feat(prophet-us): the indicator floor is the measured warmup, not 200 | `claude/us-indicator-floor-measured-warmup` | 2026-08-05 | — |
+| #4557 | board honesty: disclose true panel price reach + same-as_of buy-lane continuity guard | `claude/adoring-proskuriakova-1996c0` | 2026-08-05 | — |
+| #4556 | stocks index: fix light-mode charcoal hover + market-hub redesign mockup | `claude/stock-dashboard-redesign-25f9d9` | 2026-08-05 | ⚠ CONFLICTING |
+| #4555 | prophet-us W7: grade every ranked name — all picks, both cohorts, four horizons (charter + data half) | `prophet-us/w7-all-picks-grades` | 2026-08-05 | ⚠ protected:4 |
+| #4554 | board ledger: row-persistence law + outage continuity (the VALE class) | `claude/board-ledger-row-persistence-2026-08-05` | 2026-08-05 | — |
+| #4553 | theme tape: fix the clamped-label overlap, compact it, move it below the board | `claude/page-obstruction-formatting-ad6f1d` | 2026-08-05 | — |
+| #4550 | ledger: entry_status disclosure law — no silently-absent stamp on graded rows | `claude/quirky-meninsky-f5a7ef` | 2026-08-05 | — |
+| #4549 | lanes: normalize site/ HTML in the six publishing lanes #4492 missed | `claude/amazing-shtern-5488a6` | 2026-08-05 | ⚠ protected:7 |
+| #4548 | registry(dnr): FRESH_TICKS widening kill row (third-look null, #4546/#4547) + compiled blocklist regen | `claude/dnr-fresh-ticks-kill-080428` | 2026-08-05 | — |
+| #4547 | prophet-us: label-grading battery — entry-status ladder, veto-day labels, ran lane (CN→US handoff §1) | `claude/us-label-grading-battery-lgb1` | 2026-08-05 | — |
+| #4546 | research(prophet-us): W5.2 FRESH_TICKS-extension decision packet — the gradient does not extend, and it was board selection | `claude/fresh-ticks-extension-packet-w52` | 2026-08-05 | — |
+| #4545 | ci: stage the #4331-deferred prophet suites — 6 dark suites join the two #4331 packs | `claude/frosty-jang-c1b4a4` | 2026-08-05 | ⚠ protected:1 |
+| #4544 | research(prophet): CN→US handoff — method, stand-in pattern, and playbook from the China breakthrough | `claude/cn-to-us-prophet-handoff` | 2026-08-04 | — |
+| #4535 | feat(popups): rebuild every hover/info card on Sector Intelligence | `claude/popup-container-redesign-9a6528` | 2026-08-05 | — |
+| #4533 | fix(rotation): persist leg display names on closure rows | `claude/silly-feistel-3d3acc` | 2026-08-05 | — |
+| #4532 | ledger hygiene: per-column tape-flow commits, retire species_id, wire archetype, coverage map | `claude/eager-jennings-95d54f` | 2026-08-05 | ⚠ protected:2 |
+| #4525 | china_connect: retire dead northbound flow columns, heal fake-zero holdings, add column-grain dark alarms | `claude/recursing-elgamal-76391e` | 2026-08-04 | ⚠ CONFLICTING |
+| #4524 | feat(cn-prophet): W-C plumbing — PIT membership history, continuation-watch ledger, Neural Web + chat visibility | `claude/cn-prophet-wc-plumbing-20260804` | 2026-08-04 | ⚠ CONFLICTING / ⚠ protected:3 |
+| #4521 | research(cn-prophet): v3 era-retro — the stand-in race verdict while the forward shadow matures | `claude/china-prophet-v3-era-retro-08041100` | 2026-08-04 | — |
+| #4520 | research(cn-prophet): flow/positioning ex-ante battery — which unwired stores separated losers at admission | `claude/cn-flow-exante-battery` | 2026-08-04 | — |
+| #4519 | Open every page shell to anonymous visitors; footer fixes; retire the legacy auth modal | `claude/nav-ungate-auth-sheet-3d8a4e` | 2026-08-04 | ⚠ CONFLICTING |
+| #4517 | research(cn-prophet): Superintelligence Roadmap — composing the six layers, fast-track evidence doctrine, Neural Web wiring | `claude/cn-prophet-si-roadmap` | 2026-08-05 | — |
+| #4512 | fix(nav,i18n,ui): translate the market mega menus; unstick the mobile country drill; operator defect sweep | `claude/mega-menu-translations-fixes-e7daa8` | 2026-08-04 | ⚠ CONFLICTING |
+| #4509 | feat(china-prophet): V3 Relay Engine — prime-window featured, bounded theme_timing authority, relay-position chase guard (R1-R3, operator-ratified) | `claude/china-prophet-v3-relay-08040037` | 2026-08-04 | — |
+| #4507 | research(cn-prophet): CN exit-policy horse race — day-3 review family vs H=10 incumbent | `claude/cn-exit-policy-study-7a2e10` | 2026-08-04 | — |
+| #4506 | research(cn-prophet): 12-month chase×theme-ignition study — phase-0 for relay-aware admission | `claude/cn-ignition-chase-study-20260804` | 2026-08-04 | — |
+| #4498 | Light estate rollout: depth recipe in the operative soft-contrast palette + repeatable light sweep tool | `claude/light-estate-palette` | 2026-08-04 | — |
+| #4497 | sector_central: de-tint the seasonality chip in the light + zh layers | `claude/agitated-swartz-5cca97` | 2026-08-04 | ⚠ CONFLICTING |
+| #4496 | refactor(prophet-card): drop the dead verb-chip tip payload from the five board builders | `claude/eager-williamson-19151b` | 2026-08-04 | — |
+| #4493 | Light mode as a first-class design: us_stocks + subsectors redesign, emoji → monoline icons | `claude/light-mode-design-issues-e2c4c6` | 2026-08-04 | ⚠ CONFLICTING |
+| #4490 | fix: stop caching auth outages as logouts; lift ⚠ popover above sibling cards | `claude/hk-stocks-logout-bug-06fb6d` | 2026-08-04 | — |
+| #4473 | hk board: anchor the vetoed + ran move on the confirmation close | `claude/hk-vetoed-lane-honest-anchor` | 2026-08-04 | — |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
+> ℹ 23 of 43 PRs: mergeability not yet computed by GitHub (UNKNOWN).
 
 ## File Collisions
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
-| #4469 | #4462 | 5 | `engine/marketing/content_studio.py`, `engine/marketing/copywriter.py`, `engine/marketing/movers_source.py`, `engine/marketing/publish_time_content.py`, `tests/test_marketing_publish_time_content.py` |
+| #4535 | #4512 | 8 | `site/heatmap.js`, `site/rotation_events.js`, `site/si_workspace.js`, `site/theme.js`, `templates/heatmap.js`, `templates/rotation_events.js`, `templates/si_workspace.js`, `templates/theme.js` |
+| #4572 | #4512 | 7 | `site/baskets_desk.js`, `site/navigation-refresh.css`, `templates/baskets_china_factorwatch.html.j2`, `templates/baskets_desk.js`, `templates/navigation-refresh.css`, `templates/sector_central.html.j2`, `templates/sector_central_china.html.j2` |
+| #4561 | #4555 | 7 ⚠ | `.github/workflows/daily.yml`, `config/dag.yml`, `config/synapse.yml`, `data/us_prophet_rank/README.md`, `engine/prophet_miss_audit.py`, `engine/us_context_vector.py`, `tests/test_prophet_miss_audit.py` |
+| #4562 | #4561 | 3 ⚠ | `config/dag.yml`, `config/synapse.yml`, `research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md` |
+| #4562 | #4558 | 3 | `engine/prophet_doors.py`, `research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md`, `scripts/build_stock_library.py` |
+| #4562 | #4555 | 3 ⚠ | `config/dag.yml`, `config/synapse.yml`, `research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` |
+| #4519 | #4512 | 3 | `site/theme.js`, `site/unsubscribe.html`, `templates/theme.js` |
+| #4574 | #4555 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #4574 | #4545 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #4572 | #4535 | 2 | `site/si_workspace_china.js`, `templates/si_workspace_china.js` |
+| #4572 | #4493 | 2 | `templates/dashboard.html.j2`, `templates/subsectors.html.j2` |
+| #4565 | #4473 | 2 | `tests/fixtures/hk_board_2026_07_31.json`, `tests/test_hk_board_rank.py` |
+| #4563 | #4562 | 2 | `AGENTS.md`, `CLAUDE.md` |
+| #4562 | #4553 | 2 | `templates/_theme_tape.html.j2`, `tests/test_theme_tape.py` |
+| #4562 | #4548 | 2 | `config/compiled_kill_registry.yml`, `research/DO_NOT_REBUILD.md` |
+| #4558 | #4555 | 2 | `engine/us_context_vector.py`, `research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` |
+| #4555 | #4545 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #4535 | #4533 | 2 | `site/rotation_events.js`, `templates/rotation_events.js` |
+| #4535 | #4519 | 2 | `site/theme.js`, `templates/theme.js` |
+| #4535 | #4498 | 2 | `site/theme.js`, `templates/theme.js` |
+| #4533 | #4512 | 2 | `site/rotation_events.js`, `templates/rotation_events.js` |
+| #4524 | #4509 | 2 | `engine/china_standout_track.py`, `scripts/build_china_library.py` |
+| #4519 | #4498 | 2 | `site/theme.js`, `templates/theme.js` |
+| #4512 | #4498 | 2 | `site/theme.js`, `templates/theme.js` |
+| #4574 | #4565 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4572 | #4553 | 1 | `templates/dashboard.html.j2` |
+| #4572 | #4497 | 1 | `templates/sector_central.html.j2` |
+| #4572 | #4496 | 1 | `templates/dashboard.html.j2` |
+| #4565 | #4555 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4565 | #4545 | 1 | `.github/ci/legacy-jobs.yml` |
+| #4562 | #4557 | 1 | `scripts/build_stock_library.py` |
+| #4562 | #4550 | 1 | `scripts/build_stock_library.py` |
+| #4562 | #4549 | 1 ⚠ | `config/dag.yml` |
+| #4562 | #4532 | 1 ⚠ | `config/synapse.yml` |
+| #4562 | #4524 | 1 ⚠ | `config/synapse.yml` |
+| #4561 | #4558 | 1 | `engine/us_context_vector.py` |
+| #4561 | #4549 | 1 ⚠ | `config/dag.yml` |
+| #4561 | #4545 | 1 | `research/CONTEXT_VECTOR_SCHEMA_CONTRACT.md` |
+| #4561 | #4532 | 1 ⚠ | `config/synapse.yml` |
+| #4561 | #4524 | 1 ⚠ | `config/synapse.yml` |
+| #4558 | #4557 | 1 | `scripts/build_stock_library.py` |
+| #4558 | #4550 | 1 | `scripts/build_stock_library.py` |
+| #4557 | #4550 | 1 | `scripts/build_stock_library.py` |
+| #4555 | #4549 | 1 ⚠ | `config/dag.yml` |
+| #4555 | #4532 | 1 ⚠ | `config/synapse.yml` |
+| #4555 | #4524 | 1 ⚠ | `config/synapse.yml` |
+| #4554 | #4550 | 1 | `scripts/grade_us_board.py` |
+| #4554 | #4532 | 1 | `scripts/grade_us_board.py` |
+| #4553 | #4496 | 1 | `templates/dashboard.html.j2` |
+| #4553 | #4493 | 1 | `templates/dashboard.html.j2` |
+| #4550 | #4532 | 1 | `scripts/grade_us_board.py` |
+| #4532 | #4524 | 1 ⚠ | `config/synapse.yml` |
+| #4512 | #4509 | 1 | `templates/china.html.j2` |
+| #4512 | #4497 | 1 | `templates/sector_central.html.j2` |
+| #4512 | #4496 | 1 | `templates/china.html.j2` |
+| #4509 | #4496 | 1 | `templates/china.html.j2` |
+| #4509 | #4473 | 1 | `engine/us_board_rank.py` |
+| #4496 | #4493 | 1 | `templates/dashboard.html.j2` |
+| #4496 | #4490 | 1 | `templates/_prophet_card.html.j2` |
+| #4496 | #4473 | 1 | `templates/hk.html.j2` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #4569 | fix(ui): sync plan features to the landing, unpack the stretched vignettes | 2026-08-05 |
+| #4568 | fix(ignition): make the suspended radar's background record gradeable before first maturity | 2026-08-05 |
+| #4567 | ci: end the HK board pair's darkness — unrun-hk-board wires test_hk_board_rank + test_hk_board_ui | 2026-08-05 |
+| #4560 | fix(collect): categorical per-source isolation at _run_one — escapes from run_adapter must never sever the nightly commit path | 2026-08-05 |
+| #4559 | fix(hk): re-pin G1 fixture after 2338.HK dividend adjustment — heals base-side red pinning 8 armed PRs | 2026-08-05 |
+| #4552 | fix(brain): Mastermind can see HK / China / Canada charts, technicals and fundamentals | 2026-08-05 |
+| #4551 | research: NewsImpact event-impact teardown → stock dossier + Company Intelligence | 2026-08-05 |
+| #4543 | refactor(cn-prophet): rename candidate-store stamp column date -> stamp_date (contract §3.1) | 2026-08-04 |
+| #4542 | engine: memoize name_score_grader close-series resolution (grade() byte-identical, ~17× faster) | 2026-08-04 |
+| #4541 | tests: fix sys.modules stub leak in test_radar_single_writer | 2026-08-04 |
+| #4540 | prophet-us: US Context Vector nightly PIT store (roadmap §2 keystone) | 2026-08-04 |
+| #4539 | fix(cn-track): adjudicate reversal_watch shelf as known cohort — heals base-side ci-pack-3 red pinning every PR | 2026-08-04 |
+| #4538 | theme tape: join the Foresight Desk (roadmap §4.2, display-tier) | 2026-08-04 |
+| #4537 | name_score adjudication instruments: nightly scorecard + frozen-frame P@k benchmark + intake prereg (roadmap §4.4) | 2026-08-04 |
+| #4536 | tests: scope build_theme_addons engine stubs via monkeypatch (ordering pollution) | 2026-08-04 |
+| #4534 | fix(collect): duck-type-safe run_adapter — optional status protocol crashed the nightly collect job | 2026-08-04 |
+| #4531 | tests: make collect_failfast hermetic (no network, no data writes) | 2026-08-04 |
+| #4530 | governance(metabolism): roster-cap reconciliation (66 vs 75) + wire the dark roster governor | 2026-08-04 |
+| #4529 | foresight: reconcile t1_fingerprint health leg with fingerprint-variant stages | 2026-08-04 |
+| #4528 | feat(prophet-doors): record relay/turnover/foresight features on flags — prereg addendum, zero fire-definition change | 2026-08-04 |
+| #4527 | feat(earnings): replace the dead earnings feed with a real-time SEC EDGAR wire | 2026-08-04 |
+| #4526 | research(prophet-us): Superintelligence Roadmap — composition layers, context vector, ladder + four stand-ins measured | 2026-08-04 |
+| #4523 | cn_prophet_audit: pin v1_loser_audit to GRADE_ASOF frozen replay | 2026-08-04 |
+| #4518 | macro light mode: lift 25 sub-floor text inks to clear WCAG 4.5:1 | 2026-08-04 |
+| #4516 | Fix the stocks dossier chrome: dead nav, overlapping cards, bespoke buttons | 2026-08-04 |
+| #4515 | china-si: adopt the US workspace shell + verdict hero, and revive the dead conviction board | 2026-08-04 |
+| #4514 | Light r3: macro.html depth recipe, china macro §5.8 audit, hub orb kill | 2026-08-04 |
+| #4513 | wire volume: remove the per-account breaking caps | 2026-08-04 |
+| #4511 | feat(wire): a cold read — can a stranger resolve this post? (ships in shadow) | 2026-08-04 |
+| #4510 | publish-time lane: guard hard-indexed lane keys against _DEFAULTS | 2026-08-04 |
+| #4508 | fix(tests): de-bomb the codex insertion-order test — pin is_cooling, split the cooldown contract | 2026-08-04 |
+| #4505 | fix(ship-loop): live gate asks /api/health the field that can answer for this merge | 2026-08-04 |
+| #4504 | fix(ship-guard): make the escape ladders reachable — the report was undetectable, not unfiled | 2026-08-04 |
+| #4503 | feat(cn-prophet): W0 loser+miss telemetry engine + W1 ledger hygiene (ops-tier, zero authority) | 2026-08-04 |
+| #4502 | china stocks: adopt the US stock-dashboard header (shared partial) | 2026-08-04 |
+| #4501 | fix(hk): honest block copy + open the ran lane's above200 door | 2026-08-04 |
+| #4500 | research(china-prophet): V1 loser forensics + missed-winner funnel — why our buys crashed, what V2 still carries | 2026-08-04 |
+| #4499 | test(hk-board): freeze the board fixtures — 9 red + 9 dark HK gates were live-artifact drift | 2026-08-04 |
+| #4494 | links: retarget SI-consolidation redirect stubs at their real destinations | 2026-08-04 |
+| #4492 | fix(render-lanes): normalize the exact tree every site commit stages (P0 2026-08-04 outage root cause) | 2026-08-04 |
+| #4491 | hk: route 🏃 leaders row clicks to the Terminal (the #4489 defect, HK side) | 2026-08-04 |
+| #4489 | us_stocks: route ⚡/🏃 row clicks to the Terminal; make "Risk radar →" actually pop | 2026-08-04 |
+| #4488 | feat(us-stocks+prophet): W2 Theme Tape — theme heat × member states with why-not narration (display-tier) | 2026-08-04 |
+| #4487 | feat(prophet): W3 — shadow doors T (theme-relay) + R (re-arm), prospective ledgers + prereg | 2026-08-04 |
+| #4486 | feat(prophet): W0 miss-audit + conversion telemetry engine — nightly, zero authority | 2026-08-04 |
+| #4485 | feat(earnings): W4 — rotation-guaranteed sweep, staleness alarm, catalyst fields on board rows | 2026-08-04 |
+| #4483 | fix(nav): bump immutable asset chain key so cached menus pick up the Sector/Options consolidation | 2026-08-04 |
+| #4482 | sector_central: drawn rail tick + repair the tape strip's mover labels | 2026-08-04 |
+| #4481 | feat(prophet): W1 intake repair — priority-score ordering, active-plan dedup, index aging (operator-signed) | 2026-08-04 |
+| #4480 | Fix mobile Prophet names and Chinese bull/bear colors | 2026-08-04 |
+| #4479 | feat: add R2 share-count concurrency witness | 2026-08-04 |
+| #4477 | fix(wire): the source's own page is not our post — relay hygiene + a citation that earns its place | 2026-08-04 |
+| #4476 | Fix Terminal overlay browser Back behavior | 2026-08-04 |
+| #4475 | fix(capital-structure): reconcile retried R2 head writes | 2026-08-04 |
+| #4474 | feat(capital-structure): add isolated R2 CAS conformance witness | 2026-08-04 |
+| #4472 | research(prophet-us): trend-intelligence masterplan + miss forensics — why winners don't surface | 2026-08-04 |
+| #4471 | fix(tests): de-bomb the welcome-window CLI test — assert the rule, not the month | 2026-08-04 |
+| #4470 | feat(hk-board): drop the 200-day reclaim veto for HK (hk_prophet_v2) | 2026-08-04 |
+| #4469 | publish-time lane: fix the four defects that shipped on the flagship today | 2026-08-04 |
+| #4468 | Fix Chinese unit leaking into US track record | 2026-08-04 |
 | #4467 | Add private Ollama provider fallback | 2026-08-04 |
 | #4466 | publish-time movers: PAUSE — the auto-posting lane shipped four defects today | 2026-08-04 |
+| #4465 | ci: register tests/test_copywriter.py in the marketing lane (unrun-suite rot) | 2026-08-04 |
 | #4464 | fix(contracts): register China reversal surfaces | 2026-08-03 |
 | #4463 | fix(name_score): us_calls ledger integrity — loud universe disclosures + Russell cache parity, no coverage gate | 2026-08-04 |
+| #4462 | mover copy: trend-context stance — no more 'let it settle' on washed-out reversals (FSLR postmortem) | 2026-08-04 |
 | #4461 | feat(capital-structure): add scope-bound v4 head protocol | 2026-08-04 |
 | #4460 | feat(seo): gate-6b re-flip — etfs.html goes public against its committed walled shell | 2026-08-04 |
 | #4459 | BioCatalyst: add dark fixed cohort control v1 | 2026-08-03 |
@@ -463,68 +624,6 @@ Generated: 2026-08-04T01:04:38.208568+00:00  |  Open PRs: 4  |  Merged (window):
 | #4003 | Fix mobile Terminal reopen black screen | 2026-07-30 |
 | #4002 | docs(theta-ops): W0 M1 heal record — vintage skew, first autonomous matrix publish | 2026-07-30 |
 | #4001 | ci: wire the three strictly-dark GEX suites — model layer, engine math, polygon accrual | 2026-07-30 |
-| #4000 | fix: publish normalized macro action typography | 2026-07-30 |
-| #3999 | fix(bc2): a hyphen is not a CSS selector — close the _STRUCTURAL prose gap | 2026-07-30 |
-| #3998 | Restore Wave 1 generated Vector artifact | 2026-07-30 |
-| #3997 | Remove landing hero section gap | 2026-07-30 |
-| #3996 | fix(intl): one shared recovery-naming step so intl.html and macro.html cannot disagree | 2026-07-30 |
-| #3995 | marketing: route content LLM lanes ChatGPT-first, Claude as balanced key_pool fallback | 2026-07-30 |
-| #3993 | Restore Stage Analysis fonts and declutter news score | 2026-07-30 |
-| #3992 | fix(marketing): publisher-side orphan-brief gate — a hot-tape brief never outlives its recalled alert | 2026-07-30 |
-| #3991 | fix(bc2): enforce the allowlist's `surfaces` scope + gate 经验证 / 经过验证 | 2026-07-30 |
-| #3990 | Live official event lifecycle and intraday foundation | 2026-07-30 |
-| #3989 | Wave 1: rebuild Bitcoin Vector as a command deck | 2026-07-30 |
-| #3988 | fix(macro): demote the dislocation page-hijack and stop the regime/radar surfaces overstating what they know | 2026-07-30 |
-| #3987 | Revamp responsive product navigation | 2026-07-30 |
-| #3986 | fix(fred): NFCI family nulled every release-day session — ffill seam + weekly missed-cycle tripwire | 2026-07-30 |
-| #3985 | fix(whitehouse): sentinel re-renders dropped the page's ?v= stamps — stamp at render | 2026-07-30 |
-| #3984 | Replace repeated US Stocks preview gates with two CTAs | 2026-07-30 |
-| #3983 | marketing: close the seven open reviewer minors from #3960 | 2026-07-30 |
-| #3982 | Normalize macro action-card typography | 2026-07-30 |
-| #3981 | feat(marketing): post-time frame/filler/substance gates (port of #3928's sentinel work) | 2026-07-30 |
-| #3980 | design(landing): W5 voice & polish — mk size ramp, lede tightening, 390 headroom | 2026-07-30 |
-| #3979 | fix(earnings): nightly swept a 3-ticker demo universe, not the whole board | 2026-07-30 |
-| #3978 | Fix globe label scroll anchoring and transitions | 2026-07-30 |
-| #3977 | fix(oip-e8): options express-lane coverage, earnings sweep root cause, weekend-row + unit-seam sweep | 2026-07-30 |
-| #3976 | feat(oip-e3): light oi_delta_clusters, wall persistence, heal index_gex_history freeze | 2026-07-30 |
-| #3975 | OIP E1: session digest engine — the Terminal→EOD bridge (data only) | 2026-07-30 |
-| #3974 | docs(oip): W0 build-time amendments to the masterplan | 2026-07-29 |
-| #3973 | feat(prophet-live): P0 — armed pack, */5 evaluator, event spool, nightly reconciler (measure-dark) | 2026-07-30 |
-| #3972 | feat(live_flow): dated tide/dte archives + zero-vega Newton guard (OIP W0 T-lane) | 2026-07-29 |
-| #3971 | feat(brain): Analyst OS P0 — market analyst doctrine, live market state packet, news + research tools | 2026-07-30 |
-| #3970 | design(landing): W4 motion & consistency sweep — one heading system, complete focus states, reduced-motion fix | 2026-07-29 |
-| #3969 | OIP masterplan: EOD options-suite upgrade program (plan only) | 2026-07-29 |
-| #3968 | Refresh Terminal launcher asset stamp | 2026-07-29 |
-| #3967 | feat: initiate Crypto Cockpit Wave 0 | 2026-07-29 |
-| #3966 | research(prophet): Prophet Live — intraday provisional signals masterplan | 2026-07-29 |
-| #3965 | Fix staggered ticker search styling and extend Terminal loader | 2026-07-30 |
-| #3964 | Simplify US stocks without replacing its decision cards | 2026-07-29 |
-| #3963 | Fix live YM and RTY macro tape quotes | 2026-07-29 |
-| #3962 | design(landing): instrument-grade redesign — Attio-benchmark finish, house voice intact | 2026-07-29 |
-| #3961 | Simplify macro What To Do card | 2026-07-29 |
-| #3960 | feat(x-growth): ecosystem E-waves — press wire bridge, radar LLM voice, earnings detector, filing lanes, intel loop, reply craft | 2026-07-29 |
-| #3959 | feat: complete real-time intelligence desk | 2026-07-29 |
-| #3958 | Keep embedded Terminal launcher public at the access edge | 2026-07-29 |
-| #3957 | feat: refresh navigation and ticker search | 2026-07-29 |
-| #3956 | fix(intl): UI/UX + layout pass — kill the grid voids, align type to macro.html | 2026-08-01 |
-| #3955 | research: Crypto Master Cockpit masterplan — vector.html rebuild + crypto asset-class platform | 2026-07-29 |
-| #3953 | Launch Terminal as a native full-screen workspace | 2026-07-29 |
-| #3952 | Fix fastlane news rail activation and deploy lifecycle | 2026-07-29 |
-| #3951 | Fix Pro entitlement hydration on confluence screener | 2026-07-29 |
-| #3950 | docs: add US stocks dashboard UX handoff | 2026-07-29 |
-| #3949 | Fix Pro users being gated from the free confluence screener | 2026-07-29 |
-| #3948 | fix(marketing): quarantine 6 leftover approved 07-28 template posts | 2026-07-29 |
-| #3947 | feat(marketing): Content Studio LLM-first — per-post writer, five shapes, selection layer, no template fallback | 2026-07-29 |
-| #3946 | Fix Mastermind international ticker context and model routing | 2026-07-29 |
-| #3945 | fix(marketing): quarantine the 2026-07-29 templated batch (65 posts, 61 auto-approved) | 2026-07-29 |
-| #3944 | fix(research-vault): Pro unlock race — MDXAuth listener never registered | 2026-07-29 |
-| #3943 | fix(tests): PSS-RH1 parity audit replays on a frozen input grid (data-advance bomb defused) | 2026-07-29 |
-| #3942 | feat: add public dashboard preview tiers | 2026-07-29 |
-| #3941 | feat(marketing): Hot Tape P1 — intraday attention radar, wire copy with required devices, booked-to-Buffer in minutes | 2026-07-29 |
-| #3940 | Fix Research Vault dark-mode canvas | 2026-07-29 |
-| #3939 | Public Research Vault preview with Pro gating | 2026-07-29 |
-| #3937 | feat(marketing): Hot Tape P2 — LLM wire desk behind the numeric-consistency gate | 2026-07-29 |
-| #3936 | fix(tests): defuse confluence content-plan date bomb (base-side red since 07-26) | 2026-07-28 |
 
 ---
 
