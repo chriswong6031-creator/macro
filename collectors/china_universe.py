@@ -24,6 +24,9 @@ fragile cross-job actions/cache):
   data/china_search/dropped.parquet  ticker → dropped_date marker for names that left the live
       top-N (append-only; cleared if a name re-enters). Lets consumers tell "current" from "frozen".
   data/china_search/coverage.parquet 1-row daily time series (n_stocks) for run_status
+  data/china_search/index_cons.parquet  last KNOWN-GOOD CSI constituent list per index
+      (symbol/ticker/name_zh/fetched_date). Serves membership on a night CSIndex is
+      degraded so a network blip cannot shrink the universe; see _resolve_index_membership.
 
 build_china_library.universe() reads these FIRST so real names win over the
 ticker-as-name fallback from the breadth cache.
@@ -39,11 +42,12 @@ from __future__ import annotations
 
 import logging
 import time
+from io import BytesIO
 
 import pandas as pd
 import yfinance as yf
 
-from collectors.base import Adapter
+from collectors.base import Adapter, is_connection_error
 from collectors.breadth import repair_seams
 from lib import config
 
@@ -131,12 +135,86 @@ def _code_to_ticker(code: str) -> str | None:
     return None  # Beijing Stock Exchange (4xxxxx / 8xxxxx / 92xxxx) + B-shares elsewhere — skip
 
 
-# Official CSIndex constituent-table columns (ak.index_stock_cons_csindex). Selected BY
-# NAME, never by a "代码"/"名称" substring scan: the same frame carries 指数代码/指数名称
-# (the INDEX's own code '000852' / name '中证1000'), which such a scan matches FIRST —
-# mapping every row to one bogus ticker.
-_CSINDEX_CODE_COL = "成分券代码"
+# The official CSIndex constituent table, as an .xls on CSIndex's own OSS bucket. This
+# is the exact URL akshare's index_stock_cons_csindex builds — fetched here directly so
+# the call carries a TIMEOUT (see _csindex_direct).
+_CSINDEX_CONS_URL = ("https://oss-ch.csindex.com.cn/static/html/csindex/public/uploads/"
+                     "file/autofile/cons/{symbol}cons.xls")
+
+# Constituent columns are selected by a NAME MARKER, never by a "代码"/"名称" substring
+# scan: the same frame carries 指数代码/指数名称 (the INDEX's own code '000852' / name
+# '中证1000'), which such a scan matches FIRST — mapping every row to one bogus ticker.
+#
+# Two header dialects reach this parser and they are NOT the same string:
+#   * akshare's reader overwrites all nine headers POSITIONALLY with 成分券代码 …
+#     (成分, fen1).
+#   * the raw .xls ships BILINGUAL headers using 成份券代码Constituent Code (成份, fen4).
+# A single-dialect literal therefore matches one source and silently misses the other,
+# so both variants (plus the English half) are markers. The English constituent columns
+# are excluded explicitly — '成份券英文名称Constituent Name(Eng)' contains the lowercased
+# marker 'constituent name' and would otherwise win the name pick.
+_CSINDEX_CODE_COL = "成分券代码"          # akshare's normalized header (kept: pinned by tests)
 _CSINDEX_NAME_COL = "成分券名称"
+_CONS_CODE_MARKERS = ("成分券代码", "成份券代码", "constituent code")
+_CONS_NAME_MARKERS = ("成分券名称", "成份券名称", "constituent name")
+_ENGLISH_MARKERS = ("英文", "(eng)")
+
+# Known constituent count per CSI index symbol — the denominator for the shortfall check.
+# NOT derivable from the digits: '000852' is 中证1000 and '000905' is 中证500, so the
+# symbol number and the member count are unrelated. An unlisted symbol simply gets no
+# size check (logged), never a wrong one.
+_INDEX_EXPECTED_SIZE = {
+    "000016": 50,     # 上证50
+    "000300": 300,    # 沪深300
+    "000905": 500,    # 中证500
+    "000906": 800,    # 中证800
+    "000852": 1000,   # 中证1000
+    "932000": 2000,   # 中证2000
+}
+
+# Re-stamp an unchanged cached membership at most this often, so the committed cache
+# does not churn 365 times a year for an index whose members did not move.
+_INDEX_CACHE_RESTAMP_DAYS = 7
+
+
+def _norm_code(v: object) -> str:
+    """Constituent code -> zero-padded 6-digit string. ``1`` / ``'1'`` / ``1.0`` -> ``'000001'``.
+
+    The raw CSIndex .xls types the constituent-code column as int64 (平安银行 arrives as
+    ``1``, not ``'000001'``), and any NaN in the column promotes it to float, whose
+    ``str()`` is ``'1.0'`` — which ``zfill(6)`` turns into ``'0001.0'`` and
+    ``_code_to_ticker`` then rejects as non-digit, dropping a real constituent with no
+    error. akshare's own reader handles only the int case (``.astype(str).str.zfill(6)``).
+    """
+    s = str(v).strip()
+    if s.endswith(".0") and s[:-2].isdigit():
+        s = s[:-2]
+    return s.zfill(6) if s.isdigit() else s
+
+
+def _pick_cons_col(columns, markers: tuple[str, ...]) -> str | None:
+    """First column whose header carries a CONSTITUENT marker (never an index/English one)."""
+    for c in columns:
+        s = str(c).strip()
+        low = s.lower()
+        if any(e in low for e in _ENGLISH_MARKERS):
+            continue
+        if any(m in s or m in low for m in markers):
+            return c
+    return None
+
+
+def _cons_pairs(df: pd.DataFrame) -> list[tuple[str, str]]:
+    """(code, name_zh) pairs from a CSIndex constituent frame, either header dialect."""
+    code_col = _pick_cons_col(df.columns, _CONS_CODE_MARKERS)
+    name_col = _pick_cons_col(df.columns, _CONS_NAME_MARKERS)
+    if code_col is None:
+        raise RuntimeError(f"no constituent-code column in csindex frame: {list(df.columns)}")
+    codes = df[code_col]
+    if not len(codes):
+        raise RuntimeError("empty constituent table")
+    names = df[name_col] if name_col is not None else [""] * len(codes)
+    return [(_norm_code(c), str(n).strip()) for c, n in zip(codes, names)]
 
 
 class ChinaUniverseAdapter(Adapter):
@@ -156,6 +234,9 @@ class ChinaUniverseAdapter(Adapter):
         self.closes_path = self.dir / "closes.parquet"
         self.members_path = self.dir / "members.parquet"
         self.dropped_path = self.dir / "dropped.parquet"   # append-only frozen-history marker table
+        # Last KNOWN-GOOD CSI constituent list per index. Serves membership on a night
+        # CSIndex is degraded, so a network blip cannot shrink the universe (_index_rows).
+        self.index_cache_path = self.dir / "index_cons.parquet"
 
     # -- universe (Sina) -------------------------------------------------------
     def _sina_universe(self) -> pd.DataFrame:
@@ -296,23 +377,62 @@ class ChinaUniverseAdapter(Adapter):
         members["sector"] = members["sector"].replace("", "A-share")
         return members
 
-    # -- CSI index constituents (akshare) -------------------------------------
-    @staticmethod
-    def _index_rows(ak, sym: str) -> tuple[list[tuple[str, str]], str]:
-        """(code, name_zh) pairs for one CSI index + the endpoint that served them.
+    # -- CSI index constituents ------------------------------------------------
+    def _csindex_direct(self, sym: str) -> list[tuple[str, str]]:
+        """Constituents straight from the official CSIndex .xls, with a TIMEOUT.
 
-        Official CSIndex first; the legacy index_stock_cons endpoint only when that
-        call is missing (older akshare) or fails."""
+        akshare's ``index_stock_cons_csindex`` builds this same URL and fetches it with a
+        bare ``requests.get(url)`` — no timeout argument at all, so the call inherits
+        requests' default of *waiting forever*. A probe from this host on 2026-08-05 hung
+        **742 s** before raising ConnectionError, and nothing inside china_universe bounded
+        it: the only other limit is the asia-close job cap (165 min), i.e. the whole
+        nightly lane is the timeout. ``self.http_get`` carries an explicit per-attempt
+        timeout plus the configured retries/backoff, so the same stall now costs at most
+        ``retries x index_fetch_timeout_s`` (plus backoff) and then falls through to a
+        source that answers.
+        """
+        r = self.http_get(_CSINDEX_CONS_URL.format(symbol=sym),
+                          retries=int(self.ycfg["retries"]),
+                          backoff_base=float(self.ycfg["backoff_base_s"]),
+                          timeout=int(self.cfg.get("index_fetch_timeout_s", 30)))
+        return _cons_pairs(pd.read_excel(BytesIO(r.content)))
+
+    def _index_rows(self, ak, sym: str) -> tuple[list[tuple[str, str]], str]:
+        """(code, name_zh) pairs for one CSI index + the source that served them.
+
+        Three rungs, most authoritative first:
+
+        1. ``csindex``           — the official constituent .xls fetched by this adapter,
+                                   time-bounded (see ``_csindex_direct``). Works with no
+                                   akshare installed at all.
+        2. ``csindex-ak``        — akshare's reader for the SAME url. Same authoritative
+                                   data, different (positional) header handling, so it can
+                                   still win when CSIndex reshuffles its header text. It is
+                                   SKIPPED when rung 1 failed because the host is
+                                   unreachable: retrying a dead host through a call that
+                                   cannot time out is how the 742 s stall happens.
+        3. ``index_stock_cons``  — legacy, KNOWN-INCOMPLETE (duplicate codes: 288 unique of
+                                   300 rows for CSI 300, 772 of 1000 for CSI 1000, measured
+                                   2026-08-04). Last resort, and its use is annotated by
+                                   ``_resolve_index_membership`` rather than merely logged.
+        """
         try:
-            df = ak.index_stock_cons_csindex(symbol=sym)
-            codes, names = df[_CSINDEX_CODE_COL], df[_CSINDEX_NAME_COL]
-            if not len(codes):
-                raise RuntimeError("empty constituent table")
-            return [(str(c), str(n).strip()) for c, n in zip(codes, names)], "csindex"
-        except Exception as e:  # noqa: BLE001 — endpoint absent / CSIndex down / shape change
-            log.warning("china_universe: csindex %s unavailable (%s) — falling back to "
-                        "index_stock_cons, whose list is KNOWN-INCOMPLETE (duplicate codes; "
-                        "772 unique of 1000 rows for CSI 1000, measured 2026-08-04)", sym, e)
+            return self._csindex_direct(sym), "csindex"
+        except Exception as e:  # noqa: BLE001 — CSIndex down / 404 / shape change
+            host_dead = is_connection_error(e)
+            log.warning("china_universe: direct csindex fetch for %s failed (%s) — %s",
+                        sym, e, "host unreachable, SKIPPING akshare's untimed reader"
+                        if host_dead else "retrying via akshare's reader")
+        if not host_dead and ak is not None:
+            try:
+                return _cons_pairs(ak.index_stock_cons_csindex(symbol=sym)), "csindex-ak"
+            except Exception as e:  # noqa: BLE001 — endpoint absent (older akshare) / shape change
+                log.warning("china_universe: akshare csindex reader for %s failed (%s)", sym, e)
+        if ak is None:
+            raise RuntimeError("csindex .xls unavailable and akshare is not installed")
+        log.warning("china_universe: csindex %s unavailable — falling back to "
+                    "index_stock_cons, whose list is KNOWN-INCOMPLETE (duplicate codes; "
+                    "772 unique of 1000 rows for CSI 1000, measured 2026-08-04)", sym)
         df = ak.index_stock_cons(symbol=sym)
         # Legacy frame is ['品种代码','品种名称','纳入日期'] — no index-level columns, so the
         # version-tolerant substring scan is safe HERE and only here.
@@ -323,41 +443,163 @@ class ChinaUniverseAdapter(Adapter):
         name_col = next((c for c in df.columns if "名称" in c or c.lower() == "name"), None)
         if code_col is None:
             raise RuntimeError(f"no code column in index_stock_cons: {list(df.columns)}")
-        return [(str(r[code_col]), str(r[name_col]).strip() if name_col else "")
+        return [(_norm_code(r[code_col]), str(r[name_col]).strip() if name_col else "")
                 for _, r in df.iterrows()], "index_stock_cons"
 
-    def _index_constituents(self, symbols: list[str]) -> list[dict]:
-        """Fetch constituent lists for named CSI indices (e.g. '000300', '000852')
-        via akshare. Returns a list of {ticker, name_zh} dicts. Best-effort: one
-        failed index is logged and skipped, never fatal.
+    # -- last-known-good membership cache (one row per ticker per index) -------
+    def _read_index_cache(self, sym: str) -> tuple[list[dict], str]:
+        """Last known-good membership for one index -> (rows, fetched_date); ([], "") if unusable.
 
-        Source is the official CSIndex table (exactly 300 / 1000 unique codes). The
-        legacy index_stock_cons endpoint is a fallback only: it returns the right ROW
-        count carrying duplicate codes — 772 unique of 1000 for CSI 1000 and 288 of 300
-        for CSI 300 (measured 2026-08-04) — silently dropping 228 real constituents."""
+        A cache older than ``index_cache_max_age_days`` is NOT served: holding prior
+        membership is meant to ride out a transient blip, and a months-old constituent
+        list is a worse answer than a fresh 95%-complete one. Fail-soft throughout — an
+        unreadable cache degrades to "no cache", never to a failed run.
+        """
+        if not self.index_cache_path.exists():
+            return [], ""
+        try:
+            df = pd.read_parquet(self.index_cache_path)
+        except Exception as e:  # noqa: BLE001 — a corrupt cache must not kill the night
+            log.warning("china_universe: index cache unreadable (%s) — ignored", e)
+            return [], ""
+        if "symbol" not in df.columns or "ticker" not in df.columns:
+            return [], ""
+        part = df[df["symbol"].astype(str) == str(sym)]
+        if part.empty:
+            return [], ""
+        stamp = str(part["fetched_date"].iloc[0]) if "fetched_date" in part.columns else ""
+        max_age = int(self.cfg.get("index_cache_max_age_days", 30))
+        try:
+            age = (pd.Timestamp.utcnow().tz_localize(None).normalize()
+                   - pd.Timestamp(stamp)).days
+        except Exception:  # noqa: BLE001 — unparseable stamp: treat as unusable, not as fresh
+            age = max_age + 1
+        if age > max_age:
+            log.warning("china_universe: cached %s membership is %dd old (> %dd) — NOT served; "
+                        "tonight's degraded list stands", sym, age, max_age)
+            return [], ""
+        names = part["name_zh"] if "name_zh" in part.columns else [""] * len(part)
+        return [{"ticker": str(t), "name_zh": str(z)}
+                for t, z in zip(part["ticker"], names)], stamp
+
+    def _write_index_cache(self, sym: str, live: list[dict]) -> None:
+        """Persist a HEALTHY constituent list as the fallback membership (fail-soft)."""
+        today = str(pd.Timestamp.utcnow().tz_localize(None).normalize().date())
+        try:
+            prev = (pd.read_parquet(self.index_cache_path)
+                    if self.index_cache_path.exists()
+                    else pd.DataFrame(columns=["symbol", "ticker", "name_zh", "fetched_date"]))
+            if "symbol" not in prev.columns:
+                prev = pd.DataFrame(columns=["symbol", "ticker", "name_zh", "fetched_date"])
+            is_sym = prev["symbol"].astype(str) == str(sym)
+            same = prev[is_sym]
+            if not same.empty and set(same["ticker"]) == {r["ticker"] for r in live}:
+                try:
+                    age = (pd.Timestamp(today)
+                           - pd.Timestamp(str(same["fetched_date"].iloc[0]))).days
+                except Exception:  # noqa: BLE001 — unparseable stamp -> re-stamp it
+                    age = _INDEX_CACHE_RESTAMP_DAYS + 1
+                if age <= _INDEX_CACHE_RESTAMP_DAYS:
+                    return          # unchanged and still fresh: no nightly churn
+            fresh = pd.DataFrame([{"symbol": str(sym), "ticker": r["ticker"],
+                                   "name_zh": r["name_zh"], "fetched_date": today}
+                                  for r in live])
+            self.index_cache_path.parent.mkdir(parents=True, exist_ok=True)
+            pd.concat([prev[~is_sym], fresh], ignore_index=True).to_parquet(
+                self.index_cache_path, index=False)
+        except Exception as e:  # noqa: BLE001 — the cache is resilience, never a gate
+            log.warning("china_universe: could not persist %s index cache (%s)", sym, e)
+
+    def _resolve_index_membership(self, sym: str, live: list[dict], source: str,
+                                  tol: float) -> list[dict]:
+        """Choose between tonight's list and the last known-good one — and SAY SO.
+
+        Two ways tonight's list is not fit to define membership:
+          * it came off the legacy ``index_stock_cons`` endpoint, whose duplicate codes
+            cost ~12 names on CSI 300 and ~228 on CSI 1000;
+          * it is short of the index's KNOWN size by more than ``index_shortfall_tol``,
+            whatever served it (an authoritative source can be truncated too).
+
+        Either way the old code just ``log.warning``-ed and shipped the short list, so the
+        universe silently flickered night to night — and a name dropping out of
+        china_search is not free: it freezes that ticker's ``closes`` column and gets
+        marked in ``dropped.parquet``. A transient network blip should not buy that. So a
+        degraded night serves the cached membership when one is available and larger, and
+        the event is emitted as a GitHub annotation, not just a log line.
+
+        The annotation is a BARE ``print`` on purpose. Every builder here logs through a
+        prefixing formatter, so ``log.warning("::warning …")`` emits ``WARNING ::warning …``
+        and GitHub drops it silently — an alarm that reviews as wired and produces nothing
+        (tests/test_gh_annotation_line_start.py).
+
+        Cost of serving the cache: constituents that genuinely LEFT the index linger in the
+        search universe until the next healthy fetch. That is a few extra searchable names,
+        against a frozen price column and a dropped-marker for every name lost — and it
+        self-heals on the next good night.
+        """
+        expected = _INDEX_EXPECTED_SIZE.get(sym)
+        n = len(live)
+        lossy = source not in ("csindex", "csindex-ak")
+        short = expected is not None and n < expected * (1.0 - tol)
+        if not lossy and not short and n:
+            self._write_index_cache(sym, live)
+            return live
+        if expected is None:
+            log.info("china_universe: no known size for CSI %s — shortfall check skipped", sym)
+        cached, stamp = self._read_index_cache(sym)
+        exp_txt = f"{expected} expected" if expected else "expected size unknown"
+        if cached and len(cached) > n:
+            print(f"::warning title=csindex-fallback::CSI {sym} came back degraded from "
+                  f"{source} ({n} unique mappable tickers, {exp_txt}) — serving the cached "
+                  f"membership from {stamp} ({len(cached)} tickers) instead, so a transient "
+                  f"CSIndex outage cannot shrink the china_search universe", flush=True)
+            return cached
+        print(f"::warning title=csindex-fallback::CSI {sym} came back degraded from {source} "
+              f"({n} unique mappable tickers, {exp_txt}) and no usable cached membership "
+              f"exists — the china_search universe is SHORT for this index tonight; every "
+              f"name it drops freezes that ticker's closes column and is marked in "
+              f"dropped.parquet", flush=True)
+        return live
+
+    def _index_constituents(self, symbols: list[str]) -> list[dict]:
+        """Fetch constituent lists for named CSI indices (e.g. '000300', '000852').
+        Returns a list of {ticker, name_zh} dicts. Best-effort: one failed index is
+        logged and skipped, never fatal.
+
+        Source is the official CSIndex constituent table (exactly 300 / 1000 unique
+        codes), fetched directly and with a timeout by ``_index_rows``. The legacy
+        index_stock_cons endpoint is a last resort only: it returns the right ROW count
+        carrying duplicate codes — 772 unique of 1000 for CSI 1000 and 288 of 300 for
+        CSI 300 (measured 2026-08-04) — silently dropping 228 real constituents. When a
+        night lands on it, or lands short of the index's known size for any other reason,
+        ``_resolve_index_membership`` prefers the last known-good membership and raises a
+        GitHub annotation."""
         try:
             import akshare as ak  # noqa: PLC0415 — optional dep
         except ImportError:
-            log.warning("china_universe: akshare not installed — CSI index fetch skipped")
-            return []
+            ak = None
+            log.warning("china_universe: akshare not installed — the official CSIndex .xls "
+                        "is the only constituent source this run")
+        tol = float(self.cfg.get("index_shortfall_tol", 0.05))
         rows: list[dict] = []
         for sym in symbols:
             try:
                 pairs, source = self._index_rows(ak, sym)
             except Exception as e:  # noqa: BLE001 — one bad index must not kill the run
-                log.warning("china_universe: akshare index %s failed (%s) — skipped", sym, e)
-                continue
-            seen: set[str] = set()
+                log.warning("china_universe: CSI index %s failed on every source (%s)", sym, e)
+                pairs, source = [], "no source"
+            seen: dict[str, str] = {}
             for code, zh in pairs:
                 t = _code_to_ticker(code)
                 if not t or t in seen:      # dedup per index; Beijing/other codes drop out
                     continue
-                seen.add(t)
-                rows.append({"ticker": t, "name_zh": zh})
+                seen[t] = zh
+            live = [{"ticker": t, "name_zh": zh} for t, zh in seen.items()]
             # Count what was actually UNIONED (unique + ticker-mappable), never len(df):
             # a row-count log reported 1000/1000 while 228 CSI 1000 members were missing.
             log.info("china_universe: CSI index %s → %d constituents from %d %s rows",
-                     sym, len(seen), len(pairs), source)
+                     sym, len(live), len(pairs), source)
+            rows.extend(self._resolve_index_membership(sym, live, source, tol))
         return rows
 
     # -- main ------------------------------------------------------------------
