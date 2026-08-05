@@ -624,6 +624,7 @@ lanes:
             - scripts.build_options_screener
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            - scripts.build_options_dislocation
             - scripts.build_options_entry_state
             - scripts.build_intraday_flow --mode nightly
             - scripts.build_darkpool_desk
@@ -1905,6 +1906,7 @@ lanes:
             - scripts.build_flow_desk
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            - scripts.build_options_dislocation
             # OIP E8 (2026-07-29): options_screener.html had NO express coverage in
             # either intraday lane (the flow_leaders #3515 freeze class). Pure function
             # of committed data/, zero network, site/-only writes. Placed AFTER the skew

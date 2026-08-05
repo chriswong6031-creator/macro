@@ -305,6 +305,26 @@ jobs:
       # spend fewer characters of this scalar's remaining headroom. The `flow_desk` SLUG —
       # what ORDER matches and what names the log group — is identical across all lanes.
       # Anti-rot: tests/test_render_flow_desk_scope.py.
+      #
+      # cl_gex notes (hoisted OUT of the run: scalar 2026-08-05 — that block sits near the
+      # ~20,563-char ceiling test_render_run_size_cap.py enforces, and prose costs the scalar
+      # while a YAML comment here costs it nothing):
+      #  * build_gex_board is DELIBERATELY omitted from the auto (push-triggered) render.
+      #    Unlike every other builder here it is NOT a pure function of committed data — it
+      #    fetches ~700 live option chains from the free Cboe CDN (5 workers, 429-rate-limited
+      #    w/ multi-second backoff → ~22 min, the band's longest lane). An engine/** code change
+      #    cannot affect options chains, and GEX's consumers (build_site, radar, engine.run) all
+      #    read the COMMITTED data/gex/latest.json, so skipping it here staled nothing —
+      #    site/gex/* simply keeps the last nightly's values until the nightly `daily` (or a
+      #    manual `scope=gex` dispatch) refreshes them. This also restores the lane's "NO
+      #    network" invariant. See header comment.
+      #  * options_dislocation runs AFTER options_skew + options_ivspread: it joins BOTH of
+      #    their snapshot ledgers into its neutralised feature panel.
+      #  * Its two invocation lines carry a TERSER label than daily.yml/closing-bell.yml use
+      #    for the same builder ("options dislocation" vs "options information-dislocation
+      #    panel (build_options_dislocation)"), for the same headroom reason as flow_desk
+      #    above. The `options_dislocation` SLUG — what ORDER matches and what names the log
+      #    group — is identical across all lanes.
       - name: re-render pages from the freshly recomputed engine output (resilient)
         # IDENTICAL to render.yml's render step — reads the engine output just recomputed above
         # (regime/latest.json + the MTF leaf, now in the working tree) and re-renders every page.
@@ -471,22 +491,13 @@ jobs:
             cl_china() { brun china "build china a-share dashboard (build_china)" scripts.build_china; }
             cl_hk()    { brun hk    "build hong kong / hang seng (build_hk)"      scripts.build_hk; }
             cl_gex() {
-              # NOTE: build_gex_board is DELIBERATELY omitted from the auto (push-triggered)
-              # render. Unlike every other builder here it is NOT a pure function of committed
-              # data — it fetches ~700 live option chains from the free Cboe CDN (5 workers,
-              # 429-rate-limited w/ multi-second backoff → ~22 min, the band's longest lane).
-              # An engine/** code change cannot affect options chains, and GEX's consumers
-              # (build_site, radar, engine.run) all read the COMMITTED data/gex/latest.json, so
-              # skipping it here staled nothing — site/gex/* simply keeps the last nightly's
-              # values until the nightly `daily` (or a manual `scope=gex` dispatch) refreshes
-              # them. This also restores the lane's "NO network" invariant. See header comment.
+              # gex_board omission + dislocation ordering: see the cl_gex notes above the step.
               brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
               brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
               brun flow_desk "flow desk (build_flow_desk)" scripts.build_flow_desk
               brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
               brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
-              # AFTER skew+ivspread: it joins both ledgers into the neutralised feature panel.
-              brun options_dislocation "options information-dislocation panel (build_options_dislocation)" scripts.build_options_dislocation
+              brun options_dislocation "options dislocation" scripts.build_options_dislocation
               # OIP E8 (note above): AFTER skew/ivspread, inside cl_gex — not a sibling.
               brun options_screener "US options screener page (build_options_screener)" scripts.build_options_screener
               # options_entry_state IS a pure function of committed data/ (polygon_gex,
@@ -608,7 +619,7 @@ jobs:
               run_py "flow desk (build_flow_desk)" scripts.build_flow_desk
               run_py "single-name IV skew (build_options_skew)" scripts.build_options_skew
               run_py "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
-              run_py "options information-dislocation panel (build_options_dislocation)" scripts.build_options_dislocation
+              run_py "options dislocation" scripts.build_options_dislocation
               run_py "US options screener page (build_options_screener)" scripts.build_options_screener
               # flowleaders BEFORE optionscmd (M10) — see the OIP E8 note above the step.
               flowleaders; optionscmd
