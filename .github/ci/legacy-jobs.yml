@@ -4264,6 +4264,12 @@ jobs:
         run: python -m pytest tests/test_check_ledger_advance.py tests/test_builder_failstreaks.py tests/test_notify_turn_events.py -q
       - name: polygon universe/intraday + dead-name prices + finviz archival + thetadata sessions
         run: python -m pytest tests/test_build_polygon_universe.py tests/test_polygon_intraday.py tests/test_fetch_dead_name_prices_polygon.py tests/test_finviz_archival.py tests/test_thetadata_tape_sessions.py -q
+      # Enumerated in NO workflow before this (calendar-asof audit follow-up
+      # 2026-08-05): the finviz collector's asof feeds these ledgers, but a PR
+      # touching the track record or its heal fired no run that could see a
+      # failure. Lives here because the collector's own suite already does.
+      - name: subsector rotation track record + significance guard + session-stamp heal
+        run: python -m pytest tests/test_subsector_track_record.py tests/test_subsector_significance_guard.py tests/test_heal_subsector_rotation_ledgers.py -q
 
   unrun-government-revenue:
     # Government Revenue Foresight — builder envelope, publication fence,
