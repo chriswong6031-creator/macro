@@ -1,8 +1,8 @@
 {
-  "version": "2026-07-30",
+  "version": "2026-08-05",
   "note": "Curated US theme baskets for monitoring rotation. Descriptive only, not a buy list.",
   "seed_date": "2023-05-09",
-  "curated": "2026-07-30",
+  "curated": "2026-08-05",
   "baskets": {
     "mag7": {
       "name": "Magnificent Seven",
@@ -3809,6 +3809,100 @@
           "date": "2026-07-30",
           "action": "create",
           "note": "Added a coherent US-listed gold-producer basket; royalty/streaming and silver-led names explicitly excluded."
+        }
+      ]
+    },
+    "silver_miners": {
+      "name": "Silver Miners",
+      "name_zh": "白银矿业",
+      "theme": "Liquid US-listed silver producers with direct operating leverage to the silver price. Royalty/streaming companies, physical-metal trusts and gold-led producers are kept out so the cycle read stays economically coherent.",
+      "category": "Materials & Mining",
+      "parent": "Materials",
+      "tags": [
+        "silver",
+        "miners",
+        "precious-metals",
+        "commodities"
+      ],
+      "etf_proxy": "SIL",
+      "etf_proxy_note": "tight — SIL is the Global X Silver Miners ETF",
+      "created": "2026-08-05",
+      "curated": "2026-08-05",
+      "omitted": [
+        "WPM, SLVM-type royalty/streaming vehicles (royalty/streaming economics rather than mine operators — the same exclusion gold_miners applies to FNV/WPM/RGLD)",
+        "SLV, PSLV and other physical-metal trusts (bullion vehicles, not operating leverage)",
+        "NEM, AEM, GOLD, KGC, AU, GFI, HMY, AGI, IAG, EQX, EGO, BTG (gold-led producers — held in gold_miners so the two sleeves stay disjoint)",
+        "Junior explorers and pre-production developers (financing and single-asset risk dominate metal-cycle timing)"
+      ],
+      "members": [
+        {
+          "ticker": "PAAS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Pan American Silver — senior primary-silver producer with a diversified Americas asset base"
+        },
+        {
+          "ticker": "HL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Hecla Mining — the largest US-domiciled primary silver producer"
+        },
+        {
+          "ticker": "AG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "First Majestic Silver — Mexico-focused primary silver producer"
+        },
+        {
+          "ticker": "CDE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Coeur Mining — US-listed producer with material primary silver output alongside gold"
+        },
+        {
+          "ticker": "FSM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Fortuna Mining — Americas and West Africa producer built on a primary-silver base"
+        },
+        {
+          "ticker": "SSRM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "SSR Mining — diversified precious-metals producer carrying silver output; the sleeve's least silver-led member, kept for cycle breadth"
+        },
+        {
+          "ticker": "MAG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "MAG Silver — primary silver through the Juanicipio joint venture"
+        },
+        {
+          "ticker": "EXK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Endeavour Silver — Mexico-focused primary silver producer"
+        },
+        {
+          "ticker": "GATO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Gatos Silver — primary silver producer at Cerro Los Gatos"
+        },
+        {
+          "ticker": "SVM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Silvercorp Metals — established low-cost primary silver producer"
+        }
+      ],
+      "thesis": "Silver producers provide operational leverage to the silver price through realized prices, reserve value and margin expansion. The gold_miners charter explicitly deferred silver-led names to a separately calibrated sleeve; this is that sleeve, so trend, breadth and cycle signals describe one economic sleeve rather than a blended precious-metals average.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-08-05",
+          "action": "create",
+          "note": "Created the silver sleeve the gold_miners charter deferred ('PAAS, HL, AG — reserve for a separately calibrated silver sleeve'). Royalty/streaming, physical-metal trusts and gold-led producers excluded. COLLECTION STATE AT CREATION: only HL and CDE resolve on the baskets price path today (S&P-1500 breadth cache); the other eight members carry no local history yet and are backfilled by the membership-derived nightly collectors (scripts/fetch_basket_extras.py for the baskets page, scripts/fetch_basket_ohlcv.py for the consolidated candle) exactly as gold_miners' own 11 off-index members were after its 2026-07-30 creation. engine/baskets.py skips a basket resolving fewer than 3 members, so this basket is expected to be absent from the site for one build cycle and to appear after the first nightly collection."
         }
       ]
     },

@@ -280,6 +280,15 @@ jobs:
         run: pip install jsonschema pytest pandas numpy pyyaml requests
       - name: signal §7 contract tests
         run: python -m pytest tests/test_validate_signals.py -q
+      # W-F reclaim-veto decision packet (2026-08-05). This job, not a new one: the suite
+      # drives the REAL engine.signal_quality._buy_filter and analyze() over synthetic
+      # series, so it needs pandas + numpy + pyyaml (lib.config, via engine.technicals) —
+      # all present in the install line above, so no importorskip is needed and none is
+      # used. No data fixtures: every case is hand-built, which is why it can ride a job
+      # that checks out no caches. It pins that the packet's refusal set isolates exactly
+      # one leg — if that drifts, a research file starts overstating the veto's cost.
+      - name: W-F reclaim-veto flip-isolation construction
+        run: python -m pytest tests/test_us_reclaim_veto_packet.py -q
       - name: fundamental forensics lineage, normalization, detector, and schema contracts
         run: >
           python -m pytest
