@@ -340,5 +340,35 @@ version needs a delisting-inclusive panel (`collectors/edgar_delisting.py` +
 ## §7. Status log
 
 - 2026-08-05: Data spine built (IBKR borrow collector; FINRA 2018→now panel
-  backfill; display-tier axes module; 15 tests, 5 mutation-verified). Two
+  backfill; display-tier axes module; 20 tests, all guards mutation-verified). Two
   believed-blocked data sources unblocked. Study frozen, not run.
+- 2026-08-05: Amendment 1 committed pre-outcome (revisions/options/borrow
+  conditioners not historically available; price-action substituted).
+- 2026-08-05: **SP1-A RUN — NULL.** 47,807 events, 120 entry dates, 641 tickers,
+  2018-01-22 → 2026-04-10, returns demeaned within date.
+  `reports/sp1-short-pressure.md`, `data/research/sp1_short_pressure.json`.
+
+  **H0 does not replicate.** High days-to-cover *out*performed low (+0.37pp 21d /
+  +0.79pp 63d, t 1.22 / 1.09, q 0.45 / 0.82) — opposite sign to the published
+  result and not significant. Per §5A's own gate, the branch tests are therefore
+  **uninterpretable**, and that is the finding. H1 (bearish branch) came out
+  positive — opposite to hypothesis — and null. H2 (squeeze branch) reached
+  q=0.09 at 63d but its 21d sibling flips sign across halves, its halves differ
+  ~8× (+0.28 / +2.19), and 1.28pp sits far below the ±5pp promotion bar. Its
+  pre-declared expectation was null; it is null.
+
+  **This does not overturn the published result — this universe cannot test it.**
+  Three measured reasons, all pushing the same way: 34.8% of the pre-2021
+  high-DTC quintile is gone from the panel by 2025 and the price panel is the
+  CURRENT universe (so the names that went to zero are absent, biasing H0
+  positive); coverage is 583 of 5,616 eligible names, concentrated in large/mid
+  caps by quintile {3.2, 13.4, 19.2, 12.6, 7.2}%, while the documented effect
+  lives in small and illiquid names; and the sample is entirely post-publication.
+  The sort itself is alive (5.4× top/bottom spread vs 7.8× in the full universe),
+  so this is a population problem, not a dead signal.
+
+  **No DO_NOT_REBUILD row is filed.** Nothing was killed: the construction was
+  not testable on this price panel. The named fix is a delisting-inclusive panel
+  (`collectors/edgar_delisting.py` + `edgar_deadname_prices.py` already exist) and
+  a wider universe. Until then short pressure stays display-tier context, which is
+  where §3 already put it.
