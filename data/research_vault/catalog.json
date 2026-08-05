@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T09:29:00.812673+00:00",
-  "count": 793,
+  "generated_at": "2026-08-05T09:43:54.575679+00:00",
+  "count": 794,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -420,6 +420,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6fbgkbqpelo-611582",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:09Z",
+      "summary_points": [
+        "**AI growth fundamentals**: Power constraints (generation/grid) critical for AI; industrial tech opportunities have least substitution risk.",
+        "**AI-Driven Semiconductor & Healthcare**: Semicap equipment revenue to grow 30% CAGR due to AI demand/supply bottlenecks; healthcare AI leverages price-inelastic demand and longevity trend.",
+        "**Fed Policy & Inflation Outlook**: Fed holds rates steady amid \"watchful thinking\" on inflation; core inflation data critical for 2028 path, with tariffs/energy as key catalysts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
