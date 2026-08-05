@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOCKUP — Stocks market hub | MastermindX</title>
+<script>try{{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}}catch(e){{}}</script>
+<style>{THEME}</style>
+<style>{CSS}</style>
+</head>
+<body>
+
+<div class="mockbar">
+  <b>MOCKUP</b>
+  <span>Layout + copy are the proposal. Sectors, market caps, index returns, breadth,
+  sector strength, the map and the spine are <b>real</b> (site/marketdata/sp500_heatmap.json,
+  {ASOF}). <b>Prices, dollar volume, unusual-volume multiples, 52-week position and the
+  per-name read are production-shaped placeholders</b> — those live in the gitignored
+  site/stockdata tree the nightly builder reads. Universe here is the S&amp;P 500 (501);
+  the shipped page covers {N_REAL}.</span>
+</div>
+
+<div class="wrap">
+
+  <!-- ═══ 1. PULSE ═══════════════════════════════════════════════════════ -->
+  <section class="pulse">
+    <div class="pulse-eyebrow">
+      <span class="dot live"></span>
+      <span class="l-en">US market · {ASOF}</span><span class="l-zh">美股 · {ASOF}</span>
+      <span>·</span>
+      <span class="l-en">≈15-min delayed</span><span class="l-zh">≈延迟15分钟</span>
+    </div>
+    <h1>
+      <span class="l-en"><span class="accent {STANCE_TONE}">{STANCE_EN}.</span> {PCT_UP}% of the market is green.</span>
+      <span class="l-zh"><span class="accent {STANCE_TONE}">{STANCE_ZH}。</span>{PCT_UP}% 的个股上涨。</span>
+    </h1>
+    <p class="pulse-read">
+      <span class="l-en">Every one of the <b>{N}</b> US names we cover, ranked by today's move. Money moved toward <b>{TOP_EN}</b> and away from <b>{BOT_EN}</b>.</span>
+      <span class="l-zh">我们覆盖的全部 <b>{N}</b> 只美股，按今日涨跌幅排序。资金流向 <b>{TOP_ZH}</b>，流出 <b>{BOT_ZH}</b>。</span>
+    </p>
+
+    <!-- ── SIGNATURE: the day's shape ──────────────────────────────────── -->
+    <div class="spine">
+      <svg viewBox="0 0 {SPINE_W} {SPINE_H}" role="img" preserveAspectRatio="none"
+           aria-label="Every covered stock ranked by today's move, worst to best">
+        <line class="sp-zero" x1="0" y1="64" x2="{SPINE_W}" y2="64"/>
+        <path class="sp-neg" d="{SPINE_NEG}"/>
+        <path class="sp-pos" d="{SPINE_POS}"/>
+        <path class="sp-line" d="{SPINE_LINE}" vector-effect="non-scaling-stroke"/>
+        <line class="sp-cross" x1="{SPINE_CROSS}" y1="0" x2="{SPINE_CROSS}" y2="{SPINE_H}"
+              vector-effect="non-scaling-stroke"/>
+      </svg>
+      <div class="sp-foot">
+        <span class="sp-lab at-l">
+          <span class="l-en">Worst · <b>{WORST_T}</b> {WORST_V}</span>
+          <span class="l-zh">最弱 · <b>{WORST_T}</b> {WORST_V}</span>
+        </span>
+        <span class="sp-lab sp-mid">
+          <span class="l-en">the line crosses zero here — {GREEN_PCT}% finished green</span>
+          <span class="l-zh">此处越过零轴 —— {GREEN_PCT}% 收涨</span>
+        </span>
+        <span class="sp-lab at-r">
+          <span class="l-en"><b>{BEST_T}</b> {BEST_V} · Best</span>
+          <span class="l-zh"><b>{BEST_T}</b> {BEST_V} · 最强</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- ── stat strip ──────────────────────────────────────────────────── -->
+    <div class="stats">
+      <div class="stat">
+        <div class="k"><span class="l-en">Advancing vs declining</span><span class="l-zh">涨跌家数</span></div>
+        <div class="v fig">{PCT_UP}<span style="font-size:14px;font-weight:600">%</span></div>
+        <div class="bbar"><i class="a" style="width:{ADV_W}%"></i><i class="f" style="width:{FLAT_W}%"></i><i class="d" style="width:{DEC_W}%"></i></div>
+        <div class="bleg"><span class="up fig">&#9650; {ADV}</span><span class="dn fig">{DEC} &#9660;</span></div>
+      </div>
+      <div class="stat">
+        <div class="k"><span class="l-en">Median move</span><span class="l-zh">涨跌中位数</span></div>
+        <div class="v fig {MEDIAN_TONE}">{MEDIAN}</div>
+        <div class="m"><span class="l-en">{MEDIAN_W_EN}</span><span class="l-zh">{MEDIAN_W_ZH}</span></div>
+      </div>
+      <div class="stat">
+        <div class="k"><span class="l-en">Strongest sector</span><span class="l-zh">最强板块</span></div>
+        <div class="v fig {TOP_TONE}">{TOP_PC}</div>
+        <div class="m"><span class="l-en">{TOP_EN}</span><span class="l-zh">{TOP_ZH}</span></div>
+      </div>
+      <div class="stat">
+        <div class="k"><span class="l-en">Weakest sector</span><span class="l-zh">最弱板块</span></div>
+        <div class="v fig {BOT_TONE}">{BOT_PC}</div>
+        <div class="m"><span class="l-en">{BOT_EN}</span><span class="l-zh">{BOT_ZH}</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 2. FINDER ══════════════════════════════════════════════════════ -->
+  <section class="finder">
+    <div class="sbox">
+      <svg class="mag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+      <input id="q" type="search" autocomplete="off" spellcheck="false"
+             placeholder="Search {N} dossiers / 搜索 {N} 只个股">
+      <span class="kbd"><kbd>/</kbd><span class="l-en">to search</span><span class="l-zh">搜索</span></span>
+    </div>
+
+    <div class="facets">
+      <div class="fgrp">{SEC_CHIPS}</div>
+      <div class="fgrp">{STANCE_CHIPS}</div>
+      <div class="fgrp">
+        <button class="fchip s-up" data-f="dir" data-v="up"><span class="l-en">Up today</span><span class="l-zh">今日上涨</span></button>
+        <button class="fchip s-down" data-f="dir" data-v="dn"><span class="l-en">Down today</span><span class="l-zh">今日下跌</span></button>
+        <button class="fchip" data-f="cap" data-v="mega"><span class="l-en">Mega cap</span><span class="l-zh">超大市值</span></button>
+        <button class="fchip" data-f="cap" data-v="large"><span class="l-en">Large cap</span><span class="l-zh">大市值</span></button>
+      </div>
+    </div>
+
+    <div class="res" id="res" hidden>
+      <div class="res-h">
+        <span id="res-meta"></span>
+        <span class="sorts">
+          <button class="sortbtn on" data-s="cap"><span class="l-en">Size</span><span class="l-zh">市值</span></button>
+          <button class="sortbtn" data-s="chg"><span class="l-en">Gainers</span><span class="l-zh">涨幅</span></button>
+          <button class="sortbtn" data-s="chgd"><span class="l-en">Losers</span><span class="l-zh">跌幅</span></button>
+          <button class="sortbtn" data-s="rvol"><span class="l-en">Volume</span><span class="l-zh">放量</span></button>
+          <button class="sortbtn" data-s="az">A–Z</button>
+        </span>
+      </div>
+      <div class="rows" id="rows"></div>
+      <button class="more" id="more" hidden></button>
+    </div>
+  </section>
+
+  <!-- ═══ 3. BOARDS ══════════════════════════════════════════════════════ -->
+  <div class="sec-h">
+    <h2><span class="l-en">Today's movers</span><span class="l-zh">今日异动</span></h2>
+    <span class="sh-note"><span class="l-en">Ranked from the same close every board on this page uses.</span><span class="l-zh">全页各榜单均取自同一收盘数据。</span></span>
+  </div>
+  <div class="grid">
+    {GAINERS}
+    {LOSERS}
+    {ACTIVE}
+    {UNUSUAL}
+    {NEAR_HI}
+    {NEAR_LO}
+  </div>
+
+  <div class="sec-h">
+    <h2><span class="l-en">Where the money went</span><span class="l-zh">资金去向</span></h2>
+  </div>
+  <div class="moneygrid">
+    <section class="card">
+      <header class="card-h">
+        <h2><span class="l-en">Sector strength</span><span class="l-zh">板块强弱</span></h2>
+        <span class="card-note"><span class="l-en">Cap-weighted move per sector</span><span class="l-zh">按市值加权的板块涨跌</span></span>
+      </header>
+      <div>{SECTOR_STRENGTH}</div>
+    </section>
+
+    <section class="card hmcard">
+      <header class="card-h">
+        <h2><span class="l-en">The whole market, one map</span><span class="l-zh">全市场热力图</span></h2>
+        <span class="card-note"><span class="l-en">Boxes sized by company value, shaded by today's move — click any name for its dossier.</span><span class="l-zh">方块大小代表公司规模，颜色代表今日涨跌 —— 点击任意个股查看研究报告。</span></span>
+      </header>
+      <div class="hm-wrap">
+        <svg viewBox="0 0 {HM_W} {HM_H}" role="img"
+             aria-label="Treemap of covered stocks grouped by sector, sized by company value and shaded by today's move">
+          {TREEMAP}
+        </svg>
+      </div>
+      <div class="hm-legend">
+        <span class="l-en">Down</span><span class="l-zh">下跌</span>
+        <span class="hm-scale">
+          <i style="background:var(--hmd4)"></i><i style="background:var(--hmd3)"></i>
+          <i style="background:var(--hmd2)"></i><i style="background:var(--hmd1)"></i>
+          <i style="background:var(--hm0)"></i>
+          <i style="background:var(--hmu1)"></i><i style="background:var(--hmu2)"></i>
+          <i style="background:var(--hmu3)"></i><i style="background:var(--hmu4)"></i>
+        </span>
+        <span class="l-en">Up</span><span class="l-zh">上涨</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- ═══ 4. DIRECTORY ═══════════════════════════════════════════════════ -->
+  <section class="dir">
+    <div class="sec-h" style="margin-top:0">
+      <h2><span class="l-en">All coverage A–Z</span><span class="l-zh">全部覆盖 A–Z</span></h2>
+      <span class="sh-note"><span class="l-en">Every dossier we publish. Search above is faster.</span><span class="l-zh">我们发布的全部研究报告。上方搜索更快。</span></span>
+    </div>
+    {DIRECTORY}
+  </section>
+
+  <footer class="foot">
+    <p><span class="l-en">Research context only — not investment advice. Prices are delayed by about 15 minutes.</span>
+       <span class="l-zh">仅供研究参考，不构成投资建议。价格约延迟15分钟。</span></p>
+    <p><span class="l-en">Board data as of {ASOF}.</span><span class="l-zh">榜单数据截至 {ASOF}。</span></p>
+  </footer>
+</div>
+
+<script>
+window.__HUB_ROWS = {SEARCH_JSON};
+window.__HUB_SEC = {SEC_LABELS_JSON};
+window.__HUB_STANCE = {STANCE_JSON};
+</script>
+<script>{JS}</script>
+</body>
+</html>

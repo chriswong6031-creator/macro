@@ -55,9 +55,13 @@ h1 { font-size:22px; margin:0 0 4px; }
 
 /* grid */
 .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; margin-top:4px; }
-.card { background:rgba(16,22,30,.55); border:1px solid rgba(255,255,255,.12); border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,.45),0 1.5px 0 rgba(255,255,255,.07) inset; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); padding:12px 14px; display:flex; flex-direction:column; gap:4px; transition:background .2s,border-color .2s,transform .2s,box-shadow .2s; }
-[data-theme="light"] .card { background:rgba(255,255,255,.82); border-color:rgba(0,0,0,.09); box-shadow:0 8px 32px rgba(0,0,0,.08); }
-.card:hover { background:rgba(22,29,38,.62); border-color:rgba(255,255,255,.16); transform:translateY(-1px); box-shadow:0 12px 40px rgba(0,0,0,.55),0 1.5px 0 rgba(255,255,255,.09) inset; }
+/* Surfaces resolve from theme tokens, never from a literal rgba(). The previous
+   pair hard-coded a DARK fill on .card with a light override on the base rule
+   only — so .card:hover (rgba(22,29,38,.62), which had no light twin) repainted
+   every hovered card charcoal in light mode, white text and all. A theme cannot
+   miss an override that does not exist. */
+.card { background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:var(--card-shadow); padding:12px 14px; display:flex; flex-direction:column; gap:4px; transition:background .2s,border-color .2s,transform .2s,box-shadow .2s; }
+.card:hover { background:color-mix(in srgb,var(--link) 5%,var(--panel)); border-color:color-mix(in srgb,var(--link) 45%,var(--line)); transform:translateY(-1px); }
 .card a { display:block; }
 .card .ticker { font-size:16px; font-weight:720; color:var(--link); font-variant-numeric:tabular-nums; }
 .card .name { font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
