@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T08:27:44.364412+00:00",
-  "count": 790,
+  "generated_at": "2026-08-05T08:42:46.643865+00:00",
+  "count": 791,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -275,6 +275,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zrgo2vvutlg-c980d4",
+      "title": "Commodity Compass Analytics (CCA) An Oil Odyssey – Red Sea Tension Sends Oil on a Long Voyage Home",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:11:23Z",
+      "summary_points": [
+        "**Red Sea Flow Disruption**: Saudi crude flows via Bab al-Mandab down 3.7 mb/d (vs.",
+        "4 mb/d pre-war), Suez Canal down 0.5 mb/d, Russian Red Sea exports down 2.2 mb/d; Houthi attacks threaten Yanbu terminal, increasing voyage risk and costs ($292k ballast charges).",
+        "**China Demand-Policy Mismatch**: Crude imports accelerate to 3 mb/d (14d MA) with refinery utilization at 66%, but Beijing mandates refineries to maintain inventories at or above end-Feb levels, constraining supply flexibility and exposing vulnerabilities.",
+        "**CPC Pipeline Disruption**: Drone attacks on CPC tankers reduced loadings by 1.8 mb/d (vs.",
+        "June), compounded by Kazakhstan production cuts, threatening global oil flows amid resumed attacks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 36,
       "language": "en",
       "needs_metadata": false
     },
