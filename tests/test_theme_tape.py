@@ -379,6 +379,109 @@ def test_a_group_reason_takes_exactly_one_separator():
         "a group-level reason already has the previous name's trailing separator")
 
 
+def test_no_fixed_track_is_sized_to_a_sub_12px_label():
+    """The 2026-08-04 break: 10px labels inside flat px tracks.
+
+    `.tt-k` and `.tt-fs` are 10px, and 10px is below the browser's
+    minimum-font-size setting — a user preference (commonly 12–16px) that raises
+    the RENDERED size while the track stays where the CSS put it. So the width of
+    that text is not a function of this stylesheet, and a track sized to fit it at
+    the authored size has no guarantee at all. Sized to clear "setting up" at 10px
+    the columns were 58px with 4.1px of slack: at a 12px clamp "watching" overran
+    its column and the shelf's "loading up" chip overran the 74px label column and
+    printed across the theme names beside it, which is what the operator
+    screenshotted. Same class as the score-ring caption in #4357.
+
+    These assertions are STRUCTURAL on purpose. A clearance check measured in a
+    default render passes on the broken build — it cannot reach the state that
+    breaks it — so what gets pinned is the two properties that make the layout
+    hold at any rendered label width:
+      · the label column can GROW (minmax → max-content), so a clamped chip widens
+        its track instead of painting over the column beside it, and
+      · a clamped column label WRAPS inside its own track (overflow-wrap).
+    """
+    css = _panel_css()
+
+    # 1. the three widths are declared once, so the grids cannot drift apart
+    assert "--tt-col:" in css and "--tt-quiet:" in css and "--tt-gk:" in css, (
+        "the header row, the theme rows and the member groups must read their "
+        "column widths from one declaration — three inline copies drift")
+    ladder = css.split(".tt-row{")[1].split("}")[0]
+    assert "repeat(5,var(--tt-col))" in ladder and "var(--tt-quiet)" in ladder, (
+        "the ladder must size from the shared properties, not inline px")
+    assert "repeat(5,58px)" not in css, "the pre-#4357-ruling magic number is back"
+
+    # 2. the label column grows rather than overflowing — the chip overlap fix
+    gk = css.split(".tt-g{")[1].split("}")[0]
+    assert "minmax(var(--tt-gk),max-content)" in gk, (
+        "a flat label track is what let the 'loading up' chip print across the "
+        "theme names; it must be free to widen when the chip is clamped larger")
+    assert not re.search(r"grid-template-columns:\d+px", gk), (
+        "a fixed px label column cannot report that its chip no longer fits")
+
+    # 3. containment is a guarantee, not a margin — no label paints out of its cell
+    k = css.split(".tt-k{")[1].split("}")[0]
+    assert "overflow-wrap:break-word" in k, (
+        "past any track width a column label must wrap inside its OWN column; "
+        "without this it silently paints over its neighbour")
+    assert "overflow:hidden" not in k and "text-overflow:ellipsis" not in k, (
+        "clipping the label to 'watchin…' is the worse fix (#4357 ruling)")
+
+
+def test_the_glance_row_is_one_line_and_the_stance_is_the_exception():
+    """Doctrine Law 4: a per-row constant belongs in one place, once.
+
+    `_stance_for` is a lookup on the five counts printed on the row beside it, so
+    the stance sentence carries no information the ladder has not already given —
+    and on a normal night four of five rows print the identical sentence. Three
+    lines per theme is what made the panel 692px. The row that has live names is
+    the one row whose stance asks for something today, so it keeps it on the
+    glance tier; the rest carry it inside the disclosure.
+    """
+    src = (TMPL / "_theme_tape.html.j2").read_text()
+    summary = src.split('<summary class="tt-s">')[1].split("</summary>")[0]
+    detail = src.split('<div class="tt-det">')[1].split("{%- endfor %}")[0]
+
+    assert 'class="tt-say"' in summary, "the actionable row keeps its stance"
+    say_at = summary.index('class="tt-say"')
+    gate = summary.rfind("_c.get('live')", 0, say_at)
+    assert gate != -1, (
+        "the glance-tier stance must be gated on the live count — ungated it is "
+        "the repeated constant Law 4 forbids")
+
+    assert 'class="tt-heat"' not in summary, (
+        "rank/heat is Tier-3 reference, not a second glance line per theme")
+    assert 'class="tt-heat"' in detail and "say_en" in detail, (
+        "what leaves the glance tier has to land somewhere — rank, heat and the "
+        "stance for every non-live row belong in the expanded row")
+
+
+def test_the_footnote_is_one_sentence_and_points_at_the_board_above():
+    """Law 4 (one footnote, never stacked) and the panel's move below the board.
+
+    The overlap fact used to ride here as a second sentence; it explains something
+    only visible with the rows open and the `?` tip already states it. "the picks
+    below" was the one piece of copy with a direction baked into it.
+    """
+    src = (TMPL / "_theme_tape.html.j2").read_text()
+    foot = src.split('<p class="tt-foot">')[1].split("</p>")[0]
+    assert "picks above" in foot and "上方选股" in foot
+    assert "picks below" not in foot and "下方选股" not in foot
+    assert "more than one line" not in foot, (
+        "duplicated from the ? tip — a second copy on the always-visible tier is "
+        "the stacked footnote Law 4 forbids")
+    # Law 1 — the panel's own stance survives even when the `measuring` clause dark
+    for lang, stance in (("l-en", "where to look, not at what to buy"),
+                         ("l-zh", "而非买入对象")):
+        span = foot.split(f'class="{lang}"')[1].split("</span>")[0]
+        # what a reader gets when `measuring` is False: drop the whole conditional
+        unconditional = re.sub(r"\{%\s*if\b.*?\{%\s*endif\s*%\}", "", span, flags=re.S)
+        assert stance in unconditional, (
+            f"[{lang}] the stance must sit outside the measuring conditional — on a "
+            "night with no live row this is the panel's only answer to 'so what "
+            "do I do'")
+
+
 def test_mobile_break_matches_the_board_and_hides_the_header_row():
     """#4344 — primary decisions never x-scroll on a phone."""
     src = (TMPL / "_theme_tape.html.j2").read_text()
@@ -388,24 +491,32 @@ def test_mobile_break_matches_the_board_and_hides_the_header_row():
     assert ".tt-c.is-zero-cell{display:none}" in block.replace(" ", "")
 
 
-def test_the_page_includes_the_partial_above_the_board():
+def test_the_page_includes_the_partial_below_the_board():
+    """Operator order 2026-08-04: "it's obstructing this entire page."
+
+    The panel shipped ABOVE the board to build a reading order (heat → what the
+    picks do with it → the picks). Measured on the real page it was 692px — 20.7%
+    of us_stocks — and it put #us-standouts nearly two full screens down to set up
+    a panel that, by its own footnote, changes no ranking below it. Context that
+    changes no decision reads after the decision it contextualises.
+    """
     dash = (TMPL / "dashboard.html.j2").read_text()
     assert '{% include "_theme_tape.html.j2" %}' in dash
-    assert dash.index("_theme_tape.html.j2") < dash.index('id="us-standouts"')
+    assert dash.index("_theme_tape.html.j2") > dash.index('id="us-standouts"')
 
 
 def test_full_page_renders_the_panel_on_stocks_and_never_on_macro():
     """Integration: the real dashboard template, both modes, one shared view-model.
 
     A partial can parse perfectly and still never reach the page — this is the
-    assertion that the include actually fires, in the right mode, above the board.
+    assertion that the include actually fires, in the right mode, below the board.
     """
     from tests.test_dashboard_template_render import _base_vm, _env
     vm = dict(_base_vm(), theme_tape=_build())
 
     stocks = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
     assert 'id="theme-tape"' in stocks
-    assert stocks.index('id="theme-tape"') < stocks.index('id="us-standouts"')
+    assert stocks.index('id="theme-tape"') > stocks.index('id="us-standouts"')
     assert STANCES["act"][0] in stocks
 
     macro = _env().get_template("dashboard.html.j2").render(**vm, mode="macro")
