@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
-  "as_of": "2026-08-04",
-  "generated_utc": "2026-08-04T10:11:07.004730+00:00",
+  "as_of": "2026-08-05",
+  "generated_utc": "2026-08-05T01:23:13.227105+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": "The alt-data picture shows strong convergence in mega-cap tech (MSFT, NVDA), driven by insider/government accumulation, developer momentum, and policy tailwinds, while Trump-linked names present a mixed but notable signal in PLTR and META. The track record is yet uncalibrated, so conviction must remain modest.",
   "brain_present": true,
@@ -603,6 +603,41 @@
       "clamped": null
     },
     {
+      "ticker": "AXP",
+      "signal_score": 37,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 2,
+      "channels": [
+        "affiliation",
+        "material_8k"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 4.1,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": false,
+      "off_high_252": -9.7,
+      "ret_20d": -3.2,
+      "above_50dma": true,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Warren Buffett",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "AMCR",
       "signal_score": 36,
       "conviction": "medium",
@@ -1045,35 +1080,6 @@
       "second_order": [],
       "falsifier": null,
       "clamped": null
-    },
-    {
-      "ticker": "MA",
-      "signal_score": 27,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.7,
-      "convergence_score": 2,
-      "channels": [
-        "special_situation",
-        "trump"
-      ],
-      "trump_linked": true,
-      "rs_vs_spy_60d": 12.8,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": false,
-      "off_high_252": -4.2,
-      "ret_20d": 7.3,
-      "above_50dma": true,
-      "entry_tier": null,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
     }
   ],
   "broken_signals": [
@@ -1194,6 +1200,43 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "QCOM",
+      "signal_score": 44,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.55,
+      "convergence_score": 4,
+      "channels": [
+        "affiliation",
+        "congress_buy",
+        "patent_cluster",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -24.2,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -39.4,
+      "ret_20d": -18.7,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Tommy Tuberville",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        }
+      ],
+      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -1410,42 +1453,6 @@
         }
       ],
       "n_affiliated_actors": 2,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "QCOM",
-      "signal_score": 29,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.1,
-      "convergence_score": 3,
-      "channels": [
-        "affiliation",
-        "patent_cluster",
-        "special_situation"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -24.2,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -39.4,
-      "ret_20d": -18.7,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Tommy Tuberville",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        }
-      ],
-      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,

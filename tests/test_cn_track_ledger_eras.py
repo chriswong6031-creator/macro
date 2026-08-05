@@ -56,13 +56,23 @@ class TestRealStoreEraSplit:
         assert len(board) > 1000
         assert "board_definition" in board.columns
 
-    def test_the_two_masks_partition_the_store_exactly(self, board):
+    def test_the_known_cohorts_partition_the_store_exactly(self, board):
+        """Eras + adjudicated shelves cover every row; a FOURTH stamp still fails here.
+
+        2026-08-04: the reversal_watch shelf (#4393) wrote its first rows under
+        `cn_reversal_watch_v1` and this tripwire fired exactly as designed. The
+        adjudication: a known labelled cohort (never pooled), registered in
+        `bcl._CN_ADJUDICATED_SHELF_STAMPS` — which this test shares with the emitter's
+        alarm gate, so the allowlist and the warning can never drift apart.
+        """
         stamps = board["board_definition"]
         prior = stamps.map(bcl._cn_is_legacy_stamp)
         current = stamps.astype(str) == "cn_prophet_v2"
+        shelf = stamps.astype(str).isin(bcl._CN_ADJUDICATED_SHELF_STAMPS)
         assert not (prior & current).any(), "a row landed in BOTH eras"
-        assert int(prior.sum()) + int(current.sum()) == len(board), \
-            "a row landed in NEITHER era"
+        assert not ((prior | current) & shelf).any(), "a shelf row landed in an era"
+        assert int(prior.sum()) + int(current.sum()) + int(shelf.sum()) == len(board), \
+            "a row landed in NO known cohort — a new stamp needs adjudication"
         assert int(current.sum()) > 0 and int(prior.sum()) > int(current.sum())
 
     def test_the_eras_do_not_overlap_in_time(self, board):
@@ -305,6 +315,41 @@ class TestUnknownStampIsNeverDropped:
                      + doc["prior_record"]["meta"]["n_total"]
                      + sum(e["meta"]["n_total"] for e in doc["extra_records"]))
         assert published == 3
+
+    def test_an_adjudicated_shelf_gets_the_block_but_not_the_alarm(
+        self, monkeypatch, tmp_path, capsys
+    ):
+        """A KNOWN shelf stamp publishes exactly like an unknown one — its own labelled
+        extra_records block, never pooled — but must NOT trip the unknown-stamp
+        warning: a nightly alarm for an expected state trains readers to ignore the
+        alarm that matters (the fixture two tests up proves the unknown path still
+        warns, so the pair pins the gate in both directions)."""
+        from engine import china_standout_track as cst
+        d = tmp_path / "china_standout_track"
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / "board.parquet"
+        pd.DataFrame([
+            {"date": "2026-06-01", "ticker": "600519.SS", "board_rank": 1, "tier": "T1",
+             "board_definition": None},
+            {"date": "2026-06-15", "ticker": "000001.SZ", "board_rank": 1, "tier": "T1",
+             "board_definition": "cn_reversal_watch_v1"},   # ADJUDICATED shelf (matured date)
+            {"date": "2026-07-20", "ticker": "601318.SS", "board_rank": 1, "tier": "T1",
+             "board_definition": "cn_prophet_v2"},
+        ]).to_parquet(p, index=False)
+        monkeypatch.setattr(cst, "_store_path", lambda: p)
+        monkeypatch.setattr(cst, "_price_frame", _price_frame)
+        monkeypatch.setattr(cst, "_bench_close", _bench)
+        site = tmp_path / "site_shelf"
+        (site / "factordata").mkdir(parents=True)
+        assert bcl.emit_cn_track_ledger(site, None, [],
+                                        board_definition="cn_prophet_v2",
+                                        asof="2026-07-31") is True
+        out = capsys.readouterr().out
+        doc = json.loads((site / "factordata" / "cn_track_ledger.json").read_text())
+        extra = doc["extra_records"]
+        assert len(extra) == 1
+        assert {r["t"] for r in extra[0]["rows"]} == {"000001.SZ"}
+        assert "cn-track-unknown-board-definition" not in out
 
     def test_the_unknown_era_is_labelled_by_its_stamp_value(self, three_eras):
         doc, _ = three_eras

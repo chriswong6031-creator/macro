@@ -577,7 +577,7 @@ def miss_funnel() -> dict:
         out["note"] = "candidate store absent — miss funnel unavailable"
         return out
     try:
-        cand = pd.read_parquet(p, columns=["date", "ticker", "lane"])
+        cand = pd.read_parquet(p, columns=["stamp_date", "ticker", "lane"])
     except Exception as exc:  # noqa: BLE001
         out["note"] = f"candidate store unreadable: {exc}"
         return out
@@ -585,7 +585,7 @@ def miss_funnel() -> dict:
         out["note"] = "candidate store empty"
         return out
 
-    dates = sorted(cand["date"].astype(str).unique().tolist())
+    dates = sorted(cand["stamp_date"].astype(str).unique().tolist())
     out["coverage_start"] = dates[0]
     out["coverage_dates"] = dates
 
@@ -597,7 +597,7 @@ def miss_funnel() -> dict:
 
     lane_by_key: dict[tuple[str, str], str] = {}
     for _i, row in cand.iterrows():
-        key = (str(row["date"])[:10], str(row["ticker"]))
+        key = (str(row["stamp_date"])[:10], str(row["ticker"]))
         lane_by_key.setdefault(key, str(row["lane"]) if pd.notna(row["lane"]) else FUNNEL_ABSENT)
 
     pooled: dict[str, int] = {lane: 0 for lane in FUNNEL_LANES}

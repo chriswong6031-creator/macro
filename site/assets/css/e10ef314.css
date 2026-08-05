@@ -1503,6 +1503,10 @@
   .ts-row { cursor: pointer; transition: background .12s; }
   .ts-row:hover { background: var(--panel2); }
   .ts-tk { font-weight: 800; color: var(--text); }
+  /* The ticker is a real anchor so theme.js's capture-phase Terminal intercept can
+     see it (and so middle-/cmd-click still opens a tab). It must not read as a blue
+     link inside the row — the row itself is the affordance. */
+  .ts-tk-a { color: inherit; text-decoration: none; }
   .ts-nm { font-size: 10px; color: var(--muted); }
   .ts-tbl td.az-up { color: var(--ink-up, var(--up)); font-weight: 700; }
   .ts-tbl td.az-dn { color: var(--ink-down, var(--down)); font-weight: 700; }
@@ -1699,12 +1703,20 @@
     --rail: var(--link);
   }
   html[data-theme="light"] body.page-macro {
-    /* restore the airy light canvas (the dark overrides above set it on <body>) */
-    --bg:#f6f7fa; --panel:#ffffff; --panel2:#eef1f6;
+    /* Light = a design target, not a tint (round-3 depth pass). The old canvas
+       was #f6f7fa: a white panel on it measured 1.07:1, so every card dissolved
+       into the page and the dashboard read as one flat sheet. The estate depth
+       recipe deepens the canvas to #e8ebf1 (1.19:1 under a white panel, +81%
+       separation) and moves the remaining depth into a real two-stop shadow —
+       contact + ambient — instead of a heavier border. --line is deliberately
+       NOT lowered to the recipe hairline here: it drives 233 INTERNAL rules on
+       this page (vs 29 for --hair), and an internal rule has no shadow to lean
+       on, so it keeps the estate's raised value. The recipe hairline is applied
+       where it belongs — the panel EDGE (--mx5-glass-border below). */
+    --bg:#e8ebf1; --panel:#ffffff; --panel2:#eef1f6;
     --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
     --hair: color-mix(in srgb, var(--line) 90%, transparent);
-    --ms: inset 0 1px 0 0 rgba(255,255,255,.7),
-          0 1px 2px rgba(20,30,50,.05), 0 14px 30px -20px rgba(20,30,50,.16);
+    --ms: 0 1px 2px rgba(23,32,55,.05), 0 8px 24px -12px rgba(23,32,55,.10);
   }
 
   /* ---- type scale: one confident hierarchy, every size from the scale ---- */

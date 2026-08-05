@@ -650,10 +650,61 @@ def _attention_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
 # Insider dimension
 # ---------------------------------------------------------------------------
 
+_insider_panel_cache: dict[str, pd.DataFrame | None] = {}
+
+#: The only columns the trailing-90d aggregate below consumes.  Narrowing here is
+#: output-neutral (every emitted field derives from these plus the row count) and
+#: keeps the cached panel a few hundred MB smaller than the raw 15-column store.
+_INSIDER_COLUMNS = ("ticker", "filing_date", "code", "usd")
+
+
+def _load_insider_panel(panel_dir: Path) -> pd.DataFrame | None:
+    """Concatenate data/sec_insider/panel/*.parquet ONCE per process.
+
+    Mirrors the ``_si_cache`` idiom below.  Before this existed, _insider_dim
+    re-read every file in the panel for EVERY ticker: 81 files x ~2,900 names is
+    ~235k parquet reads a night, and that single dimension was ~80% of the whole
+    Context Snapshot cost (measured 2026-08-04 while building the US Context
+    Vector store, which calls context_frame over the full universe).
+
+    Output-equivalent to the old per-ticker loop by construction: the files are
+    concatenated in the same ``sorted()`` order the loop walked them in, so a
+    ticker's rows keep their relative order; ``_filing_dt`` is the same
+    elementwise ``to_datetime(errors="coerce")``, just computed once; and every
+    panel file carries an identical schema, so no column-union difference can
+    arise.  Files missing ticker/filing_date are skipped exactly as before.
+
+    Read failures are NOT cached: the caller maps them to the same
+    "sec_insider/panel unreadable" disclosure the old code emitted.
+    """
+    key = str(panel_dir)
+    if key in _insider_panel_cache:
+        return _insider_panel_cache[key]
+
+    frames: list[pd.DataFrame] = []
+    for pq_file in sorted(panel_dir.glob("*.parquet")):
+        try:
+            df = pd.read_parquet(pq_file)
+        except Exception:  # noqa: BLE001 — one corrupt part must not blind the dim
+            continue
+        if "ticker" not in df.columns or "filing_date" not in df.columns:
+            continue
+        frames.append(df[[c for c in _INSIDER_COLUMNS if c in df.columns]])
+
+    if not frames:
+        _insider_panel_cache[key] = None
+        return None
+
+    panel = pd.concat(frames, ignore_index=True)
+    panel["_filing_dt"] = pd.to_datetime(panel["filing_date"], errors="coerce")
+    _insider_panel_cache[key] = panel
+    return panel
+
+
 def _insider_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
     """Trailing-90-day aggregate of insider transactions with filing_date <= date.
 
-    Reads data/sec_insider/panel/*.parquet; absent-tolerant.
+    Reads data/sec_insider/panel/*.parquet (cached per process); absent-tolerant.
     """
     data = _data_dir(root)
     panel_dir = data / "sec_insider" / "panel"
@@ -661,32 +712,21 @@ def _insider_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
         return _absent("data/sec_insider/panel absent (host-only store)")
 
     cutoff_start = date_ts - pd.Timedelta(days=90)
-    rows: list[pd.DataFrame] = []
     try:
-        for pq_file in sorted(panel_dir.glob("*.parquet")):
-            try:
-                df = pd.read_parquet(pq_file)
-                if "ticker" not in df.columns or "filing_date" not in df.columns:
-                    continue
-                t_rows = df[df["ticker"] == ticker].copy()
-                if t_rows.empty:
-                    continue
-                t_rows["_filing_dt"] = pd.to_datetime(t_rows["filing_date"], errors="coerce")
-                t_rows = t_rows[
-                    (t_rows["_filing_dt"] >= cutoff_start) &
-                    (t_rows["_filing_dt"] <= date_ts)
-                ]
-                if not t_rows.empty:
-                    rows.append(t_rows)
-            except Exception:  # noqa: BLE001
-                continue
+        panel = _load_insider_panel(panel_dir)
     except Exception as e:  # noqa: BLE001
         return _absent(f"sec_insider/panel unreadable: {e}")
 
-    if not rows:
-        return _absent(f"no insider transactions for {ticker} in trailing 90 days of {date_ts.date()}")
+    combined = None
+    if panel is not None:
+        combined = panel[
+            (panel["ticker"] == ticker) &
+            (panel["_filing_dt"] >= cutoff_start) &
+            (panel["_filing_dt"] <= date_ts)
+        ].reset_index(drop=True)
 
-    combined = pd.concat(rows, ignore_index=True)
+    if combined is None or combined.empty:
+        return _absent(f"no insider transactions for {ticker} in trailing 90 days of {date_ts.date()}")
     # Aggregate: sum buy/sell amounts, count transactions
     buys  = combined[combined["code"].isin(["P", "A", "M"]) if "code" in combined.columns else [True] * len(combined)]
     sells = combined[combined["code"].isin(["S", "D"]) if "code" in combined.columns else [False] * len(combined)]

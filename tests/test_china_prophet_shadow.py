@@ -264,7 +264,7 @@ def test_schema_union_preserves_legacy_columns(shadow_store):
     pd.DataFrame(
         [
             {
-                "date": "2026-07-28",
+                "stamp_date": "2026-07-28",
                 "ticker": "600030.SS",
                 "board_definition": "cn_prophet_v1",
                 "legacy_only": "keep-me",
