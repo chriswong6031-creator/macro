@@ -359,6 +359,39 @@ def macro_revision_penalty(event_class: str, headline_lower: str) -> tuple[float
 # The bare word "inflation" is deliberately ABSENT from the tier-1 vocabulary.
 # It is the token that put a UK trucking-union pay settlement on the flagship,
 # and a genuine CPI/PCE print always says so by name.
+
+#: The FOMC's own FURNITURE — tokens that name the institution or its published
+#: artifacts. A headline carrying one of these needs no separate proof that a
+#: central bank is involved, because the token IS the proof. Kept separate from
+#: the decision vocabulary spliced in beside it so `macro_print_tier` can tell
+#: the two apart — see the authority rule there.
+_FOMC_FURNITURE: tuple[str, ...] = (
+    "fomc", "rate decision", "fed funds", "federal reserve decision",
+    "basis points", "beige book",
+)
+
+#: Somebody who actually SETS a policy rate. Word-boundary matched.
+#: The rate-decision vocabulary is verb-bound ("cut rates", "rates unchanged"),
+#: and a retail bank repricing its savings book uses the identical words.
+#: Measured, before this rule existed: "Banks cut rates on savings accounts",
+#: "Mortgage rates unchanged for a third week" and "Credit card issuers raise
+#: rates on new customers" all graded tier1/us off the widened `fomc` row — i.e.
+#: consumer-lending copy addressed to the BRAND ACCOUNT, which is the operator's
+#: 2026-08-05 complaint arriving by a new road.
+#:
+#: This is an ADDRESS, not a kill, exactly like the tier around it: an item that
+#: fails the rule grades tier2 and routes to `macro_print.minor`, so the record
+#: survives on the relay desk. It also correctly demotes market CHATTER about
+#: the path ("traders price a September rate cut") — real news, but not a
+#: RELEASE, which is what this list ranks.
+_POLICY_AUTHORITY_MARKERS: tuple[str, ...] = (
+    "fed", "the fed", "federal reserve", "fomc", "powell", "jerome powell",
+    "central bank", "central banks", "policymakers", "rate-setters",
+    "ecb", "boe", "bank of england", "boj", "bank of japan",
+    "boc", "bank of canada", "snb", "pboc", "rba", "rbnz", "rbi",
+    "riksbank", "norges", "cbrt",
+)
+
 _TIER1_RELEASES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("cpi", ("cpi", "consumer price index")),
     ("pce", ("pce", "personal consumption expenditure",
@@ -377,8 +410,7 @@ _TIER1_RELEASES: tuple[tuple[str, tuple[str, ...]], ...] = (
     # on the ratified keep-list; that is the inverse of it. One constant, two
     # readers, so the next word added to the vocabulary cannot reach the
     # classifier and miss the router.
-    ("fomc", ("fomc", "rate decision", "fed funds", "federal reserve decision",
-              "basis points", "beige book") + _RATE_DECISION_KEYWORDS),
+    ("fomc", _FOMC_FURNITURE + _RATE_DECISION_KEYWORDS),
     ("gdp", ("gdp", "gross domestic product")),
     ("retail_sales", ("retail sales",)),
     ("ism", ("ism", "purchasing managers")),
@@ -450,6 +482,13 @@ def macro_print_tier(event_class: str, text_lower: str) -> tuple[str, str, str]:
     reads "Retail sales +0.5% vs +0.3% est" with no country at all, so the
     absence of a marker is not evidence of a foreign print. A NAMED foreign
     economy is what moves an item, and an explicit US marker outranks it.
+
+    UNMARKED IS NOT A CENTRAL BANK, though — the opposite default, and for the
+    opposite reason. The `fomc` row reaches decision LANGUAGE ("cut rates",
+    "rates unchanged"), which a retail bank repricing its savings book writes
+    identically, so a decision-language match must NAME somebody who sets a
+    policy rate. The FOMC's own furniture is exempt: those tokens are the proof.
+    See `_POLICY_AUTHORITY_MARKERS`.
     """
     if event_class != "macro_print":
         return "", "", ""
@@ -457,8 +496,17 @@ def macro_print_tier(event_class: str, text_lower: str) -> tuple[str, str, str]:
     foreign = _kw_any(text, _FOREIGN_ECONOMY_MARKERS)
     economy = "foreign" if (foreign and not _kw_any(text, _US_ECONOMY_MARKERS)) else "us"
     for release, patterns in _TIER1_RELEASES:
-        if _kw_any(text, patterns):
-            return "tier1", economy, release
+        hit = _kw_any(text, patterns)
+        if not hit:
+            continue
+        if (release == "fomc" and hit not in _FOMC_FURNITURE
+                and not _kw_any(text, _POLICY_AUTHORITY_MARKERS)):
+            # Decision language with nobody deciding. `continue`, not `break`:
+            # a later row may still own the item ("Banks cut rates as retail
+            # sales fall" is a retail-sales print), and short-circuiting here
+            # would silently narrow the ratified list.
+            continue
+        return "tier1", economy, release
     return "tier2", economy, ""
 
 

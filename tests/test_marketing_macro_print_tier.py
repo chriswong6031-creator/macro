@@ -363,3 +363,87 @@ def test_the_classifier_and_the_router_read_ONE_vocabulary():
     missing = [kw for kw in BR._RATE_DECISION_KEYWORDS if kw not in fomc_patterns]
     assert not missing, f"tier-1 fomc row is missing {len(missing)} decision terms"
     assert set(BR._RATE_DECISION_KEYWORDS) <= set(BR._MACRO_PRINT_KEYWORDS)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Decision LANGUAGE must name somebody who decides
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Widening the `fomc` row to decision verbs widens it to every sentence that
+# uses those verbs, and a retail bank repricing its savings book writes them
+# identically. Measured, before `_POLICY_AUTHORITY_MARKERS` existed, all three
+# of these graded tier1/us — consumer-lending copy addressed to the BRAND
+# ACCOUNT, i.e. the operator's complaint arriving by a new road.
+#
+# `_FOMC_FURNITURE` is exempt from the rule because those tokens ARE the proof:
+# nothing but the FOMC has an "fomc" or a "beige book".
+
+NOT_A_POLICY_DECISION = [
+    "Banks cut rates on savings accounts",
+    "Mortgage rates unchanged for a third week",
+    "Credit card issuers raise rates on new customers",
+    "Auto loan rates unchanged for a third month",
+    "Banks hold rates on certificates of deposit",
+    # Real news, but not a RELEASE — which is what the tier-1 list ranks.
+    "Treasury yields slide as traders price a September rate cut",
+]
+
+# NOTE on why every entry above must CLASSIFY first: "Auto loan rates hold near
+# multi-year highs" was the original fourth case and it made this pair of tests
+# disagree — the tier assertion passed (tier2) while `_desk` returned
+# "flagship". It never classified at all: the vocabulary is verb-bound, and
+# "rates hold" is not "hold rates", so the item was `event_class="none"`, which
+# `_cfg()` leaves to `default: flagship`. A tier-2 verdict on a non-macro-print
+# is vacuous — `macro_print_tier` is only ever consulted for the class it is
+# scoped to. The lesson is the end-to-end helper's: assert through `_desk`, not
+# on the tier alone, or a fixture that never reaches the code under test reads
+# as a pass.
+
+
+@pytest.mark.parametrize("headline", NOT_A_POLICY_DECISION)
+def test_decision_language_without_a_rate_setter_is_not_tier_one(headline):
+    tier, _economy, release = BR.macro_print_tier("macro_print", headline.lower())
+    assert (tier, release) == ("tier2", ""), headline
+
+
+@pytest.mark.parametrize("headline", NOT_A_POLICY_DECISION)
+def test_decision_language_without_a_rate_setter_leaves_the_flagship(headline):
+    assert _desk(headline) == "mastermind_news", headline
+
+
+@pytest.mark.parametrize("headline", [
+    "Mortgage rates fall after the Fed cuts rates",
+    "Savings rates drop as the Fed cuts rates for the first time since 2024",
+])
+def test_a_named_rate_setter_outranks_the_consumer_framing(headline):
+    """The authority is the signal, not the absence of consumer words.
+
+    A rule written as a consumer-word blocklist would demote these — they are
+    the Fed's decision, reported through its retail consequence.
+    """
+    assert _desk(headline) == "flagship", headline
+
+
+def test_the_furniture_needs_no_authority_of_its_own():
+    """`fomc`/`beige book` ARE the proof — nothing else has them.
+
+    Without the exemption the rule would be circular for exactly the headlines
+    that named the institution most plainly.
+    """
+    for headline in ("FOMC statement: policy remains restrictive",
+                     "Beige book shows activity little changed",
+                     "Rate decision due at 2pm"):
+        tier, _e, release = BR.macro_print_tier("macro_print", headline.lower())
+        assert (tier, release) == ("tier1", "fomc"), headline
+
+
+def test_a_skipped_fomc_row_does_not_swallow_a_later_release():
+    """`continue`, not `break`.
+
+    Short-circuiting on the failed authority check would silently narrow the
+    ratified list: this headline is a retail-sales print whichever way the
+    rate clause reads.
+    """
+    tier, _economy, release = BR.macro_print_tier(
+        "macro_print", "banks cut rates as retail sales fall 0.4%")
+    assert (tier, release) == ("tier1", "retail_sales")
