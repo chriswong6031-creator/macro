@@ -2,9 +2,12 @@
 
 Closes the measure→act loop the hub half-built. Every desk track record in this repo is,
 by long-standing doctrine, *"CONTEXT-ONLY — never fed into a score/size/allocation."* That
-left a hole: `data/radar/radar_ic.json` has MEASURED the radar leading signal to be inverted
-(pooled IC ≈ −0.33 over ~2k matured obs), yet the hub keeps ranking on it. This module is the
-authorized, scoped exception (operator 2026-07-21, "arm live, de-escalation-only, gated"):
+left a hole: `data/radar/radar_ic.json` appeared to measure the radar leading signal as
+inverted (pooled IC ≈ −0.33 over ~2k matured obs — later shown by the 2026-08-05 forensic
+audit to be mostly unsigned-pooling + overlap + era artifacts; the signed, overlap-robust
+read is null), yet the hub keeps ranking on it. Acting only on the rigorous HAC path below
+is exactly what protected this governor from that artifact. This module is the authorized,
+scoped exception (operator 2026-07-21, "arm live, de-escalation-only, gated"):
 
   * DE-ESCALATION ONLY — every signal's ``trust`` ∈ [TRUST_FLOOR, 1.0]. The hub applies it as a
     DOWNWARD scale on that signal's contribution to ``opportunity``. The governor can only

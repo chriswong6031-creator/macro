@@ -28,6 +28,13 @@ log = logging.getLogger(__name__)
 
 SCHEMA = "radar_ticker.v1"
 
+# Attributed-row state docks (2026-08-05 audit). A member of a flagged basket
+# inherits basket edge, but a CONFIRMED_* attribution is "the move is priced"
+# (its own note says so) and BROKEN_LAGGARD is an explicit warning, not a call —
+# neither may out-rank real divergence attributions.
+_ATTR_STATE_MULT = {"CONFIRMED_UP": 0.40, "CONFIRMED_DOWN": 0.40,
+                    "BROKEN_LAGGARD": 0.25}
+
 
 def _state(act: float, pr: float) -> tuple[str, str]:
     """Divergence state + lifecycle from normalized activity vs price."""
@@ -131,7 +138,8 @@ def _basket_attributed(existing: set, today: date) -> list:
                     mstate, lc, depth = "CONFIRMED_DOWN", "fading", 0.3
                 else:
                     continue
-            edge = int(max(0, min(100, round(bedge * (0.45 + 0.45 * depth)))))
+            edge = int(max(0, min(100, round(bedge * (0.45 + 0.45 * depth)
+                                             * _ATTR_STATE_MULT.get(mstate, 1.0)))))
             existing.add(t)
             out.append({
                 "ticker": t, "state": mstate, "lifecycle": lc, "edge_score": edge,
@@ -174,9 +182,15 @@ def build(today: date | None = None) -> dict:
         agree = sum(1 for lg in legs if rp._sign(lg.get("lean")) == act_dir) if (act_dir and legs) else 0
         breadth = (agree / len(legs)) if legs else 0.5
 
-        # edge: the activity-vs-price gap, scaled by confirmation, regime, crowding
+        # edge: the activity-vs-price gap, scaled by confirmation, regime, crowding.
+        # Diagonal dock (2026-08-05 audit): CONFIRMED_* is "already priced" — a
+        # hot signal on an already-leading price is corroboration, not edge, and
+        # v1 ranked exactly those rows on top into the July-2026 momentum unwind.
+        # rp._diagonal_mult docks confirmed rows by state + price extension (pr
+        # is the price leg in ~z units). Divergence rows are untouched.
         gap = abs(act - pr)
-        base = min(100.0, 26.0 * gap) * (0.55 + 0.45 * breadth) * regime["mult"] - crowd["penalty"]
+        base = (min(100.0, 26.0 * gap) * (0.55 + 0.45 * breadth) * regime["mult"]
+                * rp._diagonal_mult(state, pr) - crowd["penalty"])
         edge = int(max(0, min(100, round(base))))
 
         rows.append({
