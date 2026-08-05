@@ -388,6 +388,40 @@ def consume_charter_proposals(
                     log.warning("applier: refused item (tier-raise) — %s", reason)
                     continue
 
+                # Roster-budget governor at ONBOARDING (V2-C, R-V2-7 — wired
+                # 2026-08-04, roster-cap reconciliation).  scout.py documents
+                # this exact site ("the cap surfaces as a digest ASK at
+                # onboarding (roster_governor)") but the call was never wired
+                # and the governor sat production-dark while the roster crossed
+                # its cap.  ADVISORY ONLY: a breach refreshes
+                # item['roster_budget'] (carried onto the injected proposal by
+                # _item_to_proposal) and emits the standing operator ASK card;
+                # it NEVER blocks onboarding — the hard deny stays in the
+                # ADJUDICATE genesis screen (R-V6-3a).  Skipped in shadow /
+                # dry-run so non-armed runs never write operator tap surfaces.
+                item_schema = str(item.get("schema") or "")
+                is_charter_item = (
+                    "charter_proposal" in item_schema and "lifecycle" not in item_schema
+                )
+                if is_charter_item and not is_shadow:
+                    try:
+                        from engine.metabolism.roster_governor import check_charter_budget  # noqa: PLC0415
+                        _lobe_id = str(item.get("lobe_id") or item.get("lobe") or "").strip() or "unknown"
+                        _state = str(item.get("proposed_lifecycle_state") or "proposed").strip().lower()
+                        _budget = check_charter_budget(
+                            _lobe_id, proposed_lifecycle_state=_state, root=repo,
+                        )
+                        item["roster_budget"] = _budget
+                        if _budget.get("cap_exceeded"):
+                            log.warning(
+                                "applier: roster cap exceeded at onboarding for %r — %s "
+                                "(digest ASK emitted=%s; onboarding continues, R-V2-7)",
+                                _lobe_id, _budget.get("reason"),
+                                _budget.get("digest_ask_emitted"),
+                            )
+                    except Exception as _rg_exc:  # noqa: BLE001
+                        log.warning("applier: roster governor check failed (advisory) — %s", _rg_exc)
+
                 # Convert to injected proposal
                 proposal = _item_to_proposal(item)
                 if proposal is None:

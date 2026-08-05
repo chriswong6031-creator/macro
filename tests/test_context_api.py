@@ -411,6 +411,173 @@ def test_insider_trailing_90d(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# (10b) Insider panel cache — equality pin against the pre-cache implementation
+# ---------------------------------------------------------------------------
+
+def _insider_dim_uncached_reference(ticker: str, date_ts: pd.Timestamp,
+                                    root: Path) -> dict:
+    """Verbatim transcription of ``_insider_dim`` as it stood BEFORE the
+    per-process panel cache landed (2026-08-04).
+
+    The cache exists because the old body re-read all 81 panel files for EVERY
+    ticker — ~235k parquet reads across a full-universe context_frame sweep, and
+    ~80% of the whole Context Snapshot cost.  Speed is worthless if the values
+    move, so this reference is kept as the oracle: the cached implementation must
+    agree with it exactly, disclosure strings included.
+    """
+    from engine.neuralweb.context_api import _absent, _data_dir, _present
+
+    data = _data_dir(root)
+    panel_dir = data / "sec_insider" / "panel"
+    if not panel_dir.exists():
+        return _absent("data/sec_insider/panel absent (host-only store)")
+
+    cutoff_start = date_ts - pd.Timedelta(days=90)
+    rows: list[pd.DataFrame] = []
+    try:
+        for pq_file in sorted(panel_dir.glob("*.parquet")):
+            try:
+                df = pd.read_parquet(pq_file)
+                if "ticker" not in df.columns or "filing_date" not in df.columns:
+                    continue
+                t_rows = df[df["ticker"] == ticker].copy()
+                if t_rows.empty:
+                    continue
+                t_rows["_filing_dt"] = pd.to_datetime(t_rows["filing_date"],
+                                                      errors="coerce")
+                t_rows = t_rows[
+                    (t_rows["_filing_dt"] >= cutoff_start) &
+                    (t_rows["_filing_dt"] <= date_ts)
+                ]
+                if not t_rows.empty:
+                    rows.append(t_rows)
+            except Exception:  # noqa: BLE001
+                continue
+    except Exception as e:  # noqa: BLE001
+        return _absent(f"sec_insider/panel unreadable: {e}")
+
+    if not rows:
+        return _absent(
+            f"no insider transactions for {ticker} in trailing 90 days of "
+            f"{date_ts.date()}")
+
+    combined = pd.concat(rows, ignore_index=True)
+    buys = combined[combined["code"].isin(["P", "A", "M"])
+                    if "code" in combined.columns else [True] * len(combined)]
+    sells = combined[combined["code"].isin(["S", "D"])
+                     if "code" in combined.columns else [False] * len(combined)]
+    usd_col = "usd" if "usd" in combined.columns else None
+    agg: dict = {
+        "n_transactions": int(len(combined)),
+        "n_buys":         int(len(buys)),
+        "n_sells":        int(len(sells)),
+        "buy_usd":        float(buys[usd_col].sum()) if usd_col else None,
+        "sell_usd":       float(sells[usd_col].abs().sum()) if usd_col else None,
+        "latest_filing":  str(combined["_filing_dt"].max().date())
+                          if not combined["_filing_dt"].isna().all() else None,
+    }
+    return _present(value=agg, as_of=agg["latest_filing"],
+                    basis="filing_date_gated_90d")
+
+
+def _insider_row(ticker: str, filing_date, code: str, usd: float,
+                 quarter: str = "2026q1") -> dict:
+    return {"ticker": ticker, "issuer_cik": "1", "filing_date": filing_date,
+            "trans_date": filing_date, "rptownercik": "100", "code": code,
+            "direct": True, "is_officer": True, "is_director": False,
+            "is_tenpct": False, "title": "CEO", "shares": 10.0, "price": 5.0,
+            "usd": usd, "quarter": quarter}
+
+
+def _insider_cache_fixture(tmp_path: Path) -> Path:
+    """Multi-file panel exercising every branch the cache could have broken:
+    several files, a name spanning them, window boundaries, an unparseable
+    filing_date, a sell, a name absent entirely, and a file with no schema."""
+    root = _make_root(tmp_path)
+    _write_insider_panel(root, [
+        _insider_row("AAPL", "2026-03-01", "P", 15000.0),
+        _insider_row("AAPL", "2025-12-01", "S", 7000.0, "2025q4"),
+        _insider_row("MSFT", "2026-03-10", "S", -2500.0),
+    ], filename="2026q1_a.parquet")
+    _write_insider_panel(root, [
+        _insider_row("AAPL", "2026-04-14", "A", 900.0),      # inside window
+        _insider_row("AAPL", "2026-01-15", "P", 4200.0),     # exactly 90d out
+        _insider_row("AAPL", "not-a-date", "P", 111.0),      # coerces to NaT
+        _insider_row("MSFT", "2026-04-15", "M", 3300.0),     # on the query date
+    ], filename="2026q1_b.parquet")
+    # a part with an unrelated schema — skipped by both implementations
+    junk = root / "data" / "sec_insider" / "panel" / "2026q1_junk.parquet"
+    pd.DataFrame({"unrelated": [1, 2]}).to_parquet(junk, index=False)
+    return root
+
+
+@pytest.mark.parametrize("ticker", ["AAPL", "MSFT", "NOSUCH"])
+@pytest.mark.parametrize("query_date", ["2026-04-15", "2026-02-01", "2020-01-01"])
+def test_insider_cache_is_byte_identical_to_the_uncached_reference(
+    tmp_path, ticker, query_date
+):
+    """Cached vs uncached must produce the SAME dim — values and disclosures."""
+    root = _insider_cache_fixture(tmp_path)
+    date_ts = pd.Timestamp(query_date)
+
+    expected = _insider_dim_uncached_reference(ticker, date_ts, root)
+    actual = _insider_dim(ticker, date_ts, root)
+    assert actual == expected, (
+        f"insider cache changed the {ticker} @ {query_date} dim:\n"
+        f"  cached:   {actual}\n  uncached: {expected}")
+
+
+def test_insider_cache_serves_repeat_queries_without_rereading_the_panel(
+    tmp_path, monkeypatch
+):
+    """The point of the cache: N tickers must cost ONE pass over the panel.
+
+    Counts real ``pd.read_parquet`` calls — the thing the old code did ~81x per
+    ticker. A regression that reverts to per-ticker reads reds here even though
+    every value stays correct, which is exactly the failure the equality pin
+    above cannot see.
+    """
+    from engine.neuralweb import context_api
+
+    root = _insider_cache_fixture(tmp_path)
+    context_api._insider_panel_cache.clear()
+
+    calls: list[str] = []
+    real = context_api.pd.read_parquet
+
+    def counting_read_parquet(path, *a, **kw):
+        calls.append(str(path))
+        return real(path, *a, **kw)
+
+    monkeypatch.setattr(context_api.pd, "read_parquet", counting_read_parquet)
+
+    for ticker in ("AAPL", "MSFT", "NOSUCH", "AAPL", "MSFT"):
+        _insider_dim(ticker, pd.Timestamp("2026-04-15"), root)
+
+    panel_reads = [c for c in calls if "sec_insider" in c]
+    assert len(panel_reads) == 3, (
+        f"expected one read per panel file across 5 queries, got "
+        f"{len(panel_reads)}: {panel_reads}")
+
+
+def test_insider_cache_is_keyed_per_panel_directory(tmp_path):
+    """Two roots must not share a cached panel."""
+    from engine.neuralweb import context_api
+
+    context_api._insider_panel_cache.clear()
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    root_a = _insider_cache_fixture(tmp_path / "a")
+    root_b = _make_root(tmp_path / "b")
+    _write_insider_panel(root_b, [_insider_row("AAPL", "2026-04-10", "P", 1.0)])
+
+    dim_a = _insider_dim("AAPL", pd.Timestamp("2026-04-15"), root_a)
+    dim_b = _insider_dim("AAPL", pd.Timestamp("2026-04-15"), root_b)
+    assert dim_a["value"]["n_transactions"] != dim_b["value"]["n_transactions"]
+    assert dim_b["value"]["n_transactions"] == 1
+
+
+# ---------------------------------------------------------------------------
 # (11) Options — absent-tolerant
 # ---------------------------------------------------------------------------
 

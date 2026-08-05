@@ -251,10 +251,17 @@ def test_cn_alpha_fallback_is_recorded_and_labelled_honestly():
     assert "alpha" in p["provenance"]["present"]          # not silently absorbed
 
 
-def test_parabolic_gets_specific_dont_chase_verdict():
+def test_parabolic_gets_specific_hold_off_verdict():
+    # A parabolic name must read as "wait", never as an entry. Asserted on the
+    # stance, not the phrasing: the verdict said "don't chase; wait for a
+    # pullback" until 2026-08-04, when the redundant half was cut and every
+    # extended branch unified on the "Extended — wait for a pullback" wording
+    # two other branches already used.
     rec = _rec(ext={"grade": "parabolic", "ext_z": 2.6},
                tech={"off_52w_high_pct": -1.0, "rsi14": 82.0})
-    assert "chase" in ss.conviction_profile(rec, "US")["verdict"].lower()
+    v = ss.conviction_profile(rec, "US")["verdict"].lower()
+    assert "extended" in v and "pullback" in v
+    assert "buy" not in v
 
 
 # --- CN cycle-anchored verdict (the cn_brokers fix) -------------------------
@@ -432,7 +439,8 @@ def test_overextended_name_is_blocked_and_dont_chase():
     assert blocked is True and z is not None and z <= ss._ENTRY_CAP_Z * 1.6 + 1e-9
     assert "over-200dma" in present
     p = ss.conviction_profile(rec, "US")
-    assert "don't chase" in p["verdict"].lower() or "chase" in p["verdict"].lower()
+    # stance, not phrasing — see test_parabolic_gets_specific_hold_off_verdict
+    assert "extended" in p["verdict"].lower() and "pullback" in p["verdict"].lower()
     # de-jargoned copy (#4297): "200dma" is banned vocabulary now, but the caution
     # must still QUANTIFY the extension (+31% -> "31%") and call the buy a chase.
     assert any("31%" in c and "trend line" in c.lower() and "chasing" in c.lower()

@@ -1163,6 +1163,37 @@ wire_routing:
     # (both of its first booked items were BEA prints), so moving it would zero
     # the flagship's wire on the same night we are trying to raise volume.
     macro_print: flagship
+    # macro_print.minor — A REFINEMENT OF THE ROW ABOVE, not a new class. The
+    # item is still event_class=macro_print everywhere else (its label, its
+    # self-evident citation status, the nexus-gate exemption and the revision
+    # penalty are all keyed on that string and all keep working); this row only
+    # answers "which desk owns it".
+    #
+    # WHY IT EXISTS (operator, 2026-08-05, reading the flagship timeline): "These
+    # posts are so boring, we get absolutely no engagement on them... These arent
+    # the ones people really care about." Measured on the seven breaking posts
+    # the flagship shipped after the 2026-08-03 clustering fix, NOT ONE was a
+    # top-tier US release: South Korea core inflation, a US payrolls lookahead, a
+    # UK trucking-union pay settlement, JOLTS, the Canadian trade balance, an
+    # Asia-Pacific FX wrap and the US trade balance.
+    #
+    # The cause is that `macro_print` is one class covering two products. The
+    # taxonomy in breaking_relevance is a FLAT keyword list, so "SWITZERLAND
+    # (JUL) CPI CORE YOY" and "US CPI rises 0.3% m/m" both score base 55.0 —
+    # byte-identical — and the row above sent both to the brand account.
+    #
+    # `breaking_relevance.macro_print_tier` supplies the missing dimension: a
+    # print is minor unless it is BOTH a tape-moving release (CPI, PCE, payrolls,
+    # FOMC, GDP, retail sales, ISM, PPI, jobless claims — the ratified list) AND
+    # a US one. Both halves bind: tier alone leaves GERMANY RETAIL SALES on the
+    # flagship, economy alone leaves JOLTS and the US trade balance there.
+    #
+    # RELAYED, NOT DELETED. The minor print goes to the desk whose charter job is
+    # stance-free relay, so the record stays complete and only the brand account
+    # gets quieter. Point this row at `flagship` to undo the split entirely; the
+    # bare `macro_print` row above is the fallback, so DELETING this row restores
+    # the pre-2026-08-05 behaviour exactly.
+    macro_print.minor: mastermind_news
     # policy — Fed/White House/tariffs. Two reasons it stays. (1) The register is
     # ATTRIBUTIVE (wire_voice's TRUMP/White-House opener pools), and mis-attribution
     # here is the exact defect that shipped a fabricated "White House, minutes ago:"
@@ -2289,24 +2320,52 @@ house_picks:
 wire_volume:
   breaking:
     window_hours: 24
-    # Network default for a desk with no row below. 8 is the wire desk's working
-    # number: mastermind_news's own ramp tier allows 14 posts/day and the wire
-    # must not be able to eat the whole allowance, because the nightly ladder
-    # and the publish-time lanes draw from the same tier.
-    default_per_window: 8
+    # CAPS REMOVED (operator, 2026-08-04: "remove caps"). A negative number is
+    # the documented UNLIMITED sentinel — `breaking_cap_for` returns it and
+    # `route()` short-circuits on `cap < 0` before it ever counts the window.
+    # ZERO IS NOT "no cap", it is a real zero, which is why the persona rows
+    # below are untouched.
+    #
+    # WHAT THIS GIVES UP, recorded plainly because this block was built as the
+    # backstop for the operator's OWN quadruple-posting complaint (four posts
+    # from one John Williams appearance, two Switzerland CPI sub-prints, same
+    # batch). Two defences existed and only the second is being removed:
+    #   1. STORY CLUSTERING (wire_story.py, the D1 lane) stops the
+    #      four-from-one-speech shape AT THE SOURCE. Still in force, untouched,
+    #      and it is the one that actually addressed that complaint.
+    #   2. This per-account ceiling was the BACKSTOP for when clustering
+    #      mis-fires or a genuinely busy tape produces that much unrelated news.
+    #      That backstop is now gone.
+    # Also gone: the wire could not previously eat a desk's whole daily
+    # allowance, since the nightly ladder and the publish-time lanes draw from
+    # the same ramp tier. A busy tape can now crowd them out of the brand
+    # account.
+    #
+    # Made deliberately: on 2026-08-04 every wire desk hit its ceiling at once
+    # and items were being HELD with nowhere to route. Supply was not the
+    # constraint, this block was. If duplicate-ish bursts reappear, fix them in
+    # clustering rather than by restoring a counter that fired on whichever
+    # items happened to arrive last.
+    default_per_window: -1
     accounts:
-      # THE BRAND ACCOUNT SITS BELOW THE NETWORK DEFAULT, on purpose. @mastermindx001
-      # is the desk a reader judges the product by, and a relay whose whole
-      # content is a restated headline is the least valuable thing it can post.
-      # 6 is under the 11 that shipped on 2026-08-03 (so it BINDS on the day
-      # that caused this) and under `breaking.flagship_top_k_per_day: 10` (so it
-      # is the stricter of the two and the one that decides). Raise it only with
-      # a reason better than "the tape was busy".
-      flagship: 6
-      # The publication wire IS this content's home. It gets the network default
-      # explicitly rather than by omission, so an operator reading this block
-      # sees the split rather than inferring it.
-      mastermind_news: 8
+      # UNCAPPED (operator, 2026-08-04). This row used to read 6, deliberately
+      # below the network default, on the argument that the brand account is
+      # what a reader judges the product by and a restated headline is the least
+      # valuable thing it can post. That argument was about QUALITY and it is
+      # now enforced where it belongs rather than by a counter: the restatement
+      # gate drops a line that re-says the headline, the card gate refuses a
+      # card that only restates the post, and the attribution gate digests a
+      # source it cannot name. Those fire per item; a volume ceiling only ever
+      # fired at the wrong ones, whichever happened to arrive last.
+      #
+      # NOTE: `breaking.flagship_top_k_per_day: 10` is a SEPARATE ceiling and is
+      # still in force. Removing this row does not make the flagship unbounded
+      # on its own — that key now decides, and it is the one to change next if
+      # the flagship is still short.
+      flagship: -1
+      # The publication wire IS this content's home, so it is the last desk that
+      # should carry a ceiling.
+      mastermind_news: -1
       # A persona/employee desk may never carry a wire relay at all (charter §4
       # safety rails — wire accounts relay and never take a stance), and
       # wire_routing.spill_pool already refuses to select one. This 0 is the

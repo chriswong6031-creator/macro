@@ -42,6 +42,17 @@ days for such classes. See ``_block`` for the two ladders (external: 2 consecuti
 or 3 cumulative; any code: 10 consecutive or 15 total; always requiring an explicit
 ``SHIP LOOP BLOCKED:`` evidence report). Repository rules remain the source of
 truth; this hook makes them executable.
+
+The ladders themselves were unreachable until 2026-08-04, so the brick they exist
+to prevent happened to them: the release condition demanded a payload flag the
+harness clears on any turn it did not itself start. Session 787452b5 filed a
+correct ``SHIP LOOP BLOCKED:`` report on ``live_stale`` with both external arms
+armed and was refused, because a background ``<task-notification>`` had started
+that turn and reset ``stop_hook_active`` to False. Re-entrancy now also counts as
+proven when this guard's own persisted ledger shows a prior block, and the report
+itself is recovered from ``transcript_path`` when ``last_assistant_message`` — an
+UNDOCUMENTED payload field — is absent. Both changes make the report DETECTABLE;
+neither makes it optional, and no counter moved.
 """
 
 from __future__ import annotations
@@ -1403,6 +1414,27 @@ def _render_lanes_for_paths(
     return lanes
 
 
+def _merge_changed_paths(
+    root: Path, merge_sha: str, start_head: str, head: str
+) -> list[str]:
+    """The paths ``merge_sha`` itself changed.
+
+    Scoped to the merge's OWN diff, never the session range: this repo runs many
+    concurrent sessions, and a worktree synced to origin/main sweeps every OTHER
+    session's merges into start_head..head. The session range survives only as the
+    fallback for a root/orphan merge with no reachable parent, where it
+    over-reports rather than under-reports — the fail-closed direction for every
+    caller here, since each of them reads "this merge touched a path" as "this
+    merge owes proof".
+    """
+    try:
+        return _run(
+            root, "git", "diff", "--name-only", f"{merge_sha}^", merge_sha
+        ).splitlines()
+    except Exception:
+        return _run(root, "git", "diff", "--name-only", start_head, head).splitlines()
+
+
 _RENDER_LANE_CACHE: dict[tuple[str, str, str, str], frozenset[str]] = {}
 
 
@@ -1446,14 +1478,7 @@ def _required_render_lanes(
     cached = _RENDER_LANE_CACHE.get(memo_key)
     if cached is not None:
         return set(cached)
-    try:
-        changed = _run(
-            root, "git", "diff", "--name-only", f"{merge_sha}^", merge_sha
-        ).splitlines()
-    except Exception:
-        # Root/orphan merge or unavailable parent — fall back to the session
-        # range, which over-requires rather than under-requires a render.
-        changed = _run(root, "git", "diff", "--name-only", start_head, head).splitlines()
+    changed = _merge_changed_paths(root, merge_sha, start_head, head)
     lanes = _render_lanes_for_paths(
         changed, _plain_copy_pairs(root), _render_lane_filters(root)
     )
@@ -1469,6 +1494,60 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
 def _needs_public_render(root: Path, merge_sha: str, start_head: str, head: str) -> bool:
     """Whether a push-triggered ``public-render.yml`` run must exist for ``merge_sha``."""
     return _RENDER_LANE_PUBLIC in _required_render_lanes(root, merge_sha, start_head, head)
+
+
+_DEPLOY_UPDATE_SCRIPT = Path("app") / "deploy" / "update.sh"
+# The macro-api restart condition in app/deploy/update.sh, identified by the one
+# thing no other restart block in that script shares: `$API_UNIT_UPDATED`. The
+# script holds a dozen `grep -qE` restart guards (admin, press feeds, biocatalyst,
+# the live timers), and matching the wrong one would answer a different question
+# than /api/health's `commit` field does.
+_API_RESTART_GUARD = re.compile(r"API_UNIT_UPDATED.*?grep -qE '(?P<filter>[^']+)'")
+
+
+def _api_restart_filter(root: Path) -> str:
+    """The ERE ``app/deploy/update.sh`` restarts macro-api on, read from the script.
+
+    Parsed at runtime, never transcribed — the same stance ``_render_lane_filters``
+    takes on the two render workflows, and for the same reason. That list names
+    ~120 modules and grows most weeks as new engine code enters the API's
+    ``sys.modules``; a second copy here would be wrong within days, and wrong in
+    the one direction this gate must never be wrong in.
+
+    Returns ``""`` on anything it cannot vouch for — missing file, renamed guard,
+    a rewrite that splits the condition across lines. Every caller reads that as
+    ignorance rather than permission.
+    """
+    try:
+        text = (root / _DEPLOY_UPDATE_SCRIPT).read_text(encoding="utf-8")
+    except Exception:
+        return ""
+    match = _API_RESTART_GUARD.search(text)
+    return match.group("filter") if match else ""
+
+
+def _needs_api_restart(root: Path, merge_sha: str, start_head: str, head: str) -> bool:
+    """Whether ``merge_sha`` changes code the running macro-api process imported.
+
+    Which is exactly the question "does this merge owe an API DEPLOY, or only a
+    pull?" — and therefore which field of /api/health can prove it live. The
+    predicate is the deploy script's own restart condition applied to this
+    merge's own diff, so it can be neither wider nor narrower than what the VPS
+    actually does.
+
+    True on every uncertainty: an unreadable script, an unparseable filter, a
+    diff git cannot produce. Not knowing whether the API restarts means demanding
+    the field that proves it did.
+    """
+    pattern = _api_restart_filter(root)
+    if not pattern:
+        return True
+    try:
+        compiled = re.compile(pattern)
+        changed = _merge_changed_paths(root, merge_sha, start_head, head)
+    except Exception:
+        return True
+    return any(compiled.search(item) for item in changed)
 
 
 def _is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
@@ -1633,24 +1712,196 @@ def _render_status(
     )
 
 
-def _find_commit(value: Any) -> str:
-    """Find a plausible deployed git SHA in a health payload."""
-    preferred = {"commit", "commit_sha", "git_sha", "git_commit", "revision", "sha"}
-    if isinstance(value, dict):
-        for key, child in value.items():
-            if str(key).lower() in preferred and isinstance(child, str):
-                match = re.search(r"\b[0-9a-f]{7,40}\b", child, re.I)
-                if match:
-                    return match.group(0)
-        for child in value.values():
-            found = _find_commit(child)
-            if found:
-                return found
-    elif isinstance(value, list):
-        for child in value:
-            found = _find_commit(child)
-            if found:
-                return found
+# The two shas /api/health reports, which answer DIFFERENT questions (app/main.py
+# health()): `commit` is the build the running macro-api PROCESS imported at
+# startup, `checkout` is /opt/macro's working tree at request time. They diverge
+# whenever the 3-minute pull loop has advanced past the last restart — measured
+# 2026-08-04 at 70 commits and ~14 hours apart.
+_LIVE_PROCESS_FIELD = "commit"
+_LIVE_CHECKOUT_FIELD = "checkout"
+
+
+def _health_sha(payload: Any, field: str) -> str:
+    """The git sha under a NAMED top-level key of the health payload.
+
+    Named, never sniffed. The helper this replaced walked the payload for any
+    plausible sha-ish key and returned whichever it reached first — the right
+    answer to "did anything deploy" and the wrong one here, since `commit` and
+    `checkout` answer different questions and the gate must read the specific
+    field it decided proves THIS merge, not whichever the endpoint serialises
+    first. It was deleted rather than left beside this one: a sniffing reader in
+    reach of the live gate is the defect, not a spare part.
+    """
+    if not isinstance(payload, dict):
+        return ""
+    value = payload.get(field)
+    if not isinstance(value, str):
+        return ""
+    match = re.search(r"\b[0-9a-f]{7,40}\b", value, re.I)
+    return match.group(0) if match else ""
+
+
+def _live_health_fields(
+    root: Path, merge_sha: str, start_head: str, head: str
+) -> tuple[str, ...]:
+    """Which /api/health fields are allowed to prove ``merge_sha`` is live.
+
+    A merge that changes code macro-api imported is not live until the API has
+    RESTARTED into it, and only `commit` shows that. A merge that changes nothing
+    the deploy script restarts on is live the moment /opt/macro's tree carries it,
+    which is what `checkout` shows — and its `commit` may never advance at all.
+
+    Reading `commit` for both was structurally unsatisfiable for the second kind
+    (observed 2026-08-04, PR #4499: a tests-only merge sat in `checkout` while
+    `commit` was 70 commits behind, so the gate blocked `live_stale` on a merge
+    that had been fully live for hours, and no action the session could take would
+    ever satisfy it — restarting production to bless a test-only merge is the
+    wrong move, so the session was pinned until an unrelated later PR happened to
+    touch API code).
+
+    `commit` stays in the tuple for the pull-only case as a fallback, not as a
+    softening: the pull loop only ever moves forward, so a process that IMPORTED a
+    sha containing the merge proves the tree containing it too. That keeps the
+    gate satisfiable against a health payload that omits `checkout` entirely
+    (an older API build) without ever accepting weaker evidence than the question
+    demands — for an api-code merge the tuple is `commit` alone, and `checkout`
+    carrying the merge means nothing.
+    """
+    if _needs_api_restart(root, merge_sha, start_head, head):
+        return (_LIVE_PROCESS_FIELD,)
+    return (_LIVE_CHECKOUT_FIELD, _LIVE_PROCESS_FIELD)
+
+
+def _live_gate(
+    root: Path, merge_sha: str, start_head: str, head: str, payload: Any
+) -> tuple[bool, str]:
+    """Whether production demonstrably carries ``merge_sha``, plus the detail why.
+
+    Fail-closed at every step. A field that is absent, non-string, sha-less, or
+    unknown to this checkout is NO EVIDENCE, never permission: it is skipped, and
+    if no permitted field clears, the caller blocks. ``_is_ancestor`` collapses
+    its own failures to False for the same reason.
+    """
+    fields = _live_health_fields(root, merge_sha, start_head, head)
+    seen: list[str] = []
+    for field in fields:
+        sha = _health_sha(payload, field)
+        if not sha:
+            seen.append(f"{field}=<absent>")
+            continue
+        try:
+            _run(root, "git", "rev-parse", sha)
+        except Exception:
+            seen.append(f"{field}={sha} (unknown to this checkout — try `git fetch origin main`)")
+            continue
+        if _is_ancestor(root, merge_sha, sha):
+            return True, f"{field}={sha} contains the merge"
+        seen.append(f"{field}={sha}")
+    demanded = (
+        "this merge changes code macro-api imported, so only a RESTARTED API "
+        f"(`{_LIVE_PROCESS_FIELD}`) proves it live"
+        if fields == (_LIVE_PROCESS_FIELD,)
+        else "this merge restarts nothing, so the VPS pull loop "
+        f"(`{_LIVE_CHECKOUT_FIELD}`) is what makes it live"
+    )
+    return False, f"{demanded}; production reports {', '.join(seen) or '<no usable field>'}"
+
+
+# How much of the tail of a transcript to scan for the final assistant message
+# before giving up and re-reading the whole file. Transcripts are JSONL whose bulk
+# is tool_result rows, so a few MB is many turns deep, but one pathological result
+# row can exceed it — hence the escalation rather than a hard cap.
+_TRANSCRIPT_TAIL_BYTES = 4 * 1024 * 1024
+
+
+def _jsonl_tail(path: Path, limit: int | None) -> tuple[list[str], bool]:
+    """Return (lines, whole_file) for the last `limit` bytes of a JSONL file.
+
+    A byte window almost always cuts mid-line, so the first line of a windowed read
+    is dropped as a fragment. `whole_file` reports whether the window covered the
+    entire file, which is how the caller knows a miss is final rather than an
+    artifact of the window.
+    """
+    with path.open("rb") as handle:
+        handle.seek(0, os.SEEK_END)
+        size = handle.tell()
+        start = 0 if limit is None else max(0, size - limit)
+        handle.seek(start)
+        data = handle.read()
+    if start:
+        _, _, data = data.partition(b"\n")
+    return data.decode("utf-8", "replace").splitlines(), start == 0
+
+
+def _last_assistant_text(lines: list[str]) -> str:
+    """The newest assistant message's visible text, or "" if the window holds none.
+
+    Only `text` blocks count. `thinking` blocks are excluded deliberately: the
+    harness's own `last_assistant_message` carries visible text only (measured
+    2026-08-04), and a report has to be something the operator can read in the
+    transcript, not reasoning the session never surfaced. Sidechain rows are
+    subagent turns, not this session's final word, so they are skipped too.
+    """
+    for line in reversed(lines):
+        line = line.strip()
+        if not line or '"assistant"' not in line:
+            continue
+        try:
+            row = json.loads(line)
+        except Exception:
+            continue
+        if not isinstance(row, dict) or row.get("type") != "assistant":
+            continue
+        if row.get("isSidechain"):
+            continue
+        message = row.get("message")
+        if not isinstance(message, dict):
+            continue
+        content = message.get("content")
+        if isinstance(content, str):
+            if content.strip():
+                return content
+            continue
+        if not isinstance(content, list):
+            continue
+        text = "".join(
+            str(block.get("text") or "")
+            for block in content
+            if isinstance(block, dict) and block.get("type") == "text"
+        )
+        if text.strip():
+            return text
+    return ""
+
+
+def _transcript_final_message(payload: dict[str, Any]) -> str:
+    """Recover the final assistant message from `transcript_path`.
+
+    `last_assistant_message` is NOT a documented field of the Stop hook payload
+    (documented: session_id, transcript_path, cwd, hook_event_name,
+    stop_hook_active). This harness does supply it, but a client that does not
+    would make the `SHIP LOOP BLOCKED:` report undetectable and the escape ladders
+    unreachable — the exact brick this guard exists to prevent. `transcript_path`
+    IS documented, so it is the durable source.
+
+    Fails CLOSED: any unreadable, missing, or textless transcript returns "", which
+    leaves the report unfiled and the session blocked.
+    """
+    raw = payload.get("transcript_path")
+    if not raw:
+        return ""
+    try:
+        path = Path(str(raw)).expanduser()
+    except Exception:
+        return ""
+    for limit in (_TRANSCRIPT_TAIL_BYTES, None):
+        try:
+            lines, whole_file = _jsonl_tail(path, limit)
+        except OSError:
+            return ""
+        text = _last_assistant_text(lines)
+        if text or whole_file:
+            return text
     return ""
 
 
@@ -1663,8 +1914,11 @@ def _block(
 ) -> None:
     """Block Stop, except when a reported blocker has ping-ponged past the ceiling.
 
-    Two escape ladders, both requiring an explicit `SHIP LOOP BLOCKED:` report with
-    stop_hook_active set, so a session cannot bail on the first attempt:
+    Two escape ladders, both requiring an explicit `SHIP LOOP BLOCKED:` report on a
+    re-entrant Stop, so a session cannot bail on the first attempt. The report is
+    read from `last_assistant_message` when the harness supplies it and recovered
+    from `transcript_path` when it does not; re-entrancy is proven by the payload's
+    `stop_hook_active` OR by this guard's own block ledger (see below):
 
     - EXTERNAL codes escape at 2 CONSECUTIVE or 3 CUMULATIVE external blocks. The
       cumulative arm is what the field forced: a session ping-ponging
@@ -1702,7 +1956,25 @@ def _block(
         state["external_blocks"] = external_blocks
     _save(path, state)
     final = str(payload.get("last_assistant_message") or "").lstrip()
-    reported = bool(payload.get("stop_hook_active")) and final.startswith("SHIP LOOP BLOCKED:")
+    if not final:
+        final = _transcript_final_message(payload).lstrip()
+    # Re-entrancy is proven by the guard's OWN ledger, not only by the payload flag.
+    # `stop_hook_active` describes how the CURRENT turn was started, not whether this
+    # guard has ever blocked: measured 2026-08-04, a turn started by a background
+    # `<task-notification>` arrives with the flag False even though the guard had
+    # already blocked three times. Session 787452b5 filed a correct, token-leading
+    # `SHIP LOOP BLOCKED:` report on such a turn with live_stale at count 5 — both
+    # external arms armed — and was refused anyway, because the flag alone vetoed it.
+    # A repository whose sessions routinely wait on background tasks hits that reset
+    # constantly, so the ladder was unreachable exactly when it was most needed.
+    #
+    # `total_blocks >= 2` is the durable form of the same fact and never widens a
+    # ladder: EVERY escape arm below already requires at least two blocks (external
+    # needs count >= 2 or external_blocks >= 3; any-code needs count >= 10 or
+    # total_blocks >= 15). So the first-attempt bailout the flag was guarding against
+    # stays impossible — on a first Stop total_blocks is 1 and no arm can fire.
+    reentrant = bool(payload.get("stop_hook_active")) or total_blocks >= 2
+    reported = reentrant and final.startswith("SHIP LOOP BLOCKED:")
     external_escape = code in EXTERNAL_BLOCKERS and (count >= 2 or external_blocks >= 3)
     any_code_escape = count >= 10 or total_blocks >= 15
     if reported and (external_escape or any_code_escape):
@@ -2083,14 +2355,23 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         elif isinstance(render_proof, dict) and "deferred" in render_proof:
             render_notes.append(str(render_proof.get("deferred") or ""))
 
+    # Which /api/health field can prove this merge live depends on whether the
+    # merge owes an API DEPLOY or only a pull — see _live_health_fields. Asking
+    # `commit` of a merge that restarts nothing is unsatisfiable by construction.
     try:
-        deployed = _find_commit(_get_json(LIVE_HEALTH_URL))
-        if not deployed:
-            raise RuntimeError("Production health response did not include a git commit.")
-        deployed_full = _run(root, "git", "rev-parse", deployed)
-        _run(root, "git", "merge-base", "--is-ancestor", merge_sha, deployed_full)
+        health = _get_json(LIVE_HEALTH_URL)
     except Exception as exc:
-        _block(path, state, payload, "live_stale", f"Production does not yet contain the merge: {exc}")
+        _block(path, state, payload, "live_unreachable", f"Production health check failed: {exc}")
+        return
+    live_ok, live_detail = _live_gate(root, merge_sha, start_head, head, health)
+    if not live_ok:
+        _block(
+            path,
+            state,
+            payload,
+            "live_stale",
+            f"Production does not yet contain the merge: {live_detail}",
+        )
         return
 
     audit: list[str] = []

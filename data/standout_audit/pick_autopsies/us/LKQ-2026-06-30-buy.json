@@ -1,0 +1,95 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "LKQ-2026-06-30-buy",
+  "ticker": "LKQ",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "LKQ",
+    "as_of": "2026-06-30",
+    "lane": "buy",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "LKQ",
+    "lane": "buy",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Consumer Discretionary",
+    "excess_spy": -0.14319434099974715,
+    "excess_sector": -0.12455511849412726,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "LKQ was a buy that was stopped out with a negative excess return, classified as an idiosyncratic break with a clean process. The entry signal was wrong or a negative catalyst appeared.",
+    "root_cause": "LKQ was a buy that was stopped out with a negative excess return, classified as an idiosyncratic break with a clean process. The entry signal was wrong or a negative catalyst appeared.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The buy lane entry failed due to an idiosyncratic break, suggesting the conditioning at entry was insufficient to avoid this name.",
+    "engines_credit": "The process was clean, but the buy-lane signal engine missed a company-specific risk.",
+    "causal_chain": [
+      {
+        "order": 1,
+        "layer": "company_alpha",
+        "factor": "",
+        "mechanism": "Idiosyncratic negative break caused the expected move to fail",
+        "evidence_status": "claimed",
+        "timing_status": "emerged_after",
+        "counterfactual": "Without the break, the pick might have succeeded.",
+        "evidence_refs": [
+          "Pick data: idio_break, negative excess return"
+        ]
+      },
+      {
+        "order": 2,
+        "layer": "catalyst",
+        "factor": "",
+        "mechanism": "Unknown catalyst may have triggered the break.",
+        "evidence_status": "unknown",
+        "timing_status": "emerged_after",
+        "counterfactual": "If the catalyst was not present, the pick would have succeeded.",
+        "evidence_refs": [
+          "No timestamp for catalyst"
+        ]
+      }
+    ],
+    "alternate_explanations": [
+      "The buy signal was based on technicals that later failed due to broader market weakness.",
+      "A Consumer Discretionary sector selloff could have created the break."
+    ],
+    "missing_evidence": [
+      "Company-specific news or earnings",
+      "Consumer Discretionary sector performance post-entry",
+      "Details of buy-lane entry criteria"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "buy_lane_failure_density",
+        "feature": "Density of buy-lane failures in Consumer Discretionary over the last 6 months",
+        "measurement": "Count failures per sector per month",
+        "expected_direction": "High failure density should reduce appetite for new entries in that sector",
+        "falsifier": "If failures are uniform across sectors, the signal is not sector-specific.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-05",
+  "asof": "2026-08-05",
+  "ts": "2026-08-05T09:23:44+00:00"
+}

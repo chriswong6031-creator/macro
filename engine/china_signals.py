@@ -35,12 +35,15 @@ def _f(x):
 # board type + price-limit width (STAR/ChiNext = ±20%, main board = ±10%)
 # ---------------------------------------------------------------------------
 def board_type(ticker: str) -> tuple[str, float]:
-    """(board, daily_limit_pct) from the ticker. STAR (688xxx.SS) and ChiNext (300/301xxx.SZ)
-    have ±20% limits and faster reversal; Beijing (8/4xxxx.BJ) ±30%; main board ±10%."""
+    """(board, daily_limit_pct) from the ticker. STAR (688xxx.SS) and ChiNext
+    (300/301/302xxx.SZ) have ±20% limits and faster reversal; Beijing (8/4xxxx.BJ) ±30%;
+    main board ±10%.  302xxx was added 2026-08-04: the block is ChiNext and trades the
+    ±20% band, but read as "main" it took a 10% band — which mis-sizes every limit test
+    downstream (the CN V3 relay ladder found it)."""
     t = (ticker or "").upper().split(".")[0]
     if t.startswith("688") or t.startswith("689"):
         return "star", 20.0
-    if t.startswith("300") or t.startswith("301"):
+    if t.startswith(("300", "301", "302")):
         return "chinext", 20.0
     if t.startswith(("8", "4", "92")):
         return "bse", 30.0

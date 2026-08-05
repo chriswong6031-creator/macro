@@ -61,7 +61,14 @@ jobs:
     # ~115m→~148m after the schedule moved 02:00 UTC → 22:30 UTC — suspected early-
     # evening source retry loops (under forensics). 185m buys survival at the observed
     # pace + commit headroom while the growth is root-caused.
-    timeout-minutes: 185
+    # 2026-08-05: 185 nearly bit a FOURTH time. When the M1 host went down (ENOSPC) the
+    # macstudio label failed over to a COLD spare (mac-builder-5: fresh venv, no warm
+    # GHA/R2 caches) and the collectors step took 172m — a 13-minute margin under the
+    # cap, on a run that had already lost three nights. The fleet can always fail over
+    # to a cold runner, so the cap must clear the COLD pace, not the warm one: 240m is
+    # ~1.4x the observed 172m. The job still exits as soon as its steps finish; a
+    # larger cap costs nothing on a healthy night and buys the commit on a slow one.
+    timeout-minutes: 240
     outputs:
       government_revenue_projection_needed: ${{ steps.pushdata.outputs.published }}
     steps:
@@ -359,6 +366,39 @@ jobs:
         # observed-filing-state artifact and byte-identical public twin; terms,
         # capacity, runway, scores, probabilities, and Prophet authority stay absent.
         run: python -m scripts.build_capital_structure_projection
+      # Diagnostics only — changes NO behavior. When the compiler above fails, the
+      # ledger it rejected is the one artifact that identifies WHY, and today it is
+      # unrecoverable: the failure skips every later step, so the post-collect tree
+      # is never committed, and the next job's actions/checkout deletes it. That is
+      # exactly how the 2026-08-05 evidence was lost (run 30960328285:
+      # ManifestIdentityError on source ledger row 0, tree wiped before anyone could
+      # copy it, and the drift CANNOT be reproduced locally — without the R2 secrets
+      # every document retrieval defers with "content-addressed source store
+      # unavailable", so no manifest is ever appended and the ledger never moves).
+      # Placed AFTER every capital-structure step, not after the first one: `if:
+      # failure()` only sees failures that already happened, so sitting directly
+      # under the event spine made it fire ONLY for that step. Run 30997579632
+      # proved it — the spine passed, the document-terms compiler two steps later
+      # failed, and this capture was SKIPPED. From here it catches whichever of
+      # the five steps aborts (a later step is skipped after an earlier failure,
+      # but an `if: failure()` step still runs).
+      # BOTH encodings are listed on purpose: #4600 moves this ledger from
+      # source_manifest.parquet to source_manifest.jsonl (that is the fix for the
+      # drift above). Naming only one would make this capture silently upload
+      # nothing the moment the other lands — `if-no-files-found: warn` would not
+      # even go red about it. Keep both names until the parquet copy is gone.
+      # actions/upload-artifact v4.6.2
+      - name: capture the rejected capital-structure ledger (diagnostics; failure only)
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: capital-structure-ledger-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            data/capital_structure/source_manifest.jsonl
+            data/capital_structure/source_manifest.parquet
+            data/capital_structure/telemetry.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
         # The only network leg for the themes map + Subsector Rotation. Refreshes
         # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
@@ -392,6 +432,21 @@ jobs:
                                   # "restore failed -> store did not advance" warning — the
                                   # single loudest signal here — would never be emitted.
         run: python -m scripts.audit_massive_store
+      - name: audit stocks store freshness (per-name stale-tip tripwire — loud, never blocks the night)
+        # Own step for the same reason as "audit massive_stock_day store" above: this
+        # lane runs --exclude-group asia, so scripts/collect.py skips the WHOLE
+        # run_quality_audits gate as a partial run, leaving this audit zero nightly
+        # coverage without its own step. 2026-08-03 incident: a name that exits every
+        # sector SPDR's top-20 froze its data/stocks parquet forever — invisible to
+        # audit_prices (interior gaps only) and check_price_store_freshness (SPY in
+        # data/yahoo only). The module bare-prints a ::warning annotation and always
+        # exits 0 for data findings (flags-only law, never gates the night); the ||
+        # echo below only guards an unexpected crash. Writes
+        # data/quality/stocks_freshness_audit.json, picked up by "commit data" below.
+        continue-on-error: true
+        run: |
+          python -m scripts.audit_stocks_freshness \
+            || echo "::warning::audit_stocks_freshness crashed (non-fatal — per-name freshness disclosure absent this run)"
       - name: commit data (local checkpoint — no network ops in this step)
         id: commitdata
         run: |
@@ -2182,6 +2237,21 @@ jobs:
         # Context-only (never feeds a score); the ledger accrues forward from here. The commit
         # step below (git add data/ site/) lands both artifacts. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_us_board --nightly || true
+      - name: Prophet doors — accrue Door T (theme-relay) + Door R (re-arm) flags (shadow, zero authority)
+        # Prophet W3 shadow doors (research/PROPHET_DOORS_PREREG.md, frozen before first accrual).
+        # Evaluates both doors on the committed caches and appends to data/prophet_doors/flags.jsonl.
+        # Sole forward advancer of this ledger (nightly-only: --nightly AND COLLECT_LANE=nightly).
+        # PROSPECTIVE ONLY — no backfill; the ledger starts the night this merges. ZERO AUTHORITY:
+        # no board membership, no plan origination, no rank/gate/size, no site/ artifact. The
+        # commit step below (git add data/) lands the store. ~2.5 min. Idempotent per as_of.
+        run: python -m scripts.emit_prophet_doors --nightly || true
+      - name: Prophet doors — grade matured flags at H=10/21 vs SPY (policy-free marks)
+        # Grades data/prophet_doors/flags.jsonl into grades.jsonl via engine.grading.forward_metrics
+        # (next-bar fill, positional session horizons, excess vs SPY) — the SAME ruler grade_us_board
+        # uses, reused not forked. Policy-free: fixed-horizon marks only, no stops/exits. Graded rows
+        # are frozen (one-grader law). Runs after the emitter so tonight's flags are present.
+        # OUTCOMES ARE NOT TO BE READ before the prereg §4 trigger. Idempotent. Resilient.
+        run: python -m scripts.grade_prophet_doors --nightly || true
       - name: Bottom Ledger (accrue bottom-class flags + mature at H=60; policy-free instrument)
         # Bottom Ledger P1: the policy-free bottom-calling learning instrument (design PR #3182).
         # Sole forward advancer of this ledger (nightly-only). Accrues board buy-lane +

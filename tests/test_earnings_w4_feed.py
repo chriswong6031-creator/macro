@@ -588,11 +588,61 @@ class TestNothingGatesOnTheNewFields:
     def test_only_the_producer_reads_the_new_fields(self, field):
         """The ONLY files allowed to read a W4 field are the module that computes it
         and the builder that attaches it.  A third reader is a consumer, and a consumer
-        is how a display field quietly becomes an authority."""
-        allowed = {"engine/earnings_catalyst.py", "scripts/build_stock_library.py"}
+        is how a display field quietly becomes an authority.
+
+        engine/us_context_vector.py is admitted as the ONE recording exception (US
+        Context Vector PIT store, roadmap §2): it copies these fields into a
+        zero-authority research store — `consumers: []` in config/synapse.yml — and
+        never branches on them.  That second half is not taken on trust:
+        ``test_the_context_vector_records_the_fields_without_branching_on_them``
+        below proves it structurally, and this allowlist entry is only as safe as
+        that test.  Any FURTHER reader is a consumer and must be refused here.
+        """
+        allowed = {"engine/earnings_catalyst.py", "scripts/build_stock_library.py",
+                   "engine/us_context_vector.py"}
         assert self._readers(field) <= allowed, (
             f"{field} is read outside the producer: "
             f"{sorted(self._readers(field) - allowed)}")
+
+    def test_the_context_vector_records_the_fields_without_branching_on_them(self):
+        """The compensating control for admitting us_context_vector to the allowlist.
+
+        Recording a field and gating on it are different acts, and only the second is
+        what the allowlist exists to prevent.  A recorder reads the value and stores
+        it; a gate reads the value and CHANGES BEHAVIOUR on it.  So: parse the module
+        and assert none of the W4 field names ever appears inside a branch condition
+        (if/while/ternary/comparison/boolean op).
+
+        If someone later writes ``if row.get("reports_within_7"):`` in that module,
+        this reds — which is the whole reason the allowlist entry above is allowed to
+        exist.
+        """
+        import ast
+
+        src = (ROOT / "engine" / "us_context_vector.py").read_text()
+        tree = ast.parse(src)
+        fields = ("days_to_report", "reports_within_7", "post_earnings_move")
+
+        offenders: list[str] = []
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.If, ast.While)):
+                tests = [node.test]
+            elif isinstance(node, ast.IfExp):
+                tests = [node.test]
+            elif isinstance(node, (ast.Compare, ast.BoolOp)):
+                tests = [node]
+            else:
+                continue
+            for test in tests:
+                rendered = ast.unparse(test)
+                for field in fields:
+                    if f"'{field}'" in rendered or f'"{field}"' in rendered:
+                        offenders.append(f"{field}: {rendered[:80]}")
+
+        assert not offenders, (
+            "engine/us_context_vector.py branches on a W4 earnings field — it is "
+            "admitted to the reader allowlist as a RECORDER only:\n  "
+            + "\n  ".join(offenders))
 
     def test_the_rank_engine_still_gates_only_on_in_blackout(self):
         """engine/us_board_rank is the one place earnings touches the pick chain.  It
