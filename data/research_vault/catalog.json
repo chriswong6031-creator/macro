@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T13:31:32.337769+00:00",
-  "count": 805,
+  "generated_at": "2026-08-05T13:46:59.678255+00:00",
+  "count": 806,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -338,6 +338,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xwgrpopch2z-f830fe",
+      "title": "BrightView Holdings (BV) F3Q First Take Revenue, margin and EPS shortfall with the full year outlook reduced",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:17Z",
+      "summary_points": [
+        "**Revenue and Margin Shortfall**: F3Q revenue +1.3% y/y (vs.",
+        "5% consensus), EBITDA margins down 260 bps y/y to 13.4% (vs.",
+        "2% consensus) from self-insurance adjustment and higher fuel costs.",
+        "**Reduced Full-Year Guidance**: Revenue, EBITDA, and FCF outlook cut; development revenue down 3-5% with margins at 12.4% due to self-insurance, fuel costs, and inability to pass costs to customers.",
+        "**Valuation Discount**: F2026 guidance (revenue $2.750-2.780mn, EBITDA $340-345mn) implies $10.80 target (6.0x NTM + 1YR EBITDA), below peer median (9.3x) on slower growth, lower margins, and higher leverage."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
