@@ -870,3 +870,162 @@ class TestComplexesBlock:
 
         assert "complexes" in result
         assert isinstance(result["complexes"], list)
+
+
+# ── (14) data-plane session stamp (forward-ledger audit 2026-08-05, #4568) ────
+#
+# The ledger stamp is the tape the legs read, NOT the calendar.  A run against a
+# frozen store must re-derive the session it already recorded and dedupe, rather
+# than re-describing old tape under a fresh date — which defeated the (date,
+# basket_id) idempotency AND mis-based the downstream forward-return graders
+# (they resolve the base close FORWARD from the row date).
+#
+# All fixture dates are pinned weekdays; no test here reads the wall clock.
+
+_DATA_SESSION = "2026-07-15"      # Wednesday — the fixture store's newest bar
+_LATER_ASOF   = "2026-07-20"      # Monday — a calendar date AFTER the tape
+_LATER_ASOF_2 = "2026-07-21"      # Tuesday — the "next night, frozen store" run
+
+
+def _make_stock_parquet(path: Path, end: str, n: int = 60) -> None:
+    """Write a close+volume parquet whose LAST bar is `end` (business days)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    idx = pd.date_range(end=end, periods=n, freq="B")
+    closes = [100.0 + i * 0.01 for i in range(n)]
+    pd.DataFrame(
+        {"close": closes, "volume": [1_000_000.0] * n,
+         "high": closes, "low": closes},
+        index=idx,
+    ).to_parquet(path)
+
+
+class TestDataPlaneSessionStamp:
+    """(a) stamp priority: data_session > as_of > _session_date()."""
+
+    def _row(self) -> dict:
+        return {"basket_id": "mag7", "state": "WATCH", "k": 2, "legs": {}}
+
+    def test_data_session_beats_as_of(self, tmp_path):
+        """A data_session stamp wins over an as_of one session ahead of the tape."""
+        os.environ["US_LANE"] = "nightly"
+        try:
+            n = BTW.stamp_ledger(
+                [self._row()], as_of=_LATER_ASOF, data_root=tmp_path,
+                data_session=_DATA_SESSION,
+            )
+        finally:
+            os.environ.pop("US_LANE", None)
+
+        assert n == 1
+        rows = BTW.load_ledger(tmp_path)
+        assert rows[0]["date"] == _DATA_SESSION
+        assert rows[0]["as_of"] == _DATA_SESSION
+
+    def test_as_of_used_when_no_data_session(self, tmp_path):
+        """No readable frame → the caller's as_of is the fallback."""
+        os.environ["US_LANE"] = "nightly"
+        try:
+            n = BTW.stamp_ledger(
+                [self._row()], as_of=_LATER_ASOF, data_root=tmp_path,
+                data_session=None,
+            )
+        finally:
+            os.environ.pop("US_LANE", None)
+
+        assert n == 1
+        assert BTW.load_ledger(tmp_path)[0]["date"] == _LATER_ASOF
+
+    def test_session_date_is_last_resort_only(self, tmp_path):
+        """With neither data_session nor as_of, the NYSE session date stamps."""
+        import unittest.mock as mock
+
+        os.environ["US_LANE"] = "nightly"
+        try:
+            with mock.patch.object(BTW, "_session_date",
+                                   return_value=date(2026, 7, 15)):
+                n = BTW.stamp_ledger([self._row()], data_root=tmp_path)
+        finally:
+            os.environ.pop("US_LANE", None)
+
+        assert n == 1
+        assert BTW.load_ledger(tmp_path)[0]["date"] == _DATA_SESSION
+
+
+class TestComputeStampsFromDataPlane:
+    """(b)+(c) compute() derives data_session and stamps the ledger with it."""
+
+    _TICKERS = ["M1", "M2", "M3", "M4", "M5", "M6"]
+
+    def _baskets_meta(self) -> dict:
+        return {
+            "test_basket": {
+                "members": [{"ticker": tk, "removed": None} for tk in self._TICKERS]
+            }
+        }
+
+    def _write_store(self, tmp_path: Path) -> None:
+        """Member + SPY frames whose newest bar is the pinned _DATA_SESSION."""
+        for tk in self._TICKERS + ["SPY"]:
+            _make_stock_parquet(tmp_path / "stocks" / f"{tk}.parquet", _DATA_SESSION)
+
+    def _compute(self, tmp_path: Path, as_of: str) -> dict:
+        """compute() against the frozen fixture store, WATCH forced (k=2)."""
+        import unittest.mock as mock
+        import engine.basket_turn_watch as btw_mod
+
+        with mock.patch.object(btw_mod, "_leg_impulse_day", return_value=True), \
+             mock.patch.object(btw_mod, "_leg_volume_confirm", return_value=True), \
+             mock.patch.object(btw_mod, "_leg_rs_z", return_value=(False, None)), \
+             mock.patch.object(btw_mod, "_leg_breadth_surge", return_value=False), \
+             mock.patch.object(btw_mod, "_leg_complex_confirm", return_value=False), \
+             mock.patch.object(btw_mod, "_leg_shock_relative_bid", return_value=False), \
+             mock.patch.object(btw_mod, "_load_market_drivers", return_value=None), \
+             mock.patch.object(btw_mod, "_theme_sibling_map",
+                               return_value={"test_basket": frozenset()}):
+            return btw_mod.compute(
+                baskets_meta=self._baskets_meta(),
+                data_root=tmp_path,
+                as_of=as_of,
+                run_backscan=False,
+            )
+
+    def test_artifact_and_ledger_carry_the_tape_date(self, tmp_path):
+        """data_session = newest member bar; the ledger row is stamped with it."""
+        self._write_store(tmp_path)
+
+        os.environ["US_LANE"] = "nightly"
+        try:
+            result = self._compute(tmp_path, as_of=_LATER_ASOF)
+        finally:
+            os.environ.pop("US_LANE", None)
+
+        assert result["data_session"] == _DATA_SESSION
+        # TS-R2 display semantics untouched: as_of is still the caller's date
+        assert result["as_of"] == _LATER_ASOF
+
+        rows = BTW.load_ledger(tmp_path)
+        assert len(rows) == 1
+        assert rows[0]["basket_id"] == "test_basket"
+        assert rows[0]["date"] == _DATA_SESSION
+        assert rows[0]["as_of"] == _DATA_SESSION
+
+    def test_frozen_store_rerun_appends_nothing(self, tmp_path):
+        """Regression pin: a second night on the SAME store must not re-log.
+
+        This is the defect — the clock-stamped writer appended a fresh
+        wrong-dated row for every calendar day the store stayed frozen.
+        """
+        self._write_store(tmp_path)
+        ledger_p = tmp_path / "basket_turn" / "ledger.jsonl"
+
+        os.environ["US_LANE"] = "nightly"
+        try:
+            self._compute(tmp_path, as_of=_LATER_ASOF)
+            before = ledger_p.read_bytes()
+            self._compute(tmp_path, as_of=_LATER_ASOF_2)   # next night, same tape
+            after = ledger_p.read_bytes()
+        finally:
+            os.environ.pop("US_LANE", None)
+
+        assert before == after, "frozen-store rerun must leave the ledger byte-identical"
+        assert len(BTW.load_ledger(tmp_path)) == 1
