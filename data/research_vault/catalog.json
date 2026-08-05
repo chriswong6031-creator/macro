@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T15:47:48.685975+00:00",
-  "count": 812,
+  "generated_at": "2026-08-05T16:17:54.074152+00:00",
+  "count": 813,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -55,6 +55,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-m40kw7oiwgi-10a417",
+      "title": "Gerdau (GGBR4.SA) 2Q26 Strong, 3Q26 To Be Better",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:08:00Z",
+      "summary_points": [
+        "**Q2 EBITDA Beat & Q3 Outlook**: Q2 EBITDA R$3.4B (+34% y/y) beat consensus; North America margins at 26% (+7% volumes, +3% prices), order backlog >100 days; Q3 margins expected to improve with persistent tariffs (GS at 27.7%).",
+        "**North America Margin Catalyst**: Price hikes for beams/merchant bar (R$30/st → R$80/st, Aug 3) + strong volumes (+7% y/y) offset higher costs, enabling margin expansion (GS 27.7%).",
+        "**Valuation Upside & Buy Rating**: Goldman Sachs Buy rating with R$27 target (current R$25.87), implying 4.4% upside; supported by 9% FCF yield, 4x EV/EBITDA, and improving fundamentals (EPS R$0.51 → R$0.57 by 12/26E)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-uhi2ekheb7u-a2b5bc",
       "title": "Fidelity National Information Services (FIS) 2Q26 Takeaways Shares decline on capital markets reset",
