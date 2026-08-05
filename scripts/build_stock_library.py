@@ -1320,8 +1320,10 @@ def _spotlight_context() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("spotlight sector stage table unavailable (%s)", e)
     alloc_by_id = _basket_alloc_map(theme_by_id)
-    log.info("spotlight context: %d scored themes · %d sector stages · %d basket alloc states",
-             len(theme_by_id), len(sector_by_etf), len(alloc_by_id))
+    turn_by_id = _basket_turn_map()
+    log.info("spotlight context: %d scored themes · %d sector stages · %d basket alloc states "
+             "· %d baskets turning up off a low",
+             len(theme_by_id), len(sector_by_etf), len(alloc_by_id), len(turn_by_id))
     # Oracle dark-tilt channel — {} unless config oracle.tilt_enabled (R4: default off).
     try:
         from engine.oracle.tilt import oracle_tilt_by_etf
@@ -1332,7 +1334,8 @@ def _spotlight_context() -> dict:
     if oracle_by_etf:
         log.info("spotlight context: oracle tilt ENABLED for %d sector ETFs", len(oracle_by_etf))
     return {"theme_by_id": theme_by_id, "sector_by_etf": sector_by_etf,
-            "alloc_by_id": alloc_by_id, "oracle_tilt_by_etf": oracle_by_etf, "unmapped": set()}
+            "alloc_by_id": alloc_by_id, "turn_by_id": turn_by_id,
+            "oracle_tilt_by_etf": oracle_by_etf, "unmapped": set()}
 
 
 def _basket_alloc_map(theme_by_id: dict) -> dict:
@@ -1371,6 +1374,45 @@ def _basket_alloc_map(theme_by_id: dict) -> dict:
             "name": th.get("name") or r.get("name"), "name_zh": th.get("name_zh"),
             "signal_grade": (th.get("signal_strength") or {}).get("grade"),
         }
+    return out
+
+
+def _basket_turn_map() -> dict[str, dict]:
+    """Baskets whose CYCLE says they are turning up off a low, keyed by slug.
+
+    The rule is the cycle engine's own registered bottoming condition and is
+    quoted, not invented: `phase == "Trough" AND osc_slope > 0` on the latest
+    `data/sector_cycles/forward_log.parquet` rows — character for character the
+    CN `bottoming_watch` rule (engine/china_act_now.py:352-359), including the
+    leading `b-` strip that maps a basket forward-log id onto a basket slug.
+
+    Feeds the caution DUAL-READ only (engine.stock_score._basket_risk). It can
+    change no size, no rank and no haircut: a name whose best-ranked basket earns
+    a caution gains one extra SENTENCE when a different basket it also belongs to
+    is turning. Best-effort — {} on any failure, and the caution then reads
+    exactly as it read before this map existed.
+    """
+    out: dict[str, dict] = {}
+    try:
+        fwd = pd.read_parquet(config.data_dir() / "sector_cycles" / "forward_log.parquet")
+        if fwd.empty:
+            return out
+        fwd["date"] = pd.to_datetime(fwd["date"])
+        latest = fwd.sort_values("date").groupby("id").last().reset_index()
+        for _, row in latest.iterrows():
+            slug = str(row["id"])
+            if not slug.startswith("b-"):
+                continue                    # sector ETF rows are not basket memberships
+            slope = row.get("osc_slope")
+            if str(row.get("phase") or "") != "Trough":
+                continue
+            if slope is None or pd.isna(slope) or float(slope) <= 0:
+                continue
+            out[slug[2:]] = {"name": (str(row["name"]) if pd.notna(row.get("name")) else None),
+                             "pos": (float(row["pos"]) if pd.notna(row.get("pos")) else None),
+                             "osc_slope": float(slope)}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket turn map unavailable (%s)", e)
     return out
 
 
@@ -2617,6 +2659,7 @@ def main() -> int:
         # de-risk caution to that minor basket is a credibility misattribution. The
         # spotlight tilt (used for scoring) is UNCHANGED; only the caution anchor differs.
         _alloc_by_id = spotlight_ctx.get("alloc_by_id") or {}
+        _turn_by_id = spotlight_ctx.get("turn_by_id") or {}
         _bslug = None
         if bsk_mem.get(ticker):
             _cands = [m.get("slug") for m in bsk_mem[ticker] if m.get("slug") in _alloc_by_id]
@@ -2625,6 +2668,38 @@ def main() -> int:
         _balloc = _alloc_by_id.get(_bslug) if _bslug else None
         if _balloc:
             rec["basket_alloc"] = {**_balloc, "slug": _bslug}
+            # DUAL-READ (W-D.3): the rule above picks ONE basket and the caution then
+            # speaks as if that were the name's whole story. ASTS was sized down on
+            # 2026-07-30/31 citing "Defense & Aerospace below its long-term trend"
+            # while its space_economy membership was the washout-recovery read —
+            # one membership's state silently overwrote the other's, which is a
+            # narrower failure of the same detection-without-narration class the
+            # theme tape exists to close.
+            #
+            # DISCLOSURE, NOT RESOLUTION. The anchor above is unchanged, the haircut
+            # is unchanged, and no size moves: the second membership's state is
+            # attached here and _basket_risk appends ONE sentence to a caution it
+            # was going to emit anyway. A name with no caution gains nothing, and
+            # a name whose other baskets are not turning gains nothing.
+            # Reads today (2026-08-04) on NEM — cited basket Materials
+            # (deteriorating, rank 21) while its gold_miners membership sits at
+            # Trough pos 2.0 with a rising oscillator: the missed-gold case itself.
+            _turning = [
+                (m.get("slug"), _turn_by_id[m["slug"]])
+                for m in bsk_mem[ticker]
+                if m.get("slug") and m.get("slug") != _bslug and m.get("slug") in _turn_by_id
+            ]
+            if _turning:
+                # Most-advanced turn first, so the sentence names the strongest one.
+                _tslug, _tinfo = max(_turning, key=lambda kv: kv[1].get("osc_slope") or 0.0)
+                _talloc = _alloc_by_id.get(_tslug) or {}
+                rec["basket_alloc"]["also_turning"] = {
+                    "slug": _tslug,
+                    "name": _talloc.get("name") or _tinfo.get("name") or _tslug,
+                    "name_zh": _talloc.get("name_zh"),
+                    "pos": _tinfo.get("pos"),
+                    "osc_slope": _tinfo.get("osc_slope"),
+                }
         norm = stock_score.normalize_rec(
             rec, "US", sue=sue_z.get(ticker), sue_fresh_days=sue_fresh.get(ticker),
             insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker),
