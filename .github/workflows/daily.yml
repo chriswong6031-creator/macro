@@ -61,7 +61,14 @@ jobs:
     # ~115m→~148m after the schedule moved 02:00 UTC → 22:30 UTC — suspected early-
     # evening source retry loops (under forensics). 185m buys survival at the observed
     # pace + commit headroom while the growth is root-caused.
-    timeout-minutes: 185
+    # 2026-08-05: 185 nearly bit a FOURTH time. When the M1 host went down (ENOSPC) the
+    # macstudio label failed over to a COLD spare (mac-builder-5: fresh venv, no warm
+    # GHA/R2 caches) and the collectors step took 172m — a 13-minute margin under the
+    # cap, on a run that had already lost three nights. The fleet can always fail over
+    # to a cold runner, so the cap must clear the COLD pace, not the warm one: 240m is
+    # ~1.4x the observed 172m. The job still exits as soon as its steps finish; a
+    # larger cap costs nothing on a healthy night and buys the commit on a slow one.
+    timeout-minutes: 240
     outputs:
       government_revenue_projection_needed: ${{ steps.pushdata.outputs.published }}
     steps:
