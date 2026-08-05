@@ -1,0 +1,71 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "DFH-2026-06-30-laggards",
+  "ticker": "DFH",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "DFH",
+    "as_of": "2026-06-30",
+    "lane": "laggards",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "DFH",
+    "lane": "laggards",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Consumer Discretionary",
+    "excess_spy": -0.22134908585950663,
+    "excess_sector": -0.20270986335388674,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 4.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "DFH was in the laggards lane and was stopped out with negative excess return, classified as an idiosyncratic break. This was a failure but with a clean process.",
+    "root_cause": "DFH was in the laggards lane and was stopped out with negative excess return, classified as an idiosyncratic break. This was a failure but with a clean process.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "The laggards lane reversal signal for DFH failed, indicating the conditioning for reversal is not robust here.",
+    "engines_credit": "The laggards reversal book missed a continued downtrend despite the signal.",
+    "causal_chain": [],
+    "alternate_explanations": [
+      "The stock continued to fall due to sector weakness or no reversal catalyst.",
+      "The signal was based on stale data."
+    ],
+    "missing_evidence": [
+      "Homebuilding sector performance",
+      "Company-specific news",
+      "Details of laggards reversal signal",
+      "Housing macro data"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "laggard_break_continuation",
+        "feature": "Proportion of laggards entries that continue to break, within 10 days",
+        "measurement": "Compute for laggards lane, fraction of picks with further negative excess return 10 days post-entry",
+        "expected_direction": "A high fraction indicates the reversal signal is weak and conditioning needs review",
+        "falsifier": "If only a small fraction continue to break, reversal signal is working and DFH is an outlier.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-05",
+  "asof": "2026-08-05",
+  "ts": "2026-08-05T09:23:44+00:00"
+}

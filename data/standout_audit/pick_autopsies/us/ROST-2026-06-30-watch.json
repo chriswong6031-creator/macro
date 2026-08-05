@@ -1,0 +1,68 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "ROST-2026-06-30-watch",
+  "ticker": "ROST",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "ROST",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "ROST",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Consumer Discretionary",
+    "excess_spy": 0.18314842676125487,
+    "excess_sector": 0.20178764926687476,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 7.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "ROST was a watch-list name with a clean liftoff and positive excess return. A successful pick, no fault.",
+    "root_cause": "ROST was a watch-list name with a clean liftoff and positive excess return. A successful pick, no fault.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "Watch-list entries in Consumer Discretionary can have clean liftoffs with strong performance.",
+    "engines_credit": "The watch-list timing and the sector model both supported this outcome.",
+    "causal_chain": [],
+    "alternate_explanations": [
+      "Consumer Discretionary sector strength may have contributed."
+    ],
+    "missing_evidence": [
+      "Consumer Discretionary sector performance post-entry",
+      "Company-specific news"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "watch_liftoff_vs_sector",
+        "feature": "Average excess return of watch-list clean liftoffs relative to sector",
+        "measurement": "Compute mean 10-day excess return for watch-list liftoffs and compare to sector mean",
+        "expected_direction": "Watch-list picks should outperform sector average",
+        "falsifier": "If watch-list picks do not outperform sector average, the watch list adds no value.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-05",
+  "asof": "2026-08-05",
+  "ts": "2026-08-05T09:23:44+00:00"
+}
