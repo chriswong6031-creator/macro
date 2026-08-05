@@ -14,6 +14,18 @@
    "lane": "buy"
   },
   {
+   "ticker": "CRDO",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-07-29",
+   "surfaced_price": 177.45,
+   "last_price": 237.92,
+   "pct_since": 34.1,
+   "days_on_board": 1,
+   "exit_date": "2026-07-30",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
    "ticker": "NEOG",
    "sector": "Health Care",
    "first_surfaced": "2026-06-30",
@@ -134,6 +146,18 @@
    "lane": "buy"
   },
   {
+   "ticker": "UROY",
+   "sector": "Energy",
+   "first_surfaced": "2026-07-28",
+   "surfaced_price": 2.78,
+   "last_price": 3.36,
+   "pct_since": 20.9,
+   "days_on_board": 1,
+   "exit_date": "2026-07-29",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
    "ticker": "AMKR",
    "sector": "Information Technology",
    "first_surfaced": "2026-07-17",
@@ -230,6 +254,18 @@
    "lane": "buy"
   },
   {
+   "ticker": "TEAM",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-07-27",
+   "surfaced_price": 95.87,
+   "last_price": 110.31,
+   "pct_since": 15.1,
+   "days_on_board": 4,
+   "exit_date": "2026-07-31",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
    "ticker": "LKQ",
    "sector": "Consumer Discretionary",
    "first_surfaced": "2026-06-30",
@@ -250,6 +286,18 @@
    "pct_since": -14.5,
    "days_on_board": 1,
    "exit_date": "2026-07-17",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "NVO",
+   "sector": "Health Care",
+   "first_surfaced": "2026-07-30",
+   "surfaced_price": 51.61,
+   "last_price": 44.28,
+   "pct_since": -14.2,
+   "days_on_board": 1,
+   "exit_date": "2026-07-31",
    "status": "stopped",
    "lane": "buy"
   },
@@ -672,71 +720,18 @@
    "exit_date": "2026-07-20",
    "status": "stopped",
    "lane": "buy"
-  },
-  {
-   "ticker": "KEX",
-   "sector": "Industrials",
-   "first_surfaced": "2026-07-17",
-   "surfaced_price": 144.16,
-   "last_price": 131.14,
-   "pct_since": -9.0,
-   "days_on_board": 2,
-   "exit_date": "2026-07-21",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "NBIX",
-   "sector": "Health Care",
-   "first_surfaced": "2026-07-28",
-   "surfaced_price": 182.83,
-   "last_price": 166.8,
-   "pct_since": -8.8,
-   "days_on_board": 1,
-   "exit_date": "2026-07-29",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "RITM",
-   "sector": "Financials",
-   "first_surfaced": "2026-07-02",
-   "surfaced_price": 9.09,
-   "last_price": 9.88,
-   "pct_since": 8.7,
-   "days_on_board": 1,
-   "exit_date": "2026-07-06",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "MO",
-   "sector": "Consumer Staples",
-   "first_surfaced": "2026-07-20",
-   "surfaced_price": 74.66,
-   "last_price": 68.33,
-   "pct_since": -8.5,
-   "days_on_board": 2,
-   "exit_date": "2026-07-21",
-   "status": "stopped",
-   "lane": "buy"
   }
  ],
  "summary": {
-  "n_running": 107,
-  "n_stopped": 115,
+  "n_running": 110,
+  "n_stopped": 116,
   "n_flat": 86,
-  "n_total": 308,
+  "n_total": 312,
   "n_shown": 60,
-  "median_pct": -0.1,
-  "n_skipped_no_price": 4,
-  "skipped_no_price": [
-   "CRDO",
-   "NVO",
-   "TEAM",
-   "UROY"
-  ],
-  "win_rate": 0.482,
-  "avg_pct": 0.5
+  "median_pct": 0.0,
+  "n_skipped_no_price": 0,
+  "skipped_no_price": [],
+  "win_rate": 0.487,
+  "avg_pct": 0.7
  }
 }

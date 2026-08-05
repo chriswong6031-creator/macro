@@ -437,14 +437,15 @@ _ARTIFACT_KEYS = {
     "schema", "price_through", "tier", "authority", "bases", "summary",
     "top63_excluder_hist", "top63_excluder_family_hist", "top21_excluder_hist",
     "veto_leg_hist", "runner_sector_hist", "eligible_today_sector_hist",
-    "conversion", "themes", "name_score_scorecard", "priority_score_scorecard",
+    "conversion", "themes", "basket_misses", "name_score_scorecard",
+    "priority_score_scorecard",
     "top63_runners", "top21_runners", "eligible_today", "degraded",
 }
 _SUMMARY_KEYS = {
     "universe_n", "eligible_today_n", "top63_n",
     "top63_eligible_today_n", "top63_never_eligible_n", "top63_never_eligible_pct",
     "top63_eligible_days", "top21_n", "top21_eligible_today_n", "conversion_rate",
-    "conversion_n",
+    "conversion_n", "basket_misses_n", "basket_scored_n",
 }
 
 
@@ -600,6 +601,326 @@ def test_structural_degradation_does_not_page_but_unexpected_does(capsys):
     msgs = PMA.emit_annotations(doc)
     assert len(msgs) == 1 and PMA.STANDOUTS_JSON in msgs[0]
     assert PMA.THEME_PIT_JSONL not in msgs[0]
+
+
+# ---------------------------------------------------------------------------
+# (f) basket-grain misses — "did a whole theme run with nobody on the board?"
+# ---------------------------------------------------------------------------
+_BK_N = 300          # bars per synthetic member: > BASKET_MIN_HISTORY + horizon
+
+
+def _bk_days(n: int = _BK_N) -> pd.DatetimeIndex:
+    return pd.bdate_range("2025-01-01", periods=n)
+
+
+def _pop(n: int = _BK_N) -> pd.Series:
+    """Flat, then a hard 10-day run. Today's 10d return is the unique maximum of the
+    basket's own history, so its mid-rank percentile pins at ~1.0."""
+    idx = _bk_days(n)
+    values = np.full(n, 100.0)
+    values[-10:] = 100.0 * np.cumprod(np.full(10, 1.02))
+    return pd.Series(values, index=idx)
+
+
+def _ramp_then_flat(n: int = _BK_N) -> pd.Series:
+    """A history full of +2% ten-day windows, then a dead-flat fortnight. Today's 10d
+    return is 0 and sits at the BOTTOM of its own history — the deliberate opposite of
+    ``_pop`` on the same store."""
+    idx = _bk_days(n)
+    values = 100.0 * np.cumprod(np.full(n, 1.002))
+    values[-20:] = values[-21]
+    return pd.Series(values, index=idx)
+
+
+def _flat(n: int = _BK_N) -> pd.Series:
+    """A dead series — every 10d return is exactly 0.0, so every observation ties."""
+    return pd.Series(np.full(n, 100.0), index=_bk_days(n))
+
+
+def _basket_root(tmp_path: Path, specs: dict, *, board: dict | None = None,
+                 skip_store: tuple = ()) -> Path:
+    """A miniature baskets store. ``specs`` = {basket_id: {member: series}}; a member
+    listed in ``skip_store`` gets a membership row but NO parquet."""
+    ohlcv = tmp_path / "data" / "baskets" / "ohlcv"
+    ohlcv.mkdir(parents=True, exist_ok=True)
+    baskets, written = {}, set()
+    for basket_id, members in specs.items():
+        rows = []
+        for ticker, series in members.items():
+            rows.append({"ticker": ticker, "added": "2024-01-01", "removed": None}
+                        if not isinstance(series, tuple) else
+                        {"ticker": ticker, "added": series[1], "removed": series[2]})
+            data = series[0] if isinstance(series, tuple) else series
+            if ticker in skip_store or ticker in written:
+                continue
+            pd.DataFrame({"close": data}).to_parquet(ohlcv / f"{ticker}.parquet")
+            written.add(ticker)
+        baskets[basket_id] = {"name": basket_id.title(), "category": "Test",
+                              "members": rows}
+    (tmp_path / "data" / "baskets" / "membership.json").write_text(
+        json.dumps({"version": "test", "baskets": baskets}), encoding="utf-8")
+    (tmp_path / "site" / "factordata").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "site" / "factordata" / "us_standouts.json").write_text(
+        json.dumps({"as_of": "2026-07-31", **{k: [{"ticker": t} for t in v]
+                                              for k, v in (board or {}).items()}}),
+        encoding="utf-8")
+    return tmp_path
+
+
+def _run_baskets(root: Path, board: dict | None = None):
+    degraded: list[dict] = []
+    standouts = json.loads(
+        (root / "site" / "factordata" / "us_standouts.json").read_text())
+    block = PMA.basket_misses(root, standouts, degraded)
+    return block, degraded, {r["basket_id"]: r for r in block["baskets"]}
+
+
+def _four_worlds(tmp_path: Path) -> Path:
+    """The 2x2 the miss rule is defined over: {ignited, quiet} x {dark, represented}."""
+    specs = {
+        "hot_dark": {f"HD{i}": _pop() for i in range(3)},
+        "hot_seen": {f"HS{i}": _pop() for i in range(3)},
+        "quiet_dark": {f"QD{i}": _ramp_then_flat() for i in range(3)},
+        "quiet_seen": {f"QS{i}": _ramp_then_flat() for i in range(3)},
+    }
+    return _basket_root(tmp_path, specs, board={"buy": ["HS0"], "watch": ["QS1"]})
+
+
+def test_a_miss_needs_BOTH_the_top_decile_and_zero_representation(tmp_path):
+    """The whole rule, on one store, in one assertion set.
+
+    Each half is separately necessary: `hot_seen` has the identical price history to
+    `hot_dark` and differs only by one board row; `quiet_dark` has the identical board
+    state as `hot_dark` and differs only by price. A rule that had lost either
+    conjunct would flag two of these four.
+    """
+    block, _deg, rows = _run_baskets(_four_worlds(tmp_path))
+
+    assert rows["hot_dark"]["pctile"] >= PMA.BASKET_TOP_DECILE
+    assert rows["hot_seen"]["pctile"] == rows["hot_dark"]["pctile"]
+    assert rows["quiet_dark"]["pctile"] < PMA.BASKET_TOP_DECILE
+    assert rows["hot_dark"]["n_members_on_board"] == 0
+    assert rows["quiet_dark"]["n_members_on_board"] == 0
+    assert rows["hot_seen"]["n_members_on_board"] == 1
+    assert rows["quiet_seen"]["n_members_on_board"] == 1
+
+    assert [r["basket_id"] for r in block["misses"]] == ["hot_dark"]
+    assert {b: rows[b]["miss"] for b in rows} == {
+        "hot_dark": True, "hot_seen": False,
+        "quiet_dark": False, "quiet_seen": False}
+    assert block["n_top_decile"] == 2 and block["n_unrepresented"] == 2
+    assert block["n_misses"] == 1
+
+
+def test_every_visible_lane_counts_as_representation(tmp_path):
+    """A member on ANY of buy/watch/leaders/ran means the basket was surfaced."""
+    for lane in PMA.BASKET_BOARD_LANES:
+        root = _basket_root(
+            tmp_path / lane, {"hot": {f"H{i}": _pop() for i in range(3)}},
+            board={lane: ["H0"]})
+        block, _deg, rows = _run_baskets(root)
+        assert rows["hot"]["pctile"] >= PMA.BASKET_TOP_DECILE, lane
+        assert block["misses"] == [], f"{lane} membership must clear the miss"
+        assert rows["hot"]["present_counts"][lane] == 1
+
+
+def test_laggards_is_not_representation(tmp_path):
+    """The board's weak-names shelf is not the basket being surfaced as opportunity,
+    so a name sitting there must not clear an otherwise-dark ignition."""
+    root = _basket_root(tmp_path, {"hot": {f"H{i}": _pop() for i in range(3)}},
+                        board={"laggards": ["H0"]})
+    block, _deg, rows = _run_baskets(root)
+    assert rows["hot"]["n_members_on_board"] == 0
+    assert [r["basket_id"] for r in block["misses"]] == ["hot"]
+
+
+def test_a_dead_series_is_not_an_ignition(tmp_path):
+    """Mid-rank, not the weak inequality: a store that stopped updating ties with
+    itself on every bar, and `(hist <= today).mean()` would read that as 1.00 — a
+    perfect top-decile flag on a basket that has not moved in a year."""
+    root = _basket_root(tmp_path, {"dead": {f"D{i}": _flat() for i in range(3)}})
+    block, _deg, rows = _run_baskets(root)
+    assert rows["dead"]["ew_10d"] == 0.0
+    assert rows["dead"]["pctile"] == pytest.approx(0.5)
+    assert rows["dead"]["n_members_on_board"] == 0, "dark, so only price can clear it"
+    assert block["misses"] == []
+
+
+def _vol_walk(scale: float, seed: int, tail_daily: float) -> pd.Series:
+    """A seeded walk at a chosen vol with a fixed 10-day tail move — deterministic
+    (numpy's PCG64 stream is stable) and the only way to separate ABSOLUTE size from
+    own-history extremity."""
+    rng = np.random.default_rng(seed)
+    returns = rng.normal(0.0, scale, _BK_N)
+    returns[-10:] = tail_daily
+    return pd.Series(100.0 * np.cumprod(1.0 + returns), index=_bk_days())
+
+
+def test_percentile_is_own_history_never_cross_basket(tmp_path):
+    """The SMALLER absolute move is the more extreme one, and the rule must say so.
+
+    `loud` runs +5.1% over ten days and `quiet` +1.0% — a 5x difference in size — but
+    loud's history is full of moves that big while quiet has never done it. Ranked
+    against each other, loud wins and this instrument would page about high-vol
+    baskets every night regardless of what actually turned. Ranked against their own
+    histories the order inverts, and only quiet clears the decile.
+    """
+    root = _basket_root(tmp_path, {
+        "loud": {f"L{i}": _vol_walk(0.03, 7, 0.005) for i in range(3)},
+        "quiet": {f"Q{i}": _vol_walk(0.002, 7, 0.001) for i in range(3)}})
+    _block, _deg, rows = _run_baskets(root)
+
+    assert rows["loud"]["ew_10d"] > 4 * rows["quiet"]["ew_10d"] > 0, (
+        "fixture must keep loud's move much LARGER or the inversion proves nothing")
+    assert rows["quiet"]["pctile"] > rows["loud"]["pctile"]
+    assert rows["quiet"]["pctile"] >= PMA.BASKET_TOP_DECILE
+    assert rows["loud"]["pctile"] < PMA.BASKET_TOP_DECILE
+
+
+def test_dated_membership_is_point_in_time(tmp_path):
+    """A member removed before the last bar is neither in the EW nor counted as
+    representation — the `[added, removed)` window engine.baskets._ew_level uses."""
+    gone = _bk_days()[-30]
+    specs = {"b": {"A": _pop(), "B": _pop(), "C": _pop(),
+                   "OLD": (_pop(), "2024-01-01", str(gone.date()))}}
+    root = _basket_root(tmp_path, specs, board={"buy": ["OLD"]})
+    _block, _deg, rows = _run_baskets(root)
+    assert rows["b"]["n_members"] == 4
+    assert rows["b"]["n_members_live"] == 3
+    assert rows["b"]["n_members_on_board"] == 0, "a removed member is not on the board"
+    assert rows["b"]["miss"] is True
+
+
+def test_member_coverage_is_counted_and_disclosed(tmp_path):
+    """D12/D13: the basket-turn organ read 1 of 12 gold_miners members and printed a
+    number indistinguishable from a fully-read one. Coverage is a field, not a hope."""
+    specs = {"b": {f"M{i}": _pop() for i in range(4)}}
+    root = _basket_root(tmp_path, specs, skip_store=("M3",))
+    _block, degraded, rows = _run_baskets(root)
+    assert rows["b"]["n_members"] == 4
+    assert rows["b"]["n_members_read"] == 3
+    hit = [d for d in degraded if d["input"] == PMA.BASKET_OHLCV_DIR]
+    assert hit and "b" in hit[0]["reason"], "a partial read must be disclosed"
+
+
+def test_a_shallow_coverage_gap_discloses_but_a_starved_one_pages(tmp_path):
+    """3 of 4 members is a standing fact; 3 of 8 is the D12 failure. An annotation
+    that fires every night for one unfetched member is noise, and noise is how the
+    real 1-of-12 read went unnoticed for a month — so the two get different severities
+    and only the starved one reaches emit_annotations."""
+    shallow = _basket_root(tmp_path / "shallow",
+                           {"b": {f"M{i}": _pop() for i in range(4)}},
+                           skip_store=("M3",))
+    starved = _basket_root(tmp_path / "starved",
+                           {"b": {f"M{i}": _pop() for i in range(8)}},
+                           skip_store=("M3", "M4", "M5", "M6", "M7"))
+
+    _b1, deg_shallow, rows_shallow = _run_baskets(shallow)
+    _b2, deg_starved, rows_starved = _run_baskets(starved)
+
+    assert rows_shallow["b"]["n_members_read"] == 3 and rows_shallow["b"]["n_members"] == 4
+    assert rows_starved["b"]["n_members_read"] == 3 and rows_starved["b"]["n_members"] == 8
+    assert [d["severity"] for d in deg_shallow] == ["structural"]
+    assert [d["severity"] for d in deg_starved] == ["unexpected"]
+    assert str(int(PMA.BASKET_COVERAGE_WARN * 100)) in deg_starved[0]["reason"]
+
+
+def test_too_few_readable_members_is_a_named_null_not_a_number(tmp_path):
+    specs = {"b": {f"M{i}": _pop() for i in range(3)}}
+    root = _basket_root(tmp_path, specs, skip_store=("M1", "M2"))
+    _block, _deg, rows = _run_baskets(root)
+    assert rows["b"]["pctile"] is None and rows["b"]["ew_10d"] is None
+    assert rows["b"]["miss"] is False, "an unmeasurable basket is not a miss"
+    assert str(PMA.BASKET_MIN_MEMBERS) in rows["b"]["null_reason"]
+
+
+def test_thin_history_is_a_named_null_not_a_top_decile(tmp_path):
+    """40 bars is a real 10-day return with 29 observations to rank it against — the
+    exact shape that would otherwise print `pctile 1.0` off a fortnight of data and
+    page as an ignition. Below the floor it is a null with the count in the reason."""
+    root = _basket_root(tmp_path, {"b": {f"M{i}": _pop(40) for i in range(3)}})
+    _block, _deg, rows = _run_baskets(root)
+    assert rows["b"]["ew_10d"] is not None, "the RETURN is computable; the RANK is not"
+    assert rows["b"]["pctile"] is None
+    assert 0 < rows["b"]["pctile_n"] < PMA.BASKET_MIN_HISTORY
+    assert rows["b"]["miss"] is False
+    assert str(PMA.BASKET_MIN_HISTORY) in rows["b"]["null_reason"]
+
+
+def test_block_is_keyed_to_its_own_store_clock(tmp_path):
+    """Calendar-asof trap: the basket block reports the BASKET store's last bar and
+    says so when the breadth caches disagree, rather than inheriting a foreign clock."""
+    root = _basket_root(tmp_path, {"b": {f"M{i}": _pop() for i in range(3)}})
+    degraded: list[dict] = []
+    standouts = json.loads(
+        (root / "site" / "factordata" / "us_standouts.json").read_text())
+    block = PMA.basket_misses(root, standouts, degraded, "2099-01-01")
+    assert block["as_of"] == str(_bk_days()[-1].date()) != "2099-01-01"
+    assert any("price_through" in d["reason"] for d in degraded)
+
+
+def test_unreadable_membership_degrades_with_a_reason(tmp_path):
+    degraded: list[dict] = []
+    block = PMA.basket_misses(tmp_path, {}, degraded)
+    assert block["available"] is False
+    assert block["misses"] == [] and block["tier"] == "ops_telemetry"
+    assert block["null_reason"]
+    assert any(d["input"] == PMA.BASKET_MEMBERSHIP_JSON for d in degraded)
+
+
+def test_basket_miss_annotation_names_the_basket_at_line_start(capsys):
+    doc = _doc()
+    doc["conversion"].update(sighted_n=100, converted_n=40, rate=0.40)
+    doc["summary"].update(top63_never_eligible_n=10, top63_n=150,
+                          top63_never_eligible_pct=0.07)
+    doc["basket_misses"] = {
+        "available": True, "as_of": "2026-07-31",
+        "misses": [{"basket_id": "gold_miners", "ew_10d": 0.081, "pctile": 0.96,
+                    "n_members_live": 12, "n_members_on_board": 0}]}
+    msgs = PMA.emit_annotations(doc)
+    assert len(msgs) == 1 and "gold_miners" in msgs[0]
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("::")]
+    assert lines == [f"::warning title=prophet-miss-audit::{msgs[0]}"]
+
+
+def test_no_basket_annotation_when_every_ignition_was_represented(capsys):
+    doc = _doc()
+    doc["conversion"].update(sighted_n=100, converted_n=40, rate=0.40)
+    doc["summary"].update(top63_never_eligible_n=10, top63_n=150,
+                          top63_never_eligible_pct=0.07)
+    doc["basket_misses"] = {"available": True, "as_of": "2026-07-31", "misses": []}
+    assert PMA.emit_annotations(doc) == []
+    assert [ln for ln in capsys.readouterr().out.splitlines()
+            if ln.startswith("::")] == []
+
+
+def test_forward_log_row_carries_the_basket_headline(tmp_path):
+    doc = _doc()
+    doc["summary"].update(basket_scored_n=47, basket_misses_n=1)
+    doc["basket_misses"] = {"available": True,
+                            "misses": [{"basket_id": "gold_miners"}]}
+    row = PMA.summary_row(doc)
+    assert row["basket_scored_n"] == 47
+    assert row["basket_misses_n"] == 1
+    assert row["basket_misses"] == ["gold_miners"]
+    json.dumps(row, allow_nan=False)
+
+
+def test_forward_log_row_is_null_safe_without_a_basket_block():
+    """A doc predating this layer must still produce a writable row — and an absent
+    block is None, never 0: "we did not measure" is not "nothing was missed"."""
+    row = PMA.summary_row(_doc())
+    assert row["basket_misses_n"] is None and row["basket_scored_n"] is None
+    assert row["basket_misses"] == []
+
+
+def test_basket_layer_writes_nothing(tmp_path):
+    """The layer is a pure read: it must not create or touch one path under data/."""
+    root = _four_worlds(tmp_path)
+    before = sorted(p.relative_to(root) for p in root.rglob("*") if p.is_file())
+    _run_baskets(root)
+    after = sorted(p.relative_to(root) for p in root.rglob("*") if p.is_file())
+    assert before == after
 
 
 # ---------------------------------------------------------------------------

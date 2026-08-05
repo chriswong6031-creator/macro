@@ -398,6 +398,60 @@ def test_production_compact_signal_keeps_private_research_receipt(shadow_store):
     assert stored["gate_weight"] == pytest.approx(0.75)
     assert stored["signal_asof"] == "2026-07-29"
     assert stored["signal_bar_asof"] == "2026-07-28"
+    # a verdict with nothing extra to say still fills gate_reasons — the column is never
+    # emptier than its first-match sibling, so a reader may always split on "|".
+    assert stored["gate_reasons"] == "full production reason"
+
+
+def test_gate_reasons_records_every_blocking_leg_not_just_the_first(shadow_store):
+    """The 002155.SZ defect, pinned at the PIT store.
+
+    ``gate_reason`` is a FIRST-MATCH label: ``_buy_filter`` returns on the bearish-divergence
+    veto before reclaim-and-hold is ever tested, so 湖南黄金 stamped ``veto: bearish divergence``
+    on every board date while ALSO failing the hold — and 575 of 743 vetoed fires (77%) were
+    blocked by another leg anyway (research/cn_prophet_audit/CN_DIVERGENCE_VETO_AUDIT.md).
+    The store must record the whole account, or every consumer inherits the ambiguity."""
+    blocked = "buy blocked by filter: veto: bearish divergence"
+    also = "buy blocked by filter: failed next-bar hold"
+    verdict = {
+        "eligible": False,
+        "tier_cascade": None,
+        "reason": blocked,
+        "reasons": [blocked, also],
+        "state": "short-bias",
+        "weight": 0.0,
+        "provisional": False,
+        "asof": "2026-08-03",
+        "input_asof": "2026-08-03",
+    }
+
+    # 1. the private research receipt is an explicit key ALLOWLIST — a `reasons` missing from
+    #    it degrades the store back to first-match silently, with every other test still green.
+    carrier = _candidate("002155.SZ", eligible=False, tier=None)
+    scored = shadow.china_board_rank.enrich_and_score_rows(
+        [carrier],
+        verdict_by={"002155.SZ": verdict},
+        profile_by={"002155.SZ": carrier["conviction"]},
+        entry_by={"002155.SZ": carrier["entry_signal"]},
+        micro_by={"002155.SZ": carrier["microstructure"]},
+        liquidity_by={"002155.SZ": carrier["liquidity"]},
+        board_asof="2026-08-03",
+    )
+    assert scored[0]["_signal_research"]["reasons"] == [blocked, also]
+    assert scored[0]["_signal_research"]["reason"] == blocked
+
+    # 2. the store writes both columns. A blocked name holds no board lane, so it stamps
+    #    not_raw_eligible — exactly where the full-universe log is supposed to keep it.
+    row = _candidate("002155.SZ", eligible=False, tier=None)
+    row["_signal_research"] = dict(verdict)
+    assert shadow.append_candidates(
+        [row], "2026-08-03", lane="asia", board_lanes=_lane_doc({}),
+    ) == 1
+    stored = pd.read_parquet(shadow._store_path()).iloc[0]
+    assert stored["lane"] == "not_raw_eligible"
+    assert stored["gate_reason"] == blocked, "the first-match label must not change"
+    assert stored["gate_reasons"] == f"{blocked}|{also}"
+    assert stored["gate_reasons"].split("|")[0] == stored["gate_reason"]
 
 
 def test_missing_definition_is_refused_not_relabelled_v2(shadow_store):

@@ -1,13 +1,13 @@
 {
   "schema": "radar_ic.v1",
   "as_of": "2026-08-05",
-  "generated_at": "2026-08-05T08:58:23.863249+00:00",
+  "generated_at": "2026-08-05T16:01:33.922267+00:00",
   "horizon_d": 21,
   "horizons": [
     21,
     63
   ],
-  "n_snapshots": 9158,
+  "n_snapshots": 9159,
   "n_matured": 4011,
   "ic_all": -0.2704,
   "ic_rolling_90": -0.097,
@@ -29,15 +29,15 @@
     }
   },
   "by_state": {
-    "POSITIVE_DIVERGENCE": {
-      "n": 1163,
-      "dir_accuracy": 0.401,
-      "mean_fwd_ret": -0.0238
-    },
     "CONFIRMED_UP": {
       "n": 1135,
       "dir_accuracy": 0.3,
       "mean_fwd_ret": -0.0474
+    },
+    "POSITIVE_DIVERGENCE": {
+      "n": 1163,
+      "dir_accuracy": 0.401,
+      "mean_fwd_ret": -0.0238
     },
     "NEGATIVE_DIVERGENCE": {
       "n": 844,
@@ -86,15 +86,15 @@
         }
       },
       "by_state": {
-        "POSITIVE_DIVERGENCE": {
-          "n": 1163,
-          "dir_accuracy": 0.401,
-          "mean_fwd_ret": -0.0238
-        },
         "CONFIRMED_UP": {
           "n": 1135,
           "dir_accuracy": 0.3,
           "mean_fwd_ret": -0.0474
+        },
+        "POSITIVE_DIVERGENCE": {
+          "n": 1163,
+          "dir_accuracy": 0.401,
+          "mean_fwd_ret": -0.0238
         },
         "NEGATIVE_DIVERGENCE": {
           "n": 844,

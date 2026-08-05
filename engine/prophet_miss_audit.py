@@ -23,6 +23,17 @@ WHAT IT MEASURES (nightly, over the committed S&P-1500 close caches)
   D. SUMMARY — universe n, eligible-today n (both bases), excluder histogram, and the
      runner-sector vs eligible-sector histograms that show the mismatch.
 
+  F. BASKET-GRAIN MISSES — "the gold question", automated. Sections A-C ask whether the
+     engine saw a NAME. This one asks the altitude above it: did a whole THEME run with
+     nobody on the board? For every curated US basket (``data/baskets/membership.json``,
+     point-in-time dated membership) the equal-weight 5d and 10d member returns, that
+     10d return's percentile inside the basket's OWN trailing-252-session 10d history,
+     and how many of its members are on any visible board lane. A basket in its own top
+     decile with ZERO members visible is a named miss row. Motivated by the 2026-08-05
+     missed-ignitions audit: ``b-gold_miners`` printed Trough/BUY in the sector-cycle
+     forward log while the Act board had it on reduce/avoid, and no instrument anywhere
+     counted "this basket ignited and we showed nobody".
+
   E. NAME_SCORE SCORECARD — the forward grade of the per-name POTENTIAL score
      (``engine/name_score_grader.py`` → ``data/name_score/us_calls.parquet``): rank-IC at
      21d/63d with the per-date cross-section behind it, the buy-tier hit rate, and P@k
@@ -130,6 +141,18 @@ STANDOUTS_JSON = "site/factordata/us_standouts.json"
 ROTATION_JSON = "site/marketdata/subsector_rotation.json"
 THEME_PIT_JSONL = "data/themes_heatmap/subsector_perf_history.jsonl"
 
+# Basket-grain layer (section F).
+BASKET_MEMBERSHIP_JSON = "data/baskets/membership.json"
+#: WHICH STORE, AND WHY. The audit's own universe is the three breadth close caches,
+#: and those cannot answer this question: they are the S&P 1500, while the baskets that
+#: ignited in the motivating case are full of names outside it (ASTS, RKLB, LUNR). Of
+#: the 691 currently-live basket members, ``data/baskets/ohlcv`` carries 690 and
+#: ``data/baskets/extras.parquet`` 676 — and the per-ticker store also runs from 2014
+#: rather than 2023, which the trailing-252-session reference window needs. It is also
+#: the store the basket machinery itself reads (``engine.basket_index``), so a basket's
+#: return here and on the baskets page come from the same bars.
+BASKET_OHLCV_DIR = "data/baskets/ohlcv"
+
 ARTIFACT_REL = "data/prophet_miss_audit/latest.json"
 FORWARD_LOG_REL = "data/prophet_miss_audit/forward_log.jsonl"
 
@@ -138,6 +161,29 @@ TOP21_N = 50           # top fast movers by 21-session return
 LOOKBACK = 63          # eligibility window, in sessions
 THEME_TOP_N = 5        # themes graded for representation latency
 STANDOUT_LANES = ("buy", "ran", "leaders")
+
+# --- F. basket-grain misses ---------------------------------------------------
+#: Every lane a member can be VISIBLE on. `featured` is a flag inside `buy`, not a
+#: lane, so it needs no entry: a featured name is a buy row and is already counted.
+#: `laggards` is deliberately absent — it is the board's "these are the weak ones"
+#: shelf, so a name appearing there is not the basket being surfaced as opportunity.
+BASKET_BOARD_LANES = ("buy", "watch", "leaders", "ran")
+BASKET_EW_HORIZONS = (5, 10)     # the two EW member-return windows reported
+BASKET_MISS_HORIZON = 10         # the horizon the top-decile test runs on
+BASKET_HISTORY = 252             # trailing sessions of own-history for the percentile
+BASKET_TOP_DECILE = 0.90         # >= this percentile in own history = "ignited"
+BASKET_MIN_MEMBERS = 3           # below this an EW read is one or two names, not a basket
+#: Minimum 10d observations in the reference window. Well under BASKET_HISTORY so a
+#: basket seeded mid-window still reports, but high enough that "top decile" is not a
+#: statement about eleven overlapping numbers.
+BASKET_MIN_HISTORY = 60
+#: Member-coverage floor below which a basket's read PAGES rather than merely
+#: disclosing (the masterplan's W-B threshold). Above it a shortfall is structural and
+#: sits in `degraded` without an annotation: one delisted-or-unfetched member out of
+#: twelve is a fact worth printing, not an alarm worth firing every night for a year.
+#: Below it the read is the D12 failure — gold_miners scored on 1 of 12 members — and
+#: that must be impossible to miss.
+BASKET_COVERAGE_WARN = 0.60
 
 # annotation thresholds (ops alarms only — never a gate)
 CONVERSION_WARN = 0.05          # sighting -> plan conversion below this warns
@@ -595,6 +641,286 @@ def theme_representation(root: Path, standouts: dict | None, rotation: dict | No
         "standouts_asof": (standouts or {}).get("as_of"),
         "available": True,
         "themes": out_themes,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# F. basket-grain misses — "did a whole theme run with nobody on the board?"
+# --------------------------------------------------------------------------- #
+def basket_close_reader(root: Path = ROOT) -> Callable[[str], "pd.Series | None"]:
+    """A MEMOIZED per-ticker close reader over ``data/baskets/ohlcv``.
+
+    Memoized because basket membership overlaps heavily — AAPL is in mag7, ai_infra and
+    us_sector_tech — so an unmemoized walk would re-read the same parquet several times.
+    Only the ``close`` column is pulled; the OHLCV store carries five.
+    Returns ``None`` for an absent or unreadable ticker: coverage is COUNTED by the
+    caller and disclosed per basket, never silently averaged over.
+    """
+    cache: dict[str, "pd.Series | None"] = {}
+    base = root / BASKET_OHLCV_DIR
+
+    def read(ticker: str) -> "pd.Series | None":
+        if ticker in cache:
+            return cache[ticker]
+        series: "pd.Series | None" = None
+        path = base / f"{ticker}.parquet"
+        if path.exists():
+            try:
+                frame = pd.read_parquet(path, columns=["close"])
+                s = pd.to_numeric(frame["close"], errors="coerce").dropna()
+                s.index = pd.DatetimeIndex(s.index)
+                series = s.sort_index()
+            except Exception:  # noqa: BLE001 — telemetry never takes the lane down
+                series = None
+        cache[ticker] = series
+        return series
+
+    return read
+
+
+def _live_members(members: list[dict], asof: pd.Timestamp) -> list[str]:
+    """Members live at ``asof`` — the point-in-time ``[added, removed)`` window that
+    ``engine.baskets._ew_level`` uses, so this layer and the baskets page agree about
+    who was in the basket on a given day."""
+    out: list[str] = []
+    for m in members or []:
+        ticker = m.get("ticker")
+        if not isinstance(ticker, str) or not ticker:
+            continue
+        added = m.get("added")
+        if added and pd.Timestamp(added) > asof:
+            continue
+        removed = m.get("removed")
+        if removed and pd.Timestamp(removed) <= asof:
+            continue
+        out.append(ticker)
+    return out
+
+
+def basket_ew_level(members: list[dict], close_of: Callable[[str], "pd.Series | None"],
+                    ) -> tuple["pd.Series | None", int, int]:
+    """Equal-weight LEVEL series for one basket → ``(level, n_read, n_members)``.
+
+    Same construction as ``engine.baskets._ew_level``: equal weight over the members
+    LIVE on each day (dated membership, renormalised daily), cumulated from the first
+    day the basket had any. Return-space, so a member joining or leaving rebalances
+    rather than jumping the level.
+
+    ``n_read`` is the coverage receipt. D12/D13 of the missed-ignitions audit is the
+    reason it is returned rather than assumed: the basket-turn organ read 1 of 12
+    gold_miners members and 0 of 15 space_economy members, and printed a number that
+    looked exactly like a fully-read one.
+    """
+    n_members = len({m.get("ticker") for m in (members or []) if m.get("ticker")})
+    series = {}
+    for ticker in {m.get("ticker") for m in (members or []) if m.get("ticker")}:
+        s = close_of(ticker)
+        if s is not None and len(s) > max(BASKET_EW_HORIZONS) + 1:
+            series[ticker] = s
+    if len(series) < BASKET_MIN_MEMBERS:
+        return None, len(series), n_members
+
+    px = pd.DataFrame(series).sort_index()
+    idx = px.index
+    rets = px.pct_change()
+    mask = pd.DataFrame(False, index=idx, columns=list(px.columns))
+    for m in members:
+        ticker = m.get("ticker")
+        if ticker not in mask.columns:
+            continue
+        live = idx >= pd.Timestamp(m["added"]) if m.get("added") else np.ones(len(idx), bool)
+        if m.get("removed"):
+            live = live & (idx < pd.Timestamp(m["removed"]))
+        mask[ticker] = live
+    ew = rets.where(mask).mean(axis=1)
+    first = ew.first_valid_index()
+    if first is None:
+        return None, len(series), n_members
+    level = (1.0 + ew.loc[first:].fillna(0.0)).cumprod()
+    return level, len(series), n_members
+
+
+def _trailing_ew(level: "pd.Series", sessions: int) -> float | None:
+    """The basket's own trailing ``sessions``-bar return off its EW level."""
+    if level is None or len(level) <= sessions:
+        return None
+    try:
+        return float(level.iloc[-1] / level.iloc[-sessions - 1] - 1.0)
+    except (TypeError, ValueError, ZeroDivisionError):
+        return None
+
+
+def own_history_pctile(level: "pd.Series", horizon: int = BASKET_MISS_HORIZON,
+                       window: int = BASKET_HISTORY) -> tuple[float | None, int]:
+    """Today's ``horizon``-bar return as a percentile of the basket's OWN trailing
+    ``window`` sessions of the same measure → ``(pctile, n_observations)``.
+
+    Own-history, never cross-basket: a 10-day move that is huge for defensives is
+    ordinary for quantum names, and ranking the two together would surface the same
+    high-vol baskets every night. Today is INSIDE its own window — the question is "is
+    this one of this basket's biggest 10-day moves", which includes it by construction.
+
+    MID-RANK, not the weak inequality. ``(hist <= today).mean()`` reads 1.00 — a
+    perfect top-decile flag — for a basket whose every 10d return is 0.0, because a
+    dead series ties with itself on every bar. That is the failure mode where a store
+    that stopped updating pages as an ignition. Ties therefore split:
+    ``below + half the ties``, which puts a flat basket at 0.50 and leaves a genuine
+    unique maximum at ~1.00.
+
+    The observations OVERLAP (a 10-day return sampled daily), so ``n`` is not an
+    independent sample count: 252 rows carry roughly 25 non-overlapping windows. That
+    is why this is ops telemetry with a printed percentile and not a p-value.
+    ``(None, n)`` when the window is too thin to rank against.
+    """
+    if level is None or len(level) <= horizon:
+        return None, 0
+    rolling = (level / level.shift(horizon) - 1.0).dropna()
+    hist = rolling.tail(window)
+    if len(hist) < BASKET_MIN_HISTORY:
+        return None, int(len(hist))
+    current = float(rolling.iloc[-1])
+    below = float((hist < current).mean())
+    ties = float((hist == current).mean())
+    return round(below + 0.5 * ties, 4), int(len(hist))
+
+
+def basket_misses(root: Path, standouts: dict | None, degraded: list[dict],
+                  price_through: str | None = None) -> dict:
+    """Section F: every US basket's EW move vs its board representation.
+
+    A basket in its own top decile on 10d with ZERO members on any visible lane is the
+    named miss. BOTH halves are required and each is reported alongside the flag, so a
+    reader can see that a quiet basket with nobody on the board is not a miss and that
+    a running basket with three names on the board is a hit.
+
+    ZERO AUTHORITY. Nothing reads this for rank, gate, size or membership; it is the
+    instrument §8 of the missed-ignitions masterplan grades sector-grain miss latency
+    against. Fail-soft: unreadable membership degrades to an available=False block with
+    the reason named.
+    """
+    null = {"tier": "ops_telemetry", "available": False, "misses": [], "baskets": []}
+    membership = _read_json(root, BASKET_MEMBERSHIP_JSON, degraded,
+                            "basket-grain miss layer unavailable")
+    baskets = (membership or {}).get("baskets")
+    if not isinstance(baskets, dict) or not baskets:
+        return {**null, "null_reason": f"no baskets[] in {BASKET_MEMBERSHIP_JSON}"}
+
+    close_of = basket_close_reader(root)
+    lanes: dict[str, set[str]] = {}
+    for lane in BASKET_BOARD_LANES:
+        rows = (standouts or {}).get(lane) or []
+        lanes[lane] = {r.get("ticker") for r in rows
+                       if isinstance(r, dict) and r.get("ticker")}
+    on_board = set().union(*lanes.values()) if lanes else set()
+
+    rows: list[dict] = []
+    store_last: pd.Timestamp | None = None
+    for basket_id in sorted(baskets):
+        spec = baskets[basket_id] or {}
+        members = spec.get("members") or []
+        level, n_read, n_members = basket_ew_level(members, close_of)
+        asof = level.index[-1] if level is not None and len(level) else None
+        if asof is not None and (store_last is None or asof > store_last):
+            store_last = asof
+        live = _live_members(members, asof) if asof is not None else [
+            m.get("ticker") for m in members if not m.get("removed")]
+        present = sorted({t for t in live if t in on_board})
+        pctile, n_hist = own_history_pctile(level)
+        row = {
+            "basket_id": basket_id,
+            "name": spec.get("name"),
+            "category": spec.get("category"),
+            "as_of": (str(asof.date()) if asof is not None else None),
+            "n_members": n_members,
+            "n_members_live": len(live),
+            "n_members_read": n_read,
+            "n_members_on_board": len(present),
+            "members_on_board": present,
+            "present_counts": {lane: len({t for t in live if t in lane_tickers})
+                               for lane, lane_tickers in lanes.items()},
+            "pctile": pctile,
+            "pctile_n": n_hist,
+            "miss": False,
+        }
+        for horizon in BASKET_EW_HORIZONS:
+            value = _trailing_ew(level, horizon)
+            row[f"ew_{horizon}d"] = (round(value, 6) if value is not None else None)
+        if level is None:
+            row["null_reason"] = (
+                f"fewer than {BASKET_MIN_MEMBERS} members readable in "
+                f"{BASKET_OHLCV_DIR} ({n_read}/{n_members})")
+        elif pctile is None:
+            row["null_reason"] = (
+                f"{n_hist} own-history {BASKET_MISS_HORIZON}d observations, below the "
+                f"{BASKET_MIN_HISTORY} needed to rank against")
+        else:
+            row["miss"] = bool(pctile >= BASKET_TOP_DECILE
+                               and row["n_members_on_board"] == 0)
+        rows.append(row)
+
+    scored = [r for r in rows if r["pctile"] is not None]
+    misses = [r for r in scored if r["miss"]]
+    def _coverage(row: dict) -> float:
+        return (row["n_members_read"] / row["n_members"]) if row["n_members"] else 1.0
+
+    partial = [r for r in rows if r["n_members_read"] < r["n_members"]]
+    starved = sorted(r["basket_id"] for r in partial
+                     if _coverage(r) < BASKET_COVERAGE_WARN)
+    thin = sorted(r["basket_id"] for r in partial
+                  if _coverage(r) >= BASKET_COVERAGE_WARN)
+    if starved:
+        degraded.append({
+            "input": BASKET_OHLCV_DIR, "severity": "unexpected",
+            "reason": f"{len(starved)} basket(s) read below "
+                      f"{BASKET_COVERAGE_WARN:.0%} of their members: "
+                      f"{', '.join(starved[:12])} — an EW level over a minority of a "
+                      f"basket is not that basket's move (the D12 failure)",
+        })
+    if thin:
+        degraded.append({
+            "input": BASKET_OHLCV_DIR, "severity": "structural",
+            "reason": f"{len(thin)} basket(s) missing at least one member close while "
+                      f"still reading at or above {BASKET_COVERAGE_WARN:.0%}: "
+                      f"{', '.join(thin[:12])} — EW read over the members present, "
+                      f"per-basket counts on each row's n_members_read. Disclosed "
+                      f"rather than paged: a single unfetched member is a standing "
+                      f"fact, and an annotation that fires every night is noise",
+        })
+    store_asof = str(store_last.date()) if store_last is not None else None
+    if store_asof and price_through and store_asof != price_through:
+        degraded.append({
+            "input": BASKET_OHLCV_DIR, "severity": "unexpected",
+            "reason": f"basket store last bar {store_asof} != breadth-cache "
+                      f"price_through {price_through} — the basket block is keyed to "
+                      f"its OWN store's last bar, never the other cache's clock",
+        })
+    return {
+        "tier": "ops_telemetry",
+        "authority": "none — measurement only; no rank/gate/size/membership consumer",
+        "available": True,
+        "as_of": store_asof,
+        "standouts_asof": (standouts or {}).get("as_of"),
+        "basis": (
+            f"equal-weight member returns over {BASKET_OHLCV_DIR} with point-in-time "
+            f"dated membership (engine.baskets._ew_level construction); the "
+            f"{BASKET_MISS_HORIZON}d return ranked inside the basket's OWN trailing "
+            f"{BASKET_HISTORY}-session history of the same measure. Overlapping "
+            f"windows — the percentile is a description, not a test."
+        ),
+        "miss_rule": (
+            f"pctile >= {BASKET_TOP_DECILE} AND zero live members on any of "
+            f"{list(BASKET_BOARD_LANES)} (featured is a flag inside buy)"
+        ),
+        "lanes": list(BASKET_BOARD_LANES),
+        "n_baskets": len(rows),
+        "n_scored": len(scored),
+        "n_misses": len(misses),
+        "n_top_decile": sum(1 for r in scored if r["pctile"] >= BASKET_TOP_DECILE),
+        "n_unrepresented": sum(1 for r in scored if r["n_members_on_board"] == 0),
+        "misses": sorted(misses, key=lambda r: -(r["pctile"] or 0.0)),
+        "baskets": sorted(rows, key=lambda r: (r["pctile"] is None,
+                                               -(r["pctile"] or 0.0),
+                                               r["basket_id"])),
     }
 
 
@@ -1362,7 +1688,8 @@ def _runner_rows(px: pd.DataFrame, rets: pd.Series, windows: dict[str, dict],
 def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP21_N,
                 lookback: int = LOOKBACK, with_gate: bool = True,
                 with_cascade_basis: bool = True, with_name_score: bool = True,
-                with_priority_score: bool = True) -> dict:
+                with_priority_score: bool = True,
+                with_baskets: bool = True) -> dict:
     """Compute the full audit document. Pure read: writes nothing."""
     degraded: list[dict] = []
     wide, sector, deg = load_universe(root)
@@ -1403,6 +1730,10 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
     rotation = _read_json(root, ROTATION_JSON, degraded,
                           "theme representation unavailable")
     themes = theme_representation(root, standouts, rotation, degraded)
+    basket_block = (basket_misses(root, standouts, degraded, price_through)
+                    if with_baskets else
+                    {"tier": "ops_telemetry", "available": False, "misses": [],
+                     "baskets": [], "null_reason": "not computed (with_baskets=False)"})
     name_score = (name_score_scorecard(root, degraded) if with_name_score else
                   {"tier": "ops_telemetry", "available": False,
                    "null_reason": "not computed (with_name_score=False)"})
@@ -1424,6 +1755,12 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
         "top21_eligible_today_n": sum(1 for r in fast_rows if r.get("eligible_today")),
         "conversion_rate": conversion["rate"],
         "conversion_n": f"{conversion['converted_n']}/{conversion['sighted_n']}",
+        # Section F headline. `None` (block unavailable) is a different fact from `0`
+        # (every ignited basket had somebody on the board) and stays distinguishable.
+        "basket_misses_n": (basket_block.get("n_misses")
+                            if basket_block.get("available") else None),
+        "basket_scored_n": (basket_block.get("n_scored")
+                            if basket_block.get("available") else None),
     }
 
     doc = {
@@ -1432,6 +1769,11 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
         "tier": "ops_telemetry",
         "authority": "none — measurement only; no rank/gate/size consumer",
         "bases": {
+            "basket_misses": (
+                f"equal-weight member returns over {BASKET_OHLCV_DIR} with point-in-time "
+                f"dated membership — the basket machinery's own store and construction, "
+                f"NOT the breadth caches above (they are S&P-1500 and cannot see the "
+                f"off-index members the ignited baskets are full of)."),
             "runner_eligibility": "engine.confluence_tiers.tier_stream (completed buckets, "
                                   "raw-3D-cross T1 fallback) — last row = eligible_today, "
                                   "tail(63) = days_eligible/first_eligible. One basis for both "
@@ -1464,6 +1806,7 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
             _hist([e["sector"] for e in cascade_elig]) if cascade_elig is not None else None),
         "conversion": conversion,
         "themes": themes,
+        "basket_misses": basket_block,
         "name_score_scorecard": name_score,
         "priority_score_scorecard": priority_score,
         "top63_runners": runner_rows,
@@ -1520,6 +1863,13 @@ def summary_row(doc: dict) -> dict:
         "converted_n": doc["conversion"]["converted_n"],
         "conversion_rate": doc["conversion"]["rate"],
         "excluder_family_hist": doc["top63_excluder_family_hist"],
+        # Section F: the series §8 of the missed-ignitions masterplan grades
+        # sector-grain miss latency against. Names, not just the count — a miss is only
+        # actionable if you can see WHICH basket ran unrepresented.
+        "basket_scored_n": doc["summary"].get("basket_scored_n"),
+        "basket_misses_n": doc["summary"].get("basket_misses_n"),
+        "basket_misses": [r["basket_id"] for r in
+                          ((doc.get("basket_misses") or {}).get("misses") or [])],
         **name_score_row_fields(doc),
         **priority_score_row_fields(doc),
         "degraded_n": len(doc["degraded"]),
@@ -1551,6 +1901,18 @@ def emit_annotations(doc: dict) -> list[str]:
             f"top-63d runners never eligible in {LOOKBACK} sessions ({pct * 100:.1f}%) — "
             f"above {NEVER_ELIGIBLE_WARN * 100:.0f}% (price_through {doc['price_through']})"
         )
+    # Section F: a basket in its own top decile with nobody on the board is the operator's
+    # "gold question" — it fires on the FACT, with no threshold of its own, because one
+    # unrepresented ignition is the whole event this instrument was built to catch.
+    bm = doc.get("basket_misses") or {}
+    if bm.get("available") and bm.get("misses"):
+        named = ", ".join(
+            f"{r['basket_id']} ({r['ew_10d'] * 100:+.1f}% 10d, "
+            f"pctile {r['pctile']:.2f}, {r['n_members_live']} members, 0 on board)"
+            for r in bm["misses"][:5])
+        msgs.append(
+            f"{len(bm['misses'])} basket(s) in their own top decile with ZERO members "
+            f"on any board lane (as of {bm.get('as_of')}): {named}")
     # Only UNEXPECTED degradations page. The known-structural gap (no theme-level PIT rank
     # archive) is disclosed in the artifact and printed below, but a permanently-firing
     # annotation is alarm fatigue, not signal.
@@ -1647,6 +2009,22 @@ def print_summary(doc: dict, *, wrote_artifact: bool, wrote_log: bool,
         for t in doc["themes"]["themes"]:
             print(f"  theme #{t['rank']} {t['theme']}: {t['n_members']} members, "
                   f"on board {t['present_counts']}")
+    bm = doc.get("basket_misses") or {}
+    if bm.get("available"):
+        print(f"  baskets (as of {bm.get('as_of')}): {bm['n_scored']}/{bm['n_baskets']} "
+              f"scored, {bm['n_top_decile']} in own top decile, "
+              f"{bm['n_unrepresented']} with nobody on the board, "
+              f"{bm['n_misses']} MISS(es)")
+        for r in bm["misses"]:
+            print(f"    MISS {r['basket_id']:24s} 10d {r['ew_10d'] * 100:+6.1f}%  "
+                  f"pctile {r['pctile']:.2f}  members {r['n_members_live']}  on board 0")
+        if not bm["misses"]:
+            top = bm["baskets"][0] if bm["baskets"] else None
+            if top and top.get("pctile") is not None:
+                print(f"    no misses — hottest is {top['basket_id']} at pctile "
+                      f"{top['pctile']:.2f} with {top['n_members_on_board']} on the board")
+    elif bm:
+        print(f"  baskets: null — {bm.get('null_reason')}")
     ns = doc.get("name_score_scorecard") or {}
     if ns.get("available"):
         cov = ns.get("forward_store") or {}

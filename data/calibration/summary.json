@@ -139,7 +139,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 72,
-      "open": 73,
+      "open": 76,
       "hit_rate": 0.736,
       "dir_accuracy": 0.417,
       "null_hit_rate": 0.8237,
@@ -175,7 +175,7 @@
       "name": "Demand Chain",
       "slug": "demand_chain",
       "scored": 0,
-      "open": 46,
+      "open": 47,
       "hit_rate": null,
       "dir_accuracy": null,
       "null_hit_rate": null,
@@ -205,15 +205,15 @@
       "name": "Thematic Desk",
       "slug": "thematic_desk",
       "scored": 54,
-      "open": 117,
+      "open": 125,
       "hit_rate": 0.574,
       "dir_accuracy": 0.389,
-      "null_hit_rate": 0.859,
-      "null_dir_rate": 0.5139,
+      "null_hit_rate": 0.8589,
+      "null_dir_rate": 0.5138,
       "p_hit": 1.0,
       "p_hit_holm": 1.0,
-      "p_dir": 0.97626,
-      "p_dir_holm": 0.97626,
+      "p_dir": 0.97624,
+      "p_dir_holm": 0.97624,
       "independent_blocks": 1,
       "placebo_coverage": 1.0,
       "placebo_available": true,
@@ -222,8 +222,8 @@
       "placebo_by_kind": {
         "theme_rel_return": {
           "n": 54,
-          "null_hit_rate": 0.859,
-          "null_dir_rate": 0.5139
+          "null_hit_rate": 0.8589,
+          "null_dir_rate": 0.5138
         }
       },
       "conviction_monotone": null,
@@ -1168,7 +1168,7 @@
       "region": "US",
       "rel_path": "site/factordata/us_board_track.json",
       "board_dates": 17,
-      "graded_rows": 2282,
+      "graded_rows": 2287,
       "h21_hit_rate": 0.4706,
       "h21_n": 34,
       "health": "weak",
@@ -1179,12 +1179,12 @@
       "region": "CN",
       "rel_path": "data/china_standout_track/board.parquet",
       "board_definition": "cn_prophet_v2",
-      "board_dates": 4,
+      "board_dates": 5,
       "graded_rows": 0,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
-      "health_note": "55 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
+      "health_note": "70 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
     }
   ]
 }
