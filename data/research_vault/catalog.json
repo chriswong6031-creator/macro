@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-04T19:40:10.849852+00:00",
-  "count": 754,
+  "generated_at": "2026-08-05T04:30:57.300903+00:00",
+  "count": 769,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -153,6 +153,68 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-r9kpf4inutx-b8356a",
+      "title": "Mexico Firmer Consumer Sentiment and Manufacturing Services PMIs",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:21:48Z",
+      "summary_points": [
+        "**Business Confidence Below Threshold**: IGOEC at 48.2 (17th consecutive month below 50), signaling sustained weakness across manufacturing, construction, commerce, and private services.",
+        "**Margin Compression Risk**: Input price pressures (69.9) remain high versus output prices (52.1), directly compressing corporate margins.",
+        "**Global Business Sentiment Deterioration**: IGOEC index (48-50) below historical average (49.6), indicating broad sector weakening beyond Mexico.",
+        "**Consumer Spending Vulnerability**: Consumer confidence (45.0) remains 3.9pt below cyclical high, below historical average, signaling elevated spending risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pbum7vpkbm0-be6e91",
+      "title": "LATAM Today August 4, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:21:44Z",
+      "summary_points": [
+        "**Brazil Industrial Slump & Carry-Over Risk**: Industrial production fell 1.8% mom sa (vs.",
+        "0.9% consensus), with manufacturing (-1.8%) and mining (-0.6%) weak; 3Q2026 carry-over at -1.5% qoq sa signals persistent near-term weakness.",
+        "**Colombia Inflation & Policy Divergence**: Headline inflation forecast to rise to 6.9% (end-2026), above central bank’s 3.5% target; MPC held rate at 12.0% (3 dissenters for hike) amid election dovish risks and El Niño/FX pressures.",
+        "**Mexico Remittance Flows & FX Pressure**: June remittances at $5.47bn (4.2% yoy), but MXN appreciation caused local remittance decline (5.2% yoy); US immigration policies threaten formal channels, risking FX stability.",
+        "**Inflation Expectations Above Targets**: Median 2026 headline/core inflation expectations at 4.00% (down 20bp/18bp), still above central bank forecasts (3.5%/3.0%), driven by cost-push pressures and unanchored medium-term expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ilfp1vgfgfe-b7f1e0",
+      "title": "Global Markets Analyst 10 Questions on Coordinated Yen Intervention",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:21:42Z",
+      "summary_points": [
+        "**Intervention Scale & Timing**: Japan executed $85bn Yen purchase (July 30–31), largest 2-day operation since 2011; July 30 alone ¥7–8tn (largest single-day), signaling aggressive response to volatility.",
+        "**US Treasury’s Symbolic Role**: Intervention is low-cost market stabilization (not policy shift); Treasury’s involvement minimizes US Treasury volatility via coordination, not signaling domestic policy changes.",
+        "**Fundamental Yen Backdrop**: Coordination shows muted USD/JPY response, reinforcing negative Yen fundamentals; engineering repatriation risks trade-offs with Japanese investors’ foreign allocation.",
+        "**Reserve Capacity Constraints**: Japan’s $980bn USD reserves (90% USD) enable intervention, but recent operations near limits; capacity constrained before selling longer-dated securities (70% cash/short-term cap).",
+        "**US Market Impact Flows**: Japan’s short-term Treasury bill holdings decline during interventions (Exhibit 6), tightening US swap spreads in shorter maturities (Exhibit 8), signaling intervention-driven market pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-v9aboqngsos-359ffd",
       "title": "Euro Area Data Update Strong Registered Employment Growth in Spain",
       "institution": "Goldman Sachs",
@@ -169,6 +231,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-beck6g2umcn-e4dfaa",
+      "title": "Brazil Weaker Than Expected Industrial Activity in June",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:21:34Z",
+      "summary_points": [
+        "**Brazil Industrial Output Miss**: June industrial production fell 1.8% mom sa (vs.",
+        "0.9% consensus), with manufacturing (-1.8% mom sa) and mining (-0.6% mom sa) driving weakness; Q2 IP growth slowed to 0.3% qoq sa (from 1.4% in Q1), signaling persistent contraction.",
+        "**Tight Monetary Policy Headwind**: Persistent tight monetary conditions remain a key headwind, offsetting potential support from fiscal transfers and real wage policies, constraining near-term industrial recovery.",
+        "**Structural Volatility in Recovery**: Post-2020 capacity utilization trends above historical averages but remains volatile, confirming ongoing structural risks in industrial output despite rebounding activity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -252,6 +334,47 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-usfblvoylgt-99356e",
+      "title": "Pearson (PSON.L) Downgrade to Neutral Further outperformance likely requires growth acceleration into 2027",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:21:07Z",
+      "summary_points": [
+        "**Downgrade to Neutral**: Cautious on 6% 2027 growth due to US college enrollment headwinds (lagged 2008 births), PTE market weakness, and subdued Enterprise Solutions growth; valuation at 16x 12m fwd P/E slightly above 10-yr median.",
+        "**Debt & Cash Flow Deterioration**: Net debt/equity rising to 20.2% (16.1%→20.2%) and EV/sales declining (2.3→1.9); net cash flow turns negative (224.0→103.3) despite operational cash flow improvement.",
+        "**Key Flow Risks**: UK study visas 30% below 2022/23 peak (main applicant volumes down 41% yoy); Canadian study permits collapsed 45% from 2023 peak (India-driven), signaling policy tightening.",
+        "**PTE Market Erosion**: PTE website visits declining YoY (Exhibit 5); test volumes fell from 1,231k (2023 peak) to 1,051k (2025), prompting price hikes to offset volume contraction.",
+        "**SOTP Upside Catalyst**: SOTP valuation implies 59% premium to Assessment & Qualifications segment, driving 1,375p target (9% upside) despite 17x P/E vs 10-yr median 16x."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 22,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kvrikhrrti5-c0e920",
+      "title": "Hong Kong Retail sales declined notably in June",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:20:57Z",
+      "summary_points": [
+        "**Retail Sales Value Momentum**: June value fell 2.6% mom (vs.",
+        "+1.2% May), with yoy growth slowing to 4.6% (from 7.9%), signaling deteriorating consumer demand post-seasonal adjustment.",
+        "**Volume-Value Divergence**: Sales volume rose 2.3% yoy (down from 4.8% May) but fell 2.6% mom, indicating weakening demand despite modest annual growth.",
+        "**Sector-Specific Weakness**: Fuels sales 55% below 2018 levels (Dec 2018=100), department stores showed steepest underperformance, highlighting material portfolio risk in retail-heavy segments."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-bsl15sdecna-5116f0",
       "title": "Baker Hughes Co. (BKR) See Long Term Growth Driven by Diversified OFSE Exposure and Increasing IET Order Growth",
       "institution": "Goldman Sachs",
@@ -269,6 +392,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fubicnkvwul-953b5e",
+      "title": "Ukraine GDP Growth Rebounds in Q2, Below Official Projections",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:20:42Z",
+      "summary_points": [
+        "**Q2 GDP Rebound with Vulnerabilities**: Real GDP growth +0.6% YoY (vs.",
+        "forecast +0.8%), driven by energy system improvements and government spending, but threatened by Black Sea shipping disruptions and Russian military escalation.",
+        "**Growth Forecast Sensitivity to War Duration**: Baseline growth hinges on peace deal credibility; 5-6% peace dividend (3% trend) vs.",
+        "upside 8-10% dividend (5% trend), with risks favoring delayed resolution as conflict persists.",
+        "**2026 Growth Slowdown Drivers**: Projected +0.5% growth (down from 2025’s +1.8%), driven by tight labor market, Russian attacks on energy/civilian infrastructure, and currency depreciation, with Black Sea conflict escalation directly threatening H2 2026."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -315,6 +459,46 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-aoqpomr9fsb-1fadd8",
+      "title": "Global daily financial fort sumter",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T14:02:56Z",
+      "summary_points": [
+        "**Geopolitical-Monetary Shift**: US-Japan Yen intervention signals emerging monetary order amid neo-mercantilism (China), QE-driven devaluations, and \"you scratch my back\" dollar swaps (e.g., UAE, Israel), reshaping global FX dynamics.",
+        "**Critical Data Catalysts**: Australia household spending/ANZ job ads, US trade/JOLTS/factory orders, Spain employment, Italy retail sales, and Canada manufacturing PMI drive near-term market volatility and portfolio positioning.",
+        "**Risk Factor Exposure**: Oil volatility (Brent -7%, gasoil -8.5%) amid energy disruptions and US-China strategic competition in Middle East heighten portfolio risk from supply chain shocks and geopolitical escalation.",
+        "**Specialized Risk Coverage**: Agri Commodity (geopolitical supply risks) and Energy (policy-driven flows) segments with dedicated leadership critical for assessing portfolio exposure to supply chain disruptions and policy shifts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-r66qacfhlvs-6ab08e",
+      "title": "SLOOS Lending Standards Stable to Modestly NCO Rates",
+      "institution": "Jefferies",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T13:49:56Z",
+      "summary_points": [
+        "**C&I Demand Surge**: Large/mid firm net demand accelerated to 16.1% (vs 4.8% prior), ending 6 quarters of tightening; signals improving corporate credit environment and potential loan growth rebound.",
+        "**CRE Divergence**: CRE lending standards eased modestly while demand weakened (net 4.3% weaker), highlighting sector-specific stress despite reduced bank caution; historical tightness persists.",
+        "**Recession Correlation**: C&I demand and CRE underwriting terms deteriorate sharply during recessions (red bars spiking), with CRE demand dropping 17% and loan growth turning negative—critical cyclical risk for credit portfolios.",
+        "**NDFI Tightness**: NDFI lending standards at tightest historical levels (2023-present), signaling persistent credit constraints for non-financial firms despite easing in C&I/CRE."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-0wdrkyfsdy6-c306e0",
       "title": "China Mobile Remains Committed",
       "institution": "Jefferies",
@@ -355,6 +539,68 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-aezsr9qjfxe-c65fac",
+      "title": "Daikin Industries (6367)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T13:46:27Z",
+      "summary_points": [
+        "**US & Europe Competitive Erosion**: Chinese players gaining market share in European residential AC (Southern/Central Europe) and US commercial defense weakening, driving 5-6% OP estimate cut; DNA residential mix deterioration (volume +10%, price +2%, mix -10%) contrasts with competitors' mid-single-digit growth.",
+        "**Q1 Earnings Miss & Structural Pressures**: 1Q OP (¥130.6bn) below SmartEstimate (¥126.2bn) due to US mix deterioration, European residential competition, and Chinese market share gains; compounded by tariff refund timing and higher raw material costs.",
+        "**Downgraded Valuation & Critical Risks**: Target price cut to ¥24,000 (from ¥25,000) with Neutral rating; sector-relative discount widened to -10% due to deteriorating competitive environment; key risks: NA strategy outcome, Europe recovery, China growth outlook.",
+        "**US Recovery as Forward Driver**: Daikin’s ability to defend commercial AC market share and US recovery remain critical near-term catalysts despite current competitive headwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4x2ag34ehj1-6b1a33",
+      "title": "ExxonMobil Holdings (XOM) Modestly Raising Target and See Differentiated Asset Base Execution",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T13:46:17Z",
+      "summary_points": [
+        "**Valuation vs Peers**: Neutral rating with $168 target (11% upside) but expensive valuation (6% FCF yield vs CVX’s 8%), driven by record diesel volumes, Permian production (1.8 MBOE/d), Guyana output (~900kbd), and $23.6bn cash flow.",
+        "**Guyana FCF Catalyst**: Guyana delivered ~900kbd gross production; Longtail FSO on-track with industry-leading costs, accelerating capital recovery (NPV up).",
+        "Management expects FCF to double by 2030 vs 2025, leveraging AI/tech to unlock acreage.",
+        "**Geopolitical Risk**: Strait of Hormuz closure risk could reduce regional production by ~750kbd by 2025, tightening refining margins and driving demand for high-grade products amid Middle East supply shortfalls.",
+        "**Cash Flow Surge**: Free cash flow per share surged to $11.60 (12/26E) from $3.45 (12/25), with $23.6bn cash flow and $17bn FCF, enabling $7bn debt reduction and $27-29bn capital spend (2026)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-q6ewhi7b9vd-9312ff",
+      "title": "Shoals Technologies (SHLS) First Take 2Q26 beat with in line 3Q26 guidance",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T13:46:00Z",
+      "summary_points": [
+        "**Q2 beat & guidance reaffirmed**: Q2 2026 results exceeded consensus (revenue $163mn vs.",
+        "$157mn, adj.",
+        "EBITDA $32mn vs.",
+        "$31mn, EPS $0.12 vs.",
+        "$0.10); 2026 revenue ($600mn-$640mn) and adj."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-4jzmtmz8qg8-bb5b3f",
       "title": "TransDigm Group (TDG) F3Q26 First Take aftermarket acceleration, margin beat, doing deals, guidance raised",
       "institution": "Goldman Sachs",
@@ -371,6 +617,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xngdai6vjvt-242bc6",
+      "title": "NRG Energy Inc. (NRG) First Take EBITDA roughly in line GS consensus, with 1.2 GW data center opportunity announced",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T13:45:46Z",
+      "summary_points": [
+        "**Texas Execution Gap**: Texas segment underperformed (EBITDA $381 vs $499 est) amid higher costs, creating regional risk; offset by East/West/Vivint outperformance, highlighting operational vulnerability.",
+        "**Data Center Growth Catalyst**: 1.2 GW Texas CCGT facility (2.4 GW expansion potential) and $1.2B CFC contract (2030) with BYOP opportunity (5.4 GW through 2032) signal scalable revenue upside.",
+        "**Valuation & Key Risks**: Buy rating ($184 target, 32.9% upside) on 9.0x EV/EBITDA/8.5% FCF yield; critical risks include AI/data center headline volatility, lower power prices, and PJM capacity auction uncertainty."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
@@ -457,6 +722,23 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-tmwrqwlc5ae-3334ac",
+      "title": "GS MORNING 1 JPY and Intervention Call Takeaways 2 FX Correlation Themes 3 Jan Hatzius’ Latest 4 Weekend Macro Call Key Quotes and 5 China Energy Deman",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T10:38:27Z",
+      "summary_points": [
+        "**JPY Intervention Scale**: $100-110bn over 3 days (vs prior $25-30bn), US-Japan coordination targeting USDJPY <158 (200-day MA), short-term cap at 158.50 - **BOJ Policy Shift Expectation**: Market prices higher likelihood of BOJ behavioral shift (out-hiking Fed required for JPY reversal), with inflation forecast unmet driving dovish near-term stance - **Fed Communication Risk**: Warsh’s reduced transparency strategy causes markets to price *expected* (not optimal) policy, increasing volatility and delaying real economy impact - **Swaption Trade Opportunity**: Buy 6m EURUSD 6.5% Vol Swaption Call at 0.45% cost; implied volatility near multi-year lows offers cheap convexity amid underpriced vol repricing risk"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-c6ihzscvcr3-118996",
       "title": "USA GS Economic Indicators Update",
       "institution": "Goldman Sachs",
@@ -512,6 +794,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hhhs6vfpxat-bd552b",
+      "title": "Sportradar Group (SRAD) Q2'26 Review Near Term Headwinds Weigh on Results & Guidance",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-04T10:37:50Z",
+      "summary_points": [
+        "**Near-Term Performance Deterioration**: Q2 revenue/EBITDA misses due to slower US OSB growth, FX headwinds, and 30% YoY sports rights cost surge; 2026 revenue guidance cut to €1,518-1,553m (vs €1,560m) with EBITDA margin compression (-2.9pp).",
+        "**Long-Term Catalysts**: Prediction markets (Kalshi/PolyMarket) scaling from 2H26 to drive revenue upside in 2027+; AI productivity gains and fixed sports rights costs to enable sustained operating leverage.",
+        "**Fundamental Profitability Erosion**: Q3'26-2028 revenue forecasts decline -2% to -7% YoY, EBITDA margins compressing (-2.9pp in 2026), signaling structural profitability deterioration.",
+        "**Key Risk Drivers**: Regulatory shifts in online gaming (consumer adoption/legislation), rights costs inflation (leagues/competitors), and exclusivity on data rights materially threatening gross margins and revenue trajectory.",
+        "**Valuation & Guidance Downside**: Price target slashed to $14.50 (from $16.50) via lower EV/IFRS EBITDA (9.5x vs 10.0x), reflecting near-term earnings pressure and reduced growth visibility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
