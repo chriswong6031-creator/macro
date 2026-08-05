@@ -658,11 +658,16 @@ def grade_instrument(
         bench_ret = _return_between_dates(bench_frame, frame.index[a], frame.index[end])
         out["excess"][key] = None if bench_ret is None else round(ret - bench_ret, 6)
 
-    # mark-to-latest interim — always available once at least one session elapsed
+    # mark-to-latest interim — available once at least one session has elapsed
     last = len(frame) - 1
     if interim_cutoff:
         capped = last_position_on_or_before(frame.index, interim_cutoff)
-        last = min(last, capped) if capped is not None else last
+        # capped is None only when the cutoff predates the whole series, i.e. the
+        # event window closed before this instrument has any data.  Falling back
+        # to the uncapped last bar there would print a mark-to-TODAY number on a
+        # bounded card — the exact defect the cap exists to prevent — so collapse
+        # the window to nothing and report no interim instead.
+        last = min(last, capped) if capped is not None else a
         out["interim_basis"] = f"capped at {interim_cutoff} (event period close)"
     if last > a:
         interim = _ratio_mean(frame, a, last)

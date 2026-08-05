@@ -349,6 +349,20 @@ class TestReturnAndExcessMath:
                                        str(_DATES[0].date()), [21])
         assert uncapped["interim"] == pytest.approx(1.00)
 
+    def test_cutoff_before_the_series_reports_no_interim_not_a_todays_mark(self, fake_store):
+        """The degenerate cap must fail closed.
+
+        If the event window closed before this instrument has any data, falling
+        back to the last bar would print a mark-to-today number on a bounded
+        card — the very defect the cap exists to prevent.
+        """
+        fake_store["AAA.SS"] = _frame(_flat_then_step(400, 100.0, 21, 2.00))
+        out = mt.grade_instrument({"series": "AAA.SS", "benchmark": "absolute"},
+                                  str(_DATES[0].date()), [21],
+                                  interim_cutoff="1999-01-01")
+        assert out["interim"] is None
+        assert out["interim_date"] is None
+
     def test_retro_thesis_caps_interim_but_forward_marks_to_latest(self, tmp_path, fake_store):
         closes = [100.0] * 400
         closes[21:] = [110.0] * (400 - 21)
