@@ -36,6 +36,19 @@ from scripts.compile_capital_structure_document_terms import (
     DOCUMENT_TERM_COLUMNS,
     compile_from_disk,
 )
+from engine.capital_structure.source_ledger_io import (
+    encode_source_ledger,
+    read_source_ledger,
+    source_ledger_path,
+)
+
+
+def _write_ledger(path, records):
+    """Write a source-manifest ledger fixture, bypassing the validating writer.
+
+    Fixtures deliberately include ledgers the identity law rejects.
+    """
+    path.write_bytes(encode_source_ledger(list(records)))
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -1508,7 +1521,7 @@ def test_re_signed_manifest_cannot_detach_its_root_span_from_retained_bytes():
 def test_disk_compiler_requires_matching_store_namespace_and_writes_canonical_ledger(tmp_path):
     raw = FIXTURE.read_bytes()
     manifest = _manifest(raw)
-    pd.DataFrame([manifest]).to_parquet(tmp_path / "source_manifest.parquet", index=False)
+    _write_ledger(source_ledger_path(tmp_path), [manifest])
 
     class Store:
         store_id = "r2_shared"
@@ -1557,7 +1570,7 @@ def test_disk_compiler_resolves_mixed_manifest_namespaces_independently(tmp_path
     }
     research["storage"]["store_id"] = "r2_research"
     research["manifest_id"] = manifest_id_for(research)
-    pd.DataFrame([shared, research]).to_parquet(tmp_path / "source_manifest.parquet", index=False)
+    _write_ledger(source_ledger_path(tmp_path), [shared, research])
 
     class Store:
         def __init__(self, store_id: str):
