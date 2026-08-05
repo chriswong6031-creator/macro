@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T06:11:39.198238+00:00",
-  "count": 784,
+  "generated_at": "2026-08-05T07:12:17.090870+00:00",
+  "count": 787,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -85,6 +85,45 @@
         "10% historical premium) with trade barriers ensuring sustained earnings; reiterated Buy with 16-20% FCFF growth (2027-28) and 3.9-3.3x EV/EBITDA.",
         "**Valuation Upside & Key Risks**: Goldman Sachs sets $59.00 price target (17.2% upside from $50.34) but highlights risks: USMCA uncertainties slowing Mexico growth, raw material cost surges, and operational risks (Usiminas competition, Pesquiera capex, CSN litigation).",
         "**Price Target Divergence & Flow Catalyst**: $59 target significantly above current price ($44.78), signaling strong analyst bullishness; active coverage (\"Covered by Marco Fid\") indicates institutional flow potential amid historical target premium."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wr1qaymrtct-9b882e",
+      "title": "NRG Energy Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:21:39Z",
+      "summary_points": [
+        "**Texas Grid Directive Alignment**: NRG’s BYOP/BTM model directly addresses Governor Abbott’s grid reliability directive (474 GW peak demand, 90% data centers), reducing interconnection risks and favoring self-generation projects, with late-2029 COD and island mode flexibility navigating audits.",
+        "**Robust Financials & Cash Flow**: Projected 2028 EBITDA of $6,427M and $4,260M operating cash flow signal strong profitability and operational resilience, supporting capital allocation strategy amid Texas regulatory headwinds.",
+        "**Valuation Upside & Reaffirmed Guidance**: Buy rating with $169 target (46% upside), driven by revised 8.75x EV/EBITDA (down from 9.0x), while management reaffirms 2026 guidance despite Texas softness, funded via $721M Texas CCGT allocation (cumulative $0.8B by 2026).",
+        "**Data Center Opportunity & Expansion**: 1.2GW plant with hyperscaler (late 2029 COD, 12–15% IRR) and 2.4GW expansion potential, leveraging regulatory alignment to secure financial commitments despite hurdles, positioning for AI-driven demand."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jl2obi1abfy-1bc40a",
+      "title": "Rockwell Automation Inc. (ROK) Raising estimates on improving growth outlook",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:23Z",
+      "summary_points": [
+        "**ROK Estimate Revision & Growth Outlook**: Revised FY26 organic sales guidance to +7.5%–9.5% (from +5%–9%) and raised FY26–28 EPS to $13.30/$14.90/$16.60, with 12-month price target lifted to $510 (+14.5% upside).",
+        "**Strong EBITDA Growth & Margin Expansion**: EBITDA growth accelerated to 26.3% YoY (9/26 vs 6.8% 9/25), EBIT margin improved to 22.7% (9/28E), reflecting operational efficiency and pricing power in industrial automation.",
+        "**ROK Key Risks**: Upside drivers include accelerating orders, margin expansion, and M&A; downside risks involve muted order momentum, softening price realization, and slower internal margin progress."
       ],
       "tags": [],
       "tickers": [],
@@ -237,6 +276,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yakwqoiblxh-84d4c9",
+      "title": "US municipal bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:18Z",
+      "summary_points": [
+        "**US Munis: Yield Spread & Strategic Shift**: IG munis outperform Treasuries with tax-equivalent yield at 6.7% (83rd/80th percentile), strategic shift to 5-15yr duration (effective 6.5 yrs) amid elevated Treasury yields and geopolitical risks.",
+        "**Upside Drivers**: Declining Treasury yields and sustained fund inflows (mutual/ETF) support munis, with strong credit quality (upgrades outpacing downgrades).",
+        "**Downside Risks**: Sharp Treasury/muni yield increases or inflation reacceleration weaken returns; sustained fund outflows pressure prices."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
