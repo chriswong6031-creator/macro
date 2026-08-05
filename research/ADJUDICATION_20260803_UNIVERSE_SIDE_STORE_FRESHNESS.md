@@ -135,12 +135,17 @@ names — membership is intact; the provider went silent per-symbol.
 - **No data/ writes, no membership edits, no cache pruning, no re-sourcing.**
 - **Chipped, out of scope:** (1) `data/stocks` collector retention fetch
   (QCOM/HOOD/MRVL/CVNA/HON/WDC/SATS still stale at HEAD — the load-bearing
-  upstream defect named by #4441 §3, still unbuilt); (2) provider-side
-  symbol refusals for live names (CTRA, TPH, FI, MMC, K — likely yfinance
-  version/symbol-mapping; fixing it heals the demotions this PR discloses);
-  (3) the ~19 other breadth-cache readers (factor panels, sector map, chart
-  data, …) that read frozen columns with no freshness gate — same class,
-  separate program.
+  upstream defect named by #4441 §3, still unbuilt); (2) symbol-level
+  resolution for the refused names — #4622 (open) established these are often
+  **retired-symbol renames** (FI→FISV, MMC→MRSH; K = Kellanova delisted via the
+  Mars close): CTRA and TPH must be resolved against the NASDAQ symbol
+  directory + OpenFIGI CUSIP per the #4622 protocol (a rename is a KEY
+  MIGRATION, never an in-place refetch) — until resolved, this PR's demotion
+  keeps them honest; page copy is deliberately cause-neutral ("no new data
+  since X") because stale-vs-delisted-vs-renamed is NOT established per name
+  (#4616 law: delisted is not stale); (3) the ~19 other breadth-cache readers
+  (factor panels, sector map, chart data, …) that read frozen columns with no
+  freshness gate — same class, separate program.
 
 ## §5. Receipt appendix
 
