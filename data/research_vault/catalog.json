@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T11:45:23.812095+00:00",
-  "count": 800,
+  "generated_at": "2026-08-05T12:00:37.031241+00:00",
+  "count": 801,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -662,6 +662,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-t4gxmrvoaq4-f83b28",
+      "title": "Market Update US, Europe & Asia",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:43:27Z",
+      "summary_points": [
+        "**US Market Resilience Amid Geopolitical Tension**: Tech (Mag 7) drove US equities (Dow +1.32%, Nasdaq +2.13%) despite Iran conflict and Fed rate concerns; gold surged (+8.18) as safe haven, oil fell (-4.33) on demand fears.",
+        "**AstraZeneca-Bristol Myers Merger Risk**: Sell-side skepticism over revenue/LOE challenges elevates risk for AstraZeneca amid near-$400B pharma deal, creating sector volatility.",
+        "**US-Japan Yen Intervention**: Joint US-Japan action to support yen (JGB yields 3-week highs, Nikkei down) amid Iran conflict; speculative net yen shorts near 2004 highs signals temporary intervention risk.",
+        "**Fixed Income Tightening**: 2s10s spread at 43 bps (tightening), US 2y yield at 4.25%, 5y at 4.40, amid M&A volatility (AZN/BMY, LINTH/Curium) adding short-term risk.",
+        "**UK Labor Market Weakness**: Job postings down 11% since 2026, vacancies lowest since 2021, despite housing stocks up; AI-driven hiring shifts create macro uncertainty."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
