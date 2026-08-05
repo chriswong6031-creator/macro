@@ -339,6 +339,33 @@ jobs:
         # Any source-bundle, ledger, or generation-receipt integrity failure blocks
         # the checkpoint; a partial capital-structure generation is never committed.
         run: python -m scripts.compile_capital_structure_events
+      # Diagnostics only — changes NO behavior. When the compiler above fails, the
+      # ledger it rejected is the one artifact that identifies WHY, and today it is
+      # unrecoverable: the failure skips every later step, so the post-collect tree
+      # is never committed, and the next job's actions/checkout deletes it. That is
+      # exactly how the 2026-08-05 evidence was lost (run 30960328285:
+      # ManifestIdentityError on source ledger row 0, tree wiped before anyone could
+      # copy it, and the drift CANNOT be reproduced locally — without the R2 secrets
+      # every document retrieval defers with "content-addressed source store
+      # unavailable", so no manifest is ever appended and the ledger never moves).
+      # `if: failure()` so it runs precisely when there is something to keep.
+      # BOTH encodings are listed on purpose: #4600 moves this ledger from
+      # source_manifest.parquet to source_manifest.jsonl (that is the fix for the
+      # drift above). Naming only one would make this capture silently upload
+      # nothing the moment the other lands — `if-no-files-found: warn` would not
+      # even go red about it. Keep both names until the parquet copy is gone.
+      # actions/upload-artifact v4.6.2
+      - name: capture the rejected capital-structure ledger (diagnostics; failure only)
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: capital-structure-ledger-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            data/capital_structure/source_manifest.jsonl
+            data/capital_structure/source_manifest.parquet
+            data/capital_structure/telemetry.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: compile capital-structure direct document terms (SEC-network-free, context-only)
         # The fee-table compiler reads only source-manifest-addressed complete
         # submissions through their exact R2 namespace. The collector's source-store
