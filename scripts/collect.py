@@ -14,13 +14,14 @@ import logging
 import os
 import sys
 import time
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from datetime import datetime, timezone
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent.parent))
 
-from collectors.base import run_adapter, update_breaker  # noqa: E402
+from collectors.base import FetchResult, run_adapter, update_breaker  # noqa: E402
 from lib import config, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -108,7 +109,19 @@ def _run_one(key: str, cls, full_history: bool):
         log.error("init %s failed: %s", key, e)
         return None
     t0 = time.perf_counter()
-    res = run_adapter(adapter, full_history=full_history)
+    try:
+        res = run_adapter(adapter, full_history=full_history)
+    except Exception as e:  # noqa: BLE001 — degrade, never crash the pass
+        # run_adapter's internal except is the per-source boundary, but an
+        # exception can still ESCAPE it: its pre-try attribute reads
+        # (adapter.stale_after_days), or a future gap in the handler itself —
+        # the 2026-08-02/03 shape (#4534), where one duck-typing miss killed
+        # the whole collect job and the night's "commit data" step with it.
+        # This net makes _run_one the categorical boundary: any escape becomes
+        # a normal per-source 'failed' (breaker strike, annotated, night kept).
+        log.error("runner crashed on %s (degraded to failed): %s\n%s",
+                  key, e, traceback.format_exc(limit=3))
+        res = FetchResult(key, "failed", error=f"runner: {type(e).__name__}: {e}")
     dt = time.perf_counter() - t0
     res.source = key
     log.info("%s -> %s (%d rows, last %s) [%.1fs]%s", key, res.status, res.rows,
