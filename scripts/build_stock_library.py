@@ -38,6 +38,7 @@ from engine.setups import (  # noqa: E402
 from engine import stock_score  # noqa: E402
 from engine import name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score, edge-blended
 from engine import name_score_grader  # noqa: E402  — forward-grades the POTENTIAL score
+from engine.name_score_grader import _MAX_BAR_LAG_DAYS  # noqa: E402  — single staleness law (R1)
 from engine import entry_signal  # noqa: E402
 from engine import risk_sizing  # noqa: E402 — vol-managed inverse-vol sizing (the validated Sharpe lever)
 from engine import dispersion  # noqa: E402 — cross-sectional dispersion regime (selection-gross dial)
@@ -384,6 +385,84 @@ def _collect_potential_calls(to_write) -> list[dict]:
             calls.append({**_pot["call"], "level": (_rec.get("tech") or {}).get("price"),
                           "bar_asof": _rec.get("asof")})
     return calls
+
+
+_FEED_DEMOTION_BREAKER = 0.20  # R2: >20% of full recs demoting reads as a collector
+# outage, not per-name staleness — the gate disarms rather than blank most of the site.
+
+
+def _feed_freshness(recs) -> tuple[str | None, dict[str, int], int]:
+    """Scan-side freshness read over the raw rec list, BEFORE any board/profile
+    admission (research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_FRESHNESS.md
+    R1/R2). Considers ONLY full recs (rec truthy, `not rec.get("limited")`) — a
+    LIMITED record carries no comparable asof depth and is exempt (R1 invariant
+    I4). `lib_asof` is the max parseable `asof` among those full recs — the
+    library's own tip, self-relative so no wall-clock/calendar dependency.
+
+    A rec whose `asof` cannot be parsed is fail-open (never demoted) and counted
+    in `n_dark` (CSP-R1 — an unusable stamp must never silently darken a name).
+    A rec demotes iff strictly more than `_MAX_BAR_LAG_DAYS` calendar days behind
+    `lib_asof` — the SAME law the ledger admission gate (name_score_grader)
+    already enforces.
+
+    CIRCUIT BREAKER (R2): if the demotion set would exceed
+    `_FEED_DEMOTION_BREAKER` (20%) of full recs, the gate DISARMS for this run —
+    an empty demotion map is returned and this function prints the loud
+    ::warning itself (so a direct caller/test sees it without needing main()'s
+    plumbing); a universe-wide freeze reads as a collector outage, and blanking
+    every board would itself be fail-dark (CSP-R1).
+
+    Returns (lib_asof as an ISO date string or None when no full rec has a
+    parseable asof, {ticker: behind_days} for the (possibly disarmed) demotion
+    set, n_dark)."""
+    full = [r for r in recs if r and not r.get("limited")]
+    parsed: dict[str, pd.Timestamp] = {}
+    n_dark = 0
+    for r in full:
+        tk = r.get("ticker")
+        if not tk:
+            continue
+        ts = None
+        try:
+            ts = pd.Timestamp(r.get("asof"))
+            if pd.isna(ts):
+                ts = None
+        except (TypeError, ValueError):
+            ts = None
+        if ts is None:
+            n_dark += 1
+        else:
+            parsed[tk] = ts
+    if not parsed:
+        return None, {}, n_dark
+    lib_ts = max(parsed.values())
+    lib_asof = str(lib_ts.date())
+    demoted = {tk: int((lib_ts - ts).days) for tk, ts in parsed.items()
+               if (lib_ts - ts).days > _MAX_BAR_LAG_DAYS}
+    if full and (len(demoted) / len(full)) > _FEED_DEMOTION_BREAKER:
+        frac = len(demoted) / len(full)
+        print(f"::warning title=stock-library freshness gate disarmed::demotion set "
+              f"{len(demoted)}/{len(full)} ({frac:.0%}) exceeds the "
+              f"{_FEED_DEMOTION_BREAKER:.0%} circuit breaker — a universe-wide freeze "
+              "reads as a collector outage, not per-name staleness; gate DISARMED for "
+              "this run, no demotions applied", flush=True)
+        return lib_asof, {}, n_dark
+    return lib_asof, demoted, n_dark
+
+
+def _apply_feed_demotion(rec: dict, behind_days: int, lib_asof: str) -> None:
+    """Strip scoring authority from a full rec whose feed is frozen (R1): the page
+    and JSON keep the record (search + deep links stay alive — deleting a name
+    would be fail-dark, CSP-R1), disclosed via `feed_stale`, but
+    `conviction.potential` is removed so `_collect_potential_calls` emits no call
+    for this name (the grader's own bar_asof gate is the second line of
+    defense). The caller additionally excludes the ticker from
+    `profiles`/`entry_sig`/`risk_sig` so it drops out of every board/standout/
+    percentile cohort (I2) — this helper only touches the rec itself (I1)."""
+    rec["feed_stale"] = {"behind_days": int(behind_days), "lib_asof": lib_asof}
+    conv = rec.get("conviction")
+    if isinstance(conv, dict):
+        conv.pop("potential", None)
 
 
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
@@ -2527,6 +2606,28 @@ def main() -> int:
         recs = [_one_task(item) for item in uni]
         log.info("stock library: analysed %d names in %.0fs (serial)", len(uni), time.time() - t0)
 
+    # ---- feed-freshness scan (R1/R2, research/ADJUDICATION_20260803_UNIVERSE_SIDE_STORE_FRESHNESS.md)
+    # A full rec whose own asof lags the library's max tip by >_MAX_BAR_LAG_DAYS is a name
+    # scored off a dead side-store feed (CTRA/TPH/TCNNF/CWEN-A class). Demotion is applied
+    # per-rec below, right where profiles/entry_sig/risk_sig are populated. Bare prints, NOT
+    # logger calls — see the annotation-line-start law at the top of this module's imports.
+    _lib_asof, _demote_map, _n_dark = _feed_freshness(recs)
+    print(f"::notice title=stock-library feed-freshness::lib_asof={_lib_asof} "
+          f"demoted={len(_demote_map)} dark={_n_dark}", flush=True)
+    if _demote_map:
+        _tip_by = {r.get("ticker"): r.get("asof") for r in recs if r}
+        _demoted_sorted = sorted(_demote_map)
+        _shown = [f"{t}({_tip_by.get(t)})" for t in _demoted_sorted[:15]]
+        _more = len(_demoted_sorted) - len(_shown)
+        print(f"::warning title=stock-library frozen feeds::{len(_demote_map)} name(s) "
+              f"frozen >{_MAX_BAR_LAG_DAYS}d behind {_lib_asof}, demoted from scoring "
+              f"(page kept): {', '.join(_shown)}"
+              f"{f', +{_more} more' if _more > 0 else ''}", flush=True)
+    if _n_dark:
+        print(f"::warning title=stock-library freshness gate DARK::{_n_dark} full rec(s) "
+              "carry an unparseable/unusable asof — fail-open (not demoted); the "
+              "feed-freshness gate cannot see them", flush=True)
+
     # ---- flow_score pre-loop load (FS-4 Lane C, schema flow_score.stock/v1) --------
     # Loads ledger + scores once; looked up per-ticker inside the main rec loop below.
     # OMITTED entirely (block never written) when:
@@ -2862,11 +2963,24 @@ def main() -> int:
                 regime_stress=float((prof.get("risk") or {}).get("macro_stress") or 0.0))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("US potential score for %s failed (%s)", ticker, e)
-        profiles[ticker] = prof
-        if rec.get("entry_signal"):
-            entry_sig[ticker] = rec["entry_signal"]    # attached to standout rows below
-        if rec.get("risk_sizing"):
-            risk_sig[ticker] = rec["risk_sizing"]      # attached to standout rows below
+        # ---- feed-staleness demotion (R1) — strip scoring authority, keep the page ----
+        # A full rec frozen >_MAX_BAR_LAG_DAYS behind the library's own tip (side-store
+        # collector silence — CTRA/TPH/TCNNF/CWEN-A class) never enters profiles/
+        # entry_sig/risk_sig, so it can't land on any board/standout/percentile cohort
+        # (I2), and carries no conviction.potential so _collect_potential_calls emits
+        # nothing for it (I3) — the grader's own bar_asof gate is the second line of
+        # defense. LIMITED recs are never in _demote_map (I4, _feed_freshness excludes
+        # them). The JSON write below still happens for every rec (I1) — search + deep
+        # links stay alive (CSP-R1), now carrying an honest `feed_stale` disclosure.
+        _demoted_days = _demote_map.get(ticker)
+        if _demoted_days is not None:
+            _apply_feed_demotion(rec, _demoted_days, _lib_asof)
+        else:
+            profiles[ticker] = prof
+            if rec.get("entry_signal"):
+                entry_sig[ticker] = rec["entry_signal"]    # attached to standout rows below
+            if rec.get("risk_sizing"):
+                risk_sig[ticker] = rec["risk_sizing"]      # attached to standout rows below
         # ---- Macro sensitivity (display-only, never scored) -------------------
         # rate-beta tier + duration bucket + live-regime head/tailwind + inflation
         # label. Uses the archetype merged from fpanels above + the shared context.

@@ -197,6 +197,76 @@ def compute_updown(closes: pd.DataFrame, volume: pd.DataFrame) -> pd.DataFrame:
     return out.dropna(how="all", subset=["up_vol", "down_vol"])
 
 
+_STALE_CAL_DAYS = 7  # cross-ref: engine.name_score_grader._MAX_BAR_LAG_DAYS /
+# collectors.yahoo._STALE_CAL_DAYS — the SAME 7-calendar-day staleness law, duplicated
+# here because collectors must not import engine (layering).
+
+
+def disclose_stale_constituent_columns(members_symbols, closes: pd.DataFrame,
+                                       group_name: str) -> dict:
+    """Current-constituent column disclosure (R4, research/ADJUDICATION_20260803_
+    UNIVERSE_SIDE_STORE_FRESHNESS.md). ``_merge_refreshed``'s
+    ``fresh.combine_first(cached)`` is a deliberate FEATURE (a survivorship-honest
+    perpetual archive for replay/backtest readers) — it must never prune history.
+    But it also means a symbol Yahoo silently stops returning (CWEN-A: dead at
+    Yahoo since 2026-06-26, sibling CWEN advancing daily in the same batches)
+    carries its frozen column forward every night, byte-identical to a departed
+    name, with zero disclosure. This only classifies CURRENT members (a name
+    Wikipedia already dropped is correctly gone — no disclosure owed there).
+
+    Classifies each symbol in ``members_symbols`` against ``closes``:
+      no column          — symbol absent from the closes matrix entirely
+      never populated     — column present but 100% NaN (FI/MMC class)
+      frozen(tip)          — column's own last non-NaN obs is more than
+                            _STALE_CAL_DAYS behind the merged frame's overall tip
+    Bare ::warning (cap 15) if any non-empty category; annotation law — never
+    through the logger. Returns {"no_column": [...], "never_populated": [...],
+    "frozen": {ticker: tip}} so a caller/test can assert on the classification
+    without re-parsing the printed text."""
+    no_column: list[str] = []
+    never_populated: list[str] = []
+    frozen: dict[str, str] = {}
+    if closes is None or closes.empty:
+        return {"no_column": list(members_symbols), "never_populated": [], "frozen": {}}
+    # the merged frame's own overall tip — the freshest date ANY column still carries
+    # data for (closes.index.max() is not reliable once trailing rows are all-NaN).
+    _nonempty = closes.dropna(axis=1, how="all")
+    overall_tip = _nonempty.index[_nonempty.notna().any(axis=1)].max() if not _nonempty.empty else None
+    for sym in members_symbols:
+        if sym not in closes.columns:
+            no_column.append(sym)
+            continue
+        col = closes[sym].dropna()
+        if col.empty:
+            never_populated.append(sym)
+            continue
+        if overall_tip is not None:
+            tip = col.index.max()
+            if (pd.Timestamp(overall_tip) - pd.Timestamp(tip)).days > _STALE_CAL_DAYS:
+                frozen[sym] = str(pd.Timestamp(tip).date())
+    if no_column or never_populated or frozen:
+        parts: list[str] = []
+        if no_column:
+            shown = sorted(no_column)[:15]
+            more = len(no_column) - len(shown)
+            parts.append(f"no column ({len(no_column)}): {', '.join(shown)}"
+                         f"{f', +{more} more' if more > 0 else ''}")
+        if never_populated:
+            shown = sorted(never_populated)[:15]
+            more = len(never_populated) - len(shown)
+            parts.append(f"never populated ({len(never_populated)}): {', '.join(shown)}"
+                         f"{f', +{more} more' if more > 0 else ''}")
+        if frozen:
+            shown = sorted(frozen)[:15]
+            more = len(frozen) - len(shown)
+            parts.append(f"frozen ({len(frozen)}): "
+                         f"{', '.join(f'{t}({frozen[t]})' for t in shown)}"
+                         f"{f', +{more} more' if more > 0 else ''}")
+        print(f"::warning title={group_name} breadth constituents not refreshing::"
+              f"{'; '.join(parts)}", flush=True)
+    return {"no_column": no_column, "never_populated": never_populated, "frozen": frozen}
+
+
 class BreadthAdapter(Adapter):
     name = "breadth"
     group = "breadth"
@@ -362,6 +432,14 @@ class BreadthAdapter(Adapter):
         live_cols = closes.dropna(axis=1, how="all").shape[1]
         if live_cols < len(tickers) * 0.8:
             raise RuntimeError(f"breadth closes too sparse: {live_cols}/{len(tickers)}")
+
+        # R4 current-constituent column disclosure (CWEN-A class): a symbol Yahoo
+        # silently stops returning is otherwise indistinguishable from a departed
+        # member — combine_first carries the frozen column forward forever, silently.
+        try:
+            disclose_stale_constituent_columns(tickers, closes, self.name)
+        except Exception as e:  # noqa: BLE001 — disclosure must never break the run
+            log.warning("%s: constituent freshness disclosure failed (%s)", self.name, e)
 
         self.cache_path.parent.mkdir(parents=True, exist_ok=True)
         if not full_history:
