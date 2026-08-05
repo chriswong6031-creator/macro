@@ -2168,6 +2168,11 @@ on:
       - "tests/test_start_publish_integrity.py"
       - "tests/test_terminal_indicator_pricing.py"
       - "tests/test_terminal_overlay_contract.py"
+      # The portal's CASCADE guard: substring assertions cannot see that a
+      # descendant re-declaring an inherited property un-hides itself through
+      # the closed root. Its subject is templates/terminal_overlay.js, already
+      # covered by "templates/**" below — this half wires the test itself.
+      - "tests/test_terminal_overlay_closed_state.py"
       - "scripts/build_ai_desk_page.py"
       - "scripts/build_chart_data.py"
       - "scripts/build_confluence_screener.py"

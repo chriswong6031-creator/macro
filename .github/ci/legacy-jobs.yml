@@ -4448,7 +4448,7 @@ jobs:
       - name: landing IA + nav front-door regroup + start-page voice and publish integrity
         run: python -m pytest tests/test_landing_navigation.py tests/test_oip_w1_nav_regroup.py tests/test_hub_welcome_persona.py tests/test_start_publish_integrity.py -q
       - name: terminal entitlement copy + full-screen portal contract
-        run: python -m pytest tests/test_terminal_indicator_pricing.py tests/test_terminal_overlay_contract.py -q
+        run: python -m pytest tests/test_terminal_indicator_pricing.py tests/test_terminal_overlay_contract.py tests/test_terminal_overlay_closed_state.py -q
 
   unrun-builders-stores:
     # store/ops builders behind the nightly data lanes.
