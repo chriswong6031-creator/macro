@@ -69,10 +69,22 @@ def _idx(start: str, periods: int) -> pd.DatetimeIndex:
     return pd.date_range(start, periods=periods, freq="D")
 
 
+# Wall-clock anchor for every "fresh" fixture: the M1 backstops compare a fixture's own
+# tip against utcnow, so a hardcoded fresh-tip date is a scheduled failure fuse — it
+# passes until (date + 7d) and then reds the suite with no code change. Same idiom as
+# the production backstops (Timestamp.utcnow kept for consistency with breadth.py:436).
+_TODAY = pd.Timestamp.utcnow().tz_localize(None).normalize()
+
+
+def _idx_ending(periods: int, end: pd.Timestamp = _TODAY, lag_days: int = 0) -> pd.DatetimeIndex:
+    return pd.date_range(end=end - pd.Timedelta(days=lag_days), periods=periods, freq="D")
+
+
 def test_audit_store_freshness_classifies_stale_stub_missing(monkeypatch, capsys):
-    fresh_df = pd.DataFrame({"close": range(80)}, index=_idx("2026-05-18", 80))   # tip 2026-08-05
-    stale_df = pd.DataFrame({"close": range(70)}, index=_idx("2026-05-01", 70))   # tip 2026-07-09
-    stub_df = pd.DataFrame({"close": [1.0, 2.0]}, index=_idx("2026-08-04", 2))    # tip 2026-08-05, 2 rows
+    fresh_df = pd.DataFrame({"close": range(80)}, index=_idx_ending(80))              # tip today
+    stale_df = pd.DataFrame({"close": range(70)}, index=_idx_ending(70, lag_days=27))  # tip today-27d
+    stub_df = pd.DataFrame({"close": [1.0, 2.0]}, index=_idx_ending(2))               # tip today, 2 rows
+    _stale_tip = str((_TODAY - pd.Timedelta(days=27)).date())
 
     fixtures = {"FRESH": fresh_df, "STALE": stale_df, "STUB": stub_df}
 
@@ -83,8 +95,8 @@ def test_audit_store_freshness_classifies_stale_stub_missing(monkeypatch, capsys
     monkeypatch.setattr(yh.store, "read", fake_read)
     result = yh.audit_store_freshness(["FRESH", "STALE", "STUB", "GHOST"], group="yahoo")
 
-    assert result["ref"] == "2026-08-05"           # FRESH sets the group's own tip
-    assert "STALE" in result["stale"] and result["stale"]["STALE"] == "2026-07-09"
+    assert result["ref"] == str(_TODAY.date())     # FRESH sets the group's own tip
+    assert "STALE" in result["stale"] and result["stale"]["STALE"] == _stale_tip
     assert "FRESH" not in result["stale"] and "STUB" not in result["stale"]
     assert "STUB" in result["stub"]
     assert "FRESH" not in result["stub"] and "STALE" not in result["stub"]
@@ -98,7 +110,7 @@ def test_audit_store_freshness_classifies_stale_stub_missing(monkeypatch, capsys
 
 
 def test_audit_store_freshness_all_fresh_prints_nothing(monkeypatch, capsys):
-    fresh_df = pd.DataFrame({"close": range(80)}, index=_idx("2026-05-18", 80))
+    fresh_df = pd.DataFrame({"close": range(80)}, index=_idx_ending(80))
 
     def fake_read(group, name):
         return fresh_df
@@ -141,9 +153,9 @@ def test_audit_store_freshness_m1_wall_clock_backstop_on_old_ref(monkeypatch, ca
 # ---------------------------------------------------------------------------
 
 def test_breadth_column_disclosure_names_only_the_bad_ones(capsys):
-    idx = pd.date_range("2026-06-27", periods=40, freq="D")   # last date 2026-08-05
+    idx = _idx_ending(40)   # ends today — a hardcoded end date would arm the M1 backstop
     fresh = pd.Series(1.0, index=idx)
-    # CWEN-A class: real values only through day 5 (2026-07-01) -> 35 days behind
+    # CWEN-A class: real values only through day 5 (idx[4]) -> 35 days behind the tip
     frozen = pd.Series(1.0, index=idx[:5]).reindex(idx)
     never_pop = pd.Series([float("nan")] * len(idx), index=idx)
     closes = pd.DataFrame({"FRESH": fresh, "FROZEN": frozen, "NEVERPOP": never_pop})
@@ -151,7 +163,7 @@ def test_breadth_column_disclosure_names_only_the_bad_ones(capsys):
     members = ["FRESH", "FROZEN", "NEVERPOP", "GONE"]   # GONE isn't even a column
     result = bp.disclose_stale_constituent_columns(members, closes, "smallcap_breadth")
 
-    assert result["frozen"] == {"FROZEN": "2026-07-01"}
+    assert result["frozen"] == {"FROZEN": str(idx[4].date())}
     assert result["never_populated"] == ["NEVERPOP"]
     assert result["no_column"] == ["GONE"]
     assert "FRESH" not in result["frozen"] and "FRESH" not in result["never_populated"] \

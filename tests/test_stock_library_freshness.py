@@ -248,7 +248,9 @@ def test_sig_verdict_and_cand_population_gated_by_authority_admits():
                 j = i - 1
                 while j >= 0 and (not lines[j].strip() or lines[j].strip().startswith("#")):
                     j -= 1
-                return j >= 0 and "_authority_admits(ticker, _demote_map)" in lines[j]
+                # polarity-pinned: `if not _authority_admits(...)` must NOT pass
+                return j >= 0 and lines[j].strip().startswith(
+                    "if _authority_admits(ticker, _demote_map)")
         raise AssertionError(f"{needle!r} not found in {bsl.__file__}")
 
     assert _immediately_guarded("sig_verdict[ticker] = signal_gate.gate(ticker, close)")
@@ -277,27 +279,22 @@ def test_feed_freshness_tz_aware_asof_does_not_raise():
     assert demoted == {"STALETZ": 16}
 
 
-def test_feed_freshness_gate_crash_is_caught_by_main_and_fails_open(monkeypatch, capsys):
-    """B3(b): the main()-level wrapper around _feed_freshness must fail OPEN on any
-    exception — prints a loud ::warning and proceeds with no demotions, never aborts
-    the nightly build. Exercises the exact try/except shape by monkeypatching
-    _feed_freshness itself to blow up, mirroring how main() calls it."""
-    def _boom(recs):
-        raise RuntimeError("synthetic crash")
-
-    monkeypatch.setattr(bsl, "_feed_freshness", _boom)
-    lib_asof, demote_map, n_dark = None, {}, 0
-    try:
-        lib_asof, demote_map, n_dark = bsl._feed_freshness([])
-    except Exception as e:  # noqa: BLE001 — mirrors main()'s own guard exactly
-        print(f"::warning title=stock-library freshness gate crashed::{e} — "
-              "gate fail-open, no demotions this run", flush=True)
-        lib_asof, demote_map, n_dark = None, {}, 0
-    assert lib_asof is None and demote_map == {} and n_dark == 0
-    out = capsys.readouterr().out
-    lines = [ln for ln in out.splitlines() if ln.startswith("::")]
-    assert any(ln.startswith("::warning title=stock-library freshness gate crashed::")
-               for ln in lines)
+def test_feed_freshness_gate_call_in_main_is_wrapped_fail_open():
+    """B3(b) source-level regression pin (a re-implementation of the guard inside the
+    test body would stay green if main()'s wrapper were deleted — mirrored-guard trap):
+    the ONE `_feed_freshness(recs)` call site in main() must sit inside a try whose
+    except prints the crashed-gate ::warning and resets to (None, {}, 0) — fail-open,
+    never aborting the nightly build."""
+    src = Path(bsl.__file__).read_text()
+    call = src.index("_lib_asof, _demote_map, _n_dark = _feed_freshness(recs)")
+    # fail-open defaults + try: open just before the call; the except recovers after it
+    # (tuple unpack is atomic, so a raise leaves the pre-try (None, {}, 0) in place)
+    before, after = src[max(0, call - 700):call], src[call:call + 2500]
+    assert "_lib_asof, _demote_map, _n_dark = None, {}, 0" in before, \
+        "fail-open defaults before the try wrapper are gone"
+    assert "try:" in before, "the _feed_freshness(recs) call in main() lost its try wrapper"
+    assert "except Exception" in after
+    assert "::warning title=stock-library freshness gate crashed::" in after
 
 
 # ---------------------------------------------------------------------------
