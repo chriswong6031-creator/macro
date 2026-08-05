@@ -1449,9 +1449,18 @@ class TestLLMPhrasing:
         figures the model could write about a stock that moved 8%."""
         from engine.marketing.hot_tape_llm import numeric_violations
 
+        # fired_at is PINNED, not NOW. _admissible_values harvests numbers out of
+        # the packet's strings, so a wall-clock timestamp licenses its own
+        # day-of-month: on the 14th "14%" stopped being a violation and on the
+        # 5th "05 sessions" did, failing this test on ~7% of calendar days for a
+        # reason that has nothing to do with alert_key. It fired for real on
+        # 2026-08-05 (ci-pack-2, run 30971844036). The pinned components below
+        # (2026/06/23/16/38) collide with neither probe.
+        pinned_fired_at = "2026-06-23T16:38:00Z"
+
         packet = FactPacket(
             trigger="context_brief", key="brief:mover:MU:down:x:0",
-            fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+            fired_at=pinned_fired_at, session="rth",
             ticker="MU", name="Micron", sector="Technology", direction="down",
             severity=91.0,
             facts={"ticker": "MU", "pct": -8.2, "price": 92.0,
