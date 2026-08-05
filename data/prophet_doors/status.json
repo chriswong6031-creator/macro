@@ -1,0 +1,81 @@
+{
+  "appended": 0,
+  "asof": "2026-07-31",
+  "candidates": {
+    "R": 1,
+    "T": 6
+  },
+  "deduped": {
+    "R": 1,
+    "T": 6
+  },
+  "dry_run": false,
+  "feature_source": {
+    "enabled": true,
+    "foresight": {
+      "consulted": false
+    },
+    "keys": [
+      "relay_count_3d",
+      "relay_position",
+      "relay_members_covered",
+      "turnover_pctile",
+      "turnover_window",
+      "foresight_stage",
+      "foresight_covered"
+    ],
+    "relay": {
+      "consulted": false
+    },
+    "turnover": {
+      "consulted": false
+    }
+  },
+  "flag_tickers": {
+    "R": [],
+    "T": []
+  },
+  "n_universe": 1495,
+  "overflow": {
+    "R": 0,
+    "T": 0
+  },
+  "run_utc": "2026-08-05 15:49:32",
+  "runtime_s": 160.6,
+  "schema": "prophet_doors/v1",
+  "theme_source": {
+    "age_days": -2,
+    "asof": "2026-08-02",
+    "n_members": 128,
+    "ok": true,
+    "reason": null,
+    "source": "site/marketdata/subsector_rotation.json",
+    "top_themes": [
+      {
+        "emerging_score": 3.271,
+        "rank": 1,
+        "theme": "Software"
+      },
+      {
+        "emerging_score": 1.848,
+        "rank": 2,
+        "theme": "Healthy Food & Nutrition"
+      },
+      {
+        "emerging_score": 1.775,
+        "rank": 3,
+        "theme": "Quantum Computing"
+      },
+      {
+        "emerging_score": 1.586,
+        "rank": 4,
+        "theme": "Smart Home"
+      },
+      {
+        "emerging_score": 1.497,
+        "rank": 5,
+        "theme": "Big Data"
+      }
+    ]
+  }
+}

@@ -142,6 +142,38 @@ have not yet imagined will be found the same way until there is.
 Ordered by (defect classes closed) ÷ (effort). Everything below is unbuilt unless
 marked.
 
+### P0 — Cold-read veto on relayed lanes — **SHIPPED, IN SHADOW**
+
+`engine/marketing/cold_read.py`, wired as the publisher's fourth post-time
+screen. Ships with `action: shadow` — it computes and logs a verdict and blocks
+nothing. **Arming it is an operator decision made after reading a week of shadow
+notices**, which is the same probation this charter demands of a new SOURCE,
+applied to a new GATE. The arming ladder is `shadow → hold → quarantine`; `hold`
+is reversible (the item stays queued for another pass), only `quarantine` is
+terminal.
+
+Four structural guards, because "the model may only veto" is worth nothing if the
+veto is unbounded:
+
+* **Closed category enum.** A block counts only when it names one of five
+  reader-cannot-resolve categories. A model that decides the copy is boring
+  returns something we discard — "the model became an editor" is a wasted call,
+  not a quarantined post. The enum is deliberately not config-widenable.
+* **Fail-open everywhere.** No endpoint, bad JSON, a refusal, a timeout, an
+  exception — not blocked. `{"blocked": "yes"}` is not a block either: only a
+  real JSON boolean counts, because `bool("yes")` is `True` and a schema slip
+  must not delete a post.
+* **Lane-scoped** from `relay_hygiene`'s single allowlist. On the live queue,
+  217 of 317 items never reach the model at all.
+* **A dark gate is loud.** `enabled` with no reachable model prints a
+  `::warning`; "zero flags" from a gate that read nothing looks exactly like
+  "the copy was clean", and that is the worst state it can be in.
+
+Needs `OLLAMA_BASE_URL` on the runner (wired in `marketing-publish.yml` from a
+repo variable) plus `MARKETING_LLM_ENABLED=1`. Absent either, zero model calls.
+
+*Original charter entry follows.*
+
 ### P0 — Cold-read veto on relayed lanes *(the one that matters)*
 
 One local-model call per relayed post, immediately before it goes out, answering

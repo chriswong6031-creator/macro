@@ -470,6 +470,11 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
             "bottleneck_band": (bn or {}).get("band"),
             "bottleneck_text_only": (bn or {}).get("text_only", False),
             "bottleneck_fingerprint_only": (bn or {}).get("fingerprint_only", False),
+            # W5a: fingerprint sub-object (n_legs_live et al.) passed through from the
+            # bottleneck payload — foresight_health._assess_t1_fingerprint counts leg
+            # liveness from cascade rows, and without this key the t1_fingerprint leg
+            # reads structurally DARK even while a (fingerprint) band/stage is on the row.
+            "fingerprint": (bn or {}).get("fingerprint"),
             "tightness": (bn or {}).get("tightness"),
             "bottleneck_regime": (bn or {}).get("regime"),
             "demand_band": dband,

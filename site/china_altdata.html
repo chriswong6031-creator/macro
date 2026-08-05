@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="utf-8">
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
   var B = window.DATA_BASE;
@@ -29,7 +30,6 @@
     return orig.call(this, u, o);
   };
 })();</script>
-<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>China Alternative Data — Mastermind</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
@@ -99,6 +99,8 @@
         <a href="us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
         
         <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+        
+        <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Live session board — volume, tape and stance lanes · ≈15-min delayed</span><span class="l-zh">盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟</span></span></a>
         <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
         
         <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span><span class="d"><span class="l-en">Sectors, themes & rotation in one read · lanes · cycle map · graded</span><span class="l-zh">板块·主题·轮动一页读 · 操作清单 · 周期图谱 · 自评分</span></span></a>
@@ -108,11 +110,9 @@
         <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">Workspace · desk · flow tracker · dark pool</span><span class="l-zh">工作台 · 期权台 · 资金流追踪 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="options.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Market Structure</span><span class="l-zh">期权与市场结构</span><span class="d"><span class="l-en">Workspace · dark pool · index regime</span><span class="l-zh">工作台 · 暗池 · 指数结构</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 筛选 · 个股 · 领头股</span></span></a>
-            <a href="gex.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">Instrument bench — charts, walls, vol surface</span><span class="l-zh">工具台 — 图表、墙位、波动率曲面</span></span></a>
-            <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="options.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span><span class="d"><span class="l-en">Daily Brief · Flow · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 资金流 · 筛选 · 个股 · 领头股</span></span></a>
             <a href="darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
             <a href="market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
           </div>
@@ -354,14 +354,14 @@
     <div class="cad-sec-bar" style="margin-top:16px">
       <strong style="font-size:12.5px"><span class="l-en">Cross-section tilt</span><span class="l-zh">横截面倾向</span></strong>
       <div class="cad-breadth" title="" aria-hidden="true">
-        <span class="b-acc" style="width:43.3%"></span>
-        <span class="b-neu" style="width:10.5%"></span>
-        <span class="b-dis" style="width:46.2%"></span>
+        <span class="b-acc" style="width:42.0%"></span>
+        <span class="b-neu" style="width:11.0%"></span>
+        <span class="b-dis" style="width:47.0%"></span>
       </div>
-      <span class="cad-chip c-up">2256 <span class="l-en">accumulate</span><span class="l-zh">吸筹</span></span>
-      <span class="cad-chip c-down">2410 <span class="l-en">distribute</span><span class="l-zh">派发</span></span>
-      <span class="cad-chip" data-tip-en="Share of the 5212-name alt-data universe whose feeds lean net-accumulate vs net-distribute right now. A breadth read, not a forecast."
-            data-tip-zh="在5212只另类数据样本中，当前数据源净偏吸筹与净偏派发的占比。广度读数，非预测。">-3<span class="l-en"> net</span><span class="l-zh">净</span></span>
+      <span class="cad-chip c-up">2227 <span class="l-en">accumulate</span><span class="l-zh">吸筹</span></span>
+      <span class="cad-chip c-down">2490 <span class="l-en">distribute</span><span class="l-zh">派发</span></span>
+      <span class="cad-chip" data-tip-en="Share of the 5303-name alt-data universe whose feeds lean net-accumulate vs net-distribute right now. A breadth read, not a forecast."
+            data-tip-zh="在5303只另类数据样本中，当前数据源净偏吸筹与净偏派发的占比。广度读数，非预测。">-5<span class="l-en"> net</span><span class="l-zh">净</span></span>
     </div>
     
   </section>
@@ -384,7 +384,7 @@
     <div class="cad-sec-head">
       <span class="cad-sec-n">01</span>
       <h2><span class="l-en">Smart-money convergence</span><span class="l-zh">主力共振</span></h2>
-      <span class="cad-sec-count"><span class="l-en">≥3 of 7 feeds agree</span><span class="l-zh">7源中≥3源一致</span> · 3528</span>
+      <span class="cad-sec-count"><span class="l-en">≥3 of 7 feeds agree</span><span class="l-zh">7源中≥3源一致</span> · 3531</span>
       <span class="cad-stance st-watch"><span class="l-en">Watch — a watchlist seed</span><span class="l-zh">观望 — 自选股种子</span></span>
     </div>
     <p class="cad-sec-intro"><span class="l-en">Seven independent A-share feeds, each rank-scored across the market, then read as one signed convergence: where consensus, valuation, financing, main-force flow, retail attention, hot-money and block trades line up. The seal-strip shows which feeds are constructive (green) or cautionary (red) per name.</span><span class="l-zh">七个独立的A股数据源各自在全市场排名评分，再合并为一个带符号的共振：一致预期、估值、融资、主力资金、散户关注、龙虎榜与大宗交易在何处一致。印记条显示每只个股上各数据源是偏建设性（绿）还是偏谨慎（红）。</span></p>
@@ -405,6 +405,19 @@
       </tr></thead>
       <tbody>
       <tr>
+          <td><div class="cad-nm">301380.SZ</div></td>
+          <td>
+            <span class="cad-seal" role="img"
+              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 100.0th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第100.0分位 · 7源中有3源。">
+              <i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
+            </span>
+          </td>
+          <td class="num conv r-pos">+0.94</td>
+          <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
+          <td></td>
+        </tr>
+      <tr>
           <td><div class="cad-nm">300951.SZ</div></td>
           <td>
             <span class="cad-seal" role="img"
@@ -413,94 +426,29 @@
               <i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-pos"></i>
             </span>
           </td>
-          <td class="num conv r-pos">+0.92</td>
+          <td class="num conv r-pos">+0.93</td>
           <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
-          <td></td>
+          <td><span class="flag"><span class="l-en">leverage_crowded</span><span class="l-zh">leverage_crowded</span></span> </td>
         </tr>
       <tr>
-          <td><div class="cad-nm">301380.SZ</div></td>
+          <td><div class="cad-nm">301234.SZ</div></td>
           <td>
             <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 99.8th pct · 3 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第99.8分位 · 7源中有3源。">
+              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 99.9th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第99.9分位 · 7源中有3源。">
               <i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
             </span>
           </td>
           <td class="num conv r-pos">+0.88</td>
           <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
-          <td></td>
-        </tr>
-      <tr>
-          <td><div class="cad-nm">600079.SS</div></td>
-          <td>
-            <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Valuation, Attention, Main-force flow. Cross-section rank 99.8th pct · 3 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：估值、千股千评、主力资金。横截面排名第99.8分位 · 7源中有3源。">
-              <i class="sc-off"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
-            </span>
-          </td>
-          <td class="num conv r-pos">+0.87</td>
-          <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
-          <td></td>
-        </tr>
-      <tr>
-          <td><div class="cad-nm">002300.SZ</div></td>
-          <td>
-            <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 99.7th pct · 3 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第99.7分位 · 7源中有3源。">
-              <i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
-            </span>
-          </td>
-          <td class="num conv r-pos">+0.86</td>
-          <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
-          <td></td>
-        </tr>
-      <tr>
-          <td><div class="cad-nm">300937.SZ</div></td>
-          <td>
-            <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 99.6th pct · 3 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第99.6分位 · 7源中有3源。">
-              <i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
-            </span>
-          </td>
-          <td class="num conv r-pos">+0.84</td>
-          <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
           <td><span class="flag"><span class="l-en">leverage_crowded</span><span class="l-zh">leverage_crowded</span></span> </td>
         </tr>
       <tr>
-          <td><div class="cad-nm">000025.SZ</div></td>
+          <td><div class="cad-nm">688237.SS</div></td>
           <td>
             <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 99.6th pct · 3 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第99.6分位 · 7源中有3源。">
-              <i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
-            </span>
-          </td>
-          <td class="num conv r-pos">+0.83</td>
-          <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
-          <td></td>
-        </tr>
-      <tr>
-          <td><div class="cad-nm">002112.SZ</div></td>
-          <td>
-            <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 99.4th pct · 3 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第99.4分位 · 7源中有3源。">
-              <i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
-            </span>
-          </td>
-          <td class="num conv r-pos">+0.81</td>
-          <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
-          <td></td>
-        </tr>
-      <tr>
-          <td><div class="cad-nm">000779.SZ</div></td>
-          <td>
-            <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 99.4th pct · 3 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第99.4分位 · 7源中有3源。">
+              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 99.6th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第99.6分位 · 7源中有3源。">
               <i class="sc-off"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i>
             </span>
           </td>
@@ -509,12 +457,12 @@
           <td></td>
         </tr>
       <tr>
-          <td><div class="cad-nm">001229.SZ</div></td>
+          <td><div class="cad-nm">600818.SS</div></td>
           <td>
             <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Attention, Block trades, Main-force flow. Cross-section rank 99.4th pct · 3 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、大宗交易、主力资金。横截面排名第99.4分位 · 7源中有3源。">
-              <i class="sc-off"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-neg"></i>
+              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 99.5th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第99.5分位 · 7源中有3源。">
+              <i class="sc-off"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i>
             </span>
           </td>
           <td class="num conv r-pos">+0.80</td>
@@ -522,30 +470,43 @@
           <td></td>
         </tr>
       <tr>
-          <td><div class="cad-nm">300358.SZ</div></td>
+          <td><div class="cad-nm">301072.SZ</div></td>
           <td>
             <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 99.3th pct · 3 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第99.3分位 · 7源中有3源。">
+              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 99.4th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第99.4分位 · 7源中有3源。">
               <i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
             </span>
           </td>
-          <td class="num conv r-pos">+0.79</td>
+          <td class="num conv r-pos">+0.78</td>
           <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
           <td></td>
         </tr>
       <tr>
-          <td><div class="cad-nm">水羊股份</div><div class="cad-tk">300740.SZ</div></td>
+          <td><div class="cad-nm">孚日股份</div><div class="cad-tk">002083.SZ</div></td>
           <td>
             <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 99.3th pct · 4 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第99.3分位 · 7源中有4源。">
-              <i class="sc-neu"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
+              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 99.3th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第99.3分位 · 7源中有3源。">
+              <i class="sc-neu"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
             </span>
           </td>
-          <td class="num conv r-pos">+0.79</td>
+          <td class="num conv r-pos">+0.78</td>
           <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
-          <td><span class="flag"><span class="l-en">leverage_crowded</span><span class="l-zh">leverage_crowded</span></span> </td>
+          <td></td>
+        </tr>
+      <tr>
+          <td><div class="cad-nm">德林海</div><div class="cad-tk">688069.SS</div></td>
+          <td>
+            <span class="cad-seal" role="img"
+              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 99.3th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第99.3分位 · 7源中有3源。">
+              <i class="sc-neu"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
+            </span>
+          </td>
+          <td class="num conv r-pos">+0.77</td>
+          <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
+          <td></td>
         </tr>
       <tr>
           <td><div class="cad-nm">博源化工</div><div class="cad-tk">000683.SZ</div></td>
@@ -556,60 +517,99 @@
               <i class="sc-neu"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i>
             </span>
           </td>
-          <td class="num conv r-pos">+0.79</td>
+          <td class="num conv r-pos">+0.76</td>
           <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
           <td></td>
         </tr>
       <tr>
-          <td><div class="cad-nm">海伦哲</div><div class="cad-tk">300201.SZ</div></td>
+          <td><div class="cad-nm">300937.SZ</div></td>
           <td>
             <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 99.2th pct · 3 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第99.2分位 · 7源中有3源。">
+              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 99.1th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第99.1分位 · 7源中有3源。">
+              <i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
+            </span>
+          </td>
+          <td class="num conv r-pos">+0.75</td>
+          <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
+          <td><span class="flag"><span class="l-en">leverage_crowded</span><span class="l-zh">leverage_crowded</span></span> </td>
+        </tr>
+      <tr>
+          <td><div class="cad-nm">征和工业</div><div class="cad-tk">003033.SZ</div></td>
+          <td>
+            <span class="cad-seal" role="img"
+              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 99.0th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第99.0分位 · 7源中有3源。">
               <i class="sc-neu"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
             </span>
           </td>
-          <td class="num conv r-pos">+0.79</td>
-          <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
-          <td></td>
-        </tr>
-      <tr>
-          <td><div class="cad-nm">688622.SS</div></td>
-          <td>
-            <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 99.2th pct · 3 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第99.2分位 · 7源中有3源。">
-              <i class="sc-off"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i>
-            </span>
-          </td>
-          <td class="num conv r-pos">+0.79</td>
-          <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
-          <td></td>
-        </tr>
-      <tr>
-          <td><div class="cad-nm">301633.SZ</div></td>
-          <td>
-            <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 99.2th pct · 4 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第99.2分位 · 7源中有4源。">
-              <i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-pos"></i>
-            </span>
-          </td>
-          <td class="num conv r-pos">+0.78</td>
-          <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
+          <td class="num conv r-pos">+0.74</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Elevated +</span><span class="l-zh">偏强 ↑</span></span></td>
           <td></td>
         </tr>
       <tr>
           <td><div class="cad-nm">威尔药业</div><div class="cad-tk">603351.SS</div></td>
           <td>
             <span class="cad-seal" role="img"
-              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 99.2th pct · 3 of 7 feeds present."
-              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第99.2分位 · 7源中有3源。">
+              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 99.0th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第99.0分位 · 7源中有3源。">
               <i class="sc-neu"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
             </span>
           </td>
-          <td class="num conv r-pos">+0.78</td>
-          <td><span class="cvband cv-pos"><span class="l-en">High +</span><span class="l-zh">高置信 ↑</span></span></td>
+          <td class="num conv r-pos">+0.74</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Elevated +</span><span class="l-zh">偏强 ↑</span></span></td>
+          <td></td>
+        </tr>
+      <tr>
+          <td><div class="cad-nm">埃科光电</div><div class="cad-tk">688610.SS</div></td>
+          <td>
+            <span class="cad-seal" role="img"
+              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 99.0th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第99.0分位 · 7源中有3源。">
+              <i class="sc-neu"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
+            </span>
+          </td>
+          <td class="num conv r-pos">+0.74</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Elevated +</span><span class="l-zh">偏强 ↑</span></span></td>
+          <td></td>
+        </tr>
+      <tr>
+          <td><div class="cad-nm">上海沿浦</div><div class="cad-tk">605128.SS</div></td>
+          <td>
+            <span class="cad-seal" role="img"
+              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 98.9th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第98.9分位 · 7源中有3源。">
+              <i class="sc-neu"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
+            </span>
+          </td>
+          <td class="num conv r-pos">+0.74</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Elevated +</span><span class="l-zh">偏强 ↑</span></span></td>
+          <td></td>
+        </tr>
+      <tr>
+          <td><div class="cad-nm">思泰克</div><div class="cad-tk">301568.SZ</div></td>
+          <td>
+            <span class="cad-seal" role="img"
+              data-tip-en="Feeds agreeing with the accumulate read: Financing, Attention, Main-force flow. Cross-section rank 98.9th pct · 4 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：融资、千股千评、主力资金。横截面排名第98.9分位 · 7源中有4源。">
+              <i class="sc-neu"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
+            </span>
+          </td>
+          <td class="num conv r-pos">+0.73</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Elevated +</span><span class="l-zh">偏强 ↑</span></span></td>
+          <td><span class="flag"><span class="l-en">leverage_crowded</span><span class="l-zh">leverage_crowded</span></span> </td>
+        </tr>
+      <tr>
+          <td><div class="cad-nm">瑞联新材</div><div class="cad-tk">688550.SS</div></td>
+          <td>
+            <span class="cad-seal" role="img"
+              data-tip-en="Feeds agreeing with the accumulate read: Attention, Main-force flow. Cross-section rank 98.9th pct · 3 of 7 feeds present."
+              data-tip-zh="与「accumulate」方向一致的数据源：千股千评、主力资金。横截面排名第98.9分位 · 7源中有3源。">
+              <i class="sc-neu"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-pos"></i><i class="sc-pos"></i><i class="sc-off"></i><i class="sc-off"></i>
+            </span>
+          </td>
+          <td class="num conv r-pos">+0.73</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Elevated +</span><span class="l-zh">偏强 ↑</span></span></td>
           <td></td>
         </tr>
       
@@ -624,45 +624,45 @@
       <tbody>
       
         <tr>
-          <td style="width:40%"><span class="cad-nm">600892.SS</span></td>
-          <td><span class="cad-seal"><i class="sc-off"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-neg"></i><i class="sc-neg"></i><i class="sc-off"></i><i class="sc-off"></i></span></td>
-          <td class="num conv r-neg">-0.98</td>
-          <td><span class="cvband cv-neg"><span class="l-en">Elevated −</span><span class="l-zh">偏强 ↓</span></span></td>
-        </tr>
-      
-        <tr>
           <td style="width:40%"><span class="cad-nm">600463.SS</span></td>
           <td><span class="cad-seal"><i class="sc-off"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-neg"></i><i class="sc-neg"></i><i class="sc-off"></i><i class="sc-off"></i></span></td>
-          <td class="num conv r-neg">-0.95</td>
+          <td class="num conv r-neg">-0.97</td>
           <td><span class="cvband cv-neg"><span class="l-en">Elevated −</span><span class="l-zh">偏强 ↓</span></span></td>
         </tr>
       
         <tr>
-          <td style="width:40%"><span class="cad-nm">300264.SZ</span></td>
+          <td style="width:40%"><span class="cad-nm">688121.SS</span></td>
           <td><span class="cad-seal"><i class="sc-off"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-neg"></i><i class="sc-neg"></i><i class="sc-off"></i><i class="sc-off"></i></span></td>
           <td class="num conv r-neg">-0.94</td>
           <td><span class="cvband cv-neg"><span class="l-en">Elevated −</span><span class="l-zh">偏强 ↓</span></span></td>
         </tr>
       
         <tr>
-          <td style="width:40%"><span class="cad-nm">603370.SS</span></td>
-          <td><span class="cad-seal"><i class="sc-off"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-neg"></i><i class="sc-neg"></i><i class="sc-off"></i><i class="sc-off"></i></span></td>
+          <td style="width:40%"><span class="cad-nm">天马新材</span> <span class="cad-tk">920971.BJ</span></td>
+          <td><span class="cad-seal"><i class="sc-neg"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-neg"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-off"></i></span></td>
           <td class="num conv r-neg">-0.93</td>
           <td><span class="cvband cv-neg"><span class="l-en">Elevated −</span><span class="l-zh">偏强 ↓</span></span></td>
         </tr>
       
         <tr>
-          <td style="width:40%"><span class="cad-nm">300076.SZ</span></td>
+          <td style="width:40%"><span class="cad-nm">002656.SZ</span></td>
           <td><span class="cad-seal"><i class="sc-off"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-neg"></i><i class="sc-neg"></i><i class="sc-off"></i><i class="sc-off"></i></span></td>
-          <td class="num conv r-neg">-0.93</td>
+          <td class="num conv r-neg">-0.92</td>
           <td><span class="cvband cv-neg"><span class="l-en">Elevated −</span><span class="l-zh">偏强 ↓</span></span></td>
         </tr>
       
         <tr>
-          <td style="width:40%"><span class="cad-nm">001311.SZ</span></td>
+          <td style="width:40%"><span class="cad-nm">603356.SS</span></td>
           <td><span class="cad-seal"><i class="sc-off"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-neg"></i><i class="sc-neg"></i><i class="sc-off"></i><i class="sc-off"></i></span></td>
-          <td class="num conv r-neg">-0.93</td>
+          <td class="num conv r-neg">-0.91</td>
           <td><span class="cvband cv-neg"><span class="l-en">Elevated −</span><span class="l-zh">偏强 ↓</span></span></td>
+        </tr>
+      
+        <tr>
+          <td style="width:40%"><span class="cad-nm">昊海生科</span> <span class="cad-tk">688366.SS</span></td>
+          <td><span class="cad-seal"><i class="sc-neg"></i><i class="sc-off"></i><i class="sc-off"></i><i class="sc-neg"></i><i class="sc-neg"></i><i class="sc-off"></i><i class="sc-off"></i></span></td>
+          <td class="num conv r-neg">-0.91</td>
+          <td><span class="cvband cv-neg"><span class="l-en">High −</span><span class="l-zh">高置信 ↓</span></span></td>
         </tr>
       
       </tbody>
@@ -696,74 +696,8 @@
             <tr>
               <td><span class="cad-nm">传智教育</span> <span class="cad-tk">003032.SZ</span></td>
               <td style="color:var(--muted)">教育</td>
-              <td class="num conv">6</td>
-              <td class="num">2.0</td>
-              <td>
-                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
-                
-              </td>
-            </tr>
-          
-            <tr>
-              <td><span class="cad-nm">605179.SS</span></td>
-              <td style="color:var(--muted)">饮料乳品</td>
-              <td class="num conv">5</td>
-              <td class="num">0.3</td>
-              <td>
-                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
-                
-              </td>
-            </tr>
-          
-            <tr>
-              <td><span class="cad-nm">高争民爆</span> <span class="cad-tk">002827.SZ</span></td>
-              <td style="color:var(--muted)">化学制品</td>
-              <td class="num conv">4</td>
-              <td class="num">1.3</td>
-              <td>
-                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
-                
-              </td>
-            </tr>
-          
-            <tr>
-              <td><span class="cad-nm">000820.SZ</span></td>
-              <td style="color:var(--muted)">环保设备</td>
-              <td class="num conv">3</td>
-              <td class="num">0.1</td>
-              <td>
-                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
-                
-              </td>
-            </tr>
-          
-            <tr>
-              <td><span class="cad-nm">天娱数科</span> <span class="cad-tk">002354.SZ</span></td>
-              <td style="color:var(--muted)">广告营销</td>
-              <td class="num conv">2</td>
-              <td class="num">2.5</td>
-              <td>
-                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
-                
-              </td>
-            </tr>
-          
-            <tr>
-              <td><span class="cad-nm">中大力德</span> <span class="cad-tk">002896.SZ</span></td>
-              <td style="color:var(--muted)">通用设备</td>
-              <td class="num conv">2</td>
-              <td class="num">2.1</td>
-              <td>
-                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
-                
-              </td>
-            </tr>
-          
-            <tr>
-              <td><span class="cad-nm">002131.SZ</span></td>
-              <td style="color:var(--muted)">通用设备</td>
-              <td class="num conv">2</td>
-              <td class="num">2.0</td>
+              <td class="num conv">8</td>
+              <td class="num">0.7</td>
               <td>
                 <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
                 
@@ -773,52 +707,8 @@
             <tr>
               <td><span class="cad-nm">000593.SZ</span></td>
               <td style="color:var(--muted)">燃气Ⅱ</td>
-              <td class="num conv">2</td>
-              <td class="num">1.1</td>
-              <td>
-                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
-                
-              </td>
-            </tr>
-          
-            <tr>
-              <td><span class="cad-nm">000967.SZ</span></td>
-              <td style="color:var(--muted)">环保设备</td>
-              <td class="num conv">2</td>
-              <td class="num">1.0</td>
-              <td>
-                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
-                
-              </td>
-            </tr>
-          
-            <tr>
-              <td><span class="cad-nm">000815.SZ</span></td>
-              <td style="color:var(--muted)">IT服务Ⅱ</td>
-              <td class="num conv">2</td>
-              <td class="num">0.9</td>
-              <td>
-                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
-                
-              </td>
-            </tr>
-          
-            <tr>
-              <td><span class="cad-nm">中岩大地</span> <span class="cad-tk">003001.SZ</span></td>
-              <td style="color:var(--muted)">专业工程</td>
-              <td class="num conv">2</td>
+              <td class="num conv">4</td>
               <td class="num">0.8</td>
-              <td>
-                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
-                
-              </td>
-            </tr>
-          
-            <tr>
-              <td><span class="cad-nm">000595.SZ</span></td>
-              <td style="color:var(--muted)">电力</td>
-              <td class="num conv">2</td>
-              <td class="num">0.7</td>
               <td>
                 <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
                 
@@ -828,8 +718,8 @@
             <tr>
               <td><span class="cad-nm">002963.SZ</span></td>
               <td style="color:var(--muted)">装修装饰</td>
-              <td class="num conv">2</td>
-              <td class="num">0.6</td>
+              <td class="num conv">4</td>
+              <td class="num">0.2</td>
               <td>
                 <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
                 
@@ -837,10 +727,120 @@
             </tr>
           
             <tr>
-              <td><span class="cad-nm">603106.SS</span></td>
-              <td style="color:var(--muted)">计算机设</td>
+              <td><span class="cad-nm">300615.SZ</span></td>
+              <td style="color:var(--muted)">通信设备</td>
+              <td class="num conv">3</td>
+              <td class="num">2.4</td>
+              <td>
+                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
+                
+              </td>
+            </tr>
+          
+            <tr>
+              <td><span class="cad-nm">601700.SS</span></td>
+              <td style="color:var(--muted)">电网设备</td>
+              <td class="num conv">3</td>
+              <td class="num">1.1</td>
+              <td>
+                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
+                
+              </td>
+            </tr>
+          
+            <tr>
+              <td><span class="cad-nm">云南锗业</span> <span class="cad-tk">002428.SZ</span></td>
+              <td style="color:var(--muted)">小金属</td>
               <td class="num conv">2</td>
-              <td class="num">0.6</td>
+              <td class="num">9.8</td>
+              <td>
+                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
+                
+              </td>
+            </tr>
+          
+            <tr>
+              <td><span class="cad-nm">603629.SS</span></td>
+              <td style="color:var(--muted)">消费电子</td>
+              <td class="num conv">2</td>
+              <td class="num">2.5</td>
+              <td>
+                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
+                
+              </td>
+            </tr>
+          
+            <tr>
+              <td><span class="cad-nm">603773.SS</span></td>
+              <td style="color:var(--muted)">光学光电</td>
+              <td class="num conv">2</td>
+              <td class="num">1.7</td>
+              <td>
+                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
+                
+              </td>
+            </tr>
+          
+            <tr>
+              <td><span class="cad-nm">华正新材</span> <span class="cad-tk">603186.SS</span></td>
+              <td style="color:var(--muted)">元件</td>
+              <td class="num conv">2</td>
+              <td class="num">1.6</td>
+              <td>
+                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
+                
+              </td>
+            </tr>
+          
+            <tr>
+              <td><span class="cad-nm">002975.SZ</span></td>
+              <td style="color:var(--muted)">自动化设</td>
+              <td class="num conv">2</td>
+              <td class="num">1.4</td>
+              <td>
+                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
+                
+              </td>
+            </tr>
+          
+            <tr>
+              <td><span class="cad-nm">002579.SZ</span></td>
+              <td style="color:var(--muted)">元件</td>
+              <td class="num conv">2</td>
+              <td class="num">1.3</td>
+              <td>
+                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
+                
+              </td>
+            </tr>
+          
+            <tr>
+              <td><span class="cad-nm">东方钽业</span> <span class="cad-tk">000962.SZ</span></td>
+              <td style="color:var(--muted)">小金属</td>
+              <td class="num conv">2</td>
+              <td class="num">1.2</td>
+              <td>
+                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
+                
+              </td>
+            </tr>
+          
+            <tr>
+              <td><span class="cad-nm">002425.SZ</span></td>
+              <td style="color:var(--muted)">游戏Ⅱ</td>
+              <td class="num conv">2</td>
+              <td class="num">1.1</td>
+              <td>
+                <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
+                
+              </td>
+            </tr>
+          
+            <tr>
+              <td><span class="cad-nm">600721.SS</span></td>
+              <td style="color:var(--muted)">医疗服务</td>
+              <td class="num conv">2</td>
+              <td class="num">1.1</td>
               <td>
                 <span class="flag"><span class="l-en">froth</span><span class="l-zh">过热</span></span>
                 
@@ -857,75 +857,75 @@
         <h3><span class="l-en">Where the heat is — limit-ups by sector</span><span class="l-zh">热度分布 — 分板块涨停</span></h3>
         <p class="sub"><span class="l-en">A rotation thermometer: the sectors printing the most limit-ups right now. Concentration in one theme is the tell.</span><span class="l-zh">轮动温度计：当前涨停最多的板块。热度集中于单一题材即是信号。</span></p>
         <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
-          <span style="font-size:12px">电网设备</span>
+          <span style="font-size:12px">汽车零部</span>
           <span class="cad-bar" style="--bc:var(--cad-verm);width:100.0%"></span>
-          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">8</span>
+          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">7</span>
         </div>
         
         <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
-          <span style="font-size:12px">通用设备</span>
-          <span class="cad-bar" style="--bc:var(--cad-verm);width:75.0%"></span>
+          <span style="font-size:12px">光学光电</span>
+          <span class="cad-bar" style="--bc:var(--cad-verm);width:85.0%"></span>
           <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">6</span>
         </div>
         
         <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
-          <span style="font-size:12px">化学制品</span>
-          <span class="cad-bar" style="--bc:var(--cad-verm);width:50.0%"></span>
-          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">4</span>
+          <span style="font-size:12px">小金属</span>
+          <span class="cad-bar" style="--bc:var(--cad-verm);width:85.0%"></span>
+          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">6</span>
         </div>
         
         <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
-          <span style="font-size:12px">电力</span>
-          <span class="cad-bar" style="--bc:var(--cad-verm);width:50.0%"></span>
-          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">4</span>
-        </div>
-        
-        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
-          <span style="font-size:12px">IT服务Ⅱ</span>
-          <span class="cad-bar" style="--bc:var(--cad-verm);width:37.0%"></span>
-          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">3</span>
-        </div>
-        
-        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
-          <span style="font-size:12px">计算机设</span>
-          <span class="cad-bar" style="--bc:var(--cad-verm);width:37.0%"></span>
-          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">3</span>
-        </div>
-        
-        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
-          <span style="font-size:12px">光伏设备</span>
-          <span class="cad-bar" style="--bc:var(--cad-verm);width:37.0%"></span>
-          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">3</span>
-        </div>
-        
-        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
-          <span style="font-size:12px">塑料</span>
-          <span class="cad-bar" style="--bc:var(--cad-verm);width:37.0%"></span>
-          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">3</span>
+          <span style="font-size:12px">消费电子</span>
+          <span class="cad-bar" style="--bc:var(--cad-verm);width:85.0%"></span>
+          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">6</span>
         </div>
         
         <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
           <span style="font-size:12px">通信设备</span>
-          <span class="cad-bar" style="--bc:var(--cad-verm);width:37.0%"></span>
+          <span class="cad-bar" style="--bc:var(--cad-verm);width:71.0%"></span>
+          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">5</span>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
+          <span style="font-size:12px">元件</span>
+          <span class="cad-bar" style="--bc:var(--cad-verm);width:71.0%"></span>
+          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">5</span>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
+          <span style="font-size:12px">电网设备</span>
+          <span class="cad-bar" style="--bc:var(--cad-verm);width:57.0%"></span>
+          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">4</span>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
+          <span style="font-size:12px">半导体</span>
+          <span class="cad-bar" style="--bc:var(--cad-verm);width:57.0%"></span>
+          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">4</span>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
+          <span style="font-size:12px">通用设备</span>
+          <span class="cad-bar" style="--bc:var(--cad-verm);width:57.0%"></span>
+          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">4</span>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
+          <span style="font-size:12px">化学制品</span>
+          <span class="cad-bar" style="--bc:var(--cad-verm);width:57.0%"></span>
+          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">4</span>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
+          <span style="font-size:12px">专用设备</span>
+          <span class="cad-bar" style="--bc:var(--cad-verm);width:42.0%"></span>
           <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">3</span>
         </div>
         
         <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
-          <span style="font-size:12px">饮料乳品</span>
-          <span class="cad-bar" style="--bc:var(--cad-verm);width:25.0%"></span>
-          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">2</span>
-        </div>
-        
-        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
-          <span style="font-size:12px">环保设备</span>
-          <span class="cad-bar" style="--bc:var(--cad-verm);width:25.0%"></span>
-          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">2</span>
-        </div>
-        
-        <div style="display:grid;grid-template-columns:130px 1fr 34px;gap:9px;align-items:center;padding:3px 0">
-          <span style="font-size:12px">专业工程</span>
-          <span class="cad-bar" style="--bc:var(--cad-verm);width:25.0%"></span>
-          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">2</span>
+          <span style="font-size:12px">化学原料</span>
+          <span class="cad-bar" style="--bc:var(--cad-verm);width:42.0%"></span>
+          <span class="num" style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)">3</span>
         </div>
         
       </div>
@@ -952,9 +952,49 @@
       </tr></thead>
       <tbody>
       <tr>
+          <td><span class="cad-nm"><span class="l-en">SMIC Supply Chain</span><span class="l-zh">中芯国际概念</span></span></td>
+          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></td>
+          <td class="num conv r-pos">+10%</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Mid-cycle</span><span class="l-zh">周期中段</span></span>
+            <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
+            
+          </td>
+          <td style="font-size:11.5px;color:var(--muted)">有研硅 · 中科飞测 · 雅克科技</td>
+        </tr>
+      <tr>
+          <td><span class="cad-nm"><span class="l-en">SOE Reform</span><span class="l-zh">国企改革</span></span></td>
+          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Financials</span><span class="l-zh">金融</span></td>
+          <td class="num conv r-pos">+9%</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Mid-cycle</span><span class="l-zh">周期中段</span></span>
+            <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
+            
+          </td>
+          <td style="font-size:11.5px;color:var(--muted)">锐捷网络 · 冰轮环境 · 星网锐捷</td>
+        </tr>
+      <tr>
+          <td><span class="cad-nm"><span class="l-en">Synthetic Biology</span><span class="l-zh">合成生物</span></span></td>
+          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Healthcare & Biotech</span><span class="l-zh">医药与生物科技</span></td>
+          <td class="num conv r-pos">+7%</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Mid-cycle</span><span class="l-zh">周期中段</span></span>
+            <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
+            
+          </td>
+          <td style="font-size:11.5px;color:var(--muted)">义翘神州 · 九洲药业 · 翰宇药业</td>
+        </tr>
+      <tr>
+          <td><span class="cad-nm"><span class="l-en">Natural Gas</span><span class="l-zh">天然气</span></span></td>
+          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Energy Transition</span><span class="l-zh">新能源</span></td>
+          <td class="num conv r-pos">+5%</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Mid-cycle</span><span class="l-zh">周期中段</span></span>
+            <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
+            
+          </td>
+          <td style="font-size:11.5px;color:var(--muted)">雅克科技 · 冰轮环境 · 杰瑞股份</td>
+        </tr>
+      <tr>
           <td><span class="cad-nm"><span class="l-en">Consumer Electronics</span><span class="l-zh">消费电子概念</span></span></td>
           <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Technology & AI</span><span class="l-zh">科技与AI</span></td>
-          <td class="num conv r-pos">+11%</td>
+          <td class="num conv r-pos">+5%</td>
           <td><span class="cvband cv-pos"><span class="l-en">Mid-cycle</span><span class="l-zh">周期中段</span></span>
             <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
             
@@ -964,117 +1004,77 @@
       <tr>
           <td><span class="cad-nm"><span class="l-en">Memory Chips</span><span class="l-zh">存储芯片</span></span></td>
           <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Technology & AI</span><span class="l-zh">科技与AI</span></td>
-          <td class="num conv r-pos">+10%</td>
+          <td class="num conv r-pos">+5%</td>
           <td><span class="cvband cv-pos"><span class="l-en">Mid-cycle</span><span class="l-zh">周期中段</span></span>
             <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
-            <span class="cad-chip c-gold" style="margin-left:4px" data-tip-en="A global cross-market read confirms this theme's momentum (4-week -9%)." data-tip-zh="全球跨市场读数印证该题材动能（4周 -9%）。"><span class="l-en">AI-confirmed</span><span class="l-zh">AI印证</span></span>
+            <span class="cad-chip c-gold" style="margin-left:4px" data-tip-en="A global cross-market read confirms this theme's momentum (4-week -6%)." data-tip-zh="全球跨市场读数印证该题材动能（4周 -6%）。"><span class="l-en">AI-confirmed</span><span class="l-zh">AI印证</span></span>
           </td>
-          <td style="font-size:11.5px;color:var(--muted)">中科飞测 · 芯源微 · 红板科技</td>
+          <td style="font-size:11.5px;color:var(--muted)">中科飞测 · 芯源微 · 广钢气体</td>
         </tr>
       <tr>
-          <td><span class="cad-nm"><span class="l-en">SMIC Supply Chain</span><span class="l-zh">中芯国际概念</span></span></td>
-          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></td>
-          <td class="num conv r-pos">+10%</td>
-          <td><span class="cvband cv-pos"><span class="l-en">Recovering</span><span class="l-zh">修复回升</span></span>
-            <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
-            
-          </td>
-          <td style="font-size:11.5px;color:var(--muted)">有研硅 · 中科飞测 · 雅克科技</td>
-        </tr>
-      <tr>
-          <td><span class="cad-nm"><span class="l-en">New Industrialization</span><span class="l-zh">新型工业化</span></span></td>
-          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Advanced Manufacturing</span><span class="l-zh">高端制造</span></td>
-          <td class="num conv r-pos">+7%</td>
-          <td><span class="cvband cv-pos"><span class="l-en">Recovering</span><span class="l-zh">修复回升</span></span>
-            <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
-            
-          </td>
-          <td style="font-size:11.5px;color:var(--muted)">锐捷网络 · 埃斯顿 · 绿的谐波</td>
-        </tr>
-      <tr>
-          <td><span class="cad-nm"><span class="l-en">National Fund Holdings</span><span class="l-zh">国家大基金持股</span></span></td>
-          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Financials</span><span class="l-zh">金融</span></td>
-          <td class="num conv r-pos">+6%</td>
-          <td><span class="cvband cv-pos"><span class="l-en">Recovering</span><span class="l-zh">修复回升</span></span>
-            <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
-            
-          </td>
-          <td style="font-size:11.5px;color:var(--muted)">中科飞测 · 雅克科技 · 精测电子</td>
-        </tr>
-      <tr>
-          <td><span class="cad-nm"><span class="l-en">SOE Reform</span><span class="l-zh">国企改革</span></span></td>
-          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Financials</span><span class="l-zh">金融</span></td>
-          <td class="num conv r-pos">+5%</td>
-          <td><span class="cvband cv-pos"><span class="l-en">Recovering</span><span class="l-zh">修复回升</span></span>
-            <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
-            
-          </td>
-          <td style="font-size:11.5px;color:var(--muted)">锐捷网络 · 冰轮环境 · 星网锐捷</td>
-        </tr>
-      <tr>
-          <td><span class="cad-nm"><span class="l-en">Belt & Road Initiative</span><span class="l-zh">一带一路</span></span></td>
+          <td><span class="cad-nm"><span class="l-en">Guangdong-Hong Kong-Macau GBA</span><span class="l-zh">粤港澳大湾区</span></span></td>
           <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Real Estate & Infrastructure</span><span class="l-zh">地产与基建</span></td>
           <td class="num conv r-pos">+4%</td>
           <td><span class="cvband cv-pos"><span class="l-en">Mid-cycle</span><span class="l-zh">周期中段</span></span>
             <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
             
           </td>
-          <td style="font-size:11.5px;color:var(--muted)">锐捷网络 · 红板科技 · 上纬新材</td>
+          <td style="font-size:11.5px;color:var(--muted)">劲胜精密 · 奥比中光 · 广钢气体</td>
         </tr>
       <tr>
-          <td><span class="cad-nm"><span class="l-en">BYD Concept</span><span class="l-zh">比亚迪概念</span></span></td>
-          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Autos & Mobility</span><span class="l-zh">汽车与出行</span></td>
-          <td class="num conv r-pos">+3%</td>
-          <td><span class="cvband cv-pos"><span class="l-en">Recovering</span><span class="l-zh">修复回升</span></span>
+          <td><span class="cad-nm"><span class="l-en">National Fund Holdings</span><span class="l-zh">国家大基金持股</span></span></td>
+          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Financials</span><span class="l-zh">金融</span></td>
+          <td class="num conv r-pos">+4%</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Mid-cycle</span><span class="l-zh">周期中段</span></span>
             <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
             
           </td>
-          <td style="font-size:11.5px;color:var(--muted)">劲胜精密 · 思特威 · 昊志机电</td>
+          <td style="font-size:11.5px;color:var(--muted)">中科飞测 · 雅克科技 · 精测电子</td>
         </tr>
       <tr>
           <td><span class="cad-nm"><span class="l-en">Mini-LED Displays</span><span class="l-zh">MiniLED</span></span></td>
           <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></td>
           <td class="num conv r-pos">+3%</td>
-          <td><span class="cvband cv-pos"><span class="l-en">Recovering</span><span class="l-zh">修复回升</span></span>
+          <td><span class="cvband cv-pos"><span class="l-en">Mid-cycle</span><span class="l-zh">周期中段</span></span>
             <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
             
           </td>
-          <td style="font-size:11.5px;color:var(--muted)">精测电子 · 红板科技 · 京东方Ａ</td>
+          <td style="font-size:11.5px;color:var(--muted)">京东方Ａ · 精测电子 · 红板科技</td>
+        </tr>
+      <tr>
+          <td><span class="cad-nm"><span class="l-en">Hepatitis Concept</span><span class="l-zh">肝炎概念</span></span></td>
+          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Healthcare & Biotech</span><span class="l-zh">医药与生物科技</span></td>
+          <td class="num conv r-pos">+2%</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Mid-cycle</span><span class="l-zh">周期中段</span></span>
+            <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
+            
+          </td>
+          <td style="font-size:11.5px;color:var(--muted)">众生药业 · 义翘神州 · 翰宇药业</td>
+        </tr>
+      <tr>
+          <td><span class="cad-nm"><span class="l-en">Machine Tools</span><span class="l-zh">工业母机</span></span></td>
+          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Advanced Manufacturing</span><span class="l-zh">高端制造</span></td>
+          <td class="num conv r-pos">+2%</td>
+          <td><span class="cvband cv-pos"><span class="l-en">Mid-cycle</span><span class="l-zh">周期中段</span></span>
+            <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
+            
+          </td>
+          <td style="font-size:11.5px;color:var(--muted)">埃斯顿 · 大族数控 · 劲胜精密</td>
         </tr>
       <tr>
           <td><span class="cad-nm"><span class="l-en">Artificial Intelligence</span><span class="l-zh">人工智能</span></span></td>
           <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Technology & AI</span><span class="l-zh">科技与AI</span></td>
-          <td class="num conv r-pos">+3%</td>
+          <td class="num conv r-pos">+2%</td>
           <td><span class="cvband cv-pos"><span class="l-en">Mid-cycle</span><span class="l-zh">周期中段</span></span>
             <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
-            <span class="cad-chip c-gold" style="margin-left:4px" data-tip-en="A global cross-market read confirms this theme's momentum (4-week -9%)." data-tip-zh="全球跨市场读数印证该题材动能（4周 -9%）。"><span class="l-en">AI-confirmed</span><span class="l-zh">AI印证</span></span>
+            <span class="cad-chip c-gold" style="margin-left:4px" data-tip-en="A global cross-market read confirms this theme's momentum (4-week -6%)." data-tip-zh="全球跨市场读数印证该题材动能（4周 -6%）。"><span class="l-en">AI-confirmed</span><span class="l-zh">AI印证</span></span>
           </td>
-          <td style="font-size:11.5px;color:var(--muted)">锐捷网络 · 翱捷科技 · 昊志机电</td>
-        </tr>
-      <tr>
-          <td><span class="cad-nm"><span class="l-en">Advanced Packaging</span><span class="l-zh">先进封装</span></span></td>
-          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Technology & AI</span><span class="l-zh">科技与AI</span></td>
-          <td class="num conv r-pos">+2%</td>
-          <td><span class="cvband cv-pos"><span class="l-en">Recovering</span><span class="l-zh">修复回升</span></span>
-            
-            <span class="cad-chip c-gold" style="margin-left:4px" data-tip-en="A global cross-market read confirms this theme's momentum (4-week -9%)." data-tip-zh="全球跨市场读数印证该题材动能（4周 -9%）。"><span class="l-en">AI-confirmed</span><span class="l-zh">AI印证</span></span>
-          </td>
-          <td style="font-size:11.5px;color:var(--muted)">中科飞测 · 安集科技 · 甬矽电子</td>
-        </tr>
-      <tr>
-          <td><span class="cad-nm"><span class="l-en">Innovative Drugs</span><span class="l-zh">创新药</span></span></td>
-          <td style="color:var(--muted);font-size:11.5px"><span class="l-en">Healthcare & Biotech</span><span class="l-zh">医药与生物科技</span></td>
-          <td class="num conv r-pos">+2%</td>
-          <td><span class="cvband cv-pos"><span class="l-en">Recovering</span><span class="l-zh">修复回升</span></span>
-            <span class="cad-chip c-up" style="margin-left:4px" data-tip-en="Trading above its 200-day trend." data-tip-zh="运行于200日趋势之上。">↑<span class="l-en">trend</span><span class="l-zh">趋势</span></span>
-            
-          </td>
-          <td style="font-size:11.5px;color:var(--muted)">泽璟制药 · 艾力斯 · 海思科</td>
+          <td style="font-size:11.5px;color:var(--muted)">锐捷网络 · 昊志机电 · 翱捷科技</td>
         </tr>
       
       </tbody>
     </table>
-    <p style="font-size:11px;color:var(--muted);margin-top:6px"><span class="l-en">Cycle position: washout → building → strong → overheated. Overheated (red) = crowded and extended.</span><span class="l-zh">周期位置：洗盘 → 蓄势 → 强势 → 过热。过热（红）＝拥挤且乖离过大。</span> · 2026-07-31</p>
+    <p style="font-size:11px;color:var(--muted);margin-top:6px"><span class="l-en">Cycle position: washout → building → strong → overheated. Overheated (red) = crowded and extended.</span><span class="l-zh">周期位置：洗盘 → 蓄势 → 强势 → 过热。过热（红）＝拥挤且乖离过大。</span> · 2026-08-05</p>
     
   </section>
 
@@ -1105,8 +1105,8 @@
         </div>
         
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
-          <span>威力传动</span>
-          <span class="cad-asof">2026-08-10</span>
+          <span>聚仁新材</span>
+          <span class="cad-asof">2026-09-03</span>
         </div>
         
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -1124,12 +1124,17 @@
 
       
       <div class="cad-card">
-        <h3>📩 <span class="l-en">Exchange inquiries</span><span class="l-zh">交易所问询</span> <span class="cad-chip c-warn">14</span></h3>
+        <h3>📩 <span class="l-en">Exchange inquiries</span><span class="l-zh">交易所问询</span> <span class="cad-chip c-warn">13</span></h3>
         <p class="sub"><span class="l-en">Regulators asking hard questions — a risk flag, not a verdict.</span><span class="l-zh">监管层发问——风险信号，非定论。</span></p>
         
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
           <span></span>
-          <span class="cad-asof">2026-08-01</span>
+          <span class="cad-asof">2026-08-04</span>
+        </div>
+        
+        <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
+          <span></span>
+          <span class="cad-asof">2026-08-03</span>
         </div>
         
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -1144,12 +1149,7 @@
         
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
           <span></span>
-          <span class="cad-asof">2026-07-31</span>
-        </div>
-        
-        <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
-          <span></span>
-          <span class="cad-asof">2026-07-31</span>
+          <span class="cad-asof">2026-08-01</span>
         </div>
         
       </div>
@@ -1157,7 +1157,7 @@
 
       
       <div class="cad-card">
-        <h3>♻️ <span class="l-en">Active buybacks</span><span class="l-zh">进行中回购</span> <span class="cad-chip c-up">316</span></h3>
+        <h3>♻️ <span class="l-en">Active buybacks</span><span class="l-zh">进行中回购</span> <span class="cad-chip c-up">327</span></h3>
         <p class="sub"><span class="l-en">Companies buying their own shares — an insider conviction floor.</span><span class="l-zh">公司回购自家股份——内部人信心的底。</span></p>
         
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -1176,13 +1176,13 @@
         </div>
         
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
-          <span>立讯精密</span>
+          <span>五粮液</span>
           <span class="cad-asof">¥10.0yi</span>
         </div>
         
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
-          <span>恒瑞医药</span>
-          <span class="cad-asof">¥8.5yi</span>
+          <span>立讯精密</span>
+          <span class="cad-asof">¥10.0yi</span>
         </div>
         
       </div>
@@ -1251,7 +1251,7 @@
 
       
       <div class="cad-card">
-        <h3>📣 <span class="l-en">Earnings pre-announcements</span><span class="l-zh">业绩预告</span> <span class="cad-chip">5375</span></h3>
+        <h3>📣 <span class="l-en">Earnings pre-announcements</span><span class="l-zh">业绩预告</span> <span class="cad-chip">5387</span></h3>
         <p class="sub"><span class="l-en">Companies flagging results early — the biggest guided swings.</span><span class="l-zh">提前预告业绩的公司——预告变动最大者。</span></p>
         
         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);font-size:12px">
@@ -1299,7 +1299,7 @@
       <h3><span class="l-en">Leverage building fastest</span><span class="l-zh">杠杆累积最快</span></h3>
       <p class="sub"><span class="l-en">20-day financing balance jumped most here — the crowd is adding leverage. Cuts both ways: it fuels rallies and deepens unwinds.</span><span class="l-zh">这些名单20日融资余额跳升最多——市场在加杠杆。双刃剑：既助涨，也加深回撤。</span></p>
       <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:4px">
-        <span class="cad-chip c-warn">300937.SZ</span><span class="cad-chip c-warn">300740.SZ</span><span class="cad-chip c-warn">301108.SZ</span><span class="cad-chip c-warn">301578.SZ</span><span class="cad-chip c-warn">300191.SZ</span><span class="cad-chip c-warn">301295.SZ</span><span class="cad-chip c-warn">001221.SZ</span><span class="cad-chip c-warn">301234.SZ</span><span class="cad-chip c-warn">301157.SZ</span><span class="cad-chip c-warn">301568.SZ</span><span class="cad-chip c-warn">001286.SZ</span><span class="cad-chip c-warn">300875.SZ</span><span class="cad-chip c-warn">300886.SZ</span><span class="cad-chip c-warn">301122.SZ</span><span class="cad-chip c-warn">301112.SZ</span><span class="cad-chip c-warn">300892.SZ</span><span class="cad-chip c-warn">301520.SZ</span><span class="cad-chip c-warn">001395.SZ</span><span class="cad-chip c-warn">301585.SZ</span><span class="cad-chip c-warn">301068.SZ</span>
+        <span class="cad-chip c-warn">300951.SZ</span><span class="cad-chip c-warn">301234.SZ</span><span class="cad-chip c-warn">300937.SZ</span><span class="cad-chip c-warn">301568.SZ</span><span class="cad-chip c-warn">301578.SZ</span><span class="cad-chip c-warn">301108.SZ</span><span class="cad-chip c-warn">301585.SZ</span><span class="cad-chip c-warn">300892.SZ</span><span class="cad-chip c-warn">001221.SZ</span><span class="cad-chip c-warn">002043.SZ</span><span class="cad-chip c-warn">301520.SZ</span><span class="cad-chip c-warn">300886.SZ</span><span class="cad-chip c-warn">300639.SZ</span><span class="cad-chip c-warn">301357.SZ</span><span class="cad-chip c-warn">301122.SZ</span><span class="cad-chip c-warn">301310.SZ</span><span class="cad-chip c-warn">001328.SZ</span><span class="cad-chip c-warn">301112.SZ</span><span class="cad-chip c-warn">300997.SZ</span><span class="cad-chip c-warn">301378.SZ</span>
       </div>
     </div>
     
@@ -1310,15 +1310,39 @@
       <tbody>
       
         <tr>
-          <td><span class="cad-nm">300937.SZ</span></td>
+          <td><span class="cad-nm">300951.SZ</span></td>
           <td><span class="flag"><span class="l-en">leverage_crowded</span><span class="l-zh">leverage_crowded</span></span> </td>
-          <td class="num conv r-pos">+0.84</td>
+          <td class="num conv r-pos">+0.93</td>
         </tr>
       
         <tr>
-          <td><span class="cad-nm">水羊股份</span> <span class="cad-tk">300740.SZ</span></td>
+          <td><span class="cad-nm">301234.SZ</span></td>
           <td><span class="flag"><span class="l-en">leverage_crowded</span><span class="l-zh">leverage_crowded</span></span> </td>
-          <td class="num conv r-pos">+0.79</td>
+          <td class="num conv r-pos">+0.88</td>
+        </tr>
+      
+        <tr>
+          <td><span class="cad-nm">300937.SZ</span></td>
+          <td><span class="flag"><span class="l-en">leverage_crowded</span><span class="l-zh">leverage_crowded</span></span> </td>
+          <td class="num conv r-pos">+0.75</td>
+        </tr>
+      
+        <tr>
+          <td><span class="cad-nm">思泰克</span> <span class="cad-tk">301568.SZ</span></td>
+          <td><span class="flag"><span class="l-en">leverage_crowded</span><span class="l-zh">leverage_crowded</span></span> </td>
+          <td class="num conv r-pos">+0.73</td>
+        </tr>
+      
+        <tr>
+          <td><span class="cad-nm">301578.SZ</span></td>
+          <td><span class="flag"><span class="l-en">leverage_crowded</span><span class="l-zh">leverage_crowded</span></span> </td>
+          <td class="num conv r-pos">+0.73</td>
+        </tr>
+      
+        <tr>
+          <td><span class="cad-nm">301108.SZ</span></td>
+          <td><span class="flag"><span class="l-en">leverage_crowded</span><span class="l-zh">leverage_crowded</span></span> </td>
+          <td class="num conv r-pos">+0.72</td>
         </tr>
       
       </tbody>
@@ -1702,6 +1726,7 @@
   
 </footer>
 <script src="illus.js?v=8e0a3779" defer></script>
-<script src="theme.js?v=55773325" defer></script>
+<script src="theme.js?v=37ffbce3" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

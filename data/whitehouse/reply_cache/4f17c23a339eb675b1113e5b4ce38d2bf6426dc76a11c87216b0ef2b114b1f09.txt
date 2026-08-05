@@ -1,0 +1,51 @@
+{
+  "activate": true,
+  "importance": 75,
+  "banner_days": 5,
+  "tone": "tailwind",
+  "banner_title": "Treasury injects $128bn into drained RRP — reserves backstop the tape",
+  "banner_title_zh": "财政部向已耗尽的逆回购工具注入1280亿美元——准备金为市场提供支撑",
+  "summary": "Treasury spent down $128bn of its TGA cash since July 30, landing directly into bank reserves with the overnight RRP buffer exhausted. This is a high-impact liquidity injection that acts as a tailwind for risk assets amid a contracting Fed liquidity backdrop.",
+  "summary_zh": "自7月30日以来，财政部已支出1280亿美元的TGA现金，直接流入银行准备金，隔夜逆回购缓冲已耗尽。在美联储流动性收缩的背景下，这是一次高影响力的流动性注入，对风险资产构成顺风。",
+  "analysis": "Mechanically, the $128bn drop in the TGA over two business days represents Treasury spending cash into the private sector. Because the overnight RRP facility sits at a mere $2.2bn, this injection bypasses the usual RRP drain and lands straight into bank reserves — the highest-impact plumbing scenario. In a ‘neutral_hollow’ liquidity state with reserves already tightening, this flow provides a meaningful, direct liquidity boost.\n\nFor the current tape under a ‘Reflation’ regime with contracting Fed liquidity, this injection acts as a tactical backstop. It does not reverse the broader liquidity trend, which is still negative over a 20-day window, but it forcefully cushions any near-term risk-off pressure or incipient drawdown. The flow is large enough to be felt across the curve, easing marginal funding stress and supporting duration-sensitive assets.\n\nThe read would be falsified if the TGA rebuilds sharply in the coming days — for instance, through large corporate or individual tax receipts that pull cash back out of reserves — reversing the injection. A sudden surge in bill issuance that drains reserves would also offset the effect. Duration-sensitive megacap/tech complex is the primary beneficiary; defensives and low-duration value lose relative appeal in a liquidity-driven squeeze.",
+  "sectors": [
+    {
+      "name": "Long-duration growth / Megacap tech",
+      "impact": "tailwind",
+      "rationale": "A direct reserves injection eases the discount-rate pressure that hits long-duration assets hardest, favoring growth over value."
+    },
+    {
+      "name": "High-beta cyclicals",
+      "impact": "tailwind",
+      "rationale": "Liquidity-driven boosts to risk appetite mechanically lift higher-beta names in a reflation backdrop."
+    },
+    {
+      "name": "Defensive / Low-volatility equities",
+      "impact": "headwind",
+      "rationale": "Liquidity-driven risk-on flows rotate capital out of defensives and into duration-sensitive growth."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "QQQ",
+      "direction": "benefit",
+      "rationale": "Nasdaq-100 ETF, a direct proxy for long-duration megacap growth that benefits most from reserve injections."
+    },
+    {
+      "symbol": "TLT",
+      "direction": "benefit",
+      "rationale": "Long-duration Treasury ETF; a reserves boost eases funding stress and supports long-end bonds."
+    },
+    {
+      "symbol": "IWM",
+      "direction": "benefit",
+      "rationale": "Small-cap ETF; high-beta and rate-sensitive, it benefits from improved banking-system liquidity."
+    },
+    {
+      "symbol": "NVDA",
+      "direction": "benefit",
+      "rationale": "High-duration megacap; discount-rate relief directly supports stretched valuations."
+    }
+  ],
+  "confidence": "medium"
+}

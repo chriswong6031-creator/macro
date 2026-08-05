@@ -1,12 +1,40 @@
 {
  "active": {
+  "cn_tech:cn_semis->cn_ai_compute": {
+   "pair_id": "cn_tech:cn_semis->cn_ai_compute",
+   "sector": "cn_tech",
+   "from_leg": "cn_semis",
+   "to_leg": "cn_ai_compute",
+   "started": "2026-08-04",
+   "lapse_count": 0,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-07-09",
+     "runup_pct": 0.4618,
+     "runup_z": 2.36,
+     "drawdown_pct": 0.2689,
+     "qualified_by": "z"
+    },
+    "turn": {
+     "low_date": "2026-07-30",
+     "off_low_pct": 0.1671,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.0463,
+     "inflected": true,
+     "ratio_20s_high": false
+    },
+    "asof": "2026-08-05"
+   }
+  },
   "cn_tech:cn_semis->cn_software": {
    "pair_id": "cn_tech:cn_semis->cn_software",
    "sector": "cn_tech",
    "from_leg": "cn_semis",
    "to_leg": "cn_software",
    "started": "2026-07-31",
-   "lapse_count": 0,
+   "lapse_count": 3,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-30",

@@ -146,10 +146,15 @@ def test_primary_public_dashboards_ship_the_static_earnings_wire_card() -> None:
 
 
 def test_hover_gap_release_uses_fresh_immutable_asset_chain() -> None:
-    assert "account.js?v=20260801-crossfade" in TEMPLATE_THEME_JS
-    assert "account.js?v=20260801-crossfade" in SITE_THEME_JS
-    assert "nav_market.js?v=20260801-crossfade" in TEMPLATE_ACCOUNT_JS
-    for stale in ("20260730-exact6", "20260730-exact7", "20260731-folded2"):
+    assert "account.js?v=20260803-onemenu" in TEMPLATE_THEME_JS
+    assert "account.js?v=20260803-onemenu" in SITE_THEME_JS
+    assert "nav_market.js?v=20260803-onemenu" in TEMPLATE_ACCOUNT_JS
+    for stale in (
+        "20260730-exact6",
+        "20260730-exact7",
+        "20260731-folded2",
+        "20260801-crossfade",
+    ):
         assert stale not in TEMPLATE_THEME_JS
         assert stale not in SITE_THEME_JS
         assert stale not in TEMPLATE_ACCOUNT_JS
@@ -273,4 +278,4 @@ def test_nested_pages_resolve_market_nav_from_theme_asset_root() -> None:
         assert "new URL('.', _mmThemeScript" in source
         assert source.count("var pfx = _mmSharedAssetRoot;") == 3
         assert "location.pathname.indexOf('/sectors/')" not in source
-        assert "s.src = pfx + 'account.js?v=20260801-crossfade'" in source
+        assert "s.src = pfx + 'account.js?v=20260803-onemenu'" in source

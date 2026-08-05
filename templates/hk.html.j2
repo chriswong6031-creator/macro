@@ -315,9 +315,11 @@
      a coloured left bar plus a tint fading out to the right. The bar is the
      non-verbal encoding of the bucket and the label IS the stance — "Live now",
      "Ran — don't chase" are complete instructions on their own. --sgc carries
-     the tone so one rule set serves four buckets. Tones are --pv-* tokens and
+     the tone so one rule set serves all five buckets. Tones are --pv-* tokens and
      follow the active language convention: green-up/red-down in English,
-     red-up/green-down in Chinese. */
+     red-up/green-down in Chinese — except the two direction-NEUTRAL tones
+     (--pv-wait, --muted), which mean the same thing in both and are the right home
+     for a stance with no direction in it. */
   .nb-stage-hd { grid-column: 1 / -1; display: flex; align-items: baseline; flex-wrap: wrap;
                  gap: 3px 9px; margin: 15px 0 4px; padding: 5px 11px 5px 9px;
                  border-left: 3px solid var(--sgc, var(--muted)); border-radius: 0 8px 8px 0;
@@ -337,6 +339,11 @@
   .sg-live       { --sgc: var(--pv-buy); }
   .sg-setting_up { --sgc: var(--pv-near); }
   .sg-ran        { --sgc: var(--muted); }
+  /* Basing is the "watch — don't chase" shelf, so it takes the wait tone, not the
+     avoid tone it used to inherit by sitting inside Blocked. --pv-wait is amber and
+     is deliberately one of the two verb tones the zh 红涨绿跌 block does NOT remap
+     (theme.css) — a directionless stance must read the same in both languages. */
+  .sg-basing     { --sgc: var(--pv-wait); }
   .sg-blocked    { --sgc: var(--pv-avoid); }
 
   /* ── stage filter chips ──────────────────────────────────────────────────
@@ -377,10 +384,12 @@
   #standouts:not(.st-table-mode)[data-stagef="live"]       [data-stage]:not([data-stage="live"]),
   #standouts:not(.st-table-mode)[data-stagef="setting_up"] [data-stage]:not([data-stage="setting_up"]),
   #standouts:not(.st-table-mode)[data-stagef="ran"]        [data-stage]:not([data-stage="ran"]),
+  #standouts:not(.st-table-mode)[data-stagef="basing"]     [data-stage]:not([data-stage="basing"]),
   #standouts:not(.st-table-mode)[data-stagef="blocked"]    [data-stage]:not([data-stage="blocked"]) { display: none !important; }
   #standouts:not(.st-table-mode)[data-stagef="live"]       .sm-hidden[data-stage="live"],
   #standouts:not(.st-table-mode)[data-stagef="setting_up"] .sm-hidden[data-stage="setting_up"],
   #standouts:not(.st-table-mode)[data-stagef="ran"]        .sm-hidden[data-stage="ran"],
+  #standouts:not(.st-table-mode)[data-stagef="basing"]     .sm-hidden[data-stage="basing"],
   #standouts:not(.st-table-mode)[data-stagef="blocked"]    .sm-hidden[data-stage="blocked"] { display: flex !important; }
   #standouts[data-stagef]:not([data-stagef="all"]) .nb-grid-section .sm-bar { display: none !important; }
 
@@ -455,6 +464,10 @@
   .ts-row { cursor: pointer; transition: background .12s; }
   .ts-row:hover { background: var(--panel2); }
   .ts-tk { font-weight: 800; color: var(--text); }
+  /* The ticker is a real anchor so theme.js's capture-phase Terminal intercept can
+     see it (and so middle-/cmd-click still opens a tab). It must not read as a blue
+     link inside the row — the row itself is the affordance. */
+  .ts-tk-a { color: inherit; text-decoration: none; }
   .ts-nm { font-size: 10px; color: var(--muted); }
   .ts-tbl td.az-up { color: var(--up); font-weight: 700; }
   .ts-tbl td.az-dn { color: var(--down); font-weight: 700; }
@@ -3561,11 +3574,16 @@
      tells them apart. #}
   {%- set _VMN = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
                   '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'} -%}
-  {%- set _stage_order = ['live','setting_up','ran','blocked'] -%}
-  {%- set _stage_en  = {'live':'Live now','setting_up':'Setting up','ran':'Ran — don’t chase','blocked':'Blocked'} -%}
-  {%- set _stage_zh  = {'live':'现在可操作','setting_up':'形成中','ran':'已启动 — 勿追','blocked':'受阻'} -%}
-  {%- set _stage_sub_en = {'live':'entry window is open','setting_up':'not there yet — get ready','ran':'the move already started','blocked':'stand aside for now'} -%}
-  {%- set _stage_sub_zh = {'live':'入场窗口已打开','setting_up':'尚未触发 — 做好准备','ran':'行情已经启动','blocked':'暂时观望'} -%}
+  {# `basing` sits between `ran` and `blocked` (engine.us_board_rank.STAGE_ORDER):
+     nothing to act on, so below every actionable bucket — but not the stand-aside
+     verdict either. It is the cycle read's "this name is working on a low", which
+     used to be filed under Blocked beside the falling knives. Watch words only:
+     this shelf never says buy. #}
+  {%- set _stage_order = ['live','setting_up','ran','basing','blocked'] -%}
+  {%- set _stage_en  = {'live':'Live now','setting_up':'Setting up','ran':'Ran — don’t chase','basing':'Basing','blocked':'Blocked'} -%}
+  {%- set _stage_zh  = {'live':'现在可操作','setting_up':'形成中','ran':'已启动 — 勿追','basing':'筑底中','blocked':'受阻'} -%}
+  {%- set _stage_sub_en = {'live':'entry window is open','setting_up':'not there yet — get ready','ran':'the move already started','basing':'no entry signal yet — watch, don’t chase','blocked':'stand aside for now'} -%}
+  {%- set _stage_sub_zh = {'live':'入场窗口已打开','setting_up':'尚未触发 — 做好准备','ran':'行情已经启动','basing':'尚无入场信号 — 观察，勿追高','blocked':'暂时观望'} -%}
   {# ── the Priority formula, READ from the artifact, not hard-coded ──────────
        The masterplan freezes hk_prophet_v1 on the us_prophet_v1 constants, but a
        weight printed on a user surface that disagrees with the engine's is a wrong
@@ -3623,11 +3641,13 @@
        'live':'The entry signal is open right now — buy now, partial, or buy soon.' ~ _pri_en,
        'setting_up':'The setup is forming but the entry has not fired — awaiting confluence, waiting on a bounce, or on watch. Nothing to do yet.' ~ _pri_en,
        'ran':'The signal fired and price has already moved — extended, topping, or hold. The entry window has passed; wait for the next setup.' ~ _pri_en,
+       'basing':'The cycle read has these names nearing a low — still falling, but working on a base rather than breaking down. No entry has fired and none may; this shelf exists so a name working on a low stays in front of you instead of disappearing into Blocked. Watch, don’t chase.' ~ _pri_en,
        'blocked':'Entry is blocked, exited, avoided, or the trend is down. Each card names its own reason on the ⚠ mark. Stand aside.' ~ _pri_en } -%}
   {%- set _stage_tip_zh = {
        'live':'入场信号当前已打开 —— 可买入、部分买入或即将买入。' ~ _pri_zh,
        'setting_up':'形态正在形成但入场尚未触发 —— 等待共振、等待回踩或处于观察中。暂时无需操作。' ~ _pri_zh,
        'ran':'信号已触发且价格已经启动 —— 过度拉伸、做顶或持有。入场窗口已过，等待下一个买点。' ~ _pri_zh,
+       'basing':'周期读数显示这些个股正在接近低点 —— 仍在下跌，但更像在筑底而非破位。入场信号尚未触发，也可能不会触发；设立此组是为了让正在筑底的个股留在你的视线内，而不是消失在「受阻」里。观察，勿追高。' ~ _pri_zh,
        'blocked':'入场受阻、已离场、建议回避，或趋势向下。每张卡片的 ⚠ 标记会写明各自的原因。请观望。' ~ _pri_zh } -%}
   {# The render list: stage bucket first, engine order preserved INSIDE each bucket
      (the artifact ships buy[] pre-sorted by stage then score desc, so this only
@@ -3635,7 +3655,7 @@
      no stage, or a stage value newer than this template, still renders, but it may
      never sit above a live row. #}
   {%- set _render_list = namespace(items=[]) -%}
-  {%- set _sc = {'live':0,'setting_up':0,'ran':0,'blocked':0} -%}
+  {%- set _sc = {'live':0,'setting_up':0,'ran':0,'basing':0,'blocked':0} -%}
   {%- if _hsg.any -%}
     {%- for _sk in _stage_order -%}
       {%- set _grp = _hkb | selectattr('stage', 'equalto', _sk) | list -%}
@@ -3736,8 +3756,11 @@
          cautious lane (DESIGN_DOCTRINE §3: unknown states route to the cautious
          lane), and the ⚠ mark names the check that shut the entry. Demoting also
          drops the buy zone from lit to muted, because `_zk` reads `_verb` below.
+         Basing is in the same list for the same reason and the sharpest case of it:
+         its heading says "no entry signal yet — watch, don't chase", so a buy-family
+         verb under it is exactly the contradiction this rule exists to prevent.
          Legacy path unaffected — there is no stage to disagree with. #}
-      {% if _hsg.any and n.get('stage') in ('ran','blocked') and _verb in ('buy','near') %}{% set _verb = 'wait' %}{% endif %}
+      {% if _hsg.any and n.get('stage') in ('ran','basing','blocked') and _verb in ('buy','near') %}{% set _verb = 'wait' %}{% endif %}
       {% set _lbl = (n.label or '')|upper %}
       {% set _stage = 4 if ('RALLY' in _lbl or 'UPTREND' in _lbl)
                else (1 if ('BOTTOM' in _lbl or 'BOUNCE' in _lbl)
@@ -4056,8 +4079,8 @@
           {% set _lmz = r.get('momentum_z') if r.get('momentum_z') is not none else r.get('alpha') %}
           {% set _lage = r.get('days_since_signal') %}
           {% set _lt = r.get('leadership') or r.get('theme') %}
-          <tr class="ts-row" onclick="location.href='hk_lookup.html#{{ r.get('ticker','') }}'">
-            <td class="c-stock"><span class="ts-tk">{{ r.get('ticker','') }}</span>{% if _lnm %} <span class="ts-nm">{{ t(_lnm, r.get('name_zh') or _lnm) }}</span>{% endif %}</td>
+          <tr class="ts-row" data-tkr="{{ r.get('ticker','') }}">
+            <td class="c-stock"><a class="ts-tk-a" href="hk_lookup.html#{{ r.get('ticker','') }}"><span class="ts-tk">{{ r.get('ticker','') }}</span></a>{% if _lnm %} <span class="ts-nm">{{ t(_lnm, r.get('name_zh') or _lnm) }}</span>{% endif %}</td>
             {% set _lsec = r.get('sector') or '' %}
             {% set _lsz = r.get('sector_zh') %}
             <td class="muted c-sector">{% if _lsec %}{{ t(_lsec, _lsz if (_lsz and _lsz != _lsec) else tr(_lsec)) }}{% else %}—{% endif %}</td>
@@ -4074,6 +4097,33 @@
         {% endfor %}
         </tbody>
       </table></div>{# /tbl-scroll #}
+      {# ── 🏃 leaders row click → Terminal ──────────────────────────────────────
+           This table used to carry onclick="location.href='hk_lookup.html#TKR'" on
+           the <tr>. theme.js re-routes Terminal-covered analyzer links by
+           intercepting <a href> clicks in the capture phase (hk_lookup.html is in its
+           TERMINAL_PAGES) — an inline location.href assignment is invisible to it, so
+           every row click landed on the retired hk_lookup.html analyzer instead of the
+           Terminal portal. The ticker cell is now a real anchor (theme.js handles it,
+           and cmd-/middle-click keeps its native new-tab behaviour); this handler
+           covers clicks anywhere else in the row and mirrors the contract in
+           stocktable.js. Bubble phase on purpose: theme.js's capture handler calls
+           stopPropagation for anchor clicks, so the two can never both fire. #}
+      <script>
+      (function () {
+        document.addEventListener('click', function (e) {
+          if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          if (!e.target || !e.target.closest) return;
+          var tr = e.target.closest('tr.ts-row[data-tkr]');
+          if (!tr) return;
+          if (e.target.closest('a')) return;   /* anchors route themselves */
+          var tk = tr.getAttribute('data-tkr') || '';
+          if (!tk) return;
+          var T = window.MDXTerminal;
+          if (T && T.on && T.on() && T.open && T.open(tk, tr)) return;
+          location.href = 'hk_lookup.html#' + encodeURIComponent(tk);
+        });
+      })();
+      </script>
     </div>
     {% endif %}
     {% if setups.watch %}
@@ -4521,7 +4571,7 @@ function renderStrip(ev){
     var to=isZh()?e.to_leg.name_zh:e.to_leg.name_en;
     var sect=isZh()?e.sector_name_zh:e.sector_name_en;
     var copy=isZh()?e.copy_zh:e.copy_en;   // full sentence -> native title (JSON copy, not t()-macro)
-    return '<a class="rc-chip rc-'+esc(sev)+'" href="baskets.html" title="'+esc(copy||'')+'">'
+    return '<a class="rc-chip rc-'+esc(sev)+'" href="baskets_hk.html" title="'+esc(copy||'')+'">'
       +'⟲ <b>'+esc(from)+'</b> <span class="rc-arrow">→</span> <b>'+esc(to)+'</b>'
       +' <span class="rc-sect">('+esc(sect)+')</span>'
       +' <span class="rc-days">· '+esc(e.day_n)+t('d','天')+'</span></a>';

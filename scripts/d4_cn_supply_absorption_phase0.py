@@ -17,8 +17,9 @@ ABSORPTION DEFINITION:
 E1 — Active 减持 execution window opens:
   Source: data/cn_holder_sales/windows.parquet
   Availability: window_open + 1 trading day (PIT-correct)
-  Ticker normalization: windows use .SH suffix; price store uses .SS suffix.
-    .SH → .SS for Shanghai tickers; .SZ unchanged.
+  Ticker normalization: none required since 2026-08-05 — windows.parquet now carries
+    the store's own .SS/.SZ/.BJ keys. _norm_ticker is retained as a legacy shim so a
+    pre-heal .SH file still joins; it is a no-op on a current file.
 
 E2 — Deep-discount block day (avg_premium_pct <= −15):
   REGISTERED GAP: data/china_block_trades/detail.parquet is a rolling snapshot
@@ -70,8 +71,11 @@ PRE-REGISTERED AMENDMENTS:
   AM-4: Trailing-60d size proxy = median(close * volume) in [signal_date-60d, signal_date].
         Close price alone used if volume unavailable. If fewer than 20 observations,
         event placed in median size bucket.
-  AM-5: SH ticker normalization: .SH → .SS in price store lookup. All coverage
-        stats use normalized keys.
+  AM-5: Price-store lookup goes through _norm_ticker, which maps a legacy .SH key to
+        .SS. Since the 2026-08-05 relabel of data/cn_holder_sales the panel already
+        carries .SS, so this is a no-op; the shim stays for pre-heal files. Coverage
+        stats use normalized keys. This changes no join outcome — d4 always applied
+        the shim, so its numbers are unaffected by the relabel.
 
 Run:
     python -m scripts.d4_cn_supply_absorption_phase0
@@ -127,7 +131,7 @@ AMENDMENTS = [
     "AM-2: Events with fewer than 1 matched control excluded from G1; exclusion rate reported.",
     "AM-3: Trailing-60d vol = std(log-returns); if <20 obs, median-vol bucket.",
     "AM-4: Trailing-60d size = median(close*volume); price-only if no volume. If <20 obs, median-size bucket.",
-    "AM-5: .SH tickers in windows mapped to .SS in price store.",
+    "AM-5: Price-store lookup via _norm_ticker (legacy .SH -> .SS shim; no-op since the 2026-08-05 relabel). No join outcome changes.",
 ]
 
 # ---------------------------------------------------------------------------
@@ -135,7 +139,19 @@ AMENDMENTS = [
 # ---------------------------------------------------------------------------
 
 def _norm_ticker(t: str) -> str:
-    """Normalize ticker: .SH → .SS for price store lookup."""
+    """Legacy `.SH -> .SS` shim for the price-store lookup. Identity on any other key.
+
+    `data/china_stocks_raw` is `.SS`/`.SZ` only and has never held a `.SH` file, so a
+    `.SH` key is unjoinable — and unjoinable *silently*, as an absent dict key rather
+    than an error. This shim is why d4's E1 lane joined despite `data/cn_holder_sales`
+    emitting `.SH`; `scripts/d2_cn_holder_sale_phase0.py` had no equivalent and so
+    joined zero Shanghai events until that store was relabelled on 2026-08-05.
+
+    Kept rather than deleted: the E1 panel on someone's disk may predate the relabel,
+    and two siblings import it (`d4_cn_supply_absorption_e2_rerun`,
+    `d4_cn_supply_absorption_d401b_stage0`) for a different, runner-local store whose
+    vocabulary is not the one this fix touched.
+    """
     if t.endswith(".SH"):
         return t[:-3] + ".SS"
     return t
@@ -725,19 +741,27 @@ def main() -> None:
     print(f"\n[windows] {len(windows)} rows, "
           f"date range: {windows['signal_date'].min().date()}..{windows['signal_date'].max().date()}")
     print(f"  Unique tickers (raw): {windows['ticker'].nunique()}")
-    print(f"  Unique SH tickers: {(windows['ticker'].str.endswith('.SH')).sum()} events, "
-          f"{windows[windows['ticker'].str.endswith('.SH')]['ticker'].nunique()} unique")
-    print(f"  Unique SZ tickers: {(windows['ticker'].str.endswith('.SZ')).sum()} events, "
-          f"{windows[windows['ticker'].str.endswith('.SZ')]['ticker'].nunique()} unique")
+    # Count by EXCHANGE, not by a suffix spelling: a pre-heal file says .SH and a
+    # current one says .SS for the same Shanghai names, and a hard-coded ".SH" test
+    # would silently report zero Shanghai events against a healed panel.
+    for label, suffixes in (("Shanghai", (".SH", ".SS")), ("Shenzhen", (".SZ",)),
+                            ("Beijing", (".BJ",))):
+        sel = windows["ticker"].str.endswith(suffixes)
+        print(f"  {label} tickers: {int(sel.sum())} events, "
+              f"{windows.loc[sel, 'ticker'].nunique()} unique")
 
     # Coverage stats (ticker-level)
-    sh_tickers = {t for t in windows["ticker"].unique() if t.endswith(".SH")}
+    sh_tickers = {t for t in windows["ticker"].unique() if t.endswith((".SH", ".SS"))}
     sz_tickers = {t for t in windows["ticker"].unique() if t.endswith(".SZ")}
+    bj_tickers = {t for t in windows["ticker"].unique() if t.endswith(".BJ")}
     sh_in_store = {t for t in sh_tickers if _norm_ticker(t) in prices}
     sz_in_store = {t for t in sz_tickers if t in prices}
-    print(f"\n[coverage] SH unique: {len(sh_tickers)}, in store (after .SH→.SS): {len(sh_in_store)}")
-    print(f"  SZ unique: {len(sz_tickers)}, in store: {len(sz_in_store)}")
-    print(f"  Total covered tickers: {len(sh_in_store)+len(sz_in_store)}")
+    bj_in_store = {t for t in bj_tickers if t in prices}
+    print(f"\n[coverage] Shanghai unique: {len(sh_tickers)}, in store: {len(sh_in_store)}")
+    print(f"  Shenzhen unique: {len(sz_tickers)}, in store: {len(sz_in_store)}")
+    print(f"  Beijing unique: {len(bj_tickers)}, in store: {len(bj_in_store)} "
+          f"(Beijing sits outside the top-cap price store; 0 is expected)")
+    print(f"  Total covered tickers: {len(sh_in_store)+len(sz_in_store)+len(bj_in_store)}")
 
     # ---- Build event table ----
     ev_df = build_event_table(windows, prices, basket_members)
@@ -977,9 +1001,10 @@ def _write_report(
     W("")
     W(f"**Covered-universe caveat (PROMINENT): only {100*n_covered/max(n_total,1):.1f}% of E1 events have price data.**")
     W("")
-    W("Join mechanism: `windows.parquet` uses `.SH` suffixes for Shanghai names;")
-    W("`china_stocks_raw` stores them as `.SS`. After `.SH <-> .SS` normalization,")
-    W("673 of 1,927 SH tickers and 645 of 2,786 SZ tickers are covered.")
+    W("Join mechanism: `windows.parquet` and `china_stocks_raw` share one key space")
+    W("(`.SS`/`.SZ`/`.BJ`) since the 2026-08-05 relabel; `_norm_ticker` remains only as a")
+    W("legacy `.SH -> .SS` shim. Coverage is unchanged by that relabel — d4 always applied")
+    W("the shim. Beijing (`.BJ`) names sit outside the top-cap price store and do not join.")
     W("")
     W(f"Coverage {100*n_covered/max(n_total,1):.1f}% is within the pre-stated expected range of ~28–30% and is a structural")
     W("limit of the price universe, not a bug. Every return estimate below is an upper bound")

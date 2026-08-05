@@ -821,6 +821,11 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-cmp-ft{font-size:12.5px;line-height:1.35;color:var(--ink-soft);min-width:0}
 .obm-cmp-cell{display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:650;color:var(--ink);line-height:1.25}
 .obm-cmp-cell svg{width:14px;height:14px;stroke:var(--blue);stroke-width:2.6;fill:none}
+/* partial inclusion — the tick drawn in the muted ink instead of the blue one, so a
+   tier that gets SOME of a row is neither a full tick nor a dash. Deliberately
+   quieter than the included tick, never louder: full access has to stay the loudest
+   thing in the column. Matches .mx .ok.some on the landing matrix. */
+.obm-cmp-cell svg.obm-cmp-part{stroke:var(--faint)}
 .obm-cmp-cell.obm-cmp-no{color:var(--faint)}
 .obm-cmp-cell.obm-cmp-no::before{content:"–";font-weight:600}
 .obm-cmp-soon{font-family:var(--display);font-weight:800;font-size:7.5px;letter-spacing:.08em;color:var(--q-gold);background:var(--gold-wash);border-radius:5px;padding:2px 5px}

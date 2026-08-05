@@ -15,6 +15,19 @@ from engine.capital_structure.companyfacts_authenticated_read import (
     load_authenticated_companyfacts_snapshot,
 )
 from engine.capital_structure.source_store import ContentAddressedSourceStore, LocalStore
+from engine.capital_structure.source_ledger_io import (
+    encode_source_ledger,
+    read_source_ledger,
+    source_ledger_path,
+)
+
+
+def _write_ledger(path, records):
+    """Write a source-manifest ledger fixture, bypassing the validating writer.
+
+    Fixtures deliberately include ledgers the identity law rejects.
+    """
+    path.write_bytes(encode_source_ledger(list(records)))
 
 
 _SUBMISSION = b"""\
@@ -89,7 +102,7 @@ def _selected(tmp_path, monkeypatch):
     store = ContentAddressedSourceStore(LocalStore(tmp_path / "objects"))
     anchor = _anchor_manifest(store)
     (root.parent).mkdir(parents=True, exist_ok=True)
-    pd.DataFrame([anchor]).to_parquet(root.parent / "source_manifest.parquet", index=False)
+    _write_ledger(source_ledger_path(root.parent), [anchor])
     signer = companyfacts.DeterministicTestCompanyFactsSigner(
         "R" * 32, key_id="companyfacts-authenticated-read-test-v1",
     )

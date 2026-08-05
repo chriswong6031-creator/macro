@@ -2845,12 +2845,18 @@ def main() -> int:
                 "not_topped": bool(_sv.get("not_topped", True)),
                 "htf_s1": bool(_sv.get("htf_s1", False)),
                 "htf_s2": bool(_sv.get("htf_s2", False)),
+                # Graded-cohort label (measured-floor change 2026-08-05): True = this name
+                # tiered on fewer daily bars than the pre-change 200-bar floor. Stamped so
+                # the record can forever separate the pre/post-change populations.
+                "young_history": bool(_sv.get("young_history", False)),
+                "history_bars": _sv.get("history_bars"),
                 "asof": _sv.get("asof"),
             }
         except Exception:  # noqa: BLE001 — additive; never fatal
             rec["confluence"] = {"tier": None, "weight": None, "sub": None, "ticks": None,
                                  "bars_to_cross": None, "provisional": False,
                                  "not_topped": True, "htf_s1": False, "htf_s2": False,
+                                 "young_history": False, "history_bars": None,
                                  "asof": None}
         # ---- sniper pre-compute (frozen Terminal contract, 2026-07-06) -----------
         # Compute w2_washout/w2_stoch_d + days_since_63d_low here (close is in scope).
@@ -4063,12 +4069,18 @@ def main() -> int:
         # what changes is that a name you cannot act on today can no longer sit at
         # slot 1 above a live one (the 07-31 board opened on an "Extended — don't
         # chase" row, with `avoid`/DOWNTREND names mid-board).
+        # W-E.1 (missed-ignitions §5): the ladder's BOTTOM WATCH state gets its own
+        # `basing` shelf instead of disappearing into `blocked`. DISPLAY-ONLY — this
+        # moves rows between rendered buckets and touches nothing else. The opt-in is
+        # explicit because the shelf is a template surface and only this board has
+        # built it (engine.us_board_rank.stage_for).
         wide["buy"] = us_board_rank.score_rows(
             wide["buy"],
             verdict_by=sig_verdict,
             blackout_by={t: bool((v or {}).get("in_blackout"))
                          for t, v in (_eb_blackout_map or {}).items()},
             board_asof=wide.get("as_of"),
+            bottom_watch_stage=us_board_rank.STAGE_BASING,
         )
         wide["rank_by"] = us_board_rank.BOARD_DEFINITION
         wide["board_definition"] = us_board_rank.BOARD_DEFINITION
@@ -4165,7 +4177,8 @@ def main() -> int:
         wide["lane_counts"] = dict(_lane_ct)
         # us_prophet_v1: the stage buckets the board actually renders. Additive —
         # the bottoming/continuation/watch keys above are untouched.
-        #   live / setting_up / ran / blocked  count BUY rows and sum to len(buy)
+        #   live / setting_up / ran / basing / blocked
+        #                                      count BUY rows and sum to len(buy)
         #   featured                           is the flagged subset of `live`
         #   ran_lane                           is the separate ran ARRAY
         # The rendered "Ran — don't chase" chip is `ran + ran_lane` (masterplan
@@ -4983,6 +4996,59 @@ def main() -> int:
                 log.warning("pick_lab snapshot skipped: no as_of or no close panel")
         except Exception as _plab_e:  # noqa: BLE001 — snapshot producer is never fatal
             log.warning("pick_lab snapshot skipped (%s)", _plab_e)
+
+        # ── US Context Vector PIT store (PROPHET US roadmap §2 keystone) ──────────────
+        # Stamps ONE row per universe name per night — including names that never passed
+        # the raw gate — so future studies join evidence point-in-time instead of
+        # reconstructing the night from mutable files. ZERO AUTHORITY: nothing reads it
+        # for scoring, it changes no lane, no rank and no score, and it originates
+        # nothing (every column is READ off a producer that already ran tonight).
+        #
+        # Nightly is the sole advancer: engine.us_context_vector gates on
+        # ledger_lane.nightly_advance_enabled() as its FIRST statement, so the render
+        # and intraday lanes (whose data/ writes are discarded anyway) return 0 without
+        # loading a single file and pay none of the assembly cost.
+        #
+        # Budget: 0.0675 s/name measured 2026-08-04 — ~1.7 min over this checkout's
+        # 1,540 names, ~3.3 min over the host's ~2,932. Dominated by
+        # neuralweb.context_api.context_frame (the canonical Context Snapshot —
+        # called, never re-derived), whose insider dimension now loads the panel
+        # once per process instead of per ticker. See data/us_prophet_rank/README.md.
+        # Wrapped try/except — never fatal.
+        try:
+            from engine import us_context_vector as _ucv
+
+            _ucv_asof = wide.get("as_of")
+            if _ucv_asof and sig_verdict:
+                _ucv_t0 = time.time()
+                _ucv_board: dict[str, dict] = {}
+                _ucv_lane: dict[str, str] = {}
+                for _ucv_lane_name in ("buy", "watch", "leaders", "laggards"):
+                    for _ucv_row in (wide.get(_ucv_lane_name) or []):
+                        _ucv_t = _ucv_row.get("ticker")
+                        if _ucv_t:
+                            _ucv_board[_ucv_t] = _ucv_row
+                            _ucv_lane[_ucv_t] = _ucv_lane_name
+                _ucv_meta = {t: {"name": nm, "sector": sec}
+                             for (t, _c, _h, nm, sec) in uni}
+                _ucv_n = _ucv.append_candidates(
+                    sig_verdict, _ucv_asof,
+                    board_definition=us_board_rank.BOARD_DEFINITION,
+                    is_buyable=signal_gate.is_buyable,
+                    universe_meta=_ucv_meta,
+                    board_rows=_ucv_board,
+                    lane_by_ticker=_ucv_lane,
+                    profile_rows=row_by_t,
+                    ext_map=ext_map,
+                    blackout_map=_eb_blackout_map if "_eb_blackout_map" in dir() else None,
+                    closes=_ext_closes if "_ext_closes" in dir() else None,
+                    gate_go=wide.get("gate_go"),
+                )
+                if _ucv_n:
+                    log.info("us_context_vector: store now %d rows (stamped %s, %.1fs)",
+                             _ucv_n, _ucv_asof, time.time() - _ucv_t0)
+        except Exception as _ucv_e:  # noqa: BLE001 — research telemetry is never fatal
+            log.warning("us_context_vector stamp skipped (%s)", _ucv_e)
     # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
     # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)
     bccal = config.data_dir() / "regime" / "bottom_confidence_calibration.json"

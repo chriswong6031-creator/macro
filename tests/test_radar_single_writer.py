@@ -21,7 +21,6 @@ import json
 import sys
 import types
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -29,10 +28,40 @@ import pytest
 # helpers
 # ---------------------------------------------------------------------------
 
-def _make_mod(name: str) -> types.ModuleType:
+def _make_mod(monkeypatch, name: str) -> types.ModuleType:
+    """Return a stub module registered in sys.modules under `name`.
+
+    Registration must go through monkeypatch.setitem so the prior entry (or
+    the key's absence) is restored at teardown — a bare `sys.modules[name] =`
+    assignment leaks the attribute-less stub to every test that runs after
+    this file in the same pytest process (same defect class as the
+    engine.bottleneck stubs fixed in PR #4536)."""
     mod = types.ModuleType(name)
-    sys.modules[name] = mod
+    monkeypatch.setitem(sys.modules, name, mod)
     return mod
+
+
+@pytest.fixture
+def engine_stub_mp():
+    """Dedicated MonkeyPatch for the engine stubs, so teardown ORDER is
+    guaranteed: restore sys.modules FIRST, then importlib.reload the scripts
+    under test.  Both scripts bind the engines at module level
+    (`from engine import ...`) and the tests reload them while the stubs are
+    installed, so restoring sys.modules alone would leave the cached
+    scripts.build_intelligence / scripts.build_radar_plus modules carrying
+    stub bindings for the rest of the process.  reload() re-executes the
+    module in place, so existing references heal too.  (The builtin
+    monkeypatch fixture can't do this: its undo runs during its own teardown,
+    with no hook ordered after it.)"""
+    mp = pytest.MonkeyPatch()
+    try:
+        yield mp
+    finally:
+        mp.undo()
+        for name in ("scripts.build_intelligence", "scripts.build_radar_plus"):
+            mod = sys.modules.get(name)
+            if mod is not None:
+                importlib.reload(mod)
 
 
 def _stub_config_load(monkeypatch):
@@ -43,19 +72,19 @@ def _stub_config_load(monkeypatch):
     monkeypatch.setattr(cfg, "load", lambda: {"storage": {"site_dir": "site"}})
 
 
-def _stub_intelligence_engines():
+def _stub_intelligence_engines(engine_stub_mp):
     """Stub engine.intelligence so build_intelligence.build() stays hermetic."""
-    mod = _make_mod("engine.intelligence")
+    mod = _make_mod(engine_stub_mp, "engine.intelligence")
     mod.load_and_build = lambda: {"n_tickers": 0, "n_with_both": 0}
     return mod
 
 
-def _stub_radar_plus_engines():
+def _stub_radar_plus_engines(engine_stub_mp):
     """Stub engine.radar_plus and engine.radar_ticker so build_radar_plus.build() is hermetic."""
-    rp = _make_mod("engine.radar_plus")
+    rp = _make_mod(engine_stub_mp, "engine.radar_plus")
     rp.enrich = lambda radar, **kw: radar  # no-op enrichment
 
-    rt = _make_mod("engine.radar_ticker")
+    rt = _make_mod(engine_stub_mp, "engine.radar_ticker")
     rt.build = lambda: {"n": 0, "n_divergences": 0, "tickers": []}
     return rp, rt
 
@@ -112,13 +141,13 @@ class TestStaticRadarSingleWriter:
 class TestDynamicRadarSingleWriter:
     """Run the patched builders in tmp_path and assert the correct artifacts are written."""
 
-    def test_build_intelligence_writes_radar_news_not_radar(self, tmp_path, monkeypatch):
+    def test_build_intelligence_writes_radar_news_not_radar(self, tmp_path, monkeypatch, engine_stub_mp):
         """build_intelligence.build() must write radar_news.json and NOT touch radar.json."""
         import lib.config as cfg
         monkeypatch.setattr(cfg, "ROOT", tmp_path)
         _stub_config_load(monkeypatch)
 
-        _stub_intelligence_engines()
+        _stub_intelligence_engines(engine_stub_mp)
 
         # Pre-populate financial.json with one basket having headlines.
         news_dir = tmp_path / "site" / "news"
@@ -159,13 +188,13 @@ class TestDynamicRadarSingleWriter:
         assert "ai_infra" in rn["baskets"], "ai_infra basket headlines must appear in radar_news.json"
         assert len(rn["baskets"]["ai_infra"]["headlines"]) == 2
 
-    def test_build_intelligence_does_not_mutate_existing_radar(self, tmp_path, monkeypatch):
+    def test_build_intelligence_does_not_mutate_existing_radar(self, tmp_path, monkeypatch, engine_stub_mp):
         """build_intelligence.build() must leave an existing radar.json byte-identical."""
         import lib.config as cfg
         monkeypatch.setattr(cfg, "ROOT", tmp_path)
         _stub_config_load(monkeypatch)
 
-        _stub_intelligence_engines()
+        _stub_intelligence_engines(engine_stub_mp)
 
         bdata_dir = tmp_path / "site" / "basketdata"
         bdata_dir.mkdir(parents=True, exist_ok=True)
@@ -185,13 +214,13 @@ class TestDynamicRadarSingleWriter:
             "build_intelligence must NOT mutate an existing radar.json"
         )
 
-    def test_build_radar_plus_writes_enriched_not_radar(self, tmp_path, monkeypatch):
+    def test_build_radar_plus_writes_enriched_not_radar(self, tmp_path, monkeypatch, engine_stub_mp):
         """build_radar_plus.build() must write radar_enriched.json and NOT touch radar.json."""
         import lib.config as cfg
         monkeypatch.setattr(cfg, "ROOT", tmp_path)
         _stub_config_load(monkeypatch)
 
-        _stub_radar_plus_engines()
+        _stub_radar_plus_engines(engine_stub_mp)
 
         bdata_dir = tmp_path / "site" / "basketdata"
         bdata_dir.mkdir(parents=True, exist_ok=True)
@@ -214,13 +243,13 @@ class TestDynamicRadarSingleWriter:
         enriched = json.loads(enriched_p.read_text())
         assert "flags" in enriched, "radar_enriched.json must contain a 'flags' list"
 
-    def test_build_radar_plus_degrades_when_radar_absent(self, tmp_path, monkeypatch):
+    def test_build_radar_plus_degrades_when_radar_absent(self, tmp_path, monkeypatch, engine_stub_mp):
         """build_radar_plus.build() must degrade gracefully when radar.json is absent."""
         import lib.config as cfg
         monkeypatch.setattr(cfg, "ROOT", tmp_path)
         _stub_config_load(monkeypatch)
 
-        _stub_radar_plus_engines()
+        _stub_radar_plus_engines(engine_stub_mp)
 
         import scripts.build_radar_plus as brp
         importlib.reload(brp)
