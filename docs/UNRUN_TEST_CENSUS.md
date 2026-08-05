@@ -738,3 +738,35 @@ rather than trusting this snapshot; the leak reopens weekly.
 declare its CI wiring. Its own docstring names the gap: *"Census only auto-covers
 scripts/check_*.py — guard-shaped pytest files and harness"* are a documented blind spot.
 Every suite in this census lives in that blind spot.
+
+## 2026-08-05: the leak's bill, itemized — the HK board pair
+
+The weekly-reopening leak this census predicts produced its cleanest specimen yet.
+`tests/test_hk_board_rank.py` (163 tests) and `tests/test_hk_board_ui.py` landed with the
+HK board resurrection (#4421, 2026-08-03) — eight days after the census sweep, named by no
+`run:` step anywhere, with no paths entries for the test halves. The next day the asia
+collection re-adjusted 2338.HK (ex-dividend), rewriting 28 sessions of the G1 panel's
+history, and the suite's `TestG1FixtureIsNotStale` tripwire caught it — **in a hand run
+only**. Three receipts of total CI blindness, in one incident:
+
+- **UNRUN:** no workflow named either suite, so the tripwire's red never appeared in any
+  check. The queue-wide ci-pack red the same night (pinning the armed-PR queue, easy to
+  conflate) was `tests/test_marketing_hot_tape_radar.py` — a *wired* market-state pin —
+  in both the pre-heal run (30964059141) and the post-heal run (30971797334).
+- **UNTRIGGERABLE (fixture half):** the heal, #4559, was a fixture-only diff
+  (`tests/fixtures/hk_board_2026_07_31.json`) matching nothing in `ci.yml` paths — it
+  merged having triggered **zero** pack checks. The PR that re-pinned a measurement could
+  not run the measurement's own suite.
+- **The dep-list trap, measured:** in a clean venv the pair needs more than the obvious
+  `pytest pandas pyarrow jinja2` — the builder-wiring tests import
+  `scripts/build_hk.py` (plotly) and reach `lib.config` (pyyaml); the four-dep venv left
+  23 tests red on imports. The `unrun-hk-board` job repeats the shared unrun-* install
+  byte-for-byte, which contains both.
+
+Wired 2026-08-05 as `unrun-hk-board` (both suites), with paths entries for both test
+files, both frozen G1 fixtures, and `data/hk_search/**` (the same input-grid shape #4545
+stages, in flight, for the prophet suites: a hand rewrite of the tripwire's replay grid
+must start the workflow; the nightly asia collection pushes straight to main, so the glob
+costs nothing on the daily bake). The regeneration remedy —
+`scripts/regen_hk_g1_fixture.py` + `tests/test_regen_hk_g1_fixture.py` — is #4565, in
+flight separately with its own `regen-hk-g1-fixture-guard` job.
