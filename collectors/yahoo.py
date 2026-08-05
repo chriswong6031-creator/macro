@@ -89,7 +89,13 @@ class YahooAdapter(Adapter):
         # so a refill would splice exactly what the guard just refused.
         extras = config.load().get("stock_search", {}).get("extra_tickers", []) or []
         self._fill_missing_extras(frames, [t for t in extras if t not in deferred])
-        _report_missing_symbols(tickers, frames.keys())
+        # M3: `deferred` names WERE returned this run (yfinance served real data for
+        # them) — they were pulled out of `frames` only because `_rebase_shifted`'s
+        # re-pull failed on a basis mismatch (kept out of THIS run so the guard
+        # re-flags them next night, never spliced onto a stale basis). Reconciling
+        # against `frames` alone would relabel them "returned no data", which is
+        # false and would mislead every nightly read of this warning.
+        _report_missing_symbols(tickers, set(frames) | set(deferred))
         if len(frames) < len(tickers) * 0.7:
             raise RuntimeError(f"yahoo returned only {len(frames)}/{len(tickers)} tickers")
         return frames
@@ -385,4 +391,14 @@ def audit_store_freshness(tickers: list[str], group: str = "yahoo") -> dict:
         print(f"::warning title={group} store audit missing::{len(missing)} name(s) "
               f"have no store: {', '.join(shown)}"
               f"{f', +{more} more' if more > 0 else ''}", flush=True)
+    # M1: self-relative blindness backstop — every check above is relative to `ref`
+    # (this group's own max tip), so a TOTAL freeze (every ticker frozen together)
+    # is invisible to them. Disclosure only, against wall-clock now — never a gate.
+    if ref_ts is not None:
+        _now = pd.Timestamp.utcnow().tz_localize(None)
+        _behind_wall = (_now.normalize() - ref_ts.tz_localize(None).normalize()).days \
+            if ref_ts.tzinfo is not None else (_now.normalize() - ref_ts.normalize()).days
+        if _behind_wall > _STALE_CAL_DAYS:
+            print(f"::warning title={group} store audit tip stale::group ref tip {ref} "
+                  f"is >{_STALE_CAL_DAYS}d behind today — possible collector outage", flush=True)
     return {"ref": ref, "stale": stale, "stub": stub, "missing": missing}

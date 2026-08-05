@@ -853,7 +853,7 @@
           ph: 'Search any S&P 500 stock, ETF, commodity or crypto… (e.g. AAPL, Energy, Bitcoin)',
           th_state: 'state', th_n: 'samples', th_up: 'up next month', th_avg: 'avg next month',
           th_dipm: 'typical dip', th_dipb: 'bad-case dip',
-          feedstale_pre: '· no new data since ', feedstale_post: ' — not scored' },
+          feedstale_pre: '· no new data for ', feedstale_post: ' days — not scored' },
     zh: { asof: '数据截至', notlib: '不在库中',
           notlibmsg: '不在每晚更新的标的库中（标普500 ＋ 跟踪的 ETF／大宗商品／加密货币）。一行即可添加：config.yml → stock_search.extra_tickers。',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
@@ -862,7 +862,7 @@
           ph: '搜索任意标普500股票、ETF、大宗商品或加密货币…（例如 AAPL、Energy、Bitcoin）',
           th_state: '状态', th_n: '样本数', th_up: '下月上涨', th_avg: '下月均值',
           th_dipm: '典型回撤', th_dipb: '最坏回撤',
-          feedstale_pre: '· 自 ', feedstale_post: ' 起无新数据 — 暂不评分' } };
+          feedstale_pre: '· 已 ', feedstale_post: ' 天无新数据 — 暂不评分' } };
   function L(k) { return (T[lang()] || T.en)[k]; }
   // pick the Chinese variant of a composed analysis string when in zh mode
   // (the per-stock JSON carries parallel *_zh fields from engine/cycles.py)
@@ -2993,10 +2993,12 @@
     // FRESHNESS.md): a full rec whose feed froze >7d behind the library keeps its page
     // but loses scoring authority (scripts/build_stock_library.py::_apply_feed_demotion).
     // Cause-neutral copy — never "stale"/"delisted" (cause is not established per name).
-    if (d.feed_stale) {
+    // Uses behind_days (not d.asof again) — the r_asof line above already states the
+    // date once; repeating it here read as a self-quoting non-sequitur.
+    if (d.feed_stale && d.feed_stale.behind_days != null) {
       var fs = document.createElement('span');
       fs.className = 'feed-stale-note';
-      fs.textContent = ' ' + L('feedstale_pre') + d.asof + L('feedstale_post');
+      fs.textContent = ' ' + L('feedstale_pre') + d.feed_stale.behind_days + L('feedstale_post');
       r_asof.appendChild(fs);
     }
 

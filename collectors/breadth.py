@@ -264,6 +264,20 @@ def disclose_stale_constituent_columns(members_symbols, closes: pd.DataFrame,
                          f"{f', +{more} more' if more > 0 else ''}")
         print(f"::warning title={group_name} breadth constituents not refreshing::"
               f"{'; '.join(parts)}", flush=True)
+    # M1: self-relative blindness backstop — the `frozen` check above is relative to
+    # overall_tip (this merged frame's own tip), so a TOTAL freeze (every constituent
+    # frozen together, e.g. the whole download host down) is invisible to it. Disclosure
+    # only, against wall-clock now — never a gate.
+    if overall_tip is not None:
+        _now = pd.Timestamp.utcnow().tz_localize(None)
+        _tip_ts = pd.Timestamp(overall_tip)
+        if _tip_ts.tzinfo is not None:
+            _tip_ts = _tip_ts.tz_localize(None)
+        _behind_wall = (_now.normalize() - _tip_ts.normalize()).days
+        if _behind_wall > _STALE_CAL_DAYS:
+            print(f"::warning title={group_name} breadth tip stale::overall tip "
+                  f"{_tip_ts.date()} is >{_STALE_CAL_DAYS}d behind today — possible "
+                  "collector outage", flush=True)
     return {"no_column": no_column, "never_populated": never_populated, "frozen": frozen}
 
 
@@ -428,18 +442,21 @@ class BreadthAdapter(Adapter):
             cutoff = closes.index.max() - pd.Timedelta(days=self.cfg["lookback_days_live"] + 30)
             closes = closes[closes.index >= cutoff]
 
-        # coverage sanity: a half-empty matrix silently poisons every ratio
-        live_cols = closes.dropna(axis=1, how="all").shape[1]
-        if live_cols < len(tickers) * 0.8:
-            raise RuntimeError(f"breadth closes too sparse: {live_cols}/{len(tickers)}")
-
         # R4 current-constituent column disclosure (CWEN-A class): a symbol Yahoo
         # silently stops returning is otherwise indistinguishable from a departed
         # member — combine_first carries the frozen column forward forever, silently.
+        # NIT fix: this runs BEFORE the coverage-sanity raise below — the run that
+        # most needs this report (sparse enough to abort) is exactly the one a
+        # post-raise placement would have denied it to.
         try:
             disclose_stale_constituent_columns(tickers, closes, self.name)
         except Exception as e:  # noqa: BLE001 — disclosure must never break the run
             log.warning("%s: constituent freshness disclosure failed (%s)", self.name, e)
+
+        # coverage sanity: a half-empty matrix silently poisons every ratio
+        live_cols = closes.dropna(axis=1, how="all").shape[1]
+        if live_cols < len(tickers) * 0.8:
+            raise RuntimeError(f"breadth closes too sparse: {live_cols}/{len(tickers)}")
 
         self.cache_path.parent.mkdir(parents=True, exist_ok=True)
         if not full_history:

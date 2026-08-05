@@ -402,15 +402,26 @@ def _feed_freshness(recs) -> tuple[str | None, dict[str, int], int]:
     A rec whose `asof` cannot be parsed is fail-open (never demoted) and counted
     in `n_dark` (CSP-R1 — an unusable stamp must never silently darken a name).
     A rec demotes iff strictly more than `_MAX_BAR_LAG_DAYS` calendar days behind
-    `lib_asof` — the SAME law the ledger admission gate (name_score_grader)
-    already enforces.
+    `lib_asof`. This is the SAME 7-day constant as the ledger admission gate
+    (name_score_grader), but a DIFFERENT reference: the ledger gate measures
+    against a wall-clock stamp, this measures against the library's OWN max tip
+    (self-relative) — strictly LOOSER, and in the safe direction (a demotion
+    here can only ever be as late or later than the ledger gate's own refusal,
+    never earlier). Real headroom is closer to ~3 days than 7 on an ordinary
+    build, since a 24/7 crypto tip typically leads the equity pack by 1-2 days
+    even mid-week; the full 7 is the worst-case NYSE closure margin.
 
     CIRCUIT BREAKER (R2): if the demotion set would exceed
-    `_FEED_DEMOTION_BREAKER` (20%) of full recs, the gate DISARMS for this run —
-    an empty demotion map is returned and this function prints the loud
-    ::warning itself (so a direct caller/test sees it without needing main()'s
-    plumbing); a universe-wide freeze reads as a collector outage, and blanking
-    every board would itself be fail-dark (CSP-R1).
+    `_FEED_DEMOTION_BREAKER` (20%) of the ASSESSABLE population — recs with a
+    parseable asof, i.e. `len(parsed)`, NOT `len(full)` — the gate DISARMS for
+    this run. Dark recs (unparseable asof) are excluded from the denominator on
+    purpose: they carry no freshness read at all, so diluting the ratio with
+    them would let a mass-dark run (most asof fields unparseable) mask a
+    genuinely mass-stale assessable population and keep the gate armed when it
+    shouldn't be. An empty demotion map is returned and this function prints
+    the loud ::warning itself (so a direct caller/test sees it without needing
+    main()'s plumbing); a universe-wide freeze reads as a collector outage, and
+    blanking every board would itself be fail-dark (CSP-R1).
 
     Returns (lib_asof as an ISO date string or None when no full rec has a
     parseable asof, {ticker: behind_days} for the (possibly disarmed) demotion
@@ -427,6 +438,12 @@ def _feed_freshness(recs) -> tuple[str | None, dict[str, int], int]:
             ts = pd.Timestamp(r.get("asof"))
             if pd.isna(ts):
                 ts = None
+            elif ts.tzinfo is not None:
+                # tz-aware asof (e.g. an ISO stamp carrying "+00:00") would TypeError
+                # against a tz-naive peer at max()/subtraction below — normalize to
+                # naive (calendar-day math only; no true cross-timezone comparison
+                # is intended here, same as every other asof this module compares).
+                ts = ts.tz_localize(None)
         except (TypeError, ValueError):
             ts = None
         if ts is None:
@@ -439,15 +456,67 @@ def _feed_freshness(recs) -> tuple[str | None, dict[str, int], int]:
     lib_asof = str(lib_ts.date())
     demoted = {tk: int((lib_ts - ts).days) for tk, ts in parsed.items()
                if (lib_ts - ts).days > _MAX_BAR_LAG_DAYS}
-    if full and (len(demoted) / len(full)) > _FEED_DEMOTION_BREAKER:
-        frac = len(demoted) / len(full)
+    # M2: denominator is the ASSESSABLE population (parsed), not `full` — a dark
+    # rec (unparseable asof) was never classifiable as fresh OR stale, so it must
+    # not pad the denominator and understate the true stale fraction among names
+    # the gate can actually see.
+    if parsed and (len(demoted) / len(parsed)) > _FEED_DEMOTION_BREAKER:
+        frac = len(demoted) / len(parsed)
         print(f"::warning title=stock-library freshness gate disarmed::demotion set "
-              f"{len(demoted)}/{len(full)} ({frac:.0%}) exceeds the "
+              f"{len(demoted)}/{len(parsed)} ({frac:.0%}) exceeds the "
               f"{_FEED_DEMOTION_BREAKER:.0%} circuit breaker — a universe-wide freeze "
               "reads as a collector outage, not per-name staleness; gate DISARMED for "
               "this run, no demotions applied", flush=True)
         return lib_asof, {}, n_dark
     return lib_asof, demoted, n_dark
+
+
+def _lib_tip_wall_clock_warning(lib_asof: str | None) -> str | None:
+    """M1 backstop: every R1/R2 guard is self-relative to the library's OWN max tip
+    (`lib_asof`), which is exactly right for demotion (never a wall-clock/calendar
+    dependency, per R1) but has one blind spot — a TOTAL freeze (every feed frozen
+    together, e.g. the whole collector host down) is invisible to a purely self-
+    relative check, since every rec is still "on time" relative to a tip that itself
+    never advanced. This is DISCLOSURE ONLY (the demotion gate stays self-relative;
+    this never feeds it) against wall-clock now.
+
+    Returns the bare ::warning line to print, or None when `lib_asof` is absent/
+    unparseable or not stale enough to warrant one — pulled out as a pure function
+    (rather than inlined in main()) purely so this decision is unit-testable without
+    invoking the full nightly build."""
+    if lib_asof is None:
+        return None
+    try:
+        lib_ts = pd.Timestamp(lib_asof)
+        if pd.isna(lib_ts):
+            return None
+        if lib_ts.tzinfo is not None:
+            lib_ts = lib_ts.tz_localize(None)
+        now_naive = pd.Timestamp.utcnow().tz_localize(None)
+        behind_wall = (now_naive.normalize() - lib_ts.normalize()).days
+    except (TypeError, ValueError):
+        return None
+    if behind_wall <= _MAX_BAR_LAG_DAYS:
+        return None
+    return (f"::warning title=stock-library tip stale::library max tip {lib_asof} "
+            f"is >{_MAX_BAR_LAG_DAYS}d behind today — possible collector outage "
+            "(demotion gate unaffected)")
+
+
+def _authority_admits(ticker: str, demote_map: dict) -> bool:
+    """B1: True iff `ticker` may enter a SCORING-AUTHORITY collection this run — a
+    board/rank/setups/ran-lane admission set, as opposed to a display-only chip map
+    (disp_map, coil/donor/hold state, W3 evidence, …, which stay unguarded — see the
+    call-site comments in main()). A demoted ticker (frozen feed, R1) is excluded.
+
+    Guards `sig_verdict` (site/factordata/signal_gate.json — the discovery board's
+    PRIMARY buy gate — AND us_board_rank.build_ran_rows' own admission set, since it
+    iterates sig_verdict's keys directly) and `cand` (setups.json's "Top setups"
+    strip, and wide["universe"] = len(cand)) at THEIR population sites, which run
+    earlier in the per-ticker loop than the profiles/entry_sig/risk_sig demotion
+    branch — populating either one before checking this predicate would leak scoring
+    authority through a path the later guard never touches."""
+    return ticker not in demote_map
 
 
 def _apply_feed_demotion(rec: dict, behind_days: int, lib_asof: str) -> None:
@@ -458,11 +527,22 @@ def _apply_feed_demotion(rec: dict, behind_days: int, lib_asof: str) -> None:
     for this name (the grader's own bar_asof gate is the second line of
     defense). The caller additionally excludes the ticker from
     `profiles`/`entry_sig`/`risk_sig` so it drops out of every board/standout/
-    percentile cohort (I2) — this helper only touches the rec itself (I1)."""
+    percentile cohort (I2) — this helper only touches the rec itself (I1).
+
+    B2: `conviction.score` (the raw per-name logistic value stock_score.
+    conviction_profile computes) is ALSO cleared to None. `attach_panel_scores`
+    would normally overwrite it with a within-market percentile — but it only
+    runs over `profiles`, and a demoted name is excluded from `profiles` (I2),
+    so its raw logistic score would otherwise survive untouched and render on
+    the page as a scale-mixed NN/100 "board rank" gauge sitting right next to
+    the "not scored" banner — a self-contradicting page. None flows through
+    engine/stock_view.py's score_view() to suppress both the gauge and its
+    rank_note tooltip (see the stock_view.py / stockview.js changes)."""
     rec["feed_stale"] = {"behind_days": int(behind_days), "lib_asof": lib_asof}
     conv = rec.get("conviction")
     if isinstance(conv, dict):
         conv.pop("potential", None)
+        conv["score"] = None
 
 
 def _one(ticker: str, close: pd.Series, high: pd.Series | None,
@@ -2611,22 +2691,38 @@ def main() -> int:
     # scored off a dead side-store feed (CTRA/TPH/TCNNF/CWEN-A class). Demotion is applied
     # per-rec below, right where profiles/entry_sig/risk_sig are populated. Bare prints, NOT
     # logger calls — see the annotation-line-start law at the top of this module's imports.
-    _lib_asof, _demote_map, _n_dark = _feed_freshness(recs)
-    print(f"::notice title=stock-library feed-freshness::lib_asof={_lib_asof} "
-          f"demoted={len(_demote_map)} dark={_n_dark}", flush=True)
-    if _demote_map:
-        _tip_by = {r.get("ticker"): r.get("asof") for r in recs if r}
-        _demoted_sorted = sorted(_demote_map)
-        _shown = [f"{t}({_tip_by.get(t)})" for t in _demoted_sorted[:15]]
-        _more = len(_demoted_sorted) - len(_shown)
-        print(f"::warning title=stock-library frozen feeds::{len(_demote_map)} name(s) "
-              f"frozen >{_MAX_BAR_LAG_DAYS}d behind {_lib_asof}, demoted from scoring "
-              f"(page kept): {', '.join(_shown)}"
-              f"{f', +{_more} more' if _more > 0 else ''}", flush=True)
-    if _n_dark:
-        print(f"::warning title=stock-library freshness gate DARK::{_n_dark} full rec(s) "
-              "carry an unparseable/unusable asof — fail-open (not demoted); the "
-              "feed-freshness gate cannot see them", flush=True)
+    # B3: this gate must never abort the nightly build — a crash here (e.g. a shape it
+    # doesn't defend against) fails OPEN (no demotions this run), never fails the lane.
+    _lib_asof, _demote_map, _n_dark = None, {}, 0
+    try:
+        _lib_asof, _demote_map, _n_dark = _feed_freshness(recs)
+        print(f"::notice title=stock-library feed-freshness::lib_asof={_lib_asof} "
+              f"demoted={len(_demote_map)} dark={_n_dark}", flush=True)
+        if _demote_map:
+            _tip_by = {r.get("ticker"): r.get("asof") for r in recs if r}
+            _demoted_sorted = sorted(_demote_map)
+            _shown = [f"{t}({_tip_by.get(t)})" for t in _demoted_sorted[:15]]
+            _more = len(_demoted_sorted) - len(_shown)
+            print(f"::warning title=stock-library frozen feeds::{len(_demote_map)} name(s) "
+                  f"frozen >{_MAX_BAR_LAG_DAYS}d behind {_lib_asof}, demoted from scoring "
+                  f"(page kept): {', '.join(_shown)}"
+                  f"{f', +{_more} more' if _more > 0 else ''}", flush=True)
+        if _n_dark:
+            print(f"::warning title=stock-library freshness gate DARK::{_n_dark} full rec(s) "
+                  "carry an unparseable/unusable asof — fail-open (not demoted); the "
+                  "feed-freshness gate cannot see them", flush=True)
+        # M1: self-relative wall-clock blindness backstop — every guard above compares a
+        # rec's asof against the LIBRARY's own max tip, so a TOTAL freeze (every feed
+        # frozen together, e.g. the whole collector host down) is invisible to all three:
+        # every rec is "on time" relative to a tip that itself never moved. This is
+        # DISCLOSURE ONLY (never a gate — R1/R2 stay self-relative) against wall-clock now.
+        _wall_warning = _lib_tip_wall_clock_warning(_lib_asof)
+        if _wall_warning:
+            print(_wall_warning, flush=True)
+    except Exception as _ff_e:  # noqa: BLE001 — the gate must never abort the nightly build
+        print(f"::warning title=stock-library freshness gate crashed::{_ff_e} — "
+              "gate fail-open, no demotions this run", flush=True)
+        _lib_asof, _demote_map, _n_dark = None, {}, 0
 
     # ---- flow_score pre-loop load (FS-4 Lane C, schema flow_score.stock/v1) --------
     # Loads ledger + scores once; looked up per-ticker inside the main rec loop below.
@@ -2684,9 +2780,15 @@ def main() -> int:
         # COMBINE: the confluence T1->T4 cascade is computed alongside main's bottoming-alignment
         # gate. It NEVER changes which names are eligible (alignment stays the inclusion gate) —
         # it only adds the per-card tier badge and re-ranks WITHIN the aligned set (below).
-        sig_verdict[ticker] = signal_gate.gate(ticker, close)
+        # B1 (_authority_admits): a demoted name (frozen feed, R1) must NEVER enter
+        # sig_verdict — see the helper's docstring for why. `_demote_map` is already
+        # fully known at this point (computed before the loop starts).
+        if _authority_admits(ticker, _demote_map):
+            sig_verdict[ticker] = signal_gate.gate(ticker, close)
         # W6-C HOLD tracker: derive anchor from the §7 take/pending marker (open buy only),
-        # fall back to the last 3D cross. Additive + graceful: failure -> None entry.
+        # fall back to the last 3D cross. Additive + graceful: failure -> None entry (also the
+        # fail-open path for a demoted ticker, which has no sig_verdict entry above — display-
+        # only, not an authority map, so no separate guard needed here).
         try:
             _sv = sig_verdict[ticker]
             _last_m = _sv.get("last")
@@ -2730,7 +2832,12 @@ def main() -> int:
                 sconf = sue_confirmer(sue_z.get(ticker))    # earnings-momentum confirmer (display only)
                 if sconf is not None:
                     row["sue_z"] = sconf
-                cand.append(sc)
+                # B1 (_authority_admits): `cand` feeds setups.json's "Top setups" strip
+                # AND `row_by_t`/`wide["universe"] = len(cand)` below — same authority-
+                # leak class as sig_verdict above. rec["alpha"] (display) is still set
+                # unconditionally above this guard (I1).
+                if _authority_admits(ticker, _demote_map):
+                    cand.append(sc)
         if smart_money.get(ticker):
             rec["smart_money"] = smart_money[ticker]
         if beneficial_ownership.get(ticker):
