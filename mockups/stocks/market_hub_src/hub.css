@@ -34,14 +34,18 @@ body {
 }
 a { color: inherit; text-decoration: none; }
 /* One token owns the gutter, because the sticky finder's opaque backdrop has to
-   bleed EXACTLY to the viewport edge. A hard-coded -40px bleed against a 12px
-   gutter pushed 28px of phantom width past the right edge and put the whole
-   page into horizontal scroll on a phone. */
-:root { --gut: 16px; }
-@media (max-width: 620px)  { :root { --gut: 12px; } }
-@media (min-width: 1180px) { :root { --gut: max(30px, calc((100vw - 1440px) / 2)); } }
-.wrap { padding: 14px var(--gut) 0; }
-@media (min-width: 1180px) { .wrap { padding-top: 18px; } }
+   bleed EXACTLY to the viewport edge — a hard-coded bleed wider than the gutter
+   pushes phantom width past the right edge and puts the page into horizontal
+   scroll on a phone.
+
+   The values mirror us_stocks (dashboard.html.j2: `padding: 26px max(40px,
+   calc((100vw - 1500px)/2))` at min-width 1100px) so the two primary US
+   surfaces share one content column instead of each inventing a width. */
+:root { --gut: 18px; --gut-top: 18px; }
+@media (min-width: 1100px) {
+  :root { --gut: max(40px, calc((100vw - 1500px) / 2)); --gut-top: 26px; }
+}
+.wrap { padding: var(--gut-top) var(--gut) 0; }
 
 /* numerals: mono + tabular everywhere a figure appears — never for words */
 .fig, .bd-v, .bd-x, .ss-v, .dir-t, .bd-tk, .r-px, .r-chg, .r-tk, .sp-lab b
