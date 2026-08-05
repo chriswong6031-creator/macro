@@ -402,6 +402,14 @@ pays.
   A modern-era *failure* to clear the bar is therefore conservative; a *pass* is optimistic.
   The gate comparison is more robust to this than the levels are: survivorship inflates
   gated and ungated sleeves alike, so the *difference* is the less contaminated number.
+
+  **Not done: the point-in-time de-biased re-run.** The earlier work built PIT S&P 500
+  membership + a delisted-price fetch (`scripts/residual_alpha_pit.py`, `--pit`) and found
+  that de-biasing **collapses plain momentum's IC to ~0** while the residual holds. This
+  harness does **not** wire `--pit`, so every number above carries the survivorship
+  tailwind. That matters most for §4a/§4d (where it means the IC levels are optimistic and
+  the total-momentum full-history "wins" are the most inflated of all) and least for §4c
+  (a within-panel difference). **Any promotion attempt must re-run under PIT first.**
 - **One-episode risk** → §4c prints a per-era breakdown, losing eras included.
 - **Constant de-risking masquerading as timing** → Sharpe is scale-invariant, so holding
   less on average cannot move it; mean exposure is printed beside the Sharpe lift.
