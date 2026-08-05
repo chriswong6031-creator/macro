@@ -61,10 +61,14 @@ explains the contradiction.
 
 1. **Continuation is priced.** Names the board already marks as having run are not free
    money. *(Commissioner-supplied figure: "stage-ran 14.5% / 27.6%".* **Provenance
-   unresolved — flagged, not laundered.** No repo artifact carries these numbers:
-   `data/us_board_ledger/retro_grades.parquet` has `lane` and `horizon` columns but **no
-   stage column**, and the figure appears in no `research/` document. Treat it as an
-   unverified brainstorm note. It must be recomputed and cited before anything downstream
+   RESOLVED (commissioner annotation, 2026-08-05): the figure is
+   `research/prophet_us_audit/label_grading_battery_results.json`
+   §section_3_ran_lane.a_stage_ran_from_ledger (PR #4547, armed but UNMERGED when this
+   charter branched — a checkout-lens artifact, not a missing measurement). Its basis is
+   `entry_status` values bucketing to STAGE_RAN — there is deliberately no "stage" column
+   in retro_grades; the flag's column search was the wrong lens. n=55, H=10, loser 14.5%
+   vs 27.6% rest-of-buy, no half-split flip. The original caution stands in one respect:
+   anything downstream should cite the #4547 artifact once merged, not this prose.
    leans on it.*)
 
 2. **Generic ignition is a measured null.** The S-D relay-position stand-in
