@@ -1446,21 +1446,21 @@ class TestLLMPhrasing:
         key a later detector added walked straight into the admissible set. The
         two-step brief's `alert_key` is the live example: an internal id whose
         digits ("...:2026-07-29T14:05:00Z:0") licensed 2026, 29, 14 and 05 as
-        figures the model could write about a stock that moved 8%."""
-        from engine.marketing.hot_tape_llm import numeric_violations
+        figures the model could write about a stock that moved 8%.
 
-        # fired_at is PINNED, not NOW. _admissible_values harvests numbers out of
-        # the packet's strings, so a wall-clock timestamp licenses its own
-        # day-of-month: on the 14th "14%" stopped being a violation and on the
-        # 5th "05 sessions" did, failing this test on ~7% of calendar days for a
-        # reason that has nothing to do with alert_key. It fired for real on
-        # 2026-08-05 (ci-pack-2, run 30971844036). The pinned components below
-        # (2026/06/23/16/38) collide with neither probe.
-        pinned_fired_at = "2026-06-23T16:38:00Z"
+        fired_at is PINNED, not NOW: the packet's own as_of date head is admissible
+        by design (``_string_numbers``: "2026-06-22" -> 2026, 6, 22), so on the 5th
+        of any month a live clock licensed the very "05" this test probes with and
+        the assertion below silently inverted. It red-ran CI on 2026-08-05 having
+        passed every day since. The pinned date shares no component with either
+        probe (14, 05), so the test now measures the alert_key leak on all dates
+        rather than on 27 days out of 31.
+        """
+        from engine.marketing.hot_tape_llm import numeric_violations
 
         packet = FactPacket(
             trigger="context_brief", key="brief:mover:MU:down:x:0",
-            fired_at=pinned_fired_at, session="rth",
+            fired_at="2026-06-22T15:10:00Z", session="rth",
             ticker="MU", name="Micron", sector="Technology", direction="down",
             severity=91.0,
             facts={"ticker": "MU", "pct": -8.2, "price": 92.0,
@@ -1481,6 +1481,41 @@ class TestLLMPhrasing:
         assert numeric_violations("$MU is down 8.2% at $92.", out) == []
         # Peers stay a cashtag source even though their numbers are not quotable.
         assert out["cashtags"] == ["$MU", "$SNDK", "$STX"]
+
+    @pytest.mark.parametrize("as_of", [
+        "2026-01-05T15:10:00Z",   # day 05 — the calendar that red-ran CI
+        "2026-05-12T15:10:00Z",   # month 05
+        "2026-08-14T15:10:00Z",   # day 14 — the other probe
+        "2026-06-22T15:10:00Z",   # the pinned control
+        "2026-12-31T15:10:00Z",
+    ])
+    def test_the_alert_key_probe_holds_on_every_calendar_date(self, as_of):
+        """The guard above must not depend on what day it runs.
+
+        A packet's as_of date head is admissible by design, so a probe number that
+        happens to match today's day or month is licensed by the STAMP rather than
+        by the leak under test — and the assertion inverts with no code change.
+        Verified here across the dates that collide with both probes.
+        """
+        from engine.marketing.hot_tape_llm import numeric_violations
+
+        packet = FactPacket(
+            trigger="context_brief", key="brief:mover:MU:down:x:0",
+            fired_at=as_of, session="rth",
+            ticker="MU", name="Micron", sector="Technology", direction="down",
+            severity=91.0,
+            facts={"ticker": "MU", "pct": -8.2, "price": 92.0,
+                   "alert_key": "mover:MU:down:2026-07-29T14:05:00Z:0",
+                   "alert_trigger": "mover_drop", "subject": "MU",
+                   "mechanism": "single_name",
+                   "peers": [["SNDK", -0.3], ["STX", -0.4]]},
+            provenance={})
+        out = HW.llm_packet(packet)
+        # The leak itself is closed on every date: alert_key never reaches the model.
+        assert "alert_key" not in out["facts"]
+        assert "2026-07-29T14:05:00Z" not in json.dumps(out)
+        # And the real numbers stay quotable regardless of the stamp.
+        assert numeric_violations("$MU is down 8.2% at $92.", out) == []
 
     def test_the_llm_packet_forwards_every_key_a_clause_renders(self):
         """The allowlist's staleness guard: a new device that reads a new fact
@@ -2172,7 +2207,13 @@ class TestCIWiring:
         from engine.marketing import chart_render as CR
 
         assert RADAR.PRICE_SUBDIRS == CR.HOT_TAPE_PRICE_SUBDIRS
-        assert CR._PRICE_SUBDIRS == ("data/baskets/ohlcv", "data/stocks")
+        # The second assertion used to pin the literal ("data/baskets/ohlcv",
+        # "data/stocks"). The 2026-08-04 regional fix appended five curated non-US
+        # trees to the default so the brain could see a HK / A-share / TSX candle;
+        # what this line is actually for is that massive_stock_day stays OUT of the
+        # default and the US trees keep the front of the order.
+        assert "data/massive_stock_day" not in CR._PRICE_SUBDIRS
+        assert CR._PRICE_SUBDIRS[:2] == ("data/baskets/ohlcv", "data/stocks")
 
     def test_the_radar_lane_never_writes_a_forward_ledger(self):
         """Ledger law: outbox + the two hot-tape ledgers, nothing else."""

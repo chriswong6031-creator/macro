@@ -1,0 +1,184 @@
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ROTATION-MAP DESIGN LAYER (rvx-) — ported from the US Sector Intelligence
+   page so both desks speak one visual language: state-tinted aurora, glass
+   containers, a verdict hero whose headline IS the read. Every class is
+   prefixed rvx- and every token --rvx-*, so nothing collides with the China
+   page's retained scc-/tc-/board styles above.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --rvx-num: ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono",Menlo,Consolas,monospace;
+  --rvx-hair: color-mix(in srgb,var(--text) 9%,transparent);
+  --rvx-hair2: color-mix(in srgb,var(--text) 15%,transparent);
+  --rvx-lead:#3da564; --rvx-weak:#e0a030; --rvx-improve:#4f86e0; --rvx-lag:#d15656;
+}
+.rvx-mut{color:var(--muted)}
+
+/* aurora backdrop — fixed radial blooms behind the whole workspace */
+.rvx-aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.rvx-aurora b{position:absolute;border-radius:50%;filter:blur(90px);opacity:.42;animation:rvxDrift 26s ease-in-out infinite}
+.rvx-aurora .a1{width:600px;height:600px;left:-150px;top:-160px;background:radial-gradient(circle,#1c3a63 0%,transparent 68%)}
+.rvx-aurora .a2{width:540px;height:540px;right:-120px;top:-70px;background:radial-gradient(circle,#4a3a1a 0%,transparent 66%);opacity:.36;animation-delay:-9s}
+.rvx-aurora .a3{width:680px;height:520px;left:34%;bottom:-280px;background:radial-gradient(circle,#22304d 0%,transparent 70%);opacity:.34;animation-delay:-15s}
+html[data-theme="light"] .rvx-aurora b{opacity:.22}
+@keyframes rvxDrift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(24px,20px) scale(1.06)}}
+
+.rvx-reveal{opacity:0;transform:translateY(12px);animation:rvxReveal .7s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes rvxReveal{to{opacity:1;transform:none}}
+
+/* ── VERDICT HERO ── */
+.rvx-hero{margin-top:16px;padding:24px 26px;position:relative;overflow:hidden;border-radius:20px;border:1px solid var(--rvx-hair2);
+  background:radial-gradient(120% 140% at 8% 0%,var(--rvx-hero-a,color-mix(in srgb,var(--info) 12%,transparent)) 0%,transparent 42%),
+    radial-gradient(120% 160% at 100% 20%,var(--rvx-hero-b,color-mix(in srgb,var(--warn) 10%,transparent)) 0%,transparent 46%),
+    color-mix(in srgb,var(--panel) 80%,transparent);
+  box-shadow:0 30px 80px -42px rgba(0,0,0,.7),inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent);backdrop-filter:blur(10px)}
+.rvx-hero.strain{--rvx-hero-a:color-mix(in srgb,var(--down) 13%,transparent)}
+.rvx-hero.steady{--rvx-hero-a:color-mix(in srgb,var(--up) 12%,transparent)}
+.rvx-eyebrow{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700}
+/* the page's <h1> IS the eyebrow: it keeps the document outline honest for screen
+   readers and search while reading as the small caps label the design calls for */
+.rvx-eyebrow h1{font:inherit;letter-spacing:inherit;margin:0;color:inherit}
+.rvx-eyebrow .as-of{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500}
+/* the 20-day extremes line under the verdict — a receipt, never the headline */
+.rvx-story{font-size:12.5px;line-height:1.55;color:var(--muted);margin:15px 0 0;max-width:96ch}
+.rvx-story:empty{display:none}
+.rvx-story b{color:var(--text);font-weight:650}
+.rvx-hgrid{display:grid;grid-template-columns:1.4fr .95fr;gap:24px;margin-top:13px;align-items:center}
+.rvx-vword{font-size:38px;line-height:1.05;font-weight:800;letter-spacing:-.028em;margin:2px 0 8px}
+.rvx-vword .ac{background:linear-gradient(90deg,var(--warn),var(--up));-webkit-background-clip:text;background-clip:text;color:transparent}
+.rvx-hero.strain .rvx-vword .ac{background:linear-gradient(90deg,var(--warn),var(--down));-webkit-background-clip:text;background-clip:text}
+.rvx-vsub{font-size:15px;color:color-mix(in srgb,var(--text) 88%,transparent);max-width:48ch;margin:0}
+.rvx-stance{display:inline-flex;align-items:center;gap:8px;margin-top:15px;padding:7px 13px;border-radius:11px;
+  background:color-mix(in srgb,var(--warn) 14%,transparent);font-weight:600;font-size:13px}
+.rvx-hero.steady .rvx-stance{background:color-mix(in srgb,var(--up) 13%,transparent)}
+.rvx-stance-days{opacity:.72;font-weight:500}
+.rvx-chips{display:flex;flex-wrap:wrap;gap:5px 15px;margin-top:12px;align-items:center}
+.rvx-chips.ctx{gap:7px 20px}
+.rvx-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;text-decoration:none;color:var(--text)}
+/* ONE family for the hero rows: quiet ink + a state dot, no boxes. */
+.rvx-chips.ctx :is(.rvx-chip,.tc-chip){border:0;background:transparent;padding:2px 0;font-size:12px;gap:7px;
+  display:inline-flex;align-items:center}
+.rvx-chips.ctx :is(.rvx-chip,.tc-chip)::before{content:'';width:7px;height:7px;border-radius:50%;
+  background:currentColor;opacity:.5;flex:none}
+.rvx-chips.ctx > .rvx-chip{color:var(--muted)}
+.rvx-chips:not(.ctx) .rvx-chip{color:var(--muted);gap:5px}
+a.rvx-chip{color:var(--link)}
+/* strength / breaking name chips keep their tinted pill treatment inside the hero */
+.rvx-names{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.rvx-names-l{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+/* handoff */
+.rvx-hocard{border:1px solid var(--rvx-hair2);border-radius:14px;overflow:hidden;background:color-mix(in srgb,var(--panel2) 32%,transparent)}
+.rvx-hocard .cap{font-size:10px;letter-spacing:.09em;color:var(--muted);padding:10px 16px 0;font-weight:700}
+.rvx-handoff{display:flex;align-items:stretch}
+.rvx-hocol{flex:1;padding:13px 16px;min-width:0}
+.rvx-hocol .lbl{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.rvx-hocol .nm{font-size:16px;font-weight:750;margin:4px 0 2px;line-height:1.28;letter-spacing:-.012em}
+.rvx-hocol .meta{font-size:11.5px;color:var(--muted)}
+.rvx-hocol.out .nm{color:var(--rvx-weak)} .rvx-hocol.in .nm{color:var(--rvx-lead)}
+.rvx-hoarrow{flex:none;width:54px;display:grid;place-items:center}
+.rvx-hoarrow svg{width:54px;height:28px;overflow:visible}
+.rvx-hoarrow path.ln{stroke:url(#rvxHo);stroke-width:2;fill:none;stroke-linecap:round;stroke-dasharray:58;stroke-dashoffset:58;animation:rvxHoDraw 1.1s ease-out .5s forwards}
+.rvx-hoarrow path.hd{fill:var(--rvx-lead);opacity:0;animation:rvxHoHead .3s ease-out 1.5s forwards}
+@keyframes rvxHoDraw{to{stroke-dashoffset:0}} @keyframes rvxHoHead{to{opacity:1}}
+@media (max-width:900px){ .rvx-hgrid{grid-template-columns:1fr;gap:16px} .rvx-vword{font-size:31px} .rvx-hero{padding:20px} }
+/* The reveal + draw-on animations are the page's only motion; honour the OS setting.
+   Named individually (not a blanket *) so a future organ's animation is a deliberate add. */
+@media (prefers-reduced-motion:reduce){
+  .rvx-aurora b,.rvx-reveal,.rvx-hoarrow path.ln,.rvx-hoarrow path.hd{animation:none!important}
+  .rvx-reveal{opacity:1;transform:none}
+  .rvx-hoarrow path.ln{stroke-dashoffset:0} .rvx-hoarrow path.hd{opacity:1}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LIGHT-MODE ORGAN LAYER — the shell was designed for both themes; the organs
+   inside it were not (they accreted against the dark canvas). Same two-step the
+   US page uses: the inks are COMPUTED on the page body and REBOUND one level
+   down on .si-stage/.si-side, because a custom property may not reference
+   itself on the element that declares it (`--up: color-mix(… var(--up) …)` is a
+   cycle and silently no-ops). Every rule is gated on light AND on this page's
+   body class, so dark renders unchanged and the site nav keeps estate colours.
+   ══════════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] body.page-sector-central {
+  --si-ink-up:     color-mix(in srgb, var(--up)     62%, var(--text));
+  --si-ink-down:   color-mix(in srgb, var(--down)   84%, var(--text));
+  --si-ink-warn:   color-mix(in srgb, var(--warn)   62%, var(--text));
+  --si-ink-link:   color-mix(in srgb, var(--link)   88%, var(--text));
+  --si-edge:     color-mix(in srgb, var(--text) 14%, var(--line));
+}
+/* zh 红涨绿跌 — theme.css swaps --up/--down at the token level, so the mix that
+   darkens a green must follow the green, not the name. Red clears AA with far
+   less mixing; one percentage for both would print a dour maroon. */
+html[data-theme="light"][data-lang="zh"] body.page-sector-central {
+  --si-ink-up:   color-mix(in srgb, var(--up)   84%, var(--text));  /* red   */
+  --si-ink-down: color-mix(in srgb, var(--down) 62%, var(--text));  /* green */
+}
+html[data-theme="light"] .si-stage,
+html[data-theme="light"] .si-side {
+  --up: var(--si-ink-up); --down: var(--si-ink-down); --warn: var(--si-ink-warn);
+  --link: var(--si-ink-link); --info: var(--si-ink-link);
+  --line: var(--si-edge);
+}
+
+/* ── macro-desk composure: the estate's container recipe ────────────────────
+   Drop shadow does the definition, borders stay TRANSPARENT (layout-stable,
+   invisible), and the stage itself stays transparent so the aurora runs
+   unbroken beneath every panel. A flat stage fill painted over the gradient is
+   a hard seam — never reintroduce one. */
+.si-stage { background:transparent; }
+.si-vb-g { width:19px; height:19px; flex:none; }
+.si-vr-g { width:16px; height:16px; flex:none; margin-top:1px; color:var(--link); }
+.si-view-btn .si-vb-g { color:var(--muted); }
+.si-view-btn.on .si-vb-g, .si-view-btn:hover .si-vb-g { color:var(--link); }
+.si-side-out .si-vb-g { color:var(--muted); }
+.si-side { padding:14px 11px; }
+.si-view-btn { font-size:13px; padding:8.5px 11px; }
+.si-side-out { white-space:nowrap; }
+/* rail: COMPLETELY open in BOTH themes — the aurora/gradient is the page's
+   identity, and a column fill (frosted or flat) reads as a hard seam cutting
+   across it (operator 2026-08-05: the dark frosted-55%-bg column "looks weird"
+   over the gradient). The rail is a grid COLUMN, not an overlay, so content never
+   scrolls under it; the active/hover button pills carry their own backing, so no
+   rail fill is needed for legibility. */
+.si-side { background:transparent; border-right:0;
+  backdrop-filter:none; -webkit-backdrop-filter:none; }
+.rvx-hero, .rvx-hocard, .si-view-read {
+  background:var(--desk-tile, var(--panel));
+  border:1px solid transparent;
+  border-radius:var(--desk-r-lg, 14px);
+  box-shadow:var(--card-shadow, 0 1px 2px color-mix(in srgb, var(--text) 6%, transparent)); }
+.rvx-hero { border-radius:20px; }
+html[data-theme="light"] .rvx-hero,
+html[data-theme="light"] .si-view-read {
+  background:var(--panel);
+  box-shadow:0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+             0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent); }
+html[data-theme="light"] .rvx-hocard {
+  background:linear-gradient(100deg,
+    color-mix(in srgb, var(--si-ink-warn, var(--warn)) 6%, var(--panel)) 0%,
+    var(--panel) 46%,
+    color-mix(in srgb, var(--si-ink-up, var(--up)) 8%, var(--panel)) 100%);
+  box-shadow:0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+             0 12px 32px -14px color-mix(in srgb, var(--text) 10%, transparent); }
+html[data-theme="light"] .rvx-hocol.out .nm { color:var(--si-ink-warn, var(--warn)); }
+html[data-theme="light"] .rvx-hocol.in .nm  { color:var(--si-ink-up, var(--up)); }
+html[data-theme="light"] .rvx-hero .rvx-vword .ac {
+  background:linear-gradient(94deg, var(--si-ink-up, var(--up)),
+    color-mix(in srgb, var(--si-ink-up, var(--up)) 52%, var(--link)));
+  -webkit-background-clip:text; background-clip:text; }
+html[data-theme="light"] .rvx-hero.strain .rvx-vword .ac {
+  background:linear-gradient(94deg, var(--si-ink-warn, var(--warn)), var(--si-ink-down, var(--down)));
+  -webkit-background-clip:text; background-clip:text; }
+
+/* — the macro rail-tick on every workspace section head — */
+.si-sec-h h2, .scc-section-h h2 { display:flex; align-items:center; gap:11px; }
+.si-sec-h h2::before, .scc-section-h h2::before { content:""; flex:none; width:3px; height:18px;
+  border-radius:2px;
+  background:linear-gradient(180deg, var(--link), color-mix(in srgb, var(--link) 35%, transparent)); }
+
+/* typeface: SF first (Apple system faces), Inter everywhere else — operator
+   directive for the sector pages */
+body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
+  Roboto, Helvetica, sans-serif; }
+
+/* the hero IS the overview's read — no echo line beneath it */
+.si-view[data-view="overview"] .si-view-read { display:none; }

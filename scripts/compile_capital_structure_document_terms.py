@@ -38,6 +38,10 @@ from engine.capital_structure.source_identity import (
     validate_manifest_content_binding,
     validate_manifest_ledger,
 )
+from engine.capital_structure.source_ledger_io import (
+    read_source_ledger,
+    source_ledger_path,
+)
 from engine.capital_structure.source_store import build_source_stores
 
 
@@ -276,11 +280,11 @@ def compile_from_disk(
     SEC acquisition.
     """
     root = root or _data_root()
-    manifest_path = root / "source_manifest.parquet"
+    manifest_path = source_ledger_path(root)
     ledger_path = root / "document_term_observations.parquet"
     manifest_schema = _load_contract("capital_structure_source_manifest.schema.json")
     observation_schema = _load_contract("capital_structure_document_term_observation.schema.json")
-    manifests = dataframe_records(pd.read_parquet(manifest_path)) if manifest_path.exists() else []
+    manifests = read_source_ledger(manifest_path)
     for index, manifest in enumerate(manifests):
         _validate_schema(manifest, manifest_schema, f"source manifest {index}")
         validate_manifest_content_binding(manifest)

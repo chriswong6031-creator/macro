@@ -69,6 +69,7 @@ from engine.us_board_rank import (  # noqa: F401 — shared vocabulary, re-expor
     BASIS_SESSIONS,
     SCORE_KIND,
     SCORE_WEIGHTS,
+    STAGE_BASING,
     STAGE_BLOCKED,
     STAGE_LABELS,
     STAGE_LIVE,
@@ -309,6 +310,7 @@ def score_rows(
     board_asof: Any = None,
     featured_cap: int = FEATURED_CAP,
     sector_cap: int = SECTOR_CAP,
+    bottom_watch_stage: str = _ubr.STAGE_BLOCKED,
 ) -> list[dict]:
     """Score, stage, feature and order the HK buy pool.
 
@@ -319,6 +321,23 @@ def score_rows(
     MEMBERSHIP IS UNTOUCHED — byte-identically so.  The caller hands this function
     the pool the confluence cascade already admitted, in whatever order; this
     function adds fields and re-orders.  It never adds, drops or re-filters a row.
+
+    ``bottom_watch_stage`` names the bucket the cycle ladder's BOTTOM WATCH state
+    routes to.  It defaults to ``STAGE_BLOCKED`` — the behaviour every caller had
+    before the basing shelf existed — so a board whose template has no basing shelf
+    keeps rendering byte-identically; the HK builder passes ``STAGE_BASING`` (see
+    :func:`engine.us_board_rank.stage_for`).  DISPLAY-TIER ONLY: it decides which
+    shelf a row renders under, never membership, never score, never who is featured.
+
+    THE HK TRUTH, so nobody reads this as a population claim.  The HK pool is
+    CASCADE-GATED — ``scripts/build_hk_library.py`` hands this function only the
+    names ``hk_cascade_eligible`` admitted — so a pre-signal BOTTOM WATCH row is
+    structurally rare here in a way it is not on the US board: MEASURED ZERO across
+    all 14 committed board snapshots (2026-07-20..08-04).  The parameter exists so
+    the HK surface speaks the same five-bucket language as the US one, and so the day
+    the cycle ladder and the confluence cascade DO disagree, the row lands on a
+    labelled shelf instead of falling through the template's catch-all — which
+    renders an unknown stage LAST, below Blocked, the worst place for it.
     """
     return _ubr.score_rows(
         rows,
@@ -331,6 +350,7 @@ def score_rows(
         definition=BOARD_DEFINITION,
         alpha_of=selection_value,
         featured_extra=featured_shortfalls_extra(adv_by),
+        bottom_watch_stage=bottom_watch_stage,
     )
 
 
