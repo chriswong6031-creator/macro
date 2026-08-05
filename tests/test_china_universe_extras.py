@@ -18,9 +18,10 @@ from collectors import china_universe as cu  # noqa: E402
 from lib import config  # noqa: E402
 
 # The names wired in 2026-06-25 (seven sub-cutoff A-shares: 旗天科技 + the user's
-# six-name watchlist) that the Sina top-800 / CSI universe never reaches.
+# six-name watchlist) that the Sina top-800 / CSI universe never reaches, plus
+# 002716.SZ 湖南白银 (2026-08-04), whose mktcap rank STRADDLES the top-800 cutoff.
 EXPECTED = ["300061.SZ", "301531.SZ", "688508.SS", "300580.SZ",
-            "688049.SS", "300470.SZ", "688609.SS"]
+            "688049.SS", "300470.SZ", "688609.SS", "002716.SZ"]
 
 
 class _CountingTicker:
