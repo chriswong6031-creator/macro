@@ -169,9 +169,11 @@ def test_live_theme_inputs_are_closed_accounted_and_contract_valid() -> None:
     explicit_unmapped = {item["id"] for item in crosswalk["unmapped_baskets"]}
     known_baskets = set(membership["baskets"])
 
-    assert len(known_baskets) == 47
+    # 48 since 2026-08-05: silver_miners, the sleeve gold_miners' charter deferred, joins
+    # gold_miners in unmapped_baskets (29 -> 30). The mapped 18 are untouched.
+    assert len(known_baskets) == 48
     assert len(theme_by_basket) == 18
-    assert len(explicit_unmapped) == 29
+    assert len(explicit_unmapped) == 30
     assert set(theme_by_basket).isdisjoint(explicit_unmapped)
     assert set(theme_by_basket) | explicit_unmapped == known_baskets
     assert {item["mapping_qualifier"] for item in theme_by_basket.values()} <= {"direct", "proxy", "curated"}
@@ -182,9 +184,11 @@ def test_live_theme_inputs_are_closed_accounted_and_contract_valid() -> None:
     active_count = sum(len(baskets) for baskets in active.values())
     mapped_count = sum(len(baskets & set(theme_by_basket)) for baskets in active.values())
     unmapped_count = active_count - mapped_count
-    assert (active_count, mapped_count, unmapped_count) == (1009, 246, 763)
-    assert len(active) == 691
-    assert sum(not bool(baskets & set(theme_by_basket)) for baskets in active.values()) == 489
+    # +10 on every unmapped-side count: silver_miners' ten members appear in no other
+    # basket, so each is a NEW active ticker whose only basket is unmapped.
+    assert (active_count, mapped_count, unmapped_count) == (1019, 246, 773)
+    assert len(active) == 701
+    assert sum(not bool(baskets & set(theme_by_basket)) for baskets in active.values()) == 499
 
     assert theme_state["schema"] == "neuralweb.theme_state.v1"
     state_as_of = date.fromisoformat(theme_state["as_of"])

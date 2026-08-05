@@ -703,6 +703,19 @@
       }
     });
   }
+  /* "/" focuses the symbol field — the shortcut the field's own hint advertises.
+     Guarded so it never steals a slash the user is typing into some other field
+     (the nav search, the chat composer) or into a contenteditable surface. */
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!input || e.defaultPrevented) return;
+    var t = e.target;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    e.preventDefault();
+    input.focus();
+    input.select();
+  });
+
   var quick = $("sx-quick");
   if (quick) {
     quick.addEventListener("click", function (e) {

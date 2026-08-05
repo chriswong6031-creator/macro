@@ -1,0 +1,72 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "RNG-2026-06-30-watch",
+  "ticker": "RNG",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "RNG",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "RNG",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "premature_stop_noise",
+    "sector": "Information Technology",
+    "excess_spy": 0.35521325252722424,
+    "excess_sector": 0.41224427134642805,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 4.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "RNG was entered on a watch list, achieved strong positive excess return but was stopped out on premature stop noise. The outcome was positive alpha with a process fault of over-sensitive stops truncating the move.",
+    "root_cause": "RNG was entered on a watch list, achieved strong positive excess return but was stopped out on premature stop noise. The outcome was positive alpha with a process fault of over-sensitive stops truncating the move.",
+    "mitigation_verdict": "mitigable_process",
+    "lesson": "Watch-list entries with thin stops can be whipsawed by intraday noise; the stop engine needs to distinguish regulatory noise from structural reversal.",
+    "engines_credit": "The alpha engine correctly identified the opportunity; the stop-loss book lagged by firing on noise, not a confirmed trend break.",
+    "causal_chain": [],
+    "alternate_explanations": [
+      "The stop may have been triggered by a company-specific event (e.g., earnings, guidance) not captured in the provided data.",
+      "The observed excess return could be partly due to market rotation into IT names, not just company-specific strength."
+    ],
+    "missing_evidence": [
+      "intraday price and volume data around the stop trigger",
+      "company-specific news or events on 2026-06-30",
+      "stop-loss parameter settings and historical stop performance for this name",
+      "sector and market context on 2026-06-30",
+      "trailing stop logic and volatility adjustment"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "noise_stop_ratio",
+        "feature": "Ratio of stop-triggered exits that occur within 3 days of entry to total stops for watch-list names",
+        "measurement": "Compute over trailing 6 months of watch-list trades",
+        "expected_direction": "Higher ratio should correlate with larger post-trigger reversals (whipsaw losses)",
+        "falsifier": "If the ratio does not correlate with post-trigger excess returns, the hypothesis fails.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-05",
+  "asof": "2026-08-05",
+  "ts": "2026-08-05T09:23:44+00:00"
+}

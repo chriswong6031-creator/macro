@@ -221,7 +221,11 @@ def score_group(key: str, label: str, sector: str, tickers: list[str],
     if cand is None or "close" not in cand:
         return None
     close = cand["close"].dropna()
-    if len(close) < 220:                       # cascade needs >=200 daily bars; keep a small margin
+    # 220 is this lane's OWN floor, deliberately above confluence_tiers.MIN_HISTORY (the
+    # measured warmup max, 159 since 2026-08-05). A synthetic subsector index is a
+    # constructed series whose members join and leave, so it is held to a stricter bar than
+    # a single name. NOT a restatement of the cascade floor — do not "sync" it to that.
+    if len(close) < 220:
         return None
 
     gv = signal_gate.gate(key, close)          # owner's T1-T4 MACDRSI×StochRSI cascade

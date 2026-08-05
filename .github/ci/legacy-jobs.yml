@@ -280,6 +280,15 @@ jobs:
         run: pip install jsonschema pytest pandas numpy pyyaml requests
       - name: signal §7 contract tests
         run: python -m pytest tests/test_validate_signals.py -q
+      # W-F reclaim-veto decision packet (2026-08-05). This job, not a new one: the suite
+      # drives the REAL engine.signal_quality._buy_filter and analyze() over synthetic
+      # series, so it needs pandas + numpy + pyyaml (lib.config, via engine.technicals) —
+      # all present in the install line above, so no importorskip is needed and none is
+      # used. No data fixtures: every case is hand-built, which is why it can ride a job
+      # that checks out no caches. It pins that the packet's refusal set isolates exactly
+      # one leg — if that drifts, a research file starts overstating the veto's cost.
+      - name: W-F reclaim-veto flip-isolation construction
+        run: python -m pytest tests/test_us_reclaim_veto_packet.py -q
       - name: fundamental forensics lineage, normalization, detector, and schema contracts
         run: >
           python -m pytest
@@ -861,8 +870,15 @@ jobs:
       - name: install capital-structure test deps
         run: pip install pytest pandas numpy pyarrow jsonschema==4.26.0 requests pyyaml jinja2 fastapi httpx boto3
       - name: capital-structure contracts, compilers, projection, graph, source store, and legacy boundary
+        # test_daily_collect_commit_path.py rides HERE on purpose: it names the set
+        # of collect-job steps allowed to fail before "commit data", and every entry
+        # in that allowlist is a capital-structure step. Its sibling pin
+        # (test_capital_structure_compiler.py::test_nightly_order_and_render_network
+        # _firewall_are_pinned) asserts the same step stays fatal, so the two must
+        # move together — co-locating means a change to either surfaces the other.
         run: >
           python -m pytest
+          tests/test_daily_collect_commit_path.py
           tests/test_capital_structure_compiler.py
           tests/test_capital_structure_contracts.py
           tests/test_capital_structure_document_terms.py
@@ -980,6 +996,30 @@ jobs:
         run: pip install pytest pandas numpy pyarrow requests pyyaml
       - name: whole-board breadth collector + heatmap payload contract
         run: python -m pytest tests/test_china_board_breadth.py tests/test_market_heatmap.py -q
+
+  china-search-universe:
+    if: ${{ false }}
+    # The A-Share Analyzer's searchable name set (Sina top-800 ∪ CSI 300 ∪ CSI 1000).
+    # WIRING LAW (#1253 precedent): both suites were named by NO job, so the CSI union —
+    # the part of this collector that has now produced four separate silent-shrink
+    # defects (#4577 duplicate codes, #4585 92xxxx→.SS, and the untimed fetch + silent
+    # lossy fallback fixed here) — merged untested for its whole life. Offline: canned
+    # CSIndex frames, generated .xls bytes, no network.
+    #
+    # openpyxl is not optional here: the direct CSIndex path is an .xls parsed through
+    # pd.read_excel, and the fixtures generate real workbook bytes rather than mocking
+    # the parser (a mocked read_excel cannot see the bilingual 成份 header dialect the
+    # live file actually ships). yfinance is a module-scope import of the collector.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml requests openpyxl yfinance
+      - name: CSI constituent union — timeout, header dialect, degraded-night membership
+        run: python -m pytest tests/test_china_universe_index_constituents.py tests/test_china_universe_extras.py -q
 
   cycle-consistency:
     if: ${{ false }}
@@ -4271,6 +4311,12 @@ jobs:
         run: python -m pytest tests/test_check_ledger_advance.py tests/test_builder_failstreaks.py tests/test_notify_turn_events.py -q
       - name: polygon universe/intraday + dead-name prices + finviz archival + thetadata sessions
         run: python -m pytest tests/test_build_polygon_universe.py tests/test_polygon_intraday.py tests/test_fetch_dead_name_prices_polygon.py tests/test_finviz_archival.py tests/test_thetadata_tape_sessions.py -q
+      # Enumerated in NO workflow before this (calendar-asof audit follow-up
+      # 2026-08-05): the finviz collector's asof feeds these ledgers, but a PR
+      # touching the track record or its heal fired no run that could see a
+      # failure. Lives here because the collector's own suite already does.
+      - name: subsector rotation track record + significance guard + session-stamp heal
+        run: python -m pytest tests/test_subsector_track_record.py tests/test_subsector_significance_guard.py tests/test_heal_subsector_rotation_ledgers.py -q
 
   unrun-government-revenue:
     # Government Revenue Foresight — builder envelope, publication fence,
@@ -4580,6 +4626,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: vector allocation surfaces + the calibration ledger and basket pulse they read
         run: python -m pytest tests/test_basket_turn_watch.py tests/test_btc_overrides.py tests/test_build_basket_pulse.py tests/test_signal_surface_bugfixes.py tests/test_spvector_page.py tests/test_trial_log_refresh.py tests/test_validation_effective_t.py tests/test_vector_conviction.py -q
+      - name: basket-turn grading pack + session-stamp heal (forward-ledger audit 2026-08-05)
+        run: python -m pytest tests/test_basket_turn_grading.py tests/test_heal_basket_turn_ledger.py -q
       - name: W4 staged re-entry spine + P5 deferred-context BTC chips (dat/netliq/cascade)
         run: python -m pytest tests/test_btc_reentry.py tests/test_btc_deferred_legs.py -q
 
@@ -5063,3 +5111,35 @@ jobs:
         run: python -m pytest tests/test_hk_board_rank.py -q
       - name: hk board ui — the unified board template contract
         run: python -m pytest tests/test_hk_board_ui.py -q
+
+  unrun-subsector-themes:
+    # The subsector rotation/turn engine family + the Theme Tracker page suite —
+    # named by NO run: step in any workflow before this (subsector CI-wiring
+    # audit 2026-08-05, following the #4584 calendar-asof heal): the TURN
+    # engine (#4085), the rotation state machine, its alerts/scan/confluence
+    # organs, and the themes heatmap ran only when someone happened to run
+    # them locally.  The Theme Tracker suite runs FULL here on purpose: the
+    # portfolio-ctx job deliberately selects the theme_lanes/byte-identity
+    # subset (5 of 42 tests) as the Portfolio-brief contract, so the other 37
+    # — live render off the committed artifacts, banned-word and title= scans,
+    # node --check over inline JS (the pack runners ship setup-node), and the
+    # TIL section wiring — were dark.  All seven suites measured green in a
+    # clean venv with exactly the install below: 119 tests / ~87s, the live
+    # renders dominating.  Deps: the engine suites reach numpy+pandas; the
+    # page builder reaches jinja2 + pyyaml (theme_crosswalk lane projection).
+    # The shared unrun-* install repeated BYTE-FOR-BYTE keeps this job inside
+    # the census set's single venv instead of adding one.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: subsector rotation family — turn engine, state machine, alerts, scan, confluence
+        run: python -m pytest tests/test_subsector_turn.py tests/test_subsector_rotation.py tests/test_subsector_rotation_alerts.py tests/test_subsector_scan.py tests/test_subsector_confluence.py -q
+      - name: themes heatmap + Theme Tracker page (full suite; portfolio-ctx keeps its subset)
+        run: python -m pytest tests/test_themes_heatmap.py tests/test_state_of_themes.py -q
