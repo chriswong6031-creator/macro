@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T13:01:14.866234+00:00",
-  "count": 804,
+  "generated_at": "2026-08-05T13:31:32.337769+00:00",
+  "count": 805,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -93,6 +93,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pjkd4tw2ufl-b298b9",
+      "title": "Kratos (KTOS) 2Q26 First Take Solid quarter, full year guidance raised",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:21:47Z",
+      "summary_points": [
+        "**Q2 Outperformance**: Revenue ($458.8M vs.",
+        "$408.5M est.) +12.3% YoY, EBITDA ($38.2M) and EPS ($0.21) beat estimates; Unmanned Systems segment drove growth (revenue +8.1% YoY, EBITDA +37.8% YoY).",
+        "**Guidance & Capex Discipline**: Raised 2026 revenue/EBITDA guidance ($1.75–$1.81B/$173–$176M) and reduced capex to $125–$135M (vs.",
+        "$159M consensus), maintaining FCF.",
+        "**Valuation Gap & Upside**: Goldman Sachs $89 target implies 71.6% upside from $46.96 current price; revenue/EBITDA growth trajectory (2026E: $1.595B/$157M → 2028E: $2.444B/$294.9M) supports bullish thesis."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
