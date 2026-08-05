@@ -204,6 +204,8 @@ const ICONS = {
   mastermind_ai: NAV_ICO('<rect x="5" y="7" width="14" height="12" rx="2.5"/><circle cx="9.5" cy="12.5" r="1.2"/><circle cx="14.5" cy="12.5" r="1.2"/><path d="M12 7V4M12 4h.01M9 16h6"/>'),
   mastermind_logs: NAV_ICO('<path d="M4 5.5h16M4 12h16M4 18.5h10"/><circle cx="18.5" cy="18" r="3"/><path d="M18.5 16.6v1.4l1 .8"/>'),
   prophet:       NAV_ICO('<ellipse cx="12" cy="12" rx="5" ry="7.5"/><path d="M12 4.5a7.5 5 0 0 1 0 15M12 4.5a7.5 5 0 0 0 0 15"/><circle cx="12" cy="12" r="2"/>'),
+  /* Macro Thesis: a ledger page with several plane-lines converging on one mark. */
+  macro_thesis:  NAV_ICO('<path d="M5 3.5h14a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1Z"/><path d="M7.5 8h5M7.5 11.5h4M7.5 15h6"/><circle cx="16.5" cy="12" r="2.2"/>'),
   site_gate:     NAV_ICO('<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5"/>'),
   revenue:       NAV_ICO('<path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx="1"/><rect x="10.25" y="8" width="3.5" height="10" rx="1"/><rect x="15.5" y="4" width="3.5" height="14" rx="1"/><path d="M12 2.2v2M12 8.2v-1"/>'),
   /* Support: a life-ring — the outer float, the inner hub, and the four lugs. */
@@ -243,7 +245,7 @@ const ICONS = {
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
-  { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
+  { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["macro_thesis", "Macro Thesis"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
   { label: "Research", items: [["research_tools", "Research Tools"]] },
   /* Marketing was one flat 19-item list — "SUPER messy" (operator, 2026-07-29).
      Split along the operator's actual loops: the nightly production line he
@@ -276,6 +278,7 @@ const TAB_PREFETCH_PATHS = {
   neural_web: ["/api/neural_web/lobes"],
   orchestrator: ["/api/orchestrator", "/api/prophet"],
   prophet: ["/api/prophet", "/api/prophet/trade-memory"],
+  macro_thesis: ["/api/macro-thesis"],
   marketing_overview: ["/api/marketing/overview"],
   marketing_departments: ["/api/marketing/departments"],
   marketing_campaigns: ["/api/marketing/campaigns"],
@@ -3944,6 +3947,185 @@ RENDER.prophet = async () => {
     }
     toast(`${result.ticker || body.ticker} saved privately`);
     await RENDER.prophet();
+  };
+};
+
+/* ---- MACRO THESIS LEDGER --------------------------------------------------- */
+/* Operator-conviction register at THESIS grain. ops/journal tier, ZERO AUTHORITY:
+   a track record OF macro synthesis, never a signal into any surface. Sibling of
+   Trade Memory (per-trade / Supabase) — different grain, different store.
+   Forward and retro are rendered as SEPARATE sections and are never summed
+   together; the engine raises if anything tries to pool them. */
+
+const MT_STATUS_CLS = { accruing: "s-mut", interim: "s-warn", graded_21: "s-ok", graded_63: "s-ok" };
+const mtPct = (x) => x == null ? "—" : `${x >= 0 ? "+" : ""}${(Number(x) * 100).toFixed(2)}%`;
+const mtStatusCls = (s) => MT_STATUS_CLS[s] || (String(s || "").startsWith("graded_") ? "s-ok" : "s-mut");
+
+function mtLegRowsHtml(legs) {
+  if (!legs || !legs.length) return `<div class="sub muted">No legs recorded.</div>`;
+  return `<div class="table-wrap"><table><thead><tr><th>Plane</th><th>Kind</th><th>Claim</th><th>State ref @ registration</th></tr></thead><tbody>
+    ${legs.map(leg => {
+      const sr = leg.state_ref;
+      /* A calibrated leg shows the artifact + key that HELD the state, and the
+         literal value read then — without the observed value the pointer is
+         useless by the time anyone grades the thesis. */
+      const refCell = sr
+        ? `<code class="muted">${esc(sr.artifact)}</code> → <code class="muted">${esc(sr.key)}</code>${
+            sr.observed !== undefined
+              ? `<div class="note">observed: <b>${esc(typeof sr.observed === "object" ? JSON.stringify(sr.observed) : sr.observed)}</b></div>`
+              : ""}`
+        : `<span class="muted">— plane not wired (judgment)</span>`;
+      return `<tr>
+        <td><b>${esc(leg.plane)}</b></td>
+        <td><span class="statpill ${leg.leg_kind === "calibrated" ? "s-ok" : "s-mut"}">${esc(leg.leg_kind)}</span></td>
+        <td>${esc(leg.claim)}</td>
+        <td>${refCell}</td>
+      </tr>`;
+    }).join("")}
+  </tbody></table></div>`;
+}
+
+function mtInstrumentRowsHtml(instruments, horizons) {
+  if (!instruments || !instruments.length) return `<div class="sub muted">No instruments.</div>`;
+  const hs = horizons || [21, 63];
+  return `<div class="table-wrap"><table><thead><tr>
+      <th>Series</th><th>Benchmark</th><th>Anchor</th><th>Sessions</th>
+      ${hs.map(h => `<th>H${h} ret</th><th>H${h} excess</th>`).join("")}
+      <th>Interim</th><th>Interim excess</th></tr></thead><tbody>
+    ${instruments.map(i => {
+      if (i.resolution === "unresolved") {
+        /* Disclosed null, never a silent zero and never a crash. */
+        return `<tr><td><b>${esc(i.series)}</b></td>
+          <td colspan="${3 + hs.length * 2 + 2}"><span class="statpill s-warn">unresolved</span>
+          <span class="note muted">${esc(i.reason || "series did not resolve in any price store")}</span></td></tr>`;
+      }
+      return `<tr>
+        <td><b>${esc(i.series)}</b>${i.kind === "basket" ? ` <span class="statpill s-mut">EW basket · ${Number((i.members || []).length)}</span>` : ""}</td>
+        <td>${esc(i.benchmark)}</td>
+        <td>${esc(i.anchor_date)}</td>
+        <td>${Number(i.sessions_elapsed)}</td>
+        ${hs.map(h => `<td>${mtPct((i.returns || {})[String(h)])}</td><td>${mtPct((i.excess || {})[String(h)])}</td>`).join("")}
+        <td>${mtPct(i.interim)}</td>
+        <td>${mtPct(i.interim_excess)}</td>
+      </tr>`;
+    }).join("")}
+  </tbody></table></div>`;
+}
+
+function mtThesisHtml(t) {
+  const hs = t.horizon_sessions || [21, 63];
+  const roll = t.rollup || {};
+  const retro = t.entry_class === "retro";
+  return `<div class="card">
+    <h3>${esc(t.title)}
+      <span class="statpill ${mtStatusCls(t.status)}">${esc(t.status)}</span>
+      <span class="statpill s-mut">${esc(t.direction)}</span>
+      <span class="statpill s-mut">conviction ${Number(t.conviction)}/5</span>
+    </h3>
+    <div class="sub">${esc(t.thesis_id)}</div>
+    <div class="kv"><span>Registered</span><b>${esc(t.registered_at)} · ${esc(t.author)}</b></div>
+    <div class="kv"><span>Anchor (first close on/after)</span><b>${esc(t.anchor_date)}</b></div>
+    ${retro && t.event_period ? `<div class="kv"><span>Event period</span><b>${esc(t.event_period.from)} → ${esc(t.event_period.to)}</b></div>` : ""}
+    ${t.amended_from ? `<div class="kv"><span>Amends</span><b>${esc(t.amended_from)}</b></div>` : ""}
+    <div class="kv"><span>Legs</span><b>${Number(t.legs_calibrated)} calibrated · ${Number(t.legs_judgment)} judgment</b></div>
+    <div class="kv"><span>Rollup (median across instruments)</span><b>${
+      hs.map(h => `H${h} ${mtPct((roll.returns || {})[String(h)])} / excess ${mtPct((roll.excess || {})[String(h)])}`).join(" &middot; ")
+    } &middot; interim ${mtPct(roll.interim)}</b></div>
+    ${Number(t.unresolved_n) ? `<div class="note muted">${Number(t.unresolved_n)} instrument(s) unresolved — disclosed below, excluded from the rollup.</div>` : ""}
+    ${retro ? `<div class="note"><b>Hindsight risk (mandatory disclosure):</b> ${esc(t.hindsight_risk)}</div>` : ""}
+    <div class="section">Instruments</div>
+    ${mtInstrumentRowsHtml(t.instruments, hs)}
+    <div class="section">Legs</div>
+    ${mtLegRowsHtml(t.legs)}
+    ${t.confirm_watch ? `<div class="note"><b>Confirm watch:</b> ${esc(t.confirm_watch)}</div>` : ""}
+    ${t.risk_watch ? `<div class="note"><b>Risk watch:</b> ${esc(t.risk_watch)}</div>` : ""}
+    ${retro && (t.sources || []).length ? `<div class="note muted"><b>Sources:</b> ${(t.sources || []).map(s => esc(s)).join(" &middot; ")}</div>` : ""}
+  </div>`;
+}
+
+function mtSectionHtml(section, emptyMsg) {
+  if (!section) return `<div class="sub muted">${esc(emptyMsg)}</div>`;
+  const s = section.summary || {};
+  const theses = section.theses || [];
+  const med = s.median_return || {};
+  const excess = s.median_excess || {};
+  const hs = Object.keys(med);
+  const byStatus = Object.entries(s.by_status || {}).map(([k, v]) => `${esc(k)} ${Number(v)}`).join(" · ");
+  return `<div class="card">
+      <h3>${esc(section.label)} <span class="cnt">${Number(s.n || 0)} theses</span></h3>
+      <div class="kv"><span>Status</span><b>${byStatus || "—"}</b></div>
+      <div class="kv"><span>Median return</span><b>${hs.length ? hs.map(h => `H${esc(h)} ${mtPct(med[h])}`).join(" &middot; ") : "—"}</b></div>
+      <div class="kv"><span>Median excess</span><b>${hs.length ? hs.map(h => `H${esc(h)} ${mtPct(excess[h])}`).join(" &middot; ") : "—"}</b></div>
+      <div class="kv"><span>Legs</span><b>${Number(s.legs_calibrated || 0)} calibrated · ${Number(s.legs_judgment || 0)} judgment</b></div>
+    </div>
+    ${theses.length ? theses.map(mtThesisHtml).join("") : `<div class="sub muted">${esc(emptyMsg)}</div>`}`;
+}
+
+RENDER.macro_thesis = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/macro-thesis");
+  if (!d || !d.ok) {
+    v.innerHTML = nwEmpty("Macro Thesis unavailable", (d && (d.error || d.reason)) || "panel error");
+    return;
+  }
+
+  /* The schema is nested (legs[] and instruments[] are lists of objects), which a
+     flat field-per-input form cannot express. The paste box uses the same
+     form/post/toast idiom as the Trade Memory form — no new UI machinery. */
+  const template = JSON.stringify({
+    registered_at: new Date().toISOString().slice(0, 10),
+    author: "operator",
+    title: "",
+    direction: "long",
+    horizon_sessions: [21, 63],
+    conviction: 3,
+    entry_class: "forward",
+    legs: [{ plane: "rates", claim: "", leg_kind: "judgment", state_ref: null }],
+    instruments: [{ series: "", benchmark: "absolute" }],
+    confirm_watch: "",
+    risk_watch: "",
+  }, null, 2);
+
+  v.innerHTML = `<div class="section">Macro Thesis Ledger <span class="cnt">${Number((d.forward && d.forward.summary && d.forward.summary.n) || 0)} forward · ${Number((d.retro && d.retro.summary && d.retro.summary.n) || 0)} retro</span></div>
+    <div class="card">
+      <h3>Record the synthesis, then grade it</h3>
+      <div class="sub">A multivariable macro thesis is written down point-in-time and graded at fixed horizons, building a track record of macro synthesis. Human now, Neural Web later.</div>
+      <div class="note muted"><b>Authority: ${esc(d.authority)}</b></div>
+      <div class="note muted">${esc(d.store)}</div>
+      <div class="note muted">${esc(d.firewall)}</div>
+    </div>
+    <form id="macroThesisForm" class="tm-form">
+      <label class="tm-wide"><span>Thesis JSON</span><textarea name="thesis" rows="16" spellcheck="false" placeholder="Paste one thesis object">${esc(template)}</textarea></label>
+      <div class="tm-wide"><button class="btn" type="submit">Register thesis</button><span id="macroThesisSaveState" class="sub muted"></span></div>
+    </form>
+    <div class="section">Forward register</div>
+    ${mtSectionHtml(d.forward, "No forward theses registered yet.")}
+    <div class="section">Retro library</div>
+    <div class="note muted">Retro rows are curated in hindsight. They exist for schema exercise and Neural Web reconstruction training, and are never pooled into the forward track record.</div>
+    ${mtSectionHtml(d.retro, "No retro theses recorded yet.")}`;
+
+  const form = $("#macroThesisForm");
+  if (form) form.onsubmit = async (event) => {
+    event.preventDefault();
+    const state = $("#macroThesisSaveState");
+    let body;
+    try {
+      body = JSON.parse(String(new FormData(form).get("thesis") || ""));
+    } catch (err) {
+      if (state) state.textContent = `Not valid JSON: ${err.message}`;
+      toast("Not valid JSON", true);
+      return;
+    }
+    if (state) state.textContent = "Registering…";
+    const result = await post("/api/macro-thesis", body);
+    if (!result.ok) {
+      if (state) state.textContent = result.error || "Registration failed";
+      toast(result.error || "Registration failed", true);
+      return;
+    }
+    toast(`${result.thesis_id} registered`);
+    await RENDER.macro_thesis();
   };
 };
 

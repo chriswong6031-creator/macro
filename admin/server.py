@@ -37,6 +37,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                content, context_lobe, email_center, entitlements, experiments,
                flags, ga4, github_api, github_config, gitops, health, long_hold,
                live_runs,
+               macro_thesis,
                marketing,
                marketing_floor,
                mastermind_logs,
@@ -669,6 +670,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(prophet.panel())
             if path == "/api/prophet/trade-memory":
                 return self._json(trade_memory.panel())
+            # Macro Thesis Ledger — operator-conviction register at THESIS grain.
+            # ops/journal tier, ZERO AUTHORITY: a track record OF macro synthesis,
+            # never a signal into any surface.  Sibling of Trade Memory (per-trade,
+            # Supabase); this one is thesis-grain over a committed JSONL ledger.
+            if path == "/api/macro-thesis":
+                return self._json(macro_thesis.panel())
             # Marketing lobe admin pages
             # The floor/model-desk/lanes trio is the operator's view INSIDE the
             # factory: per-station yield with every loss named, model routing +
@@ -1093,6 +1100,13 @@ class Handler(BaseHTTPRequestHandler):
             # Supabase only; never through the GitHub config mutation path.
             if path == "/api/prophet/trade-memory":
                 result = trade_memory.record(b)
+                return self._json(result, 200 if result.get("ok") else 400)
+
+            # Macro Thesis registration. Append-only + keep-first on thesis_id:
+            # a re-registered id is REFUSED, never overwritten, so the register
+            # cannot be quietly rewritten after the outcome is known.
+            if path == "/api/macro-thesis":
+                result = macro_thesis.register(b)
                 return self._json(result, 200 if result.get("ok") else 400)
 
             # REJECT — terminal kill WITH a reason, unlike hold (reversible,
