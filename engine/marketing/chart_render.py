@@ -522,15 +522,28 @@ def bar_basis(ticker: str, root: Path | str,
         if (Path(root) / "data" / "yahoo" / f"{ticker}-USD.parquet").exists():
             return "close_to_close"
         return "close_to_close" if _wide_close_series(ticker, root, 2) else "none"
-    try:
-        import pandas as pd  # noqa: PLC0415
-    except ImportError:
-        return "intrabar"
-    try:
-        cols = set(pd.read_parquet(path).columns)
-    except Exception:  # noqa: BLE001
+    # SCHEMA ONLY — this runs on every chart_digest, and the question is just
+    # "does this file have high/low columns". Reading the frame to find out would
+    # pull thousands of rows per call (an A-share parquet is 6k+) for a set of
+    # column names the footer already carries.
+    cols = _parquet_columns(path)
+    if cols is None:
         return "none"
     return "intrabar" if {"high", "low"}.issubset(cols) else "close_to_close"
+
+
+def _parquet_columns(path: Path) -> "set[str] | None":
+    """Column names from the parquet footer, without reading any row group."""
+    try:
+        import pyarrow.parquet as pq  # noqa: PLC0415
+        return set(pq.read_schema(path).names)
+    except Exception:  # noqa: BLE001 — no pyarrow, or an unreadable footer
+        pass
+    try:
+        import pandas as pd  # noqa: PLC0415
+        return set(pd.read_parquet(path).columns)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def load_closes(
