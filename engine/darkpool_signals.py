@@ -63,6 +63,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -233,6 +234,13 @@ class NameMetrics:
     avg_print_price: float | None = None
     top_ats_venue: str | None = None
     top_nonats_firm: str | None = None
+    # role mix as a fraction of TOTAL off-exchange volume (labelled heuristic —
+    # knowledge/darkpool/otc_firm_roles.yaml; never a measurement of intent)
+    frac_retail_wholesaler: float | None = None
+    frac_retail_broker: float | None = None
+    frac_institutional_desk: float | None = None
+    frac_unclassified: float | None = None
+    retail_frac: float | None = None
     n_obs: int = 0
     history_rebased: bool = False   # baseline restarted after a share-count break (split)
     n_usable: int = 0               # comparable observations behind the z
@@ -346,13 +354,66 @@ def compute_name_metrics(
         m.avg_print_price = venue.get("avg_print_price")
         m.top_ats_venue = venue.get("top_ats_venue")
         m.top_nonats_firm = venue.get("top_nonats_firm")
+        for k in ("frac_retail_wholesaler", "frac_retail_broker",
+                  "frac_institutional_desk", "frac_unclassified", "retail_frac"):
+            setattr(m, k, venue.get(k))
 
     return m
 
 
 # ── venue split: institutional dark pools vs wholesaler internalization ────────
 
-def venue_split(ats: pd.DataFrame | None, nonats: pd.DataFrame | None) -> dict[str, dict]:
+_FIRM_ROLES_CACHE: dict | None = None
+
+
+def firm_roles(root: "str | Path | None" = None) -> dict:
+    """Load knowledge/darkpool/otc_firm_roles.yaml → {"FIRM NAME": role}.
+
+    A LABELLED HEURISTIC on each firm's primary business — never a measurement of who
+    was actually trading, never a direction. Firms absent from the file (and FINRA's
+    own "De Minimis Firms" aggregate) resolve to None so they report as `unclassified`
+    rather than being defaulted onto a side.
+
+    Fail-open: an unreadable file yields an empty map, every firm becomes unclassified,
+    and the page prints that — the desk never invents an attribution.
+    """
+    global _FIRM_ROLES_CACHE
+    if _FIRM_ROLES_CACHE is not None and root is None:
+        return _FIRM_ROLES_CACHE
+    out: dict = {"by_firm": {}, "labels": {}, "unattributable": set()}
+    try:
+        import yaml
+        if root is None:
+            from lib import config
+            root = config.ROOT
+        path = Path(root) / "knowledge" / "darkpool" / "otc_firm_roles.yaml"
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        for role, block in (doc.get("roles") or {}).items():
+            out["labels"][role] = {
+                "label": (block or {}).get("label") or {},
+                "note": (block or {}).get("note") or {},
+            }
+            for firm in (block or {}).get("firms") or []:
+                out["by_firm"][str(firm).strip().upper()] = role
+        out["unattributable"] = {str(f).strip().upper()
+                                 for f in (doc.get("unattributable") or [])}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("darkpool firm roles unreadable (%s) — every firm unclassified", exc)
+    if root is None:
+        _FIRM_ROLES_CACHE = out
+    return out
+
+
+def firm_role(name: str | None, roles: dict | None = None) -> str | None:
+    """Role for one FINRA firm name, or None when it is not classified."""
+    if not name:
+        return None
+    r = roles if roles is not None else firm_roles()
+    return (r.get("by_firm") or {}).get(str(name).strip().upper())
+
+
+def venue_split(ats: pd.DataFrame | None, nonats: pd.DataFrame | None,
+                roles: dict | None = None) -> dict[str, dict]:
     """Per-ticker ATS-vs-non-ATS breakdown of the off-exchange tape.
 
     Off-exchange volume is ATS (registered dark pools) PLUS non-ATS OTC (wholesaler
@@ -399,6 +460,21 @@ def venue_split(ats: pd.DataFrame | None, nonats: pd.DataFrame | None) -> dict[s
     a = _agg(ats, "venue_name")
     n = _agg(nonats, "venue_name")
 
+    # Per-ticker non-ATS shares split by the firm's PRIMARY BUSINESS. See
+    # knowledge/darkpool/otc_firm_roles.yaml — a labelled heuristic, not a measurement
+    # of intent. "De Minimis Firms" (FINRA's own aggregate, ~36% of non-ATS volume) and
+    # any firm absent from the roster land in `unclassified` and are never folded onto
+    # a side, so the page can print what could not be attributed.
+    role_mix: dict[str, dict[str, float]] = {}
+    if nonats is not None and not nonats.empty:
+        r = roles if roles is not None else firm_roles()
+        by_firm = r.get("by_firm") or {}
+        d = nonats[["ticker", "venue_name", "shares"]].copy()
+        d["role"] = (d["venue_name"].astype(str).str.strip().str.upper()
+                     .map(by_firm).fillna("unclassified"))
+        for (tk, role), grp in d.groupby(["ticker", "role"]):
+            role_mix.setdefault(str(tk), {})[str(role)] = float(grp["shares"].sum())
+
     for tk in set(a) | set(n):
         ai, ni = a.get(tk), n.get(tk)
         ash = ai["shares"] if ai else 0.0
@@ -427,6 +503,17 @@ def venue_split(ats: pd.DataFrame | None, nonats: pd.DataFrame | None) -> dict[s
         if num > 0 and den > 0:
             rec["avg_print_price"] = round(num / den, 2)
             rec["avg_print_price_partial"] = bool(den < tot)   # only one leg contributed
+
+        # role mix as a fraction of this name's TOTAL off-exchange volume (ATS + non-ATS),
+        # so the four buckets plus ats_frac describe the whole tape rather than a subset.
+        mix = role_mix.get(tk)
+        if mix and tot > 0:
+            for role in ("retail_wholesaler", "retail_broker",
+                         "institutional_desk", "unclassified"):
+                rec[f"frac_{role}"] = round(mix.get(role, 0.0) / tot, 4)
+            # retail-facing share of the whole off-exchange tape (wholesaler + broker)
+            rec["retail_frac"] = round(
+                (mix.get("retail_wholesaler", 0.0) + mix.get("retail_broker", 0.0)) / tot, 4)
         out[tk] = rec
     return out
 

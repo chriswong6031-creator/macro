@@ -231,8 +231,49 @@ where the original defect actually lived.
 |---|---|
 | Deeper than 3y history | 8y is size-lawful (19.8 MB) but a much longer crawl; 755 dates already supports a 252-session baseline. One command away: `--start 2018-08-01`. |
 | Grading the ledger | It needs forward time to accrue. The reader is the next piece of work, and until it exists the honest statement is the null in §1/F2. |
-| Wholesaler classification (retail internaliser vs institutional broker) | The data supports it — AAPL's largest non-ATS counterparty is Goldman at $15.5B, which is not retail flow. But the retail/institutional labelling of firms is a judgment call that should ship as an explicitly labelled heuristic, reviewed, not slipped in. |
 | Intraday / per-print data | Genuinely needs an equity tick feed. Still `null` under `pending`, never faked. |
+
+---
+
+## §5 Counterparty attribution (added after operator sign-off)
+
+Off-exchange volume that does **not** reach an ATS was internalised by a firm, and FINRA
+names that firm. `knowledge/darkpool/otc_firm_roles.yaml` maps each to its **primary
+business** — retail wholesaler, retail broker, or bank/institutional desk — which is the
+separation the desk previously could not draw at all.
+
+**It is a labelled heuristic on the firm, not a measurement of who was trading, and
+never a direction.** Large firms run several businesses at once; the roster describes
+where the bulk of a firm's internalised share volume comes from.
+
+**Grounded, not asserted.** Average print price separates the roles cleanly over weeks
+2026-06-22/29, because wholesalers handle high-volume lower-priced names while bank
+desks handle institutional business in higher-priced ones:
+
+| role | examples (avg print price) |
+|---|---|
+| retail wholesaler | Citadel $29.07 · Virtu $31.11 · HRT $22.38 · Jane St $34.81 |
+| bank / institutional | Goldman $137.72 · Citi $167.63 · JPM $192.57 · Morgan Stanley $243.03 (avg print 4,646 shares, 11 symbols) |
+| retail broker | DriveWealth avg print **7 shares** (fractional retail) |
+
+**The result discriminates.** Of each name's total off-exchange volume, week 2026-06-22:
+
+| | ATS | wholesaler | bank desk | unattributed |
+|---|---|---|---|---|
+| AAPL | 31.4% | 18.9% | **38.7%** | 10.5% |
+| NVDA | 23.5% | **52.9%** | 17.1% | 4.8% |
+| TSLA | 26.0% | **57.5%** | 10.4% | 4.3% |
+| F | 16.5% | **73.0%** | 6.7% | 2.7% |
+| SPY | **54.0%** | 23.2% | 4.9% | 17.0% |
+
+**Nothing is invented.** FINRA reports small firms only as a single `De Minimis Firms`
+aggregate — **36.4%** of non-ATS volume market-wide, the largest single entry — and it is
+genuinely unattributable. It, and any firm absent from the roster, reports as
+`unclassified` and is printed on the card ("8% unattributed"), never folded onto a side.
+An unreadable roster fails open to 100% unclassified rather than to a default role.
+
+Coverage on the display universe (374 names): median **19.4%** unattributed, p75 26.7%,
+only 6 names (2%) above 50%.
 | Re-fetching stored ATS weeks for `notional` | Would cost ~39 API pages/week for cosmetic completeness; new weeks acquire it naturally, and `avg_print_price_partial` flags the interim. |
 
 ---

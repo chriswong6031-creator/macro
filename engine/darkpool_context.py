@@ -139,23 +139,52 @@ def _streak_label(streak: int) -> dict:
 
 
 def _venue_character(ats_frac: float | None) -> dict:
-    """Where the hidden volume ran: institutional venues vs internalized retail flow.
+    """How much of the hidden volume reached a REGISTERED dark pool (ATS).
 
-    This is the distinction the old desk could not draw at all — it called the whole
-    off-exchange blob "dark pool" while only ever showing the ATS quarter of it.
-    Thresholds are descriptive cuts on an observed ratio, not a scored signal.
+    The old desk could not draw this at all — it called the whole off-exchange blob
+    "dark pool" while only ever showing the ATS quarter of it. Descriptive cuts on an
+    observed ratio, not a scored signal.
     """
+    # Renders as "<label> <value>" on the card, where the label already says "Reached a
+    # dark pool" — so the value carries the FIGURE only. Restating the label here
+    # printed "Reached a dark pool 34% reached a dark pool" (and the same doubling in zh).
     if ats_frac is None:
-        return {"en": "Venue mix not yet reported", "zh": "场所构成尚未公布"}
+        return {"en": "not yet reported", "zh": "尚未公布"}
     pct = ats_frac * 100
-    if ats_frac >= 0.40:
-        return {"en": f"{pct:.0f}% through dark pools — institution-heavy",
-                "zh": f"{pct:.0f}% 经由暗池——机构占比偏高"}
-    if ats_frac >= 0.25:
-        return {"en": f"{pct:.0f}% through dark pools — mixed",
-                "zh": f"{pct:.0f}% 经由暗池——构成混合"}
-    return {"en": f"{pct:.0f}% through dark pools — mostly internalized retail flow",
-            "zh": f"{pct:.0f}% 经由暗池——多为内部化的散户订单流"}
+    # "only" below the ~25% typical large-cap level, where the headline "dark pool"
+    # framing is most misleading; the bare figure at or above it.
+    if ats_frac < 0.25:
+        return {"en": f"only {pct:.0f}%", "zh": f"仅 {pct:.0f}%"}
+    return {"en": f"{pct:.0f}%", "zh": f"{pct:.0f}%"}
+
+
+def _counterparty_character(row: dict) -> dict | None:
+    """Who internalized the rest — retail wholesaler vs bank/institutional desk.
+
+    This is the half the desk could never see. Off-exchange volume that does NOT reach
+    an ATS was internalized by a firm, and FINRA names that firm; mapping it to the
+    firm's primary business (knowledge/darkpool/otc_firm_roles.yaml) separates retail
+    order flow from institutional risk transfer. Measured week 2026-06-22 the split is
+    strongly discriminating — AAPL 38.7% bank desks vs F 6.7%, while F is 73% wholesaler.
+
+    A LABELLED HEURISTIC on firm business, never a measurement of who was trading, and
+    never a direction. Returns None when nothing is attributable so the card omits the
+    line rather than printing a hollow one.
+    """
+    whole = row.get("frac_retail_wholesaler")
+    bank = row.get("frac_institutional_desk")
+    unk = row.get("frac_unclassified")
+    if whole is None and bank is None:
+        return None
+    whole = whole or 0.0
+    bank = bank or 0.0
+    tail_en = f" ({unk * 100:.0f}% unattributed)" if unk else ""
+    tail_zh = f"（{unk * 100:.0f}% 无法归类）" if unk else ""
+    if bank > whole:
+        return {"en": f"{bank * 100:.0f}% via bank desks, {whole * 100:.0f}% via retail wholesalers{tail_en}",
+                "zh": f"{bank * 100:.0f}% 经银行交易台，{whole * 100:.0f}% 经散户批发商{tail_zh}"}
+    return {"en": f"{whole * 100:.0f}% via retail wholesalers, {bank * 100:.0f}% via bank desks{tail_en}",
+            "zh": f"{whole * 100:.0f}% 经散户批发商，{bank * 100:.0f}% 经银行交易台{tail_zh}"}
 
 
 def _name_read(pattern: str, streak: int, ats_frac: float | None) -> dict:
@@ -325,6 +354,9 @@ def build_snapshot(rows: list[dict], ats_table: dict | None, asof: str,
             "short_trend_pp": r.get("short_trend_pp"),
             "exempt_rate": r.get("exempt_rate"),
             "ats_frac": r.get("ats_frac"),
+            "frac_retail_wholesaler": r.get("frac_retail_wholesaler"),
+            "frac_institutional_desk": r.get("frac_institutional_desk"),
+            "frac_unclassified": r.get("frac_unclassified"),
             "ats_block_shares": r.get("ats_block_shares"),
             "nonats_block_shares": r.get("nonats_block_shares"),
             "top_ats_venue": r.get("top_ats_venue"),
@@ -332,6 +364,7 @@ def build_snapshot(rows: list[dict], ats_table: dict | None, asof: str,
             "norm_label": _norm_label(r.get("participation_z")),
             "streak_label": _streak_label(r.get("streak") or 0),
             "venue_character": _venue_character(r.get("ats_frac")),
+            "counterparty_character": _counterparty_character(r),
             "read": _name_read(pat, r.get("streak") or 0, r.get("ats_frac")),
         })
 

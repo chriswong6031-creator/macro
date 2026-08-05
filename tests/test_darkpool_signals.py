@@ -288,6 +288,91 @@ def test_desk_unions_both_stores_and_prefers_the_collector_on_overlap(tmp_path, 
     assert restated["total_vol"] == 99.0, "collector restatement must win over the deep copy"
 
 
+# ---------------------------------------------------------------------------
+# firm roles — retail internalisation vs institutional risk transfer
+# ---------------------------------------------------------------------------
+
+def test_firm_roles_roster_loads_and_classifies_the_major_internalisers():
+    from engine.darkpool_signals import firm_role, firm_roles
+
+    r = firm_roles()
+    assert len(r["by_firm"]) > 30, "roster failed to load"
+    assert firm_role("CITADEL SECURITIES LLC") == "retail_wholesaler"
+    assert firm_role("VIRTU AMERICAS LLC") == "retail_wholesaler"
+    assert firm_role("GOLDMAN SACHS & CO. LLC") == "institutional_desk"
+    assert firm_role("MORGAN STANLEY & CO. LLC") == "institutional_desk"
+    assert firm_role("DRIVEWEALTH, LLC") == "retail_broker"
+    assert firm_role("citadel securities llc") == "retail_wholesaler", "match must be case-insensitive"
+
+
+def test_de_minimis_and_unknown_firms_are_never_defaulted_onto_a_side():
+    """FINRA's "De Minimis Firms" aggregate is ~36% of non-ATS volume and is genuinely
+    unattributable. Folding it (or any unlisted firm) into either side would invent an
+    attribution for a third of the tape."""
+    from engine.darkpool_signals import firm_role
+
+    assert firm_role("De Minimis Firms") is None
+    assert firm_role("SOME BROKER NOBODY LISTED LLC") is None
+    assert firm_role(None) is None
+
+
+def test_role_mix_splits_a_names_off_exchange_volume_and_keeps_unclassified_visible():
+    ats = _venue_frame([["2026-06-22", "AAA", "UBSA", "UBS ATS", 200.0, 4, 40000.0]])
+    non = _venue_frame([
+        ["2026-06-22", "AAA", "", "CITADEL SECURITIES LLC", 400.0, 20, 80000.0],
+        ["2026-06-22", "AAA", "", "GOLDMAN SACHS & CO. LLC", 200.0, 2, 40000.0],
+        ["2026-06-22", "AAA", "", "De Minimis Firms", 200.0, 5, 40000.0],
+    ])
+    out = venue_split(ats, non)["AAA"]
+    # fractions are of TOTAL off-exchange (ATS 200 + non-ATS 800 = 1000)
+    assert out["ats_frac"] == pytest.approx(0.20)
+    assert out["frac_retail_wholesaler"] == pytest.approx(0.40)
+    assert out["frac_institutional_desk"] == pytest.approx(0.20)
+    assert out["frac_unclassified"] == pytest.approx(0.20)
+    assert out["retail_frac"] == pytest.approx(0.40)
+    # the four buckets plus ats_frac account for the whole tape — nothing vanishes
+    total = (out["ats_frac"] + out["frac_retail_wholesaler"]
+             + out["frac_retail_broker"] + out["frac_institutional_desk"]
+             + out["frac_unclassified"])
+    assert total == pytest.approx(1.0)
+
+
+def test_role_mix_is_absent_not_zero_when_non_ats_is_missing():
+    """No non-ATS week ⇒ no attribution. Zeros would read as 'no retail flow'."""
+    ats = _venue_frame([["2026-06-22", "AAA", "UBSA", "UBS ATS", 200.0, 4, 40000.0]])
+    out = venue_split(ats, None)["AAA"]
+    assert out.get("frac_retail_wholesaler") is None
+    assert out.get("frac_unclassified") is None
+
+
+def test_unreadable_roster_fails_open_to_unclassified(tmp_path):
+    """A missing roster must degrade to 'we cannot attribute this', never to a side."""
+    from engine.darkpool_signals import firm_roles
+
+    r = firm_roles(root=tmp_path)          # no knowledge/ dir under tmp_path
+    assert r["by_firm"] == {}
+    non = _venue_frame([["2026-06-22", "AAA", "", "CITADEL SECURITIES LLC", 100.0, 5, 1000.0]])
+    out = venue_split(None, non, roles=r)["AAA"]
+    assert out["frac_unclassified"] == pytest.approx(1.0)
+    assert out["frac_retail_wholesaler"] == pytest.approx(0.0)
+
+
+def test_counterparty_copy_omits_the_line_when_nothing_is_attributable():
+    from engine.darkpool_context import _counterparty_character
+
+    assert _counterparty_character({"ats_frac": 0.3}) is None
+    line = _counterparty_character({
+        "frac_retail_wholesaler": 0.60, "frac_institutional_desk": 0.05,
+        "frac_unclassified": 0.10})
+    assert "60% via retail wholesalers" in line["en"]
+    assert "10% unattributed" in line["en"], "the unattributed remainder must be printed"
+    # a bank-dominated name leads with the bank figure
+    bank = _counterparty_character({
+        "frac_retail_wholesaler": 0.10, "frac_institutional_desk": 0.40,
+        "frac_unclassified": 0.05})
+    assert bank["en"].startswith("40% via bank desks")
+
+
 def test_desk_still_loads_when_the_deep_store_is_absent(tmp_path, monkeypatch):
     """A fresh checkout has no deep store — that is a shorter panel, not a failure."""
     import scripts.build_darkpool_desk as bdd

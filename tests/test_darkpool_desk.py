@@ -631,13 +631,40 @@ def test_standout_depth_marker_carries_own_norm():
     assert s["participation"] == 0.60 and s["participation_norm"] == 0.42
 
 
-def test_venue_character_separates_pools_from_internalisation():
-    """ats_frac is rendered in words so "dark volume" is never read as "institutions"."""
-    hi = dctx._venue_character(0.55)["en"].lower()
-    lo = dctx._venue_character(0.12)["en"].lower()
-    assert "institution" in hi
-    assert "retail" in lo and "internalized" in lo
-    assert dctx._venue_character(None)["en"].startswith("Venue mix not")
+def test_venue_character_states_how_much_reached_a_real_dark_pool():
+    """ats_frac is rendered in words so "dark volume" is never read as "dark pool".
+
+    The who-was-on-the-other-side half moved to `_counterparty_character` once the
+    non-ATS firm roster landed; this function now reports only the ATS share.
+    """
+    hi = dctx._venue_character(0.55)["en"]
+    lo = dctx._venue_character(0.12)["en"]
+    assert hi == "55%"
+    assert lo.startswith("only "), "below the typical large-cap level the copy says 'only'"
+    assert "12%" in lo
+    assert dctx._venue_character(None)["en"] == "not yet reported"
+
+
+def test_card_values_never_restate_their_own_label():
+    """The board renders "<label> <value>". A value that repeats its label prints
+    "Reached a dark pool 34% reached a dark pool" — which shipped twice in this page's
+    history (also "Running for 6 sessions running" / "已持续 连续 6 日").
+
+    Pins the value side against the label wording in BOTH languages.
+    """
+    labels = {                                  # label text as rendered on the card
+        "venue_character": ("reached a dark pool", "进入暗池"),
+        "streak_label": ("elevated for", "已持续"),
+    }
+    row = _row("X", 2.0, 0.60, price_change_pct=-3.0, streak=6, ats_frac=0.34)
+    snap = dctx.build_snapshot([row], None, "2026-08-04")
+    s = snap["standouts"][0]
+    for field, (label_en, label_zh) in labels.items():
+        val = s[field]
+        assert label_en not in val["en"].lower(), (
+            f"{field} value {val['en']!r} restates its label {label_en!r}")
+        assert label_zh not in val["zh"], (
+            f"{field} value {val['zh']!r} restates its label {label_zh!r}")
 
 
 def test_change_feed_first_run_is_empty():

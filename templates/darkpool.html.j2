@@ -301,7 +301,8 @@
       <div class="nf">{{ t('vs its own norm', '相对自身常态') }}<b>{{ bl(s.norm_label) }}</b></div>
       <div class="nf">{{ t('Elevated for', '已持续') }}<b>{{ bl(s.streak_label) }}</b></div>
       <div class="nf">{{ t('Price, past week', '过去一周股价') }}<b class="{{ 'up' if (s.price_change_pct or 0) > 0 else 'dn' if (s.price_change_pct or 0) < 0 else '' }}">{% if s.price_change_pct is not none %}{{ '%+.1f'|format(s.price_change_pct) }}%{% else %}—{% endif %}</b></div>
-      <div class="nf">{{ t('Where it printed', '成交场所构成') }}<b>{{ bl(s.venue_character) }}</b></div>
+      <div class="nf">{{ t('Reached a dark pool', '进入暗池比例') }}<b>{{ bl(s.venue_character) }}</b></div>
+      {% if s.counterparty_character %}<div class="nf">{{ t('The rest was internalized', '其余为内部化成交') }}<b>{{ bl(s.counterparty_character) }}</b></div>{% endif %}
     </div>
     <div class="n-read"><b>{{ t('Read:', '解读：') }}</b> {{ bl(s.read) }}</div>
   </div>
@@ -423,6 +424,9 @@
       <p><b>{{ t('Dark pools are the smaller half.', '暗池只是较小的一半。') }}</b>
         {{ t('Off-exchange volume is registered dark pools (ATS) PLUS wholesaler internalisation — broker-dealers filling order flow, largely retail, against their own book. The second is the bigger half: across large names only about 17–31% of off-exchange volume actually reaches a dark pool. Each card shows that split, so "trading in the dark" is never confused with "institutions are accumulating".',
            '场外成交由注册暗池（ATS）与批发商内部化两部分构成——后者是券商以自有账簿承接订单流（多为散户订单）。后者才是较大的一半：在大型个股中，实际进入暗池的场外成交通常仅占约17–31%。每张卡片都显示这一构成，以免将「暗池成交」误读为「机构在吸筹」。') }}</p>
+      <p><b>{{ t('Who was on the other side.', '成交对手方是谁。') }}</b>
+        {{ t('Off-exchange volume that does not reach a dark pool was internalized by a firm, and FINRA names that firm. We map each firm to its PRIMARY BUSINESS — retail wholesaler, retail broker, or bank/institutional desk — which separates retail order flow from institutional risk transfer. This is a labelled heuristic on the firm, not a measurement of who was actually trading, and never a direction: large firms run several businesses at once. FINRA reports small firms only as one "De Minimis" aggregate (about a third of internalized volume market-wide), and that plus any firm we do not classify is shown as unattributed rather than pushed onto a side.',
+           '未进入暗池的场外成交由某家机构内部化完成，FINRA会公布该机构名称。我们按其主营业务将其归类为散户批发商、零售券商或银行／机构交易台，从而区分散户订单流与机构风险转移。这是针对机构主营业务的标注式启发规则，并非对实际交易者的测定，也绝非方向判断：大型机构往往同时经营多项业务。FINRA仅将小型机构合并为一个「De Minimis」汇总项（约占全市场内部化成交的三分之一），该部分及任何未归类机构均标注为「无法归类」，而不会被归入任何一方。') }}</p>
       <p><b>{{ t('Venues.', '交易场所。') }}</b>
         {{ t('FINRA OTC Transparency weekly per-ATS breakdown. The publication lag is measured and printed next to the week label rather than assumed — it runs longer than the nominal 2–4 weeks. Bar length is each venue\'s share of that week\'s total ATS volume; the arrow is the week-over-week change in percentage points.',
            'FINRA场外透明度每周各ATS分项。公布延迟为实测值并标注于报告周旁，而非按名义值假定——实际延迟长于名义的2–4周。条形长度为各场所占该周ATS总成交量的比例；箭头为周环比变化（百分点）。') }}</p>
