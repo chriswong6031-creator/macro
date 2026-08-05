@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T19:34:13.494568+00:00",
-  "count": 823,
+  "generated_at": "2026-08-05T20:04:23.094939+00:00",
+  "count": 824,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -129,6 +129,27 @@
         "**FTK Segment Dominance**: FTK drives +11% YoY client growth, +23% savings capital, +8% cash deposits, and elevated July 2026 transaction activity (vs.",
         "July 2025), signaling concentrated retail inflow strength.",
         "**Flow Volatility in Critical Drivers**: Elevated volatility in FTK transactions and Net new money (SAVE) with widened 25th-75th percentile ranges (July 2026 vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qxvuyhdqtxw-ebd28c",
+      "title": "Boise Cascade Co. (BCC) 2Q26 Earnings Recap Well Positioned to Navigate Shift in Suppliers While Maintaining Focus on Servi...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:07:56Z",
+      "summary_points": [
+        "**Valuation Compression & Leverage Risks**: Net debt/EBITDA rises to 0.7 (from 0.0), long-term debt increases to $492.7mn, while P/E (25.6→14.4) and EV/EBITDA (9.9→6.6) decline, signaling structural leverage risk amid value potential.",
+        "**Geopolitical & Risk Scenarios**: Section 301 tariffs boost pricing (5% above Q2 avg), Brazilian tariffs cause 25% YOY plywood drop; upside $120 (20.2x EPS) vs.",
+        "downside $65 (17.0x EPS) based on housing/seasonal risks.",
+        "**2027 Upside Case**: Sales projected at $7.071M (+7% YOY), operating margin 4.1%, EPS $5.95, valuation $120 vs.",
+        "base case $6.752M sales, $4.50 EPS, $91 valuation."
       ],
       "tags": [],
       "tickers": [],
