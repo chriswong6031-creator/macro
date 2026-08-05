@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-05T09:37:25Z",
+  "produced_at": "2026-08-05T16:33:59Z",
   "as_of": "2026-08-05",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 12,
-    "passed": 12,
+    "items": 2,
+    "passed": 2,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -19,46 +19,6 @@
   "quarantined": [],
   "passed": [
     {
-      "id": "post-flagship-011",
-      "account": "flagship",
-      "slot": "D1-S11",
-      "type": "event",
-      "cashtag": "",
-      "headline": "Unemployment holding its ground, GDP tracking 5%, inflation running at 2.1%."
-    },
-    {
-      "id": "post-flagship-021",
-      "account": "flagship",
-      "slot": "D1-S21",
-      "type": "chart",
-      "cashtag": "$MDB",
-      "headline": "$MDB is back above 335"
-    },
-    {
-      "id": "post-theme-003",
-      "account": "flagship",
-      "slot": "D1-S3",
-      "type": "theme_list",
-      "cashtag": "$AMBA",
-      "headline": "Autonomous Systems ripping, +1.9% avg on Tuesday"
-    },
-    {
-      "id": "post-housepick-001",
-      "account": "flagship",
-      "slot": "D1-S10",
-      "type": "watchlist",
-      "cashtag": "$DVN",
-      "headline": ""
-    },
-    {
-      "id": "post-founder-001",
-      "account": "founder",
-      "slot": "D1-S1",
-      "type": "event",
-      "cashtag": "",
-      "headline": "The economy's growing. The buying is hiding in one corner."
-    },
-    {
       "id": "post-founder-017",
       "account": "founder",
       "slot": "D1-S17",
@@ -67,57 +27,17 @@
       "headline": ""
     },
     {
-      "id": "post-founder-027",
-      "account": "founder",
-      "slot": "D1-S27",
-      "type": "watchlist",
-      "cashtag": "$CWK",
-      "headline": ""
-    },
-    {
-      "id": "post-meagan-012",
-      "account": "meagan",
-      "slot": "D1-S12",
-      "type": "signal",
-      "cashtag": "$SHOO",
-      "headline": "Okay so $SHOO found the penthouse again."
-    },
-    {
-      "id": "post-sophia-022",
+      "id": "post-sophia-007",
       "account": "sophia",
-      "slot": "D1-S22",
-      "type": "chart",
-      "cashtag": "$SOFI",
-      "headline": "The $SOFI recovery story keeps meeting the same objection"
-    },
-    {
-      "id": "post-kelly-018",
-      "account": "kelly",
-      "slot": "D1-S18",
-      "type": "chart",
-      "cashtag": "$CSR",
-      "headline": "$CSR has closed red 4 weeks straight"
-    },
-    {
-      "id": "post-cici-007",
-      "account": "cici",
       "slot": "D1-S7",
-      "type": "chart",
-      "cashtag": "$EQT",
+      "type": "watchlist",
+      "cashtag": "$SOC",
       "headline": ""
-    },
-    {
-      "id": "post-theme-006",
-      "account": "cici",
-      "slot": "D1-S5",
-      "type": "theme_list",
-      "cashtag": "$VRT",
-      "headline": "Cloud Computing ripping, +1.7% avg on Tuesday"
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 56,
+      "pairs_checked": 1,
       "hits": 0,
       "shared_media_hits": 0
     },
