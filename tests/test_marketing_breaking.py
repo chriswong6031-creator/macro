@@ -1213,14 +1213,14 @@ class TestRateDecisionVocabulary:
     NOW = datetime(2026, 7, 29, 18, 0, 0, tzinfo=timezone.utc)
 
     #: The six measured headlines, verbatim.
-    SIX = [
+    SIX = (
         "Fed holds rates steady, Powell signals September cut on the table",
         "Fed leaves rates unchanged at 4.25%-4.50%",
         "Fed cuts rates for the first time since 2024",
         "Powell says the committee is not in a hurry to cut",
         "Federal Reserve cuts interest rates by 25 basis points",
         "FOMC statement: policy remains restrictive",
-    ]
+    )
 
     def _score(self, headline, tier="wire"):
         return score_item(
