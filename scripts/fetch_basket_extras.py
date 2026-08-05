@@ -45,6 +45,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
+from lib.ticker_aliases import YAHOO_FETCH_ALIASES as ALIASES  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("fetch_basket_extras")
@@ -54,13 +55,11 @@ RETRIES = 4
 BACKOFF_S = 3.0
 BATCH = 60                  # tickers per yfinance download call
 
-# membership ticker -> the symbol yfinance actually resolves it under (ticker renames where Yahoo
-# serves the series under a different symbol — sometimes the old one, sometimes the new one).
-# Fetched under the value, stored under the key.
-ALIASES = {
-    "FI": "FISV",       # Fiserv renamed FISV->FI in 2023; Yahoo still serves the FISV series
-    "MMC": "MRSH",      # Marsh McLennan: Yahoo migrated the series to MRSH; MMC returns nothing
-}
+# Ticker renames where the vendor symbol differs from the membership ticker (Yahoo serves
+# the series under a different symbol — sometimes the old one, sometimes the new one).
+# Fetched under the value, stored under the key. Shared with the DEEP-store sibling
+# scripts/fetch_basket_ohlcv via lib/ticker_aliases: this map used to be local to each
+# collector, and the entry that was here but not there is why the deep store never held MMC.
 
 # ETF proxies a basket's reference cross-check points at but the rest of the site does not
 # already cache (members go in extras.parquet; proxies go in the yahoo store like SPY).
