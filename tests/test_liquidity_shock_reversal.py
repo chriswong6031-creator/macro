@@ -176,3 +176,15 @@ def test_break_even_splits_the_edge_across_both_legs() -> None:
     dies at 14bp per leg — not 28bp. Halving is the whole point of the function."""
     assert break_even_bps(0.281) == pytest.approx(14.05)
     assert break_even_bps(0.281, n_legs=1) == pytest.approx(28.1)
+
+
+def test_break_even_takes_percent_and_returns_basis_points() -> None:
+    """UNIT PIN. The input is a spread in PERCENT and the output is BASIS POINTS, so
+    the function multiplies by 100 as well as halving. Re-deriving this inline in the
+    reopener script once produced a break-even 100x too small — which would have read
+    as 'dies at 0.2bp' (absurdly fragile) instead of '19.6bp' (a real bar). Anything
+    that needs a break-even calls THIS, never its own arithmetic.
+    """
+    assert break_even_bps(1.0) == pytest.approx(50.0)      # 1% gross -> 50bp per leg
+    assert break_even_bps(0.3922) == pytest.approx(19.61)  # the illiquid-tail number
+    assert break_even_bps(0.3922) > 1.0, "a sub-1bp break-even means the units slipped"

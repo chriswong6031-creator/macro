@@ -94,20 +94,33 @@ information firewall and **OHLCV-derived** microstructure proxies. Do not
 re-propose it by re-tuning the z-threshold, the volume multiple, the horizon set,
 the peer basis, or the label taxonomy — those are the same construction.
 
-**Explicitly NOT closed** (each needs a fresh prereg, and #1 needs new data):
+**The four reopeners, after `scripts/research_lsr_reopeners.py` (report §7):**
 
-1. **Tape-grade features.** `signed_order_imbalance`,
-   `price_change_per_dollar_flow` and a true `spread_proxy` require the per-trade
-   tape and NBBO. Our massive.com entitlement is aggregates-only —
-   `trades_v1`/`quotes_v1` both 403 (`collectors/massive_flatfiles`). **The
-   order-flow half of the candidate was never tested at its intended fidelity.**
-2. **A richer information firewall** — analyst revisions (Savor's own proxy),
-   guidance, newswire. An 8-K-only firewall leaves informed moves in the "no-news"
-   arm and attenuates the contrast toward zero.
-3. **The sub-$5 / sub-$5M-ADV tail**, excluded here by the tradeability floor.
-4. **A market-liquidity-regime-conditioned variant** (Nagel 2012: reversal
-   compensation spikes with VIX). This study did not condition on the aggregate
-   regime at all.
+1. **Tape-grade features — STILL OPEN, blocked on entitlement.**
+   `signed_order_imbalance`, `price_change_per_dollar_flow` and a true
+   `spread_proxy` require the per-trade tape and NBBO; massive.com is
+   aggregates-only, `trades_v1`/`quotes_v1` both 403
+   (`collectors/massive_flatfiles`). **The order-flow half of the candidate was
+   never tested at its intended fidelity.** Not closeable by more analysis.
+2. **Richer information firewall — OPEN, COVERAGE-BLOCKED with a clock.**
+   `data/revisions/history.parquet` begins 2026-06-16; only **239 of 35,678
+   events (0.67%) on 12 dates** have a revisions read. Savor's own proxy is
+   unanswerable here today. Keep accruing; re-test in a few years.
+3. **Illiquid tail — CLOSED.** Rebuilt at $2/$250k (7,087 names, 63,352 events):
+   news contrast **0 of 5**; unconditional reversal genuinely stronger (bottom
+   decile 5d **+0.392%**, rank-IC **+0.032** vs +0.013 liquid) but break-even
+   **19.6 bp/leg**, which a $2 / $250k-ADV name does not trade inside. Bigger
+   gross, worse net — the same place `validate_reversal_nonsurvivor` landed.
+4. **Market-liquidity regime — separation CLOSED (0 of 9); one lead LOGGED.**
+   By VIX 252d percentile, the news contrast fails in *every* regime. But the
+   no-news down arm runs **−0.599% (calm, VIX 16) → −0.312% → +0.261% (stressed,
+   VIX 24.5)** at h=5, and the direct test of that gradient gives **calm − stressed
+   = −0.860% [−1.575, −0.145]**, excluding zero at **1 of 3 horizons**. Treat as a
+   hypothesis, not a finding: the stressed level itself spans zero, breakpoints
+   were post hoc, it is an arm mean and not a tradeable spread, and a ranker inside
+   the stressed bucket is exactly what §2's classifier test found null. It is a
+   **different claim from the candidate's** — *down-shock continuation weakens as
+   market liquidity tightens* — and needs its own prereg with frozen breakpoints.
 
 ## §5 Relation to the existing record
 

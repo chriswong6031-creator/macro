@@ -174,8 +174,14 @@ def break_even_bps(gross_spread_pct: float, n_legs: int = 2) -> float:
 # ══════════════════════════════════════════════════════════════════════════════
 # panel
 # ══════════════════════════════════════════════════════════════════════════════
-def build_panel(cache: Path, massive_dir: Path) -> dict[str, pd.DataFrame]:
-    """Split-repaired, liquidity-filtered wide OHLCV panel. Cached — the scan is ~50s."""
+def build_panel(cache: Path, massive_dir: Path, *, min_price: float = MIN_PRICE,
+                min_adv: float = MIN_ADV_PANEL) -> dict[str, pd.DataFrame]:
+    """Split-repaired, liquidity-filtered wide OHLCV panel. Cached — the scan is ~50s.
+
+    `min_price`/`min_adv` are parameters so the illiquid-tail reopener re-measures at a
+    lower floor through THIS builder rather than forking the split repair (which is the
+    part that is easy to get wrong and expensive to re-verify).
+    """
     cols = ("open", "high", "low", "close", "volume", "transactions", "split_day")
     if all((cache / f"panel_{c}.parquet").exists() for c in cols):
         log.info("lsr: panel cache hit at %s", cache)
@@ -194,7 +200,7 @@ def build_panel(cache: Path, massive_dir: Path) -> dict[str, pd.DataFrame]:
         df = df[~df.index.duplicated(keep="last")].sort_index()
         px = df["close"].astype(float).dropna()
         vol = df["volume"].astype(float)
-        if len(px) < 400 or px.tail(252).median() < MIN_PRICE or (px * vol).median() < MIN_ADV_PANEL:
+        if len(px) < 400 or px.tail(252).median() < min_price or (px * vol).median() < min_adv:
             continue
         factor = (px / split_adjust(px)).reindex(df.index).ffill().bfill()
         keep[f.stem] = pd.DataFrame({
@@ -218,7 +224,8 @@ def build_panel(cache: Path, massive_dir: Path) -> dict[str, pd.DataFrame]:
     return out
 
 
-def derive(panel: dict[str, pd.DataFrame], data_dir: Path) -> dict:
+def derive(panel: dict[str, pd.DataFrame], data_dir: Path, *, min_price: float = MIN_PRICE,
+           min_adv_event: float = MIN_ADV_EVENT) -> dict:
     """Residual returns, the candidate's feature set, and forward outcomes."""
     close, high, low = panel["close"], panel["high"], panel["low"]
     op, vol, txn = panel["open"], panel["volume"], panel["transactions"]
@@ -253,7 +260,7 @@ def derive(panel: dict[str, pd.DataFrame], data_dir: Path) -> dict:
 
     cum = np.log1p(resid.clip(-0.9, 5.0)).cumsum()
     fwd = {h: cum.shift(-h) - cum for h in FWD_HORIZONS}          # t+1..t+h, no overlap with t
-    eligible = (~splitd) & (close >= MIN_PRICE) & (dv_med >= MIN_ADV_EVENT) & sd.notna()
+    eligible = (~splitd) & (close >= min_price) & (dv_med >= min_adv_event) & sd.notna()
     return {"f": f, "cum": cum, "fwd": fwd, "eligible": eligible, "resid": resid, "dv_med": dv_med}
 
 

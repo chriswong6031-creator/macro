@@ -1108,7 +1108,7 @@ entries:
       gates FAIL on 16,315 firewall-covered shocks (4,281-name
       tradeable panel, 1,274 covered names × 1,191 dates,
       2021-09..2026-07, date-clus
-    source: 'LSR-P0 (2026-08-05): `research/LIQUIDITY_SHOCK_REVERSAL_PHASE0.md`; `reports/liquidity-shock-reversal-phase0.md`; `scripts/research_liquidity_shock_reversal.py` (family `liquidity_shock_reversal_p0`)'
+    source: 'LSR-P0 (2026-08-05): `research/LIQUIDITY_SHOCK_REVERSAL_PHASE0.md`; `reports/liquidity-shock-reversal-phase0.md`; `scripts/research_liquidity_shock_reversal.py` + `scripts/research_lsr_reopeners.py` ('
 
   - id: BL-G086
     match:

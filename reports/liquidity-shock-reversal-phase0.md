@@ -173,13 +173,80 @@ firewall and OHLCV-derived microstructure proxies.
    condition on the market-wide liquidity regime; a VIX/dispersion-gated variant
    is a genuinely different construction.
 
+## §7 Reopeners, measured (`scripts/research_lsr_reopeners.py`)
+
+Three of the four escape hatches in §5 were answered rather than left as promises.
+The kill stands; two hatches close, one is coverage-blocked with a named clock,
+and one produced a lead worth a fresh prereg.
+
+### R2 — a richer information firewall: COVERAGE-BLOCKED, not null
+
+Savor used analyst reports; we used 8-Ks, and that was the most likely reason a
+real separation could have washed out. It cannot be tested here:
+`data/revisions/history.parquet` is a forward accrual that began **2026-06-16**,
+while the shock tape starts 2021-09. Only **239 of 35,678 events (0.67%) on 12
+dates** fall inside the revisions window. This stays **OPEN with a clock** — first
+answerable once the store has a few years — and is *not* evidence either way.
+
+### R3 — the illiquid tail: the effect is bigger and still does not pay
+
+Rebuilt at $2 / $250k ADV → **7,087 names, 63,352 events** (8-K coverage falls to
+27.2%). The news contrast is **0 of 5** — the firewall separates nothing in the
+tail either. Unconditional reversal *is* genuinely stronger, exactly as the
+literature says:
+
+| slice | hold | D10−D1 | rank-IC | break-even / leg |
+|---|---|---|---|---|
+| bottom decile | 5d | **+0.392%** [+0.231, +0.555] | **+0.032** [+0.023, +0.042] | **19.6 bp** |
+| bottom tercile | 5d | +0.313% [+0.189, +0.437] | +0.025 [+0.017, +0.034] | 15.6 bp |
+| bottom decile | 1d | +0.208% [+0.127, +0.290] | +0.039 [+0.029, +0.049] | 10.4 bp |
+
+rank-IC +0.032 in the tail vs +0.013 in the liquid panel. But a $2-price /
+$250k-ADV name does not trade at 20 bp round trip — effective spreads there run
+well above that — so the tail is **worse** net despite the larger gross, which is
+the same conclusion `validate_reversal_nonsurvivor.py` reached from the delisting
+side. **Closed.**
+
+### R4 — market-liquidity regime: separation still 0 of 9, but a real lead
+
+Partitioning by the VIX 252d percentile at t0 (FRED `VIXCLS`), the news-vs-no-news
+contrast is **0 of 9** — the candidate's claim fails in *every* regime. The
+no-news down arm, however, shows a Nagel-shaped gradient:
+
+| regime | median VIX | no-news down, h=5 |
+|---|---|---|
+| calm (p0–50) | 16.0 | **−0.599%** [−1.060, −0.211] |
+| elevated (p50–80) | 18.0 | −0.312% [−0.953, +0.314] |
+| stressed (p80–100) | 24.5 | **+0.261%** [−0.324, +0.826] |
+
+Overlapping intervals are the wrong test for a gradient, so the difference was
+measured directly: **calm − stressed = −0.860% [−1.575, −0.145] at h=5**, which
+excludes zero — at **1 of 3 horizons** (h=3 and h=10 do not).
+
+Read this conservatively. The stressed arm's own level does *not* exclude zero; the
+bucket boundaries were chosen post hoc, not pre-registered; it is an **arm mean,
+not a tradeable spread** — and building a ranker inside the stressed bucket is
+precisely what §2(C) tested and found null. It does not revive the classifier,
+whose entire claim is the news/no-news split that stays 0/9 here. What it *is*: a
+mechanism-backed hypothesis — *down-shock continuation weakens as market liquidity
+tightens* — that deserves its own prereg with frozen breakpoints. Logged, not
+claimed.
+
 ## §6 What to do instead
 
-Nothing here is worth building today. The one honest follow-up with real option
-value is **(1)** — and it is a data-acquisition question, not a modelling one.
-Until a per-trade tape and NBBO exist in this repo, the discriminator the
-candidate is built on cannot be measured properly, and every OHLCV-grade proxy
-for it has now been tested and come back null.
+Nothing here is worth building today. After §7, two follow-ups carry real option
+value and neither is "tune this model":
+
+1. **Acquire a per-trade tape + NBBO** (§5 #1). Until then the discriminator the
+   candidate is built on cannot be measured properly, and every OHLCV-grade proxy
+   for it has now been tested and come back null. A data-acquisition question.
+2. **Pre-register the R4 liquidity-regime effect** (§7) with frozen breakpoints
+   and a horizon set declared in advance — it is the only thread here with a
+   mechanism and a measured gradient behind it, and it is a *different* claim from
+   the candidate's.
+
+The revisions store (§7 R2) should keep accruing regardless; it makes Savor's own
+information proxy testable in a few years at zero marginal effort.
 
 ---
 
