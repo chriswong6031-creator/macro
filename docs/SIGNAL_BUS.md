@@ -178,7 +178,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | capital-structure-companyfacts-coverage-receipts | `data/capital_structure/companyfacts/receipts/*.json` | json | collect | infrastructure | 2 | 0 |
 | capital-structure-companyfacts-source-manifest | `data/capital_structure/companyfacts/generations/*/source_manifest.parquet` | parquet | collect | infrastructure | 2 | 0 |
 | capital-structure-share-count-current-pointer | `data/capital_structure/share_counts/v2/current_receipt.json` | json | collect | infrastructure | 2 | 0 |
-| capital-structure-source-manifest | `data/capital_structure/source_manifest.parquet` | parquet | collect | infrastructure | 2 | 0 |
+| capital-structure-source-manifest | `data/capital_structure/source_manifest.jsonl` | jsonl | collect | infrastructure | 2 | 0 |
 | capital-structure-discovery | `data/capital_structure/discovery.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-event-edges | `data/capital_structure/event_edges.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-event-versions | `data/capital_structure/event_versions.parquet` | parquet | collect | infrastructure | 1 | 0 |

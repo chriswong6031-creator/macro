@@ -870,3 +870,373 @@ class TestComplexesBlock:
 
         assert "complexes" in result
         assert isinstance(result["complexes"], list)
+
+
+# ── (14) data-plane session stamp (forward-ledger audit 2026-08-05, #4568) ────
+#
+# The ledger stamp is the tape the legs read, NOT the calendar.  A run against a
+# frozen store must re-derive the session it already recorded and dedupe, rather
+# than re-describing old tape under a fresh date — which defeated the (date,
+# basket_id) idempotency AND mis-based the downstream forward-return graders
+# (they resolve the base close FORWARD from the row date).
+#
+# All fixture dates are pinned weekdays; no test here reads the wall clock.
+
+_DATA_SESSION = "2026-07-15"      # Wednesday — the fixture store's newest bar
+_LATER_ASOF   = "2026-07-20"      # Monday — a calendar date AFTER the tape
+_LATER_ASOF_2 = "2026-07-21"      # Tuesday — the "next night, frozen store" run
+
+
+def _make_stock_parquet(path: Path, end: str, n: int = 60) -> None:
+    """Write a close+volume parquet whose LAST bar is `end` (business days)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    idx = pd.date_range(end=end, periods=n, freq="B")
+    closes = [100.0 + i * 0.01 for i in range(n)]
+    pd.DataFrame(
+        {"close": closes, "volume": [1_000_000.0] * n,
+         "high": closes, "low": closes},
+        index=idx,
+    ).to_parquet(path)
+
+
+class TestDataPlaneSessionStamp:
+    """(a) stamp priority: data_session > as_of > _session_date()."""
+
+    def _row(self) -> dict:
+        return {"basket_id": "mag7", "state": "WATCH", "k": 2, "legs": {}}
+
+    def test_data_session_beats_as_of(self, tmp_path):
+        """A data_session stamp wins over an as_of one session ahead of the tape."""
+        os.environ["US_LANE"] = "nightly"
+        try:
+            n = BTW.stamp_ledger(
+                [self._row()], as_of=_LATER_ASOF, data_root=tmp_path,
+                data_session=_DATA_SESSION,
+            )
+        finally:
+            os.environ.pop("US_LANE", None)
+
+        assert n == 1
+        rows = BTW.load_ledger(tmp_path)
+        assert rows[0]["date"] == _DATA_SESSION
+        assert rows[0]["as_of"] == _DATA_SESSION
+
+    def test_as_of_used_when_no_data_session(self, tmp_path):
+        """No readable frame → the caller's as_of is the fallback."""
+        os.environ["US_LANE"] = "nightly"
+        try:
+            n = BTW.stamp_ledger(
+                [self._row()], as_of=_LATER_ASOF, data_root=tmp_path,
+                data_session=None,
+            )
+        finally:
+            os.environ.pop("US_LANE", None)
+
+        assert n == 1
+        assert BTW.load_ledger(tmp_path)[0]["date"] == _LATER_ASOF
+
+    def test_session_date_is_last_resort_only(self, tmp_path):
+        """With neither data_session nor as_of, the NYSE session date stamps."""
+        import unittest.mock as mock
+
+        os.environ["US_LANE"] = "nightly"
+        try:
+            with mock.patch.object(BTW, "_session_date",
+                                   return_value=date(2026, 7, 15)):
+                n = BTW.stamp_ledger([self._row()], data_root=tmp_path)
+        finally:
+            os.environ.pop("US_LANE", None)
+
+        assert n == 1
+        assert BTW.load_ledger(tmp_path)[0]["date"] == _DATA_SESSION
+
+
+class TestComputeStampsFromDataPlane:
+    """(b)+(c) compute() derives data_session and stamps the ledger with it."""
+
+    _TICKERS = ["M1", "M2", "M3", "M4", "M5", "M6"]
+
+    def _baskets_meta(self) -> dict:
+        return {
+            "test_basket": {
+                "members": [{"ticker": tk, "removed": None} for tk in self._TICKERS]
+            }
+        }
+
+    def _write_store(self, tmp_path: Path) -> None:
+        """Member + SPY frames whose newest bar is the pinned _DATA_SESSION."""
+        for tk in self._TICKERS + ["SPY"]:
+            _make_stock_parquet(tmp_path / "stocks" / f"{tk}.parquet", _DATA_SESSION)
+
+    def _compute(self, tmp_path: Path, as_of: str) -> dict:
+        """compute() against the frozen fixture store, WATCH forced (k=2)."""
+        import unittest.mock as mock
+        import engine.basket_turn_watch as btw_mod
+
+        with mock.patch.object(btw_mod, "_leg_impulse_day", return_value=True), \
+             mock.patch.object(btw_mod, "_leg_volume_confirm", return_value=True), \
+             mock.patch.object(btw_mod, "_leg_rs_z", return_value=(False, None)), \
+             mock.patch.object(btw_mod, "_leg_breadth_surge", return_value=False), \
+             mock.patch.object(btw_mod, "_leg_complex_confirm", return_value=False), \
+             mock.patch.object(btw_mod, "_leg_shock_relative_bid", return_value=False), \
+             mock.patch.object(btw_mod, "_load_market_drivers", return_value=None), \
+             mock.patch.object(btw_mod, "_theme_sibling_map",
+                               return_value={"test_basket": frozenset()}):
+            return btw_mod.compute(
+                baskets_meta=self._baskets_meta(),
+                data_root=tmp_path,
+                as_of=as_of,
+                run_backscan=False,
+            )
+
+    def test_artifact_and_ledger_carry_the_tape_date(self, tmp_path):
+        """data_session = newest member bar; the ledger row is stamped with it."""
+        self._write_store(tmp_path)
+
+        os.environ["US_LANE"] = "nightly"
+        try:
+            result = self._compute(tmp_path, as_of=_LATER_ASOF)
+        finally:
+            os.environ.pop("US_LANE", None)
+
+        assert result["data_session"] == _DATA_SESSION
+        # TS-R2 display semantics untouched: as_of is still the caller's date
+        assert result["as_of"] == _LATER_ASOF
+
+        rows = BTW.load_ledger(tmp_path)
+        assert len(rows) == 1
+        assert rows[0]["basket_id"] == "test_basket"
+        assert rows[0]["date"] == _DATA_SESSION
+        assert rows[0]["as_of"] == _DATA_SESSION
+
+    def test_frozen_store_rerun_appends_nothing(self, tmp_path):
+        """Regression pin: a second night on the SAME store must not re-log.
+
+        This is the defect — the clock-stamped writer appended a fresh
+        wrong-dated row for every calendar day the store stayed frozen.
+        """
+        self._write_store(tmp_path)
+        ledger_p = tmp_path / "basket_turn" / "ledger.jsonl"
+
+        os.environ["US_LANE"] = "nightly"
+        try:
+            self._compute(tmp_path, as_of=_LATER_ASOF)
+            before = ledger_p.read_bytes()
+            self._compute(tmp_path, as_of=_LATER_ASOF_2)   # next night, same tape
+            after = ledger_p.read_bytes()
+        finally:
+            os.environ.pop("US_LANE", None)
+
+        assert before == after, "frozen-store rerun must leave the ledger byte-identical"
+        assert len(BTW.load_ledger(tmp_path)) == 1
+
+
+# ── (16) benchmark store ladder — IGNITION reachability ────────────────────────
+#
+# Every leg test above hands `_leg_rs_z` a `spy_ret` float directly, and
+# TestStateAssignment monkeypatches `_load_prices` wholesale.  So the entire
+# suite stayed green from ship (2026-07-09) while production IGNITION was
+# arithmetically impossible: SPY is a member of no basket, the member collector
+# only writes data/stocks/, and SPY is only ever collected into data/yahoo/ —
+# so `_load_prices("SPY")` missed every night, `spy_ret` stayed None, and
+# `_leg_rs_z` short-circuited to (False, None).  With the rs_z leg pinned False,
+# `k >= STATE_IGNITION_K AND l2` could never hold.
+#
+# These tests therefore drive the REAL on-disk store layout — no mocked loader,
+# no synthetic closes_map — because the layout is precisely what the mocks hid.
+
+_BENCH_SESSION = "2026-07-15"     # Wednesday — newest bar in the member store
+_BENCH_N = 60                     # < BREADTH_LOOKBACK+2, so breadth_surge is off
+
+
+def _write_frame(path: Path, end: str, n: int, *, bump_pct: float = 0.0,
+                 vol_spike: float = 1.0, cols: tuple[str, ...] = ("close", "volume")) -> None:
+    """Write a price parquet whose LAST business-day bar is `end`.
+
+    `bump_pct` moves only the final close (the 1d return the legs read);
+    `vol_spike` multiplies only the final volume.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    idx = pd.date_range(end=end, periods=n, freq="B")
+    closes = [100.0] * n
+    closes[-1] = 100.0 * (1.0 + bump_pct)
+    vols = [1_000_000.0] * n
+    vols[-1] = 1_000_000.0 * vol_spike
+    data: dict[str, list[float]] = {}
+    if "close" in cols:
+        data["close"] = closes
+    if "close_price" in cols:          # the data/yahoo/ schema carries both
+        data["close_price"] = closes
+    if "volume" in cols:
+        data["volume"] = vols
+    pd.DataFrame(data, index=idx).to_parquet(path)
+
+
+class TestBenchmarkStoreLadder:
+    """SPY resolves out of data/yahoo/; members stay on data/stocks/."""
+
+    # 8 baskets: the cross-sectional rs_z z-score of one +10% outlier against
+    # seven flat peers is 0.0875/0.035355 = 2.47 >= RS_Z_THRESHOLD (2.0).
+    _TARGET = "tb_target"
+    _PEERS = [f"tb_peer{i}" for i in range(7)]
+
+    def _membership(self) -> dict:
+        meta: dict = {}
+        for bid in [self._TARGET] + self._PEERS:
+            meta[bid] = {"members": [
+                {"ticker": f"{bid.upper()}_{j}", "removed": None} for j in range(3)
+            ]}
+        return meta
+
+    def _write_store(self, tmp_path: Path, *, with_benchmark: bool = True,
+                     spy_end: str | None = None) -> dict:
+        """Real layout: members under stocks/, SPY under yahoo/ ONLY."""
+        meta = self._membership()
+        for bid, basket in meta.items():
+            # Target basket: every member +10% on a 5x volume day (impulse +
+            # volume_confirm + rs_z = K3).  Peers flat.
+            bump = 0.10 if bid == self._TARGET else 0.0
+            spike = 5.0 if bid == self._TARGET else 1.0
+            for m in basket["members"]:
+                _write_frame(
+                    tmp_path / "stocks" / f"{m['ticker']}.parquet",
+                    _BENCH_SESSION, _BENCH_N, bump_pct=bump, vol_spike=spike,
+                )
+        if with_benchmark:
+            # SPY UP, so shock_relative_bid (which needs SPY down) stays off and
+            # K is exactly 3 regardless of what market_drivers says.
+            _write_frame(
+                tmp_path / "yahoo" / "SPY.parquet",
+                spy_end or _BENCH_SESSION, _BENCH_N, bump_pct=0.01,
+                cols=("close_price", "close", "volume"),
+            )
+        return meta
+
+    def _compute(self, tmp_path: Path, meta: dict, *, backscan: bool = False) -> dict:
+        return BTW.compute(
+            baskets_meta=meta, data_root=tmp_path,
+            as_of=_BENCH_SESSION, run_backscan=backscan,
+        )
+
+    # --- fixture integrity: the layout under test must be the real one --------
+
+    def test_fixture_has_no_stocks_spy_copy(self, tmp_path):
+        """Guard the fixture itself: a stocks/SPY.parquet would hide the defect.
+
+        The pre-existing suite's fixtures write SPY into stocks/, which is why
+        they could not see this.  If someone ever adds that file here, every
+        assertion below would pass for the wrong reason.
+        """
+        self._write_store(tmp_path)
+        assert not (tmp_path / "stocks" / "SPY.parquet").exists()
+        assert (tmp_path / "yahoo" / "SPY.parquet").exists()
+
+    # --- the loader ----------------------------------------------------------
+
+    def test_spy_series_loads_from_yahoo(self, tmp_path):
+        """The headline plumbing pin: SPY loads non-empty from the real layout."""
+        self._write_store(tmp_path)
+        s = BTW._spy_prices(tmp_path)
+        assert s is not None, "SPY must resolve from data/yahoo/ when stocks/ has no copy"
+        assert len(s) == _BENCH_N
+        assert str(s.index.max().date()) == _BENCH_SESSION
+
+    def test_spy_missing_everywhere_returns_none(self, tmp_path):
+        """No rung has it → None (fail-soft, not an exception)."""
+        self._write_store(tmp_path, with_benchmark=False)
+        assert BTW._spy_prices(tmp_path) is None
+
+    def test_member_does_not_fall_back_to_yahoo(self, tmp_path):
+        """The ladder is benchmark-scoped: members keep their stocks/ discipline."""
+        _write_frame(tmp_path / "yahoo" / "TB_TARGET_0.parquet", _BENCH_SESSION, _BENCH_N)
+        assert BTW._load_prices("TB_TARGET_0", tmp_path) is None
+
+    def test_rung_without_close_column_falls_through(self, tmp_path):
+        """A stocks/ frame that exists but carries no `close` must not win the ladder."""
+        self._write_store(tmp_path)
+        _write_frame(tmp_path / "stocks" / "SPY.parquet", _BENCH_SESSION, _BENCH_N,
+                     cols=("close_price", "volume"))
+        s = BTW._spy_prices(tmp_path)
+        assert s is not None, "unusable rung must fall through to data/yahoo/"
+        assert len(s) == _BENCH_N
+
+    # --- the fire condition --------------------------------------------------
+
+    def test_rs_z_is_computable_end_to_end(self, tmp_path):
+        """rs_z_value must be a real number, not the null it was for 47/47 baskets."""
+        meta = self._write_store(tmp_path)
+        rows = self._compute(tmp_path, meta)["baskets"]
+        assert rows
+        assert all(r["rs_z_value"] is not None for r in rows), \
+            "every basket needs a computable rs_z once the benchmark loads"
+
+    def test_ignition_is_reachable(self, tmp_path):
+        """THE regression: IGNITION must be arithmetically possible in production.
+
+        K=3 (impulse_day + rs_z + volume_confirm) with the rs_z leg true is the
+        minimum IGNITION shape.  Before the store ladder this was unreachable for
+        every basket on every session.
+        """
+        meta = self._write_store(tmp_path)
+        rows = self._compute(tmp_path, meta)["baskets"]
+        target = next(r for r in rows if r["basket_id"] == self._TARGET)
+
+        assert target["legs"]["rs_z"] is True, "rs_z leg must fire"
+        assert target["k"] >= BTW.STATE_IGNITION_K
+        assert target["state"] == "IGNITION"
+
+    def test_ignition_unreachable_without_the_benchmark(self, tmp_path):
+        """Mutation pin — the test must be able to SEE the defect it guards.
+
+        Same tape, benchmark removed: the identical basket that reaches IGNITION
+        above must fall back to a null rs_z and a sub-IGNITION K.  Without this,
+        the assertion above could pass for reasons unrelated to SPY loading.
+        """
+        meta = self._write_store(tmp_path, with_benchmark=False)
+        rows = self._compute(tmp_path, meta)["baskets"]
+        target = next(r for r in rows if r["basket_id"] == self._TARGET)
+
+        assert target["rs_z_value"] is None
+        assert target["legs"]["rs_z"] is False
+        assert target["state"] != "IGNITION"
+        assert all(r["state"] != "IGNITION" for r in rows), \
+            "no basket can reach IGNITION while the benchmark is missing"
+
+    # --- the benchmark must not contaminate the data-plane stamp -------------
+
+    def test_data_session_ignores_a_fresher_benchmark(self, tmp_path):
+        """data_session is the MEMBER tape, never the benchmark's.
+
+        SPY is collected on a different cadence than the member store (observed
+        2026-08-05: yahoo/SPY ended 08-03 while 220/235 stocks/ frames ended
+        07-31).  If the benchmark joined the max() that derives the stamp, the
+        ledger would claim a session the member legs never read — the very
+        wrong-base defect the data-plane stamp exists to prevent.
+        """
+        later = "2026-07-17"      # Friday — two sessions past the member tape
+        meta = self._write_store(tmp_path, spy_end=later)
+        result = self._compute(tmp_path, meta)
+
+        assert BTW._spy_prices(tmp_path).index.max().date().isoformat() == later
+        assert result["data_session"] == _BENCH_SESSION, \
+            "a fresher benchmark bar must not carry the member-tape stamp"
+
+    # --- backscan honesty ----------------------------------------------------
+
+    def test_backscan_does_not_report_unevaluated_legs_as_zero(self, tmp_path):
+        """The walk scores 3 of 6 legs; the other 3 are unmeasured, NOT 0.0%.
+
+        This block was unreachable before the ladder (it is guarded on the
+        benchmark loading), so its shape ships for the first time here.
+        """
+        meta = self._write_store(tmp_path)
+        bs = self._compute(tmp_path, meta, backscan=True).get("backscan") or {}
+        if "error" in bs:
+            pytest.skip(f"backscan not computable on this fixture: {bs['error']}")
+
+        rates = bs["per_leg_fire_rates_pct"]
+        for leg in BTW._BACKSCAN_UNEVALUATED_LEGS:
+            assert leg not in rates, f"{leg} is never scored — it must not carry a rate"
+        assert set(rates) == set(BTW._BACKSCAN_EVALUATED_LEGS)
+        assert set(bs["legs_not_evaluated"]) == set(BTW._BACKSCAN_UNEVALUATED_LEGS)
+        assert bs["k_is_partial"] is True

@@ -33,6 +33,11 @@ from engine.capital_structure import (
     link_registration_graph,
     route_form,
 )
+from engine.capital_structure.source_ledger_io import (
+    SOURCE_LEDGER_FILENAME,
+    read_source_ledger,
+    source_ledger_path,
+)
 from engine.capital_structure.source_identity import (
     source_ledger_prefix_hash,
     validate_manifest_ledger,
@@ -529,7 +534,7 @@ def _validate_event_source_lineage(
         if missing:
             raise ValueError(
                 f"event {event_id} source lineage is absent from current "
-                "source_manifest.parquet: " + ", ".join(missing)
+                f"{SOURCE_LEDGER_FILENAME}: " + ", ".join(missing)
             )
 
 
@@ -1182,12 +1187,8 @@ def compile_from_disk(*, root: Path | None = None, generated_at: str | None = No
     root = root or _data_root()
     now = generated_at or _now_iso()
     contracts = {kind: _load_contract(kind) for kind in CONTRACT_FILES}
-    manifest_path = root / "source_manifest.parquet"
-    manifests = (
-        dataframe_records(pd.read_parquet(manifest_path))
-        if manifest_path.exists()
-        else []
-    )
+    manifest_path = source_ledger_path(root)
+    manifests = read_source_ledger(manifest_path)
     has_prior_generation = _validate_committed_generation(
         root, contracts["telemetry"], manifests
     )

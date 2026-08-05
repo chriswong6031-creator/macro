@@ -41,6 +41,7 @@ import pandas as pd
 
 from lib import config, store
 from engine.sector_ignition import compute_basket_ignition, STATE_IGNITING
+from engine.ignition_audit import ALERT_STATES, event_sector_excluded
 
 log = logging.getLogger(__name__)
 
@@ -49,6 +50,7 @@ _K_IGNITED = 3          # broad K threshold for "ignited"
 _K_WARMING = 1          # broad K threshold for "warming"
 _SECTOR_ETFS = ["XLK", "XLF", "XLV", "XLY", "XLP", "XLE", "XLI", "XLB", "XLU", "XLRE", "XLC"]
 _COARSE_ITEMS = _SECTOR_ETFS + ["SMH"]
+NARROW_MAX_RANKED = 8   # cap on ranked narrow items (a cap, never a forced fill)
 
 
 # ---------------------------------------------------------------------------
@@ -649,6 +651,66 @@ def compute_narrow(
 
 
 # ---------------------------------------------------------------------------
+# NARROW OUTPUT POLICY — honest-null floor + event-sector exclusion
+# ---------------------------------------------------------------------------
+
+def apply_narrow_output_policy(items: list[dict], broad_state: str | None) -> dict:
+    """Post-compute output policy for the narrow channel (census PR #4564 §4).
+
+    Fire conditions (scores, states, sector_ignition thresholds) are NOT touched
+    here — this decides which already-scored items may RANK in the radar's
+    output/log, per the 2026-07-23 suspension's own requirements:
+
+    1. Honest-null floor: only items whose state is in ignition_audit.ALERT_STATES
+       ("igniting"/"running" — the pre-registered loud tiers a scoreboard grades)
+       may rank. A dead tape yields items=[] — never a forced top-N of the
+       least-dead ("no forced top-3 ranking in a dead tape").
+    2. Event-sector exclusion: geopolitical single-sector bids ≠ ignition
+       (POSTMORTEM_20260723 §2). Items in ignition_audit.GEOPOLITICAL_EVENT_SECTORS
+       are excluded from ranking unless broad_state == "ignited" (a confirmed
+       broad ignition is by definition not single-sector). Excluded items are
+       DISCLOSED under event_excluded, never hidden.
+
+    Consumers downstream of this policy: the payload's narrow.items, the regime
+    label, narrow_top/streak, and the forward log's top_narrow.
+
+    Returns {items (ranked, capped at NARROW_MAX_RANKED), event_excluded,
+             n_scored, n_qualifying, null, floor}.
+    """
+    scored = list(items or [])
+    qualifying: list[dict] = []
+    excluded: list[dict] = []
+    for it in scored:
+        if it.get("state") not in ALERT_STATES:
+            continue  # below the honest-null floor — never ranked
+        if event_sector_excluded(it.get("id"), broad_state):
+            excluded.append({
+                "id": it.get("id"),
+                "name": it.get("name"),
+                "name_zh": it.get("name_zh"),
+                "ignition_score": it.get("ignition_score"),
+                "state": it.get("state"),
+                "reason": (
+                    "geopolitical event sector outside broad ignition "
+                    "(suspension 2026-07-23: single-sector bids ≠ ignition)"
+                ),
+            })
+            continue
+        qualifying.append(it)
+    return {
+        "items": qualifying[:NARROW_MAX_RANKED],
+        "event_excluded": excluded,
+        "n_scored": len(scored),
+        "n_qualifying": len(qualifying),
+        "null": not qualifying,
+        "floor": (
+            "state in " + "/".join(ALERT_STATES)
+            + " (pre-registered ALERT_STATES); empty when nothing clears — honest null"
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
 # CROSS-CHANNEL REGIME LABEL
 # ---------------------------------------------------------------------------
 
@@ -755,10 +817,11 @@ def _streak_from_us_log(basket_id: str, log_path: Path) -> tuple[int, str | None
     the most-recent entry counting consecutive sessions where the basket meets the
     threshold.
 
-    Returns (streak_count, most_recent_asof) where most_recent_asof is the
-    asof string of the log's newest row (or None when the log is empty/missing).
-    The caller uses most_recent_asof to detect whether today's snapshot has
-    already been committed to the log (same-day re-render idempotency).
+    Returns (streak_count, most_recent_session) where most_recent_session is the
+    session string of the log's newest row — falling back to its asof for rows
+    that predate the session stamp (or None when the log is empty/missing).
+    The caller uses it to detect whether the current session's snapshot has
+    already been committed to the log (same-session re-render idempotency).
     """
     if not log_path.exists():
         return 0, None
@@ -778,10 +841,10 @@ def _streak_from_us_log(basket_id: str, log_path: Path) -> tuple[int, str | None
     if not rows:
         return 0, None
 
-    # sort by asof ascending
+    # sort by asof ascending (session order and asof order agree row-wise)
     rows.sort(key=lambda r: r.get("asof", ""))
 
-    most_recent_asof: str | None = rows[-1].get("asof") or None
+    most_recent_asof: str | None = rows[-1].get("session") or rows[-1].get("asof") or None
 
     streak = 0
     for row in reversed(rows):
@@ -804,14 +867,17 @@ def _streak_from_us_log(basket_id: str, log_path: Path) -> tuple[int, str | None
 def _update_streak_cache(
     basket_id: str,
     score: float | None,
-    today_str: str,
+    session_str: str,
     streak_path: Path,
 ) -> int:
-    """Advance the narrow_streak.json cache (idempotent for same-date reruns).
+    """Advance the narrow_streak.json cache (idempotent for same-session reruns).
 
-    If us_ignition.jsonl history has >= 1 entry with this basket, the log-based
-    count (from _streak_from_us_log) is authoritative and this file is only a
-    warm-start seed.  When the log is empty the file IS the sole persistence.
+    session_str is the underlying tape session (data_session), so weekend
+    re-renders — which carry Friday's session — no-op instead of adding a
+    phantom day. If us_ignition.jsonl history has >= 1 entry with this basket,
+    the log-based count (from _streak_from_us_log) is authoritative and this
+    file is only a warm-start seed. When the log is empty the file IS the sole
+    persistence.
 
     Returns the current streak count for basket_id.
     """
@@ -828,8 +894,8 @@ def _update_streak_cache(
 
     above = (score is not None) and (float(score) >= STATE_IGNITING)
 
-    if last_date == today_str:
-        # idempotent: same-date rerun — return stored value without modifying
+    if last_date == session_str:
+        # idempotent: same-session rerun — return stored value without modifying
         return current_streak
 
     if above:
@@ -839,7 +905,7 @@ def _update_streak_cache(
 
     data[basket_id] = {
         "streak": current_streak,
-        "last_date": today_str,
+        "last_date": session_str,
         "score": score,
     }
     try:
@@ -854,27 +920,33 @@ def _update_streak_cache(
 def _compute_narrow_top(
     narrow_items: list[dict],
     base_path: Path,
+    data_session: str | None = None,
 ) -> dict | None:
     """Build the narrow_top display payload for the top-ranked narrow basket/ETF.
 
     Returns None if no item is at or above the igniting threshold.
 
-    Streak calculation — same-date idempotency:
+    Streak calculation — same-SESSION idempotency:
 
-    The us_ignition.jsonl log is the authoritative streak source.  The log may or may
-    not contain a row for today depending on when in the pipeline we are called:
+    The us_ignition.jsonl log is the authoritative streak source.  The log may or
+    may not contain a row for the current SESSION (the tape date — data_session,
+    falling back to the calendar date for callers that predate the stamp)
+    depending on when in the pipeline we are called:
 
       * Nightly first-run: snapshot() runs BEFORE log_us_snapshot() (run.py order),
-        so the log does NOT yet contain today.  We count history from the log and add
-        +1 via the cache file for the current day.
+        so the log does NOT yet contain this session.  We count history from the
+        log and add +1 via the cache file for the current session.
 
-      * Same-day re-render (engine-render.yml, cortex-retry): log_us_snapshot() has
-        ALREADY been called earlier in the day and today's row IS in the log.
-        historical_streak already includes today — adding +1 would double-count.
+      * Same-session re-render (engine-render.yml, cortex-retry, weekend re-runs):
+        log_us_snapshot() has ALREADY committed this session's row.
+        historical_streak already includes it — adding +1 would double-count.
+        Keying on the SESSION (not the wall clock) also stops weekend re-renders
+        inflating the streak by a day that never traded (census #4564 §4).
 
-    Fix: compare the log's most-recent asof against today.  If they match, the log
-    already includes today so use historical_streak directly.  If the log predates
-    today (or is empty), use cache_streak which bridges the current day.
+    Fix: compare the log's most-recent session against the current session.  If
+    they match, the log already includes this session so use historical_streak
+    directly.  If the log predates it (or is empty), use cache_streak which
+    bridges the current session.
     """
     if not narrow_items:
         return None
@@ -885,25 +957,25 @@ def _compute_narrow_top(
         return None
 
     basket_id = top.get("id", "")
-    today_str = str(date.today())
+    session_str = data_session or str(date.today())
 
     log_path = base_path / "ignition_log" / "us_ignition.jsonl"
     streak_path = base_path / "ignition_radar" / _STREAK_FILE
 
-    # Streak from log + the date of the most-recent log row (for same-day detection)
+    # Streak from log + the session of the most-recent log row (for same-session detection)
     historical_streak, log_latest_date = _streak_from_us_log(basket_id, log_path)
 
-    # Advance the cache file (+1 for today, idempotent for same-date reruns)
-    cache_streak = _update_streak_cache(basket_id, score, today_str, streak_path)
+    # Advance the cache file (+1 for this session, idempotent for same-session reruns)
+    cache_streak = _update_streak_cache(basket_id, score, session_str, streak_path)
 
-    # Determine the authoritative streak — idempotent across same-day re-renders:
-    #   * log already contains today (same-day re-render) -> log is complete, use as-is.
-    #   * log predates today or is empty -> log covers prior days only; bridge +today via cache.
-    if log_latest_date == today_str:
-        # Today's snapshot is already committed to the log — historical_streak includes today.
+    # Determine the authoritative streak — idempotent across same-session re-renders:
+    #   * log already contains this session (re-render) -> log is complete, use as-is.
+    #   * log predates it or is empty -> log covers prior sessions only; bridge via cache.
+    if log_latest_date == session_str:
+        # This session's snapshot is already committed to the log.
         streak = historical_streak
     elif historical_streak > 0:
-        # Log has prior-day history; cache adds the current day's +1.
+        # Log has prior-session history; cache adds the current session's +1.
         streak = historical_streak + 1
     else:
         # Log empty or basket never appeared — cache is the sole source.
@@ -953,6 +1025,16 @@ def snapshot(root: str | Path | None = None) -> dict:
         log.warning("ignition_radar: SPY load failed: %s", e)
         spy_series = None
 
+    # --- underlying US trading session (the tape date, from the SPY store) ---
+    # This is the forward log's idempotency + grading base key (census #4564 §4):
+    # weekend/holiday re-runs carry the prior session and dedupe in the logger.
+    data_session: str | None = None
+    try:
+        if spy_series is not None and len(spy_series):
+            data_session = str(pd.Timestamp(spy_series.index[-1]).date())
+    except Exception:  # noqa: BLE001
+        data_session = None
+
     # --- broad channel: pull catalysts ---
     catalysts_payload: dict | None
     try:
@@ -983,6 +1065,12 @@ def snapshot(root: str | Path | None = None) -> dict:
     narrow = compute_narrow(membership_data, spy_series, ticker_cache=_ticker_cache)
     log.info("[timing] ignition_radar: ticker_cache populated %d unique tickers", len(_ticker_cache))
 
+    # --- narrow output policy: honest-null floor + event-sector exclusion ---
+    # (census #4564 §4 — everything downstream of here, including the regime
+    # label, narrow_top/streak and the forward log, sees the policy-filtered
+    # list; scores/states themselves are untouched.)
+    narrow_policy = apply_narrow_output_policy(narrow["items"], broad["state"])
+
     # --- regime label ---
     rsp_chip = next((c for c in broad["chips"] if c["key"] == "rsp_confirm"), None)
     sec_chip = next((c for c in broad["chips"] if c["key"] == "sector_participation"), None)
@@ -991,7 +1079,7 @@ def snapshot(root: str | Path | None = None) -> dict:
 
     regime = compute_regime(
         broad["state"],
-        narrow["items"],
+        narrow_policy["items"],
         rsp_lit,
         sec_lit,
     )
@@ -1003,7 +1091,7 @@ def snapshot(root: str | Path | None = None) -> dict:
     _base_path = (Path(root) / "data") if root else config.data_dir()
     narrow_top: dict | None = None
     try:
-        narrow_top = _compute_narrow_top(narrow["items"], _base_path)
+        narrow_top = _compute_narrow_top(narrow_policy["items"], _base_path, data_session)
     except Exception as e:  # noqa: BLE001
         log.warning("ignition_radar: narrow_top computation failed: %s", e)
 
@@ -1013,12 +1101,18 @@ def snapshot(root: str | Path | None = None) -> dict:
 
     payload = {
         "as_of": str(date.today()),
+        "data_session": data_session,
         "state": broad["state"],
         "k_count": broad["k_count"],
         "chips": broad["chips"],
         "regime": regime,
         "narrow": {
-            "items": narrow["items"][:8],
+            "items": narrow_policy["items"],
+            "event_excluded": narrow_policy["event_excluded"],
+            "n_scored": narrow_policy["n_scored"],
+            "n_qualifying": narrow_policy["n_qualifying"],
+            "null": narrow_policy["null"],
+            "floor": narrow_policy["floor"],
             "as_of": narrow["as_of"],
         },
         "narrow_top": narrow_top,

@@ -97,7 +97,9 @@ MAX_FLAGS_PER_DOOR = 25          # per door, per night; overflow COUNTED and ann
 DEDUPE_SESSIONS = 21             # same ticker, same door: suppressed while a prior flag is younger
 THEME_MAX_AGE_DAYS = 7           # Door T fails soft + discloses when the theme artifact is older
 RS_LOOKBACK = 63                 # RS percentile lookback (sessions), matches the §2.5 study
-MIN_HISTORY = ct.MIN_HISTORY     # 200 — the production gate's own history floor
+MIN_HISTORY = ct.MIN_HISTORY     # the production gate's own history floor — read, never
+                                 # restated (it is the MEASURED warmup max, 200 -> 159 on
+                                 # 2026-08-05; a hardcoded twin here would silently fork)
 
 UNIVERSE_GROUPS = ("breadth", "midcap_breadth", "smallcap_breadth")
 THEME_ARTIFACT = ("site", "marketdata", "subsector_rotation.json")

@@ -121,6 +121,12 @@ class SeriesSource:
 #       contains 'EM equities') → fred/DTWEXBGS 21d return>0 (strengthening). The headwind_for
 #       membership is a derived label the forex engine writes when the dollar strengthens vs
 #       EM; strengthening-dollar is its observable driver, reconstructed here.
+#   real_rate_peak_{gold,crypto}_rerate.real_rate_extreme (live: transmission
+#       latest.state.rates real_10y_pctile>=0.90 AND regime=restrictive) → fred/DFII10
+#       trailing-1260d rolling percentile >= 0.90. Faithful by construction: the rate engine's
+#       real_10y_pctile IS _pctile(us10y_real, lookback=1260) over the same DFII10 series
+#       (rate_inflation_transmission.py:198,224), and regime=restrictive IS pctile>=0.70
+#       (line 227) — subsumed by the 0.90 cut, so the proxy reproduces the live AND exactly.
 def _proxy_yield_rise(src: SeriesSource) -> tuple[pd.Series, str]:
     s = src.get("fred", "DFII10")
     chg = (s - s.shift(63)) * 100.0            # Δ63d in basis points (series in %)
@@ -151,12 +157,24 @@ def _proxy_usd_transmission_on(src: SeriesSource) -> tuple[pd.Series, str]:
     return fired.dropna().astype(bool), "proxy: fred/DTWEXBGS 21d ret>0 (dollar strengthening)"
 
 
+def _proxy_real_rate_extreme(src: SeriesSource) -> tuple[pd.Series, str]:
+    s = src.get("fred", "DFII10")
+    roll_pct = s.rolling(1260).apply(lambda w: (w <= w[-1]).mean(), raw=True)
+    fired = roll_pct >= 0.90
+    return (fired.dropna().astype(bool),
+            "proxy: fred/DFII10 trailing-1260d pctile>=0.90 (reproduces the live "
+            "real_10y_pctile>=0.90 AND regime=restrictive test exactly — the engine's pctile "
+            "is the same 1260d rolling percentile and restrictive is pctile>=0.70, subsumed)")
+
+
 # keyed by (chain_slug, node_id)
 _STATE_NODE_PROXIES: dict[tuple[str, str], Callable[[SeriesSource], tuple[pd.Series, str]]] = {
     ("oil_inflation_duration_derate", "yield_rise"): _proxy_yield_rise,
     ("vol_regime_deleveraging", "vol_expansion"): _proxy_vol_expansion,
     ("dollar_spike_em_multinational", "dollar_spike"): _proxy_dollar_spike,
     ("dollar_spike_em_multinational", "usd_transmission_on"): _proxy_usd_transmission_on,
+    ("real_rate_peak_gold_rerate", "real_rate_extreme"): _proxy_real_rate_extreme,
+    ("real_rate_peak_crypto_rerate", "real_rate_extreme"): _proxy_real_rate_extreme,
 }
 
 

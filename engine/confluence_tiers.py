@@ -43,7 +43,64 @@ CONF_W, BUY_RSI_MAX = 8, 65
 # AMAT case (10 ticks late AND overbought/bearish-crossed). A buy 3+ ticks back is a HOLD.
 FRESH_TICKS = 2                   # just-crossed window: this bar through 2 ticks ago (~6d on 3D)
 EARLY_CROSS_BARS = 1.5            # 2D cross "projected within ~1-2 days" (bars-to-zero on the 2D grid)
-MIN_HISTORY = 200
+
+# ── HISTORY FLOOR — the MEASURED warmup requirement, not a round number ──────────────────
+# Operator order 2026-08-05 ("200 bar indicator floor, lets lift this?"). The incumbent
+# MIN_HISTORY = 200 was a round number matching NO leg's actual warmup: it simultaneously
+# locked out names on which every T2/T3 leg was ALREADY computable (159 bars) and admitted
+# names on which the 3D RSI-MACD leg was STILL NaN (needs 232) — so the not-topped veto's
+# macd_bear leg has been silently fail-open on every 200-231 bar name since the floor was set.
+#
+# Every number below was MEASURED, not derived. The cascade resamples with
+# ``resample("2B"/"3B")``, so the daily->TF bar ratio depends on the calendar; the
+# measurement basis is a pure business-day index (NO holidays), which is the WORST case —
+# holidays give a name MORE 2D/3D buckets per daily bar, so a floor measured without them is
+# conservative for every real ticker. Method: truncate to N trailing daily bars, ask whether
+# the leg is non-NaN at the final bar, and take the smallest N that holds for all N' >= N.
+#
+#   leg                          daily bars  gates          short of it, TODAY
+#   ---------------------------  ----------  -------------  ---------------------------------
+#   rsi_ok    (3D RSI-14)                43  T2 T3 T4       NaN -> False -> no tier at all
+#   k2_d2     (2D StochRSI)              63  T4             NaN -> recent2 False
+#   recent2   (2D stoch cross)           65  T4             cross not computable
+#   fromos2   (d2.rolling(8))            77  T4 confirm2    NaN -> False (OR-arm)
+#   k3_d3     (3D StochRSI)              94  T2 T3          NaN -> long_bias False
+#   recent3   (3D stoch cross)           97  T2 T3          cross not computable
+#   fromos3   (d3.rolling(8))           115  T2 T3 confirm3 NaN -> False (OR-arm)
+#   m2_s2     (2D RSI-MACD)             155  T2 T3 T4       no cross, no bars-to-cross
+#   mb2       (2D MACD cross)           157  T2             cross not computable
+#   imm2      (2D MACD projection)      157  T3 T4          projection not computable
+#   imm2 x2   (CONFLUENCE_T3_PERSIST)   159  T3             persistence not readable
+#   ---------------------------------------------------------------------------------------
+#   above200  (200dMA)                  200  T4 ONLY        NULL + disclosed — never False
+#   m3_s3     (3D RSI-MACD)             232  nothing        veto macd_bear leg FAILS OPEN
+#   mb3       (3D MACD cross)           235  T1 raw only    T1 needs an explicit take_date
+#   wbull     (weekly RSI-MACD)         391  nothing        confirm falls back to the fromos arm
+#   htf_2w    (S1/S2 badges)            776  nothing        display badges read False
+#
+# The floor is the MAX over the legs that GATE eligibility for a tier reachable below 200.
+# T4 is deliberately NOT in that max — it self-gates at 200 through its own above200 leg,
+# which is correct: a name with no 200dMA cannot be graded "anti-falling-knife". T1's
+# raw-cross fallback self-gates at 235; T1 via an explicit ``take_date`` is unaffected
+# (the §7 marker carries its own date). Pinned by tests/test_confluence_warmup_floor.py —
+# a leg whose warmup moves fails loudly rather than drifting the floor in silence.
+LEG_WARMUP_BARS = {
+    "rsi_ok": 43, "k2_d2": 63, "recent2": 65, "fromos2": 77,
+    "k3_d3": 94, "recent3": 97, "fromos3": 115,
+    "m2_s2": 155, "mb2": 157, "imm2": 157, "imm2_persist2": 159,
+    "above200": 200, "m3_s3": 232, "mb3": 235, "wbull": 391, "htf_2w": 776,
+}
+#: The legs that GATE eligibility for a tier reachable below the old 200-bar floor (T2/T3).
+GATING_LEGS = ("rsi_ok", "k3_d3", "recent3", "fromos3",
+               "m2_s2", "mb2", "imm2", "imm2_persist2")
+MIN_HISTORY = max(LEG_WARMUP_BARS[k] for k in GATING_LEGS)   # == 159 (measured, not chosen)
+#: T4's own leg. NOT the cascade floor — T4 simply cannot fire below it.
+MA200_WARMUP_BARS = LEG_WARMUP_BARS["above200"]
+#: The PRE-CHANGE floor. A name tiering on fewer than this many daily bars belongs to the
+#: post-2026-08-05 cohort and is stamped ``young_history=True`` all the way to the board row
+#: and the candidates store, so the graded record can forever separate the two populations
+#: (era law: a graded-population change is dated and labelled, never silent).
+YOUNG_HISTORY_BARS = 200
 
 # operator-ratified 2026-07-06 — T2 ranked above T1 for entry quality (fills nearer the
 # trough, confirmed-bar low repaint ~9%); T1 remains the highest-precision confirmed state.
@@ -51,7 +108,14 @@ WEIGHTS = {"T1": 0.9, "T2": 1.0, "T3": 0.6, "T4": 0.4}
 _BLANK = {"tier": None, "weight": 0.0, "sub": None, "eligible": False,
           "bars_to_cross": None, "asof": None, "not_topped": True, "ticks": None,
           "provisional": False, "htf": {"s1": False, "s2": False},
-          "hist_d2": None, "hist_d3": None}
+          "hist_d2": None, "hist_d3": None,
+          # ── warmup disclosure (2026-08-05) ────────────────────────────────────────────
+          # `bars`         daily bars the cascade actually read (None = never got that far)
+          # `young_history` True = fewer than YOUNG_HISTORY_BARS; the graded-cohort label
+          # `above200`     True/False/None — None means the 200dMA is NOT YET KNOWABLE.
+          #                NEVER False on an unknowable value (the PLTR precedent).
+          # `null_legs`    {leg: plain-word reason} for every leg short of its warmup
+          "bars": None, "young_history": None, "above200": None, "null_legs": None}
 
 # HTF super-tier constants (S1/S2 display-only, rank-neutral, 2026-07-06)
 # Frozen per research/signal_engine/HTF_SUPER_TIERS_ADJUDICATION_AND_PREREG.md Part 2.
@@ -87,6 +151,19 @@ def _t3_persist() -> int:
         return max(1, int(os.environ.get("CONFLUENCE_T3_PERSIST", "2")))
     except (TypeError, ValueError):
         return 2
+
+
+def _null_legs(n_bars: int) -> dict:
+    """Plain-word disclosure for every leg whose warmup ``n_bars`` has not reached.
+
+    A leg short of its warmup is NULL — "not knowable yet" — never False. The PLTR
+    narration-gap postmortem is the binding precedent: an ``above200: False`` stamped on an
+    unknowable value read as "below its 200-day average" and excluded a live winner from
+    every lane that tests that field. Absence of evidence is disclosed here, not asserted
+    as evidence of absence. Returns a FRESH dict each call (``_BLANK`` is shallow-copied,
+    so a shared mutable would alias across every blank return)."""
+    return {leg: f"needs {need} daily bars, has {n_bars}"
+            for leg, need in LEG_WARMUP_BARS.items() if n_bars < need}
 
 
 def _ema(s, span):
@@ -163,13 +240,17 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         c = daily_close.dropna()
         if not isinstance(c.index, pd.DatetimeIndex):
             c = c.copy(); c.index = pd.to_datetime(c.index)
-        if len(c) < MIN_HISTORY:
-            v = dict(_BLANK)
+        n_bars = len(c)
+        if n_bars < MIN_HISTORY:
+            v = dict(_BLANK, bars=n_bars, young_history=True,
+                     above200=None, null_legs=_null_legs(n_bars))
             if take_active:               # thin history: trust the §7 marker (can't tick-age it)
                 v.update(tier="T1", weight=WEIGHTS["T1"], eligible=True)
             return v
         di = c.index
         last = len(di) - 1
+        young = n_bars < YOUNG_HISTORY_BARS
+        nulls = _null_legs(n_bars)
         # HTF super-tier (S1/S2): display-only, rank-neutral, computed once per call.
         # Kept inside the try so any HTF failure degrades to {"s1":False,"s2":False} via _BLANK.
         htf = _compute_htf(daily_close)
@@ -217,7 +298,15 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         recent2_d = td(recent2.fillna(False), smk).fillna(False)
         fromos2_d = td(fromos2.fillna(False), smk).fillna(False)
         wbull_d = wbull.reindex(di, method="ffill").fillna(False).astype(bool)
+        # NOTE the two faces of above200. The SERIES keeps `.fillna(False)` because that is
+        # what T4's conjunction needs — a name whose 200dMA is unknown must NOT collect the
+        # anti-falling-knife tier, so T4 self-gates at MA200_WARMUP_BARS. The PUBLISHED
+        # scalar below is the opposite: NULL when the average is not computable, because a
+        # downstream lane reading `above200: False` would take it as "trading below its
+        # 200-day average" — a claim the data cannot support (the PLTR precedent).
         above200 = (c > ma200).fillna(False)
+        above200_pub = (bool(above200.iloc[last])
+                        if bool(pd.notna(ma200.iloc[last])) else None)
 
         confirm3 = (wbull_d | fromos3_d)
         rsi_ok = (r14_d < BUY_RSI_MAX).fillna(False)
@@ -262,7 +351,9 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         cross3_date = di[int(idx3[-1])] if len(idx3) else None
         t1_ticks = _ticks_since(sk3, take_date if take_date is not None else cross3_date)
         blank = dict(_BLANK, asof=str(di[last].date()), not_topped=not_topped, ticks=t1_ticks,
-                     htf=htf, hist_d2=hist_d2, hist_d3=hist_d3)
+                     htf=htf, hist_d2=hist_d2, hist_d3=hist_d3,
+                     bars=n_bars, young_history=young, above200=above200_pub,
+                     null_legs=nulls)
         if not not_topped:
             return blank                                # topped/rolled-over: never a fresh buy
 
@@ -321,9 +412,13 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
             "provisional": tier == "T3",
             "htf": htf,   # S1/S2 display-only badges (rank-neutral)
             "hist_d2": hist_d2, "hist_d3": hist_d3,   # display-only glyph feed
+            # warmup disclosure — see _BLANK. `young_history` is the graded-cohort label
+            # (era law); `above200` is None, never False, when the 200dMA is unknowable.
+            "bars": n_bars, "young_history": young,
+            "above200": above200_pub, "null_legs": nulls,
         }
     except Exception:
-        return dict(_BLANK)
+        return dict(_BLANK, null_legs={})
 
 
 def _ticks_since_vec(known: pd.Series, cross_pos_daily: np.ndarray, di: pd.DatetimeIndex,

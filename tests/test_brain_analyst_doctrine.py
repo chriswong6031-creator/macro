@@ -53,14 +53,14 @@ def _ids(modules: list[dict]) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# 1. Manifest + frontmatter validity of all 9 real files
+# 1. Manifest + frontmatter validity of all 10 real files
 # ---------------------------------------------------------------------------
 
 def test_manifest_shape():
     m = a.manifest()
     assert m["version"] == a.ANALYST_DOCTRINE_VERSION == 1
     mods = m["modules"]
-    assert len(mods) == 9, f"expected 9 analyst doctrine modules, got {len(mods)}"
+    assert len(mods) == 10, f"expected 10 analyst doctrine modules, got {len(mods)}"
 
     ids = [x["id"] for x in mods]
     assert len(ids) == len(set(ids)), "module ids must be unique"
@@ -88,9 +88,13 @@ def test_every_file_on_disk_parses():
     """A malformed module is skipped with a warning, not a crash — which would
     silently shrink the library.  Pin file count == loaded count."""
     on_disk = sorted(p.name for p in _ANALYST_DIR.glob("*.md"))
-    assert len(on_disk) == 9, f"expected 9 .md files, found {on_disk}"
     loaded = a._load()
-    assert len(loaded) == 9, f"{len(loaded)} of {len(on_disk)} files parsed"
+    # The load-bearing assertion is the EQUALITY — a file that fails to parse is
+    # skipped with a warning and silently shrinks the library. The absolute count
+    # is pinned second, so adding a module is a deliberate one-line edit here
+    # (lens_regional.md, 2026-08-04) rather than something that slips in unseen.
+    assert len(loaded) == len(on_disk), f"{len(loaded)} of {len(on_disk)} files parsed"
+    assert len(on_disk) == 10, f"expected 10 .md files, found {on_disk}"
 
     for m in loaded:
         # every lens/playbook carries triggers; the always-on protocol needs none
@@ -355,7 +359,7 @@ def test_two_libraries_stay_separate():
     tech_routed = _ids(tech.route("where is support?"))
     assert "protocol" in tech_routed and "lens_sr" in tech_routed
     assert len(tech._load()) == 11
-    assert len(a._load()) == 9
+    assert len(a._load()) == 10
 
     # no id bleed except the shared 'protocol' stem, and no body bleed at all
     a_ids, t_ids = {m["id"] for m in a._load()}, {m["id"] for m in tech._load()}

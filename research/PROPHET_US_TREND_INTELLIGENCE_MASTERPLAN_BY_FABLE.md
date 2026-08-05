@@ -409,6 +409,80 @@ builder (opus); analysis adjudicated main-loop.*
 M4 is the honest headline: it may lag the others by a quarter of maturation — the plan
 commits to grading it, not to a number. Everything else is mechanical and lands fast.
 
+## §9 AMENDMENT 2026-08-05 — the indicator floor is the MEASURED warmup, not 200
+
+**Operator ratification.** Operator order 2026-08-05: *"200 bar indicator floor, lets lift
+this?"* — raised after receipts showed young names being refused a tier. This subsection
+records the ratification, the arithmetic, and the population-change disclosure it requires.
+Scope is the floor constant and its disclosure only; the universe/scan-tier lane and the
+show-all charter lane amend elsewhere in this file and in their own programs.
+
+**What changed.** `engine/confluence_tiers.MIN_HISTORY` 200 → **159**, and it is now
+*derived* (`max` over the gating legs of `LEG_WARMUP_BARS`) rather than written down.
+
+**The arithmetic.** Every leg's warmup was measured, not assumed, by truncating a series to
+N trailing daily bars and asking whether the leg is non-NaN at the final bar. Basis: a pure
+business-day index — the worst case, since holidays give a name *more* 2D/3D buckets per
+daily bar, so a floor measured without them is conservative for every real ticker.
+
+| leg | daily bars | gates | short of it, before this change |
+|---|---|---|---|
+| `rsi_ok` (3D RSI-14) | 43 | T2 T3 T4 | NaN → False → no tier at all |
+| `k2_d2` / `recent2` / `fromos2` (2D stoch) | 63 / 65 / 77 | T4 | NaN → False |
+| `k3_d3` / `recent3` / `fromos3` (3D stoch) | 94 / 97 / 115 | T2 T3 | NaN → False |
+| `m2_s2` (2D RSI-MACD) | 155 | T2 T3 T4 | no cross, no bars-to-cross |
+| `mb2` (2D MACD cross) | 157 | T2 | cross not computable |
+| `imm2` (2D MACD projection) | 157 | T3 T4 | projection not computable |
+| `imm2` ×2 (`CONFLUENCE_T3_PERSIST`=2) | **159** | **T3** | persistence not readable |
+| `above200` (200dMA) | 200 | **T4 only** | now NULL + disclosed, never False |
+| `m3_s3` (3D RSI-MACD) | 232 | nothing | veto's `macd_bear` leg **fails open** |
+| `mb3` (3D MACD cross) | 235 | T1 raw fallback | T1 needs an explicit `take_date` |
+| `wbull` (weekly RSI-MACD) | 391 | nothing | `confirm` falls back to its `fromos` arm |
+| `htf_2w` (S1/S2 badges) | 776 | nothing | display badges read False |
+
+**floor = max(gating legs) = 159.** T4 is deliberately excluded from that max: it self-gates
+at 200 through its own `above200` leg, which is correct — a name with no 200-day average
+cannot be graded "anti-falling-knife". The old 200 was a round number that matched no leg:
+it locked out names whose T2/T3 legs were already live at 159, **and** admitted names whose
+3D RSI-MACD was still NaN (232), leaving the not-topped veto's `macd_bear` leg silently
+fail-open on every 200–231-bar name for as long as the floor has stood.
+
+**Null-not-false.** `above200` is published as `True`/`False`/**`None`**, where `None` means
+the 200-day average is not yet computable, with a plain-word reason in `null_legs`. The PLTR
+narration-gap postmortem is the binding precedent: an `above200: False` stamped on an
+unknowable value reads as "trading below its 200-day average" and excluded a live winner
+from every lane that tests the field. `signal_gate` additionally *heals* the case where the
+name's 200dMA **is** computable but `signal_quality` (which needs ~270 daily bars) returned
+nothing — previously that left a null on a knowable value, and every `above200 is True` lane
+dropped the name for a reason that was not true.
+
+**Graded-population disclosure (DNR §49).** This IS a graded-population change: names with
+fewer than the old 200 bars may now enter the curated board, which the DNR row on the
+Top-setups data-lane merge forbids *from the trigger lane*. It ships here **only because the
+operator ordered it**, and it is made separable rather than silent — every name tiering on
+fewer than `YOUNG_HISTORY_BARS` (200, the pre-change floor) carries `young_history: true`
+from the cascade through the signal-gate verdict, the board row's `confluence` block, the
+slim buy verdict, and the `us_prophet_rank` candidates store. The graded record can
+therefore always split the pre- and post-2026-08-05 cohorts; any forward measurement that
+does not split them is reading two populations as one.
+
+**Measured effect at ratification (2026-07-31 universe, 1,540 names).** Two names sit in the
+newly-admitted band \[159, 200): SOLS (196 bars) and Q (191). **Neither becomes
+tier-eligible** — every gating leg is computable at those counts, and both grade to no tier
+for ordinary market reasons (Q has no 2D MACD cross in its history at all). So the floor
+change admits *nobody* new to the board today; what it removes is a structural refusal that
+would have been indistinguishable from a market verdict. 45 names remain below 159 bars,
+where no tier is computable — including CDE (51 bars). A 35-bar listing cannot have a 2D
+MACD cross history: that is arithmetic, not policy, and no floor change reaches it.
+
+**The floor is not the binding constraint.** `scripts/build_stock_library._one` refuses a
+library record below `min_days = 300` (`EXTRAS_MIN_DAYS = 252` for curated extras, which get
+a LIMITED record instead), and `signal_gate.gate` is only called for names that got a
+record. For every non-extra name the 300-bar library floor therefore dominates the cascade
+floor, and lowering 200 → 159 cannot surface anyone until that floor or the universe lane
+moves. The 300 is justified independently — the cycle ladder needs ~260 sessions — so it is
+left alone here and flagged for the universe/scan-tier lane rather than changed in passing.
+
 ---
 
 *Related: PROPHET_MASTERPLAN_BY_FABLE.md (program charter), PROPHET_BOARD_PRIORITY_ENGINE

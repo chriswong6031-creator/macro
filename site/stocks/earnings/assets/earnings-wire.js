@@ -80,6 +80,12 @@
     document.documentElement.setAttribute('data-earnings-member','unlocked');
   }
   function revealSignin(){
+    // Release the pre-paint hold FIRST and unconditionally. Every early return below
+    // is about which button to show, not about whether the gate belongs on the page —
+    // and the signed-in-but-not-entitled reader takes the earliest of them.
+    if(document.documentElement.getAttribute('data-earnings-member')==='pending'){
+      document.documentElement.removeAttribute('data-earnings-member');
+    }
     var button=document.querySelector('[data-earnings-signin]');
     var signedIn=false;
     try{signedIn=!!(window.MDXAuth&&window.MDXAuth.user&&window.MDXAuth.user());}catch(e){}
