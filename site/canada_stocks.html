@@ -313,7 +313,7 @@
   <div class="row">
     <h1><span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-31 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-08-05 05:54 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-31 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-08-05 15:34 UTC</span>
   </div>
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
     <a href="canada.html" style="color:var(--link);font-weight:600">← <span class="l-en">Canada macro dashboard</span><span class="l-zh">加拿大宏观看板</span></a></p>
@@ -1055,18 +1055,6 @@
 </script>
 
 
-<div class="panel" style="border-color:color-mix(in srgb,var(--warn) 40%,var(--line))">
-  <div class="row" style="gap:8px">
-    <b style="color:var(--warn)">⚠ <span class="l-en">Data health</span><span class="l-zh">数据健康</span></b>
-    <span class="muted small"><span class="l-en">some board inputs are degraded — the affected axes are suppressed, not silently filled</span><span class="l-zh">部分榜单输入已降级 — 受影响的轴已抑制，而非静默填充</span></span>
-  </div>
-  <div class="row small" style="gap:6px; margin-top:6px">
-    
-    <span class="chip off"><span class="l-en">Board ledger (append wrote 0 rows — see build log)</span><span class="l-zh">榜单账本（写入 0 行 — 查看构建日志）</span> <b>· ERROR</b> <span class="muted">(2026-07-31)</span></span>
-    
-  </div>
-</div>
-
 <div class="panel" id="standouts">
   <h2><span class="l-en">⚡ Prophet Stock Signals — TSX ripe list</span><span class="l-zh">⚡ 先知选股 — TSX 成熟清单</span>
     <span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">10 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 4 <span class="l-en">bottoming and turning up (not still falling)</span><span class="l-zh">筑底并开始转向（而非仍在下跌）</span></span>
@@ -1252,13 +1240,13 @@
          beat:'Beat index', lag:'Lagged', onboard:'On board', stock:'Stock', logged:'Logged', entry:'Entry', latest:'Latest',
          move:'Move %', vs:'vs '+(benchEn||'index')+' %', days:'Days', status:'Status', find:'Find a stock',
          prev:'Prev', next:'Next', err:'Ledger unavailable right now — the numbers above are still current.', retry:'Retry',
-         win90:'90d', win30:'30d', winall:'All', of:'of',
+         win90:'90d', win30:'30d', winall:'All', of:'of', unscored:'No price data',
          cohortCur:'Current board', cohortLegacy:'Previous board' },
     zh:{ all:'全部', up:'上涨', stopped:'低于入场价', flat:'持平', early:'初期', matured:'已成熟', suspended:'停牌',
          beat:'跑赢', lag:'跑输', onboard:'在榜', stock:'个股', logged:'上榜', entry:'入场', latest:'最新',
          move:'涨跌', vs:'超额', days:'天数', status:'状态', find:'搜索股票',
          prev:'上一页', next:'下一页', err:'台账暂时不可用——上方数据仍然有效。', retry:'重试',
-         win90:'90天', win30:'30天', winall:'全部', of:'共',
+         win90:'90天', win30:'30天', winall:'全部', of:'共', unscored:'无价格数据',
          cohortCur:'现行榜单', cohortLegacy:'上一版榜单' }
   };
   function L(k){ return (isZh()? T.zh : T.en)[k]; }
@@ -1373,8 +1361,11 @@
       return (av-bv)*dir;
     });
   }
-  var STDOT = { up:'trd-dot-up', stopped:'trd-dot-dn', flat:'trd-dot-flat', early:'trd-dot-early', beat:'trd-dot-up', lag:'trd-dot-dn', onboard:'trd-dot-flat' };
-  function stWord(st){ var mp = { up:L('up'), stopped:L('stopped'), flat:L('flat'), early:L('early'), beat:L('beat'), lag:L('lag'), onboard:L('onboard') }; return mp[st]||st; }
+  // 'unscored' = the desk picked it and can no longer price it. The row stays so a
+  // pick never silently leaves the book; it carries no numbers and is in none of the
+  // stats above. Plain words, never the raw status slug (glance-tier doctrine).
+  var STDOT = { up:'trd-dot-up', stopped:'trd-dot-dn', flat:'trd-dot-flat', early:'trd-dot-early', beat:'trd-dot-up', lag:'trd-dot-dn', onboard:'trd-dot-flat', unscored:'trd-dot-flat' };
+  function stWord(st){ var mp = { up:L('up'), stopped:L('stopped'), flat:L('flat'), early:L('early'), beat:L('beat'), lag:L('lag'), onboard:L('onboard'), unscored:L('unscored') }; return mp[st]||st; }
   var FLAG = { locked:{en:'Locked-limit day excluded', zh:'一字板剔除'}, susp:{en:'Suspended', zh:'停牌'}, delisted:{en:'Delisted', zh:'退市'} };
   // Lane names in plain words. The sub-cell under a ticker falls back to the row's
   // GROUP when a name was never logged, and the group is a raw engine slug —
@@ -1428,6 +1419,15 @@
         }
       }
       h += '<div class="trd-ribbon" style="margin:0 0 8px">' + lNote + '</div>';
+    }
+    // Outage disclosure. The book only advances on nights the pipeline ran; when it
+    // did not, the record freezes and would otherwise READ as complete. One quiet
+    // line says which sessions are blank — and that nothing was written in after the
+    // fact. Absent key (the normal case) → no line at all.
+    var cont = (DATA.meta || {}).continuity;
+    if(cont && cont.n_stale_sessions){
+      var cNote = zh ? cont.note_zh : cont.note_en;
+      if(cNote) h += '<div class="trd-ribbon" style="margin:0 0 8px">' + esc(cNote) + '</div>';
     }
     h += '<div class="trd-tbl-wrap"><table class="trd-tbl"><thead><tr>';
     h += '<th>'+L('stock')+'</th>';
@@ -2304,5 +2304,6 @@ if (document.readyState === 'loading') {
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

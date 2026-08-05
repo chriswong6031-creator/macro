@@ -64,15 +64,83 @@ def test_clean_filters_market():
     assert "协议转让" not in cleaned["MARKET"].values
 
 
+def _exchange_df(codes: list[str]) -> pd.DataFrame:
+    """One valid (unfilterable) row per code, so _clean's output is code -> ticker."""
+    n = len(codes)
+    return pd.DataFrame({
+        "CHANGE_NUM": [100.0] * n,
+        "NOTICE_DATE": ["2024-03-15"] * n,
+        "START_DATE": ["2024-03-01"] * n,
+        "END_DATE": ["2024-03-14"] * n,
+        "TRADE_DATE": ["2024-03-10"] * n,
+        "HOLDER_NAME": [f"大股东{i}" for i in range(n)],
+        "HOLD_RATIO": [5.0] * n,
+        "AFTER_HOLDER_NUM": [1000.0] * n,
+        "CHANGE_NUM_SYMBOL": [-100.0] * n,
+        "MARKET": ["二级市场"] * n,
+        "FREE_SHARES": [20000.0] * n,
+        "CHANGE_RATE": [1.5] * n,
+        "AFTER_CHANGE_RATE": [5.0] * n,
+        "SECURITY_CODE": list(codes),
+        "SECURITY_NAME_ABBR": [f"Test{i}" for i in range(n)],
+    })
+
+
+# Both halves of the 9-prefix split are pinned deliberately. The defect this
+# guards was a bare `code.startswith("6")` Shanghai test that swept every other
+# code — including Beijing's 92xxxx — into .SZ. The obvious over-correction is a
+# bare `code[0] == "9"` Beijing test, which would send Shanghai's 900xxx
+# B-shares to .BJ; 900001 is here so that fix cannot pass either.
+EXCHANGE_CASES = {
+    "600000": "600000.SS",   # Shanghai main board
+    "688981": "688981.SS",   # STAR (Shanghai)
+    "900001": "900001.SS",   # Shanghai B-share — the quiet half of the 9-prefix
+    "000001": "000001.SZ",   # Shenzhen main board
+    "300001": "300001.SZ",   # ChiNext (Shenzhen)
+    "920178": "920178.BJ",   # Beijing Stock Exchange, post-2023 renumbering
+    "830799": "830799.BJ",   # Beijing (8xxxxx)
+    "430139": "430139.BJ",   # Beijing (4xxxxx)
+}
+
+
 def test_clean_ticker_suffix():
-    """000xxx -> .SZ, 600xxx -> .SH."""
-    raw = _raw_df()
-    cleaned = _clean(raw)
-    tickers = cleaned["ticker"].tolist()
-    sz = [t for t in tickers if t.endswith(".SZ")]
-    sh = [t for t in tickers if t.endswith(".SH")]
-    assert len(sz) >= 1, "Should have at least one .SZ ticker"
-    assert len(sh) >= 1, "Should have at least one .SH ticker"
+    """_clean stamps the store's .SS/.SZ/.BJ vocabulary, both halves of 9xxxxx."""
+    cleaned = _clean(_exchange_df(list(EXCHANGE_CASES)))
+    got = dict(zip(cleaned["SECURITY_CODE"], cleaned["ticker"]))
+    assert got == EXCHANGE_CASES
+
+
+def test_clean_ticker_suffix_never_emits_sh():
+    """The lane speaks the price store's dialect (.SS), not Eastmoney's .SH.
+
+    data/china_stocks_raw is 100% .SS/.SZ — it has never held a .SH file — so a
+    .SH ticker here is unjoinable, and the failure is silent (an absent key, not
+    an error). See the module docstring in collectors/cn_holder_sale_calendar.py.
+    """
+    cleaned = _clean(_exchange_df(list(EXCHANGE_CASES)))
+    assert not cleaned["ticker"].str.endswith(".SH").any()
+
+
+# `scripts/_download_cn_holder.py` cannot be exercised through _clean — it is a wrapper,
+# not an importable mapper — so the behavioural tests above would pass while it carried a
+# forked copy of the bug (it did, for both mappers, until this change). Pin the shape of
+# the regression instead: no producer of data/cn_holder_sales may hand-roll a suffix.
+PRODUCERS = ("collectors/cn_holder_sale_calendar.py", "scripts/_download_cn_holder.py")
+
+
+@pytest.mark.parametrize("rel", PRODUCERS)
+def test_producer_has_no_local_suffix_mapper(rel):
+    """Neither producer may re-inline a suffix mapper; to_suffixed is the only one."""
+    src = (ROOT / rel).read_text()
+    code = "\n".join(ln for ln in src.splitlines() if not ln.lstrip().startswith("#"))
+    _, _, body = code.partition('"""')          # drop the module docstring
+    _, _, body = body.partition('"""')
+    assert '".SH"' not in body and "'.SH'" not in body and ".SH\"" not in body, (
+        f"{rel} emits a .SH literal; data/china_stocks_raw is .SS/.SZ only"
+    )
+    assert "def _suffix" not in body, (
+        f"{rel} declares a local _suffix mapper — import to_suffixed instead"
+    )
 
 
 def test_clean_shares_sold_positive():

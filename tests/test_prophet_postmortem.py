@@ -1215,3 +1215,141 @@ class TestLoserCohortFixture:
         assert "loser coverage" in text
         for f in artifact["summary"]["label_frequency"]:
             assert f"| {f['n_losers_evaluated']} / {f['n_losers_total']} " in text
+
+
+# ===========================================================================
+# W-E.3 — the close-series ladder (D21: extras-universe names were ungradeable)
+# ===========================================================================
+class TestCloseResolverLadder:
+    """The rungs may only APPEND. A name the four caches carry must resolve to the
+    identical series it did before the fallbacks existed — that is the whole licence
+    for adding them without an era stamp, because it means no graded episode can be
+    re-graded, only an ungraded one graded."""
+
+    @staticmethod
+    def _cache_frame() -> pd.DataFrame:
+        idx = pd.bdate_range("2026-01-02", periods=40)
+        return pd.DataFrame(
+            {"INCACHE": [float(10 + i) for i in range(40)],
+             "BOTH": [float(50 + i) for i in range(40)]}, index=idx)
+
+    @staticmethod
+    def _write_ohlcv(root: Path, ticker: str, values: list) -> None:
+        d = root / ppm.BASKET_OHLCV_REL
+        d.mkdir(parents=True, exist_ok=True)
+        idx = pd.bdate_range("2026-01-02", periods=len(values))
+        pd.DataFrame({"open": values, "high": values, "low": values,
+                      "close": values, "volume": [1] * len(values)},
+                     index=idx).to_parquet(d / f"{ticker}.parquet")
+
+    @staticmethod
+    def _write_extras(root: Path, cols: dict) -> None:
+        d = root / ppm.BASKET_EXTRAS_REL
+        d.parent.mkdir(parents=True, exist_ok=True)
+        n = len(next(iter(cols.values())))
+        pd.DataFrame(cols, index=pd.bdate_range("2026-01-02", periods=n)).to_parquet(d)
+
+    def test_a_cached_ticker_is_untouched_by_the_ladder(self, tmp_path):
+        closes = self._cache_frame()
+        # Deliberately plant CONTRADICTING values on both fallback rungs: if either
+        # ever outranked the cache, this assertion moves.
+        self._write_ohlcv(tmp_path, "BOTH", [999.0] * 40)
+        self._write_extras(tmp_path, {"BOTH": [777.0] * 40})
+        series, source = ppm.close_resolver(tmp_path, closes)("BOTH")
+        assert source == ppm.SOURCE_CACHE
+        assert series.equals(closes["BOTH"].dropna())
+        assert float(series.iloc[-1]) == 89.0
+
+    def test_ohlcv_is_the_second_rung_and_extras_the_third(self, tmp_path):
+        closes = self._cache_frame()
+        self._write_ohlcv(tmp_path, "DEEP", [float(100 + i) for i in range(40)])
+        self._write_extras(tmp_path, {"DEEP": [1.0] * 40, "SHALLOW": [2.0] * 40})
+        resolve = ppm.close_resolver(tmp_path, closes)
+        deep, deep_src = resolve("DEEP")
+        shallow, shallow_src = resolve("SHALLOW")
+        assert deep_src == ppm.SOURCE_BASKET_OHLCV and float(deep.iloc[0]) == 100.0
+        assert shallow_src == ppm.SOURCE_BASKET_EXTRAS and float(shallow.iloc[0]) == 2.0
+
+    def test_a_ticker_on_no_rung_is_still_none(self, tmp_path):
+        assert ppm.close_resolver(tmp_path, self._cache_frame())("NOWHERE") == (
+            None, None)
+
+    def test_a_fallback_series_arrives_clean_and_sorted(self, tmp_path):
+        """A rung that returned raw frames would grade the right name off the wrong
+        bars — NaNs and an unsorted index are the two ways that happens."""
+        d = tmp_path / ppm.BASKET_OHLCV_REL
+        d.mkdir(parents=True, exist_ok=True)
+        idx = pd.bdate_range("2026-01-02", periods=5)[::-1]      # reversed
+        pd.DataFrame({"close": [5.0, float("nan"), 3.0, 2.0, 1.0]},
+                     index=idx).to_parquet(d / "MESSY.parquet")
+        series, source = ppm.close_resolver(tmp_path, self._cache_frame())("MESSY")
+        assert source == ppm.SOURCE_BASKET_OHLCV
+        assert len(series) == 4 and not series.isna().any()
+        assert series.index.is_monotonic_increasing
+        assert isinstance(series.index, pd.DatetimeIndex)
+
+    def test_an_unreadable_rung_is_a_miss_not_a_crash(self, tmp_path):
+        d = tmp_path / ppm.BASKET_OHLCV_REL
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "JUNK.parquet").write_bytes(b"not a parquet file")
+        self._write_extras(tmp_path, {"JUNK": [4.0] * 40})
+        series, source = ppm.close_resolver(tmp_path, self._cache_frame())("JUNK")
+        assert source == ppm.SOURCE_BASKET_EXTRAS, "a bad rung must fall through"
+        assert float(series.iloc[0]) == 4.0
+
+    def test_resolution_is_memoized(self, tmp_path):
+        resolve = ppm.close_resolver(tmp_path, self._cache_frame())
+        first = resolve("INCACHE")
+        assert resolve("INCACHE")[0] is first[0], "a second call must not re-read"
+
+
+class TestLadderOnTheCommittedLedgers:
+    """The ladder against real data — a unit test on tmp_path cannot say whether the
+    class it was built for actually resolves."""
+
+    def test_the_asts_class_now_resolves_and_names_its_rung(self):
+        closes = ppm.load_closes(ROOT)
+        assert "ASTS" not in closes.columns, (
+            "ASTS must be absent from the caches or this proves nothing")
+        series, source = ppm.close_resolver(ROOT, closes)("ASTS")
+        assert series is not None and source == ppm.SOURCE_BASKET_OHLCV
+        assert len(series) > 250
+
+    def test_every_cache_resolved_name_is_byte_identical(self):
+        closes = ppm.load_closes(ROOT)
+        resolve = ppm.close_resolver(ROOT, closes)
+        sample = list(closes.columns)[::7]
+        assert len(sample) > 50, "sample must be wide enough to mean something"
+        for ticker in sample:
+            series, source = resolve(ticker)
+            assert source == ppm.SOURCE_CACHE, ticker
+            assert series.equals(closes[ticker].dropna()), ticker
+
+    def test_coverage_separates_a_missing_name_from_a_stale_store(self, artifact):
+        """`U` resolves to a real series whose store stops before its fill bar. That
+        is a stale STORE, not a missing NAME, and merging the two would have the
+        coverage receipt claim we hold no prices for a ticker we do hold."""
+        cov = artifact["coverage"]
+        resolve = ppm.close_resolver(ROOT, ppm.load_closes(ROOT))
+        assert set(cov["tickers_no_price_series"]) <= set(cov["tickers_no_price_path"])
+        assert cov["n_tickers_no_price_series"] == len(cov["tickers_no_price_series"])
+        for ticker in cov["tickers_no_price_series"]:
+            assert resolve(ticker)[0] is None, ticker
+        for ticker in set(cov["tickers_no_price_path"]) - set(
+                cov["tickers_no_price_series"]):
+            assert resolve(ticker)[0] is not None, ticker
+
+    def test_the_ladder_receipt_reaches_the_artifact(self, artifact):
+        cov = artifact["coverage"]
+        sources = cov["price_path_sources"]
+        assert sources.get(ppm.SOURCE_CACHE, 0) > 0
+        assert sum(sources.values()) + cov["n_no_price_path"] == cov["n_episodes"]
+        assert set(sources) <= {ppm.SOURCE_CACHE, ppm.SOURCE_BASKET_OHLCV,
+                                ppm.SOURCE_BASKET_EXTRAS}
+        assert "closes_ladder" in artifact["generated_from"]
+
+    def test_the_fallback_rungs_actually_graded_something(self, artifact):
+        """The point of the wave. If this ever goes to zero the ladder is dead code
+        and `tickers_no_price_path` should be re-read, not the test relaxed."""
+        assert artifact["coverage"]["price_path_sources"].get(
+            ppm.SOURCE_BASKET_OHLCV, 0) > 0

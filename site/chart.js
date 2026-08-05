@@ -729,12 +729,21 @@
     return t === 'sell' ? 'var(--down)' : t === 'cut' ? 'var(--warn)'
          : t === 'rebuy' ? '#7ed957' : 'var(--up)';   // lime has no theme token; literal
   }
+  // Keyed by the engine's raw `reason` literal. lxReason() falls back to the ENGLISH string
+  // on a miss, so a key missing here is a silent bilingual regression, not a visible error —
+  // every literal engine/signal_quality.py can emit needs a row. 'failed reclaim-and-hold' is
+  // RETIRED (2026-08-04: its branch tests the next-bar hold alone and now says so) but stays,
+  // because already-rendered signal files still carry it on their historical markers.
   var REASON_ZH = {
     'held confirmation': '确认持稳',
+    'held confirmation (counter-trend)': '确认持稳（逆势）',
+    'failed next-bar hold': '未能站稳',
     'failed reclaim-and-hold': '未能站稳',
     'veto: bearish divergence': '否决：顶背离',
     'reclaimed 200 & held': '收复200日并站稳',
     'counter-trend, no 200-reclaim/hold': '逆势，未收复/站稳200日',
+    'counter-trend, held but no 200-reclaim': '逆势，已站稳但未收复200日',
+    'counter-trend, reclaimed 200 but no next-bar hold': '逆势，已收复200日但未站稳',
     'pending confirmation': '待确认'
   };
   function lxReason(r) { return lang() === 'zh' ? (REASON_ZH[r] || r) : r; }
