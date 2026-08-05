@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T13:46:59.678255+00:00",
-  "count": 806,
+  "generated_at": "2026-08-05T14:17:22.164899+00:00",
+  "count": 807,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -401,6 +401,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xke0zpfqpwx-71610c",
+      "title": "GS US EQUITIES COLOR RISING TIDE",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:19:50Z",
+      "summary_points": [
+        "**Record S&P 500**: Closes at 7,736 driven by stellar Q2 earnings and cleaner positioning; NDX up ~9% (TMT-led).",
+        "**AI Acceleration**: PINS revs +17% y/y and SPCX beat on AI revenue ($2.56b vs $2.08b consensus) with AI as key growth driver.",
+        "**FOMO Risk**: Front-end volatility spiking (>1v) and skew crushed from FOMO-driven derivatives activity, exacerbating rallies."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
