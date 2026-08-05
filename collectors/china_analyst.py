@@ -31,17 +31,31 @@ log = logging.getLogger("china_analyst")
 
 OUT = config.data_dir() / "china_analyst" / "forecast.parquet"
 
-# Eastmoney bare 6-digit code -> our ticker suffix. A-shares: 6/9 = Shanghai,
-# 688 STAR = Shanghai, 0/3 = Shenzhen, 4/8 = Beijing (BSE).
+# Eastmoney bare 6-digit code -> our ticker suffix. THE SHARED A-SHARE MAPPER: a dozen
+# sibling collectors import this (china_lhb, china_zt_pool, china_block_trades,
+# china_buyback, china_unlocks, china_preannounce, china_margin_detail, china_pledge,
+# china_st, china_comment, china_earnings) plus engine/china_special_situations, so every
+# suffix minted here lands in a tracked store and is rendered.
+#
+#   Shanghai (.SS)  6xxxxx main + 688xxx STAR, 900xxx B-shares
+#   Shenzhen (.SZ)  0xxxxx main, 300xxx ChiNext, 200xxx B-shares
+#   Beijing  (.BJ)  4xxxxx, 8xxxxx, and — since the 2023 renumbering — 92xxxx
+#
+# The Shanghai test is `900`-prefixed, NOT a bare `c[0] == "9"`. A bare 9 swallowed every
+# Beijing name minted under the new numbering and stamped it `.SS` — a ticker no exchange
+# has issued — so the `.BJ` branch below could never see them (Eastmoney itself labels
+# these BEIJING; see the captured 920178 row in tests/test_china_reports_collector.py).
+# Both halves matter: 900xxx Shanghai B-shares are real and DO belong on `.SS`, so the
+# 9-space cannot simply be dropped. House reference: china_ths_concepts.to_suffixed.
 def to_ticker(code: str) -> str | None:
     c = "".join(ch for ch in str(code) if ch.isdigit()).zfill(6)
     if len(c) != 6:
         return None
-    if c[0] in ("6", "9") or c.startswith("688"):
+    if c[0] == "6" or c.startswith("900"):
         return f"{c}.SS"
     if c[0] in ("0", "2", "3"):
         return f"{c}.SZ"
-    if c[0] in ("4", "8"):
+    if c[0] in ("4", "8") or c.startswith("92"):
         return f"{c}.BJ"
     return None
 
