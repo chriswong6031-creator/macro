@@ -46,6 +46,12 @@ motion. Change the appropriate shared family and its parity tests instead.
 - Macro branches start from fresh `origin/main`; Terminal branches start from fresh
   `origin/master`. Never reuse a squash-merged branch.
 - Do not use the repo-global stash stack.
+- Session worktrees are garbage-collected by `scripts/worktree_gc.py` per
+  `research/WORKTREE_GC_POLICY.md` (report-first; deletion only while
+  `config/worktree_gc.json` is `armed:true` — an operator ratification act). The
+  sweeper honors `git worktree lock`, live process cwds, uncommitted/unpushed
+  work, open PRs, and <7-day activity. To park a checkout long-term, lock it:
+  `git worktree lock --reason "<why>" <path>`.
 
 ## Definition of done
 
