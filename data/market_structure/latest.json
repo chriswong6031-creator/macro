@@ -1,7 +1,7 @@
 {
   "schema": "market_structure_context.v1",
-  "asof": "2026-08-03",
-  "built_at": "2026-08-04T01:29:41.044760+00:00",
+  "asof": "2026-08-04",
+  "built_at": "2026-08-05T06:50:40.748416+00:00",
   "is_context_only": true,
   "display_only": true,
   "gamma": {
@@ -193,32 +193,24 @@
   },
   "systematic": {
     "vc": {
-      "alloc_bn": 220.66156,
-      "alloc_frac": 0.735539,
-      "flow_1d_bn": -4.750988,
-      "flow_5d_bn": -16.363971,
+      "alloc_bn": 214.711329,
+      "alloc_frac": 0.715704,
+      "flow_1d_bn": -5.950232,
+      "flow_5d_bn": -22.258021,
       "state": "cutting",
       "aum_bn": 300.0,
       "target_vol_pct": 10.0,
       "series_start": "1927-12-30"
     },
     "cta": {
-      "score": 0.842436,
-      "z": -0.27846,
-      "flow_1d": 0.110221,
-      "flow_5d": 0.148319,
+      "score": 1.07778,
+      "z": 0.085854,
+      "flow_1d": 0.235344,
+      "flow_5d": 0.537571,
       "state": "adding"
     },
     "agreement": "split",
     "history": [
-      {
-        "date": "2024-08-05",
-        "vc_alloc_bn": 162.462334,
-        "vc_flow_bn": -24.431997,
-        "cta_score": -0.11527,
-        "cta_flow": -0.412045,
-        "spx_close": 5186.330078
-      },
       {
         "date": "2024-08-06",
         "vc_alloc_bn": 157.976648,
@@ -4210,12 +4202,20 @@
         "cta_score": 0.842436,
         "cta_flow": 0.110221,
         "spx_close": 7600.5
+      },
+      {
+        "date": "2026-08-04",
+        "vc_alloc_bn": 214.711329,
+        "vc_flow_bn": -5.950232,
+        "cta_score": 1.07778,
+        "cta_flow": 0.235344,
+        "spx_close": 7736.52002
       }
     ]
   },
   "vol": {
-    "rv21": 0.128663,
-    "rv63": 0.135955,
+    "rv21": 0.139662,
+    "rv63": 0.139722,
     "rv_cross_state": "calm",
     "vix_curve": [
       {
@@ -6276,11 +6276,11 @@
     "source": "spx_iv30_scaled_5d"
   },
   "state_changes": {
-    "vs_asof": "2026-07-31",
+    "vs_asof": "2026-08-03",
     "items": []
   },
   "prev_state": {
-    "as_of": "2026-07-31",
+    "as_of": "2026-08-03",
     "state": {
       "gamma_regime": "long",
       "vc_state": "cutting",

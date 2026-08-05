@@ -479,7 +479,7 @@
             <div class="ms-alerts-wrap">
               <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
                 <span class="dot"></span><span class="l-en">Fired alerts</span><span class="l-zh">已触发警报</span>
-                <span class="ct">9</span>
+                <span class="ct">8</span>
               </label>
               <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
                 <div class="ms-pop-head">
@@ -501,15 +501,6 @@
                     <div class="ms-sig-detail"><span class="l-en">GEX: net GEX changed sign (net +79bn, spot vs flip -0.7%)</span><span class="l-zh">GEX：net GEX changed sign（净 +79bn，现价相对翻转点 -0.7%）</span></div>
                     <div class="ms-sig-what"><span class="l-en">Dealer gamma (GEX) measures how options hedging pushes the market around. Positive gamma damps moves (calmer); negative amplifies them (sharper swings, both ways). This flag means that backdrop just changed — expect the market to move more freely until it flips back.</span><span class="l-zh">做市商 gamma（GEX）衡量期权对冲如何推动市场。正 gamma 抑制波动（更平静）；负 gamma 放大波动（双向更剧烈）。此信号表示该背景刚刚改变 —在它再次反转前，市场可能波动得更自由。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Medium — changes the volatility backdrop, not the direction.</span><span class="l-zh">中 — 改变的是波动背景，而非方向。</span></div>
-                  </a>
-                  
-                  
-                  
-                  <a class="ms-sig sev-warn" data-ms-jump href="#regime-radar">
-                    <div class="ms-sig-head"><span class="ms-sig-ico">🎚️</span><span class="ms-sig-title"><span class="l-en">Inflation read got muddy — trust the regime label less</span><span class="l-zh">通胀信号变浑浊 — 降低对周期标签的信任</span></span><span class="ms-sig-jump"><span class="l-en">View ↓</span><span class="l-zh">查看 ↓</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Inflation axis confidence dropped below 30%: 45% -&gt; 16%</span><span class="l-zh">通胀 轴一致度跌破 30%：45% -&gt; 16%</span></div>
-                    <div class="ms-sig-what"><span class="l-en">The regime is built from two dials — growth direction and inflation direction. “Confidence” is how strongly the underlying indicators agree. The inflation dial just fell below a usable threshold, so it’s now mixed. Lower confidence = size positions down and trust the radar more than the label.</span><span class="l-zh">周期由两个刻度盘构成 — 增长方向与通胀方向。“一致度”反映底层指标的认同程度。通胀刻度盘刚跌破可用阈值，目前信号混杂。一致度低 =缩小仓位，相信雷达多于标签。</span></div>
-                    <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — a confidence drop, not a directional call. Size down.</span><span class="l-zh">背景 — 这是置信度下降，而非方向判断。缩小仓位。</span></div>
                   </a>
                   
                   
@@ -570,7 +561,7 @@
                   
                   <a class="ms-sig sev-warn" data-ms-dlg="dlg-events" href="#dlg-events">
                     <div class="ms-sig-head"><span class="ms-sig-ico">📅</span><span class="ms-sig-title"><span class="l-en">Major event on deck — expect bigger swings either way</span><span class="l-zh">重大事件临近 — 双向波动或加大</span></span><span class="ms-sig-jump"><span class="l-en">View →</span><span class="l-zh">查看 →</span></span></div>
-                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 2 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（2 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
+                    <div class="ms-sig-detail"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 3 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（3 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
                     <div class="ms-sig-what"><span class="l-en">A high-impact scheduled release (CPI, Fed decision, jobs report) lands in the coming sessions — the message says which and when. Moves around these prints are two-sided and often retraced — a volatility warning, not a directional call. Size positions for the noise; avoid forcing new trades right into the print.</span><span class="l-zh">未来数个交易日内将有高影响力的既定事件（CPI、美联储决议、就业报告）——具体是哪个、何时，见提示内容。事件前后的波动是双向的、常被回补 —这是波动性提示，并非方向判断。按噪声调整仓位，避免在数据公布前强行开新仓。</span></div>
                     <div class="ms-sig-edge"><b><span class="l-en">Conviction:</span><span class="l-zh">可信度：</span></b> <span class="l-en">Context — a volatility window, not a direction call. Size for the noise.</span><span class="l-zh">背景 — 波动窗口而非方向判断。按噪声调整仓位。</span></div>
                   </a>
@@ -602,7 +593,7 @@
     <div class="mxfs">
       <div class="mxfs-hd">
         <span class="l-en">What could change the regime call</span><span class="l-zh">什么会改变周期判断</span>
-        <span class="help">?<span class="tip"><span class="l-en">Drawn only from today&#39;s regime-engine readings, shown as-is. Weakest support: the component still supporting the call — slope z 0.46 vs its ±0.45 cutoff, margin 0.01. Drift: how the model&#39;s regime probabilities moved over the last 5 sessions. How firmly held: 0–1 = probability behind the label × how much the inputs agree. Conditional context only — nothing here predicts a flip.</span><span class="l-zh">仅取自今日周期引擎的读数，原样展示。最弱支撑：仍支撑当前判断的最弱分量 — 斜率 z 0.46，阈值 ±0.45（边际 0.01）。漂移方向：模型周期概率近 5 个交易日的变化。把握程度：0–1 = 标签背后的概率 × 输入一致度。仅为条件性参考 — 并非预测翻转。</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Drawn only from today&#39;s regime-engine readings, shown as-is. Weakest support: the component still supporting the call — slope z 0.5 vs its ±0.45 cutoff, margin 0.05. Drift: how the model&#39;s regime probabilities moved over the last 5 sessions. How firmly held: 0–1 = probability behind the label × how much the inputs agree. Conditional context only — nothing here predicts a flip.</span><span class="l-zh">仅取自今日周期引擎的读数，原样展示。最弱支撑：仍支撑当前判断的最弱分量 — 斜率 z 0.5，阈值 ±0.45（边际 0.05）。漂移方向：模型周期概率近 5 个交易日的变化。把握程度：0–1 = 标签背后的概率 × 输入一致度。仅为条件性参考 — 并非预测翻转。</span></span></span>
         <span class="mxfs-badge"><span class="l-en">Context — not a forecast</span><span class="l-zh">情景参考 — 非预测</span></span>
       </div>
       <div class="mxfs-subtitle"><span class="l-en">About the regime label — not the 0-100 risk score.</span><span class="l-zh">指上方周期标签——并非 0-100 风险评分。</span></div>
@@ -619,8 +610,8 @@
       <div class="mxfs-row">
         <span class="mxfs-k"><span class="l-en">Weakest support</span><span class="l-zh">最弱支撑</span></span>
         <span class="mxfs-v">
-          <span class="l-en"><b>the inflation-winners basket</b> is the shakiest evidence behind this call — cushion today: <b>razor-thin</b></span>
-          <span class="l-zh"><b>通胀受益篮子</b>是当前判断中最不稳的一条证据 — 今日缓冲：<b>极薄</b></span>
+          <span class="l-en"><b>cyclical vs defensive sectors</b> is the shakiest evidence behind this call — cushion today: <b>razor-thin</b></span>
+          <span class="l-zh"><b>周期性板块</b>是当前判断中最不稳的一条证据 — 今日缓冲：<b>极薄</b></span>
         </span>
       </div>
       
@@ -643,8 +634,8 @@
       <div class="mxfs-row">
         <span class="mxfs-k"><span class="l-en">How firmly held</span><span class="l-zh">把握程度</span></span>
         <span class="mxfs-v">
-          <span class="l-en"><b>loosely</b> (0.25 / 1) — it wouldn't take much new evidence to change this label</span>
-          <span class="l-zh"><b>较松</b>（0.25 / 1）— 不需太多新证据即可改变该判断</span>
+          <span class="l-en"><b>loosely</b> (0.32 / 1) — it wouldn't take much new evidence to change this label</span>
+          <span class="l-zh"><b>较松</b>（0.32 / 1）— 不需太多新证据即可改变该判断</span>
         </span>
       </div>
       
@@ -722,7 +713,7 @@
       <div class="mx5-sc-gauge-row mx5-score-yellow">
         
         <svg class="mx5-gauge-svg" viewBox="0 -4 140 101" fill="none"
-             aria-label="Mixed — score 50; capped from six-signal blend 69"
+             aria-label="Mixed — score 50; capped from six-signal blend 70"
              data-gauge-arc-len="175.93"
              data-gauge-radius="56"
              data-gauge-cx="70" data-gauge-cy="75">
@@ -782,7 +773,7 @@
             <span class="l-en">YELLOW &mdash; Trade with caution</span>
             <span class="l-zh">谨慎操作</span>
             
-            <span class="help">?<span class="tip"><span class="l-en">The dial is capped at 50; the six-signal blend is 69. The cap can only pull the dial down, never up.</span><span class="l-zh">刻度盘上限为 50；六项信号合成为 69。上限只能压低刻度盘，不会抬高。</span></span></span>
+            <span class="help">?<span class="tip"><span class="l-en">The dial is capped at 50; the six-signal blend is 70. The cap can only pull the dial down, never up.</span><span class="l-zh">刻度盘上限为 50；六项信号合成为 70。上限只能压低刻度盘，不会抬高。</span></span></span>
             
           </div>
         </div>
@@ -883,7 +874,7 @@
               
               <text class="mxqm-quad-label l-en" x="112.5" y="24" text-anchor="middle">REFLATION</text>
               <text class="mxqm-quad-label l-zh" x="112.5" y="24" text-anchor="middle">再通胀</text>
-              <text class="mxqm-odds active" x="112.5" y="52" text-anchor="middle">96%</text>
+              <text class="mxqm-odds active" x="112.5" y="52" text-anchor="middle">97%</text>
               
               <text class="mxqm-quad-label l-en" x="37.5" y="99" text-anchor="middle">GROWTH-SCARE</text>
               <text class="mxqm-quad-label l-zh" x="37.5" y="99" text-anchor="middle">增长恐慌</text>
@@ -899,11 +890,11 @@
               <text class="mxqm-axis-label l-zh" x="-2" y="75" dominant-baseline="middle" text-anchor="middle" transform="rotate(-90 -2 75)">通胀 ↑</text>
               
               
-              <line class="mxqm-arrow" x1="101" y1="59" x2="107" y2="47"/>
+              <line class="mxqm-arrow" x1="101" y1="49" x2="105" y2="45"/>
               
               
-              <circle class="mxqm-pulse" cx="101" cy="59" r="5"/>
-              <circle class="mxqm-dot" cx="101" cy="59" r="4.5"/>
+              <circle class="mxqm-pulse" cx="101" cy="49" r="5"/>
+              <circle class="mxqm-dot" cx="101" cy="49" r="4.5"/>
             </svg>
           </div>
         </div>
@@ -920,10 +911,10 @@
         
         <div class="mxqm-hold">
           <span class="mxqm-hold-txt">
-            <span class="l-en">Held loosely. Weakest leg: <b>the inflation-winners basket</b>.</span>
-            <span class="l-zh">把握较松。最弱一环：<b>通胀受益篮子</b>。</span>
+            <span class="l-en">Held loosely. Weakest leg: <b>cyclical vs defensive sectors</b>.</span>
+            <span class="l-zh">把握较松。最弱一环：<b>周期性板块</b>。</span>
           </span>
-          <span class="help">?<span class="tip"><span class="l-en">conviction 0.25 / 1 · cushion 0.01 · drift measured over 5 sessions</span><span class="l-zh">把握 0.25 / 1 · 缓冲 0.01 · 漂移基于近 5 个交易日</span></span></span>
+          <span class="help">?<span class="tip"><span class="l-en">conviction 0.32 / 1 · cushion 0.05 · drift measured over 5 sessions</span><span class="l-zh">把握 0.32 / 1 · 缓冲 0.05 · 漂移基于近 5 个交易日</span></span></span>
         </div>
         
         
@@ -1003,10 +994,10 @@
                 <span class="mx5-factor-name">
                   <span class="l-en">Trend &amp; technicals</span><span class="l-zh">趋势与技术</span>
                 </span>
-                <span class="mx5-factor-score">68</span>
+                <span class="mx5-factor-score">72</span>
               </div>
               <div class="mx5-factor-bar-track">
-                <div class="mx5-factor-bar-fill" style="width:68%"></div>
+                <div class="mx5-factor-bar-fill" style="width:72%"></div>
               </div>
               
             </div>
@@ -1102,12 +1093,12 @@
     <div class="mx5-sc-right">
       <div class="mx5-path-header">
         <span class="mx5-path-title">
-          <span class="l-en">24-session path</span>
-          <span class="l-zh">近 24 交易日走势</span>
+          <span class="l-en">25-session path</span>
+          <span class="l-zh">近 25 交易日走势</span>
         </span>
         
         
-        <span class="mx5-path-meta"><span class="l-en">Score vs time &middot; last graded Aug 3</span><span class="l-zh">综合评分 · 时序 &middot; 最后评级 8月3日</span></span>
+        <span class="mx5-path-meta"><span class="l-en">Score vs time &middot; last graded Aug 4</span><span class="l-zh">综合评分 · 时序 &middot; 最后评级 8月4日</span></span>
       </div>
       
       
@@ -1370,6 +1361,16 @@
         
         
       
+        
+        
+        
+        
+        
+        
+        
+        
+        
+      
       
       
       
@@ -1489,6 +1490,12 @@
         
       
         
+        
+      
+        
+        
+          
+          
         
       
       
@@ -1500,47 +1507,49 @@
       
       <div class="mx5-path-plot">
       <svg class="mx5-path-svg" viewBox="0 0 1000 224" preserveAspectRatio="none"
-           data-points='[{"d": "2026-06-26", "md": "Jun 26", "mz": "6\u670826", "s": 28, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 44.0, "y": 142.48}, {"d": "2026-06-29", "md": "Jun 29", "mz": "6\u670829", "s": 34, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 85.04, "y": 131.44}, {"d": "2026-06-30", "md": "Jun 30", "mz": "6\u670830", "s": 28, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 126.09, "y": 142.48}, {"d": "2026-07-01", "md": "Jul 1", "mz": "7\u67081", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 167.13, "y": 102.0}, {"d": "2026-07-02", "md": "Jul 2", "mz": "7\u67082", "s": 40, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 208.17, "y": 120.4}, {"d": "2026-07-06", "md": "Jul 6", "mz": "7\u67086", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 249.22, "y": 90.96}, {"d": "2026-07-07", "md": "Jul 7", "mz": "7\u67087", "s": 40, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 290.26, "y": 120.4}, {"d": "2026-07-08", "md": "Jul 8", "mz": "7\u67088", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 331.3, "y": 90.96}, {"d": "2026-07-09", "md": "Jul 9", "mz": "7\u67089", "s": 77, "v": "Risk-on", "vz": "\u504f\u591a", "x": 372.35, "y": 52.32}, {"d": "2026-07-10", "md": "Jul 10", "mz": "7\u670810", "s": 77, "v": "Risk-on", "vz": "\u504f\u591a", "x": 413.39, "y": 52.32}, {"d": "2026-07-13", "md": "Jul 13", "mz": "7\u670813", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 454.43, "y": 90.96}, {"d": "2026-07-14", "md": "Jul 14", "mz": "7\u670814", "s": 77, "v": "Risk-on", "vz": "\u504f\u591a", "x": 495.48, "y": 52.32}, {"d": "2026-07-15", "md": "Jul 15", "mz": "7\u670815", "s": 79, "v": "Risk-on", "vz": "\u504f\u591a", "x": 536.52, "y": 48.64}, {"d": "2026-07-16", "md": "Jul 16", "mz": "7\u670816", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 577.57, "y": 102.0}, {"d": "2026-07-17", "md": "Jul 17", "mz": "7\u670817", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 618.61, "y": 102.0}, {"d": "2026-07-20", "md": "Jul 20", "mz": "7\u670820", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 659.65, "y": 102.0}, {"d": "2026-07-21", "md": "Jul 21", "mz": "7\u670821", "s": 74, "v": "Risk-on", "vz": "\u504f\u591a", "x": 700.7, "y": 57.84}, {"d": "2026-07-24", "md": "Jul 24", "mz": "7\u670824", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 741.74, "y": 90.96}, {"d": "2026-07-27", "md": "Jul 27", "mz": "7\u670827", "s": 70, "v": "Risk-on", "vz": "\u504f\u591a", "x": 782.78, "y": 65.2}, {"d": "2026-07-28", "md": "Jul 28", "mz": "7\u670828", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 823.83, "y": 102.0}, {"d": "2026-07-29", "md": "Jul 29", "mz": "7\u670829", "s": 40, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 864.87, "y": 120.4}, {"d": "2026-07-30", "md": "Jul 30", "mz": "7\u670830", "s": 44, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 905.91, "y": 113.04}, {"d": "2026-07-31", "md": "Jul 31", "mz": "7\u670831", "s": 66, "v": "Risk-on", "vz": "\u504f\u591a", "x": 946.96, "y": 72.56}, {"d": "2026-08-03", "md": "Aug 3", "mz": "8\u67083", "s": 69, "v": "Risk-on", "vz": "\u504f\u591a", "x": 988.0, "y": 67.04}]'
+           data-points='[{"d": "2026-06-26", "md": "Jun 26", "mz": "6\u670826", "s": 28, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 44.0, "y": 142.48}, {"d": "2026-06-29", "md": "Jun 29", "mz": "6\u670829", "s": 34, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 83.33, "y": 131.44}, {"d": "2026-06-30", "md": "Jun 30", "mz": "6\u670830", "s": 28, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 122.67, "y": 142.48}, {"d": "2026-07-01", "md": "Jul 1", "mz": "7\u67081", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 162.0, "y": 102.0}, {"d": "2026-07-02", "md": "Jul 2", "mz": "7\u67082", "s": 40, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 201.33, "y": 120.4}, {"d": "2026-07-06", "md": "Jul 6", "mz": "7\u67086", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 240.67, "y": 90.96}, {"d": "2026-07-07", "md": "Jul 7", "mz": "7\u67087", "s": 40, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 280.0, "y": 120.4}, {"d": "2026-07-08", "md": "Jul 8", "mz": "7\u67088", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 319.33, "y": 90.96}, {"d": "2026-07-09", "md": "Jul 9", "mz": "7\u67089", "s": 77, "v": "Risk-on", "vz": "\u504f\u591a", "x": 358.67, "y": 52.32}, {"d": "2026-07-10", "md": "Jul 10", "mz": "7\u670810", "s": 77, "v": "Risk-on", "vz": "\u504f\u591a", "x": 398.0, "y": 52.32}, {"d": "2026-07-13", "md": "Jul 13", "mz": "7\u670813", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 437.33, "y": 90.96}, {"d": "2026-07-14", "md": "Jul 14", "mz": "7\u670814", "s": 77, "v": "Risk-on", "vz": "\u504f\u591a", "x": 476.67, "y": 52.32}, {"d": "2026-07-15", "md": "Jul 15", "mz": "7\u670815", "s": 79, "v": "Risk-on", "vz": "\u504f\u591a", "x": 516.0, "y": 48.64}, {"d": "2026-07-16", "md": "Jul 16", "mz": "7\u670816", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 555.33, "y": 102.0}, {"d": "2026-07-17", "md": "Jul 17", "mz": "7\u670817", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 594.67, "y": 102.0}, {"d": "2026-07-20", "md": "Jul 20", "mz": "7\u670820", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 634.0, "y": 102.0}, {"d": "2026-07-21", "md": "Jul 21", "mz": "7\u670821", "s": 74, "v": "Risk-on", "vz": "\u504f\u591a", "x": 673.33, "y": 57.84}, {"d": "2026-07-24", "md": "Jul 24", "mz": "7\u670824", "s": 56, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 712.67, "y": 90.96}, {"d": "2026-07-27", "md": "Jul 27", "mz": "7\u670827", "s": 70, "v": "Risk-on", "vz": "\u504f\u591a", "x": 752.0, "y": 65.2}, {"d": "2026-07-28", "md": "Jul 28", "mz": "7\u670828", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 791.33, "y": 102.0}, {"d": "2026-07-29", "md": "Jul 29", "mz": "7\u670829", "s": 40, "v": "Risk-off", "vz": "\u504f\u7a7a", "x": 830.67, "y": 120.4}, {"d": "2026-07-30", "md": "Jul 30", "mz": "7\u670830", "s": 44, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 870.0, "y": 113.04}, {"d": "2026-07-31", "md": "Jul 31", "mz": "7\u670831", "s": 66, "v": "Risk-on", "vz": "\u504f\u591a", "x": 909.33, "y": 72.56}, {"d": "2026-08-03", "md": "Aug 3", "mz": "8\u67083", "s": 69, "v": "Risk-on", "vz": "\u504f\u591a", "x": 948.67, "y": 67.04}, {"d": "2026-08-04", "md": "Aug 4", "mz": "8\u67084", "s": 50, "v": "Mixed", "vz": "\u4e2d\u6027", "x": 988.0, "y": 102.0}]'
            data-px0="44" data-pxw="944" data-py0="10" data-pyb="194"
            data-vbw="1000" data-vbh="224"
-           role="img" aria-label="24-session macro score path, 28 to 69">
+           role="img" aria-label="25-session macro score path, 28 to 50">
         <defs>
           
           <linearGradient id="mx5PathBandGrad" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0" class="b-off"/>
-            <stop offset="0.08696" class="b-off"/>
-            <stop offset="0.08696" class="b-mid"/>
-            <stop offset="0.13043" class="b-mid"/>
-            <stop offset="0.13043" class="b-off"/>
-            <stop offset="0.17391" class="b-off"/>
-            <stop offset="0.17391" class="b-mid"/>
-            <stop offset="0.21739" class="b-mid"/>
-            <stop offset="0.21739" class="b-off"/>
-            <stop offset="0.26087" class="b-off"/>
-            <stop offset="0.26087" class="b-mid"/>
-            <stop offset="0.30434" class="b-mid"/>
-            <stop offset="0.30434" class="b-on"/>
-            <stop offset="0.3913" class="b-on"/>
-            <stop offset="0.3913" class="b-mid"/>
-            <stop offset="0.43478" class="b-mid"/>
-            <stop offset="0.43478" class="b-on"/>
-            <stop offset="0.52174" class="b-on"/>
-            <stop offset="0.52174" class="b-mid"/>
-            <stop offset="0.65217" class="b-mid"/>
-            <stop offset="0.65217" class="b-on"/>
-            <stop offset="0.69566" class="b-on"/>
-            <stop offset="0.69566" class="b-mid"/>
-            <stop offset="0.73913" class="b-mid"/>
-            <stop offset="0.73913" class="b-on"/>
-            <stop offset="0.78261" class="b-on"/>
-            <stop offset="0.78261" class="b-mid"/>
-            <stop offset="0.82609" class="b-mid"/>
-            <stop offset="0.82609" class="b-off"/>
-            <stop offset="0.86957" class="b-off"/>
-            <stop offset="0.86957" class="b-mid"/>
-            <stop offset="0.91304" class="b-mid"/>
-            <stop offset="0.91304" class="b-on"/>
-            <stop offset="1" class="b-on"/>
+            <stop offset="0.08334" class="b-off"/>
+            <stop offset="0.08334" class="b-mid"/>
+            <stop offset="0.125" class="b-mid"/>
+            <stop offset="0.125" class="b-off"/>
+            <stop offset="0.16666" class="b-off"/>
+            <stop offset="0.16666" class="b-mid"/>
+            <stop offset="0.20834" class="b-mid"/>
+            <stop offset="0.20834" class="b-off"/>
+            <stop offset="0.25" class="b-off"/>
+            <stop offset="0.25" class="b-mid"/>
+            <stop offset="0.29166" class="b-mid"/>
+            <stop offset="0.29166" class="b-on"/>
+            <stop offset="0.375" class="b-on"/>
+            <stop offset="0.375" class="b-mid"/>
+            <stop offset="0.41666" class="b-mid"/>
+            <stop offset="0.41666" class="b-on"/>
+            <stop offset="0.5" class="b-on"/>
+            <stop offset="0.5" class="b-mid"/>
+            <stop offset="0.625" class="b-mid"/>
+            <stop offset="0.625" class="b-on"/>
+            <stop offset="0.66666" class="b-on"/>
+            <stop offset="0.66666" class="b-mid"/>
+            <stop offset="0.70834" class="b-mid"/>
+            <stop offset="0.70834" class="b-on"/>
+            <stop offset="0.75" class="b-on"/>
+            <stop offset="0.75" class="b-mid"/>
+            <stop offset="0.79166" class="b-mid"/>
+            <stop offset="0.79166" class="b-off"/>
+            <stop offset="0.83334" class="b-off"/>
+            <stop offset="0.83334" class="b-mid"/>
+            <stop offset="0.875" class="b-mid"/>
+            <stop offset="0.875" class="b-on"/>
+            <stop offset="0.95834" class="b-on"/>
+            <stop offset="0.95834" class="b-mid"/>
+            <stop offset="1" class="b-mid"/>
           </linearGradient>
         </defs>
         
@@ -1560,7 +1569,7 @@
         </g>
         
         
-        <polyline class="mx5-ph-line" points="44.0,142.48 85.04,131.44 126.09,142.48 167.13,102.0 208.17,120.4 249.22,90.96 290.26,120.4 331.3,90.96 372.35,52.32 413.39,52.32 454.43,90.96 495.48,52.32 536.52,48.64 577.57,102.0 618.61,102.0 659.65,102.0 700.7,57.84 741.74,90.96 782.78,65.2 823.83,102.0 864.87,120.4 905.91,113.04 946.96,72.56 988.0,67.04" fill="none" stroke="url(#mx5PathBandGrad)" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline class="mx5-ph-line" points="44.0,142.48 83.33,131.44 122.67,142.48 162.0,102.0 201.33,120.4 240.67,90.96 280.0,120.4 319.33,90.96 358.67,52.32 398.0,52.32 437.33,90.96 476.67,52.32 516.0,48.64 555.33,102.0 594.67,102.0 634.0,102.0 673.33,57.84 712.67,90.96 752.0,65.2 791.33,102.0 830.67,120.4 870.0,113.04 909.33,72.56 948.67,67.04 988.0,102.0" fill="none" stroke="url(#mx5PathBandGrad)" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
         
         <line x1="44" y1="194" x2="988" y2="194" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
         
@@ -1570,16 +1579,16 @@
           <line x1="44.0" y1="194" x2="44.0" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
         
           
-          <line x1="249.22" y1="194" x2="249.22" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
+          <line x1="240.67" y1="194" x2="240.67" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
         
           
-          <line x1="413.39" y1="194" x2="413.39" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
+          <line x1="437.33" y1="194" x2="437.33" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
         
           
-          <line x1="618.61" y1="194" x2="618.61" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
+          <line x1="594.67" y1="194" x2="594.67" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
         
           
-          <line x1="782.78" y1="194" x2="782.78" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
+          <line x1="791.33" y1="194" x2="791.33" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
         
           
           <line x1="988.0" y1="194" x2="988.0" y2="198" stroke="rgba(255,255,255,.20)" stroke-width="1"/>
@@ -1614,39 +1623,39 @@
           
           
           
-          <span class="mx5-pl-x" style="left:24.922%;transform:translate(-50%,-50%)"><span class="l-en">Jul 6</span><span class="l-zh">7月6</span></span>
+          <span class="mx5-pl-x" style="left:24.067%;transform:translate(-50%,-50%)"><span class="l-en">Jul 6</span><span class="l-zh">7月6</span></span>
           
         
           
           
           
           
-          <span class="mx5-pl-x" style="left:41.339%;transform:translate(-50%,-50%)"><span class="l-en">Jul 10</span><span class="l-zh">7月10</span></span>
+          <span class="mx5-pl-x" style="left:43.733%;transform:translate(-50%,-50%)"><span class="l-en">Jul 13</span><span class="l-zh">7月13</span></span>
           
         
           
           
           
           
-          <span class="mx5-pl-x" style="left:61.861%;transform:translate(-50%,-50%)"><span class="l-en">Jul 17</span><span class="l-zh">7月17</span></span>
+          <span class="mx5-pl-x" style="left:59.467%;transform:translate(-50%,-50%)"><span class="l-en">Jul 17</span><span class="l-zh">7月17</span></span>
           
         
           
           
           
           
-          <span class="mx5-pl-x" style="left:78.278%;transform:translate(-50%,-50%)"><span class="l-en">Jul 27</span><span class="l-zh">7月27</span></span>
+          <span class="mx5-pl-x" style="left:79.133%;transform:translate(-50%,-50%)"><span class="l-en">Jul 28</span><span class="l-zh">7月28</span></span>
           
         
           
           
           
           
-          <span class="mx5-pl-x" style="left:98.8%;transform:translate(-100%,-50%)"><span class="l-en">Aug 3</span><span class="l-zh">8月3</span></span>
+          <span class="mx5-pl-x" style="left:98.8%;transform:translate(-100%,-50%)"><span class="l-en">Aug 4</span><span class="l-zh">8月4</span></span>
           
         
         
-        <span class="mx5-pl-today" style="left:98.8%;top:29.929%;color:var(--warn)"></span>
+        <span class="mx5-pl-today" style="left:98.8%;top:45.536%;color:var(--warn)"></span>
       </div>
       
       <div class="mx5-path-cross" aria-hidden="true"></div>
@@ -4496,11 +4505,11 @@
         
         <span class="mx5-ai-ticker-pill">QQQ</span>
         
-        <span class="mx5-ai-ticker-pill">XLI</span>
-        
         <span class="mx5-ai-ticker-pill">USO</span>
         
         <span class="mx5-ai-ticker-pill">MRK</span>
+        
+        <span class="mx5-ai-ticker-pill">AMD</span>
         
       </div>
       
@@ -4508,14 +4517,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          8 high-impact signals across channels
+          7 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">8 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          8 条高影响信号
+          7 条高影响信号
         </span>
         
       </div>
@@ -4594,8 +4603,8 @@
               <span class="l-zh">重大事件临近 — 双向波动或加大</span>
             </div>
             <div class="mx5-alert-detail">
-              <span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 2 days — high two-sided volatility expected. Not a sell signal; siz…</span>
-              <span class="l-zh">事件风险窗口：非农就业报告（2 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span>
+              <span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 3 days — high two-sided volatility expected. Not a sell signal; siz…</span>
+              <span class="l-zh">事件风险窗口：非农就业报告（3 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span>
             </div>
           </div>
         </div>
@@ -4610,7 +4619,7 @@
             <div class="mx5-alert-title">
               <span style="font-size:12px;margin-right:3px">📰</span>
               <span class="l-en">Paramount Skydance raises full-year profit guidance, remains &#39;confident&#39; about W…</span>
-              <span class="l-zh">Paramount Skydance上调全年利润指引，对WBD合并仍持‘有信心’态度</span>
+              <span class="l-zh">派拉蒙Skydance上调全年利润指引，对与WBD合并仍‘有信心’</span>
             </div>
             <div class="mx5-alert-detail">
               <span>CNBC - Stock Blog</span> · 
@@ -4626,8 +4635,8 @@
       </div>
       <div class="mx5-alert-footer">
         <span>
-          <span class="l-en">Showing 2 of 9 in feed</span>
-          <span class="l-zh">显示 2 / 9 条</span>
+          <span class="l-en">Showing 2 of 8 in feed</span>
+          <span class="l-zh">显示 2 / 8 条</span>
         </span>
         <button type="button" class="gbtn gbtn-sm gbtn-quiet" onclick="event.stopPropagation();mx5OpenDlg('dlg-news')">
           <span class="l-en">View all &#8594;</span>
@@ -4752,14 +4761,14 @@
               
             </div>
             
-            <div class="mx5-dlg-factor-read"><span class="l-en">1/3 US indices in an uptrend across timeframes (uptrend, mixed, mixed).</span><span class="l-zh">1/3 个美股指数多周期呈上升趋势。</span></div>
+            <div class="mx5-dlg-factor-read"><span class="l-en">3/3 US indices in an uptrend across timeframes (uptrend, uptrend, uptrend).</span><span class="l-zh">3/3 个美股指数多周期呈上升趋势。</span></div>
             
           </div>
           <div>
-            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:68%;background:var(--up)"></div></div>
+            <div class="mx5-dlg-factor-bar"><div class="mx5-dlg-factor-fill" style="width:72%;background:var(--up)"></div></div>
             <div class="mx5-dlg-bar-ticks"><span>0</span><span>50</span><span>100</span></div>
           </div>
-          <div class="mx5-dlg-factor-score" style="color:var(--up)">68</div>
+          <div class="mx5-dlg-factor-score" style="color:var(--up)">72</div>
         </div>
         
         
@@ -4891,9 +4900,9 @@
           <tr>
             <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></td>
             
-            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">60</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">66</span></span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">61</span></span></td>
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">66</span></span></td>
             
             <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">61</span></span></td>
             
@@ -4905,29 +4914,29 @@
           <tr>
             <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Nasdaq 100</span><span class="l-zh">纳指100</span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">50</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">58</span></span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">52</span></span></td>
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">58</span></span></td>
             
             <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">54</span></span></td>
             
             <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">68</span></span></td>
             
-            <td style="text-align:right"><span class="mx5-dlg-mtf-conf warn"><span class="l-en">Mixed</span><span class="l-zh">分化</span></span></td>
+            <td style="text-align:right"><span class="mx5-dlg-mtf-conf good"><span class="l-en">Uptrend</span><span class="l-zh">上升趋势</span></span></td>
           </tr>
           
           <tr>
             <td style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">Russell 2000</span><span class="l-zh">罗素2000</span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">55</span></span></td>
+            <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">61</span></span></td>
             
-            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">63</span></span></td>
+            <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">68</span></span></td>
             
             <td><span class="ms-cell2 flat"><span class="ar">▶</span><span class="rsi">62</span></span></td>
             
             <td><span class="ms-cell2 good"><span class="ar">▲</span><span class="rsi">69</span></span></td>
             
-            <td style="text-align:right"><span class="mx5-dlg-mtf-conf warn"><span class="l-en">Mixed</span><span class="l-zh">分化</span></span></td>
+            <td style="text-align:right"><span class="mx5-dlg-mtf-conf good"><span class="l-en">Uptrend</span><span class="l-zh">上升趋势</span></span></td>
           </tr>
           
           </tbody>
@@ -5277,8 +5286,8 @@
           <div class="mx5-dlg-idx-card">
             <div class="mx5-dlg-idx-ticker">SPY</div>
             <div class="mx5-dlg-idx-name">S&amp;P 500</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="SPY" data-mkt="us" data-bare>757.67</div>
-            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="SPY" data-mkt="us">+1.42%</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="SPY" data-mkt="us" data-bare>771.33</div>
+            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="SPY" data-mkt="us">+1.80%</div>
             <div class="mx5-dlg-idx-chips">
               
               
@@ -5295,7 +5304,7 @@
               
               
               
-              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 60"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 66"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
               
             </div>
           </div>
@@ -5309,15 +5318,15 @@
           <div class="mx5-dlg-idx-card">
             <div class="mx5-dlg-idx-ticker">QQQ</div>
             <div class="mx5-dlg-idx-name">Nasdaq 100</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="QQQ" data-mkt="us" data-bare>700.07</div>
-            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="QQQ" data-mkt="us">+1.76%</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="QQQ" data-mkt="us" data-bare>723.85</div>
+            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="QQQ" data-mkt="us">+3.40%</div>
             <div class="mx5-dlg-idx-chips">
               
               
-              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-6.1% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-2.9% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
               
               
-              <span class="mx5-dlg-idx-chip mt" title="vs 50-day moving average"><span class="l-en">Below 50-day ✕</span><span class="l-zh">低于50日线 ✕</span></span>
+              <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average"><span class="l-en">Above 50-day ✓</span><span class="l-zh">高于50日线 ✓</span></span>
               
               
               
@@ -5327,7 +5336,7 @@
               
               
               
-              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 50"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 58"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
               
             </div>
           </div>
@@ -5341,8 +5350,8 @@
           <div class="mx5-dlg-idx-card">
             <div class="mx5-dlg-idx-ticker">DJI</div>
             <div class="mx5-dlg-idx-name">Dow Jones</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="^DJI" data-mkt="us" data-bare>53,178.41</div>
-            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="^DJI" data-mkt="us">+1.32%</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="^DJI" data-mkt="us" data-bare>54,085.88</div>
+            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="^DJI" data-mkt="us">+1.71%</div>
             <div class="mx5-dlg-idx-chips">
               
               
@@ -5359,7 +5368,7 @@
               
               
               
-              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 60"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 67"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
               
             </div>
           </div>
@@ -5373,12 +5382,12 @@
           <div class="mx5-dlg-idx-card">
             <div class="mx5-dlg-idx-ticker">RUT</div>
             <div class="mx5-dlg-idx-name">Russell 2000</div>
-            <div class="mx5-dlg-idx-px nb-px" data-sym="^RUT" data-mkt="us" data-bare>2,981.91</div>
-            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="^RUT" data-mkt="us">+1.73%</div>
+            <div class="mx5-dlg-idx-px nb-px" data-sym="^RUT" data-mkt="us" data-bare>3,036.98</div>
+            <div class="mx5-dlg-idx-chg up nb-chg" data-sym="^RUT" data-mkt="us">+1.85%</div>
             <div class="mx5-dlg-idx-chips">
               
               
-              <span class="mx5-dlg-idx-chip wn" title="Distance from 52-week high">-1.4% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
+              <span class="mx5-dlg-idx-chip ok" title="Distance from 52-week high">+0.0% <span class="l-en">off high</span><span class="l-zh">距高</span></span>
               
               
               <span class="mx5-dlg-idx-chip ok" title="vs 50-day moving average"><span class="l-en">Above 50-day ✓</span><span class="l-zh">高于50日线 ✓</span></span>
@@ -5391,7 +5400,7 @@
               
               
               
-              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 55"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+              <span class="mx5-dlg-idx-chip mt" title="RSI(14) = 61"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
               
             </div>
           </div>
@@ -5493,7 +5502,7 @@
           
           <div class="mx5-dlg-asset-tile">
             <div class="mx5-dlg-asset-lbl">VIX</div>
-            <div class="mx5-dlg-asset-val" style="color:var(--up)">15.9</div>
+            <div class="mx5-dlg-asset-val" style="color:var(--up)">16.5</div>
             <div class="mx5-dlg-asset-ctx"><span class="l-en">calm</span><span class="l-zh">平静</span></div>
           </div>
           
@@ -5640,7 +5649,7 @@
 
   
   
-  <div class="rrx-audit"><span class="rrx-audit-k">🧾 <span class="l-en">Self-audit</span><span class="l-zh">自审</span></span>8 <span class="l-en">graded</span><span class="l-zh">已评分</span> · <b>×</b> <span class="l-en">vs base rate</span><span class="l-zh">对比基准</span> · <span class="l-en">display-only</span><span class="l-zh">仅展示</span></div>
+  <div class="rrx-audit"><span class="rrx-audit-k">🧾 <span class="l-en">Self-audit</span><span class="l-zh">自审</span></span>9 <span class="l-en">graded</span><span class="l-zh">已评分</span> · <b>×</b> <span class="l-en">vs base rate</span><span class="l-zh">对比基准</span> · <span class="l-en">display-only</span><span class="l-zh">仅展示</span></div>
   
   
   <div class="rrx-cyc rrx-cgl">
@@ -5655,13 +5664,13 @@
 
   <div class="rrx-cyc rrx-cax">
     <span class="rrx-cyc-k"><span class="l-en">Markets moving as one</span><span class="l-zh">多市场同涨同跌</span></span>
-    <span class="help">?<span class="tip"><span class="l-en">Absorption 82th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 82分位（5年）；集群：US、Commodities、Dollar</span></span></span>
+    <span class="help">?<span class="tip"><span class="l-en">Absorption 81th pctile (5y) · Cluster: US, Commodities, Dollar</span><span class="l-zh">吸收率 81分位（5年）；集群：US、Commodities、Dollar</span></span></span>
   </div>
 
   <div class="rrx-trk">
     <span class="l-en">Graded calls accruing — check back once alerts mature (~21 trading days)</span><span class="l-zh">评分记录积累中 — 约21个交易日后可查看</span>
     
-    <span class="help">?<span class="tip"><span class="l-en">Past-year hit rate: too few graded alerts yet (daily readings — consecutive days overlap) | Watch/caution: on 0 of 8 watch/caution days a drop followed | Recovery: too few graded</span><span class="l-zh">过去一年命中率：暂无足够评分记录（按日读数——连续日期相互重叠） | 观察/谨慎：8 个观察/谨慎日中有 0 天先于下跌 | 修复信号：暂无足够评分</span></span></span>
+    <span class="help">?<span class="tip"><span class="l-en">Past-year hit rate: too few graded alerts yet (daily readings — consecutive days overlap) | Watch/caution: on 0 of 9 watch/caution days a drop followed | Recovery: too few graded</span><span class="l-zh">过去一年命中率：暂无足够评分记录（按日读数——连续日期相互重叠） | 观察/谨慎：9 个观察/谨慎日中有 0 天先于下跌 | 修复信号：暂无足够评分</span></span></span>
   </div>
   
   </div>
@@ -5872,7 +5881,7 @@
               <div class="rlx-viz" style="--rlx-c:var(--isle-markets,#4d8ef5)">
                 <div class="rlx-bar-row" style="grid-template-columns:70px 1fr">
                   <span class="rlx-bar-lbl"><span class="l-en">vs 5-year range</span><span class="l-zh">相对5年区间</span></span>
-                  <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:82%"></span></span>
+                  <span class="rlx-bar-track"><span class="rlx-bar-fill" style="--rlx-w:81%"></span></span>
                 </div>
                 <div class="rlx-viz-cap"><span class="l-en">Further right = markets moving more tightly together than usual.</span><span class="l-zh">越靠右，代表市场比平常联动得更紧。</span></div>
               </div>
@@ -5889,8 +5898,8 @@
                 <span class="rlx-chip dn">US</span><span class="rlx-chip dn">Commodities</span><span class="rlx-chip dn">Dollar</span>
               </div>
               <div class="lens-receipt">
-                <span class="l-en">82nd pctile co-movement · 5-year window · display context, not a trigger</span>
-                <span class="l-zh">联动度 82 分位 · 5 年区间 · 展示背景，非触发</span>
+                <span class="l-en">81st pctile co-movement · 5-year window · display context, not a trigger</span>
+                <span class="l-zh">联动度 81 分位 · 5 年区间 · 展示背景，非触发</span>
               </div>
             </span>
           </div>
@@ -7128,8 +7137,8 @@
               
               
             </span>
-            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:36.2%;background:var(--warn)"></div></div>
-            <span class="sc-score" style="color:var(--warn)">36.2</span>
+            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:40.9%;background:var(--warn)"></div></div>
+            <span class="sc-score" style="color:var(--warn)">40.9</span>
             <span class="sc-band sc-band-elev">
               <span class="l-en">calm</span>
               <span class="l-zh">平静</span>
@@ -7197,8 +7206,8 @@
               
               
             </span>
-            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:14.2%;background:var(--muted)"></div></div>
-            <span class="sc-score" style="color:var(--muted)">14.2</span>
+            <div class="sc-bar-track"><div class="sc-bar-fill" style="width:5.2%;background:var(--muted)"></div></div>
+            <span class="sc-score" style="color:var(--muted)">5.2</span>
             <span class="sc-band sc-band-calm">
               <span class="l-en">calm</span>
               <span class="l-zh">平静</span>
@@ -7235,12 +7244,12 @@
               <div class="rkc-mood-lens-top">
                 <span class="rkc-mood-lens-name"><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span>
                 <span class="rkc-mood-scoreline">
-                  <strong class="rkc-mood-score">100</strong><span class="rkc-mood-unit">/100</span>
+                  <strong class="rkc-mood-score">99</strong><span class="rkc-mood-unit">/100</span>
                   <span class="chip c-up"><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
                 </span>
               </div>
-              <div class="rkc-mood-mini-track" role="img" aria-label="Risk appetite 100 out of 100">
-                <span class="rkc-mood-pin" style="--rkc-pos:100%"></span>
+              <div class="rkc-mood-mini-track" role="img" aria-label="Risk appetite 99 out of 100">
+                <span class="rkc-mood-pin" style="--rkc-pos:99%"></span>
               </div>
             </div>
             
@@ -7407,8 +7416,8 @@
             </div>
             
             <div class="plx-asof">
-              <span class="l-en">As of 2026-08-03</span>
-              <span class="l-zh">截至 2026-08-03</span>
+              <span class="l-en">As of 2026-08-04</span>
+              <span class="l-zh">截至 2026-08-04</span>
             </div>
             
           </div>
@@ -7686,9 +7695,9 @@
               
               
               <div class="plx-lever-stoch"
-                   data-tip-en="Setup gauge (stochastic %K): 31/100 — how coiled this lever's asset is; state is set by the Armed/Quiet flag, not this bar"
-                   data-tip-zh="蓄势程度（随机指标%K）：31/100 — 状态以“已触发/平静”标记为准，非此条形">
-                <div class="plx-lever-stoch-fill" style="width:31%;background:color-mix(in srgb,var(--isle-policy) 55%,transparent)"></div>
+                   data-tip-en="Setup gauge (stochastic %K): 3/100 — how coiled this lever's asset is; state is set by the Armed/Quiet flag, not this bar"
+                   data-tip-zh="蓄势程度（随机指标%K）：3/100 — 状态以“已触发/平静”标记为准，非此条形">
+                <div class="plx-lever-stoch-fill" style="width:3%;background:color-mix(in srgb,var(--isle-policy) 55%,transparent)"></div>
               </div>
               
               
@@ -7749,8 +7758,8 @@
         
         
         <div class="plx-favored"
-          data-tip-en="Semis complex (SMH/SOXX equal-weight) is -20.5% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions."
-          data-tip-zh="半导体组合（SMH/SOXX等权）距过去120日高点-20.5%。回撤深度是轮动反转条件的结构性背景。">
+          data-tip-en="Semis complex (SMH/SOXX equal-weight) is -15.6% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions."
+          data-tip-zh="半导体组合（SMH/SOXX等权）距过去120日高点-15.6%。回撤深度是轮动反转条件的结构性背景。">
           
           <span class="plx-basket-chip">SMH</span>
           
@@ -7758,8 +7767,8 @@
           
           
           <span style="font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));align-self:center">
-            <span class="l-en">drawdown -20.5% from 120d peak</span>
-            <span class="l-zh">较120日高点回撤-20.5%</span>
+            <span class="l-en">drawdown -15.6% from 120d peak</span>
+            <span class="l-zh">较120日高点回撤-15.6%</span>
           </span>
           
         </div>
@@ -7988,7 +7997,7 @@
                 <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.12);color:var(--mx5-warn-ink,#9c6212);border:1px solid rgba(245,158,11,.22);white-space:nowrap"><span class="l-en">Event</span><span class="l-zh">事件</span></span>
                 
               </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 2 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（2 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
+              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));line-height:1.5"><span class="l-en">Event-risk window: Jobs report (nonfarm payrolls) in 3 days — high two-sided volatility expected. Not a sell signal; size for the noise.</span><span class="l-zh">事件风险窗口：非农就业报告（3 天后）—— 预计偏高的两面性波动。非卖出信号；按噪声调整仓位。</span></div>
             </div>
           </div>
           
@@ -7998,20 +8007,6 @@
         
         <div class="isle-head"><div class="isle-head-dot"></div><span class="isle-head-label"><span class="l-en">Context</span><span class="l-zh">背景</span></span><div class="isle-head-line"></div></div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;opacity:.8">
-          
-          <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
-            <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px">
-                <div style="font-size:12.5px;font-weight:600;color:var(--ink-2,rgba(255,255,255,.7))">
-                  <span style="font-size:11px;margin-right:3px">🎚️</span>
-                  <span class="l-en">Inflation read got muddy — trust the regime label less</span><span class="l-zh">通胀信号变浑浊 — 降低对周期标签的信任</span>
-                </div>
-                <span style="font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--ink-3,rgba(255,255,255,.36));border:1px solid rgba(255,255,255,.09);white-space:nowrap"><span class="l-en">Context</span><span class="l-zh">背景</span></span>
-              </div>
-              <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.30));line-height:1.5"><span class="l-en">Inflation axis confidence dropped below 30%: 45% -&gt; 16%</span><span class="l-zh">通胀 轴一致度跌破 30%：45% -&gt; 16%</span></div>
-            </div>
-          </div>
           
           <div style="display:flex;gap:10px;padding:10px 12px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid rgba(255,255,255,.05)">
             <div style="width:6px;height:6px;border-radius:50%;background:var(--ink-3,rgba(255,255,255,.30));flex-shrink:0;margin-top:5px"></div>
@@ -8113,7 +8108,7 @@
           <a class="nbx-item" href="https://www.cnbc.com/2026/08/04/paramount-skydance-psky-earnings-q2-2026.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Paramount Skydance raises full-year profit guidance, remains &#39;confident&#39; about WBD merger</span><span class="l-zh">Paramount Skydance上调全年利润指引，对WBD合并仍持‘有信心’态度</span></span>
+              <span class="nbx-title"><span class="l-en">Paramount Skydance raises full-year profit guidance, remains &#39;confident&#39; about WBD merger</span><span class="l-zh">派拉蒙Skydance上调全年利润指引，对与WBD合并仍‘有信心’</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8131,7 +8126,7 @@
           <a class="nbx-item" href="https://www.cnbc.com/2026/08/04/merck-mrk-earnings-q2-2026.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Merck hikes revenue outlook as new drug sales grow, but cuts profit guidance due to deal charges</span><span class="l-zh">默克上调营收展望因新药销售增长，但下调利润指引受交易费用影响</span></span>
+              <span class="nbx-title"><span class="l-en">Merck hikes revenue outlook as new drug sales grow, but cuts profit guidance due to deal charges</span><span class="l-zh">默克因新药销售增长上调营收展望，但受交易费用影响下调利润指引</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8146,10 +8141,10 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4625646-paylocity-forecasts-fy-2027-revenue-of-1_88b-1_90b-as-ignite-ai-rolls-out-and-buybacks?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4625661-astellas-pharma-adr-gaap-eps-of-7896-revenue-of-64091b-reaffirms-fy-2027-outlook?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Paylocity forecasts FY 2027 revenue of $1.88B-$1.90B as Ignite AI rolls out and buybacks continue</span><span class="l-zh">Paylocity预测2027财年营收18.8亿至19亿美元，Ignite AI推出及回购持续进行</span></span>
+              <span class="nbx-title"><span class="l-en">Astellas Pharma ADR GAAP EPS of ¥78.96, revenue of ¥640.91B; reaffirms FY 2027 outlook</span><span class="l-zh">安斯泰来制药ADR GAAP每股收益为78.96日元，营收为6409.1亿日元；重申2027财年展望</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8167,7 +8162,7 @@
           <a class="nbx-item" href="https://www.cnbc.com/2026/08/04/amd-earnings-are-a-key-test-for-chips-and-momentum-stocks-heres-what-the-options-market-is-saying.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">AMD earnings are a key test for chips and momentum stocks. Here&#39;s what the options market is saying</span><span class="l-zh">AMD财报对芯片和动量股是关键考验，期权市场怎么说</span></span>
+              <span class="nbx-title"><span class="l-en">AMD earnings are a key test for chips and momentum stocks. Here&#39;s what the options market is saying</span><span class="l-zh">AMD财报是芯片和动量股的关键考验。期权市场对此有何看法</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8182,10 +8177,10 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4625651-icl-group-non-gaap-eps-of-012-beats-by-001-revenue-of-21b-reaffirms-fy-2026-outlook?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4625659-gran-tierra-gaap-eps-of-070-revenue-of-18718m?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">ICL Group Non-GAAP EPS of $0.12 beats by $0.01, revenue of $2.1B; reaffirms FY 2026 outlook</span><span class="l-zh">ICL集团非GAAP每股收益0.12美元，超预期0.01美元，营收21亿美元；重申2026财年展望</span></span>
+              <span class="nbx-title"><span class="l-en">Gran Tierra GAAP EPS of $0.70, revenue of $187.18M</span><span class="l-zh">Gran Tierra GAAP每股收益为0.70美元，营收为1.8718亿美元</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8200,28 +8195,10 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4625650-infineon-technologies-non-gaap-eps-of-044-revenue-of-417b-gives-q4-and-updates-fy-2026-outlook?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4625656-lime-anticipates-1_04b-1_1b-2026-revenue-with-265m-285m-adjusted-ebitda-following-ipo-debt?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Infineon Technologies Non-GAAP EPS of €0.44, revenue of €4.17B; gives Q4 and updates FY 2026 outlook</span><span class="l-zh">英飞凌科技非GAAP每股收益0.44欧元，营收41.7亿欧元；给出第四季度指引并更新2026财年展望</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Aug 5</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4625649-wolters-kluwer-nv-non-gaap-eps-of-283-revenue-of-303b-reaffirms-fy-2026-outlook?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Wolters Kluwer N.V. Non-GAAP EPS of €2.83, revenue of €3.03B; reaffirms FY 2026 outlook</span><span class="l-zh">Wolters Kluwer N.V.非GAAP每股收益2.83欧元，营收30.3亿欧元；重申2026财年展望</span></span>
+              <span class="nbx-title"><span class="l-en">Lime anticipates $1.04B-$1.1B 2026 revenue with $265M-$285M adjusted EBITDA, following IPO debt payoff</span><span class="l-zh">Lime预计2026年营收为10.4亿至11亿美元，调整后EBITDA为2.65亿至2.85亿美元，此前IPO债务已偿还</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8239,7 +8216,7 @@
           <a class="nbx-item" href="https://www.marketwatch.com/story/upstarts-ai-upgrades-pay-off-as-a-pickup-in-loan-growth-helps-send-the-stock-higher-32e7ec9d?mod=mw_rss_topstories" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
-              <span class="nbx-title"><span class="l-en">Upstart’s AI upgrades pay off, as a pickup in loan growth helps send the stock higher</span><span class="l-zh">Upstart的AI升级见成效，贷款增长回暖推动股价上行</span></span>
+              <span class="nbx-title"><span class="l-en">Upstart’s AI upgrades pay off, as a pickup in loan growth helps send the stock higher</span><span class="l-zh">Upstart的AI升级见成效，贷款增长回暖推动股价走高</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8257,7 +8234,7 @@
           <a class="nbx-item" href="https://www.npr.org/2026/08/04/nx-s1-5918538/apple-will-invest-tariff-refund-into-u-s-manufacturing" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-              <span class="nbx-title"><span class="l-en">Apple will invest tariff refund into U.S. manufacturing</span><span class="l-zh">苹果将关税退税投入美国制造业</span></span>
+              <span class="nbx-title"><span class="l-en">Apple will invest tariff refund into U.S. manufacturing</span><span class="l-zh">苹果将把关税退款投资于美国制造业</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
@@ -8272,10 +8249,28 @@
           
           
           
+          <a class="nbx-item" href="https://seekingalpha.com/news/4625657-attovia-therapeutics-prices-upsized-ipo-at-17-per-share-targets-289m-raise?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="nbx-title"><span class="l-en">Attovia Therapeutics prices upsized IPO at $17 per share, targets $289M raise</span><span class="l-zh">Attovia Therapeutics以每股17美元定价扩大IPO，目标募资2.89亿美元</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Aug 5</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
           <a class="nbx-item" href="https://www.federalreserve.gov/newsevents/pressreleases/orders20260804c.htm" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nbx-title"><span class="l-en">Federal Reserve Board announces approval of the application by Coastal Bend Bancshares, Inc.</span><span class="l-zh">美联储理事会批准Coastal Bend Bancshares, Inc.的申请</span></span>
+              <span class="nbx-title"><span class="l-en">Federal Reserve Board announces approval of the application by Coastal Bend Bancshares, Inc.</span><span class="l-zh">联邦储备委员会宣布批准Coastal Bend Bancshares, Inc.的申请</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">official</span>
@@ -12103,9 +12098,9 @@
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-08-05 06:19 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-08-05 06:50 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-08-05 06:19 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-08-05 06:50 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
@@ -12358,5 +12353,6 @@ window.__CHART_SWAP__ = {
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

@@ -1,20 +1,20 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-08-03",
+  "as_of": "2026-08-05",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
       "scored": 28,
-      "open": 23,
+      "open": 26,
       "hit_rate": 0.893,
       "dir_accuracy": 0.786,
       "null_hit_rate": 0.8649,
       "null_dir_rate": 0.49,
-      "p_hit": 0.43805,
-      "p_hit_holm": 0.8761,
-      "p_dir": 0.0013,
-      "p_dir_holm": 0.0026,
+      "p_hit": 0.4381,
+      "p_hit_holm": 0.8762,
+      "p_dir": 0.00131,
+      "p_dir_holm": 0.00262,
       "independent_blocks": 2,
       "placebo_coverage": 1.0,
       "placebo_available": true,
@@ -24,7 +24,7 @@
         "level": {
           "n": 3,
           "null_hit_rate": 0.1703,
-          "null_dir_rate": 0.5327
+          "null_dir_rate": 0.5328
         },
         "rel_return": {
           "n": 25,
@@ -139,11 +139,11 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 72,
-      "open": 79,
+      "open": 73,
       "hit_rate": 0.736,
       "dir_accuracy": 0.417,
-      "null_hit_rate": 0.8236,
-      "null_dir_rate": 0.5311,
+      "null_hit_rate": 0.8237,
+      "null_dir_rate": 0.5312,
       "p_hit": null,
       "p_hit_holm": null,
       "p_dir": null,
@@ -156,8 +156,8 @@
       "placebo_by_kind": {
         "rel_return": {
           "n": 24,
-          "null_hit_rate": 0.8236,
-          "null_dir_rate": 0.5311
+          "null_hit_rate": 0.8237,
+          "null_dir_rate": 0.5312
         }
       },
       "conviction_monotone": true,
@@ -204,16 +204,16 @@
     {
       "name": "Thematic Desk",
       "slug": "thematic_desk",
-      "scored": 53,
-      "open": 112,
-      "hit_rate": 0.585,
-      "dir_accuracy": 0.396,
-      "null_hit_rate": 0.8589,
+      "scored": 54,
+      "open": 117,
+      "hit_rate": 0.574,
+      "dir_accuracy": 0.389,
+      "null_hit_rate": 0.859,
       "null_dir_rate": 0.5139,
       "p_hit": 1.0,
       "p_hit_holm": 1.0,
-      "p_dir": 0.9685,
-      "p_dir_holm": 0.9685,
+      "p_dir": 0.97626,
+      "p_dir_holm": 0.97626,
       "independent_blocks": 1,
       "placebo_coverage": 1.0,
       "placebo_available": true,
@@ -221,27 +221,27 @@
       "placebo_mix_source": "scored",
       "placebo_by_kind": {
         "theme_rel_return": {
-          "n": 53,
-          "null_hit_rate": 0.8589,
+          "n": 54,
+          "null_hit_rate": 0.859,
           "null_dir_rate": 0.5139
         }
       },
       "conviction_monotone": null,
-      "conviction_note": "conviction ordering untested \u2014 all 53 calls are single-tier (low 53)",
+      "conviction_note": "conviction ordering untested \u2014 all 54 calls are single-tier (low 54)",
       "conviction_tiers": {
         "high": 0,
         "medium": 0,
-        "low": 53
+        "low": 54
       },
       "regimes": [],
       "health": "inverted",
-      "health_note": "not-falsified 58% vs 86% of these same falsifiers go untriggered by chance (53 graded, 1 independent window); direction called right 40% vs 51% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering untested \u2014 all 53 calls are single-tier (low 53)."
+      "health_note": "not-falsified 57% vs 86% of these same falsifiers go untriggered by chance (54 graded, 1 independent window); direction called right 39% vs 51% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering untested \u2014 all 54 calls are single-tier (low 54)."
     },
     {
       "name": "Narrative Brain",
       "slug": "narrative_brain",
       "scored": 0,
-      "open": 4,
+      "open": 5,
       "hit_rate": null,
       "dir_accuracy": null,
       "null_hit_rate": null,
@@ -275,10 +275,10 @@
       "hit_rate": 0.8,
       "dir_accuracy": 0.6,
       "null_hit_rate": 0.8269,
-      "null_dir_rate": 0.474,
-      "p_hit": 0.79508,
+      "null_dir_rate": 0.4741,
+      "p_hit": 0.79505,
       "p_hit_holm": null,
-      "p_dir": 0.4512,
+      "p_dir": 0.45133,
       "p_dir_holm": null,
       "independent_blocks": 2,
       "placebo_coverage": 1.0,
@@ -289,7 +289,7 @@
         "rel_return": {
           "n": 5,
           "null_hit_rate": 0.8269,
-          "null_dir_rate": 0.474
+          "null_dir_rate": 0.4741
         }
       },
       "conviction_monotone": null,
@@ -1179,12 +1179,12 @@
       "region": "CN",
       "rel_path": "data/china_standout_track/board.parquet",
       "board_definition": "cn_prophet_v2",
-      "board_dates": 3,
+      "board_dates": 4,
       "graded_rows": 0,
       "h21_hit_rate": null,
       "h21_n": 0,
       "health": "cold",
-      "health_note": "39 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
+      "health_note": "55 board rows, 0 graded (fwd_mfe_21 non-null) \u2014 ACCRUING; hit-rate requires excess_21d column (not yet wired)"
     }
   ]
 }

@@ -1,16 +1,16 @@
 {
   "schema": "radar_ic.v1",
-  "as_of": "2026-08-03",
-  "generated_at": "2026-08-04T04:16:34.530930+00:00",
+  "as_of": "2026-08-05",
+  "generated_at": "2026-08-05T08:58:23.863249+00:00",
   "horizon_d": 21,
   "horizons": [
     21,
     63
   ],
-  "n_snapshots": 8922,
+  "n_snapshots": 9158,
   "n_matured": 4011,
-  "ic_all": -0.2705,
-  "ic_rolling_90": -0.0973,
+  "ic_all": -0.2704,
+  "ic_rolling_90": -0.097,
   "by_bucket": {
     "0-40": {
       "n": 3344,
@@ -39,30 +39,30 @@
       "dir_accuracy": 0.3,
       "mean_fwd_ret": -0.0474
     },
-    "CONFIRMED_DOWN": {
-      "n": 808,
-      "dir_accuracy": 0.506,
-      "mean_fwd_ret": -0.0152
-    },
     "NEGATIVE_DIVERGENCE": {
       "n": 844,
       "dir_accuracy": 0.611,
       "mean_fwd_ret": -0.0381
+    },
+    "CONFIRMED_DOWN": {
+      "n": 808,
+      "dir_accuracy": 0.506,
+      "mean_fwd_ret": -0.0152
     }
   },
-  "note": "4011 matured observations (horizon=21d). IC_all=-0.2705, IC_rolling_90=-0.0973. CONTEXT-ONLY \u2014 never fed into a score/size/allocation.",
+  "note": "4011 matured observations (horizon=21d). IC_all=-0.2704, IC_rolling_90=-0.097. CONTEXT-ONLY \u2014 never fed into a score/size/allocation.",
   "by_horizon": {
     "21": {
       "n_matured": 4011,
-      "ic_all": -0.2705,
-      "ic_rolling_90": -0.0973,
+      "ic_all": -0.2704,
+      "ic_rolling_90": -0.097,
       "ic_daily_hac": {
         "mean_ic": -0.0911,
         "ic_vol": 0.2298,
         "ic_ir": -0.396,
         "ic_ir_ann": -2.569,
         "t_hac": -0.956,
-        "p_hac": 0.3391,
+        "p_hac": 0.3392,
         "hit": 0.3,
         "n": 20,
         "hac_lags": 19,
@@ -96,18 +96,18 @@
           "dir_accuracy": 0.3,
           "mean_fwd_ret": -0.0474
         },
-        "CONFIRMED_DOWN": {
-          "n": 808,
-          "dir_accuracy": 0.506,
-          "mean_fwd_ret": -0.0152
-        },
         "NEGATIVE_DIVERGENCE": {
           "n": 844,
           "dir_accuracy": 0.611,
           "mean_fwd_ret": -0.0381
+        },
+        "CONFIRMED_DOWN": {
+          "n": 808,
+          "dir_accuracy": 0.506,
+          "mean_fwd_ret": -0.0152
         }
       },
-      "note": "4011 matured observations (horizon=21d). IC_all=-0.2705, IC_rolling_90=-0.0973. CONTEXT-ONLY \u2014 never fed into a score/size/allocation."
+      "note": "4011 matured observations (horizon=21d). IC_all=-0.2704, IC_rolling_90=-0.097. CONTEXT-ONLY \u2014 never fed into a score/size/allocation."
     },
     "63": {
       "n_matured": 0,
