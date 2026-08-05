@@ -278,8 +278,24 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install jsonschema pytest pandas numpy pyyaml requests
-      - name: signal §7 contract tests
-        run: python -m pytest tests/test_validate_signals.py -q
+      # test_signal_quality_no_leak.py joined 2026-08-05 — dark from birth, named
+      # by no run: step in any workflow.  It belongs HERE and not in a new job:
+      # it pins the §7 contract this job already owns, one layer down.  The
+      # marker `date` engine.signal_quality._buy_filter emits is NOT the earliest
+      # date its take/block label was knowable — the label reads bars i+1 (and
+      # i+2 on the counter-trend branch) — so a forward-return grade anchored on
+      # the marker date embeds the confirmation bars it consumed (measured
+      # +5.7pp/10d aggregate look-ahead).  The guard is structural, not a fixture
+      # direction: flip only bar i+1 and a 'take' must overturn.  Deps are
+      # satisfied by the install line above (pandas + numpy); the suite imports
+      # engine.signal_quality and nothing else, so it adds no wheel, no venv and
+      # no job.  Cost measured in this job's exact install string: the step goes
+      # 31 -> 34 tests for ~0.2s (0.76s alone, 0.92s combined, steady state).  A
+      # first run in a freshly built venv reports ~13s, but that is pandas/numpy
+      # cold-start — paid by whichever pytest step runs first, already on this
+      # job's bill, and NOT an increment this suite adds.
+      - name: signal §7 contract tests + the marker-date look-ahead guard
+        run: python -m pytest tests/test_validate_signals.py tests/test_signal_quality_no_leak.py -q
       - name: fundamental forensics lineage, normalization, detector, and schema contracts
         run: >
           python -m pytest
@@ -5086,6 +5102,26 @@ jobs:
         run: python -m pytest tests/test_hk_board_rank.py -q
       - name: hk board ui — the unified board template contract
         run: python -m pytest tests/test_hk_board_ui.py -q
+      # test_hk_reclaim_veto_policy.py joined 2026-08-05, dark since it landed
+      # with the operator's 2026-08-03 admission ruling.  It pins the ONE leg HK
+      # drops — `reclaim_veto=False`, the requirement that a name both below its
+      # 200-day line AND weekly-down close back above that line within 2 bars,
+      # unsatisfiable by construction for a deep drawdown — and, more load-
+      # bearing, pins the blast radius: that US/CN keep the validated default at
+      # every layer (_buy_filter, analyze, signal_gate.gate), keyword-only so
+      # argument order cannot flip it, and that build_hk_library is the only
+      # caller opting out.  This is the exact leg the reclaim-veto decision
+      # packet measures (research/prophet_us_audit/RECLAIM_VETO_PACKET_2026-08-05.md,
+      # #4607) — a packet arguing over a policy whose guard no CI job ran.
+      # Belongs in THIS job: it imports scripts.build_hk_library (which pulls the
+      # engine.i18n/stock_score/cycles chain) and engine.hk_board_rank, so it
+      # needs this job's wide install exactly — the same dep-list trap the
+      # census recorded for the pair above.  Cost measured as this job's third
+      # step over the full sequence: 68.5s (rank, 163 tests) + 13.5s (ui, 83) +
+      # 1.5s (this, 10) = ~83s against timeout-minutes: 8, so the budget is
+      # untouched and the witness replay keeps its headroom.
+      - name: hk reclaim-veto admission policy — the dropped leg and its blast radius
+        run: python -m pytest tests/test_hk_reclaim_veto_policy.py -q
 
   unrun-subsector-themes:
     # The subsector rotation/turn engine family + the Theme Tracker page suite —
