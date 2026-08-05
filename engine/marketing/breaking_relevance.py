@@ -48,6 +48,97 @@ from typing import Any
 # Each tuple: (class_name, base_salience, keywords...)
 # Keywords are word-boundary matched (case-insensitive) against headline + snippet.
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Rate-DECISION vocabulary (2026-08-05)
+# ─────────────────────────────────────────────────────────────────────────────
+# `_MACRO_PRINT_KEYWORDS` knew the Fed by its FURNITURE — "fomc", "rate
+# decision", "fed funds", "basis points", "federal reserve decision" — and by
+# nothing the decision itself is ever written in. Measured on the live
+# classifier before this list existed:
+#
+#   none         base=0.0   Fed holds rates steady, Powell signals September cut…
+#   none         base=0.0   Fed leaves rates unchanged at 4.25%-4.50%
+#   none         base=0.0   Fed cuts rates for the first time since 2024
+#   none         base=0.0   Powell says the committee is not in a hurry to cut
+#   macro_print  base=55.0  Federal Reserve cuts interest rates by 25 basis points
+#   macro_print  base=55.0  FOMC statement: policy remains restrictive
+#
+# A base of 0.0 cannot reach `breaking.salience_threshold: 60` under ANY source
+# tier (the largest bonus in `_TIER_BONUS` is official's +15), so the single most
+# market-moving macro headline this lane can receive could not post at all. The
+# two that DID classify were accidents of wording: a wire that writes "cuts rates
+# by a quarter point" rather than "by 25 basis points" scored zero for the same
+# event. This is the same shape of defect as the flat-tier one
+# `macro_print_tier` fixes — a vocabulary that reads the FORM of a headline and
+# calls it the CONTENT — one layer earlier, in the classifier itself.
+#
+# NOTHING IS TAKEN FROM `policy`. The taxonomy is first-match-wins and
+# `macro_print` sits directly above `policy`, so a term that also reads as policy
+# would silently re-address existing items. The one collision candidate in
+# `_POLICY_KEYWORDS` is "interest rate cap" (singular "rate"), which is why bare
+# "interest rate"/"interest rates" are ABSENT below and the plural only ever
+# appears bound to a decision verb ("cuts interest rates"). Pinned by
+# `test_rate_decision_vocabulary_steals_nothing_from_policy`.
+
+#: Conjugations × objects, GENERATED rather than hand-listed. `_MACRO_REVISION_RE`
+#: further down records why: an exact-phrase list written from guesses missed
+#: four of the five real phrasings on its first calibration run. A wire writes "cuts
+#: rates", "cut interest rates", "is cutting rates" and "kept rates on hold"
+#: interchangeably, and the cross product is the only form of this list that
+#: cannot be short by a tense.
+_RATE_DECISION_VERBS: tuple[str, ...] = (
+    "hold", "holds", "held", "holding",
+    "leave", "leaves", "left", "leaving",
+    "keep", "keeps", "kept", "keeping",
+    "cut", "cuts", "cutting",
+    "lower", "lowers", "lowered", "lowering",
+    "raise", "raises", "raised", "raising",
+    "hike", "hikes", "hiked", "hiking",
+    "lift", "lifts", "lifted", "lifting",
+    "slash", "slashes", "slashed", "slashing",
+)
+_RATE_DECISION_OBJECTS: tuple[str, ...] = ("rates", "interest rates")
+
+_RATE_DECISION_KEYWORDS: tuple[str, ...] = tuple(
+    f"{verb} {obj}"
+    for obj in _RATE_DECISION_OBJECTS
+    for verb in _RATE_DECISION_VERBS
+) + (
+    # The decision as a NOUN — how a headline names it when the verb belongs to
+    # somebody else ("markets price a September rate cut"). Singular and plural
+    # are both listed because the match is word-boundary anchored: "rate hike"
+    # does NOT match "rate hikes".
+    "rate cut", "rate cuts", "rate hike", "rate hikes",
+    "rate increase", "rate increases", "rate reduction", "rate reductions",
+    "quarter-point cut", "quarter point cut",
+    "half-point cut", "half point cut",
+    "quarter-point hike", "quarter point hike",
+    # The HOLD, which carries no verb at all in its two commonest phrasings.
+    "rates unchanged", "rate unchanged", "rates steady", "rate steady",
+    "rates on hold", "stands pat", "stood pat",
+    # The instrument, and the decision's own published artifacts.
+    "policy rate", "benchmark rate", "target rate", "federal funds rate",
+    "dot plot", "summary of economic projections",
+    # THE CHAIR, AND ONLY THE CHAIR. Two deliberate exclusions.
+    #
+    # (1) Bare "powell" is out. It is the same precision trap the
+    #     `_GEOPOLITICAL_KEYWORDS` note describes for bare "strike": Powell
+    #     Industries (POWL) is a listed company on the same broad feeds this lane
+    #     reads, and because macro_print outranks company_news, one surname would
+    #     re-class its earnings. Pinned by
+    #     `test_powell_industries_stays_company_news`.
+    # (2) Regional presidents are out — no "fed's williams", no "bostic", no
+    #     generic "fed's". The chair's words ARE the decision's guidance; a
+    #     regional appearance is the volume the operator complained about on
+    #     2026-08-02 ("four of them from a single John Williams appearance inside
+    #     an hour", 2/2/2/1 views). Promoting every speaker to a 55.0 base would
+    #     have re-armed exactly that firehose onto the brand account.
+    "fed chair", "fed chairman", "chair powell", "chairman powell",
+    "jerome powell", "fed's powell",
+    "powell says", "powell said", "powell signals", "powell signaled",
+    "powell signalled", "powell told", "powell warned", "powell:",
+)
+
 _MACRO_PRINT_KEYWORDS: tuple[str, ...] = (
     "consumer price index", "cpi", "inflation",
     "payrolls", "nonfarm", "non-farm",
@@ -56,6 +147,9 @@ _MACRO_PRINT_KEYWORDS: tuple[str, ...] = (
     "pce", "personal consumption expenditure",
     "fomc", "rate decision", "basis points", "fed funds",
     "federal reserve decision",
+    # The decision itself, in the words a wire actually writes it in — see the
+    # measured six-headline block above `_RATE_DECISION_KEYWORDS`.
+    *_RATE_DECISION_KEYWORDS,
     "ppi", "producer price index",
     "ism", "purchasing managers",
     "retail sales",
