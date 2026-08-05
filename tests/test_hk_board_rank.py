@@ -35,22 +35,20 @@ BOARD_ASOF = "2026-07-31"
 
 
 def regenerate_g1_fixture() -> str:
-    """The exact command that produced tests/fixtures/hk_board_2026_07_31.json.
+    """The exact command that (re)generates tests/fixtures/hk_board_2026_07_31.json.
 
-    Not run by the suite — recorded so the fixture is reproducible rather than
-    mysterious.  ``TestG1FixtureIsNotStale`` re-derives the seven witnesses live and
-    fails if the committed fixture no longer matches the panel, so a silently rotted
-    fixture cannot keep the G1 gate green.
+    scripts/regen_hk_g1_fixture.py rebuilds the ENTIRE fixture from the committed
+    close panel with the real ``engine.signal_gate`` — the same slices the two
+    ``TestG1FixtureIsNotStale`` replays check — and is byte-idempotent on an
+    unchanged panel.  On drift it prints an ADJUSTMENT-SIGNATURE receipt per
+    ticker (n changed sessions, constant-ratio min/max, dates-equal) so a
+    regeneration commit carries proof the rewrite was a legitimate adjustment;
+    a NON-constant ratio makes it refuse and demand human eyes (--force after
+    diagnosis).  Era-stamp decisions (the 9-key verdict prune, the 252-session
+    off_high window, the sub-HK$1 price precision, dir="flat") are documented in
+    that script's docstring.
     """
-    return (
-        "python3 - <<'PY'\n"
-        "import json, pandas as pd\n"
-        "from engine import signal_gate\n"
-        "df = pd.read_parquet('data/hk_search/closes_deep.parquet')\n"
-        "# for each column with >=250 closes: signal_gate.compact(signal_gate.gate(t, s))\n"
-        "# plus the trailing 90 sessions of dates/closes and price/off_high/dir meta\n"
-        "PY"
-    )
+    return "python3 scripts/regen_hk_g1_fixture.py"
 
 
 # --------------------------------------------------------------------------- #
