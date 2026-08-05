@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T12:32:20.897604+00:00",
-  "count": 802,
+  "generated_at": "2026-08-05T12:51:12.305028+00:00",
+  "count": 803,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -400,6 +400,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 36,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bvmfav5suu3-016878",
+      "title": "Risk Premium in Pictures Robust earnings growth offsets higher bond yields",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:11:01Z",
+      "summary_points": [
+        "**US ERP Near Critical Threshold**: Current US equity risk premium at 3.6% (above 3% threshold), signaling potential negative market reaction despite strong 2026e earnings growth (24%) and moderate risk premium.",
+        "**Double-Digit Earnings Growth Trajectory**: Consensus earnings CAGR 2025-2028 mostly double-digit; US exhibits strong perpetual growth (\"g\") and near-term upgrades, lifting entire earnings trajectory.",
+        "**India/China Vulnerability to Yield Shifts**: Growth-oriented markets most sensitive to 50bps bond yield rise, as equity valuations tied to future growth expectations face direct pressure.",
+        "**EM Risk/Reward Disparity**: Emerging markets show elevated risk premium (4.5% vs global 3.9%) paired with 93.0% consensus earnings growth (2026e) vs 30.8% global, indicating high growth expectations but heightened volatility.",
+        "**Europe ERP Compression**: Europe’s ERP highest in developed markets (above historical average), while US ERP below historical average but 60bps above critical 3% threshold, creating divergent valuation dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 41,
       "language": "en",
       "needs_metadata": false
     },
