@@ -73,12 +73,13 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 593, (
-        f"Expected 593 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 594, (
+        f"Expected 594 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (CN Prophet W-C registered the loser/miss telemetry artifact + its forward"
         " log, the CN episode track ledger, and the two PIT basket-membership"
-        " histories = 588->593;"
+        " histories = 588->593; (pin drifted during the W-C rebase: a racing merge"
+        " added one registration while W-C carried its five — repaired here = 594;"
         " (Biopharma Seasonality Lane 6 added the Neural Web shadow state and its"
         " append-only forward outcome ledger = 586->588;"
         " (Government Revenue Wave9A candidate foundation added candidate ledger,"
