@@ -1,24 +1,24 @@
 {
   "schema": "policy_lever.v1",
-  "as_of": "2026-08-03",
+  "as_of": "2026-08-04",
   "favored_complex": {
     "basket": [
       "SMH",
       "SOXX"
     ],
     "basket_incomplete": false,
-    "drawdown_pct": -20.48,
-    "drawdown_z": -3.25,
-    "as_of": "2026-08-03",
-    "note": "Semis complex (SMH/SOXX equal-weight) is -20.5% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
-    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-20.5%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
+    "drawdown_pct": -15.57,
+    "drawdown_z": -2.28,
+    "as_of": "2026-08-04",
+    "note": "Semis complex (SMH/SOXX equal-weight) is -15.6% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
+    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-15.6%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
   },
   "jawboning": {
-    "n_7d": 4,
-    "n_30d": 16,
-    "last_alert_ts": "2026-08-03T20:00:00+00:00",
-    "last_alert_summary": "Treasury injects $128bn into drained RRP \u2014 reserves backstop the tape",
-    "last_alert_summary_zh": "\u8d22\u653f\u90e8\u5411\u5df2\u8017\u5c3d\u7684\u9006\u56de\u8d2d\u5de5\u5177\u6ce8\u51651280\u4ebf\u7f8e\u5143\u2014\u2014\u51c6\u5907\u91d1\u4e3a\u5e02\u573a\u63d0\u4f9b\u652f\u6491"
+    "n_7d": 6,
+    "n_30d": 18,
+    "last_alert_ts": "2026-08-04T21:33:29+00:00",
+    "last_alert_summary": "White House touts $345B+ in foreign manufacturing pledges \u2014 sentiment boost, no new policy",
+    "last_alert_summary_zh": "\u767d\u5bab\u5ba3\u626c\u8d853450\u4ebf\u7f8e\u5143\u5916\u8d44\u5236\u9020\u4e1a\u627f\u8bfa\u2014\u2014\u63d0\u632f\u60c5\u7eea\uff0c\u65e0\u65b0\u653f\u7b56"
   },
   "calendar": {
     "days_to_midterm": 90,
@@ -31,13 +31,13 @@
       "name_zh": "\u4f0a\u6717/\u77f3\u6cb9",
       "asset": "CL=F",
       "arming": {
-        "stoch_k": 30.65,
-        "stoch_d": 32.94,
+        "stoch_k": 2.78,
+        "stoch_d": 16.28,
         "stoch_curl": false,
         "macd_curl": false,
         "basing": false,
         "days_in_base": 0,
-        "flatness": 0.0668,
+        "flatness": 0.1593,
         "armed": false,
         "params": {
           "stoch_k_period": 14,

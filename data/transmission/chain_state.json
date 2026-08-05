@@ -1,7 +1,7 @@
 {
   "schema": "transmission_chains.v1",
-  "asof": "2026-08-03",
-  "built": "2026-08-04 02:21 UTC",
+  "asof": "2026-08-04",
+  "built": "2026-08-05 07:52 UTC",
   "chains": [
     {
       "chain": "credit_spreads_refinancing",
@@ -37,7 +37,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": 0.929,
+              "value": 1.15,
               "op": "lt",
               "threshold": 0,
               "passed": false
@@ -55,7 +55,7 @@
               "series": "HYG/LQD",
               "metric": "ratio_ret_pct",
               "window": 22,
-              "value": 1.855,
+              "value": 1.61,
               "op": "lt",
               "threshold": -2.0,
               "passed": false
@@ -72,7 +72,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": 0.929,
+              "value": 1.15,
               "op": "lt",
               "threshold": 0,
               "passed": false
@@ -93,15 +93,15 @@
         "en": "Dollar spike → EM & multinational-EPS headwind",
         "zh": "美元飙升 → 新兴市场与跨国企业盈利承压"
       },
-      "state": "expressed",
+      "state": "arming",
       "state_label": {
-        "en": "Expressed",
-        "zh": "已兑现"
+        "en": "Arming",
+        "zh": "触发中"
       },
-      "hop": 2,
+      "hop": 0,
       "n_hops": 2,
       "armable": true,
-      "episode_id": "dollar_spike_em_multinational@r3:2026-07-31",
+      "episode_id": "dollar_spike_em_multinational@r3:2026-08-04",
       "hops": [
         {
           "id": "dollar_spike->usd_transmission_on",
@@ -111,8 +111,8 @@
             0,
             20
           ],
-          "confirmed": true,
-          "asof": "2026-07-31",
+          "confirmed": false,
+          "asof": null,
           "value_receipt": [
             {
               "path": "transmission.usd_dir",
@@ -145,15 +145,15 @@
             0,
             90
           ],
-          "confirmed": true,
-          "asof": "2026-08-03",
+          "confirmed": false,
+          "asof": null,
           "value_receipt": [
             {
               "series": "FXI",
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -6.088,
+              "value": -8.083,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -221,7 +221,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -6.088,
+              "value": -8.083,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -837,7 +837,7 @@
               "path": "state.rates.real_10y_chg_63d_bp",
               "op": "gt",
               "threshold": 30,
-              "value": 47.0,
+              "value": 45.0,
               "passed": true
             }
           ]
@@ -858,10 +858,10 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -1.292,
+              "value": 0.149,
               "op": "lt",
               "threshold": 0,
-              "passed": true
+              "passed": false
             }
           ]
         }
@@ -876,7 +876,7 @@
               "series": "CL=F",
               "metric": "ret_pct",
               "window": 60,
-              "value": -19.907,
+              "value": -30.904,
               "op": "gt",
               "threshold": 25,
               "passed": false
@@ -884,7 +884,7 @@
             {
               "series": "CL=F",
               "metric": "ma50_slope5",
-              "value": -0.8484,
+              "value": -1.0282,
               "op": "gt",
               "threshold": 0,
               "passed": false
@@ -923,7 +923,7 @@
               "path": "state.rates.real_10y_chg_63d_bp",
               "op": "gt",
               "threshold": 30,
-              "value": 47.0,
+              "value": 45.0,
               "passed": true
             }
           ]
@@ -931,17 +931,17 @@
         {
           "id": "duration_derate",
           "resolved": true,
-          "confirmed": true,
+          "confirmed": false,
           "receipts": [
             {
               "series": "QQQ",
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -1.292,
+              "value": 0.149,
               "op": "lt",
               "threshold": 0,
-              "passed": true
+              "passed": false
             }
           ]
         }
@@ -1005,7 +1005,7 @@
               "vs": "SPLV",
               "metric": "rs_pp",
               "window": 21,
-              "value": -2.509,
+              "value": -1.339,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -1062,7 +1062,7 @@
               "vs": "SPLV",
               "metric": "rs_pp",
               "window": 21,
-              "value": -2.509,
+              "value": -1.339,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -1095,7 +1095,7 @@
     "universe": 2936,
     "substrate_asof": {
       "min": "2026-05-07",
-      "max": "2026-08-04"
+      "max": "2026-08-05"
     }
   }
 }

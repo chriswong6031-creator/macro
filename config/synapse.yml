@@ -16666,8 +16666,8 @@ artifacts:
       a risk score, or a trading authority.
 
   capital-structure-source-manifest:
-    path: data/capital_structure/source_manifest.parquet
-    format: parquet
+    path: data/capital_structure/source_manifest.jsonl
+    format: jsonl
     producer: collectors/sec_capital_structure.py
     known_extra_writers: []
     owner_program: capital-structure-intelligence

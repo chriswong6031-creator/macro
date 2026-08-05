@@ -1,29 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-05T04:35:12.238551+00:00",
+  "as_of": "2026-08-05T09:48:44.642943+00:00",
   "posts_seen": 6,
   "seen_total": 84,
-  "evaluated": 3,
-  "activated": 2,
+  "evaluated": 0,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-08-05-presidential-message-on-the-birthday-of-the-united-states-coast-guard",
-      "importance": 5,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-08-04-manufacturing-jobs-flock-to-the-u-s-thanks-to-president-trumps-america-first-eco",
-      "importance": 62,
-      "activated": true,
-      "degraded_reason": null
-    },
-    {
-      "id": "tw-2026-07-30-tga-release",
-      "importance": 82,
-      "activated": true,
-      "degraded_reason": null
-    }
-  ]
+  "gate_scores": []
 }

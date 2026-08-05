@@ -21,7 +21,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable, Iterable
+from collections.abc import Mapping, Sequence
+from typing import Any, Callable, Iterable
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -34,6 +35,11 @@ from engine.capital_structure.source_identity import (
     merge_manifest_ledgers,
     validate_manifest_identity,
     validate_manifest_ledger,
+)
+from engine.capital_structure.source_ledger_io import (
+    read_source_ledger,
+    source_ledger_path,
+    write_source_ledger,
 )
 
 log = logging.getLogger(__name__)
@@ -130,11 +136,6 @@ _ATTEMPT_COLUMNS = [
     "attempt_id", "accession", "source_id", "canonical_url", "attempted_at",
     "state", "error", "content_sha256", "retrieval_lane", "collection_scope",
 ]
-_MANIFEST_COLUMNS = [
-    "schema", "manifest_id", "source_system", "source_id", "issuer", "filing",
-    "document", "retrieval", "storage", "rights", "privacy", "parser", "spans",
-]
-
 
 class IndexNotPublished(RuntimeError):
     """A historical SEC daily-index object has no published archive object."""
@@ -1104,18 +1105,15 @@ def _validate_source_manifest(record: dict) -> None:
 
 
 def _append_manifests_strict(
-    prior: pd.DataFrame, fresh: list[dict]
-) -> pd.DataFrame:
-    """Append immutable manifests without hiding identity collisions."""
-    prior_records = prior.to_dict(orient="records") if not prior.empty else []
-    merged = merge_manifest_ledgers(prior_records, fresh)
-    out = pd.DataFrame(merged)
-    if out.empty:
-        return pd.DataFrame(columns=_MANIFEST_COLUMNS)
-    for column in _MANIFEST_COLUMNS:
-        if column not in out:
-            out[column] = None
-    return out[_MANIFEST_COLUMNS].reset_index(drop=True)
+    prior: Sequence[Mapping[str, Any]], fresh: list[dict]
+) -> list[dict]:
+    """Append immutable manifests without hiding identity collisions.
+
+    Records stay as records end to end.  Routing them through a frame would
+    reintroduce the column padding that made a manifest's stored body depend on
+    the other rows it was written beside.
+    """
+    return merge_manifest_ledgers(list(prior), fresh)
 
 
 def _append_keep_first(
@@ -1139,7 +1137,7 @@ def _append_keep_first(
     return out
 
 
-def _eligible_complete_accessions(manifests: pd.DataFrame) -> set[str]:
+def _eligible_complete_accessions(manifests: Sequence[Mapping[str, Any]]) -> set[str]:
     """Return filings with readable roots and hardened file-number provenance.
 
     A pre-Wave-2C complete submission remains valid immutable evidence, but it
@@ -1150,13 +1148,11 @@ def _eligible_complete_accessions(manifests: pd.DataFrame) -> set[str]:
     including an explicit ``unavailable`` state -- the accession closes normally
     and cannot enter an infinite compatibility-refetch loop.
     """
-    required = {"filing", "document", "parser"}
-    if manifests.empty or not required.issubset(manifests.columns):
-        return set()
     complete: set[str] = set()
-    for filing, document, parser in zip(
-        manifests["filing"], manifests["document"], manifests["parser"]
-    ):
+    for record in manifests:
+        filing = record.get("filing")
+        document = record.get("document")
+        parser = record.get("parser")
         if not all(isinstance(value, dict) for value in (filing, document, parser)):
             continue
         if (
@@ -1170,12 +1166,14 @@ def _eligible_complete_accessions(manifests: pd.DataFrame) -> set[str]:
     return complete
 
 
-def _next_bundle_document_version(manifests: pd.DataFrame, accession: str) -> int:
+def _next_bundle_document_version(
+    manifests: Sequence[Mapping[str, Any]], accession: str
+) -> int:
     """Advance one accession-wide version for a closed manifest bundle."""
-    if manifests.empty or not {"filing", "document"}.issubset(manifests.columns):
-        return 1
     latest = 0
-    for filing, document in zip(manifests["filing"], manifests["document"]):
+    for record in manifests:
+        filing = record.get("filing")
+        document = record.get("document")
         if not isinstance(filing, dict) or str(filing.get("accession")) != accession:
             continue
         if not isinstance(document, dict):
@@ -1345,15 +1343,15 @@ class SecCapitalStructureAdapter(Adapter):
         discovery_path = root / "discovery.parquet"
         coverage_path = root / "index_coverage.parquet"
         attempts_path = root / "retrieval_attempts.parquet"
-        manifests_path = root / "source_manifest.parquet"
+        manifests_path = source_ledger_path(root)
         queue_receipt_path = root / "retrieval_queue_receipt.json"
 
         discovery = _read_table(discovery_path, _DISCOVERY_COLUMNS)
         coverage = _read_table(coverage_path, _COVERAGE_COLUMNS)
         attempts = _read_table(attempts_path, _ATTEMPT_COLUMNS)
-        manifests = _read_table(manifests_path, _MANIFEST_COLUMNS)
-        if not manifests.empty:
-            validate_manifest_ledger(manifests.to_dict(orient="records"))
+        manifests = read_source_ledger(manifests_path)
+        if manifests:
+            validate_manifest_ledger(manifests)
         now = self._now_fn().astimezone(timezone.utc)
         now_iso = _iso(now)
         # ``full_history`` is the Adapter refresh flag; for this bounded W1
@@ -1606,7 +1604,7 @@ class SecCapitalStructureAdapter(Adapter):
         attempts = _append_keep_first(
             attempts, new_attempts, key="attempt_id", columns=_ATTEMPT_COLUMNS
         )
-        _atomic_write(manifests, manifests_path)
+        write_source_ledger(manifests, manifests_path)
         _atomic_write(attempts, attempts_path)
 
         successful = sum(1 for attempt in new_attempts if attempt["state"] == "stored")

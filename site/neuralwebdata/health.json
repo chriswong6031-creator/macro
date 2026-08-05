@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.health.v1",
-  "produced_at": "2026-08-04T20:55:55.972981+00:00",
-  "as_of": "2026-07-31",
+  "produced_at": "2026-08-05T09:39:37.325917+00:00",
+  "as_of": "2026-08-04",
   "overall_status": "warn",
   "lobes": [
     {
@@ -12,14 +12,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04T03:24:25+00:00",
+      "as_of": "2026-08-05T08:31:35+00:00",
       "produced_at": null,
-      "age_hours": 1.1,
+      "age_hours": 0.76,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 13942,
+      "byte_size": 13950,
       "gaps": []
     },
     {
@@ -58,13 +58,85 @@
       "storage": "git",
       "as_of": "2026-07-31",
       "produced_at": null,
-      "age_hours": 100.51,
+      "age_hours": 129.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 1861150,
-      "gaps": []
+      "byte_size": 1700046,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "engine/intelligence.py",
+          "engine/risk_brain.py",
+          "engine/signal_sanity.py",
+          "engine/stock_desk.py",
+          "engine/subsector_confluence.py",
+          "scripts/build_allocation.py",
+          "scripts/build_site.py",
+          "scripts/build_stock_board_v2.py",
+          "scripts/build_theme_detail.py",
+          "scripts/grade_us_board.py",
+          "scripts/snapshot_shadow_book.py",
+          "engine/neuralweb/mastermind_context.py"
+        ],
+        "transitive_downstream_count": 84,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "stock-desk-theses",
+            "hop": 1,
+            "via_module": "engine/stock_desk.py"
+          },
+          {
+            "artifact_id": "site-allocation",
+            "hop": 1,
+            "via_module": "scripts/build_allocation.py"
+          },
+          {
+            "artifact_id": "site-ai-desk-us",
+            "hop": 1,
+            "via_module": "scripts/build_allocation.py"
+          },
+          {
+            "artifact_id": "site-regime-timeline",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-macro-signals",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-factors",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-momentum-display",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-health-history",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-governance-recent",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-confluence-graph",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "site-altdata-mastermind",
@@ -74,14 +146,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
-      "produced_at": "2026-08-04T04:15:23.196255+00:00",
-      "age_hours": 4.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T08:57:04.886259+00:00",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 52653,
+      "byte_size": 47307,
       "gaps": []
     },
     {
@@ -92,14 +164,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T10:27:25.369275+00:00",
+      "as_of": "2026-08-04T12:26:19.178399+00:00",
       "produced_at": null,
-      "age_hours": 18.05,
+      "age_hours": 20.85,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 53377,
+      "byte_size": 54523,
       "gaps": []
     },
     {
@@ -110,14 +182,14 @@
       "tier": "display",
       "horizon_role": "tactical_entry",
       "storage": "git",
-      "as_of": "2026-08-03",
-      "produced_at": "2026-08-04T04:15:26.105179+00:00",
-      "age_hours": 28.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T08:57:08.188691+00:00",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 113411,
+      "byte_size": 113437,
       "gaps": []
     },
     {
@@ -128,15 +200,49 @@
       "tier": "display",
       "horizon_role": "tactical_entry",
       "storage": "git",
-      "as_of": "2026-08-03",
+      "as_of": "2026-08-04",
       "produced_at": null,
-      "age_hours": 28.51,
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 4084703,
-      "gaps": []
+      "byte_size": 4556210,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "scripts/build_china.py",
+          "scripts/export_signal_contracts.py",
+          "scripts/backfill_stock_open.py",
+          "engine/neuralweb/mastermind_context.py"
+        ],
+        "transitive_downstream_count": 4,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "site-artifact-manifest",
+            "hop": 1,
+            "via_module": "scripts/export_signal_contracts.py"
+          },
+          {
+            "artifact_id": "site-golden-signals",
+            "hop": 1,
+            "via_module": "scripts/export_signal_contracts.py"
+          },
+          {
+            "artifact_id": "neuralweb-market-plane",
+            "hop": 1,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-market-plane",
+            "hop": 1,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "site-china-cycle-phase",
@@ -146,15 +252,25 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
+      "as_of": "2026-08-04",
       "produced_at": null,
-      "age_hours": 28.51,
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 7081,
-      "gaps": []
+      "byte_size": 7122,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "engine/china_market_state.py"
+        ],
+        "transitive_downstream_count": 0,
+        "transitive_downstream_top": [],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "site-china-market-state",
@@ -164,15 +280,79 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
-      "produced_at": "2026-08-03T11:18:34Z",
-      "age_hours": 28.51,
+      "as_of": "2026-08-04",
+      "produced_at": "2026-08-04T13:14:29Z",
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 12919,
-      "gaps": []
+      "byte_size": 13024,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "engine/neuralweb/world_state.py",
+          "engine/neuralweb/mastermind_context.py",
+          "engine/neuralweb/daily_brief.py",
+          "engine/neuralweb/ask_brain.py"
+        ],
+        "transitive_downstream_count": 28,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "world-state",
+            "hop": 1,
+            "via_module": "engine/neuralweb/world_state.py"
+          },
+          {
+            "artifact_id": "neuralweb-market-plane",
+            "hop": 1,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-market-plane",
+            "hop": 1,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          },
+          {
+            "artifact_id": "feeds-plane",
+            "hop": 2,
+            "via_module": "scripts/build_feeds.py"
+          },
+          {
+            "artifact_id": "cortex-memo",
+            "hop": 2,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "cortex-attention-firings",
+            "hop": 2,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "hypothesis-inbox",
+            "hop": 2,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "site-cortex-memo",
+            "hop": 2,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "macro-context-latest",
+            "hop": 2,
+            "via_module": "scripts/build_macro_context.py"
+          },
+          {
+            "artifact_id": "spine-index",
+            "hop": 3,
+            "via_module": "engine/neuralweb/query.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "site-artifact-manifest",
@@ -182,15 +362,25 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
+      "as_of": "2026-08-04",
       "produced_at": null,
-      "age_hours": 28.51,
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 11269,
-      "gaps": []
+      "byte_size": 11363,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "tests/test_signal_contracts_wiring.py"
+        ],
+        "transitive_downstream_count": 0,
+        "transitive_downstream_top": [],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "site-golden-signals",
@@ -200,15 +390,25 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
+      "as_of": "2026-08-04",
       "produced_at": null,
-      "age_hours": 28.51,
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
       "byte_size": 31709,
-      "gaps": []
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "tests/test_signal_contracts_wiring.py"
+        ],
+        "transitive_downstream_count": 0,
+        "transitive_downstream_top": [],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "spine-index",
@@ -220,12 +420,12 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 0.29,
+      "age_hours": 0.39,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
-      "row_count": 338640,
-      "byte_size": 9106571,
+      "row_count": 347305,
+      "byte_size": 9289810,
       "gaps": []
     },
     {
@@ -238,12 +438,12 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 0.28,
+      "age_hours": 0.38,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
-      "row_count": 73,
-      "byte_size": 14292,
+      "row_count": 77,
+      "byte_size": 14431,
       "gaps": []
     },
     {
@@ -254,14 +454,14 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04T04:13:26Z",
-      "produced_at": "2026-08-04T04:13:26Z",
-      "age_hours": 0.28,
+      "as_of": "2026-08-05T08:54:54Z",
+      "produced_at": "2026-08-05T08:54:54Z",
+      "age_hours": 0.38,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 16800,
+      "byte_size": 17110,
       "gaps": []
     },
     {
@@ -272,9 +472,9 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04T04:13:30Z",
-      "produced_at": "2026-08-04T04:13:30Z",
-      "age_hours": 0.28,
+      "as_of": "2026-08-05T08:54:59Z",
+      "produced_at": "2026-08-05T08:54:59Z",
+      "age_hours": 0.37,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
@@ -290,14 +490,14 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04T04:13:28Z",
-      "produced_at": "2026-08-04T04:13:28Z",
-      "age_hours": 0.28,
+      "as_of": "2026-08-05T08:54:56Z",
+      "produced_at": "2026-08-05T08:54:56Z",
+      "age_hours": 0.37,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 161552,
+      "byte_size": 158648,
       "gaps": []
     },
     {
@@ -308,14 +508,14 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04T04:28:52Z",
-      "produced_at": "2026-08-04T04:28:52Z",
-      "age_hours": 0.03,
+      "as_of": "2026-08-05T09:16:18Z",
+      "produced_at": "2026-08-05T09:16:18Z",
+      "age_hours": 0.02,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 173225,
+      "byte_size": 163460,
       "gaps": []
     },
     {
@@ -326,18 +526,80 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
-      "produced_at": "2026-08-04T04:13:33Z",
-      "age_hours": 28.51,
+      "as_of": "2026-08-04",
+      "produced_at": "2026-08-05T08:55:02Z",
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh_partial",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 615841,
+      "byte_size": 615863,
       "gaps": [
         "stable edges (Tier-S): data/oracle/graph_s.json absent — gitignored/Mac-local on this run",
         "stable edges (Tier-M): data/oracle/graph_m.json absent — gitignored/Mac-local on this run"
-      ]
+      ],
+      "support_impact": {
+        "direct_consumers": [
+          "scripts/build_site.py",
+          "engine/neuralweb/mastermind_context.py"
+        ],
+        "transitive_downstream_count": 28,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "site-regime-timeline",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-macro-signals",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-factors",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-momentum-display",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-health-history",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-governance-recent",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-confluence-graph",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-kernel-families",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-kernel-half-lives",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-liquidity-plumbing",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "confluence-strength",
@@ -347,14 +609,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-07-30",
-      "produced_at": "2026-08-04T04:13:33Z",
-      "age_hours": 124.51,
+      "as_of": "2026-08-03",
+      "produced_at": "2026-08-05T08:55:02Z",
+      "age_hours": 57.29,
       "freshness_sla_hours": 30,
       "staleness_from": "produced_at",
       "status": "fresh_partial",
-      "row_count": 375,
-      "byte_size": 103588,
+      "row_count": 462,
+      "byte_size": 127532,
       "gaps": [
         "confluence_strength: no clusters in lobes block — no discount"
       ]
@@ -369,12 +631,12 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 0.27,
+      "age_hours": 0.36,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
-      "row_count": 423,
-      "byte_size": 101595,
+      "row_count": 514,
+      "byte_size": 123048,
       "gaps": []
     },
     {
@@ -385,14 +647,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
-      "produced_at": "2026-08-04T04:14:32Z",
-      "age_hours": 4.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T08:56:06Z",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 62080,
+      "byte_size": 75429,
       "gaps": []
     },
     {
@@ -405,12 +667,12 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 0.27,
+      "age_hours": 0.36,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
-      "row_count": 14,
-      "byte_size": 3320,
+      "row_count": 15,
+      "byte_size": 3443,
       "gaps": []
     },
     {
@@ -503,7 +765,7 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 104.33,
+      "age_hours": 200.23,
       "freshness_sla_hours": 9999,
       "staleness_from": null,
       "status": "fresh",
@@ -764,13 +1026,75 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 25.09,
+      "age_hours": 28.72,
       "freshness_sla_hours": 26,
       "staleness_from": null,
-      "status": "fresh",
-      "row_count": 18,
-      "byte_size": 2088,
-      "gaps": []
+      "status": "stale",
+      "row_count": 19,
+      "byte_size": 2204,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "scripts/check_nw_health_escalation.py",
+          "scripts/build_site.py"
+        ],
+        "transitive_downstream_count": 30,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "ops-push-nw-health",
+            "hop": 1,
+            "via_module": "scripts/check_nw_health_escalation.py"
+          },
+          {
+            "artifact_id": "site-regime-timeline",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-macro-signals",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-factors",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-momentum-display",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-health-history",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-governance-recent",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-confluence-graph",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-kernel-families",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-kernel-half-lives",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "feeds-plane",
@@ -800,12 +1124,12 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 0.26,
+      "age_hours": 0.36,
       "freshness_sla_hours": 9999,
       "staleness_from": null,
       "status": "fresh",
-      "row_count": 57,
-      "byte_size": 28393,
+      "row_count": 61,
+      "byte_size": 30855,
       "gaps": []
     },
     {
@@ -816,9 +1140,9 @@
       "tier": "shadow",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T20:43:17+00:00",
+      "as_of": "2026-08-04T20:50:17+00:00",
       "produced_at": null,
-      "age_hours": 7.79,
+      "age_hours": 12.45,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
@@ -836,7 +1160,7 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 104.33,
+      "age_hours": 148.46,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "stale",
@@ -915,7 +1239,7 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 104.33,
+      "age_hours": 148.46,
       "freshness_sla_hours": 9999,
       "staleness_from": null,
       "status": "fresh",
@@ -933,12 +1257,12 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 104.33,
+      "age_hours": 28.62,
       "freshness_sla_hours": 9999,
       "staleness_from": null,
       "status": "fresh",
       "row_count": 6,
-      "byte_size": 5924,
+      "byte_size": 5920,
       "gaps": []
     },
     {
@@ -951,12 +1275,12 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 24.83,
+      "age_hours": 28.62,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
-      "row_count": 2,
-      "byte_size": 861,
+      "row_count": 3,
+      "byte_size": 1350,
       "gaps": []
     },
     {
@@ -967,15 +1291,77 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
+      "as_of": "2026-08-04",
       "produced_at": null,
-      "age_hours": 28.51,
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
       "byte_size": 368,
-      "gaps": []
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "engine/neuralweb/cortex.py",
+          "engine/neuralweb/mastermind_context.py"
+        ],
+        "transitive_downstream_count": 28,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "cortex-memo",
+            "hop": 1,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "cortex-attention-firings",
+            "hop": 1,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "hypothesis-inbox",
+            "hop": 1,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "site-cortex-memo",
+            "hop": 1,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "neuralweb-market-plane",
+            "hop": 1,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-market-plane",
+            "hop": 1,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          },
+          {
+            "artifact_id": "spine-index",
+            "hop": 2,
+            "via_module": "engine/neuralweb/query.py"
+          },
+          {
+            "artifact_id": "kernel-estimates",
+            "hop": 3,
+            "via_module": "engine/neuralweb/kernel.py"
+          },
+          {
+            "artifact_id": "kernel-families",
+            "hop": 3,
+            "via_module": "engine/neuralweb/decay.py"
+          },
+          {
+            "artifact_id": "lagging-signals",
+            "hop": 3,
+            "via_module": "engine/neuralweb/lagging.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "opex-risk-snapshot",
@@ -987,13 +1373,76 @@
       "storage": "git",
       "as_of": "2026-08-03",
       "produced_at": null,
-      "age_hours": 28.51,
+      "age_hours": 57.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 7096,
-      "gaps": []
+      "byte_size": 7095,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "scripts/build_site.py",
+          "scripts/build_intraday_flow.py",
+          "scripts/build_stock_library.py"
+        ],
+        "transitive_downstream_count": 88,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "site-regime-timeline",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-macro-signals",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-factors",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-momentum-display",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-health-history",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-governance-recent",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-confluence-graph",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-kernel-families",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-kernel-half-lives",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-liquidity-plumbing",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "options-entry-state",
@@ -1005,12 +1454,12 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 1.84,
+      "age_hours": 1.1,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": 415,
-      "byte_size": 71885,
+      "byte_size": 70650,
       "gaps": []
     },
     {
@@ -1021,7 +1470,7 @@
       "tier": "shadow",
       "horizon_role": "tactical_entry",
       "storage": "git",
-      "as_of": "2026-08-04 04:12 UTC",
+      "as_of": "2026-08-05 08:53 UTC",
       "produced_at": null,
       "age_hours": null,
       "freshness_sla_hours": 30,
@@ -1046,7 +1495,7 @@
       "staleness_from": null,
       "status": "fresh",
       "row_count": 2932,
-      "byte_size": 89066,
+      "byte_size": 89718,
       "gaps": []
     },
     {
@@ -1059,13 +1508,34 @@
       "storage": "git",
       "as_of": "2026-07-31",
       "produced_at": null,
-      "age_hours": 100.51,
+      "age_hours": 129.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": 2932,
-      "byte_size": 3028730,
-      "gaps": []
+      "byte_size": 3027386,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "engine/neuralweb/mastermind_context.py"
+        ],
+        "transitive_downstream_count": 2,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "neuralweb-market-plane",
+            "hop": 1,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-market-plane",
+            "hop": 1,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "research-queue",
@@ -1101,14 +1571,14 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T10:28:12.538473+00:00",
+      "as_of": "2026-08-04T12:27:17.510136+00:00",
       "produced_at": null,
-      "age_hours": 18.04,
+      "age_hours": 20.84,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 39478,
+      "byte_size": 39495,
       "gaps": []
     },
     {
@@ -1121,7 +1591,7 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 104.33,
+      "age_hours": 257.91,
       "freshness_sla_hours": 8760,
       "staleness_from": null,
       "status": "fresh",
@@ -1165,7 +1635,7 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 104.33,
+      "age_hours": 257.91,
       "freshness_sla_hours": 9999,
       "staleness_from": null,
       "status": "fresh",
@@ -1182,13 +1652,13 @@
       "horizon_role": "context",
       "storage": "git",
       "as_of": "2026-07-31",
-      "produced_at": "2026-08-04T04:30:25Z",
-      "age_hours": 100.51,
+      "produced_at": "2026-08-05T09:17:23Z",
+      "age_hours": 129.29,
       "freshness_sla_hours": 30,
       "staleness_from": "generated_utc",
       "status": "fresh",
       "row_count": null,
-      "byte_size": 111382,
+      "byte_size": 87551,
       "gaps": []
     },
     {
@@ -1200,13 +1670,13 @@
       "horizon_role": "context",
       "storage": "git",
       "as_of": "2026-07-31",
-      "produced_at": "2026-08-04T04:30:25Z",
-      "age_hours": 100.51,
+      "produced_at": "2026-08-05T09:17:23Z",
+      "age_hours": 129.29,
       "freshness_sla_hours": 30,
       "staleness_from": "generated_utc",
       "status": "fresh",
       "row_count": null,
-      "byte_size": 111382,
+      "byte_size": 87551,
       "gaps": []
     },
     {
@@ -1217,14 +1687,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
-      "produced_at": "2026-08-04T04:30:25Z",
-      "age_hours": 4.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T09:17:23Z",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh_partial",
       "row_count": null,
-      "byte_size": 1601,
+      "byte_size": 1595,
       "gaps": [
         "options_structure: no usable options_hub/gex payload for SPX/SPY/QQQ"
       ]
@@ -1237,14 +1707,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
-      "produced_at": "2026-08-04T04:30:25Z",
-      "age_hours": 4.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T09:17:23Z",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh_partial",
       "row_count": null,
-      "byte_size": 1601,
+      "byte_size": 1595,
       "gaps": [
         "options_structure: no usable options_hub/gex payload for SPX/SPY/QQQ"
       ]
@@ -1259,12 +1729,12 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 24.83,
+      "age_hours": 28.62,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
-      "row_count": 20,
-      "byte_size": 14416,
+      "row_count": 21,
+      "byte_size": 15041,
       "gaps": []
     },
     {
@@ -1275,15 +1745,25 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
-      "produced_at": "2026-08-03T03:40:40Z",
-      "age_hours": 28.51,
+      "as_of": "2026-08-04",
+      "produced_at": "2026-08-04T04:40:10Z",
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 17323,
-      "gaps": []
+      "byte_size": 17948,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "admin/neural_web.py"
+        ],
+        "transitive_downstream_count": 0,
+        "transitive_downstream_top": [],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "factor-intelligence-state",
@@ -1293,19 +1773,84 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
-      "produced_at": "2026-08-03T03:20:40.059671+00:00",
-      "age_hours": 28.51,
+      "as_of": "2026-08-04",
+      "produced_at": "2026-08-04T02:35:11.446217+00:00",
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh_partial",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 18321,
+      "byte_size": 18334,
       "gaps": [
-        "latest_board_coordinates: 6 tickers missing from panel at 2026-07-31: ['VALE', 'ASTS', 'BIDU', 'NXE', 'NET']...",
+        "latest_board_coordinates: 6 tickers missing from panel at 2026-07-31: ['NET', 'BIDU', 'VALE', 'ASTS', 'U']...",
         "fire_coordinates: 6 buy-lane entries skipped (tier_cascade=null — held/topped, not fires)",
-        "fire_coordinates: 5 tickers had no panel row at 2026-07-31: ['VALE', 'BIDU', 'NXE', 'NET', 'U']"
-      ]
+        "fire_coordinates: 5 tickers had no panel row at 2026-07-31: ['NET', 'BIDU', 'VALE', 'U', 'NXE']"
+      ],
+      "support_impact": {
+        "direct_consumers": [
+          "engine/neuralweb/world_state.py",
+          "engine/neuralweb/cortex.py",
+          "engine/neuralweb/ask_brain.py",
+          "scripts/build_site.py",
+          "admin/neural_web.py"
+        ],
+        "transitive_downstream_count": 28,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "world-state",
+            "hop": 1,
+            "via_module": "engine/neuralweb/world_state.py"
+          },
+          {
+            "artifact_id": "cortex-memo",
+            "hop": 1,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "cortex-attention-firings",
+            "hop": 1,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "hypothesis-inbox",
+            "hop": 1,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "site-cortex-memo",
+            "hop": 1,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "site-regime-timeline",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-macro-signals",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-factors",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-momentum-display",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-health-history",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "site-factor-intelligence-state",
@@ -1315,19 +1860,27 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
-      "produced_at": "2026-08-03T03:20:40.059671+00:00",
-      "age_hours": 28.51,
+      "as_of": "2026-08-04",
+      "produced_at": "2026-08-04T02:35:11.446217+00:00",
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh_partial",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 18321,
+      "byte_size": 18334,
       "gaps": [
-        "latest_board_coordinates: 6 tickers missing from panel at 2026-07-31: ['VALE', 'ASTS', 'BIDU', 'NXE', 'NET']...",
+        "latest_board_coordinates: 6 tickers missing from panel at 2026-07-31: ['NET', 'BIDU', 'VALE', 'ASTS', 'U']...",
         "fire_coordinates: 6 buy-lane entries skipped (tier_cascade=null — held/topped, not fires)",
-        "fire_coordinates: 5 tickers had no panel row at 2026-07-31: ['VALE', 'BIDU', 'NXE', 'NET', 'U']"
-      ]
+        "fire_coordinates: 5 tickers had no panel row at 2026-07-31: ['NET', 'BIDU', 'VALE', 'U', 'NXE']"
+      ],
+      "support_impact": {
+        "direct_consumers": [],
+        "transitive_downstream_count": 0,
+        "transitive_downstream_top": [],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "factor-contradictions-ledger",
@@ -1417,15 +1970,36 @@
       "tier": "shadow",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
-      "produced_at": "2026-08-04T02:23:34Z",
-      "age_hours": 28.51,
+      "as_of": "2026-08-04",
+      "produced_at": "2026-08-05T07:54:43Z",
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
       "byte_size": 68596,
-      "gaps": []
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "engine/neuralweb/mastermind_context.py"
+        ],
+        "transitive_downstream_count": 2,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "neuralweb-market-plane",
+            "hop": 1,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-market-plane",
+            "hop": 1,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "neuralweb-health",
@@ -1436,13 +2010,13 @@
       "horizon_role": "context",
       "storage": "git",
       "as_of": "2026-07-31",
-      "produced_at": "2026-08-03T20:48:53.746451+00:00",
-      "age_hours": 7.69,
+      "produced_at": "2026-08-04T20:55:55.972981+00:00",
+      "age_hours": 12.36,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 92018,
+      "byte_size": 88710,
       "gaps": []
     },
     {
@@ -1454,13 +2028,13 @@
       "horizon_role": "context",
       "storage": "git",
       "as_of": "2026-07-31",
-      "produced_at": "2026-08-03T20:48:53.746451+00:00",
-      "age_hours": 7.69,
+      "produced_at": "2026-08-04T20:55:55.972981+00:00",
+      "age_hours": 12.36,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 92018,
+      "byte_size": 88710,
       "gaps": []
     },
     {
@@ -1471,9 +2045,9 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04T02:11:22Z",
-      "produced_at": "2026-08-04T02:11:22Z",
-      "age_hours": 2.32,
+      "as_of": "2026-08-05T07:42:14Z",
+      "produced_at": "2026-08-05T07:42:14Z",
+      "age_hours": 1.59,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
@@ -1489,14 +2063,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04T02:11:22Z",
-      "produced_at": "2026-08-04T02:11:22Z",
-      "age_hours": 2.32,
+      "as_of": "2026-08-05T07:42:14Z",
+      "produced_at": "2026-08-05T07:42:14Z",
+      "age_hours": 1.59,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": 20,
-      "byte_size": 9307,
+      "byte_size": 10159,
       "gaps": []
     },
     {
@@ -1508,13 +2082,13 @@
       "horizon_role": "context",
       "storage": "git",
       "as_of": "2026-07-31",
-      "produced_at": "2026-08-03T20:48:53.838038+00:00",
-      "age_hours": 7.69,
+      "produced_at": "2026-08-04T20:55:56.046570+00:00",
+      "age_hours": 12.36,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 14454,
+      "byte_size": 12664,
       "gaps": []
     },
     {
@@ -1526,13 +2100,13 @@
       "horizon_role": "context",
       "storage": "git",
       "as_of": "2026-07-31",
-      "produced_at": "2026-08-03T20:48:53.838038+00:00",
-      "age_hours": 7.69,
+      "produced_at": "2026-08-04T20:55:56.046570+00:00",
+      "age_hours": 12.36,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 14454,
+      "byte_size": 12664,
       "gaps": []
     },
     {
@@ -1545,12 +2119,12 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 7.23,
+      "age_hours": 12.36,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": 14,
-      "byte_size": 147567,
+      "byte_size": 147673,
       "gaps": []
     },
     {
@@ -1561,15 +2135,26 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
-      "produced_at": "2026-08-03T03:19:45Z",
-      "age_hours": 28.51,
+      "as_of": "2026-08-04",
+      "produced_at": "2026-08-04T04:30:29Z",
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 6389,
-      "gaps": []
+      "byte_size": 5033,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "templates/committee.html.j2",
+          "engine/neuralweb/brief_context.py"
+        ],
+        "transitive_downstream_count": 0,
+        "transitive_downstream_top": [],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "site-attention-deterministic",
@@ -1579,15 +2164,25 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
-      "produced_at": "2026-08-03T03:19:45Z",
-      "age_hours": 28.51,
+      "as_of": "2026-08-04",
+      "produced_at": "2026-08-04T04:30:29Z",
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 6389,
-      "gaps": []
+      "byte_size": 5033,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "templates/committee.html.j2"
+        ],
+        "transitive_downstream_count": 0,
+        "transitive_downstream_top": [],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "site-confluence-graph",
@@ -1597,14 +2192,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-02",
-      "produced_at": "2026-08-03T02:58:11Z",
-      "age_hours": 52.51,
+      "as_of": "2026-08-03",
+      "produced_at": "2026-08-04T04:13:33Z",
+      "age_hours": 57.29,
       "freshness_sla_hours": 30,
       "staleness_from": "produced_at",
       "status": "fresh_partial",
       "row_count": null,
-      "byte_size": 596285,
+      "byte_size": 615841,
       "gaps": [
         "stable edges (Tier-S): data/oracle/graph_s.json absent — gitignored/Mac-local on this run",
         "stable edges (Tier-M): data/oracle/graph_m.json absent — gitignored/Mac-local on this run"
@@ -1618,9 +2213,9 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T02:58:03Z",
-      "produced_at": "2026-08-03T02:58:03Z",
-      "age_hours": 25.54,
+      "as_of": "2026-08-04T04:13:26Z",
+      "produced_at": "2026-08-04T04:13:26Z",
+      "age_hours": 29.07,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
@@ -1636,9 +2231,9 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T02:58:08Z",
-      "produced_at": "2026-08-03T02:58:08Z",
-      "age_hours": 25.54,
+      "as_of": "2026-08-04T04:13:30Z",
+      "produced_at": "2026-08-04T04:13:30Z",
+      "age_hours": 29.07,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
@@ -1655,13 +2250,13 @@
       "horizon_role": "context",
       "storage": "git",
       "as_of": "2026-07-31",
-      "produced_at": "2026-08-03T03:15:52Z",
-      "age_hours": 100.51,
+      "produced_at": "2026-08-05T09:13:41Z",
+      "age_hours": 129.29,
       "freshness_sla_hours": 30,
       "staleness_from": "produced_at",
       "status": "fresh_partial",
       "row_count": null,
-      "byte_size": 8533,
+      "byte_size": 8453,
       "gaps": [
         "SRF take-up and discount-window primary credit not collected yet — srf_takeup_bn / discount_window_primary_credit_bn stay null"
       ]
@@ -1674,9 +2269,9 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T20:43:17+00:00",
+      "as_of": "2026-08-04T20:50:17+00:00",
       "produced_at": null,
-      "age_hours": 7.79,
+      "age_hours": 12.45,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
@@ -1692,14 +2287,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
+      "as_of": "2026-08-05",
       "produced_at": null,
-      "age_hours": 4.51,
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 3916,
+      "byte_size": 10992,
       "gaps": []
     },
     {
@@ -1710,14 +2305,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
+      "as_of": "2026-08-05",
       "produced_at": null,
-      "age_hours": 4.51,
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 3916,
+      "byte_size": 10992,
       "gaps": []
     },
     {
@@ -1730,12 +2325,12 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 0.02,
+      "age_hours": 0.01,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
-      "row_count": 26,
-      "byte_size": 3721,
+      "row_count": 27,
+      "byte_size": 3868,
       "gaps": []
     },
     {
@@ -1746,14 +2341,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
-      "produced_at": "2026-08-04T04:29:33Z",
-      "age_hours": 4.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T09:16:55Z",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 36698,
+      "byte_size": 37116,
       "gaps": []
     },
     {
@@ -1764,14 +2359,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
-      "produced_at": "2026-08-04T04:29:33Z",
-      "age_hours": 4.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T09:16:55Z",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 36698,
+      "byte_size": 37116,
       "gaps": []
     },
     {
@@ -1788,8 +2383,8 @@
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
-      "row_count": 127,
-      "byte_size": 50258,
+      "row_count": 131,
+      "byte_size": 51902,
       "gaps": []
     },
     {
@@ -1806,8 +2401,8 @@
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
-      "row_count": 99,
-      "byte_size": 409433,
+      "row_count": 105,
+      "byte_size": 434169,
       "gaps": []
     },
     {
@@ -1818,9 +2413,9 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
-      "produced_at": "2026-08-04T04:29:33Z",
-      "age_hours": 4.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T09:16:55Z",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
@@ -1836,14 +2431,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
-      "produced_at": "2026-08-04T04:29:33Z",
-      "age_hours": 4.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T09:16:55Z",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 214714,
+      "byte_size": 215334,
       "gaps": []
     },
     {
@@ -1854,14 +2449,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
-      "produced_at": "2026-08-04T04:29:33Z",
-      "age_hours": 4.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T09:16:55Z",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 214714,
+      "byte_size": 215334,
       "gaps": []
     },
     {
@@ -1872,14 +2467,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
-      "produced_at": "2026-08-04T04:29:33Z",
-      "age_hours": 4.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T09:16:55Z",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 75937,
+      "byte_size": 76039,
       "gaps": []
     },
     {
@@ -1890,14 +2485,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
-      "produced_at": "2026-08-04T04:29:33Z",
-      "age_hours": 4.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T09:16:55Z",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 75937,
+      "byte_size": 76039,
       "gaps": []
     },
     {
@@ -1908,14 +2503,14 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
-      "produced_at": "2026-08-04T04:29:31.746173+00:00",
-      "age_hours": 4.51,
+      "as_of": "2026-08-05",
+      "produced_at": "2026-08-05T09:16:54.183253+00:00",
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 157319,
+      "byte_size": 157935,
       "gaps": []
     },
     {
@@ -1926,14 +2521,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
+      "as_of": "2026-08-05",
       "produced_at": null,
-      "age_hours": 28.51,
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 51443,
+      "byte_size": 51446,
       "gaps": []
     },
     {
@@ -1946,7 +2541,7 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 52.98,
+      "age_hours": 33.51,
       "freshness_sla_hours": 240,
       "staleness_from": null,
       "status": "fresh",
@@ -1963,13 +2558,13 @@
       "horizon_role": "context",
       "storage": "git",
       "as_of": "2026-07-31",
-      "produced_at": "2026-08-03T03:15:52Z",
-      "age_hours": 100.51,
+      "produced_at": "2026-08-05T09:13:41Z",
+      "age_hours": 129.29,
       "freshness_sla_hours": 30,
       "staleness_from": "produced_at",
       "status": "fresh_partial",
       "row_count": null,
-      "byte_size": 8533,
+      "byte_size": 8453,
       "gaps": [
         "SRF take-up and discount-window primary credit not collected yet — srf_takeup_bn / discount_window_primary_credit_bn stay null"
       ]
@@ -1982,15 +2577,23 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-07-31",
+      "as_of": "2026-08-03",
       "produced_at": null,
-      "age_hours": 100.51,
+      "age_hours": 57.29,
       "freshness_sla_hours": 48,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 4800,
-      "gaps": []
+      "byte_size": 5251,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [],
+        "transitive_downstream_count": 0,
+        "transitive_downstream_top": [],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "causal-feature-inventory",
@@ -2000,9 +2603,9 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T03:24:50.098418+00:00",
+      "as_of": "2026-08-04T05:01:21.445873+00:00",
       "produced_at": null,
-      "age_hours": 25.09,
+      "age_hours": 28.27,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
@@ -2020,7 +2623,7 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 104.33,
+      "age_hours": 257.91,
       "freshness_sla_hours": null,
       "staleness_from": null,
       "status": "fresh",
@@ -2036,9 +2639,9 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
+      "as_of": "2026-08-05",
       "produced_at": null,
-      "age_hours": 28.51,
+      "age_hours": 9.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
@@ -2054,14 +2657,14 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
+      "as_of": "2026-08-05",
       "produced_at": null,
-      "age_hours": 4.51,
+      "age_hours": 9.29,
       "freshness_sla_hours": 48,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 4942,
+      "byte_size": 4943,
       "gaps": []
     },
     {
@@ -2072,14 +2675,14 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
+      "as_of": "2026-08-05",
       "produced_at": null,
-      "age_hours": 4.51,
+      "age_hours": 9.29,
       "freshness_sla_hours": 48,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 4942,
+      "byte_size": 4943,
       "gaps": []
     },
     {
@@ -2092,12 +2695,12 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 0.28,
+      "age_hours": 0.38,
       "freshness_sla_hours": 48,
       "staleness_from": null,
       "status": "fresh",
-      "row_count": 22,
-      "byte_size": 5326,
+      "row_count": 23,
+      "byte_size": 5331,
       "gaps": []
     },
     {
@@ -2110,7 +2713,7 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 104.32,
+      "age_hours": 257.91,
       "freshness_sla_hours": 8760,
       "staleness_from": null,
       "status": "fresh",
@@ -2126,15 +2729,26 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
-      "produced_at": "2026-08-03T03:19:46Z",
-      "age_hours": 28.51,
+      "as_of": "2026-08-04",
+      "produced_at": "2026-08-04T04:30:30Z",
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
-      "row_count": 312,
-      "byte_size": 303799,
-      "gaps": []
+      "status": "stale",
+      "row_count": 308,
+      "byte_size": 301113,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "scripts/check_evidence_clock.py",
+          "engine/neuralweb/brief_context.py"
+        ],
+        "transitive_downstream_count": 0,
+        "transitive_downstream_top": [],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "evidence-clock-reviews",
@@ -2179,14 +2793,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04T02:52:43.101711+00:00",
+      "as_of": "2026-08-05T08:26:22.289883+00:00",
       "produced_at": null,
-      "age_hours": 1.63,
+      "age_hours": 0.85,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 4013,
+      "byte_size": 4008,
       "gaps": []
     },
     {
@@ -2197,14 +2811,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T03:15:52Z",
+      "as_of": "2026-08-05T09:13:41Z",
       "produced_at": null,
-      "age_hours": 25.24,
+      "age_hours": 0.06,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 85070,
+      "byte_size": 84665,
       "gaps": []
     },
     {
@@ -2215,15 +2829,77 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
+      "as_of": "2026-08-04",
       "produced_at": null,
-      "age_hours": 28.51,
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 52327,
-      "gaps": []
+      "byte_size": 52635,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "scripts/build_site.py",
+          "engine/neuralweb/world_state.py"
+        ],
+        "transitive_downstream_count": 28,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "site-regime-timeline",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-macro-signals",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-factors",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-momentum-display",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-health-history",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-governance-recent",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-confluence-graph",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-kernel-families",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-kernel-half-lives",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          },
+          {
+            "artifact_id": "site-liquidity-plumbing",
+            "hop": 1,
+            "via_module": "scripts/build_site.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "stage-analysis-context-latest",
@@ -2233,14 +2909,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
+      "as_of": "2026-08-05",
       "produced_at": null,
-      "age_hours": 4.51,
+      "age_hours": 9.29,
       "freshness_sla_hours": 36,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 674890,
+      "byte_size": 675389,
       "gaps": []
     },
     {
@@ -2253,13 +2929,74 @@
       "storage": "git",
       "as_of": "2026-07-31",
       "produced_at": null,
-      "age_hours": 100.51,
+      "age_hours": 129.29,
       "freshness_sla_hours": 36,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 6129,
-      "gaps": []
+      "byte_size": 6128,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "engine/neuralweb/world_state.py"
+        ],
+        "transitive_downstream_count": 28,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "world-state",
+            "hop": 1,
+            "via_module": "engine/neuralweb/world_state.py"
+          },
+          {
+            "artifact_id": "feeds-plane",
+            "hop": 2,
+            "via_module": "scripts/build_feeds.py"
+          },
+          {
+            "artifact_id": "cortex-memo",
+            "hop": 2,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "cortex-attention-firings",
+            "hop": 2,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "hypothesis-inbox",
+            "hop": 2,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "site-cortex-memo",
+            "hop": 2,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "neuralweb-market-plane",
+            "hop": 2,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-market-plane",
+            "hop": 2,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          },
+          {
+            "artifact_id": "macro-context-latest",
+            "hop": 2,
+            "via_module": "scripts/build_macro_context.py"
+          },
+          {
+            "artifact_id": "spine-index",
+            "hop": 3,
+            "via_module": "engine/neuralweb/query.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "transmission-chains-state",
@@ -2269,14 +3006,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
+      "as_of": "2026-08-04",
       "produced_at": null,
-      "age_hours": 28.51,
+      "age_hours": 33.29,
       "freshness_sla_hours": 36,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 28131,
+      "byte_size": 28109,
       "gaps": []
     },
     {
@@ -2287,14 +3024,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-04",
+      "as_of": "2026-08-05",
       "produced_at": null,
-      "age_hours": 4.51,
+      "age_hours": 9.29,
       "freshness_sla_hours": 36,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 222502,
+      "byte_size": 227960,
       "gaps": []
     },
     {
@@ -2305,14 +3042,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T03:36Z",
+      "as_of": "2026-08-04T04:34Z",
       "produced_at": null,
-      "age_hours": 24.91,
+      "age_hours": 28.72,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 20445,
+      "byte_size": 20431,
       "gaps": []
     },
     {
@@ -2323,14 +3060,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T03:36Z",
+      "as_of": "2026-08-04T04:34Z",
       "produced_at": null,
-      "age_hours": 24.91,
+      "age_hours": 28.72,
       "freshness_sla_hours": 30,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 20445,
+      "byte_size": 20431,
       "gaps": []
     },
     {
@@ -2343,7 +3080,7 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 24.9,
+      "age_hours": 28.72,
       "freshness_sla_hours": 36,
       "staleness_from": null,
       "status": "fresh",
@@ -2361,13 +3098,23 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 104.33,
+      "age_hours": 257.91,
       "freshness_sla_hours": 192,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": 35,
       "byte_size": 34575,
-      "gaps": []
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "engine/neuralweb/causal_frontier.py"
+        ],
+        "transitive_downstream_count": 0,
+        "transitive_downstream_top": [],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "causal-nulls",
@@ -2379,13 +3126,24 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 104.33,
+      "age_hours": 257.91,
       "freshness_sla_hours": 192,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": 35,
       "byte_size": 40317,
-      "gaps": []
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "engine/neuralweb/causal_frontier.py",
+          "engine/neuralweb/causal_scout.py"
+        ],
+        "transitive_downstream_count": 0,
+        "transitive_downstream_top": [],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "causal-frontier",
@@ -2395,9 +3153,9 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T03:24:50Z",
+      "as_of": "2026-08-04T05:01:21Z",
       "produced_at": null,
-      "age_hours": 25.09,
+      "age_hours": 28.27,
       "freshness_sla_hours": 36,
       "staleness_from": null,
       "status": "fresh",
@@ -2415,7 +3173,7 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 25.09,
+      "age_hours": 28.27,
       "freshness_sla_hours": 36,
       "staleness_from": null,
       "status": "fresh",
@@ -2431,14 +3189,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T03:24:50Z",
+      "as_of": "2026-08-04T05:01:21Z",
       "produced_at": null,
-      "age_hours": 25.09,
+      "age_hours": 28.27,
       "freshness_sla_hours": 36,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 2254,
+      "byte_size": 2305,
       "gaps": []
     },
     {
@@ -2449,14 +3207,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T03:24:50Z",
+      "as_of": "2026-08-04T05:01:21Z",
       "produced_at": null,
-      "age_hours": 25.09,
+      "age_hours": 28.27,
       "freshness_sla_hours": 36,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 2254,
+      "byte_size": 2305,
       "gaps": []
     },
     {
@@ -2469,7 +3227,7 @@
       "storage": "git",
       "as_of": null,
       "produced_at": null,
-      "age_hours": 104.33,
+      "age_hours": 170.53,
       "freshness_sla_hours": 200,
       "staleness_from": null,
       "status": "fresh",
@@ -2485,9 +3243,9 @@
       "tier": "infrastructure",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T03:24:50+00:00",
+      "as_of": "2026-08-04T05:01:22+00:00",
       "produced_at": null,
-      "age_hours": 25.09,
+      "age_hours": 28.27,
       "freshness_sla_hours": 200,
       "staleness_from": null,
       "status": "fresh",
@@ -2503,9 +3261,9 @@
       "tier": "shadow",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T03:24:50Z",
+      "as_of": "2026-08-04T05:01:21Z",
       "produced_at": null,
-      "age_hours": 25.09,
+      "age_hours": 28.27,
       "freshness_sla_hours": 36,
       "staleness_from": null,
       "status": "fresh",
@@ -2521,14 +3279,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-07-27",
+      "as_of": "2026-08-03",
       "produced_at": null,
-      "age_hours": 196.51,
+      "age_hours": 57.29,
       "freshness_sla_hours": 2160,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 4241,
+      "byte_size": 5982,
       "gaps": []
     },
     {
@@ -2539,9 +3297,9 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-07-28",
+      "as_of": "2026-08-04",
       "produced_at": null,
-      "age_hours": 172.51,
+      "age_hours": 33.29,
       "freshness_sla_hours": 2160,
       "staleness_from": null,
       "status": "fresh",
@@ -2557,14 +3315,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-07-28",
+      "as_of": "2026-08-04",
       "produced_at": null,
-      "age_hours": 172.51,
+      "age_hours": 33.29,
       "freshness_sla_hours": 2160,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 20123,
+      "byte_size": 20124,
       "gaps": []
     },
     {
@@ -2577,12 +3335,12 @@
       "storage": "git",
       "as_of": "2026-08-04",
       "produced_at": null,
-      "age_hours": 4.51,
+      "age_hours": 33.29,
       "freshness_sla_hours": 168,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 53461,
+      "byte_size": 56725,
       "gaps": []
     },
     {
@@ -2619,9 +3377,9 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T03:26:05+00:00",
+      "as_of": "2026-08-04T04:53:25+00:00",
       "produced_at": null,
-      "age_hours": 25.07,
+      "age_hours": 28.4,
       "freshness_sla_hours": 48,
       "staleness_from": null,
       "status": "fresh",
@@ -2637,14 +3395,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03T03:26:05+00:00",
+      "as_of": "2026-08-04T04:53:25+00:00",
       "produced_at": null,
-      "age_hours": 25.07,
+      "age_hours": 28.4,
       "freshness_sla_hours": 48,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 412,
+      "byte_size": 413,
       "gaps": []
     },
     {
@@ -2683,15 +3441,79 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
+      "as_of": "2026-08-04",
       "produced_at": null,
-      "age_hours": 28.51,
+      "age_hours": 33.29,
       "freshness_sla_hours": 30,
       "staleness_from": null,
-      "status": "fresh",
+      "status": "stale",
       "row_count": null,
-      "byte_size": 145207,
-      "gaps": []
+      "byte_size": 145203,
+      "gaps": [],
+      "support_impact": {
+        "direct_consumers": [
+          "engine/neuralweb/world_state.py",
+          "engine/neuralweb/mastermind_context.py",
+          "engine/neuralweb/brief_context.py",
+          "engine/neuralweb/confluence.py"
+        ],
+        "transitive_downstream_count": 29,
+        "transitive_downstream_top": [
+          {
+            "artifact_id": "world-state",
+            "hop": 1,
+            "via_module": "engine/neuralweb/world_state.py"
+          },
+          {
+            "artifact_id": "neuralweb-market-plane",
+            "hop": 1,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          },
+          {
+            "artifact_id": "site-neuralweb-market-plane",
+            "hop": 1,
+            "via_module": "engine/neuralweb/mastermind_context.py"
+          },
+          {
+            "artifact_id": "confluence-graph",
+            "hop": 1,
+            "via_module": "engine/neuralweb/confluence.py"
+          },
+          {
+            "artifact_id": "feeds-plane",
+            "hop": 2,
+            "via_module": "scripts/build_feeds.py"
+          },
+          {
+            "artifact_id": "cortex-memo",
+            "hop": 2,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "cortex-attention-firings",
+            "hop": 2,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "hypothesis-inbox",
+            "hop": 2,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "site-cortex-memo",
+            "hop": 2,
+            "via_module": "engine/neuralweb/cortex.py"
+          },
+          {
+            "artifact_id": "macro-context-latest",
+            "hop": 2,
+            "via_module": "scripts/build_macro_context.py"
+          }
+        ],
+        "bound": "upper",
+        "note": "Downstream surfaces that read this artifact directly or transitively. Bound is upper: shared-producer inversion may fold in additional artifacts beyond those that directly depend on this one.",
+        "available": true
+      }
     },
     {
       "id": "marketing-state",
@@ -2701,14 +3523,14 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
-      "produced_at": "2026-08-03T03:33:35Z",
-      "age_hours": 28.51,
+      "as_of": "2026-08-04",
+      "produced_at": "2026-08-04T05:00:38Z",
+      "age_hours": 33.29,
       "freshness_sla_hours": 48,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 69366,
+      "byte_size": 69169,
       "gaps": []
     },
     {
@@ -2719,9 +3541,9 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
-      "produced_at": "2026-08-03T03:33:35Z",
-      "age_hours": 28.51,
+      "as_of": "2026-08-04",
+      "produced_at": "2026-08-04T05:00:38Z",
+      "age_hours": 33.29,
       "freshness_sla_hours": 48,
       "staleness_from": null,
       "status": "fresh",
@@ -2737,20 +3559,20 @@
       "tier": "display",
       "horizon_role": "context",
       "storage": "git",
-      "as_of": "2026-08-03",
+      "as_of": "2026-08-05",
       "produced_at": null,
-      "age_hours": 28.51,
+      "age_hours": 9.29,
       "freshness_sla_hours": 36,
       "staleness_from": null,
       "status": "fresh",
       "row_count": null,
-      "byte_size": 697994,
+      "byte_size": 692695,
       "gaps": []
     }
   ],
   "cortex": {
     "cortex_source": "current_run",
-    "memo_as_of": "2026-08-04T20:50:17+00:00",
+    "memo_as_of": "2026-08-05T09:33:59+00:00",
     "run_status": {
       "status": "degraded",
       "degraded": true,
@@ -2763,7 +3585,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdiNKCowYxj4s9HwPJFsy'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdjNYyqUj2tpFk5kXGcLr'}"
         },
         {
           "provider": "oauth",
@@ -2771,7 +3593,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdiNLWBEqxiKB55WCZBS8'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdjNaKAbpgVxC4JLvwLbk'}"
         },
         {
           "provider": "oauth",
@@ -2779,7 +3601,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdiNRDbEecBW5bRdmK5ff'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdjNeyGumD5pPrBthyz5Z'}"
         },
         {
           "provider": "oauth",
@@ -2787,7 +3609,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdiNeh8oNw3PThYEi4HRM'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdjNtTKVGTFgFe9FkX6nK'}"
         },
         {
           "provider": "codex",
@@ -2827,7 +3649,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdiNjCgfgExXpCfvJdgw5'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdjNxpusbxrQhZYLExLmZ'}"
         },
         {
           "provider": "oauth",
@@ -2835,7 +3657,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdiNjP9DNhzbNDRoV4u89'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdjNy3FmtSURuJa8ZdFcR'}"
         },
         {
           "provider": "oauth",
@@ -2843,7 +3665,7 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdiNjb45JD7BXDayBYtsh'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdjNyHqNnYfU4euUBPVXy'}"
         },
         {
           "provider": "oauth",
@@ -2851,14 +3673,14 @@
           "attempted": true,
           "ok": false,
           "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdiNjoFJ686Bo5fUafRG7'}"
+          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CdjNyU9jU1ZGv6ZrZ6eTF'}"
         }
       ],
       "tool_call_batches": 0,
       "individual_tool_calls": 0,
       "expected_min_tool_calls": 1,
       "context_stale": false,
-      "context_as_of": "2026-08-04T04:28:52Z"
+      "context_as_of": "2026-08-05T09:16:18Z"
     },
     "probation": {
       "granted": false,
@@ -2886,9 +3708,9 @@
   ],
   "summary_counts": {
     "total_lobes": 130,
-    "fresh": 105,
-    "fresh_partial": 9,
-    "stale": 1,
+    "fresh": 84,
+    "fresh_partial": 6,
+    "stale": 25,
     "missing": 14,
     "degraded": 0,
     "not_locally_verifiable": 1,

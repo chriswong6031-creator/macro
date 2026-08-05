@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T06:11:39.198238+00:00",
-  "count": 784,
+  "generated_at": "2026-08-05T11:45:23.812095+00:00",
+  "count": 800,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -38,6 +38,7 @@
     "S&T",
     "SG Prime",
     "Safra",
+    "ScotiaBank",
     "Scotiabank",
     "Societe Generale",
     "Std Chartered",
@@ -73,6 +74,68 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-d2hwbkvjkbz-5ae392",
+      "title": "Advanced Micro Devices Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:21:44Z",
+      "summary_points": [
+        "**Growth Narrative Mismatch**: Management's 2027 guidance (Datcenter GPU >100% YoY, server CPU 70%+ growth) underdelivers vs.",
+        "bullish investor sentiment despite Q2 beat (revenue $11.5B, gross margin 56.2%), triggering expected stock pullback.",
+        "**Critical Risk Concentration**: Slower agentic AI adoption, delayed Meta GPU deployment, x86 erosion in enterprise, and lack of operating leverage threaten near-term growth trajectory.",
+        "**Extreme Valuation Volatility**: Goldman Sachs price target range spans $120 (44% downside) to $875 (100% upside), highlighting semiconductor valuation fragility and significant downside risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-z9ml1finvoz-ed543c",
+      "title": "UL Solutions (ULS) Mixed 2Q as the Industrial business undergoes organic growth deceleration and margin contraction",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:21:41Z",
+      "summary_points": [
+        "**Q2 Growth & Margin Pressure**: Industrial organic growth decelerated to 7.2% y/y (vs.",
+        "2% in 1Q), EBITDA margins contracted 10 bps y/y due to compensation spend; revenue beat consensus (5.2% y/y vs.",
+        "9% est) but organic growth missed (6.6% vs.",
+        "1%).",
+        "**Valuation vs Growth Deceleration**: Elevated P/E (33.8x) vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yeau9d3q94f-6f6e69",
+      "title": "Trex Company Inc. (TREX) 2Q26 Recap Successful Brand Investments and Productivity Suggest Upside to 2H26 and 2027 EPS",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:21:40Z",
+      "summary_points": [
+        "**Strategic Growth Catalysts**: Marketing investments drive 7% sell-out/9% sell-in growth (Q2 vs Q1), targeting $2bn sales by 2030; EBITDA margin recovery via Arkansas ramp and productivity, with $152m FCF + $309m buybacks supporting 2026/2027 EPS upside.",
+        "**Margin & Debt Pressure**: EBITDA growth decelerates to 6.0% (12/26E) from 9.8% (12/25), while net debt/EBITDA rises to 0.8x, signaling leverage risk and potential margin compression.",
+        "**Valuation Upside**: $61.00 12m target (29.7% upside) driven by 2027 EPS of $2.30, $1,301.8M revenue, and cash flow for buybacks; upside case $73 (34x 2027 EPS).",
+        "**Cash Flow Volatility**: Operating cash flow declines to $264.2m (12/26E) from $358.1m (12/25), despite rising FCF/share ($1.54 vs $1.26), indicating operational inefficiencies.",
+        "**Margin Expansion**: Gross margin expands 89bps YoY to 38% (full-year), led by Q4 639bps improvement (productivity, recycled plastic sourcing, Little Rock ramp), with EBITDA forecast at $347mn (high-end guide)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-xmsgejfidgp-00b2d4",
       "title": "Ternium (TX) 2Q26 Solid Beat",
       "institution": "Goldman Sachs",
@@ -85,6 +148,65 @@
         "10% historical premium) with trade barriers ensuring sustained earnings; reiterated Buy with 16-20% FCFF growth (2027-28) and 3.9-3.3x EV/EBITDA.",
         "**Valuation Upside & Key Risks**: Goldman Sachs sets $59.00 price target (17.2% upside from $50.34) but highlights risks: USMCA uncertainties slowing Mexico growth, raw material cost surges, and operational risks (Usiminas competition, Pesquiera capex, CSN litigation).",
         "**Price Target Divergence & Flow Catalyst**: $59 target significantly above current price ($44.78), signaling strong analyst bullishness; active coverage (\"Covered by Marco Fid\") indicates institutional flow potential amid historical target premium."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wr1qaymrtct-9b882e",
+      "title": "NRG Energy Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:21:39Z",
+      "summary_points": [
+        "**Texas Grid Directive Alignment**: NRG’s BYOP/BTM model directly addresses Governor Abbott’s grid reliability directive (474 GW peak demand, 90% data centers), reducing interconnection risks and favoring self-generation projects, with late-2029 COD and island mode flexibility navigating audits.",
+        "**Robust Financials & Cash Flow**: Projected 2028 EBITDA of $6,427M and $4,260M operating cash flow signal strong profitability and operational resilience, supporting capital allocation strategy amid Texas regulatory headwinds.",
+        "**Valuation Upside & Reaffirmed Guidance**: Buy rating with $169 target (46% upside), driven by revised 8.75x EV/EBITDA (down from 9.0x), while management reaffirms 2026 guidance despite Texas softness, funded via $721M Texas CCGT allocation (cumulative $0.8B by 2026).",
+        "**Data Center Opportunity & Expansion**: 1.2GW plant with hyperscaler (late 2029 COD, 12–15% IRR) and 2.4GW expansion potential, leveraging regulatory alignment to secure financial commitments despite hurdles, positioning for AI-driven demand."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jl2obi1abfy-1bc40a",
+      "title": "Rockwell Automation Inc. (ROK) Raising estimates on improving growth outlook",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:23Z",
+      "summary_points": [
+        "**ROK Estimate Revision & Growth Outlook**: Revised FY26 organic sales guidance to +7.5%–9.5% (from +5%–9%) and raised FY26–28 EPS to $13.30/$14.90/$16.60, with 12-month price target lifted to $510 (+14.5% upside).",
+        "**Strong EBITDA Growth & Margin Expansion**: EBITDA growth accelerated to 26.3% YoY (9/26 vs 6.8% 9/25), EBIT margin improved to 22.7% (9/28E), reflecting operational efficiency and pricing power in industrial automation.",
+        "**ROK Key Risks**: Upside drivers include accelerating orders, margin expansion, and M&A; downside risks involve muted order momentum, softening price realization, and slower internal margin progress."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mf0juhopn2c-537d29",
+      "title": "Devon Energy Corp",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:22Z",
+      "summary_points": [
+        "**Q2 Earnings & Production Beat**: DVN reported $3.48bn EBITDA (+6% vs estimates) and $1.57/shr EPS (+9%), with oil production guidance at 550-560 Mboe/d (slight below prior but strong execution).",
+        "**Debt Reduction & Valuation Upside**: $1.25bn debt reduction post-merger and EBITDA yield expanding to 16.3% by 2028 support Goldman Sachs' $53 target (20.3% upside from $44.05).",
+        "**Fundamental Driver**: Core metrics show EBITDA growth to $14.17B by 2028 and rising EPS, underpinning 12.5% FCF yield valuation basis.",
+        "**Bullish Rating & Momentum**: Goldman Sachs \"Buy\" rating with consistent target prices above current levels (e.g., $53 vs $41.99), reflecting strong institutional conviction."
       ],
       "tags": [],
       "tickers": [],
@@ -111,6 +233,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xez0ebpbtkx-440d26",
+      "title": "The 720 Korea Memory & Strategy, Ibiden, MHI, HSBC, AMEC, Toyota, China Value Retailers, Asia Views, Japan FX",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:20Z",
+      "summary_points": [
+        "**Korea Memory Sector**: Samsung (CL) and SK Hynix Buy; HBM pricing +100% YoY (2027E), healthy inventory, no NAND oversupply, SEC/Hynix P/E/P/B (3.6x/1.4x vs 3.5x/1.6x), AI server demand driving fundamentals.",
+        "**Korea Strategy**: 320%/35%/20% earnings growth (2026-2028), KOSPI 12,000 target; semiconductor cycle strength (compute demand, supply shortages), market positioning cleaner (ETF AUM decline, hedge fund moderation).",
+        "**Asia Macro Outlook**: North Asia (Taiwan/Korea/China) AI/tech exports driving \"super surpluses\"; China housing drag resolves 2028; Japan reflates under Takaichi (no BoJ hikes), India cyclical improvement.",
+        "**Yen Intervention**: $85bn coordinated FX purchase (largest since 2011); US participation minimizes Treasury volatility, Yen muted response aligns with macro fundamentals.",
+        "**AMD & Hynix HBM**: AMD Q3 beat ($11.5bn revenue, $1.66 EPS), server CPU optimism; Hynix HBM ASP to $2.9/GB (2027E, +100% YoY), driven by demand dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
@@ -178,6 +321,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qvhncxnkoxt-0178ef",
+      "title": "ETF Market Pulse",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:11:28Z",
+      "summary_points": [
+        "**AWS Revenue Beat**: AWS +37% YoY revenue growth drives cloud ETFs higher, with positive catalysts for Datadog, Snowflake, CrowdStrike; key data release impacting sector fundamentals.",
+        "**Geopolitical Reversal**: Korea Defense ETF sold off on Iran de-escalation reducing geopolitical premium and Hyundai Rotem earnings miss; signals delayed export contracts and earnings risk.",
+        "**Asset Rotation**: European/Japan equities (YTD +10.3%/+13.5%) surge while Bitcoin (-28.2% YTD) and commodities fade; weekly returns show equities/fixed income shift right vs crypto/commodities left.",
+        "**Risk-Return Efficiency**: European Equities (VGC US) in \"Efficient\" quadrant (low vol, high return); Bitcoin (IBIT US) and commodities (PDBC US) in \"Inefficient\" (high vol, low return), guiding portfolio construction."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-vv4eaqbkwkj-879842",
       "title": "4 Aug 2026 US Equity Strategy",
       "institution": "Societe Generale",
@@ -195,6 +358,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zrgo2vvutlg-c980d4",
+      "title": "Commodity Compass Analytics (CCA) An Oil Odyssey – Red Sea Tension Sends Oil on a Long Voyage Home",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:11:23Z",
+      "summary_points": [
+        "**Red Sea Flow Disruption**: Saudi crude flows via Bab al-Mandab down 3.7 mb/d (vs.",
+        "4 mb/d pre-war), Suez Canal down 0.5 mb/d, Russian Red Sea exports down 2.2 mb/d; Houthi attacks threaten Yanbu terminal, increasing voyage risk and costs ($292k ballast charges).",
+        "**China Demand-Policy Mismatch**: Crude imports accelerate to 3 mb/d (14d MA) with refinery utilization at 66%, but Beijing mandates refineries to maintain inventories at or above end-Feb levels, constraining supply flexibility and exposing vulnerabilities.",
+        "**CPC Pipeline Disruption**: Drone attacks on CPC tankers reduced loadings by 1.8 mb/d (vs.",
+        "June), compounded by Kazakhstan production cuts, threatening global oil flows amid resumed attacks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 36,
       "language": "en",
       "needs_metadata": false
     },
@@ -241,6 +425,87 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-oswdd1ofbfu-7f8e3c",
+      "title": "Markets unhinging is a feature not a bug",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:05:13Z",
+      "summary_points": [
+        "**AI Infrastructure Bottleneck Opportunity**: MLCC manufacturers (Murata, Samsung Electro-Mechanics, Yageo) offer 23x upside potential with 50% cushion amid AI hardware demand, targeting critical infrastructure bottleneck.",
+        "**FX Stress Drives GFSI Positive**: FX volatility (USDJPY skew, implied vol) pushed GFSI to +0.03 (highest since Apr 2023), with credit now least stressed asset class amid FOMC/BoJ intervention risks.",
+        "**US Cybersecurity & Healthcare Bubble Risk**: Elevated BRI scores (0.87/0.84) signal bubble-like dynamics; medical device stocks show largest BRI jump, cybersecurity ranks highest in bubble indicators.",
+        "**Magnificent 7 Earnings Fragility**: All six stocks (GOOGL, TSLA, META, MSFT, AAPL, AMZN) exceeded options-implied earnings moves in Q3-26, with S&P tech fragility at 2025’s record pace.",
+        "**SPX Tech Dispersion Near Dotcom Peaks**: S&P tech dispersion hit near all-time highs (30-Jul), with realized volatility dispersion trending toward Dotcom-era peaks amid AI megacap volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 34,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yakwqoiblxh-84d4c9",
+      "title": "US municipal bonds",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:18Z",
+      "summary_points": [
+        "**US Munis: Yield Spread & Strategic Shift**: IG munis outperform Treasuries with tax-equivalent yield at 6.7% (83rd/80th percentile), strategic shift to 5-15yr duration (effective 6.5 yrs) amid elevated Treasury yields and geopolitical risks.",
+        "**Upside Drivers**: Declining Treasury yields and sustained fund inflows (mutual/ETF) support munis, with strong credit quality (upgrades outpacing downgrades).",
+        "**Downside Risks**: Sharp Treasury/muni yield increases or inflation reacceleration weaken returns; sustained fund outflows pressure prices."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8xhlrm4edkw-e33e3f",
+      "title": "Brazil Economic August26 Eng",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:18Z",
+      "summary_points": [
+        "**Oil Volatility from Geopolitical Tensions**: US-Iran attacks resuming, Strait of Hormuz flows near zero, Brent crude spiked to $120+ (July 2024), signaling acute energy market volatility and supply disruption risk.",
+        "**China Oil Reserve Depletion**: Strategic reserves (190.6M metric tons) face exhaustion by 2027 (base scenario) or negative stock (-31.7M metric tons) by June 2027, amplifying import dependency and supply vulnerability.",
+        "**July Inflation Surprise**: 12-month inflation down to 4.5% (vs.",
+        "expectations), driven by gasoline, reducing Fed rate hike urgency despite hawkish tone.",
+        "**Commodity Price Collapse**: Sharp decline across all categories (Brent, industrial metals, agriculture, natural gas) post-war resumption, falling from ~120-140 to 100+ levels."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 47,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-iamd1fu5j9z-d0ab33",
+      "title": "Transformational Innovation Opportunities (TRIO)",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:16Z",
+      "summary_points": [
+        "**AI Sector Valuation Shift**: Traditional EV/sales metric unreliable; sector trades at ~15% forward P/E vs global equities (50% historical premium), signaling fundamental change requiring selective positioning beyond broad software.",
+        "**Geopolitical & Macro Risks**: US-China tensions (ASML, Alibaba, ARM), semiconductor supply chain disruptions, and macro slowdowns (Alibaba, Broadcom) dominate risk factors, amplifying exposure in semiconductors and e-commerce.",
+        "**Strategic Allocation Shift**: Rebalancing from AI semis/hardware (76%→47%) to Mag 7 (15%→40%) and Defensive tech (6%→23%), prioritizing infrastructure software and enterprise control points with defensible AI monetization paths.",
+        "**Rating Distribution & Flow**: 47.54% of covered companies rated \"Most Preferred\" (equivalent to \"buy\"), indicating concentrated bullish sentiment; 60%+ \"Most Preferred\" signals sustained preference for AI/tech plays amid tactical rotations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-oj97ii0py3m-c4498d",
       "title": "Investing in China",
       "institution": "UBS",
@@ -258,6 +523,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6fbgkbqpelo-611582",
+      "title": "Daily US",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:09Z",
+      "summary_points": [
+        "**AI growth fundamentals**: Power constraints (generation/grid) critical for AI; industrial tech opportunities have least substitution risk.",
+        "**AI-Driven Semiconductor & Healthcare**: Semicap equipment revenue to grow 30% CAGR due to AI demand/supply bottlenecks; healthcare AI leverages price-inelastic demand and longevity trend.",
+        "**Fed Policy & Inflation Outlook**: Fed holds rates steady amid \"watchful thinking\" on inflation; core inflation data critical for 2028 path, with tariffs/energy as key catalysts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
@@ -340,6 +624,44 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-oyhwulsds9o-51b80d",
+      "title": "BNZ Markets Today 04 August 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-05T01:58:03Z",
+      "summary_points": [
+        "**Geopolitical & Data Shock**: US-Japan intervention triggered oil price plunge (Brent crude $82.50–$84.50), while strong US ISM manufacturing (55.6 vs 53.9 exp) and NZ/CH PMI data fueled equity gains and USD strength.",
+        "**NZ Rate Dynamics**: Offshore forces drove NZ rates higher (2-yr 3.71%, 5-yr 4.07%, 10-yr 4.45%), with NZGBs rally adding downward pressure on yields.",
+        "**Critical Upcoming Catalysts**: Australian household spending (Jun) and US JOLTS job openings (Jun) are pivotal for market direction, with NZ rates highly sensitive to these releases."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8x5pbppqzbk-b0ab30",
+      "title": "dailypoints20260804",
+      "institution": "ScotiaBank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:55:39Z",
+      "summary_points": [
+        "**Canadian Trade Data Confirms Q2 GDP**: Exports outpacing imports and monthly trade data tracking 3.4% q/q SAAR GDP growth validate robust Q2 performance, critical for Canadian market positioning.",
+        "**US Data & Iran Oil Volatility Dominate Risk Factors**: US JOLTS, trade, factory orders releases combined with Iran-driven oil volatility (oil up $2–3) and tariff lawsuits create immediate policy uncertainty and impact risk appetite.",
+        "**EM Central Bank Actions Drive Currency Flows**: Brazil’s -2bps cut and Banxico’s hold directly impact regional market dynamics and EM currency volatility ahead of Banxico (Aug 6), RBA (Aug 11), and BoC (Sep 2) meetings."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },

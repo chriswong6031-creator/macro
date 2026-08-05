@@ -19,14 +19,14 @@
     "hard_gate": false
   },
   "headline": {
-    "state": "neutral_hollow",
-    "summary": "Net liquidity is neutral but RRP exhausted or composition is mechanical — buffer is hollow; net-neutral read with limited downside cushion. RRP buffer is empty — the next liquidity drain hits bank reserves directly."
+    "state": "orderly_drain",
+    "summary": "Net liquidity is contracting in an orderly manner; conditions may steer toward headwind for buy setups (existing engine limits apply)."
   },
   "fed": {
     "assets_bn": 6738.19,
     "assets_chg_20d_bn": 13.626,
     "reserve_balances_bn": 2984.57,
-    "walcl_stale_days": 2,
+    "walcl_stale_days": 4,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
     "asof": "2026-07-31"
@@ -59,21 +59,21 @@
     "netliq_chg_20d_bn": -207.453,
     "netliq_chg_65d_bn": 26.992,
     "netliq_pctile_expanding": 0.75542,
-    "overlay": "neutral"
+    "overlay": "contracting"
   },
   "quality": {
-    "label": "neutral-hollow",
-    "fed_share": 0.14,
+    "label": "contracting",
+    "fed_share": 0.06,
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
       "hy_oas_pct": 2.84,
-      "hy_oas_z": 0.58,
+      "hy_oas_z": 0.93,
       "nfci": -0.554,
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 2
+    "walcl_stale_days": 4
   },
   "funding": {
     "effr_minus_iorb_bp": -2.0,
@@ -379,8 +379,8 @@
     "asof": "2026-07-29"
   },
   "entry_effect": {
-    "direction": "neutral",
-    "quality": "neutral",
+    "direction": "headwind",
+    "quality": "contraction",
     "measured_basis": "cycle_ladder_21d_odds",
     "use": "support existing buy setup, never originate one"
   },
@@ -390,7 +390,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-08-03T03:15:52Z",
-  "inputs_hash": "sha256:4035f59a738ca4b0b0841671a1b893a46fe2a95ad97f423a13796d4ffb3e5764",
+  "produced_at": "2026-08-05T09:13:41Z",
+  "inputs_hash": "sha256:164b78b145f3ebb4dd2c0c21b05cee718e5471eae4bfd23e373ca55f7a418cf8",
   "tier": "shadow"
 }

@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-04T05:00:29Z",
-  "as_of": "2026-08-04",
+  "produced_at": "2026-08-05T09:37:25Z",
+  "as_of": "2026-08-05",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 8,
-    "passed": 8,
+    "items": 12,
+    "passed": 12,
     "quarantined": 0,
     "quarantined_policy": 0,
     "quarantined_overflow": 0,
@@ -24,7 +24,15 @@
       "slot": "D1-S11",
       "type": "event",
       "cashtag": "",
-      "headline": ""
+      "headline": "Unemployment holding its ground, GDP tracking 5%, inflation running at 2.1%."
+    },
+    {
+      "id": "post-flagship-021",
+      "account": "flagship",
+      "slot": "D1-S21",
+      "type": "chart",
+      "cashtag": "$MDB",
+      "headline": "$MDB is back above 335"
     },
     {
       "id": "post-theme-003",
@@ -32,7 +40,15 @@
       "slot": "D1-S3",
       "type": "theme_list",
       "cashtag": "$AMBA",
-      "headline": "Autonomous Systems ripping, +1.9% avg on Monday"
+      "headline": "Autonomous Systems ripping, +1.9% avg on Tuesday"
+    },
+    {
+      "id": "post-housepick-001",
+      "account": "flagship",
+      "slot": "D1-S10",
+      "type": "watchlist",
+      "cashtag": "$DVN",
+      "headline": ""
     },
     {
       "id": "post-founder-001",
@@ -40,52 +56,68 @@
       "slot": "D1-S1",
       "type": "event",
       "cashtag": "",
-      "headline": "203k claims, GDP tracking 5.0%, median CPI still 2.1%"
+      "headline": "The economy's growing. The buying is hiding in one corner."
     },
     {
-      "id": "post-founder-021",
+      "id": "post-founder-017",
       "account": "founder",
-      "slot": "D1-S21",
-      "type": "signal",
-      "cashtag": "$JBLU",
-      "headline": "Heaviest week of volume in five years on $JBLU."
+      "slot": "D1-S17",
+      "type": "chart",
+      "cashtag": "$TEAM",
+      "headline": ""
     },
     {
-      "id": "post-meagan-026",
-      "account": "meagan",
-      "slot": "D1-S26",
+      "id": "post-founder-027",
+      "account": "founder",
+      "slot": "D1-S27",
       "type": "watchlist",
-      "cashtag": "$TPR",
+      "cashtag": "$CWK",
       "headline": ""
     },
     {
-      "id": "post-theme-004",
+      "id": "post-meagan-012",
       "account": "meagan",
-      "slot": "D1-S2",
-      "type": "theme_list",
-      "cashtag": "$STKH",
-      "headline": "Agriculture & FoodTech selling off, -2.2% avg on Monday"
+      "slot": "D1-S12",
+      "type": "signal",
+      "cashtag": "$SHOO",
+      "headline": "Okay so $SHOO found the penthouse again."
     },
     {
-      "id": "post-kelly-009",
+      "id": "post-sophia-022",
+      "account": "sophia",
+      "slot": "D1-S22",
+      "type": "chart",
+      "cashtag": "$SOFI",
+      "headline": "The $SOFI recovery story keeps meeting the same objection"
+    },
+    {
+      "id": "post-kelly-018",
       "account": "kelly",
-      "slot": "D1-S9",
-      "type": "macro",
-      "cashtag": "",
+      "slot": "D1-S18",
+      "type": "chart",
+      "cashtag": "$CSR",
+      "headline": "$CSR has closed red 4 weeks straight"
+    },
+    {
+      "id": "post-cici-007",
+      "account": "cici",
+      "slot": "D1-S7",
+      "type": "chart",
+      "cashtag": "$EQT",
       "headline": ""
     },
     {
-      "id": "post-cici-001",
+      "id": "post-theme-006",
       "account": "cici",
-      "slot": "D1-S1",
-      "type": "macro",
-      "cashtag": "",
-      "headline": ""
+      "slot": "D1-S5",
+      "type": "theme_list",
+      "cashtag": "$VRT",
+      "headline": "Cloud Computing ripping, +1.7% avg on Tuesday"
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 25,
+      "pairs_checked": 56,
       "hits": 0,
       "shared_media_hits": 0
     },
@@ -111,7 +143,7 @@
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": 1,
+      "age_days": 2,
       "max": 7
     },
     "kill_switch": {
@@ -142,7 +174,7 @@
       "graduate_after_days": 21,
       "weeks_1_2_days": 5,
       "weeks_3_4_days": 10,
-      "as_of": "2026-08-04",
+      "as_of": "2026-08-05",
       "as_of_usable": true,
       "base": {
         "max_posts_per_account_per_day": null,
@@ -158,7 +190,7 @@
       "accounts": {
         "flagship": {
           "created": "2026-07-24",
-          "age_days": 11,
+          "age_days": 12,
           "tier": "week_5_plus",
           "enabled": true,
           "caps": {
@@ -271,7 +303,7 @@
         },
         "founder": {
           "created": "2026-07-27",
-          "age_days": 8,
+          "age_days": 9,
           "tier": "weeks_3_4",
           "enabled": true,
           "caps": {
@@ -289,7 +321,7 @@
         },
         "meagan": {
           "created": "2026-07-28",
-          "age_days": 7,
+          "age_days": 8,
           "tier": "weeks_3_4",
           "enabled": true,
           "caps": {
@@ -307,7 +339,7 @@
         },
         "sophia": {
           "created": "2026-07-28",
-          "age_days": 7,
+          "age_days": 8,
           "tier": "weeks_3_4",
           "enabled": true,
           "caps": {
@@ -325,7 +357,7 @@
         },
         "kelly": {
           "created": "2026-07-28",
-          "age_days": 7,
+          "age_days": 8,
           "tier": "weeks_3_4",
           "enabled": true,
           "caps": {
@@ -343,7 +375,7 @@
         },
         "cici": {
           "created": "2026-07-28",
-          "age_days": 7,
+          "age_days": 8,
           "tier": "weeks_3_4",
           "enabled": true,
           "caps": {
@@ -361,7 +393,7 @@
         },
         "mastermind_news": {
           "created": "2026-08-02",
-          "age_days": 2,
+          "age_days": 3,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {

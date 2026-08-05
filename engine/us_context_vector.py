@@ -689,6 +689,11 @@ def build_records(
             "gate_provisional": bool(verdict.get("provisional")),
             "htf_s1": _bool(verdict.get("htf_s1")),
             "htf_s2": _bool(verdict.get("htf_s2")),
+            # Graded-cohort label for the measured-floor change (2026-08-05): True = the
+            # name tiered on fewer daily bars than the pre-change 200-bar floor. The store
+            # is the permanent record, so the two populations stay separable forever.
+            "young_history": _bool(verdict.get("young_history")),
+            "history_bars": _finite(verdict.get("history_bars")),
             # key is ABSENT (not None) on the verdict when no near-miss applies
             "near_miss_reason": _text(verdict.get("near_miss_reason")),
             "signal_asof": _date(verdict.get("asof")),
