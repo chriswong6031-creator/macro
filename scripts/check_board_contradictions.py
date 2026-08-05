@@ -63,8 +63,11 @@ _EXT_GRADES = {"parabolic", "stretched"}
 # engine.us_board_rank.STAGE_ORDER: an unknown stage is a hard finding here, so a
 # bucket added there and not here fails the publish lane on every row that carries it.
 # `basing` (the ladder's BOTTOM WATCH shelf) joined 2026-08-05 between `ran` and
-# `blocked`; the HK board does not emit it (it keeps BOTTOM WATCH in `blocked`), which
-# costs this tuple nothing — a stage no board produces simply never matches.
+# `blocked`; the HK board opts in at its own builder the same day, so both boards can
+# emit it. On HK it will almost always be EMPTY rather than absent: that pool is
+# cascade-gated, and a pre-signal BOTTOM WATCH row measured zero across all 14
+# committed board snapshots (2026-07-20..08-04) — a bucket no row lands in simply
+# never matches here.
 _STAGE_ORDER = ("live", "setting_up", "ran", "basing", "blocked")
 
 

@@ -938,6 +938,108 @@ class TestStageArithmetic:
         assert hbr.stage_rank("nonsense") == len(hbr.STAGE_ORDER)
 
 
+class TestBasingOptIn:
+    """The `basing` shelf, ported from the US board (W-E.1 / D18).
+
+    WHAT IS AND IS NOT CLAIMED HERE.  HK's staged pool is CASCADE-GATED — the builder
+    hands :func:`score_rows` only the names `hk_cascade_eligible` admitted — so a
+    pre-signal BOTTOM WATCH row is structurally rare on this board in a way it is not
+    on the US one: measured ZERO across all 14 committed board snapshots
+    (2026-07-20..08-04).  What is under test is the ROUTING, not a population.  The
+    shelf is the labelled home for the day the cycle ladder and the cascade disagree,
+    so such a row lands under a heading a reader can read instead of falling through
+    the template's catch-all, which renders an unknown stage LAST, below Blocked.
+
+    The full membership fence for the split (nothing but `stage` moves, no other
+    ladder state is read as basing) is pinned once, on the shared machinery, in
+    tests/test_us_board_rank.py::TestBasingStage.  This class pins the HK
+    PARAMETERISATION: the re-export, the keyword thread-through, and that the HK
+    builder actually asks for it.
+    """
+
+    def _row(self) -> dict:
+        """The HK row shape — the ladder's DISPLAY label, and no internal `state` key.
+
+        The builder maps the scoreboard's `cycle` into `label` and never stamps
+        `state` on an HK row (scripts/build_hk_library.py), so the LABEL rung of
+        `is_bottom_watch` is the only one that can fire on this board.  A fixture
+        carrying `state` would pin a path HK cannot reach.
+        """
+        return {"ticker": "8888.HK", "label": "NEARING A LOW", "dir": "down",
+                "entry_signal": {"status": "watch"}}
+
+    def test_the_re_export_is_the_shared_constant(self):
+        """Same identity idiom as `test_stage_vocabulary_is_shared` — a local copy of
+        the string would let the two boards' bucket names drift apart silently."""
+        assert hbr.STAGE_BASING is ubr.STAGE_BASING
+        assert hbr.STAGE_BASING in hbr.STAGE_ORDER
+
+    def test_the_default_keeps_bottom_watch_in_blocked(self):
+        """No opt-in, no change — the pre-shelf behaviour, byte for byte."""
+        rows = hbr.score_rows([self._row()], board_asof=BOARD_ASOF)
+        assert rows[0]["stage"] == hbr.STAGE_BLOCKED
+
+    def test_the_opt_in_reaches_the_shared_engine(self):
+        """The thread-through: HK's `score_rows` is a WRAPPER, so a parameter it
+        accepts and forgets to forward would look wired and route nothing."""
+        rows = hbr.score_rows([self._row()], board_asof=BOARD_ASOF,
+                              bottom_watch_stage=hbr.STAGE_BASING)
+        assert rows[0]["stage"] == hbr.STAGE_BASING
+
+    def test_the_shelf_moves_the_row_between_display_buckets_and_nothing_else(self):
+        """Display-tier, at row grain: the same row through both calls differs in
+        `stage` alone.  Position stamps are compared separately because they are
+        positions — they move with the bucket, which is the feature."""
+        before = hbr.score_rows([self._row()], board_asof=BOARD_ASOF)[0]
+        after = hbr.score_rows([self._row()], board_asof=BOARD_ASOF,
+                               bottom_watch_stage=hbr.STAGE_BASING)[0]
+        assert (before["stage"], after["stage"]) == (hbr.STAGE_BLOCKED,
+                                                     hbr.STAGE_BASING)
+        positional = {"stage", "display_rank", "score_rank"}
+        assert set(before) == set(after)
+        assert ({k: v for k, v in before.items() if k not in positional}
+                == {k: v for k, v in after.items() if k not in positional})
+
+    def test_the_builder_asks_for_the_shelf(self, tmp_path, monkeypatch):
+        """A REAL CALL, not a source grep: the builder runs and the kwarg is recorded.
+
+        An engine that accepts `bottom_watch_stage` while the builder never passes it
+        is a dark parameter — the HK surface would ship the shelf's markup and never
+        route a row to it.  The recorder delegates to the real function so the rest of
+        the build is unchanged; this fixture's rows are DECLINE, so it produces no
+        basing row and is not asked to.
+        """
+        import json as _json
+        import lib.config as cfg_module
+        from scripts.build_hk_library import compute_hk_standouts
+
+        helper = TestBuilderWiring()          # same synthetic fixture, one definition
+        tickers = ["9988.HK", "0700.HK", "9618.HK", "3690.HK", "1810.HK"]
+        hd = tmp_path / "site" / "hkstockdata"
+        hd.mkdir(parents=True, exist_ok=True)
+        for ticker in tickers:
+            (hd / f"{ticker}.json").write_text(_json.dumps(helper._stock_json(ticker)))
+        monkeypatch.setattr(cfg_module, "ROOT", tmp_path)
+
+        seen: list[dict] = []
+        real = hbr.score_rows
+
+        def _recorder(rows, **kwargs):
+            seen.append(dict(kwargs))
+            return real(rows, **kwargs)
+
+        monkeypatch.setattr(hbr, "score_rows", _recorder)
+        out = compute_hk_standouts({
+            "as_of": "2026-07-08", "risk_state": "risk_off",
+            "modes": {"all": [helper._scoreboard_row(t) for t in tickers]},
+        })
+        if out is None:                       # pragma: no cover — env-dependent
+            pytest.skip("compute_hk_standouts returned None — enriched < 4 here")
+        assert seen, "the builder never called hk_board_rank.score_rows"
+        assert [k.get("bottom_watch_stage") for k in seen] == [hbr.STAGE_BASING], (
+            "the HK builder must opt into the basing shelf explicitly")
+
+
 class TestFalsyZeroGuards:
     """The traps: a truthiness test on any of these silently inverts the answer."""
 

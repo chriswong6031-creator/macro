@@ -53,6 +53,24 @@ _UP = [100.0, 101.0, 101.5, 102.0]      # next bar closes HIGHER -> held
 _DOWN = [100.0, 99.0, 99.5, 100.5]      # next bar closes LOWER  -> not held
 
 
+def _reclaiming_frame(*, closes) -> pd.DataFrame:
+    """A counter-trend frame whose `above200` FLIPS TRUE at bar i+1 — i.e. the name
+    reclaims its 200-day line after the signal.
+
+    Needed because `_frame` holds `above200` constant, so `reclaim = a[i+1] or a[i+2]`
+    could only ever be the same value as `a[i]`.  With a constant frame the counter-trend
+    branch can never return its 'reclaimed but did not hold' outcome, and the inventory
+    below would silently miss a reason the engine really does emit in production (29 rows
+    in the CN_RECLAIM_HOLD_AUDIT year).  A missing reason is a missing copy requirement,
+    so the fixture's blind spot would have become the map's blind spot."""
+    n = len(closes)
+    return pd.DataFrame({
+        "close": pd.Series(closes, dtype=float),
+        "above200": pd.Series([False] + [True] * (n - 1), dtype=bool),
+        "w_bull": pd.Series([False] * n, dtype=bool),
+    })
+
+
 def _emitted_reasons() -> dict[str, list[bool | None]]:
     """{reason: [every `take` value it was returned with]} across all branches."""
     seen: dict[str, list[bool | None]] = {}
@@ -72,6 +90,10 @@ def _emitted_reasons() -> dict[str, list[bool | None]]:
                 record(*sq._buy_filter(0, sig, True, len(sig)))
                 record(*sq._buy_filter(0, sig, False, 1))            # i+1 >= n
                 record(*sq._buy_filter(0, sig, False, 2, reclaim_veto=True))
+    # the counter-trend branch's reclaim-succeeded outcomes (both hold results)
+    for closes in (_UP, _DOWN):
+        sig = _reclaiming_frame(closes=closes)
+        record(*sq._buy_filter(0, sig, False, len(sig), reclaim_veto=True))
     return seen
 
 
@@ -90,10 +112,17 @@ def test_the_reason_inventory_is_not_vacuous():
     missing-copy assertion below becomes an unconditional pass — which is exactly how
     the regex-scraping first draft of this file would have shipped green."""
     blocks = _block_reasons()
-    assert len(blocks) >= 4, blocks
-    assert {"failed next-bar hold", "failed reclaim-and-hold",
+    assert len(blocks) >= 5, blocks
+    assert {"failed next-bar hold",
             "counter-trend, no 200-reclaim/hold",
+            "counter-trend, held but no 200-reclaim",
+            "counter-trend, reclaimed 200 but no next-bar hold",
             "veto: bearish divergence"} <= blocks, sorted(blocks)
+    # RETIRED 2026-08-04 — the engine must NOT emit it any more, and this is the pin that
+    # says so.  Its copy key deliberately outlives it (hk_board_rank.RETIRED_VETO_REASONS).
+    assert "failed reclaim-and-hold" not in blocks, (
+        "the main branch is again naming a reclaim it never tests — "
+        "research/cn_prophet_audit/CN_RECLAIM_HOLD_AUDIT.md §11")
 
 
 def test_every_block_reason_the_engine_emits_has_plain_word_copy():
@@ -108,10 +137,30 @@ def test_the_copy_map_carries_no_key_the_vetoed_lane_can_never_render():
     """`veto_reason_copy` is reached from ONE place — `build_vetoed_rows`, which admits
     `quality == "block"` only.  A take/pending key would be unreachable copy, and a test
     asserting its wording would be pinning dead code.  (An earlier cut of this fix added
-    `held confirmation (counter-trend)`, a TAKE reason, for exactly that reason.)"""
-    strays = sorted(set(hk_board_rank.VETO_REASON_COPY) - _block_reasons())
+    `held confirmation (counter-trend)`, a TAKE reason, for exactly that reason.)
+
+    A RETIRED key is the one legitimate exception: the engine has stopped emitting it but
+    stored rows still carry it, so its sentence must survive or every historical vetoed row
+    goes blank.  That exemption is declared in code (`RETIRED_VETO_REASONS`), never inferred
+    here — otherwise this guard would quietly accept any dead key someone forgot to remove."""
+    strays = sorted(set(hk_board_rank.VETO_REASON_COPY)
+                    - _block_reasons()
+                    - hk_board_rank.RETIRED_VETO_REASONS)
     assert not strays, (
         f"{strays} can never reach the vetoed lane — the map is block-only")
+
+
+def test_every_retired_key_is_really_retired_and_still_has_copy():
+    """The other half of the exemption.  A key parked in `RETIRED_VETO_REASONS` while the
+    engine still emits it would exempt a LIVE reason from the reachability guard; one
+    without copy would leave historical rows on the contentless fallback."""
+    assert hk_board_rank.RETIRED_VETO_REASONS, "the retired set is the exemption's receipt"
+    live = _block_reasons()
+    for key in hk_board_rank.RETIRED_VETO_REASONS:
+        assert key not in live, (
+            f"{key!r} is marked retired but the engine still emits it")
+        assert key in hk_board_rank.VETO_REASON_COPY, (
+            f"{key!r} is retired without copy — every stored row carrying it goes blank")
 
 
 @pytest.mark.parametrize("reason", ["failed next-bar hold", "failed reclaim-and-hold"])
@@ -151,14 +200,45 @@ def test_the_reason_that_does_test_the_200day_line_still_says_so():
     assert "200-day" in en, en
 
 
-def test_the_engine_literal_is_deliberately_unrenamed():
-    """`failed reclaim-and-hold` is a misleading name, and it STAYS.  It rides in the §7
-    marker stream US/CN artifacts already carry, so renaming it would change US/CN
-    output bytes to fix a copy defect.  If a later change does rename it, this test
-    fails and the copy key must move with it — the key is a contract, not a comment."""
-    sig = _frame(above200=True, weekly_bull=True, closes=_DOWN)
-    assert sq._buy_filter(0, sig, False, len(sig)) == (
-        False, "failed reclaim-and-hold")
+def test_the_main_branch_names_the_hold_it_tests_and_no_reclaim():
+    """Was `test_the_engine_literal_is_deliberately_unrenamed`, which pinned the misleading
+    `failed reclaim-and-hold` on the grounds that renaming it would change US/CN §7 bytes to
+    fix a copy defect.  `research/cn_prophet_audit/CN_RECLAIM_HOLD_AUDIT.md` §10/§11 measured
+    what leaving it cost: 1,094 blocks in the audit year named a reclaim that never ran, and
+    002155.SZ — 5.2% ABOVE its 200-day mean at its buy bar, so the counter-trend branch was
+    never entered — was misread by two separate investigations off that string.  The rename
+    landed; the old test's own instruction was that the copy key must move with it, and
+    `RETIRED_VETO_REASONS` is where it moved to.
+
+    The main branch is reached whenever a name is NOT both below-200 and weekly-down.  It
+    resolves on `held` alone, so its failure may name the hold and nothing else."""
+    for above200, weekly_bull in ((True, True), (True, False), (False, True)):
+        sig = _frame(above200=above200, weekly_bull=weekly_bull, closes=_DOWN)
+        take, reason = sq._buy_filter(0, sig, False, len(sig))
+        assert take is False
+        assert reason == sq.HOLD_FAIL == "failed next-bar hold", (
+            f"above200={above200} weekly_bull={weekly_bull}: {reason!r}")
+        assert "reclaim" not in reason and "200" not in reason, (
+            f"the main branch is naming a 200-day test it never ran: {reason!r}")
+
+
+def test_the_counter_trend_branch_names_which_of_its_two_legs_refused():
+    """The branch that DOES test both legs must say which one failed.  Collapsing all three
+    outcomes into one string is why only 40.2% of the rows reading 'no 200-reclaim' were
+    actually relieved by dropping the reclaim rule (CN_RECLAIM_HOLD_AUDIT.md §11)."""
+    ct = {"above200": False, "weekly_bull": False}
+    # neither leg: reclaim never happens, hold fails -> the legacy sentence, earned
+    assert sq._buy_filter(0, _frame(closes=_DOWN, **ct), False, 4) == (
+        False, "counter-trend, no 200-reclaim/hold")
+    # held, never reclaimed
+    assert sq._buy_filter(0, _frame(closes=_UP, **ct), False, 4) == (
+        False, "counter-trend, held but no 200-reclaim")
+    # reclaimed, did not hold
+    assert sq._buy_filter(0, _reclaiming_frame(closes=_DOWN), False, 4) == (
+        False, "counter-trend, reclaimed 200 but no next-bar hold")
+    # both legs pass -> unchanged take copy
+    assert sq._buy_filter(0, _reclaiming_frame(closes=_UP), False, 4) == (
+        True, "reclaimed 200 & held")
 
 
 # --------------------------------------------------------------------------- #

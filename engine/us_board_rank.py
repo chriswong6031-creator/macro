@@ -101,9 +101,11 @@ SCORE_WEIGHTS = {
     "quality": 10.0,
 }
 
-# Frozen definition inputs, not fitted coefficients.  Shared verbatim with
-# engine.china_board_rank — the tier cascade and entry-status vocabularies are
-# market-independent, so the two boards speak one scoring language.
+# Frozen definition inputs, not fitted coefficients.  The tier cascade and
+# entry-status VOCABULARIES are shared with engine.china_board_rank, but the
+# entry VALUES diverged 2026-08-04: CN v3 re-ordered its map to the measured
+# CN prime-window order (patience statuses first) while the US map below keeps
+# the trend-tape order.  tests/test_us_board_rank.py pins the divergence.
 _SIGNAL_BASE = {"T2": 1.0, "T1": 0.9, "T3": 0.7}
 _ENTRY_VALUE = {
     "buy_now": 1.0,
