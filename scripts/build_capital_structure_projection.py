@@ -28,6 +28,10 @@ from engine.capital_structure.projection import (
     build_projection_bundle,
     validate_projection_bundle,
 )
+from engine.capital_structure.source_ledger_io import (
+    read_source_ledger,
+    source_ledger_path,
+)
 from scripts.compile_capital_structure_events import (
     EDGE_COLUMNS,
     REVIEW_COLUMNS,
@@ -251,12 +255,8 @@ def build_from_disk(
     # the last-good public/canonical pair returns to a byte-identical state.
     _recover_projection_pair(canonical_path, public_path)
 
-    manifest_path = root / "source_manifest.parquet"
-    manifests = (
-        dataframe_records(pd.read_parquet(manifest_path))
-        if manifest_path.exists()
-        else []
-    )
+    manifest_path = source_ledger_path(root)
+    manifests = read_source_ledger(manifest_path)
     telemetry_path = root / "telemetry.json"
     telemetry = (
         _read_json_object(telemetry_path)

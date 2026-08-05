@@ -116,3 +116,10 @@
 {"asof": "2026-08-04", "domain": "commodity", "field": "commodity_ladder", "from_value": "COUNTERTREND BOUNCE", "to_value": "TOP WATCH", "macro_context_id": "85f210a2265b66a6"}
 {"asof": "2026-08-04", "domain": "commodity", "field": "copper_action", "from_value": "HOLD", "to_value": "BUY", "macro_context_id": "85f210a2265b66a6"}
 {"asof": "2026-08-04", "domain": "commodity", "field": "oil_action", "from_value": "SELL", "to_value": "STRONG SELL", "macro_context_id": "85f210a2265b66a6"}
+{"asof": "2026-08-05", "domain": "us", "field": "us_risk_radar", "from_value": "watch", "to_value": "caution", "macro_context_id": "ac481c9201da0a7f"}
+{"asof": "2026-08-05", "domain": "market", "field": "market_state_verdict", "from_value": "RISK_ON", "to_value": "MIXED", "macro_context_id": "ac481c9201da0a7f"}
+{"asof": "2026-08-05", "domain": "commodity", "field": "commodity_mtf_grade", "from_value": "BUY-THE-DIP", "to_value": "TREND-FOLLOW", "macro_context_id": "ac481c9201da0a7f"}
+{"asof": "2026-08-05", "domain": "commodity", "field": "commodity_ladder", "from_value": "TOP WATCH", "to_value": "FRESH BUY", "macro_context_id": "ac481c9201da0a7f"}
+{"asof": "2026-08-05", "domain": "commodity", "field": "silver_action", "from_value": "SELL", "to_value": "HOLD", "macro_context_id": "ac481c9201da0a7f"}
+{"asof": "2026-08-05", "domain": "commodity", "field": "oil_action", "from_value": "STRONG SELL", "to_value": "SELL", "macro_context_id": "ac481c9201da0a7f"}
+{"asof": "2026-08-05", "domain": "china", "field": "china_fe_band", "from_value": "Greed", "to_value": "Neutral", "macro_context_id": "ac481c9201da0a7f"}

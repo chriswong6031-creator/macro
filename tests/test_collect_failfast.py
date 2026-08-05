@@ -202,3 +202,38 @@ def test_declared_status_protocol_still_honored():
 
     res = run_adapter(_Declaring())
     assert res.status == "blocked"
+
+
+def test_runner_escape_degrades_to_failed_at_run_one_boundary():
+    """An exception ESCAPING run_adapter must not crash the collect pass.
+
+    #4534 made run_adapter's two known optional-attribute reads getattr-safe,
+    but the boundary ABOVE it was still bare: run_adapter reads
+    adapter.stale_after_days before its try block, so a plain-class adapter
+    (the gaming_ny pattern — no Adapter base) missing that attribute raises
+    straight through _run_one and kills main(), skipping the night's
+    "commit data" step — the exact 2026-08-02/03 outage shape, one attribute
+    over.  _run_one is the per-source isolation boundary: ANY escape from the
+    runner machinery must degrade to a normal 'failed' FetchResult so one
+    source can never sever the data-collection commit path again.
+    """
+    from scripts.collect import _run_one
+
+    class _NoStaleAttr:
+        # Plain class, deliberately NOT subclassing Adapter and NOT defining
+        # stale_after_days — run_adapter's pre-try read raises AttributeError.
+        name = "no_stale_attr_source"
+        group = "test_group"
+
+        def fetch(self, full_history: bool = False) -> dict:
+            return {}
+
+        def validate(self, series_name, df):
+            return df
+
+    out = _run_one("no_stale_attr_source", _NoStaleAttr, False)
+    assert out is not None, "runner escape must degrade, not abort the source"
+    res, _dt = out
+    assert res.status == "failed"
+    assert res.source == "no_stale_attr_source"
+    assert "AttributeError" in (res.error or "")

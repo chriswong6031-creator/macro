@@ -8,7 +8,7 @@
   "scope_en": "India national economy; Nifty 50 and Sensex are market context.",
   "scope_zh": "印度全国经济；Nifty 50与Sensex仅作市场背景。",
   "asof": "2026-07-31",
-  "built": "2026-08-04 03:26 UTC",
+  "built": "2026-08-05 08:34 UTC",
   "regime": {
     "quad": "Q2",
     "name": "Reflation",
@@ -531,9 +531,9 @@
       "bank": "RBI",
       "name_en": "Reserve Bank of India Monetary Policy Committee",
       "name_zh": "印度储备银行货币政策委员会",
-      "state": "upcoming",
-      "outcome_en": "Scheduled — no outcome yet",
-      "outcome_zh": "已排期——尚无结果",
+      "state": "today",
+      "outcome_en": "Decision due today",
+      "outcome_zh": "决议今日公布",
       "source": "https://www.rbi.org.in/scripts/Annualpolicy.aspx"
     },
     {
@@ -561,7 +561,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2025-03",
-      "age_days": 521,
+      "age_days": 522,
       "state": "stale",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -585,7 +585,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-05",
-      "age_days": 95,
+      "age_days": 96,
       "state": "stale",
       "label_en": "Rates",
       "label_zh": "利率"

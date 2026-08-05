@@ -485,6 +485,24 @@
       "at": "2026-08-03T21:30:15.465330+00:00",
       "activated": true,
       "importance": 78
+    },
+    "https://www.whitehouse.gov/?p=47544": {
+      "id": "wh-2026-08-05-presidential-message-on-the-birthday-of-the-united-states-coast-guard",
+      "at": "2026-08-05T04:34:14.396837+00:00",
+      "activated": false,
+      "importance": 5
+    },
+    "https://www.whitehouse.gov/?p=47539": {
+      "id": "wh-2026-08-04-manufacturing-jobs-flock-to-the-u-s-thanks-to-president-trumps-america-first-eco",
+      "at": "2026-08-05T04:34:29.771115+00:00",
+      "activated": true,
+      "importance": 62
+    },
+    "tw-2026-07-30-tga-release": {
+      "id": "tw-2026-07-30-tga-release",
+      "at": "2026-08-05T04:35:11.230315+00:00",
+      "activated": true,
+      "importance": 82
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."

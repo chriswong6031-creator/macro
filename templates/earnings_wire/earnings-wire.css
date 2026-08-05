@@ -23,7 +23,16 @@ html[data-theme="light"] .earnings-wire{--ew-accent:#174ec7;--ew-hot:#176a43;--e
 .earnings-wire :is(code,.ewa-rail-block .mono,.ewa-fact-meta>.mono,.ewa-table-wrap .mono){font-family:var(--num)}
 
 /* Secure member continuation. The locked excerpts are absent from this HTML;
-   this is the visible bridge to the edge-protected payload, not a CSS blur. */
+   this is the visible bridge to the edge-protected payload, not a CSS blur.
+
+   `pending` is the pre-paint hold set by the inline boot script in
+   earnings_wire_article.html.j2 — a session cookie is present, so the verdict is
+   probably "unlocked" and the gate must not paint while we go and confirm it.
+   earnings-wire.js clears the attribute the moment the answer arrives (and the boot
+   script's own timer clears it if that script never runs), so this rule can only ever
+   hide the gate for the length of one round trip. It is NOT an entitlement check:
+   the locked excerpts are not in this document to begin with. */
+html[data-earnings-member="pending"] .ewa-member-gate{display:none}
 .ewa-member-gate{position:relative;margin:28px 0 8px;padding:28px 18px 18px;border:1px solid color-mix(in srgb,var(--ew-accent) 44%,var(--ew-rule));border-radius:18px;overflow:hidden;background:radial-gradient(85% 130% at 100% 0%,color-mix(in srgb,var(--ew-accent) 18%,transparent),transparent 60%),linear-gradient(145deg,color-mix(in srgb,var(--panel2) 76%,var(--panel)),var(--panel))}
 .ewa-member-gate::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(180deg,var(--ew-accent),var(--ew-hot))}
 .ewa-gate-ghosts{display:grid;gap:9px;opacity:.45;filter:blur(.2px)}

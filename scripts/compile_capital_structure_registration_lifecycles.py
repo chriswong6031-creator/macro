@@ -25,6 +25,10 @@ from engine.capital_structure.registration_lifecycle import (
     compile_registration_lifecycles,
     validate_registration_lifecycle_bundle,
 )
+from engine.capital_structure.source_ledger_io import (
+    read_source_ledger,
+    source_ledger_path,
+)
 from scripts.compile_capital_structure_events import (
     EDGE_COLUMNS,
     _load_contract,
@@ -84,12 +88,8 @@ def compile_from_disk(
     output_path = output_path or (root / "registration_lifecycles.json")
     produced_at = generated_at or _now_iso()
 
-    manifest_path = root / "source_manifest.parquet"
-    manifests = (
-        dataframe_records(pd.read_parquet(manifest_path))
-        if manifest_path.exists()
-        else []
-    )
+    manifest_path = source_ledger_path(root)
+    manifests = read_source_ledger(manifest_path)
     telemetry_path = root / "telemetry.json"
     telemetry = (
         _read_json_object(telemetry_path)

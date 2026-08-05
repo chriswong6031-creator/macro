@@ -1,0 +1,53 @@
+{
+  "quarantine": {
+    "snapshots.jsonl": {
+      "file": "snapshots_quarantine.jsonl",
+      "n_rows": 1613,
+      "reason": "duplicate weekend re-description of an already-recorded session under a fresh calendar date (clock-stamped fetch; calendar-asof forward-ledger family, #4568/basket-turn sibling)",
+      "reason_classes": {
+        "duplicate": 1612,
+        "roster": 1
+      },
+      "healed_by": "scripts/heal_subsector_rotation_ledgers.py",
+      "last_heal": "2026-08-05T07:37:59+00:00"
+    },
+    "turns.jsonl": {
+      "file": "turns_quarantine.jsonl",
+      "n_rows": 12,
+      "reason": "turn-state-machine OUTPUT evolved on a session that does not exist — the weekend row set carries state transitions absent from the true session's own rows, so restamping would mint events no real build produced (clock-stamped fetch; calendar-asof forward-ledger family, #4568/basket-turn sibling)",
+      "reason_classes": {
+        "fake-session turn output": 12
+      },
+      "healed_by": "scripts/heal_subsector_rotation_ledgers.py",
+      "last_heal": "2026-08-05T07:37:59+00:00"
+    },
+    "universe_nominations.jsonl": {
+      "file": "universe_nominations_quarantine.jsonl",
+      "n_rows": 12,
+      "reason": "nomination derived from turn-state-machine output evolved on a session that does not exist — the weekend row set carries pairings absent from the true session's own rows, so restamping would mint nominations no real build produced (clock-stamped fetch; calendar-asof forward-ledger family, #4568/basket-turn sibling)",
+      "reason_classes": {
+        "fake-session nomination": 12
+      },
+      "healed_by": "scripts/heal_subsector_rotation_ledgers.py",
+      "last_heal": "2026-08-05T07:37:59+00:00"
+    }
+  },
+  "known_gaps": [
+    {
+      "session": "2026-07-06",
+      "reason": "the nightly logged no snapshot rows for this session (fetch failure or build abort); the board for that session is unknowable from this ledger"
+    },
+    {
+      "session": "2026-07-13",
+      "reason": "the nightly logged no snapshot rows for this session (fetch failure or build abort); the board for that session is unknowable from this ledger"
+    },
+    {
+      "session": "2026-07-15",
+      "reason": "the nightly logged no snapshot rows for this session (fetch failure or build abort); the board for that session is unknowable from this ledger"
+    },
+    {
+      "session": "2026-07-23",
+      "reason": "the nightly logged no snapshot rows for this session (fetch failure or build abort); the board for that session is unknowable from this ledger"
+    }
+  ]
+}

@@ -567,6 +567,64 @@ def test_wire_filter_hidden_state_wins_over_card_layout() -> None:
     assert ".ew-card[hidden]{display:none!important}" in committed_css
 
 
+def test_member_gate_never_flashes_at_a_signed_in_reader() -> None:
+    """The gate must not paint while the entitlement answer is still in flight.
+
+    2026-08-04 (operator, on a call-record page opened logged in): "for a split second
+    it will show the gating container and then it will disappear". The gate ships in
+    the HTML and earnings-wire.js removes it only after auth settles AND the payload
+    fetch returns — up to 3s of auth wait plus a round trip, all of it painted.
+
+    Three legs hold this up, and each one is load-bearing on its own:
+      1. a synchronous <head> script that reads the Supabase session COOKIE (theme.js
+         uses cookie storage, so this is answerable before first paint) and holds the
+         gate back — but ONLY when a session exists, so anonymous readers and crawlers
+         are untouched;
+      2. a CSS rule keyed to that hold and nothing else;
+      3. an unconditional release on the failure path, ahead of every early return in
+         revealSignin — the signed-in-but-not-entitled reader hits the FIRST of those
+         returns, so a release placed after them would hide the gate from exactly the
+         reader it is meant for.
+    """
+    repo = Path(__file__).resolve().parents[1]
+    template = (repo / "templates" / "earnings_wire" / "earnings_wire_article.html.j2").read_text(
+        encoding="utf-8"
+    )
+    css_paths = (
+        repo / "templates" / "earnings_wire" / "earnings-wire.css",
+        repo / "site" / "stocks" / "earnings" / "assets" / "earnings-wire.css",
+    )
+    js_paths = (
+        repo / "templates" / "earnings_wire" / "earnings-wire.js",
+        repo / "site" / "stocks" / "earnings" / "assets" / "earnings-wire.js",
+    )
+
+    # 1 — the pre-paint hold, gated on a real session cookie and self-expiring.
+    assert "sb-[^=;]*-auth-token" in template
+    assert "d.setAttribute('data-earnings-member','pending')" in template
+    assert "d.removeAttribute('data-earnings-member')" in template
+    assert "},8000);" in template, "the boot script must expire its own hold"
+
+    # 2 — one rule, keyed to the hold. Anything broader would be an entitlement
+    #     check in CSS, and the locked excerpts are not in this document anyway.
+    rule = 'html[data-earnings-member="pending"] .ewa-member-gate{display:none}'
+    for path in css_paths:
+        css = path.read_text(encoding="utf-8")
+        assert rule in css, path
+        assert css.count("data-earnings-member") == 1, path
+
+    # 3 — release before the early returns, not after them. Comments are stripped
+    #     first: the guard has to read the code, not the prose explaining it.
+    for path in js_paths:
+        script = path.read_text(encoding="utf-8")
+        halves = script.split("function revealSignin(){", 1)
+        assert len(halves) == 2, path
+        body = halves[1].split("\n  }", 1)[0]
+        body = "\n".join(re.sub(r"//.*$", "", line) for line in body.splitlines())
+        release = body.index("removeAttribute('data-earnings-member')")
+        assert release < body.index("return"), f"{path}: gate release sits behind an early return"
+
+
 def test_wire_header_cta_keeps_contrast_against_estate_link_rule() -> None:
     """The estate-wide anchor color must not turn the blue header CTA text blue."""
     repo = Path(__file__).resolve().parents[1]

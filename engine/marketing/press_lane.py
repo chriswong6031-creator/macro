@@ -971,16 +971,42 @@ def _spill_pool(cfg: dict, root: Path) -> list[str]:
         return []
 
 
+def _macro_refinement(scored: dict) -> str:
+    """``"minor"`` when a macro print must not sit on the brand desk, else ``""``.
+
+    Reads the verdict `breaking_relevance.score_item` already stamped rather than
+    re-deriving it from the text: deriving it twice is how the routing decision
+    and the provenance the outbox records drift apart, and the ledger is the only
+    evidence available when a post lands on the wrong desk.
+    """
+    tier = str(scored.get("macro_tier") or "").strip()
+    if not tier:
+        # Not a macro print, or an item scored before this key existed. Either
+        # way there is no refinement to apply and the class owns it outright.
+        return ""
+    economy = str(scored.get("macro_economy") or "").strip()
+    return "" if (tier == "tier1" and economy == "us") else "minor"
+
+
 def _route_account(scored: dict, *, cfg: dict, root: Path) -> str:
     """The account that owns this wire item (XG-W2 per-account wire routing).
 
     Fail-soft to the historical flagship: a routing lookup must never be able to
     stop a breaking item from emitting at all.
+
+    The REFINEMENT carries release importance (2026-08-05). `macro_print` is one
+    class covering two products — a US CPI print and a Swiss CPI sub-print score
+    identically at base 55.0 — and only the tape-moving US release belongs on the
+    desk that exists to carry a house view. `score_item` has already stamped the
+    verdict on the item, so this reads it rather than re-deriving it; an item
+    scored before that key existed simply has no refinement and routes by class,
+    which is the pre-2026-08-05 behaviour.
     """
     try:
         from engine.marketing.wire_routing import route  # noqa: PLC0415
 
-        return route(scored.get("event_class", "none"), cfg=cfg, root=root)
+        return route(scored.get("event_class", "none"), cfg=cfg, root=root,
+                     refinement=_macro_refinement(scored))
     except Exception as exc:  # noqa: BLE001
         print(f"::warning title=wire-routing-failed::falling back to "
               f"{_FALLBACK_ACCOUNT}: {exc}", flush=True)
@@ -1578,7 +1604,30 @@ def _apply_wire_voice(
                 opener = ""
                 post = post_no_opener
             else:
-                return base_summary, register, "", fmt, "", False
+                # LADDER RUNG 3 (2026-08-05): shed TAPE LEGS before declining.
+                # A US macro print's stamp is a three-leg basket, and the two
+                # rungs above spend the whole reading to save characters that
+                # the reading is the entire point of — the old ladder went
+                # opener -> decline, and "decline" returns tape="", so the one
+                # post whose value IS the tape read shipped without it. A
+                # two-leg read is still a read; only when even ONE leg cannot
+                # fit do we fall back to the plain body.
+                from engine.marketing.tape_stamp import shorten_stamp  # noqa: PLC0415
+                for n_legs in (2, 1):
+                    short = shorten_stamp(tape, n_legs)
+                    if not short or short == tape:
+                        continue
+                    candidate = wv.compose_post(
+                        opener="", summary=summary_text,
+                        attribution=attribution, tape_stamp=short,
+                    )
+                    if not wf.validate_length(candidate, fmt, cfg=format_cfg):
+                        opener = ""
+                        post = candidate
+                        tape = short
+                        break
+                else:
+                    return base_summary, register, "", fmt, "", False
 
     # Record the chosen opener into the account's no-repeat window (newest last).
     acct_recent.append(opener)

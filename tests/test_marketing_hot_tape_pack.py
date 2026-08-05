@@ -751,14 +751,48 @@ class TestMassiveStoreIsOptIn:
         }, index=pd.Index(days, name="date")).to_parquet(massive / "WIDE.parquet")
 
     def test_the_default_order_stops_at_the_curated_trees(self, tmp_path):
+        """The invariant is MASSIVE-STAYS-OUT, not a frozen tuple.
+
+        This used to assert the literal ``("data/baskets/ohlcv", "data/stocks")``.
+        The 2026-08-04 regional fix appended five curated non-US trees so the brain
+        could see a Hong Kong / A-share / TSX candle at all, which broke the literal
+        without touching what the guard is actually for. Pinned here instead:
+        massive_stock_day is absent from the default, the US trees are still searched
+        FIRST, and a bare unqualified ticker still resolves nowhere but the US trees.
+        """
         from engine.marketing import chart_render as CR
 
         self._massive_only(tmp_path)
-        assert CR._PRICE_SUBDIRS == ("data/baskets/ohlcv", "data/stocks")
+        assert "data/massive_stock_day" not in CR._PRICE_SUBDIRS
+        assert CR._PRICE_SUBDIRS[:2] == ("data/baskets/ohlcv", "data/stocks")
+        assert CR._US_PRICE_SUBDIRS == ("data/baskets/ohlcv", "data/stocks")
         assert CR._price_parquet("WIDE", tmp_path) is None
         assert CR.load_closes("WIDE", tmp_path, n=30) is None
         assert CR.load_ohlcv("WIDE", tmp_path, n=30) is None
         assert CR.load_ohlcv_windowed("WIDE", tmp_path) is None
+
+    def test_a_regional_tree_never_shadows_a_curated_us_name(self, tmp_path):
+        """The reason appending the regional trees is safe: they cannot outrank a US
+        name. Same ticker in a US tree and a regional tree → the US bars win."""
+        import numpy as _np
+        from engine.marketing import chart_render as CR
+
+        days = pd.bdate_range(end=pd.Timestamp(date.today()), periods=40)
+
+        def _write(subdir, level):
+            d = tmp_path / subdir
+            d.mkdir(parents=True, exist_ok=True)
+            closes = _np.full(len(days), float(level))
+            pd.DataFrame({
+                "open": closes, "high": closes, "low": closes, "close": closes,
+                "volume": _np.full(len(days), 1000, dtype="int64"),
+            }, index=pd.Index(days, name="Date")).to_parquet(d / "DUPE.parquet")
+
+        _write("data/stocks", 100)          # curated US
+        _write("data/hk_stocks", 999)       # regional impostor
+        bars = CR.load_ohlcv("DUPE", tmp_path, n=10)
+        assert bars is not None
+        assert bars[4][-1] == 100.0, "regional tree shadowed a curated US name"
 
     def test_the_hot_tape_order_reaches_it(self, tmp_path):
         from engine.marketing import chart_render as CR

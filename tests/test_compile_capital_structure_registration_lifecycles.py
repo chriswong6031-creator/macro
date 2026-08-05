@@ -16,6 +16,19 @@ from scripts.compile_capital_structure_events import compile_from_disk as compil
 from scripts.compile_capital_structure_registration_lifecycles import (
     compile_from_disk,
 )
+from engine.capital_structure.source_ledger_io import (
+    encode_source_ledger,
+    read_source_ledger,
+    source_ledger_path,
+)
+
+
+def _write_ledger(path, records):
+    """Write a source-manifest ledger fixture, bypassing the validating writer.
+
+    Fixtures deliberately include ledgers the identity law rejects.
+    """
+    path.write_bytes(encode_source_ledger(list(records)))
 
 
 def _manifest(*, role: str, parent_manifest_id: str | None = None) -> dict:
@@ -107,9 +120,7 @@ def _compiled_root(tmp_path: Path) -> Path:
     primary = _manifest(
         role="primary", parent_manifest_id=complete["manifest_id"]
     )
-    pd.DataFrame([complete, primary]).to_parquet(
-        root / "source_manifest.parquet", index=False
-    )
+    _write_ledger(source_ledger_path(root), [complete, primary])
     compile_events(root=root, generated_at="2026-08-02T12:00:00Z")
     return root
 
