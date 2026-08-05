@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T08:58:23.031358+00:00",
-  "count": 792,
+  "generated_at": "2026-08-05T09:29:00.812673+00:00",
+  "count": 793,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -70,6 +70,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-z9ml1finvoz-ed543c",
+      "title": "UL Solutions (ULS) Mixed 2Q as the Industrial business undergoes organic growth deceleration and margin contraction",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:21:41Z",
+      "summary_points": [
+        "**Q2 Growth & Margin Pressure**: Industrial organic growth decelerated to 7.2% y/y (vs.",
+        "2% in 1Q), EBITDA margins contracted 10 bps y/y due to compensation spend; revenue beat consensus (5.2% y/y vs.",
+        "9% est) but organic growth missed (6.6% vs.",
+        "1%).",
+        "**Valuation vs Growth Deceleration**: Elevated P/E (33.8x) vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
