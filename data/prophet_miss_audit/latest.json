@@ -10,7 +10,7 @@
   "name_score": "engine.name_score_grader's append-only PIT call ledger, forward-joined through engine.grading (next-bar fill, survivorship-aware). Read-only: this audit mirrors the grader's numbers, it does not change what the grader computes."
  },
  "summary": {
-  "universe_n": 1493,
+  "universe_n": 1495,
   "eligible_today_n": 38,
   "top63_n": 150,
   "top63_eligible_today_n": 8,
