@@ -686,12 +686,17 @@ def chart_digest(symbol: str, tf: str = "1D", sections: list | None = None,
 
 
 def _bar_basis(symbol: str, root: Path) -> str:
-    """'intrabar' | 'close_to_close' | 'none' for *symbol* (never raises)."""
+    """'intrabar' | 'close_to_close' | 'none' | 'unknown' for *symbol* (never raises).
+
+    The failure value is 'unknown', NOT 'intrabar': this feeds a disclosure, and a
+    silent default of "real wicks" is the one answer that could make a synthesized
+    chart read as a measured one.
+    """
     try:
         from engine.marketing.chart_render import bar_basis  # noqa: PLC0415
         return bar_basis(symbol, root)
     except Exception:  # noqa: BLE001 — unknown basis must not cost the digest
-        return "intrabar"
+        return "unknown"
 
 
 def _apply_bar_basis(digest: dict, symbol: str, root: Path) -> None:
@@ -720,6 +725,9 @@ def _apply_bar_basis(digest: dict, symbol: str, root: Path) -> None:
         "wicks, intrabar range and volume are not observable here; closes, trend, "
         "swing structure and levels are."
     )
+    # Only the 1D digest carries gaps at all — _weekly_snapshot builds its skeleton
+    # with want_gaps=False, so neither the 1W digest nor the weekly block riding on
+    # a 1D digest has a gaps key to correct.
     if "gaps" in digest:
         digest["gaps"] = {
             "measurable": False,
@@ -729,10 +737,6 @@ def _apply_bar_basis(digest: dict, symbol: str, root: Path) -> None:
                 "this chart as gap-free."
             ),
         }
-    for block in ("weekly",):
-        inner = digest.get(block)
-        if isinstance(inner, dict) and "gaps" in inner:
-            inner["gaps"] = dict(digest["gaps"])
 
 
 def _select_sections(digest: dict, sections: list | None) -> dict:

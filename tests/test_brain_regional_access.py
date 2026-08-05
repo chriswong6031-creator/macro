@@ -227,6 +227,27 @@ def test_section_filter_cannot_strip_the_disclosure(tree):
     assert digest["bar_basis_note"]
 
 
+def test_only_the_1d_digest_carries_gaps_at_all(tree):
+    """Pins the reachability the correction relies on: _weekly_snapshot builds with
+    want_gaps=False, so the 1W digest and the weekly block riding on a 1D digest have
+    no gaps key. If that ever changes, an uncorrected empty list would reappear on
+    close-only symbols and this test is where it surfaces."""
+    for symbol in ("0700.HK", "SHOP.TO"):
+        assert "gaps" not in cp.chart_digest(symbol, "1W", root=tree)
+        weekly = cp.chart_digest(symbol, "1D", root=tree).get("weekly") or {}
+        assert "gaps" not in weekly
+
+
+def test_an_undeterminable_basis_never_defaults_to_real_wicks(tree, monkeypatch):
+    """The disclosure's failure value must not be the one answer that lets a
+    synthesized chart read as a measured one."""
+    monkeypatch.setattr(
+        "engine.marketing.chart_render.bar_basis",
+        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+    assert cp._bar_basis("SHOP.TO", tree) == "unknown"
+
+
 def test_measure_line_says_a_touch_means_the_close(tree):
     out = cp.measure_line("_HSI", "1D",
                           {"t": 1_735_000_000, "p": 100.0},
