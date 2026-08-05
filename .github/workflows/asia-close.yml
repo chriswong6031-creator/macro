@@ -649,6 +649,16 @@ jobs:
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # normalize the EXACT tree this always() commit stages (P0 2026-08-04,
+          # 9a997e9da3f — daily.yml's identical always() shape): a timeout-cancel
+          # skips every success()-gated step including the shim/externalize step
+          # above (this job's ONLY normalize pass) while this step still commits,
+          # shipping raw CN/HK pages sitewide. Normalize here so the staged tree is
+          # normalized by construction; all three passes are idempotent (~35s no-op
+          # when the step above already ran them).
+          python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.externalize_css || echo "::warning::pre-commit css externalize FAILED — pages may ship un-externalized (9a997e9da3f)"
+          python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
           # pre-commit template↔site re-sync (ui.template_site_sync): the shim/externalize
           # step above rewrites the site/ copies of the ~48 templates/-paired plain-copy
           # assets, and only the post-rebase --fix in the push loop heals the divergence —
@@ -715,6 +725,12 @@ jobs:
               # -X theirs can also resurrect checkout-time copies over a reword that merged
               # mid-render. templates/ is now fresh post-rebase main — re-copy the plain-copy
               # page assets; the render-heal commit below folds the delta.
+              # re-shim + re-externalize POST-rebase (P0 2026-08-04, 9a997e9da3f): the rebase
+              # can inherit RAW pages from main (a cancelled nightly's always() commit); a
+              # re-stamp-only heal re-stamps the fat inline page and pushes the poison
+              # onward. Full normalize chain here = the next lane push self-heals the tree.
+              python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+              python -m scripts.externalize_css || echo "::warning::post-rebase css externalize FAILED — inherited raw pages stay un-externalized (9a997e9da3f)"
               # re-stamp POST-rebase (ui.asset_stamp): the tree this loop PUSHES is not the tree
               # the normalizer step stamped — pages a sibling lane lands mid-run arrive here
               # un-stamped and unseen by that pass (2026-07-26 render 6260e5ac8c0 shipped

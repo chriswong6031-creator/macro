@@ -63,7 +63,7 @@ LEGACY_ARTIFACT = FIXTURES / "hk_standouts_2026_07_31.json"
 # is rewritten every night and cannot satisfy both halves of the era contract.
 LIVE_ARTIFACT = ROOT / "site" / "factordata" / "hk_standouts.json"
 
-_STAGE_ORDER = ["live", "setting_up", "ran", "blocked"]
+_STAGE_ORDER = ["live", "setting_up", "ran", "basing", "blocked"]
 
 
 # --------------------------------------------------------------------------- #
@@ -164,6 +164,13 @@ def score_buy_lane(rows: list[dict]) -> list[dict]:
     from its own copy of the mapping.  A harness that reimplements the thing under
     test can only ever agree with itself, and the numbers it put on the reference
     screenshots were not the board's.  `hk_board_rank.score_rows` is the board.
+
+    `bottom_watch_stage` is passed for the same reason every other argument is: the
+    builder passes it (scripts/build_hk_library.py), so a harness that left it out
+    would stage a BOTTOM WATCH row into `blocked` and photograph a board the nightly
+    does not produce.  It changes nothing on the 2026-07-31 tape — that board carries
+    no BOTTOM WATCH row in any lane — which is exactly why the shelf's subject is a
+    synthetic one in `shapes_fixture()`.
     """
     from engine import hk_board_rank as hbr
 
@@ -175,7 +182,8 @@ def score_buy_lane(rows: list[dict]) -> list[dict]:
                             else r.get("adv63"))
               for r in rows if r.get("ticker")}
     return hbr.score_rows(rows, verdict_by=verdict_by, entry_by=entry_by,
-                          adv_by=adv_by, board_asof=BOARD_ASOF)
+                          adv_by=adv_by, board_asof=BOARD_ASOF,
+                          bottom_watch_stage=hbr.STAGE_BASING)
 
 
 # The seven witnesses (masterplan §1): every one of them bottomed 2026-06-26 and ran
@@ -474,7 +482,30 @@ def shapes_fixture() -> dict:
         _witness_buy_row(("8808.HK", "Sample Holdings H", "样本控股辛",
                           "Property", 6.0, 0.0),
                          "blocked", "counter-trend, no 200-reclaim/hold"),
+        # `failed next-bar hold` is what reclaim_veto=False (hk_prophet_v2) emits on a
+        # counter-trend refusal — 10 of the first v2 board's 12 vetoed rows carried it.
+        # Carded here so its CARD copy is exercised by a render, not only asserted
+        # against a map literal: with no _HK_BLOCK entry the popover fell through to
+        # the generic sentence with the raw engine slug appended.
+        _witness_buy_row(("8809.HK", "Sample Holdings I", "样本控股壬",
+                          "Healthcare", 7.0, 0.0),
+                         "blocked", "failed next-bar hold"),
     ]
+    # The BASING subject (W-E.1). HK's staged pool is cascade-gated, so a pre-signal
+    # BOTTOM WATCH row is near-impossible on the real board — measured ZERO across the
+    # 14 committed snapshots — which is precisely why the shelf's copy, tone and
+    # filtering have to be pinned on a rendered row here rather than on a map literal.
+    # The row carries the ladder's DISPLAY label and no `state` key, because that is
+    # the HK row shape (the builder maps the scoreboard's `cycle` into `label`).
+    # `await_confluence` is deliberate: no entry has fired — it is a setting-up
+    # status, so without the shelf this row would read "Setting up" — and the card's
+    # own verb map turns it into `near`, which makes this row the subject that proves
+    # a buy-family verb demotes to Wait underneath a "no entry signal yet" heading.
+    _basing = _witness_buy_row(("8806.HK", "Sample Holdings F", "样本控股己",
+                                "Materials", 24.0, 0.0), "await_confluence")
+    _basing.update({"label": "NEARING A LOW", "label_zh": "接近低点",
+                    "dir": "down", "group": "setting_up"})
+    extra_buy.append(_basing)
     # a setting-up subject the real tape does supply — its own stage, untouched
     su["buy"] = score_buy_lane([dict(r) for r in su["buy"]] + extra_buy)
     from engine import hk_board_rank as _hbr
@@ -489,6 +520,7 @@ def shapes_fixture() -> dict:
         "live": sum(1 for r in su["buy"] if r["stage"] == "live"),
         "setting_up": sum(1 for r in su["buy"] if r["stage"] == "setting_up"),
         "ran": sum(1 for r in su["buy"] if r["stage"] == "ran"),
+        "basing": sum(1 for r in su["buy"] if r["stage"] == "basing"),
         "blocked": sum(1 for r in su["buy"] if r["stage"] == "blocked"),
         "ran_lane": len(su["ran"]),
         "vetoed_lane": len(su["vetoed"]),
@@ -549,6 +581,60 @@ def test_stage_heading_carries_label_count_and_stance(prio_html):
     assert '<span class="l-zh">现在可操作</span>' in block
     assert '<span class="sh-n">%d</span>' % n_live in block
     assert '<span class="l-en">entry window is open</span>' in block
+
+
+# --------------------------------------------------------------------------- #
+# W-E.1 — the basing shelf, ported from the US board (#4609)
+# --------------------------------------------------------------------------- #
+
+def test_the_basing_shelf_renders_between_ran_and_blocked(prio_html):
+    """The shelf is the whole deliverable: a BOTTOM WATCH name rendered inside
+    `Blocked`, beside the falling knives, is where the reader stops looking.  Its own
+    shelf ABOVE Blocked is what makes the state visible.
+
+    On HK this ships for vocabulary parity — the cascade-gated pool has produced no
+    BOTTOM WATCH row in any committed snapshot — so what is pinned is the routing and
+    the position, not a population.
+    """
+    basing = prio_html.find('<div class="nb-stage-hd sg-basing" data-stage="basing"')
+    assert basing != -1, "the basing shelf never rendered"
+    assert (prio_html.find('<div class="nb-stage-hd sg-ran" data-stage="ran"') < basing
+            < prio_html.find('<div class="nb-stage-hd sg-blocked" data-stage="blocked"'))
+    # the basing subject is ON the shelf, and a blocked subject is NOT
+    subject = prio_html.find('data-ticker="8806.HK" data-stage="basing"')
+    assert subject > basing, "the basing subject did not land under its own heading"
+    assert subject < prio_html.find('data-ticker="8804.HK" data-stage="blocked"')
+
+
+def test_the_basing_shelf_speaks_watch_words_in_both_languages(prio_html):
+    """A watch lane that never makes a claim: the shelf says what the state is and
+    what to do about it, and 'buy' is not one of the things it can say."""
+    assert '<span class="l-en">Basing</span><span class="l-zh">筑底中</span>' in prio_html
+    assert ('<span class="l-en">no entry signal yet — watch, don’t chase</span>'
+            '<span class="l-zh">尚无入场信号 — 观察，勿追高</span>') in prio_html
+    shelf = prio_html[prio_html.find('<div class="nb-stage-hd sg-basing"'):]
+    shelf = shelf[:shelf.find("</div>") + 6]
+    for banned in ("Buy", "buy", "买入"):
+        assert banned not in shelf, "%r on a watch-only shelf" % banned
+
+
+def test_the_basing_shelf_takes_a_direction_neutral_tone(prio_html):
+    """--pv-wait and --muted are the two verb tones theme.css does NOT flip under the
+    zh 红涨绿跌 convention, so a stance with no direction in it reads the same in both
+    languages.  Inheriting --pv-avoid (what these rows had inside Blocked) would paint
+    a basing name with the stand-aside colour it is being taken out of."""
+    assert ".sg-basing     { --sgc: var(--pv-wait); }" in prio_html
+    assert ".sg-blocked    { --sgc: var(--pv-avoid); }" in prio_html
+
+
+def test_the_basing_bucket_is_filterable_like_every_other(prio_html):
+    """Both halves of the filter pair, or the facet is half-built: the hide half alone
+    leaves a basing row below the show-more fold invisible when you filter to it."""
+    assert 'data-stagepick="basing"' in prio_html
+    assert ('#standouts:not(.st-table-mode)[data-stagef="basing"]     '
+            '[data-stage]:not([data-stage="basing"])') in prio_html
+    assert ('#standouts:not(.st-table-mode)[data-stagef="basing"]     '
+            '.sm-hidden[data-stage="basing"]') in prio_html
 
 
 def test_no_blocked_card_above_a_live_card(prio_html):
@@ -982,6 +1068,46 @@ def test_leaders_rows_keep_the_engines_order(prio_html):
     assert rendered == [r["ticker"] for r in shapes_fixture()["leaders"][:15]]
 
 
+def test_leaders_rows_are_terminal_routable(prio_html):
+    """Every leaders row must be reachable by theme.js's Terminal intercept.
+
+    That intercept is a capture-phase listener on `a[href]` — it re-points
+    hk_lookup.html#TKR (one of theme.js's TERMINAL_PAGES) at the Terminal portal.
+    A `<tr onclick="location.href=…">` is invisible to it, so these rows navigated
+    to the retired hk_lookup.html analyzer no matter what theme.js did (the same
+    defect fixed for us_stocks in #4489, reported here 2026-08-03). The pin is
+    two-sided: the anchor must exist AND the onclick form must be gone, on a
+    render that actually has rows (an empty strip would make the absence half
+    vacuous).
+    """
+    seg = _leaders_block(prio_html)
+    tickers = [r["ticker"] for r in shapes_fixture()["leaders"][:15]]
+    assert tickers, "fixture has no leaders — the assertions below are vacuous"
+
+    for ticker in tickers:
+        assert '<tr class="ts-row" data-tkr="%s">' % ticker in seg, (
+            "%s row is not carrying the ticker the delegated handler reads" % ticker)
+        assert '<a class="ts-tk-a" href="hk_lookup.html#%s">' % ticker in seg, (
+            "%s ticker is not an anchor — theme.js cannot see it" % ticker)
+
+    # The defect itself: no ts-row may navigate via an inline location.href.
+    assert "onclick=\"location.href='hk_lookup.html#" not in prio_html
+
+    # The delegated handler that covers clicks on the REST of the row. It lives
+    # just past the table, so it is outside `seg` — search the whole page.
+    assert "tr.ts-row[data-tkr]" in prio_html
+    assert "window.MDXTerminal" in prio_html
+
+
+def test_leaders_ticker_anchor_does_not_read_as_a_link(prio_html):
+    """The row is the affordance; the anchor exists only so theme.js can see it
+    (and so cmd-/middle-click keeps its native new-tab behaviour). Without this
+    rule every ticker in the strip turns blue and underlined."""
+    css = (Path(__file__).resolve().parents[1] / "templates" / "hk.html.j2").read_text()
+    assert ".ts-tk-a { color: inherit; text-decoration: none; }" in css
+    assert 'class="ts-tk-a"' in prio_html   # the rule has something to style
+
+
 def test_every_leaders_column_carries_a_c_class_so_none_escapes_the_mobile_budget(prio_html):
     """The c-* classes ARE the mobile contract (≤680px hides the tertiary set); a th
     or td without one silently escapes that budget."""
@@ -1098,10 +1224,13 @@ def test_a_card_never_contradicts_the_bucket_it_sits_in(prio_html):
     """The bucket outranks the verb. HK's 200-day veto stamps a blocking marker while
     the entry gauge may still read `partial`, which would print a solid green BUY
     chip under a heading that says "stand aside". No buy-family verb is reachable in
-    the ran or blocked buckets."""
+    the ran, basing or blocked buckets — basing is the sharpest case, since its
+    heading says "no entry signal yet" while its `await_confluence` subject would
+    otherwise card as `near`."""
     su = shapes_fixture()
-    shut = {r["ticker"] for r in su["buy"] if r["stage"] in ("ran", "blocked")}
-    assert shut, "fixture must contain ran/blocked rows"
+    shut = {r["ticker"] for r in su["buy"]
+            if r["stage"] in ("ran", "basing", "blocked")}
+    assert shut, "fixture must contain ran/basing/blocked rows"
     for tk in shut:
         m = re.search(r'<a class="pvcard pv-(\w+)[^"]*" href="[^"]*" data-ticker="%s"'
                       % re.escape(tk), prio_html)
@@ -1132,12 +1261,30 @@ def test_the_glow_can_never_land_outside_the_live_bucket(prio_html):
 
 def test_blocked_witnesses_name_the_check_that_is_holding_them_out(prio_html):
     """G6 display-tier relief: a blocked name is visible AND its reason is nameable
-    in plain words, on Tier 2 where mechanics belong."""
-    assert "Price has not reclaimed its 200-day line and held there" in prio_html
-    assert "价格尚未重新站上200日均线并守住" in prio_html
+    in plain words, on Tier 2 where mechanics belong.
+
+    The `failed reclaim-and-hold` sentence used to be "Price has not reclaimed its
+    200-day line and held there, so entries stay shut until it does" — a promise about
+    a 200-day condition that branch of `_buy_filter` never evaluates (it tests the
+    next 3-day bar's close alone).  It now states the test that actually ran.
+    """
+    assert "The 3-day bar after the signal closed lower" in prio_html
+    assert "信号后的下一根 3 日K线收低" in prio_html
     assert "still under its 200-day line" in prio_html
-    assert "failed reclaim-and-hold</span>" not in prio_html, (
-        "the engine's raw reason string must not reach the glance tier verbatim")
+    for slug in ("failed reclaim-and-hold", "failed next-bar hold"):
+        assert "%s</span>" % slug not in prio_html, (
+            "the engine's raw reason string must not reach the glance tier verbatim")
+
+
+def test_the_blocked_card_copy_never_promises_a_200day_reclaim_it_did_not_test(
+        prio_html):
+    """The inverse guard.  `counter-trend, no 200-reclaim/hold` DOES test the 200-day
+    line, so its sentence must keep naming it — otherwise the fix above could be
+    'passed' by deleting every 200-day mention from the page."""
+    assert "This would be a bounce against the bigger downtrend" in prio_html
+    assert "Price has not reclaimed its 200-day line and held there" not in prio_html, (
+        "the next-bar-hold branch is again narrating a 200-day round trip it never "
+        "measured")
 
 
 # --------------------------------------------------------------------------- #

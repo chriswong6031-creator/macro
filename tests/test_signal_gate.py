@@ -51,12 +51,15 @@ def test_buy_signal_is_slim_and_json_safe():
     slim = buy_signal(full)
     assert set(slim) == {"eligible", "tier_cascade", "tier_sub", "ticks", "bars_to_cross",
                          "provisional",  # provisional = the T3 partial-bucket badge (W6 #22)
-                         "htf_s1", "htf_s2"}   # HTF super-tier badges (S1 display / S2 shadow)
+                         "htf_s1", "htf_s2",   # HTF super-tier badges (S1 display / S2 shadow)
+                         # graded-cohort label for the measured-floor change (2026-08-05):
+                         # a young name reaching a buy strip must be labellable there too.
+                         "young_history"}
     assert "last" not in slim and "result" not in slim          # no NaN-prone / heavy fields
     json.dumps(slim, allow_nan=False)                            # must not raise
     assert is_buyable(slim) is True                              # slim still gates correctly
     assert buy_signal(None) == {"eligible": False, "tier_cascade": None,
-                                "htf_s1": False, "htf_s2": False}
+                                "htf_s1": False, "htf_s2": False, "young_history": False}
     assert is_buyable(buy_signal(None)) is False
 
 

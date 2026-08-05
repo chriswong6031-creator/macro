@@ -8,7 +8,8 @@ Public API:
     prefer_fresher_session(data) -> dict
     top_movers(data, *, tf, n, min_abs) -> {gainers, losers}
     theme_lists(data, *, tf, n, min_members, min_abs_theme) -> list[dict]
-    mover_facts(mover, data) -> {facts, numbers_whitelist}
+    technical_state(ticker, root) -> str | None
+    mover_facts(mover, data, *, root=None) -> {facts, numbers_whitelist}
     theme_facts(theme_item) -> {facts, numbers_whitelist}
 
 All functions are deterministic and fail-soft (return None / empty on errors).
@@ -53,9 +54,14 @@ and they are systematically one calendar day apart:
     (engine/sp500_heatmap.build_heatmap, ``closes_sorted.index[-1]``). That cache
     lags the live session, so at 21:25Z on 2026-07-30 the field read 2026-07-29
     while the tile 1D it labels had already been overlaid with the 07-30 tape.
-  * themes_heatmap.json `asof` = the finviz scrape's own capture date
-    (scripts/fetch_finviz_themes: ``datetime.now(timezone.utc)``) — the session
-    actually being read.
+  * themes_heatmap.json `asof` = the NYSE session the scrape's EOD numbers
+    describe (scripts/fetch_finviz_themes ``_asof_stamp()``, via
+    ``lib.nyse_calendar.session_date()`` since the #4584 calendar-asof heal: a
+    post-close weekday run stamps that weekday; a weekend/holiday run stamps
+    the last completed session) — the session actually being read. The
+    measurement below predates that heal but is undisturbed by it: on weekdays
+    the old ``datetime.now(timezone.utc)`` clock stamp and the session date
+    coincide.
 
 Measured over 14 consecutive commits (2026-07-30 13:34Z .. 2026-07-31 11:58Z)
 the sp500 stamp was EXACTLY one day behind the themes stamp on every single one,
@@ -130,18 +136,36 @@ _EMPTY_FACTS: dict = {"facts": [], "numbers_whitelist": []}
 #      (publish_time_content._render_copy_unbaited now also re-rolls onto other
 #      variants on a too-long violation, which is the second net; this is the
 #      first, and a bank that fits should never need the net.)
+#   6. **NO TRADING INSTRUCTION, NOT EVEN A HEDGED ONE** (defect 4, operator
+#      2026-08-03). Every line of the 2026-07-31 bank was a timing decision the
+#      desk had not computed: "Does not chasing keep costing me money?", "I'd
+#      rather be late. Am I paying for that?", "Am I too slow waiting for the
+#      pullback?". Read as English those say *wait, do not chase, a pullback is
+#      coming* — a directional call wearing a first-person hedge. The lane picks
+#      the tail from a crc32 of the THEME NAME; nothing in that hash has ever
+#      looked at a chart, so the "stance" is a coin flip that reads as ignorance
+#      the half of the time it is wrong (the $FSLR post of 2026-08-03: "either
+#      way I'd let it settle first", written over a name that had just crossed
+#      up out of a two-month washout, which is the setup momentum traders buy).
+#
+#      The replacement keeps the COST — the author admits, on the record, that
+#      he cannot yet read the group — and drops the instruction. An admission of
+#      ignorance is falsifiable in the only way that matters here (the next day
+#      shows whether it was a theme or one story) and it prescribes nothing.
+#      ``copywriter.uncomputed_stance`` is the executable form of this rule and
+#      ``tests/test_marketing_mover_stance.py`` walks both banks through it.
 # ─────────────────────────────────────────────────────────────────────────────
 _TAIL_DOWN = [
-    "Am I too slow waiting for one quiet close?",
-    "Do I regret passing on the first bounce?",
-    "Does patience cost me the snapback here?",
-    "I'd rather be late. Am I paying for that?",
+    "Am I looking at damage or a loud afternoon?",
+    "Do I know why they all went at once?",
+    "Is my read on this group any good today?",
+    "Am I seeing pressure or one story repeated?",
 ]
 _TAIL_UP = [
-    "Do I miss it if I refuse to pay up here?",
-    "Am I too slow waiting for the pullback?",
-    "Does not chasing keep costing me money?",
-    "I want it to hold first. Too careful of me?",
+    "Am I watching a rotation or one loud day?",
+    "Do I trust a group move I cannot explain?",
+    "Is this a theme or a headline I missed?",
+    "Am I sure this is the group and not a name?",
 ]
 
 #: Hard ceiling every tail must satisfy — pinned in tests so a future "better"
@@ -685,17 +709,272 @@ def theme_lists(
 # The day word
 # ─────────────────────────────────────────────────────────────────────────────
 
-def session_phrase(now: datetime | None = None) -> str:
+def session_phrase(now: datetime | None = None, *,
+                   asof: object | None = None) -> str:
     """The honest phrase for "the session this move happened in" — "today",
     "on Friday", or "" when no word can be justified.
 
     ONE call site for a word that was hardcoded in four places in this module
-    and two more in ``content_studio``. A mover's percent is by construction the
-    last COMPLETED session's, so that session is the fact's as_of and
-    :func:`market_clock.temporal_vocab` decides what it may be called at `now`.
+    and two more in ``content_studio``. :func:`market_clock.temporal_vocab`
+    decides what a fact stamped `asof` may be called at `now`.
+
+    ``asof`` IS THE FIX FOR DEFECT 2 (operator, live posts 2026-08-03 ~17:30Z).
+    -------------------------------------------------------------------------
+    This function used to take no `asof` at all: it inferred the fact's session
+    from the CLOCK, as ``_clock.last_completed_session(now)``, on the premise
+    stated in the old docstring — "a mover's percent is by construction the last
+    COMPLETED session's". That premise is true for the NIGHTLY desk, which writes
+    after the close about a finished session. It is FALSE for the publish-time
+    lane (``engine/marketing/publish_time_content``), whose rows are the session
+    IN PROGRESS, overlaid from the live tape.
+
+    What that cost, exactly: a theme_list posted Monday 2026-08-03 at ~13:30 ET
+    carried the live Monday tape, a headline reading "Virtual & Augmented Reality
+    is up across the board today" and a card stamped 2026-08-03 — and a BODY
+    reading "+3.7% on average on Friday", because ``last_completed_session`` at
+    13:30 ET Monday is Friday 2026-07-31 (Monday's close has not happened yet).
+    Three claims about which session it was, in one post.
+
+    The session a fact belongs to is a property of the ROW, never of the wall
+    clock, so the row's stamp is now passed in. ``asof=None`` keeps the old
+    clock-inferred behaviour for the nightly callers that legitimately mean "the
+    last completed session" (content_studio's plan-time day word), so this is an
+    additive fix and no nightly copy changes.
+
+    An unparseable / absent `asof` resolves to the empty phrase, not to a guess —
+    the fact texts below join on truthiness, so the sentence simply carries no
+    temporal word. Fail-closed, per market_clock's stated fail direction.
     """
     now = now or datetime.now(timezone.utc)
-    return _clock.temporal_vocab(now, _clock.last_completed_session(now)).phrase
+    fact_asof = _clock.last_completed_session(now) if asof is None else asof
+    return _clock.temporal_vocab(now, fact_asof).phrase
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The COMPUTED technical state (defect 4, operator 2026-08-03)
+#
+# THE DEFECT. The $FSLR mover post of 2026-08-03 read "FSLR surged +10.3% today
+# (Technology). Real strength or real damage, either way I'd let it settle
+# first." The operator: "this just did a daily MACD cross and is washed out
+# after 2 months of downtrend... If it launched then the best thing to do is to
+# chase in, since it already got washed. So us saying to let it settle is the
+# dumbest thing ever and just ruins our reputation."
+#
+# The deeper fault is NOT that the stance pointed the wrong way. It is that the
+# lane emitted a DIRECTIONAL STANCE IT HAD NEVER COMPUTED: a canned template
+# sentence chosen by a hash of the ticker, over a chart nothing in the lane had
+# read. A template that says "let it settle" on every large move is wrong about
+# half the time by construction, and it looks ignorant exactly when it is.
+#
+# THE RULING (operator, 2026-08-03): we do not issue a directional trading
+# stance we have not computed. Two lawful shapes remain:
+#   (a) NO STANCE — the move plus what is observable, and stop.
+#   (b) A COMPUTED state — the real technical situation the move landed on,
+#       cited in plain words, which is a stance we have EARNED.
+#
+# This block is shape (b)'s producer, and it is deliberately the cheapest
+# honest one available to this lane. The publish-time mover path already loads
+# local daily bars for every item it ships (``chart_render.load_ohlcv_windowed``
+# inside ``publish_time_content._resolve_card``), so the price history is
+# already on the machine; the 50-day average and the length of the current run
+# on one side of it are a dozen lines of arithmetic over those closes.
+#
+# WHY THE 50-DAY AND NOTHING ELSE. Three constraints, all of them the repo's
+# own laws rather than a preference:
+#   * MACD IS UNSAYABLE. ``copywriter._BANNED_VOCAB`` bans "macd" (and "rsi",
+#     "vwap", "poc") outright: a study name the reader has to look up may not
+#     appear in a post, whatever the chart labels. The operator's own diagnosis
+#     is therefore not directly quotable, but the STATE it describes — a
+#     washed-out name climbing back over its trend average — is.
+#   * NO STAGE ARTIFACT REACHES THIS LANE. There is no per-ticker stage /
+#     washout store keyed by an arbitrary S&P-or-pack ticker that the publisher
+#     checkout carries; the daily parquets are what is genuinely available at
+#     publish time, so they are what this reads.
+#   * PLAIN WORDS AND NO NEW NUMBERS. Every phrase below spells its duration out
+#     ("two months") rather than printing a figure, so nothing here has to be
+#     licensed through the numbers whitelist, and none of them puts a bare
+#     pronoun after a preposition ("under it") — that is the dangling-level
+#     defect ``copywriter.dangling_levels`` exists to catch.
+#
+# A name whose bars are missing, short, or unreadable returns None and the
+# writer falls back to shape (a). Degrading to "no stance" is always lawful;
+# inventing one never is.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: The trend average every phrase below is written against. 50 sessions is the
+#: line the lane's own chart already draws (``render_chart_v2`` warms SMA50), so
+#: the sentence and the picture describe the same line.
+_STATE_SMA_PERIOD = 50
+
+#: Bars needed before the state is measurable at all: the average itself plus
+#: enough history behind it for "how long has it been on this side" to mean
+#: something. Below this the honest answer is None.
+_STATE_MIN_BARS = _STATE_SMA_PERIOD + 15
+
+#: A run shorter than this is not a "since" — it is chop, and calling three
+#: sessions "a stretch above the average" would be the degenerate-lookback
+#: defect ``chart_facts._MIN_SINCE_SESSIONS`` documents in its own register.
+_STATE_MIN_RUN = 8
+
+#: A run this short on a side reached out of a LONG run on the other side is the
+#: fresh-cross case — the $FSLR shape. Above it the cross is no longer news.
+_STATE_FRESH_RUN = 4
+
+#: How far from the average counts as ON it rather than either side of it, as a
+#: fraction of the average. See the three-sides note in _state_from_closes: a
+#: two-valued `close > sma` test calls a flat line "below its average".
+_STATE_DEADBAND = 0.001
+
+_WEEK_WORDS: dict[int, str] = {
+    1: "a week", 2: "two weeks", 3: "three weeks", 4: "four weeks",
+}
+_MONTH_WORDS: dict[int, str] = {
+    1: "a month", 2: "two months", 3: "three months", 4: "four months",
+    5: "five months", 6: "six months", 7: "seven months", 8: "eight months",
+    9: "nine months", 10: "ten months", 11: "eleven months", 12: "a year",
+}
+
+
+def _span_words(sessions: int) -> str:
+    """Plain-word duration for a run of trading sessions, or "" when too short.
+
+    SPELLED OUT, NEVER NUMERIC — the same rule ``chart_facts._window_label``
+    follows and for the same reason: a spelled duration adds no token to the
+    numbers whitelist, so a state sentence can never be rejected as an invented
+    number. Weeks below a month, months above it, capped at a year.
+    """
+    try:
+        n = int(sessions)
+    except (TypeError, ValueError):
+        return ""
+    if n < 5:
+        return ""
+    if n < 21:
+        return _WEEK_WORDS.get(max(1, min(4, round(n / 5))), "")
+    months = round(n / 21)
+    if months <= 0:
+        return ""
+    return _MONTH_WORDS.get(months, "more than a year")
+
+
+def _sma_tail(closes: list[float], period: int) -> list[float | None]:
+    """Simple moving average aligned to *closes* (None until the window fills)."""
+    out: list[float | None] = []
+    running = 0.0
+    for i, v in enumerate(closes):
+        running += v
+        if i >= period:
+            running -= closes[i - period]
+        out.append(running / period if i >= period - 1 else None)
+    return out
+
+
+def _state_from_closes(ticker: str, closes: list[float]) -> str | None:
+    """The plain-word technical state of *ticker*, or None when unmeasurable.
+
+    Pure and stdlib-only on purpose: the arithmetic is unit-testable against a
+    hand-built series (see tests/test_marketing_mover_stance.py, which builds
+    the $FSLR shape — a two-month slide, then one +10% session) without touching
+    pandas, a parquet, or the filesystem.
+    """
+    try:
+        series = [float(c) for c in (closes or [])]
+    except (TypeError, ValueError):
+        return None
+    if len(series) < _STATE_MIN_BARS:
+        return None
+    if any(c != c for c in series):        # NaN anywhere → refuse, do not guess
+        return None
+
+    sma = _sma_tail(series, _STATE_SMA_PERIOD)
+    # THREE SIDES, NOT TWO: +1 above, -1 below, 0 *at* the average. A plain
+    # `close > sma` test has no third state, so a price sitting exactly on its
+    # average resolves to "below" — and a perfectly flat series (a halted name, a
+    # stale-carried close, a synthetic fixture) then produces the fully confident
+    # sentence "X has been below its 50-day average for a month now" about a
+    # price that has not moved at all. The deadband is relative because the
+    # sentence is about a TREND relationship: a tenth of a percent away from the
+    # average is not on either side of it in any sense a reader would recognise.
+    sides: list[int] = []
+    for i in range(len(series)):
+        avg = sma[i]
+        if avg is None or not (avg > 0):
+            continue
+        gap = (series[i] - avg) / avg
+        sides.append(0 if abs(gap) <= _STATE_DEADBAND else (1 if gap > 0 else -1))
+    if len(sides) < 2:
+        return None
+
+    side = sides[-1]
+    if side == 0:
+        # Sitting ON the average is a real state and an unsayable one: it is
+        # neither "back above" nor "still below", and every phrase this function
+        # can build would overstate it. No state, so the writer's no-stance shape.
+        return None
+    above = side > 0
+    run = 1
+    for i in range(len(sides) - 2, -1, -1):
+        if sides[i] != side:
+            break
+        run += 1
+    prior = 0
+    for i in range(len(sides) - run - 1, -1, -1):
+        if sides[i] != -side:      # a 0 bar ends the prior run too, on purpose
+            break
+        prior += 1
+
+    side_word = "above" if above else "below"
+    label = f"its {_STATE_SMA_PERIOD}-day average"
+
+    # 1. The fresh cross. This is the $FSLR case, and it is the one state worth
+    #    a whole sentence: a name that spent a long stretch on one side of its
+    #    trend average and has just changed sides.
+    if run <= _STATE_FRESH_RUN and prior >= _STATE_MIN_RUN:
+        span = _span_words(prior)
+        if span:
+            if run == 1:
+                return (f"{ticker} closed back {side_word} {label} "
+                        f"for the first time in {span}")
+            return (f"{ticker} has been back {side_word} {label} only a few "
+                    f"days, after {span} on the other side")
+
+    # 2. The established side. Not news, but it is the context a one-day move
+    #    landed in, and it is the honest answer to "is this a turn or a step".
+    if run >= _STATE_MIN_RUN:
+        span = _span_words(run)
+        if span:
+            return f"{ticker} has been {side_word} {label} for {span} now"
+
+    # 3. Neither: the name is chopping across the average. Still a real state,
+    #    and saying so is more useful than a stance nobody computed.
+    return f"{ticker} has been crossing {label} in both directions lately"
+
+
+def technical_state(ticker: str, root: PathLike | None) -> str | None:
+    """:func:`_state_from_closes` over *ticker*'s local daily bars. None on any
+    failure — missing store, short history, no pandas, unreadable parquet.
+
+    The bar loader is imported INSIDE this function on purpose. Every top-level
+    import in this module is stdlib (``publish_time_content`` depends on that:
+    "movers_source, copywriter, outbox, sentinel, live_verify" are named there as
+    the stdlib-only set the publisher may import for free), and
+    ``chart_render.load_ohlcv`` pulls pandas. Same lazy-import contract the card
+    path in that module already uses.
+    """
+    tkr = str(ticker or "").upper()
+    if not tkr or root is None:
+        return None
+    try:
+        from engine.marketing.chart_render import load_ohlcv  # noqa: PLC0415
+        bars = load_ohlcv(tkr, root, n=_STATE_MIN_BARS + 150)
+    except Exception:  # noqa: BLE001
+        return None
+    if not bars or len(bars) < 5 or not bars[4]:
+        return None
+    try:
+        return _state_from_closes(tkr, list(bars[4]))
+    except Exception:  # noqa: BLE001
+        return None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -778,13 +1057,28 @@ def trend_context(closes: list | tuple, pct: float | int | None) -> str:
 
 
 def mover_facts(mover: dict, data: dict | None = None, *,
-                now: datetime | None = None) -> dict:
+                now: datetime | None = None,
+                asof: object | None = None,
+                root: PathLike | None = None) -> dict:
     """Build {facts, numbers_whitelist} for a single mover.
 
     mover: a dict with {ticker, name, pct, sector} (from top_movers output).
     data: unused currently (reserved for future enrichment), kept for API symmetry.
     now: the wall clock the temporal word is resolved against (UTC, defaults to
         the real one). See the "today" note below.
+    asof: the SESSION THE ROW IS FROM (``mover["asof"]``). Defaults to None,
+        which keeps the legacy clock-inferred "last completed session" reading
+        for the nightly desk. An intraday caller whose rows are the session in
+        progress MUST pass it — see :func:`session_phrase` for the defect
+        (a Monday-live theme post whose body said "on Friday").
+    root: repo root, and the OPT-IN for the computed technical state (defect 4,
+        2026-08-03). Given it, this emits an extra ``mover_state`` fact reading
+        the name's real position against its 50-day average from local daily
+        bars, which is what lets a mover post carry a stance the desk actually
+        computed instead of the canned "I'd let it settle first". Omitted (or
+        unreadable bars) → no such fact, and the writer's mover bank degrades to
+        its no-stance shape. Opt-in because it costs a parquet read per mover
+        and pulls pandas: a caller that only wants the percent should not pay.
 
     Returns the standard facts shape; every number used in fact text is whitelisted.
     No invented numbers — only values from the mover dict itself.
@@ -817,7 +1111,7 @@ def mover_facts(mover: dict, data: dict | None = None, *,
     whitelist = [pct_str]
 
     # Primary fact: the day's move
-    when = session_phrase(now)
+    when = session_phrase(now, asof=asof)
     direction_verb = "surged" if pct >= 3 else ("gained" if pct > 0 else ("crashed" if pct <= -5 else "fell"))
     sector_note = f" ({sector})" if sector else ""
     _lead = " ".join(p for p in (ticker, direction_verb, pct_str, when) if p)
@@ -856,6 +1150,25 @@ def mover_facts(mover: dict, data: dict | None = None, *,
             "numbers": [abs_pct_str],
         })
 
+    # THE COMPUTED STATE (defect 4). Salience 9 puts it directly under the
+    # percent and above the magnitude note, so `{top_fact}` is still the move
+    # itself — the state is the SECOND thing the post says, which is the order a
+    # reader wants ("it did this; here is the situation it did it in"). Absent
+    # when `root` was not given or the bars are unreadable, and the writer's
+    # `needs_state` variants are then unselectable: no state, no stance.
+    state_text = technical_state(ticker, root) if root is not None else None
+    if state_text:
+        facts.append({
+            "id": "mover_state",
+            "text": f"{state_text}.",
+            "salience": 9,
+            # Deliberately empty. Every phrase _state_from_closes can build
+            # spells its duration out ("two months") and names the average as
+            # "50-day" — a 2-digit token copywriter._NUMBER_RE does not screen —
+            # so the sentence licenses nothing and can invent nothing.
+            "numbers": [],
+        })
+
     facts.sort(key=lambda x: (-x["salience"], x["id"]))
     return {"facts": facts, "numbers_whitelist": list(dict.fromkeys(whitelist))}
 
@@ -864,12 +1177,20 @@ def mover_facts(mover: dict, data: dict | None = None, *,
 # theme_facts
 # ─────────────────────────────────────────────────────────────────────────────
 
-def theme_facts(theme_item: dict, *, now: datetime | None = None) -> dict:
+def theme_facts(theme_item: dict, *, now: datetime | None = None,
+                asof: object | None = None) -> dict:
     """Build {facts, numbers_whitelist} for a theme_list item.
 
     theme_item: a dict from theme_lists() output.
     The whitelist MUST cover every member % AND the aggregate pct.
     No invented numbers.
+
+    asof: the SESSION THE MEMBERS ARE FROM (``theme_item["asof"]`` — the one
+        session all members agree on, None when they do not). Defaults to None,
+        which keeps the legacy clock-inferred reading for the nightly desk.
+        The publish-time lane passes it; see :func:`session_phrase` for the
+        Monday-live post whose body said "on Friday" while its own headline and
+        card said today.
     """
     theme_name = theme_item.get("theme", "")
     members = theme_item.get("members") or []
@@ -919,7 +1240,7 @@ def theme_facts(theme_item: dict, *, now: datetime | None = None) -> dict:
     # Primary fact: the theme's aggregate move
     direction_word = "lower" if direction == "down" else "higher"
     n_members_str = str(len(members))
-    _when = session_phrase(now)
+    _when = session_phrase(now, asof=asof)
     if agg_pct_str:
         _avg = " ".join(
             p for p in (f"{theme_name} is {agg_pct_str} on average", _when) if p)

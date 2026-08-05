@@ -1186,3 +1186,153 @@ class TestRoutineRestatementDemotion:
         assert set(c) >= {"base", "tier_bonus", "kw_bonus", "ticker_bonus",
                           "revision_penalty", "revision_marker",
                           "market_hours_weight", "raw", "capped"}
+
+
+class TestRateDecisionVocabulary:
+    """The Fed's DECISION, in the words a wire actually writes it in.
+
+    `_MACRO_PRINT_KEYWORDS` knew the Fed by its furniture — "fomc", "rate
+    decision", "fed funds", "basis points", "federal reserve decision" — and by
+    nothing the decision itself is ever phrased as. Measured on the live
+    classifier before the fix, four of these six scored `none` / base 0.0:
+
+        none         base=0.0   Fed holds rates steady, Powell signals…
+        none         base=0.0   Fed leaves rates unchanged at 4.25%-4.50%
+        none         base=0.0   Fed cuts rates for the first time since 2024
+        none         base=0.0   Powell says the committee is not in a hurry to cut
+        macro_print  base=55.0  Federal Reserve cuts interest rates by 25 basis points
+        macro_print  base=55.0  FOMC statement: policy remains restrictive
+
+    `breaking.salience_threshold: 60` and the largest `_TIER_BONUS` is
+    official's +15, so a base of 0.0 could not clear the emit gate under ANY
+    source tier: the most market-moving macro headline this lane can receive
+    could not post at all. The two that did classify were accidents of wording.
+    """
+
+    # 14:00 ET on a weekday — the FOMC statement slot, full market-hours weight.
+    NOW = datetime(2026, 7, 29, 18, 0, 0, tzinfo=timezone.utc)
+
+    #: The six measured headlines, verbatim.
+    SIX = (
+        "Fed holds rates steady, Powell signals September cut on the table",
+        "Fed leaves rates unchanged at 4.25%-4.50%",
+        "Fed cuts rates for the first time since 2024",
+        "Powell says the committee is not in a hurry to cut",
+        "Federal Reserve cuts interest rates by 25 basis points",
+        "FOMC statement: policy remains restrictive",
+    )
+
+    def _score(self, headline, tier="wire"):
+        return score_item(
+            {"headline": headline, "body_snippet": "", "source_tier": tier},
+            now=self.NOW,
+        )
+
+    @pytest.mark.parametrize("headline", SIX)
+    def test_every_measured_decision_headline_is_a_macro_print(self, headline):
+        r = self._score(headline)
+        assert r["event_class"] == "macro_print", headline
+        assert r["_salience_components"]["base"] == 55.0, headline
+
+    @pytest.mark.parametrize("headline", SIX)
+    def test_every_measured_decision_headline_clears_the_emit_gate(self, headline):
+        """The consequence, not just the class.
+
+        Classifying is worthless if the score still cannot reach the gate, so
+        this pins the number the lane actually gates on rather than the label.
+        Wire tier (+8) at the statement hour, against the shipped
+        `breaking.salience_threshold: 60`.
+        """
+        r = self._score(headline)
+        assert r["salience"] >= 60.0, (headline, r["_salience_components"])
+        assert r["relevant"] is True, headline
+
+    @pytest.mark.parametrize("headline,tense", [
+        ("Fed holds rates steady", "holds"),
+        ("Fed held rates at 4.25%", "held"),
+        ("Fed is holding rates for now", "holding"),
+        ("Fed leaves rates unchanged", "leaves"),
+        ("Fed left rates unchanged", "left"),
+        ("Fed keeps rates on hold", "keeps"),
+        ("Fed kept rates unchanged", "kept"),
+        ("Fed cuts rates by a quarter point", "cuts"),
+        ("Fed cut interest rates today", "cut + interest rates"),
+        ("Fed is cutting rates again", "cutting"),
+        ("Fed raises rates to 5.5%", "raises"),
+        ("Fed raised interest rates again", "raised + interest rates"),
+        ("Fed hikes rates for a third time", "hikes"),
+        ("Fed lifts rates off the floor", "lifts"),
+        ("Fed slashes rates in emergency move", "slashes"),
+        ("Fed lowers rates a quarter point", "lowers"),
+        ("Markets price a September rate cut", "noun: rate cut"),
+        ("Traders trim bets on rate hikes", "noun: rate hikes"),
+        ("Fed delivers quarter-point cut", "quarter-point cut"),
+        ("Fed stands pat as inflation cools", "stands pat"),
+        ("Dot plot shows two cuts in 2026", "dot plot"),
+    ])
+    def test_no_tense_of_the_decision_is_missing(self, headline, tense):
+        """Why the vocabulary is a generated cross product, not a hand list.
+
+        `_MACRO_REVISION_RE`'s own comment records the precedent: an exact-phrase
+        list written from guesses caught 1 of 5 real phrasings. A wire writes
+        "cuts rates", "cut interest rates" and "kept rates on hold"
+        interchangeably, and the cross product is the only form of this list
+        that cannot be short by a tense.
+        """
+        assert self._score(headline)["event_class"] == "macro_print", tense
+
+    # ── PRECISION: the taxonomy is first-match-wins and macro_print sits
+    # directly above policy, so a term that also reads as policy silently
+    # re-addresses existing items to a different desk. ────────────────────────
+
+    @pytest.mark.parametrize("headline", [
+        # The one real collision candidate in `_POLICY_KEYWORDS`: SINGULAR
+        # "interest rate cap". The plural only ever appears bound to a decision
+        # verb in the macro vocabulary, and bare "interest rate(s)" is absent.
+        "Senate advances an interest rate cap on credit cards",
+        "Trump announces 50% tariff on Chinese semiconductors",
+        "White House unveils new export controls on AI chips",
+        "Congress passes a tax cut package",
+        "EU opens an antitrust probe into cloud pricing",
+    ])
+    def test_rate_decision_vocabulary_steals_nothing_from_policy(self, headline):
+        assert self._score(headline)["event_class"] == "policy", headline
+
+    def test_powell_industries_stays_company_news(self):
+        """Bare "powell" is the `_GEOPOLITICAL_KEYWORDS` bare-"strike" trap.
+
+        Powell Industries (POWL) is a listed company on the same broad feeds
+        this lane reads, and macro_print outranks company_news — so one surname
+        in the vocabulary would re-class its earnings as a Fed decision. The
+        chair is reached through qualified forms ("powell says", "chair
+        powell", "fed's powell") instead.
+        """
+        r = self._score("Powell Industries beats Q3 estimates, raises guidance")
+        assert r["event_class"] == "company_news"
+
+    @pytest.mark.parametrize("headline", [
+        "Fed's Williams says policy is well positioned",
+        "Bostic sees the economy in a good place",
+        "Goolsbee comfortable with where things stand",
+    ])
+    def test_regional_fed_speakers_are_not_promoted(self, headline):
+        """A deliberate exclusion, not an oversight.
+
+        The chair's words ARE the decision's guidance. A regional appearance is
+        the volume the operator complained about on 2026-08-02 — "four of them
+        from a single John Williams appearance inside an hour", at 2/2/2/1
+        views. A generic "fed's" or a bare surname list would have re-armed
+        that firehose onto the brand account at a 55.0 base.
+        """
+        assert self._score(headline)["event_class"] != "macro_print", headline
+
+    def test_the_vocabulary_carries_no_bare_rate_noun(self):
+        """Mutation pin for the collision above.
+
+        The behavioural tests pass for the wrong reason if someone later adds
+        bare "interest rate" — "Senate advances an interest rate cap" would
+        then be a macro print. Pin the absence directly so the edit fails here.
+        """
+        from engine.marketing.breaking_relevance import _MACRO_PRINT_KEYWORDS
+        for banned in ("interest rate", "interest rates", "powell", "rate", "rates"):
+            assert banned not in _MACRO_PRINT_KEYWORDS, banned

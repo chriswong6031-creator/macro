@@ -343,14 +343,174 @@ class TestStages:
 
     def test_stage_rank_order(self):
         ranks = [ubr.stage_rank(s) for s in
-                 ("live", "setting_up", "ran", "blocked")]
-        assert ranks == sorted(ranks) == [0, 1, 2, 3]
+                 ("live", "setting_up", "ran", "basing", "blocked")]
+        assert ranks == sorted(ranks) == [0, 1, 2, 3, 4]
 
     def test_unknown_stage_sorts_last(self):
         assert ubr.stage_rank("banana") > ubr.stage_rank("blocked")
 
     def test_reads_the_row_when_no_entry_is_passed(self):
         assert ubr.stage_for({"entry_signal": {"status": "buy_now"}}) == "live"
+
+
+# ---------------------------------------------------------------------------
+# 3b. the `basing` shelf — BOTTOM WATCH stops hiding inside `blocked` (W-E.1 / D18)
+# ---------------------------------------------------------------------------
+
+_BASING = {"bottom_watch_stage": ubr.STAGE_BASING}
+
+# Every other ladder state, as (state, display label) — engine.cycles.STATE_DISPLAY.
+# BOTTOM WATCH is deliberately absent: this is the "must NOT fire" list.
+_OTHER_LADDER_STATES = [
+    ("DECLINE", "DOWNTREND"),
+    ("ROLLING OVER", "TOPPING"),
+    ("TURN SIGNALED", "BOTTOMING"),
+    ("FRESH BUY", "BUY ZONE"),
+    ("RALLY ON", "UPTREND"),
+    ("TOP WATCH", "NEARING A HIGH"),
+    ("COUNTERTREND BOUNCE", "UNCONFIRMED TURN"),
+    ("CONFIRMING TURN", "TURN IN PROGRESS"),
+]
+
+
+class TestBasingStage:
+    """D18: BOTTOM WATCH carries dir='down', so the DOWNTREND clause swallowed the one
+    ladder state that names a name working on a low.  Measured on the board's own
+    ledger (data/us_board_ledger/snapshots.jsonl, 2026-06-30..07-31): 41 buy-lane rows
+    over 13 of 17 board days, every one filed under `blocked`."""
+
+    def test_bottom_watch_state_routes_to_basing(self):
+        row = {"state": "BOTTOM WATCH", "label": "NEARING A LOW", "dir": "down"}
+        assert ubr.stage_for(row, {"status": "wait_pullback"}, **_BASING) == "basing"
+
+    def test_the_display_label_alone_is_enough(self):
+        """A row carrying only what the template renders still lands on the shelf."""
+        assert ubr.stage_for({"label": "NEARING A LOW", "dir": "down"},
+                             {"status": "wait_pullback"}, **_BASING) == "basing"
+
+    def test_a_suffixed_bottom_watch_label_still_bases(self):
+        """_enforce_blocked_buy_invariant appends the marker AFTER staging, but the
+        ledger's own rows carry it (7 of the 41), so re-staging a shipped row must
+        agree with what the nightly decided."""
+        for label in ("NEARING A LOW (blocked)", "NEARING A LOW （受阻）"):
+            assert ubr.is_bottom_watch({"label": label}) is True, label
+
+    @pytest.mark.parametrize("state,label", _OTHER_LADDER_STATES)
+    def test_no_other_ladder_state_is_read_as_basing(self, state, label):
+        """Mutation guard.  A predicate that answered True for every down row, or for
+        every label, would pass the test above and quietly move DECLINE onto the shelf
+        this wave exists to keep clean."""
+        assert ubr.is_bottom_watch({"state": state, "label": label}) is False
+
+    @pytest.mark.parametrize("state,label", [("DECLINE", "DOWNTREND"),
+                                             ("ROLLING OVER", "TOPPING")])
+    def test_decline_and_rolling_over_stay_blocked_with_the_shelf_on(self, state, label):
+        """The falling knife and the topping roll keep their stand-aside verdict —
+        that is the whole point of splitting the bucket rather than widening it."""
+        row = {"state": state, "label": label, "dir": "down"}
+        assert ubr.stage_for(row, {"status": "wait_pullback"}, **_BASING) == "blocked"
+        assert ubr.stage_for(row, {"status": "wait_pullback"}) == "blocked"
+
+    def test_the_default_is_the_pre_basing_behaviour(self):
+        """No opt-in, no change: the default protects any caller that has not built
+        the shelf, so its rendering stays byte-identical.  Both boards now opt in
+        EXPLICITLY at their own builders (US 2026-08-05, HK the same day), which is
+        why the opt-in is a parameter and not a flag day — the delegating HK module
+        below still reads `blocked` when nobody asks for the shelf."""
+        row = {"state": "BOTTOM WATCH", "label": "NEARING A LOW", "dir": "down"}
+        assert ubr.stage_for(row, {"status": "wait_pullback"}) == "blocked"
+        from engine import hk_board_rank as hbr
+        assert hbr.stage_for(row, {"status": "wait_pullback"}) == "blocked"
+
+    @pytest.mark.parametrize("status", ["blocked", "exit", "avoid"])
+    def test_an_explicit_blocked_entry_verdict_still_wins(self, status):
+        """The entry status is a decision about THIS name; the cycle read is context.
+        Ordering the two the other way would let the shelf launder an avoid."""
+        row = {"state": "BOTTOM WATCH", "label": "NEARING A LOW", "dir": "down"}
+        assert ubr.stage_for(row, {"status": status}, **_BASING) == "blocked"
+
+    def test_basing_sorts_after_ran_and_before_blocked(self):
+        assert (ubr.stage_rank("ran") < ubr.stage_rank("basing")
+                < ubr.stage_rank("blocked"))
+
+    def test_a_basing_row_is_never_featured(self):
+        rows = [_row("BASE", status="buy_now", alpha=9.0, tier="T1", ticks=0,
+                     state="BOTTOM WATCH", label="NEARING A LOW", dir="down"),
+                _row("OK", status="buy_now", alpha=-1.0)]
+        scored = ubr.score_rows(rows, board_asof="2026-07-31", **_BASING)
+        by_ticker = {r["ticker"]: r for r in scored}
+        assert by_ticker["BASE"]["stage"] == "basing"
+        assert by_ticker["BASE"]["featured"] is False
+        assert "stage_not_live" in by_ticker["BASE"]["featured_blocked_by"]
+        # …and it still sorts below the actionable row despite the better score.
+        assert [r["ticker"] for r in scored] == ["OK", "BASE"]
+
+    def test_the_shelf_moves_rows_only_between_display_buckets(self):
+        """G0.3 population fence, at row grain: the SAME pool through score_rows with
+        and without the opt-in differs in exactly one key — ``stage`` — on exactly the
+        BOTTOM WATCH rows.  Scores, featured flags and every other stamped field are
+        recomputed identically.
+
+        The rendered SEQUENCE does change, and that is the feature, not a leak: a
+        basing row now sorts above a blocked one because its shelf sits above the
+        blocked shelf.  What must hold is that the new sequence is fully explained by
+        the bucket split — same rows, same scores, same within-bucket order — which is
+        what the last assertion pins.  ``display_rank``/``score_rank`` are positions,
+        so they move with it and are compared separately from the rest of the row.
+        """
+        def _pool():
+            return [
+                _row("BASE1", status="wait_pullback", alpha=2.0,
+                     state="BOTTOM WATCH", label="NEARING A LOW", dir="down"),
+                _row("KNIFE", status="wait_pullback", alpha=1.0,
+                     state="DECLINE", label="DOWNTREND", dir="down"),
+                _row("BASE2", status="watch", alpha=0.5,
+                     state="BOTTOM WATCH", label="NEARING A LOW", dir="down"),
+                _row("LIVE", status="buy_now", alpha=3.0, label="BUY ZONE"),
+            ]
+
+        before = ubr.score_rows(_pool(), board_asof="2026-07-31")
+        after = ubr.score_rows(_pool(), board_asof="2026-07-31", **_BASING)
+
+        moved = {"BASE1", "BASE2"}
+        assert {r["ticker"] for r in before if r["stage"] == "blocked"} == (
+            moved | {"KNIFE"}), "fixture must exercise the split to mean anything"
+        assert {r["ticker"] for r in after if r["stage"] == "basing"} == moved
+        assert {r["ticker"] for r in after if r["stage"] == "blocked"} == {"KNIFE"}
+
+        # Membership is untouched, and matched BY TICKER every row is identical
+        # except `stage` and the two position stamps.
+        _positional = {"stage", "display_rank", "score_rank"}
+        by_before = {r["ticker"]: r for r in before}
+        by_after = {r["ticker"]: r for r in after}
+        assert set(by_before) == set(by_after)
+        for tk, lhs in by_before.items():
+            rhs = by_after[tk]
+            assert rhs["stage"] == ("basing" if tk in moved else lhs["stage"]), tk
+            assert {k: v for k, v in lhs.items() if k not in _positional} == {
+                k: v for k, v in rhs.items() if k not in _positional}, tk
+
+        # The new sequence is exactly the old rows re-grouped by the new bucket rank.
+        assert [r["ticker"] for r in after] == [
+            r["ticker"] for r in sorted(
+                before,
+                key=lambda r: (ubr.stage_rank(by_after[r["ticker"]]["stage"]),
+                               -r["prophet"]["score"], r["ticker"]))]
+
+    def test_stage_counts_and_labels_cover_the_new_bucket(self):
+        scored = ubr.score_rows(
+            [_row("BASE", status="wait_pullback", state="BOTTOM WATCH",
+                  label="NEARING A LOW", dir="down")],
+            board_asof="2026-07-31", **_BASING)
+        assert ubr.stage_counts(scored)["basing"] == 1
+        assert set(ubr.STAGE_LABELS[ubr.STAGE_BASING]) == {"en", "zh"}
+        assert ubr.STAGE_LABELS[ubr.STAGE_BASING]["zh"].strip()
+
+    def test_no_buy_word_in_the_basing_label(self):
+        """P2 / G0.4: watch-lane vocabulary only — this shelf never makes a claim."""
+        text = " ".join(ubr.STAGE_LABELS[ubr.STAGE_BASING].values()).lower()
+        for banned in ("buy", "entry", "买入", "入场"):
+            assert banned not in text, banned
 
 
 # ---------------------------------------------------------------------------
@@ -627,7 +787,7 @@ class TestScoreRows:
     def test_stage_counts_report_every_bucket(self):
         scored = ubr.score_rows([_row("A")], board_asof="2026-07-31")
         assert ubr.stage_counts(scored) == {
-            "live": 1, "setting_up": 0, "ran": 0, "blocked": 0}
+            "live": 1, "setting_up": 0, "ran": 0, "basing": 0, "blocked": 0}
 
     def test_empty_pool_is_not_a_crash(self):
         assert ubr.score_rows([], board_asof="2026-07-31") == []
@@ -644,7 +804,8 @@ class TestRankingBlock:
         assert sum(p["points"] for p in block["formula_points"]) == 100.0
         assert block["zero_score_authority"] == list(ubr.ZERO_SCORE_AUTHORITY)
         assert block["featured_count"] == 1
-        assert block["stage_order"] == ["live", "setting_up", "ran", "blocked"]
+        assert block["stage_order"] == [
+            "live", "setting_up", "ran", "basing", "blocked"]
 
     def test_block_is_json_serialisable(self):
         scored = ubr.score_rows([_row("A")], board_asof="2026-07-31")
@@ -1474,6 +1635,29 @@ def scored():
     return board, rows
 
 
+@pytest.fixture(scope="module")
+def scored_with_blocked_witness(scored):
+    """The live board shape with one deterministic downtrend witness.
+
+    A nightly board can legitimately contain no blocked/downtrend names, which
+    makes the two ordering guards below fail on fixture composition instead of
+    ranking behaviour.  Mutating one real row keeps the full production shape
+    while ensuring those guards always exercise the blocked bucket.
+    """
+    from pathlib import Path
+    board, _rows = scored
+    root = Path(__file__).resolve().parents[1]
+    gate = json.loads(
+        (root / "site" / "factordata" / "signal_gate.json").read_text())
+    raw = [dict(r) for r in board["buy"]]
+    assert raw, "committed board must contain a row for the blocked witness"
+    witness = raw[-1]
+    witness["dir"] = "down"
+    rows = ubr.score_rows(raw, verdict_by=gate.get("verdicts") or {},
+                          board_asof=board["as_of"])
+    return board, rows, witness["ticker"]
+
+
 class TestCommittedArtifactIntegration:
     """Run the real module over the COMMITTED us_standouts + signal_gate + baskets.
 
@@ -1490,8 +1674,8 @@ class TestCommittedArtifactIntegration:
             assert isinstance(score, float)
             assert 0.0 <= score <= 100.0
 
-    def test_no_blocked_row_ranks_above_any_live_row(self, scored):
-        _board, rows = scored
+    def test_no_blocked_row_ranks_above_any_live_row(self, scored_with_blocked_witness):
+        _board, rows, _witness = scored_with_blocked_witness
         live = [i for i, r in enumerate(rows) if r["stage"] == "live"]
         blocked = [i for i, r in enumerate(rows) if r["stage"] == "blocked"]
         assert live and blocked, "fixture must contain both stages to mean anything"
@@ -1514,6 +1698,80 @@ class TestCommittedArtifactIntegration:
         assert sorted(r["ticker"] for r in rows) == sorted(
             r["ticker"] for r in board["buy"])
         assert len(rows) == len(board["buy"])
+
+    def test_the_basing_shelf_changes_nothing_but_the_shelf(self, scored):
+        """G0.3 at board grain: the committed board through score_rows with and
+        without the basing opt-in.
+
+        The witness is injected rather than hoped for.  The 2026-07-31 artifact
+        happens to carry no BOTTOM WATCH buy row, so reading this fixture as-is would
+        pass on an engine that had never learned the state — the vacuous form of this
+        guard.  The board's own ledger says the state IS routine (41 buy-lane rows
+        over 13 of the 17 board days ending 07-31), so one real row is relabelled to
+        the state the ledger shows and the assertions below refuse an empty split.
+
+        The non-buy lanes are asserted as OBJECTS, not counts: score_rows is never
+        handed watch/leaders/laggards/ran, and this is the test that says so.
+        """
+        board, _rows = scored
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[1]
+        gate = json.loads(
+            (root / "site" / "factordata" / "signal_gate.json").read_text())
+        verdicts = gate.get("verdicts") or {}
+
+        def _pool():
+            raw = [json.loads(json.dumps(r)) for r in board["buy"]]
+            assert len(raw) >= 2, "committed board must have room for a witness"
+            raw[-1].update({"state": "BOTTOM WATCH", "label": "NEARING A LOW",
+                            "dir": "down"})
+            raw[-1].pop("label_zh", None)
+            return raw, raw[-1]["ticker"]
+
+        lanes_before = json.dumps(
+            {lane: board.get(lane) for lane in
+             ("watch", "leaders", "laggards", "ran")}, sort_keys=True)
+
+        raw_before, witness = _pool()
+        raw_after, _ = _pool()
+        before = ubr.score_rows(raw_before, verdict_by=verdicts,
+                                board_asof=board["as_of"])
+        after = ubr.score_rows(raw_after, verdict_by=verdicts,
+                               board_asof=board["as_of"],
+                               bottom_watch_stage=ubr.STAGE_BASING)
+
+        by_before = {r["ticker"]: r for r in before}
+        by_after = {r["ticker"]: r for r in after}
+        assert by_before[witness]["stage"] == "blocked", (
+            "witness must be blocked without the opt-in or this proves nothing")
+        assert by_after[witness]["stage"] == "basing"
+
+        moved = {t for t in by_before
+                 if by_before[t]["stage"] != by_after[t]["stage"]}
+        assert moved == {witness}
+        assert all(by_before[t]["stage"] == "blocked" for t in moved)
+        assert all(by_after[t]["stage"] == "basing" for t in moved)
+
+        # Matched by ticker, every stamped field but `stage` and the two position
+        # stamps is identical — the split re-groups the board, it does not re-score it.
+        _positional = {"stage", "display_rank", "score_rank"}
+        assert set(by_before) == set(by_after)
+        for tk, lhs in by_before.items():
+            assert {k: v for k, v in lhs.items() if k not in _positional} == {
+                k: v for k, v in by_after[tk].items()
+                if k not in _positional}, tk
+        assert [r["ticker"] for r in after] == [
+            r["ticker"] for r in sorted(
+                before,
+                key=lambda r: (ubr.stage_rank(by_after[r["ticker"]]["stage"]),
+                               -r["prophet"]["score"], r["ticker"]))]
+
+        # The graded/context lanes are byte-identical across BOTH runs.  The US
+        # builder shares one row object between lanes, so an engine that stamped a
+        # lane row while staging the buy pool would show up right here.
+        assert json.dumps(
+            {lane: board.get(lane) for lane in
+             ("watch", "leaders", "laggards", "ran")}, sort_keys=True) == lanes_before
 
     def test_featured_respects_both_caps(self, scored):
         from collections import Counter
@@ -1606,11 +1864,11 @@ class TestCommittedArtifactIntegration:
             assert by[ticker]["days_since_signal"] == verdict["fresh_bars"]
             assert by[ticker]["days_since_signal_basis"] == "sessions"
 
-    def test_no_downtrend_row_escapes_the_blocked_bucket(self, scored):
-        """m1 on production shape: the 07-31 board carries DOWNTREND names."""
-        _board, rows = scored
+    def test_no_downtrend_row_escapes_the_blocked_bucket(self, scored_with_blocked_witness):
+        """m1 on production shape with a deterministic DOWNTREND witness."""
+        _board, rows, witness = scored_with_blocked_witness
         downtrend = [r for r in rows if ubr.is_downtrend(r)]
-        assert downtrend, "fixture must contain a DOWNTREND row"
+        assert witness in {r["ticker"] for r in downtrend}
         assert all(r["stage"] == "blocked" for r in downtrend)
 
     def test_the_board_is_json_safe(self, scored):

@@ -42,7 +42,7 @@ _STAGE_OF_STATUS = {
     "extended": "ran", "topping": "ran", "hold": "ran",
     "blocked": "blocked", "exit": "blocked", "avoid": "blocked",
 }
-_STAGE_ORDER = ["live", "setting_up", "ran", "blocked"]
+_STAGE_ORDER = ["live", "setting_up", "ran", "basing", "blocked"]
 
 # Three in-favour baskets, mirroring the shape §3.6's loader stamps onto rows.
 _THEMES = [
@@ -53,9 +53,15 @@ _THEMES = [
 
 
 def _stage_of(row: dict) -> str:
+    status = ((row.get("entry_signal") or {}).get("status")) or ""
+    if status in ("blocked", "exit", "avoid"):
+        return "blocked"
+    # BOTTOM WATCH before DOWNTREND — both are `dir: down`, and the specific one wins
+    # (engine.us_board_rank.stage_for, W-E.1).
+    if (row.get("state") or "").upper() == "BOTTOM WATCH":
+        return "basing"
     if (row.get("label") or "").upper() == "DOWNTREND":
         return "blocked"
-    status = ((row.get("entry_signal") or {}).get("status")) or ""
     return _STAGE_OF_STATUS.get(status, "setting_up")
 
 
@@ -110,7 +116,7 @@ def priority_overlay(rows, *, n_themed=15, board_cap=12, sector_cap=4):
     # sector cap 4, score desc.  The buy_soon exclusion is load-bearing for the
     # display layer, not just the engine: buy_now/partial are the two statuses the
     # card maps to the `buy` verb, so every featured card's hue rail is --pv-buy and
-    # the green aura never sits on a lighter `near` card.
+    # the bullish aura never sits on a lighter `near` card.
     per_sector: dict[str, int] = {}
     featured = 0
     for row in out:
@@ -193,9 +199,12 @@ def leaders_overlay(rows):
 # --------------------------------------------------------------------------- #
 
 def _rich_rows() -> list[dict]:
-    """A board wide enough to fill all four stage buckets, with sectors that make the
-    featured sector-cap bite and one DOWNTREND row that must land in `blocked`."""
+    """A board wide enough to fill all five stage buckets, with sectors that make the
+    featured sector-cap bite, one DOWNTREND row that must land in `blocked`, and one
+    BOTTOM WATCH row that must land in `basing` — the two are both `dir: down` and the
+    board used to file them together, which is the defect W-E.1 fixes."""
     spec = [
+        ("HL", "Hecla Mining", "Materials", "wait_pullback", "NEARING A LOW"),
         ("AAPL", "Apple Inc.", "Information Technology", "buy_now", None),
         ("MSFT", "Microsoft Corp.", "Information Technology", "partial", None),
         ("PLTR", "Palantir Technologies", "Information Technology", "buy_now", None),
@@ -218,6 +227,10 @@ def _rich_rows() -> list[dict]:
     for ticker, name, sector, status, label in spec:
         rows.append(_board_row(
             ticker=ticker, name=name, sector=sector, label=label,
+            # The ladder stamps BOTH `state` (internal key) and `label` (display) on a
+            # board row; the engine matches the state first, so the fixture carries it.
+            state=("BOTTOM WATCH" if label == "NEARING A LOW" else None),
+            dir=("down" if label in ("NEARING A LOW", "DOWNTREND") else "up"),
             lane="bottoming" if status in ("buy_now", "await_confluence") else "continuation",
             entry_signal={"status": status, "headline": f"{status} headline", "headline_zh": "标题",
                           "buy_zone": {"low": 100.0, "high": 110.0}},
@@ -290,12 +303,58 @@ def _legacy_html() -> str:
 def test_stage_headings_render_in_fixed_order():
     html = _priority_html()
     positions = []
-    for key in ("live", "setting_up", "ran", "blocked"):
+    for key in ("live", "setting_up", "ran", "basing", "blocked"):
         needle = f'<div class="nb-stage-hd sg-{key}" data-stage="{key}"'
         idx = html.find(needle)
         assert idx != -1, f"stage heading for {key!r} missing"
         positions.append(idx)
     assert positions == sorted(positions), f"stage headings out of order: {positions}"
+
+
+def test_the_basing_shelf_renders_between_ran_and_blocked():
+    """W-E.1 / D18. The shelf is the whole deliverable: a BOTTOM WATCH name used to
+    render inside `Blocked` beside the falling knives, which is where the operator
+    stops reading. Its own shelf, above Blocked, is what makes the state visible."""
+    html = _priority_html()
+    basing = html.find('<div class="nb-stage-hd sg-basing" data-stage="basing"')
+    assert basing != -1, "the basing shelf never rendered"
+    assert (html.find('<div class="nb-stage-hd sg-ran" data-stage="ran"') < basing
+            < html.find('<div class="nb-stage-hd sg-blocked" data-stage="blocked"'))
+    # The BOTTOM WATCH name is on the shelf, and the DOWNTREND name is NOT.
+    assert html.find('data-ticker="HL"') > basing
+    assert html.find('data-ticker="HL"') < html.find('data-ticker="NXE"')
+
+
+def test_the_basing_shelf_speaks_watch_words_in_both_languages():
+    """P2/G0.4: a watch lane that never makes a claim. The shelf says what the state
+    is and what to do about it — and 'buy' is not one of the things it can say."""
+    html = _priority_html()
+    assert '<span class="l-en">Basing</span><span class="l-zh">筑底中</span>' in html
+    assert ('<span class="l-en">no entry signal yet — watch, don’t chase</span>'
+            '<span class="l-zh">尚无入场信号 — 观察，勿追高</span>') in html
+    shelf = html[html.find('<div class="nb-stage-hd sg-basing"'):]
+    shelf = shelf[:shelf.find("</div>") + 6]
+    for banned in ("Buy", "buy", "买入"):
+        assert banned not in shelf, f"{banned!r} on a watch-only shelf"
+
+
+def test_the_basing_shelf_takes_a_direction_neutral_tone():
+    """--pv-wait and --muted are the two verb tones theme.css does NOT flip under the
+    zh 红涨绿跌 convention, so a stance with no direction in it reads the same in both
+    languages. Inheriting --pv-avoid (what these rows had inside Blocked) would paint
+    a basing name with the stand-aside colour it is being taken out of."""
+    html = _priority_html()
+    assert ".sg-basing     { --sgc: var(--pv-wait); }" in html
+    assert ".sg-blocked    { --sgc: var(--pv-avoid); }" in html
+
+
+def test_the_basing_bucket_is_filterable_like_every_other():
+    html = _priority_html()
+    assert 'data-stagepick="basing"' in html
+    assert ('#us-standouts[data-stagef="basing"]     '
+            '[data-stage]:not([data-stage="basing"])') in html
+    assert ('#us-standouts[data-stagef="basing"]     '
+            '.sm-hidden[data-stage="basing"]') in html
 
 
 def test_stage_headings_carry_label_count_and_stance():
@@ -374,7 +433,7 @@ def test_featured_chip_is_bilingual_and_supersedes_the_triage_ring():
 def test_featured_glow_is_static_and_theme_aware():
     """No animation means no prefers-reduced-motion kill block to keep in sync — but
     that only holds while nothing animates.  Pin both halves, plus the light override
-    and the zh-safe hue (never --up, which flips to red under html[data-lang=zh])."""
+    and the semantic Prophet hue (never bypassing --pv-buy with --up)."""
     html = _priority_html()
     # Tone calibration (operator correction 2026-08-03): the card BODY stays plain —
     # dark keeps a 2.5% barely-there lift, light is pure #fff with NO tint; featured
@@ -386,7 +445,7 @@ def test_featured_glow_is_static_and_theme_aware():
     assert 'html[data-theme="light"] .pvcard.pv-featured:hover{' in html
     glow = html[html.find(".pvcard.pv-featured{"):html.find(".pv-chart{")]
     assert "animation" not in glow and "@keyframes" not in glow, "featured glow must not animate"
-    assert "var(--up)" not in glow, "the glow must use --pv-buy; --up flips to red in zh"
+    assert "var(--up)" not in glow, "the glow must use the language-aware --pv-buy token"
 
 
 # --------------------------------------------------------------------------- #
@@ -673,8 +732,13 @@ def test_watch_lane_is_not_chipped_on_the_priority_path():
     assert '<span class="pv-mk-i pv-mk-feat"' in html      # the rest of the row is intact
     # …but the LEGACY path still groups by it, heading and all.
     legacy = _base_vm()
-    legacy["us_standouts"] = {"buy": [dict(r, lane="watch") for r in _rich_rows()], "eligible": 17}
-    assert '<span class="l-en">Watch · 17</span>' in _render(legacy)
+    rich = _rich_rows()
+    legacy["us_standouts"] = {"buy": [dict(r, lane="watch") for r in rich],
+                              "eligible": len(rich)}
+    # Counted from the fixture, never a literal: the heading prints the ROW count, so a
+    # test that hardcodes it goes red for the fixture growing rather than the lane
+    # heading breaking (it did, the night the basing row was added).
+    assert f'<span class="l-en">Watch · {len(rich)}</span>' in _render(legacy)
 
 
 def test_leaders_table_gains_a_theme_column_only_when_rows_carry_themes():

@@ -908,6 +908,18 @@ def _cn_era_label(date_from: str | None, date_to: str | None) -> tuple[str, str]
     return (f"previous board definition · {en_span}", f"上一版选股口径 · {zh_span}")
 
 
+# Stamps ADJUDICATED as known labelled cohorts — measurement shelves that share the
+# standout-track store under their own board_definition so their forward grades accrue
+# separately from both era records. Shelf rows still publish through `extra_records`
+# (labelled, never pooled — same path as an unknown stamp); membership here only
+# silences the unknown-stamp Actions alarm, which would otherwise fire every night for
+# an expected state and rot into noise. A stamp NOT in this set still warns and still
+# fails the era-partition test — that tripwire is how this set gets its next entry.
+_CN_ADJUDICATED_SHELF_STAMPS = frozenset({
+    "cn_reversal_watch_v1",   # washout reversal_watch shelf (#4393), first rows 2026-08-04
+})
+
+
 def _cn_unknown_era_label(stamp, date_from: str | None,
                           date_to: str | None) -> tuple[str, str]:
     """Bilingual label for a board_definition stamp the era split does not recognise.
@@ -935,18 +947,26 @@ def _cn_grade_era(bdf, bench_ser, look, _cst) -> dict:
     """
     from engine import track_scoring as _ts
 
-    rows_out, n_locked, scored, n_inflight, n_skipped = \
+    rows_out, n_locked, scored, n_inflight, n_awaiting_t1, n_no_price = \
         _cn_ledger_rows(bdf, bench_ser, look, _cst)
+    # W1.1: `n_skipped_no_price` now carries ONLY genuine store misses, so the
+    # survivorship alarm means what its name says. The awaiting-T+1 count ships beside
+    # it as an additive key, and the old total stays available as n_skipped_total.
+    n_skipped = n_awaiting_t1 + n_no_price
     summary = _ts.summarize(scored, metric="excess", n_inflight=n_inflight,
-                            n_skipped=n_skipped, horizon=_CN_HORIZON)
+                            n_skipped=n_no_price, horizon=_CN_HORIZON)
     summary["n_logged"] = len(rows_out)
     summary["n_locked_excluded"] = n_locked
+    summary["n_skipped_awaiting_t1"] = n_awaiting_t1
+    summary["n_skipped_total"] = n_skipped
     return {
         "rows": rows_out,
         "summary": summary,
         "n_locked": n_locked,
         "n_inflight": n_inflight,
         "n_skipped": n_skipped,
+        "n_awaiting_t1": n_awaiting_t1,
+        "n_no_price": n_no_price,
         "state": _ts.publish_state(summary),
     }
 
@@ -987,9 +1007,14 @@ def _cn_era_block(graded: dict, *, era_id: str, label_fn, closed: bool) -> dict:
             "closed": closed,
             "survivorship": {
                 "n_locked_excluded": graded["n_locked"],
-                "n_skipped_no_price": graded["n_skipped"],
+                # W1.1: store misses only. `n_skipped_awaiting_t1` is the in-flight
+                # half that used to be pooled into this alarm.
+                "n_skipped_no_price": graded["n_no_price"],
+                "n_skipped_awaiting_t1": graded["n_awaiting_t1"],
+                "n_skipped_total": graded["n_skipped"],
                 "note": ("locked-limit T+1 rows are unfillable — flagged, "
-                         "excluded from stats"),
+                         "excluded from stats; n_skipped_no_price counts store "
+                         "misses only, awaiting-T+1 episodes are in flight"),
             },
             "exit_rule": (f"{_CN_HORIZON}-session forced verdict · T+1 open fill · "
                           "no oscillator target (3D thresholds not yet refit for "
@@ -1027,10 +1052,28 @@ def _cn_track_state(bt: dict | None) -> str:
 
 
 def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
-                    _cst) -> tuple[list[dict], int, list[dict], int, int]:
+                    _cst) -> tuple[list[dict], int, list[dict], int, int, int]:
     """Row loop for emit_cn_track_ledger — EPISODE grain, forced-horizon verdict.
 
-    Returns (rows, n_locked, scored, n_inflight, n_skipped).
+    Returns (rows, n_locked, scored, n_inflight, n_awaiting_t1, n_no_price).
+
+    W1.1 — THE SKIP COUNTER IS TWO DIFFERENT FACTS. One counter used to absorb both
+    "this name has no price history at all" (a genuine survivorship hole: the graded
+    win/loss mix is missing a delisted name and is therefore survivor-tilted) and
+    "this episode's T+1 fill simply has not printed yet" (a name that surfaced on the
+    newest board — nothing is missing, it is in flight). Publishing the sum under the
+    name ``n_skipped_no_price`` made the survivorship alarm read high every single
+    night for a reason that was not survivorship, which is the same conflation the US
+    desk fixed when 22 liquid names including DE and F were reported as unpriceable.
+    They are counted separately now and ``n_skipped_no_price`` means only the first.
+
+    W1.2 — ADMISSION-ROW METADATA. ``rk``/``tr`` used to come from a ticker-keyed map
+    built by iterating the whole frame, so a repeat ticker's LAST board row overwrote
+    the earlier ones and every episode of that name was labelled with the rank/tier it
+    carried on its most recent appearance — including episodes that closed weeks
+    before. The lookup is keyed on the episode's own ``(entry_date, ticker)``
+    admission now, keep-FIRST, mirroring the store's own (date, ticker, definition)
+    rule.
 
     Rewritten 2026-07-26 onto engine.track_scoring. Three changes from the
     board_day × ticker version this replaces:
@@ -1057,21 +1100,25 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
     # board_day → tickers, then contiguous runs. Ordered by date so the episode
     # builder sees the history in sequence.
     board_days: dict[str, set[str]] = {}
-    meta_by_tk: dict[str, dict] = {}
+    # W1.2: keyed on (board_date, ticker) — the episode's OWN admission row. A
+    # ticker-keyed map is last-row-wins across the whole frame, which mislabels every
+    # episode of a repeat name with its most recent rank/tier. setdefault = keep-FIRST,
+    # the same rule the store applies to (date, ticker, board_definition).
+    meta_by_admission: dict[tuple[str, str], dict] = {}
     for _i, brow in bdf.iterrows():
         tk = str(brow.get("ticker") or "")
         d0s = str(brow.get("date") or "")
         if not tk or not d0s:
             continue
         board_days.setdefault(d0s, set()).add(tk)
-        meta_by_tk[tk] = {
+        meta_by_admission.setdefault((d0s, tk), {
             "rank": brow.get("board_rank") if pd.notna(brow.get("board_rank")) else None,
             "tier": brow.get("tier") if pd.notna(brow.get("tier")) else None,
-        }
+        })
 
     rows_out: list[dict] = []
     scored: list[dict] = []
-    n_locked = n_inflight = n_skipped = 0
+    n_locked = n_inflight = n_awaiting_t1 = n_no_price = 0
 
     for ep in _ts.build_episodes(board_days):
         tk, d0s = ep["ticker"], ep["entry_date"]
@@ -1082,7 +1129,15 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
 
         pdf = _cst._price_frame(tk)  # noqa: SLF001 — memoized by caller
         if pdf is None or "close" not in pdf:
-            n_skipped += 1
+            # Genuine survivorship hole: the store has no price history for this name.
+            n_no_price += 1
+            continue
+        closes = pd.to_numeric(pdf["close"], errors="coerce").dropna()
+        if closes.empty:
+            # A frame with a close column that holds nothing usable is the same hole
+            # as a missing frame — and it must be counted BEFORE the fill probe, which
+            # can still synthesise an (H+L)/2 price the scorer will then refuse.
+            n_no_price += 1
             continue
         fill, locked_flag, _pinned = _cst._t1_fill(pdf, d0)  # noqa: SLF001
 
@@ -1094,7 +1149,6 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
             fl.append("locked")
             n_locked += 1
 
-        closes = pd.to_numeric(pdf["close"], errors="coerce").dropna()
         after = closes.index[closes.index > d0]
         sc = None
         if fill is not None and len(after):
@@ -1104,7 +1158,10 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
             sc = _ts.score_from_fill(closes, after[0], float(fill), _CN_HORIZON,
                                      bench_close=bench_ser, include_fill_bar=True)
         if sc is None:
-            n_skipped += 1
+            # The name HAS prices; what it does not have yet is a scoreable T+1 fill —
+            # no bar strictly after the board date, or a fill the scorer refuses. That
+            # is in flight, not a survivorship hole.
+            n_awaiting_t1 += 1
             continue
 
         matured = bool(sc["matured"]) and not locked_flag
@@ -1140,12 +1197,12 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
             "dy": dy,
             "st": st,
             "m": bool(matured),
-            "rk": meta_by_tk.get(tk, {}).get("rank"),
-            "tr": meta_by_tk.get(tk, {}).get("tier"),
+            "rk": meta_by_admission.get((d0s, tk), {}).get("rank"),
+            "tr": meta_by_admission.get((d0s, tk), {}).get("tier"),
             "fl": fl,
             "xr": sc.get("exit_reason") if matured else None,
         })
-    return rows_out, n_locked, scored, n_inflight, n_skipped
+    return rows_out, n_locked, scored, n_inflight, n_awaiting_t1, n_no_price
 
 
 def emit_cn_track_ledger(
@@ -1213,7 +1270,8 @@ def emit_cn_track_ledger(
     # "store missing / era empty" path and the "era graded" path build their summary
     # through the same call and cannot drift apart.
     live: dict = {
-        "rows": [], "n_locked": 0, "n_inflight": 0, "n_skipped": 0, "state": "accruing",
+        "rows": [], "n_locked": 0, "n_inflight": 0, "n_skipped": 0,
+        "n_awaiting_t1": 0, "n_no_price": 0, "state": "accruing",
         "summary": _ts.summarize([], metric="excess", n_inflight=0, n_skipped=0,
                                  horizon=_CN_HORIZON),
     }
@@ -1302,6 +1360,8 @@ def emit_cn_track_ledger(
                             orphan["board_definition"].astype(str), sort=True):
                         _stamp = str(_stamp)
                         unknown_slices[_stamp] = _grp.copy()
+                        if _stamp in _CN_ADJUDICATED_SHELF_STAMPS:
+                            continue   # known shelf: labelled block, no alarm
                         # Bare print, NOT log.* — a logger prefixes the line and
                         # GitHub only parses '::' at column 0 (CLAUDE.md). The opening
                         # literal stays on the `print(` line on purpose: the repo guard
@@ -1351,6 +1411,7 @@ def emit_cn_track_ledger(
     # rows spanning 15 nights; that interval could not have been right.
     rows_out = live["rows"]
     n_locked, n_skipped = live["n_locked"], live["n_skipped"]
+    n_awaiting_t1, n_no_price = live["n_awaiting_t1"], live["n_no_price"]
     summary = live["summary"]
     summary["board_definition"] = board_definition
     state = _ts.publish_state(summary)
@@ -1361,8 +1422,14 @@ def emit_cn_track_ledger(
 
     doc = _tl.build_shell(
         "CN", as_of, state, bench_dict, summary, rows_out, grain="episode",
-        survivorship={"n_locked_excluded": n_locked, "n_skipped_no_price": n_skipped,
-                      "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats"},
+        # W1.1: n_skipped_no_price = store misses ONLY (the honest survivorship alarm);
+        # awaiting-T+1 episodes are in flight and ship under their own additive key.
+        survivorship={"n_locked_excluded": n_locked, "n_skipped_no_price": n_no_price,
+                      "n_skipped_awaiting_t1": n_awaiting_t1,
+                      "n_skipped_total": n_skipped,
+                      "note": "locked-limit T+1 rows are unfillable — flagged, excluded "
+                              "from stats; n_skipped_no_price counts store misses only, "
+                              "awaiting-T+1 episodes are in flight"},
         extra_meta={
             "board_definition": board_definition,
             "exit_rule": f"{_CN_HORIZON}-session forced verdict · T+1 open fill · "
@@ -3185,6 +3252,24 @@ def main(alpha: dict | None = None) -> dict | None:
                 _bn_rw = china_standout_track.append_board(
                     wide["reversal_watch"], asof=as_of, lane=_lane)
                 log.info("china reversal_watch board-track: logged %d rows", _bn_rw)
+            # W0 — loser + miss telemetry (engine/cn_prophet_audit.py). OPS-TELEMETRY
+            # tier with ZERO authority: it reads the board store we just appended to,
+            # the price stores, and the PIT candidate ledger, and writes ONLY to
+            # data/cn_prophet_audit/. It never touches wide["buy"], the lanes, the
+            # scores or the ranks — tests/test_cn_prophet_audit.py pins that the buy
+            # rows come out of this call byte-identical. Same asof/lane as the board
+            # append so its own gates (asia-lane + partial-session refusal) evaluate
+            # against exactly the same session the ledger just committed.
+            try:
+                from engine import cn_prophet_audit as _cn_audit  # noqa: PLC0415
+
+                _audit = _cn_audit.run(asof=as_of, lane=_lane)
+                log.info("[timing] cn_prophet_audit: %s (%.1fs)",
+                         "wrote latest.json" if _audit.get("written")
+                         else f"skipped — {_audit.get('reason')}",
+                         float(_audit.get("elapsed_seconds") or 0.0))
+            except Exception as _cpa_e:  # noqa: BLE001 — telemetry never blocks the board
+                log.warning("cn_prophet_audit failed (%s) — board build continues", _cpa_e)
             _bt = china_standout_track.grade()
             # Detach the tuple-keyed F7 map BEFORE _bt reaches wide/setups — it must
             # never ride into the JSON artifact (see _detach_board_track_plumbing).

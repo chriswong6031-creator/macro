@@ -61,7 +61,14 @@ jobs:
     # ~115m→~148m after the schedule moved 02:00 UTC → 22:30 UTC — suspected early-
     # evening source retry loops (under forensics). 185m buys survival at the observed
     # pace + commit headroom while the growth is root-caused.
-    timeout-minutes: 185
+    # 2026-08-05: 185 nearly bit a FOURTH time. When the M1 host went down (ENOSPC) the
+    # macstudio label failed over to a COLD spare (mac-builder-5: fresh venv, no warm
+    # GHA/R2 caches) and the collectors step took 172m — a 13-minute margin under the
+    # cap, on a run that had already lost three nights. The fleet can always fail over
+    # to a cold runner, so the cap must clear the COLD pace, not the warm one: 240m is
+    # ~1.4x the observed 172m. The job still exits as soon as its steps finish; a
+    # larger cap costs nothing on a healthy night and buys the commit on a slow one.
+    timeout-minutes: 240
     outputs:
       government_revenue_projection_needed: ${{ steps.pushdata.outputs.published }}
     steps:
@@ -359,6 +366,39 @@ jobs:
         # observed-filing-state artifact and byte-identical public twin; terms,
         # capacity, runway, scores, probabilities, and Prophet authority stay absent.
         run: python -m scripts.build_capital_structure_projection
+      # Diagnostics only — changes NO behavior. When the compiler above fails, the
+      # ledger it rejected is the one artifact that identifies WHY, and today it is
+      # unrecoverable: the failure skips every later step, so the post-collect tree
+      # is never committed, and the next job's actions/checkout deletes it. That is
+      # exactly how the 2026-08-05 evidence was lost (run 30960328285:
+      # ManifestIdentityError on source ledger row 0, tree wiped before anyone could
+      # copy it, and the drift CANNOT be reproduced locally — without the R2 secrets
+      # every document retrieval defers with "content-addressed source store
+      # unavailable", so no manifest is ever appended and the ledger never moves).
+      # Placed AFTER every capital-structure step, not after the first one: `if:
+      # failure()` only sees failures that already happened, so sitting directly
+      # under the event spine made it fire ONLY for that step. Run 30997579632
+      # proved it — the spine passed, the document-terms compiler two steps later
+      # failed, and this capture was SKIPPED. From here it catches whichever of
+      # the five steps aborts (a later step is skipped after an earlier failure,
+      # but an `if: failure()` step still runs).
+      # BOTH encodings are listed on purpose: #4600 moves this ledger from
+      # source_manifest.parquet to source_manifest.jsonl (that is the fix for the
+      # drift above). Naming only one would make this capture silently upload
+      # nothing the moment the other lands — `if-no-files-found: warn` would not
+      # even go red about it. Keep both names until the parquet copy is gone.
+      # actions/upload-artifact v4.6.2
+      - name: capture the rejected capital-structure ledger (diagnostics; failure only)
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: capital-structure-ledger-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            data/capital_structure/source_manifest.jsonl
+            data/capital_structure/source_manifest.parquet
+            data/capital_structure/telemetry.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
         # The only network leg for the themes map + Subsector Rotation. Refreshes
         # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
@@ -2182,6 +2222,21 @@ jobs:
         # Context-only (never feeds a score); the ledger accrues forward from here. The commit
         # step below (git add data/ site/) lands both artifacts. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_us_board --nightly || true
+      - name: Prophet doors — accrue Door T (theme-relay) + Door R (re-arm) flags (shadow, zero authority)
+        # Prophet W3 shadow doors (research/PROPHET_DOORS_PREREG.md, frozen before first accrual).
+        # Evaluates both doors on the committed caches and appends to data/prophet_doors/flags.jsonl.
+        # Sole forward advancer of this ledger (nightly-only: --nightly AND COLLECT_LANE=nightly).
+        # PROSPECTIVE ONLY — no backfill; the ledger starts the night this merges. ZERO AUTHORITY:
+        # no board membership, no plan origination, no rank/gate/size, no site/ artifact. The
+        # commit step below (git add data/) lands the store. ~2.5 min. Idempotent per as_of.
+        run: python -m scripts.emit_prophet_doors --nightly || true
+      - name: Prophet doors — grade matured flags at H=10/21 vs SPY (policy-free marks)
+        # Grades data/prophet_doors/flags.jsonl into grades.jsonl via engine.grading.forward_metrics
+        # (next-bar fill, positional session horizons, excess vs SPY) — the SAME ruler grade_us_board
+        # uses, reused not forked. Policy-free: fixed-horizon marks only, no stops/exits. Graded rows
+        # are frozen (one-grader law). Runs after the emitter so tonight's flags are present.
+        # OUTCOMES ARE NOT TO BE READ before the prereg §4 trigger. Idempotent. Resilient.
+        run: python -m scripts.grade_prophet_doors --nightly || true
       - name: Bottom Ledger (accrue bottom-class flags + mature at H=60; policy-free instrument)
         # Bottom Ledger P1: the policy-free bottom-calling learning instrument (design PR #3182).
         # Sole forward advancer of this ledger (nightly-only). Accrues board buy-lane +
@@ -2193,6 +2248,20 @@ jobs:
         # sibling forward ledger, the committed store is what lets cohorts accrue night to
         # night. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_bottom_calls --nightly || true
+      - name: Prophet miss-audit (why don't the winners surface? ops telemetry, ZERO authority)
+        # Prophet US trend-intelligence W0 (masterplan
+        # research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md): the nightly
+        # measurement the program grades itself against — per-runner dominant-excluder
+        # attribution, the trailing-63-session eligibility window, sighting->plan conversion,
+        # and theme-representation counts. Reads the committed close caches + the board/plan
+        # artifacts through the PRODUCTION tier paths (confluence_tiers.tier_stream/cascade,
+        # signal_gate); computes nothing the board reads back. Sole forward advancer of
+        # data/prophet_miss_audit/forward_log.jsonl (nightly-only, like the Bottom Ledger
+        # above), idempotent on price_through. Both it and data/prophet_miss_audit/latest.json
+        # are landed by the "commit engine outputs" step below (git add data/). ~2-3 min on
+        # ~1,500 names. ZERO authority: no rank/gate/size/membership consumer, ever
+        # (tests/test_prophet_miss_audit.py pins that nothing else imports it). Resilient.
+        run: python -m scripts.run_prophet_miss_audit --nightly || true
       - name: Options-state stamp on board ledger (Options Alpha W1.3; context-only)
         # Stamps the freshly-graded + accumulated retro_grades.parquet with the eight nullable
         # opt_* options-state columns (PIT: only positioning data with as-of ≤ each fire's as_of).
@@ -2931,6 +3000,19 @@ jobs:
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # normalize the EXACT tree this always() commit stages (P0 2026-08-04,
+          # 9a997e9da3f): the engine job hit its 200m cap at 04:28Z; the cancel skipped
+          # every success()-gated step INCLUDING the White House step above — the only
+          # normalize pass in this job — while this always() step still committed 5,895
+          # raw pages (inline workspace scripts, stale ?v= stamps): 7 shipped-page
+          # guards red on every PR head in the repo until #4484 re-ran the passes by
+          # hand. The builders' partial output IS safe to commit ("committing what
+          # built beats shipping nothing"); a tree the NORMALIZERS never touched is
+          # not partial output — it is a sitewide regression. All three passes are
+          # idempotent, ~35s total when the White House step already ran them.
+          python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+          python -m scripts.externalize_css || echo "::warning::pre-commit css externalize FAILED — pages may ship un-externalized (9a997e9da3f)"
+          python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
           # pre-commit template↔site re-sync (ui.template_site_sync): the shim/externalize
           # step above rewrites the site/ copies of the ~48 templates/-paired plain-copy
           # assets, and only the post-rebase --fix in the push loop heals the divergence —
@@ -3073,6 +3155,16 @@ jobs:
               # mid-nightly (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's
               # site-side de-escalation in sector_cycles.js this way). templates/ is now
               # fresh post-rebase main — re-copy and fold any delta into a follow-up commit.
+              # re-shim + re-externalize POST-rebase (P0 2026-08-04, 9a997e9da3f): the
+              # rebase can inherit RAW pages from main — a cancelled nightly's always()
+              # commit shipped 5,895 un-normalized pages, and every later lane's replay
+              # merged its small deltas INTO those fat pages (clean merge, no conflict,
+              # so -X theirs never engaged) while its re-stamp-only heal pushed the
+              # poison onward re-stamped. Running the FULL normalize chain here makes
+              # the next lane push self-heal the whole tree instead. Same order as the
+              # normalizer step: shim → externalize → stamp; all idempotent.
+              python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
+              python -m scripts.externalize_css || echo "::warning::post-rebase css externalize FAILED — inherited raw pages stay un-externalized (9a997e9da3f)"
               # re-stamp POST-rebase (ui.asset_stamp): the tree this loop PUSHES is not the tree
               # the normalizer step stamped — pages a sibling lane lands mid-run arrive here
               # un-stamped and unseen by that pass (2026-07-26 render 6260e5ac8c0 shipped

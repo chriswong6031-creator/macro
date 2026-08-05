@@ -290,9 +290,42 @@ _HEADER = (
 # HEADER and TAPE are never dropped when present. SHOCK is not in the
 # commissioned list — an ACTIVE shock de-escalation window is rare and material,
 # so it sits with the flags it qualifies rather than at the droppable tail.
+# ---------------------------------------------------------------------------
+# Regional boards — Hong Kong, mainland China, Canada
+# ---------------------------------------------------------------------------
+# The packet was ENTIRELY US: SPX/NDX/DJI/RUT, the four US futures, VIX, WTI/Brent/
+# gold/copper/silver, DXY, BTC/ETH and the US curve. Nothing else. So when a user
+# asked "how does the Hang Seng look" or "what's the read on the TSX", the model's
+# only grounded numbers were American, and it answered a Hong Kong question off the
+# S&P — or off memory. Meanwhile this repo builds and refreshes a full regime read
+# for all three boards every night and the brain had never been shown one.
+#
+# Each region is INDEPENDENT and carries its OWN as-of stamp. That matters here more
+# than anywhere else in the packet: these boards close at different times in
+# different weeks (Canada's artifact is routinely a session behind Hong Kong's), and
+# a Canadian print rendered under Hong Kong's date would be a fabricated fact.
+class _Region:
+    __slots__ = ("code", "label", "basket_rel", "regime_rel")
+
+    def __init__(self, code: str, label: str, basket_rel: str, regime_rel: str):
+        self.code = code
+        self.label = label
+        self.basket_rel = basket_rel
+        self.regime_rel = regime_rel
+
+
+_REGIONS: tuple[_Region, ...] = (
+    _Region("HK", "Hong Kong",
+            "site/hkbasketdata/baskets.json", "data/hk_regime/latest.json"),
+    _Region("CN", "mainland China",
+            "site/chinabasketdata/baskets.json", "data/china_regime/latest.json"),
+    _Region("CA", "Canada",
+            "site/canadabasketdata/baskets.json", "data/canada_regime/latest.json"),
+)
+
 _SECTION_ORDER: tuple[str, ...] = (
     "HEADER", "TAPE", "CURVE", "FLAGS", "SHOCK", "EVENTS", "DRIVERS",
-    "RATES", "VOL", "BREADTH", "LEADERS", "CROSSASSET", "DESK", "WATCH",
+    "RATES", "VOL", "BREADTH", "LEADERS", "REGIONAL", "CROSSASSET", "DESK", "WATCH",
 )
 _NEVER_DROP: frozenset[str] = frozenset({"HEADER", "TAPE"})
 
@@ -1025,6 +1058,13 @@ def build_packet(root: Path) -> dict:
             gaps.append(f"events: build failed ({type(exc).__name__})")
 
         try:
+            regional = _regional_block(root, gaps)
+            if regional:
+                packet["regional"] = regional
+        except Exception as exc:  # noqa: BLE001
+            gaps.append(f"regional: build failed ({type(exc).__name__})")
+
+        try:
             desk, watch = _desk_block(root, gaps)
             if desk:
                 packet["desk"] = desk
@@ -1041,6 +1081,100 @@ def build_packet(root: Path) -> dict:
 # ---------------------------------------------------------------------------
 # Section renderers
 # ---------------------------------------------------------------------------
+
+def _regional_block(root: Path, gaps: list[str]) -> list[dict]:
+    """One entry per regional board that has a readable artifact. Never raises.
+
+    Reads back, unchanged: the board's own benchmark LABEL and rebased benchmark
+    series (site/<region>basketdata/baskets.json) and the nightly regime read
+    (data/<region>_regime/latest.json). The single piece of arithmetic is the
+    benchmark's last session change from two adjacent points of the SAME series the
+    region's own page plots — the presentational class this module already allows.
+
+    The regime files carry a float ``confidence``; it is deliberately DROPPED, per
+    the module rule that no numeric confidence reaches the prompt. The qualitative
+    fields (quad name, cycle tag, liquidity overlay, risk/peg words) pass through.
+    """
+    out: list[dict] = []
+    for region in _REGIONS:
+        entry: dict = {"code": region.code, "label": region.label}
+        basket = _read_json(root / region.basket_rel, [], f"{region.code}_basket")
+        if isinstance(basket, dict):
+            as_of = str(basket.get("as_of") or "").strip()
+            if as_of:
+                entry["as_of"] = as_of
+            bench_label = str(basket.get("benchmark_label") or "").strip()
+            if bench_label:
+                entry["bench_label"] = bench_label
+            chart = basket.get("chart")
+            if isinstance(chart, dict):
+                series = chart.get("bench")
+                if isinstance(series, list) and len(series) >= 2:
+                    prev, last = _f(series[-2]), _f(series[-1])
+                    if prev and last and prev > 0:
+                        entry["bench_change_pct"] = 100.0 * (last / prev - 1.0)
+            intel = basket.get("theme_intel")
+            if isinstance(intel, dict):
+                rot = intel.get("rotation_5d")
+                if isinstance(rot, dict):
+                    leaders = [
+                        str(row.get("name") or "").strip()
+                        for row in (rot.get("climbers") or [])[:2]
+                        if isinstance(row, dict) and str(row.get("name") or "").strip()
+                    ]
+                    if leaders:
+                        entry["leaders"] = leaders
+        regime = _read_json(root / region.regime_rel, [], f"{region.code}_regime")
+        if isinstance(regime, dict):
+            # The regime file has its own date. It can legitimately differ from the
+            # basket file's as_of, so it is stamped separately rather than merged.
+            for src, dst in (("date", "regime_as_of"), ("quad", "quad"),
+                             ("quad_name", "quad_name"), ("cycle_tag", "cycle"),
+                             ("liquidity_overlay", "liquidity"),
+                             ("risk_state", "risk_state"), ("peg_state", "peg_state")):
+                val = str(regime.get(src) or "").strip()
+                if val:
+                    entry[dst] = val
+        if len(entry) > 2:
+            out.append(entry)
+        else:
+            gaps.append(f"regional {region.code}: absent")
+    return out
+
+
+def _render_regional(p: dict) -> str:
+    """'REGIONAL — HK (2026-08-04): HSI −0.6% · Goldilocks (Q1), mid-cycle · …'"""
+    lines: list[str] = []
+    for entry in p.get("regional") or []:
+        parts: list[str] = []
+        bench = entry.get("bench_label")
+        chg = _signed(entry.get("bench_change_pct"), 1, "%")
+        if bench and chg:
+            parts.append(f"{bench} {chg}")
+        elif bench:
+            parts.append(bench)
+        quad_name, quad = entry.get("quad_name"), entry.get("quad")
+        if quad_name:
+            parts.append(f"{quad_name} ({quad})" if quad else quad_name)
+        if entry.get("cycle"):
+            parts.append(f"{entry['cycle']}-cycle")
+        if entry.get("liquidity"):
+            parts.append(f"liquidity {entry['liquidity']}")
+        if entry.get("risk_state"):
+            parts.append(str(entry["risk_state"]))
+        if entry.get("peg_state"):
+            parts.append(f"peg {entry['peg_state']}")
+        if entry.get("leaders"):
+            parts.append("leading " + ", ".join(entry["leaders"]))
+        if not parts:
+            continue
+        stamp = _stamp(entry.get("as_of") or entry.get("regime_as_of"))
+        lines.append(f"{entry['code']} ({stamp}): " + _SEP.join(parts))
+    if not lines:
+        return ""
+    return ("REGIONAL BOARDS — each stamped with its OWN session; these close at "
+            "different times and a board can be a session behind: " + " | ".join(lines))
+
 
 def _row_text(r: dict) -> str:
     """'SPX −1.7%' — change only; a level instrument also shows its level."""
@@ -1406,6 +1540,7 @@ _RENDERERS: dict[str, object] = {
     "VOL": ("vol", _render_vol),
     "BREADTH": ("breadth", _render_breadth),
     "LEADERS": ("leaders", _render_leaders),
+    "REGIONAL": ("regional", _render_regional),
     "CROSSASSET": ("crossasset", _render_crossasset),
     "DESK": ("desk", _render_desk),
     "WATCH": ("watch", _render_watch),
@@ -1497,6 +1632,7 @@ _ROOT_SOURCES: tuple[str, ...] = (
     "data/neuralweb/world_state.json", "data/rates_command/latest.json",
     "site/vol/regime.json", "data/crossasset/latest.json",
     "data/marketing/press/wires.json",
+    *(p for r in _REGIONS for p in (r.basket_rel, r.regime_rel)),
 )
 
 

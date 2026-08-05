@@ -650,6 +650,15 @@ FRESHNESS_MAX_STALE_TD = 3
 # no-change guarantee are documented at engine.signal_quality._buy_filter. Named rather
 # than inlined so the policy is greppable and its single flip site is obvious.
 HK_RECLAIM_VETO = False
+# The SECOND door the same impossible condition walked through (2026-08-04). The ran
+# lane ("fired recently, already moved, don't chase") required `above200`, but a name
+# recovering from a 30-50% drawdown is BELOW its 200-day average BY CONSTRUCTION —
+# that is what a deep drawdown is. Measured on the first hk_prophet_v2 board: 1810.HK,
+# 9988.HK, 2318.HK, 1093.HK and 0867.HK correctly left the vetoed lane (no longer
+# blocked) and then landed on NO lane at all, because every lane that could catch them
+# tests above200. The lane still requires weekly_bull and not-marked-down, so it never
+# claims an intact long-term uptrend — only that the cross fired and the name has moved.
+HK_RAN_REQUIRE_ABOVE200 = False
 
 
 def _entry_window(e: dict) -> dict:
@@ -1642,11 +1651,21 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         log.warning("hk leadership compute failed (%s) — lanes ship without the cohort chip",
                     _ldr_ex)
 
+    # W-E.1 (missed-ignitions §5, ported from the US board): the cycle ladder's
+    # BOTTOM WATCH state gets its own `basing` shelf instead of disappearing into
+    # `blocked`. DISPLAY-ONLY — it moves rows between rendered buckets and touches
+    # nothing else. The opt-in is explicit because the shelf is a template surface
+    # (engine.us_board_rank.stage_for), and it is NOT a population claim here: HK's
+    # pool is cascade-gated, so this bucket is usually empty — measured empty on all
+    # 14 committed snapshots (2026-07-20..08-04) — and an empty bucket renders
+    # nothing at all. The shelf is the labelled HOME for the day the cycle ladder and
+    # the cascade disagree, not a prediction that they will.
     buys = hk_board_rank.score_rows(
         buys,
         verdict_by=sig_verdict,
         adv_by=adv63,
         board_asof=as_of,
+        bottom_watch_stage=hk_board_rank.STAGE_BASING,
     )
     _stage_ct = hk_board_rank.stage_counts(buys)
     _ranking = hk_board_rank.ranking_block(buys, theme_asof=as_of)
@@ -1741,6 +1760,11 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         exclude=_claimed | {r["ticker"] for r in leaders},
         leadership=_leadership,
         board_asof=as_of,
+        require_above200=HK_RAN_REQUIRE_ABOVE200,
+        # Load-bearing: with the above200 door open the lane is ~5x oversubscribed,
+        # and without the cohort the cap truncates freshest-first — which drops every
+        # mega-cap a reader came to check.  No cohort => _cohort_first is a no-op.
+        cohort=_ldr.DEFAULT_COHORT,
     )
     # Vetoed lane (G1 / G6): a buy signal fired and the entry gate refused it —
     # the block reason named, and what the name did while the board stayed out.

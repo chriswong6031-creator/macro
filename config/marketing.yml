@@ -557,6 +557,47 @@ sentinel:
 # set. The Buffer personal access token is read from env BUFFER_TOKEN (never
 # committed — see .env.example).
 # ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# COLD READ (2026-08-04) — engine/marketing/cold_read.py
+#
+# The last post-time screen, and the only one that is not a rule list. Every
+# other copy gate asks a question about the STRING; this asks whether a READER
+# who sees nothing but the post can resolve it. The post that forced it —
+#
+#     More info on this - South Korea core inflation hits 2-1/2 year high
+#     despite headline cooling -- wire reports
+#
+# — was grammatical, sourced, in budget, stance-free and handle-free. It passed
+# every deterministic gate and failed only "there is no 'this' anywhere in this
+# post", which is not a rule anybody can write.
+#
+# A DE-ESCALATION (A7). It runs last, it can only STOP a post — never pass,
+# rank, promote or edit one — and a block counts only when it names one of the
+# five categories in cold_read.BLOCK_CATEGORIES, so a model that decides the
+# copy is boring is discarded rather than obeyed.
+#
+# ARMING, in order. `action` is the graduated rung:
+#   shadow      log what it WOULD hold, block nothing        <- ships here
+#   hold        leave the item queued for another pass + an operator's eye
+#   quarantine  terminal
+# Read a week of shadow notices before moving off "shadow". Wiring a model veto
+# into a terminal quarantine with no measured precision is exactly what
+# research/WIRE_COPY_HARDENING_PROGRAM.md argues against.
+#
+# Local-first on purpose: ~30 relayed posts a day, one short question each, on
+# hardware already paid for. Needs OLLAMA_BASE_URL in the process env AND
+# MARKETING_LLM_ENABLED=1; absent either, zero model calls and nothing is
+# screened.
+# ─────────────────────────────────────────────────────────────────────────────
+cold_read:
+  enabled: true
+  action: shadow
+  provider_order: [ollama]
+  ollama_model: "qwen3.5:9b"
+  ollama_timeout_s: 30
+  ollama_num_ctx: 4096
+  max_tokens: 200
+
 publish:
   backend: buffer          # only "buffer" is implemented today
   require_approval: true   # only outbox items an operator approved may post
@@ -729,13 +770,46 @@ publish:
     #     computed, and backwards for the setup.
     # Every 30-minute sweep would have shipped more of the same. Volume is not
     # worth an account strike or a reputation for not reading our own charts.
-    # RE-ARM once the four fixes land and one clean batch has been eyeballed.
-    enabled: false
+    #
+    # RE-ARMED in this same PR, 2026-08-04, because the pause and the fixes now
+    # land together — a lane that is dark at the 13:30Z open ships zero mover and
+    # theme posts for the whole session, which is the failure this week has
+    # actually been about. All four defects carry a test, and each was probed
+    # directly against the live defect rather than only through its suite:
+    #   * cashtag cap: _theme_text_cashtags(members, 3) on the live 8-name post
+    #     returns ['$AMBA','$AMZN','$OUST'] — the three biggest moves — while the
+    #     card still renders all eight rows.
+    #   * session claims: _session_conflict on the live string "...average +3.7%
+    #     on Friday" with Monday rows returns
+    #     "wrong_session_claim: copy says 2026-07-31, rows are 2026-08-03";
+    #     the same copy saying "today" returns None.
+    #   * logos: the icon CDN is a DARK-theme set and the card mounted every mark
+    #     on one near-white disc. Contrast-aware plates + monogram fallback;
+    #     verified by eye on the rendered PNG (COHR/LITE/AXON/RBLX all legible).
+    #   * stance: trend_context() buckets an FSLR-shaped series (-34% over 3m,
+    #     then +10.3%) as "washout_bounce", and the selector then NARROWS the
+    #     variant pool to bucket lines, so the generic "let it settle first"
+    #     cannot be drawn. Coverage is one bucket line per voice bank.
+    # KNOWN RESIDUAL: the narrowing only bites when a voice's bank carries a line
+    # for that bucket. A voice bank added later without one silently falls back
+    # to the generic caution — worth a guard test before the next voice lands.
+    enabled: true
     max_per_run: 2           # network-wide new items per slot run
     min_abs_mover_pct: 3.0   # floor for a single-name move claim
     min_abs_theme_pct: 1.0   # floor for a theme-average claim
     max_quote_age_min: 45    # generation freshness gate (mirrors live_gate)
     min_active_tiles: 25     # flat-tape belt: skip unless ≥N S&P names moved ±0.5% (closed-market guard)
+    # Defect 1, the cashtag spam fingerprint: the most cashtags a theme_list
+    # POST TEXT may name. The card still renders every row, and the breadth
+    # count and average are still computed over the whole member list — this
+    # caps only what the text says out loud, and names the biggest movers.
+    #
+    # OPTIONAL, like every key here: publish_time_content.resolve() overlays this
+    # block onto its in-code _DEFAULTS, so omitting it simply takes the default
+    # (also 3). Written out anyway because it is an operator dial — 3 is the top
+    # of the stated "2-3, not all of them" band — and every other tunable in this
+    # block is explicit here rather than buried in the module.
+    max_theme_cashtags_in_text: 3
     # Per-call lane allowlist (XG-W1). This lane picks an account straight from
     # desk_network and builds a mover/theme item — it never consults tilt, so the
     # employee desks' zeroed mover/event weights cannot reach it. The charter
@@ -1089,6 +1163,37 @@ wire_routing:
     # (both of its first booked items were BEA prints), so moving it would zero
     # the flagship's wire on the same night we are trying to raise volume.
     macro_print: flagship
+    # macro_print.minor — A REFINEMENT OF THE ROW ABOVE, not a new class. The
+    # item is still event_class=macro_print everywhere else (its label, its
+    # self-evident citation status, the nexus-gate exemption and the revision
+    # penalty are all keyed on that string and all keep working); this row only
+    # answers "which desk owns it".
+    #
+    # WHY IT EXISTS (operator, 2026-08-05, reading the flagship timeline): "These
+    # posts are so boring, we get absolutely no engagement on them... These arent
+    # the ones people really care about." Measured on the seven breaking posts
+    # the flagship shipped after the 2026-08-03 clustering fix, NOT ONE was a
+    # top-tier US release: South Korea core inflation, a US payrolls lookahead, a
+    # UK trucking-union pay settlement, JOLTS, the Canadian trade balance, an
+    # Asia-Pacific FX wrap and the US trade balance.
+    #
+    # The cause is that `macro_print` is one class covering two products. The
+    # taxonomy in breaking_relevance is a FLAT keyword list, so "SWITZERLAND
+    # (JUL) CPI CORE YOY" and "US CPI rises 0.3% m/m" both score base 55.0 —
+    # byte-identical — and the row above sent both to the brand account.
+    #
+    # `breaking_relevance.macro_print_tier` supplies the missing dimension: a
+    # print is minor unless it is BOTH a tape-moving release (CPI, PCE, payrolls,
+    # FOMC, GDP, retail sales, ISM, PPI, jobless claims — the ratified list) AND
+    # a US one. Both halves bind: tier alone leaves GERMANY RETAIL SALES on the
+    # flagship, economy alone leaves JOLTS and the US trade balance there.
+    #
+    # RELAYED, NOT DELETED. The minor print goes to the desk whose charter job is
+    # stance-free relay, so the record stays complete and only the brand account
+    # gets quieter. Point this row at `flagship` to undo the split entirely; the
+    # bare `macro_print` row above is the fallback, so DELETING this row restores
+    # the pre-2026-08-05 behaviour exactly.
+    macro_print.minor: mastermind_news
     # policy — Fed/White House/tariffs. Two reasons it stays. (1) The register is
     # ATTRIBUTIVE (wire_voice's TRUMP/White-House opener pools), and mis-attribution
     # here is the exact defect that shipped a fabricated "White House, minutes ago:"
@@ -2215,24 +2320,52 @@ house_picks:
 wire_volume:
   breaking:
     window_hours: 24
-    # Network default for a desk with no row below. 8 is the wire desk's working
-    # number: mastermind_news's own ramp tier allows 14 posts/day and the wire
-    # must not be able to eat the whole allowance, because the nightly ladder
-    # and the publish-time lanes draw from the same tier.
-    default_per_window: 8
+    # CAPS REMOVED (operator, 2026-08-04: "remove caps"). A negative number is
+    # the documented UNLIMITED sentinel — `breaking_cap_for` returns it and
+    # `route()` short-circuits on `cap < 0` before it ever counts the window.
+    # ZERO IS NOT "no cap", it is a real zero, which is why the persona rows
+    # below are untouched.
+    #
+    # WHAT THIS GIVES UP, recorded plainly because this block was built as the
+    # backstop for the operator's OWN quadruple-posting complaint (four posts
+    # from one John Williams appearance, two Switzerland CPI sub-prints, same
+    # batch). Two defences existed and only the second is being removed:
+    #   1. STORY CLUSTERING (wire_story.py, the D1 lane) stops the
+    #      four-from-one-speech shape AT THE SOURCE. Still in force, untouched,
+    #      and it is the one that actually addressed that complaint.
+    #   2. This per-account ceiling was the BACKSTOP for when clustering
+    #      mis-fires or a genuinely busy tape produces that much unrelated news.
+    #      That backstop is now gone.
+    # Also gone: the wire could not previously eat a desk's whole daily
+    # allowance, since the nightly ladder and the publish-time lanes draw from
+    # the same ramp tier. A busy tape can now crowd them out of the brand
+    # account.
+    #
+    # Made deliberately: on 2026-08-04 every wire desk hit its ceiling at once
+    # and items were being HELD with nowhere to route. Supply was not the
+    # constraint, this block was. If duplicate-ish bursts reappear, fix them in
+    # clustering rather than by restoring a counter that fired on whichever
+    # items happened to arrive last.
+    default_per_window: -1
     accounts:
-      # THE BRAND ACCOUNT SITS BELOW THE NETWORK DEFAULT, on purpose. @mastermindx001
-      # is the desk a reader judges the product by, and a relay whose whole
-      # content is a restated headline is the least valuable thing it can post.
-      # 6 is under the 11 that shipped on 2026-08-03 (so it BINDS on the day
-      # that caused this) and under `breaking.flagship_top_k_per_day: 10` (so it
-      # is the stricter of the two and the one that decides). Raise it only with
-      # a reason better than "the tape was busy".
-      flagship: 6
-      # The publication wire IS this content's home. It gets the network default
-      # explicitly rather than by omission, so an operator reading this block
-      # sees the split rather than inferring it.
-      mastermind_news: 8
+      # UNCAPPED (operator, 2026-08-04). This row used to read 6, deliberately
+      # below the network default, on the argument that the brand account is
+      # what a reader judges the product by and a restated headline is the least
+      # valuable thing it can post. That argument was about QUALITY and it is
+      # now enforced where it belongs rather than by a counter: the restatement
+      # gate drops a line that re-says the headline, the card gate refuses a
+      # card that only restates the post, and the attribution gate digests a
+      # source it cannot name. Those fire per item; a volume ceiling only ever
+      # fired at the wrong ones, whichever happened to arrive last.
+      #
+      # NOTE: `breaking.flagship_top_k_per_day: 10` is a SEPARATE ceiling and is
+      # still in force. Removing this row does not make the flagship unbounded
+      # on its own — that key now decides, and it is the one to change next if
+      # the flagship is still short.
+      flagship: -1
+      # The publication wire IS this content's home, so it is the last desk that
+      # should carry a ceiling.
+      mastermind_news: -1
       # A persona/employee desk may never carry a wire relay at all (charter §4
       # safety rails — wire accounts relay and never take a stance), and
       # wire_routing.spill_pool already refuses to select one. This 0 is the

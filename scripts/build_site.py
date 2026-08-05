@@ -4605,6 +4605,37 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("us_board_outcomes.json unreadable (%s)", e)
 
+    # THEME TAPE (W2) — the hottest themes reconciled against the board above, so a
+    # heating theme the board is SILENT on still prints a line saying so. Pure
+    # presentation join (engine/theme_tape.py): reads two already-published
+    # artifacts, writes nothing, and produces no rank/gate/score/size field.
+    # The rotation artifact is rebuilt LATER in this same main() (subsector rotation
+    # section), so a first render reads the previous day's file — which is why the
+    # view carries its own `asof` and the panel stamps it. Fail-open at every step:
+    # unreadable, stale, or nothing clearing the constructive floor → None → the
+    # panel emits nothing at all (the honest-null the Ignition Radar ruling requires).
+    # The Foresight Desk read joins in here (W5a): it adds a word to the rows it
+    # covers and a shelf of the themes loading off the heat list. Read separately
+    # and fail-open on its own — a missing or unreadable desk artifact leaves the
+    # tape exactly as it renders without this layer, rather than costing the panel.
+    theme_tape = None
+    _rot_p = site / "marketdata" / "subsector_rotation.json"
+    if _rot_p.exists():
+        try:
+            from engine.theme_tape import build_theme_tape
+
+            _fsight = None
+            _fs_p = site / "basketdata" / "foresight_cascade.json"
+            if _fs_p.exists():
+                try:
+                    _fsight = json.loads(_fs_p.read_text())
+                except Exception as e:  # noqa: BLE001 — the tape still renders
+                    log.warning("foresight_cascade.json unreadable (%s)", e)
+            theme_tape = build_theme_tape(
+                json.loads(_rot_p.read_text()), us_standouts, foresight=_fsight)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("theme tape unavailable (%s)", e)
+
     # TRD chip — the SAME artifact the popup's table fetches. Before 2026-07-26 the
     # server-rendered chip read us_board_outcomes.json while the table below it read
     # us_track_ledger.json: two different methodologies on one component, so the
@@ -5325,6 +5356,7 @@ def main() -> int:
         action_board=_ab,
         top_setups=top_setups,
         us_standouts=us_standouts,
+        theme_tape=theme_tape,
         us_board_outcomes=us_board_outcomes,
         us_track_ledger=us_track_ledger,
         us_track_series=us_track_series,
@@ -5919,6 +5951,33 @@ def main() -> int:
                     _fresh_su.get("as_of") != _prior_as_of
                     or (_fresh_su.get("staleness") or {}) != _prior_stale):
                 vm["us_standouts"] = _fresh_su
+                # The Theme Tape is a JOIN against this board, so it has to move with
+                # it: leaving the first-pass tape here would print counts that the
+                # rows underneath no longer support — a panel disagreeing with the
+                # board it claims to summarise. Recomputed, not patched, and the
+                # rotation artifact is fresh by this point in main() too, so the tape
+                # also sheds its one-build lag. Fail-soft: on any error the first-pass
+                # tape stands rather than the panel vanishing mid-page.
+                try:
+                    from engine.theme_tape import build_theme_tape as _btt
+
+                    _rot_rr = site / "marketdata" / "subsector_rotation.json"
+                    if _rot_rr.exists():
+                        # The desk read has to come along, or this re-render
+                        # silently strips the foresight layer the first pass
+                        # built — the shelf would appear in a dry run and vanish
+                        # from the shipped page.
+                        _fs_rr = site / "basketdata" / "foresight_cascade.json"
+                        _fsight_rr = None
+                        if _fs_rr.exists():
+                            try:
+                                _fsight_rr = json.loads(_fs_rr.read_text())
+                            except Exception:  # noqa: BLE001 — tape still renders
+                                pass
+                        vm["theme_tape"] = _btt(json.loads(_rot_rr.read_text()),
+                                                _fresh_su, foresight=_fsight_rr)
+                except Exception as _tt_e:  # noqa: BLE001 — additive, never fatal
+                    log.warning("theme tape re-render skipped (%s)", _tt_e)
                 _setups_path = site / "factordata" / "setups.json"
                 if _setups_path.exists():
                     try:
