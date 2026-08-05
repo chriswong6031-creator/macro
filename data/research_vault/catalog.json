@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T16:17:54.074152+00:00",
-  "count": 813,
+  "generated_at": "2026-08-05T16:33:10.789493+00:00",
+  "count": 814,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -113,6 +113,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-aqn2dxpzknd-67a925",
+      "title": "Citi The Point for Europe Wednesday, 05 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T10:58:04Z",
+      "summary_points": [
+        "**Lufthansa EBIT Cut & Sell Rating**: EBIT down 17% to €1.4bn vs guide; target cut to €7.80; Sell due to competitive acceleration and valuation deterioration (fundamental shift from Buy).",
+        "**Vinci Gatwick Expansion De-Risked**: Court dismissal of legal challenge confirms project viability post-DCO, removing key regulatory risk; execution/capex focus critical for long-term growth (geopolitical policy resolution).",
+        "**AI Revenue Acceleration**: Hyperscaler cloud revenue surged +48% YoY (vs +39% Q1); consensus underestimating AI-driven growth (+500bps '27, +900bps '28) due to demand outpacing supply (structural data release).",
+        "**Western Europe Airlines Short Positioning Surge**: IAG shifted from consensus long to short; sector-wide short crowding rising (Wizz highest, easyJet w/w increase), signaling negative sentiment shift (critical flow indicator)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
