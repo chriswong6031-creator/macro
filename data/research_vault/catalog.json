@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T23:05:28.825755+00:00",
-  "count": 833,
+  "generated_at": "2026-08-05T23:20:43.614367+00:00",
+  "count": 834,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -277,6 +277,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8wy3fbyuzy8-336a02",
+      "title": "JPM US AI and the labor",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:05:40Z",
+      "summary_points": [
+        "**Labor Share Depression**: Labor share of national income hit all-time low in Q2 2026, reflecting genuine decline in labor bargaining power (not measurement error); AI models predict further decline, threatening corporate margins and labor costs.",
+        "**Reliable Proxy Metric**: Net capital share (QFR data) mirrors labor share trends despite 2017 tax act distortions, providing a critical alternative metric for portfolio analysis.",
+        "**Elevated Capital Returns**: Nonfinancial corporate sector’s rate of return (before/after tax) remains above historical norms through Q2 2026, indicating persistent capital returns post-pandemic."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
