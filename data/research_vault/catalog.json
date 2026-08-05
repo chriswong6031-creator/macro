@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T04:41:42.343974+00:00",
-  "count": 779,
+  "generated_at": "2026-08-05T04:53:28.833650+00:00",
+  "count": 780,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -134,6 +134,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-z86t7fsp47l-2b2e42",
+      "title": "Packed week with payroll, AMD, Palantir, SpaceX",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:05:14Z",
+      "summary_points": [
+        "**Fed Policy Catalysts**: Aug 7 payroll and Aug 12 CPI data pivotal for Fed rate hike expectations; soft data validates dovishness, firm data risks credibility (July jobs expected at 80k, u-rate 4.3%).",
+        "**Tech Earnings & AI Growth**: AMD server CPU beat/raise driven by EPYC gains and AI tailwinds; SpaceX targets 155% AI revenue growth ($1.9bn) via compute deals (Anthropic, Google); PLTR high short interest (1.9x) poses volatility risk.",
+        "**Earnings Mispricing Signals**: Consumer Discretionary stocks (PINS, Spotify, Akamai) show implied earnings moves below historical realized moves (e.g., PINS 11.59 score), indicating undervalued volatility and upside potential.",
+        "**Critical Short Interest Risks**: PLTR (1.9x short interest), SpaceX (2.2x), and AKAM (14.9% short interest) signal elevated squeeze risk; high earnings straddle premiums (e.g., AKAM 2.44x 3m avg) price volatility ahead.",
+        "**Volatility Hedging Strategy**: SMH call spreads recommended amid NDX-SPX variance spread at historic levels; semis show upside momentum despite China DUV headwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 28,
       "language": "en",
       "needs_metadata": false
     },
