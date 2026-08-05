@@ -157,24 +157,31 @@ _BUY_MARKERS = frozenset(("buy", "rebuy"))
 # surface can render, and a test asserting its wording would be pinning dead code.
 # The complete block set `_buy_filter` can emit is the four keys below.
 #
-# WHY TWO KEYS SHARE ONE SENTENCE.  Read `engine.signal_quality._buy_filter`: both
+# WHY TWO KEYS SHARE ONE SENTENCE.  Read `engine.signal_quality._confirm_legs`: both
 # "failed next-bar hold" (the hk_prophet_v2 counter-trend branch, reclaim_veto=False)
-# and "failed reclaim-and-hold" (the FINAL branch, reached whenever the name is NOT
-# both below-200 and weekly-down) resolve on ONE test — ``held = c.iloc[i+1] >
+# and the legacy "failed reclaim-and-hold" (the FINAL branch, reached whenever the name
+# is NOT both below-200 and weekly-down) resolve on ONE test — ``held = c.iloc[i+1] >
 # c.iloc[i]`` on the 3D signal frame.  Neither evaluates a 200-day reclaim at all,
 # so the same sentence is the whole truth for both.
 #
-# ⚠ "failed reclaim-and-hold" IS A MISLEADING ENGINE STRING and this copy no longer
-# echoes it.  It used to render as "Reclaimed the 200-day average, then lost it
-# again" — narrating a 200-day round trip its branch never measured, on a name that
-# may never have been near its 200-day line.  The engine literal is deliberately NOT
-# renamed: it is part of the §7 marker contract US/CN artifacts already carry
-# (site/signals/<T>.json `reason`, graded ledger rows, tests/test_hk_board_ui.py), so
-# renaming it would change US/CN output bytes to fix a copy defect.  The lie lived in
-# the copy, so the copy is where it is fixed.
+# ⚠ "failed reclaim-and-hold" WAS A MISLEADING ENGINE STRING — and as of 2026-08-04 the
+# engine no longer emits it.  It used to render as "Reclaimed the 200-day average, then
+# lost it again", narrating a 200-day round trip its branch never measured, on a name
+# that may never have been near its 200-day line.  The copy was fixed first (2026-08-03)
+# and the literal deliberately left alone, because renaming it changes US/CN §7 marker
+# bytes to fix a copy defect.  `research/cn_prophet_audit/CN_RECLAIM_HOLD_AUDIT.md`
+# §10/§11 then MEASURED the cost of leaving it: 1,094 blocks in the audit year named a
+# reclaim that never ran, and 002155.SZ — 5.2% ABOVE its 200-day mean at its buy bar —
+# was misread by two separate investigations because of it.  The main branch now emits
+# `HOLD_FAIL`, the literal that was already correct for the identical one-test outcome.
+#
+# THE KEY STAYS ANYWAY.  Rows stamped before that change still carry the old string in
+# the PIT candidate stores, the graded ledgers and already-rendered signal files, and
+# this map is what turns a stored reason into a sentence.  Deleting the key would blank
+# the copy on every historical vetoed row.  It is a RETIRED key, not a dead one.
 #
 # UNITS: the confirmation bar is a 3-DAY bar, not a session — `signal_frame`
-# resamples to "3B" before `_buy_filter` reads i+1.  The copy says "3-day bar" for
+# resamples to "3B" before the filter reads i+1.  The copy says "3-day bar" for
 # that reason; "the next session" would be the same species of small false narrative
 # this entry exists to remove.
 _NEXT_BAR_HOLD_COPY = {
@@ -182,21 +189,50 @@ _NEXT_BAR_HOLD_COPY = {
     "zh": "信号后的下一根 3 日K线收低，入场未获确认",
 }
 VETO_REASON_COPY: dict[str, dict[str, str]] = {
+    # Both legs ran and both refused: no reclaim AND no hold.  The only shape that
+    # still earns the legacy sentence — 58.0% of the rows that used to carry it.
     "counter-trend, no 200-reclaim/hold": {
         "en": "Price never held above its 200-day average after the signal",
         "zh": "信号出现后股价未能站稳 200 日均线之上",
     },
+    # The other two shapes of the same branch, split out 2026-08-04 so a reader is told
+    # WHICH leg refused.  40.2% of the legacy rows are these — the ones a reclaim-rule
+    # change would actually relieve — and 1.8% are the inverse.
+    "counter-trend, held but no 200-reclaim": {
+        "en": "The 3-day bar after the signal held, but price never reclaimed its "
+              "200-day average",
+        "zh": "信号后的 3 日K线守住，但股价始终未收复 200 日均线",
+    },
+    "counter-trend, reclaimed 200 but no next-bar hold": {
+        "en": "Price reclaimed its 200-day average, but the next 3-day bar closed lower",
+        "zh": "股价收复 200 日均线，但下一根 3 日K线收低",
+    },
     # The reason `reclaim_veto=False` (hk_prophet_v2) made common.  Without this
     # entry the rows fell through to VETO_REASON_FALLBACK: 10 of the 12 vetoed rows
     # on the first v2 board rendered the contentless "The entry gate refused this
-    # signal", which tells a reader nothing at all.
+    # signal", which tells a reader nothing at all.  It is now ALSO what the main
+    # branch emits, so one sentence covers every hold-only block on every market.
     "failed next-bar hold": dict(_NEXT_BAR_HOLD_COPY),
-    "failed reclaim-and-hold": dict(_NEXT_BAR_HOLD_COPY),
+    "failed reclaim-and-hold": dict(_NEXT_BAR_HOLD_COPY),   # RETIRED — historical rows
     "veto: bearish divergence": {
         "en": "Momentum was already fading as the signal fired",
         "zh": "信号出现时动能已在衰减",
     },
 }
+
+# Keys the engine NO LONGER EMITS but stored rows still carry.  A vetoed row is rendered
+# from whatever reason was stamped on it, so a retired key must keep its sentence or every
+# historical row loses its copy — while an UNRETIRED key that the engine cannot emit is a
+# dead entry whose wording no surface can show.  Declaring the difference here is what lets
+# the reachability guard keep catching the second case
+# (tests/test_hk_v2_reason_copy_and_ran_lane.py).  Add a key here ONLY with the commit that
+# stops the engine emitting it.
+RETIRED_VETO_REASONS = frozenset({
+    # Retired 2026-08-04: the main branch tests the next-bar hold alone and now says so.
+    # research/cn_prophet_audit/CN_RECLAIM_HOLD_AUDIT.md §11 — 1,094 blocks carried this
+    # string for a reclaim test that never ran.
+    "failed reclaim-and-hold",
+})
 VETO_REASON_FALLBACK = {
     "en": "The entry gate refused this signal",
     "zh": "入场闸门未放行该信号",

@@ -32,6 +32,15 @@ signal_quality is CLOSE-ONLY by construction (it stochs the RSI of close; it nev
 high/low), so this gate runs on every market's close-only price store and self-degrades to
 "insufficient history" on thin names instead of crashing.
 
+REASONS vs REASON. Every verdict carries BOTH `reason` (the single first-match label, unchanged
+and back-compatible) and `reasons` (the ordered, exhaustive account, `reasons[0] == reason`
+always). They differ only where a verdict is over-determined — today, a buy that more than one
+buy-filter leg refuses. `reason` alone is a first-match LABEL: the bearish-divergence veto returns
+before reclaim-and-hold is ever tested, so a name blocked twice reads as blocked once, and 77% of
+divergence-vetoed CN fires were blocked by another leg anyway
+(research/cn_prophet_audit/CN_DIVERGENCE_VETO_AUDIT.md). Neither field is a gate input — admission,
+tier and eligibility are byte-identical with or without the account.
+
 Anticipation-form decision: research/signal_engine/tuning_anticipation.py compared the
 in-engine from-OS `early` leg (a) against a from-above-OS + 2D-cross relaxation (b) as
 SURFACERS of imminent base3d buys on the 110 held-out US names. (a) dominated (b) on recall
@@ -92,10 +101,30 @@ def is_buyable(v: dict | None) -> bool:
     return v.get("tier_cascade") in BUYABLE_TIERS
 
 
-_VERDICT_KEYS = ("eligible", "tier", "sub", "reason", "state", "above200",
+_VERDICT_KEYS = ("eligible", "tier", "sub", "reason", "reasons", "state", "above200",
                  "weekly_bull", "early_now", "asof", "last",
                  "tier_cascade", "weight", "tier_sub", "bars_to_cross", "fresh_bars", "ticks",
                  "provisional", "htf_s1", "htf_s2")
+
+_BLOCKED_PREFIX = "buy blocked by filter: "
+
+
+def _set_reason(v: dict, reason: str, *extra: str) -> None:
+    """Write ``reason`` and its EXHAUSTIVE companion ``reasons`` in lockstep.
+
+    ``reason`` stays exactly what it always was — a single first-match label, unchanged for
+    back-compat — and ``reasons`` is the ordered account, with ``reasons[0]`` byte-identical to
+    ``reason`` on every verdict. Extra elements appear only where a verdict is over-determined
+    (today: a buy blocked by more than one filter leg), and each one is a COMPLETE reason string
+    in the same idiom as ``reason``, so any element renders on its own.
+
+    Every ``reason`` write in this module goes through here on purpose: :func:`gate` REWRITES
+    the verdict reason after :func:`verdict` has run (the stale/topped demotions and the
+    ``tier T*`` extension), and an account left behind by an earlier stage would then describe a
+    verdict that no longer exists. Setting both together makes that impossible rather than
+    something a later reader has to notice."""
+    v["reason"] = reason
+    v["reasons"] = [reason, *extra]
 
 
 def _bars_since(daily_close, marker) -> int | None:
@@ -112,13 +141,34 @@ def _bars_since(daily_close, marker) -> int | None:
         return None
 
 
+def _extra_block_legs(marker: dict) -> list[str]:
+    """The blocking legs BEYOND the first-match one, off a §7 buy marker's `reasons` list.
+
+    Defensive by construction: the marker's account is trusted only when it actually starts with
+    the marker's own `reason` (that invariant is what makes `reasons[0] == reason` safe to rely
+    on downstream). A missing, malformed, or out-of-sync list yields no extras rather than a
+    verdict whose account contradicts its label."""
+    first = (marker.get("reason") or "").strip()
+    raw = marker.get("reasons")
+    if not isinstance(raw, (list, tuple)):
+        return []
+    legs = [str(r).strip() for r in raw if str(r).strip()]
+    if not legs or legs[0] != first:
+        return []
+    return legs[1:]
+
+
 def verdict(result: dict | None) -> dict:
     """Map an :func:`engine.signal_quality.analyze` result (or None) to a gate verdict."""
+    # `reason`/`reasons` are seeded here (not via _set_reason) so the key ORDER of a verdict
+    # dict is identical to the pre-change one — a raw verdict serialized to JSON keeps its
+    # byte layout, with `reasons` slotted directly behind the label it accounts for.
     v = {"eligible": False, "tier": None, "sub": None, "reason": "no signal",
+         "reasons": ["no signal"],
          "state": None, "above200": None, "weekly_bull": None, "early_now": False,
          "asof": None, "last": None}
     if not result:
-        v["reason"] = "insufficient history"
+        _set_reason(v, "insufficient history")
         return v
     markers = result.get("markers") or []
     last = markers[-1] if markers else None
@@ -129,26 +179,31 @@ def verdict(result: dict | None) -> dict:
     if last and last.get("type") in _BUY_TYPES:
         q = last.get("quality")
         if q == "take":
-            v.update(eligible=True, tier=TAKE,
-                     reason=last.get("reason") or "held buy-filter confirmation")
+            v.update(eligible=True, tier=TAKE)
+            _set_reason(v, last.get("reason") or "held buy-filter confirmation")
             return v
         if q == "pending":
-            v.update(eligible=True, tier=ANTICIPATION, sub="pending",
-                     reason="buy fired; forward confirmation pending")
+            v.update(eligible=True, tier=ANTICIPATION, sub="pending")
+            _set_reason(v, "buy fired; forward confirmation pending")
             return v
         # a blocked buy: only a live early advance-warning can still surface it
         if early:
-            v.update(eligible=True, tier=ANTICIPATION, sub="early",
-                     reason="early advance-warning (last buy was filtered out)")
+            v.update(eligible=True, tier=ANTICIPATION, sub="early")
+            _set_reason(v, "early advance-warning (last buy was filtered out)")
             return v
-        v.update(reason="buy blocked by filter: " + (last.get("reason") or "").strip())
+        # THE over-determined case. `reason` keeps naming the FIRST leg that fired, exactly as
+        # before; `reasons` names every leg that refused the name, so a reader can tell a buy
+        # blocked once from a buy blocked twice over. The marker only carries `reasons` when it
+        # adds something (signal_quality.analyze), so [reason] is the correct fallback, not a gap.
+        _set_reason(v, _BLOCKED_PREFIX + (last.get("reason") or "").strip(),
+                    *(_BLOCKED_PREFIX + leg for leg in _extra_block_legs(last)))
         return v
     # flat: last marker is a sell/cut, or there are no markers yet
     if early:
-        v.update(eligible=True, tier=ANTICIPATION, sub="early",
-                 reason="early advance-warning (no open buy)")
+        v.update(eligible=True, tier=ANTICIPATION, sub="early")
+        _set_reason(v, "early advance-warning (no open buy)")
         return v
-    v.update(reason="flat: " + (last.get("type") if last else "no buy signal"))
+    _set_reason(v, "flat: " + (last.get("type") if last else "no buy signal"))
     return v
 
 
@@ -189,7 +244,8 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     # the name drops: it is a HOLD, not one of the "about to cross" / "just crossed" board buys.
     if take_active and tier_c != "T1":
         why = "topped/rolled-over" if topped else "risen for many days (cross 2+ ticks ago)"
-        v.update(eligible=False, tier=None, reason=f"held but {why} — no longer a fresh entry")
+        v.update(eligible=False, tier=None)
+        _set_reason(v, f"held but {why} — no longer a fresh entry")
         # W0.2 Stage C near-miss annotation (Appendix A): stamped ONLY when the name
         # failed EXACTLY ONE condition — topped AND stale together is two failures,
         # which is a plain rejection, not a near-miss.
@@ -206,7 +262,8 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
             tier_c = "T1"
         else:
             why = "already topping" if topped else "risen for many days"
-            v.update(eligible=False, tier=None, reason=f"forming master {why} — not a fresh entry")
+            v.update(eligible=False, tier=None)
+            _set_reason(v, f"forming master {why} — not a fresh entry")
             # W0.2 Stage C: same exactly-one near-miss rule as the held-take branch.
             if topped and not fresh:
                 pass
@@ -233,7 +290,12 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     v["htf_s1"] = bool(_htf.get("s1", False))
     v["htf_s2"] = bool(_htf.get("s2", False))
     if tier_c and not v.get("eligible"):      # T2/T4 (or a fresh re-trigger) extend eligibility
-        v.update(eligible=True, reason=f"tier {tier_c} (weight {v['weight']})")
+        # NB this path can overwrite a blocked-buy reason (and its account): the name is no
+        # longer surfaced as blocked, it is surfaced on the cascade tier, so the buy-filter
+        # legs no longer explain the verdict. _set_reason drops the stale account with the
+        # stale label — the two can never disagree.
+        v.update(eligible=True)
+        _set_reason(v, f"tier {tier_c} (weight {v['weight']})")
     v["result"] = res
     return v
 
@@ -298,7 +360,8 @@ def blend_sorted(items: list, base_of, verdict_of, reverse: bool = True, bonus_o
 def compact(v: dict | None) -> dict:
     """The display-safe verdict subset to attach to a grid card row (drops "result")."""
     if not v:
-        return {"eligible": False, "tier": None, "sub": None, "reason": "no signal"}
+        return {"eligible": False, "tier": None, "sub": None, "reason": "no signal",
+                "reasons": ["no signal"]}
     return {k: v.get(k) for k in _VERDICT_KEYS}
 
 
