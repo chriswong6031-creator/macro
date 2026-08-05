@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T15:17:45.350691+00:00",
-  "count": 810,
+  "generated_at": "2026-08-05T15:32:48.008042+00:00",
+  "count": 811,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -566,6 +566,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tzulog826hv-b1aa8a",
+      "title": "On Our Minds RBI Preview August hold likely, but the policy runway is narrowing",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:10:54Z",
+      "summary_points": [
+        "**RBI Policy Hold with Narrowing Runway**: RBI likely holds repo rate at 5.25% in August (inflation >4% insufficient for tightening), but second-round inflation risks (corporate price hikes in tyres/paints/toothpaste, geopolitical tensions) signal reduced policy flexibility; core inflation now critical monitor for potential Q4 2026 hike.",
+        "**Core Inflation as Key Trigger**: Corporate price hikes (FMCG, autos) risk entrenching core inflation beyond food/fuel, triggering RBI action; Governor’s \"premature\" comment confirms tolerance for transient shocks but not persistent core CPI rises.",
+        "**Supply Chain & Geopolitical Inflation Pressures**: West Asia conflict-driven supply disruptions (natural gas +40%, sulphur +90%) amplify input costs in chemicals/fertilizers/energy, threatening WPI-CPI transmission and reducing RBI’s policy options amid crude price volatility.",
+        "**Q4 2026 Rate Hike Risk**: Persistent core inflation from corporate price hikes and second-round effects (wider non-food/services price increases) pose credible risk for Q4 2026 rate hike if data deteriorates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
