@@ -412,8 +412,11 @@ class TestBasingStage:
         assert ubr.stage_for(row, {"status": "wait_pullback"}) == "blocked"
 
     def test_the_default_is_the_pre_basing_behaviour(self):
-        """No opt-in, no change: the HK board delegates to this same function and its
-        template has no basing shelf, so its rendering must stay byte-identical."""
+        """No opt-in, no change: the default protects any caller that has not built
+        the shelf, so its rendering stays byte-identical.  Both boards now opt in
+        EXPLICITLY at their own builders (US 2026-08-05, HK the same day), which is
+        why the opt-in is a parameter and not a flag day — the delegating HK module
+        below still reads `blocked` when nobody asks for the shelf."""
         row = {"state": "BOTTOM WATCH", "label": "NEARING A LOW", "dir": "down"}
         assert ubr.stage_for(row, {"status": "wait_pullback"}) == "blocked"
         from engine import hk_board_rank as hbr
