@@ -2398,6 +2398,13 @@ jobs:
         run: pip install pytest pandas numpy pyyaml pyarrow requests jinja2 plotly
       - name: IRD substrate + engines test suite
         run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py tests/test_intl_risk.py tests/test_contagion.py tests/test_cb_desk.py tests/test_ird_velocity.py tests/test_ird_wiring.py -q
+      # Contagion-links propagation layer + its session-stamp heal (forward-ledger
+      # audit 2026-08-05).  test_contagion_links.py was enumerated in NO workflow
+      # (audit_unrun_tests.py P4: unrun, writes a data/ ledger) even though the
+      # engine appends twelve committed forward logs — a break there went red
+      # nowhere.  Same family as test_contagion.py above, so it shares this venv.
+      - name: contagion-links session stamps + heal (forward-ledger audit 2026-08-05)
+        run: python -m pytest tests/test_contagion_links.py tests/test_heal_contagion_links_ledger.py -q
 
   itr-turn-rotation:
     if: ${{ false }}
@@ -4631,6 +4638,15 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: pick lab runners + US/CN board surfaces — shipped picks, outcome ledgers, priority board
         run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_cn_board_unified_grid.py tests/test_cn_prophet_candidates_schema.py tests/test_cn_track_ledger_eras.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_prophet_card_shared.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_priority_ui.py tests/test_us_board_rank.py tests/test_us_board_w3_evidence.py -q
+      # Stage-analysis board + its forward ledger and session-stamp heal
+      # (forward-ledger audit 2026-08-05).  test_stage_analysis.py and
+      # test_weinstein_stage.py were both enumerated in NO workflow
+      # (audit_unrun_tests.py P4: unrun, writes a data/ ledger) while the ledger
+      # they cover feeds the live stage-ran shelf read and oracle/tape_outcomes'
+      # point-in-time reconstruction.  Same US board-store family as the suites
+      # above, so it shares their venv.
+      - name: stage-analysis ledger session stamps + heal (forward-ledger audit 2026-08-05)
+        run: python -m pytest tests/test_stage_analysis.py tests/test_weinstein_stage.py tests/test_heal_stage_forward_ledger.py -q
 
   unrun-prophet-learning-loop:
     # Prophet learning loop (#4331) — postmortem forensics over the loser cohort

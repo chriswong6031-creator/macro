@@ -2334,6 +2334,25 @@ on:
       - "tests/test_trial_log_refresh.py"
       - "tests/test_validation_effective_t.py"
       - "tests/test_vector_conviction.py"
+      # Forward-ledger calendar-asof audit 2026-08-05 (#4568 pattern): three
+      # clock-stamped ledger writers converted to data-plane session stamps.
+      # test_contagion_links.py and test_stage_analysis.py were enumerated in NO
+      # workflow before this (audit_unrun_tests.py P4 — unrun, writes a data/
+      # ledger), so an edit to either engine produced no check that could see a
+      # failure; test_weinstein_stage.py is the classifier the stage ledger reads
+      # and was dark for the same reason.  The engines themselves are already
+      # reached by the broad "engine/**" trigger.
+      - "tests/test_contagion_links.py"
+      - "tests/test_heal_contagion_links_ledger.py"
+      - "tests/test_stage_analysis.py"
+      - "tests/test_heal_stage_forward_ledger.py"
+      - "tests/test_weinstein_stage.py"
+      - "scripts/heal_contagion_links_ledger.py"
+      - "scripts/heal_stage_forward_ledger.py"
+      # The nightly stage builder invokes the heal above; it is the only lane
+      # permitted to write this ledger (.gitignore:574), so an edit to it must
+      # start the pack that executes the stage suites.
+      - "scripts/build_stage_analysis.py"
       # unrun-picks-boards
       - "tests/test_b3_forex_consumer.py"
       - "tests/test_board_contradictions.py"

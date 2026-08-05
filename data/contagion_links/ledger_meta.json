@@ -1,0 +1,202 @@
+{
+  "quarantine": {
+    "files": [
+      {
+        "ledger": "contagion_links/history.jsonl",
+        "file": "data/contagion_links/history_quarantine.jsonl",
+        "n_rows": 64
+      },
+      {
+        "ledger": "risk_radar/forward_log_contagion.jsonl",
+        "file": "data/risk_radar/forward_log_contagion_quarantine.jsonl",
+        "n_rows": 5
+      },
+      {
+        "ledger": "risk_radar_intl/cn_forward_log_contagion.jsonl",
+        "file": "data/risk_radar_intl/cn_forward_log_contagion_quarantine.jsonl",
+        "n_rows": 5
+      },
+      {
+        "ledger": "risk_radar_intl/hk_forward_log_contagion.jsonl",
+        "file": "data/risk_radar_intl/hk_forward_log_contagion_quarantine.jsonl",
+        "n_rows": 5
+      },
+      {
+        "ledger": "risk_radar_intl/ca_forward_log_contagion.jsonl",
+        "file": "data/risk_radar_intl/ca_forward_log_contagion_quarantine.jsonl",
+        "n_rows": 6
+      },
+      {
+        "ledger": "risk_radar_intl/kr_forward_log_contagion.jsonl",
+        "file": "data/risk_radar_intl/kr_forward_log_contagion_quarantine.jsonl",
+        "n_rows": 6
+      },
+      {
+        "ledger": "risk_radar_intl/jp_forward_log_contagion.jsonl",
+        "file": "data/risk_radar_intl/jp_forward_log_contagion_quarantine.jsonl",
+        "n_rows": 7
+      },
+      {
+        "ledger": "risk_radar_intl/tw_forward_log_contagion.jsonl",
+        "file": "data/risk_radar_intl/tw_forward_log_contagion_quarantine.jsonl",
+        "n_rows": 6
+      },
+      {
+        "ledger": "risk_radar_intl/in_forward_log_contagion.jsonl",
+        "file": "data/risk_radar_intl/in_forward_log_contagion_quarantine.jsonl",
+        "n_rows": 6
+      },
+      {
+        "ledger": "risk_radar_intl/au_forward_log_contagion.jsonl",
+        "file": "data/risk_radar_intl/au_forward_log_contagion_quarantine.jsonl",
+        "n_rows": 6
+      },
+      {
+        "ledger": "risk_radar_intl/gb_forward_log_contagion.jsonl",
+        "file": "data/risk_radar_intl/gb_forward_log_contagion_quarantine.jsonl",
+        "n_rows": 6
+      },
+      {
+        "ledger": "risk_radar_intl/ez_forward_log_contagion.jsonl",
+        "file": "data/risk_radar_intl/ez_forward_log_contagion_quarantine.jsonl",
+        "n_rows": 6
+      }
+    ],
+    "n_rows": 128,
+    "reason": "duplicate re-description of an already-recorded session stamped under a fresh calendar date (clock-stamped writer; forward-ledger calendar-asof audit 2026-08-05)",
+    "healed_by": "scripts/heal_contagion_links_ledger.py",
+    "last_heal": "2026-08-05T06:53:39+00:00"
+  },
+  "known_gaps": [
+    {
+      "session": "2026-07-17",
+      "markets": [
+        "kr"
+      ],
+      "reason": "the engine stamped this calendar date from the clock, not from the tape it read; for the markets listed the date is not evidence about that session at all — their rows were restamped to their true session or quarantined as duplicates of it"
+    },
+    {
+      "session": "2026-07-18",
+      "markets": [
+        "au",
+        "ca",
+        "cn",
+        "ez",
+        "gb",
+        "hk",
+        "in",
+        "jp",
+        "kr",
+        "tw",
+        "us"
+      ],
+      "reason": "the engine stamped this calendar date from the clock, not from the tape it read; for the markets listed the date is not evidence about that session at all — their rows were restamped to their true session or quarantined as duplicates of it"
+    },
+    {
+      "session": "2026-07-19",
+      "markets": [
+        "au",
+        "ca",
+        "cn",
+        "ez",
+        "gb",
+        "hk",
+        "in",
+        "jp",
+        "kr",
+        "tw",
+        "us"
+      ],
+      "reason": "the engine stamped this calendar date from the clock, not from the tape it read; for the markets listed the date is not evidence about that session at all — their rows were restamped to their true session or quarantined as duplicates of it"
+    },
+    {
+      "session": "2026-07-20",
+      "markets": [
+        "jp"
+      ],
+      "reason": "the engine stamped this calendar date from the clock, not from the tape it read; for the markets listed the date is not evidence about that session at all — their rows were restamped to their true session or quarantined as duplicates of it"
+    },
+    {
+      "session": "2026-07-25",
+      "markets": [
+        "au",
+        "ca",
+        "cn",
+        "ez",
+        "gb",
+        "hk",
+        "in",
+        "jp",
+        "kr",
+        "tw",
+        "us"
+      ],
+      "reason": "the engine stamped this calendar date from the clock, not from the tape it read; for the markets listed the date is not evidence about that session at all — their rows were restamped to their true session or quarantined as duplicates of it"
+    },
+    {
+      "session": "2026-07-26",
+      "markets": [
+        "au",
+        "ca",
+        "cn",
+        "ez",
+        "gb",
+        "hk",
+        "in",
+        "jp",
+        "kr",
+        "tw",
+        "us"
+      ],
+      "reason": "the engine stamped this calendar date from the clock, not from the tape it read; for the markets listed the date is not evidence about that session at all — their rows were restamped to their true session or quarantined as duplicates of it"
+    },
+    {
+      "session": "2026-08-01",
+      "markets": [
+        "au",
+        "ca",
+        "cn",
+        "ez",
+        "gb",
+        "hk",
+        "in",
+        "jp",
+        "kr",
+        "tw",
+        "us"
+      ],
+      "reason": "the engine stamped this calendar date from the clock, not from the tape it read; for the markets listed the date is not evidence about that session at all — their rows were restamped to their true session or quarantined as duplicates of it"
+    },
+    {
+      "session": "2026-08-02",
+      "markets": [
+        "au",
+        "ca",
+        "cn",
+        "ez",
+        "gb",
+        "hk",
+        "in",
+        "jp",
+        "kr",
+        "tw",
+        "us"
+      ],
+      "reason": "the engine stamped this calendar date from the clock, not from the tape it read; for the markets listed the date is not evidence about that session at all — their rows were restamped to their true session or quarantined as duplicates of it"
+    },
+    {
+      "session": "2026-08-03",
+      "markets": [
+        "au",
+        "ca",
+        "ez",
+        "gb",
+        "in",
+        "jp",
+        "kr",
+        "tw"
+      ],
+      "reason": "the engine stamped this calendar date from the clock, not from the tape it read; for the markets listed the date is not evidence about that session at all — their rows were restamped to their true session or quarantined as duplicates of it"
+    }
+  ]
+}
