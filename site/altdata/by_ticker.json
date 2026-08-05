@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-05",
-  "generated_utc": "2026-08-05T08:03:54.223403+00:00",
-  "n_tickers": 2604,
+  "generated_utc": "2026-08-05T09:54:39.296718+00:00",
+  "n_tickers": 2596,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "HUBB": {
@@ -281,6 +281,7 @@
       "gov_contract_accel": 2.36,
       "days_to_earnings": 0,
       "next_earnings": "2026-08-05",
+      "earnings_surprise_pct": -0.9,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -513,6 +514,7 @@
       "gov_grant_accel": 0.4,
       "days_to_earnings": 1,
       "next_earnings": "2026-08-06",
+      "earnings_surprise_pct": 7.0,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -2994,8 +2996,6 @@
       ],
       "weighted_score": 0.35,
       "analyst_bull_ratio": 0.85,
-      "days_to_earnings": 15,
-      "next_earnings": "2026-08-20",
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -3007,8 +3007,8 @@
       ],
       "weighted_score": 0.35,
       "analyst_bull_ratio": 0.82,
-      "days_to_earnings": 20,
-      "next_earnings": "2026-08-25",
+      "days_to_earnings": 21,
+      "next_earnings": "2026-08-26",
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -3315,6 +3315,7 @@
       "weighted_score": 0,
       "days_to_earnings": 1,
       "next_earnings": "2026-08-06",
+      "earnings_surprise_pct": 9.2,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -3610,6 +3611,7 @@
       "weighted_score": 0.2,
       "days_to_earnings": 5,
       "next_earnings": "2026-08-10",
+      "earnings_surprise_pct": 4.9,
       "news_bull_ratio": 0.88,
       "convergence_score": 1,
       "trump_linked": false,
@@ -3712,6 +3714,7 @@
       "weighted_score": 0.2,
       "days_to_earnings": 13,
       "next_earnings": "2026-08-18",
+      "earnings_surprise_pct": 2.6,
       "congress_position_usd": 32300000.0,
       "convergence_score": 1,
       "trump_linked": false,
