@@ -273,11 +273,6 @@ jobs:
         # missing trust, source mismatch, or partial progress blocks the checkpoint.
         # This step observes direct SEC facts only. It cannot select a current share
         # basis, calculate fully diluted supply, score risk, or influence Prophet.
-        # continue-on-error + the exclusion block in "commit data": this lane is
-        # gated OFF today, but a flip of its var must not hand a pre-production
-        # publication step a veto over the night's market collection (2026-08-05).
-        id: cs_sharecount
-        continue-on-error: true
         env:
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -324,8 +319,6 @@ jobs:
         # A third variable separately requests apply mode; one retention-variable
         # flip can never request deletion.
         if: ${{ vars.CAPITAL_STRUCTURE_SHARE_COUNT_PUBLICATION_ENABLED == 'true' && vars.CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_ENABLED == 'true' }}
-        id: cs_retain
-        continue-on-error: true
         env:
           CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_ENABLED: 'true'
           CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_APPLY_ENABLED: ${{ vars.CAPITAL_STRUCTURE_SHARE_COUNT_RETENTION_APPLY_ENABLED }}
@@ -343,11 +336,8 @@ jobs:
         # AFTER collection so today's verified SEC manifests are visible, and BEFORE
         # the data commit so immutable event versions/edges ride the same checkpoint.
         # This compiler is network-free by contract and has no Prophet/rank authority.
-        # Any source-bundle, ledger, or generation-receipt integrity failure keeps a
-        # partial capital-structure generation OUT of the commit (see "commit data"),
-        # but must never discard the night's market collection with it.
-        id: cs_events
-        continue-on-error: true
+        # Any source-bundle, ledger, or generation-receipt integrity failure blocks
+        # the checkpoint; a partial capital-structure generation is never committed.
         run: python -m scripts.compile_capital_structure_events
       - name: compile capital-structure direct document terms (SEC-network-free, context-only)
         # The fee-table compiler reads only source-manifest-addressed complete
@@ -355,10 +345,8 @@ jobs:
         # environment is step-local, so wire it again here rather than pretending a
         # manifest object key is independently resolvable. It transcribes direct SEC
         # cells only: no aggregate capacity, instrument, risk, probability, or Prophet
-        # claim may originate in this step. A missing/mismatched source keeps the term
-        # ledger out of the commit instead of committing it partial.
-        id: cs_terms
-        continue-on-error: true
+        # claim may originate in this step. A missing/mismatched source aborts instead
+        # of committing a partial term ledger.
         env:
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -377,8 +365,6 @@ jobs:
         # Reads only the verified telemetry-last event generation. It publishes an
         # observed-filing-state artifact and byte-identical public twin; terms,
         # capacity, runway, scores, probabilities, and Prophet authority stay absent.
-        id: cs_projection
-        continue-on-error: true
         run: python -m scripts.build_capital_structure_projection
       - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
         # The only network leg for the themes map + Subsector Rotation. Refreshes
@@ -440,35 +426,6 @@ jobs:
           # `china` or `hk` (scripts/collect.py group_members), so excludes cover all
           # data/china*, data/hk*, and data/hkma (adapter key `hkma` starts with `hk`).
           git reset -q -- data/hk data/hk_* data/hkma data/china data/china_* 2>/dev/null || true
-          # 2026-08-05 postmortem (run 30960328285): the capital-structure compilers
-          # were BARE (no continue-on-error), so when the event spine hit a
-          # ManifestIdentityError — tonight's re-fetched SEC source manifests no
-          # longer hashing to what the committed generation pinned — the job died at
-          # that step and THIS step never ran. A 2h52m collection (235 data/stocks
-          # names, baskets/ohlcv, breadth) was discarded by a subsystem that is
-          # context-only by its own description, and the next job's checkout wiped
-          # the runner tree before it could be rescued. Fourth consecutive night lost.
-          # The compilers are now continue-on-error; their fail-closed guarantee moves
-          # HERE, where it costs only its own artifacts: on any capital-structure
-          # failure the partial generation is unstaged and the market data still
-          # lands. Both intents hold — no partial generation is ever committed, and
-          # no context-only subsystem can discard the night.
-          CS_FAILED=""
-          for outcome in "${{ steps.cs_sharecount.outcome }}" \
-                         "${{ steps.cs_retain.outcome }}" \
-                         "${{ steps.cs_events.outcome }}" \
-                         "${{ steps.cs_terms.outcome }}" \
-                         "${{ steps.cs_projection.outcome }}"; do
-            case "$outcome" in
-              success|skipped|"") ;;
-              *) CS_FAILED="yes" ;;
-            esac
-          done
-          if [ -n "$CS_FAILED" ]; then
-            git reset -q -- data/capital_structure site/capital-structure-data 2>/dev/null || true
-            git checkout -q -- data/capital_structure site/capital-structure-data 2>/dev/null || true
-            echo "::error title=capital-structure-generation-excluded::a capital-structure step failed (sharecount=${{ steps.cs_sharecount.outcome }} retain=${{ steps.cs_retain.outcome }} events=${{ steps.cs_events.outcome }} terms=${{ steps.cs_terms.outcome }} projection=${{ steps.cs_projection.outcome }}); its partial generation is EXCLUDED from tonight's commit. The market data below still lands. Investigate before the next SEC-facing publication."
-          fi
           if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
           git commit -m "data: daily collection $(date -u +%F)"
           echo "committed=true" >> "$GITHUB_OUTPUT"
