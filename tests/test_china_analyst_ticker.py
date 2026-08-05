@@ -147,3 +147,54 @@ def test_entity_resolver_known_space_unchanged(code, want):
 @pytest.mark.parametrize("bad", ["", "12345", "abcdef", "1234567"])
 def test_entity_resolver_rejects_junk(bad):
     assert cn_code_to_ticker(bad) is None
+
+
+# --- the stores themselves must stay clean ----------------------------------------- #
+# The mapper fix stops NEW corruption; scripts/heal_cn_beijing_tickers.py re-keyed the
+# 6,278 rows already written. This guard is what keeps both from silently regressing —
+# it reads the tracked stores, so a reintroduced mapper bug fails here on the first
+# nightly commit rather than after another month of accrual.
+_HEALED_STORES = [
+    "data/china_analyst/forecast.parquet",
+    "data/china_block_trades/detail.parquet",
+    "data/china_buyback/buyback.parquet",
+    "data/china_lhb/detail.parquet",
+    "data/china_lhb/events.parquet",
+    "data/china_lhb/history.parquet",
+    "data/china_preannounce/forecast.parquet",
+    "data/china_unlocks/detail.parquet",
+    "data/china_zt_pool/pool.parquet",
+]
+
+_REPO = Path(__file__).resolve().parent.parent
+
+
+def test_no_store_carries_a_beijing_code_on_a_wrong_exchange():
+    """No tracked china store may key a 92xxxx Beijing code as `.SS` or `.SZ`.
+
+    FAIL-CLOSED: if not one of the stores is readable the test FAILS rather than skips —
+    a guard that quietly finds nothing to check is a guard that has gone dark."""
+    import pandas as pd
+
+    checked, offenders = 0, {}
+    for rel in _HEALED_STORES:
+        p = _REPO / rel
+        if not p.exists():
+            continue
+        try:
+            tick = pd.read_parquet(p, columns=["ticker"])["ticker"].astype(str)
+        except Exception:  # unreadable is not "clean" — leave it uncounted
+            continue
+        checked += 1
+        bad = tick[tick.str.match(r"^92\d{4}\.(SS|SZ)$", na=False)]
+        if len(bad):
+            offenders[rel] = (len(bad), sorted(bad.unique())[:5])
+
+    assert checked, (
+        "fail-closed: none of the china stores were readable, so this guard proved "
+        f"nothing. Expected at least one of: {_HEALED_STORES}"
+    )
+    assert not offenders, (
+        "Beijing 92xxxx codes keyed to a Shanghai/Shenzhen suffix — the mapper "
+        f"regressed or a store was written by an unfixed path: {offenders}"
+    )
