@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T19:19:10.679972+00:00",
-  "count": 822,
+  "generated_at": "2026-08-05T19:34:13.494568+00:00",
+  "count": 823,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -359,6 +359,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-aaa07dctwd8-3f5db5",
+      "title": "Suncor Energy Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:25Z",
+      "summary_points": [
+        "**CFPS Beat & Buyback Expansion**: Q2 CFPS C$4.52 (vs.",
+        "est C$4.38) + repurchase increase to C$500mn/month (targeting C$4.7bn full-year), signaling management confidence in cash flow and shareholder returns.",
+        "**Upstream Cash Flow Outperformance**: Upstream cash flow C$4,471mn (vs.",
+        "est C$4,144mn), driven by strong pricing, tracking 3-year targets (C$2bn free funds flow increase, ~US$5/b breakeven reduction).",
+        "**Segment Divergence & Execution**: Refining beat (C$2,299mn vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
