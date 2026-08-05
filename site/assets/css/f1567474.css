@@ -27,11 +27,17 @@ body.page-macro.mx4-grid {
   --mx5-warn-ink:      var(--mx5-warn);
 }
 [data-theme="light"] body.page-macro.mx4-grid {
-  --mx5-glass-bg:      rgba(255,255,255,.82);
-  --mx5-pop-bg:        rgba(255,255,255,.97);
-  --mx5-glass-border:  rgba(0,0,0,.06);
-  --mx5-glass-shadow:  0 4px 24px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.95) inset;
-  --mx5-glass-hover:   0 8px 32px rgba(0,0,0,.13), 0 1px 0 rgba(255,255,255,.95) inset;
+  /* Round-3 depth pass: the panels were 82% white over a near-white canvas —
+     the card surface and the page were the SAME value, so nothing read as a
+     card. Panels are now opaque white on the deepened #e8ebf1 canvas, with the
+     estate's two-stop shadow (a tight contact shadow + a wide ambient one) and
+     the soft recipe hairline. Depth now comes from the value step + the shadow,
+     which is why the border can afford to be quiet. */
+  --mx5-glass-bg:      #ffffff;
+  --mx5-pop-bg:        #ffffff;
+  --mx5-glass-border:  #dde2ea;
+  --mx5-glass-shadow:  0 1px 2px rgba(23,32,55,.05), 0 8px 24px -12px rgba(23,32,55,.10);
+  --mx5-glass-hover:   0 2px 4px rgba(23,32,55,.07), 0 14px 32px -14px rgba(23,32,55,.16);
   /* Dedicated dark accents for TEXT on the light glass card (>=4.5:1 vs ~#f6f7fa).
      Deliberately darker than the site-wide --up/--warn (which are tuned ~3.4:1
      for other surfaces); fills above keep the bright #22d97a / #f59e0b. */
@@ -54,9 +60,12 @@ body.page-macro.mx4-grid {
   --mx5-focus-ring:    0 0 0 2px rgba(34,217,122,.55);
 }
 [data-theme="light"] body.page-macro.mx4-grid {
-  --mx5-hover-bg:      rgba(255,255,255,.92);
-  --mx5-hover-border:  rgba(0,0,0,.14);
-  --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.12);
+  /* Round-3: the resting surface is now opaque white, so "surface lifts 2%" has
+     nowhere to go in light — the lift is carried by the border stepping up and
+     the ambient shadow deepening, alongside the shared translateY(-1px). */
+  --mx5-hover-bg:      #ffffff;
+  --mx5-hover-border:  #c3cbd9;
+  --mx5-hover-shadow:  0 2px 4px rgba(23,32,55,.07), 0 14px 32px -14px rgba(23,32,55,.16);
 }
 
 /* ── Aurora backdrop (fixed position, grid-view only) ───────────── */
@@ -87,10 +96,16 @@ body.page-macro.mx4-grid .mx5-aurora .mx5-a4{
   border-radius:50%;filter:blur(90px);
   background:radial-gradient(ellipse,rgba(99,102,241,.08) 0%,transparent 70%);
 }
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora::before{background:radial-gradient(ellipse,rgba(14,165,98,.06) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora::after {background:radial-gradient(ellipse,rgba(99,102,241,.05) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora .mx5-a3{background:radial-gradient(ellipse,rgba(14,165,98,.04) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora .mx5-a4{background:radial-gradient(ellipse,rgba(99,102,241,.04) 0%,transparent 70%);}
+/* LIGHT: the aurora is a dark-mode idiom — coloured light blooming out of a black
+   field. Inverted onto paper it is not light, it is INK: four 90px-blurred colour
+   washes that tint the canvas green/indigo and read as a printing stain (most
+   visible as the "orb" floating in the empty canvas past the footer, since the
+   layer is position:fixed and spans the whole scroll). It is also pure decoration
+   here — the market state it tints is already stated by the gauge, the score and
+   the thesis line — so light simply doesn't get it. Depth in light comes from the
+   panel/canvas value step and the shadow recipe, not from ambient bloom.
+   The state-tinted (.au-yellow/.au-red) light variants are dropped with it. */
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora{display:none;}
 /* verdict-tinted aurora (operator order 2026-07-14): the two GREEN blobs follow the
    market-state color — amber when Mixed, red when Risk-off; the indigo companions
    stay neutral. Class baked from market_state.color + live-swapped by risk_state_live.js. */
@@ -98,10 +113,6 @@ body.page-macro.mx4-grid .mx5-aurora.au-yellow::before{background:radial-gradien
 body.page-macro.mx4-grid .mx5-aurora.au-yellow .mx5-a3{background:radial-gradient(ellipse,rgba(245,158,11,.06) 0%,transparent 70%);}
 body.page-macro.mx4-grid .mx5-aurora.au-red::before{background:radial-gradient(ellipse,rgba(239,68,68,.10) 0%,transparent 70%);}
 body.page-macro.mx4-grid .mx5-aurora.au-red .mx5-a3{background:radial-gradient(ellipse,rgba(239,68,68,.06) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(156,98,18,.05) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-yellow .mx5-a3{background:radial-gradient(ellipse,rgba(156,98,18,.035) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-red::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-red .mx5-a3{background:radial-gradient(ellipse,rgba(220,38,38,.035) 0%,transparent 70%);}
 @media(prefers-reduced-motion:reduce){
   body.page-macro.mx4-grid .mx5-aurora::before,
   body.page-macro.mx4-grid .mx5-aurora::after,
@@ -177,7 +188,11 @@ body.page-macro.mx4-grid .mx5-gauge-svg{
 }
 /* Light mode: the gauge's white-alpha track/ticks/scale-labels vanish on white —
    repaint in dark ink. #mx5-score-numeral keeps its own id rule (state colour). */
-[data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg > text{fill:rgba(10,16,24,.42);}
+/* Dial scale labels (0 / 50 / 100) are text, not decoration — they are what makes the
+   needle position mean anything. At .42 they composited to #989b9e = 2.79:1 on a white
+   card, under the 4.5 floor at 10px. .62 lands 5.37:1 and still reads a full step
+   quieter than the body copy. Twin of the body.page-china rule — same component. */
+[data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg > text{fill:rgba(10,16,24,.62);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
 /* Regime pill (Order 3: smaller + never clips — sizes to content, no fixed width) */
@@ -447,7 +462,7 @@ body.page-macro.mx4-grid .mx5-path-tip-date{
   font-size:11px;font-weight:600;letter-spacing:.03em;
   color:var(--ink-3,rgba(255,255,255,.5));text-transform:uppercase;
 }
-[data-theme="light"] body.page-macro.mx4-grid .mx5-path-tip-date{color:rgba(0,0,0,.5);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-path-tip-date{color:rgba(0,0,0,.62);}
 body.page-macro.mx4-grid .mx5-path-tip-row{display:flex;align-items:baseline;gap:7px;}
 body.page-macro.mx4-grid .mx5-path-tip-score{
   font-size:16px;font-weight:800;line-height:1;color:var(--ink-1,rgba(255,255,255,.95));
@@ -818,7 +833,7 @@ body.mx5-dlg-open{ overflow:hidden; }
   font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
   color:var(--ink-3,rgba(255,255,255,.36));margin:0 0 14px;
 }
-[data-theme="light"] .mx5-dlg-eyebrow{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-eyebrow{color:rgba(0,0,0,.58);}
 
 /* Section divider (thin separator between content blocks) */
 .mx5-dlg-sep{
@@ -841,7 +856,7 @@ body.mx5-dlg-open{ overflow:hidden; }
 }
 .mx5-dlg-driver-label{font-size:13px;font-weight:700;margin-bottom:3px;}
 .mx5-dlg-driver-sub{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
-[data-theme="light"] .mx5-dlg-driver-sub{color:rgba(0,0,0,.45);}
+[data-theme="light"] .mx5-dlg-driver-sub{color:rgba(0,0,0,.62);}
 
 /* Heads-up chips row (fed stance, turning point) */
 .mx5-dlg-chips-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
@@ -965,7 +980,7 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-factor-row.weakest{border-color:rgba(245,158,11,.25);}
 .mx5-dlg-factor-name{font-size:12px;font-weight:700;}
 .mx5-dlg-factor-read{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;line-height:1.4;}
-[data-theme="light"] .mx5-dlg-factor-read{color:rgba(0,0,0,.42);}
+[data-theme="light"] .mx5-dlg-factor-read{color:rgba(0,0,0,.62);}
 .mx5-dlg-factor-bar{position:relative;height:7px;border-radius:4px;background:rgba(255,255,255,.08);}
 [data-theme="light"] .mx5-dlg-factor-bar{background:rgba(0,0,0,.09);}
 .mx5-dlg-factor-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;opacity:.85;}
@@ -996,7 +1011,7 @@ body.page-macro .rsx-dlg-footer{
   text-align:left;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--ink-3,rgba(255,255,255,.36));padding:0 0 8px;
 }
-[data-theme="light"] .mx5-dlg-mtf-tbl th{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-mtf-tbl th{color:rgba(0,0,0,.58);}
 .mx5-dlg-mtf-tbl th:not(:first-child){text-align:center;}
 .mx5-dlg-mtf-tbl td{padding:6px 0;}
 .mx5-dlg-mtf-tbl td:not(:first-child){text-align:center;}
@@ -1019,7 +1034,7 @@ body.page-macro .rsx-dlg-footer{
 [data-theme="light"] .mx5-dlg-idx-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
 .mx5-dlg-idx-ticker{font-size:12px;font-weight:700;margin-bottom:1px;}
 .mx5-dlg-idx-name{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-[data-theme="light"] .mx5-dlg-idx-name{color:rgba(0,0,0,.42);}
+[data-theme="light"] .mx5-dlg-idx-name{color:rgba(0,0,0,.62);}
 .mx5-dlg-idx-px{font-size:20px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:3px;}
 .mx5-dlg-idx-chg{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:10px;}
 .mx5-dlg-idx-chg.up{color:var(--up,#22d97a);}
@@ -1032,7 +1047,7 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-idx-chip.ok{color:var(--up,#22d97a);background:rgba(62,200,122,.1);border:1px solid rgba(62,200,122,.2);}
 .mx5-dlg-idx-chip.wn{color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);}
 .mx5-dlg-idx-chip.mt{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
-[data-theme="light"] .mx5-dlg-idx-chip.mt{color:rgba(0,0,0,.38);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
+[data-theme="light"] .mx5-dlg-idx-chip.mt{color:rgba(0,0,0,.58);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
 
 /* Sector columns (MARKETS dialog) */
 .mx5-dlg-sector-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
@@ -1040,7 +1055,7 @@ body.page-macro .rsx-dlg-footer{
   font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px;
 }
-[data-theme="light"] .mx5-dlg-sector-col-head{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-sector-col-head{color:rgba(0,0,0,.58);}
 .mx5-dlg-sector-row{
   display:flex;align-items:center;gap:8px;padding:9px 0;
   border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;
@@ -1051,7 +1066,7 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-sector-arr.cool{color:var(--up,#22d97a);}
 .mx5-dlg-sector-name{flex:1;font-weight:500;}
 .mx5-dlg-sector-rk{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));font-variant-numeric:tabular-nums;}
-[data-theme="light"] .mx5-dlg-sector-rk{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-sector-rk{color:rgba(0,0,0,.58);}
 
 /* ── Sector Temperature — rotation ladder (dlg-sector rebuild) ─────────────────
    Each sector is a rung; the little trace is its 5-day rank move (an honest 2-point
@@ -1158,10 +1173,10 @@ body.page-macro .rsx-dlg-footer{
 }
 [data-theme="light"] .mx5-dlg-asset-tile{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);}
 .mx5-dlg-asset-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:6px;}
-[data-theme="light"] .mx5-dlg-asset-lbl{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-asset-lbl{color:rgba(0,0,0,.58);}
 .mx5-dlg-asset-val{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:3px;}
 .mx5-dlg-asset-ctx{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
-[data-theme="light"] .mx5-dlg-asset-ctx{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-asset-ctx{color:rgba(0,0,0,.58);}
 
 /* Events calendar cards (EVENTS dialog) */
 .mx5-dlg-cal-grid{
@@ -1217,11 +1232,11 @@ body.page-macro .rsx-dlg-footer{
   .mx5-dlg-cal-card.rr-fed:hover .mx5-dlg-cal-fed{transform:none;}
 }
 .mx5-dlg-cal-date{font-size:11px;font-weight:700;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:5px;}
-[data-theme="light"] .mx5-dlg-cal-date{color:rgba(0,0,0,.42);}
+[data-theme="light"] .mx5-dlg-cal-date{color:rgba(0,0,0,.62);}
 .mx5-dlg-cal-title{font-size:13px;font-weight:700;margin-bottom:6px;line-height:1.3;}
 .mx5-dlg-cal-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 .mx5-dlg-cal-time{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
-[data-theme="light"] .mx5-dlg-cal-time{color:rgba(0,0,0,.4);}
+[data-theme="light"] .mx5-dlg-cal-time{color:rgba(0,0,0,.62);}
 .mx5-dlg-cal-badge{
   display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;
   font-size:11px;font-weight:700;
@@ -1229,7 +1244,7 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-cal-badge.high{color:var(--down,#ef4444);background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);}
 .mx5-dlg-cal-badge.med{color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.18);}
 .mx5-dlg-cal-badge.low{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}
-[data-theme="light"] .mx5-dlg-cal-badge.low{color:rgba(0,0,0,.38);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
+[data-theme="light"] .mx5-dlg-cal-badge.low{color:rgba(0,0,0,.58);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
 
 /* Fed strip inside dialogs (EVENTS dialog) */
 .mx5-dlg-fed-strip{
@@ -1249,7 +1264,7 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-fed-chg{font-size:11px;font-variant-numeric:tabular-nums;margin-left:6px;}
 .mx5-dlg-fed-chg.pos{color:var(--ink-up,var(--up,#22d97a));}.mx5-dlg-fed-chg.neg{color:var(--ink-down,var(--down,#ef4444));}
 .mx5-dlg-fed-src{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));text-align:right;padding-top:6px;}
-[data-theme="light"] .mx5-dlg-fed-src{color:rgba(0,0,0,.35);}
+[data-theme="light"] .mx5-dlg-fed-src{color:rgba(0,0,0,.58);}
 
 /* ── Inline Release Radar panel (#rr-inline, EVENTS dialog) ───────────────────
    Replaces the retired per-date popup + its open button. Shows the selected
@@ -1263,7 +1278,7 @@ body.page-macro .rsx-dlg-footer{
   font-variant-numeric:tabular-nums;}
 .rr-inline-date .mx5-dlg-cal-dot{width:8px;height:8px;}
 .rr-inline-sub{font-size:11.5px;color:var(--ink-3,rgba(255,255,255,.42));}
-[data-theme="light"] .rr-inline-sub{color:rgba(0,0,0,.42);}
+[data-theme="light"] .rr-inline-sub{color:rgba(0,0,0,.62);}
 /* body: cross-fade on swap (JS toggles .rr-inline-swap for one frame) */
 .rr-inline-body{transition:opacity .22s ease;}
 .rr-inline-body.rr-inline-swap{opacity:0;}
@@ -1276,11 +1291,11 @@ body.page-macro .rsx-dlg-footer{
 .rr-inline-empty-line{font-size:12.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.72));}
 [data-theme="light"] .rr-inline-empty-line{color:rgba(0,0,0,.62);}
 .rr-inline-empty-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--ink-3,rgba(255,255,255,.42));}
-[data-theme="light"] .rr-inline-empty-meta{color:rgba(0,0,0,.42);}
+[data-theme="light"] .rr-inline-empty-meta{color:rgba(0,0,0,.62);}
 /* single display-only footer for the inline panel (Law 4: one footnote) */
 .rr-inline-foot{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);
   font-size:10px;line-height:1.5;color:var(--ink-3,rgba(255,255,255,.36));}
-[data-theme="light"] .rr-inline-foot{border-top-color:rgba(0,0,0,.06);color:rgba(0,0,0,.38);}
+[data-theme="light"] .rr-inline-foot{border-top-color:rgba(0,0,0,.06);color:rgba(0,0,0,.58);}
 @media (prefers-reduced-motion: reduce){ .rr-inline-body{transition:none;} }
 
 /* Heatmap wrap inside dialog — chromeless spacer (1.2 de-chrome) */
@@ -1428,8 +1443,14 @@ body.page-macro.mx4-grid .mx5-mkt-tile{
   position:relative;overflow:hidden;cursor:pointer;
   transition:background .2s ease-out,border-color .2s ease-out,box-shadow .2s ease-out,transform .2s ease-out;
 }
+/* Light: the dark "3% fill on glass" trick inverts badly — a 3% BLACK wash on a
+   white card is a grey smudge with a 1.10:1 edge, so the six futures read as one
+   undivided band. Each tile becomes its own white surface with the recipe
+   hairline and a single contact shadow: the same card idiom as the panel that
+   holds them, one scale down. The 16px grid gap does the rest of the separating. */
 [data-theme="light"] body.page-macro.mx4-grid .mx5-mkt-tile{
-  background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);
+  background:#ffffff;border-color:#dde2ea;
+  box-shadow:0 1px 2px rgba(23,32,55,.05);
 }
 /* v5.3.1: tiles sit calm — neutral border like every other card; direction color
    lives on the delta text and a dimmed sparkline only (operator: too bright) */
@@ -1911,7 +1932,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   border-radius:50%;border:1px solid rgba(255,255,255,.22);color:var(--ink-3,rgba(255,255,255,.5));
   font:700 10px/1 var(--font-ui,inherit);cursor:help;margin-left:2px;user-select:none;transition:border-color .2s,color .2s;}
 .fbm-tip:hover{border-color:var(--isle-policy,#a070e8);color:var(--isle-policy,#a070e8);}
-[data-theme="light"] .fbm-tip{border-color:rgba(0,0,0,.22);color:rgba(0,0,0,.45);}
+[data-theme="light"] .fbm-tip{border-color:rgba(0,0,0,.22);color:rgba(0,0,0,.62);}
 
 /* — Chip row (policy conditions) — */
 .fbm-chips{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 4px;}
@@ -2054,7 +2075,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   border-radius:50%;border:1px solid rgba(255,255,255,.22);color:var(--ink-3,rgba(255,255,255,.5));
   font:700 10px/1 var(--font-ui,inherit);cursor:help;user-select:none;margin-left:auto;transition:border-color .2s,color .2s;}
 .rkc-sig-tip:hover{border-color:var(--isle-risk,#e05c5c);color:var(--isle-risk,#e05c5c);}
-[data-theme="light"] .rkc-sig-tip{border-color:rgba(0,0,0,.2);color:rgba(0,0,0,.45);}
+[data-theme="light"] .rkc-sig-tip{border-color:rgba(0,0,0,.2);color:rgba(0,0,0,.62);}
 @media(prefers-reduced-motion:no-preference){
   #dlg-risk .rkc-sig{opacity:0;transform:translateY(6px);transition:opacity .4s ease,transform .4s cubic-bezier(.22,.9,.26,1.02),border-color .2s ease,background .2s ease;}
   #dlg-risk.mx5-dlg-in .rkc-sig{opacity:1;transform:translateY(0);}
@@ -2198,7 +2219,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
    single footer stamp is the board's date, and a ring can be days behind it */
 .rkc-ov-age{margin-top:-4px;font:600 9px/1.2 var(--font-ui,inherit);text-align:center;
   color:var(--ink-3,rgba(255,255,255,.34));}
-[data-theme="light"] .rkc-ov-age{color:rgba(0,0,0,.36);}
+[data-theme="light"] .rkc-ov-age{color:rgba(0,0,0,.58);}
 .row-pop-why li.row-pop-stale{color:var(--warn,#f59e0b);}
 @media(prefers-reduced-motion:no-preference){
   #dlg-risk .rkc-ov-ring{--rkc-anim:0;

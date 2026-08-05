@@ -61,7 +61,7 @@
 <link rel="prefetch" href="sector_cycles_series_data.js?v=ad88ea74" as="script">
 <link rel="prefetch" href="sector_cycles_narr_data.js?v=ae7b4553" as="script">
 <link rel="prefetch" href="sector_cycles_dna_data.js?v=46b0879d" as="script">
-<link rel="preload" href="sector_central_data.js?v=b6002f8a" as="script">
+<link rel="preload" href="sector_central_data.js?v=8e09578a" as="script">
 
 <link rel="prefetch" href="subsector_rotation.js?v=be121ce4" as="script">
 <link rel="prefetch" href="rotation_events.js?v=2c98bfa4" as="script">
@@ -75,8 +75,8 @@
 
 <link rel="stylesheet" href="assets/css/0448fe99.css?v=0448fe99">
 <link rel="stylesheet" href="assets/css/363c988e.css?v=363c988e">
-<link rel="stylesheet" href="assets/css/42442d2a.css?v=42442d2a">
-<link rel="stylesheet" href="assets/css/6103edcb.css?v=6103edcb">
+<link rel="stylesheet" href="assets/css/d6fa9047.css?v=d6fa9047">
+<link rel="stylesheet" href="assets/css/b9bf777e.css?v=b9bf777e">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 </head>
@@ -400,8 +400,8 @@
       <span id="ftr-strip-token-lbl">—</span>
     </span>
     <span class="ftr-strip-asof" id="ftr-strip-asof"></span>
-    <span id="ftr-strip-leaders"></span>
-    <span id="ftr-strip-laggards"></span>
+    <span class="ftr-strip-grp" id="ftr-strip-leaders"></span>
+    <span class="ftr-strip-grp" id="ftr-strip-laggards"></span>
     <button class="ftr-strip-expand" id="ftr-strip-expand" type="button" aria-expanded="false">
       <span class="l-en">Full tape ▾</span><span class="l-zh">完整榜单 ▾</span>
     </button>
@@ -707,10 +707,15 @@
     all.sort(function(a,b){return b.tape_rank-a.tape_rank;});
     var leadEl=document.getElementById('ftr-strip-leaders');
     var lagEl=document.getElementById('ftr-strip-laggards');
+    /* name and figure are separate spans: they carry different type (the .dtp tape
+       idiom — readable name, mono tabular figure) and the strip prints the ZH name
+       in ZH, like the full band below it already does. */
     function chipHtml(b,cls){
       var chg=b.live_ew_chg_pct;
-      var nm=nameEn(b.id)||b.id;
-      return '<span class="ftr-strip-chip '+cls+'">'+esc(nm)+' '+(chg>=0?'+':'')+chg.toFixed(1)+'%</span>';
+      return '<span class="ftr-strip-chip '+cls+'">'
+        +'<span class="ftr-strip-nm">'+L(esc(nameEn(b.id)),esc(nameZh(b.id)))+'</span>'
+        +'<span class="ftr-strip-pct">'+(chg>=0?'+':'')+chg.toFixed(1)+'%</span>'
+        +'</span>';
     }
     if(leadEl){
       var top3=all.slice(0,3);
@@ -761,6 +766,17 @@
   }
 
   fetchJson('live/basket_pulse.json', function(d){ pulse=d; tryRender(); });
+
+  /* Display names come from window.BASKETS, which the DEFERRED sector_central_data.js
+     assigns via __siInitPage — and a same-origin basket_pulse.json fetch routinely
+     resolves first. When it does, _theme() finds nothing and every label in BOTH the
+     strip and the full band falls back to a prettified slug, in both languages:
+     "Ai Neoclouds", "Non Ai Software", "Us Sector Energy" (operator crop, 2026-08-03).
+     Doctrine §3 bans raw machine slugs from the glance tier — the prettified form is
+     the never-block-render safety net, not the label we ship. __siInitPage calls this
+     once the name map is in and (Equal-Weight)-stripped, and the tape repaints with
+     real names. No file, no call, no change: the fallback still holds the page up. */
+  window.__ftrTapeNamesReady = function(){ if(pulse) tryRender(); };
   })();
   </script>
 
@@ -801,8 +817,8 @@
           <div class="rvx-hoarrow"><svg viewBox="0 0 46 28"><defs><linearGradient id="rvxHo" x1="0" x2="1"><stop offset="0" stop-color="var(--rvx-weak)"/><stop offset="1" stop-color="var(--rvx-lead)"/></linearGradient></defs><path class="ln" d="M3 14 H37"/><path class="hd" d="M33 8 L43 14 L33 20 Z"/></svg></div>
           <div class="rvx-hocol in">
             <div class="lbl"><span class="l-en">Taking the lead</span><span class="l-zh">接过领先</span></div>
-            <div class="nm"><span class="l-en">Energy</span><span class="l-zh">能源</span> · <span class="l-en">US Energy Complex</span><span class="l-zh">美国能源综合</span></div>
-            <div class="meta" id="hero-in-meta" data-id="us_sector_energy"></div>
+            <div class="nm"><span class="l-en">US Energy Complex</span><span class="l-zh">美国能源综合</span> · <span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span></div>
+            <div class="meta" id="hero-in-meta" data-id="energy_complex"></div>
           </div>
         </div>
       </div>
@@ -825,7 +841,7 @@
   
 
   
-  <p class="si-view-read" id="si-read-overview" hidden data-from-en="Memory, HBM &amp; Storage" data-from-zh="内存、HBM 与存储" data-to-en="Energy" data-to-zh="能源"></p>
+  <p class="si-view-read" id="si-read-overview" hidden data-from-en="Memory, HBM &amp; Storage" data-from-zh="内存、HBM 与存储" data-to-en="US Energy Complex" data-to-zh="美国能源综合"></p>
 
   
   <section class="rvx-sec rvx-reveal" id="actnow-section" style="animation-delay:.05s">
@@ -847,7 +863,7 @@
   <div class="si-changed">
     <span class="si-changed-l"><span class="l-en">What&#39;s holding</span><span class="l-zh">维持不变</span></span>
     <span class="tc-chip"><span class="l-en">Held for 10 days.</span><span class="l-zh">已持续 10 天。</span></span>
-    <span class="tc-chip"><span class="l-en">Memory, HBM &amp; Storage → Energy</span><span class="l-zh">内存、HBM 与存储 → 能源</span></span>
+    <span class="tc-chip"><span class="l-en">Memory, HBM &amp; Storage → US Energy Complex</span><span class="l-zh">内存、HBM 与存储 → 美国能源综合</span></span>
   </div>
 
   </section>
@@ -1063,7 +1079,7 @@
 
   <footer>
     <span class="l-en">Informational only, not investment advice. Baskets are equal-weighted and benchmarked to the S&amp;P 500. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list.</span><span class="l-zh">仅供参考，非投资建议。篮子等权重，并以标普 500 为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-08-04 10:57 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-08-05 02:03 UTC</span>.
   </footer>
   
   </div>
@@ -1088,6 +1104,10 @@ function deepStrip(obj) {
   }
 }
 deepStrip(BASKETS);
+/* The tape band fetches its quotes from a parse-time script and usually paints before
+   this deferred payload lands, i.e. against an empty name map. Now that the map is in
+   AND de-suffixed, let it repaint with real display names. */
+try{ if(window.__ftrTapeNamesReady) window.__ftrTapeNamesReady(); }catch(e){ console.warn('tape names', e); }
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
 // W4 velocity/heat card-chip helpers removed with the dead FTR chip lane (#4257).
@@ -1188,6 +1208,9 @@ function renderBTable(){
 
 // ---- 02 chart -------------------------------------------------------------
 let chart=null, chartMode='rel', chartRange=parseInt(localStorage.getItem('fw-brange')||'252',10)||252, hidden={};
+/* Set when renderChart() is asked to draw while #chart is still inside a display:none
+   view; si:view clears it the moment Explore is really on screen. See renderChart(). */
+let _chartDeferred=false;
 function chartSets(){
   const sets=Object.entries(CHART.baskets).map(([id,levels])=>{ const b=(BASKETS.baskets||[]).find(x=>x.id===id);
     return {key:id,label:b?b.name:id,color:colorOf[id]||'#888',levels}; });
@@ -1215,6 +1238,14 @@ function _xhTip(){
 }
 function renderChart(){
   const el=document.getElementById('chart'); if(typeof LightweightCharts==='undefined'){ el.innerHTML='<p class="muted">The charting library failed to load — the rest of the page is unaffected.</p>'; return; }
+  /* Under the workspace shell #chart starts inside a display:none view, where it measures
+     0 wide — and the basket payload lands (calling us) long before anyone opens Explore.
+     lightweight-charts binds autoSize at CREATION: a chart born zero-wide never recovers.
+     Measured on the shipped page 2026-08-04: with Explore open, #chart was 0px wide and
+     all seven canvases sat at the library's 300px default inside a ~950px slot, and
+     neither a window resize event nor a container width nudge moved them. So do not
+     create it yet — mark the draw deferred and let the si:view handler run us again. */
+  if(!chart && !el.clientWidth){ _chartDeferred=true; return; }
   if(!chart){ chart=LightweightCharts.createChart(el,chartOpts()); }
   (chart.__series||[]).forEach(s=>chart.removeSeries(s)); chart.__series=[];
   const start=rangeStart(CHART.dates);
@@ -1618,6 +1649,11 @@ function boot(){
   const rvxRerender=()=>{ try{ renderVerdictHero(); renderActBoard(); renderRotationMap(); renderRotBoard(); renderInternals(); }catch(e){} };
   document.addEventListener('langchange',()=>{ rvxRerender(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
   document.addEventListener('themechange',()=>{ renderRotationMap(); renderRotBoard(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
+  /* The overlay chart could not be built while Explore was hidden (see renderChart);
+     build it the first time the view is actually on screen. */
+  document.addEventListener('si:view',(e)=>{
+    if(e&&e.detail==='explore'&&_chartDeferred){ _chartDeferred=false; renderChart(); }
+  });
 }
 boot();
 try{ __siWireScope(); __siWireTrace(); }catch(e){ console.warn('si glue', e); }
@@ -1667,7 +1703,8 @@ if(document.readyState!=='loading') __siBoot(); else document.addEventListener('
 </script>
 
 
-<script src="sector_central_data.js?v=b6002f8a" defer></script>
+
+<script data-sync src="sector_central_data.js?v=8e09578a"></script>
 <script>
 (function(){
   "use strict";

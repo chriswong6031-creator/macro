@@ -608,3 +608,12 @@ html[data-lang="zh"] .hub-greet.convo .greet-tx{max-width:min(20em,calc(100vw - 
  .hub-brand,.hub-greet,.hub-intel-shell::before{transition:none;animation:none}
  .hub-greet .greet-caret,.hub-greet.convo .greet-tx::after{animation:none}
 }
+/* ══ LIGHT MODE — the celestial backdrop ═══════════════════════════════════════
+   #sky is position:fixed, so its disc is pinned to the VIEWPORT, not to the deck
+   it belongs to. Scroll away from the globe in light mode and the sun follows —
+   an amber orb glowing in the empty canvas past the footer, lighting nothing and
+   belonging to nothing. The page below the deck is a briefing sheet; it does not
+   want a sun in it, and the deck does not need one to read.
+   (The starfield canvas paints nothing in light — sky.js only draws stars on the
+   dark path — so hiding the disc empties #sky entirely, no other ambient left.) */
+html[data-theme="light"] #sky-sun{display:none}

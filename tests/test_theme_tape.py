@@ -439,3 +439,470 @@ def test_the_shipped_site_copy_matches_the_template():
     """Plain-copy asset pairing (CI-guarded)."""
     assert (TMPL / "tier_preview.js").read_bytes() == (
         ROOT / "site" / "tier_preview.js").read_bytes()
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# THE FORESIGHT DESK JOIN (W5a)
+#
+# The tape reads price; the desk reads filings and company language, so it sees a
+# theme tighten before the tape has anything to say about it. Joining them is
+# worth exactly one word per row and one shelf, and the tests that matter are the
+# ones that keep that word HONEST: a stage enum leaking to the glance tier, a
+# mapping typo that makes the feature look alive while it joins nothing, a theme
+# printed twice, and — the one with a shelf life — a disclosure written as a
+# constant, which would go on claiming "not confirmed" years after it stopped
+# being true.
+# ════════════════════════════════════════════════════════════════════════════
+import json as _json  # noqa: E402
+
+from engine.theme_tape import (  # noqa: E402
+    FORESIGHT_LABELS,
+    STAGE_LABEL,
+    THEME_MAP,
+    THEME_NAME_ZH,
+    THEME_UNMAPPED,
+)
+
+DESK_ARTIFACT = ROOT / "site" / "basketdata" / "foresight_cascade.json"
+ROT_ARTIFACT = ROOT / "site" / "marketdata" / "subsector_rotation.json"
+
+
+def _shipped(path):
+    """A git-tracked artifact, read as a hard requirement.
+
+    Never skip on absence: a coverage gate that skips when its input is missing
+    is a dark gate, and both files are tracked in the repo precisely so the gate
+    can always run.
+    """
+    assert path.exists(), f"{path} is git-tracked and must be present"
+    return _json.loads(path.read_text())
+
+
+def _desk(*themes, asof="2026-08-04"):
+    return {"asof": asof, "themes": list(themes)}
+
+
+def _theme(key, stage, name=None, **over):
+    doc = {"theme": key, "name": name or key.replace("_", " ").title(),
+           "stage": stage, "bottleneck_text_only": False,
+           "bottleneck_fingerprint_only": False}
+    doc.update(over)
+    return doc
+
+
+def _hot_rotation(*names):
+    """A rotation artifact where each named theme is hot and has two members."""
+    return _rotation(
+        themes=[{"theme": n, "theme_zh": n, "emerging_score": 3.0 - i,
+                 "quadrant": "leading", "rs": {"1W": 1.0, "1M": 2.0}}
+                for i, n in enumerate(names)],
+        subsectors=[{"theme": n, "name": "S", "members": [{"t": "APPF"}, {"t": "MSFT"}]}
+                    for n in names],
+    )
+
+
+# ── the mapping table (pure — these can never go dark) ──────────────────────
+def test_every_desk_theme_is_mapped_or_explicitly_unmapped():
+    """No desk theme may fall through the join silently.
+
+    A theme in neither table gets no chip AND no reason on record, which is how
+    a taxonomy drifts apart unnoticed. Adding a theme to the desk must force a
+    decision here.
+    """
+    keys = {t["theme"] for t in _shipped(DESK_ARTIFACT)["themes"]}
+    missing = sorted(keys - set(THEME_MAP) - set(THEME_UNMAPPED))
+    assert missing == [], (
+        f"desk themes with no mapping decision: {missing} — add each to "
+        "THEME_MAP, or to THEME_UNMAPPED with the reason it cannot be paired")
+
+
+def test_mapped_and_unmapped_are_disjoint_and_every_exclusion_is_reasoned():
+    both = sorted(set(THEME_MAP) & set(THEME_UNMAPPED))
+    assert both == [], f"claimed as both mapped and unmapped: {both}"
+    for key, why in THEME_UNMAPPED.items():
+        assert isinstance(why, str) and len(why) > 20, (
+            f"{key} is excluded without a usable reason")
+
+
+def test_every_mapping_target_is_a_real_rotation_theme():
+    """The typo guard, and the reason this test exists at all.
+
+    A mistyped target does not raise — it simply never matches a row, so the
+    chip never appears and the feature looks alive while joining nothing. Only
+    checking targets against the published vocabulary can see it.
+    """
+    published = {t.get("theme") for t in _shipped(ROT_ARTIFACT).get("themes") or []}
+    unknown = sorted({v for v in THEME_MAP.values() if v not in published})
+    assert unknown == [], (
+        f"mapping targets that no rotation theme publishes: {unknown} — these "
+        "would never join, and nothing else would notice")
+
+
+def test_every_desk_theme_has_a_chinese_name():
+    for key in set(THEME_MAP) | set(THEME_UNMAPPED):
+        assert THEME_NAME_ZH.get(key), f"{key} would print English in zh"
+
+
+def test_a_narrow_slice_of_a_broad_row_stays_unmapped():
+    """The composition test (ruling 2026-08-04).
+
+    Desk themes may share a target only when they JOINTLY COMPOSE it. The three
+    healthcare themes are narrow slices of a much broader row — pharma, managed
+    care and hospitals are most of "Healthcare & Biotech" — so a row-level word
+    would overstate the slice. They keep their shelf presence under their own
+    names, which is where they already sit on live data.
+    """
+    for key in ("glp1_obesity", "medical_devices", "diagnostics_lifesci"):
+        assert key not in THEME_MAP, (
+            f"{key} is a slice of Healthcare & Biotech, not a constituent that "
+            "composes it — a row-level chip would overstate it")
+        assert "Healthcare & Biotech" in THEME_UNMAPPED[key]
+    # the trio that DOES compose its row keeps the many-to-one mapping
+    assert {k for k, v in THEME_MAP.items() if v == "Semiconductors"} == {
+        "ai_semiconductors", "memory_storage", "semicap_equipment"}
+    assert "Healthcare & Biotech" not in set(THEME_MAP.values())
+
+
+def test_the_whole_stage_enum_has_a_decision():
+    """Every value the desk can emit maps to a word, or explicitly to nothing."""
+    from engine.foresight_cascade import _STAGE_RANK
+
+    missing = sorted(set(_STAGE_RANK) - set(STAGE_LABEL))
+    assert missing == [], f"stage values with no display decision: {missing}"
+
+
+def test_only_two_words_ever_reach_a_reader():
+    words = {v for v in STAGE_LABEL.values() if v is not None}
+    assert words == set(FORESIGHT_LABELS) == {"loading", "re_rating"}
+    for en, zh in FORESIGHT_LABELS.values():
+        assert en and zh and en != zh
+
+
+def test_stages_that_are_neither_thesis_nor_re_rating_get_no_word():
+    for stage in ("GLUT-RISK", "WATCH", "UNKNOWN"):
+        assert STAGE_LABEL[stage] is None
+    # an enum value invented tomorrow falls through to silence, not to a crash
+    assert STAGE_LABEL.get("SOMETHING-NEW") is None
+
+
+# ── the join ────────────────────────────────────────────────────────────────
+def test_a_covered_hot_row_carries_the_word_and_names_its_source():
+    tape = build_theme_tape(
+        _hot_rotation("Semiconductors"), _standouts(), today=TODAY,
+        foresight=_desk(_theme("ai_semiconductors", "PRECIPICE",
+                               name="AI Semiconductors")))
+    chip = tape["rows"][0]["foresight"]
+    assert chip["label_en"] == "loading up" and chip["label_zh"] == "蓄势"
+    # a target can be composed of several desk themes, so the hover names the
+    # ones the word actually came from
+    assert chip["sources_en"] == "AI Semiconductors"
+    assert chip["tip_en"] and chip["tip_zh"]
+
+
+def test_a_row_the_desk_has_no_read_on_carries_nothing():
+    tape = build_theme_tape(_rotation(), _standouts(), today=TODAY,
+                            foresight=_desk(_theme("solar", "PRECIPICE")))
+    assert tape["rows"][0]["name"] == "Software"
+    assert tape["rows"][0]["foresight"] is None
+
+
+def test_disagreeing_desk_themes_on_one_row_print_no_word():
+    """Absence beats a four-character chip hiding a coin flip."""
+    tape = build_theme_tape(
+        _hot_rotation("Semiconductors"), _standouts(), today=TODAY,
+        foresight=_desk(_theme("ai_semiconductors", "RE-RATING"),
+                        _theme("memory_storage", "PRECIPICE")))
+    assert tape["rows"][0]["foresight"] is None
+
+
+def test_a_watch_sibling_cannot_veto_a_live_read():
+    """WATCH earns no word, so it does not get a vote either."""
+    tape = build_theme_tape(
+        _hot_rotation("Semiconductors"), _standouts(), today=TODAY,
+        foresight=_desk(_theme("ai_semiconductors", "RE-RATING"),
+                        _theme("memory_storage", "WATCH"),
+                        _theme("semicap_equipment", "WATCH")))
+    assert tape["rows"][0]["foresight"]["label_en"] == "re-rating"
+
+
+# ── the shelf ───────────────────────────────────────────────────────────────
+def _shelf(tape, label):
+    return next((g for g in tape["foresight_shelf"] if g["label"] == label), None)
+
+
+def test_staged_themes_off_the_heat_list_reach_the_shelf():
+    tape = build_theme_tape(
+        _rotation(), _standouts(), today=TODAY,
+        foresight=_desk(_theme("nuclear_power", "PRECIPICE (text)",
+                               name="Nuclear & SMR Power", bottleneck_text_only=True),
+                        _theme("ai_semiconductors", "RE-RATING",
+                               name="AI Semiconductors")))
+    assert _shelf(tape, "loading")["names_en"] == ["Nuclear & SMR Power"]
+    assert _shelf(tape, "loading")["names_zh"] == ["核电与小型堆"]
+    assert _shelf(tape, "re_rating")["names_en"] == ["AI Semiconductors"]
+
+
+def test_a_theme_shown_as_a_row_is_never_also_on_the_shelf():
+    """It is on the heat list by definition; the shelf would say the opposite."""
+    tape = build_theme_tape(
+        _hot_rotation("Semiconductors"), _standouts(), today=TODAY,
+        foresight=_desk(_theme("ai_semiconductors", "PRECIPICE",
+                               name="AI Semiconductors")))
+    assert tape["rows"][0]["foresight"] is not None
+    assert tape["foresight_shelf"] == []
+
+
+def test_an_unmapped_desk_theme_still_reaches_the_reader_by_name():
+    """A mapping gap costs the chip, never the disclosure."""
+    key = sorted(THEME_UNMAPPED)[0]
+    tape = build_theme_tape(
+        _rotation(), _standouts(), today=TODAY,
+        foresight=_desk(_theme(key, "PRECIPICE", name="Unpairable Theme")))
+    assert _shelf(tape, "loading")["names_en"] == ["Unpairable Theme"]
+
+
+def test_stages_without_a_word_reach_neither_a_row_nor_the_shelf():
+    tape = build_theme_tape(
+        _rotation(), _standouts(), today=TODAY,
+        foresight=_desk(_theme("solar", "WATCH"),
+                        _theme("cybersecurity", "GLUT-RISK")))
+    assert tape["foresight_shelf"] == []
+    assert tape["foresight_unconfirmed"] is False
+
+
+# ── the numeric-confirmation disclosure (a CONDITION, never a constant) ─────
+def test_a_text_only_stage_is_not_numerically_confirmed():
+    tape = build_theme_tape(
+        _rotation(), _standouts(), today=TODAY,
+        foresight=_desk(_theme("nuclear_power", "PRECIPICE (text)",
+                               bottleneck_text_only=True)))
+    assert tape["foresight_unconfirmed"] is True
+
+
+def test_a_re_rating_stage_with_a_text_only_band_is_not_confirmed():
+    """The leg a stage-string check alone would miss, and today's real state.
+
+    RE-RATING carries no "(text)" qualifier, so on the stage string it reads as
+    confirmed while its bottleneck band is language-only — which is exactly the
+    shape site/basketdata/foresight_cascade.json ships for ai_semiconductors.
+    """
+    tape = build_theme_tape(
+        _rotation(), _standouts(), today=TODAY,
+        foresight=_desk(_theme("ai_semiconductors", "RE-RATING",
+                               bottleneck_text_only=True)))
+    assert tape["foresight_unconfirmed"] is True
+
+
+def test_the_disclosure_retires_itself_when_a_stage_becomes_confirmed():
+    """The assertion that must not rot.
+
+    Pinning "the panel says not-confirmed" would be a time bomb: it passes today
+    and becomes a lie the night a numeric leg lights up. So the test pins the
+    CONDITIONAL — a fully confirmed desk drops the clause and keeps the stance —
+    which stays true in both eras.
+    """
+    confirmed = build_theme_tape(
+        _rotation(), _standouts(), today=TODAY,
+        foresight=_desk(_theme("nuclear_power", "PRECIPICE",
+                               name="Nuclear & SMR Power")))
+    assert confirmed["foresight_unconfirmed"] is False
+    assert _shelf(confirmed, "loading")["names_en"] == ["Nuclear & SMR Power"]
+
+    html = _render(confirmed)
+    assert "not confirmed by price or trading yet" not in html
+    assert "价格与成交尚未确认" not in html
+    # the stance survives either way — a shelf with no instruction is not a shelf
+    assert "Watch — don’t chase." in html and "观望，勿追高。" in html
+
+
+def test_one_unconfirmed_theme_is_enough_to_state_the_disclosure():
+    mixed = build_theme_tape(
+        _rotation(), _standouts(), today=TODAY,
+        foresight=_desk(_theme("nuclear_power", "PRECIPICE"),
+                        _theme("solar", "PRECIPICE (text)",
+                               bottleneck_text_only=True)))
+    assert mixed["foresight_unconfirmed"] is True
+    assert "not confirmed by price or trading yet" in _render(mixed)
+
+
+def test_the_shipped_desk_read_is_disclosed_by_the_rule_not_by_a_pin():
+    """Today every staged theme is an early read; assert the RULE reproduces it.
+
+    This deliberately does not pin "zero confirmed" as a number — that would
+    redden the day the desk's first numeric leg fires, which is a success and not
+    a regression. It asserts that whatever the artifact says, the panel's flag
+    agrees with the per-theme predicate.
+    """
+    from engine.theme_tape import _numerically_confirmed
+
+    themes = [t for t in _shipped(DESK_ARTIFACT)["themes"]
+              if STAGE_LABEL.get(t.get("stage")) is not None]
+    assert themes, "the shipped desk carries no staged theme to check"
+    tape = build_theme_tape(_rotation(), _standouts(), today=TODAY,
+                            foresight=_shipped(DESK_ARTIFACT))
+    assert tape["foresight_unconfirmed"] is any(
+        not _numerically_confirmed(t) for t in themes)
+
+
+# ── fail-open ───────────────────────────────────────────────────────────────
+def test_no_desk_read_leaves_the_panel_exactly_as_it_was():
+    """The layer is additive or it is nothing.
+
+    The <style> block is unconditional (it is one static string), so the check
+    that matters is on the MARKUP: with no desk read, not one shelf or chip
+    element is emitted, and the page is byte-identical to the pre-join panel.
+    """
+    base = _render(build_theme_tape(_rotation(), _standouts(), today=TODAY))
+    markup = re.sub(r"<style\b.*?</style>", "", base, flags=re.S | re.I)
+    assert 'class="tt-shelf"' not in markup and 'class="tt-fs"' not in markup
+    assert base == _render(build_theme_tape(_rotation(), _standouts(),
+                                            today=TODAY, foresight=None))
+
+
+@pytest.mark.parametrize("desk", [
+    None, {}, {"themes": None}, {"themes": "nope"}, {"themes": [None, 7]},
+    {"themes": [{"theme": "solar"}]},                        # no stage
+    {"themes": [{"stage": "PRECIPICE"}]},                    # no key
+    {"themes": [{"theme": "solar", "stage": "PRECIPICE"}]},  # no display name
+])
+def test_a_broken_desk_read_is_never_fatal(desk):
+    tape = build_theme_tape(_rotation(), _standouts(), today=TODAY, foresight=desk)
+    assert tape is not None and tape["foresight_shelf"] == []
+
+
+def test_a_stale_desk_read_prints_nothing():
+    """Filing language from three weeks ago is not evidence about tonight."""
+    tape = build_theme_tape(
+        _hot_rotation("Semiconductors"), _standouts(), today=TODAY,
+        foresight=_desk(_theme("ai_semiconductors", "PRECIPICE"),
+                        asof="2026-06-01"))
+    assert tape["rows"][0]["foresight"] is None
+    assert tape["foresight_shelf"] == []
+
+
+def test_the_desk_cannot_change_which_themes_appear_or_in_what_order():
+    """Heat rank stays the only ordering. Display-tier means exactly this."""
+    plain = build_theme_tape(_rotation(), _standouts(), today=TODAY)
+    joined = build_theme_tape(
+        _rotation(), _standouts(), today=TODAY,
+        foresight=_desk(_theme("ai_semiconductors", "PRECIPICE"),
+                        _theme("nuclear_power", "PRECIPICE (text)")))
+    assert [r["name"] for r in plain["rows"]] == [r["name"] for r in joined["rows"]]
+    for a, b in zip(plain["rows"], joined["rows"]):
+        assert a["rank"] == b["rank"] and a["counts"] == b["counts"]
+        assert a["stance"] == b["stance"] and a["quiet_sample"] == b["quiet_sample"]
+
+
+# ── the surface ─────────────────────────────────────────────────────────────
+def _joined():
+    return build_theme_tape(
+        _hot_rotation("Semiconductors", "Commodities Metals"), _standouts(),
+        today=TODAY,
+        foresight=_desk(
+            _theme("ai_semiconductors", "RE-RATING", name="AI Semiconductors",
+                   bottleneck_text_only=True),
+            _theme("rare_earth_critical_min", "PRECIPICE (text)",
+                   name="Rare Earth & Critical Minerals", bottleneck_text_only=True),
+            _theme("nuclear_power", "PRECIPICE (text)", name="Nuclear & SMR Power",
+                   bottleneck_text_only=True)))
+
+
+def test_the_word_and_the_shelf_render_in_both_languages():
+    html = _render(_joined())
+    assert 'class="tt-fs"' in html and 'class="tt-shelf"' in html
+    for token in ("loading up", "蓄势", "re-rating", "重估",
+                  "Off the heat list", "不在热度榜上",
+                  "Nuclear &amp; SMR Power", "核电与小型堆"):
+        assert token in html, token
+
+
+def test_the_english_word_does_not_read_as_a_progress_state():
+    """"loading" beside a list of names reads as a list still arriving.
+
+    The particle is the whole fix and it is one word long, so it is easy to lose
+    to a well-meaning tidy-up. 蓄势 carries no such collision and is untouched.
+    """
+    assert FORESIGHT_LABELS["loading"] == ("loading up", "蓄势")
+
+
+def test_no_stage_enum_value_ever_reaches_the_reader():
+    """Doctrine Law 2 — the desk's state names are internal vocabulary.
+
+    Scans the rendered text AND the hovers: the enum is what the two words above
+    exist to replace, so a leak here is the feature failing its only content job.
+    """
+    html = _render(_joined())
+    text = _visible_text(html) + " " + _tip_text(html)
+    for slug in ("PRECIPICE", "BROADENING", "RE-RATING", "GLUT-RISK", "WATCH",
+                 "UNKNOWN", "foresight_cascade", "bottleneck", "fingerprint",
+                 "text_only", "entry_ready", "THESIS"):
+        assert slug not in text, f"stage vocabulary reached the reader: {slug}"
+
+
+def test_the_word_is_uncoloured_and_takes_the_column_header_type():
+    """No hue on the least-confirmed thing on the panel, and no new type.
+
+    The chip is a label, so it speaks in the voice the panel already labels with
+    (`.tt-k`). Any --ink-*/--up/--down here would paint the desk's read louder
+    than the board states beside it.
+    """
+    css = _panel_css()
+    chip = css.split(".tt-fs{")[1].split("}")[0]
+    assert "font-size:10px" in chip and "font-weight:700" in chip
+    assert "letter-spacing:.05em" in chip and "color:var(--muted)" in chip
+    for coloured in ("--ink-up", "--ink-down", "var(--up)", "var(--down)"):
+        assert coloured not in chip, f"the desk's word must carry no state ink: {coloured}"
+    assert "text-transform:uppercase" not in chip, (
+        "in caps 're-rating' is the desk's enum value verbatim on a glance tier")
+
+
+def test_the_shelf_list_is_not_a_member_roster():
+    """tier_preview.js collapses `#theme-tape .tt-names` to "N 只股票" (N stocks).
+
+    The shelf holds THEMES, so being caught by that gate would print a false
+    sentence in Chinese — and would hide the panel's disclosure from exactly the
+    visitors with the least other context. It shares the flex declaration and
+    nothing else.
+    """
+    src = (TMPL / "_theme_tape.html.j2").read_text()
+    shelf = src.split('class="tt-shelf"')[1].split("{%- endif %}")[0]
+    assert "tt-names" not in shelf, "the shelf roster is caught by the tier gate"
+    assert "tt-load" in shelf
+    css = _panel_css()
+    assert ".tt-names,body.page-stocks.tt-load{display:flex" in css, (
+        "the two lists must share ONE declaration — a second copy of the "
+        "atomic-wrap fix will drift from the first")
+
+
+def test_the_shelf_survives_the_phone_break():
+    """#4488's flex fix is inherited, not re-implemented — and .tt-g flattens."""
+    src = (TMPL / "_theme_tape.html.j2").read_text()
+    block = src.split("@media (max-width:680px)")[1].replace(" ", "")
+    assert ".tt-g{grid-template-columns:minmax(0,1fr)" in block
+    assert ".tt-gk{text-align:left}" in block
+
+
+def test_the_page_carries_the_desk_read_on_every_render_path():
+    """build_site renders us_stocks TWICE — the second pass must not strip it.
+
+    The one-build-lag fix rebuilds the tape from a fresher board; a rebuild that
+    forgot the desk would show the shelf in a dry run and drop it from the page
+    that actually ships.
+    """
+    src = (ROOT / "scripts" / "build_site.py").read_text()
+    # Both call sites wrap across lines and nest calls two deep
+    # (`json.loads(p.read_text())`), so walk the parens rather than pattern-match
+    # a line: a regex that quietly matches nothing would make this gate vacuous.
+    calls = []
+    for m in re.finditer(r"\b(?:build_theme_tape|_btt)\(", src):
+        depth, i = 0, m.end() - 1
+        while i < len(src):
+            depth += (src[i] == "(") - (src[i] == ")")
+            i += 1
+            if depth == 0:
+                break
+        calls.append(" ".join(src[m.start():i].split()))
+    assert len(calls) >= 2, f"expected the first-pass AND the re-render call, got {calls}"
+    missing = [c for c in calls if "foresight" not in c]
+    assert missing == [], (
+        f"a build_theme_tape call renders without the desk read: {missing}")
