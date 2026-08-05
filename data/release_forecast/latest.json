@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast.v2",
-  "asof": "2026-08-05T09:13:41Z",
+  "asof": "2026-08-05T16:16:44Z",
   "display_only": true,
   "authority": {
     "can_score": false,
@@ -2641,8 +2641,8 @@
   "scoreboard_ref": "data/release_forecast/scoreboard.json",
   "capture_health": {
     "asof": "2026-08-05",
-    "last_nightly_asof": "2026-08-02",
-    "nightly_gap_days": 3,
+    "last_nightly_asof": "2026-08-05",
+    "nightly_gap_days": 0,
     "past_due_unscored": [
       {
         "release": "ppi_finaldemand",
