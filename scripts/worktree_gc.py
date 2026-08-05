@@ -455,6 +455,12 @@ def classify(
         wt.reasons.append(wt.lock_reason or "git worktree lock present")
         return
 
+    # Age is computed before the process check so pinned trees still REPORT
+    # their idle age (the LIVE_PROC pile is an operator lever and needs the
+    # number); the verdict priority is unchanged — processes always veto.
+    gitdir = gitdir_for(wt)
+    wt.age_days, wt.age_sources = activity_age_days(wt, gitdir, now)
+
     if procs is None:
         wt.verdict = "ERROR"
         wt.reasons.append("process scan unavailable — liveness unknown")
@@ -468,13 +474,10 @@ def classify(
         wt.reasons.append(f"{len(live)} process(es) cwd inside")
         return
 
-    gitdir = gitdir_for(wt)
     if gitdir is None and not wt.orphan:
         wt.verdict = "ERROR"
         wt.reasons.append(".git pointer unreadable or gitdir missing")
         return
-
-    wt.age_days, wt.age_sources = activity_age_days(wt, gitdir, now)
     if wt.age_days is None and wt.orphan:
         # Orphans carry no git metadata; their only readable signals are the
         # weak file mtimes.  Use those for the recency courtesy — deletion is

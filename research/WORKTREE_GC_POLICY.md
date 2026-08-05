@@ -5,21 +5,23 @@ Tool: `scripts/worktree_gc.py` (shipped disarmed: `config/worktree_gc.json` → 
 
 ## §0 Ratification box (operator decisions)
 
-| # | Decision | Default shipped | Operator act |
-|---|---|---|---|
-| R1 | Arm deletion of `SAFE_MERGED` + `SAFE_REMOTE` worktrees, `min_age_days: 7` | disarmed | flip `"armed": true` in `config/worktree_gc.json` (one-line PR) |
-| R2 | Install the daily launchd sweeper on the Studio | not installed | run `bash scripts/install_worktree_gc_launchd.sh` on the Studio |
-| R3 | Same for the M1 host when it returns (currently unreachable) | not installed | same installer over ssh; feed it `--pr-states-file` if gh is unauthenticated there |
-| R4 | Reclaim `ORPHAN` husks (unregistered dirs under the roots) | off | `"include_orphans": true` |
-| R5 | Reclaim clean+pushed worktrees of OPEN PRs (branch/PR survive; only the local checkout goes) | off | `"include_open_pr": true` |
-| R6 | charting-app: same sweep for its 103 GiB `.claude/worktrees` | report-only | arm a `config/worktree_gc.json` there (tool takes `--repo-root`) |
+| # | Decision | Default shipped | Operator act | Measured effect today |
+|---|---|---|---|---|
+| R1 | Arm deletion of `SAFE_MERGED` + `SAFE_REMOTE` and set `min_age_days` — **recommend 2** (3 = conservative, 7 = insurance-only) | disarmed, 7 d | flip `"armed": true` + set `"min_age_days"` in `config/worktree_gc.json` (one-line PR) | at 2 d: **51.3 GiB** now + caps the leak tail forever; at 7 d: ~0 today (nothing unpinned survives 7 d — see §5) |
+| R2 | Install the daily launchd sweeper on the Studio | not installed | `bash scripts/install_worktree_gc_launchd.sh` on the Studio | keeps the tail drained daily |
+| R3 | Same for the M1 host when it returns (unreachable at audit time, runners offline) | not installed | same installer over ssh; feed `--pr-states-file` if gh is unauthenticated there | unknown until reachable |
+| R4 | Reclaim `ORPHAN` husks (unregistered dirs under the roots) | off | `"include_orphans": true` | ~0 GiB (4 empty husks) |
+| R5 | Reclaim clean+pushed worktrees of OPEN PRs (branch/PR survive; only the local checkout goes) | off | `"include_open_pr": true` | small; open lanes are mostly RECENT anyway |
+| R6 | charting-app: same sweep for its 103 GiB `.claude/worktrees` | report-only | arm a `config/worktree_gc.json` there (tool takes `--repo-root`) | **9.6 GiB** at 7 d already (16 trees); more at 2 d |
+| R7 | Session-closing hygiene: **24 open sessions / 78.1 GiB** have their PR already squash-merged at the worktree head but stay pinned by their processes. Closing finished sessions releases them to the sweeper (all 62 pinned trees are < 2 d strong-active, so this is workflow, not archaeology) | keep all pinned | close finished sessions in FleetView as a habit | ~78 GiB now; keeps the done-pool draining |
+| R8 | Structural: each checkout is 3.27 GiB, of which `data/` 2.10 + `site/` 0.67 = **85 %**. The ~0–2 d active window (~330 GiB at the measured ~40 sessions/day cadence) is a capacity requirement GC cannot reduce — a sparse-checkout session profile could cut it ~5×. Proposal note only | — | commission separately if wanted | ~250+ GiB of standing working set |
 
 First armed run on the Studio: suggest `--apply --dry-run` once, eyeball the log, then `--apply`.
 `max_delete_per_run: 200` caps a single pass; the daily schedule drains any remainder.
 
 ## 1. The problem (measured 2026-08-05, Studio)
 
-Disk at **96 %** (1.7 Ti / 1.8 Ti, 89 Gi free). Session worktrees are never deleted, one per session since ~June:
+Disk at **96 %** (1.7 Ti / 1.8 Ti, 89 Gi free). The fleet worktree roots hold:
 
 | Root | Entries | Size |
 |---|---:|---:|
@@ -27,14 +29,33 @@ Disk at **96 %** (1.7 Ti / 1.8 Ti, 89 Gi free). Session worktrees are never dele
 | Macro `.codex-worktrees/` | 13 | 37.0 GiB |
 | `~/.codex/worktrees/` (legacy home root) | 14 | 34.4 GiB |
 | Macro `.claire/worktrees/` | 3 husks | ~0 |
-| charting-app `.claude/worktrees/` | ~edge | 103.3 GiB |
+| charting-app `.claude/worktrees/` | 130 | 103.3 GiB |
 | **Fleet sprawl total** | | **≈ 772 GiB** |
 
-A typical checkout is ~3.2 GiB (site/ + data/ working copies). The M1 runner host
-(mac-builder-1/2/3) hit **ENOSPC 2026-08-04**, killing the runner Worker mid-collect
-(run 30960328285) and severing the nightly collection lane; it very likely carries the
-same sprawl. As of this audit the M1 is unreachable over ssh (Tailscale timeout) and
-its three runners are offline; Studio spares mac-builder-4/5 are online carrying load.
+**Corrected model (what the audit actually found):** this is *not* months of quiet
+accumulation. The harness already recycles most closed sessions (at the measured
+cadence of ~40 session worktrees/day, two months of pure leakage would be ~2,400
+trees — only 186 exist). The pile decomposes into three different problems:
+
+1. **The active window** — ~132 unpinned trees / ~417 GiB with strong activity
+   < 3 d, plus 62 process-pinned trees / 203 GiB that are ALL < 2 d strong-active
+   too (49 carry a live `claude` process). Fleet cadence × 3.27 GiB per checkout.
+   GC cannot shrink the genuinely-working part; only R8 can.
+2. **The done-but-still-here pool** — sessions whose PR is already squash-merged
+   at exactly the worktree head: **64 idle trees / 201.4 GiB** (aging toward the
+   min_age bar; 17 / 51.3 GiB past 2 d today) plus **24 still-open trees /
+   78.1 GiB** whose processes pin them until the session is closed (→ R7).
+   This ~280 GiB pool is what the sweeper + session hygiene continuously drain.
+3. **The leak tail** — 4 DIRTY trees / 8.7 GiB idle 7–60 d holding uncommitted
+   files (operator-review pile, listed in the report; never auto-deleted).
+
+A typical checkout is 3.27 GiB: `data/` 2.10 + `site/` 0.67 (85 %) + code.
+The M1 runner host (mac-builder-1/2/3) hit **ENOSPC 2026-08-04**, killing the
+runner Worker mid-collect (run 30960328285) and severing the nightly collection
+lane; it likely carries its own mix of the same three piles plus runner `_work`
+churn. As of this audit the M1 is unreachable over ssh (Tailscale timeout) and
+its three runners are offline; Studio spares mac-builder-4/5 are online carrying
+the load.
 
 ## 2. Safety model (what "provably safe to remove" means)
 
@@ -95,9 +116,44 @@ is safe: apply self-gates to report-only while disarmed. `scripts/metabolism_gc.
 (wf_* autonomy-loop trees, journal-based proofs) stays as is — different scope; its
 inverted ancestry check is flagged separately.
 
-## 5. Measured classification & reclaim estimate (Studio)
+## 5. Measured classification & reclaim estimate (Studio, 2026-08-05)
 
-<!-- AUDIT_TABLE -->
+Receipts: `research/worktree_gc/2026-08-05_studio_*.{md,json}` (full per-tree verdicts).
+
+**Macro root** (186 trees + husks; shipped default min_age 7 d; verdicts stable across
+three audit passes):
+
+| verdict | count | GiB | note |
+|---|---:|---:|---|
+| RECENT | 143 | 450.6 | strong activity < 7 d (histogram below) |
+| LIVE_PROC | 62 | 203.0 | all < 2 d strong-active; 49 with live `claude` proc |
+| DIRTY | 4 | 8.7 | idle 7–60 d, uncommitted files — operator-review pile |
+| LOCKED | 1 | 3.3 | `x-growth-overhaul`, session lock honored |
+| ORPHAN / SELF / MISSING | 4 / 1 / 1 | ~0 | husks; metadata prune only |
+| **SAFE now (7 d)** | **0** | **0.0** | nothing unpinned survives 7 d — see below |
+
+Strong-age histogram of unpinned trees (count / GiB): <1 d 36/117 · 1–2 d 68/215 ·
+2–3 d 28/85 · 3–5 d 7/22 · 5–7 d 4/12 · ≥7 d 4/8.7 (the DIRTY pile).
+
+**Why 7 d reclaims zero here and why that is not failure:** the harness already
+recycles most closed sessions; what remains is the live fleet plus the done-pool.
+The done-pool is real and measured — **64 idle trees / 201.4 GiB are oid-exact
+squash-merged** (of which 17 / **51.3 GiB** already ≥ 2 d idle) and **24 pinned
+trees / 78.1 GiB** more are merged but still open. R1 at min_age 2 d harvests the
+idle half continuously; R7 releases the pinned half.
+
+**charting-app root** (130 trees, min_age 7 d): SAFE_MERGED 14 + SAFE_REMOTE 2 =
+**9.6 GiB reclaimable immediately**; RECENT 93 / 76.6 GiB; DIRTY 19 / 9.7 GiB;
+UNPUSHED 14 / 7.1 GiB; LIVE_PROC 4. A smaller, older fleet → a genuine dead tail;
+validates every verdict class on a second repo.
+
+**Detector integrity (why the first two audit passes were discarded):** pass 1
+read all trees "0.2 d old" — a repo-global `reflog expire` had stamped every
+`logs/HEAD` file at 2026-08-04 15:38:24; pass 2 still read 137/143 "fresh" off
+index/HEAD/dir file mtimes written by observer sweeps (`git status` from
+dashboards, Finder `.DS_Store`). Both stampers are now regression-pinned in
+`tests/test_worktree_gc.py`; the shipped probe gates on reflog ENTRY epochs +
+session transcript mtimes only.
 
 ## 6. M1 plan (R3)
 
@@ -113,9 +169,8 @@ present its numbers, then arm.
 
 - `git gc` / repack of the shared 29 GiB `.git` (concurrent-session risk; separate ask).
 - Runner `_work` directories (bounded per-workflow reuse; separate lever).
-- Killing orphaned shells whose cwd pins a worktree (`LIVE_PROC` pile) — surfaced in the
-  report for manual window-closing; a "shell-only + git-idle ≥ 14 d doesn't count as
-  live" rule is a possible R7 once the pile size is known.
-- Preventing accumulation at the source (harness-side worktree lifecycle) — the daily
-  sweeper makes steady-state ≈ (sessions/day × 3.2 GiB × 7 d) ≈ manageable; revisit only
-  if that proves wrong.
+- Killing processes that pin `LIVE_PROC` trees — the sweeper only reports them (R7 is
+  operator hygiene; a rule change would be its own ratified PR).
+- Shrinking the active window (R8 sparse-checkout proposal) — capacity question, not GC.
+- Steady state with R1 armed at 2 d ≈ active window (~330 GiB) + parked pile until R7
+  acted on. The tail no longer grows; the window tracks fleet cadence.
