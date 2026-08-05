@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T07:42:20.827102+00:00",
-  "count": 788,
+  "generated_at": "2026-08-05T07:57:24.575973+00:00",
+  "count": 789,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -315,6 +315,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-iamd1fu5j9z-d0ab33",
+      "title": "Transformational Innovation Opportunities (TRIO)",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:16Z",
+      "summary_points": [
+        "**AI Sector Valuation Shift**: Traditional EV/sales metric unreliable; sector trades at ~15% forward P/E vs global equities (50% historical premium), signaling fundamental change requiring selective positioning beyond broad software.",
+        "**Geopolitical & Macro Risks**: US-China tensions (ASML, Alibaba, ARM), semiconductor supply chain disruptions, and macro slowdowns (Alibaba, Broadcom) dominate risk factors, amplifying exposure in semiconductors and e-commerce.",
+        "**Strategic Allocation Shift**: Rebalancing from AI semis/hardware (76%→47%) to Mag 7 (15%→40%) and Defensive tech (6%→23%), prioritizing infrastructure software and enterprise control points with defensible AI monetization paths.",
+        "**Rating Distribution & Flow**: 47.54% of covered companies rated \"Most Preferred\" (equivalent to \"buy\"), indicating concentrated bullish sentiment; 60%+ \"Most Preferred\" signals sustained preference for AI/tech plays amid tactical rotations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
