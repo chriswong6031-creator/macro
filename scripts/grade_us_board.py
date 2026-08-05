@@ -219,6 +219,178 @@ def _load_prices() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 
 # --------------------------------------------------------------------------- #
+# ROW-PERSISTENCE LAW — the price panel must cover what the board ADMITS
+# --------------------------------------------------------------------------- #
+# The board's universe (scripts/build_stock_library.py::universe) is a UNION of three
+# sources: data/stocks deep history, the breadth close caches, and the curated
+# `stock_search.extra_tickers` extras read from the yahoo store (foreign ADRs + recent
+# IPOs outside the S&P 1500). Every grader here priced from ONE of them —
+# engine.equity_factors._closes("broad"), i.e. the breadth caches alone — so a name the
+# board admitted through the extras lane had `tk not in names.columns` and was dropped.
+#
+# Observed 2026-08-05 (operator report): VALE sat in the buy lane on five board dates
+# 07-24..07-31, then had ZERO rows in retro_grades.parquet and never appeared in the
+# Track-record dialog. It was not delisted and not stale — data/yahoo/VALE.parquet
+# carried 6,131 closes through 2026-08-03. Every name on the shipped artifact's
+# `tickers_skipped` list was the same class (ASTS BIDU CRDO NET NVO NXE PL RKLB TEAM U
+# UROY VALE, plus LCID from the git-archaeology boards): 13 of 13 recoverable from the
+# very store the board admitted them from, ZERO genuinely unresolvable.
+#
+# A ticker resolved here uses the SAME dividend-adjusted yahoo closes the board itself
+# read, so the price convention is unchanged; this only stops the grader from pricing a
+# narrower universe than the one it is grading.
+def extend_prices_to_admitted(
+    names: pd.DataFrame, boards: list[dict],
+) -> tuple[pd.DataFrame, dict]:
+    """Widen the close panel to every ticker the boards ADMITTED.
+
+    Returns ``(names, receipt)``. The receipt records what was recovered and what is
+    still unresolvable, so the survivorship disclosure is measured, never assumed.
+    Additive only: a ticker already carrying a usable column is left untouched.
+    """
+    from lib import store
+
+    admitted: set[str] = set()
+    for b in boards or []:
+        for r in b.get("rows") or []:
+            tk = r.get("ticker")
+            if tk:
+                admitted.add(str(tk))
+
+    have = {c for c in getattr(names, "columns", []) if names[c].notna().any()}
+    dead = set(load_dead_prices().keys())
+    missing = sorted(admitted - have - dead)
+
+    # Clip recovered history to the panel's own span. The yahoo store carries decades
+    # (NVO alone has 11,406 bars) and an un-clipped union index would grow the close
+    # frame from 777 rows to 11,406 — ~140 MB of mostly-NaN on the 4-core render path,
+    # for history no grader here reads. The breadth panel spans ~3y, which clears both
+    # lookbacks this module uses (the 200-bar StochRSI floor and the 90-bar trough).
+    floor = None
+    if names is not None and not getattr(names, "empty", True) and len(names.index):
+        floor = pd.Timestamp(names.index.min())
+
+    recovered: dict[str, pd.Series] = {}
+    for tk in missing:
+        try:
+            df = store.read("yahoo", tk)
+        except Exception as e:  # noqa: BLE001 — one bad parquet must not kill the grade
+            print(f"[prices] admitted-store read failed for {tk} ({e})", flush=True)
+            continue
+        if df is None or df.empty or "close" not in df.columns:
+            continue
+        ser = pd.to_numeric(df["close"], errors="coerce").dropna()
+        if ser.empty:
+            continue
+        ser.index = pd.to_datetime(ser.index)
+        ser = ser.sort_index()
+        if floor is not None:
+            ser = ser[ser.index >= floor]
+        if ser.empty:
+            continue
+        recovered[tk] = ser
+
+    unresolved = sorted(set(missing) - set(recovered))
+    receipt = {
+        "n_admitted": len(admitted),
+        "n_recovered_from_admitted_store": len(recovered),
+        "recovered": sorted(recovered),
+        "n_unresolved": len(unresolved),
+        "unresolved": unresolved[:30],
+    }
+    if unresolved:
+        # Nulls printed, not hidden: a board name with no price ANYWHERE is a real
+        # survivorship hole and the operator should see it the next morning. Bare
+        # line-start print — a logger would prefix the line and GitHub would drop it.
+        print("::warning title=us-board-admitted-name-unpriced::"
+              f"{len(unresolved)} board name(s) have no close series in any admission "
+              f"source (broad cache, dead-name store, yahoo extras): "
+              f"{', '.join(unresolved[:15])} — each still ships an unscored ledger row",
+              flush=True)
+    if not recovered:
+        return names, receipt
+
+    add = pd.DataFrame(recovered)
+    if names is None or getattr(names, "empty", True):
+        out = add.sort_index()
+    else:
+        out = pd.concat([names, add], axis=1).sort_index()
+    return out.loc[:, ~out.columns.duplicated()], receipt
+
+
+# --------------------------------------------------------------------------- #
+# CONTINUITY — a dead nightly must be visible the next morning
+# --------------------------------------------------------------------------- #
+# The forward ledger only advances in the nightly (ledger lane-gate law), so when the
+# nightly dies the snapshots simply stop and everything downstream keeps publishing the
+# last good record with a stale `as_of` and no complaint. That is how the 08-02/08-03
+# collect failure stayed invisible until an operator noticed a name missing three days
+# later. The gap is DISCLOSED, never backfilled — no snapshot is reconstructed for a
+# session on which the board did not actually run.
+#
+# Reference clock is the benchmark ETF close (data/yahoo/SPY.parquet), which is
+# refreshed by a different lane than the board. Using the board's own price source
+# would be circular: a build that never ran leaves board and price frozen together and
+# reads as perfectly fresh.
+def continuity_block(boards: list[dict], names: pd.DataFrame,
+                     etfs: pd.DataFrame | None) -> dict:
+    """Staleness of the newest board snapshot against the last completed US session."""
+    last_snap = boards[-1].get("as_of") if boards else None
+
+    ref = None
+    if etfs is not None and BENCH in getattr(etfs, "columns", []):
+        s = etfs[BENCH].dropna()
+        if not s.empty:
+            ref = pd.DatetimeIndex(s.index)
+    if ref is None and names is not None and not getattr(names, "empty", True):
+        ref = pd.DatetimeIndex(names.index)
+    if ref is None:
+        return {"last_snapshot": last_snap, "last_session": None,
+                "n_stale_sessions": 0, "stale_sessions": [], "clock": None}
+
+    last_session = str(ref.max())[:10]
+    stale: list[str] = []
+    if last_snap:
+        cut = pd.Timestamp(last_snap)
+        stale = [str(d)[:10] for d in ref[ref > cut]]
+
+    out = {
+        "last_snapshot": last_snap,
+        "last_session": last_session,
+        "n_stale_sessions": len(stale),
+        "stale_sessions": stale[:20],
+        "clock": f"{BENCH} close",
+    }
+    if stale:
+        n = len(stale)
+        out["note_en"] = (
+            f"No board was recorded for the {n} session{'s' if n > 1 else ''} after "
+            f"{last_snap} ({stale[0]}–{stale[-1]}). Those days are left blank in the "
+            "record — nothing is filled in after the fact.")
+        out["note_zh"] = (
+            f"{last_snap} 之后有 {n} 个交易日没有记录榜单（{stale[0]}–{stale[-1]}）。"
+            "这些日子在记录中留白，事后不做补写。")
+    return out
+
+
+def warn_if_stale(cont: dict) -> bool:
+    """Emit the line-start staleness annotation. Returns True when it fired.
+
+    Bare ``print`` with ``flush=True`` on purpose: every logger in this repo prefixes
+    the line, and GitHub silently drops a ``::warning`` that does not start the line.
+    """
+    n = int(cont.get("n_stale_sessions") or 0)
+    if n <= 0:
+        return False
+    print("::warning title=us-board-ledger-stale::"
+          f"newest board snapshot is {cont.get('last_snapshot')} but the last completed "
+          f"US session is {cont.get('last_session')} ({n} session(s) with no board) — "
+          "the nightly forward ledger did not advance; the gap is disclosed, not backfilled",
+          flush=True)
+    return True
+
+
+# --------------------------------------------------------------------------- #
 # board reconstruction (git archaeology + snapshot union)
 # --------------------------------------------------------------------------- #
 def _git_revisions() -> list[tuple[str, str]]:
@@ -1555,14 +1727,36 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
     n_inflight = 0
     _ob_cache: dict[str, pd.Series | None] = {}
 
+    def _unscored(tk: str, d0: str) -> dict:
+        """A persistent row for an episode that cannot be priced.
+
+        ROW-PERSISTENCE LAW: an admission is a claim the desk made, and a claim it can
+        no longer measure is still a claim. Pre-fix these episodes hit `continue` and
+        left NOTHING in the artifact — the name was simply absent from the dialog, and
+        the only trace was a count in meta.survivorship that no reader sees. A row that
+        says "no price data" is auditable; a missing row is indistinguishable from a
+        name that was never picked. Excluded from every summary number (it is not in
+        `scored`), so the headline is unmoved.
+        """
+        m = meta_by_tk.get(tk, {})
+        return {
+            "t": tk, "nm": None, "sec": m.get("sector"), "grp": None, "d": d0,
+            "e": None, "l": None, "p": None, "x": None, "dy": None,
+            "st": "unscored", "m": False,
+            "rk": m.get("rank"), "tr": m.get("tier"), "fl": [],
+            "xr": "no price data",
+        }
+
     for ep in _ts.build_episodes(board_days):
         tk, d0 = ep["ticker"], ep["entry_date"]
         if tk not in names.columns:
             skipped_no_price.append(tk)
+            rows_out.append(_unscored(tk, d0))
             continue
         ser = names[tk].dropna()
         if ser.empty:
             skipped_no_price.append(tk)
+            rows_out.append(_unscored(tk, d0))
             continue
         if tk not in _ob_cache:
             _ob_cache[tk] = _ob_mask(ser)
@@ -1581,6 +1775,7 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
                                early_exit=_ob_cache[tk], bench_close=bench_ser)
         if sc is None:
             skipped_no_price.append(tk)
+            rows_out.append(_unscored(tk, d0))
             continue
         if sc.get("fill_pending"):
             # Surfaced on the newest board — the T+1 fill prints tomorrow. In flight,
@@ -1628,19 +1823,30 @@ def emit_ledger(boards: list[dict], names: pd.DataFrame,
     state = _ts.publish_state(summary)
 
     _days = sorted(board_days)
+    _extra = {"exit_rule": "3D StochRSI >= 80 target · 90d-trough x0.97 stop · "
+                           f"{LEDGER_HORIZON}-session forced verdict",
+              # History span, so a truncated retro read is visible in the artifact
+              # instead of silently shrinking the record (see _git_revisions).
+              "history": {"first_board": _days[0] if _days else None,
+                          "last_board": _days[-1] if _days else None,
+                          "n_boards": len(_days),
+                          "scored_from": LEDGER_HISTORY_FROM,
+                          "n_boards_before_current_definition": n_boards_predefinition}}
+    # Outage disclosure: sessions after the newest snapshot on which no board was
+    # recorded. Present in the artifact so the dialog can say so in one quiet line
+    # instead of the reader inferring a healthy record from a frozen one.
+    cont = continuity_block(boards, names, etfs)
+    if cont.get("n_stale_sessions"):
+        _extra["continuity"] = cont
+
     return _tl.build_shell(
         "US", current_as_of, state, bench, summary, rows_out, grain="episode",
         survivorship={"n_skipped_no_price": len(skipped_no_price),
-                      "tickers_skipped": sorted(set(skipped_no_price))[:15]},
-        extra_meta={"exit_rule": "3D StochRSI >= 80 target · 90d-trough x0.97 stop · "
-                                 f"{LEDGER_HORIZON}-session forced verdict",
-                    # History span, so a truncated retro read is visible in the artifact
-                    # instead of silently shrinking the record (see _git_revisions).
-                    "history": {"first_board": _days[0] if _days else None,
-                                "last_board": _days[-1] if _days else None,
-                                "n_boards": len(_days),
-                                "scored_from": LEDGER_HISTORY_FROM,
-                                "n_boards_before_current_definition": n_boards_predefinition}},
+                      "tickers_skipped": sorted(set(skipped_no_price))[:15],
+                      # Post-fix these are rows in the artifact, not deletions — the
+                      # count stays so the exclusion from the SUMMARY is still stated.
+                      "unscored_rows_published": True},
+        extra_meta=_extra,
     )
 
 
@@ -1855,6 +2061,24 @@ def main() -> None:
     if not args.quiet:
         print(f"[boards] {len(boards)} distinct as_of dates "
               f"({boards[0]['as_of']}..{boards[-1]['as_of']})" if boards else "[boards] none")
+
+    # Price what the board ADMITTED, not just what the breadth caches carry — otherwise
+    # every curated-extras admission (ADRs, recent IPOs) is ungradeable forever.
+    names, _price_receipt = extend_prices_to_admitted(names, boards)
+    if not args.quiet:
+        print(f"[prices] {names.shape[1]} priced tickers "
+              f"(+{_price_receipt['n_recovered_from_admitted_store']} recovered from the "
+              f"admission store: {', '.join(_price_receipt['recovered'][:15])}"
+              f"{'…' if len(_price_receipt['recovered']) > 15 else ''}; "
+              f"{_price_receipt['n_unresolved']} still unresolvable)")
+
+    # A dead nightly must be visible in Actions the next morning, not discovered days
+    # later by an operator noticing a missing name. Never backfills — the gap is stated.
+    _cont = continuity_block(boards, names, etfs)
+    warn_if_stale(_cont)
+    if not args.quiet and _cont.get("n_stale_sessions"):
+        print(f"[continuity] newest snapshot {_cont['last_snapshot']} vs last session "
+              f"{_cont['last_session']} — {_cont['n_stale_sessions']} session(s) with no board")
 
     # P2: load existing store BEFORE grading so _board_tenure can look up history
     _pre_existing = pd.read_parquet(RETRO_PARQUET) if RETRO_PARQUET.exists() else None

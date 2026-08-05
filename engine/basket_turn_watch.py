@@ -192,33 +192,49 @@ def stamp_ledger(
     watch_rows: list[dict],
     as_of: str | None = None,
     data_root: Path | None = None,
+    *,
+    data_session: str | None = None,
 ) -> int:
     """Append rows for baskets in WATCH/IGNITION (plus downgrades).
 
     Idempotent: keep-first per (date, basket_id). Gated by COLLECT_LANE=nightly (US_LANE alias accepted).
     Returns count of appended rows.
+
+    SESSION STAMP COMES FROM THE DATA PLANE (forward-ledger audit 2026-08-05,
+    #4568 pattern).  ``data_session`` is the newest bar the legs actually read;
+    it stamps both ``date`` and ``as_of``.  A run against a frozen store
+    therefore re-derives the session it already recorded and the keep-first
+    dedupe refuses it, instead of re-describing old tape under a fresh calendar
+    date — which defeated asof-keyed idempotency AND made the downstream
+    forward-return graders (basket_turn_cohort._cohort_ew_vs_spy,
+    tape_disagreement._basket_ew_vs_spy_return — both resolve the base close
+    FORWARD from the row date) grade from the wrong base.  ``as_of`` is the
+    caller's explicit override; wall-clock ``_session_date()`` is the
+    last-resort fallback only.
     """
     if not _ledger_advance_enabled():
         log.debug("basket_turn_watch.stamp_ledger: skipped (COLLECT_LANE != nightly)")
         return 0
     if not watch_rows:
         return 0
-    today_str = as_of or _session_date().isoformat()  # TS-R2: NYSE session date, not UTC wall-clock
+    # data plane > caller override > wall clock (last resort; TS-R2 NYSE session
+    # date, not UTC — still a clock read, so it is the fallback, never the default)
+    stamp = data_session or as_of or _session_date().isoformat()
     try:
         rows = load_ledger(data_root)
         existing = {(r.get("basket_id"), r.get("date")) for r in rows}
         appended = 0
         for w in watch_rows:
-            key = (w.get("basket_id"), today_str)
+            key = (w.get("basket_id"), stamp)
             if key in existing:
                 continue
             rows.append({
-                "date":         today_str,
+                "date":         stamp,
                 "basket_id":    w.get("basket_id"),
                 "state":        w.get("state"),
                 "k":            w.get("k"),
                 "legs":         w.get("legs", {}),
-                "as_of":        today_str,
+                "as_of":        stamp,
                 # FT-R9: no per-basket forward-return fields — grading unit is the
                 # catalyst-day cohort (co-firing baskets share members; per-event
                 # forward returns inflate N per DT-R14/ticker-cluster-time-confound).
@@ -238,32 +254,59 @@ def stamp_ledger(
 # Price-store helpers
 # ---------------------------------------------------------------------------
 
-def _load_prices(ticker: str, data_root: Path | None = None) -> pd.DataFrame | None:
-    """Load price parquet for a single ticker from data/stocks/.
+# Basket members are collected into data/stocks/.  SPY is the rs_z BENCHMARK and
+# is a member of no basket (verified against data/baskets/membership.json), so
+# the member collector never writes data/stocks/SPY.parquet — SPY only ever
+# lands in data/yahoo/.  Looking it up under "stocks" alone therefore missed
+# unconditionally, which left spy_ret None and made the three legs that require
+# it (rs_z, complex_confirm, shock_relative_bid) unable to fire — and IGNITION,
+# which is gated on `k >= STATE_IGNITION_K AND rs_z`, arithmetically unreachable.
+# This ladder is PLUMBING: it changes where the benchmark series is read from,
+# not any leg formula or threshold.
+_STORE_LADDER: dict[str, tuple[str, ...]] = {"SPY": ("stocks", "yahoo")}
+_DEFAULT_STORES: tuple[str, ...] = ("stocks",)
 
-    Returns a DataFrame with columns [close, high, low, volume] indexed by Date,
-    or None if unavailable.
+
+def _load_prices(ticker: str, data_root: Path | None = None) -> pd.DataFrame | None:
+    """Load the price parquet for a single ticker.
+
+    Members resolve out of data/stocks/ exactly as before; only tickers listed in
+    _STORE_LADDER consult a second store.  A rung that exists but carries no
+    usable `close` column falls through to the next rung rather than returning a
+    frame the legs cannot read.
+
+    Returns a DataFrame indexed by Date carrying at least a `close` column, or
+    None if no rung yielded one.
     """
     from lib import config
     root = data_root if data_root is not None else config.data_dir()
-    p = root / "stocks" / f"{ticker}.parquet"
-    if not p.exists():
-        return None
-    try:
-        df = pd.read_parquet(p)
-        df.index = pd.to_datetime(df.index)
-        return df
-    except Exception as e:  # noqa: BLE001
-        log.debug("_load_prices(%s): %s", ticker, e)
-        return None
+    for sub in _STORE_LADDER.get(ticker, _DEFAULT_STORES):
+        p = root / sub / f"{ticker}.parquet"
+        if not p.exists():
+            continue
+        try:
+            df = pd.read_parquet(p)
+            if "close" not in df.columns or df.empty:
+                log.debug("_load_prices(%s): %s/ frame has no usable close", ticker, sub)
+                continue
+            df.index = pd.to_datetime(df.index)
+            return df
+        except Exception as e:  # noqa: BLE001
+            log.debug("_load_prices(%s) from %s/: %s", ticker, sub, e)
+            continue
+    return None
 
 
 def _spy_prices(data_root: Path | None = None) -> pd.Series | None:
-    """Return SPY close series."""
+    """Return the SPY close series (the rs_z benchmark), or None if unavailable."""
     df = _load_prices("SPY", data_root)
     if df is None:
         return None
-    return df["close"].astype(float)
+    try:
+        return df["close"].astype(float)
+    except Exception as e:  # noqa: BLE001
+        log.debug("_spy_prices: %s", e)
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -641,6 +684,18 @@ def _days_since_last_state(basket_id: str, ledger_rows: list[dict], today_str: s
 # Backscan computation
 # ---------------------------------------------------------------------------
 
+# The walk below scores a SUBSET of the six legs — the other three
+# (breadth_surge, volume_confirm, complex_confirm) are per-basket rolling
+# computations too costly to repeat 250× on the render path.  Keeping the split
+# explicit is what stops the unevaluated three from being reported as 0.0%.
+_BACKSCAN_EVALUATED_LEGS: tuple[str, ...] = (
+    "impulse_day", "rs_z", "shock_relative_bid",
+)
+_BACKSCAN_UNEVALUATED_LEGS: tuple[str, ...] = (
+    "breadth_surge", "volume_confirm", "complex_confirm",
+)
+
+
 def _backscan(
     baskets_meta: dict,
     closes_map: dict[str, pd.Series],
@@ -657,21 +712,35 @@ def _backscan(
     # We'll compute a simplified backscan: iterate recent sessions,
     # compute legs for each basket, count fires.
     try:
-        spy_rets_full = spy_closes.pct_change()
+        # --- align the member tape onto the benchmark's session index ---
+        # The walk below indexes an integer `i` into spy_closes.index and then
+        # applies THAT SAME integer positionally to each member series.  Member
+        # frames do not share SPY's first listing date (data/stocks/ spans
+        # 1980-2026, data/yahoo/SPY.parquet starts 1993), so position i resolved
+        # to a different calendar date in every column: measured 2026-08-05, the
+        # walk paired SPY 2025-08-05..2026-08-03 against AAPL 2013-05-24..
+        # 2014-05-21, and the `len(s) <= i` skip silently dropped 91 of 235
+        # member frames for being too short to reach the walked positions.
+        # This block never executed in production (it is reachable only when the
+        # benchmark loads, which it never did before the store ladder above), so
+        # the misalignment has never been published — reindexing here keeps it
+        # that way.  Descriptive-block alignment only: no leg formula, no
+        # threshold, and no state rule is touched.
+        aligned = pd.DataFrame(closes_map).reindex(spy_closes.index)
+        closes_map = {c: aligned[c] for c in aligned.columns}
+
+        # (a full-series pct_change was computed here and never read — dropped:
+        #  this path is newly reachable and the render budget is law)
+
         # Limit to last n_sessions
         if len(spy_closes) < n_sessions + 1:
             n_sessions = len(spy_closes) - 1
 
         watch_fires: int = 0
         ignition_fires: int = 0
-        leg_fires: dict[str, int] = {
-            "impulse_day": 0,
-            "rs_z": 0,
-            "breadth_surge": 0,
-            "volume_confirm": 0,
-            "complex_confirm": 0,
-            "shock_relative_bid": 0,
-        }
+        # Counters exist only for the legs the walk scores — an unevaluated leg
+        # must have no counter to report rather than a zero one.
+        leg_fires: dict[str, int] = {name: 0 for name in _BACKSCAN_EVALUATED_LEGS}
         total_basket_days: int = 0
 
         # Build sibling map once
@@ -689,7 +758,7 @@ def _backscan(
             spy_ret_today: float | None = None
             spy_prev = float(spy_closes.iloc[i - 1])
             spy_today = float(spy_closes.iloc[i])
-            if spy_prev != 0:
+            if spy_prev != 0 and np.isfinite(spy_prev) and np.isfinite(spy_today):
                 spy_ret_today = spy_today / spy_prev - 1.0
 
             # Compute EW 1d returns per basket using closes up to index i
@@ -702,9 +771,13 @@ def _backscan(
                     if s is None or len(s) <= i:
                         continue
                     prev = float(s.iloc[i - 1])
-                    if prev == 0:
+                    cur = float(s.iloc[i])
+                    # Post-reindex a member carries NaN on any session outside its
+                    # own listed history; an unguarded NaN return would poison the
+                    # basket mean and every cross-sectional z derived from it.
+                    if prev == 0 or not np.isfinite(prev) or not np.isfinite(cur):
                         continue
-                    rets.append(float(s.iloc[i]) / prev - 1.0)
+                    rets.append(cur / prev - 1.0)
                 if rets:
                     all_ew_rets[bid] = float(np.mean(rets))
 
@@ -744,9 +817,10 @@ def _backscan(
                         if s is None or len(s) <= i:
                             continue
                         prev = float(s.iloc[i - 1])
-                        if prev == 0:
+                        cur = float(s.iloc[i])
+                        if prev == 0 or not np.isfinite(prev) or not np.isfinite(cur):
                             continue
-                        if float(s.iloc[i]) / prev - 1.0 >= IMPULSE_THRESHOLD:
+                        if cur / prev - 1.0 >= IMPULSE_THRESHOLD:
                             count_up += 1
                     threshold = max(IMPULSE_FRACTION * len(tickers), IMPULSE_MIN_MEMBERS)
                     impulse = count_up >= threshold
@@ -768,9 +842,16 @@ def _backscan(
                     ignition_fires += 1
 
         fire_rate_pct = round(watch_fires / total_basket_days * 100, 2) if total_basket_days > 0 else 0.0
+        # Report ONLY the legs this walk actually evaluates.  The walk scores a
+        # 3-leg subset (impulse_day, rs_z, shock_relative_bid); the other three
+        # counters were initialised to 0 and never incremented, so emitting them
+        # published "0.0%" for legs that were never measured — a fake zero that
+        # reads as "never fired".  It is demonstrably false: on the first session
+        # this block was ever reachable the live organ had breadth_surge,
+        # volume_confirm and complex_confirm all firing.  Name the gap instead.
         leg_rates = {
-            name: round(cnt / total_basket_days * 100, 2) if total_basket_days > 0 else 0.0
-            for name, cnt in leg_fires.items()
+            name: round(leg_fires[name] / total_basket_days * 100, 2) if total_basket_days > 0 else 0.0
+            for name in _BACKSCAN_EVALUATED_LEGS
         }
         return {
             "description": (
@@ -784,6 +865,16 @@ def _backscan(
             "ignition_fires": ignition_fires,
             "watch_fire_rate_pct": fire_rate_pct,
             "per_leg_fire_rates_pct": leg_rates,
+            # Null disclosure: these legs are not computed in the walk, so their
+            # rate is unmeasured — NOT zero.
+            "legs_not_evaluated": list(_BACKSCAN_UNEVALUATED_LEGS),
+            "k_is_partial": True,
+            "comparability_note": (
+                "K here sums a 3-leg subset "
+                f"({', '.join(_BACKSCAN_EVALUATED_LEGS)}); the live organ scores all six. "
+                "These counts are therefore a FLOOR on the organ's rate and are not "
+                "comparable to live WATCH/IGNITION frequency."
+            ),
         }
     except Exception as e:  # noqa: BLE001
         log.warning("basket_turn_watch._backscan failed: %s", e)
@@ -971,8 +1062,11 @@ def _compute_inner(
         if not any(bid.startswith(p) for p in ("cn_", "hk_", "ca_"))
     }
 
-    # Load price data for all members
-    all_tickers: set[str] = {"SPY"}
+    # Load price data for all members.  MEMBERS ONLY — the SPY benchmark is
+    # loaded separately below and deliberately kept OUT of closes_map/price_data
+    # so that `closes_map` means "the member tape the legs read" with no
+    # exception, which is what the data_session stamp below has to reflect.
+    all_tickers: set[str] = set()
     for basket in us_baskets.values():
         all_tickers.update(_active_tickers(basket))
 
@@ -984,7 +1078,42 @@ def _compute_inner(
             closes_map[tk] = df["close"].astype(float)
             price_data[tk] = df
 
-    spy_closes = closes_map.get("SPY")
+    # --- underlying session: the newest bar the legs actually read ---
+    # Forward-ledger audit 2026-08-05 (#4568 pattern): the ledger stamp must key
+    # off the data plane, not the calendar.  A run against a frozen store then
+    # re-derives the session it already logged and dedupes, instead of
+    # re-describing old tape under a fresh date.  The artifact's `as_of` field
+    # is untouched — that stays TS-R2 display semantics.
+    #
+    # MEMBER TAPE ONLY.  SPY is collected on a different cadence than the member
+    # store (observed 2026-08-05: data/yahoo/SPY.parquet ended 08-03 while 220 of
+    # 235 data/stocks/ frames ended 07-31).  Folding the benchmark in here would
+    # let a fresher SPY bar carry `max()` and stamp the ledger with a session the
+    # member legs never read — reinstating, through the benchmark, exactly the
+    # wrong-base defect this derivation exists to prevent.
+    data_session: str | None = None
+    try:
+        _last_bars = []
+        for _s in closes_map.values():
+            _s = _s.dropna()          # one pass per series (render budget is law)
+            if len(_s):
+                _last_bars.append(_s.index.max())
+        if _last_bars:
+            data_session = str(pd.Timestamp(max(_last_bars)).date())
+    except Exception as _ex:  # noqa: BLE001 — stamp derivation is never fatal
+        log.debug("basket_turn_watch: data_session derivation failed: %s", _ex)
+        data_session = None
+
+    spy_closes = _spy_prices(data_root)
+    if spy_closes is None:
+        # Not fatal — WATCH still reachable on the three member-only legs — but it
+        # is the condition that silently held IGNITION dark, so it is not a debug.
+        print(
+            "::warning title=basket-turn-benchmark-missing::"
+            "SPY benchmark series unavailable; rs_z / complex_confirm / "
+            "shock_relative_bid cannot fire and IGNITION is unreachable this run",
+            flush=True,
+        )
     spy_ret: float | None = None
     if spy_closes is not None and len(spy_closes) >= 2:
         prev = float(spy_closes.iloc[-2])
@@ -1085,9 +1214,14 @@ def _compute_inner(
             log.debug("basket_turn_watch: basket %s failed: %s", bid, ex)
             continue
 
-    # Stamp forward ledger (US_LANE gate inside stamp_ledger)
+    # Stamp forward ledger (US_LANE gate inside stamp_ledger).
+    # data_session (the tape the legs read) is the stamp of record; as_of only
+    # survives as the fallback when no member frame was readable.
     try:
-        n = stamp_ledger(ledger_candidates, as_of=as_of, data_root=data_root)
+        n = stamp_ledger(
+            ledger_candidates, as_of=as_of, data_root=data_root,
+            data_session=data_session,
+        )
         if n:
             log.info("basket_turn_watch: stamped %d rows to ledger", n)
     except Exception as ex:  # noqa: BLE001
@@ -1146,6 +1280,10 @@ def _compute_inner(
     result: dict = {
         "schema": "basket_turn_watch.v1",
         "as_of": as_of,
+        # The tape the legs read (newest member bar).  Additive provenance
+        # field — mirrors ignition_radar.snapshot()'s data_session stamp.
+        # `as_of` above keeps its TS-R2 display meaning and is NOT derived here.
+        "data_session": data_session,
         "built": datetime.now(timezone.utc).isoformat(),
         "n_baskets": len(basket_states),
         "baskets": basket_states,

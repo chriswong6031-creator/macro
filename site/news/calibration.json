@@ -1,21 +1,21 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-08-03",
-  "n_events_logged": 259,
-  "n_events_graded": 149,
+  "asof": "2026-08-05",
+  "n_events_logged": 283,
+  "n_events_graded": 154,
   "classes": [
     {
       "event_type": "bankruptcy_restructuring",
       "direction": "bearish",
       "n": 2,
-      "n_graded": 1,
-      "hit_5d": 0.0,
+      "n_graded": 2,
+      "hit_5d": 0.5,
       "hit_21d": null,
-      "avg_rel_5d": 0.009076,
+      "avg_rel_5d": -0.02570375,
       "avg_rel_21d": null,
-      "wilson_low_5d": 0.0,
-      "wilson_high_5d": 0.793457,
+      "wilson_low_5d": 0.094529,
+      "wilson_high_5d": 0.905471,
       "verdict": "insufficient"
     },
     {
@@ -48,13 +48,13 @@
       "event_type": "customer_win",
       "direction": "bullish",
       "n": 2,
-      "n_graded": 0,
-      "hit_5d": null,
+      "n_graded": 1,
+      "hit_5d": 1.0,
       "hit_21d": null,
-      "avg_rel_5d": null,
+      "avg_rel_5d": 0.019937,
       "avg_rel_21d": null,
-      "wilson_low_5d": null,
-      "wilson_high_5d": null,
+      "wilson_low_5d": 0.206543,
+      "wilson_high_5d": 1.0,
       "verdict": "insufficient"
     },
     {
@@ -73,7 +73,7 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 49,
+      "n": 55,
       "n_graded": 23,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -86,12 +86,12 @@
     {
       "event_type": "equity_offering",
       "direction": "bearish",
-      "n": 7,
+      "n": 12,
       "n_graded": 4,
       "hit_5d": 0.75,
       "hit_21d": 1.0,
       "avg_rel_5d": -0.016861333333333336,
-      "avg_rel_21d": -0.01622233333333333,
+      "avg_rel_21d": -0.014613333333333332,
       "wilson_low_5d": 0.300636,
       "wilson_high_5d": 0.954414,
       "verdict": "insufficient"
@@ -99,7 +99,7 @@
     {
       "event_type": "guidance_cut",
       "direction": "bearish",
-      "n": 8,
+      "n": 9,
       "n_graded": 4,
       "hit_5d": 0.25,
       "hit_21d": null,
@@ -112,7 +112,7 @@
     {
       "event_type": "guidance_raise",
       "direction": "bullish",
-      "n": 16,
+      "n": 20,
       "n_graded": 3,
       "hit_5d": 1.0,
       "hit_21d": null,
@@ -125,20 +125,20 @@
     {
       "event_type": "litigation",
       "direction": "bearish",
-      "n": 97,
-      "n_graded": 80,
-      "hit_5d": 0.4375,
-      "hit_21d": 0.23529411764705882,
-      "avg_rel_5d": 0.010179889583333334,
-      "avg_rel_21d": 0.02052411764705882,
-      "wilson_low_5d": 0.334137,
-      "wilson_high_5d": 0.546591,
+      "n": 102,
+      "n_graded": 83,
+      "hit_5d": 0.43373493975903615,
+      "hit_21d": 0.23809523809523808,
+      "avg_rel_5d": 0.011215941767068272,
+      "avg_rel_21d": 0.03619433333333333,
+      "wilson_low_5d": 0.33239,
+      "wilson_high_5d": 0.540943,
       "verdict": "context_only"
     },
     {
       "event_type": "macro_release",
       "direction": "informational",
-      "n": 12,
+      "n": 13,
       "n_graded": 2,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -190,7 +190,7 @@
     {
       "event_type": "policy_trade_control",
       "direction": "mixed",
-      "n": 25,
+      "n": 27,
       "n_graded": 5,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -254,7 +254,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 528,
+    "n_sampled": 564,
     "n_graded": 0,
     "classes": []
   }

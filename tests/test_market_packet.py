@@ -1162,11 +1162,19 @@ def test_leaders_survives_hostile_basket_rows(tmp_path):
 
 
 def test_leaders_sits_between_breadth_and_crossasset(tmp_path):
+    """LEADERS renders after BREADTH and before CROSS-ASSET.
+
+    The CROSSASSET assertion was ``== LEADERS + 1``. REGIONAL (2026-08-04) landed
+    between them, which breaks strict adjacency without touching what this test is
+    named for — LEADERS still follows BREADTH immediately, and still precedes
+    CROSS-ASSET. Adjacency to CROSSASSET is pinned as ordering, so a future section
+    may sit in the gap but nothing may reorder the three.
+    """
     text = mp.digest(make_root(tmp_path))
     heads = [ln.split(" (")[0] for ln in text.split("\n")]
     assert heads.index("BREADTH") < heads.index("LEADERS") < heads.index("CROSS-ASSET")
     assert mp._SECTION_ORDER.index("LEADERS") == mp._SECTION_ORDER.index("BREADTH") + 1
-    assert mp._SECTION_ORDER.index("CROSSASSET") == mp._SECTION_ORDER.index("LEADERS") + 1
+    assert mp._SECTION_ORDER.index("CROSSASSET") > mp._SECTION_ORDER.index("LEADERS")
 
 
 def test_leaders_source_is_in_the_cache_key(tmp_path):

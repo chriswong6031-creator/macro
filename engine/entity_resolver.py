@@ -67,8 +67,12 @@ _ADJACENT_CODE_RE = re.compile(r"\d{6}")
 def cn_code_to_ticker(code: str) -> str | None:
     """A bare 6-digit A-share code → suffixed ticker by number range, or None.
 
-    6xxxxx → .SS (Shanghai) · 0/3xxxxx → .SZ (Shenzhen) · 4/8xxxxx → .BJ (Beijing).
-    PURE. ~100% precision (the range→exchange mapping is a hard market rule)."""
+    6xxxxx → .SS (Shanghai) · 0/3xxxxx → .SZ (Shenzhen) · 4/8/92xxxx → .BJ (Beijing).
+    PURE. ~100% precision (the range→exchange mapping is a hard market rule).
+
+    Beijing's code space is 4xxxxx / 8xxxxx / 92xxxx — the last added by the 2023 BSE
+    renumbering. Omitting 92 made every such code in free text resolve to None, a silent
+    MISS (the name simply never resolved) rather than a wrong value."""
     c = (code or "").strip()
     if not (len(c) == 6 and c.isdigit()):
         return None
@@ -77,7 +81,7 @@ def cn_code_to_ticker(code: str) -> str | None:
         return f"{c}.SS"
     if head in ("0", "3"):
         return f"{c}.SZ"
-    if head in ("4", "8"):
+    if head in ("4", "8") or c.startswith("92"):
         return f"{c}.BJ"
     return None
 
