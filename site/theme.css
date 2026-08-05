@@ -1378,14 +1378,6 @@ body.lst-ovl-lock .act-pop { z-index:12000; }
    Mobile: single-column ≤560px; board label 12px nowrap at 390px.
    =========================================================================== */
 .anv2-board { }
-/* Migrated from china.html.j2 inline <style> (W8-R3) so the four-lane board renders
-   identically on china_stocks.html AND the China SI Overview, both of which load this bundle. */
-.anv2-chip-tape { background:color-mix(in srgb,var(--info) 10%,var(--panel)); color:color-mix(in srgb,var(--info) 80%,var(--text)); border-color:color-mix(in srgb,var(--info) 26%,transparent); }
-/* anv2 click-through name link — colour/decoration intentionally inherit from .anv2-name */
-.anv2-name-link { color:inherit; text-decoration:none; }
-.anv2-name-link:hover .l-en, .anv2-name-link:hover .l-zh { text-decoration:underline; }
-.anv2-name-link:focus-visible { outline:2px solid var(--link); outline-offset:2px; border-radius:4px; }
-.anv2-go { font-size:10px; opacity:.55; margin-left:3px; }
 .anv2-hd { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
 .anv2-hd h2 { font-size:15px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin:0; display:flex; align-items:center; gap:8px; flex-wrap:nowrap; white-space:nowrap; }
 @media (max-width:390px) { .anv2-hd h2 { font-size:12px; } }
