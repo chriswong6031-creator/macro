@@ -168,6 +168,11 @@ on:
       - "scripts/build_signal_quality.py"
       - "engine/signal_quality.py"
       - "tests/test_validate_signals.py"
+      # W-F reclaim-veto decision packet (2026-08-05). Both halves per #3488: the suite AND
+      # the module it measures, so an edit to either can trigger the job that proves the
+      # flip-isolation construction still isolates exactly one leg.
+      - "research/prophet_us_audit/reclaim_veto_packet.py"
+      - "tests/test_us_reclaim_veto_packet.py"
       # W1d trial-budget gate: any new multiple-testing harness must register its budget.
       - "scripts/*_phase0.py"
       - "scripts/*_phase1.py"

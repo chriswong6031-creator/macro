@@ -1808,3 +1808,5 @@
 {"date":"2026-08-05","ticker":"COIN","rank":null,"score":10,"lean":1,"broken":true}
 {"date":"2026-08-05","ticker":"VST","rank":null,"score":9,"lean":1,"broken":true}
 {"date":"2026-08-05","ticker":"ETSY","departed":true,"left_desk":"2026-08-05","last_rank":30,"last_score":30}
+{"date":"2026-08-05","ticker":"UNP","rank":23,"score":33,"lean":1,"broken":false}
+{"date":"2026-08-05","ticker":"LUNR","rank":null,"score":3,"lean":1,"broken":true}

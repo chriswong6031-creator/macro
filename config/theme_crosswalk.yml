@@ -5,7 +5,7 @@
 #
 # Rules:
 #   • Every foresight theme MUST appear exactly once as a canonical id.
-#   • basket_ids reference data/baskets/membership.json keys (47 baskets total).
+#   • basket_ids reference data/baskets/membership.json keys (48 baskets total).
 #   • primary_basket_id (v2) — the ONE basket that IS this theme, or null. It is the
 #     only mapping that is sound in the REVERSE direction (basket → theme): basket_ids
 #     answers "which baskets give this theme a price surface", which legitimately
@@ -294,13 +294,19 @@ themes:
 
 # ---------------------------------------------------------------------------
 # Baskets not mapped to any canonical theme
-# (All 47 baskets accounted for — 18 mapped above, 29 here)
+# (All 48 baskets accounted for — 18 mapped above, 30 here)
 # ---------------------------------------------------------------------------
 unmapped_baskets:
   - id: gold_miners
     reason: >
       Globally traded gold-producer sleeve. Covered by cross-market narrative
       rotation, but not one of the canonical foresight themes.
+
+  - id: silver_miners
+    reason: >
+      Silver-producer sleeve, split out of gold_miners so the two precious-metal
+      cycles read separately. Same standing as gold_miners — covered by
+      cross-market narrative rotation, not a canonical foresight theme.
 
   - id: mag7
     reason: >
