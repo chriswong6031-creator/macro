@@ -5008,3 +5008,42 @@ jobs:
         run: python -m pytest tests/test_signup_email_validation.py -q
       - name: shared-GitHub-quota hook — the guard that keeps polling loops off the REST pool
         run: python -m pytest tests/test_gh_quota_guard.py -q
+
+  # ── THE HK BOARD PAIR — BORN DARK EIGHT DAYS AFTER THE CENSUS (2026-08-05) ──
+  # tests/test_hk_board_rank.py (163 tests) + tests/test_hk_board_ui.py landed
+  # with the HK board resurrection (#4421, 2026-08-03) — AFTER the 2026-07-26
+  # census sweep — named by no run: step in any workflow: the weekly-reopening
+  # leak docs/UNRUN_TEST_CENSUS.md warns about, on its schedule.  The bill came
+  # due within a day.  The 2026-08-04 asia collection re-adjusted 2338.HK
+  # (ex-dividend) and rewrote 28 sessions of the G1 panel's history; the suite's
+  # TestG1FixtureIsNotStale tripwire caught it — and CI never saw any of it.  No
+  # job ran the suite, and the heal (#4559) was a fixture-only diff that matched
+  # no ci.yml paths entry, so it merged having triggered zero pack checks: both
+  # the red and its fix existed only in hand runs.  (The queue-wide ci-pack red
+  # the same night was tests/test_marketing_hot_tape_radar.py — wired, a
+  # different market-state pin — easy to conflate, not the G1 red.)  This job
+  # ends the unrun half; the trigger halves (both test files, the frozen G1
+  # fixture pair, data/hk_search/**) land in ci.yml paths in the same PR.
+  #
+  # Runtime: the witness-replay test runs engine.signal_gate.gate() on seven
+  # full-history series from data/hk_search/closes_deep.parquet — minutes, not
+  # seconds; budget 8.  Deps: the builder-wiring tests import scripts/build_hk.py
+  # (plotly) and reach lib.config (pyyaml) — measured in a clean venv, where
+  # pytest+pandas+pyarrow+jinja2 alone left 23 tests red on those two imports.
+  # The shared unrun-* install repeated BYTE-FOR-BYTE keeps this job inside the
+  # set's single venv instead of adding one.
+  unrun-hk-board:
+    if: ${{ false }}
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: hk board rank — G1-G5 gates + the G1 staleness tripwire (witness replay)
+        run: python -m pytest tests/test_hk_board_rank.py -q
+      - name: hk board ui — the unified board template contract
+        run: python -m pytest tests/test_hk_board_ui.py -q

@@ -558,7 +558,10 @@ from engine import ignition_audit as ia
 
 
 def _make_ig_snap(as_of=None, state="off", k=0) -> dict:
-    as_of = as_of or str(date.today())
+    # Pinned weekday default — never date.today(): the session-keyed logger
+    # refuses session-less weekend as_of dates, so a wall-clock fixture would
+    # turn this suite red every Saturday/Sunday run.
+    as_of = as_of or "2026-01-06"
     return {
         "as_of": as_of,
         "state": state,
@@ -655,7 +658,7 @@ def test_grade_us_narrow_none_when_immature(tmp_path):
     """Narrow grade returns None when SPY doesn't have h40 bars ahead."""
     idx = pd.date_range("2026-01-01", periods=20, freq="B")
     spy = pd.Series(np.full(20, 100.0), index=idx)
-    asof = "2026-01-10"
+    asof = "2026-01-09"  # a Friday — the logger refuses session-less weekend as_of
     snap = _make_ig_snap(as_of=asof, state="warming")
     ia.log_us_snapshot(snap, root=tmp_path)
     n = ia.grade_us_log(spy, root=tmp_path)
@@ -681,6 +684,255 @@ def test_us_snapshot_and_grade_smoke(tmp_path):
     assert "n_graded" in sc
     assert "note" in sc
     assert "accruing" in sc["note"].lower()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# narrow output policy — honest-null floor + event-sector exclusion (census #4564 §4)
+# ──────────────────────────────────────────────────────────────────────────────
+
+from engine.ignition_radar import apply_narrow_output_policy, NARROW_MAX_RANKED
+
+
+def _pol_item(iid, score, state):
+    return {"id": iid, "name": iid, "name_zh": iid, "ignition_score": score,
+            "state": state, "category": "x"}
+
+
+def test_narrow_policy_honest_null_when_nothing_clears_floor():
+    """A dead tape yields items=[] — never a forced ranking of the least-dead."""
+    items = [_pol_item("XLK", 0.30, "fading"), _pol_item("mag7", 0.10, "idle")]
+    pol = apply_narrow_output_policy(items, "off")
+    assert pol["items"] == []
+    assert pol["null"] is True
+    assert pol["n_scored"] == 2
+    assert pol["n_qualifying"] == 0
+
+
+def test_narrow_policy_alert_states_rank_others_do_not():
+    items = [_pol_item("XLK", 0.7, "igniting"), _pol_item("mag7", 0.4, "running"),
+             _pol_item("ai_infra", 0.3, "fading")]
+    pol = apply_narrow_output_policy(items, "off")
+    assert [i["id"] for i in pol["items"]] == ["XLK", "mag7"]
+    assert pol["null"] is False
+    assert pol["n_qualifying"] == 2
+
+
+def test_narrow_policy_event_sector_excluded_outside_broad_ignition():
+    """XLE igniting on a war headline must not rank while broad is not ignited —
+    and the exclusion is DISCLOSED, not hidden."""
+    items = [_pol_item("XLE", 0.99, "igniting"), _pol_item("XLK", 0.7, "igniting")]
+    pol = apply_narrow_output_policy(items, "warming")
+    assert [i["id"] for i in pol["items"]] == ["XLK"]
+    assert len(pol["event_excluded"]) == 1
+    exc = pol["event_excluded"][0]
+    assert exc["id"] == "XLE"
+    assert "reason" in exc and "event sector" in exc["reason"]
+
+
+def test_narrow_policy_event_sector_ranks_inside_broad_ignition():
+    """A confirmed broad ignition is by definition not single-sector — the
+    exclusion lifts."""
+    items = [_pol_item("XLE", 0.99, "igniting")]
+    pol = apply_narrow_output_policy(items, "ignited")
+    assert [i["id"] for i in pol["items"]] == ["XLE"]
+    assert pol["event_excluded"] == []
+
+
+def test_narrow_policy_event_basket_ids_excluded_too():
+    for bid in ("energy_complex", "us_sector_energy", "defense", "gold_miners"):
+        pol = apply_narrow_output_policy([_pol_item(bid, 0.9, "igniting")], "off")
+        assert pol["items"] == [], bid
+        assert pol["event_excluded"][0]["id"] == bid
+
+
+def test_narrow_policy_caps_ranked_items_without_forcing_fill():
+    items = [_pol_item(f"b{i}", 0.9 - i * 0.01, "igniting") for i in range(12)]
+    pol = apply_narrow_output_policy(items, "off")
+    assert len(pol["items"]) == NARROW_MAX_RANKED
+    assert pol["n_qualifying"] == 12  # cap disclosed via n_qualifying
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# audit US arm — session-keyed logging (census #4564 §4 dedupe)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def test_log_us_snapshot_session_keyed_weekend_relog_skipped(tmp_path):
+    """Sat/Sun re-runs carry Friday's data_session — one row per session."""
+    fri = _make_ig_snap(as_of="2026-01-09")
+    fri["data_session"] = "2026-01-09"
+    sat = _make_ig_snap(as_of="2026-01-10", state="warming")
+    sat["data_session"] = "2026-01-09"
+    assert ia.log_us_snapshot(fri, root=tmp_path) == 1
+    assert ia.log_us_snapshot(sat, root=tmp_path) == 0
+    rows = ia._us_read(ia._us_path(tmp_path))
+    assert len(rows) == 1
+    assert rows[0]["session"] == "2026-01-09"
+    assert rows[0]["asof"] == "2026-01-09"
+
+
+def test_log_us_snapshot_weekend_asof_without_session_refused(tmp_path):
+    """A session-less payload with a weekend as_of is a Friday re-log — refuse."""
+    sat = _make_ig_snap(as_of="2026-01-10")  # Saturday, no data_session stamp
+    assert ia.log_us_snapshot(sat, root=tmp_path) == 0
+    assert ia._us_read(ia._us_path(tmp_path)) == []
+
+
+def test_log_us_snapshot_session_matches_legacy_asof_row(tmp_path):
+    """A stamped run must not duplicate a legacy (pre-stamp) row for the same session."""
+    legacy = _make_ig_snap(as_of="2026-01-09")  # logged pre-fix: no session field
+    assert ia.log_us_snapshot(legacy, root=tmp_path) == 1
+    relog = _make_ig_snap(as_of="2026-01-11")
+    relog["data_session"] = "2026-01-09"
+    assert ia.log_us_snapshot(relog, root=tmp_path) == 0
+    assert len(ia._us_read(ia._us_path(tmp_path))) == 1
+
+
+def test_log_us_snapshot_records_event_exclusion_audit_trail(tmp_path):
+    snap = _make_ig_snap(as_of="2026-01-06")
+    snap["narrow"]["event_excluded"] = [{"id": "XLE", "reason": "event sector"}]
+    ia.log_us_snapshot(snap, root=tmp_path)
+    rows = ia._us_read(ia._us_path(tmp_path))
+    assert rows[0]["event_excluded"] == ["XLE"]
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# audit US arm — pre-registered narrow success criterion (census #4564 §4)
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def _sandbox_basket_levels(monkeypatch, tmp_path, levels: dict):
+    """Point the grader's ohlcv lookup at an empty tmp dir and serve ETF levels
+    from an in-memory map (ids <=5 chars route through _load_etf_series)."""
+    import engine.ignition_radar as ir
+    monkeypatch.setattr("lib.config.data_dir", lambda: tmp_path / "data")
+    monkeypatch.setattr(ir, "_load_etf_series", lambda t: levels.get(t))
+
+
+def test_grade_us_narrow_preregistered_outcomes(tmp_path, monkeypatch):
+    """Alert TP iff excess_h40 > 0; event sectors tagged; missing level ungradeable."""
+    idx = pd.bdate_range("2026-01-05", periods=80)
+    spy = pd.Series(np.full(80, 100.0), index=idx)           # flat bench
+    winner = pd.Series(np.linspace(100.0, 120.0, 80), index=idx)  # beats SPY
+    _sandbox_basket_levels(monkeypatch, tmp_path, {"XLK": winner, "XLE": winner})
+    entry = {
+        "asof": "2026-01-06", "session": "2026-01-06", "broad_state": "warming",
+        "top_narrow": [
+            {"id": "XLK", "name": "XLK", "ignition_score": 0.8, "state": "igniting"},
+            {"id": "XLE", "name": "XLE", "ignition_score": 0.9, "state": "igniting"},
+            {"id": "ghost_basket", "name": "Ghost", "ignition_score": 0.7, "state": "running"},
+        ],
+    }
+    g = ia._grade_us_narrow(entry, spy)
+    assert g is not None
+    by = {i["id"]: i for i in g["items"]}
+    assert by["XLK"]["outcome"] == "true_positive"
+    assert by["XLK"].get("excess_h40") is not None and by["XLK"]["excess_h40"] > 0
+    assert "event_excluded" not in by["XLK"]
+    # event sector: still graded for the record, but tagged excluded
+    assert by["XLE"]["event_excluded"] is True
+    assert by["XLE"]["outcome"] == "true_positive"
+    # no loadable level → ungradeable, disclosed — never silently dropped
+    assert by["ghost_basket"]["outcome"] == "ungradeable"
+    assert "excess_h40" not in by["ghost_basket"]
+
+
+def test_grade_us_narrow_false_positive_and_quiet_states(tmp_path, monkeypatch):
+    idx = pd.bdate_range("2026-01-05", periods=80)
+    spy = pd.Series(np.linspace(100.0, 110.0, 80), index=idx)  # rising bench
+    laggard = pd.Series(np.full(80, 100.0), index=idx)          # flat → loses
+    _sandbox_basket_levels(monkeypatch, tmp_path, {"XLK": laggard, "XLB": laggard})
+    entry = {
+        "asof": "2026-01-06", "session": "2026-01-06", "broad_state": "off",
+        "top_narrow": [
+            {"id": "XLK", "state": "igniting", "ignition_score": 0.8},
+            {"id": "XLB", "state": "fading", "ignition_score": 0.2},
+        ],
+    }
+    g = ia._grade_us_narrow(entry, spy)
+    by = {i["id"]: i for i in g["items"]}
+    assert by["XLK"]["outcome"] == "false_positive"   # alert that lost
+    assert by["XLB"]["outcome"] == "quiet_flat"        # non-alert, negative excess
+
+
+def test_grade_us_narrow_event_exclusion_lifts_inside_broad_ignition(tmp_path, monkeypatch):
+    idx = pd.bdate_range("2026-01-05", periods=80)
+    spy = pd.Series(np.full(80, 100.0), index=idx)
+    winner = pd.Series(np.linspace(100.0, 120.0, 80), index=idx)
+    _sandbox_basket_levels(monkeypatch, tmp_path, {"XLE": winner})
+    entry = {
+        "asof": "2026-01-06", "session": "2026-01-06", "broad_state": "ignited",
+        "top_narrow": [{"id": "XLE", "state": "igniting", "ignition_score": 0.9}],
+    }
+    g = ia._grade_us_narrow(entry, spy)
+    assert "event_excluded" not in g["items"][0]
+    assert g["items"][0]["outcome"] == "true_positive"
+
+
+def test_grade_us_narrow_uses_session_base_not_asof(tmp_path, monkeypatch):
+    """A drifted run's row grades from its SESSION close, not the stamped asof day."""
+    idx = pd.bdate_range("2026-01-05", periods=60)
+    vals = np.where(idx <= pd.Timestamp("2026-01-09"), 100.0, 102.0)
+    spy = pd.Series(vals, index=idx)                     # +2% between the two bases
+    flat = pd.Series(np.full(60, 100.0), index=idx)
+    _sandbox_basket_levels(monkeypatch, tmp_path, {"XLK": flat})
+    entry = {
+        "asof": "2026-01-12",        # Monday stamp (drifted run)
+        "session": "2026-01-09",     # underlying tape: Friday
+        "broad_state": "off",
+        "top_narrow": [{"id": "XLK", "state": "igniting", "ignition_score": 0.8}],
+    }
+    g = ia._grade_us_narrow(entry, spy)
+    it = g["items"][0]
+    # From the Friday base: basket 0%, SPY +2% → excess −0.02. An asof (Monday)
+    # base would give 0.0 — the assertion pins the session base.
+    assert it["excess_h40"] == -0.02
+    assert it["outcome"] == "false_positive"
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# audit US arm — scorecard narrow block + meta disclosure
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def test_us_scorecard_narrow_block_denominator_law(tmp_path):
+    """TP rate over gradeable non-excluded alerts; excluded/ungradeable PRINTED."""
+    rows = [{
+        "asof": "2026-01-06", "session": "2026-01-06", "market": "us",
+        "broad_state": "warming", "graded_broad": None,
+        "graded_narrow": {"items": [
+            {"id": "a", "state_at_log": "igniting", "excess_h40": 0.03, "outcome": "true_positive"},
+            {"id": "b", "state_at_log": "igniting", "excess_h40": -0.01, "outcome": "false_positive"},
+            {"id": "XLE", "state_at_log": "igniting", "excess_h40": 0.05,
+             "outcome": "true_positive", "event_excluded": True},
+            {"id": "c", "state_at_log": "running", "outcome": "ungradeable"},
+            {"id": "d", "state_at_log": "fading", "excess_h40": 0.01, "outcome": "quiet_up"},
+        ]},
+    }]
+    ia._us_write(ia._us_path(tmp_path), rows)
+    sc = ia.us_scorecard(root=tmp_path)
+    nb = sc["narrow"]
+    assert nb["n_items_graded"] == 5
+    assert nb["n_alerts_gradeable"] == 2          # a + b (XLE excluded, c ungradeable)
+    assert nb["alert_tp_rate_h40"] == 0.5
+    assert nb["n_event_excluded"] == 1
+    assert nb["n_ungradeable"] == 1
+    assert "pre-registered" in nb["criterion"]
+
+
+def test_us_scorecard_attaches_log_meta_gaps(tmp_path):
+    meta = {
+        "known_gaps": [{"missing_sessions": ["2026-07-14"]},
+                       {"missing_sessions": ["2026-07-22", "2026-07-23"]}],
+        "quarantine": {"n_rows": 6},
+    }
+    log_dir = tmp_path / "data" / "ignition_log"
+    log_dir.mkdir(parents=True)
+    (log_dir / "us_ignition_meta.json").write_text(json.dumps(meta))
+    sc = ia.us_scorecard(root=tmp_path)
+    assert sc["log_meta"]["known_missing_sessions"] == [
+        "2026-07-14", "2026-07-22", "2026-07-23"]
+    assert sc["log_meta"]["n_quarantined"] == 6
 
 
 # ──────────────────────────────────────────────────────────────────────────────

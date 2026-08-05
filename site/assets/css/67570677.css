@@ -205,6 +205,8 @@
   .mx .grp td { font-family:var(--display); font-weight:700; font-size:10.5px; letter-spacing:.14em;
     color:var(--blue); background:var(--surface-2); padding:9px 16px; }
   .mx .ok { color:var(--q-green); font-weight:800; font-size:14.5px; }
+  
+  .mx .ok.some { color:var(--faint); }
   .mx .no { color:var(--x-red); font-weight:700; font-size:13px; }
   .mx .val { font-weight:600; color:var(--ink); }
   .mx .val small { display:block; font-weight:500; font-size:11px; color:var(--muted); margin-top:1px; }
