@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T07:57:24.575973+00:00",
-  "count": 789,
+  "generated_at": "2026-08-05T08:27:44.364412+00:00",
+  "count": 790,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -150,6 +150,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xez0ebpbtkx-440d26",
+      "title": "The 720 Korea Memory & Strategy, Ibiden, MHI, HSBC, AMEC, Toyota, China Value Retailers, Asia Views, Japan FX",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:20Z",
+      "summary_points": [
+        "**Korea Memory Sector**: Samsung (CL) and SK Hynix Buy; HBM pricing +100% YoY (2027E), healthy inventory, no NAND oversupply, SEC/Hynix P/E/P/B (3.6x/1.4x vs 3.5x/1.6x), AI server demand driving fundamentals.",
+        "**Korea Strategy**: 320%/35%/20% earnings growth (2026-2028), KOSPI 12,000 target; semiconductor cycle strength (compute demand, supply shortages), market positioning cleaner (ETF AUM decline, hedge fund moderation).",
+        "**Asia Macro Outlook**: North Asia (Taiwan/Korea/China) AI/tech exports driving \"super surpluses\"; China housing drag resolves 2028; Japan reflates under Takaichi (no BoJ hikes), India cyclical improvement.",
+        "**Yen Intervention**: $85bn coordinated FX purchase (largest since 2011); US participation minimizes Treasury volatility, Yen muted response aligns with macro fundamentals.",
+        "**AMD & Hynix HBM**: AMD Q3 beat ($11.5bn revenue, $1.66 EPS), server CPU optimism; Hynix HBM ASP to $2.9/GB (2027E, +100% YoY), driven by demand dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
