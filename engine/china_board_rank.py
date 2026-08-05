@@ -1,4 +1,4 @@
-"""China Prophet v2 board scoring and lane admission.
+"""China Prophet v3 "Relay Engine" board scoring and lane admission.
 
 The module deliberately separates three decisions which the old board conflated:
 
@@ -7,10 +7,53 @@ The module deliberately separates three decisions which the old board conflated:
 * lifecycle lanes preserve every raw gate-eligible name instead of silently dropping it.
 
 The score is a transparent priority heuristic, not a calibrated return forecast.  Only
-the five components in :data:`SCORE_WEIGHTS` have score authority.  Residual alpha,
-the legacy setup score, sector/narrative context, fundamental quality, low volatility,
+the six components in :data:`SCORE_WEIGHTS` have score authority.  Residual alpha,
+the legacy setup score, sector-turn context, fundamental quality, low volatility,
 microstructure, liquidity, and risk sizing never add score.  Microstructure and
 liquidity are used solely as execution/admission safeguards.
+
+V3 (operator-ratified 2026-08-04, masterplan
+``research/CHINA_PROPHET_LOSER_INTELLIGENCE_MASTERPLAN_BY_FABLE.md`` §5 R1-R3)
+changes exactly three things and nothing else:
+
+R1 — the featured shelf is re-founded on the PRIME ENTRY WINDOW.  §2.3/§2.11
+     measured the entry gauge inverting in the CN mean-reversion tape: the patience
+     statuses were the era's best cohort (bounce_wait 6.9% loser rate, wait_pullback
+     7.7%) while the action statuses were the worst (buy_soon 46.7%, partial 41.4%,
+     buy_now 30.0%).  :data:`_ENTRY_VALUE` is re-ordered to that measured order, and
+     :data:`_FEATURED_ENTRY_STATUSES` admits the patience statuses while demoting
+     CONFIRMED-LATE ``buy_now``/``partial`` (signal ticks > :data:`EARLY_TICKS_MAX`).
+     Every other featured safeguard — fresh same-day signal, fresh microstructure,
+     fillability, liquidity floor, not extended, sector/board caps — is unchanged.
+
+R2 — theme/cycle context gains EXACTLY ONE bounded authority: the 15-point
+     ``theme_timing`` component computed by :func:`_theme_timing_value`.  §2.10
+     measured curated-basket membership at a 13.1% loser rate vs 36.2% for
+     non-members, and the cycle engine's own early-turn state ("Trough+") at 3.6%.
+     Nothing else about narrative or sector context may move the score: RAW HEAT
+     LEVEL ALONE NEVER ADDS SCORE (a HOT member with no timing state scores the same
+     0.6 as any other neutral member), and ``sector_turn`` keeps zero authority —
+     see :data:`_ZERO_SCORE_AUTHORITY`.  ``narrative`` left that tuple because it
+     now has this one bounded channel, not because it became free.
+
+R3 — the chase guard is a RELAY-POSITION demotion, not a chase veto and not a
+     theme-heat split.  The 12-month formalization (PR #4506, n=7,816 chase events)
+     REFUTED both the blanket demote and the in-era §2.9 theme split: chase x HOT
+     ran −2.04pp vs chase x no-theme −1.51pp — no separation, the n=5 in-era cell
+     was noise.  What replicated (monotone, robust across halves, inside BOTH HOT
+     and WARMING, steeper at H=21) is RELAY POSITION — how many OTHER members of
+     the name's basket printed a limit-close in the trailing 3 sessions:
+     early (<=1) −1.17pp / 46.0% win, mid (2-3) −2.61pp / 42.3%, late (>=4)
+     −5.32pp / 36.0% (n=406).  So a chase-composite row sitting LATE in its
+     theme's relay takes the ``relay_late`` featured shortfall and routes to
+     ``more_actionable`` — an ordering-grade demotion, matching evidence the study
+     itself calls "a ranking, not a de-escalation trigger".  Every other chase
+     branch is display/ledger only so W0 can grade them all.  No name is ever
+     deleted from the board, and nothing here is a buy trigger.
+
+The displaced v2 admission rule keeps grading as a labeled shadow via
+:func:`v2_shadow_featured` under :data:`V2_SHADOW_DEFINITION` (G0.8).  Tripwire
+thresholds for that race live in :mod:`engine.cn_v3_tripwires`.
 """
 from __future__ import annotations
 
@@ -23,49 +66,100 @@ from typing import Any, Iterable, Mapping
 from engine import signal_gate
 
 
-BOARD_DEFINITION = "cn_prophet_v2"
+BOARD_DEFINITION = "cn_prophet_v3"
+# The displaced v2 admission rule keeps grading in parallel under this labeled
+# definition (G0.8).  It is registered in ``china_standout_track.WATCH_DEFINITIONS``
+# so it can never own the headline grade.
+V2_SHADOW_DEFINITION = "cn_prophet_v2_shadow"
 FEATURED_CAP = 24
 SECTOR_CAP = 4
 ADV_FLOOR_YI = 0.5
 NON_STOCK_SECTORS = frozenset(("Sector ETF", "Index"))
 
 SCORE_WEIGHTS = {
-    "signal": 35.0,
-    "entry": 25.0,
-    "runway": 20.0,
+    "signal": 30.0,
+    "entry": 20.0,
+    "runway": 15.0,
     "bottom_quality": 10.0,
     "reversal_member": 10.0,
+    # R2: the ONLY score channel theme/cycle context has.  See _theme_timing_value.
+    "theme_timing": 15.0,
 }
 
 # These values are frozen definition inputs, rather than fitted coefficients.
 _SIGNAL_BASE = {"T2": 1.0, "T1": 0.9, "T3": 0.7}
+# R1 — the MEASURED order (masterplan §2.3, V1 era, 407 matured episodes).  The
+# patience statuses were the era's best cohort and the action statuses its worst;
+# v2 had this ladder upside down.  Stats below are the era cohort's loser rate and
+# median CSI300-relative excess; statuses with no printed §2.3 cohort keep an
+# ordinal placement only and are marked as such.
 _ENTRY_VALUE = {
-    "buy_now": 1.0,
-    "partial": 0.9,
-    "buy_soon": 0.8,
-    "hold": 0.65,
-    "wait_pullback": 0.55,
-    "later": 0.55,
-    "await": 0.45,
-    "await_confluence": 0.45,
-    "watch": 0.4,
-    "bounce_wait": 0.35,
-    "extended": 0.0,
+    "bounce_wait": 1.0,       # §2.3: 6.9% loser rate, +6.3 median excess — era best
+    "wait_pullback": 0.95,    # §2.3: 7.7% loser rate, +6.9 median excess
+    "hold": 0.8,              # no §2.3 cohort printed — ordinal: patience, below the two measured leaders
+    "buy_now": 0.7,           # §2.3: 30.0% loser rate — the confirmed-late window
+    "partial": 0.6,           # §2.3: 41.4% loser rate
+    "later": 0.5,             # no §2.3 cohort printed — ordinal
+    "await": 0.45,            # no §2.3 cohort printed — ordinal
+    "await_confluence": 0.45,  # no §2.3 cohort printed — ordinal
+    "watch": 0.4,             # no §2.3 cohort printed — ordinal
+    "buy_soon": 0.35,         # §2.3: 46.7% loser rate — era worst
+    "extended": 0.3,          # already ran; kept rankable, never featured
     "topping": 0.0,
     "blocked": 0.0,
     "exit": 0.0,
     "avoid": 0.0,
 }
-_FEATURED_ENTRY_STATUSES = frozenset(("buy_now", "partial"))
+# R1 — the prime-window featured set.  bounce_wait/wait_pullback/hold admit on the
+# unchanged execution safeguards alone; buy_now/partial additionally need an EARLY
+# signal (ticks <= EARLY_TICKS_MAX) or they take the ``confirmed_late`` shortfall.
+_FEATURED_ENTRY_STATUSES = frozenset(
+    ("bounce_wait", "wait_pullback", "hold", "buy_now", "partial")
+)
+_CONFIRMED_LATE_STATUSES = frozenset(("buy_now", "partial"))
+EARLY_TICKS_MAX = 1
+# The pre-R1 (v2) featured rule, kept only for the parallel shadow grading.
+_V2_FEATURED_ENTRY_STATUSES = frozenset(("buy_now", "partial"))
+
+# R2 — theme/cycle context has EXACTLY the bounded ``theme_timing`` authority in
+# SCORE_WEIGHTS and nothing else.  ``narrative`` therefore leaves this tuple, but
+# raw heat LEVEL alone still adds no score (see _theme_timing_value: a HOT member
+# with no timing state scores the same neutral 0.6 as any other member), and
+# ``sector_turn`` remains fully zero-authority.
 _ZERO_SCORE_AUTHORITY = (
     "residual_alpha",
     "setup",
     "sector_turn",
-    "narrative",
     "quality",
     "low_vol",
     "risk_sizing",
 )
+
+# Public aliases for builders and contract emitters.  The underscored names stay
+# the canonical in-module references.
+ZERO_SCORE_AUTHORITY = _ZERO_SCORE_AUTHORITY
+FEATURED_ENTRY_STATUSES = _FEATURED_ENTRY_STATUSES
+
+# R2 — theme_timing states.  Phases are the ``china_sector_cycles`` forward-log
+# vocabulary (Trough / Recovery / Expansion / Peak / Downturn).
+_THEME_TIMING_NON_MEMBER = 0.25
+_THEME_TIMING_MEMBER_NEUTRAL = 0.6
+_EARLY_CYCLE_PHASES = frozenset(("Trough", "Recovery"))
+_LATE_CYCLE_PHASES = frozenset(("Peak", "Downturn"))
+
+# R3 — build-time-knowable chase composite (T+1 gap is grading-side and excluded).
+# The composite itself is a COHORT LABEL, not a veto: PR #4506 measured a blanket
+# chase demote as a mixed verdict (median worse, mean and win rate better — the
+# cohort is right-tail heavy). Only relay POSITION earned an admission effect.
+CHASE_TRAIL_21_MIN = 0.25
+CHASE_RUN_5D_MIN = 0.15
+
+# R3 — the replicated relay ladder (PR #4506, n=406 positioned chase events).
+# ``count_3d`` counts DISTINCT OTHER members of the name's basket(s) that printed a
+# limit-close in sessions [d-2, d]; the name itself is excluded from its own count.
+RELAY_MID_MIN = 2
+RELAY_LATE_MIN = 4
+RELAY_POSITIONS = ("early", "mid", "late")
 
 
 def _clip01(value: Any) -> float:
@@ -181,6 +275,139 @@ def _runway_value(
     return _clip01(0.6 * fuel + 0.4 * not_extended)
 
 
+def _theme_state(row: Mapping[str, Any]) -> tuple[str | None, str | None, bool, bool]:
+    """Return ``(narrative_level, basket_phase, osc_up, has_cycle)`` for one row.
+
+    Both inputs are optional and may be ``None``; a malformed payload reads as
+    absent rather than raising.  Levels and phases are case-normalised so a
+    producer's capitalisation can never silently change a score.
+    """
+    narrative = row.get("narrative")
+    narrative = narrative if isinstance(narrative, Mapping) else None
+    cycle = row.get("basket_cycle")
+    # An EMPTY mapping is not a cycle record. Treating ``{}`` as "present" would
+    # let a degraded producer manufacture theme membership out of nothing.
+    cycle = cycle if isinstance(cycle, Mapping) and cycle else None
+
+    level = str((narrative or {}).get("level") or "").strip().upper() or None
+    phase = str((cycle or {}).get("phase") or "").strip().title() or None
+    osc_up = bool((cycle or {}).get("osc_up")) if cycle is not None else False
+    return level, phase, osc_up, cycle is not None
+
+
+def _is_theme_member(row: Mapping[str, Any]) -> bool:
+    """Theme membership: a qualifying narrative theme OR a joined basket cycle.
+
+    Both halves require CONTENT, not just a present key: a narrative tag with no
+    theme is a radar-only join (see china_narrative_tags.name_tags), and an empty
+    ``basket_cycle`` mapping is a degraded producer, not a membership.
+    """
+    narrative = row.get("narrative")
+    if isinstance(narrative, Mapping) and narrative.get("theme"):
+        return True
+    cycle = row.get("basket_cycle")
+    return isinstance(cycle, Mapping) and bool(cycle)
+
+
+def _theme_timing_value(row: Mapping[str, Any]) -> float:
+    """R2 — the ONE bounded score channel theme/cycle context has (0 / .25 / .6 / 1).
+
+    Measured basis (masterplan §2.10, PIT join onto the 407 matured V1 episodes):
+    curated-basket membership ran a 13.1% loser rate vs 36.2% for non-members;
+    "Trough+" (Trough phase with the oscillator turning up) ran 3.6% and Recovery+
+    0%, while "Downturn−" ran 50%.  §2.2 measured narrative WARMING at a 16% loser
+    rate vs HOT at 42% — theme *timing*, not theme *level*, is the predictive axis.
+
+    Ladder, evaluated in this order (the 1.0 test precedes the 0.0 test, as
+    specified in the ratified slate):
+
+    * ``1.0``  member AND (narrative WARMING OR an early basket cycle turning up)
+    * ``0.0``  member AND (Downturn with the oscillator down OR HOT into a
+               late-cycle basket with the oscillator down)
+    * ``0.6``  any other member — INCLUDING a HOT member with no timing state, so
+               raw heat level alone never buys score
+    * ``0.25`` non-member
+
+    Deterministic and null-tolerant: a member whose states are all missing takes
+    the neutral 0.6, and only a genuine non-member takes 0.25.
+    """
+    if not _is_theme_member(row):
+        return _THEME_TIMING_NON_MEMBER
+
+    level, phase, osc_up, has_cycle = _theme_state(row)
+
+    early_cycle_turning_up = has_cycle and phase in _EARLY_CYCLE_PHASES and osc_up
+    if level == "WARMING" or early_cycle_turning_up:
+        return 1.0
+
+    fading_basket = has_cycle and phase == "Downturn" and not osc_up
+    hot_into_late_cycle = (
+        level == "HOT" and has_cycle and phase in _LATE_CYCLE_PHASES and not osc_up
+    )
+    if fading_basket or hot_into_late_cycle:
+        return 0.0
+
+    return _THEME_TIMING_MEMBER_NEUTRAL
+
+
+def _chase_composite(row: Mapping[str, Any]) -> bool:
+    """R3 — the build-time-knowable chase composite (masterplan §2.6/§2.9).
+
+    Fires on an admission-day limit-close, a trailing-21d run at or above
+    :data:`CHASE_TRAIL_21_MIN`, or a 5-session run at or above
+    :data:`CHASE_RUN_5D_MIN`.  Missing inputs never manufacture a fire.
+    """
+    chase = row.get("chase")
+    if not isinstance(chase, Mapping):
+        return False
+    if chase.get("limit_close_day") is True:
+        return True
+    trail_21 = _finite_float(chase.get("trail_21"))
+    if trail_21 is not None and trail_21 >= CHASE_TRAIL_21_MIN:
+        return True
+    run_5d = _finite_float(chase.get("run_5d"))
+    return run_5d is not None and run_5d >= CHASE_RUN_5D_MIN
+
+
+def relay_position(count_3d: Any) -> str | None:
+    """Map a trailing-3-session relay count to its position bucket.
+
+    ``None`` means "not positionable" — the name belongs to no basket, so there is
+    no relay to be early or late in.  That is a DIFFERENT state from a count of
+    zero (a basket member whose peers printed nothing), which is ``"early"``.
+
+    Buckets are PR #4506's measured ladder: early <= 1, mid 2-3, late >= 4.
+    """
+    count = _finite_float(count_3d)
+    if count is None:
+        return None
+    if count >= RELAY_LATE_MIN:
+        return "late"
+    if count >= RELAY_MID_MIN:
+        return "mid"
+    return "early"
+
+
+def relay_state(count_3d: Any) -> dict[str, Any]:
+    """Build the ``row["relay"]`` payload from a trailing-3-session relay count."""
+    count = _finite_float(count_3d)
+    return {
+        "count_3d": int(count) if count is not None else None,
+        "position": relay_position(count_3d),
+    }
+
+
+def _relay_position_of(row: Mapping[str, Any]) -> str | None:
+    """Read a row's relay position, deriving it from ``count_3d`` when absent."""
+    payload = row.get("relay")
+    if not isinstance(payload, Mapping):
+        return None
+    position = payload.get("position")
+    if position in RELAY_POSITIONS:
+        return str(position)
+    return relay_position(payload.get("count_3d"))
+
+
 def _bottom_quality_value(row: Mapping[str, Any]) -> float:
     coiled = row.get("coiled") or {}
     if coiled.get("star"):
@@ -279,6 +506,10 @@ def enrich_and_score_rows(
     micro_by: Mapping[str, Mapping[str, Any]] | None = None,
     liquidity_by: Mapping[str, Mapping[str, Any]] | None = None,
     sector_turn_by: Mapping[str, Mapping[str, Any]] | None = None,
+    narrative_by: Mapping[str, Mapping[str, Any]] | None = None,
+    basket_cycle_by: Mapping[str, Mapping[str, Any]] | None = None,
+    chase_by: Mapping[str, Mapping[str, Any]] | None = None,
+    relay_by: Mapping[str, Mapping[str, Any]] | None = None,
     micro_asof: Any = None,
     board_asof: Any = None,
 ) -> list[dict]:
@@ -288,6 +519,14 @@ def enrich_and_score_rows(
     If a map explicitly contains a ticker, that value is authoritative (even when it
     is ``None``); otherwise the corresponding value already attached to the row is used.
     The returned order is score-descending with ticker as the deterministic tiebreak.
+
+    ``narrative_by`` and ``basket_cycle_by`` feed the R2 ``theme_timing`` component
+    and must therefore be attached BEFORE scoring — unlike v2, where narrative was
+    a post-hoc display column with an order-invariance assertion behind it.
+    ``chase_by`` and ``relay_by`` feed the R3 relay-position demotion.  Both are
+    admission/display inputs only and add no score; ``chase_by`` alone has no
+    admission effect at all (PR #4506 refuted the blanket demote) — it is kept on
+    the row so the W0 telemetry engine can grade every chase branch.
     """
     enriched: list[dict] = []
     board_date = _as_date(board_asof)
@@ -309,6 +548,10 @@ def enrich_and_score_rows(
         micro = _mapped(micro_by, ticker, row.get("microstructure"))
         liquidity = _mapped(liquidity_by, ticker, row.get("liquidity"))
         sector_turn = _mapped(sector_turn_by, ticker, row.get("sector_turn"))
+        narrative = _mapped(narrative_by, ticker, row.get("narrative"))
+        basket_cycle = _mapped(basket_cycle_by, ticker, row.get("basket_cycle"))
+        chase = _mapped(chase_by, ticker, row.get("chase"))
+        relay = _mapped(relay_by, ticker, row.get("relay"))
         rev_z = _mapped(rev_z_by, ticker, row.get("rev_z"))
 
         # The slim verdict prevents the raw analyzer payload from bloating the board
@@ -318,6 +561,11 @@ def enrich_and_score_rows(
             key: deepcopy(verdict.get(key))
             for key in (
                 "eligible", "tier_cascade", "tier_sub", "sub", "reason",
+                # `reasons` is the EXHAUSTIVE companion of `reason` (signal_gate._set_reason):
+                # same label at [0], plus every other leg that refused the name. Research-only,
+                # never a gate input — it exists so the PIT store records why a name was
+                # blocked rather than which leg happened to fire first.
+                "reasons",
                 "state", "ticks", "bars_to_cross", "weight", "provisional",
                 # ``asof`` is the 3-business-day indicator bucket label. It is
                 # not proof that the underlying daily input reached the board
@@ -340,6 +588,16 @@ def enrich_and_score_rows(
                 row["adv_yi"] = adv_yi
         if sector_turn is not None:
             row["sector_turn"] = deepcopy(dict(sector_turn))
+        # R2/R3 inputs. Attached before scoring so ``theme_timing`` is computed on
+        # the same point-in-time payload the card and the ledger later show.
+        if narrative is not None:
+            row["narrative"] = deepcopy(dict(narrative))
+        if basket_cycle is not None:
+            row["basket_cycle"] = deepcopy(dict(basket_cycle))
+        if chase is not None:
+            row["chase"] = deepcopy(dict(chase))
+        if relay is not None:
+            row["relay"] = deepcopy(dict(relay))
         row["rev_z"] = _finite_float(rev_z)
         row["_micro_asof"] = micro_date
         row["_board_asof"] = board_date
@@ -353,6 +611,7 @@ def enrich_and_score_rows(
         runway_value = _runway_value(row.get("conviction"), row.get("extension"))
         bottom_value = _bottom_quality_value(row)
         reversal_value = 1.0 if row.get("reversal_member") else 0.0
+        theme_timing_value = _theme_timing_value(row)
 
         values = {
             "signal": signal_value,
@@ -360,6 +619,7 @@ def enrich_and_score_rows(
             "runway": runway_value,
             "bottom_quality": bottom_value,
             "reversal_member": reversal_value,
+            "theme_timing": theme_timing_value,
         }
         points = {
             name: round(SCORE_WEIGHTS[name] * value, 4)
@@ -576,7 +836,12 @@ def reversal_coverage(
 
 
 def _execution_reasons(row: Mapping[str, Any]) -> list[str]:
-    """Known execution blockers.  Unknown/stale context is not treated as a veto."""
+    """Known execution blockers.  Unknown/stale context is not treated as a veto.
+
+    R3 deliberately adds NOTHING here: PR #4506 refuted the blanket chase demote,
+    so no chase branch is an execution veto.  The one surviving chase effect is the
+    ordering-grade ``relay_late`` featured shortfall below.
+    """
     reasons: list[str] = []
     micro = row.get("microstructure") or {}
     if _micro_is_fresh(row):
@@ -590,7 +855,13 @@ def _execution_reasons(row: Mapping[str, Any]) -> list[str]:
     return reasons
 
 
-def _featured_shortfalls(row: Mapping[str, Any]) -> list[str]:
+def _featured_shortfalls(
+    row: Mapping[str, Any],
+    *,
+    entry_statuses: frozenset[str] = _FEATURED_ENTRY_STATUSES,
+    early_ticks_required: bool = True,
+    relay_late_guard: bool = True,
+) -> list[str]:
     reasons: list[str] = []
     if not _signal_is_fresh(row):
         research = row.get("_signal_research")
@@ -602,8 +873,26 @@ def _featured_shortfalls(row: Mapping[str, Any]) -> list[str]:
         reasons.append("signal_stale" if signal_date else "signal_date_unknown")
 
     status = str((row.get("entry_signal") or {}).get("status") or "")
-    if status not in _FEATURED_ENTRY_STATUSES:
+    if status not in entry_statuses:
         reasons.append(f"entry_status_{status or 'unknown'}")
+    elif early_ticks_required and status in _CONFIRMED_LATE_STATUSES:
+        # R1 — the confirmed-late demotion. §2.11: "window open" fires AFTER the
+        # bounce has matured, which is the measured loser cohort. An unknown tick
+        # count is not evidence of lateness and passes, matching the same field's
+        # incumbent reading in signal_gate.gate() ("ticks is None" => fresh) and in
+        # _signal_value above (only ticks == 2 is penalised).
+        ticks = _finite_float((row.get("signal") or {}).get("ticks"))
+        if ticks is not None and ticks > EARLY_TICKS_MAX:
+            reasons.append("confirmed_late")
+
+    # R3 — the ONE admission effect chase evidence earned. A chase-composite row
+    # sitting LATE in its theme's limit-up relay (>= RELAY_LATE_MIN peers printing
+    # inside 3 sessions) demotes to more_actionable: PR #4506 measured that cohort
+    # at −5.32pp / 36.0% win vs −1.17pp / 46.0% for early. It is not an execution
+    # veto and it never routes to late_or_unfillable — the evidence is
+    # ordering-grade, so the demotion is too.
+    if relay_late_guard and _chase_composite(row) and _relay_position_of(row) == "late":
+        reasons.append("relay_late")
 
     adv = _adv_yi(row)
     if adv is None:
@@ -628,20 +917,17 @@ def _featured_shortfalls(row: Mapping[str, Any]) -> list[str]:
     return reasons
 
 
-def partition_board_rows(
+def _partition(
     scored_rows: Iterable[Mapping[str, Any]],
     *,
-    featured_cap: int = FEATURED_CAP,
-    sector_cap: int = SECTOR_CAP,
+    featured_cap: int,
+    sector_cap: int,
+    definition: str,
+    entry_statuses: frozenset[str],
+    early_ticks_required: bool,
+    relay_late_guard: bool,
 ) -> dict[str, Any]:
-    """Partition scored, stage-assigned raw gate rows into four lossless lanes.
-
-    ``forming`` contains legacy raw-eligible signals which are not actionable T1-T3.
-    A buyable name with a known execution block, an extension flag, or a non-ENTRY
-    lifecycle is routed to ``late_or_unfillable``.  Remaining ENTRY rows enter
-    ``more_actionable`` unless they pass every featured-now safeguard and fit both
-    display caps.
-    """
+    """Shared lane machinery for the live v3 rule and the v2 shadow rule."""
     rows = [deepcopy(dict(row)) for row in scored_rows]
     rows.sort(
         key=lambda row: (
@@ -685,7 +971,12 @@ def partition_board_rows(
             place(row, "late_or_unfillable", execution, late)
             continue
 
-        shortfalls = _featured_shortfalls(row)
+        shortfalls = _featured_shortfalls(
+            row,
+            entry_statuses=entry_statuses,
+            early_ticks_required=early_ticks_required,
+            relay_late_guard=relay_late_guard,
+        )
         if shortfalls:
             place(row, "more_actionable", shortfalls, more)
             continue
@@ -703,7 +994,7 @@ def partition_board_rows(
                 [
                     "buyable_signal",
                     "entry_stage",
-                    "entry_window_open",
+                    "prime_entry_window",
                     "liquid",
                     "microstructure_clear",
                     "not_extended",
@@ -734,15 +1025,72 @@ def partition_board_rows(
             row.pop("prophet_rank", None)
             row.pop("prophet_score", None)
             row.pop("liquidity", None)
+            row["board_definition"] = definition
 
     return {
-        "board_definition": BOARD_DEFINITION,
+        "board_definition": definition,
         "featured_cap": max(0, int(featured_cap)),
         "sector_cap": max(0, int(sector_cap)),
         **lanes,
         "counts": {name: len(lane_rows) for name, lane_rows in lanes.items()},
         "eligible": len(rows),
     }
+
+
+def partition_board_rows(
+    scored_rows: Iterable[Mapping[str, Any]],
+    *,
+    featured_cap: int = FEATURED_CAP,
+    sector_cap: int = SECTOR_CAP,
+) -> dict[str, Any]:
+    """Partition scored, stage-assigned raw gate rows into four lossless lanes.
+
+    ``forming`` contains legacy raw-eligible signals which are not actionable T1-T3.
+    A buyable name with a known execution block, an extension flag, or a non-ENTRY
+    lifecycle is routed to ``late_or_unfillable``.  Remaining ENTRY rows enter
+    ``more_actionable`` unless they pass every featured-now safeguard — including
+    the R1 prime-window entry rule and the R3 ``relay_late`` demotion — and fit
+    both display caps.
+    """
+    return _partition(
+        scored_rows,
+        featured_cap=featured_cap,
+        sector_cap=sector_cap,
+        definition=BOARD_DEFINITION,
+        entry_statuses=_FEATURED_ENTRY_STATUSES,
+        early_ticks_required=True,
+        relay_late_guard=True,
+    )
+
+
+def v2_shadow_featured(
+    scored_rows: Iterable[Mapping[str, Any]],
+    *,
+    featured_cap: int = FEATURED_CAP,
+    sector_cap: int = SECTOR_CAP,
+) -> list[dict]:
+    """The DISPLACED v2 featured shelf, stamped :data:`V2_SHADOW_DEFINITION` (G0.8).
+
+    The v2 rule was ``entry_status in {buy_now, partial}`` with no confirmed-late
+    demotion and no relay-late demotion; every other safeguard is shared with the
+    live rule.  Running it on the SAME scored rows isolates the admission rule — the
+    §2.3 defect under test — from the score weights, so the race the operator would
+    otherwise have waited weeks for runs from merge day with v3 live.
+
+    These rows are display-free measurement output: they log to the shared board
+    store under their own definition, which ``china_standout_track.WATCH_DEFINITIONS``
+    excludes from headline-grade resolution.
+    """
+    lanes = _partition(
+        scored_rows,
+        featured_cap=featured_cap,
+        sector_cap=sector_cap,
+        definition=V2_SHADOW_DEFINITION,
+        entry_statuses=_V2_FEATURED_ENTRY_STATUSES,
+        early_ticks_required=False,
+        relay_late_guard=False,
+    )
+    return lanes["featured"]
 
 
 def build_board_lanes(
@@ -757,6 +1105,10 @@ def build_board_lanes(
     micro_by: Mapping[str, Mapping[str, Any]] | None = None,
     liquidity_by: Mapping[str, Mapping[str, Any]] | None = None,
     sector_turn_by: Mapping[str, Mapping[str, Any]] | None = None,
+    narrative_by: Mapping[str, Mapping[str, Any]] | None = None,
+    basket_cycle_by: Mapping[str, Mapping[str, Any]] | None = None,
+    chase_by: Mapping[str, Mapping[str, Any]] | None = None,
+    relay_by: Mapping[str, Mapping[str, Any]] | None = None,
     micro_asof: Any = None,
     board_asof: Any = None,
     featured_cap: int = FEATURED_CAP,
@@ -774,6 +1126,10 @@ def build_board_lanes(
         micro_by=micro_by,
         liquidity_by=liquidity_by,
         sector_turn_by=sector_turn_by,
+        narrative_by=narrative_by,
+        basket_cycle_by=basket_cycle_by,
+        chase_by=chase_by,
+        relay_by=relay_by,
         micro_asof=micro_asof,
         board_asof=board_asof,
     )
