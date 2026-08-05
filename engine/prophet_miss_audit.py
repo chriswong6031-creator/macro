@@ -119,6 +119,24 @@ THEME_PIT_JSONL = "data/themes_heatmap/subsector_perf_history.jsonl"
 ARTIFACT_REL = "data/prophet_miss_audit/latest.json"
 FORWARD_LOG_REL = "data/prophet_miss_audit/forward_log.jsonl"
 
+# --- §4.5 SCAN TIER (operator-ratified 2026-08-05) ---------------------------------
+# The runner scan above covers the S&P-1500 close caches. An off-index runner
+# (CRCL, and the FNV/FSM/EXK/AG/SBSW receipts) is not merely un-admitted there —
+# it is structurally INVISIBLE, because it is not in the frame at all. The scan
+# tier widens the SEEING to a liquidity-floored slice of the whole-market daily
+# store, so such a name is at minimum SEEN and counted missed, with its excluder
+# named. Admission is untouched: nothing here feeds rank, gate, size or intake.
+#
+# The scan pass needs data/massive_stock_day (617 MB, R2-canonical) which the
+# ENGINE job does not restore — so it runs in its own post-engine lane
+# (scripts/run_us_scan_tier.py) and writes its own artifact. build_audit READS
+# that artifact's summary rather than recomputing it, so the W0 document carries
+# scan-tier coverage at no cost to the engine job, with its own asof disclosed.
+SCAN_ARTIFACT_REL = "data/prophet_scan_tier/latest.json"
+SCAN_FORWARD_LOG_REL = "data/prophet_scan_tier/forward_log.jsonl"
+SCAN_SCHEMA = "prophet_scan_tier/v1"
+SCAN_TOP_N = 150         # top runners by 63-session return within the scan tier
+
 TOP63_N = 150          # top runners by 63-session return
 TOP21_N = 50           # top fast movers by 21-session return
 LOOKBACK = 63          # eligibility window, in sessions
@@ -892,7 +910,8 @@ def _runner_rows(px: pd.DataFrame, rets: pd.Series, windows: dict[str, dict],
 
 def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP21_N,
                 lookback: int = LOOKBACK, with_gate: bool = True,
-                with_cascade_basis: bool = True, with_name_score: bool = True) -> dict:
+                with_cascade_basis: bool = True, with_name_score: bool = True,
+                with_scan_tier: bool = True) -> dict:
     """Compute the full audit document. Pure read: writes nothing."""
     degraded: list[dict] = []
     wide, sector, deg = load_universe(root)
@@ -936,6 +955,13 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
     name_score = (name_score_scorecard(root, degraded) if with_name_score else
                   {"tier": "ops_telemetry", "available": False,
                    "null_reason": "not computed (with_name_score=False)"})
+    # §4.5 scan-tier coverage: MIRRORED from the post-engine scan lane's artifact,
+    # never recomputed here (that pass needs a 617 MB store this job does not
+    # restore). Its own asof travels with it, so a reader can see when the two
+    # tiers are a session apart instead of assuming one date covers both.
+    scan_tier = scan_tier_coverage(root, degraded) if with_scan_tier else {
+        "available": False, "asof": None,
+        "null_reason": "not mirrored (with_scan_tier=False)"}
 
     days = [r["days_eligible"] for r in runner_rows if r.get("days_eligible") is not None]
     never = sum(1 for d in days if d == 0)
@@ -985,12 +1011,208 @@ def build_audit(root: Path = ROOT, *, top63_n: int = TOP63_N, top21_n: int = TOP
         "conversion": conversion,
         "themes": themes,
         "name_score_scorecard": name_score,
+        "scan_tier": scan_tier,
         "top63_runners": runner_rows,
         "top21_runners": fast_rows,
         "eligible_today": cascade_elig,
         "degraded": degraded,
     }
     return doc
+
+
+# --------------------------------------------------------------------------- #
+# F. SCAN TIER — the same instrument, over the widened seeing set (§4.5)
+# --------------------------------------------------------------------------- #
+def build_scan_tier_audit(root: Path = ROOT, *, top_n: int = SCAN_TOP_N,
+                          lookback: int = LOOKBACK,
+                          curated: set[str] | None = None,
+                          tickers: list[str] | None = None,
+                          floor: dict | None = None) -> dict:
+    """Runner-exclusion audit over the liquidity-floored SCAN universe.
+
+    Identical instrument to section A, pointed at a different frame: the runner
+    verdict comes from ``ct.tier_stream`` and the excluder from
+    ``attribute_excluder`` — the SAME functions the curated audit uses, not a
+    parallel implementation. Only the universe differs.
+
+    The point of the block is the ``off_index`` count: a scan-tier runner is a
+    name the curated frame could not have rejected, because it was never in the
+    frame. Reporting it as "missed" alongside the curated misses would blur two
+    different failures, so the taxonomy names it separately —
+    ``not_in_curated_universe`` is a COVERAGE fact, not a gate verdict.
+
+    ``tickers``/``floor`` let a caller that ALREADY resolved the universe hand it
+    in, so the runner lane pays the 30-second store census once instead of twice
+    (it needs the same set to stamp the context vector). Omit both and this
+    function resolves it itself.
+
+    Fail-soft: with no store restored in this lane the document is a disclosed
+    null carrying the reason, never an empty runner list that reads as "no
+    off-index runners tonight".
+    """
+    from engine import us_scan_universe as usu
+
+    degraded: list[dict] = []
+    if not usu.store_available(root):
+        return {
+            "schema": SCAN_SCHEMA,
+            "tier": "ops_telemetry",
+            "authority": "none — coverage measurement only; no rank/gate/size consumer",
+            "available": False,
+            "null_reason": (
+                f"{usu.STORE_REL} is not restored in this lane — the scan tier was NOT "
+                "measured tonight (a null, not an absence of off-index runners)"),
+            "price_through": None,
+            "floor": {"rule": usu.floor_rule_text()},
+            "summary": {}, "runners": [], "excluder_hist": {}, "sector_hist": {},
+            "degraded": degraded,
+        }
+
+    curated = set(curated or ())
+    if tickers is None or floor is None:
+        tickers, floor = usu.resolve(root, curated=curated)
+    price_through = floor.get("price_through")
+    if not tickers:
+        return {
+            "schema": SCAN_SCHEMA, "tier": "ops_telemetry",
+            "authority": "none — coverage measurement only; no rank/gate/size consumer",
+            "available": False,
+            "null_reason": floor.get("null_reason") or (
+                "the liquidity floor admitted no name outside the curated universe"),
+            "price_through": price_through, "floor": floor,
+            "summary": {}, "runners": [], "excluder_hist": {}, "sector_hist": {},
+            "degraded": degraded,
+        }
+
+    px = usu.close_panel(root, tickers)
+    if px.empty or px.shape[0] < lookback + 2:
+        return {
+            "schema": SCAN_SCHEMA, "tier": "ops_telemetry",
+            "authority": "none — coverage measurement only; no rank/gate/size consumer",
+            "available": False,
+            "null_reason": (
+                f"scan close panel too thin to audit: {px.shape} — needs > {lookback + 1} "
+                "sessions"),
+            "price_through": price_through, "floor": floor,
+            "summary": {}, "runners": [], "excluder_hist": {}, "sector_hist": {},
+            "degraded": degraded,
+        }
+
+    valid = px.columns[px.notna().sum() >= ct.MIN_HISTORY]
+    px = px[valid]
+    r63 = (px.iloc[-1] / px.iloc[-(lookback + 1)] - 1).dropna()
+    top = r63.sort_values(ascending=False).head(top_n)
+
+    sector = _scan_sector_map(root, degraded)
+    rows: list[dict] = []
+    for ticker, ret in top.items():
+        close = px[ticker].dropna()
+        win = eligibility_window(close, lookback)
+        att = attribute_excluder(close, eligible_today=bool(win.get("eligible_today")))
+        row = {
+            "ticker": ticker,
+            "r63_pct": round(float(ret) * 100, 1),
+            "sector": sector.get(ticker, "?"),
+            # THE coverage fact this block exists to print. Always True here by
+            # construction (resolve() removes curated names) — stamped anyway so
+            # the row is self-describing when it is read outside this artifact.
+            "off_index": True,
+            "coverage_reason": "not_in_curated_universe",
+        }
+        row.update(win)
+        row.update(att)
+        rows.append(row)
+
+    days = [r["days_eligible"] for r in rows if r.get("days_eligible") is not None]
+    never = sum(1 for d in days if d == 0)
+    summary = {
+        "store_n": floor.get("store_n"),
+        "floored_n": floor.get("kept_n"),
+        "curated_overlap_n": floor.get("curated_overlap_n"),
+        "scan_n": floor.get("scan_n"),
+        "panel_n": int(px.shape[1]),
+        "runners_n": len(rows),
+        "runners_eligible_today_n": sum(1 for r in rows if r.get("eligible_today")),
+        "runners_never_eligible_n": never,
+        "runners_never_eligible_pct": (round(never / len(days), 4) if days else None),
+        "runners_eligible_days": _describe([float(d) for d in days]),
+    }
+    return {
+        "schema": SCAN_SCHEMA,
+        "tier": "ops_telemetry",
+        "authority": "none — coverage measurement only; no rank/gate/size consumer",
+        "available": True,
+        "null_reason": None,
+        "price_through": price_through,
+        "floor": floor,
+        "bases": {
+            "runner_eligibility": "engine.confluence_tiers.tier_stream — the SAME basis as "
+                                  "the curated runner rows, so the two tiers are comparable "
+                                  "session for session.",
+            "universe": "engine.us_scan_universe.resolve over data/massive_stock_day, minus "
+                        "the curated universe (the two tiers are disjoint by construction).",
+        },
+        "summary": summary,
+        "excluder_hist": _hist([r["excluder"] for r in rows]),
+        "excluder_family_hist": _hist([r["excluder_family"] for r in rows]),
+        "sector_hist": _hist([r["sector"] for r in rows]),
+        "runners": rows,
+        "degraded": degraded,
+    }
+
+
+def _scan_sector_map(root: Path, degraded: list[dict]) -> dict[str, str]:
+    """ticker -> GICS sector for scan names, from the polygon reference table.
+
+    Coverage is genuinely partial: ``data/polygon_universe/reference.parquet`` is
+    504 rows (S&P 500 + ``us_sector_*`` baskets), so most scan names resolve to
+    "?" — which is the honest answer, and is disclosed rather than guessed from
+    the ticker.
+    """
+    p = root / "data" / "polygon_universe" / "reference.parquet"
+    try:
+        ref = pd.read_parquet(p, columns=["gics_sector"])
+    except Exception as exc:  # noqa: BLE001
+        degraded.append({"input": "data/polygon_universe/reference.parquet",
+                         "severity": "structural",
+                         "reason": f"unreadable: {exc} — scan sector histogram collapses to '?'"})
+        return {}
+    return {str(t): str(s) for t, s in ref["gics_sector"].items() if pd.notna(s)}
+
+
+def scan_tier_coverage(root: Path = ROOT, degraded: list[dict] | None = None) -> dict:
+    """READ the scan-tier artifact for the W0 document. Never recomputes it.
+
+    The scan pass needs a 617 MB store the engine job does not restore, so the W0
+    audit mirrors the artifact the post-engine scan lane wrote rather than paying
+    for the pass twice. ``asof`` is the scan artifact's OWN ``price_through``, and
+    it is reported beside W0's — a reader must be able to see that the two tiers
+    can be a session apart, instead of assuming one date for both.
+    """
+    p = root / SCAN_ARTIFACT_REL
+    try:
+        doc = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        if degraded is not None:
+            degraded.append({"input": SCAN_ARTIFACT_REL, "severity": "structural",
+                             "reason": f"unreadable: {exc} — scan-tier coverage not mirrored "
+                                       "tonight (the scan lane writes it post-engine)"})
+        return {"available": False, "asof": None,
+                "null_reason": f"{SCAN_ARTIFACT_REL} absent or unreadable — "
+                               "scan-tier coverage unmeasured in this document"}
+    s = doc.get("summary") or {}
+    return {
+        "available": bool(doc.get("available")),
+        "asof": doc.get("price_through"),
+        "null_reason": doc.get("null_reason"),
+        "floor_rule": (doc.get("floor") or {}).get("rule"),
+        "store_n": s.get("store_n"),
+        "scan_n": s.get("scan_n"),
+        "runners_n": s.get("runners_n"),
+        "runners_eligible_today_n": s.get("runners_eligible_today_n"),
+        "runners_never_eligible_n": s.get("runners_never_eligible_n"),
+        "excluder_family_hist": doc.get("excluder_family_hist") or {},
+    }
 
 
 def name_score_row_fields(doc: dict) -> dict:
@@ -1040,7 +1262,30 @@ def summary_row(doc: dict) -> dict:
         "conversion_rate": doc["conversion"]["rate"],
         "excluder_family_hist": doc["top63_excluder_family_hist"],
         **name_score_row_fields(doc),
+        **scan_tier_row_fields(doc),
         "degraded_n": len(doc["degraded"]),
+    }
+
+
+def scan_tier_row_fields(doc: dict) -> dict:
+    """The scan-tier headline, flattened for the forward-log row (§4.5).
+
+    ``scan_tier_asof`` rides beside every figure on purpose: this block is
+    MIRRORED from a lane that runs after this one, so its date can legitimately
+    trail ``price_through``. Without the date in the row, a later reader plotting
+    ``scan_tier_scan_n`` over time would silently be plotting a mixture of
+    same-night and previous-night values.
+
+    Null-safe on every path, including a doc with no block at all.
+    """
+    st = doc.get("scan_tier") or {}
+    return {
+        "scan_tier_available": bool(st.get("available")),
+        "scan_tier_asof": st.get("asof"),
+        "scan_tier_scan_n": st.get("scan_n"),
+        "scan_tier_runners_n": st.get("runners_n"),
+        "scan_tier_runners_eligible_today_n": st.get("runners_eligible_today_n"),
+        "scan_tier_runners_never_eligible_n": st.get("runners_never_eligible_n"),
     }
 
 
@@ -1184,6 +1429,16 @@ def print_summary(doc: dict, *, wrote_artifact: bool, wrote_log: bool,
                   f"{'  [THIN]' if h.get('thin') else ''}")
     elif ns:
         print(f"  name_score: null — {ns.get('null_reason')}")
+    st = doc.get("scan_tier") or {}
+    if st.get("available"):
+        stale = "" if st.get("asof") == doc["price_through"] else \
+            f"  [asof {st.get('asof')} — trails this document]"
+        print(f"  scan tier: {st.get('scan_n')} off-index names seen, "
+              f"{st.get('runners_n')} runners, "
+              f"{st.get('runners_eligible_today_n')} eligible today, "
+              f"{st.get('runners_never_eligible_n')} never eligible{stale}")
+    elif st:
+        print(f"  scan tier: null — {st.get('null_reason')}")
     if doc["degraded"]:
         print(f"  DEGRADED ({len(doc['degraded'])}):")
         for d in doc["degraded"]:

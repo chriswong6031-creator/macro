@@ -19,6 +19,34 @@ chronological order and unifies columns across parts, returning exactly what a
 single accreting file would have. Nothing outside the producer module should know
 parts exist.
 
+## Two coverage tiers, one store (roadmap §4.5, ratified 2026-08-05)
+
+Every row carries `tier`:
+
+| `tier` | what it is | who writes it | admission |
+|---|---|---|---|
+| `curated` | the graded population (S&P 1500 + Russell + curated extras) | `scripts/build_stock_library.py`, in the **engine** job | unchanged — this set IS the board's population |
+| `scan` | liquidity-floored coverage over `data/massive_stock_day` | `scripts/run_us_scan_tier.py`, in the post-engine **us_scan_tier** job | **never admitted** — seen and counted only |
+
+"See everything, admit selectively." The scan tier exists so an off-index runner
+is at minimum SEEN and counted missed (the FNV/FSM/EXK/AG/SBSW receipts: those
+five were in no frame the engine looked at).
+
+The two writers are **ordered** (engine first; the scan job `needs: engine`) and
+their ticker sets are **disjoint by construction** — the scan resolver removes
+curated names before stamping. Keep-first on
+`(stamp_date, ticker, board_definition)` is the second fence: `tier` is
+deliberately NOT in the dedupe key, so a name that somehow reached both passes
+survives exactly once, as its **curated** row — the one carrying board legs, lane
+and near-miss. Had `tier` joined the key, both rows would be kept and every
+cohort count would double-count that name.
+
+Floor (displayed, built from the constants so it cannot drift from what runs):
+still trading AND ≥200 bars AND close ≥ $3 AND *median* close×volume over 20
+sessions ≥ $5M. Measured 2026-07-02: 20,476 in store → 12,434 still trading →
+10,422 with ≥200 bars → 3,980 pass the floor → **2,252 scan tier** after removing
+the 1,728 already curated. Coverage 1,838 → 4,090 names seen.
+
 ## Zero authority
 
 Nothing reads this store for scoring. It changes no lane, no rank, no score and no
