@@ -110,7 +110,20 @@ def _part_path(stamp_date: str, root: Any = None):
     return _store_dir(root) / f"{str(stamp_date)[:7]}.parquet"
 
 
-def load_candidates(root: Any = None, *, months: Iterable[str] | None = None):
+def _read_part(part, columns: list[str] | None):
+    """One part, optionally projected.  A part that predates a requested column
+    rejects the projection, so that case falls back to a full read + reindex —
+    the column reads back null for that month rather than raising."""
+    if columns is None:
+        return pd.read_parquet(part)
+    try:
+        return pd.read_parquet(part, columns=columns).reindex(columns=columns)
+    except Exception:  # noqa: BLE001 — missing column in an older part
+        return pd.read_parquet(part).reindex(columns=columns)
+
+
+def load_candidates(root: Any = None, *, months: Iterable[str] | None = None,
+                    columns: Iterable[str] | None = None):
     """Read the store as ONE frame — the only supported way to consume it.
 
     The monthly parts are a storage detail; nothing outside this module should
@@ -124,17 +137,29 @@ def load_candidates(root: Any = None, *, months: Iterable[str] | None = None):
 
     ``months`` optionally restricts to ``YYYY-MM`` keys, so a study that only
     needs one quarter never reads the whole store.
+
+    ``columns`` projects at the parquet level.  The store is ~150 columns wide
+    and accrues ~33k rows a month, so the §W7 full-population forward grader —
+    which walks the whole store nightly for three identity columns to find rows
+    it has not graded — must not have to materialise the other 147.  The
+    projection is reindexed to the requested order, so asking for a column a
+    part predates yields nulls for that part rather than an error: the same
+    forward-only self-healing as above.  This parameter is what lets that
+    consumer honour "never glob the parts".  (Named by role, not by module: the
+    grader's own suite greps every other module for its literal name to pin its
+    zero-authority fence, so a mention here would read as a dependency.)
     """
     store = _store_dir(root)
     if not store.exists():
         return pd.DataFrame()
     wanted = {str(m) for m in months} if months is not None else None
+    wanted_cols = [str(c) for c in columns] if columns is not None else None
     frames: list[pd.DataFrame] = []
     for part in sorted(store.glob("*.parquet")):
         if wanted is not None and part.stem not in wanted:
             continue
         try:
-            frames.append(pd.read_parquet(part))
+            frames.append(_read_part(part, wanted_cols))
         except Exception as exc:  # noqa: BLE001 — one bad part must not blind the rest
             log.warning("us_context_vector: part %s unreadable (%s)", part.name, exc)
     if not frames:

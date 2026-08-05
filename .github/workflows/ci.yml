@@ -2345,6 +2345,17 @@ on:
       # that reintroduced the pre-rename column must be able to start this workflow.
       # The producer engine/china_prophet_shadow.py is already covered by engine/**.
       - "data/china_prophet_rank/**"
+      # prophet-us-context-and-grades (PROPHET US §W7)
+      - "tests/test_us_prophet_grades.py"
+      - "tests/test_us_context_vector.py"
+      - "tests/test_prophet_miss_audit.py"
+      - "scripts/grade_us_prophet_candidates.py"
+      # The US candidate + grade stores are the SUBJECT of that suite (PIT keep-first,
+      # monthly-part isolation, the frozen grade key), so a nightly append or a hand
+      # rewrite of either store must be able to start this workflow — the same reason
+      # data/china_prophet_rank/** is listed above. The producers engine/us_context_vector.py
+      # and engine/us_prophet_grades.py are already covered by engine/**.
+      - "data/us_prophet_rank/**"
       # unrun-prophet-learning-loop
       - "tests/test_prophet_postmortem.py"
       - "tests/test_exit_policy_study.py"

@@ -2208,6 +2208,23 @@ jobs:
         # sibling forward ledger, the committed store is what lets cohorts accrue night to
         # night. Idempotent per as_of. Resilient.
         run: python -m scripts.grade_bottom_calls --nightly || true
+      - name: Prophet US full-population grades (every stamped name, not just the picks)
+        # Prophet US trend-intelligence W7 (operator order 2026-08-05: "we should be
+        # remembering the score that we give picks … so that we can later assess how robust
+        # and correct our scoring system is"). The US Context Vector store already stamps
+        # every analyzed name nightly WITH its itemized us_prophet_v1 score legs; this grades
+        # every one of those rows at H=10/21 sessions excess-vs-SPY, so the graded record
+        # grows by ~1,579 rows a night instead of ~12. Runs AFTER build_stock_library (which
+        # stamps tonight's rows) and BEFORE the miss-audit (whose priority_score_scorecard
+        # block reads this store). Same ruler as grade_us_board / grade_prophet_doors
+        # (engine.grading.forward_metrics; next-bar fill, positional session horizons) —
+        # reused, not forked, and pinned mark-for-mark by tests/test_us_prophet_grades.py.
+        # Sole forward advancer of data/us_prophet_rank/grades/YYYY-MM.parquet (nightly-only),
+        # idempotent: a graded (stamp_date, ticker, board_definition, horizon) is frozen, so a
+        # re-run appends nothing. Monthly parts keyed by the RUN's month, so a closed part is
+        # never rewritten. Landed by the "commit engine outputs" step below (git add data/).
+        # ZERO authority: no rank/gate/size/board/plan consumer, ever. Resilient.
+        run: python -m scripts.grade_us_prophet_candidates --nightly || true
       - name: Prophet miss-audit (why don't the winners surface? ops telemetry, ZERO authority)
         # Prophet US trend-intelligence W0 (masterplan
         # research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md): the nightly

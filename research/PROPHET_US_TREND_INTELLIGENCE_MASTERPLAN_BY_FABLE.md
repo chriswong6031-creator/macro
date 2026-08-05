@@ -367,11 +367,134 @@ builder (opus); analysis adjudicated main-loop.*
 
 ---
 
+### W7 — Show ALL ranked picks + remember the score (operator amendment 2026-08-05)
+
+**Operator order, verbatim intent:** *"That rule where we only introduce 6-12 picks to the
+board … isn't that an awful rule cuz then we have less data to train on. We should be using
+the scoring system like China, adapted so it fits the US market, so that best picks are
+surfaced to the top, but we should show all picks, for data as well as for users."* And:
+*"we should be remembering the score that we give picks, so that it can be logged into the
+ledger and so that we can later assess how robust and correct our scoring system is."*
+
+The order has two halves and they are answered separately. **What is SHOWN** and **what is
+GRADED** both widen to the full universe; **what is PICKED does not change**. Board
+admission, plan intake (12/night), the gates and the score construction are untouched by
+this wave — any admission-width change is a separate future adjudication (§W7.5).
+
+#### W7.1 — The board becomes a VIEW over the ranked universe
+
+The 6-12 number was never a data-collection decision; it is the *plan-origination* cap
+(`prophet_bridge.N_CANDIDATES`), and the board's buy lane is itself a display slice. The
+system already forms an opinion on the whole universe every night — it simply threw most of
+it away at the surface. W7 makes the ranked universe the substrate and the board a lens over
+it:
+
+- The **single source of truth** is the US Context Vector store
+  (`data/us_prophet_rank/candidates/YYYY-MM.parquet`, merged #4540): the full universe
+  (~1,579 real names in this checkout, ~2,932 on the host), one row per name per night, with
+  the `us_prophet_v1` priority-score legs already itemized per row. The operator's "remember
+  the score" is therefore **already accruing** — this wave makes it consumable and graded,
+  it does not re-log it.
+- **Curated lanes stay** — featured / buy / ran / leaders / laggards remain exactly as they
+  are, re-expressed as *views and filters* over the ranked list rather than as the only
+  thing that exists. This is the CN total-partition principle W2.4 already adopted, carried
+  to its conclusion: nothing the system evaluated is invisible.
+- The **user surface** is specified in §W7.4 and built by a separate designer lane against a
+  frozen contract (`research/US_ALL_PICKS_SURFACE_CONTRACT.md`).
+
+#### W7.2 — Two graded populations, never pooled (the era law, restated)
+
+This is the fence that makes the amendment lawful:
+
+- The **graded CURATED record** — `us_board_ledger` / the board's buy-lane track record —
+  is **UNCHANGED by this program**. Its population, its membership and its era boundaries
+  are byte-identical after W7 as before. It continues as its own labeled cohort.
+- The **full-population record is NEW and separately labeled**:
+  `data/us_prophet_rank/grades/YYYY-MM.parquet`, accruing beside the curated one, never
+  merged into it, never quoted interchangeably with it. It is a different population
+  answering a different question, and §2.3's warning about board-level marks vs the
+  closed-plan ledger applies here with full force: **two measures, two names, never one
+  number.**
+
+**DNR §1 row 49 adjudication (2026-08-05, operator-ordered).** Row 49 forbids any change to
+the `us_board_ledger` graded population from a non-board lane, and any blended
+conviction×timing ranking. Both fences hold: W7 changes NO membership, adds NO composite
+(the itemized `us_prophet_v1` legs are read off, never re-weighted), and touches the curated
+ledger not at all. The all-picks record is a **new, separately-labeled population authorized
+by this operator order** — it accrues in its own store, under its own schema
+(`us.prophet_grades/v1`), with zero authority over rank, gate, size, board or plan. A future
+proposal to *pool* the two, or to let the all-picks record confer board rights, remains
+forbidden and needs its own adjudication.
+
+#### W7.3 — What was built (this wave)
+
+1. **Full-population forward grader** — `engine/us_prophet_grades.py` +
+   `scripts/grade_us_prophet_candidates.py --nightly`, declared in `config/dag.yml` between
+   `build_site` (which stamps tonight's candidate rows) and `run_prophet_miss_audit` (which
+   reads the result). Grades **every stamped row** at **H=10 and H=21 sessions, excess vs
+   SPY** as rows mature: ~1,579 graded rows a night instead of ~12. Nightly-lane-gated
+   (`ledger_lane.nightly_advance_enabled` is the first statement of the append,
+   mutation-checked in the suite), idempotent (a graded
+   `(stamp_date, ticker, board_definition, horizon)` is frozen), policy-free (fixed-horizon
+   marks only — no stops, exits or sizing), **zero authority**. The ruler is *reused, not
+   forked*: `engine.grading.forward_metrics`, pinned mark-for-mark against
+   `grade_prophet_doors.grade_flag`.
+2. **Scoring-robustness scorecard** — the W0 miss-audit artifact gains a
+   `priority_score_scorecard` block (same ops-telemetry tier and anti-fork idiom as
+   #4537's `name_score_scorecard`: it *reads* the grade store, it recomputes nothing).
+   Per horizon: rank-IC by date, P@k at k=1/5/10/25, a decile lift table, and the
+   **loser rate by score decile** — the operator's "it would be a disaster if high-scored
+   names underperform", answered nightly with ns and nulls printed while maturity accrues.
+3. **A comparator the plan-only record could never have.** Because every name is graded, a
+   pick's *hit* is judged against **that night's whole universe median**, not against the
+   picks alone. "Did this beat a name drawn at random that night" is now a computable
+   question, and the population leg reports the buy lane's excess against the universe it
+   was drawn from.
+
+**Honest coverage receipt (measured, not assumed).** `us_board_rank.score_rows()` is run by
+the builder on the **buy lane only**, so the priority score and its legs are populated on
+**~3.2% of stamped rows** (`data/us_prophet_rank/README.md`, 2026-07-31 dry run) — and the
+live board agrees from the other side: on `site/factordata/us_standouts.json` (as_of
+2026-07-31) `prophet.score` is present on all 60 buy rows and **null on all 74
+watch/leaders/laggards rows**, while `alpha` is present on all 134. The
+scorecard therefore computes its *ranking* legs (rank-IC / P@k / deciles) on the scored
+subset and its *population* leg on everything, and prints the coverage percentage rather
+than treating a missing score as a zero. The surface contract carries the same disclosure.
+
+#### W7.4 — Surface contract (frozen; designer lane builds against it)
+
+`research/US_ALL_PICKS_SURFACE_CONTRACT.md` freezes the fields, ordering, states, pagination
+and honest-labelling rules for the ranked all-picks surface, so the designer lane builds
+against a contract rather than a guess. Its load-bearing constraint is the coverage receipt
+above: **the full universe cannot be ordered by a score that exists for 3.2% of it**, so the
+contract specifies an explicit, disclosed tiered ordering rather than pretending to a single
+ranked column. The graded-record split (curated vs all-picks) is named on the surface itself.
+
+#### W7.5 — Named follow-ons (NOT in this wave)
+
+- **Widening the score to the full universe is a SCORED change, not a display change.**
+  `us_board_rank.score_rows` computes the `edge` leg from `alpha_percentiles(pool)` — a
+  cross-sectional percentile *within the scored pool*. Running it over 1,579 names instead of
+  ~71 would move **every existing buy-lane score**, which is a rank change under G0.1 and
+  needs its own prereg + operator ratification. Until then the contract's tiered ordering is
+  the honest surface, and the scorecard measures the score where it exists.
+- **Admission width** (the 12/night intake cap, the `_WIDE_PER_SECTOR=10` pre-cap) is
+  untouched and remains a separate adjudication.
+- **CN gets the same treatment afterward** — a separate relay, explicitly not this wave
+  (§P5: CN stays untouched; its record is the control group).
+
+*Routing: builder (opus) for the data/grading half (shipped); designer (opus) for the
+surface, against the frozen contract. Operator order 2026-08-05.*
+
+---
+
 ## §6 What this plan deliberately does NOT do
 
 - No un-gauntleted leadership/momentum board (row 117 — the 2026-07-11→07-23 failure class).
 - No FRESH-BUY-as-edge re-ranking (#1513); the tight window survives until W5.2's prereg.
-- No conviction×timing blended rank, no setups.json population merge (row 49).
+- No conviction×timing blended rank, no setups.json population merge (row 49). W7's
+  all-picks record is a NEW separately-labeled population in its own store — it never
+  pools with, and confers no rights on, the `us_board_ledger` graded population (§W7.2).
 - No per-name best-of-grid timing selection (row 69); doors are global constructions.
 - No pre-onset winner-fingerprint claims (rows 114-115) — Door T conditions on THEME state,
   a cross-sectional context, and claims nothing per-name until its ledger matures.
@@ -382,7 +505,10 @@ builder (opus); analysis adjudicated main-loop.*
 ## §7 Rollout, fences, collisions
 
 - Order: **W0 → W1 → W2 → (W3 ∥ W4) → W5 → W6.** W0-W2 are one week of build; W3 doors accrue
-  from the day they merge; W5 waits for G0.2.
+  from the day they merge; W5 waits for G0.2. **W7 (operator amendment 2026-08-05) is
+  order-independent of W3-W6** — its grader accrues from the day it merges and its surface
+  is display-tier, so it does not queue behind G0.2. Its own dependency is #4540: the first
+  candidate stamp must land before the first grade can.
 - Collision fences: PSI program (PR #4404) owns portfolio-level health/score surfaces — this
   plan stays inside Prophet origination/surfacing; HK board (#4421) and SI Workspace V2
   (#4372) own their pages — Theme Tape lands on us_stocks + prophet index only; seasonality

@@ -437,8 +437,8 @@ _ARTIFACT_KEYS = {
     "schema", "price_through", "tier", "authority", "bases", "summary",
     "top63_excluder_hist", "top63_excluder_family_hist", "top21_excluder_hist",
     "veto_leg_hist", "runner_sector_hist", "eligible_today_sector_hist",
-    "conversion", "themes", "name_score_scorecard", "top63_runners", "top21_runners",
-    "eligible_today", "degraded",
+    "conversion", "themes", "name_score_scorecard", "priority_score_scorecard",
+    "top63_runners", "top21_runners", "eligible_today", "degraded",
 }
 _SUMMARY_KEYS = {
     "universe_n", "eligible_today_n", "top63_n",
@@ -880,7 +880,13 @@ def test_no_module_outside_the_runner_imports_the_audit():
     """ZERO AUTHORITY (masterplan W0): no rank/gate/size path may read this instrument."""
     root = Path(__file__).resolve().parent.parent
     allowed = {"engine/prophet_miss_audit.py", "scripts/run_prophet_miss_audit.py",
-               "tests/test_prophet_miss_audit.py"}
+               "tests/test_prophet_miss_audit.py",
+               # W7: the priority_score_scorecard block reads the full-population grade
+               # store, and its tests live beside that store's suite (which is wired into a
+               # CI pack) rather than here. A TEST importing the audit is not an authority
+               # path — the fence is about production modules — so the allowance is scoped
+               # to that one file, not widened to tests/*.
+               "tests/test_us_prophet_grades.py"}
     offenders = []
     for d in ("engine", "scripts", "app", "admin", "collectors", "lib", "tools", "tests"):
         for p in (root / d).rglob("*.py"):
