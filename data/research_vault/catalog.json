@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T16:48:29.812555+00:00",
-  "count": 815,
+  "generated_at": "2026-08-05T17:19:21.778169+00:00",
+  "count": 816,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -154,6 +154,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wihva33aati-6d263f",
+      "title": "Will Brazil Have A James Comey Moment",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-05T10:46:07Z",
+      "summary_points": [
+        "**STF Probe on Lula's Son**: Intensifying Supreme Court investigation into Lula’s son for alleged influence-peddling risks fueling fake news, shifting voter sentiment, and escalating political volatility ahead of runoff.",
+        "**Flávio Bolsonaro Poll Surge**: Rising poll numbers (BTG/Nexus) narrow Lula’s lead; negative news on Lula’s son could alter voter behavior, with Lula’s request for his son’s return heightening tension.",
+        "**Multi-Probe Targeting Both Candidates**: Three Federal Police probes (lobbying, Dataprev/3Structure, Banco Master scandal) targeting Lula/Bolsonaro; evidence release pre-election could sway votes despite corruption no longer being top campaign issue.",
+        "**Election-Day Evidence Risk**: Investigations (Lula/Bolsonaro-appointed judges, Flávio Dino/Banco Master) may release evidence on election eve, increasing volatility amid improving approval ratings and candidate vulnerabilities."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
