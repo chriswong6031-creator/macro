@@ -168,6 +168,11 @@ on:
       - "scripts/build_signal_quality.py"
       - "engine/signal_quality.py"
       - "tests/test_validate_signals.py"
+      # W-F reclaim-veto decision packet (2026-08-05). Both halves per #3488: the suite AND
+      # the module it measures, so an edit to either can trigger the job that proves the
+      # flip-isolation construction still isolates exactly one leg.
+      - "research/prophet_us_audit/reclaim_veto_packet.py"
+      - "tests/test_us_reclaim_veto_packet.py"
       # W1d trial-budget gate: any new multiple-testing harness must register its budget.
       - "scripts/*_phase0.py"
       - "scripts/*_phase1.py"
@@ -460,6 +465,11 @@ on:
       - "contracts/capital_structure_*.schema.json"
       - "docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md"
       - "templates/capital_structure.html.j2"
+      # The collect-job veto allowlist rides in the capital-structure pack (every
+      # entry in it IS a capital-structure step). Its SUBJECT — daily.yml — already
+      # reaches CI via ".github/workflows/**"; this line covers the other direction,
+      # so an edit that only widens the allowlist still runs the suite that checks it.
+      - "tests/test_daily_collect_commit_path.py"
       - "templates/capital_structure_boot.js"
       - "templates/capital_structure.css"
       - "templates/capital_structure.js"
@@ -948,6 +958,17 @@ on:
       - "tests/test_state_of_themes.py"
       - "engine/portfolio_brief.py"
       - "tests/test_portfolio_brief.py"
+      # unrun-subsector-themes — subsector rotation/turn engines + the Theme
+      # Tracker page suite (subsector CI-wiring audit 2026-08-05). The engine
+      # subjects are covered by engine/**, and the page builder + its suite are
+      # whitelisted just above; only the test halves below were missing, so a
+      # test-only edit could not start this workflow.
+      - "tests/test_subsector_turn.py"
+      - "tests/test_subsector_rotation.py"
+      - "tests/test_subsector_rotation_alerts.py"
+      - "tests/test_subsector_scan.py"
+      - "tests/test_subsector_confluence.py"
+      - "tests/test_themes_heatmap.py"
       # Research Factory W1 (RF-11): authority guard, ledger schemas, state machine.
       - "scripts/research_factory*.py"
       - "scripts/*research_factory*.py"
@@ -1980,6 +2001,23 @@ on:
       - "scripts/build_china_analogs.py"
       - "scripts/build_china_library.py"
       - "scripts/build_hk_library.py"
+      # unrun-hk-board — the HK board resurrection pair (#4421), born dark AFTER
+      # the census sweep: the hk_prophet_v2 rank/lane engine (G1-G5 gates) and
+      # the unified board UI contract.  engine/** and templates/** already cover
+      # the code halves; these are the test halves PLUS the frozen G1 pair (the
+      # panel-replay fixture and the board artifact it excludes against) and the
+      # committed close panel the staleness tripwire replays.  The fixture
+      # entries are the #4559 lesson: that heal was a fixture-only diff that
+      # matched NOTHING in this list, so the PR re-pinning the G1 measurement
+      # merged having triggered zero pack checks.  The panel glob closes the
+      # other input: a hand rewrite of the tripwire's replay grid must start
+      # the workflow (the nightly asia collection pushes to main and never
+      # opens a PR, so the glob costs nothing on the daily bake).
+      - "tests/test_hk_board_rank.py"
+      - "tests/test_hk_board_ui.py"
+      - "tests/fixtures/hk_board_2026_07_31.json"
+      - "tests/fixtures/hk_standouts_2026_07_31.json"
+      - "data/hk_search/**"
       # nyse-calendar-freshness — the exchange-calendar reference under every
       # freshness SLA. lib/** above already triggers on lib/nyse_calendar.py, but
       # a test-only edit must reach its own guard too (#3488: "a guard the guarded
@@ -2023,6 +2061,15 @@ on:
       - "scripts/fetch_r2.py"
       - "scripts/notify_turn_events.py"
       - "scripts/research/fetch_dead_name_prices_polygon.py"
+      # subsector-rotation session-stamp hygiene (calendar-asof audit 2026-08-05):
+      # the finviz collector's `asof` is the clock these ledgers were stamped from,
+      # but the track record, its significance guard and the heal were enumerated in
+      # NO workflow — a PR touching them fired no run that could see a failure.
+      - "tests/test_heal_subsector_rotation_ledgers.py"
+      - "tests/test_subsector_significance_guard.py"
+      - "tests/test_subsector_track_record.py"
+      - "engine/subsector_track_record.py"
+      - "scripts/heal_subsector_rotation_ledgers.py"
       # unrun-factor-research — factor registry + measurement disclosure + the study lanes behind them
       - "tests/test_a2_oos_analysis.py"
       - "tests/test_build_measurement_evidence_gap.py"
@@ -2307,16 +2354,25 @@ on:
       - "scripts/check_nw_health_escalation.py"
       - "scripts/check_synapse_registry.py"
       # unrun-vector-baskets
+      - "tests/test_basket_turn_grading.py"
       - "tests/test_basket_turn_watch.py"
       - "tests/test_btc_deferred_legs.py"
       - "tests/test_btc_overrides.py"
       - "tests/test_btc_reentry.py"
       - "tests/test_build_basket_pulse.py"
+      - "tests/test_heal_basket_turn_ledger.py"
       - "tests/test_signal_surface_bugfixes.py"
       - "tests/test_spvector_page.py"
       - "tests/test_trial_log_refresh.py"
       - "tests/test_validation_effective_t.py"
       - "tests/test_vector_conviction.py"
+      # basket-turn session-stamp hygiene (forward-ledger audit 2026-08-05): the
+      # W9 grading pack's engines + heal were enumerated in NO workflow before
+      # this — a PR touching them fired no run that could see a failure.
+      - "engine/basket_turn_cohort.py"
+      - "engine/tape_disagreement.py"
+      - "scripts/build_basket_turn_grading.py"
+      - "scripts/heal_basket_turn_ledger.py"
       # unrun-picks-boards
       - "tests/test_b3_forex_consumer.py"
       - "tests/test_board_contradictions.py"

@@ -14,7 +14,10 @@ for are used, and a subsector with too few priceable members is left unscored.
 
   1. snapshot(subsectors, member_map, today) — append today's per-subsector
      {date, key, score, stage, lean, members} to data/subsector_rotation/
-     snapshots.jsonl. Idempotent by (date, key).
+     snapshots.jsonl. Idempotent by (date, key), where `date` is the NYSE SESSION
+     the read describes, never the calendar day of the run (_session_stamp) —
+     the nightly fires seven nights a week against an EOD board, so a weekend
+     stamp would slip a re-description of Friday past that idempotency.
   2. compute(today) — for each horizon (5/10/21/63d) mature the snapshots old
      enough AND price-covered, compute member-EW SPY-relative forward returns,
      then: by-stage hit-rate (do 'emerging' subsectors outperform & 'fading'
@@ -41,7 +44,7 @@ import pandas as pd
 from engine.ai_desk import _level_asof              # price helpers — do NOT reinvent
 from engine.ai_desk_scorer import _close_at, _covers
 from engine import validation as V
-from lib import config
+from lib import config, nyse_calendar
 
 log = logging.getLogger(__name__)
 
@@ -70,6 +73,57 @@ _TD_TO_CALENDAR = 7.0 / 5.0  # trading days → calendar days
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _as_date(value) -> date | None:
+    """`value` as a plain date, or None when it cannot be read as one."""
+    if isinstance(value, datetime):          # datetime subclasses date — check it first
+        return value.date()
+    if isinstance(value, date):
+        return value
+    try:
+        ts = pd.Timestamp(value)
+    except (TypeError, ValueError):
+        return None
+    return None if pd.isna(ts) else ts.date()
+
+
+def _session_stamp(today: date | str | None) -> str:
+    """Normalize a ledger stamp onto the DATA PLANE: the NYSE session it describes.
+
+    Every date in this module is a claim about a tape, and a non-session date cannot
+    describe one. The stamp arrives here from ``build_subsector_rotation`` as the
+    Finviz snapshot's ``asof``, and daily.yml fires ~22:30 UTC SEVEN nights a week
+    against an end-of-day board — so the Saturday and Sunday runs re-read Friday's
+    unchanged numbers. Clock-stamped, each weekend night looked like a brand-new day
+    to the (date,key) dedup below, appended a full ~269-row set, and handed
+    ``compute()`` up to three copies of one Friday to grade as independent IC days.
+
+    NORMALIZATION, NEVER REFUSAL. A weekend/holiday stamp maps to the prior session:
+      * re-run case — Friday's rows are already there, so the existing (date,key)
+        idempotency turns the weekend pass into a clean no-op;
+      * recovery case — Friday's fetch FAILED and Saturday's run is the only record
+        of that board, so the rows still log, dated to the session they describe.
+    Refusing weekend calls outright would throw the second case away.
+
+    An unparseable stamp passes through unchanged: this module is
+    degrade-never-raise, and inventing a session for a string we cannot read would
+    be a fabrication rather than a heal.
+    """
+    if not today:
+        return nyse_calendar.session_date().isoformat()
+    try:
+        d = _as_date(today)
+        if d is None:
+            return today.isoformat() if hasattr(today, "isoformat") else str(today)
+        if not nyse_calendar.is_session(d):
+            d = nyse_calendar.last_session_on_or_before(d)
+        return d.isoformat()
+    except Exception as e:  # noqa: BLE001 — a calendar surprise degrades to the
+        # old clock-stamp behaviour; it never raises into a never-raises caller.
+        log.warning("session stamp normalization failed for %r (%s) — using it as-is",
+                    today, e)
+        return today.isoformat() if hasattr(today, "isoformat") else str(today)
 
 
 def _path(root: Path) -> Path:
@@ -121,7 +175,9 @@ def snapshot(payload: dict, member_map: dict | None = None,
     try:
         root = Path(root) if root else config.ROOT
         member_map = member_map or {}
-        today_str = today.isoformat() if hasattr(today, "isoformat") else str(today or date.today())
+        # SESSION, not calendar day (see _session_stamp): a weekend re-read of
+        # Friday's EOD board must land on Friday, where (date,key) dedup can see it.
+        today_str = _session_stamp(today)
         existing = {f"{r.get('date')}|{r.get('key')}" for r in _load(root)}
         emerging = set((payload.get("highlights") or {}).get("emerging") or [])
         fading = set((payload.get("highlights") or {}).get("fading") or [])
@@ -477,7 +533,12 @@ def compute(today: date | str | None = None, root: Path | None = None,
     """Grade every matured snapshot across all horizons. Never raises; degrades to 'accruing'."""
     try:
         root = Path(root) if root else config.ROOT
-        today_dt = pd.Timestamp(today).date() if today else date.today()
+        # The maturity clock runs on SESSIONS (see _session_stamp). There is no
+        # session between Friday's close and a Sunday run, so this only stops
+        # phantom weekend aging; `as_of` becomes the session date (TS-R2 display
+        # semantics). An unreadable stamp still raises here into the degrade-safe
+        # payload below, exactly as pd.Timestamp() used to.
+        today_dt = date.fromisoformat(_session_stamp(today))
         rows = _load(root)
         n_days = len({r.get("date") for r in rows})
         out_h: dict[str, dict] = {}
@@ -559,7 +620,7 @@ def compute(today: date | str | None = None, root: Path | None = None,
         }
     except Exception as e:  # noqa: BLE001
         log.warning("subsector track compute failed: %s", e)
-        return {"schema": SCHEMA, "as_of": str(today or date.today()), "generated_at": _now_iso(),
+        return {"schema": SCHEMA, "as_of": _session_stamp(today), "generated_at": _now_iso(),
                 "is_context_only": True, "n_snapshots": 0, "n_days": 0, "horizons": {},
                 "lead_time_d": None, "peak_score_ic": None, "proven": {}, "any_matured": False,
                 "verdict": "accruing", "note": f"compute error ({e}) — accruing, degrade-safe.",

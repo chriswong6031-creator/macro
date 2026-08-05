@@ -1,0 +1,156 @@
+# TXI easing-direction chain — the INVERSE of oil_inflation_duration_derate.
+# Operator case 2026-08-05: "big drop in interest rates today as oil cratered — forward
+# inflation expectations coming down, yields come down with them." The library previously
+# encoded only the tightening direction (oil shock → derate); this chain closes the quiet
+# half so a disinflationary oil slide can arm, stage, and be graded. Display-tier; never
+# scored (DNR row 45 / TXI Article 1/2).
+chain: oil_slide_disinflation_duration_rerate
+rev: 0
+tier: hypothesis            # every node resolves; per-hop base rates untested until the W3 miner
+title:
+  en: "Oil slide → disinflation → yields fall → long-duration re-rate"
+  zh: "油价下滑 → 通胀降温 → 收益率回落 → 长久期估值修复"
+
+nodes:
+  oil_slide:
+    title: {en: "Oil sliding", zh: "油价下滑"}
+    src: yahoo
+    # Mirror of the derate chain's oil_shock (60d +25% AND MA50 slope up), inverted.
+    # Sharp-break OR grind entry: a 20d −12% air-pocket (2018Q4-style) or a 60d −18%
+    # grind (2014-15 glut) both qualify, but only with the 50d MA rolling over — a
+    # one-week dip inside an intact uptrend must not arm the disinflation read.
+    test:
+      all:
+        - any:
+            - {series: "CL=F", metric: ret, window: 20, op: lt, value: -12}
+            - {series: "CL=F", metric: ret, window: 60, op: lt, value: -18}
+        - {series: "CL=F", metric: ma_slope, window: 50, lookback: 5, op: lt, value: 0}
+  breakeven_fall:
+    title: {en: "10y breakeven falling", zh: "10年期盈亏平衡回落"}
+    src: fred
+    # Inverse of breakeven_rise (+15bp/22td). Falls are graded at −12bp: measured on the
+    # 2003→ T10YIE store, 22td Δ < −12bp holds on ~16% of days — a hop confirm, not a
+    # hair trigger. ret_bp = absolute Δ in basis points.
+    test: {series: "T10YIE", metric: ret_bp, window: 22, op: lt, value: -12}
+  real_yield_fall:
+    title: {en: "Real 10y yield falling", zh: "实际10年期收益率回落"}
+    src: fred
+    # The valuation-relief leg must be REAL, not just breakeven compression: a nominal
+    # fall composed purely of falling breakevens with real yields flat re-rates nothing.
+    # Direct series read (fred DFII10, 2003→) — the state adapter's direction key lags a
+    # fresh turn by construction (63d window), so the node reads the raw series.
+    test: {series: "DFII10", metric: ret_bp, window: 22, op: lt, value: -12}
+  duration_rerate:
+    title: {en: "Long-duration cohort re-rating", zh: "长久期板块相对修复"}
+    src: yahoo
+    # Inverse of duration_derate: the long-duration growth cohort (QQQ proxy) resumes
+    # outperforming. Per-name resolution rides the existing W2 blast screens.
+    test: {series: "QQQ", vs: "SPY", metric: rs, window: 63, op: gt, value: 0}
+
+hops:
+  - from: oil_slide
+    to: breakeven_fall
+    sign: "-"
+    lag_d: [5, 60]
+    label:
+      en: "Oil slides → breakevens fall"
+      zh: "油价下滑 → 盈亏平衡回落"
+    condition:
+      en: "supply/glut-driven slide with demand intact (credit calm, no recession scare); a demand-crash slide is a different chain and is falsified below"
+      zh: "供给/过剩驱动的下滑且需求稳定（信用平稳、无衰退恐慌）；需求崩塌式下跌属另一条链，由下方证伪条件排除"
+    mechanism:
+      en: "cheaper energy feeds headline CPI directly and pulls market inflation compensation down with it"
+      zh: "能源价格走低直接压低整体CPI，并带动市场通胀补偿回落"
+    prior: "transmission_matrix[oil→breakevens] IC if present, else theory (passthrough, sign-symmetric)"
+  - from: breakeven_fall
+    to: real_yield_fall
+    sign: "-"
+    lag_d: [0, 90]
+    label:
+      en: "Breakevens fall → real yields fall"
+      zh: "盈亏平衡回落 → 实际收益率回落"
+    condition:
+      en: "policy path free to reprice lower (Fed not fighting a second inflation source); real fall confirms the relief is more than breakeven arithmetic"
+      zh: "政策路径可向下重定价（美联储无需应对第二个通胀源）；实际利率回落确认宽松不止于盈亏平衡的算术"
+    mechanism:
+      en: "cooling expectations let the market price an easier policy path — nominal falls, and the real 10y (the discount rate that matters) follows"
+      zh: "通胀预期降温令市场定价更宽松的政策路径——名义利率回落，关键贴现率（实际10年期）随之走低"
+    prior: "theory (Fisher decomposition + policy-path repricing)"
+  - from: real_yield_fall
+    to: duration_rerate
+    sign: "+"
+    lag_d: [0, 120]
+    label:
+      en: "Real yields fall → long-duration re-rates"
+      zh: "实际收益率回落 → 长久期估值修复"
+    condition:
+      en: "no concurrent earnings deterioration in the long-duration cohort (a growth scare can swamp the discount-rate tailwind)"
+      zh: "长久期板块盈利未同步恶化（增长恐慌可能盖过贴现率利好）"
+    mechanism:
+      en: "a lower discount rate expands the present value of far-dated cash flows first — the exact inverse of the derate leg"
+      zh: "更低的贴现率首先抬升远期现金流的现值——与下修链完全对称的逆过程"
+    prior: "stock_macro_sensitivity calibration (shipped; per-name rate beta + duration tier, sign-symmetric)"
+
+falsifiers:
+  # Sticky expectations: oil slid but breakevens did NOT come down over ~30d — the
+  # passthrough is absent (e.g. core services inflation dominating).
+  - when: {series: "T10YIE", metric: ret_bp, window: 22, op: gt, value: 5}
+    src: fred
+    note: "oil slide with breakevens flat-to-up over ~30d — disinflation passthrough absent"
+  # THE REGIME DISCRIMINATOR: the slide is a demand crash, not a glut. Credit stress
+  # firing alongside the slide (HY underperforming IG hard) means the 2008/2020 chain,
+  # where duration-growth does NOT re-rate on the oil move. Kills the episode honestly.
+  - when: {series: "HYG", ratio: "LQD", metric: ratio_ret, window: 22, op: lt, value: -2.0}
+    src: yahoo
+    note: "credit stress alongside the oil slide — demand-crash regime, not a disinflation glut; wrong chain"
+  # Terminal falsifier: real yields fell but the long-duration cohort keeps underperforming.
+  - when: {series: "QQQ", vs: "SPY", metric: rs, window: 120, op: lt, value: 0}
+    note: "real yields fell with long-duration cohort RS<0 over 120d — the re-rate leg is falsified"
+
+null_model: "does conditioning on the full oil→breakeven→real-yield chain beat unconditional falling-yield momentum on the same long-duration cohort?"
+
+exposure_screens:            # same substrate as the derate chain — the beneficiaries are the
+                             # same channels with the sign flipped (relief, not pressure)
+  long_duration_valuation:
+    label: {en: "Long-duration valuation", zh: "长久期估值"}
+    note: {en: "names whose value sits in far-dated cash flows — first to re-rate when the discount rate falls",
+           zh: "价值集中于远期现金流的名字——贴现率回落时最先修复"}
+    any:
+      - {path: macro_sensitivity.duration, op: "==", value: long}
+      - {path: valuation.forward_pe, op: pctile_gte, value: 0.80}
+  refinancing_channel:
+    label: {en: "Refinancing relief", zh: "再融资减压"}
+    note: {en: "leveraged names whose refinancing cost falls with yields — the pressure channel, released",
+           zh: "杠杆较高、再融资成本随收益率回落而下降的名字——压力通道的释放"}
+    all:
+      - {path: financials.debt_to_assets, op: pctile_gte, value: 0.67}
+  fcf_burner:
+    label: {en: "FCF burner relief", zh: "现金流消耗减压"}
+    note: {en: "cash-burning names most sensitive to the cost of capital — largest beta to the relief",
+           zh: "现金消耗型名字对资金成本最敏感——宽松弹性最大"}
+    all:
+      - {path: financials.fcf_margin, op: "<", value: 0}
+
+provenance:
+  theory: ["energy passthrough (sign-symmetric)", "duration / discount-rate math (inverse leg)",
+           "inverse_of: oil_inflation_duration_derate — two-sided library law"]
+  episodes: ["2014-15 shale glut (oil −60%, breakevens −80bp, growth outperformed)",
+             "2018Q4→2019 (oil −40%, Fed pivot, 2019 duration rally)",
+             "2022H2→2023 (oil off $120, breakevens down, real peak → 2023 growth re-rate)"]
+  added_by: "fable (operator case 2026-08-05: oil craters → rates drop → real-rate peak watch)"
+  added_on: "2026-08-05"
+
+changelog:
+  - "rev 0 (2026-08-05): easing-direction inverse of oil_inflation_duration_derate. Thresholds
+     measured on the stores before authoring (oil 20d<−12%: 8.6% of days since 1986; 60d<−18%:
+     9.3%; T10YIE 22td<−12bp ~16% of days since 2003; DFII10 22td<−12bp 27% — hop confirms,
+     not triggers). Demand-crash discriminator encoded as a structured HYG/LQD falsifier."
+
+validator_note: >
+  All nodes bind to REAL collected series (yahoo CL=F/QQQ/SPY/HYG/LQD, fred T10YIE/DFII10 —
+  both present 2003→ in data/fred/). real_yield_fall deliberately reads the raw DFII10 series
+  rather than state.rates.direction: the state's 63d-window direction key certifies a fresh
+  turn LAST, and this chain exists to stage the turn as it forms. The demand-crash falsifier
+  (HYG/LQD) is the regime discriminator the derate chain carries in its condition prose,
+  promoted here to a structured auto-checked kill because the easing read is exactly the one
+  a recession tape would counterfeit.

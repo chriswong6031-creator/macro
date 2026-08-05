@@ -27,6 +27,49 @@ log = logging.getLogger(__name__)
 HORIZONS = {"h20": 20, "h40": 40}          # 4-week / 8-week business-day forward windows
 ALERT_STATES = ("igniting", "running")     # the loud tiers — the ones a scoreboard grades
 
+# ── Pre-registered US-arm grading policy (census PR #4564 charter §4, 2026-08-05) ──
+#
+# GEOPOLITICAL_EVENT_SECTORS — the canonical single-sector event-bid instruments
+# (oil/energy, defense, safe-haven gold). Per the 2026-07-23 suspension ruling
+# (research/DO_NOT_REBUILD.md "Ignition Radar user-facing surfaces" row +
+# POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md §2): a geopolitical
+# single-sector bid is NOT ignition. Items in this set are excluded from
+# narrow-channel ranking, logging, and alert TP-rate denominators UNLESS the
+# broad channel is in a confirmed "ignited" state (a broad ignition is by
+# definition not single-sector). Excluded items are always DISCLOSED — the radar
+# payload carries them under narrow.event_excluded and the scorecard prints the
+# excluded count — never silently dropped. The set is deliberately minimal;
+# extending it is a registry adjudication, not a code edit.
+GEOPOLITICAL_EVENT_SECTORS = frozenset({
+    "XLE",               # SPDR Energy — the 2026-07-23 war-bid instrument itself
+    "energy_complex",    # US Energy Complex basket
+    "us_sector_energy",  # Energy (Equal-Weight) sector basket
+    "defense",           # Defense & Aerospace basket
+    "gold_miners",       # safe-haven gold basket
+})
+
+# NARROW_TP_HORIZON — the narrow arm's success criterion, PRE-REGISTERED before
+# any narrow grade matured (first h40 maturity ≈ 2026-09-04 for the 2026-07-10
+# session row; registered 2026-08-05). An alert-state ("igniting"/"running")
+# narrow item is a TRUE POSITIVE iff its basket-minus-SPY excess at the fixed
+# h40 horizon (8 weeks — the long end of the same h20/h40 ruler as HK/CA) is
+# > 0; false positive otherwise. h20 excess is printed as a secondary
+# descriptive stat, never the criterion. Non-alert items grade quiet_up /
+# quiet_flat on the same fixed horizon. Items whose basket level cannot be
+# loaded at grade time grade "ungradeable" — counted and printed by
+# us_scorecard, excluded from rate denominators (excluded counts are always
+# shown next to the rate, never silently dropped).
+NARROW_TP_HORIZON = "h40"
+
+
+def event_sector_excluded(item_id: str | None, broad_state: str | None) -> bool:
+    """True when item_id is a geopolitical event sector NOT covered by a broad ignition.
+
+    The suspension's exclusion (geopolitical single-sector bids ≠ ignition) applies
+    whenever the broad channel is anything short of "ignited" — an event-sector theme
+    may rank/grade as ignition only inside a confirmed broad ignition."""
+    return (item_id in GEOPOLITICAL_EVENT_SECTORS) and (broad_state != "ignited")
+
 
 def ledger_lane_armed() -> bool:
     """True only on a ledger-advancing collect lane (COLLECT_LANE=nightly, legacy
@@ -283,12 +326,17 @@ def _us_write(p: Path, rows: list[dict]) -> None:
 def log_us_snapshot(ig: dict, root=None) -> int:
     """Append today's US Ignition Radar snapshot to us_ignition.jsonl.
 
-    One line per day with: as_of, broad_state, k_count, chips lit/fresh,
-    regime.fragile, top narrow items with scores/states.
-    Idempotent by as_of (one row per day). Ledger-advancing lanes only
-    (ledger_lane_armed): off-lane calls no-op, returning 0.
+    One line per underlying US TRADING SESSION (census PR #4564 charter §4): the
+    idempotency key is the session — ig["data_session"], the SPY tape date stamped
+    by ignition_radar.snapshot() — falling back to the calendar as_of for payloads
+    that predate the stamp. Weekend nightly re-runs carry Friday's data_session and
+    therefore no-op; a session-less payload with a weekend as_of is refused outright
+    (a Saturday/Sunday calendar date never opens a US session — the pre-fix log
+    accrued 6 duplicate weekend re-logs this way, quarantined 2026-08-05 into
+    us_ignition_quarantine.jsonl). First-writer-wins per session. Ledger-advancing
+    lanes only (ledger_lane_armed): off-lane calls no-op, returning 0.
 
-    Returns the number of rows added (0 = already logged).
+    Returns the number of rows added (0 = already logged / refused).
     """
     try:
         if not ledger_lane_armed():
@@ -297,14 +345,30 @@ def log_us_snapshot(ig: dict, root=None) -> int:
         if not ig or not ig.get("as_of"):
             return 0
         asof = str(ig["as_of"])
+        session = ig.get("data_session") or None
+        if session is None:
+            # Legacy payload without a tape stamp: calendar-keyed, but a weekend
+            # calendar date is definitionally a re-log of Friday's tape — refuse.
+            try:
+                if pd.Timestamp(asof).dayofweek >= 5:
+                    log.debug(
+                        "ignition_audit log_us_snapshot skipped: weekend as_of %s "
+                        "without data_session", asof,
+                    )
+                    return 0
+            except Exception:  # noqa: BLE001
+                pass
+        key = str(session or asof)
         p = _us_path(root)
         rows = _us_read(p)
-        seen = {r.get("asof") for r in rows}
-        if asof in seen:
+        seen = {str(r.get("session") or r.get("asof")) for r in rows}
+        if key in seen:
             return 0
         chips = ig.get("chips") or []
+        narrow = ig.get("narrow") or {}
         entry = {
             "asof": asof,
+            "session": session,
             "market": _US_MARKET,
             "broad_state": ig.get("state"),
             "k_count": ig.get("k_count"),
@@ -319,7 +383,13 @@ def log_us_snapshot(ig: dict, root=None) -> int:
                     "ignition_score": it.get("ignition_score"),
                     "state": it.get("state"),
                 }
-                for it in ((ig.get("narrow") or {}).get("items") or [])[:5]
+                for it in (narrow.get("items") or [])[:5]
+            ],
+            # audit trail: which items the event-sector exclusion removed from
+            # ranking today (ids only) — lets the record show the exclusion
+            # operated, so it can itself be audited later.
+            "event_excluded": [
+                e.get("id") for e in (narrow.get("event_excluded") or []) if e.get("id")
             ],
             "logged_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "graded_broad": None,
@@ -341,12 +411,15 @@ def _grade_us_broad(entry: dict, spy_series) -> dict | None:
     are NEVER overwritten (idempotent per-horizon storage).
 
     Pre-declared per IGN-R5: broad-state grades on SPY absolute return.
+    The forward-return base date is the row's underlying SESSION
+    (entry["session"]) when stamped, else the calendar as_of (weekend as_of
+    dates already resolve to the prior Friday close via searchsorted).
     Returns None when the primary gate horizon h63 has not matured.
     """
-    asof = pd.Timestamp(entry["asof"])
+    base_date = pd.Timestamp(entry.get("session") or entry["asof"])
     spy = pd.Series(spy_series).dropna()
     spy.index = pd.to_datetime(spy.index)
-    loc = spy.index.searchsorted(asof, side="right")
+    loc = spy.index.searchsorted(base_date, side="right")
     # Primary gate: h63 must be mature
     primary_h = _US_HORIZONS_BROAD["h63"]
     if loc + primary_h > len(spy):
@@ -398,15 +471,34 @@ def _grade_us_broad(entry: dict, spy_series) -> dict | None:
 
 
 def _grade_us_narrow(entry: dict, spy_series) -> dict | None:
-    """Grade top narrow items against basket-minus-SPY excess at h20/h40 (same as HK/CA).
+    """Grade top narrow items on basket-minus-SPY excess at the fixed h20/h40 horizons.
 
-    Returns None until h40 has matured (uses SPY as basket proxy when basket level absent).
+    PRE-REGISTERED success criterion (2026-08-05, census PR #4564 charter §4 —
+    defined before any narrow grade matured; fire conditions untouched):
+
+      * alert-state item (state_at_log in ALERT_STATES): outcome "true_positive"
+        iff excess at NARROW_TP_HORIZON (h40) > 0, else "false_positive".
+      * non-alert item: "quiet_up" / "quiet_flat" by the same fixed-horizon sign.
+      * basket level unavailable or too short at grade time → outcome
+        "ungradeable" (no excess fields). Grades are keep-first-permanent, so a
+        late-arriving basket history does NOT re-open the item; us_scorecard
+        prints the ungradeable count next to every rate.
+      * geopolitical event sectors (GEOPOLITICAL_EVENT_SECTORS) logged outside a
+        broad "ignited" state carry event_excluded=true — graded for the record
+        but excluded from alert TP denominators (suspension 2026-07-23:
+        geopolitical single-sector bids ≠ ignition).
+
+    The forward-return base date is the row's underlying SESSION
+    (entry["session"], stamped by the session-keyed logger or the 2026-08-05
+    heal) when present, else the calendar as_of — whose weekend dates already
+    resolve to the prior Friday close via searchsorted. Returns None until h40
+    has matured on the SPY path.
     """
-    asof = pd.Timestamp(entry["asof"])
+    base_date = pd.Timestamp(entry.get("session") or entry["asof"])
     spy = pd.Series(spy_series).dropna()
     spy.index = pd.to_datetime(spy.index)
-    loc_spy = spy.index.searchsorted(asof, side="right")
-    max_h = max(_US_NARROW_H for _US_NARROW_H in _US_HORIZONS_NARROW.values())
+    loc_spy = spy.index.searchsorted(base_date, side="right")
+    max_h = max(_US_HORIZONS_NARROW.values())
     if loc_spy + max_h > len(spy):
         return None
     base_spy = float(spy.iloc[max(0, loc_spy - 1)])
@@ -417,6 +509,7 @@ def _grade_us_narrow(entry: dict, spy_series) -> dict | None:
     for hk, hd in _US_HORIZONS_NARROW.items():
         fv = float(spy.iloc[min(loc_spy + hd - 1, len(spy) - 1)])
         spy_rets[hk] = fv / base_spy - 1.0
+    broad_state = entry.get("broad_state")
     graded_items = []
     for it in entry.get("top_narrow") or []:
         basket_id = it.get("id")
@@ -438,8 +531,10 @@ def _grade_us_narrow(entry: dict, spy_series) -> dict | None:
         except Exception:  # noqa: BLE001
             pass
         item_grade: dict = {"id": basket_id, "state_at_log": it.get("state")}
+        if event_sector_excluded(basket_id, broad_state):
+            item_grade["event_excluded"] = True
         if basket_lvl is not None and not basket_lvl.empty:
-            loc_b = basket_lvl.index.searchsorted(asof, side="right")
+            loc_b = basket_lvl.index.searchsorted(base_date, side="right")
             if loc_b + max_h <= len(basket_lvl):
                 base_b = float(basket_lvl.iloc[max(0, loc_b - 1)])
                 if base_b > 0:
@@ -447,10 +542,22 @@ def _grade_us_narrow(entry: dict, spy_series) -> dict | None:
                         fv_b = float(basket_lvl.iloc[min(loc_b + hd - 1, len(basket_lvl) - 1)])
                         b_ret = fv_b / base_b - 1.0
                         item_grade[f"excess_{hk}"] = round(b_ret - spy_rets[hk], 4)
+        ex_tp = item_grade.get(f"excess_{NARROW_TP_HORIZON}")
+        if ex_tp is None:
+            item_grade["outcome"] = "ungradeable"
+        elif it.get("state") in ALERT_STATES:
+            item_grade["outcome"] = "true_positive" if ex_tp > 0 else "false_positive"
+        else:
+            item_grade["outcome"] = "quiet_up" if ex_tp > 0 else "quiet_flat"
         graded_items.append(item_grade)
     return {
         "items": graded_items,
-        "note": "accruing — basket-minus-SPY excess, same ruler as HK/CA (IGN-R5 narrow track).",
+        "note": (
+            "accruing — basket-minus-SPY excess, same ruler as HK/CA (IGN-R5 narrow "
+            f"track). Pre-registered criterion: alert TP iff excess_{NARROW_TP_HORIZON} "
+            "> 0 (census #4564 §4, 2026-08-05); event sectors excluded from alert "
+            "denominators outside broad ignition."
+        ),
         "graded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
 
@@ -507,26 +614,93 @@ def grade_us_log(spy_series, root=None) -> int:
         return 0
 
 
+def _us_meta(root=None) -> dict:
+    """Read us_ignition_meta.json (known gaps + quarantine provenance). Never raises."""
+    try:
+        base = config.data_dir() if root is None else (Path(root) / "data")
+        p = base / "ignition_log" / "us_ignition_meta.json"
+        if not p.exists():
+            return {}
+        return json.loads(p.read_text())
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 def us_scorecard(root=None) -> dict:
-    """Rolling realized-accuracy scorecard for the US broad/narrow arms."""
+    """Rolling realized-accuracy scorecard for the US broad/narrow arms.
+
+    Narrow rates follow the pre-registered criterion (NARROW_TP_HORIZON): the
+    alert TP rate's denominator is gradeable, non-event-excluded alert items —
+    with the event-excluded and ungradeable counts PRINTED beside it, never
+    silently dropped. Known log gaps + quarantine counts from us_ignition_meta.json
+    are attached so the record discloses its own holes."""
     try:
         rows = [r for r in _us_read(_us_path(root)) if r.get("graded_broad") or r.get("graded_narrow")]
     except Exception:  # noqa: BLE001
         rows = []
     n = len(rows)
     note = "accruing — display-only until >=30 grades + operator ruling"
+    meta = _us_meta(root)
+    meta_block = None
+    if meta:
+        gaps = []
+        for g in meta.get("known_gaps") or []:
+            gaps.extend(g.get("missing_sessions") or [])
+        meta_block = {
+            "known_missing_sessions": gaps,
+            "n_quarantined": (meta.get("quarantine") or {}).get("n_rows"),
+        }
     if not rows:
-        return {"market": _US_MARKET, "n_graded": 0, "note": note}
+        out = {"market": _US_MARKET, "n_graded": 0, "note": note}
+        if meta_block:
+            out["log_meta"] = meta_block
+        return out
     broad_graded = [r for r in rows if r.get("graded_broad")]
     tp_broad = [r for r in broad_graded if (r["graded_broad"] or {}).get("broad_tp")]
-    return {
+
+    # narrow arm — item-level aggregation under the pre-registered criterion
+    narrow_items: list[dict] = []
+    for r in rows:
+        gn = r.get("graded_narrow")
+        if gn:
+            narrow_items.extend(gn.get("items") or [])
+    excluded = [i for i in narrow_items if i.get("event_excluded")]
+    ungradeable = [
+        i for i in narrow_items
+        if not i.get("event_excluded") and i.get("outcome") == "ungradeable"
+    ]
+    gradeable = [
+        i for i in narrow_items
+        if not i.get("event_excluded") and i.get("outcome") not in (None, "ungradeable")
+    ]
+    alerts = [i for i in gradeable if i.get("state_at_log") in ALERT_STATES]
+    tp_narrow = [i for i in alerts if i.get("outcome") == "true_positive"]
+    narrow_block = {
+        "criterion": (
+            f"alert TP iff basket-minus-SPY excess {NARROW_TP_HORIZON} > 0 "
+            "(pre-registered 2026-08-05, census #4564 §4)"
+        ),
+        "n_items_graded": len(narrow_items),
+        "n_alerts_gradeable": len(alerts),
+        f"alert_tp_rate_{NARROW_TP_HORIZON}": (
+            round(len(tp_narrow) / len(alerts), 3) if alerts else None
+        ),
+        "n_event_excluded": len(excluded),
+        "n_ungradeable": len(ungradeable),
+    }
+
+    out = {
         "market": _US_MARKET,
         "n_graded": n,
         "n_broad_graded": len(broad_graded),
         "broad_tp_rate": round(len(tp_broad) / len(broad_graded), 3) if broad_graded else None,
+        "narrow": narrow_block,
         "asof_range": [rows[0]["asof"], rows[-1]["asof"]] if rows else None,
         "note": note,
     }
+    if meta_block:
+        out["log_meta"] = meta_block
+    return out
 
 
 def us_snapshot_and_grade(ig: dict, spy_series, root=None) -> dict:
@@ -543,6 +717,9 @@ def us_snapshot_and_grade(ig: dict, spy_series, root=None) -> dict:
     sc["note"] = (
         "accruing — display-only until >=30 broad-state grades + operator ruling. "
         "Broad graded on SPY absolute return + MAE at h21/h63 (h126 printed). "
-        "Narrow graded on basket-minus-SPY excess at h20/h40 (same ruler as HK/CA, IGN-R5)."
+        "Narrow graded on basket-minus-SPY excess at h20/h40 (same ruler as HK/CA, "
+        f"IGN-R5); pre-registered narrow criterion: alert TP iff excess_{NARROW_TP_HORIZON} "
+        "> 0, event sectors excluded from alert denominators outside broad ignition "
+        "(census #4564 §4, 2026-08-05)."
     )
     return sc

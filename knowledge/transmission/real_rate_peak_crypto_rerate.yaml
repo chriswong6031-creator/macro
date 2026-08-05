@@ -1,0 +1,112 @@
+# TXI easing-direction chain — real-rate PEAK → crypto re-rate.
+# The operator's third implication ("perhaps cryptocurrency") — deliberately a SEPARATE
+# chain from the gold leg so its weaker, shorter evidence base earns its own base rate
+# and can die its own death without touching the gold read. Two clean historical
+# episodes, one contaminated by a liquidity regime change: the provenance is thin and
+# printed as thin. Display-tier; never scored (DNR row 45 / TXI Article 1/2). BTC
+# scored-path authority stays entirely with the BTC vector program — this chain is
+# context only and never touches allocation() (BTC override audit D1–D5).
+chain: real_rate_peak_crypto_rerate
+rev: 0
+tier: hypothesis            # every node resolves; per-hop base rates untested until the W3 miner
+title:
+  en: "Real-rate peak → crypto re-rates"
+  zh: "实际利率见顶 → 加密资产修复"
+
+nodes:
+  real_rate_extreme:
+    title: {en: "Real 10y at a restrictive extreme", zh: "实际10年期处于紧缩极值"}
+    src: transmission_state
+    # Same armed state as the gold chain (shared trigger, separate terminals — each
+    # terminal accrues its own hop base rate in the miner).
+    test:
+      all:
+        - {path: "state.rates.real_10y_pctile", op: gte, value: 0.90}
+        - {path: "state.rates.regime", op: eq, value: restrictive}
+  real_rate_rolldown:
+    title: {en: "Real 10y rolling down", zh: "实际10年期回落"}
+    src: fred
+    test: {series: "DFII10", metric: ret_bp, window: 22, op: lt, value: -12}
+  btc_bid:
+    title: {en: "Bitcoin bid confirming", zh: "比特币买盘确认"}
+    src: yahoo
+    # Terminal confirm scaled to the asset's vol: BTC +10% over ~1 month (gold's bar is
+    # +4%; BTC realized vol runs ~3x bullion's).
+    test: {series: "BTC-USD", metric: ret, window: 22, op: gt, value: 10}
+
+hops:
+  - from: real_rate_extreme
+    to: real_rate_rolldown
+    sign: "-"
+    lag_d: [0, 180]
+    label:
+      en: "Restrictive extreme → rolldown"
+      zh: "紧缩极值 → 回落"
+    condition:
+      en: "inflation cooling toward target with the policy path free to reprice lower"
+      zh: "通胀向目标降温、政策路径可向下重定价"
+    mechanism:
+      en: "same spring as the gold chain: the real 10y is the discount rate the whole long-duration complex prices from"
+      zh: "与黄金链相同的弹簧：实际10年期是整个长久期资产共同的贴现率"
+    prior: "theory (policy-path repricing at extremes)"
+  - from: real_rate_rolldown
+    to: btc_bid
+    sign: "+"
+    lag_d: [0, 120]
+    label:
+      en: "Real yields fall → crypto re-rates"
+      zh: "实际收益率回落 → 加密资产修复"
+    condition:
+      en: "risk appetite intact and liquidity improving (crypto trades as the longest-duration, zero-carry risk asset); a credit-stress rolldown is the wrong regime for this hop"
+      zh: "风险偏好稳定且流动性改善（加密资产表现为最长久期、零利息的风险资产）；信用压力导致的回落不适用本跳"
+    mechanism:
+      en: "zero carry and no cash flows put crypto at the far end of the duration spectrum — the discount-rate release plus the liquidity impulse that usually accompanies it re-rate it hardest, when the channel works at all"
+      zh: "零利息、无现金流使加密资产处于久期谱系最远端——贴现率释放叠加通常伴随的流动性改善，对其修复弹性最大（当该通道有效时）"
+    prior: "theory only — the evidence base is TWO clean episodes (2018-12→2019H1, 2022-10→2023); 2020 is contaminated by the QE liquidity regime. Printed as thin; the W3 miner grades what little history exists"
+  # NOTE (two-hop design): the risk-on breadth confirm (equities participating) is
+  # deliberately NOT a node — it would couple this chain's grade to the equity tape and
+  # blur whose base rate is whose. The blast screens + the oil_slide chain's terminal
+  # carry the equity read; this chain grades only the crypto channel.
+
+falsifiers:
+  # Peak refuted (same as gold chain).
+  - when: {series: "DFII10", metric: ret_bp, window: 63, op: gt, value: 15}
+    src: fred
+    note: "real 10y +15bp over a quarter while armed — no peak; restriction still building"
+  # Credit stress: a rolldown born of a growth/credit scare is the flight-to-quality
+  # regime, where crypto historically trades DOWN with risk, not up with duration.
+  - when: {series: "HYG", ratio: "LQD", metric: ratio_ret, window: 22, op: lt, value: -2.0}
+    src: yahoo
+    note: "credit stress alongside the rolldown — flight-to-quality regime; the crypto duration-release hop does not apply"
+  # Terminal falsifier: rolldown confirmed, BTC flat-to-down for a quarter.
+  - when: {series: "BTC-USD", metric: ret, window: 63, op: lt, value: 0}
+    note: "real yields rolled down with BTC flat-to-down over 63d — the crypto re-rate leg is falsified"
+
+null_model: "does conditioning on extreme+rolldown beat unconditional BTC momentum over the same forward windows?"
+
+exposure_screens: {}         # deliberately empty: the crypto complex has no per-name
+                             # stockdata substrate; blast context is the asset itself.
+                             # Crypto-adjacent equities (miners, exchanges) join via the
+                             # basket taxonomy if this chain ever earns a probe tier.
+
+provenance:
+  theory: ["duration-spectrum endpoint (zero carry, no cash flows)",
+           "liquidity-impulse co-channel (honestly confounded with the rate channel)",
+           "inverse_of: none — the tightening half (real-rate ramp → crypto derate, 2022) is chartered in the masterplan seed list"]
+  episodes: ["2018-12 real-rate peak → 2019H1 BTC +200% (clean)",
+             "2022-10 peak → 2023 BTC +150% (clean)",
+             "2020 (EXCLUDED as evidence: QE liquidity regime dominates the rate channel)"]
+  added_by: "fable (operator case 2026-08-05)"
+  added_on: "2026-08-05"
+
+changelog:
+  - "rev 0 (2026-08-05): authored beside real_rate_peak_gold_rerate with a shared trigger
+     and a separate terminal so the weaker channel earns its own base rate. Evidence base
+     printed as thin (2 clean episodes); tier hypothesis; BTC authority untouched."
+
+validator_note: >
+  Nodes bind to transmission_state (state.rates.*), fred/DFII10, and yahoo BTC-USD/HYG/LQD
+  — all collected. The liquidity co-channel is honestly NOT observable as a node in the
+  current adapter set (net-liquidity series live in other organs); it rides as condition
+  prose and is exactly the kind of covariate the W3 miner buckets episodes by. The empty
+  exposure_screens map is deliberate and disclosed, not an omission.

@@ -1651,11 +1651,21 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         log.warning("hk leadership compute failed (%s) — lanes ship without the cohort chip",
                     _ldr_ex)
 
+    # W-E.1 (missed-ignitions §5, ported from the US board): the cycle ladder's
+    # BOTTOM WATCH state gets its own `basing` shelf instead of disappearing into
+    # `blocked`. DISPLAY-ONLY — it moves rows between rendered buckets and touches
+    # nothing else. The opt-in is explicit because the shelf is a template surface
+    # (engine.us_board_rank.stage_for), and it is NOT a population claim here: HK's
+    # pool is cascade-gated, so this bucket is usually empty — measured empty on all
+    # 14 committed snapshots (2026-07-20..08-04) — and an empty bucket renders
+    # nothing at all. The shelf is the labelled HOME for the day the cycle ladder and
+    # the cascade disagree, not a prediction that they will.
     buys = hk_board_rank.score_rows(
         buys,
         verdict_by=sig_verdict,
         adv_by=adv63,
         board_asof=as_of,
+        bottom_watch_stage=hk_board_rank.STAGE_BASING,
     )
     _stage_ct = hk_board_rank.stage_counts(buys)
     _ranking = hk_board_rank.ranking_block(buys, theme_asof=as_of)

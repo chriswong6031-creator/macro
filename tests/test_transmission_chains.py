@@ -341,12 +341,18 @@ def test_real_artifact_smoke():
     slugs = {c["chain"] for c in state["chains"]}
     assert {"oil_inflation_duration_derate", "dollar_spike_em_multinational",
             "credit_spreads_refinancing", "vol_regime_deleveraging"} <= slugs
+    calib_present = (REPO_ROOT / "data" / "transmission" / "chain_calibration.json").exists()
     for c in state["chains"]:
         assert c["state"] in {"dormant", "arming", "propagating", "expressed", "failed", "expired"}
         assert c["display_only"] is True
-        # nulls printed honestly, not hidden; W3 base rates untested
-        assert c["base_rates"] is None
+        # base_rates era-honest: None (no calibration mined for this chain — the null printed,
+        # never hidden) OR the W3 merge dict once chain_calibration.json exists. Hard-pinning
+        # None was correct only in the pre-calibration era (first mine: 2026-08-05).
+        assert c["base_rates"] is None or isinstance(c["base_rates"], dict)
         assert c["blast"] == []          # no substrate sweep → W1 default
+    if calib_present:
+        # the W3 merge must actually light up: at least one chain carries mined rates
+        assert any(isinstance(c["base_rates"], dict) and c["base_rates"] for c in state["chains"])
 
     oil = next(c for c in state["chains"] if c["chain"] == "oil_inflation_duration_derate")
     oil_node0 = oil["nodes"][0]
