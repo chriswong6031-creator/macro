@@ -80,8 +80,8 @@
     "url": "https://www.mastermind-x.com/products/market-dashboards.html"
   }
 }</script>
-<link rel="stylesheet" href="../onboard.css?v=39e30a38">
-<link rel="stylesheet" href="../landing.css?v=eace6503">
+<link rel="stylesheet" href="../onboard.css?v=6fd34b5e">
+<link rel="stylesheet" href="../landing.css?v=2c429a7b">
 <style>
 /* ════════════════════════════════════════════════════════════════
    PRODUCT-PAGE SHARED LAYER — identical bytes on all three pages.
@@ -394,6 +394,71 @@ html[data-lang="zh"] .md-oc,html[data-lang="zh"] .md-anchors{letter-spacing:.02e
   box-shadow:var(--sh-card);white-space:nowrap;
   font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.06em;color:var(--muted)}
 .md-oc b{display:block;font-size:10.5px;color:var(--ink)}
+
+/* ── filings row: give the role badge a column it fits in ──────────────────────
+   The track was a hard 40px and the badge carried `padding:3px 0`, so SENATE —
+   six mono caps at 8.5px with .06em tracking, ~39px — filled the track edge to
+   edge and spilled its text over the 9px gutter into the company name. The chips
+   still read as one aligned column because each is a stretched grid item; the
+   track now sizes to the widest of them and the pill has room inside it. */
+.fi-row{grid-template-columns:minmax(44px,auto) 1fr auto}
+.fi-row .who{padding:3px 5px}
+
+/* ── vignette vertical rhythm ──────────────────────────────────────────────────
+   Every .demo is stretched to its copy column (landing.css: min-height 440px on a
+   grid with align-items:stretch), but only the landing's own vignettes carry a
+   child that grows into that height. Here the panels packed to the top and left a
+   hole above the bottom edge — 263px on breadth, 258px on graded reads, 188px on
+   cross-asset, 185px on the nightly rebuild, 177px on flow (operator 2026-08-04).
+
+   No new content is the point: each panel names the element that can honestly take
+   the height, and the closing note becomes a footnote on the frame's bottom rule —
+   so the panel reads header / body / note instead of content / void. Where growing
+   would distort a shape (a five-across timeline stretched to 3.7:1, a tape with
+   80px rows) the block centres instead. */
+.demo>.md-vnote{margin-top:14px;padding-top:12px;border-top:1px solid var(--hair-weak)}
+.demo>.md-stance{margin-top:14px;padding-top:12px}
+
+/* Everything below spends STRETCH height, and stretch only exists above 1080px —
+   landing.css drops .demo to min-height:0 and stacks the grid under that. Left
+   unscoped, the same rules turn into pure added scroll on a phone: the breadth
+   panel alone went from 285px to 694px there, buying nothing, because a one-column
+   .md-dual has no frame to fill. */
+@media (min-width:1081px){
+  /* breadth — the bars ARE the panel, and 30px of them was a stub. The cards take
+     the frame height and centre their contents; the bars triple. */
+  #china .md-dual{flex:1 1 auto}
+  #china .md-mk{display:flex;flex-direction:column;justify-content:center}
+  #china .md-brd{height:auto;flex:0 1 auto;min-height:96px}
+
+  /* cross-asset — same trade: the sparkline is the informative part of an asset
+     card, so it takes the growth and the label rows stay put. The bottom padding
+     keeps the grown cards off the scene-motion phase rail (right:14px/bottom:11px),
+     which until now sat in the void this fills. */
+  #beyond .md-assets{flex:1 1 auto;padding-bottom:8px}
+  #beyond .md-as{display:flex;flex-direction:column;justify-content:center}
+  #beyond .md-as .sp{height:auto;flex:0 1 auto;min-height:54px}
+
+  /* the nightly rebuild — a three-column diagram that already centres its items;
+     growing the container is enough. */
+  #nightly .md-conv{flex:1 1 auto}
+
+  /* graded reads — five ~88px cards. Stretching them would make columns, not cards,
+     so the row centres and the note keeps the bottom rule. */
+  #record .md-rec{margin-block:auto}
+
+  /* flow — the freshness chip belongs WITH the tape, so the two centre as one group
+     rather than the chip drifting down to the note. */
+  #flow .md-tape{margin-top:auto}
+  #flow .md-fresh{margin-bottom:auto}
+
+  /* regime + rotations — the other two holed panels (161px and 176px). Both are a
+     body block over a closing line, so both take the same treatment: the body grows
+     and centres what it holds, the line keeps the bottom rule. The operator named
+     five panels; leaving these two packed would just move the inconsistency. */
+  #regime .md-regime{flex:1 1 auto}
+  #rotations .md-rib{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center}
+}
 
 /* honesty station + the legal seam above the footer */
 .md-honest{max-width:78ch}
@@ -1350,7 +1415,7 @@ LANG.apply(LANG.cur());
 </script>
 <script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';</script>
 <script src="../mm_brain.js?v=b93132d7" defer></script>
-<script src="../onboard.js?v=923aa5a2" defer></script>
+<script src="../onboard.js?v=4c212c03" defer></script>
 <script defer data-whb data-root="../" src="../wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

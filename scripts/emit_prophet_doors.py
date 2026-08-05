@@ -51,6 +51,16 @@ def main() -> None:
     print(f"  theme source: ok={src.get('ok')} asof={src.get('asof')} "
           f"age_days={src.get('age_days')} members={src.get('n_members')}"
           + (f" — {src['reason']}" if src.get("reason") else ""))
+    fsrc = run.get("feature_source") or {}
+    if fsrc:
+        relay, turn, fore = (fsrc.get(k) or {} for k in ("relay", "turnover", "foresight"))
+        print(f"  feature source: relay covered={relay.get('n_covered')}"
+              f"/{relay.get('members_indexed')} members"
+              + (f" — {relay['reason']}" if relay.get("reason") else "")
+              + f" | turnover ok={turn.get('ok')} last={turn.get('last_session')}"
+              + (f" — {turn['reason']}" if turn.get("reason") else "")
+              + f" | foresight ok={fore.get('ok')} themes={fore.get('n_themes')}"
+              + (f" — {fore['reason']}" if fore.get("reason") else ""))
     for door in pd_doors.DOORS:
         rows = run["flags"][door]
         print(f"  door {door}: {len(rows)} flag(s)  "
@@ -67,6 +77,14 @@ def main() -> None:
                       f"hist_d2={f.get('hist_d2')} hist_d3={f.get('hist_d3')} "
                       f"k3={f.get('k3')} d3={f.get('d3')} rs63={f.get('rs63_pctile')} "
                       f"sector={f.get('sector')} theme={f.get('theme')}")
+            # Recorded features (analysis only, prereg §9) — nulls printed, never hidden.
+            print(f"      relay_count_3d={f.get('relay_count_3d')} "
+                  f"relay_position={f.get('relay_position')} "
+                  f"(n={f.get('relay_members_covered')})  "
+                  f"turnover_pctile={f.get('turnover_pctile')} "
+                  f"(window={f.get('turnover_window')})  "
+                  f"foresight_stage={f.get('foresight_stage')} "
+                  f"(covered={f.get('foresight_covered')})")
     print(f"  appended to ledger: {run.get('appended')}")
 
 

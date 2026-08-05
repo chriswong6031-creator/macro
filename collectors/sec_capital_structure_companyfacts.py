@@ -43,6 +43,10 @@ from engine.capital_structure.source_identity import (
     validate_manifest_identity,
     validate_manifest_ledger,
 )
+from engine.capital_structure.source_ledger_io import (
+    SOURCE_LEDGER_FILENAME,
+    decode_source_ledger,
+)
 from engine.capital_structure.source_store import object_key_for_sha256
 
 
@@ -108,6 +112,12 @@ _SOURCE_MANIFEST_COLUMNS = [
     "schema", "manifest_id", "source_system", "source_id", "issuer", "anchor",
     "request", "retrieval", "content", "storage", "rights", "privacy", "parser",
     "spans", "authority",
+]
+# The SEC *filing* manifest ledger this collector anchors against is a different
+# contract from the Company Facts generation manifests above.
+_FILING_ANCHOR_COLUMNS = [
+    "schema", "manifest_id", "source_system", "source_id", "issuer", "filing",
+    "document", "retrieval", "storage", "rights", "privacy", "parser", "spans",
 ]
 _COVERAGE_COLUMNS = [
     "schema", "coverage_id", "attempt_id", "cik", "anchor_manifest_id", "anchor_first_seen_at",
@@ -993,31 +1003,81 @@ def _records(frame: pd.DataFrame) -> list[dict[str, Any]]:
     return [_native(record) for record in frame.to_dict(orient="records")]
 
 
+def _read_ledger_body(
+    path: Path, *, max_bytes: int,
+    parent_fd: int | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+) -> bytes | None:
+    """Read a ledger's bytes through the no-follow, byte-capped boundary.
+
+    Split out from ``_read_ledger`` so the source-manifest ledger can change
+    encoding without any reader losing this hardening.
+    """
+    try:
+        if parent_fd is not None:
+            return _read_regular_bytes_at(
+                parent_fd, path.name, label=f"ledger {path.name}",
+                max_bytes=max_bytes, missing_ok=True,
+                deadline=deadline, monotonic=monotonic,
+            )
+        with _open_absolute_directory(path.parent) as opened_parent_fd:
+            return _read_regular_bytes_at(
+                opened_parent_fd, path.name, label=f"ledger {path.name}",
+                max_bytes=max_bytes, missing_ok=True,
+                deadline=deadline, monotonic=monotonic,
+            )
+    except CompanyFactsPathMissing:
+        return None
+
+
 def _read_ledger(
     path: Path, columns: Sequence[str], *, max_bytes: int,
     parent_fd: int | None = None,
     deadline: float | None = None,
     monotonic: Callable[[], float] = time.monotonic,
 ) -> pd.DataFrame:
-    try:
-        if parent_fd is not None:
-            body = _read_regular_bytes_at(
-                parent_fd, path.name, label=f"ledger {path.name}",
-                max_bytes=max_bytes, missing_ok=True,
-                deadline=deadline, monotonic=monotonic,
-            )
-        else:
-            with _open_absolute_directory(path.parent) as opened_parent_fd:
-                body = _read_regular_bytes_at(
-                    opened_parent_fd, path.name, label=f"ledger {path.name}",
-                    max_bytes=max_bytes, missing_ok=True,
-                    deadline=deadline, monotonic=monotonic,
-                )
-    except CompanyFactsPathMissing:
-        return pd.DataFrame(columns=list(columns))
+    body = _read_ledger_body(
+        path, max_bytes=max_bytes, parent_fd=parent_fd,
+        deadline=deadline, monotonic=monotonic,
+    )
     if body is None:
         return pd.DataFrame(columns=list(columns))
     return _read_ledger_bytes(body, columns, label=str(path))
+
+
+def _read_source_manifest_ledger(
+    path: Path, required_keys: Sequence[str], *, max_bytes: int,
+    parent_fd: int | None = None,
+    deadline: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
+) -> list[dict[str, Any]]:
+    """Read the JSON Lines source-manifest ledger through the same boundary.
+
+    ``required_keys`` preserves the missing-column rejection the parquet reader
+    performed; per-record now rather than per-frame, because JSON Lines has no
+    shared column set to check against.
+    """
+    body = _read_ledger_body(
+        path, max_bytes=max_bytes, parent_fd=parent_fd,
+        deadline=deadline, monotonic=monotonic,
+    )
+    if body is None:
+        return []
+    try:
+        records = decode_source_ledger(body, label=str(path))
+    except (ManifestIdentityError, TypeError, ValueError) as exc:
+        raise CompanyFactsIntakeError(
+            f"unreadable source manifest ledger {path}: {exc}"
+        ) from exc
+    for index, record in enumerate(records):
+        missing = [key for key in required_keys if key not in record]
+        if missing:
+            raise CompanyFactsIntakeError(
+                f"source manifest ledger {path} row {index} lacks keys: "
+                + ", ".join(missing)
+            )
+    return records
 
 
 def _read_ledger_bytes(body: bytes, columns: Sequence[str], *, label: str) -> pd.DataFrame:
@@ -5377,7 +5437,7 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
         beyond the current verified filing-manifest CIK set or the hard queue ceiling.
         """
         root = _data_root()
-        anchor_path = root.parent / "source_manifest.parquet"
+        anchor_path = root.parent / SOURCE_LEDGER_FILENAME
         receipt_path = root / "coverage_receipt.json"
         self._run_deadline = self._monotonic() + self.max_run_seconds
         self._run_bytes = 0
@@ -5394,12 +5454,11 @@ class SecCapitalStructureCompanyFactsAdapter(Adapter):
                 monotonic=self._monotonic,
             )
             source_stores = self._source_stores()
-            anchor_frame = _read_ledger(anchor_path, [
-                "schema", "manifest_id", "source_system", "source_id", "issuer", "filing", "document",
-                "retrieval", "storage", "rights", "privacy", "parser", "spans",
-            ], max_bytes=MAX_ANCHOR_LEDGER_BYTES, parent_fd=lane.parent_fd,
-                deadline=self._run_deadline, monotonic=self._monotonic)
-            anchor_records = _records(anchor_frame)
+            anchor_records = _read_source_manifest_ledger(
+                anchor_path, _FILING_ANCHOR_COLUMNS,
+                max_bytes=MAX_ANCHOR_LEDGER_BYTES, parent_fd=lane.parent_fd,
+                deadline=self._run_deadline, monotonic=self._monotonic,
+            )
             anchors = _complete_submission_anchor_candidates(anchor_records)
             existing_manifests, coverage_records, prior_receipt = _load_committed_bundle(
                 root=root, receipt_path=receipt_path, anchor_records=anchor_records,

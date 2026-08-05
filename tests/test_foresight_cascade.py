@@ -977,3 +977,49 @@ def test_jinja_tier_less_row_defaults_to_shelf():
     assert theme_pos > shelf_pos, (
         "tier-less row must land in the watch shelf, not in the Tier P cards section"
     )
+
+
+# ── W5a: fingerprint sub-object passthrough (2026-08-04 health coherence) ────
+# The health surface counts t1_fingerprint liveness from CASCADE rows
+# (foresight_health._assess_t1_fingerprint reads t["fingerprint"]["n_legs_live"]);
+# before 2026-08-04 the row assembly dropped the bottleneck payload's fingerprint
+# sub-object, so the leg read structurally DARK 0/N while fingerprint-variant
+# stages sat on the board.
+
+_FP_SUB = {"theme": "a", "fingerprint_tightness": 0.61, "leg7_member_inventory": 0.61,
+           "leg8_member_backlog": None, "n_legs_live": 1, "basis": "annual",
+           "provisional": True}
+
+
+def _fp_cascade():
+    bottleneck = {"themes": {"a": {"name": "A", "band": "TIGHTENING (fingerprint)",
+                                   "tightness": 0.37, "fingerprint_only": True,
+                                   "fingerprint": dict(_FP_SUB)}}}
+    revisions = {"themes": {"a": {"name": "A", "breadth": 0.05, "level_state": "FLAT_LOW"}}}
+    return fc.compute_foresight_cascade(bottleneck=bottleneck, revisions=revisions,
+                                        demand={"themes": {}}, glut={"themes": {}},
+                                        write_ledger=False)
+
+
+def test_fingerprint_subobject_passes_through_to_row():
+    """The bottleneck payload's fingerprint sub-object must ride the cascade row."""
+    out = _fp_cascade()
+    r = out["themes"][0]
+    assert r["stage"] == "PRECIPICE (fingerprint)"   # mirrors shipped medical_devices
+    assert r["bottleneck_fingerprint_only"] is True
+    assert r["fingerprint"] == _FP_SUB
+
+
+def test_fingerprint_stage_implies_health_leg_not_dark():
+    """Coherence invariant: a board carrying a fingerprint-variant stage can never
+    yield a health block that reports t1_fingerprint fully DARK. (The autouse
+    _isolate_real_data_tree fixture points the health-log append at tmp_path.)"""
+    from engine.foresight_health import compute_foresight_health
+
+    out = _fp_cascade()
+    assert any(t["stage"] in fc.FINGERPRINT_THESIS_STAGES for t in out["themes"])
+
+    h = compute_foresight_health(cascade=out)
+    leg = h["legs"]["t1_fingerprint"]
+    assert leg["status"] != "DARK"
+    assert leg["detail"] == "1/1"

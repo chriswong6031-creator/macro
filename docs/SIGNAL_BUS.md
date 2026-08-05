@@ -61,7 +61,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | metabolism-phase-v2d | 4 |
 | metabolism-phase0 | 2 |
 | mlc | 1 |
-| momoedge | 8 |
+| momoedge | 9 |
 | narrative-ignition | 5 |
 | nasdaq-internals | 1 |
 | neural-web | 64 |
@@ -110,13 +110,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 364 |
 | infrastructure | 139 |
 | scored | 4 |
-| shadow | 81 |
+| shadow | 82 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 556 |
+| git | 557 |
 | git+r2 | 2 |
 | gitignored-local | 15 |
 | r2 | 15 |
@@ -178,7 +178,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | capital-structure-companyfacts-coverage-receipts | `data/capital_structure/companyfacts/receipts/*.json` | json | collect | infrastructure | 2 | 0 |
 | capital-structure-companyfacts-source-manifest | `data/capital_structure/companyfacts/generations/*/source_manifest.parquet` | parquet | collect | infrastructure | 2 | 0 |
 | capital-structure-share-count-current-pointer | `data/capital_structure/share_counts/v2/current_receipt.json` | json | collect | infrastructure | 2 | 0 |
-| capital-structure-source-manifest | `data/capital_structure/source_manifest.parquet` | parquet | collect | infrastructure | 2 | 0 |
+| capital-structure-source-manifest | `data/capital_structure/source_manifest.jsonl` | jsonl | collect | infrastructure | 2 | 0 |
 | capital-structure-discovery | `data/capital_structure/discovery.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-event-edges | `data/capital_structure/event_edges.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-event-versions | `data/capital_structure/event_versions.parquet` | parquet | collect | infrastructure | 1 | 0 |
@@ -699,6 +699,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
 | prophet-index | `site/prophet/index.json` | json | daily-engine | display | 0 | 1 |
 | prophet-ledger | `data/prophet/ledger.jsonl` | jsonl | daily-engine | display | 1 | 0 |
+| us-context-vector | `data/us_prophet_rank/candidates/YYYY-MM.parquet` | parquet | daily-engine | shadow | 0 | 0 |
 
 ### narrative-ignition
 

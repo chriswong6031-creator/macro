@@ -767,8 +767,18 @@ def route_verdict(
     *,
     cfg: dict | None,
     root: Path | str | None = None,
+    refinement: str = "",
 ) -> DeskVerdict:
     """The full answer to "who takes this wire item, and may they?".
+
+    ``refinement`` is an optional sub-key of the event class, looked up as
+    ``classes["<event_class>.<refinement>"]`` BEFORE ``classes[event_class]``.
+    It exists because one class can carry two products: a tape-moving US CPI
+    print and a Swiss CPI sub-print are both ``macro_print``, and only the first
+    belongs on a desk that owns a house view. The caller supplies the token
+    (:func:`breaking_relevance.macro_routing_refinement` derives ``"minor"``);
+    routing stays config, never code. Omitting it reproduces the pre-refinement
+    behaviour exactly.
 
     OWNERSHIP, then LIVENESS, then VOLUME — three questions in that order, and
     keeping them separate is what stops each from quietly re-deciding the others:
@@ -795,7 +805,19 @@ def route_verdict(
     classes = _block(cfg).get("classes")
     acct = fallback
     if isinstance(classes, dict):
-        acct = str(classes.get(str(event_class)) or "").strip() or fallback
+        # A REFINEMENT NARROWS AN OWNER, IT NEVER INVENTS ONE. `macro_print.minor`
+        # is consulted first and the bare `macro_print` row is the fallback, so a
+        # config that carries no refined row routes exactly as it did before this
+        # existed — the refinement can only move an item off the desk the class
+        # names, never onto a desk no row mentions.
+        keys = [str(event_class)]
+        if refinement:
+            keys.insert(0, f"{event_class}.{refinement}")
+        for key in keys:
+            acct = str(classes.get(key) or "").strip()
+            if acct:
+                break
+        acct = acct or fallback
 
     verdict = resolve_desk(acct, cfg=cfg, root=root, event_class=event_class)
     if verdict.parked:
@@ -843,6 +865,7 @@ def route(
     *,
     cfg: dict | None,
     root: Path | str | None = None,
+    refinement: str = "",
 ) -> str:
     """The account id that owns a wire emission of ``event_class``.
 
@@ -853,4 +876,5 @@ def route(
     to the routing default, and a capped owner hands it to a wire desk with
     headroom instead of piling on. Never raises.
     """
-    return route_verdict(event_class, cfg=cfg, root=root).account
+    return route_verdict(event_class, cfg=cfg, root=root,
+                         refinement=refinement).account

@@ -866,3 +866,109 @@ def test_register_cohort_claims_lands_at_repo_root(monkeypatch, tmp_path):
         f"Claims must NOT land at data_root/data/qledger/claims.jsonl — "
         f"this indicates the double-data/ bug is still present: {double_data}"
     )
+
+
+# ---------------------------------------------------------------------------
+# (22) data-plane defaults — detection and maturity never key off the calendar
+#      (forward-ledger audit 2026-08-05, #4568 pattern)
+#
+# All fixture dates below are pinned weekdays and every assertion is
+# wall-clock-free: the contract is "the tape decides", so the expected values
+# are store-derived constants, not today's date.
+# ---------------------------------------------------------------------------
+
+_EVENT_DATE   = "2026-07-16"   # Thursday — the turn-watch ledger's newest stamp
+_EARLIER_DATE = "2026-07-15"   # Wednesday — an older stamp that must NOT win
+# data/yahoo/SPY.parquet fixture: 21 business days from _EVENT_DATE
+_SPY_LAST_BAR = "2026-08-13"   # Thursday — pd.bdate_range(_EVENT_DATE, 21)[-1]
+
+
+def test_tape_disagreement_defaults_to_the_data_plane(monkeypatch, tmp_path):
+    """as_of=None: detection keys off the ledger's MAX stamp, maturity off SPY.
+
+    Under the pre-fix default both came from date.today(): detection looked for
+    rows stamped with a calendar date the ledger may never carry (silently
+    detecting nothing), and the maturity clock ran ahead of the tape.
+    """
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+    # Two IGNITION sessions in the ledger — only the newest is tonight's
+    _make_turn_watch_ledger(
+        [
+            _make_ignition_row("memory_storage", _EARLIER_DATE),
+            _make_ignition_row("semicap_equipment", _EVENT_DATE),
+        ],
+        tmp_path,
+    )
+    _make_baskets_json(tmp_path, [_REAL_THEME_FIXTURE])          # reco = "hold"
+    _make_membership_json(tmp_path, _REAL_MEMBERSHIP_FIXTURE)
+    _make_price_parquet(tmp_path / "yahoo" / "SPY.parquet", _EVENT_DATE, 21, 0.0)
+
+    captured: dict[str, Any] = {}
+
+    def _spy_update(rows, baskets_map, as_of, data_root=None):
+        captured["as_of"] = as_of
+        return [dict(r) for r in rows]
+
+    with patch.object(TD, "update_outcomes", _spy_update):
+        result = TD.nightly_run(as_of=None, data_root=tmp_path, root=tmp_path)
+
+    assert result["ok"] is True
+    assert result["n_new_events"] == 1, "only the ledger's newest session detects"
+
+    rows = TD.load_ledger(tmp_path)
+    assert len(rows) == 1
+    assert rows[0]["event_date"] == _EVENT_DATE
+    assert rows[0]["basket_id"] == "semicap_equipment"
+
+    # Maturity clock = the SPY store's newest bar, not the calendar
+    assert captured["as_of"] == _SPY_LAST_BAR
+
+
+def test_tape_disagreement_empty_ledger_skips_detection(monkeypatch, tmp_path):
+    """An empty turn-watch ledger has no session to detect for — no crash."""
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    _make_turn_watch_ledger([], tmp_path)
+    _make_baskets_json(tmp_path, [_REAL_THEME_FIXTURE])
+
+    result = TD.nightly_run(as_of=None, data_root=tmp_path, root=tmp_path)
+
+    assert result["ok"] is True
+    assert result["n_new_events"] == 0
+
+
+# data/yahoo/SPY.parquet fixture: 22 business days from the cohort date, so
+# exactly 21 sessions elapse strictly after it (the grading horizon).
+_COHORT_DATE  = "2026-06-01"   # Monday
+_COHORT_LAST_BAR = "2026-06-30"  # Tuesday — pd.bdate_range(_COHORT_DATE, 22)[-1]
+
+
+def test_grade_cohorts_defaults_to_the_spy_tape_bound(monkeypatch, tmp_path):
+    """as_of=None: the maturity clock and graded_as_of come from the SPY store.
+
+    Under the pre-fix default graded_as_of recorded the calendar day of the run
+    — a date the grader never priced anything at.
+    """
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+    _make_membership_json(tmp_path, {
+        "semicap_equipment": {
+            "name": "test", "name_zh": "", "theme": "", "category": "",
+            "etf_proxy": "", "created": _COHORT_DATE, "curated": _COHORT_DATE,
+            "omitted": [], "weighting": "equal", "changelog": [], "parent": "", "tags": [],
+            "members": [{"ticker": "AMAT", "added": _COHORT_DATE, "removed": None,
+                         "rationale": ""}],
+        }
+    })
+    _make_price_parquet(tmp_path / "yahoo" / "SPY.parquet", _COHORT_DATE, 22, 0.0)
+    _make_price_parquet(tmp_path / "stocks" / "AMAT.parquet", _COHORT_DATE, 22, 0.003)
+
+    cohorts = [{"cohort_id": _COHORT_DATE, "cohort_date": _COHORT_DATE,
+                "basket_ids": ["semicap_equipment"], "n_baskets": 1}]
+
+    # as_of deliberately omitted — the default is what is under test
+    grades = BTC.grade_cohorts(cohorts, data_root=tmp_path)
+
+    assert len(grades) == 1
+    assert grades[0]["graded_as_of"] == _COHORT_LAST_BAR
+    assert grades[0]["sessions_elapsed"] == BTC.GRADE_HORIZON_SESSIONS

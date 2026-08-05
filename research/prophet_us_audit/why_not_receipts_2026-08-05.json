@@ -1,0 +1,307 @@
+{
+ "generated": "2026-08-05",
+ "note": "Frozen why-not receipts for the board-continuity forensic (research/prophet_us_audit/BOARD_CONTINUITY_FORENSIC_2026-08-05.md). Display/audit only — never a gate, never an input to admission.",
+ "board_artifact": {
+  "path": "site/factordata/us_standouts.json"
+ },
+ "gate_constants": {
+  "min_history": 200,
+  "fresh_ticks": 2,
+  "buy_rsi_max": 65.0,
+  "veto_legs": [
+   "stoch_ob",
+   "stoch_bear",
+   "macd_bear"
+  ]
+ },
+ "names": {
+  "FNV": {
+   "ticker": "FNV",
+   "in_universe": false,
+   "membership": {
+    "data_stocks": false,
+    "breadth_caches": [],
+    "breadth_caches_absent_file": [
+     "russell_breadth"
+    ],
+    "curated_extra_ticker": false,
+    "curated_extra_name": null,
+    "curated_extra_sector": null
+   },
+   "price_source": null,
+   "verdict": "not_in_universe",
+   "plain": "No close series in any admission source — the board cannot rank, refuse, or explain this name. Scan-tier gap (roadmap 4.5).",
+   "n_closes": 0,
+   "last_close_date": null,
+   "tier_today": null,
+   "blocking_leg": null
+  },
+  "CDE": {
+   "ticker": "CDE",
+   "in_universe": true,
+   "membership": {
+    "data_stocks": false,
+    "breadth_caches": [
+     "midcap_breadth"
+    ],
+    "breadth_caches_absent_file": [
+     "russell_breadth"
+    ],
+    "curated_extra_ticker": false,
+    "curated_extra_name": null,
+    "curated_extra_sector": null
+   },
+   "price_source": "data/midcap_breadth/_closes_cache.parquet[CDE]",
+   "n_closes": 51,
+   "last_close_date": "2026-07-31",
+   "last_close": 14.91,
+   "verdict": "insufficient_history",
+   "plain": "Only 51 closes; the tier cascade needs 200. Too new to read — not a refusal.",
+   "tier_today": null,
+   "blocking_leg": "insufficient_history",
+   "min_history_required": 200
+  },
+  "FSM": {
+   "ticker": "FSM",
+   "in_universe": false,
+   "membership": {
+    "data_stocks": false,
+    "breadth_caches": [],
+    "breadth_caches_absent_file": [
+     "russell_breadth"
+    ],
+    "curated_extra_ticker": false,
+    "curated_extra_name": null,
+    "curated_extra_sector": null
+   },
+   "price_source": null,
+   "verdict": "not_in_universe",
+   "plain": "No close series in any admission source — the board cannot rank, refuse, or explain this name. Scan-tier gap (roadmap 4.5).",
+   "n_closes": 0,
+   "last_close_date": null,
+   "tier_today": null,
+   "blocking_leg": null
+  },
+  "EXK": {
+   "ticker": "EXK",
+   "in_universe": false,
+   "membership": {
+    "data_stocks": false,
+    "breadth_caches": [],
+    "breadth_caches_absent_file": [
+     "russell_breadth"
+    ],
+    "curated_extra_ticker": false,
+    "curated_extra_name": null,
+    "curated_extra_sector": null
+   },
+   "price_source": null,
+   "verdict": "not_in_universe",
+   "plain": "No close series in any admission source — the board cannot rank, refuse, or explain this name. Scan-tier gap (roadmap 4.5).",
+   "n_closes": 0,
+   "last_close_date": null,
+   "tier_today": null,
+   "blocking_leg": null
+  },
+  "AG": {
+   "ticker": "AG",
+   "in_universe": false,
+   "membership": {
+    "data_stocks": false,
+    "breadth_caches": [],
+    "breadth_caches_absent_file": [
+     "russell_breadth"
+    ],
+    "curated_extra_ticker": false,
+    "curated_extra_name": null,
+    "curated_extra_sector": null
+   },
+   "price_source": null,
+   "verdict": "not_in_universe",
+   "plain": "No close series in any admission source — the board cannot rank, refuse, or explain this name. Scan-tier gap (roadmap 4.5).",
+   "n_closes": 0,
+   "last_close_date": null,
+   "tier_today": null,
+   "blocking_leg": null
+  },
+  "GOLD": {
+   "ticker": "GOLD",
+   "in_universe": true,
+   "membership": {
+    "data_stocks": false,
+    "breadth_caches": [],
+    "breadth_caches_absent_file": [
+     "russell_breadth"
+    ],
+    "curated_extra_ticker": true,
+    "curated_extra_name": "Barrick Mining",
+    "curated_extra_sector": "Materials"
+   },
+   "price_source": "data/yahoo/GOLD.parquet",
+   "n_closes": 23,
+   "last_close_date": "2026-08-03",
+   "last_close": 42.13,
+   "verdict": "insufficient_history",
+   "plain": "Only 23 closes; the tier cascade needs 200. Too new to read — not a refusal.",
+   "tier_today": null,
+   "blocking_leg": "insufficient_history",
+   "min_history_required": 200
+  },
+  "SBSW": {
+   "ticker": "SBSW",
+   "in_universe": false,
+   "membership": {
+    "data_stocks": false,
+    "breadth_caches": [],
+    "breadth_caches_absent_file": [
+     "russell_breadth"
+    ],
+    "curated_extra_ticker": false,
+    "curated_extra_name": null,
+    "curated_extra_sector": null
+   },
+   "price_source": null,
+   "verdict": "not_in_universe",
+   "plain": "No close series in any admission source — the board cannot rank, refuse, or explain this name. Scan-tier gap (roadmap 4.5).",
+   "n_closes": 0,
+   "last_close_date": null,
+   "tier_today": null,
+   "blocking_leg": null
+  },
+  "RKLB": {
+   "ticker": "RKLB",
+   "in_universe": true,
+   "membership": {
+    "data_stocks": false,
+    "breadth_caches": [],
+    "breadth_caches_absent_file": [
+     "russell_breadth"
+    ],
+    "curated_extra_ticker": true,
+    "curated_extra_name": "Rocket Lab",
+    "curated_extra_sector": "Industrials"
+   },
+   "price_source": "data/yahoo/RKLB.parquet",
+   "n_closes": 1427,
+   "last_close_date": "2026-08-03",
+   "last_close": 70.43,
+   "tier_row_today": {
+    "tier": null,
+    "weight": 0.0,
+    "ticks": null,
+    "not_topped": false,
+    "eligible": false,
+    "sub": null,
+    "s1": false,
+    "s2": false
+   },
+   "leg_snapshot": {
+    "stoch_ob": false,
+    "stoch_bear": false,
+    "macd_bear": true,
+    "rsi_block": false,
+    "k3": 11.4,
+    "d3": 4.3,
+    "rsi3d": 43.4,
+    "t1_ticks": 26,
+    "t2_ticks": 42,
+    "t2raw_ticks": 42,
+    "recent3": true
+   },
+   "eligibility_window_63d": {
+    "eligible_today": false,
+    "tier_today": NaN,
+    "days_eligible": 0,
+    "first_eligible": null,
+    "fwd_ret_from_first_pct": null,
+    "tiers_seen": []
+   },
+   "tier_today": null,
+   "verdict": "not_topped_veto",
+   "blocking_leg": [
+    "macd_bear"
+   ],
+   "plain": "Blocked by the not-topped veto (macd_bear) — the veto trips before any cross / freshness / RSI check, so the tier is null regardless of cross age."
+  },
+  "ASTS": {
+   "ticker": "ASTS",
+   "in_universe": true,
+   "membership": {
+    "data_stocks": false,
+    "breadth_caches": [],
+    "breadth_caches_absent_file": [
+     "russell_breadth"
+    ],
+    "curated_extra_ticker": true,
+    "curated_extra_name": "AST SpaceMobile",
+    "curated_extra_sector": "Communication Services"
+   },
+   "price_source": "data/yahoo/ASTS.parquet",
+   "n_closes": 1695,
+   "last_close_date": "2026-08-03",
+   "last_close": 63.52,
+   "tier_row_today": {
+    "tier": null,
+    "weight": 0.0,
+    "ticks": null,
+    "not_topped": false,
+    "eligible": false,
+    "sub": null,
+    "s1": false,
+    "s2": false
+   },
+   "leg_snapshot": {
+    "stoch_ob": false,
+    "stoch_bear": false,
+    "macd_bear": true,
+    "rsi_block": false,
+    "k3": 13.1,
+    "d3": 6.4,
+    "rsi3d": 42.6,
+    "t1_ticks": 19,
+    "t2_ticks": 29,
+    "t2raw_ticks": 29,
+    "recent3": true
+   },
+   "eligibility_window_63d": {
+    "eligible_today": false,
+    "tier_today": NaN,
+    "days_eligible": 5,
+    "first_eligible": "2026-05-18",
+    "fwd_ret_from_first_pct": -26.85,
+    "tiers_seen": [
+     "T1"
+    ]
+   },
+   "tier_today": null,
+   "verdict": "not_topped_veto",
+   "blocking_leg": [
+    "macd_bear"
+   ],
+   "plain": "Blocked by the not-topped veto (macd_bear) — the veto trips before any cross / freshness / RSI check, so the tier is null regardless of cross age."
+  },
+  "SPCX": {
+   "ticker": "SPCX",
+   "in_universe": true,
+   "membership": {
+    "data_stocks": false,
+    "breadth_caches": [],
+    "breadth_caches_absent_file": [
+     "russell_breadth"
+    ],
+    "curated_extra_ticker": true,
+    "curated_extra_name": "SpaceX",
+    "curated_extra_sector": "Industrials"
+   },
+   "price_source": "data/yahoo/SPCX.parquet",
+   "n_closes": 35,
+   "last_close_date": "2026-08-03",
+   "last_close": 114.53,
+   "verdict": "insufficient_history",
+   "plain": "Only 35 closes; the tier cascade needs 200. Too new to read — not a refusal.",
+   "tier_today": null,
+   "blocking_leg": "insufficient_history",
+   "min_history_required": 200
+  }
+ }
+}
