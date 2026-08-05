@@ -374,16 +374,122 @@ def test_armed_recent_fires_on_aged_curl_while_armed_stays_false() -> None:
     assert r["armed_recent"] is True
 
 
-def test_armed_recent_traverse_leg_fires_without_a_recent_cross() -> None:
-    """Curl 10 bars back (outside BOTH curl windows) — the traversal leg carries it."""
+def test_armed_recent_traverse_leg_fires_on_an_aged_curl() -> None:
+    """Curl 10 bars back — both legs carry it once the window spans the base."""
     px = _aged_curl_px(dip_at=-13)
     assert _cross_bars_back(px) == [10], f"fixture drifted: {_cross_bars_back(px)}"
     r = technical_arming(px, CFG)
-    assert r["stoch_curl"] is False
-    assert r["stoch_curl_recent"] is False, "cross is outside the 10-bar window"
-    assert r["stoch_traverse"] is True, "%K went <30 then >50 inside the window"
+    assert r["stoch_curl"] is False, "3-bar window must not see a 10-bar-old curl"
+    assert r["stoch_traverse"] is True, "%K went <30 then >50 inside the base"
     assert r["armed"] is False
     assert r["armed_recent"] is True
+
+
+# ---------------------------------------------------------------------------
+# W-C(2) base-scoped window (commissioner ruling 2026-08-05).
+#
+# The window is the CURRENT BASE — max(armed_recent_lookback, days_in_base) —
+# not a fixed bar count.  A constant window forgets a curl mid-base, which is the
+# same shutter defect the wave exists to fix.  Silver's 08-03 curl sat 12 bars
+# back inside a 23-day base: inside its own base, outside any 10-bar clock.
+# ---------------------------------------------------------------------------
+
+def _base_scoped_px(dib: int, dip_at: int | None = None, recover: int = 6,
+                    lift_len: int = 5) -> pd.DataFrame:
+    """A frame whose `days_in_base` lands exactly on `dib`.
+
+    Plateau -> a prior low -> a lift more than `base_pct` above that low (which
+    is what actually breaks the consecutive in-band counter; a flat plateau is
+    trivially inside its OWN band) -> a `dib`-bar base.  `dip_at` optionally
+    carves a fresh low inside the base so the curl lands at a chosen age.
+    """
+    n = 300
+    lvl = 55.0
+    idx = pd.date_range("2015-01-01", periods=n, freq="B")
+    rng = np.random.default_rng(11)
+    a = np.full(n, 100.0) + rng.normal(0, 0.05, n)
+    start = n - dib
+    lift0 = start - lift_len
+    a[lift0 - 4:lift0] = lvl * 0.972      # prior low — sets the band reference
+    a[lift0:start] = lvl * 1.15           # lift >8% above it -> out of band
+    a[start:] = lvl + rng.normal(0, 0.05, dib)
+    if dip_at is not None:
+        lo = n + dip_at
+        a[lo - 3:lo + 1] = lvl * 0.972
+        if recover > 0:
+            a[lo + 1:lo + 1 + recover] = np.linspace(lvl * 0.972, lvl * 1.004, recover)
+        a[lo + 1 + recover:] = lvl * 1.004
+    close = pd.Series(a, index=idx)
+    return _px(close)
+
+
+def test_armed_recent_spans_the_current_base() -> None:
+    """days_in_base=23 with the curl 12 bars back -> True (silver's 08-03 shape).
+
+    This is the case a fixed 10-bar window gets WRONG: 12 > 10, so the clock-
+    scoped construction reported False on a live 23-day base.
+    """
+    px = _base_scoped_px(23, dip_at=-15)
+    r = technical_arming(px, CFG)
+    assert r["days_in_base"] == 23, f"fixture drifted: dib={r['days_in_base']}"
+    assert 12 in _cross_bars_back(px), f"fixture drifted: {_cross_bars_back(px)}"
+    assert r["armed_recent_window"] == 23, "window must span the base"
+    assert r["basing"] is True
+    assert r["armed"] is False, "strict armed still cannot see a 12-bar-old curl"
+    assert r["stoch_curl_recent"] is True
+    assert r["armed_recent"] is True
+
+
+def test_armed_recent_drops_a_curl_from_a_previous_base() -> None:
+    """days_in_base=8 with the curl 12 bars back -> False.
+
+    The base restarted after that curl, so the curl is not this base's.  Note
+    both guards bite here: 8 < base_min_days so `basing` is False as well.  The
+    window arithmetic itself is pinned separately by the two tests below.
+    """
+    px = _base_scoped_px(8, dip_at=None)
+    r = technical_arming(px, CFG)
+    assert r["days_in_base"] == 8, f"fixture drifted: dib={r['days_in_base']}"
+    assert 12 in _cross_bars_back(px), f"fixture drifted: {_cross_bars_back(px)}"
+    assert r["armed_recent_window"] == 10, "floor applies to a sub-floor base"
+    assert r["basing"] is False
+    assert r["armed_recent"] is False
+
+
+@pytest.mark.parametrize("dib", [11, 15, 23, 30, 45])
+def test_armed_recent_window_equals_the_base_length(dib: int) -> None:
+    """Above the floor the window IS days_in_base."""
+    r = technical_arming(_base_scoped_px(dib, dip_at=-8), CFG)
+    assert r["days_in_base"] == dib, f"fixture drifted: dib={r['days_in_base']}"
+    assert r["armed_recent_window"] == dib
+
+
+@pytest.mark.parametrize("dib", [0, 2, 5, 8])
+def test_armed_recent_window_floors_at_the_lookback_constant(dib: int) -> None:
+    """A base shorter than the floor still gets the 10-bar constant."""
+    px = _base_scoped_px(dib) if dib else _px(_close(400))
+    r = technical_arming(px, CFG)
+    assert r["armed_recent_window"] == max(10, r["days_in_base"])
+    assert r["armed_recent_window"] >= 10, "floor must never be undercut"
+
+
+def test_traversal_requires_the_oversold_reading_to_come_first() -> None:
+    """A high %K with no prior oversold reading is NOT a turn.
+
+    The traversal leg means "%K was under `stoch_oversold` and LATER rose above
+    `armed_recent_traverse_high`".  Without the ordering requirement any
+    mid-range-or-better %K would fire it, so an asset that never went oversold
+    at all would read as igniting.  Fixture: a steady uptrend whose %K sits far
+    ABOVE the high threshold and never once reads oversold inside the window.
+    """
+    px = _px(_close(400, trend=0.003, vol=0.006))
+    r = technical_arming(px, CFG)
+    k, _d = _stoch_kd(px["close"], 14, 3, 3)
+    win = k.dropna().iloc[-r["armed_recent_window"]:]
+    # preconditions — if these drift the test would go vacuous
+    assert win.min() > 30, f"fixture must never read oversold (min {win.min():.1f})"
+    assert win.max() > 50, f"fixture must exceed the high threshold (max {win.max():.1f})"
+    assert r["stoch_traverse"] is False, "a high %K alone must not read as a traversal"
 
 
 def test_strict_armed_unchanged_on_a_fresh_curl() -> None:
@@ -433,6 +539,7 @@ def test_armed_recent_present_in_null_result() -> None:
     assert r["armed_recent"] is False
     assert r["stoch_curl_recent"] is False
     assert r["stoch_traverse"] is False
+    assert r["armed_recent_window"] == 10, "null result reports the floor"
 
 
 # ---------------------------------------------------------------------------
@@ -692,10 +799,14 @@ if __name__ == "__main__":
         test_oil_wti_episode_report,
         # W-C(2) armed_recent
         test_armed_recent_fires_on_aged_curl_while_armed_stays_false,
-        test_armed_recent_traverse_leg_fires_without_a_recent_cross,
+        test_armed_recent_traverse_leg_fires_on_an_aged_curl,
         test_strict_armed_unchanged_on_a_fresh_curl,
         test_armed_recent_requires_basing,
         test_armed_recent_present_in_null_result,
+        # W-C(2) base-scoped window
+        test_armed_recent_spans_the_current_base,
+        test_armed_recent_drops_a_curl_from_a_previous_base,
+        test_traversal_requires_the_oversold_reading_to_come_first,
     ]
     for fn in tests:
         fn()
@@ -704,6 +815,13 @@ if __name__ == "__main__":
     for _dip, _exp in [(-4, True), (-5, True), (-6, False), (-8, False), (-12, False)]:
         test_armed_window_boundary_family(_dip, _exp)
         print(f"PASS test_armed_window_boundary_family[dip_at={_dip}]")
+    # parametrized base-scoped window arithmetic
+    for _dib in [11, 15, 23, 30, 45]:
+        test_armed_recent_window_equals_the_base_length(_dib)
+        print(f"PASS test_armed_recent_window_equals_the_base_length[dib={_dib}]")
+    for _dib in [0, 2, 5, 8]:
+        test_armed_recent_window_floors_at_the_lookback_constant(_dib)
+        print(f"PASS test_armed_recent_window_floors_at_the_lookback_constant[dib={_dib}]")
     # parametrized falling-knife seeds
     for seed in [1, 5, 42, 99, 137]:
         test_falling_knife_never_arms(seed)
