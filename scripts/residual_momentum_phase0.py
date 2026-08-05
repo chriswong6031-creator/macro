@@ -285,6 +285,47 @@ def sleeve_extension(net: pd.Series, win: int = 126) -> pd.Series:
     return span / sd.replace(0, np.nan)
 
 
+def _era_split(net: pd.Series, gated: pd.Series, volt: pd.Series, both: pd.Series,
+               years: int = 6) -> list[dict]:
+    """Per-era gated-vs-ungated comparison — the check that separates a real gate from
+    ONE lucky episode.
+
+    A crash gate is exactly the kind of signal that can post a great full-sample number
+    off a single event (2008-09 for momentum) and nothing else. Splitting into fixed
+    multi-year blocks and printing EVERY block, winners and losers, is what makes that
+    visible: a gate that helps in one block out of four is a 2009 detector, not a gate."""
+    if net.dropna().empty:
+        return []
+    rows = []
+    start = net.index.min()
+    while start < net.index.max():
+        end = start + pd.DateOffset(years=years)
+        sl = slice(start, end)
+        n = net.loc[sl].dropna()
+        if len(n) < 250:
+            start = end
+            continue
+
+        def _sr(x):
+            x = x.loc[sl].dropna()
+            return round(float(x.mean() / x.std() * np.sqrt(252)), 2) if len(x) and x.std() else None
+
+        def _dd(x):
+            x = x.loc[sl].dropna()
+            if not len(x):
+                return None
+            c = (1 + x).cumprod()
+            return round(float((c / c.cummax() - 1).min() * 100), 1)
+
+        rows.append({"era": f"{start.year}–{min(end.year, net.index.max().year)}",
+                     "n_days": int(len(n)),
+                     "sr_ungated": _sr(net), "sr_gated": _sr(gated),
+                     "sr_vol": _sr(volt), "sr_both": _sr(both),
+                     "dd_ungated": _dd(net), "dd_both": _dd(both)})
+        start = end
+    return rows
+
+
 def crash_section(R, closes, sig, grid, horizon, market, ledger, breadth=None,
                   extension=None) -> dict:
     net, win_leg, lose_leg = ls_returns(R, sig, grid, horizon)
@@ -305,10 +346,14 @@ def crash_section(R, closes, sig, grid, horizon, market, ledger, breadth=None,
     both = net * exp.reindex(net.index).fillna(0.0) * vs
 
     live = exp.dropna()
+    # Sharpe is scale-invariant, so a constant de-risking cannot change it. Reporting
+    # mean exposure alongside the Sharpe lift is what shows the gain came from TIMING
+    # rather than from simply holding less.
     return {
         "variants": [_stats(net, "ungated", ledger), _stats(gated, "crash-gated", ledger),
                      _stats(volt, "vol-target (Barroso)", ledger),
                      _stats(both, "gate x vol-target", ledger)],
+        "eras": _era_split(net, gated, volt, both),
         "conditions_live": sorted(cond.columns) if not cond.empty else [],
         "conditions_absent": sorted(set(gate.CONDITIONS) - set(cond.columns)),
         "exposure_mean": round(float(live.mean()), 3) if len(live) else None,
@@ -319,6 +364,49 @@ def crash_section(R, closes, sig, grid, horizon, market, ledger, breadth=None,
 
 
 # --------------------------------------------------------------------------- #
+# D. factor-leg impact (descriptive)
+# --------------------------------------------------------------------------- #
+def legs_impact(closes, market, tkr_sector, legs, sec, *, win, shrink, form, skip) -> dict:
+    """Does adding size/value/quality/low-vol to the regression CHANGE anything?
+
+    Deliberately descriptive, not an IC test. The factor legs only exist on the ~3-year
+    live panel (annual fundamentals), which yields ~1-2 dozen rebalances — far too few to
+    say anything about predictive power, and an IC printed on that grid would invite
+    exactly the over-reading it cannot support. What IS answerable at this sample size:
+    how much residual variance the legs absorb, how much per-name factor exposure they
+    remove, and whether the final ranking actually moves."""
+    two = rm.residuals(closes, market, tkr_sector, win, shrink, None)
+    three = rm.residuals(closes, market, tkr_sector, win, shrink, legs)
+    warm = min(win + form, len(closes) - 60)
+    t2, t3 = two.iloc[warm:], three.iloc[warm:]
+    if t2.empty or t3.empty:
+        return {}
+
+    exposure = {}
+    for name, leg in legs.items():
+        l2 = leg.reindex(t2.index)
+        exposure[name] = {
+            "abs_corr_2leg": round(float(t2.corrwith(l2).abs().mean()), 4),
+            "abs_corr_full": round(float(t3.corrwith(l2).abs().mean()), 4),
+        }
+
+    s2 = rm.window_signals(closes.pct_change(fill_method=None), two, form, skip)["mom_res"].iloc[-1]
+    s3 = rm.window_signals(closes.pct_change(fill_method=None), three, form, skip)["mom_res"].iloc[-1]
+    j = pd.concat([s2.rename("a"), s3.rename("b")], axis=1).dropna()
+    sn = lambda s: s - s.groupby(sec.reindex(s.index)).transform("mean")  # noqa: E731
+    top = lambda s, k=50: set(s.nlargest(k).index)  # noqa: E731
+    return {
+        "resid_vol_2leg": round(float(t2.std().mean()), 6),
+        "resid_vol_full": round(float(t3.std().mean()), 6),
+        "vol_absorbed_pct": round(float((1 - t3.std().mean() / t2.std().mean()) * 100), 2),
+        "exposure": exposure,
+        "score_rank_corr": round(float(sn(j["a"]).corr(sn(j["b"]), method="spearman")), 4)
+        if len(j) >= 20 else None,
+        "top50_overlap": (len(top(sn(j["a"])) & top(sn(j["b"]))) if len(j) >= 60 else None),
+        "n_scored": int(len(j)),
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--closes", choices=["live", "deep"], default="deep")
@@ -398,7 +486,13 @@ def main() -> int:
     else:
         print("[C] SKIPPED — the live panel carries no momentum crash to gate.")
 
-    report = render(A, B, C, args, closes, grid, legs, ledger)
+    D = None
+    if legs:
+        print("[D] factor-leg impact …", flush=True)
+        D = legs_impact(closes, market, tkr_sector, legs, sec, win=args.beta_win,
+                        shrink=args.shrink, form=args.tq_form, skip=args.tq_skip)
+
+    report = render(A, B, C, D, args, closes, grid, legs, ledger)
     out = config.ROOT / config.load()["storage"]["reports_dir"] / args.out
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(report)
@@ -406,7 +500,7 @@ def main() -> int:
     return 0
 
 
-def render(A, B, C, args, closes, grid, legs, ledger) -> str:
+def render(A, B, C, D, args, closes, grid, legs, ledger) -> str:
     L = ["# Residual momentum · trend quality · crash gating — Phase 0", "",
          "*Generated by `scripts/residual_momentum_phase0.py`. Judge every IC against ~0. "
          "BH-FDR(10%) runs across the WHOLE candidate grid, not per-row.*", "",
@@ -477,7 +571,9 @@ def render(A, B, C, args, closes, grid, legs, ledger) -> str:
               f"Conditions live: {', '.join(f'`{c}`' for c in C['conditions_live']) or 'none'}"
               + (f" · absent: {', '.join(f'`{c}`' for c in C['conditions_absent'])}"
                  if C["conditions_absent"] else "") + ".",
-              f"Mean exposure {C['exposure_mean']} over {C['exposure_span']}.", "",
+              f"Mean exposure {C['exposure_mean']} over {C['exposure_span']} — Sharpe is "
+              "scale-invariant, so holding less on average cannot by itself move the "
+              "Sharpe column; any lift there is TIMING.", "",
               "| variant | Sharpe | cum % | max DD % | skew | DSR | verdict | Sharpe CI | P(SR>0) |",
               "|---|--:|--:|--:|--:|--:|---|---|--:|"]
         for v in C["variants"]:
@@ -487,6 +583,41 @@ def render(A, B, C, args, closes, grid, legs, ledger) -> str:
                      f"| {v.get('sharpe_gt0_prob','—')} |")
         L += ["", "The gate has to beat `vol-target (Barroso)`, not just `ungated` — "
               "one-line vol scaling is the cheap baseline six conditions must justify.", ""]
+        if C.get("eras"):
+            L += ["**Per-era — is this one episode?** A crash gate can post a great "
+                  "full-sample number off a single event and nothing else. Every block "
+                  "is printed, losers included.", "",
+                  "| era | days | SR ungated | SR gated | SR vol-tgt | SR both | "
+                  "maxDD ungated % | maxDD both % |", "|---|--:|--:|--:|--:|--:|--:|--:|"]
+            for e in C["eras"]:
+                L.append(f"| {e['era']} | {e['n_days']} | {e['sr_ungated']} | "
+                         f"{e['sr_gated']} | {e['sr_vol']} | {e['sr_both']} | "
+                         f"{e['dd_ungated']} | {e['dd_both']} |")
+            wins = sum(1 for e in C["eras"] if (e["sr_both"] or -9) > (e["sr_ungated"] or -9))
+            L += ["", f"`gate x vol-target` beats `ungated` in **{wins} of "
+                  f"{len(C['eras'])}** eras.", ""]
+
+    if D:
+        L += ["## D. Factor-leg impact (descriptive)", "",
+              "Does adding size / value / quality / low-vol to the regression change "
+              "anything? **Descriptive on purpose** — the legs only exist on the ~3-year "
+              "live panel (annual fundamentals), which is far too few rebalances to say "
+              "anything about predictive power.", "",
+              f"Mean residual vol {D['resid_vol_2leg']} (market+sector) → "
+              f"{D['resid_vol_full']} (with legs) — **{D['vol_absorbed_pct']}%** of "
+              "residual volatility absorbed.", "",
+              "| leg | mean abs corr to residual, market+sector | with the leg in |",
+              "|---|--:|--:|"]
+        for name, e in sorted(D["exposure"].items()):
+            L.append(f"| `{name}` | {e['abs_corr_2leg']} | {e['abs_corr_full']} |")
+        L += ["", f"Sector-neutral score rank correlation between the two constructions: "
+              f"**{D['score_rank_corr']}** over {D['n_scored']} names"
+              + (f" · top-50 overlap {D['top50_overlap']}/50" if D["top50_overlap"] is not None
+                 else "") + ".",
+              "", "A high rank correlation means the extra legs mostly re-express what "
+              "market+sector already removed; a low one means they change who the "
+              "leaders are — and would then need their own promotion gate before "
+              "anything acted on the difference.", ""]
 
     L += ["---", "",
           f"**Multiple testing.** {ledger.literal_n(FAMILY)} candidates logged to the Trial "
