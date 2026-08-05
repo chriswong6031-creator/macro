@@ -290,3 +290,76 @@ def test_the_shipped_config_carries_the_refined_row():
     classes = cfg["wire_routing"]["classes"]
     assert classes["macro_print"] == "flagship"
     assert classes["macro_print.minor"] == "mastermind_news"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The decision itself, not the FOMC's furniture
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# `TAPE_MOVERS` above carries exactly one FOMC entry — "FOMC holds the fed funds
+# target range at 4.25-4.50%" — and it is the phrasing that happens to contain
+# BOTH of the tokens this module knew the Fed by. Every other real phrasing of
+# the same event failed twice over: `_MACRO_PRINT_KEYWORDS` did not classify it
+# at all (base 0.0, under `salience_threshold: 60`, so it could not post), and
+# `_TIER1_RELEASES`'s `fomc` row — written from the SAME literal list — then
+# graded it `tier2` -> `minor` -> the relay desk. FOMC is on the ratified
+# keep-list above; that is the inverse of it.
+#
+# Measured on the union of the classifier fix and this module before the `fomc`
+# row was spliced from the shared constant, all four of these read:
+#   macro_print  tier2  us  ->  mastermind_news (macro_print.minor)
+
+US_RATE_DECISIONS = [
+    "Fed holds rates steady, Powell signals September cut on the table",
+    "Fed leaves rates unchanged at 4.25%-4.50%",
+    "Fed cuts rates for the first time since 2024",
+    "Powell says the committee is not in a hurry to cut",
+    "Federal Reserve cuts interest rates by 25 basis points",
+    "FOMC statement: policy remains restrictive",
+]
+
+
+@pytest.mark.parametrize("headline", US_RATE_DECISIONS)
+def test_a_us_rate_decision_is_a_tier_one_us_release(headline):
+    tier, economy, release = BR.macro_print_tier("macro_print", headline.lower())
+    assert (tier, economy, release) == ("tier1", "us", "fomc"), headline
+
+
+@pytest.mark.parametrize("headline", US_RATE_DECISIONS)
+def test_a_us_rate_decision_stays_on_the_flagship(headline):
+    """End-to-end through `_desk`, so the refinement really reaches `route`."""
+    assert _desk(headline) == "flagship", headline
+
+
+FOREIGN_RATE_DECISIONS = [
+    "ECB cuts rates by 25 basis points",
+    "Bank of England leaves rates unchanged",
+    "BoJ raises rates for the first time since 2007",
+    "Japan real wages rise for sixth straight month, supporting BoJ rate hike case",
+]
+
+
+@pytest.mark.parametrize("headline", FOREIGN_RATE_DECISIONS)
+def test_a_foreign_central_bank_decision_still_leaves_the_flagship(headline):
+    """The economy dimension has to keep binding on the widened vocabulary.
+
+    Widening `fomc` to cover decision verbs widens it for EVERY central bank —
+    "cuts rates" is not a US phrase. If the tier alone decided the desk, this
+    change would have quietly moved the ECB and the BoJ onto the brand account,
+    which is the very complaint this module exists to answer.
+    """
+    assert _desk(headline) == "mastermind_news", headline
+
+
+def test_the_classifier_and_the_router_read_ONE_vocabulary():
+    """Mutation pin: the two layers may not drift apart again.
+
+    The defect was a literal list written out twice — cured in the classifier,
+    still blind in the router. Restating the row would pass every behavioural
+    test above on the day it was written and rot at the next word added, so pin
+    the sharing itself, not just today's outcome.
+    """
+    fomc_patterns = dict(BR._TIER1_RELEASES)["fomc"]
+    missing = [kw for kw in BR._RATE_DECISION_KEYWORDS if kw not in fomc_patterns]
+    assert not missing, f"tier-1 fomc row is missing {len(missing)} decision terms"
+    assert set(BR._RATE_DECISION_KEYWORDS) <= set(BR._MACRO_PRINT_KEYWORDS)

@@ -365,8 +365,20 @@ _TIER1_RELEASES: tuple[tuple[str, tuple[str, ...]], ...] = (
              "personal consumption expenditures")),
     ("payrolls", ("payrolls", "nonfarm", "non-farm", "jobs report",
                   "unemployment rate")),
+    # The rate DECISION vocabulary is spliced in from one shared constant rather
+    # than restated here. Written out a second time, this row was the SAME
+    # literal list `_MACRO_PRINT_KEYWORDS` carried — "fomc", "rate decision",
+    # "fed funds", "federal reserve decision", "basis points" — and it inherited
+    # the same blind spot at the same moment the classifier was cured of it:
+    # measured on the union of the two changes, "Fed holds rates steady", "Fed
+    # leaves rates unchanged", "Fed cuts rates for the first time since 2024" and
+    # "Powell says the committee is not in a hurry to cut" all classified
+    # `macro_print` and then graded `tier2` -> `minor` -> the relay desk. FOMC is
+    # on the ratified keep-list; that is the inverse of it. One constant, two
+    # readers, so the next word added to the vocabulary cannot reach the
+    # classifier and miss the router.
     ("fomc", ("fomc", "rate decision", "fed funds", "federal reserve decision",
-              "basis points", "beige book")),
+              "basis points", "beige book") + _RATE_DECISION_KEYWORDS),
     ("gdp", ("gdp", "gross domestic product")),
     ("retail_sales", ("retail sales",)),
     ("ism", ("ism", "purchasing managers")),
