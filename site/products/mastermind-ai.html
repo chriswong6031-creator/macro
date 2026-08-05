@@ -79,8 +79,8 @@
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-<link rel="stylesheet" href="../onboard.css?v=39e30a38">
-<link rel="stylesheet" href="../landing.css?v=eace6503">
+<link rel="stylesheet" href="../onboard.css?v=6fd34b5e">
+<link rel="stylesheet" href="../landing.css?v=2c429a7b">
 <style>
 /* ════════════════════════════════════════════════════════════════
    PRODUCT-PAGE SHARED LAYER — identical bytes on all three pages.
@@ -331,6 +331,30 @@ a.ma-cite:hover{color:var(--violet);transform:translateY(-1px);box-shadow:var(--
 .ma-rec .ma-rcpt-s,.ma-rec .ma-rcpt-s:hover{cursor:default;color:var(--muted);border-color:var(--ma-hair)}
 .ma-rec-a{margin:14px 0 0;font-size:13.5px;line-height:1.55;color:var(--ink-soft)}
 .ma-rec-a b{color:var(--ink);font-weight:600}
+/* The annotation on the second citation chip is DRAWN, not hovered — there is no
+   pointer state that dismisses it — so it needs room of its own. It had none: it
+   floated up out of the chip and covered the stance line and the tail of the answer
+   underneath (operator 2026-08-04: "the 'Opens the options desk' pop up container
+   blocks everything, so stuff behind it isn't visible"). Reserving the band it
+   occupies is the fix that keeps the drawing intact: the citations row moves down by
+   the popover's own height, the popover floats in the space that opens, and nothing
+   is ever underneath it. Most of the reserve comes out of the panel's own leftover
+   height (this vignette had 69px of it), so the frame grows by well under half of it.
+
+   One number, not a breakpoint ladder: .ma-pop is 74px tall in EN and in ZH at every
+   width the page is read at, and 98px clears that plus the 10px it floats above.
+
+   The anchor moves from the chip to the ROW, which is what makes the geometry hold at
+   every width. Hung off the chip it inherited the chip's position: at ~400px the
+   citations wrap and the popover landed on the chip above; at ~350px the second chip
+   sits far enough right that 228px of popover overhung the card edge by 68px. Against
+   the row, `left:0` + `min(228px,100%)` cannot leave the card and cannot reach a chip,
+   because it sits wholly above all of them. The trade is that the arrow now points at
+   whichever chip is FIRST — so Options desk is first in the markup, which is also the
+   chip the annotation is about. */
+.ma-rec .ma-cites{position:relative;margin-top:98px}
+.ma-rec .ma-cite{position:static}
+.ma-rec .ma-pop{left:0;width:min(228px,100%)}
 .ma-pop{position:absolute;bottom:calc(100% + 10px);left:-6px;z-index:4;width:min(228px,72vw);text-align:left;
   background:var(--panel);border:1px solid var(--hair-2);border-radius:12px;box-shadow:var(--sh-lift);padding:10px 12px;
   font-family:'Inter',system-ui,sans-serif;letter-spacing:0;text-transform:none}
@@ -373,9 +397,49 @@ a.ma-cite:hover{color:var(--violet);transform:translateY(-1px);box-shadow:var(--
 .ma-lane.deep .ma-meter{color:var(--violet)}
 @media (max-width:560px){.ma-lanes{grid-template-columns:1fr}}
 
-/* ─────────── honesty station + legal microline ─────────── */
-.ma-guard{max-width:74ch}
-.ma-guard .sec-title{font-size:clamp(1.7rem,3vw,2.4rem)}
+/* ─────────── vignette vertical rhythm ───────────
+   landing.css stretches every .demo to its copy column (min-height:440px on a grid
+   with align-items:stretch), but only the landing's own vignettes carry a child
+   that grows into that height. Here the panels packed to the top and left a hole
+   above the bottom edge — 341px on the six stances, 205px on where-it-lives, 177px
+   on what-rides-along, 143px on two-lanes (operator 2026-08-04).
+
+   Nothing below adds copy. Each panel names the element that can honestly take the
+   height, and the closing caption becomes a footnote on the frame's bottom rule, so
+   the panel reads header / body / note instead of content / void. */
+.demo>.ma-cap{margin-top:14px;padding-top:12px;border-top:1px solid var(--hair-weak)}
+
+/* Everything below spends STRETCH height, and stretch only exists above 1080px —
+   landing.css drops .demo to min-height:0 and stacks the grid under that. Below the
+   breakpoint these rules would only add scroll, and the stances fall back to the
+   wrapped row they already wanted on a narrow screen. */
+@media (min-width:1081px){
+  /* where it lives — the grid already centres its two columns, so growing the
+     container is the whole fix: the three entry nodes and the core stay their own
+     size and the connector geometry is untouched. */
+  #everywhere .ma-net{flex:1 1 auto}
+
+  /* what rides along — the slash-command card takes the height and centres its rows
+     inside itself, so the leftover sits INSIDE a bordered card (where it reads as
+     padding) rather than as bare panel below it. Centring the two blocks as a group
+     was the other option and just split one hole into two. */
+  #grounded .ma-slash{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center}
+
+  /* the six stances — the worst of them (341px), and the one where the old shape was
+     simply wrong for the content: six pills wrapped into a single 34px line under all
+     that nothing. They are a CLOSED SET of six, so they get a set's layout — two
+     columns, three rows, evenly spaced down the frame, each pill still hugging its own
+     words and the one the answer landed on still filled. Same six labels, no new copy. */
+  #stance .ma-stances{display:grid;grid-template-columns:repeat(2,max-content);
+    align-content:space-evenly;justify-content:start;gap:10px 12px;flex:1 1 auto}
+
+  /* two lanes — the cards stretch and .ma-meter already carries margin-top:auto, so
+     Fast's allowance line lands on the same baseline as Deep's instead of floating
+     halfway up a short card. */
+  #lanes .ma-lanes{flex:1 1 auto}
+}
+
+/* ─────────── legal microline ─────────── */
 .ma-legal{max-width:var(--maxw);margin:0 auto;padding:clamp(26px,4vw,40px) var(--gutter) clamp(30px,4vw,44px);
   font-size:11.5px;line-height:1.6;color:var(--faint);text-align:center}
 
@@ -711,11 +775,9 @@ html.still .ma-spark{left:calc(100% - 14px);opacity:1}
           <p class="ma-rec-a" data-zh="资金流台席和格局看板这次说的不一样。<b>我把这条分歧原样留着</b>，没有折中成一个中间答案。">The flow desk and the regime board disagree here. <b>I've kept that disagreement visible</b> instead of splitting the difference.</p>
           <p class="ma-stance sm"><span class="k" data-zh="立场">STANCE</span><b data-zh="观察——不追高。">Watch — don't chase.</b></p>
           <div class="ma-cites">
+            <span class="ma-pop"><b data-zh="打开期权台席">Opens the options desk</b><em data-zh="那一页带着自己的时间戳，不会借用这个回答的时间。">That page carries its own timestamp — it never borrows the answer's.</em></span>
+            <span class="ma-cite" data-zh="期权台席">Options desk</span>
             <span class="ma-cite" data-zh="宏观格局">Macro regime</span>
-            <span class="ma-cite">
-              <span class="ma-pop"><b data-zh="打开期权台席">Opens the options desk</b><em data-zh="那一页带着自己的时间戳，不会借用这个回答的时间。">That page carries its own timestamp — it never borrows the answer's.</em></span>
-              <span data-zh="期权台席">Options desk</span>
-            </span>
             <span class="ma-cite" data-zh="因子">Factors</span>
           </div>
         </div>
@@ -849,20 +911,11 @@ html.still .ma-spark{left:calc(100% - 14px);opacity:1}
   </div>
 </section>
 
-<!-- ══════════════ HONESTY STATION — no reveal, no motion ══════════════ -->
-<section class="section-pad hair-top" id="guardrails">
-  <div class="wrap">
-    <div class="ma-guard">
-      <span class="kicker" data-zh="边界">Guardrails</span>
-      <h2 class="sec-title" style="margin-top:12px" data-zh="它会做什么，不会做什么。">What it will and won't do.</h2>
-      <div class="callout">
-        <span class="co-h" data-zh="有出处的回答，也可能出错">A cited answer can still be wrong</span>
-        <p data-zh="Mastermind AI 可能不完整、可能误读来源，也可能落后于最新的市场变化。它不下单交易，也不提供个性化投资建议。重要结论请对照所附证据及其时间戳自行核实。">Mastermind AI can be incomplete, misread a source or lag the latest market move. It does not place trades or provide personalized investment advice. Verify important claims against the linked evidence and its timestamp.</p>
-      </div>
-      <p class="psec-note" data-zh="研究工具，不是投资建议——它从不碰下单流程。信号与评分来自平台自身的引擎；助手解释引擎已经给出的结论，把握不足时可以把口径说得更保守，但它不自己产生信号。各通道的权限与用量随套餐不同，当前的权限边界以定价页为准。">Research, not advice — it never touches order flow. Signals and scores come from the platform's own engines; the assistant explains what those engines already say and can soften an uncertain read, but it never originates a signal of its own. Lane access and allowances vary by plan, and the pricing page owns the current access boundary.</p>
-    </div>
-  </div>
-</section>
+<!-- The Guardrails honesty station stood here until 2026-08-04 (operator: "remove the
+     guardrails section"). The page keeps its standing disclosure in the .ma-legal
+     microline above the footer, and the stances band still carries the substantive
+     half of the claim — "It explains; the engines decide. The assistant never
+     originates a signal of its own." -->
 
 <!-- ══════════════ CLOSER ══════════════ -->
 <section class="cband">
@@ -1097,7 +1150,7 @@ LANG.apply(LANG.cur());
 </script>
 <script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';</script>
 <script src="../mm_brain.js?v=b93132d7" defer></script>
-<script src="../onboard.js?v=923aa5a2" defer></script>
+<script src="../onboard.js?v=4c212c03" defer></script>
 <script defer data-whb data-root="../" src="../wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>
