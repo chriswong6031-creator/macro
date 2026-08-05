@@ -71,6 +71,17 @@ WIRE_CLASSES = frozenset({"geopolitical", "company_news", "earnings", "none"})
 #: editorial judgment.
 HOUSE_CLASSES = frozenset({"macro_print", "policy"})
 
+#: REFINEMENT rows (``<class>.<token>``), which are NOT classes. A refinement
+#: narrows an owner for one slice of a class its bare row still owns, so it can
+#: never leave a class unowned and it is excluded from the partition below.
+#:
+#: `macro_print.minor` (2026-08-05): a macro print that is not BOTH a tape-moving
+#: release and a US one goes to the relay desk. `macro_print` covers two
+#: products — "SWITZERLAND (JUL) CPI CORE YOY" and "US CPI rises 0.3%" score an
+#: identical base 55.0 — and only the second is the house-read half that keeps
+#: the class on the flagship at all.
+REFINEMENT_ROWS: dict[str, str] = {"macro_print.minor": "mastermind_news"}
+
 
 @pytest.fixture(scope="module")
 def cfg() -> dict:
@@ -319,13 +330,39 @@ def test_the_house_view_classes_stay_on_the_flagship(cfg):
 def test_the_routing_table_partitions_the_known_classes(cfg):
     """No class is unowned, none is owned twice, and the union is exactly the
     taxonomy press_lane renders. A class that quietly disappeared from the map
-    would fall back to the default and nothing would say so."""
+    would fall back to the default and nothing would say so.
+
+    Refinement rows are partitioned OUT rather than folded into either side: a
+    `<class>.<token>` key is a slice of a class, not a class, and letting one
+    count as either would mean a refinement could satisfy this guard while the
+    class it refines had gone missing.
+    """
     from engine.marketing import wire_routing as wr
 
     table = wr.routing_table(cfg, root=ROOT)
-    assert set(table) == WIRE_CLASSES | HOUSE_CLASSES
-    assert {k for k, v in table.items() if v == ACCOUNT} == WIRE_CLASSES
-    assert {k for k, v in table.items() if v == "flagship"} == HOUSE_CLASSES
+    classes = {k: v for k, v in table.items() if k not in REFINEMENT_ROWS}
+    assert set(classes) == WIRE_CLASSES | HOUSE_CLASSES
+    assert {k for k, v in classes.items() if v == ACCOUNT} == WIRE_CLASSES
+    assert {k for k, v in classes.items() if v == "flagship"} == HOUSE_CLASSES
+
+
+def test_every_refinement_row_refines_a_class_that_still_exists(cfg):
+    """A refinement is inert without its bare row, and dangerous without a desk.
+
+    `route` consults `<class>.<token>` first and falls back to `<class>`, so a
+    refinement whose class row was deleted would silently start routing through
+    the config DEFAULT — the brand account — which is the exact failure the
+    refinement exists to prevent.
+    """
+    from engine.marketing import wire_routing as wr
+
+    table = wr.routing_table(cfg, root=ROOT)
+    for row, desk in REFINEMENT_ROWS.items():
+        klass, _, token = row.partition(".")
+        assert token, f"{row!r} is not a refinement"
+        assert klass in table, f"{row!r} refines {klass!r}, which has no row"
+        assert table[row] == desk, (
+            f"{row!r} is owned by {table[row]!r}, expected {desk!r}")
 
 
 def test_the_flagship_remains_the_default_owner(cfg):

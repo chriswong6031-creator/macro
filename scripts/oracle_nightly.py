@@ -521,7 +521,7 @@ def _step_banner(oracle_state: dict, site_dir: Path, dry_run: bool) -> bool:
             "id": f"oracle:rotation:{asof}",
             "title": title,
             "title_zh": title_zh,
-            "href": "subsector_rotation.html",
+            "href": "sector_central.html#si-movement",
             "importance": 50,
             "tone": "mixed",
             "published_at": asof,

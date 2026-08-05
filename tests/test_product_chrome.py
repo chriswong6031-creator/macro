@@ -272,6 +272,37 @@ def test_shared_header_always_has_its_base_styling() -> None:
     )
 
 
+def test_shared_header_always_has_its_behavior() -> None:
+    """A page taking the shared header must also load theme.js.
+
+    Sibling of the styling pin above, and the half it missed. theme.js owns
+    every control in _site_nav.html.j2: the dropdown menus, the unified stock
+    search (`ensureNavSearchCss` -> `initNavSearch`), the theme switch and the
+    EN/中文 toggle. A page that links theme.css but not theme.js therefore
+    renders a header that LOOKS roughly right and does nothing at all — no menu
+    opens, neither toggle fires, search never upgrades.
+
+    That is not a hypothetical: ticker_index.html.j2 (/stocks/index.html)
+    shipped this way and was reported as "this page uses our old menu", because
+    an inert header is indistinguishable from an older one to the person
+    clicking it. market_structure.html.j2 and stage_analysis.html.j2 carried the
+    same defect. Taking the header, its stylesheet and its script is one
+    indivisible step.
+    """
+    offenders = []
+    for p in _product_templates():
+        s = p.read_text(encoding="utf-8")
+        if "theme.js" in s:
+            continue
+        offenders.append(p.name)
+    assert not offenders, (
+        f"these pages take the shared header but never load theme.js, so every "
+        f"control in it is dead markup: {offenders}. Add "
+        '<script defer src="{{ nav_prefix }}theme.js"></script> beside the '
+        "page's theme.css link."
+    )
+
+
 def test_search_placeholder_is_one_unified_universe() -> None:
     """No page may re-scope the search box to a single market.
 

@@ -1,0 +1,128 @@
+{
+ "frame": {
+  "rows": 403,
+  "names": 243,
+  "dates": [
+   "2026-06-16",
+   "2026-07-16"
+  ],
+  "loser_def": "excess_spy < -3.0pp at H=10",
+  "base_loser_rate_pct": 25.8,
+  "base_median_excess_pp": 1.81
+ },
+ "S_A_turnover": {
+  "variant": "own-20d percentile (60d spec data-blocked; debt named above)",
+  "coverage": "316/403",
+  "bands": [
+   {
+    "band": "<=p50",
+    "n": 174,
+    "names": 130,
+    "loser_rate_pct": 24.7,
+    "median_excess_pp": 1.86,
+    "median_excess_dm_pp": 0.23,
+    "per_name_median_pp": 2.2
+   },
+   {
+    "band": "p50-90",
+    "n": 112,
+    "names": 105,
+    "loser_rate_pct": 22.3,
+    "median_excess_pp": 1.43,
+    "median_excess_dm_pp": -0.2,
+    "per_name_median_pp": 1.32
+   },
+   {
+    "band": ">=p90",
+    "n": 30,
+    "names": 29,
+    "loser_rate_pct": 33.3,
+    "median_excess_pp": 2.74,
+    "median_excess_dm_pp": 2.37,
+    "per_name_median_pp": 1.6
+   }
+  ],
+  "cn_reference": "CN (60d spec): >=p90 42.5% loser vs <p50 17.7% (monotone)"
+ },
+ "S_B_confirmation": {
+  "basis": "tier recomputed PIT via confluence_tiers.tier_stream (raw-cross T1); stored frame had tier on only 34/403 rows \u2014 a finding in itself",
+  "by_tier": [
+   {
+    "tier": "T1",
+    "n": 109,
+    "loser_rate_pct": 15.6,
+    "median_excess_pp": 2.41,
+    "median_excess_dm_pp": 0.52,
+    "per_name_median_pp": 1.99
+   },
+   {
+    "tier": "T2",
+    "n": 0
+   },
+   {
+    "tier": "T3",
+    "n": 0
+   },
+   {
+    "tier": "T4",
+    "n": 0
+   },
+   {
+    "tier": "not_eligible_that_day",
+    "n": 294,
+    "loser_rate_pct": 29.6,
+    "median_excess_pp": 1.52,
+    "median_excess_dm_pp": 0.21,
+    "per_name_median_pp": 1.73
+   }
+  ],
+  "by_cross_age_ticks": [
+   {
+    "ticks": 0,
+    "n": 53,
+    "loser_rate_pct": 20.8,
+    "median_excess_pp": 1.54,
+    "median_excess_dm_pp": 0.1
+   },
+   {
+    "ticks": 1,
+    "n": 30,
+    "loser_rate_pct": 10.0,
+    "median_excess_pp": 2.77,
+    "median_excess_dm_pp": 0.92
+   },
+   {
+    "ticks": 2,
+    "n": 26,
+    "loser_rate_pct": 11.5,
+    "median_excess_pp": 5.06,
+    "median_excess_dm_pp": 3.04
+   }
+  ],
+  "note": "CN-RC0 predicts less-confirmed admissions price better."
+ },
+ "S_C_curated_membership": {
+  "cohorts": [
+   {
+    "cohort": "member",
+    "n": 103,
+    "names": 59,
+    "loser_rate_pct": 35.9,
+    "median_excess_pp": 0.76,
+    "median_excess_dm_pp": -0.94,
+    "per_name_median_pp": 1.22
+   },
+   {
+    "cohort": "non_member",
+    "n": 300,
+    "names": 184,
+    "loser_rate_pct": 22.3,
+    "median_excess_pp": 2.03,
+    "median_excess_dm_pp": 0.57,
+    "per_name_median_pp": 2.2
+   }
+  ],
+  "cn_reference": "CN: members 13.1% loser vs non-members 36.2%",
+  "caveat": "membership read from TODAY's membership.json (added/removed dates exist but current-state read; PIT caveat stated \u2014 CN found curated membership is PIT-dated enough for an ex-ante receipt)"
+ }
+}

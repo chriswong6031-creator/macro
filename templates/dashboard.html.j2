@@ -734,8 +734,10 @@
      encoding of the bucket (canonized §7 pattern) and the label is the stance —
      "Live now", "Ran — don't chase" are complete instructions on their own; the
      lighter tail sentence is the ≤14-word Tier-1 subtitle. --sgc carries the tone
-     so one rule set serves four buckets. Tones are --pv-* and follow the active
-     language convention: green-up/red-down in English, red-up/green-down in Chinese. */
+     so one rule set serves all five buckets. Tones are --pv-* and follow the active
+     language convention: green-up/red-down in English, red-up/green-down in Chinese —
+     except the two direction-NEUTRAL tones (--pv-wait, --muted), which mean the same
+     thing in both and are the right home for a stance with no direction in it. */
   .nb-stage-hd { grid-column: 1 / -1; display: flex; align-items: baseline; flex-wrap: wrap;
                  gap: 3px 9px; margin: 15px 0 4px; padding: 5px 11px 5px 9px;
                  border-left: 3px solid var(--sgc, var(--muted)); border-radius: 0 8px 8px 0;
@@ -755,6 +757,11 @@
   .sg-live       { --sgc: var(--pv-buy); }
   .sg-setting_up { --sgc: var(--pv-near); }
   .sg-ran        { --sgc: var(--muted); }
+  /* Basing is the "watch — don't chase" shelf, so it takes the wait tone, not the
+     avoid tone it used to inherit by sitting inside Blocked. --pv-wait is amber and
+     is deliberately one of the two verb tones the zh 红涨绿跌 block does NOT remap
+     (theme.css) — a directionless stance must read the same in both languages. */
+  .sg-basing     { --sgc: var(--pv-wait); }
   .sg-blocked    { --sgc: var(--pv-avoid); }
 
   /* ── stage filter chips (G0.6) ─────────────────────────────────────────────
@@ -792,10 +799,12 @@
   #us-standouts[data-stagef="live"]       [data-stage]:not([data-stage="live"]),
   #us-standouts[data-stagef="setting_up"] [data-stage]:not([data-stage="setting_up"]),
   #us-standouts[data-stagef="ran"]        [data-stage]:not([data-stage="ran"]),
+  #us-standouts[data-stagef="basing"]     [data-stage]:not([data-stage="basing"]),
   #us-standouts[data-stagef="blocked"]    [data-stage]:not([data-stage="blocked"]) { display: none !important; }
   #us-standouts[data-stagef="live"]       .sm-hidden[data-stage="live"],
   #us-standouts[data-stagef="setting_up"] .sm-hidden[data-stage="setting_up"],
   #us-standouts[data-stagef="ran"]        .sm-hidden[data-stage="ran"],
+  #us-standouts[data-stagef="basing"]     .sm-hidden[data-stage="basing"],
   #us-standouts[data-stagef="blocked"]    .sm-hidden[data-stage="blocked"] { display: flex !important; }
   #us-standouts[data-stagef]:not([data-stagef="all"]) .nb-grid-section .sm-bar { display: none !important; }
   /* NOTE: the `.pbf-empty` rules that used to sit here were removed 2026-08-02 — no
@@ -1317,6 +1326,10 @@
   .ts-row { cursor: pointer; transition: background .12s; }
   .ts-row:hover { background: var(--panel2); }
   .ts-tk { font-weight: 800; color: var(--text); }
+  /* The ticker is a real anchor so theme.js's capture-phase Terminal intercept can
+     see it (and so middle-/cmd-click still opens a tab). It must not read as a blue
+     link inside the row — the row itself is the affordance. */
+  .ts-tk-a { color: inherit; text-decoration: none; }
   .ts-nm { font-size: 10px; color: var(--muted); }
   .ts-tbl td.az-up { color: var(--ink-up, var(--up)); font-weight: 700; }
   .ts-tbl td.az-dn { color: var(--ink-down, var(--down)); font-weight: 700; }
@@ -1513,12 +1526,20 @@
     --rail: var(--link);
   }
   html[data-theme="light"] body.page-macro {
-    /* restore the airy light canvas (the dark overrides above set it on <body>) */
-    --bg:#f6f7fa; --panel:#ffffff; --panel2:#eef1f6;
+    /* Light = a design target, not a tint (round-3 depth pass). The old canvas
+       was #f6f7fa: a white panel on it measured 1.07:1, so every card dissolved
+       into the page and the dashboard read as one flat sheet. The estate depth
+       recipe deepens the canvas to #e8ebf1 (1.19:1 under a white panel, +81%
+       separation) and moves the remaining depth into a real two-stop shadow —
+       contact + ambient — instead of a heavier border. --line is deliberately
+       NOT lowered to the recipe hairline here: it drives 233 INTERNAL rules on
+       this page (vs 29 for --hair), and an internal rule has no shadow to lean
+       on, so it keeps the estate's raised value. The recipe hairline is applied
+       where it belongs — the panel EDGE (--mx5-glass-border below). */
+    --bg:#e8ebf1; --panel:#ffffff; --panel2:#eef1f6;
     --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
     --hair: color-mix(in srgb, var(--line) 90%, transparent);
-    --ms: inset 0 1px 0 0 rgba(255,255,255,.7),
-          0 1px 2px rgba(20,30,50,.05), 0 14px 30px -20px rgba(20,30,50,.16);
+    --ms: 0 1px 2px rgba(23,32,55,.05), 0 8px 24px -12px rgba(23,32,55,.10);
   }
 
   /* ---- type scale: one confident hierarchy, every size from the scale ---- */
@@ -1905,28 +1926,11 @@
 
   {% if mode == 'stocks' %}
   <!-- ===================== US STOCK DASHBOARD HEADER ===================== -->
+  {# Header geometry (panel, headline, status pills, links row) is shared with the
+     China A-share board — see templates/_stocks_header_css.html.j2. Page-local
+     rules below come after the include so they still win. #}
+  {% include "_stocks_header_css.html.j2" %}
   <style id="stocks-home-css">
-  body.page-stocks #stocks-header{
-    padding:18px 20px;
-    background:
-      radial-gradient(900px 180px at 12% -40%,color-mix(in srgb,var(--link) 16%,transparent),transparent 60%),
-      var(--panel);
-  }
-  body.page-stocks .stk-headline{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  body.page-stocks .stk-headline h1{margin:0;font-size:26px;letter-spacing:-.035em;line-height:1.1}
-  body.page-stocks .stk-head-meta{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  body.page-stocks .stk-status{
-    display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:4px 10px;
-    border:1px solid var(--line);border-radius:999px;background:var(--panel2);
-    color:color-mix(in srgb,var(--text) 76%,transparent);font-size:12px;font-weight:650;
-  }
-  body.page-stocks .stk-status strong{color:var(--text);font-weight:750}
-  body.page-stocks .stk-fresh-dot{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 18%,transparent)}
-  body.page-stocks .stk-status.is-delayed .stk-fresh-dot{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 18%,transparent)}
-  body.page-stocks .stk-header-links{display:flex;gap:16px;margin-top:11px;font-size:12px;font-weight:650}
-  body.page-stocks .stk-header-links a{color:var(--muted);text-decoration:none}
-  body.page-stocks .stk-header-links a:hover{color:var(--link)}
-
   /* Keep the two strongest existing surfaces exactly as designed:
      #action-board first, then the Prophet #us-standouts scorecards. Remove only
      the duplicated research boards that pushed both below the fold. */
@@ -1939,17 +1943,6 @@
   body.page-stocks #dash-mtf-section,
   body.page-stocks #accumulation,
   body.page-stocks #holdings{display:none!important}
-
-  @media(max-width:900px){
-    body.page-stocks .stk-head-meta{margin-left:0;width:100%}
-  }
-  @media(max-width:560px){
-    body.page-stocks #stocks-header{padding:15px 14px}
-    body.page-stocks .stk-headline h1{font-size:22px}
-    body.page-stocks .stk-head-meta{gap:6px}
-    body.page-stocks .stk-status{font-size:11px}
-    body.page-stocks .stk-header-links{gap:12px;overflow-x:auto;white-space:nowrap;padding-bottom:2px}
-  }
   </style>
   <div class="panel span12" id="stocks-header">
     {% set _stk_hdr_su = us_standouts if (us_standouts is defined and us_standouts) else none %}
@@ -2691,7 +2684,7 @@ body.page-macro .mxqm-hist{margin:-4px 0 6px;font-size:11px;line-height:1.45;
   color:var(--ink-3,rgba(255,255,255,.42))}
 body.page-macro .mxqm-hist b{color:var(--ink-2,rgba(255,255,255,.72));font-weight:650;
   font-variant-numeric:tabular-nums}
-[data-theme="light"] body.page-macro .mxqm-hist{color:rgba(0,0,0,.44)}
+[data-theme="light"] body.page-macro .mxqm-hist{color:rgba(0,0,0,.6)}
 /* Goldilocks trim (2026-07-20): ONE quiet compressed line (grip + weakest support)
    replacing the deleted flip-strip section; + one-line footer. */
 body.page-macro .mxqm-hold{display:flex;align-items:baseline;gap:6px;margin:2px 0 4px;
@@ -2701,7 +2694,7 @@ body.page-macro .mxqm-hold .help{flex:0 0 auto}
 [data-theme="light"] body.page-macro .mxqm-hold{color:rgba(0,0,0,.62)}
 body.page-macro .mxqm-foot{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
   font-size:10.5px;line-height:1.45;color:var(--ink-3,rgba(255,255,255,.42))}
-[data-theme="light"] body.page-macro .mxqm-foot{color:rgba(0,0,0,.42)}
+[data-theme="light"] body.page-macro .mxqm-foot{color:rgba(0,0,0,.6)}
 body.page-macro .mxqm-wrap{margin:0 0 8px}
 body.page-macro .mxqm-svg-box{width:100%;max-width:300px;margin:0 auto}
 body.page-macro .mxqm-svg-box svg{width:100%;height:auto;display:block;overflow:visible}
@@ -2739,7 +2732,7 @@ body.page-macro .mxqm-arrowhead{fill:var(--warn,#f59e0b)}
   body.page-macro .mxqm-pulse{animation:none;opacity:.28}
   body.page-macro .mxqm-arrow{animation:none;stroke-dashoffset:0}
 }
-[data-theme="light"] body.page-macro .mxqm-axis-label{fill:rgba(0,0,0,.4)}
+[data-theme="light"] body.page-macro .mxqm-axis-label{fill:rgba(0,0,0,.58)}
 [data-theme="light"] body.page-macro .mxqm-quad-label{fill:rgba(0,0,0,.62)}
 [data-theme="light"] body.page-macro .mxqm-odds{fill:rgba(0,0,0,.6)}
 [data-theme="light"] body.page-macro .mxqm-odds.active{fill:rgba(0,0,0,.9)}
@@ -2763,7 +2756,7 @@ body.page-macro .rsx-ldr-idx-label{
 [data-theme="light"] body.page-macro .rsx-ldr-bar-ticker{color:rgba(0,0,0,.72)}
 [data-theme="light"] body.page-macro .rsx-ldr-bar-fill{background-color:#ef4444}
 [data-theme="light"] body.page-macro .rsx-ldr-idx-line{background:rgba(0,0,0,.3)}
-[data-theme="light"] body.page-macro .rsx-ldr-idx-label{color:rgba(0,0,0,.4)}
+[data-theme="light"] body.page-macro .rsx-ldr-idx-label{color:rgba(0,0,0,.58)}
 @media(max-width:640px){body.page-macro .mxfs-row{flex-direction:column;gap:1px}body.page-macro .mxfs-k{width:auto}
 /* the longer honest-stance pill text ("… — not all-clear") must wrap on narrow
    phones instead of bleeding past the card edge (pill is nowrap on desktop; nowrap removed
@@ -3732,11 +3725,17 @@ body.page-macro.mx4-grid {
   --mx5-warn-ink:      var(--mx5-warn);
 }
 [data-theme="light"] body.page-macro.mx4-grid {
-  --mx5-glass-bg:      rgba(255,255,255,.82);
-  --mx5-pop-bg:        rgba(255,255,255,.97);
-  --mx5-glass-border:  rgba(0,0,0,.06);
-  --mx5-glass-shadow:  0 4px 24px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.95) inset;
-  --mx5-glass-hover:   0 8px 32px rgba(0,0,0,.13), 0 1px 0 rgba(255,255,255,.95) inset;
+  /* Round-3 depth pass: the panels were 82% white over a near-white canvas —
+     the card surface and the page were the SAME value, so nothing read as a
+     card. Panels are now opaque white on the deepened #e8ebf1 canvas, with the
+     estate's two-stop shadow (a tight contact shadow + a wide ambient one) and
+     the soft recipe hairline. Depth now comes from the value step + the shadow,
+     which is why the border can afford to be quiet. */
+  --mx5-glass-bg:      #ffffff;
+  --mx5-pop-bg:        #ffffff;
+  --mx5-glass-border:  #dde2ea;
+  --mx5-glass-shadow:  0 1px 2px rgba(23,32,55,.05), 0 8px 24px -12px rgba(23,32,55,.10);
+  --mx5-glass-hover:   0 2px 4px rgba(23,32,55,.07), 0 14px 32px -14px rgba(23,32,55,.16);
   /* Dedicated dark accents for TEXT on the light glass card (>=4.5:1 vs ~#f6f7fa).
      Deliberately darker than the site-wide --up/--warn (which are tuned ~3.4:1
      for other surfaces); fills above keep the bright #22d97a / #f59e0b. */
@@ -3759,9 +3758,12 @@ body.page-macro.mx4-grid {
   --mx5-focus-ring:    0 0 0 2px rgba(34,217,122,.55);
 }
 [data-theme="light"] body.page-macro.mx4-grid {
-  --mx5-hover-bg:      rgba(255,255,255,.92);
-  --mx5-hover-border:  rgba(0,0,0,.14);
-  --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.12);
+  /* Round-3: the resting surface is now opaque white, so "surface lifts 2%" has
+     nowhere to go in light — the lift is carried by the border stepping up and
+     the ambient shadow deepening, alongside the shared translateY(-1px). */
+  --mx5-hover-bg:      #ffffff;
+  --mx5-hover-border:  #c3cbd9;
+  --mx5-hover-shadow:  0 2px 4px rgba(23,32,55,.07), 0 14px 32px -14px rgba(23,32,55,.16);
 }
 
 /* ── Aurora backdrop (fixed position, grid-view only) ───────────── */
@@ -3792,10 +3794,16 @@ body.page-macro.mx4-grid .mx5-aurora .mx5-a4{
   border-radius:50%;filter:blur(90px);
   background:radial-gradient(ellipse,rgba(99,102,241,.08) 0%,transparent 70%);
 }
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora::before{background:radial-gradient(ellipse,rgba(14,165,98,.06) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora::after {background:radial-gradient(ellipse,rgba(99,102,241,.05) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora .mx5-a3{background:radial-gradient(ellipse,rgba(14,165,98,.04) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora .mx5-a4{background:radial-gradient(ellipse,rgba(99,102,241,.04) 0%,transparent 70%);}
+/* LIGHT: the aurora is a dark-mode idiom — coloured light blooming out of a black
+   field. Inverted onto paper it is not light, it is INK: four 90px-blurred colour
+   washes that tint the canvas green/indigo and read as a printing stain (most
+   visible as the "orb" floating in the empty canvas past the footer, since the
+   layer is position:fixed and spans the whole scroll). It is also pure decoration
+   here — the market state it tints is already stated by the gauge, the score and
+   the thesis line — so light simply doesn't get it. Depth in light comes from the
+   panel/canvas value step and the shadow recipe, not from ambient bloom.
+   The state-tinted (.au-yellow/.au-red) light variants are dropped with it. */
+[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora{display:none;}
 /* verdict-tinted aurora (operator order 2026-07-14): the two GREEN blobs follow the
    market-state color — amber when Mixed, red when Risk-off; the indigo companions
    stay neutral. Class baked from market_state.color + live-swapped by risk_state_live.js. */
@@ -3803,10 +3811,6 @@ body.page-macro.mx4-grid .mx5-aurora.au-yellow::before{background:radial-gradien
 body.page-macro.mx4-grid .mx5-aurora.au-yellow .mx5-a3{background:radial-gradient(ellipse,rgba(245,158,11,.06) 0%,transparent 70%);}
 body.page-macro.mx4-grid .mx5-aurora.au-red::before{background:radial-gradient(ellipse,rgba(239,68,68,.10) 0%,transparent 70%);}
 body.page-macro.mx4-grid .mx5-aurora.au-red .mx5-a3{background:radial-gradient(ellipse,rgba(239,68,68,.06) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(156,98,18,.05) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-yellow .mx5-a3{background:radial-gradient(ellipse,rgba(156,98,18,.035) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-red::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-aurora.au-red .mx5-a3{background:radial-gradient(ellipse,rgba(220,38,38,.035) 0%,transparent 70%);}
 @media(prefers-reduced-motion:reduce){
   body.page-macro.mx4-grid .mx5-aurora::before,
   body.page-macro.mx4-grid .mx5-aurora::after,
@@ -3882,7 +3886,11 @@ body.page-macro.mx4-grid .mx5-gauge-svg{
 }
 /* Light mode: the gauge's white-alpha track/ticks/scale-labels vanish on white —
    repaint in dark ink. #mx5-score-numeral keeps its own id rule (state colour). */
-[data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg > text{fill:rgba(10,16,24,.42);}
+/* Dial scale labels (0 / 50 / 100) are text, not decoration — they are what makes the
+   needle position mean anything. At .42 they composited to #989b9e = 2.79:1 on a white
+   card, under the 4.5 floor at 10px. .62 lands 5.37:1 and still reads a full step
+   quieter than the body copy. Twin of the body.page-china rule — same component. */
+[data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg > text{fill:rgba(10,16,24,.62);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
 /* Regime pill (Order 3: smaller + never clips — sizes to content, no fixed width) */
@@ -4152,7 +4160,7 @@ body.page-macro.mx4-grid .mx5-path-tip-date{
   font-size:11px;font-weight:600;letter-spacing:.03em;
   color:var(--ink-3,rgba(255,255,255,.5));text-transform:uppercase;
 }
-[data-theme="light"] body.page-macro.mx4-grid .mx5-path-tip-date{color:rgba(0,0,0,.5);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-path-tip-date{color:rgba(0,0,0,.62);}
 body.page-macro.mx4-grid .mx5-path-tip-row{display:flex;align-items:baseline;gap:7px;}
 body.page-macro.mx4-grid .mx5-path-tip-score{
   font-size:16px;font-weight:800;line-height:1;color:var(--ink-1,rgba(255,255,255,.95));
@@ -4523,7 +4531,7 @@ body.mx5-dlg-open{ overflow:hidden; }
   font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
   color:var(--ink-3,rgba(255,255,255,.36));margin:0 0 14px;
 }
-[data-theme="light"] .mx5-dlg-eyebrow{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-eyebrow{color:rgba(0,0,0,.58);}
 
 /* Section divider (thin separator between content blocks) */
 .mx5-dlg-sep{
@@ -4546,7 +4554,7 @@ body.mx5-dlg-open{ overflow:hidden; }
 }
 .mx5-dlg-driver-label{font-size:13px;font-weight:700;margin-bottom:3px;}
 .mx5-dlg-driver-sub{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
-[data-theme="light"] .mx5-dlg-driver-sub{color:rgba(0,0,0,.45);}
+[data-theme="light"] .mx5-dlg-driver-sub{color:rgba(0,0,0,.62);}
 
 /* Heads-up chips row (fed stance, turning point) */
 .mx5-dlg-chips-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
@@ -4670,7 +4678,7 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-factor-row.weakest{border-color:rgba(245,158,11,.25);}
 .mx5-dlg-factor-name{font-size:12px;font-weight:700;}
 .mx5-dlg-factor-read{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;line-height:1.4;}
-[data-theme="light"] .mx5-dlg-factor-read{color:rgba(0,0,0,.42);}
+[data-theme="light"] .mx5-dlg-factor-read{color:rgba(0,0,0,.62);}
 .mx5-dlg-factor-bar{position:relative;height:7px;border-radius:4px;background:rgba(255,255,255,.08);}
 [data-theme="light"] .mx5-dlg-factor-bar{background:rgba(0,0,0,.09);}
 .mx5-dlg-factor-fill{position:absolute;left:0;top:0;height:100%;border-radius:4px;opacity:.85;}
@@ -4701,7 +4709,7 @@ body.page-macro .rsx-dlg-footer{
   text-align:left;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--ink-3,rgba(255,255,255,.36));padding:0 0 8px;
 }
-[data-theme="light"] .mx5-dlg-mtf-tbl th{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-mtf-tbl th{color:rgba(0,0,0,.58);}
 .mx5-dlg-mtf-tbl th:not(:first-child){text-align:center;}
 .mx5-dlg-mtf-tbl td{padding:6px 0;}
 .mx5-dlg-mtf-tbl td:not(:first-child){text-align:center;}
@@ -4724,7 +4732,7 @@ body.page-macro .rsx-dlg-footer{
 [data-theme="light"] .mx5-dlg-idx-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
 .mx5-dlg-idx-ticker{font-size:12px;font-weight:700;margin-bottom:1px;}
 .mx5-dlg-idx-name{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-[data-theme="light"] .mx5-dlg-idx-name{color:rgba(0,0,0,.42);}
+[data-theme="light"] .mx5-dlg-idx-name{color:rgba(0,0,0,.62);}
 .mx5-dlg-idx-px{font-size:20px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:3px;}
 .mx5-dlg-idx-chg{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:10px;}
 .mx5-dlg-idx-chg.up{color:var(--up,#22d97a);}
@@ -4737,7 +4745,7 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-idx-chip.ok{color:var(--up,#22d97a);background:rgba(62,200,122,.1);border:1px solid rgba(62,200,122,.2);}
 .mx5-dlg-idx-chip.wn{color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);}
 .mx5-dlg-idx-chip.mt{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
-[data-theme="light"] .mx5-dlg-idx-chip.mt{color:rgba(0,0,0,.38);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
+[data-theme="light"] .mx5-dlg-idx-chip.mt{color:rgba(0,0,0,.58);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
 
 /* Sector columns (MARKETS dialog) */
 .mx5-dlg-sector-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
@@ -4745,7 +4753,7 @@ body.page-macro .rsx-dlg-footer{
   font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:10px;
 }
-[data-theme="light"] .mx5-dlg-sector-col-head{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-sector-col-head{color:rgba(0,0,0,.58);}
 .mx5-dlg-sector-row{
   display:flex;align-items:center;gap:8px;padding:9px 0;
   border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;
@@ -4756,7 +4764,7 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-sector-arr.cool{color:var(--up,#22d97a);}
 .mx5-dlg-sector-name{flex:1;font-weight:500;}
 .mx5-dlg-sector-rk{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));font-variant-numeric:tabular-nums;}
-[data-theme="light"] .mx5-dlg-sector-rk{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-sector-rk{color:rgba(0,0,0,.58);}
 
 /* ── Sector Temperature — rotation ladder (dlg-sector rebuild) ─────────────────
    Each sector is a rung; the little trace is its 5-day rank move (an honest 2-point
@@ -4863,10 +4871,10 @@ body.page-macro .rsx-dlg-footer{
 }
 [data-theme="light"] .mx5-dlg-asset-tile{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);}
 .mx5-dlg-asset-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:6px;}
-[data-theme="light"] .mx5-dlg-asset-lbl{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-asset-lbl{color:rgba(0,0,0,.58);}
 .mx5-dlg-asset-val{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:3px;}
 .mx5-dlg-asset-ctx{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
-[data-theme="light"] .mx5-dlg-asset-ctx{color:rgba(0,0,0,.38);}
+[data-theme="light"] .mx5-dlg-asset-ctx{color:rgba(0,0,0,.58);}
 
 /* Events calendar cards (EVENTS dialog) */
 .mx5-dlg-cal-grid{
@@ -4922,11 +4930,11 @@ body.page-macro .rsx-dlg-footer{
   .mx5-dlg-cal-card.rr-fed:hover .mx5-dlg-cal-fed{transform:none;}
 }
 .mx5-dlg-cal-date{font-size:11px;font-weight:700;color:var(--ink-3,rgba(255,255,255,.36));margin-bottom:5px;}
-[data-theme="light"] .mx5-dlg-cal-date{color:rgba(0,0,0,.42);}
+[data-theme="light"] .mx5-dlg-cal-date{color:rgba(0,0,0,.62);}
 .mx5-dlg-cal-title{font-size:13px;font-weight:700;margin-bottom:6px;line-height:1.3;}
 .mx5-dlg-cal-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 .mx5-dlg-cal-time{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));}
-[data-theme="light"] .mx5-dlg-cal-time{color:rgba(0,0,0,.4);}
+[data-theme="light"] .mx5-dlg-cal-time{color:rgba(0,0,0,.62);}
 .mx5-dlg-cal-badge{
   display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;
   font-size:11px;font-weight:700;
@@ -4934,7 +4942,7 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-cal-badge.high{color:var(--down,#ef4444);background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.2);}
 .mx5-dlg-cal-badge.med{color:var(--warn,#f59e0b);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.18);}
 .mx5-dlg-cal-badge.low{color:var(--ink-3,rgba(255,255,255,.36));background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}
-[data-theme="light"] .mx5-dlg-cal-badge.low{color:rgba(0,0,0,.38);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
+[data-theme="light"] .mx5-dlg-cal-badge.low{color:rgba(0,0,0,.58);background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);}
 
 /* Fed strip inside dialogs (EVENTS dialog) */
 .mx5-dlg-fed-strip{
@@ -4954,7 +4962,7 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-fed-chg{font-size:11px;font-variant-numeric:tabular-nums;margin-left:6px;}
 .mx5-dlg-fed-chg.pos{color:var(--ink-up,var(--up,#22d97a));}.mx5-dlg-fed-chg.neg{color:var(--ink-down,var(--down,#ef4444));}
 .mx5-dlg-fed-src{font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));text-align:right;padding-top:6px;}
-[data-theme="light"] .mx5-dlg-fed-src{color:rgba(0,0,0,.35);}
+[data-theme="light"] .mx5-dlg-fed-src{color:rgba(0,0,0,.58);}
 
 /* ── Inline Release Radar panel (#rr-inline, EVENTS dialog) ───────────────────
    Replaces the retired per-date popup + its open button. Shows the selected
@@ -4968,7 +4976,7 @@ body.page-macro .rsx-dlg-footer{
   font-variant-numeric:tabular-nums;}
 .rr-inline-date .mx5-dlg-cal-dot{width:8px;height:8px;}
 .rr-inline-sub{font-size:11.5px;color:var(--ink-3,rgba(255,255,255,.42));}
-[data-theme="light"] .rr-inline-sub{color:rgba(0,0,0,.42);}
+[data-theme="light"] .rr-inline-sub{color:rgba(0,0,0,.62);}
 /* body: cross-fade on swap (JS toggles .rr-inline-swap for one frame) */
 .rr-inline-body{transition:opacity .22s ease;}
 .rr-inline-body.rr-inline-swap{opacity:0;}
@@ -4981,11 +4989,11 @@ body.page-macro .rsx-dlg-footer{
 .rr-inline-empty-line{font-size:12.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.72));}
 [data-theme="light"] .rr-inline-empty-line{color:rgba(0,0,0,.62);}
 .rr-inline-empty-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--ink-3,rgba(255,255,255,.42));}
-[data-theme="light"] .rr-inline-empty-meta{color:rgba(0,0,0,.42);}
+[data-theme="light"] .rr-inline-empty-meta{color:rgba(0,0,0,.62);}
 /* single display-only footer for the inline panel (Law 4: one footnote) */
 .rr-inline-foot{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);
   font-size:10px;line-height:1.5;color:var(--ink-3,rgba(255,255,255,.36));}
-[data-theme="light"] .rr-inline-foot{border-top-color:rgba(0,0,0,.06);color:rgba(0,0,0,.38);}
+[data-theme="light"] .rr-inline-foot{border-top-color:rgba(0,0,0,.06);color:rgba(0,0,0,.58);}
 @media (prefers-reduced-motion: reduce){ .rr-inline-body{transition:none;} }
 
 /* Heatmap wrap inside dialog — chromeless spacer (1.2 de-chrome) */
@@ -5133,8 +5141,14 @@ body.page-macro.mx4-grid .mx5-mkt-tile{
   position:relative;overflow:hidden;cursor:pointer;
   transition:background .2s ease-out,border-color .2s ease-out,box-shadow .2s ease-out,transform .2s ease-out;
 }
+/* Light: the dark "3% fill on glass" trick inverts badly — a 3% BLACK wash on a
+   white card is a grey smudge with a 1.10:1 edge, so the six futures read as one
+   undivided band. Each tile becomes its own white surface with the recipe
+   hairline and a single contact shadow: the same card idiom as the panel that
+   holds them, one scale down. The 16px grid gap does the rest of the separating. */
 [data-theme="light"] body.page-macro.mx4-grid .mx5-mkt-tile{
-  background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);
+  background:#ffffff;border-color:#dde2ea;
+  box-shadow:0 1px 2px rgba(23,32,55,.05);
 }
 /* v5.3.1: tiles sit calm — neutral border like every other card; direction color
    lives on the delta text and a dimmed sparkline only (operator: too bright) */
@@ -5616,7 +5630,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   border-radius:50%;border:1px solid rgba(255,255,255,.22);color:var(--ink-3,rgba(255,255,255,.5));
   font:700 10px/1 var(--font-ui,inherit);cursor:help;margin-left:2px;user-select:none;transition:border-color .2s,color .2s;}
 .fbm-tip:hover{border-color:var(--isle-policy,#a070e8);color:var(--isle-policy,#a070e8);}
-[data-theme="light"] .fbm-tip{border-color:rgba(0,0,0,.22);color:rgba(0,0,0,.45);}
+[data-theme="light"] .fbm-tip{border-color:rgba(0,0,0,.22);color:rgba(0,0,0,.62);}
 
 /* — Chip row (policy conditions) — */
 .fbm-chips{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 4px;}
@@ -5759,7 +5773,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   border-radius:50%;border:1px solid rgba(255,255,255,.22);color:var(--ink-3,rgba(255,255,255,.5));
   font:700 10px/1 var(--font-ui,inherit);cursor:help;user-select:none;margin-left:auto;transition:border-color .2s,color .2s;}
 .rkc-sig-tip:hover{border-color:var(--isle-risk,#e05c5c);color:var(--isle-risk,#e05c5c);}
-[data-theme="light"] .rkc-sig-tip{border-color:rgba(0,0,0,.2);color:rgba(0,0,0,.45);}
+[data-theme="light"] .rkc-sig-tip{border-color:rgba(0,0,0,.2);color:rgba(0,0,0,.62);}
 @media(prefers-reduced-motion:no-preference){
   #dlg-risk .rkc-sig{opacity:0;transform:translateY(6px);transition:opacity .4s ease,transform .4s cubic-bezier(.22,.9,.26,1.02),border-color .2s ease,background .2s ease;}
   #dlg-risk.mx5-dlg-in .rkc-sig{opacity:1;transform:translateY(0);}
@@ -5903,7 +5917,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
    single footer stamp is the board's date, and a ring can be days behind it */
 .rkc-ov-age{margin-top:-4px;font:600 9px/1.2 var(--font-ui,inherit);text-align:center;
   color:var(--ink-3,rgba(255,255,255,.34));}
-[data-theme="light"] .rkc-ov-age{color:rgba(0,0,0,.36);}
+[data-theme="light"] .rkc-ov-age{color:rgba(0,0,0,.58);}
 .row-pop-why li.row-pop-stale{color:var(--warn,#f59e0b);}
 @media(prefers-reduced-motion:no-preference){
   #dlg-risk .rkc-ov-ring{--rkc-anim:0;
@@ -10967,7 +10981,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <span class="mx5-deep-chips-lbl"><span class="l-en">More</span><span class="l-zh">更多</span></span>
         <a class="mx5-deep-chip" href="macro_context.html"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></a>
         <a class="mx5-deep-chip" href="aibrief.html"><span class="l-en">AI Brief</span><span class="l-zh">AI日报</span></a>
-        <a class="mx5-deep-chip" href="sector_central.html"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
+        <a class="mx5-deep-chip" href="sector_central.html"><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span></a>
         <a class="mx5-deep-chip" href="committee.html"><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
         <a class="mx5-deep-chip" href="macro_signals.html"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
         <a class="mx5-deep-chip" href="china_intel.html"><span class="l-en">China Intel</span><span class="l-zh">中国情报</span></a>
@@ -12997,7 +13011,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="isle-linkouts">
           <a class="isle-lout" href="macro_context.html"><span class="l-en">Macro Context</span><span class="l-zh">宏观背景</span></a>
           <a class="isle-lout" href="aibrief.html"><span class="l-en">AI Daily Brief</span><span class="l-zh">AI日报</span></a>
-          <a class="isle-lout" href="sector_central.html"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span></a>
+          <a class="isle-lout" href="sector_central.html"><span class="l-en">Sector Intelligence</span><span class="l-zh">行业智慧</span></a>
           <a class="isle-lout" href="news.html"><span class="l-en">News Feed</span><span class="l-zh">新闻流</span></a>
           <a class="isle-lout" href="committee.html"><span class="l-en">Neural Web</span><span class="l-zh">神经网络</span></a>
           <a class="isle-lout" href="macro_signals.html"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></a>
@@ -14001,7 +14015,29 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       if(el.classList.contains('mx5-dlg')){ window.mx5OpenDlg(h); }
       else if(legacy){ el.scrollIntoView(); }
     }
-    _resolveAlertHash();
+    /* COLD LOAD ORDERING. This block is inline in the body, so it runs while the
+       document is still parsing; tier_preview.js (which defines MMXAccessPreview)
+       is `defer`, so it has not executed yet. mx5OpenDlg treats an absent controller
+       as anon AND falls through to a hard location.href='/?signin=1&…' when
+       MMOnboard is likewise not up — so every cold #dlg-* arrival (alert deep links,
+       the us_stocks "Risk radar →" link) bounced the visitor to the landing sign-in
+       instead of opening the dialog, signed in or not. Wait for the tier to resolve.
+       tier_preview.js fires mmx-access-tier synchronously from its own boot, so a
+       signed-in visitor still lands on the open dialog; the load-time fallback keeps
+       the deep link alive if that asset never arrives (mx5OpenDlg's own anon gate
+       then applies, which is the sign-in SHEET, not a redirect). */
+    var _hashResolved = false;
+    function _resolveAlertHashOnce(){
+      if(_hashResolved) return;
+      _hashResolved = true;
+      _resolveAlertHash();
+    }
+    if(window.MMXAccessPreview){
+      _resolveAlertHashOnce();
+    } else {
+      window.addEventListener('mmx-access-tier', _resolveAlertHashOnce, { once: true });
+      window.addEventListener('load', function(){ setTimeout(_resolveAlertHashOnce, 500); });
+    }
     window.addEventListener('hashchange', _resolveAlertHash);
 
   })();
@@ -14802,7 +14838,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {% if _b4_nalert %}
     <span class="scx-alert" data-tip-en="{{ _b4_nalert }} overseas market{{ 's' if _b4_nalert != 1 else '' }} in a risk-off cascade — details on the Risk Radar" data-tip-zh="{{ _b4_nalert }} 个海外市场处于避险传导 — 详见风险雷达">⚠ <span class="l-en">{{ _b4_nalert }} market{{ 's' if _b4_nalert != 1 else '' }} abroad risk-off</span><span class="l-zh">{{ _b4_nalert }} 个海外市场避险</span></span>
     {% endif %}
-    <a class="scx-more" href="macro.html#sx-risk-v2"><span class="l-en">Risk radar →</span><span class="l-zh">风险雷达 →</span></a>
+    {# #dlg-risk, not #sx-risk-v2: the risk card's own face is display:none on macro
+       (the band is its face) and the tray only opens through mx5OpenDlg, so the old
+       anchor scrolled to an invisible element and nothing popped. macro.html's
+       alert-hash resolver opens any .mx5-dlg named by the hash. #}
+    <a class="scx-more" href="macro.html#dlg-risk"><span class="l-en">Risk radar →</span><span class="l-zh">风险雷达 →</span></a>
   </div>
   {% endif %}{# /market_state B4 #}
   {% if action_board %}
@@ -15531,11 +15571,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {%- set _sg = namespace(any=false) -%}
       {%- for _n in _board -%}{%- if _n.get('stage') -%}{%- set _sg.any = true -%}{%- endif -%}{%- endfor -%}
       {%- set _ran_rows = (_su.get('ran') or []) if _sg.any else [] -%}
-      {%- set _stage_order = ['live','setting_up','ran','blocked'] -%}
-      {%- set _stage_en  = {'live':'Live now','setting_up':'Setting up','ran':'Ran — don’t chase','blocked':'Blocked'} -%}
-      {%- set _stage_zh  = {'live':'现在可操作','setting_up':'形成中','ran':'已启动 — 勿追','blocked':'受阻'} -%}
-      {%- set _stage_sub_en = {'live':'entry window is open','setting_up':'not there yet — get ready','ran':'the move already started','blocked':'stand aside for now'} -%}
-      {%- set _stage_sub_zh = {'live':'入场窗口已打开','setting_up':'尚未触发 — 做好准备','ran':'行情已经启动','blocked':'暂时观望'} -%}
+      {# `basing` sits between `ran` and `blocked` (engine.us_board_rank.STAGE_ORDER):
+         nothing to act on, so below every actionable bucket — but not the stand-aside
+         verdict either. It is the cycle read's "this name is working on a low", which
+         used to be filed under Blocked beside the falling knives and so was invisible
+         (missed-ignitions audit D18). Watch words only: this shelf never says buy. #}
+      {%- set _stage_order = ['live','setting_up','ran','basing','blocked'] -%}
+      {%- set _stage_en  = {'live':'Live now','setting_up':'Setting up','ran':'Ran — don’t chase','basing':'Basing','blocked':'Blocked'} -%}
+      {%- set _stage_zh  = {'live':'现在可操作','setting_up':'形成中','ran':'已启动 — 勿追','basing':'筑底中','blocked':'受阻'} -%}
+      {%- set _stage_sub_en = {'live':'entry window is open','setting_up':'not there yet — get ready','ran':'the move already started','basing':'no entry signal yet — watch, don’t chase','blocked':'stand aside for now'} -%}
+      {%- set _stage_sub_zh = {'live':'入场窗口已打开','setting_up':'尚未触发 — 做好准备','ran':'行情已经启动','basing':'尚无入场信号 — 观察，勿追高','blocked':'暂时观望'} -%}
       {# Tier-2 receipts. One shared sentence carries the honest framing on every bucket:
          the ordering is a readiness rank, NOT a return forecast (§G0.7). #}
       {%- set _pri_en = ' Cards inside are in priority order — a 0–100 readiness rank built from signal freshness, entry state, edge, runway and setup quality. Priority order, not a return forecast.' -%}
@@ -15565,11 +15610,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
            'live':'The entry signal is open right now — buy now, partial, or buy soon.' ~ _pri_en,
            'setting_up':'The setup is forming but the entry has not fired — awaiting confluence, waiting on a bounce, or on watch. Nothing to do yet.' ~ _pri_en,
            'ran':'The signal fired and price has already moved — extended, topping, or hold. The entry window has passed; wait for the next setup.' ~ _pri_en,
+           'basing':'The cycle read has these names nearing a low — still falling, but working on a base rather than breaking down. No entry has fired and none may; this shelf exists so a name working on a low stays in front of you instead of disappearing into Blocked. Watch, don’t chase.' ~ _pri_en,
            'blocked':'Entry is blocked, exited, avoided, or the trend is down. Stand aside.' ~ _pri_en } -%}
       {%- set _stage_tip_zh = {
            'live':'入场信号当前已打开 — 可买入、部分买入或即将买入。' ~ _pri_zh,
            'setting_up':'形态正在形成但入场尚未触发 — 等待共振、等待回踩或处于观察中。暂时无需操作。' ~ _pri_zh,
            'ran':'信号已触发且价格已经启动 — 过度拉伸、做顶或持有。入场窗口已过，等待下一个买点。' ~ _pri_zh,
+           'basing':'周期读数显示这些个股正在接近低点 —— 仍在下跌，但更像在筑底而非破位。入场信号尚未触发，也可能不会触发；设立此组是为了让正在筑底的个股留在你的视线内，而不是消失在「受阻」里。观察，勿追高。' ~ _pri_zh,
            'blocked':'入场受阻、已离场、建议回避，或趋势向下。请观望。' ~ _pri_zh } -%}
       {%- if _sg.any -%}
       {%- set _render_list = namespace(items=[]) -%}
@@ -15589,7 +15636,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
          a filter chip whose number disagrees with what filtering shows is a defect,
          and the ran bucket spans two artifact arrays (buy-lane ran rows + the separate
          `ran` array), which no single artifact counter covers. #}
-      {%- set _sc = {'live':0,'setting_up':0,'ran':0,'blocked':0} -%}
+      {%- set _sc = {'live':0,'setting_up':0,'ran':0,'basing':0,'blocked':0} -%}
       {%- for _n in _board -%}{%- if _n.get('stage') in _sc -%}{%- set _ = _sc.update({_n.stage: _sc[_n.stage] + 1}) -%}{%- endif -%}{%- endfor -%}
       {%- set _ = _sc.update({'ran': _sc['ran'] + (_ran_rows|length)}) -%}
       {# ── themes in favour (G0.5b) ─────────────────────────────────────────────
@@ -16009,8 +16056,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </tr></thead>
           <tbody>
           {% for r in _tsn.resid[:10] %}
-            <tr class="ts-row" onclick="location.href='stock.html#{{ r.ticker }}'">
-              <td class="c-stock"><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" data-tip-en="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer" data-tip-zh="{{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}{% if r.sue_z %} <span class="ts-sue" data-tip-en="Earnings momentum: SUE z {{ '%+.1f'|format(r.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score" data-tip-zh="盈利动量：SUE z {{ '%+.1f'|format(r.sue_z) }}（相对标普1500）— 在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 {{ t('earnings beat', '盈利超预期') }}</span>{% endif %}</td>
+            <tr class="ts-row" data-tkr="{{ r.ticker }}">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#{{ r.ticker }}"><span class="ts-tk">{{ r.ticker }}</span></a> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" data-tip-en="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer" data-tip-zh="{{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}{% if r.sue_z %} <span class="ts-sue" data-tip-en="Earnings momentum: SUE z {{ '%+.1f'|format(r.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score" data-tip-zh="盈利动量：SUE z {{ '%+.1f'|format(r.sue_z) }}（相对标普1500）— 在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 {{ t('earnings beat', '盈利超预期') }}</span>{% endif %}</td>
               <td class="muted c-sector">{{ td(r.sector) }}</td>
               <td class="r c-edge {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
               <td class="r muted c-rank">{% if r.sector_rank %}#{{ r.sector_rank }}/{{ r.sector_n }}{% endif %}</td>
@@ -16076,8 +16123,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% for r in _ldrs[:15] %}
             {% set _les = r.get('entry_signal') %}
             {% set _lbz = _les.buy_zone if _les else none %}
-            <tr class="ts-row" onclick="location.href='stock.html#{{ r.ticker }}'">
-              <td class="c-stock"><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span></td>
+            <tr class="ts-row" data-tkr="{{ r.ticker }}">
+              <td class="c-stock"><a class="ts-tk-a" href="stock.html#{{ r.ticker }}"><span class="ts-tk">{{ r.ticker }}</span></a> <span class="ts-nm">{{ r.name }}</span></td>
               <td class="muted c-sector">{{ td(r.sector) }}</td>
               {% if _lth.any %}<td class="c-theme">{% set _lt = r.get('theme') %}{% if _lt and _lt.get('name') %}<span class="pv-mk-i pv-mk-{{ 'warm' if r.get('theme_confirmed') else 'theme' }}"{% if r.get('theme_confirmed') %} data-tip-en="The theme itself only just turned up{% if _lt.get('bull_days') is not none %}{{ ' (today)' if _lt.bull_days == 0 else ' (' ~ _lt.bull_days ~ ' days in)' }}{% endif %} — the basket is early even though this name has been running. Context, not an entry." data-tip-zh="主题本身刚刚转强{% if _lt.get('bull_days') is not none %}{{ '（今日）' if _lt.bull_days == 0 else '（已进入第' ~ _lt.bull_days ~ '天）' }}{% endif %} — 尽管该股已在上涨，篮子仍处早期。仅供参考，非入场信号。"{% endif %}>{{ t(_lt.name, _lt.get('name_zh') or _lt.name) }}{% if r.get('theme_confirmed') %} ◦{% endif %}</span>{% else %}<span class="muted">—</span>{% endif %}</td>{% endif %}
               <td class="r c-edge {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
@@ -16091,6 +16138,32 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       </div>
       {% endif %}
     </div>{# /panel span12 notable — standout stocks #}
+    {# ── ⚡ trigger + 🏃 leaders row click → Terminal ───────────────────────────
+         Both tables used to carry onclick="location.href='stock.html#TKR'" on the
+         <tr>. theme.js re-routes Terminal-covered analyzer links by intercepting
+         <a href> clicks in the capture phase — an inline location.href assignment is
+         invisible to it, so every row click landed on the retired stock.html analyzer
+         instead of the Terminal portal. The ticker cell is now a real anchor (theme.js
+         handles it, and cmd-/middle-click keeps its native new-tab behaviour); this
+         handler covers clicks anywhere else in the row and mirrors the contract in
+         stocktable.js. Bubble phase on purpose: theme.js's capture handler calls
+         stopPropagation for anchor clicks, so the two can never both fire. #}
+    <script>
+    (function () {
+      document.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        if (!e.target || !e.target.closest) return;
+        var tr = e.target.closest('tr.ts-row[data-tkr]');
+        if (!tr) return;
+        if (e.target.closest('a')) return;   /* anchors route themselves */
+        var tk = tr.getAttribute('data-tkr') || '';
+        if (!tk) return;
+        var T = window.MDXTerminal;
+        if (T && T.on && T.on() && T.open && T.open(tk, tr)) return;
+        location.href = 'stock.html#' + encodeURIComponent(tk);
+      });
+    })();
+    </script>
     {# ── stage filter behaviour (G0.6). Delegated, no-ops when the bar is absent
          (old artifact / notable fallback), so it costs nothing on the legacy path.
          All the hiding is CSS keyed on #us-standouts[data-stagef] — this only moves

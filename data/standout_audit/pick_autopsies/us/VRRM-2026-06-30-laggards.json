@@ -1,0 +1,69 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "VRRM-2026-06-30-laggards",
+  "ticker": "VRRM",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "VRRM",
+    "as_of": "2026-06-30",
+    "lane": "laggards",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "VRRM",
+    "lane": "laggards",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "premature_stop_noise",
+    "sector": "Industrials",
+    "excess_spy": 0.25185156874838377,
+    "excess_sector": 0.2727517865697726,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "VRRM was in the laggards lane but produced strong positive excess return, only to be stopped out on premature noise. Process fault of premature stop truncated potential profit.",
+    "root_cause": "VRRM was in the laggards lane but produced strong positive excess return, only to be stopped out on premature noise. Process fault of premature stop truncated potential profit.",
+    "mitigation_verdict": "mitigable_process",
+    "lesson": "Laggards can reverse sharply, but the stop-loss process is too sensitive to noise, cutting winners short.",
+    "engines_credit": "The laggards signal engine correctly identified a reversal opportunity; the stop engine failed to protect the position.",
+    "causal_chain": [],
+    "alternate_explanations": [
+      "The stop may have been triggered by a company-specific event or a temporary spike in volatility."
+    ],
+    "missing_evidence": [
+      "Intraday price data near the stop trigger",
+      "Volatility or spread data for VRRM",
+      "Details on stop-loss parameters for laggards-lane entries"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "laggard_reversal_persistence",
+        "feature": "Persistence of positive excess return after a laggard reversal signal",
+        "measurement": "Track 10-day post-signal excess return for laggards with reversal signals",
+        "expected_direction": "Reversal should persist, making premature stops costly",
+        "falsifier": "If returns do not persist and stop is correct, the laggard reversal signal is weak.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-05",
+  "asof": "2026-08-05",
+  "ts": "2026-08-05T09:23:44+00:00"
+}

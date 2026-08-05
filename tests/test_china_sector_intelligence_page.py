@@ -92,14 +92,20 @@ def test_stub_ships_no_page_machinery(name: str, anchor: str) -> None:
 # ---------------------------------------------------- merged template skeleton
 
 def test_merged_template_sections_in_order() -> None:
-    """The five-section spine, top to bottom.
+    """The four-section spine, top to bottom.
 
-    Order is load-bearing, not decorative: the rail links to the sections below it,
-    and the stubs' fallback anchors (#si-explore / #si-movement) assume MOVEMENT
-    precedes EXPLORE.
+    Order is load-bearing, not decorative: the persistent rail's buttons are authored
+    in this order, and the stubs' fallback anchors (#si-explore / #si-movement) assume
+    MOVEMENT precedes EXPLORE.
+
+    The V1 horizontal anchor rail (#si-rail) that used to head this spine was retired
+    when the page adopted the US workspace shell — a sticky strip of jump links over a
+    12,000px document is a table of contents, not navigation. `<nav class="si-side">`
+    replaced it and heads the spine now; the shell contract itself is pinned in
+    tests/test_china_si_workspace_shell.py.
     """
     s = _read(TPL / MERGED)
-    spine = ['id="si-rail"', 'id="actnow-section"', 'id="si-map"',
+    spine = ['<nav class="si-side"', 'id="actnow-section"', 'id="si-map"',
              'id="si-movement"', 'id="si-explore"']
     seen = []
     for anchor in spine:
@@ -107,7 +113,7 @@ def test_merged_template_sections_in_order() -> None:
         assert i != -1, f"merged page lost {anchor}"
         seen.append(i)
     assert seen == sorted(seen), (
-        "section skeleton reordered — the si-rail links and the stub fallback "
+        "section skeleton reordered — the rail's button order and the stub fallback "
         f"anchors assume {' < '.join(spine)}"
     )
 
@@ -116,7 +122,7 @@ def test_merged_template_carries_every_transplanted_organ() -> None:
     """Nothing silently lost (masterplan §0 gate 7)."""
     s = _read(TPL / MERGED)
     for organ in ('id="theme-context-hero"',   # rotation state in plain words
-                  'id="sc-board"', 'id="board"', 'id="grader"',   # gated layer
+                  'id="actnow-section"', '_china_act_now_board',   # V2 four-lane act-now board
                   'id="sc-cyclemap"',                              # cycle map
                   'id="rc-events-cn"',                             # rotation events rail
                   'id="rotation-app"',                             # whole-market rotation
