@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T05:41:30.481215+00:00",
-  "count": 782,
+  "generated_at": "2026-08-05T05:56:34.137377+00:00",
+  "count": 783,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -53,6 +53,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-dux27ovxk3q-862454",
+      "title": "EOG Resources Inc. (EOG) First Take In Line Quarter vs GS and Consensus, Focus on Outlook for Future UAE Development and Sh...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:21:46Z",
+      "summary_points": [
+        "**UAE Development as Strategic Growth Driver**: UAE well results (25k bbl/day avg) and production guidance (546-551 Mb/d oil) highlight UAE as core growth catalyst, with capex guidance ($1.60-$1.70bn) undershooting consensus.",
+        "**Capital Discipline & Debt Reduction**: Net debt down to $3.02bn (from $4.08bn), $1.84bn returned to shareholders ($540m dividends + $1.3bn buybacks), signaling strong cash flow management amid macro uncertainty.",
+        "**Overvaluation Risk & Declining Targets**: Current price ($139.64) exceeds 12-month target ($127.00) by 13.1%, with neutral rating and 11.5% downside; historical targets declined from $139.00 (11-May-26) to $127.00 (28-Jul-26)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-xmsgejfidgp-00b2d4",
       "title": "Ternium (TX) 2Q26 Solid Beat",
