@@ -988,6 +988,30 @@ jobs:
       - name: whole-board breadth collector + heatmap payload contract
         run: python -m pytest tests/test_china_board_breadth.py tests/test_market_heatmap.py -q
 
+  china-search-universe:
+    if: ${{ false }}
+    # The A-Share Analyzer's searchable name set (Sina top-800 ∪ CSI 300 ∪ CSI 1000).
+    # WIRING LAW (#1253 precedent): both suites were named by NO job, so the CSI union —
+    # the part of this collector that has now produced four separate silent-shrink
+    # defects (#4577 duplicate codes, #4585 92xxxx→.SS, and the untimed fetch + silent
+    # lossy fallback fixed here) — merged untested for its whole life. Offline: canned
+    # CSIndex frames, generated .xls bytes, no network.
+    #
+    # openpyxl is not optional here: the direct CSIndex path is an .xls parsed through
+    # pd.read_excel, and the fixtures generate real workbook bytes rather than mocking
+    # the parser (a mocked read_excel cannot see the bilingual 成份 header dialect the
+    # live file actually ships). yfinance is a module-scope import of the collector.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml requests openpyxl yfinance
+      - name: CSI constituent union — timeout, header dialect, degraded-night membership
+        run: python -m pytest tests/test_china_universe_index_constituents.py tests/test_china_universe_extras.py -q
+
   cycle-consistency:
     if: ${{ false }}
     # W3.6 (R3-M3): the SAME instrument must show the SAME pos_v2/phase_v2 across every
