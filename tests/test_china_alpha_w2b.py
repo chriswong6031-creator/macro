@@ -823,6 +823,11 @@ class TestTemplateRender:
         """
         html = _render_w1c_w2b(_full_setups())
         assert "It is a readiness rank, not a win probability." in html
-        assert "The cn_prophet_v2 forward cohort is accruing separately." in html
+        # V3: the note no longer names a definition slug (a raw slug at glance tier
+        # is a doctrine violation, and it went stale the moment the board forked to
+        # cn_prophet_v3). The accrual disclosure itself is what must survive.
+        assert "The current forward cohort is accruing separately." in html
         assert "这是就绪度排序，并非胜率。" in html
-        assert "cn_prophet_v2前瞻样本将单独积累。" in html
+        assert "当前前瞻样本将单独积累。" in html
+        # The printed formula must match the live weights, not a superseded set.
+        assert "signal 30% + entry 20% + runway 15% + theme timing 15%" in html

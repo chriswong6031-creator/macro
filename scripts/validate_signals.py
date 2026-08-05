@@ -6,9 +6,11 @@ research/signal_engine/SCHEMA.json is the SINGLE SOURCE OF TRUTH for both — sh
 with the charting web-app so the two workstreams can never drift.
 
 This is a SAFETY GATE, not signal logic: it asserts every emitted file matches the schema AND
-two cross-field rules the schema can't express as cleanly:
+three cross-field rules the schema can't express as cleanly:
   1. markers within a file are strictly date-sorted ascending;
-  2. `quality` appears ONLY on buy/rebuy markers (never sell/cut).
+  2. `quality` appears ONLY on buy/rebuy markers (never sell/cut);
+  3. `reasons[0]` — the exhaustive buy-filter account — IS the marker's `reason`, so the
+     account can never open on a different leg than the first-match label it explains.
 It writes data/quality/signals_audit.json {asof, files_checked, n_markers, errors:[...]} and
 exits non-zero with a clear message on ANY violation, so a malformed write aborts the build
 (wired right after scripts/build_signal_quality.py in .github/workflows/daily.yml).
@@ -70,8 +72,9 @@ def check_markers(markers: list, where: str) -> list[str]:
         if not isinstance(m, dict):
             continue  # schema already flagged it
         mtype = m.get("type")
-        # Rule 2: `quality`/`reason` are buy-filter verdict fields — present on buy/rebuy ONLY,
-        # and REQUIRED there (the chart reads quality to render solid/hollow/provisional).
+        # Rule 2: `quality`/`reason`/`reasons` are buy-filter verdict fields — present on
+        # buy/rebuy ONLY, and `quality` is REQUIRED there (the chart reads it to render
+        # solid/hollow/provisional).
         if mtype in _QUALITY_TYPES:
             if "quality" not in m:
                 out.append(f"{where}: markers[{i}]: `quality` missing on type '{mtype}' "
@@ -80,9 +83,19 @@ def check_markers(markers: list, where: str) -> list[str]:
             if "quality" in m:
                 out.append(f"{where}: markers[{i}]: `quality` present on type '{mtype}' "
                            f"(allowed only on buy/rebuy)")
-            if "reason" in m:
-                out.append(f"{where}: markers[{i}]: `reason` present on type '{mtype}' "
-                           f"(allowed only on buy/rebuy)")
+            for field in ("reason", "reasons"):
+                if field in m:
+                    out.append(f"{where}: markers[{i}]: `{field}` present on type '{mtype}' "
+                               f"(allowed only on buy/rebuy)")
+        # Rule 3: `reasons` is the EXHAUSTIVE companion of `reason` — element 0 must BE
+        # `reason`. That invariant is what lets every downstream reader fall back to
+        # [reason] when the list is absent; an account that opens on a different leg than
+        # the label it accompanies would silently contradict the shipped gate_reason.
+        rs = m.get("reasons")
+        if isinstance(rs, list) and rs and rs[0] != m.get("reason"):
+            out.append(f"{where}: markers[{i}]: `reasons[0]` is {rs[0]!r} but `reason` is "
+                       f"{m.get('reason')!r} — the exhaustive account must open on the "
+                       f"first-match label it accompanies")
         # Rule 1: strict ascending dates (each 3D bar emits at most one marker).
         raw = m.get("date")
         if not isinstance(raw, str):

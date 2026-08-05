@@ -34,7 +34,7 @@
    "from_leg": "cn_semis",
    "to_leg": "cn_software",
    "started": "2026-07-31",
-   "lapse_count": 2,
+   "lapse_count": 3,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-30",

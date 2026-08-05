@@ -113,10 +113,27 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.debug("china_sector_central: sleeve stats load skipped (%s)", e)
 
+    # Act-Now v2 four-lane board — reader pattern. build_china persists the same board it
+    # renders on china_stocks.html to site/chinabasketdata/act_now_cn.json (it runs earlier in
+    # asia-close.yml); we read it fail-soft — an absent/corrupt file just renders the refreshing
+    # fallback. sectors_by_ticker feeds the SECTOR-row hover cards.
+    act_now_v2 = None
+    sectors_by_ticker = {}
+    try:
+        _an_path = site / "chinabasketdata" / "act_now_cn.json"
+        if _an_path.exists():
+            _an = json.loads(_an_path.read_text())
+            act_now_v2 = _an.get("act_now_v2")
+            sectors_by_ticker = _an.get("sectors_by_ticker") or {}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china_sector_central: act_now_cn read failed (%s)", e)
+
     from datetime import datetime, timezone
     html = env.get_template("sector_central_china.html.j2").render(
         theme_context=theme_context,
         sleeve_stats=sleeve_stats,
+        act_now_v2=act_now_v2,
+        sectors_by_ticker=sectors_by_ticker,
         generated_utc=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"))
     write_page(site / "sector_central_china.html", html, encoding="utf-8")
 
