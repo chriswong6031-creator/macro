@@ -1,6 +1,14 @@
 """Measure HK washout_watch lane coverage against the cycle ladder's BOTTOM WATCH cohort.
 
-Reproduces every number in research/ADJUDICATION_20260805_HK_WASHOUT_WATCH_LADDER_COVERAGE.md.
+Emits the receipts behind research/ADJUDICATION_20260805_HK_WASHOUT_WATCH_LADDER_COVERAGE.md:
+every count, share, per-date cohort roster, and option cost the packet quotes.
+
+KNOWN LIMIT, stated rather than papered over: per-day rescue counts read the RSI organ only
+(`in_reclaim_zone`), because historical per-date state for the other five confluence organs is
+not reconstructable from committed artifacts -- the southbound store holds only the current
+cross-section.  Those counts are therefore LOWER bounds on who would render, and cannot support
+a claim that a given name would NOT render.  For the newest snapshot, where all six organs are
+readable, `summary.latest_cohort_all_organ_confluence` measures the full confluence instead.
 
     python3 research/hk_washout_coverage/washout_coverage_packet.py
 
@@ -134,6 +142,12 @@ def main() -> int:
         validation.append({"as_of": as_of, "matched": matched, "total": total})
 
         cohort = [t for t, v in cyc.items() if v == BOTTOM_WATCH_LABEL]
+        # Option B admits EVERY cohort name as a candidate, so its lane delta is the cohort
+        # members not already in washout_watch -- which includes names visible in some OTHER
+        # lane (buy/watch/laggards/...).  Lanes overlap; "in no lane at all" is a strictly
+        # smaller set and is the wrong denominator for the cost of the change.
+        cohort_elsewhere = [t for t in cohort
+                            if t not in lanes["washout_watch"] and t in lane_union]
         invisible = []
         for t in cohort:
             if t in lane_union:
@@ -160,6 +174,16 @@ def main() -> int:
 
         # Sorted: `lanes[...]` is a set, so insertion order varies run to run and an
         # unsorted dict would make this artifact produce a phantom git diff every time.
+        # Full cohort roster with lane membership -- the receipt behind the packet's per-date
+        # tables, including the names that ARE placed (which invisible_detail omits by design).
+        name_by = {r["ticker"]: r.get("name") for r in sb["modes"]["all"]}
+        cohort_detail = [{
+            "ticker": t,
+            "name": name_by.get(t),
+            "rsi": rsi_asof(t, as_of),
+            "lanes": sorted(L for L in LANES if t in lanes[L]),
+        } for t in sorted(cohort)]
+
         label_mix: dict[str, int] = {}
         for t in sorted(lanes["washout_watch"]):
             label_mix[cyc.get(t) or "?"] = label_mix.get(cyc.get(t) or "?", 0) + 1
@@ -171,6 +195,11 @@ def main() -> int:
             "washout_watch_size": len(lanes["washout_watch"]),
             "lane_label_mix": label_mix,
             "bottom_watch_cohort": len(cohort),
+            "cohort_detail": cohort_detail,
+            "bottom_watch_in_washout_watch": len([t for t in cohort if t in lanes["washout_watch"]]),
+            "bottom_watch_visible_elsewhere_only": len(cohort_elsewhere),
+            "bottom_watch_visible_elsewhere_detail": sorted(cohort_elsewhere),
+            "option_b_lane_delta": len(cohort) - len([t for t in cohort if t in lanes["washout_watch"]]),
             "bottom_watch_invisible": len(invisible),
             "invisible_detail": invisible,
             "dist_200dma_nonnull_rows": sum(
@@ -190,6 +219,8 @@ def main() -> int:
     nal = sum(d["lane_label_mix"].get(BOTTOM_WATCH_LABEL, 0) for d in per_day)
     cohort_days = sum(d["bottom_watch_cohort"] for d in per_day)
     invis_days = sum(d["bottom_watch_invisible"] for d in per_day)
+    elsewhere_days = sum(d["bottom_watch_visible_elsewhere_only"] for d in per_day)
+    optb_delta = sum(d["option_b_lane_delta"] for d in per_day)
     rescuable = sum(1 for d in per_day for i in d["invisible_detail"] if i["in_reclaim_zone"])
     deep200 = sum(1 for d in per_day for i in d["invisible_detail"] if i["deep_below_200dma"])
 
@@ -203,8 +234,14 @@ def main() -> int:
         "bottom_watch_name_days": cohort_days,
         "bottom_watch_invisible_name_days": invis_days,
         "bottom_watch_invisible_pct": round(100 * invis_days / cohort_days, 1) if cohort_days else None,
+        "bottom_watch_visible_elsewhere_only_name_days": elsewhere_days,
+        # Option B's real lane delta: cohort members not already in washout_watch.  Larger than
+        # the "in no lane at all" count, because the lanes overlap.
+        "option_b_lane_delta_name_days": optb_delta,
+        "mean_lane_size_option_b_full_delta": round((lane_days + optb_delta) / days, 1),
+        # LOWER bound -- RSI organ only.  See latest_cohort_all_organ_confluence.
         "invisible_in_reclaim_zone": rescuable,
-        "invisible_not_rescuable_by_rsi": invis_days - rescuable,
+        "invisible_outside_reclaim_zone": invis_days - rescuable,
         "invisible_deep_below_200dma": deep200,
         "invisible_deep_below_200dma_pct": round(100 * deep200 / invis_days, 1) if invis_days else None,
         "dist_200dma_nonnull_rows_total": sum(d["dist_200dma_nonnull_rows"] for d in per_day),
@@ -252,6 +289,45 @@ def main() -> int:
         "option_c_labels": dict(sorted(deep_labels.items())),
         "option_c_naive_unit_bug_admits": naive_c,
     }
+
+    # ---- Full-organ confluence for the LATEST cohort -------------------------------------
+    # The per-day `in_reclaim_zone` flag reads ONE organ (RSI).  A name Option B admits renders
+    # if ANY of the six organs fires, so RSI alone yields a LOWER bound on who is rescued and
+    # cannot support a claim that a given name would NOT appear.  Here we read all six for the
+    # newest snapshot, using the engine's own reader functions against the committed organ
+    # artifacts, so the packet's rescue claim rests on measurement rather than one proxy.
+    organ_detail = []
+    try:
+        fd = REPO / "site" / "factordata"
+        organs = {}
+        for key, fname in (("adr_bridge", "hk_adr_bridge.json"), ("cbbc", "hk_cbbc.json"),
+                           ("narrative", "hk_narrative.json"), ("filing_bus", "hk_filing_bus.json")):
+            try:
+                organs[key] = json.loads((fd / fname).read_text())
+            except Exception:
+                pass
+        try:
+            from engine import hk_southbound_stocks as _sb
+            organs["southbound"] = _sb.signal(tickers=list(cyc))
+        except Exception:
+            pass
+        adr, cbbc = ww._read_adr_signals(organs), ww._read_cbbc_signals(organs)
+        filing, narr = ww._read_filing_signals(organs), ww._read_narrative_signals(organs)
+        sbm = ww._read_southbound_signals(organs)
+        for t in sorted(t for t, v in cyc.items() if v == BOTTOM_WATCH_LABEL):
+            r = rsi_asof(t, as_of)
+            entry = {"ticker": t, "rsi": r,
+                     "in_washout_watch": t in in_lane,
+                     "in_any_lane": any(t in s for s in _lane_map(st).values())}
+            cnt, sigs, veto = ww._confluence_for(t, {"rsi": r}, adr, cbbc, filing, narr,
+                                                 sbm, organs, as_of)
+            entry.update(confluence_count=cnt, confluence_signals=sigs, dilution_veto=veto,
+                         # What Option B would produce for this name.
+                         would_render=bool(cnt >= ww.CONFLUENCE_WATCH and not veto))
+            organ_detail.append(entry)
+    except Exception as e:  # noqa: BLE001 -- a missing organ artifact must not void the packet
+        organ_detail = [{"error": f"{type(e).__name__}: {e}"}]
+    summary["latest_cohort_all_organ_confluence"] = organ_detail
 
     out = {"summary": summary, "per_day": per_day, "validation": validation}
     dest = Path(__file__).with_name("washout_coverage_results.json")
