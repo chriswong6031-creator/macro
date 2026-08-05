@@ -25,33 +25,20 @@ have been a fix for a defect that is not there.
 
 THE DEFECT THAT IS REAL
 -----------------------
-The brief's exhibit NUMBERS are exactly right; they point at a store the brief did
-not name.  ``data/yahoo/GOLD.parquet`` carries precisely **23 bars** (from
-2026-07-01) and ``data/yahoo/SPCX.parquet`` precisely **35** — the operator was
-reading ``data/yahoo``, where the whole gold-miner cohort begins 2026-07-01:
+The brief's *class* of defect is real, in a different store with different names.
+``data/stocks/`` (the deep-history holdings tree that ``build_stock_library``
+prefers over the breadth caches) carries four names whose file begins in May 2026
+while the SAME ticker has twelve years on disk one directory over:
 
-    ticker   data/yahoo             data/baskets/ohlcv
-    GOLD     23 bars (2026-07-01)   3,113 bars (2014-03-17)
-    GFI      23 bars (2026-07-01)   3,163 bars (2014-01-02)
-    HMY      23 bars (2026-07-01)   3,163 bars (2014-01-02)
-    KGC      23 bars (2026-07-01)   3,163 bars (2014-01-02)
-    NEM/EGO/EQX — same shape
+    ticker   data/stocks        data/baskets/ohlcv
+    CBRE     35 bars (2026-05-18)   3,140 bars (2014-01-02)
+    ISRG     35 bars (2026-05-18)   3,146 bars (2014-01-02)
+    MLM      35 bars (2026-05-18)   3,140 bars (2014-01-02)
+    KMI      38 bars (2026-05-13)   3,140 bars (2014-01-02)
 
-All are below ``confluence_tiers.MIN_HISTORY`` (200), so every tier verdict for
-them is a structural null — the exact symptom the brief describes.
-
-**The cause is a missing FALLBACK, not missing data.**
-``build_stock_library.universe()`` serves ETFs, commodities and the curated
-searchable extras from ``data/yahoo`` and never falls back to
-``data/baskets/ohlcv``, so a name is gated on last month's history while twelve
-years of the same ticker sit one directory over.
-
-(Measured on the REF, not on the shared primary checkout.  An earlier pass read
-the occupied checkout's working tree and saw four shallow ``data/stocks`` names
-there — CBRE/ISRG/MLM/KMI — which are 5,570-8,166 bars deep on ``origin/main``.
-That reading was an artifact of a mid-collection working tree; ``data/stocks`` has
-no shallow names on the ref, which is why it heals nothing and is kept in
-``TARGET_DIRS`` only as a guard against the defect recurring there.)
+Those four are below ``confluence_tiers.MIN_HISTORY`` (200), so every tier verdict
+for them is a structural null — the exact symptom the brief describes, caused by
+a collection start date rather than by a young company.
 
 WHAT THIS SCRIPT DOES
 ---------------------

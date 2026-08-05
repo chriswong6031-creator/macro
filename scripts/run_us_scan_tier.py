@@ -196,21 +196,10 @@ def main() -> int:
     curated = curated_universe(root)
     # ONE store census for the whole lane: the audit and the context-vector stamp
     # need the same resolved set, and the census is a 30-second read of 20k files.
+    # Resolution itself goes through us_scan_universe so this lane cannot drift
+    # from the module's own definition of "floored minus curated".
     frame = USU.census(root)
-    kept, floor = USU.apply_floor(frame)
-    scan_tickers = [t for t in kept if t not in curated]
-    floor["curated_n"] = len(curated)
-    floor["curated_overlap_n"] = len(kept) - len(scan_tickers)
-    floor["scan_n"] = len(scan_tickers)
-    floor["store_manifest"] = {
-        k: v for k, v in USU.store_manifest(root).items()
-        if k in ("n_tickers", "latest_date", "updated_at")
-    }
-    scan_set = set(scan_tickers)
-    liquidity = {
-        str(row.ticker): {"mdv20_usd": row.mdv20}
-        for row in frame.itertuples(index=False) if str(row.ticker) in scan_set
-    }
+    scan_tickers, floor, liquidity = USU.resolve_from_census(frame, root, curated=curated)
 
     doc = PMA.build_scan_tier_audit(root, top_n=args.top_n, curated=curated,
                                     tickers=scan_tickers, floor=floor)
