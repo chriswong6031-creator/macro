@@ -27,6 +27,7 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from lib import config
+from lib import symbol_aliases          # retired ticker -> the live symbol
 
 log = logging.getLogger(__name__)
 
@@ -54,7 +55,17 @@ _TICKER_RE = re.compile(r"^[A-Z][A-Z0-9]{0,8}([.\-][A-Z0-9]{1,3})?$")
 def _valid_ticker(v) -> str | None:
     """A canonical, validated ticker, or None. Rejects placeholder junk ('N/A' and
     friends) and shape-invalid strings so no garbage name reaches the convergence
-    board. This is the single hygiene gate the kernel routes every ticker through."""
+    board, and resolves a RETIRED symbol to the one that name currently trades
+    under. This is the single hygiene gate the kernel routes every ticker through.
+
+    Resolving the rename HERE is what makes the merge free: every channel reaches
+    a record through rec()/add(), so both symbols land in the same ``by`` entry and
+    the existing channel / weighted_score / count logic aggregates them as one
+    company with no merge code. Marsh McLennan sat on this board as TWO companies
+    for ~7 months after its 2026-01-14 MMC -> MRSH rename — MMC carrying
+    news_sentiment at 0.20, MRSH carrying a trump channel at 0.50, neither aware of
+    the other — because nothing in the pipeline knew the two symbols were one name.
+    """
     s = _s(v)
     if s is None:
         return None
@@ -62,7 +73,8 @@ def _valid_ticker(v) -> str | None:
     u = s.upper()
     if u in _TICKER_JUNK or not _TICKER_RE.match(u):
         return None
-    return s
+    live = symbol_aliases.resolve(u)
+    return live if live != u else s
 
 
 def _f(v) -> float:

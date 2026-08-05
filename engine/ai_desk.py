@@ -52,6 +52,7 @@ from pathlib import Path
 import pandas as pd
 
 from lib import config
+from lib import symbol_aliases                   # retired ticker -> the live symbol
 from engine import desk_ledger as _ledger_law    # run-scoped ids + immutable appends
 from engine import master_brain as _mb          # reuse the DeepSeek/Anthropic client
 from engine.catalyst_tone import _extract_json   # shared tolerant JSON parser
@@ -183,10 +184,38 @@ def _breadth_frame(root):
 
 
 def _close_series(ticker: str, root) -> pd.Series | None:
-    """Closes for an instrument. Prefers the per-ticker yahoo parquet (cols are
-    lowercase 'close'); falls back to the S&P 1500 breadth close cache so subjects
-    beyond the ~153 yahoo names are still scorable; then to the China price
-    parquets (data/china_stocks/<ticker>.parquet A-share OHLCV, data/china/<t>.parquet
+    """Closes for an instrument, resolving retired tickers to the live symbol.
+
+    Tries ``ticker`` as written first (see ``_close_series_direct``). Only if
+    every rung there misses does it retry under the symbol the name currently
+    trades as (lib.symbol_aliases). That last step is what keeps a record written
+    under a since-retired symbol priceable: forward claims registered under MMC
+    before the 2026-01-14 MMC -> MRSH rename are stranded under MMC by operator
+    ruling, and would otherwise grade against nothing at all in October.
+
+    The retry is LAST and LOUD by design. A silent alias rung would hide a real
+    absence behind a neighbouring company's prices; this one fires only after the
+    direct read has failed on every store, and logs when it does."""
+    s = _close_series_direct(ticker, root)
+    if s is not None:
+        return s
+    live = symbol_aliases.resolve(ticker)
+    if live == str(ticker or "").strip().upper():
+        return None                      # not a retired symbol — genuinely absent
+    s = _close_series_direct(live, root)
+    if s is not None:
+        log.warning("price read for retired symbol %s served from %s (%d bars) — "
+                    "the caller is keyed on a ticker that no longer trades",
+                    ticker, live, len(s))
+    return s
+
+
+def _close_series_direct(ticker: str, root) -> pd.Series | None:
+    """Closes for an instrument under EXACTLY the symbol given. Prefers the
+    per-ticker yahoo parquet (cols are lowercase 'close'); falls back to the
+    S&P 1500 breadth close cache so subjects beyond the ~153 yahoo names are
+    still scorable; then to the China price parquets
+    (data/china_stocks/<ticker>.parquet A-share OHLCV, data/china/<t>.parquet
     for CN benches like 510300.SS) so the qledger grader can price China
     event-move claims and their 510300.SS benchmark. None if none has it."""
     try:

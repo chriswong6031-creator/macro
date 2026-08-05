@@ -2002,16 +2002,24 @@ breadth:
   lookback_days_live: 1100        # ~3y: 200DMA/NH-NL plus cycle analysis for stock search
   ma_windows: [50, 200]
   nhnl_window: 252
-  # Repair known-bad Wikipedia symbols before they reach the universe. The list is
-  # community-edited and intermittently ships a plausible-but-wrong ticker —
-  # vandalism (Marsh & McLennan as the non-existent "MRSH") or a stale pre-rename
-  # ticker (Fiserv as "FISV", renamed "FI" in 2023). Map bad -> real current
-  # ticker; pricing is best-effort (an unpriceable repaired symbol is skipped, no
-  # worse than the garbage it replaced, and it builds once the feed serves it).
+  # Repair STALE PRE-RENAME Wikipedia symbols before they reach the universe. The
+  # list is community-edited and intermittently ships the previous ticker after a
+  # rename. Map retired -> real current ticker; pricing is best-effort (an
+  # unpriceable repaired symbol is skipped, no worse than the stale symbol it
+  # replaced, and it builds once the feed serves it).
+  #
+  # DIRECTION IS LOAD-BEARING — it must always point at the symbol that CURRENTLY
+  # TRADES. This map ran backwards for Marsh McLennan from 2026-01-14 to 2026-08-05:
+  # MMC -> MRSH was a real NYSE symbol change (same CUSIP 571748102, same listing),
+  # but it was misdiagnosed here as Wikipedia vandalism and "repaired" MRSH -> MMC,
+  # pinning the universe to a symbol that no longer trades. Authoritative check
+  # before adding a row — the NASDAQ symbol directory
+  # (data/symbol_directory/snapshots/) and OpenFIGI (data/openfigi/cusip_ticker.parquet)
+  # both list the live symbol; a symbol absent from the directory is retired, not real.
   # Extend as the "constituents churn" / "dropping non-ticker row" log surfaces more.
   ticker_fixups:
-    MRSH: MMC     # Marsh & McLennan — page vandalised to a non-existent symbol
-    FISV: FI      # Fiserv — page shows the pre-2023 ticker
+    MMC: MRSH     # Marsh McLennan — renamed MMC -> MRSH on the NYSE 2026-01-14
+    FI: FISV      # Fiserv — renamed FISV->FI 2023, then BACK FI->FISV 2025-11-11
 
 # Small-cap participation, computed exactly like S&P 500 breadth but over the
 # S&P SmallCap 600 — a free, well-defined small-cap universe (Wikipedia, same
@@ -2153,11 +2161,16 @@ stock_search:
     # Thematic small/mid-caps + foreign listings that curated baskets reference but
     # the S&P-1500 pipeline never built, so their members rendered "thin / not in
     # library" and stock.html#<T> 404'd. All are liquid US lines > $100M mcap
-    # (smallest enCore ~$320M). A handful (MMC, HEI, LNG, FI, DKNG, POOL) ARE
-    # economically S&P 500 but don't resolve through the Wikipedia constituents
-    # table (garbled/aliased ticker, e.g. Marsh shows as "MRSH"), so they ride the
-    # extras hook here too. universe()'s `seen` set dedups, so this is a no-op for
-    # any name the index already resolves.
+    # (smallest enCore ~$320M). A handful (MRSH, HEI, LNG, FISV, DKNG, POOL) ARE
+    # economically S&P 500 but don't always resolve through the Wikipedia
+    # constituents table (it can lag a ticker rename — Marsh trades as MRSH since
+    # 2026-01-14, Fiserv back as FISV since 2025-11-11), so they ride the extras
+    # hook here too.
+    # universe()'s `seen` set dedups, so this is a no-op for any name the index
+    # already resolves. KEEP THIS LIST ON THE SAME SYMBOL AS breadth.ticker_fixups
+    # AND stock_search.extra_names — the three move together or the library mints a
+    # DUPLICATE company (the constituents path admits one symbol, then the extras
+    # hook re-admits the other from data/baskets/extras.parquet).
     # Uranium & nuclear fuel cycle
     - CCJ    # Cameco
     - UEC    # Uranium Energy
@@ -2223,10 +2236,10 @@ stock_search:
     - NET    # Cloudflare
     - SOUN   # SoundHound AI
     # Fintech / payments
-    - FI     # Fiserv
+    - FISV   # Fiserv (renamed back FI -> FISV 2025-11-11)
     - UPST   # Upstart
     # Index names that don't resolve through the constituents pipeline
-    - MMC    # Marsh & McLennan
+    - MRSH   # Marsh McLennan (NYSE symbol change MMC -> MRSH, 2026-01-14)
     - HEI    # HEICO
     - LNG    # Cheniere Energy
     - DKNG   # DraftKings
@@ -2698,9 +2711,9 @@ stock_search:
     ZS:    {name: "Zscaler", sector: "Information Technology"}
     NET:   {name: "Cloudflare", sector: "Information Technology"}
     SOUN:  {name: "SoundHound AI", sector: "Information Technology"}
-    FI:    {name: "Fiserv", sector: "Financials"}
+    FISV:  {name: "Fiserv", sector: "Financials"}
     UPST:  {name: "Upstart Holdings", sector: "Financials"}
-    MMC:   {name: "Marsh & McLennan", sector: "Financials"}
+    MRSH:  {name: "Marsh & McLennan", sector: "Financials"}
     HEI:   {name: "HEICO", sector: "Industrials"}
     LNG:   {name: "Cheniere Energy", sector: "Energy"}
     DKNG:  {name: "DraftKings", sector: "Consumer Discretionary"}

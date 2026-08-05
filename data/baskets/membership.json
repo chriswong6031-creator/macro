@@ -6,7 +6,7 @@
   "baskets": {
     "mag7": {
       "name": "Magnificent Seven",
-      "name_zh": "七巨头",
+      "name_zh": "\u4e03\u5de8\u5934",
       "theme": "Mega-cap tech & AI leaders",
       "category": "AI & Technology",
       "etf_proxy": "QQQ",
@@ -24,7 +24,7 @@
           "ticker": "MSFT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Azure + Copilot — the enterprise AI distribution layer"
+          "rationale": "Azure + Copilot \u2014 the enterprise AI distribution layer"
         },
         {
           "ticker": "NVDA",
@@ -57,14 +57,14 @@
           "rationale": "Auto-demand cyclicality vs robotaxi/optionality"
         }
       ],
-      "etf_proxy_note": "loose — Mag7 ≈ 40% of QQQ",
+      "etf_proxy_note": "loose \u2014 Mag7 \u2248 40% of QQQ",
       "thesis": "Mega-cap tech leaders that drive index concentration and breadth.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded Magnificent Seven — 7 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded Magnificent Seven \u2014 7 equal-weight members from the S&P 1500 cache."
         }
       ],
       "parent": "Artificial Intelligence",
@@ -76,7 +76,7 @@
     },
     "ai_infra": {
       "name": "AI Infrastructure",
-      "name_zh": "AI 基础设施",
+      "name_zh": "AI \u57fa\u7840\u8bbe\u65bd",
       "theme": "Compute, networking & power for AI buildout",
       "category": "AI & Technology",
       "etf_proxy": "SMH",
@@ -108,7 +108,7 @@
           "ticker": "MU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "HBM supply oligopoly — memory is the bottleneck"
+          "rationale": "HBM supply oligopoly \u2014 memory is the bottleneck"
         },
         {
           "ticker": "ANET",
@@ -144,91 +144,91 @@
           "ticker": "LITE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Lumentum — datacenter optical transceivers & lasers; AI interconnect"
+          "rationale": "Lumentum \u2014 datacenter optical transceivers & lasers; AI interconnect"
         },
         {
           "ticker": "COHR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Coherent — datacom optics + lasers; the merchant transceiver leader"
+          "rationale": "Coherent \u2014 datacom optics + lasers; the merchant transceiver leader"
         },
         {
           "ticker": "CBRS",
           "added": "2026-05-14",
           "removed": null,
-          "rationale": "Cerebras — wafer-scale merchant accelerator; the purest NVDA-alternative"
+          "rationale": "Cerebras \u2014 wafer-scale merchant accelerator; the purest NVDA-alternative"
         },
         {
           "ticker": "NBIS",
           "added": "2024-10-21",
           "removed": null,
-          "rationale": "Nebius — scaled GPU neocloud; AI compute capacity as a service"
+          "rationale": "Nebius \u2014 scaled GPU neocloud; AI compute capacity as a service"
         },
         {
           "ticker": "CRWV",
           "added": "2025-03-28",
           "removed": null,
-          "rationale": "CoreWeave — GPU hyperscaler neocloud; capacity levered to training"
+          "rationale": "CoreWeave \u2014 GPU hyperscaler neocloud; capacity levered to training"
         },
         {
           "ticker": "AMAT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Applied Materials — WFE leader; deposition/etch into leading-edge & HBM"
+          "rationale": "Applied Materials \u2014 WFE leader; deposition/etch into leading-edge & HBM"
         },
         {
           "ticker": "LRCX",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Lam Research — etch & deposition; the memory/HBM capex lever"
+          "rationale": "Lam Research \u2014 etch & deposition; the memory/HBM capex lever"
         },
         {
           "ticker": "KLAC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "KLA — process control monopoly; yield-critical at advanced nodes"
+          "rationale": "KLA \u2014 process control monopoly; yield-critical at advanced nodes"
         },
         {
           "ticker": "QCOM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Qualcomm — on-device/edge AI SoCs; inference at the handset"
+          "rationale": "Qualcomm \u2014 on-device/edge AI SoCs; inference at the handset"
         },
         {
           "ticker": "TER",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Teradyne — semiconductor test; AI-accelerator volume read-through"
+          "rationale": "Teradyne \u2014 semiconductor test; AI-accelerator volume read-through"
         },
         {
           "ticker": "APH",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Amphenol — high-speed connectors & cabling for AI fabrics"
+          "rationale": "Amphenol \u2014 high-speed connectors & cabling for AI fabrics"
         },
         {
           "ticker": "GLW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Corning — optical fiber for AI data-center interconnect"
+          "rationale": "Corning \u2014 optical fiber for AI data-center interconnect"
         },
         {
           "ticker": "MPWR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Monolithic Power — power management into AI server/GPU boards"
+          "rationale": "Monolithic Power \u2014 power management into AI server/GPU boards"
         },
         {
           "ticker": "MRVL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Marvell — custom AI silicon + optical DSPs (was off-cache; now in the deep store)"
+          "rationale": "Marvell \u2014 custom AI silicon + optical DSPs (was off-cache; now in the deep store)"
         },
         {
           "ticker": "ARM",
           "added": "2023-09-14",
           "removed": null,
-          "rationale": "Arm Holdings — CPU IP licensing levered to AI compute (IPO 2023-09)"
+          "rationale": "Arm Holdings \u2014 CPU IP licensing levered to AI compute (IPO 2023-09)"
         }
       ],
       "etf_proxy_note": "semis proxy",
@@ -238,7 +238,7 @@
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded AI Infrastructure — 9 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded AI Infrastructure \u2014 9 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-14",
@@ -248,7 +248,7 @@
         {
           "date": "2026-06-15",
           "action": "add",
-          "note": "Added optics (LITE, COHR) and the merchant-accelerator / neocloud leg (CBRS, NBIS, CRWV — off-index, carried in the baskets extras cache)."
+          "note": "Added optics (LITE, COHR) and the merchant-accelerator / neocloud leg (CBRS, NBIS, CRWV \u2014 off-index, carried in the baskets extras cache)."
         },
         {
           "date": "2026-06-18",
@@ -266,7 +266,7 @@
     },
     "ai_software": {
       "name": "AI Software & Platforms",
-      "name_zh": "AI 软件与平台",
+      "name_zh": "AI \u8f6f\u4ef6\u4e0e\u5e73\u53f0",
       "theme": "Apps & platforms monetizing AI",
       "category": "AI & Technology",
       "etf_proxy": "XLK",
@@ -274,7 +274,7 @@
       "curated": "2026-06-18",
       "omitted": [
         "SNOW (not in free cache)",
-        "CFLT Confluent, IOT Samsara (data infrastructure, not AI-app monetization — thesis fit debatable)"
+        "CFLT Confluent, IOT Samsara (data infrastructure, not AI-app monetization \u2014 thesis fit debatable)"
       ],
       "members": [
         {
@@ -299,7 +299,7 @@
           "ticker": "PLTR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "AIP — the AI-deployment narrative leader"
+          "rationale": "AIP \u2014 the AI-deployment narrative leader"
         },
         {
           "ticker": "NOW",
@@ -311,7 +311,7 @@
           "ticker": "CRM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Agentforce vs seat-deflation fear — contested"
+          "rationale": "Agentforce vs seat-deflation fear \u2014 contested"
         },
         {
           "ticker": "ORCL",
@@ -335,59 +335,59 @@
           "ticker": "INTU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Intuit — AI woven into tax/QuickBooks; consumer + SMB AI monetization"
+          "rationale": "Intuit \u2014 AI woven into tax/QuickBooks; consumer + SMB AI monetization"
         },
         {
           "ticker": "IBM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "IBM — watsonx + consulting; the enterprise hybrid-AI distribution"
+          "rationale": "IBM \u2014 watsonx + consulting; the enterprise hybrid-AI distribution"
         },
         {
           "ticker": "WDAY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Workday — AI in HCM/finance system-of-record; seat-expansion tell"
+          "rationale": "Workday \u2014 AI in HCM/finance system-of-record; seat-expansion tell"
         },
         {
           "ticker": "PANW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Palo Alto Networks — AI-native security platform consolidation"
+          "rationale": "Palo Alto Networks \u2014 AI-native security platform consolidation"
         },
         {
           "ticker": "CRWD",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "CrowdStrike — AI-driven endpoint/SecOps; data-flywheel moat"
+          "rationale": "CrowdStrike \u2014 AI-driven endpoint/SecOps; data-flywheel moat"
         },
         {
           "ticker": "APP",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "AppLovin — AXON AI ad engine; the clearest AI-revenue inflection"
+          "rationale": "AppLovin \u2014 AXON AI ad engine; the clearest AI-revenue inflection"
         },
         {
           "ticker": "SNOW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Snowflake — data cloud + Cortex AI (was off-cache; now in the deep store)"
+          "rationale": "Snowflake \u2014 data cloud + Cortex AI (was off-cache; now in the deep store)"
         },
         {
           "ticker": "NET",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Cloudflare — edge inference + developer AI platform"
+          "rationale": "Cloudflare \u2014 edge inference + developer AI platform"
         }
       ],
-      "etf_proxy_note": "loose — broad tech",
+      "etf_proxy_note": "loose \u2014 broad tech",
       "thesis": "Software and platform names trying to monetize AI through apps, seats and workflows.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded AI Software & Platforms — 9 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded AI Software & Platforms \u2014 9 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-14",
@@ -409,15 +409,15 @@
     },
     "defense": {
       "name": "Defense & Aerospace",
-      "name_zh": "国防与航空航天",
+      "name_zh": "\u56fd\u9632\u4e0e\u822a\u7a7a\u822a\u5929",
       "theme": "Primes & defense-tech",
       "category": "Industrials & Defense",
       "etf_proxy": "ITA",
       "created": "2023-05-09",
       "curated": "2026-06-22",
       "omitted": [
-        "LUNR Intuitive Machines, VOYG Voyager, RDW Redwire (thin-liquidity new-space — excluded)",
-        "AXON Axon — removed because public-safety software/hardware is not a defense-budget prime exposure."
+        "LUNR Intuitive Machines, VOYG Voyager, RDW Redwire (thin-liquidity new-space \u2014 excluded)",
+        "AXON Axon \u2014 removed because public-safety software/hardware is not a defense-budget prime exposure."
       ],
       "members": [
         {
@@ -472,7 +472,7 @@
           "ticker": "AXON",
           "added": "2023-05-09",
           "removed": "2026-06-18",
-          "rationale": "Less-lethal + cloud — the defense-tech re-rate"
+          "rationale": "Less-lethal + cloud \u2014 the defense-tech re-rate"
         },
         {
           "ticker": "HWM",
@@ -484,73 +484,73 @@
           "ticker": "AVAV",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "AeroVironment — tactical UAS / loitering munitions"
+          "rationale": "AeroVironment \u2014 tactical UAS / loitering munitions"
         },
         {
           "ticker": "KTOS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Kratos — drones, hypersonics & space; defense-tech beta"
+          "rationale": "Kratos \u2014 drones, hypersonics & space; defense-tech beta"
         },
         {
           "ticker": "RKLB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Rocket Lab — small-launch + space systems; the new-space leader"
+          "rationale": "Rocket Lab \u2014 small-launch + space systems; the new-space leader"
         },
         {
           "ticker": "ASTS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "AST SpaceMobile — direct-to-cell satellite constellation"
+          "rationale": "AST SpaceMobile \u2014 direct-to-cell satellite constellation"
         },
         {
           "ticker": "GE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "GE Aerospace — engines + aftermarket; the commercial/defense propulsion core"
+          "rationale": "GE Aerospace \u2014 engines + aftermarket; the commercial/defense propulsion core"
         },
         {
           "ticker": "LDOS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Leidos — defense IT, ISR & autonomy integration"
+          "rationale": "Leidos \u2014 defense IT, ISR & autonomy integration"
         },
         {
           "ticker": "TXT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Textron — Bell rotorcraft (FLRAA) + unmanned systems"
+          "rationale": "Textron \u2014 Bell rotorcraft (FLRAA) + unmanned systems"
         },
         {
           "ticker": "CW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Curtiss-Wright — naval-nuclear & defense electronics components"
+          "rationale": "Curtiss-Wright \u2014 naval-nuclear & defense electronics components"
         },
         {
           "ticker": "TDY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Teledyne — sensors, imaging & ISR payloads"
+          "rationale": "Teledyne \u2014 sensors, imaging & ISR payloads"
         },
         {
           "ticker": "HEI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Heico — aftermarket parts & niche defense electronics compounder"
+          "rationale": "Heico \u2014 aftermarket parts & niche defense electronics compounder"
         },
         {
           "ticker": "DRS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Leonardo DRS — pure-play defense electronics/sensors prime (~80% DoD), advanced sensing/EW/network computing; fills the sensors/EW gap, same budget-cycle driver as LMT/NOC/RTX."
+          "rationale": "Leonardo DRS \u2014 pure-play defense electronics/sensors prime (~80% DoD), advanced sensing/EW/network computing; fills the sensors/EW gap, same budget-cycle driver as LMT/NOC/RTX."
         },
         {
           "ticker": "MRCY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Mercury Systems — defense processing/RF/EW subsystems (radar/EW/secure processing) embedded in prime platforms; same procurement/backlog cycle."
+          "rationale": "Mercury Systems \u2014 defense processing/RF/EW subsystems (radar/EW/secure processing) embedded in prime platforms; same procurement/backlog cycle."
         }
       ],
       "etf_proxy_note": "",
@@ -560,7 +560,7 @@
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded Defense & Aerospace — 10 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded Defense & Aerospace \u2014 10 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-15",
@@ -591,21 +591,21 @@
     },
     "power_grid": {
       "name": "Power & Grid Buildout",
-      "name_zh": "电力与电网",
+      "name_zh": "\u7535\u529b\u4e0e\u7535\u7f51",
       "theme": "Generation, grid & electrification",
       "category": "Energy & Power",
       "etf_proxy": "XLU",
       "created": "2023-05-09",
       "curated": "2026-06-18",
       "omitted": [
-        "NNE NanoNuclear (pre-revenue micro-cap — excluded)"
+        "NNE NanoNuclear (pre-revenue micro-cap \u2014 excluded)"
       ],
       "members": [
         {
           "ticker": "GEV",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Grid equipment + gas turbines — the pure play"
+          "rationale": "Grid equipment + gas turbines \u2014 the pure play"
         },
         {
           "ticker": "ETN",
@@ -623,7 +623,7 @@
           "ticker": "PWR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Grid construction labor — the build-out contractor"
+          "rationale": "Grid construction labor \u2014 the build-out contractor"
         },
         {
           "ticker": "NEE",
@@ -666,85 +666,85 @@
           "ticker": "EME",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "EMCOR — datacenter electrical/mechanical construction contractor"
+          "rationale": "EMCOR \u2014 datacenter electrical/mechanical construction contractor"
         },
         {
           "ticker": "FIX",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Comfort Systems — datacenter HVAC/mechanical contractor; backlog story"
+          "rationale": "Comfort Systems \u2014 datacenter HVAC/mechanical contractor; backlog story"
         },
         {
           "ticker": "TLN",
           "added": "2023-06-02",
           "removed": null,
-          "rationale": "Talen Energy — nuclear IPP selling 24/7 power to data centers"
+          "rationale": "Talen Energy \u2014 nuclear IPP selling 24/7 power to data centers"
         },
         {
           "ticker": "OKLO",
           "added": "2024-05-13",
           "removed": null,
-          "rationale": "Oklo — advanced-reactor / SMR developer; AI-power optionality"
+          "rationale": "Oklo \u2014 advanced-reactor / SMR developer; AI-power optionality"
         },
         {
           "ticker": "SMR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "NuScale — SMR pure-play; the licensing-led reactor leg"
+          "rationale": "NuScale \u2014 SMR pure-play; the licensing-led reactor leg"
         },
         {
           "ticker": "LEU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Centrus — sole US HALEU enricher; the nuclear fuel-cycle completion"
+          "rationale": "Centrus \u2014 sole US HALEU enricher; the nuclear fuel-cycle completion"
         },
         {
           "ticker": "DUK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Duke Energy — regulated utility with Southeast data-center load growth"
+          "rationale": "Duke Energy \u2014 regulated utility with Southeast data-center load growth"
         },
         {
           "ticker": "SO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Southern Company — regulated utility; Vogtle nuclear + load growth"
+          "rationale": "Southern Company \u2014 regulated utility; Vogtle nuclear + load growth"
         },
         {
           "ticker": "AEP",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "American Electric Power — largest US grid footprint; transmission capex"
+          "rationale": "American Electric Power \u2014 largest US grid footprint; transmission capex"
         },
         {
           "ticker": "SRE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Sempra — Texas/California grid + LNG-linked power demand"
+          "rationale": "Sempra \u2014 Texas/California grid + LNG-linked power demand"
         },
         {
           "ticker": "HUBB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Hubbell — grid & electrical components into utility/datacenter capex"
+          "rationale": "Hubbell \u2014 grid & electrical components into utility/datacenter capex"
         },
         {
           "ticker": "GNRC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Generac — backup/distributed power; grid-resilience demand"
+          "rationale": "Generac \u2014 backup/distributed power; grid-resilience demand"
         },
         {
           "ticker": "BWXT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "BWX Technologies — naval-nuclear + SMR/advanced-reactor components"
+          "rationale": "BWX Technologies \u2014 naval-nuclear + SMR/advanced-reactor components"
         },
         {
           "ticker": "POWL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Powell Industries — electrical switchgear & power-control packages for the grid/data-center buildout; high-beta grid-equipment pure-play (added 2026-06-21; co-moves 0.54)."
+          "rationale": "Powell Industries \u2014 electrical switchgear & power-control packages for the grid/data-center buildout; high-beta grid-equipment pure-play (added 2026-06-21; co-moves 0.54)."
         }
       ],
       "etf_proxy_note": "",
@@ -754,7 +754,7 @@
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded Power & Grid Buildout — 10 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded Power & Grid Buildout \u2014 10 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-15",
@@ -774,7 +774,7 @@
         {
           "action": "note",
           "date": "2026-06-21",
-          "note": "PCG: coherence audit — KEPT but flagged."
+          "note": "PCG: coherence audit \u2014 KEPT but flagged."
         },
         {
           "action": "note",
@@ -792,7 +792,7 @@
     },
     "reshoring": {
       "name": "Reshoring & Industrial Capex",
-      "name_zh": "回流与工业资本开支",
+      "name_zh": "\u56de\u6d41\u4e0e\u5de5\u4e1a\u8d44\u672c\u5f00\u652f",
       "theme": "Onshoring & capex beneficiaries",
       "category": "Industrials & Defense",
       "etf_proxy": "XLI",
@@ -812,7 +812,7 @@
           "ticker": "PH",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Motion & control — factory automation"
+          "rationale": "Motion & control \u2014 factory automation"
         },
         {
           "ticker": "EMR",
@@ -842,7 +842,7 @@
           "ticker": "URI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Equipment rental — the capex-cycle read-through"
+          "rationale": "Equipment rental \u2014 the capex-cycle read-through"
         },
         {
           "ticker": "PWR",
@@ -860,43 +860,43 @@
           "ticker": "HON",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Honeywell — automation & industrial software for new plants"
+          "rationale": "Honeywell \u2014 automation & industrial software for new plants"
         },
         {
           "ticker": "ITW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Illinois Tool Works — diversified industrial bellwether"
+          "rationale": "Illinois Tool Works \u2014 diversified industrial bellwether"
         },
         {
           "ticker": "DOV",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Dover — industrial pumps/components; capex-cycle read-through"
+          "rationale": "Dover \u2014 industrial pumps/components; capex-cycle read-through"
         },
         {
           "ticker": "AME",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Ametek — instruments & electromechanical for advanced manufacturing"
+          "rationale": "Ametek \u2014 instruments & electromechanical for advanced manufacturing"
         },
         {
           "ticker": "IR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Ingersoll Rand — compressors/flow for factory build-outs"
+          "rationale": "Ingersoll Rand \u2014 compressors/flow for factory build-outs"
         },
         {
           "ticker": "NDSN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Nordson — precision dispensing into electronics/EV reshoring"
+          "rationale": "Nordson \u2014 precision dispensing into electronics/EV reshoring"
         },
         {
           "ticker": "GNRC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Generac — distributed power for new industrial sites"
+          "rationale": "Generac \u2014 distributed power for new industrial sites"
         }
       ],
       "etf_proxy_note": "industrials proxy",
@@ -906,7 +906,7 @@
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded Reshoring & Industrial Capex — 9 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded Reshoring & Industrial Capex \u2014 9 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-14",
@@ -928,7 +928,7 @@
     },
     "regional_banks": {
       "name": "Regional Banks",
-      "name_zh": "区域银行",
+      "name_zh": "\u533a\u57df\u94f6\u884c",
       "theme": "Mid/large regional lenders",
       "category": "Financials",
       "etf_proxy": "KRE",
@@ -990,73 +990,73 @@
           "ticker": "PNC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "PNC — super-regional scale; the national-franchise read"
+          "rationale": "PNC \u2014 super-regional scale; the national-franchise read"
         },
         {
           "ticker": "WAL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Western Alliance — commercial niche lender; deposit-beta watched"
+          "rationale": "Western Alliance \u2014 commercial niche lender; deposit-beta watched"
         },
         {
           "ticker": "EWBC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "East West Bancorp — US-Asia commercial franchise"
+          "rationale": "East West Bancorp \u2014 US-Asia commercial franchise"
         },
         {
           "ticker": "CFR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Cullen/Frost — Texas deposit-rich franchise; conservative underwriter"
+          "rationale": "Cullen/Frost \u2014 Texas deposit-rich franchise; conservative underwriter"
         },
         {
           "ticker": "FHN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "First Horizon — Southeast regional post-failed-merger"
+          "rationale": "First Horizon \u2014 Southeast regional post-failed-merger"
         },
         {
           "ticker": "WTFC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Wintrust — Chicago commercial growth lender"
+          "rationale": "Wintrust \u2014 Chicago commercial growth lender"
         },
         {
           "ticker": "WBS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Webster — Northeast commercial + HSA deposit moat"
+          "rationale": "Webster \u2014 Northeast commercial + HSA deposit moat"
         },
         {
           "ticker": "SSB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "SouthState — Southeast super-regional (Florida/Carolinas, now Texas via Independent Bank); pure-play CRE/commercial lender on the rate-cut re-rate."
+          "rationale": "SouthState \u2014 Southeast super-regional (Florida/Carolinas, now Texas via Independent Bank); pure-play CRE/commercial lender on the rate-cut re-rate."
         },
         {
           "ticker": "UMBF",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "UMB Financial — Kansas City super-regional, top-5 KRE holding; C&I/CRE commercial bank with yield-curve sensitivity like FITB/KEY."
+          "rationale": "UMB Financial \u2014 Kansas City super-regional, top-5 KRE holding; C&I/CRE commercial bank with yield-curve sensitivity like FITB/KEY."
         },
         {
           "ticker": "BPOP",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Popular Inc — Puerto Rico/US-mainland regional bank, a top-weighted KRE holding; deposit-funded lender exposed to the yield curve, CRE and deposit competition."
+          "rationale": "Popular Inc \u2014 Puerto Rico/US-mainland regional bank, a top-weighted KRE holding; deposit-funded lender exposed to the yield curve, CRE and deposit competition."
         },
         {
           "ticker": "COLB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Columbia Banking System (Umpqua, ~$66B assets) — West Coast deposit-funded commercial/CRE lender, top-15 KRE holding."
+          "rationale": "Columbia Banking System (Umpqua, ~$66B assets) \u2014 West Coast deposit-funded commercial/CRE lender, top-15 KRE holding."
         },
         {
           "ticker": "FCNCA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "First Citizens BancShares — super-regional commercial/CRE lender (~$236B assets, absorbed the SVB franchise); same yield-curve/deposit-competition/CRE-credit driver as MTB/USB/PNC."
+          "rationale": "First Citizens BancShares \u2014 super-regional commercial/CRE lender (~$236B assets, absorbed the SVB franchise); same yield-curve/deposit-competition/CRE-credit driver as MTB/USB/PNC."
         }
       ],
       "etf_proxy_note": "",
@@ -1066,7 +1066,7 @@
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded Regional Banks — 8 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded Regional Banks \u2014 8 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-14",
@@ -1093,7 +1093,7 @@
     },
     "managed_care": {
       "name": "Managed Care & Insurers",
-      "name_zh": "管理式医疗与保险",
+      "name_zh": "\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669",
       "theme": "Health insurers / MCOs",
       "category": "Healthcare",
       "etf_proxy": "XLV",
@@ -1123,7 +1123,7 @@
           "ticker": "HUM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Medicare-Advantage pure play — rate-notice levered"
+          "rationale": "Medicare-Advantage pure play \u2014 rate-notice levered"
         },
         {
           "ticker": "CNC",
@@ -1141,29 +1141,29 @@
           "ticker": "CVS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "CVS Health — Aetna + Caremark PBM + pharmacy; integrated payer-provider"
+          "rationale": "CVS Health \u2014 Aetna + Caremark PBM + pharmacy; integrated payer-provider"
         },
         {
           "ticker": "ALHC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Alignment Healthcare — tech-driven Medicare-Advantage challenger"
+          "rationale": "Alignment Healthcare \u2014 tech-driven Medicare-Advantage challenger"
         },
         {
           "ticker": "OSCR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Oscar Health — ACA-exchange insurer; the marketplace-growth play"
+          "rationale": "Oscar Health \u2014 ACA-exchange insurer; the marketplace-growth play"
         }
       ],
-      "etf_proxy_note": "loose — broad health",
+      "etf_proxy_note": "loose \u2014 broad health",
       "thesis": "Health insurers tied to medical-cost trends, Medicare Advantage and policy changes.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded Managed Care & Insurers — 6 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded Managed Care & Insurers \u2014 6 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-18",
@@ -1180,7 +1180,7 @@
     },
     "housing": {
       "name": "Housing Chain",
-      "name_zh": "住房产业链",
+      "name_zh": "\u4f4f\u623f\u4ea7\u4e1a\u94fe",
       "theme": "Builders & building products",
       "category": "Consumer Cyclical",
       "etf_proxy": "XHB",
@@ -1248,61 +1248,61 @@
           "ticker": "TOL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Toll Brothers — luxury builder; move-up demand"
+          "rationale": "Toll Brothers \u2014 luxury builder; move-up demand"
         },
         {
           "ticker": "KBH",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "KB Home — entry-level builder; affordability-sensitive"
+          "rationale": "KB Home \u2014 entry-level builder; affordability-sensitive"
         },
         {
           "ticker": "BLD",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "TopBuild — insulation distribution/installation scale"
+          "rationale": "TopBuild \u2014 insulation distribution/installation scale"
         },
         {
           "ticker": "OC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Owens Corning — roofing & insulation building products"
+          "rationale": "Owens Corning \u2014 roofing & insulation building products"
         },
         {
           "ticker": "FBIN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Fortune Brands — water/outdoors/security building products"
+          "rationale": "Fortune Brands \u2014 water/outdoors/security building products"
         },
         {
           "ticker": "CARR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Carrier — residential/commercial HVAC; electrification tilt"
+          "rationale": "Carrier \u2014 residential/commercial HVAC; electrification tilt"
         },
         {
           "ticker": "MHK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Mohawk — flooring; repair-remodel cyclicality"
+          "rationale": "Mohawk \u2014 flooring; repair-remodel cyclicality"
         },
         {
           "ticker": "LII",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Lennox — HVAC pure-play; replacement-cycle pricing"
+          "rationale": "Lennox \u2014 HVAC pure-play; replacement-cycle pricing"
         },
         {
           "ticker": "MTH",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Meritage Homes — top-5 entry-level/first-move-up homebuilder, highly rate-sensitive (rate buydowns); peer to DHI/LEN/PHM/KBH/TOL."
+          "rationale": "Meritage Homes \u2014 top-5 entry-level/first-move-up homebuilder, highly rate-sensitive (rate buydowns); peer to DHI/LEN/PHM/KBH/TOL."
         },
         {
           "ticker": "IBP",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Installed Building Products — residential insulation/building-products installer, chief rival to BLD; housing-starts driver."
+          "rationale": "Installed Building Products \u2014 residential insulation/building-products installer, chief rival to BLD; housing-starts driver."
         }
       ],
       "etf_proxy_note": "",
@@ -1312,7 +1312,7 @@
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded Housing Chain — 9 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded Housing Chain \u2014 9 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-14",
@@ -1339,7 +1339,7 @@
     },
     "payments_fintech": {
       "name": "Payments & Fintech",
-      "name_zh": "支付与金融科技",
+      "name_zh": "\u652f\u4ed8\u4e0e\u91d1\u878d\u79d1\u6280",
       "theme": "Networks & payment processors",
       "category": "Financials",
       "etf_proxy": "XLF",
@@ -1402,86 +1402,86 @@
           "ticker": "CRCL",
           "added": "2025-06-05",
           "removed": null,
-          "rationale": "Circle — USDC issuer; the listed stablecoin pure-play"
+          "rationale": "Circle \u2014 USDC issuer; the listed stablecoin pure-play"
         },
         {
           "ticker": "XYZ",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Block — Square + Cash App; SMB acquiring + consumer fintech"
+          "rationale": "Block \u2014 Square + Cash App; SMB acquiring + consumer fintech"
         },
         {
           "ticker": "FOUR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Shift4 — integrated payments; share-gaining acquirer"
+          "rationale": "Shift4 \u2014 integrated payments; share-gaining acquirer"
         },
         {
           "ticker": "JKHY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Jack Henry — core banking + payments processing"
+          "rationale": "Jack Henry \u2014 core banking + payments processing"
         },
         {
           "ticker": "WU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Western Union — cross-border remittance; disruption gauge",
+          "rationale": "Western Union \u2014 cross-border remittance; disruption gauge",
           "coherence": "deliberate divergence-flag: declining cross-border remittance incumbent kept as the disruption GAUGE; loosely directional, low downside co-movement."
         },
         {
-          "ticker": "FI",
+          "ticker": "FISV",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Fiserv — Clover + merchant/bank processing (was off-cache; now in the deep store)"
+          "rationale": "Fiserv \u2014 Clover + merchant/bank processing (was off-cache; now in the deep store)"
         },
         {
           "ticker": "AFRM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Affirm — BNPL pure-play; consumer-credit + checkout share"
+          "rationale": "Affirm \u2014 BNPL pure-play; consumer-credit + checkout share"
         },
         {
           "ticker": "SOFI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "SoFi — digital bank + lending; the neobank expression"
+          "rationale": "SoFi \u2014 digital bank + lending; the neobank expression"
         },
         {
           "ticker": "TOST",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Toast — restaurant payments + software vertical"
+          "rationale": "Toast \u2014 restaurant payments + software vertical"
         },
         {
           "ticker": "HOOD",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Robinhood — retail brokerage; equities, options & crypto"
+          "rationale": "Robinhood \u2014 retail brokerage; equities, options & crypto"
         },
         {
           "ticker": "UPST",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Upstart — AI consumer-lending marketplace"
+          "rationale": "Upstart \u2014 AI consumer-lending marketplace"
         },
         {
           "ticker": "FUTU",
           "added": "2023-05-09",
           "removed": "2026-06-18",
-          "rationale": "Futu Holdings — digital brokerage (HK/US-listed)"
+          "rationale": "Futu Holdings \u2014 digital brokerage (HK/US-listed)"
         },
         {
           "ticker": "FLYW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Flywire — payment-enablement/vertical processor; cash-to-card take-rate driver in the digital-payments processing complex."
+          "rationale": "Flywire \u2014 payment-enablement/vertical processor; cash-to-card take-rate driver in the digital-payments processing complex."
         },
         {
           "ticker": "MQ",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Marqeta — modern card-issuing/transaction-processing platform; take-rate/consumer-spend driver alongside FI/GPN/FOUR/TOST."
+          "rationale": "Marqeta \u2014 modern card-issuing/transaction-processing platform; take-rate/consumer-spend driver alongside FI/GPN/FOUR/TOST."
         }
       ],
       "etf_proxy_note": "",
@@ -1491,7 +1491,7 @@
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded Payments & Fintech — 8 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded Payments & Fintech \u2014 8 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-14",
@@ -1501,7 +1501,7 @@
         {
           "date": "2026-06-15",
           "action": "add",
-          "note": "Added CRCL (Circle) — the listed stablecoin name the thesis already references (off-index via the extras cache)."
+          "note": "Added CRCL (Circle) \u2014 the listed stablecoin name the thesis already references (off-index via the extras cache)."
         },
         {
           "date": "2026-06-18",
@@ -1511,7 +1511,7 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Added HOOD (from Crypto), UPST, FUTU — broadening the fintech/neobroker group."
+          "note": "Added HOOD (from Crypto), UPST, FUTU \u2014 broadening the fintech/neobroker group."
         },
         {
           "action": "remove",
@@ -1521,12 +1521,17 @@
         {
           "action": "note",
           "date": "2026-06-21",
-          "note": "WU: coherence audit — KEPT but flagged. deliberate divergence-flag: declining cross-border remittance incumbent kept as the disruption GAUGE; loosely directional, low downside co-movement."
+          "note": "WU: coherence audit \u2014 KEPT but flagged. deliberate divergence-flag: declining cross-border remittance incumbent kept as the disruption GAUGE; loosely directional, low downside co-movement."
         },
         {
           "action": "add",
           "date": "2026-06-22",
           "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
+        },
+        {
+          "date": "2026-08-05",
+          "action": "rekey",
+          "note": "Ticker rename, not a roster change: FI->FISV. Same company, same CUSIP, same listing \u2014 the old symbol was retired by the exchange."
         }
       ],
       "parent": "Financials",
@@ -1537,7 +1542,7 @@
     },
     "energy_complex": {
       "name": "US Energy Complex",
-      "name_zh": "美国能源综合",
+      "name_zh": "\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408",
       "theme": "Integrateds, E&P, services, midstream",
       "category": "Energy & Power",
       "etf_proxy": "XLE",
@@ -1615,67 +1620,67 @@
           "ticker": "FANG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Diamondback — low-cost Permian E&P"
+          "rationale": "Diamondback \u2014 low-cost Permian E&P"
         },
         {
           "ticker": "DVN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Devon — multi-basin E&P; variable-dividend model"
+          "rationale": "Devon \u2014 multi-basin E&P; variable-dividend model"
         },
         {
           "ticker": "HAL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Halliburton — pressure pumping; North-America services beta"
+          "rationale": "Halliburton \u2014 pressure pumping; North-America services beta"
         },
         {
           "ticker": "BKR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Baker Hughes — LNG equipment + oilfield services"
+          "rationale": "Baker Hughes \u2014 LNG equipment + oilfield services"
         },
         {
           "ticker": "OKE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Oneok — NGL/gas midstream; gathering & processing"
+          "rationale": "Oneok \u2014 NGL/gas midstream; gathering & processing"
         },
         {
           "ticker": "TRGP",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Targa Resources — Permian NGL midstream growth"
+          "rationale": "Targa Resources \u2014 Permian NGL midstream growth"
         },
         {
           "ticker": "EQT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "EQT — largest US natural-gas producer; LNG-demand levered"
+          "rationale": "EQT \u2014 largest US natural-gas producer; LNG-demand levered"
         },
         {
           "ticker": "LNG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Cheniere — US LNG export leader (deep-store; the gas-export expression)"
+          "rationale": "Cheniere \u2014 US LNG export leader (deep-store; the gas-export expression)"
         },
         {
           "ticker": "PR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Permian Resources — second-largest Permian pure-play E&P (Delaware Basin); crude-price/capital-discipline trade alongside FANG/EOG/DVN/OXY."
+          "rationale": "Permian Resources \u2014 second-largest Permian pure-play E&P (Delaware Basin); crude-price/capital-discipline trade alongside FANG/EOG/DVN/OXY."
         },
         {
           "ticker": "PAA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Plains All American — crude-focused midstream (~8 MMbbl/d via pipelines/terminals/storage); fee-based throughput driver like WMB/KMI."
+          "rationale": "Plains All American \u2014 crude-focused midstream (~8 MMbbl/d via pipelines/terminals/storage); fee-based throughput driver like WMB/KMI."
         },
         {
           "ticker": "DINO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "HF Sinclair — independent mid-continent/Rockies refiner with marketing/lubricants/midstream; crack-spread/refined-margin driver alongside MPC/PSX/VLO."
+          "rationale": "HF Sinclair \u2014 independent mid-continent/Rockies refiner with marketing/lubricants/midstream; crack-spread/refined-margin driver alongside MPC/PSX/VLO."
         }
       ],
       "etf_proxy_note": "energy proxy",
@@ -1685,7 +1690,7 @@
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded US Energy Complex — 11 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded US Energy Complex \u2014 11 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-18",
@@ -1707,7 +1712,7 @@
     },
     "defensives": {
       "name": "Defensives",
-      "name_zh": "防御板块",
+      "name_zh": "\u9632\u5fa1\u677f\u5757",
       "theme": "Staples & defensive cash-flows",
       "category": "Consumer Defensive",
       "etf_proxy": [
@@ -1782,49 +1787,49 @@
           "ticker": "KVUE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Kenvue — consumer-health staple (Tylenol/Listerine); a pure defensive"
+          "rationale": "Kenvue \u2014 consumer-health staple (Tylenol/Listerine); a pure defensive"
         },
         {
           "ticker": "MO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Altria — domestic tobacco; pricing power + yield"
+          "rationale": "Altria \u2014 domestic tobacco; pricing power + yield"
         },
         {
           "ticker": "PM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Philip Morris — global tobacco + smoke-free (Zyn) growth"
+          "rationale": "Philip Morris \u2014 global tobacco + smoke-free (Zyn) growth"
         },
         {
           "ticker": "CHD",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Church & Dwight — value + premium household/personal-care mix"
+          "rationale": "Church & Dwight \u2014 value + premium household/personal-care mix"
         },
         {
           "ticker": "CLX",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Clorox — cleaning staples; input-cost & pricing lever"
+          "rationale": "Clorox \u2014 cleaning staples; input-cost & pricing lever"
         },
         {
           "ticker": "HSY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Hershey — confection pricing power; cocoa-cost cross-current"
+          "rationale": "Hershey \u2014 confection pricing power; cocoa-cost cross-current"
         },
         {
           "ticker": "KDP",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Keurig Dr Pepper — coffee + beverages; staple cash flows"
+          "rationale": "Keurig Dr Pepper \u2014 coffee + beverages; staple cash flows"
         },
         {
           "ticker": "MKC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "McCormick — spices/flavor; defensive pricing compounder"
+          "rationale": "McCormick \u2014 spices/flavor; defensive pricing compounder"
         }
       ],
       "etf_proxy_note": "staples proxy",
@@ -1834,12 +1839,12 @@
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded Defensives — 10 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded Defensives \u2014 10 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-15",
           "action": "add",
-          "note": "Added KVUE (Kenvue) — a pure consumer-health staple (the basket had no clean one)."
+          "note": "Added KVUE (Kenvue) \u2014 a pure consumer-health staple (the basket had no clean one)."
         },
         {
           "date": "2026-06-18",
@@ -1856,7 +1861,7 @@
     },
     "travel": {
       "name": "Travel & Experiences",
-      "name_zh": "旅行与体验",
+      "name_zh": "\u65c5\u884c\u4e0e\u4f53\u9a8c",
       "theme": "Airlines, cruises, lodging, gaming",
       "category": "Consumer Cyclical",
       "etf_proxy": "JETS",
@@ -1946,67 +1951,67 @@
           "ticker": "LYV",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Live Nation — concerts & ticketing; the purest 'experiences over goods' name"
+          "rationale": "Live Nation \u2014 concerts & ticketing; the purest 'experiences over goods' name"
         },
         {
           "ticker": "AAL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "American Airlines — network carrier; balance-sheet beta"
+          "rationale": "American Airlines \u2014 network carrier; balance-sheet beta"
         },
         {
           "ticker": "WYNN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Wynn Resorts — Macau + Vegas premium gaming"
+          "rationale": "Wynn Resorts \u2014 Macau + Vegas premium gaming"
         },
         {
           "ticker": "CZR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Caesars — US regional gaming + digital optionality"
+          "rationale": "Caesars \u2014 US regional gaming + digital optionality"
         },
         {
           "ticker": "H",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Hyatt — asset-light luxury/resort lodging mix"
+          "rationale": "Hyatt \u2014 asset-light luxury/resort lodging mix"
         },
         {
           "ticker": "WH",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Wyndham — economy/midscale franchised lodging"
+          "rationale": "Wyndham \u2014 economy/midscale franchised lodging"
         },
         {
           "ticker": "DKNG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "DraftKings — online sports-betting/iGaming; experiences-spend beta"
+          "rationale": "DraftKings \u2014 online sports-betting/iGaming; experiences-spend beta"
         },
         {
           "ticker": "ALK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Alaska Air Group — major US network airline and core JETS constituent; same fuel/demand/operating-leverage cyclicality as DAL/UAL/LUV/AAL."
+          "rationale": "Alaska Air Group \u2014 major US network airline and core JETS constituent; same fuel/demand/operating-leverage cyclicality as DAL/UAL/LUV/AAL."
         },
         {
           "ticker": "VIK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Viking Holdings — large-cap premium cruise operator; same discretionary-travel/advance-bookings driver as RCL/CCL/NCLH."
+          "rationale": "Viking Holdings \u2014 large-cap premium cruise operator; same discretionary-travel/advance-bookings driver as RCL/CCL/NCLH."
         },
         {
           "ticker": "ALGT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Allegiant Travel — leisure-focused ultra-low-cost carrier; the 'experiences over goods' airline leg alongside LUV/AAL."
+          "rationale": "Allegiant Travel \u2014 leisure-focused ultra-low-cost carrier; the 'experiences over goods' airline leg alongside LUV/AAL."
         },
         {
           "ticker": "BYD",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Boyd Gaming — diversified regional US casino operator; discretionary leisure-spend driver like MGM/CZR/WYNN/LVS."
+          "rationale": "Boyd Gaming \u2014 diversified regional US casino operator; discretionary leisure-spend driver like MGM/CZR/WYNN/LVS."
         }
       ],
       "etf_proxy_note": "",
@@ -2016,12 +2021,12 @@
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded Travel & Experiences — 13 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded Travel & Experiences \u2014 13 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-15",
           "action": "add",
-          "note": "Added LYV (Live Nation) — the live-entertainment expression the thesis was missing."
+          "note": "Added LYV (Live Nation) \u2014 the live-entertainment expression the thesis was missing."
         },
         {
           "date": "2026-06-18",
@@ -2043,14 +2048,14 @@
     },
     "retail": {
       "name": "Retail",
-      "name_zh": "零售",
+      "name_zh": "\u96f6\u552e",
       "theme": "Big-box, off-price & discount retail",
       "category": "Consumer Cyclical",
       "etf_proxy": "XLY",
       "created": "2023-05-09",
       "curated": "2026-06-22",
       "omitted": [
-        "CHWY Chewy, W Wayfair (e-commerce category-killers — off this basket's big-box/off-price/discount thesis)"
+        "CHWY Chewy, W Wayfair (e-commerce category-killers \u2014 off this basket's big-box/off-price/discount thesis)"
       ],
       "members": [
         {
@@ -2117,77 +2122,77 @@
           "ticker": "AZO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "AutoZone — auto-parts retail; defensive DIY/DIFM demand"
+          "rationale": "AutoZone \u2014 auto-parts retail; defensive DIY/DIFM demand"
         },
         {
           "ticker": "ORLY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "O'Reilly — auto-parts dual-market share gainer"
+          "rationale": "O'Reilly \u2014 auto-parts dual-market share gainer"
         },
         {
           "ticker": "ULTA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Ulta Beauty — beauty category specialist; loyalty engine"
+          "rationale": "Ulta Beauty \u2014 beauty category specialist; loyalty engine"
         },
         {
           "ticker": "BJ",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "BJ's Wholesale — membership warehouse; value trade-down"
+          "rationale": "BJ's Wholesale \u2014 membership warehouse; value trade-down"
         },
         {
           "ticker": "FIVE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Five Below — extreme-value teen/discount growth retail"
+          "rationale": "Five Below \u2014 extreme-value teen/discount growth retail"
         },
         {
           "ticker": "BURL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Burlington — off-price share gainer"
+          "rationale": "Burlington \u2014 off-price share gainer"
         },
         {
           "ticker": "DKS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Dick's Sporting Goods — category-leading sporting big-box"
+          "rationale": "Dick's Sporting Goods \u2014 category-leading sporting big-box"
         },
         {
           "ticker": "TSCO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Tractor Supply — rural lifestyle retail; consumable-led traffic"
+          "rationale": "Tractor Supply \u2014 rural lifestyle retail; consumable-led traffic"
         },
         {
           "ticker": "OLLI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Ollie's Bargain Outlet — #1 US closeout/extreme-value retailer; trade-down/value play alongside TJX/ROST/BURL/DG/DLTR."
+          "rationale": "Ollie's Bargain Outlet \u2014 #1 US closeout/extreme-value retailer; trade-down/value play alongside TJX/ROST/BURL/DG/DLTR."
         },
         {
           "ticker": "ASO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Academy Sports + Outdoors — value-tilted big-box sporting-goods/outdoor retailer, head-to-head peer of DKS."
+          "rationale": "Academy Sports + Outdoors \u2014 value-tilted big-box sporting-goods/outdoor retailer, head-to-head peer of DKS."
         },
         {
           "ticker": "PSMT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "PriceSmart — warehouse membership-club operator (LatAm/Caribbean); same Costco/BJ's club model and trade-down resilience as COST/BJ."
+          "rationale": "PriceSmart \u2014 warehouse membership-club operator (LatAm/Caribbean); same Costco/BJ's club model and trade-down resilience as COST/BJ."
         }
       ],
-      "etf_proxy_note": "loose — broad cons. disc.",
+      "etf_proxy_note": "loose \u2014 broad cons. disc.",
       "thesis": "Big-box, off-price and discount retail tied to consumer health and trade-down behavior.",
       "weighting": "equal",
       "changelog": [
         {
           "date": "2023-05-09",
           "action": "create",
-          "note": "Seeded Retail — 10 equal-weight members from the S&P 1500 cache."
+          "note": "Seeded Retail \u2014 10 equal-weight members from the S&P 1500 cache."
         },
         {
           "date": "2026-06-18",
@@ -2208,89 +2213,89 @@
     },
     "crypto": {
       "name": "Crypto & Digital Assets",
-      "name_zh": "加密与数字资产",
+      "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8d44\u4ea7",
       "theme": "Exchanges, miners, treasuries, spot ETFs & stablecoins",
       "category": "Crypto & Digital Assets",
       "etf_proxy": "IBIT",
       "created": "2026-06-15",
       "curated": "2026-07-03",
       "omitted": [
-        "BLSH Bullish, GEMI Gemini, ETOR eToro, STRC (too-recent / illiquid — excluded)",
-        "BITF, WULF, CIFR, APLD, BTDR (miners that pivoted to AI/HPC — tracked in AI Neoclouds, not crypto exposure)",
-        "IREN, CORZ, HUT, RIOT — moved out after AI/HPC hosting exposure reduced pure BTC beta."
+        "BLSH Bullish, GEMI Gemini, ETOR eToro, STRC (too-recent / illiquid \u2014 excluded)",
+        "BITF, WULF, CIFR, APLD, BTDR (miners that pivoted to AI/HPC \u2014 tracked in AI Neoclouds, not crypto exposure)",
+        "IREN, CORZ, HUT, RIOT \u2014 moved out after AI/HPC hosting exposure reduced pure BTC beta."
       ],
       "members": [
         {
           "ticker": "COIN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Coinbase — the US exchange & custody bellwether"
+          "rationale": "Coinbase \u2014 the US exchange & custody bellwether"
         },
         {
           "ticker": "HOOD",
           "added": "2023-05-09",
           "removed": "2026-06-18",
-          "rationale": "HOOD — EXITED to Fintech (retail brokerage, not crypto)"
+          "rationale": "HOOD \u2014 EXITED to Fintech (retail brokerage, not crypto)"
         },
         {
           "ticker": "MSTR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Strategy (MicroStrategy) — the listed bitcoin-treasury proxy"
+          "rationale": "Strategy (MicroStrategy) \u2014 the listed bitcoin-treasury proxy"
         },
         {
           "ticker": "CRCL",
           "added": "2025-06-05",
           "removed": null,
-          "rationale": "Circle — USDC stablecoin issuer."
+          "rationale": "Circle \u2014 USDC stablecoin issuer."
         },
         {
           "ticker": "GLXY",
           "added": "2025-05-16",
           "removed": null,
-          "rationale": "Galaxy Digital — crypto trading/asset-management franchise."
+          "rationale": "Galaxy Digital \u2014 crypto trading/asset-management franchise."
         },
         {
           "ticker": "MARA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "MARA Holdings — pure-play scale miner + ~50K-BTC treasury."
+          "rationale": "MARA Holdings \u2014 pure-play scale miner + ~50K-BTC treasury."
         },
         {
           "ticker": "RIOT",
           "added": "2023-05-09",
           "removed": "2026-06-18",
-          "rationale": "RIOT — EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
+          "rationale": "RIOT \u2014 EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
         },
         {
           "ticker": "CLSK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "CleanSpark — pure-play BTC miner (~12K-BTC treasury, HPC still pilot-scale)."
+          "rationale": "CleanSpark \u2014 pure-play BTC miner (~12K-BTC treasury, HPC still pilot-scale)."
         },
         {
           "ticker": "IREN",
           "added": "2023-05-09",
           "removed": "2026-06-17",
-          "rationale": "IREN (Iris Energy) — EXITED: pivoted to AI/HPC neocloud; BTC corr faded to ~0.47 (40d to IBIT), now trades as data-center beta not crypto"
+          "rationale": "IREN (Iris Energy) \u2014 EXITED: pivoted to AI/HPC neocloud; BTC corr faded to ~0.47 (40d to IBIT), now trades as data-center beta not crypto"
         },
         {
           "ticker": "CORZ",
           "added": "2024-01-16",
           "removed": "2026-06-17",
-          "rationale": "Core Scientific — EXITED: AI/HPC hosting (CoreWeave); BTC corr ~0.38 (40d), now correlates MORE to NVDA/CRWV than to bitcoin"
+          "rationale": "Core Scientific \u2014 EXITED: AI/HPC hosting (CoreWeave); BTC corr ~0.38 (40d), now correlates MORE to NVDA/CRWV than to bitcoin"
         },
         {
           "ticker": "HUT",
           "added": "2023-05-09",
           "removed": "2026-06-17",
-          "rationale": "Hut 8 — EXITED: energy/AI-compute pivot; BTC corr ~0.33 (40d), now AI/neocloud beta not crypto"
+          "rationale": "Hut 8 \u2014 EXITED: energy/AI-compute pivot; BTC corr ~0.33 (40d), now AI/neocloud beta not crypto"
         },
         {
           "ticker": "ETHA",
           "added": "2026-06-17",
           "removed": null,
-          "rationale": "iShares Ethereum ETF — spot-ETH beta; ETH is the #2 crypto asset and tracks bitcoin closely (ρ≈0.8–0.9), broadening the basket beyond BTC-only"
+          "rationale": "iShares Ethereum ETF \u2014 spot-ETH beta; ETH is the #2 crypto asset and tracks bitcoin closely (\u03c1\u22480.8\u20130.9), broadening the basket beyond BTC-only"
         }
       ],
       "etf_proxy_note": "spot-BTC ETF",
@@ -2300,7 +2305,7 @@
         {
           "date": "2026-06-15",
           "action": "create",
-          "note": "Seeded Crypto & Digital Assets — 8 equal-weight members; in-cache (COIN/HOOD/MARA/CLSK) plus off-index names (MSTR/RIOT/CRCL/GLXY) via the baskets extras cache."
+          "note": "Seeded Crypto & Digital Assets \u2014 8 equal-weight members; in-cache (COIN/HOOD/MARA/CLSK) plus off-index names (MSTR/RIOT/CRCL/GLXY) via the baskets extras cache."
         },
         {
           "date": "2026-06-18",
@@ -2315,7 +2320,7 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Added ETHA (iShares Ethereum ETF) — spot-ETH beta; ETH tracks bitcoin closely (ETH↔BTC daily-return corr ≈0.8–0.9) so it belongs, and broadens the basket beyond bitcoin-only."
+          "note": "Added ETHA (iShares Ethereum ETF) \u2014 spot-ETH beta; ETH tracks bitcoin closely (ETH\u2194BTC daily-return corr \u22480.8\u20130.9) so it belongs, and broadens the basket beyond bitcoin-only."
         },
         {
           "date": "2026-06-18",
@@ -2337,61 +2342,61 @@
     },
     "crypto_rails": {
       "name": "Crypto & Digital Rails",
-      "name_zh": "加密与数字轨道",
-      "theme": "The financial rails of digital assets — exchange/distribution, agentic-payment plumbing, tokenization sleeve & the BTC cycle anchor",
+      "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8f68\u9053",
+      "theme": "The financial rails of digital assets \u2014 exchange/distribution, agentic-payment plumbing, tokenization sleeve & the BTC cycle anchor",
       "category": "Crypto & Digital Assets",
       "etf_proxy": "IBIT",
-      "etf_proxy_note": "spot BTC — measures how much asset beta the rails still carry; the thesis is the rails, not the coin",
+      "etf_proxy_note": "spot BTC \u2014 measures how much asset beta the rails still carry; the thesis is the rails, not the coin",
       "created": "2026-07-03",
       "curated": "2026-07-03",
       "omitted": [
-        "CRCL Circle — excluded because stablecoin issuer economics weakened after Open USD; keep the theme in rails/distribution instead.",
-        "SECZ Securitize — the BUIDL tokenization platform itself, listed NYSE 2026-07-02 via the Cantor SPAC; first candidate for the tokenization sleeve once the tape seasons (too-recent per house rule).",
-        "WT WisdomTree — tokenized-fund platform considered for the sleeve; kept tight to the two BUIDL-adjacent majors (BLK/BEN).",
-        "Metaplanet (3350.T) — DAT complex, Tokyo-listed, outside the US cache; its sub-1x mNAV stands as DAT-overhang evidence, not an investable line here."
+        "CRCL Circle \u2014 excluded because stablecoin issuer economics weakened after Open USD; keep the theme in rails/distribution instead.",
+        "SECZ Securitize \u2014 the BUIDL tokenization platform itself, listed NYSE 2026-07-02 via the Cantor SPAC; first candidate for the tokenization sleeve once the tape seasons (too-recent per house rule).",
+        "WT WisdomTree \u2014 tokenized-fund platform considered for the sleeve; kept tight to the two BUIDL-adjacent majors (BLK/BEN).",
+        "Metaplanet (3350.T) \u2014 DAT complex, Tokyo-listed, outside the US cache; its sub-1x mNAV stands as DAT-overhang evidence, not an investable line here."
       ],
       "members": [
         {
           "ticker": "IBIT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "iShares spot-BTC ETF — the cycle anchor; §10.2 trough protocol: $42–58K primary floor, Oct–Dec 2026 modal window, tranches weighted to Oct–Nov"
+          "rationale": "iShares spot-BTC ETF \u2014 the cycle anchor; \u00a710.2 trough protocol: $42\u201358K primary floor, Oct\u2013Dec 2026 modal window, tranches weighted to Oct\u2013Nov"
         },
         {
           "ticker": "COIN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Coinbase — the listed pure-play on the whole rails stack: perps, USDC economics, Base (Amazon Bedrock agents settle x402 in ~200ms on it), custody"
+          "rationale": "Coinbase \u2014 the listed pure-play on the whole rails stack: perps, USDC economics, Base (Amazon Bedrock agents settle x402 in ~200ms on it), custody"
         },
         {
           "ticker": "HOOD",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Robinhood — own L2, tokenized equities in 120 countries, 7% USDG yield as a deposit magnet; re-enters as RAILS (it left Crypto as a brokerage, it returns as infrastructure)"
+          "rationale": "Robinhood \u2014 own L2, tokenized equities in 120 countries, 7% USDG yield as a deposit magnet; re-enters as RAILS (it left Crypto as a brokerage, it returns as infrastructure)"
         },
         {
           "ticker": "CME",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "CME Group — institutional crypto volumes at records (+46% y/y), 24/7 trading live since May 2026; the boring confirmation that market structure matured straight through the bear"
+          "rationale": "CME Group \u2014 institutional crypto volumes at records (+46% y/y), 24/7 trading live since May 2026; the boring confirmation that market structure matured straight through the bear"
         },
         {
           "ticker": "BLK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "BlackRock — BUIDL sponsor (~$3.1B, the largest tokenized-treasury fund; Securitize-powered); the tokenization sleeve's anchor"
+          "rationale": "BlackRock \u2014 BUIDL sponsor (~$3.1B, the largest tokenized-treasury fund; Securitize-powered); the tokenization sleeve's anchor"
         },
         {
           "ticker": "BEN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Franklin Resources — Benji/FOBXX, the first on-chain US money fund; tokenization sleeve"
+          "rationale": "Franklin Resources \u2014 Benji/FOBXX, the first on-chain US money fund; tokenization sleeve"
         },
         {
           "ticker": "MSTR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "[DAT TRADING SLEEVE — never core] Strategy — purchases paused, first coin sales since 2022, 847K coins at $75.7K basis with an authorized sell drip: the telegraphed permanent overhang."
+          "rationale": "[DAT TRADING SLEEVE \u2014 never core] Strategy \u2014 purchases paused, first coin sales since 2022, 847K coins at $75.7K basis with an authorized sell drip: the telegraphed permanent overhang."
         }
       ],
       "thesis": "Crypto distribution and settlement rails: exchanges, brokers, CME, tokenization managers and spot BTC.",
@@ -2400,7 +2405,7 @@
         {
           "date": "2026-07-03",
           "action": "create",
-          "note": "Founded from The Second Act §10.4 with a BTC anchor, distribution rails, tokenization managers and an MSTR trading sleeve."
+          "note": "Founded from The Second Act \u00a710.4 with a BTC anchor, distribution rails, tokenization managers and an MSTR trading sleeve."
         }
       ],
       "parent": "Crypto",
@@ -2415,7 +2420,7 @@
     },
     "ai_neoclouds": {
       "name": "AI Neoclouds & HPC Hosting",
-      "name_zh": "AI 新云与高性能算力托管",
+      "name_zh": "AI \u65b0\u4e91\u4e0e\u9ad8\u6027\u80fd\u7b97\u529b\u6258\u7ba1",
       "theme": "GPU cloud / AI-HPC datacenter hosting pure-plays, including ex-bitcoin miners that pivoted power and datacenter assets into AI compute leasing",
       "category": "Artificial Intelligence",
       "parent": "Artificial Intelligence",
@@ -2436,79 +2441,79 @@
           "ticker": "CRWV",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "CoreWeave — pure-play GPU neocloud; rents large Nvidia clusters to AI labs and hyperscalers"
+          "rationale": "CoreWeave \u2014 pure-play GPU neocloud; rents large Nvidia clusters to AI labs and hyperscalers"
         },
         {
           "ticker": "NBIS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Nebius — Yandex-spinout neocloud building Nvidia-GPU AI cloud across US/EU datacenters"
+          "rationale": "Nebius \u2014 Yandex-spinout neocloud building Nvidia-GPU AI cloud across US/EU datacenters"
         },
         {
           "ticker": "CORZ",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Core Scientific — ex-bitcoin miner now leasing datacenter/power capacity for HPC and AI compute"
+          "rationale": "Core Scientific \u2014 ex-bitcoin miner now leasing datacenter/power capacity for HPC and AI compute"
         },
         {
           "ticker": "IREN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "IREN (Iris Energy) — bitcoin miner pivoting owned power sites into Nvidia GPU AI-cloud hosting"
+          "rationale": "IREN (Iris Energy) \u2014 bitcoin miner pivoting owned power sites into Nvidia GPU AI-cloud hosting"
         },
         {
           "ticker": "HUT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Hut 8 — miner-turned-energy/compute operator allocating power assets to AI and HPC hosting"
+          "rationale": "Hut 8 \u2014 miner-turned-energy/compute operator allocating power assets to AI and HPC hosting"
         },
         {
           "ticker": "APLD",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Applied Digital — builds and leases purpose-built HPC/AI datacenters and GPU cloud capacity"
+          "rationale": "Applied Digital \u2014 builds and leases purpose-built HPC/AI datacenters and GPU cloud capacity"
         },
         {
           "ticker": "WULF",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "TeraWulf — bitcoin miner converting low-cost nuclear/grid power sites to AI-HPC hosting leases"
+          "rationale": "TeraWulf \u2014 bitcoin miner converting low-cost nuclear/grid power sites to AI-HPC hosting leases"
         },
         {
           "ticker": "CIFR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Cipher Mining — bitcoin miner repurposing power-rich datacenter sites toward HPC/AI compute"
+          "rationale": "Cipher Mining \u2014 bitcoin miner repurposing power-rich datacenter sites toward HPC/AI compute"
         },
         {
           "ticker": "BTDR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Bitdeer — mining-tech firm expanding into AI cloud and GPU datacenter hosting capacity"
+          "rationale": "Bitdeer \u2014 mining-tech firm expanding into AI cloud and GPU datacenter hosting capacity"
         },
         {
           "ticker": "RIOT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Riot Platforms — bitcoin miner converting power/datacenters to AI-HPC hosting"
+          "rationale": "Riot Platforms \u2014 bitcoin miner converting power/datacenters to AI-HPC hosting"
         },
         {
           "ticker": "CLSK",
           "added": "2023-05-09",
           "removed": "2026-07-06",
-          "rationale": "CLSK — EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.62/0.62/0.70 vs 0.37/0.43/0.54."
+          "rationale": "CLSK \u2014 EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.62/0.62/0.70 vs 0.37/0.43/0.54."
         },
         {
           "ticker": "MARA",
           "added": "2023-05-09",
           "removed": "2026-07-04",
-          "rationale": "MARA — EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.77/0.55/0.71 (40/90/180d) vs 0.43/0.31/0.48 to CRWV+NBIS."
+          "rationale": "MARA \u2014 EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.77/0.55/0.71 (40/90/180d) vs 0.43/0.31/0.48 to CRWV+NBIS."
         },
         {
           "ticker": "GLXY",
           "added": "2023-05-09",
           "removed": "2026-07-08",
-          "rationale": "GLXY — EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.69/0.72/0.72 vs 0.39/0.46/0.54."
+          "rationale": "GLXY \u2014 EXITED back to Crypto (2026-07-03 audit): BTC beta still dominates (corr to IBIT 0.69/0.72/0.72 vs 0.39/0.46/0.54."
         }
       ],
       "thesis": "GPU-cloud and AI/HPC hosting pure plays, including miners converting power into compute leases.",
@@ -2522,7 +2527,7 @@
         {
           "date": "2026-06-18",
           "action": "add",
-          "note": "Added RIOT/CLSK/MARA/GLXY — bitcoin miners + Galaxy that pivoted to AI/HPC hosting (from Crypto)."
+          "note": "Added RIOT/CLSK/MARA/GLXY \u2014 bitcoin miners + Galaxy that pivoted to AI/HPC hosting (from Crypto)."
         },
         {
           "date": "2026-07-03",
@@ -2533,7 +2538,7 @@
     },
     "non_ai_software": {
       "name": "Non-AI Software",
-      "name_zh": "非AI软件",
+      "name_zh": "\u975eAI\u8f6f\u4ef6",
       "theme": "Enterprise SaaS / application & infra software whose thesis is NOT primarily the AI narrative",
       "category": "Software",
       "parent": "Software",
@@ -2546,7 +2551,7 @@
         "application-software"
       ],
       "etf_proxy": "IGV",
-      "etf_proxy_note": "loose — basket is a subset",
+      "etf_proxy_note": "loose \u2014 basket is a subset",
       "created": "2026-06-19",
       "curated": "2026-06-19",
       "members": [
@@ -2554,85 +2559,85 @@
           "ticker": "CRM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Salesforce — CRM/sales-cloud SaaS incumbent; bellwether for seat-based enterprise software"
+          "rationale": "Salesforce \u2014 CRM/sales-cloud SaaS incumbent; bellwether for seat-based enterprise software"
         },
         {
           "ticker": "ADBE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Adobe — Creative Cloud + Document Cloud subscription suite; digital-media software annuity"
+          "rationale": "Adobe \u2014 Creative Cloud + Document Cloud subscription suite; digital-media software annuity"
         },
         {
           "ticker": "INTU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Intuit — QuickBooks + TurboTax SMB/consumer finance software; sticky tax-season cash engine"
+          "rationale": "Intuit \u2014 QuickBooks + TurboTax SMB/consumer finance software; sticky tax-season cash engine"
         },
         {
           "ticker": "NOW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "ServiceNow — IT/workflow automation platform; enterprise digital-workflow system of record"
+          "rationale": "ServiceNow \u2014 IT/workflow automation platform; enterprise digital-workflow system of record"
         },
         {
           "ticker": "WDAY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Workday — cloud HCM + financials suite; back-office HR/finance SaaS standard"
+          "rationale": "Workday \u2014 cloud HCM + financials suite; back-office HR/finance SaaS standard"
         },
         {
           "ticker": "TEAM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Atlassian — Jira/Confluence dev & team collaboration tools; bottoms-up SaaS land-and-expand"
+          "rationale": "Atlassian \u2014 Jira/Confluence dev & team collaboration tools; bottoms-up SaaS land-and-expand"
         },
         {
           "ticker": "HUBS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "HubSpot — inbound marketing/CRM platform for SMBs; mid-market go-to-market software"
+          "rationale": "HubSpot \u2014 inbound marketing/CRM platform for SMBs; mid-market go-to-market software"
         },
         {
           "ticker": "DDOG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Datadog — cloud observability/monitoring; usage-based infra-software on workload growth"
+          "rationale": "Datadog \u2014 cloud observability/monitoring; usage-based infra-software on workload growth"
         },
         {
           "ticker": "SNOW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Snowflake — cloud data warehouse/platform; consumption-based data-infrastructure software"
+          "rationale": "Snowflake \u2014 cloud data warehouse/platform; consumption-based data-infrastructure software"
         },
         {
           "ticker": "MDB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "MongoDB — developer document database (Atlas); consumption-based database infrastructure"
+          "rationale": "MongoDB \u2014 developer document database (Atlas); consumption-based database infrastructure"
         },
         {
           "ticker": "DOCU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "DocuSign — e-signature + agreement management; transaction-tied workflow SaaS"
+          "rationale": "DocuSign \u2014 e-signature + agreement management; transaction-tied workflow SaaS"
         },
         {
           "ticker": "PCOR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Procore — cloud construction-management platform; vertical SaaS tied to building activity"
+          "rationale": "Procore \u2014 cloud construction-management platform; vertical SaaS tied to building activity"
         },
         {
           "ticker": "GTLB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "GitLab — DevSecOps platform / code system of record; developer-tooling subscription software"
+          "rationale": "GitLab \u2014 DevSecOps platform / code system of record; developer-tooling subscription software"
         },
         {
           "ticker": "KVYO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Klaviyo — marketing-automation SaaS; durable subscription / seat-growth franchise (added 2026-06-21; co-moves 0.69)."
+          "rationale": "Klaviyo \u2014 marketing-automation SaaS; durable subscription / seat-growth franchise (added 2026-06-21; co-moves 0.69)."
         }
       ],
       "thesis": "Classic enterprise software and SaaS names driven by budgets, retention and rates.",
@@ -2652,7 +2657,7 @@
     },
     "non_ai_tech": {
       "name": "Non-AI Tech & Hardware",
-      "name_zh": "非AI科技与硬件",
+      "name_zh": "\u975eAI\u79d1\u6280\u4e0e\u786c\u4ef6",
       "theme": "Legacy / diversified tech hardware, networking and non-AI analog/MCU semiconductors.",
       "category": "Semiconductors & Hardware",
       "parent": "Semiconductors & Hardware",
@@ -2665,7 +2670,7 @@
         "connectors"
       ],
       "etf_proxy": "XLK",
-      "etf_proxy_note": "loose — basket is a subset of XLK",
+      "etf_proxy_note": "loose \u2014 basket is a subset of XLK",
       "created": "2026-06-19",
       "curated": "2026-06-22",
       "members": [
@@ -2673,85 +2678,85 @@
           "ticker": "CSCO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Cisco — enterprise networking incumbent; switches, routers, security and software"
+          "rationale": "Cisco \u2014 enterprise networking incumbent; switches, routers, security and software"
         },
         {
           "ticker": "IBM",
           "added": "2023-05-09",
           "removed": "2026-06-18",
-          "rationale": "IBM — hybrid-cloud, consulting, mainframes and software; legacy enterprise IT"
+          "rationale": "IBM \u2014 hybrid-cloud, consulting, mainframes and software; legacy enterprise IT"
         },
         {
           "ticker": "HPQ",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "HP Inc — PCs and printers; consumer/commercial hardware, no datacenter AI"
+          "rationale": "HP Inc \u2014 PCs and printers; consumer/commercial hardware, no datacenter AI"
         },
         {
           "ticker": "DELL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Dell — PCs and enterprise servers/storage; AI-server upside but broad-line hardware core"
+          "rationale": "Dell \u2014 PCs and enterprise servers/storage; AI-server upside but broad-line hardware core"
         },
         {
           "ticker": "GLW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Corning — specialty glass and optical fiber; display, telecom and datacenter fiber"
+          "rationale": "Corning \u2014 specialty glass and optical fiber; display, telecom and datacenter fiber"
         },
         {
           "ticker": "APH",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Amphenol — broad-line connectors and interconnect across auto, industrial, comms"
+          "rationale": "Amphenol \u2014 broad-line connectors and interconnect across auto, industrial, comms"
         },
         {
           "ticker": "TEL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "TE Connectivity — connectors and sensors levered to auto, industrial and energy"
+          "rationale": "TE Connectivity \u2014 connectors and sensors levered to auto, industrial and energy"
         },
         {
           "ticker": "TXN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Texas Instruments — broad-line analog and embedded MCUs; industrial/auto cyclical"
+          "rationale": "Texas Instruments \u2014 broad-line analog and embedded MCUs; industrial/auto cyclical"
         },
         {
           "ticker": "ADI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Analog Devices — high-performance analog, mixed-signal and power; industrial/auto"
+          "rationale": "Analog Devices \u2014 high-performance analog, mixed-signal and power; industrial/auto"
         },
         {
           "ticker": "MCHP",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Microchip — microcontrollers and analog for embedded industrial/auto; inventory-cycle"
+          "rationale": "Microchip \u2014 microcontrollers and analog for embedded industrial/auto; inventory-cycle"
         },
         {
           "ticker": "ON",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "ON Semiconductor — power semis, SiC and image sensors; auto and industrial power"
+          "rationale": "ON Semiconductor \u2014 power semis, SiC and image sensors; auto and industrial power"
         },
         {
           "ticker": "NXPI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "NXP — automotive, edge MCUs and secure connectivity; auto/industrial demand"
+          "rationale": "NXP \u2014 automotive, edge MCUs and secure connectivity; auto/industrial demand"
         },
         {
           "ticker": "STM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "STMicroelectronics ADR — broad-line analog/MCU/power/discrete chips for auto & industrial; sub-industry peer of TXN/ADI/MCHP/ON/NXPI."
+          "rationale": "STMicroelectronics ADR \u2014 broad-line analog/MCU/power/discrete chips for auto & industrial; sub-industry peer of TXN/ADI/MCHP/ON/NXPI."
         },
         {
           "ticker": "HPE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Hewlett Packard Enterprise — diversified enterprise IT (servers, hybrid cloud, networking incl. Juniper); enterprise-IT/networking driver like CSCO/DELL/HPQ."
+          "rationale": "Hewlett Packard Enterprise \u2014 diversified enterprise IT (servers, hybrid cloud, networking incl. Juniper); enterprise-IT/networking driver like CSCO/DELL/HPQ."
         }
       ],
       "thesis": "Legacy tech hardware, networking and analog/power chips tied to industrial, auto and datacenter cycles.",
@@ -2779,7 +2784,7 @@
     },
     "ai_semiconductors": {
       "name": "AI Semiconductors",
-      "name_zh": "AI半导体",
+      "name_zh": "AI\u534a\u5bfc\u4f53",
       "theme": "GPUs, AI accelerators, AI networking silicon and custom-ASIC names.",
       "category": "Semiconductors",
       "parent": "Semiconductors",
@@ -2792,7 +2797,7 @@
         "compute"
       ],
       "etf_proxy": "SMH",
-      "etf_proxy_note": "loose — basket is an AI-compute subset of SMH",
+      "etf_proxy_note": "loose \u2014 basket is an AI-compute subset of SMH",
       "created": "2026-06-19",
       "curated": "2026-06-19",
       "members": [
@@ -2800,73 +2805,73 @@
           "ticker": "NVDA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Nvidia — dominant AI GPU maker; CUDA + datacenter accelerators anchor the AI-compute stack"
+          "rationale": "Nvidia \u2014 dominant AI GPU maker; CUDA + datacenter accelerators anchor the AI-compute stack"
         },
         {
           "ticker": "AVGO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Broadcom — custom AI ASIC partner to hyperscalers plus AI datacenter networking silicon"
+          "rationale": "Broadcom \u2014 custom AI ASIC partner to hyperscalers plus AI datacenter networking silicon"
         },
         {
           "ticker": "AMD",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "AMD — #2 merchant AI GPU (Instinct/MI series) plus EPYC server CPUs for AI hosts"
+          "rationale": "AMD \u2014 #2 merchant AI GPU (Instinct/MI series) plus EPYC server CPUs for AI hosts"
         },
         {
           "ticker": "QCOM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Qualcomm — on-device/edge AI inference chips; pushing into datacenter AI accelerators"
+          "rationale": "Qualcomm \u2014 on-device/edge AI inference chips; pushing into datacenter AI accelerators"
         },
         {
           "ticker": "MRVL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Marvell — custom AI ASIC silicon plus optical/DCI interconnect for AI datacenters"
+          "rationale": "Marvell \u2014 custom AI ASIC silicon plus optical/DCI interconnect for AI datacenters"
         },
         {
           "ticker": "MPWR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Monolithic Power — power-management chips feeding GPU/accelerator boards and AI servers"
+          "rationale": "Monolithic Power \u2014 power-management chips feeding GPU/accelerator boards and AI servers"
         },
         {
           "ticker": "ANET",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Arista — high-speed Ethernet switches networking AI/GPU clusters in datacenters"
+          "rationale": "Arista \u2014 high-speed Ethernet switches networking AI/GPU clusters in datacenters"
         },
         {
           "ticker": "SMCI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Super Micro — GPU server/rack systems; thesis intact but DOJ probe + governance discount overhang"
+          "rationale": "Super Micro \u2014 GPU server/rack systems; thesis intact but DOJ probe + governance discount overhang"
         },
         {
           "ticker": "ARM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Arm Holdings — CPU IP/architecture licensed into AI accelerators, servers and edge silicon"
+          "rationale": "Arm Holdings \u2014 CPU IP/architecture licensed into AI accelerators, servers and edge silicon"
         },
         {
           "ticker": "ALAB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Astera Labs — connectivity silicon (PCIe/CXL retimers) linking GPUs, CPUs and memory"
+          "rationale": "Astera Labs \u2014 connectivity silicon (PCIe/CXL retimers) linking GPUs, CPUs and memory"
         },
         {
           "ticker": "CRDO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Credo — high-speed SerDes and active electrical cables for AI cluster interconnect"
+          "rationale": "Credo \u2014 high-speed SerDes and active electrical cables for AI cluster interconnect"
         },
         {
           "ticker": "CBRS",
           "added": "2026-05-14",
           "removed": null,
-          "rationale": "Cerebras — wafer-scale AI inference/training chips; IPO May-2026 (flag partial)"
+          "rationale": "Cerebras \u2014 wafer-scale AI inference/training chips; IPO May-2026 (flag partial)"
         }
       ],
       "thesis": "AI silicon supply chain: GPUs, ASICs, networking, power and server hardware.",
@@ -2875,7 +2880,7 @@
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded AI Semiconductors — 11 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). GPUs, AI accelerators, AI networking silicon and custom-ASIC names."
+          "note": "Seeded AI Semiconductors \u2014 11 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). GPUs, AI accelerators, AI networking silicon and custom-ASIC names."
         },
         {
           "date": "2026-06-19",
@@ -2886,8 +2891,8 @@
     },
     "semicap_equipment": {
       "name": "Semiconductor Equipment (WFE)",
-      "name_zh": "半导体设备（晶圆厂设备）",
-      "theme": "Wafer-fab equipment, metrology and subsystem suppliers — the AI-capex pick-and-shovel layer.",
+      "name_zh": "\u534a\u5bfc\u4f53\u8bbe\u5907\uff08\u6676\u5706\u5382\u8bbe\u5907\uff09",
+      "theme": "Wafer-fab equipment, metrology and subsystem suppliers \u2014 the AI-capex pick-and-shovel layer.",
       "category": "Semiconductors",
       "parent": "Semiconductors",
       "tags": [
@@ -2898,7 +2903,7 @@
         "subsystems"
       ],
       "etf_proxy": "SMH",
-      "etf_proxy_note": "loose — SMH is broad semis; this basket is the WFE/equipment subset",
+      "etf_proxy_note": "loose \u2014 SMH is broad semis; this basket is the WFE/equipment subset",
       "created": "2026-06-19",
       "curated": "2026-06-22",
       "members": [
@@ -2906,97 +2911,97 @@
           "ticker": "AMAT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Applied Materials — largest WFE vendor; deposition, etch, CMP, ion implant tools"
+          "rationale": "Applied Materials \u2014 largest WFE vendor; deposition, etch, CMP, ion implant tools"
         },
         {
           "ticker": "LRCX",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Lam Research — etch and deposition leader; key to 3D NAND and advanced DRAM"
+          "rationale": "Lam Research \u2014 etch and deposition leader; key to 3D NAND and advanced DRAM"
         },
         {
           "ticker": "KLAC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "KLA — process-control and inspection/metrology near-monopoly for defect detection"
+          "rationale": "KLA \u2014 process-control and inspection/metrology near-monopoly for defect detection"
         },
         {
           "ticker": "ENTG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Entegris — advanced materials, filtration and fluid handling consumed per wafer"
+          "rationale": "Entegris \u2014 advanced materials, filtration and fluid handling consumed per wafer"
         },
         {
           "ticker": "MKSI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "MKS Instruments — vacuum, RF power, photonics subsystems inside fab tools"
+          "rationale": "MKS Instruments \u2014 vacuum, RF power, photonics subsystems inside fab tools"
         },
         {
           "ticker": "ONTO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Onto Innovation — optical metrology and inspection, strong in advanced packaging"
+          "rationale": "Onto Innovation \u2014 optical metrology and inspection, strong in advanced packaging"
         },
         {
           "ticker": "ACLS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Axcelis — ion implant systems; levered to mature-node and silicon-carbide power"
+          "rationale": "Axcelis \u2014 ion implant systems; levered to mature-node and silicon-carbide power"
         },
         {
           "ticker": "COHU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Cohu — back-end test handlers, contactors and inspection for chip packaging"
+          "rationale": "Cohu \u2014 back-end test handlers, contactors and inspection for chip packaging"
         },
         {
           "ticker": "FORM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "FormFactor — probe cards and test systems for wafer-level chip testing"
+          "rationale": "FormFactor \u2014 probe cards and test systems for wafer-level chip testing"
         },
         {
           "ticker": "ICHR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Ichor — fluid-delivery gas/liquid subsystems built for WFE OEMs like Lam"
+          "rationale": "Ichor \u2014 fluid-delivery gas/liquid subsystems built for WFE OEMs like Lam"
         },
         {
           "ticker": "AEIS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Advanced Energy — precision RF and DC power supplies for plasma fab tools"
+          "rationale": "Advanced Energy \u2014 precision RF and DC power supplies for plasma fab tools"
         },
         {
           "ticker": "UCTT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Ultra Clean Holdings — outsourced critical subsystems and gas modules for OEMs"
+          "rationale": "Ultra Clean Holdings \u2014 outsourced critical subsystems and gas modules for OEMs"
         },
         {
           "ticker": "NVMI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Nova — optical and X-ray metrology for process and advanced-packaging control"
+          "rationale": "Nova \u2014 optical and X-ray metrology for process and advanced-packaging control"
         },
         {
           "ticker": "CAMT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Camtek — pure-play semiconductor inspection & metrology equipment; advanced-packaging/HBM tool demand, process-control peer to KLAC/ONTO/NVMI."
+          "rationale": "Camtek \u2014 pure-play semiconductor inspection & metrology equipment; advanced-packaging/HBM tool demand, process-control peer to KLAC/ONTO/NVMI."
         },
         {
           "ticker": "KLIC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Kulicke & Soffa — assembly/packaging equipment levered to AI/HBM advanced packaging (TCB for CoWoS); back-end semicap cycle."
+          "rationale": "Kulicke & Soffa \u2014 assembly/packaging equipment levered to AI/HBM advanced packaging (TCB for CoWoS); back-end semicap cycle."
         },
         {
           "ticker": "VECO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Veeco Instruments — WFE process-equipment (laser anneal, ion-beam, MOCVD, ALD, advanced-packaging litho); front-end peer to AMAT/LRCX."
+          "rationale": "Veeco Instruments \u2014 WFE process-equipment (laser anneal, ion-beam, MOCVD, ALD, advanced-packaging litho); front-end peer to AMAT/LRCX."
         }
       ],
       "thesis": "Wafer-fab equipment, metrology and subsystems tied to fab capex and advanced packaging.",
@@ -3016,8 +3021,8 @@
     },
     "memory_storage": {
       "name": "Memory, HBM & Storage",
-      "name_zh": "内存、HBM 与存储",
-      "theme": "DRAM/HBM, NAND and enterprise storage — the AI-memory cycle.",
+      "name_zh": "\u5185\u5b58\u3001HBM \u4e0e\u5b58\u50a8",
+      "theme": "DRAM/HBM, NAND and enterprise storage \u2014 the AI-memory cycle.",
       "category": "Semiconductors",
       "parent": "Semiconductors",
       "tags": [
@@ -3029,7 +3034,7 @@
         "ai-infrastructure"
       ],
       "etf_proxy": "SMH",
-      "etf_proxy_note": "loose — SMH is broad semis; this is a memory/storage subset",
+      "etf_proxy_note": "loose \u2014 SMH is broad semis; this is a memory/storage subset",
       "created": "2026-06-19",
       "curated": "2026-06-19",
       "members": [
@@ -3037,31 +3042,31 @@
           "ticker": "MU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Micron — DRAM/NAND maker; HBM3E supplier to Nvidia GPUs, the prime AI-memory play"
+          "rationale": "Micron \u2014 DRAM/NAND maker; HBM3E supplier to Nvidia GPUs, the prime AI-memory play"
         },
         {
           "ticker": "WDC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Western Digital — post-spinoff pure HDD maker; nearline drives for hyperscaler storage"
+          "rationale": "Western Digital \u2014 post-spinoff pure HDD maker; nearline drives for hyperscaler storage"
         },
         {
           "ticker": "STX",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Seagate — HDD leader; HAMR high-capacity nearline drives for AI data-center storage"
+          "rationale": "Seagate \u2014 HDD leader; HAMR high-capacity nearline drives for AI data-center storage"
         },
         {
           "ticker": "SNDK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "SanDisk — NAND/SSD pure-play spun from WDC in 2025; flash for AI and enterprise"
+          "rationale": "SanDisk \u2014 NAND/SSD pure-play spun from WDC in 2025; flash for AI and enterprise"
         },
         {
           "ticker": "NTAP",
           "added": "2023-05-09",
           "removed": "2026-06-18",
-          "rationale": "NetApp — enterprise data-storage systems and software; AI data-pipeline storage demand"
+          "rationale": "NetApp \u2014 enterprise data-storage systems and software; AI data-pipeline storage demand"
         }
       ],
       "thesis": "DRAM, HBM, NAND and storage names tied to AI data and memory pricing cycles.",
@@ -3070,7 +3075,7 @@
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded Memory, HBM & Storage — 5 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). DRAM/HBM, NAND and enterprise storage — the AI-memory cycle."
+          "note": "Seeded Memory, HBM & Storage \u2014 5 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). DRAM/HBM, NAND and enterprise storage \u2014 the AI-memory cycle."
         },
         {
           "action": "remove",
@@ -3079,12 +3084,12 @@
         }
       ],
       "omitted": [
-        "NTAP NetApp — removed because storage systems are not a direct DRAM/HBM/NAND memory cycle exposure."
+        "NTAP NetApp \u2014 removed because storage systems are not a direct DRAM/HBM/NAND memory cycle exposure."
       ]
     },
     "data_center_power": {
       "name": "Data-Center Power & Cooling",
-      "name_zh": "数据中心电力与散热",
+      "name_zh": "\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e0e\u6563\u70ed",
       "theme": "Electrical, thermal and power infrastructure feeding AI datacenters.",
       "category": "Energy & Power",
       "parent": "Energy & Power",
@@ -3097,7 +3102,7 @@
         "grid"
       ],
       "etf_proxy": "XLU",
-      "etf_proxy_note": "loose — XLU is utilities, basket is power/cooling equipment suppliers",
+      "etf_proxy_note": "loose \u2014 XLU is utilities, basket is power/cooling equipment suppliers",
       "created": "2026-06-19",
       "curated": "2026-06-19",
       "members": [
@@ -3105,49 +3110,49 @@
           "ticker": "VRT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Vertiv — data-center thermal/liquid cooling and power management; core AI-rack infra supplier"
+          "rationale": "Vertiv \u2014 data-center thermal/liquid cooling and power management; core AI-rack infra supplier"
         },
         {
           "ticker": "ETN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Eaton — electrical power-management gear (switchgear, busway, UPS) for data-center buildouts"
+          "rationale": "Eaton \u2014 electrical power-management gear (switchgear, busway, UPS) for data-center buildouts"
         },
         {
           "ticker": "POWL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Powell Industries — MV/LV switchgear and E-houses taking grid power into data centers"
+          "rationale": "Powell Industries \u2014 MV/LV switchgear and E-houses taking grid power into data centers"
         },
         {
           "ticker": "NXT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Nextracker — solar trackers; powers behind-the-meter/renewable supply feeding data-center load"
+          "rationale": "Nextracker \u2014 solar trackers; powers behind-the-meter/renewable supply feeding data-center load"
         },
         {
           "ticker": "AEIS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Advanced Energy — precision power conversion; new 800V DC-DC converters for AI racks"
+          "rationale": "Advanced Energy \u2014 precision power conversion; new 800V DC-DC converters for AI racks"
         },
         {
           "ticker": "NVT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "nVent Electric — electrical enclosures, connections and liquid-cooling for data-center racks"
+          "rationale": "nVent Electric \u2014 electrical enclosures, connections and liquid-cooling for data-center racks"
         },
         {
           "ticker": "HUBB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Hubbell — electrical/grid connectors and components for utility and data-center power"
+          "rationale": "Hubbell \u2014 electrical/grid connectors and components for utility and data-center power"
         },
         {
           "ticker": "GEV",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "GE Vernova — gas turbines, grid equipment and transformers supplying power to data centers"
+          "rationale": "GE Vernova \u2014 gas turbines, grid equipment and transformers supplying power to data centers"
         }
       ],
       "thesis": "Switchgear, transformers, busways, power conversion and cooling tied to AI power bottlenecks.",
@@ -3162,7 +3167,7 @@
     },
     "cybersecurity": {
       "name": "Cybersecurity",
-      "name_zh": "网络安全",
+      "name_zh": "\u7f51\u7edc\u5b89\u5168",
       "theme": "Endpoint, network, identity and cloud security software.",
       "category": "Software",
       "parent": "Software",
@@ -3174,7 +3179,7 @@
         "endpoint"
       ],
       "etf_proxy": "CIBR",
-      "etf_proxy_note": "loose — basket is a subset of CIBR's holdings",
+      "etf_proxy_note": "loose \u2014 basket is a subset of CIBR's holdings",
       "created": "2026-06-19",
       "curated": "2026-06-19",
       "members": [
@@ -3182,73 +3187,73 @@
           "ticker": "CRWD",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "CrowdStrike — cloud-native endpoint/XDR leader on the Falcon platform"
+          "rationale": "CrowdStrike \u2014 cloud-native endpoint/XDR leader on the Falcon platform"
         },
         {
           "ticker": "PANW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Palo Alto Networks — next-gen firewalls plus SASE/cloud/SecOps platform consolidation"
+          "rationale": "Palo Alto Networks \u2014 next-gen firewalls plus SASE/cloud/SecOps platform consolidation"
         },
         {
           "ticker": "FTNT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Fortinet — firewall/SD-WAN scale player with custom-ASIC network security"
+          "rationale": "Fortinet \u2014 firewall/SD-WAN scale player with custom-ASIC network security"
         },
         {
           "ticker": "OKTA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Okta — identity and access management; workforce and customer SSO/auth"
+          "rationale": "Okta \u2014 identity and access management; workforce and customer SSO/auth"
         },
         {
           "ticker": "QLYS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Qualys — cloud-based vulnerability management and compliance scanning"
+          "rationale": "Qualys \u2014 cloud-based vulnerability management and compliance scanning"
         },
         {
           "ticker": "NSSC",
           "added": "2023-05-09",
           "removed": "2026-06-18",
-          "rationale": "Napco Security — physical security hardware: alarms, access control, locking"
+          "rationale": "Napco Security \u2014 physical security hardware: alarms, access control, locking"
         },
         {
           "ticker": "YOU",
           "added": "2023-05-09",
           "removed": "2026-06-18",
-          "rationale": "Clear Secure — identity verification and biometric airport/venue screening"
+          "rationale": "Clear Secure \u2014 identity verification and biometric airport/venue screening"
         },
         {
           "ticker": "ZS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Zscaler — zero-trust secure web gateway and cloud SASE proxy"
+          "rationale": "Zscaler \u2014 zero-trust secure web gateway and cloud SASE proxy"
         },
         {
           "ticker": "S",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "SentinelOne — AI-driven autonomous endpoint/XDR; CrowdStrike challenger"
+          "rationale": "SentinelOne \u2014 AI-driven autonomous endpoint/XDR; CrowdStrike challenger"
         },
         {
           "ticker": "NET",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Cloudflare — edge network with WAF, DDoS, Zero Trust access security"
+          "rationale": "Cloudflare \u2014 edge network with WAF, DDoS, Zero Trust access security"
         },
         {
           "ticker": "RBRK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Rubrik — cyber-resilience and data security; backup/recovery vs ransomware"
+          "rationale": "Rubrik \u2014 cyber-resilience and data security; backup/recovery vs ransomware"
         },
         {
           "ticker": "TENB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Tenable — exposure management and vulnerability scanning (Nessus)"
+          "rationale": "Tenable \u2014 exposure management and vulnerability scanning (Nessus)"
         }
       ],
       "thesis": "Security software across endpoint, network, identity, vulnerability and cloud protection.",
@@ -3257,7 +3262,7 @@
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded Cybersecurity — 12 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Endpoint, network, identity and cloud security software."
+          "note": "Seeded Cybersecurity \u2014 12 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Endpoint, network, identity and cloud security software."
         },
         {
           "action": "remove",
@@ -3277,8 +3282,8 @@
     },
     "nuclear_power": {
       "name": "Nuclear & SMR Power",
-      "name_zh": "核电与小型模块化反应堆",
-      "theme": "Nuclear utilities, SMR developers and the nuclear fuel/services chain — AI baseload power.",
+      "name_zh": "\u6838\u7535\u4e0e\u5c0f\u578b\u6a21\u5757\u5316\u53cd\u5e94\u5806",
+      "theme": "Nuclear utilities, SMR developers and the nuclear fuel/services chain \u2014 AI baseload power.",
       "category": "Energy & Power",
       "parent": "Energy & Power",
       "tags": [
@@ -3298,55 +3303,55 @@
           "ticker": "CEG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Constellation Energy — largest US nuclear fleet operator; signs hyperscaler PPAs for AI load"
+          "rationale": "Constellation Energy \u2014 largest US nuclear fleet operator; signs hyperscaler PPAs for AI load"
         },
         {
           "ticker": "VST",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Vistra — IPP with large nuclear+gas fleet (Comanche Peak); powers data-center demand"
+          "rationale": "Vistra \u2014 IPP with large nuclear+gas fleet (Comanche Peak); powers data-center demand"
         },
         {
           "ticker": "TLN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Talen Energy — owns Susquehanna nuclear plant; struck Amazon AWS data-center power deal"
+          "rationale": "Talen Energy \u2014 owns Susquehanna nuclear plant; struck Amazon AWS data-center power deal"
         },
         {
           "ticker": "NRG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "NRG Energy — retail+generation IPP; nuclear/gas baseload exposure to surging power demand"
+          "rationale": "NRG Energy \u2014 retail+generation IPP; nuclear/gas baseload exposure to surging power demand"
         },
         {
           "ticker": "BWXT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "BWX Technologies — nuclear reactor components, naval reactors and SMR fuel manufacturer"
+          "rationale": "BWX Technologies \u2014 nuclear reactor components, naval reactors and SMR fuel manufacturer"
         },
         {
           "ticker": "GEV",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "GE Vernova — power-equipment OEM; BWRX-300 small modular reactor developer plus grid/gas"
+          "rationale": "GE Vernova \u2014 power-equipment OEM; BWRX-300 small modular reactor developer plus grid/gas"
         },
         {
           "ticker": "OKLO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Oklo — Aurora microreactor developer; Sam Altman-backed, large data-center power pipeline"
+          "rationale": "Oklo \u2014 Aurora microreactor developer; Sam Altman-backed, large data-center power pipeline"
         },
         {
           "ticker": "SMR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "NuScale Power — NRC-certified light-water SMR (NuScale Power Module) developer"
+          "rationale": "NuScale Power \u2014 NRC-certified light-water SMR (NuScale Power Module) developer"
         },
         {
           "ticker": "NNE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Nano Nuclear Energy — pre-revenue ZEUS/ODIN microreactor and nuclear-fuel-transport developer"
+          "rationale": "Nano Nuclear Energy \u2014 pre-revenue ZEUS/ODIN microreactor and nuclear-fuel-transport developer"
         }
       ],
       "thesis": "Utilities, SMR developers and fuel/services names tied to carbon-free baseload demand.",
@@ -3361,7 +3366,7 @@
     },
     "robotics_automation": {
       "name": "Robotics & Automation",
-      "name_zh": "机器人与自动化",
+      "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
       "theme": "Factory automation, machine vision, surgical robotics and industrial controls.",
       "category": "Industrials",
       "parent": "Industrials",
@@ -3373,7 +3378,7 @@
         "capex"
       ],
       "etf_proxy": "BOTZ",
-      "etf_proxy_note": "loose — basket is US-centric subset of a global robotics fund",
+      "etf_proxy_note": "loose \u2014 basket is US-centric subset of a global robotics fund",
       "created": "2026-06-19",
       "curated": "2026-06-22",
       "members": [
@@ -3381,73 +3386,73 @@
           "ticker": "ROK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Rockwell Automation — pure-play factory automation: PLCs, drives, industrial software"
+          "rationale": "Rockwell Automation \u2014 pure-play factory automation: PLCs, drives, industrial software"
         },
         {
           "ticker": "ISRG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Intuitive Surgical — da Vinci surgical robots; razor-and-blade instrument model"
+          "rationale": "Intuitive Surgical \u2014 da Vinci surgical robots; razor-and-blade instrument model"
         },
         {
           "ticker": "TER",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Teradyne — semiconductor test gear plus Universal Robots collaborative arms"
+          "rationale": "Teradyne \u2014 semiconductor test gear plus Universal Robots collaborative arms"
         },
         {
           "ticker": "CGNX",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Cognex — machine vision sensors and barcode readers for factory inspection"
+          "rationale": "Cognex \u2014 machine vision sensors and barcode readers for factory inspection"
         },
         {
           "ticker": "NOVT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Novanta — precision photonics, motion control and laser components for robots"
+          "rationale": "Novanta \u2014 precision photonics, motion control and laser components for robots"
         },
         {
           "ticker": "TRMB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Trimble — positioning, GNSS and field automation across construction and ag"
+          "rationale": "Trimble \u2014 positioning, GNSS and field automation across construction and ag"
         },
         {
           "ticker": "ZBRA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Zebra Technologies — barcode scanning, RFID and warehouse automation hardware"
+          "rationale": "Zebra Technologies \u2014 barcode scanning, RFID and warehouse automation hardware"
         },
         {
           "ticker": "PTC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "PTC — industrial CAD/PLM and IoT software digitizing factory operations"
+          "rationale": "PTC \u2014 industrial CAD/PLM and IoT software digitizing factory operations"
         },
         {
           "ticker": "NDSN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Nordson — precision dispensing and fluid-control systems for automated lines"
+          "rationale": "Nordson \u2014 precision dispensing and fluid-control systems for automated lines"
         },
         {
           "ticker": "EMR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Emerson Electric — process automation & control systems; a core factory-automation pure-play (added 2026-06-21; co-moves 0.64 with the basket)."
+          "rationale": "Emerson Electric \u2014 process automation & control systems; a core factory-automation pure-play (added 2026-06-21; co-moves 0.64 with the basket)."
         },
         {
           "ticker": "PH",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Parker Hannifin — motion & control (hydraulics/pneumatics/actuation), the motion layer of factory automation (added 2026-06-21; co-moves 0.50)."
+          "rationale": "Parker Hannifin \u2014 motion & control (hydraulics/pneumatics/actuation), the motion layer of factory automation (added 2026-06-21; co-moves 0.50)."
         },
         {
           "ticker": "SYM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Symbotic — AI-powered warehouse/fulfillment automation robotics; factory/warehouse-automation driver shared by ROK/ZBRA/PTC."
+          "rationale": "Symbotic \u2014 AI-powered warehouse/fulfillment automation robotics; factory/warehouse-automation driver shared by ROK/ZBRA/PTC."
         }
       ],
       "thesis": "Machine vision, motion control, surgical robots and factory software tied to productivity and capex.",
@@ -3477,8 +3482,8 @@
     },
     "obesity_glp1": {
       "name": "GLP-1 & Obesity",
-      "name_zh": "GLP-1 与减肥药",
-      "theme": "Incretin/GLP-1 metabolic drugs — incumbents, oral next-gen pure-plays, supply chain and the names the drugs hurt.",
+      "name_zh": "GLP-1 \u4e0e\u51cf\u80a5\u836f",
+      "theme": "Incretin/GLP-1 metabolic drugs \u2014 incumbents, oral next-gen pure-plays, supply chain and the names the drugs hurt.",
       "category": "Healthcare",
       "parent": "Healthcare",
       "tags": [
@@ -3489,14 +3494,14 @@
         "biotech"
       ],
       "etf_proxy": "XLV",
-      "etf_proxy_note": "loose — XLV is broad healthcare, not an obesity pure-play",
+      "etf_proxy_note": "loose \u2014 XLV is broad healthcare, not an obesity pure-play",
       "created": "2026-06-19",
       "curated": "2026-06-19",
       "omitted": [
-        "MTSR Metsera (acquired by Pfizer, closed Nov-2025 — own PFE)",
-        "CTLT Catalent (taken private by Novo Holdings — delisted)",
-        "TERN Terns (obesity program TERN-601 discontinued Oct-2025 — thesis broke)",
-        "ZLDPF Zealand (US line is an OTC ADR — exposure routed via RHHBY)",
+        "MTSR Metsera (acquired by Pfizer, closed Nov-2025 \u2014 own PFE)",
+        "CTLT Catalent (taken private by Novo Holdings \u2014 delisted)",
+        "TERN Terns (obesity program TERN-601 discontinued Oct-2025 \u2014 thesis broke)",
+        "ZLDPF Zealand (US line is an OTC ADR \u2014 exposure routed via RHHBY)",
         "VERU Veru (sub-$300M binary; muscle-sparing optionality only)"
       ],
       "members": [
@@ -3504,86 +3509,86 @@
           "ticker": "LLY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Eli Lilly — Zepbound/Mounjaro leader; oral orforglipron launching 2026"
+          "rationale": "Eli Lilly \u2014 Zepbound/Mounjaro leader; oral orforglipron launching 2026"
         },
         {
           "ticker": "NVO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Novo Nordisk ADR — Wegovy/Ozempic pioneer; oral Wegovy now approved"
+          "rationale": "Novo Nordisk ADR \u2014 Wegovy/Ozempic pioneer; oral Wegovy now approved"
         },
         {
           "ticker": "PFE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Pfizer — bought Metsera (~$10B) for a next-gen obesity pipeline"
+          "rationale": "Pfizer \u2014 bought Metsera (~$10B) for a next-gen obesity pipeline"
         },
         {
           "ticker": "AMGN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Amgen — MariTide monthly injectable in Phase 3"
+          "rationale": "Amgen \u2014 MariTide monthly injectable in Phase 3"
         },
         {
           "ticker": "RHHBY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Roche ADR — CT-388 plus petrelintide (Zealand) entering Phase 3"
+          "rationale": "Roche ADR \u2014 CT-388 plus petrelintide (Zealand) entering Phase 3"
         },
         {
           "ticker": "AZN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "AstraZeneca ADR — oral AZD5004 cleared Phase 2; readying Phase 3"
+          "rationale": "AstraZeneca ADR \u2014 oral AZD5004 cleared Phase 2; readying Phase 3"
         },
         {
           "ticker": "VKTX",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Viking Therapeutics — lead pure-play; VK2735 oral+injectable in Phase 3"
+          "rationale": "Viking Therapeutics \u2014 lead pure-play; VK2735 oral+injectable in Phase 3"
         },
         {
           "ticker": "GPCR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Structure Therapeutics — oral aleniglipron heading to Phase 3"
+          "rationale": "Structure Therapeutics \u2014 oral aleniglipron heading to Phase 3"
         },
         {
           "ticker": "ALT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Altimmune — pemvidutide GLP-1/glucagon for obesity and MASH"
+          "rationale": "Altimmune \u2014 pemvidutide GLP-1/glucagon for obesity and MASH"
         },
         {
           "ticker": "SRRK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Scholar Rock — apitegromab preserves lean mass alongside GLP-1"
+          "rationale": "Scholar Rock \u2014 apitegromab preserves lean mass alongside GLP-1"
         },
         {
           "ticker": "WST",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "West Pharmaceutical — pens/components for GLP-1 fill-finish"
+          "rationale": "West Pharmaceutical \u2014 pens/components for GLP-1 fill-finish"
         },
         {
           "ticker": "DXCM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "DexCom — CGM co-prescribed with GLP-1; structural tailwind"
+          "rationale": "DexCom \u2014 CGM co-prescribed with GLP-1; structural tailwind"
         },
         {
           "ticker": "HIMS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Hims & Hers — telehealth GLP-1 distribution; branded Novo deal"
+          "rationale": "Hims & Hers \u2014 telehealth GLP-1 distribution; branded Novo deal"
         },
         {
           "ticker": "DVA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "DaVita — the 'hurt' side: dialysis demand pressured by GLP-1 kidney benefit",
-          "coherence": "deliberate INVERSE leg: the dialysis name the drugs THREATEN — negative weekly/downside corr by design; kept as the thesis's 'hurt' side, not a trend representative."
+          "rationale": "DaVita \u2014 the 'hurt' side: dialysis demand pressured by GLP-1 kidney benefit",
+          "coherence": "deliberate INVERSE leg: the dialysis name the drugs THREATEN \u2014 negative weekly/downside corr by design; kept as the thesis's 'hurt' side, not a trend representative."
         }
       ],
       "thesis": "GLP-1 leaders, challengers and supply-chain names tied to obesity-drug demand.",
@@ -3592,18 +3597,18 @@
         {
           "date": "2026-06-19",
           "action": "create",
-          "note": "Seeded GLP-1 & Obesity — 14 equal-weight members, web-vetted to mid-2026 status (failed programs and acquisitions excluded). Includes the 'hurt' side (DVA) for a true overview."
+          "note": "Seeded GLP-1 & Obesity \u2014 14 equal-weight members, web-vetted to mid-2026 status (failed programs and acquisitions excluded). Includes the 'hurt' side (DVA) for a true overview."
         },
         {
           "action": "note",
           "date": "2026-06-21",
-          "note": "DVA: coherence audit — KEPT but flagged."
+          "note": "DVA: coherence audit \u2014 KEPT but flagged."
         }
       ]
     },
     "quantum_computing": {
       "name": "Quantum Computing",
-      "name_zh": "量子计算",
+      "name_zh": "\u91cf\u5b50\u8ba1\u7b97",
       "theme": "Quantum-compute pure-plays across every qubit modality plus the credible big-tech adjacencies.",
       "category": "AI & Technology",
       "parent": "Artificial Intelligence",
@@ -3615,81 +3620,81 @@
         "high-beta"
       ],
       "etf_proxy": "QTUM",
-      "etf_proxy_note": "loose — QTUM is a broad quantum/computing fund, not pure-play",
+      "etf_proxy_note": "loose \u2014 QTUM is a broad quantum/computing fund, not pure-play",
       "created": "2026-06-19",
       "curated": "2026-06-19",
       "omitted": [
-        "ARQQ Arqit (post-quantum encryption not computing; 25:1 reverse split — death-spiral flags)",
-        "QMCO Quantum Corp (ticker trap — legacy data storage, no quantum-compute exposure)",
-        "PsiQuantum, Atom Computing, Q-CTRL, Riverlane (still private — no listed common stock)"
+        "ARQQ Arqit (post-quantum encryption not computing; 25:1 reverse split \u2014 death-spiral flags)",
+        "QMCO Quantum Corp (ticker trap \u2014 legacy data storage, no quantum-compute exposure)",
+        "PsiQuantum, Atom Computing, Q-CTRL, Riverlane (still private \u2014 no listed common stock)"
       ],
       "members": [
         {
           "ticker": "IONQ",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "IonQ — trapped-ion revenue leader; most liquid pure-play"
+          "rationale": "IonQ \u2014 trapped-ion revenue leader; most liquid pure-play"
         },
         {
           "ticker": "RGTI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Rigetti — superconducting; ~$590M cash, Cepheus-1 108-qubit"
+          "rationale": "Rigetti \u2014 superconducting; ~$590M cash, Cepheus-1 108-qubit"
         },
         {
           "ticker": "QBTS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "D-Wave — only commercial annealer; adding a gate-model roadmap"
+          "rationale": "D-Wave \u2014 only commercial annealer; adding a gate-model roadmap"
         },
         {
           "ticker": "QUBT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Quantum Computing Inc — photonic TFLN foundry; highest beta"
+          "rationale": "Quantum Computing Inc \u2014 photonic TFLN foundry; highest beta"
         },
         {
           "ticker": "QNT",
           "added": "2026-06-04",
           "removed": null,
-          "rationale": "Quantinuum — highest-fidelity trapped-ion; June-2026 IPO (Honeywell-backed)"
+          "rationale": "Quantinuum \u2014 highest-fidelity trapped-ion; June-2026 IPO (Honeywell-backed)"
         },
         {
           "ticker": "INFQ",
           "added": "2026-02-01",
           "removed": null,
-          "rationale": "Infleqtion — first public neutral-atom pure-play; federal grant"
+          "rationale": "Infleqtion \u2014 first public neutral-atom pure-play; federal grant"
         },
         {
           "ticker": "IBM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "IBM — Heron/Nighthawk superconducting; targets quantum advantage 2026"
+          "rationale": "IBM \u2014 Heron/Nighthawk superconducting; targets quantum advantage 2026"
         },
         {
           "ticker": "GOOGL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Alphabet — Willow below-threshold error-correction; deepest research bench",
+          "rationale": "Alphabet \u2014 Willow below-threshold error-correction; deepest research bench",
           "coherence": "deliberate big-tech program leg: low-corr mega-cap whose quantum (Willow) exposure is tiny vs its market cap; kept as a named program participant."
         },
         {
           "ticker": "MSFT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Microsoft — topological Majorana moonshot toward fault tolerance"
+          "rationale": "Microsoft \u2014 topological Majorana moonshot toward fault tolerance"
         },
         {
           "ticker": "NVDA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Nvidia — NVQLink GPU–QPU interconnect; the picks-and-shovels bridge"
+          "rationale": "Nvidia \u2014 NVQLink GPU\u2013QPU interconnect; the picks-and-shovels bridge"
         },
         {
           "ticker": "HON",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Honeywell — retains ~48% of Quantinuum; cleanest large-cap proxy"
+          "rationale": "Honeywell \u2014 retains ~48% of Quantinuum; cleanest large-cap proxy"
         }
       ],
       "thesis": "Quantum pure plays and big-tech programs. High-beta narrative basket.",
@@ -3703,13 +3708,13 @@
         {
           "action": "note",
           "date": "2026-06-21",
-          "note": "GOOGL: coherence audit — KEPT but flagged. deliberate big-tech program leg: low-corr mega-cap whose quantum (Willow) exposure is tiny vs its market cap; kept as a named program participant."
+          "note": "GOOGL: coherence audit \u2014 KEPT but flagged. deliberate big-tech program leg: low-corr mega-cap whose quantum (Willow) exposure is tiny vs its market cap; kept as a named program participant."
         }
       ]
     },
     "gold_miners": {
       "name": "Gold Miners",
-      "name_zh": "黄金矿业",
+      "name_zh": "\u9ec4\u91d1\u77ff\u4e1a",
       "theme": "Liquid US-listed gold producers with direct operating leverage to the gold price. Royalty/streaming companies and silver-led miners are kept out so the cycle read stays economically coherent.",
       "category": "Materials & Mining",
       "parent": "Materials",
@@ -3720,12 +3725,12 @@
         "commodities"
       ],
       "etf_proxy": "GDX",
-      "etf_proxy_note": "tight — GDX is the VanEck Gold Miners ETF",
+      "etf_proxy_note": "tight \u2014 GDX is the VanEck Gold Miners ETF",
       "created": "2026-07-30",
       "curated": "2026-07-30",
       "omitted": [
         "FNV, WPM, RGLD (royalty/streaming economics rather than mine operators)",
-        "PAAS, HL, AG (material silver exposure — reserve for a separately calibrated silver sleeve)",
+        "PAAS, HL, AG (material silver exposure \u2014 reserve for a separately calibrated silver sleeve)",
         "Junior explorers and pre-production developers (financing and single-asset risk dominate metal-cycle timing)"
       ],
       "members": [
@@ -3733,73 +3738,73 @@
           "ticker": "NEM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Newmont — largest diversified listed gold producer and core GDX holding"
+          "rationale": "Newmont \u2014 largest diversified listed gold producer and core GDX holding"
         },
         {
           "ticker": "AEM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Agnico Eagle — high-quality senior producer with a deep North American asset base"
+          "rationale": "Agnico Eagle \u2014 high-quality senior producer with a deep North American asset base"
         },
         {
           "ticker": "GOLD",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Barrick Mining — global senior producer with large-scale tier-one gold assets"
+          "rationale": "Barrick Mining \u2014 global senior producer with large-scale tier-one gold assets"
         },
         {
           "ticker": "KGC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Kinross Gold — liquid mid-to-senior producer with direct gold-price operating leverage"
+          "rationale": "Kinross Gold \u2014 liquid mid-to-senior producer with direct gold-price operating leverage"
         },
         {
           "ticker": "AU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "AngloGold Ashanti — geographically diversified senior gold producer"
+          "rationale": "AngloGold Ashanti \u2014 geographically diversified senior gold producer"
         },
         {
           "ticker": "GFI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Gold Fields — large global producer with liquid US ADR"
+          "rationale": "Gold Fields \u2014 large global producer with liquid US ADR"
         },
         {
           "ticker": "HMY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Harmony Gold — high-beta producer with liquid US ADR"
+          "rationale": "Harmony Gold \u2014 high-beta producer with liquid US ADR"
         },
         {
           "ticker": "AGI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Alamos Gold — growing North American intermediate producer"
+          "rationale": "Alamos Gold \u2014 growing North American intermediate producer"
         },
         {
           "ticker": "IAG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "IAMGOLD — intermediate producer with meaningful operating leverage"
+          "rationale": "IAMGOLD \u2014 intermediate producer with meaningful operating leverage"
         },
         {
           "ticker": "EQX",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Equinox Gold — Americas-focused producer with high gold-cycle sensitivity"
+          "rationale": "Equinox Gold \u2014 Americas-focused producer with high gold-cycle sensitivity"
         },
         {
           "ticker": "EGO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Eldorado Gold — diversified intermediate producer with liquid US listing"
+          "rationale": "Eldorado Gold \u2014 diversified intermediate producer with liquid US listing"
         },
         {
           "ticker": "BTG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "B2Gold — established low-cost producer with diversified operations"
+          "rationale": "B2Gold \u2014 established low-cost producer with diversified operations"
         }
       ],
       "thesis": "Gold producers provide operational leverage to bullion through realized prices, reserve value and margin expansion. The basket deliberately excludes royalty companies and silver-led miners so trend, breadth and cycle signals describe one economic sleeve.",
@@ -3814,7 +3819,7 @@
     },
     "silver_miners": {
       "name": "Silver Miners",
-      "name_zh": "白银矿业",
+      "name_zh": "\u767d\u94f6\u77ff\u4e1a",
       "theme": "Liquid US-listed silver producers with direct operating leverage to the silver price. Royalty/streaming companies, physical-metal trusts and gold-led producers are kept out so the cycle read stays economically coherent.",
       "category": "Materials & Mining",
       "parent": "Materials",
@@ -3825,13 +3830,13 @@
         "commodities"
       ],
       "etf_proxy": "SIL",
-      "etf_proxy_note": "tight — SIL is the Global X Silver Miners ETF",
+      "etf_proxy_note": "tight \u2014 SIL is the Global X Silver Miners ETF",
       "created": "2026-08-05",
       "curated": "2026-08-05",
       "omitted": [
-        "WPM, SLVM-type royalty/streaming vehicles (royalty/streaming economics rather than mine operators — the same exclusion gold_miners applies to FNV/WPM/RGLD)",
+        "WPM, SLVM-type royalty/streaming vehicles (royalty/streaming economics rather than mine operators \u2014 the same exclusion gold_miners applies to FNV/WPM/RGLD)",
         "SLV, PSLV and other physical-metal trusts (bullion vehicles, not operating leverage)",
-        "NEM, AEM, GOLD, KGC, AU, GFI, HMY, AGI, IAG, EQX, EGO, BTG (gold-led producers — held in gold_miners so the two sleeves stay disjoint)",
+        "NEM, AEM, GOLD, KGC, AU, GFI, HMY, AGI, IAG, EQX, EGO, BTG (gold-led producers \u2014 held in gold_miners so the two sleeves stay disjoint)",
         "Junior explorers and pre-production developers (financing and single-asset risk dominate metal-cycle timing)"
       ],
       "members": [
@@ -3839,61 +3844,61 @@
           "ticker": "PAAS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Pan American Silver — senior primary-silver producer with a diversified Americas asset base"
+          "rationale": "Pan American Silver \u2014 senior primary-silver producer with a diversified Americas asset base"
         },
         {
           "ticker": "HL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Hecla Mining — the largest US-domiciled primary silver producer"
+          "rationale": "Hecla Mining \u2014 the largest US-domiciled primary silver producer"
         },
         {
           "ticker": "AG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "First Majestic Silver — Mexico-focused primary silver producer"
+          "rationale": "First Majestic Silver \u2014 Mexico-focused primary silver producer"
         },
         {
           "ticker": "CDE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Coeur Mining — US-listed producer with material primary silver output alongside gold"
+          "rationale": "Coeur Mining \u2014 US-listed producer with material primary silver output alongside gold"
         },
         {
           "ticker": "FSM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Fortuna Mining — Americas and West Africa producer built on a primary-silver base"
+          "rationale": "Fortuna Mining \u2014 Americas and West Africa producer built on a primary-silver base"
         },
         {
           "ticker": "SSRM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "SSR Mining — diversified precious-metals producer carrying silver output; the sleeve's least silver-led member, kept for cycle breadth"
+          "rationale": "SSR Mining \u2014 diversified precious-metals producer carrying silver output; the sleeve's least silver-led member, kept for cycle breadth"
         },
         {
           "ticker": "MAG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "MAG Silver — primary silver through the Juanicipio joint venture"
+          "rationale": "MAG Silver \u2014 primary silver through the Juanicipio joint venture"
         },
         {
           "ticker": "EXK",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Endeavour Silver — Mexico-focused primary silver producer"
+          "rationale": "Endeavour Silver \u2014 Mexico-focused primary silver producer"
         },
         {
           "ticker": "GATO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Gatos Silver — primary silver producer at Cerro Los Gatos"
+          "rationale": "Gatos Silver \u2014 primary silver producer at Cerro Los Gatos"
         },
         {
           "ticker": "SVM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Silvercorp Metals — established low-cost primary silver producer"
+          "rationale": "Silvercorp Metals \u2014 established low-cost primary silver producer"
         }
       ],
       "thesis": "Silver producers provide operational leverage to the silver price through realized prices, reserve value and margin expansion. The gold_miners charter explicitly deferred silver-led names to a separately calibrated sleeve; this is that sleeve, so trend, breadth and cycle signals describe one economic sleeve rather than a blended precious-metals average.",
@@ -3902,14 +3907,14 @@
         {
           "date": "2026-08-05",
           "action": "create",
-          "note": "Created the silver sleeve the gold_miners charter deferred ('PAAS, HL, AG — reserve for a separately calibrated silver sleeve'). Royalty/streaming, physical-metal trusts and gold-led producers excluded. COLLECTION STATE AT CREATION: only HL and CDE resolve on the baskets price path today (S&P-1500 breadth cache); the other eight members carry no local history yet and are backfilled by the membership-derived nightly collectors (scripts/fetch_basket_extras.py for the baskets page, scripts/fetch_basket_ohlcv.py for the consolidated candle) exactly as gold_miners' own 11 off-index members were after its 2026-07-30 creation. engine/baskets.py skips a basket resolving fewer than 3 members, so this basket is expected to be absent from the site for one build cycle and to appear after the first nightly collection."
+          "note": "Created the silver sleeve the gold_miners charter deferred ('PAAS, HL, AG \u2014 reserve for a separately calibrated silver sleeve'). Royalty/streaming, physical-metal trusts and gold-led producers excluded. COLLECTION STATE AT CREATION: only HL and CDE resolve on the baskets price path today (S&P-1500 breadth cache); the other eight members carry no local history yet and are backfilled by the membership-derived nightly collectors (scripts/fetch_basket_extras.py for the baskets page, scripts/fetch_basket_ohlcv.py for the consolidated candle) exactly as gold_miners' own 11 off-index members were after its 2026-07-30 creation. engine/baskets.py skips a basket resolving fewer than 3 members, so this basket is expected to be absent from the site for one build cycle and to appear after the first nightly collection."
         }
       ]
     },
     "uranium_miners": {
       "name": "Uranium & Nuclear Fuel",
-      "name_zh": "铀矿与核燃料",
-      "theme": "Uranium miners, developers and fuel-cycle/enrichment — the fuel supply side of the nuclear revival (distinct from utilities and SMR reactor developers).",
+      "name_zh": "\u94c0\u77ff\u4e0e\u6838\u71c3\u6599",
+      "theme": "Uranium miners, developers and fuel-cycle/enrichment \u2014 the fuel supply side of the nuclear revival (distinct from utilities and SMR reactor developers).",
       "category": "Materials & Mining",
       "parent": "Materials",
       "tags": [
@@ -3920,12 +3925,12 @@
         "commodities"
       ],
       "etf_proxy": "URNM",
-      "etf_proxy_note": "tight — URNM is the Sprott uranium-miners fund",
+      "etf_proxy_note": "tight \u2014 URNM is the Sprott uranium-miners fund",
       "created": "2026-06-19",
       "curated": "2026-06-19",
       "omitted": [
-        "OKLO, SMR (SMR reactor developers — fuel consumers, live in nuclear_power)",
-        "Kazatomprom, Paladin, Boss, Deep Yellow (foreign-listed — no liquid US line)",
+        "OKLO, SMR (SMR reactor developers \u2014 fuel consumers, live in nuclear_power)",
+        "Kazatomprom, Paladin, Boss, Deep Yellow (foreign-listed \u2014 no liquid US line)",
         "LTBR Lightbridge (pre-revenue fuel R&D, heavy ATM dilution)"
       ],
       "members": [
@@ -3933,61 +3938,61 @@
           "ticker": "CCJ",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Cameco — largest pure-play producer; Westinghouse fuel-cycle leverage"
+          "rationale": "Cameco \u2014 largest pure-play producer; Westinghouse fuel-cycle leverage"
         },
         {
           "ticker": "UEC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Uranium Energy — US/Canada ISR producer ramping output"
+          "rationale": "Uranium Energy \u2014 US/Canada ISR producer ramping output"
         },
         {
           "ticker": "UUUU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Energy Fuels — White Mesa producer; rare-earth optionality"
+          "rationale": "Energy Fuels \u2014 White Mesa producer; rare-earth optionality"
         },
         {
           "ticker": "NXE",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "NexGen Energy — tier-1 Rook I/Arrow; construction 2026"
+          "rationale": "NexGen Energy \u2014 tier-1 Rook I/Arrow; construction 2026"
         },
         {
           "ticker": "DNN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Denison Mines — Phoenix ISR; final investment decision approved"
+          "rationale": "Denison Mines \u2014 Phoenix ISR; final investment decision approved"
         },
         {
           "ticker": "URG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Ur-Energy — Lost Creek Wyoming ISR producer"
+          "rationale": "Ur-Energy \u2014 Lost Creek Wyoming ISR producer"
         },
         {
           "ticker": "EU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "enCore Energy — South Texas ISR producer; watch warrant dilution"
+          "rationale": "enCore Energy \u2014 South Texas ISR producer; watch warrant dilution"
         },
         {
           "ticker": "UROY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Uranium Royalty — only uranium royalty/streaming pure-play"
+          "rationale": "Uranium Royalty \u2014 only uranium royalty/streaming pure-play"
         },
         {
           "ticker": "LEU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Centrus Energy — US HALEU/LEU enricher; DOE-backed backlog"
+          "rationale": "Centrus Energy \u2014 US HALEU/LEU enricher; DOE-backed backlog"
         },
         {
           "ticker": "ASPI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "ASP Isotopes — TerraPower HALEU deal; enrichment-adjacent (pre-revenue)"
+          "rationale": "ASP Isotopes \u2014 TerraPower HALEU deal; enrichment-adjacent (pre-revenue)"
         }
       ],
       "thesis": "Uranium producers, developers, royalty and enrichment names tied to nuclear fuel demand.",
@@ -4002,8 +4007,8 @@
     },
     "critical_minerals": {
       "name": "Critical Minerals & Rare Earths",
-      "name_zh": "关键矿产与稀土",
-      "theme": "US/allied critical-mineral and rare-earth supply chain ex-China — producers and government-backed developers.",
+      "name_zh": "\u5173\u952e\u77ff\u4ea7\u4e0e\u7a00\u571f",
+      "theme": "US/allied critical-mineral and rare-earth supply chain ex-China \u2014 producers and government-backed developers.",
       "category": "Materials & Mining",
       "parent": "Materials",
       "tags": [
@@ -4014,7 +4019,7 @@
         "supply-chain"
       ],
       "etf_proxy": "REMX",
-      "etf_proxy_note": "loose — REMX is global rare-earth/strategic-metals, includes China names",
+      "etf_proxy_note": "loose \u2014 REMX is global rare-earth/strategic-metals, includes China names",
       "created": "2026-06-19",
       "curated": "2026-06-19",
       "omitted": [
@@ -4028,67 +4033,67 @@
           "ticker": "MP",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "MP Materials — RE producer/magnets; DoD stake, Apple magnet deal"
+          "rationale": "MP Materials \u2014 RE producer/magnets; DoD stake, Apple magnet deal"
         },
         {
           "ticker": "USAR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "USA Rare Earth — NdFeB magnet line ramping at Stillwater"
+          "rationale": "USA Rare Earth \u2014 NdFeB magnet line ramping at Stillwater"
         },
         {
           "ticker": "UAMY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "US Antimony — only Western integrated antimony smelter; DoD contract"
+          "rationale": "US Antimony \u2014 only Western integrated antimony smelter; DoD contract"
         },
         {
           "ticker": "ALB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Albemarle — world lithium major; recovering margins"
+          "rationale": "Albemarle \u2014 world lithium major; recovering margins"
         },
         {
           "ticker": "SGML",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Sigma Lithium — low-cost Brazil lithium producer"
+          "rationale": "Sigma Lithium \u2014 low-cost Brazil lithium producer"
         },
         {
           "ticker": "UUUU",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Energy Fuels — first US heavy rare-earth oxides at White Mesa (dual-theme)"
+          "rationale": "Energy Fuels \u2014 first US heavy rare-earth oxides at White Mesa (dual-theme)"
         },
         {
           "ticker": "LAC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Lithium Americas — Thacker Pass; DOE loan + GM equity (pre-production)"
+          "rationale": "Lithium Americas \u2014 Thacker Pass; DOE loan + GM equity (pre-production)"
         },
         {
           "ticker": "PPTA",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Perpetua Resources — only US antimony reserve; EXIM-funded (pre-revenue)"
+          "rationale": "Perpetua Resources \u2014 only US antimony reserve; EXIM-funded (pre-revenue)"
         },
         {
           "ticker": "NB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "NioCorp — Elk Creek niobium/scandium/RE developer (pre-revenue)"
+          "rationale": "NioCorp \u2014 Elk Creek niobium/scandium/RE developer (pre-revenue)"
         },
         {
           "ticker": "ALM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Almonty — tungsten; 15-year US-defense offtake"
+          "rationale": "Almonty \u2014 tungsten; 15-year US-defense offtake"
         },
         {
           "ticker": "CRML",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Critical Metals — Greenland rare-earth developer; EXIM LOI (speculative)"
+          "rationale": "Critical Metals \u2014 Greenland rare-earth developer; EXIM LOI (speculative)"
         }
       ],
       "thesis": "Rare earths, lithium, antimony and other policy-sensitive critical-mineral names.",
@@ -4103,8 +4108,8 @@
     },
     "space_economy": {
       "name": "Space Economy",
-      "name_zh": "太空经济",
-      "theme": "Launch, satcom, direct-to-device, Earth observation, defense-space and components — the commercial space build-out.",
+      "name_zh": "\u592a\u7a7a\u7ecf\u6d4e",
+      "theme": "Launch, satcom, direct-to-device, Earth observation, defense-space and components \u2014 the commercial space build-out.",
       "category": "Industrials & Defense",
       "parent": "Industrials",
       "tags": [
@@ -4115,13 +4120,13 @@
         "new-space"
       ],
       "etf_proxy": "ARKX",
-      "etf_proxy_note": "loose — ARKX is a broad space-and-innovation fund",
+      "etf_proxy_note": "loose \u2014 ARKX is a broad space-and-innovation fund",
       "created": "2026-06-19",
       "curated": "2026-06-22",
       "omitted": [
-        "GSAT Globalstar (under Amazon acquisition — now merger-arb)",
-        "SATS EchoStar (sold spectrum to SpaceX/AT&T — spectrum-monetization story)",
-        "LLAP Terran Orbital (delisted — acquired by Lockheed)",
+        "GSAT Globalstar (under Amazon acquisition \u2014 now merger-arb)",
+        "SATS EchoStar (sold spectrum to SpaceX/AT&T \u2014 spectrum-monetization story)",
+        "LLAP Terran Orbital (delisted \u2014 acquired by Lockheed)",
         "SIDU/ASTR/MNTS (thin-liquidity micro-caps, heavy reverse-split history)"
       ],
       "members": [
@@ -4129,91 +4134,91 @@
           "ticker": "RKLB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Rocket Lab — defining small-launch pure-play; Neutron debut 2026"
+          "rationale": "Rocket Lab \u2014 defining small-launch pure-play; Neutron debut 2026"
         },
         {
           "ticker": "FLY",
           "added": "2025-08-07",
           "removed": null,
-          "rationale": "Firefly Aerospace — Alpha launch + Blue Ghost lunar lander (IPO 2025)"
+          "rationale": "Firefly Aerospace \u2014 Alpha launch + Blue Ghost lunar lander (IPO 2025)"
         },
         {
           "ticker": "ASTS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "AST SpaceMobile — direct-to-phone satellite cellular; AT&T/Verizon"
+          "rationale": "AST SpaceMobile \u2014 direct-to-phone satellite cellular; AT&T/Verizon"
         },
         {
           "ticker": "IRDM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Iridium — profitable satcom incumbent; NTN Direct D2D in 2026"
+          "rationale": "Iridium \u2014 profitable satcom incumbent; NTN Direct D2D in 2026"
         },
         {
           "ticker": "VSAT",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Viasat — satcom broadband plus defense; deleveraging"
+          "rationale": "Viasat \u2014 satcom broadband plus defense; deleveraging"
         },
         {
           "ticker": "PL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Planet Labs — pure-play Earth observation; $900M+ backlog"
+          "rationale": "Planet Labs \u2014 pure-play Earth observation; $900M+ backlog"
         },
         {
           "ticker": "BKSY",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "BlackSky — high-res tasking Earth observation for government"
+          "rationale": "BlackSky \u2014 high-res tasking Earth observation for government"
         },
         {
           "ticker": "LUNR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Intuitive Machines — CLPS lunar lander prime; $1.1B backlog"
+          "rationale": "Intuitive Machines \u2014 CLPS lunar lander prime; $1.1B backlog"
         },
         {
           "ticker": "RDW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Redwire — space infrastructure + Edge Autonomy drones (dilutive)"
+          "rationale": "Redwire \u2014 space infrastructure + Edge Autonomy drones (dilutive)"
         },
         {
           "ticker": "KTOS",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Kratos — Space Force ground systems and hypersonics (adjacency)"
+          "rationale": "Kratos \u2014 Space Force ground systems and hypersonics (adjacency)"
         },
         {
           "ticker": "KRMN",
           "added": "2025-02-13",
           "removed": null,
-          "rationale": "Karman — launch/missile-defense propulsion components (IPO 2025)"
+          "rationale": "Karman \u2014 launch/missile-defense propulsion components (IPO 2025)"
         },
         {
           "ticker": "MDA",
           "added": "2026-03-01",
           "removed": null,
-          "rationale": "MDA Space — diversified prime; new US listing (deep liquidity Toronto)"
+          "rationale": "MDA Space \u2014 diversified prime; new US listing (deep liquidity Toronto)"
         },
         {
           "ticker": "SPCX",
           "added": "2026-06-12",
           "removed": null,
-          "rationale": "SpaceX — launch/Starlink anchor; June-2026 IPO (very new, may flag partial)"
+          "rationale": "SpaceX \u2014 launch/Starlink anchor; June-2026 IPO (very new, may flag partial)"
         },
         {
           "ticker": "VOYG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Voyager Technologies — space + defense (Space Solutions, Defense & National Security, Starlab station); in-space-infrastructure/defense-contract driver like LUNR/RDW/KRMN."
+          "rationale": "Voyager Technologies \u2014 space + defense (Space Solutions, Defense & National Security, Starlab station); in-space-infrastructure/defense-contract driver like LUNR/RDW/KRMN."
         },
         {
           "ticker": "SATL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Satellogic — vertically integrated Earth-observation pure-play (own EO constellation + geospatial data); EO-imagery peer to PL/BKSY."
+          "rationale": "Satellogic \u2014 vertically integrated Earth-observation pure-play (own EO constellation + geospatial data); EO-imagery peer to PL/BKSY."
         }
       ],
       "thesis": "Launch, direct-to-device, satcom, Earth observation and defense-space names.",
@@ -4233,8 +4238,8 @@
     },
     "ai_agents": {
       "name": "AI Agents & Applications",
-      "name_zh": "AI 智能体与应用",
-      "theme": "The AI application/agent layer — enterprise agentic platforms and AI-native consumer apps that monetize models, distinct from infra and dev-tools software.",
+      "name_zh": "AI \u667a\u80fd\u4f53\u4e0e\u5e94\u7528",
+      "theme": "The AI application/agent layer \u2014 enterprise agentic platforms and AI-native consumer apps that monetize models, distinct from infra and dev-tools software.",
       "category": "Artificial Intelligence",
       "parent": "Artificial Intelligence",
       "tags": [
@@ -4245,11 +4250,11 @@
         "genai"
       ],
       "etf_proxy": "IGV",
-      "etf_proxy_note": "loose — IGV is broad application software, not agent pure-play",
+      "etf_proxy_note": "loose \u2014 IGV is broad application software, not agent pure-play",
       "created": "2026-06-19",
       "curated": "2026-06-19",
       "omitted": [
-        "BBAI BigBear.ai (slow growth ~17%, weakest fundamentals — watchlist)",
+        "BBAI BigBear.ai (slow growth ~17%, weakest fundamentals \u2014 watchlist)",
         "Lambda, Crusoe, Together, Databricks, Cohere (still private in mid-2026)"
       ],
       "members": [
@@ -4257,49 +4262,49 @@
           "ticker": "PLTR",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Palantir — enterprise agentic AI (AIP); profitable at scale"
+          "rationale": "Palantir \u2014 enterprise agentic AI (AIP); profitable at scale"
         },
         {
           "ticker": "NOW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "ServiceNow — agentic workflow automation embedded in the enterprise"
+          "rationale": "ServiceNow \u2014 agentic workflow automation embedded in the enterprise"
         },
         {
           "ticker": "CRM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Salesforce — Agentforce agentic layer over the CRM install base"
+          "rationale": "Salesforce \u2014 Agentforce agentic layer over the CRM install base"
         },
         {
           "ticker": "APP",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "AppLovin — AI ad-engine (Axon); pure execution play"
+          "rationale": "AppLovin \u2014 AI ad-engine (Axon); pure execution play"
         },
         {
           "ticker": "DUOL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Duolingo — AI-native consumer app monetizing GenAI features"
+          "rationale": "Duolingo \u2014 AI-native consumer app monetizing GenAI features"
         },
         {
           "ticker": "SOUN",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "SoundHound AI — voice/agentic platform; high-beta small-cap"
+          "rationale": "SoundHound AI \u2014 voice/agentic platform; high-beta small-cap"
         },
         {
           "ticker": "PATH",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "UiPath — agentic RPA / enterprise automation platform; an AI-native agent pure-play (added 2026-06-21; co-moves 0.54)."
+          "rationale": "UiPath \u2014 agentic RPA / enterprise automation platform; an AI-native agent pure-play (added 2026-06-21; co-moves 0.54)."
         },
         {
           "ticker": "TEM",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Tempus AI — AI-native precision-medicine & diagnostics platform (added 2026-06-21; co-moves 0.52)."
+          "rationale": "Tempus AI \u2014 AI-native precision-medicine & diagnostics platform (added 2026-06-21; co-moves 0.52)."
         }
       ],
       "thesis": "AI application and agent platforms where models become revenue.",
@@ -4318,18 +4323,18 @@
         {
           "action": "add",
           "date": "2026-06-21",
-          "note": "TEM: added at seed date for backtest history (recent IPOs flag partial) — quant-confirmed co-mover with the basket. Tempus AI — AI-native precision-medicine & diagnostics platform"
+          "note": "TEM: added at seed date for backtest history (recent IPOs flag partial) \u2014 quant-confirmed co-mover with the basket. Tempus AI \u2014 AI-native precision-medicine & diagnostics platform"
         }
       ]
     },
     "insurance": {
       "name": "Insurance & Brokers",
-      "name_zh": "保险与经纪",
-      "theme": "P&C / life insurers, reinsurers and insurance brokers — the underwriting-cycle + rate-on-line + float-investment-income narrative (distinct from health insurers in Managed Care).",
+      "name_zh": "\u4fdd\u9669\u4e0e\u7ecf\u7eaa",
+      "theme": "P&C / life insurers, reinsurers and insurance brokers \u2014 the underwriting-cycle + rate-on-line + float-investment-income narrative (distinct from health insurers in Managed Care).",
       "category": "Financials",
       "parent": "Financials",
       "etf_proxy": "KIE",
-      "etf_proxy_note": "loose — SPDR insurance",
+      "etf_proxy_note": "loose \u2014 SPDR insurance",
       "weighting": "equal",
       "created": "2026-06-21",
       "curated": "2026-06-22",
@@ -4347,138 +4352,143 @@
           "ticker": "PGR",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Progressive — auto P&C share-gainer; pricing/combined-ratio bellwether"
+          "rationale": "Progressive \u2014 auto P&C share-gainer; pricing/combined-ratio bellwether"
         },
         {
           "ticker": "CB",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Chubb — global P&C/commercial; hard-market underwriter"
+          "rationale": "Chubb \u2014 global P&C/commercial; hard-market underwriter"
         },
         {
           "ticker": "TRV",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Travelers — commercial + personal P&C"
+          "rationale": "Travelers \u2014 commercial + personal P&C"
         },
         {
           "ticker": "ALL",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Allstate — personal auto/home P&C"
+          "rationale": "Allstate \u2014 personal auto/home P&C"
         },
         {
           "ticker": "AIG",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "AIG — global commercial P&C"
+          "rationale": "AIG \u2014 global commercial P&C"
         },
         {
           "ticker": "MET",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "MetLife — group benefits + life"
+          "rationale": "MetLife \u2014 group benefits + life"
         },
         {
           "ticker": "PRU",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Prudential — life + annuities/asset mgmt"
+          "rationale": "Prudential \u2014 life + annuities/asset mgmt"
         },
         {
           "ticker": "AFL",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Aflac — supplemental health/life (US+Japan)"
+          "rationale": "Aflac \u2014 supplemental health/life (US+Japan)"
         },
         {
           "ticker": "HIG",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "The Hartford — commercial P&C + group benefits"
+          "rationale": "The Hartford \u2014 commercial P&C + group benefits"
         },
         {
           "ticker": "CINF",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Cincinnati Financial — regional commercial P&C"
+          "rationale": "Cincinnati Financial \u2014 regional commercial P&C"
         },
         {
           "ticker": "ACGL",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Arch Capital — specialty insurance + reinsurance + mortgage"
+          "rationale": "Arch Capital \u2014 specialty insurance + reinsurance + mortgage"
         },
         {
-          "ticker": "MMC",
+          "ticker": "MRSH",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Marsh & McLennan — #1 insurance broker + consulting"
+          "rationale": "Marsh & McLennan \u2014 #1 insurance broker + consulting"
         },
         {
           "ticker": "AON",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Aon — global insurance/reinsurance broker"
+          "rationale": "Aon \u2014 global insurance/reinsurance broker"
         },
         {
           "ticker": "AJG",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Arthur J. Gallagher — mid-market insurance broker roll-up"
+          "rationale": "Arthur J. Gallagher \u2014 mid-market insurance broker roll-up"
         },
         {
           "ticker": "WRB",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "W. R. Berkley — large commercial-lines P&C + specialty/E&S writer with reinsurance; underwriting-cycle peer to CB/TRV/ACGL."
+          "rationale": "W. R. Berkley \u2014 large commercial-lines P&C + specialty/E&S writer with reinsurance; underwriting-cycle peer to CB/TRV/ACGL."
         },
         {
           "ticker": "EG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Everest Group — global reinsurer + primary P&C/specialty; reinsurance-pricing/rate-on-line/reserve-adequacy driver like ACGL."
+          "rationale": "Everest Group \u2014 global reinsurer + primary P&C/specialty; reinsurance-pricing/rate-on-line/reserve-adequacy driver like ACGL."
         },
         {
           "ticker": "BRO",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Brown & Brown — pure-play insurance broker; commission/rate-on-line driver, the direct peer to MMC/AON/AJG."
+          "rationale": "Brown & Brown \u2014 pure-play insurance broker; commission/rate-on-line driver, the direct peer to MMC/AON/AJG."
         },
         {
           "ticker": "KNSL",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Kinsale Capital — pure-play E&S specialty P&C; high-purity hard-market/underwriting-cycle play (higher-beta)."
+          "rationale": "Kinsale Capital \u2014 pure-play E&S specialty P&C; high-purity hard-market/underwriting-cycle play (higher-beta)."
         },
         {
           "ticker": "WTW",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Willis Towers Watson — global insurance broker, the fourth major alongside MMC/AON/AJG; same commission/rate-on-line driver."
+          "rationale": "Willis Towers Watson \u2014 global insurance broker, the fourth major alongside MMC/AON/AJG; same commission/rate-on-line driver."
         }
       ],
       "changelog": [
         {
           "date": "2026-06-21",
           "action": "create",
-          "note": "Seeded Insurance & Brokers — 14 liquid P&C/life/broker names to cover the Financials standout cluster (insurers) the AI/tech-skewed basket set was missing."
+          "note": "Seeded Insurance & Brokers \u2014 14 liquid P&C/life/broker names to cover the Financials standout cluster (insurers) the AI/tech-skewed basket set was missing."
         },
         {
           "action": "add",
           "date": "2026-06-22",
           "note": "Coherence-audit additions; seeded at the basket seed date for comparable history."
+        },
+        {
+          "date": "2026-08-05",
+          "action": "rekey",
+          "note": "Ticker rename, not a roster change: MMC->MRSH. Same company, same CUSIP, same listing \u2014 the old symbol was retired by the exchange."
         }
       ]
     },
     "big_pharma": {
       "name": "Big Pharma",
-      "name_zh": "大型药企",
-      "theme": "Large-cap branded pharma & big-biotech — pipeline/patent-cliff, pricing and M&A narrative (GLP-1 leaders LLY/AMGN sit in their own basket).",
+      "name_zh": "\u5927\u578b\u836f\u4f01",
+      "theme": "Large-cap branded pharma & big-biotech \u2014 pipeline/patent-cliff, pricing and M&A narrative (GLP-1 leaders LLY/AMGN sit in their own basket).",
       "category": "Healthcare",
       "parent": "Healthcare",
       "etf_proxy": "PPH",
-      "etf_proxy_note": "loose — VanEck pharma",
+      "etf_proxy_note": "loose \u2014 VanEck pharma",
       "weighting": "equal",
       "created": "2026-06-21",
       "curated": "2026-06-21",
@@ -4495,68 +4505,68 @@
           "ticker": "JNJ",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Johnson & Johnson — diversified pharma + medtech"
+          "rationale": "Johnson & Johnson \u2014 diversified pharma + medtech"
         },
         {
           "ticker": "MRK",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Merck — Keytruda-anchored oncology; post-cliff pipeline question"
+          "rationale": "Merck \u2014 Keytruda-anchored oncology; post-cliff pipeline question"
         },
         {
           "ticker": "PFE",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Pfizer — post-COVID revenue reset + oncology buildout"
+          "rationale": "Pfizer \u2014 post-COVID revenue reset + oncology buildout"
         },
         {
           "ticker": "BMY",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Bristol-Myers Squibb — Eliquis/Opdivo cliff vs new launches"
+          "rationale": "Bristol-Myers Squibb \u2014 Eliquis/Opdivo cliff vs new launches"
         },
         {
           "ticker": "ABBV",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "AbbVie — Humira cliff navigated by Skyrizi/Rinvoq"
+          "rationale": "AbbVie \u2014 Humira cliff navigated by Skyrizi/Rinvoq"
         },
         {
           "ticker": "GILD",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Gilead — HIV franchise + oncology (Trodelvy)"
+          "rationale": "Gilead \u2014 HIV franchise + oncology (Trodelvy)"
         },
         {
           "ticker": "VRTX",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Vertex — CF monopoly + pain/CASGEVY diversification"
+          "rationale": "Vertex \u2014 CF monopoly + pain/CASGEVY diversification"
         },
         {
           "ticker": "BIIB",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Biogen — Alzheimer (Leqembi) optionality"
+          "rationale": "Biogen \u2014 Alzheimer (Leqembi) optionality"
         },
         {
           "ticker": "REGN",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Regeneron — Eylea/Dupixent franchises"
+          "rationale": "Regeneron \u2014 Eylea/Dupixent franchises"
         },
         {
           "ticker": "ZTS",
           "added": "2023-01-03",
           "removed": "2026-06-18",
-          "rationale": "Zoetis — animal health (pharma-adjacent quality compounder)"
+          "rationale": "Zoetis \u2014 animal health (pharma-adjacent quality compounder)"
         }
       ],
       "changelog": [
         {
           "date": "2026-06-21",
           "action": "create",
-          "note": "Seeded Big Pharma — 10 large-cap branded-pharma/biotech names to cover the Healthcare standout cluster (ex-GLP-1) the basket set was missing."
+          "note": "Seeded Big Pharma \u2014 10 large-cap branded-pharma/biotech names to cover the Healthcare standout cluster (ex-GLP-1) the basket set was missing."
         },
         {
           "action": "remove",
@@ -4565,17 +4575,17 @@
         }
       ],
       "omitted": [
-        "ZTS Zoetis (removed 2026-06-18: animal-health company — a separate pet/veterinary sub-industry & driver from the human large-cap drug complex; decoupling, corr 0.30 vs 0.52)."
+        "ZTS Zoetis (removed 2026-06-18: animal-health company \u2014 a separate pet/veterinary sub-industry & driver from the human large-cap drug complex; decoupling, corr 0.30 vs 0.52)."
       ]
     },
     "industrial_distribution": {
       "name": "Industrial Distribution & Capital Goods",
-      "name_zh": "工业分销与资本品",
-      "theme": "MRO/industrial distributors, equipment rental and short-cycle capital-goods/tooling — the restock + nonresidential-construction + pricing-power narrative.",
+      "name_zh": "\u5de5\u4e1a\u5206\u9500\u4e0e\u8d44\u672c\u54c1",
+      "theme": "MRO/industrial distributors, equipment rental and short-cycle capital-goods/tooling \u2014 the restock + nonresidential-construction + pricing-power narrative.",
       "category": "Industrials",
       "parent": "Industrials",
       "etf_proxy": "XLI",
-      "etf_proxy_note": "loose — broad industrials",
+      "etf_proxy_note": "loose \u2014 broad industrials",
       "weighting": "equal",
       "created": "2026-06-21",
       "curated": "2026-06-22",
@@ -4593,80 +4603,80 @@
           "ticker": "GWW",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "W.W. Grainger — #1 MRO distributor; pricing-power compounder"
+          "rationale": "W.W. Grainger \u2014 #1 MRO distributor; pricing-power compounder"
         },
         {
           "ticker": "FAST",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Fastenal — fastener/MRO distribution + onsite vending"
+          "rationale": "Fastenal \u2014 fastener/MRO distribution + onsite vending"
         },
         {
           "ticker": "WSO",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Watsco — HVAC/R distribution"
+          "rationale": "Watsco \u2014 HVAC/R distribution"
         },
         {
           "ticker": "AIT",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Applied Industrial — bearings/power-transmission distribution"
+          "rationale": "Applied Industrial \u2014 bearings/power-transmission distribution"
         },
         {
           "ticker": "MSM",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "MSC Industrial — metalworking/MRO distribution"
+          "rationale": "MSC Industrial \u2014 metalworking/MRO distribution"
         },
         {
           "ticker": "POOL",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Pool Corp — pool-equipment distribution"
+          "rationale": "Pool Corp \u2014 pool-equipment distribution"
         },
         {
           "ticker": "URI",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "United Rentals — #1 equipment rental fleet"
+          "rationale": "United Rentals \u2014 #1 equipment rental fleet"
         },
         {
           "ticker": "KMT",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Kennametal — cutting tools / short-cycle metalworking"
+          "rationale": "Kennametal \u2014 cutting tools / short-cycle metalworking"
         },
         {
           "ticker": "GGG",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Graco — fluid-handling equipment"
+          "rationale": "Graco \u2014 fluid-handling equipment"
         },
         {
           "ticker": "NDSN",
           "added": "2023-01-03",
           "removed": null,
-          "rationale": "Nordson — precision dispensing equipment"
+          "rationale": "Nordson \u2014 precision dispensing equipment"
         },
         {
           "ticker": "FERG",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Ferguson Enterprises — distributor of plumbing/HVAC/waterworks/industrial-MRO; distribution volume/pricing driver like WSO (construction/resi tilt)."
+          "rationale": "Ferguson Enterprises \u2014 distributor of plumbing/HVAC/waterworks/industrial-MRO; distribution volume/pricing driver like WSO (construction/resi tilt)."
         },
         {
           "ticker": "WCC",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "WESCO International — B2B distributor of electrical/communications/industrial-MRO products & supply-chain solutions; volume/pricing driver like GWW/FAST/MSM."
+          "rationale": "WESCO International \u2014 B2B distributor of electrical/communications/industrial-MRO products & supply-chain solutions; volume/pricing driver like GWW/FAST/MSM."
         }
       ],
       "changelog": [
         {
           "date": "2026-06-21",
           "action": "create",
-          "note": "Seeded Industrial Distribution & Capital Goods — 10 MRO-distributor / rental / tooling names to cover the Industrials standout cluster the basket set was missing."
+          "note": "Seeded Industrial Distribution & Capital Goods \u2014 10 MRO-distributor / rental / tooling names to cover the Industrials standout cluster the basket set was missing."
         },
         {
           "action": "add",
@@ -4677,12 +4687,12 @@
     },
     "us_sector_tech": {
       "name": "Technology (Equal-Weight)",
-      "name_zh": "信息技术（等权）",
+      "name_zh": "\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09",
       "theme": "S&P 500 Technology sector, equal-weighted",
       "category": "US Sectors (EW)",
       "parent": "US Sectors",
       "etf_proxy": "XLK",
-      "etf_proxy_note": "XLK is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "etf_proxy_note": "XLK is cap-weighted; this basket is equal-weight \u2014 the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
       "thesis": "Equal-weight S&P 500 Technology members versus XLK. Sector participation gauge, not a buy list.",
@@ -5135,12 +5145,12 @@
     },
     "us_sector_financials": {
       "name": "Financials (Equal-Weight)",
-      "name_zh": "金融（等权）",
+      "name_zh": "\u91d1\u878d\uff08\u7b49\u6743\uff09",
       "theme": "S&P 500 Financials sector, equal-weighted",
       "category": "US Sectors (EW)",
       "parent": "US Sectors",
       "etf_proxy": "XLF",
-      "etf_proxy_note": "XLF is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "etf_proxy_note": "XLF is cap-weighted; this basket is equal-weight \u2014 the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
       "thesis": "Equal-weight S&P 500 Financials members versus XLF. Sector participation gauge, not a buy list.",
@@ -5326,7 +5336,7 @@
           "rationale": "S&P 500 Financials constituent"
         },
         {
-          "ticker": "FI",
+          "ticker": "FISV",
           "added": "2023-05-09",
           "removed": null,
           "rationale": "S&P 500 Financials constituent"
@@ -5446,7 +5456,7 @@
           "rationale": "S&P 500 Financials constituent"
         },
         {
-          "ticker": "MMC",
+          "ticker": "MRSH",
           "added": "2023-05-09",
           "removed": null,
           "rationale": "S&P 500 Financials constituent"
@@ -5605,12 +5615,12 @@
     },
     "us_sector_health": {
       "name": "Health Care (Equal-Weight)",
-      "name_zh": "医疗保健（等权）",
+      "name_zh": "\u533b\u7597\u4fdd\u5065\uff08\u7b49\u6743\uff09",
       "theme": "S&P 500 Health Care sector, equal-weighted",
       "category": "US Sectors (EW)",
       "parent": "US Sectors",
       "etf_proxy": "XLV",
-      "etf_proxy_note": "XLV is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "etf_proxy_note": "XLV is cap-weighted; this basket is equal-weight \u2014 the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
       "thesis": "Equal-weight S&P 500 Health Care members versus XLV. Sector participation gauge, not a buy list.",
@@ -5973,12 +5983,12 @@
     },
     "us_sector_discretionary": {
       "name": "Consumer Discretionary (Equal-Weight)",
-      "name_zh": "非必需消费（等权）",
+      "name_zh": "\u975e\u5fc5\u9700\u6d88\u8d39\uff08\u7b49\u6743\uff09",
       "theme": "S&P 500 Consumer Discretionary sector, equal-weighted",
       "category": "US Sectors (EW)",
       "parent": "US Sectors",
       "etf_proxy": "XLY",
-      "etf_proxy_note": "XLY is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "etf_proxy_note": "XLY is cap-weighted; this basket is equal-weight \u2014 the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
       "thesis": "Equal-weight S&P 500 Consumer Discretionary members versus XLY. Sector participation gauge, not a buy list.",
@@ -6269,12 +6279,12 @@
     },
     "us_sector_comm": {
       "name": "Communication Services (Equal-Weight)",
-      "name_zh": "通信服务（等权）",
+      "name_zh": "\u901a\u4fe1\u670d\u52a1\uff08\u7b49\u6743\uff09",
       "theme": "S&P 500 Communication Services sector, equal-weighted",
       "category": "US Sectors (EW)",
       "parent": "US Sectors",
       "etf_proxy": "XLC",
-      "etf_proxy_note": "XLC is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "etf_proxy_note": "XLC is cap-weighted; this basket is equal-weight \u2014 the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
       "thesis": "Equal-weight S&P 500 Communication Services members versus XLC. Sector participation gauge, not a buy list.",
@@ -6421,12 +6431,12 @@
     },
     "us_sector_industrials": {
       "name": "Industrials (Equal-Weight)",
-      "name_zh": "工业（等权）",
+      "name_zh": "\u5de5\u4e1a\uff08\u7b49\u6743\uff09",
       "theme": "S&P 500 Industrials sector, equal-weighted",
       "category": "US Sectors (EW)",
       "parent": "US Sectors",
       "etf_proxy": "XLI",
-      "etf_proxy_note": "XLI is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "etf_proxy_note": "XLI is cap-weighted; this basket is equal-weight \u2014 the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
       "thesis": "Equal-weight S&P 500 Industrials members versus XLI. Sector participation gauge, not a buy list.",
@@ -6915,12 +6925,12 @@
     },
     "us_sector_staples": {
       "name": "Consumer Staples (Equal-Weight)",
-      "name_zh": "必需消费（等权）",
+      "name_zh": "\u5fc5\u9700\u6d88\u8d39\uff08\u7b49\u6743\uff09",
       "theme": "S&P 500 Consumer Staples sector, equal-weighted",
       "category": "US Sectors (EW)",
       "parent": "US Sectors",
       "etf_proxy": "XLP",
-      "etf_proxy_note": "XLP is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "etf_proxy_note": "XLP is cap-weighted; this basket is equal-weight \u2014 the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
       "thesis": "Equal-weight S&P 500 Consumer Staples members versus XLP. Sector participation gauge, not a buy list.",
@@ -7139,12 +7149,12 @@
     },
     "us_sector_energy": {
       "name": "Energy (Equal-Weight)",
-      "name_zh": "能源（等权）",
+      "name_zh": "\u80fd\u6e90\uff08\u7b49\u6743\uff09",
       "theme": "S&P 500 Energy sector, equal-weighted",
       "category": "US Sectors (EW)",
       "parent": "US Sectors",
       "etf_proxy": "XLE",
-      "etf_proxy_note": "XLE is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "etf_proxy_note": "XLE is cap-weighted; this basket is equal-weight \u2014 the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
       "thesis": "Equal-weight S&P 500 Energy members versus XLE. Sector participation gauge, not a buy list.",
@@ -7279,12 +7289,12 @@
     },
     "us_sector_utilities": {
       "name": "Utilities (Equal-Weight)",
-      "name_zh": "公用事业（等权）",
+      "name_zh": "\u516c\u7528\u4e8b\u4e1a\uff08\u7b49\u6743\uff09",
       "theme": "S&P 500 Utilities sector, equal-weighted",
       "category": "US Sectors (EW)",
       "parent": "US Sectors",
       "etf_proxy": "XLU",
-      "etf_proxy_note": "XLU is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "etf_proxy_note": "XLU is cap-weighted; this basket is equal-weight \u2014 the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
       "thesis": "Equal-weight S&P 500 Utilities members versus XLU. Sector participation gauge, not a buy list.",
@@ -7479,12 +7489,12 @@
     },
     "us_sector_realestate": {
       "name": "Real Estate (Equal-Weight)",
-      "name_zh": "房地产（等权）",
+      "name_zh": "\u623f\u5730\u4ea7\uff08\u7b49\u6743\uff09",
       "theme": "S&P 500 Real Estate sector, equal-weighted",
       "category": "US Sectors (EW)",
       "parent": "US Sectors",
       "etf_proxy": "XLRE",
-      "etf_proxy_note": "XLRE is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "etf_proxy_note": "XLRE is cap-weighted; this basket is equal-weight \u2014 the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
       "thesis": "Equal-weight S&P 500 Real Estate members versus XLRE. Sector participation gauge, not a buy list.",
@@ -7679,12 +7689,12 @@
     },
     "us_sector_materials": {
       "name": "Materials (Equal-Weight)",
-      "name_zh": "材料（等权）",
+      "name_zh": "\u6750\u6599\uff08\u7b49\u6743\uff09",
       "theme": "S&P 500 Materials sector, equal-weighted",
       "category": "US Sectors (EW)",
       "parent": "US Sectors",
       "etf_proxy": "XLB",
-      "etf_proxy_note": "XLB is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "etf_proxy_note": "XLB is cap-weighted; this basket is equal-weight \u2014 the gap is a breadth read.",
       "created": "2026-06-28",
       "weighting": "equal",
       "thesis": "Equal-weight S&P 500 Materials members versus XLB. Sector participation gauge, not a buy list.",

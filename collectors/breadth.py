@@ -220,14 +220,21 @@ class BreadthAdapter(Adapter):
     def _repair(self, members: pd.DataFrame) -> pd.DataFrame:
         """Clean a freshly-scraped constituents table before it becomes the universe.
 
-        Wikipedia is community-edited and intermittently ships a *plausible-looking*
-        but wrong symbol — vandalism (Marsh & McLennan shown as the non-existent
-        "MRSH") or a stale pre-rename ticker (Fiserv as "FISV", renamed "FI" in
-        2023) — plus the occasional non-ticker junk cell. Left unrepaired those
-        silently drop the real name from the searchable universe and can mint a
-        bogus page for the garbage symbol. This normalises symbols, drops
-        non-ticker junk, and applies the config ``ticker_fixups`` repair map
-        (bad -> real current ticker). Pure + logged; never raises."""
+        Wikipedia is community-edited and intermittently ships a *stale pre-rename*
+        symbol (Fiserv as "FISV", renamed "FI" in 2023) plus the occasional
+        non-ticker junk cell. Left unrepaired those silently drop the real name
+        from the searchable universe. This normalises symbols, drops non-ticker
+        junk, and applies the config ``ticker_fixups`` repair map
+        (retired -> real current ticker). Pure + logged; never raises.
+
+        The fixup map's DIRECTION must always point at the symbol that currently
+        trades; a backwards row pins the universe to a dead symbol. That failed
+        once, for 7 months: Marsh McLennan's real NYSE symbol change (MMC -> MRSH,
+        2026-01-14, same CUSIP/listing) was read here as vandalism and "repaired"
+        MRSH -> MMC, so the universe kept a symbol with no listing and no price
+        while every vendor-fed store followed the rename. Resolve a suspected bad
+        symbol against the NASDAQ symbol directory / OpenFIGI before adding a row —
+        a symbol ABSENT from the directory is the retired one."""
         df = members.copy()
         df["symbol"] = (df["symbol"].astype(str).str.strip().str.upper()
                         .str.replace(".", "-", regex=False))         # BRK.B -> BRK-B

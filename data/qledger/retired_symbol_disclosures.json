@@ -1,0 +1,63 @@
+{
+  "schema": "retired_symbol_disclosures.v1",
+  "note": "Forward-ledger records left under a ticker that no longer trades. These are APPEND-ONLY stores: the claims stay exactly as registered, under the symbol they were registered with. This file is the receipt that says why, so a grade read months later is not read as a claim about a dead company.",
+  "disclosures": [
+    {
+      "retired_symbol": "MMC",
+      "live_symbol": "MRSH",
+      "company": "Marsh & McLennan Companies",
+      "cusip": "571748102",
+      "event": "NYSE ticker change, same company, same CUSIP, same listing",
+      "effective": "2026-01-14",
+      "ruling": "STRAND, do not re-key",
+      "ruled_by": "operator",
+      "ruled_on": "2026-08-05",
+      "authority": [
+        "data/symbol_directory/snapshots/ \u2014 MMC absent from every snapshot; MRSH listed on NYSE",
+        "data/openfigi/cusip_ticker.parquet \u2014 CUSIP 571748102 maps to MRSH",
+        "data/breadth/sp1500_pit_membership.parquet \u2014 MMC interval closes 2026-01-14, MRSH opens the same day"
+      ],
+      "stranded": [
+        {
+          "store": "data/qledger/claims.jsonl",
+          "rows": 13,
+          "status": "open",
+          "by_desk": {
+            "altdata": 2,
+            "radar": 11
+          },
+          "placebo": 2,
+          "live": 11,
+          "check_by_first": "2026-10-08",
+          "check_by_last": "2026-10-29",
+          "claim_ids": [
+            "2c4c29e6e584dbbc",
+            "3482bd88bc00b8da",
+            "3a12b90669d470f2",
+            "66599a90f6ad16b2",
+            "86fe6d8929e6f2eb",
+            "8a9481643d3b2d23",
+            "b15370c4989f5fe4",
+            "bc1adc56a44a5f82",
+            "c09b3fb6ec86d346",
+            "c87afdfb22bdd72e",
+            "cb8a661de6b2efbe",
+            "ec89d64f0a6dfb1d",
+            "edd4cd4d2380e649"
+          ]
+        },
+        {
+          "store": "data/name_score/us_calls.parquet",
+          "rows": 35,
+          "date_first": "2026-06-29",
+          "date_last": "2026-08-05",
+          "tiers": {
+            "no_setup": 35
+          }
+        }
+      ],
+      "how_they_still_price": "engine.ai_desk._close_series resolves a retired symbol to the live one via lib.symbol_aliases AFTER every direct store read misses, and logs when it does. Verified 2026-08-05: before the fix _close_series('MMC') returned None and no entry fill was possible, so all 13 claims would have graded against nothing; after it, they resolve real fills (e.g. 175.23 on 2026-07-15, 181.08 on 2026-07-20).",
+      "what_a_reader_should_know": "A grade filed under MMC after 2026-01-14 is a claim about Marsh & McLennan, graded on MRSH's price series. The symbol on the row is the one the claim was registered under, not evidence that MMC still trades."
+    }
+  ]
+}
