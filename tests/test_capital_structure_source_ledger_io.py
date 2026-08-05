@@ -176,3 +176,40 @@ def test_committed_ledger_validates_and_matches_its_pinned_receipt() -> None:
     validate_manifest_ledger(records)
     assert records
     assert source_ledger_prefix_hash(records) == PINNED_PREFIX_SHA256
+
+
+# The 2026-08-05 nightly failure, quoted verbatim from run 30960328285:
+#   expected manifest:cs:bc364561..., got 'manifest:cs:42f684e8...'
+# validate_manifest_identity computes `expected` from the body it just read and
+# reports `got` as the body's stored ID, so `expected` is the drifted hash.
+INCIDENT_GOT_PREFIX = "42f684e8"
+INCIDENT_EXPECTED_PREFIX = "bc364561"
+
+
+@pytest.mark.skipif(not COMMITTED_LEDGER.exists(), reason="ledger not retained here")
+def test_incident_hash_identifies_the_exact_pair_of_back_filled_keys() -> None:
+    """Names the 2026-08-05 cause exactly, from committed data alone.
+
+    Reproducing the drifted hash is what separates 'a sufficient mechanism' from
+    'the cause': any *additional* mutation (an int->float promotion, a
+    list-of-struct unification inside ``spans``) would land on a different
+    digest.  Back-filling exactly ``filing.file_number_provenance`` and
+    ``filing.collection_scope`` -- the two keys #4243 added after the last ledger
+    commit -- reproduces it, and neither key alone does.
+    """
+    row = read_source_ledger(COMMITTED_LEDGER)[0]
+    assert row["manifest_id"].removeprefix("manifest:cs:").startswith(INCIDENT_GOT_PREFIX)
+    assert "file_number_provenance" not in row["filing"]
+    assert "collection_scope" not in row["filing"]
+
+    def drifted(**back_filled: object) -> str:
+        candidate = copy.deepcopy(row)
+        candidate["filing"].update(back_filled)
+        return manifest_id_for(candidate).removeprefix("manifest:cs:")
+
+    assert drifted(
+        file_number_provenance=None, collection_scope=None,
+    ).startswith(INCIDENT_EXPECTED_PREFIX)
+    # Neither key on its own accounts for the observed digest.
+    assert not drifted(file_number_provenance=None).startswith(INCIDENT_EXPECTED_PREFIX)
+    assert not drifted(collection_scope=None).startswith(INCIDENT_EXPECTED_PREFIX)
