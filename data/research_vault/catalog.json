@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T18:33:49.112183+00:00",
-  "count": 820,
+  "generated_at": "2026-08-05T19:05:24.298091+00:00",
+  "count": 821,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -604,6 +604,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 36,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zwx75jafb0z-5f508d",
+      "title": "Global Equity Market Arithmetic US versus UK shareholder returns but Momentum is still hard to ignore",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:11:04Z",
+      "summary_points": [
+        "**US vs UK shareholder returns divergence**: US net buybacks down 25% from highs (dividends + buyback yield at record low), UK distribution yield near record high (5.2%) with rising buybacks and falling issuance.",
+        "**Extreme fundamental deterioration**: New Zealand's 2025e P/E of -276.99 and 2026e EPS growth of -802.74 signal critical risk; Philippines' 2026 EPS growth of -2.29 indicates near-term earnings contraction.",
+        "**Energy sector paradox**: Japan Energy leads YTD (+37.4%) but faces negative global EPS growth (US: -4.1%, UK: -20.8%), highlighting structural risk amid apparent outperformance.",
+        "**Momentum volatility crisis**: US tech momentum strategy lost 40% in July after 225% 12m gain; long/short momentum correlation at -0.47 (unprecedented), signaling severe volatility risk.",
+        "**Japan's structural shift**: Nikkei 225 up 27.9% YTD (highest among indices); Technology sector leads with strongest earnings consensus increase (2027 vs 2026), outperforming Europe."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 33,
       "language": "en",
       "needs_metadata": false
     },
