@@ -59,8 +59,13 @@ _EXT_GRADES = {"parabolic", "stretched"}
 
 # us_prophet_v1 stage buckets, best-actionable first. Kept as a literal rather than
 # imported from engine.us_board_rank so this guard stays a standalone script with no
-# engine import (it runs in the pages.yml publish lane too).
-_STAGE_ORDER = ("live", "setting_up", "ran", "blocked")
+# engine import (it runs in the pages.yml publish lane too). MUST track
+# engine.us_board_rank.STAGE_ORDER: an unknown stage is a hard finding here, so a
+# bucket added there and not here fails the publish lane on every row that carries it.
+# `basing` (the ladder's BOTTOM WATCH shelf) joined 2026-08-05 between `ran` and
+# `blocked`; the HK board does not emit it (it keeps BOTTOM WATCH in `blocked`), which
+# costs this tuple nothing — a stage no board produces simply never matches.
+_STAGE_ORDER = ("live", "setting_up", "ran", "basing", "blocked")
 
 
 def _check_prophet_order(buy_rows: list) -> list[str]:
