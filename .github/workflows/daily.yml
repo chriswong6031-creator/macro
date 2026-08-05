@@ -2672,6 +2672,34 @@ jobs:
           # swallowed into a green run pins returning browsers to the old bytes for a year
           # (#3617/#3624). See render.yml for the full rationale.
           python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
+      - name: fetch oracle panels from R2 (PR-C1 sponsorship shim)
+        if: always()
+        # PR-C1 (RUL-7): oracle panel_s.parquet + panel_m.parquet are built off-render
+        # on the Mac (scripts/oracle_nightly.py + publish_oracle_panels.py) and published
+        # to R2 under the oracle/ prefix.  Downloaded here for TWO consumers below —
+        # this fetch MUST precede oracle_nightly (order pinned by
+        # tests/test_oracle_nightly.py::test_daily_fetch_oracle_panels_precedes_oracle_nightly):
+        #   1. oracle_nightly (next step): personality (3b) and the turn-desk lane
+        #      (Steps 15-19) read data/oracle/panel_s.parquet and skip on their
+        #      missing-file sentinels when it is absent.  When this fetch ran AFTER
+        #      oracle_nightly, turn_desk skipped and Steps 16-19 lost the night while
+        #      the panel landed ~3s later (run 30960328285, 2026-08-05).  Note
+        #      episodes_s.parquet is NOT fetched (not published to R2) — turn_desk
+        #      still needs it from the runner workspace (oracle_offrender builds it).
+        #   2. build_bottom_sensors (further below): populates sponsorship_state for
+        #      the ~1,489+ sector-mapped tickers.
+        # Safe at this position: the fetch has no local inputs (R2 creds only), and
+        # neither oracle_nightly nor build_world_state writes any of the three
+        # fetched files (panel_s/panel_m/manifest).
+        # Absent-object-safe: if R2 objects are missing the consumers degrade to
+        # 'unavailable'/sentinel-skip — this step NEVER crashes the build (always exits 0).
+        # No-op when R2 creds are absent (non-prod builds, forks).
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_oracle_panels || echo "::warning::fetch_oracle_panels failed (non-fatal — sponsorship_state will be unavailable)"
       - name: oracle nightly (state + alerts + directive + ledger + banner)
         if: always()
         # Oracle O4 live-wiring: reads committed panel/episode/graph artifacts (heavy
@@ -2684,6 +2712,7 @@ jobs:
         #   site/basketdata/oracle_state.json    the bus payload (git add site/ covers)
         # Sentinel-gap check: all outputs land under data/ or site/ which are in the
         # "git add data/ site/ reports/" below — NO new explicit git add needed.
+        # panel_s/panel_m availability: fetched from R2 by the step directly above.
         # --skip-panel --skip-graph --skip-episodes: heavy rebuilds run separately off-render.
         # --skip-timemachine: the TM feed export needs the panel+episode parquets, which are
         #   built off-render (build_oracle_panel forbids render-path use); the dedicated
@@ -2703,21 +2732,6 @@ jobs:
         # engine-render.yml (express lane) also runs this step — its regime/market_state
         # recompute would otherwise drift ahead of the committed world_state copies.
         run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
-      - name: fetch oracle panels from R2 (PR-C1 sponsorship shim)
-        if: always()
-        # PR-C1 (RUL-7): oracle panel_s.parquet + panel_m.parquet are built off-render
-        # on the Mac (scripts/oracle_nightly.py + publish_oracle_panels.py) and published
-        # to R2 under the oracle/ prefix.  Download them here so build_bottom_sensors can
-        # populate sponsorship_state for the ~1,489+ sector-mapped tickers.
-        # Absent-object-safe: if R2 objects are missing the connector degrades to
-        # 'unavailable' — this step NEVER crashes the build (always exits 0).
-        # No-op when R2 creds are absent (non-prod builds, forks).
-        env:
-          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
-        run: python -m scripts.fetch_oracle_panels || echo "::warning::fetch_oracle_panels failed (non-fatal — sponsorship_state will be unavailable)"
       - name: build bottom-sensor envelope (NW Rails B0)
         if: always()
         # Display-only (no ranking/gating/money-path) — assembles the bottom-sensor
