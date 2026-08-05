@@ -144,10 +144,19 @@
   .ancol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 13px; min-width:0; }
   .anh { margin:0 0 4px; font-size:13px; } .anh.buy { color:var(--up); } .anh.red { color:var(--down); }
   .anh.wait { color:var(--warn); }
-  .anrow { display:flex; align-items:center; gap:9px; padding:7px 4px; border-top:1px solid var(--line); border-radius:7px; color:inherit; min-width:0; }
+  /* The row must never bleed past its column. A "Reduce / avoid" row can carry TWO
+     nowrap chips (the verb badge + a state tag like "AVOID · TURNING") beside a long
+     theme name, and flex cannot shrink a nowrap chip below its min-content width — so
+     the row overflowed the .ancol edge instead of reflowing (operator 2026-08-04).
+     Wrapping is the fix: the chips keep their shape and drop to a second line.
+     min-width:0 alone does NOT cover this — it lets the *text* children shrink, but
+     the chips still floor the row at their own min-content. */
+  .anrow { display:flex; flex-wrap:wrap; align-items:center; gap:9px; row-gap:4px; padding:7px 4px; border-top:1px solid var(--line); border-radius:7px; color:inherit; min-width:0; }
   .anrow:hover { background:var(--panel2); }
-  .anverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; }
-  .anrow .rn { font-weight:650; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .anverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; flex:0 0 auto; max-width:100%; }
+  .anrow .rn { font-weight:650; white-space:nowrap; min-width:0; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; }
+  /* keeps the score at the right edge of whichever line it lands on */
+  .anrow .ansc { margin-left:auto; }
   .anwhy { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ansc { font-variant-numeric:tabular-nums; font-weight:700; }
   /* ---- W4 Velocity / Heat pills (DESCRIPTIVE — rank/score trajectory, not a forecast) ---- */
@@ -185,7 +194,11 @@
   .tsc.pos b { color:var(--up); } .tsc.neg b { color:var(--down); }
   .tspat { font-weight:650; color:var(--text); opacity:.85; }
   .tstag { color:var(--muted); font-size:9.5px; border:1px solid var(--line); border-radius:5px; padding:0 4px; }
-  /* validated sleeve-size chip (CN drawdown radar; payload-gated, display-only) */
+  /* sleeve-size chip (CN drawdown radar; payload-gated, display-only).
+     NB: this is a CSS comment, so it ships INSIDE <style> in the rendered page and
+     scripts/check_validated_claims.py reads it as page text — the word it used to
+     start with is the CI-enforced one. Keep claim vocabulary out of CSS comments;
+     the {# … #} sibling below is Jinja and never reaches the output. */
   .sleeve-chip { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 10px; background:var(--panel2);
     border:1px solid var(--line); border-radius:9px; padding:8px 12px; margin:8px 0 2px; font-size:12.5px; }
   .sleeve-chip .sl-main b { font-weight:680; }

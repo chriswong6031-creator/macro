@@ -241,10 +241,28 @@
   .scc-section-h { margin: 0 0 8px; }
   .scc-section-h h2 { font-size: 17px; font-weight: 760; margin: 0; }
   .scc-section-h .scc-section-sub { font-size: 12.5px; color: var(--muted); }
-  /* the embedded overlay reuses cycle.css/.sc-* but lives outside a .cyc-wrap — give the stage a panel frame */
-  .scc-cycle .cyc-stage { background: var(--panel); border: 1px solid var(--line); border-radius: 13px; padding: 12px 14px; }
-  /* embedded live sector desk table */
-  .scc-desk-tblwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 13px; }
+  /* ══ SECTION ISLANDS — one container per section, never a container in a container ══
+     Operator 2026-08-04. Every section on this page now wears the SAME chrome as the
+     Overview verdict hero (.rvx-hero, ~L614): var(--panel) fill, a TRANSPARENT 1px
+     border (keeps the box model, drops the drawn frame) and a soft two-stop drop
+     shadow. That is the macro.html island idiom — borderless, lifted, flat.
+
+     The tokens live here so a section can opt in with one class-free selector, and
+     so the light/dark shadow stays in ONE place instead of per-section literals. */
+  .scc-tbl-details {
+    background: var(--panel);
+    border: 1px solid transparent;
+    border-radius: 18px;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 5%, transparent),
+                0 12px 32px -14px color-mix(in srgb, var(--text) 12%, transparent);
+  }
+  /* The cycle stage's island + the flattening of .cyc-hero/.cyc-detail live in
+     macro-desk.css, NOT here: `body.macro-desk.page-sector-central .scc-cycle …`
+     (0,4,1) out-specificities anything this sheet can say about those elements,
+     so a copy here would be dead CSS that reads as the live rule. */
+  /* embedded live sector desk table — the wrapper is INSIDE .scc-tbl-details, which
+     is already the island, so it carries no frame of its own (container-in-container). */
+  .scc-desk-tblwrap { overflow-x: auto; border: 0; border-radius: 0; }
   table.scc-desk-tbl { border-collapse: collapse; width: 100%; min-width: 920px; font-size: 12.5px; }
   table.scc-desk-tbl th, table.scc-desk-tbl td { padding: 8px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
   table.scc-desk-tbl th { font-size: 10px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 700; position: sticky; top: 0; background: var(--panel); cursor: pointer; user-select: none; }
@@ -996,9 +1014,14 @@ body { font-family:-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
   .rc-caveat-cn { margin-top:10px; font-size:10.5px; color:var(--muted); line-height:1.55; }
 </style>
     <h2>⟲ {{ t('China Rotation Events', '中国轮动事件') }}</h2>
+    {# Operator 2026-08-04: was a 4-sentence spec paragraph (detector internals,
+       the US port's registry id, the ledger tier, four binding kills). A reader
+       needs one thing here — what an event on this rail means. The governance
+       detail lives in the masterplan; the ledger/expected-NULL disclosure is
+       still printed once, on the caveat line under the cards. #}
     <p class="rc-sub-cn">{{ t(
-      'First-class leadership handoffs across curated A-share baskets: blowoff-crash on one basket leg + fresh-low turn on a peer leg + pair ratio confirming. Port of the US Rotation Command detector (RC-R14). Display-tier context with receipts — ledgered, expected-NULL, never a buy list. Binding kills: no cycle-position confluence, no A-share reversal gating by rotation state, no Connect flow as a detector input.',
-      '精选A股篮子间的领导权交接事件：某篮子冲顶崩落 + 同类篮子自新低回升 + 两者比值确认。美国 Rotation Command 检测器的 A 股移植（RC-R14）。展示层上下文（含依据）——已入账、预期无效应声明，绝非买入清单。约束条款：不做周期位置叠加，不以轮动状态门控A股反转信号，沪深港通资金不作为检测器输入。') }}</p>
+      'When one theme tops out as a peer turns up off a low — and the pair confirms it. Context, not a buy list.',
+      '一个主题冲顶回落、同类主题自低位转强，且两者比值确认时记录。仅为背景，不是买入清单。') }}</p>
     <div id="rc-events-cn-content"><p class="rc-quiet-cn">
       <span class="l-en">Loading…</span><span class="l-zh">加载中…</span></p></div>
 <script>
@@ -1068,16 +1091,22 @@ function renderCn(ev, partJson){
     connectHtml += t('Southbound flow: —','南向资金：—')+' · ';
   }
   // Honest northbound disclosure
+  /* Operator 2026-08-04: shortened. The fact a reader needs is that northbound
+     daily flow stopped being published — the "turnover still shown / proxy
+     probationary" half described our own plumbing, not the market. */
   connectHtml += '<span class="rc-nb-disc">'
-    +t('Northbound daily flow disclosure ended Aug 2024 — turnover still shown / proxy probationary',
-       '北向每日净买入披露已于2024年8月停止——换手额仍有公布，代理指标为试用状态')
+    +t('Northbound daily flow is no longer published (since Aug 2024)',
+       '北向每日净买入自2024年8月起已停止披露')
     +'</span>';
   connectHtml += '</div>';
   html += connectHtml;
 
+  /* Operator 2026-08-04: compressed from four clauses of internal governance
+     vocabulary. The disclosure that has to survive is the honest one: nothing
+     here ranks or sizes anything, and the track record is still accruing. */
   html+='<div class="rc-caveat-cn">'
-    +t('Display/context tier — no rank, gate, or size anywhere. Events + outcomes accrue to an append-only ledger (expected-NULL until RC-R9 studies mature). Connect flows shown as context receipts only — never a detector input, confirmation criterion, or gate. as-of: ',
-       '仅展示/上下文层——不排名、不设门控、不调仓位。事件与结果计入只增账本（在RC-R9研究成熟前为预期无效应声明）。沪深港通资金仅作上下文凭据展示——从不作为检测器输入、确认标准或门控条件。截至：')
+    +t('Nothing here ranks or sizes a position. Every event is logged and graded over time — the track record is still building. As of ',
+       '此处不对任何标的排名或定仓位。每个事件都会记录并持续评分——历史成绩仍在累积。截至 ')
     +esc((ev&&ev.as_of)||'—')+'</div>';
   el.innerHTML=html;
 }
@@ -1102,10 +1131,9 @@ _rcCnObs.observe(document.documentElement,{attributes:true,attributeFilter:['dat
 </script>
   </div>
   <div id="rotation-app"></div>
-  <div class="sr-foot">
-    {{ t('Subsectors are the 同花顺 concept boards (reliable set ≥ 6 priced members); Themes are our curated A-share thematic baskets — both equal-weighted, refreshed nightly. Relative strength is measured cross-sectionally vs the median basket. On the rotation map the horizontal axis is strength vs. the market (right = stronger) and the vertical axis is whether that strength is heating up or cooling (up = heating); each trail traces where a basket has been and the arrow points where it is heading, so a longer trail is a faster mover. Click a quadrant to zoom in. Benchmark context is CSI 300. Research context only — not investment advice.',
-          '「子行业」为同花顺概念板块（可靠集 ≥ 6 只可定价成分）；「主题」为我们精选的 A 股主题篮子——均为等权，每晚刷新。相对强度以横截面方式相对中位数篮子衡量。轮动图中，横轴为相对大盘的强弱（越靠右越强），纵轴为该强度在升温还是降温（越靠上越热）；每条轨迹描绘篮子的来路，箭头指向去向，轨迹越长移动越快。点击象限可放大。基准参考为沪深300。仅供研究参考，非投资建议。') }}
-  </div>
+  {# Operator 2026-08-04: the 105-word "Subsectors are the 同花顺 concept boards…"
+     footnote is removed. It restated the axes the rotation map already labels and
+     the methodology the section heading already carries. #}
   </section>
   </section>{# /si-view moving #}
 
