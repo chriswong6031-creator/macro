@@ -5768,6 +5768,16 @@ china:
     index_constituents:
       - "000300"                    # CSI 300 (沪深300) — 300 large-caps
       - "000852"                    # CSI 1000 (中证1000) — 1000 mid-caps
+    index_fetch_timeout_s: 30       # per-attempt HTTP timeout on the CSIndex .xls. akshare's
+                                    # own reader passes NO timeout (bare requests.get), and a
+                                    # probe on 2026-08-05 hung 742s before erroring — the only
+                                    # other bound was the 165-min asia-close job cap.
+    index_shortfall_tol: 0.05       # a list >5% short of the index's known size is DEGRADED:
+                                    # the cached membership is served instead (if fresher than
+                                    # index_cache_max_age_days) and a GitHub annotation fires,
+                                    # so a transient CSIndex blip cannot shrink the universe.
+    index_cache_max_age_days: 30    # past this, a cached membership is staler than a short
+                                    # fresh one — tonight's degraded list stands instead.
     sina:
       url: https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData
       node: hs_a                    # Hu-Shen A-share board (Shanghai + Shenzhen; excludes Beijing)

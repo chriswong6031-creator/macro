@@ -80,15 +80,15 @@ def _resolve_trust(
 def _read_anchor_records(
     root: Path, *, lane: Any, deadline: float, monotonic: Callable[[], float],
 ) -> list[dict[str, Any]]:
-    frame = _companyfacts._read_ledger(
-        root.parent / "source_manifest.parquet", _ANCHOR_COLUMNS,
+    records = _companyfacts._read_source_manifest_ledger(
+        root.parent / _companyfacts.SOURCE_LEDGER_FILENAME, _ANCHOR_COLUMNS,
         max_bytes=_companyfacts.MAX_ANCHOR_LEDGER_BYTES, parent_fd=lane.parent_fd,
         deadline=deadline, monotonic=monotonic,
     )
     _companyfacts._require_deadline(
-        deadline, monotonic, label="filing anchor parquet decode",
+        deadline, monotonic, label="filing anchor ledger decode",
     )
-    return _companyfacts._records(frame)
+    return records
 
 
 def _injected_anchor_records(records: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
