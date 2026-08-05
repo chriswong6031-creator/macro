@@ -339,6 +339,9 @@ function renderRotation(){
   rotEl.innerHTML=subtitle+`<div class="rotwrap" style="margin-top:6px">${col('Weekly climbers','本周上升','▲',rot.climbers||[])}${col('Weekly fallers','本周下降','▽',rot.fallers||[])}</div>`;
 }
 function renderActNow(){
+  // #actnow is removed on the China SI Overview (the V2 act-now board owns #actnow-section there);
+  // bail cleanly so we neither hide that board (the sec.style.display='none' path below) nor throw.
+  if(!document.getElementById('actnow')) return;
   const sec=document.getElementById('actnow-section');
   if(!THEME||!THEME.act_now){
     const pulseOnly=actNowPulseBar(THEME&&THEME.themes||[]);

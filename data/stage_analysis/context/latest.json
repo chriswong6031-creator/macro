@@ -1,7 +1,7 @@
 {
   "schema": "stage_context.v1",
   "asof": "2026-08-05",
-  "built": "2026-08-05T07:51:48Z",
+  "built": "2026-08-05T14:58:16Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",

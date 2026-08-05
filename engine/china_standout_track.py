@@ -805,7 +805,13 @@ def _fwd_excess(ticker: str, d0: pd.Timestamp, h: int,
 # (charting-app docs/PREREG_WASHOUT_REVERSAL.md §5.4). Excluded from headline-
 # definition resolution below so an append ORDER can never flip grade() onto a
 # watch cohort.
-WATCH_DEFINITIONS = frozenset({"cn_reversal_watch_v1"})
+WATCH_DEFINITIONS = frozenset({
+    "cn_reversal_watch_v1",
+    # V3 R1/G0.8: the DISPLACED v2 featured rule keeps grading in parallel so the
+    # v3-vs-v2 race runs from merge day with v3 live.  It is a challenger cohort,
+    # never the headline record — excluding it here is what makes that safe.
+    "cn_prophet_v2_shadow",
+})
 
 
 def _latest_definition_frame(df: pd.DataFrame) -> tuple[pd.DataFrame, str | None]:
