@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T15:32:48.008042+00:00",
-  "count": 811,
+  "generated_at": "2026-08-05T15:47:48.685975+00:00",
+  "count": 812,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -36,6 +36,7 @@
     "Raymond James",
     "Royal London on Private Credit",
     "S&T",
+    "SEB",
     "SG Prime",
     "Safra",
     "ScotiaBank",
@@ -869,6 +870,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-evsizbjdyjp-90fc92",
+      "title": "STFV chartpackage automated G10",
+      "institution": "SEB",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:54:55Z",
+      "summary_points": [
+        "**EUR Relative Value Bias**: EUR undervalued vs JPY/GBP/USD/AUD/NOK/SEK (magnitudes: -3.0 to -0.7), signaling carry trade opportunities in JPY/GBP/USD pairs and risk-off positioning in CAD/CHF.",
+        "**USD Overvalued vs EUR**: Misvaluation metric (0.9) confirms USD overvaluation against EUR, indicating EUR/USD upside potential.",
+        "**SEK Cross Rate Misvaluation**: SEK overvalued vs 8 majors (e.g., -3.8 vs NZD, -1.5 vs EUR), highlighting significant overexposure risk and downside potential for SEK cross rates.",
+        "**Peripheral Spread Divergence**: EU peripheral spread (green) above EUR/USD signals structural weakness in peripheral Eurozone economies, driving capital flight and EUR/USD volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
