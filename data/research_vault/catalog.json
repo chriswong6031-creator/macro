@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T11:30:15.228042+00:00",
-  "count": 799,
+  "generated_at": "2026-08-05T11:45:23.812095+00:00",
+  "count": 800,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -461,6 +461,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8xhlrm4edkw-e33e3f",
+      "title": "Brazil Economic August26 Eng",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:18Z",
+      "summary_points": [
+        "**Oil Volatility from Geopolitical Tensions**: US-Iran attacks resuming, Strait of Hormuz flows near zero, Brent crude spiked to $120+ (July 2024), signaling acute energy market volatility and supply disruption risk.",
+        "**China Oil Reserve Depletion**: Strategic reserves (190.6M metric tons) face exhaustion by 2027 (base scenario) or negative stock (-31.7M metric tons) by June 2027, amplifying import dependency and supply vulnerability.",
+        "**July Inflation Surprise**: 12-month inflation down to 4.5% (vs.",
+        "expectations), driven by gasoline, reducing Fed rate hike urgency despite hawkish tone.",
+        "**Commodity Price Collapse**: Sharp decline across all categories (Brent, industrial metals, agriculture, natural gas) post-war resumption, falling from ~120-140 to 100+ levels."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 47,
       "language": "en",
       "needs_metadata": false
     },
