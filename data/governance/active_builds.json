@@ -1,50 +1,46 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-08-04T01:04:38.208568+00:00",
+  "generated_at": "2026-08-05T06:28:35.566610+00:00",
   "base": {
-    "sha": "6b666e1a385cc66574c67277b7b741bfb7c2a3d2"
+    "sha": "ced79b0e91eb94a7860aa69fa9108f10909e32b2"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
     {
-      "number": 4469,
-      "title": "publish-time lane: fix the four defects that shipped on the flagship today",
-      "head_ref": "claude/theme-mover-quality",
-      "updated_at": "2026-08-04T00:44:31Z",
+      "number": 4574,
+      "title": "fix(basket-turn): stamp forward-ledger sessions from the data plane, not the calendar (#4568 sibling)",
+      "head_ref": "claude/wizardly-khorana-317193",
+      "updated_at": "2026-08-05T06:24:15Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 18,
+      "files_count": 12,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "config/marketing.yml",
-        "engine/marketing/chart_render.py",
-        "engine/marketing/content_studio.py",
-        "engine/marketing/copywriter.py",
-        "engine/marketing/logo_cache.py",
-        "engine/marketing/movers_source.py",
-        "engine/marketing/publish_time_content.py",
-        "mockups/refs/watchlist_card/after-measured-plate.png",
-        "mockups/refs/watchlist_card/before-fixed-paper-chip.png",
-        "tests/fixtures/logos/AXON_color.png",
-        "tests/fixtures/logos/COHR_color.png",
-        "tests/fixtures/logos/JPM_color.png",
-        "tests/fixtures/logos/LITE_color.png",
-        "tests/fixtures/logos/RBLX_color.png",
-        "tests/fixtures/logos/U_color.png",
-        "tests/test_marketing_mover_stance.py",
-        "tests/test_marketing_publish_time_content.py",
-        "tests/test_watchlist_logo_contrast.py"
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml",
+        "data/basket_turn/ledger.jsonl",
+        "data/basket_turn/ledger_meta.json",
+        "data/basket_turn/ledger_quarantine.jsonl",
+        "engine/basket_turn_cohort.py",
+        "engine/basket_turn_watch.py",
+        "engine/tape_disagreement.py",
+        "scripts/heal_basket_turn_ledger.py",
+        "tests/test_basket_turn_grading.py",
+        "tests/test_basket_turn_watch.py",
+        "tests/test_heal_basket_turn_ledger.py"
       ],
-      "protected_paths_touched": []
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
     },
     {
-      "number": 4468,
-      "title": "Fix Chinese unit leaking into US track record",
-      "head_ref": "fix/us-hold-english-20260803",
-      "updated_at": "2026-08-04T00:49:39Z",
+      "number": 4573,
+      "title": "fix(market_structure): un-clip four charts \u2014 SVGs were sized by viewBox ratio, not by their wrapper",
+      "head_ref": "claude/market-structure-chart-fixes-735983",
+      "updated_at": "2026-08-05T06:13:44Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -52,33 +48,958 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "site/us_stocks.html",
-        "templates/_track_record_dlg.html.j2",
-        "tests/test_dashboard_template_render.py"
+        "site/market_structure.html",
+        "templates/market_structure.html.j2",
+        "tests/test_svg_wrapper_clipping.py"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 4465,
-      "title": "ci: register tests/test_copywriter.py in the marketing lane (unrun-suite rot)",
-      "head_ref": "ci/wire-test-copywriter",
-      "updated_at": "2026-08-04T00:04:12Z",
+      "number": 4572,
+      "title": "fix(nav+macro+china): nav layer law, quad-map collision, China desk containers",
+      "head_ref": "claude/macro-zindex-mastermind-3ccf88",
+      "updated_at": "2026-08-05T06:22:49Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
+      "files_count": 28,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "site/baskets_desk.js",
+        "site/chat.html",
+        "site/macro-desk.css",
+        "site/navigation-refresh.css",
+        "site/si_workspace_china.js",
+        "site/theme.css",
+        "templates/_baskets_desk.html.j2",
+        "templates/_navlinks.html.j2",
+        "templates/allocation.html.j2",
+        "templates/baskets_canada.html.j2",
+        "templates/baskets_china_factorwatch.html.j2",
+        "templates/baskets_desk.js",
+        "templates/baskets_hk.html.j2",
+        "templates/baskets_intl.html.j2",
+        "templates/chat.html",
+        "templates/dashboard.html.j2",
+        "templates/macro-desk.css",
+        "templates/navigation-refresh.css",
+        "templates/sector_central.html.j2",
+        "templates/sector_central_china.html.j2",
+        "templates/sector_cycles.html.j2",
+        "templates/sector_cycles_china.html.j2",
+        "templates/si_workspace_china.js",
+        "templates/subsectors.html.j2",
+        "templates/subsectors_china.html.j2",
+        "templates/theme.css",
+        "tests/test_macro_desk_surface.py",
+        "tests/test_nav_submenu_icons.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4571,
+      "title": "research(cn-prophet): rank-feature battery + S-COIL port test \u2014 what orders the admitted pool",
+      "head_ref": "claude/cn-rank-feature-battery",
+      "updated_at": "2026-08-05T06:09:30Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/cn_prophet_audit/RANK_FEATURE_BATTERY.md",
+        "research/cn_prophet_audit/rank_feature_battery.py",
+        "research/cn_prophet_audit/rank_feature_battery_results.json"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4570,
+      "title": "feat(cn-prophet): W0 rank-effectiveness block \u2014 the score grades itself nightly (multi-horizon, multi-metric, per-component)",
+      "head_ref": "claude/cn-prophet-rank-effectiveness",
+      "updated_at": "2026-08-05T06:05:52Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/cn_prophet_audit.py",
+        "tests/test_cn_prophet_audit.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4566,
+      "title": "fix(gc): un-invert _branch_merged_into_main \u2014 merge-base --is-ancestor, not empty <branch>..origin/main",
+      "head_ref": "claude/confident-pare-8dca01",
+      "updated_at": "2026-08-05T05:01:19Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 2,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "scripts/metabolism_gc.py",
+        "tests/test_metabolism_gc_and_merge_lifecycle.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4565,
+      "title": "feat(hk): committed G1 fixture regenerator with adjustment-signature receipts",
+      "head_ref": "claude/awesome-panini-283531",
+      "updated_at": "2026-08-05T04:58:17Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        "scripts/regen_hk_g1_fixture.py",
+        "tests/fixtures/hk_board_2026_07_31.json",
+        "tests/test_hk_board_rank.py",
+        "tests/test_regen_hk_g1_fixture.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4564,
+      "title": "research: W8 Ignition Layer charter + retro stand-in battery",
+      "head_ref": "claude/w8-ignition-layer-charter",
+      "updated_at": "2026-08-05T04:58:18Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/PROPHET_US_IGNITION_LAYER_W8_BY_FABLE.md",
+        "research/prophet_us_audit/ignition_standins.py",
+        "research/prophet_us_audit/ignition_standins_results.json",
+        "tests/test_ignition_standins.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4563,
+      "title": "ops: fleet worktree GC \u2014 report-first sweeper, measured packet, ratification-gated deletion",
+      "head_ref": "claude/eloquent-bouman-b8af29",
+      "updated_at": "2026-08-05T04:53:03Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 12,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "config/worktree_gc.json",
+        "research/WORKTREE_GC_POLICY.md",
+        "research/worktree_gc/2026-08-05_studio_charting.json",
+        "research/worktree_gc/2026-08-05_studio_charting.md",
+        "research/worktree_gc/2026-08-05_studio_macro.json",
+        "research/worktree_gc/2026-08-05_studio_macro.md",
+        "scripts/install_worktree_gc_launchd.sh",
+        "scripts/worktree_gc.launchd.plist",
+        "scripts/worktree_gc.py",
+        "tests/test_worktree_gc.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4562,
+      "title": "governance(registry): stable Key column for DO_NOT_REBUILD rows \u2014 citations rewritten to DNR:<KEY>",
+      "head_ref": "claude/pensive-newton-83c472",
+      "updated_at": "2026-08-05T04:35:47Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 44,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "config/compiled_kill_registry.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "engine/event_window.py",
+        "engine/metabolism/adjudicate.py",
+        "engine/neuralweb/mastermind_context.py",
+        "engine/neuralweb/world_state.py",
+        "engine/prophet_bridge.py",
+        "engine/prophet_doors.py",
+        "engine/theme_tape.py",
+        "engine/transmission_calibration.py",
+        "engine/transmission_chains.py",
+        "engine/transmission_publish.py",
+        "knowledge/transmission/SCHEMA.md",
+        "knowledge/transmission/proposed/README.md",
+        "research/CHINA_PROPHET_LOSER_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+        "research/DO_NOT_REBUILD.md",
+        "research/METABOLISM_V6_LOBE_GENESIS_BY_FABLE.md",
+        "research/MLC_W2B_STANCE_SURFACE_RECONNECT_ADJUDICATION.md",
+        "research/PAYWALL_GIT_MIRROR_EXPOSURE_ADJUDICATION.md",
+        "research/PORTFOLIO_SUPERINTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+        "research/POSTMORTEM_20260803_MAG7_RALLY_SILENCE_BY_FABLE.md",
+        "research/PROPHET_BOARD_PRIORITY_ENGINE_MASTERPLAN_BY_FABLE.md",
+        "research/PROPHET_DOORS_PREREG.md",
+        "research/PROPHET_LIVE_INTRADAY_SIGNALS_MASTERPLAN_BY_FABLE.md",
+        "research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md",
+        "research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+        "research/PSS_WSIG_SHORTLIST_BY_FABLE.md",
+        "research/RATIO_LENS_MASTERPLAN_BY_FABLE.md",
+        "research/REGIME_DISLOCATION_RECAL_PROPOSAL.md",
+        "research/TRANSMISSION_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+        "research/WATCHLIST_RISK_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+        "research/prophet_us_audit/INTAKE_FILTER_PREREG.md",
+        "research/redesign/Commodities_REDESIGN_MASTERPLAN_DRAFT.md",
+        "scripts/build_stock_library.py",
+        "scripts/compile_loop_blocklists.py",
+        "scripts/ingest_transmission_chains.py",
+        "scripts/propose_transmission_chains.py",
+        "templates/_theme_tape.html.j2",
+        "tests/test_dnr_registry_keys.py",
+        "tests/test_metabolism_propose_adjudicate.py",
+        "tests/test_theme_tape.py"
+      ],
+      "protected_paths_touched": [
+        "config/dag.yml",
+        "config/synapse.yml",
+        "engine/neuralweb/mastermind_context.py",
+        "engine/neuralweb/world_state.py"
+      ]
+    },
+    {
+      "number": 4561,
+      "title": "feat(prophet-us): \u00a74.5 scan tier \u2014 see everything, admit selectively",
+      "head_ref": "claude/prophet-us-scan-tier",
+      "updated_at": "2026-08-05T04:21:06Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 13,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "data/us_prophet_rank/README.md",
+        "engine/prophet_miss_audit.py",
+        "engine/us_context_vector.py",
+        "engine/us_scan_universe.py",
+        "research/CONTEXT_VECTOR_SCHEMA_CONTRACT.md",
+        "research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md",
+        "scripts/heal_shallow_caches.py",
+        "scripts/run_us_scan_tier.py",
+        "tests/test_prophet_miss_audit.py",
+        "tests/test_us_scan_tier.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ]
+    },
+    {
+      "number": 4558,
+      "title": "feat(prophet-us): the indicator floor is the measured warmup, not 200",
+      "head_ref": "claude/us-indicator-floor-measured-warmup",
+      "updated_at": "2026-08-05T04:18:48Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 10,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/confluence_tiers.py",
+        "engine/prophet_doors.py",
+        "engine/signal_gate.py",
+        "engine/subsector_confluence.py",
+        "engine/us_context_vector.py",
+        "research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+        "scripts/build_stock_library.py",
+        "scripts/build_subsector_membership.py",
+        "tests/test_confluence_warmup_floor.py",
+        "tests/test_signal_gate.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4557,
+      "title": "board honesty: disclose true panel price reach + same-as_of buy-lane continuity guard",
+      "head_ref": "claude/adoring-proskuriakova-1996c0",
+      "updated_at": "2026-08-05T04:13:59Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "scripts/build_stock_library.py",
+        "tests/test_csp_w5_board_staleness.py",
+        "tests/test_us_board_continuity_guard.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4556,
+      "title": "stocks index: fix light-mode charcoal hover + market-hub redesign mockup",
+      "head_ref": "claude/stock-dashboard-redesign-25f9d9",
+      "updated_at": "2026-08-05T04:49:16Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 11,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/stocks_hub.py",
+        "mockups/stocks/market_hub_src/README.md",
+        "mockups/stocks/market_hub_src/gen_mockup.py",
+        "mockups/stocks/market_hub_src/hub.css",
+        "mockups/stocks/market_hub_src/hub.html",
+        "mockups/stocks/market_hub_src/hub.js",
+        "mockups/stocks/market_hub_v1.html",
+        "scripts/build_ticker_pages.py",
+        "templates/ticker_index.html.j2",
+        "tests/test_marketing_hot_tape_radar.py",
+        "tests/test_stocks_hub.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4555,
+      "title": "prophet-us W7: grade every ranked name \u2014 all picks, both cohorts, four horizons (charter + data half)",
+      "head_ref": "prophet-us/w7-all-picks-grades",
+      "updated_at": "2026-08-05T03:56:32Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 14,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "data/us_prophet_rank/README.md",
+        "engine/prophet_miss_audit.py",
+        "engine/us_context_vector.py",
+        "engine/us_prophet_grades.py",
+        "research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+        "research/US_ALL_PICKS_SURFACE_CONTRACT.md",
+        "scripts/grade_us_prophet_candidates.py",
+        "tests/test_prophet_miss_audit.py",
+        "tests/test_us_prophet_grades.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml"
+      ]
+    },
+    {
+      "number": 4554,
+      "title": "board ledger: row-persistence law + outage continuity (the VALE class)",
+      "head_ref": "claude/board-ledger-row-persistence-2026-08-05",
+      "updated_at": "2026-08-05T04:23:09Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 7,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/track_ledger.py",
+        "research/prophet_us_audit/BOARD_CONTINUITY_FORENSIC_2026-08-05.md",
+        "research/prophet_us_audit/why_not_receipts_2026-08-05.json",
+        "scripts/grade_us_board.py",
+        "templates/_track_record_dlg.html.j2",
+        "tests/test_track_ledger_emitters.py",
+        "tests/test_us_board_ledger_continuity.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4553,
+      "title": "theme tape: fix the clamped-label overlap, compact it, move it below the board",
+      "head_ref": "claude/page-obstruction-formatting-ad6f1d",
+      "updated_at": "2026-08-05T03:17:26Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "templates/_theme_tape.html.j2",
+        "templates/dashboard.html.j2",
+        "tests/test_theme_tape.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4550,
+      "title": "ledger: entry_status disclosure law \u2014 no silently-absent stamp on graded rows",
+      "head_ref": "claude/quirky-meninsky-f5a7ef",
+      "updated_at": "2026-08-05T03:17:14Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/entry_signal.py",
+        "scripts/build_stock_library.py",
+        "scripts/grade_us_board.py",
+        "tests/test_entry_status_stamping.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4549,
+      "title": "lanes: normalize site/ HTML in the six publishing lanes #4492 missed",
+      "head_ref": "claude/amazing-shtern-5488a6",
+      "updated_at": "2026-08-05T03:17:07Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 9,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/commodity-sentinel.yml",
+        ".github/workflows/earnings-public-wire.yml",
+        ".github/workflows/press-publish.yml",
+        ".github/workflows/sentinel.yml",
+        ".github/workflows/special-sits-backfill.yml",
+        ".github/workflows/whitehouse-sentinel.yml",
+        "config/dag.yml",
+        "tests/test_asset_stamp_lane_order.py",
+        "tests/test_press_workflow.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/commodity-sentinel.yml",
+        ".github/workflows/earnings-public-wire.yml",
+        ".github/workflows/press-publish.yml",
+        ".github/workflows/sentinel.yml",
+        ".github/workflows/special-sits-backfill.yml",
+        ".github/workflows/whitehouse-sentinel.yml",
+        "config/dag.yml"
+      ]
+    },
+    {
+      "number": 4548,
+      "title": "registry(dnr): FRESH_TICKS widening kill row (third-look null, #4546/#4547) + compiled blocklist regen",
+      "head_ref": "claude/dnr-fresh-ticks-kill-080428",
+      "updated_at": "2026-08-05T04:23:13Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "config/compiled_kill_registry.yml",
+        "config/signal_foundry_blocklist.yml",
+        "research/DO_NOT_REBUILD.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4547,
+      "title": "prophet-us: label-grading battery \u2014 entry-status ladder, veto-day labels, ran lane (CN\u2192US handoff \u00a71)",
+      "head_ref": "claude/us-label-grading-battery-lgb1",
+      "updated_at": "2026-08-05T03:52:29Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/prophet_us_audit/label_grading_battery.py",
+        "research/prophet_us_audit/label_grading_battery_results.json",
+        "research/prophet_us_audit/test_label_grading_battery.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4546,
+      "title": "research(prophet-us): W5.2 FRESH_TICKS-extension decision packet \u2014 the gradient does not extend, and it was board selection",
+      "head_ref": "claude/fresh-ticks-extension-packet-w52",
+      "updated_at": "2026-08-05T03:52:31Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/prophet_us_audit/FRESH_TICKS_EXTENSION_PREREG.md",
+        "research/prophet_us_audit/fresh_ticks_extension_replay.py",
+        "research/prophet_us_audit/fresh_ticks_extension_replay_results.json",
+        "tests/test_fresh_ticks_extension_replay.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4545,
+      "title": "ci: stage the #4331-deferred prophet suites \u2014 6 dark suites join the two #4331 packs",
+      "head_ref": "claude/frosty-jang-c1b4a4",
+      "updated_at": "2026-08-05T03:16:41Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml",
+        "docs/UNRUN_TEST_CENSUS.md",
+        "research/CONTEXT_VECTOR_SCHEMA_CONTRACT.md"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "number": 4544,
+      "title": "research(prophet): CN\u2192US handoff \u2014 method, stand-in pattern, and playbook from the China breakthrough",
+      "head_ref": "claude/cn-to-us-prophet-handoff",
+      "updated_at": "2026-08-04T23:56:52Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNKNOWN",
       "files_count": 1,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        ".github/ci/legacy-jobs.yml"
+        "research/CN_TO_US_PROPHET_HANDOFF_2026-08-04.md"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 4462,
-      "title": "mover copy: trend-context stance \u2014 no more 'let it settle' on washed-out reversals (FSLR postmortem)",
-      "head_ref": "claude/mover-copy-context",
-      "updated_at": "2026-08-03T23:38:23Z",
+      "number": 4535,
+      "title": "feat(popups): rebuild every hover/info card on Sector Intelligence",
+      "head_ref": "claude/popup-container-redesign-9a6528",
+      "updated_at": "2026-08-05T03:16:30Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 41,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "mockups/popup-redesign-2026-08-04/1-rotation-card-dark-en.png",
+        "mockups/popup-redesign-2026-08-04/1-rotation-card-dark-zh.png",
+        "mockups/popup-redesign-2026-08-04/1-rotation-card-light-en.png",
+        "mockups/popup-redesign-2026-08-04/1-rotation-card-light-zh.png",
+        "mockups/popup-redesign-2026-08-04/2-events-lane-dark-en.png",
+        "mockups/popup-redesign-2026-08-04/2-events-lane-dark-zh.png",
+        "mockups/popup-redesign-2026-08-04/2-events-lane-light-en.png",
+        "mockups/popup-redesign-2026-08-04/2-events-lane-light-zh.png",
+        "mockups/popup-redesign-2026-08-04/3-help-explainer-dark-en.png",
+        "mockups/popup-redesign-2026-08-04/3-help-explainer-dark-zh.png",
+        "mockups/popup-redesign-2026-08-04/3-help-explainer-light-en.png",
+        "mockups/popup-redesign-2026-08-04/3-help-explainer-light-zh.png",
+        "mockups/popup-redesign-2026-08-04/4-desk-watch-dark-en.png",
+        "mockups/popup-redesign-2026-08-04/4-desk-watch-dark-zh.png",
+        "mockups/popup-redesign-2026-08-04/4-desk-watch-light-en.png",
+        "mockups/popup-redesign-2026-08-04/4-desk-watch-light-zh.png",
+        "mockups/popup-redesign-2026-08-04/5-time-machine-dark-en.png",
+        "mockups/popup-redesign-2026-08-04/5-time-machine-dark-zh.png",
+        "mockups/popup-redesign-2026-08-04/5-time-machine-light-en.png",
+        "mockups/popup-redesign-2026-08-04/5-time-machine-light-zh.png",
+        "mockups/popup-redesign-2026-08-04/6-heatmap-card-dark-en.png",
+        "mockups/popup-redesign-2026-08-04/6-heatmap-card-dark-zh.png",
+        "mockups/popup-redesign-2026-08-04/6-heatmap-card-light-en.png",
+        "mockups/popup-redesign-2026-08-04/6-heatmap-card-light-zh.png",
+        "mockups/popup-redesign-2026-08-04/7-lens-mobile-sheet.png",
+        "site/desk_watch.js",
+        "site/heatmap.js",
+        "site/rotation_events.js",
+        "site/si_workspace.js",
+        "site/si_workspace_china.js",
+        "site/subsector_rotation.js",
+        "site/theme.js",
+        "site/time_machine.js",
+        "templates/desk_watch.js",
+        "templates/heatmap.js",
+        "templates/rotation_events.js",
+        "templates/si_workspace.js",
+        "templates/si_workspace_china.js",
+        "templates/subsector_rotation.js",
+        "templates/theme.js",
+        "templates/time_machine.js"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4533,
+      "title": "fix(rotation): persist leg display names on closure rows",
+      "head_ref": "claude/silly-feistel-3d3acc",
+      "updated_at": "2026-08-05T03:16:24Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/rotation_events.py",
+        "site/rotation_events.js",
+        "templates/rotation_events.js",
+        "tests/test_rotation_events.py",
+        "tests/test_rotation_events_v2.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4532,
+      "title": "ledger hygiene: per-column tape-flow commits, retire species_id, wire archetype, coverage map",
+      "head_ref": "claude/eager-jennings-95d54f",
+      "updated_at": "2026-08-05T03:16:18Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 8,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "config/synapse.yml",
+        "data/us_board_ledger/README.md",
+        "engine/neuralweb/context_api.py",
+        "engine/tape_flow_stamp.py",
+        "scripts/grade_us_board.py",
+        "scripts/stamp_options_state.py",
+        "tests/test_grade_us_board.py",
+        "tests/test_tape_flow_stamp.py"
+      ],
+      "protected_paths_touched": [
+        "config/synapse.yml",
+        "engine/neuralweb/context_api.py"
+      ]
+    },
+    {
+      "number": 4525,
+      "title": "china_connect: retire dead northbound flow columns, heal fake-zero holdings, add column-grain dark alarms",
+      "head_ref": "claude/recursing-elgamal-76391e",
+      "updated_at": "2026-08-04T18:32:54Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 6,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "LIMITATIONS.md",
+        "collectors/base.py",
+        "collectors/china_connect.py",
+        "data/china_connect/northbound.parquet",
+        "engine/china_inputs.py",
+        "tests/test_china_connect_contracts.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4524,
+      "title": "feat(cn-prophet): W-C plumbing \u2014 PIT membership history, continuation-watch ledger, Neural Web + chat visibility",
+      "head_ref": "claude/cn-prophet-wc-plumbing-20260804",
+      "updated_at": "2026-08-04T18:46:04Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 12,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md",
+        "engine/basket_membership_pit.py",
+        "engine/china_continuation_watch.py",
+        "engine/china_standout_track.py",
+        "engine/neuralweb/market_packet.py",
+        "scripts/build_baskets_china_ths.py",
+        "scripts/build_china_library.py",
+        "tests/test_basket_membership_pit.py",
+        "tests/test_china_continuation_watch.py",
+        "tests/test_market_packet.py",
+        "tests/test_signal_bus_doc.py"
+      ],
+      "protected_paths_touched": [
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md",
+        "engine/neuralweb/market_packet.py"
+      ]
+    },
+    {
+      "number": 4521,
+      "title": "research(cn-prophet): v3 era-retro \u2014 the stand-in race verdict while the forward shadow matures",
+      "head_ref": "claude/china-prophet-v3-era-retro-08041100",
+      "updated_at": "2026-08-04T18:35:19Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/cn_prophet_audit/V3_ERA_RETRO.md",
+        "research/cn_prophet_audit/v3_era_retro.py",
+        "research/cn_prophet_audit/v3_era_retro_results.json"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4520,
+      "title": "research(cn-prophet): flow/positioning ex-ante battery \u2014 which unwired stores separated losers at admission",
+      "head_ref": "claude/cn-flow-exante-battery",
+      "updated_at": "2026-08-04T19:02:00Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/cn_prophet_audit/FLOW_EXANTE_BATTERY.md",
+        "research/cn_prophet_audit/flow_exante_battery.py",
+        "research/cn_prophet_audit/flow_exante_battery_results.json"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4519,
+      "title": "Open every page shell to anonymous visitors; footer fixes; retire the legacy auth modal",
+      "head_ref": "claude/nav-ungate-auth-sheet-3d8a4e",
+      "updated_at": "2026-08-04T18:28:26Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 18,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "app/deploy/Caddyfile",
+        "config/site_access.yml",
+        "site/about.html",
+        "site/index.html",
+        "site/plans.html",
+        "site/support.html",
+        "site/theme.js",
+        "site/unsubscribe.html",
+        "templates/_public_footer.html.j2",
+        "templates/about.html",
+        "templates/index.html",
+        "templates/theme.js",
+        "tests/test_china_heatmap_gate.py",
+        "tests/test_regwall_json_gate.py",
+        "tests/test_site_access_boundary.py",
+        "tests/test_stock_seasonality_page.py",
+        "tests/test_support_page.py",
+        "tests/test_unsubscribe_page.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4517,
+      "title": "research(cn-prophet): Superintelligence Roadmap \u2014 composing the six layers, fast-track evidence doctrine, Neural Web wiring",
+      "head_ref": "claude/cn-prophet-si-roadmap",
+      "updated_at": "2026-08-05T05:45:55Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/PROPHET_CN_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4512,
+      "title": "fix(nav,i18n,ui): translate the market mega menus; unstick the mobile country drill; operator defect sweep",
+      "head_ref": "claude/mega-menu-translations-fixes-e7daa8",
+      "updated_at": "2026-08-04T18:52:02Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 35,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "data/baskets_china/membership.json",
+        "engine/baskets_region.py",
+        "engine/china_intel_hub.py",
+        "engine/china_policy_transmission.py",
+        "engine/i18n.py",
+        "engine/theme_scoring.py",
+        "scripts/seed_china_baskets.py",
+        "site/baskets_desk.js",
+        "site/heatmap.js",
+        "site/nav_market.js",
+        "site/navigation-refresh.css",
+        "site/rotation_events.js",
+        "site/si_workspace.js",
+        "site/theme.js",
+        "site/unsubscribe.html",
+        "templates/basket_detail.html.j2",
+        "templates/baskets_china_factorwatch.html.j2",
+        "templates/baskets_desk.js",
+        "templates/china.html.j2",
+        "templates/china_intel.html.j2",
+        "templates/china_mechanics.html.j2",
+        "templates/heatmap.js",
+        "templates/nav_market.js",
+        "templates/navigation-refresh.css",
+        "templates/options.html.j2",
+        "templates/rotation_events.js",
+        "templates/sector_central.html.j2",
+        "templates/sector_central_china.html.j2",
+        "templates/si_workspace.js",
+        "templates/theme.js",
+        "tests/test_nav_hover_bridge.py",
+        "tests/test_navigation_refresh.py",
+        "tests/test_oip_w1_nav_regroup.py",
+        "tests/test_sector_intelligence_page.py",
+        "tests/test_si_workspace_shell.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4509,
+      "title": "feat(china-prophet): V3 Relay Engine \u2014 prime-window featured, bounded theme_timing authority, relay-position chase guard (R1-R3, operator-ratified)",
+      "head_ref": "claude/china-prophet-v3-relay-08040037",
+      "updated_at": "2026-08-04T18:06:09Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 13,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/china_board_rank.py",
+        "engine/china_microstructure.py",
+        "engine/china_signals.py",
+        "engine/china_standout_track.py",
+        "engine/cn_v3_tripwires.py",
+        "engine/us_board_rank.py",
+        "scripts/build_china_library.py",
+        "templates/china.html.j2",
+        "tests/test_china_alpha_w2b.py",
+        "tests/test_china_board_rank.py",
+        "tests/test_china_board_rank_v3.py",
+        "tests/test_china_microstructure.py",
+        "tests/test_us_board_rank.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4507,
+      "title": "research(cn-prophet): CN exit-policy horse race \u2014 day-3 review family vs H=10 incumbent",
+      "head_ref": "claude/cn-exit-policy-study-7a2e10",
+      "updated_at": "2026-08-04T18:06:36Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/cn_prophet_audit/CN_EXIT_POLICY_STUDY.md",
+        "research/cn_prophet_audit/cn_exit_policy_results.json",
+        "research/cn_prophet_audit/cn_exit_policy_study.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4506,
+      "title": "research(cn-prophet): 12-month chase\u00d7theme-ignition study \u2014 phase-0 for relay-aware admission",
+      "head_ref": "claude/cn-ignition-chase-study-20260804",
+      "updated_at": "2026-08-04T17:54:05Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/cn_prophet_audit/IGNITION_CHASE_STUDY.md",
+        "research/cn_prophet_audit/ignition_chase_results.json",
+        "research/cn_prophet_audit/ignition_chase_study.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4498,
+      "title": "Light estate rollout: depth recipe in the operative soft-contrast palette + repeatable light sweep tool",
+      "head_ref": "claude/light-estate-palette",
+      "updated_at": "2026-08-04T18:48:30Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 14,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "mockups/refs/light-mode/estate/alerts_after.png",
+        "mockups/refs/light-mode/estate/alerts_before.png",
+        "mockups/refs/light-mode/estate/baskets_after.png",
+        "mockups/refs/light-mode/estate/hk_after.png",
+        "mockups/refs/light-mode/estate/hk_before.png",
+        "mockups/refs/light-mode/estate/sector_central_after.png",
+        "mockups/refs/light-mode/estate/sector_central_before.png",
+        "mockups/refs/light-mode/estate/subsectors_after.png",
+        "mockups/refs/light-mode/estate/subsectors_before.png",
+        "mockups/refs/light-mode/estate/us_stocks_after.png",
+        "mockups/refs/light-mode/estate/us_stocks_before.png",
+        "scripts/light_mode_sweep.py",
+        "site/theme.js",
+        "templates/theme.js"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4497,
+      "title": "sector_central: de-tint the seasonality chip in the light + zh layers",
+      "head_ref": "claude/agitated-swartz-5cca97",
+      "updated_at": "2026-08-04T18:19:51Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "templates/sector_central.html.j2"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4496,
+      "title": "refactor(prophet-card): drop the dead verb-chip tip payload from the five board builders",
+      "head_ref": "claude/eager-williamson-19151b",
+      "updated_at": "2026-08-04T17:48:11Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -86,32 +1007,972 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "engine/marketing/content_studio.py",
-        "engine/marketing/copywriter.py",
-        "engine/marketing/movers_source.py",
-        "engine/marketing/publish_time_content.py",
-        "tests/test_marketing_copy_v2.py",
-        "tests/test_marketing_publish_time_content.py"
+        "templates/_prophet_card.html.j2",
+        "templates/canada.html.j2",
+        "templates/china.html.j2",
+        "templates/dashboard.html.j2",
+        "templates/hk.html.j2",
+        "templates/intl.html.j2"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4493,
+      "title": "Light mode as a first-class design: us_stocks + subsectors redesign, emoji \u2192 monoline icons",
+      "head_ref": "claude/light-mode-design-issues-e2c4c6",
+      "updated_at": "2026-08-04T18:39:20Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 12,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "docs/DESIGN_DOCTRINE.md",
+        "mockups/refs/light-mode/pair_sub_hero.png",
+        "mockups/refs/light-mode/pair_us_actionboard.png",
+        "mockups/refs/light-mode/pair_us_recent_tables.png",
+        "mockups/refs/light-mode/zoom_after_sub_hero.png",
+        "mockups/refs/light-mode/zoom_after_us_act.png",
+        "mockups/refs/light-mode/zoom_after_us_tables.png",
+        "site/subsectors.js",
+        "templates/_icons.html.j2",
+        "templates/dashboard.html.j2",
+        "templates/subsectors.html.j2",
+        "templates/subsectors.js"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4490,
+      "title": "fix: stop caching auth outages as logouts; lift \u26a0 popover above sibling cards",
+      "head_ref": "claude/hk-stocks-logout-bug-06fb6d",
+      "updated_at": "2026-08-04T19:00:34Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "app/main.py",
+        "templates/_prophet_card.html.j2",
+        "tests/test_prophet_card_shared.py",
+        "tests/test_uid_verify_cache.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 4473,
+      "title": "hk board: anchor the vetoed + ran move on the confirmation close",
+      "head_ref": "claude/hk-vetoed-lane-honest-anchor",
+      "updated_at": "2026-08-04T12:08:08Z",
+      "is_draft": false,
+      "merge_state": "UNKNOWN",
+      "merge_state_raw": "UNKNOWN",
+      "files_count": 8,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/hk_board_rank.py",
+        "engine/signal_quality.py",
+        "engine/us_board_rank.py",
+        "templates/hk.html.j2",
+        "tests/fixtures/hk_board_2026_07_31.json",
+        "tests/test_hk_board_rank.py",
+        "tests/test_hk_board_ui.py",
+        "tests/test_signal_quality_no_leak.py"
       ],
       "protected_paths_touched": []
     }
   ],
   "collisions": [
     {
-      "pr_a": 4469,
-      "pr_b": 4462,
+      "pr_a": 4535,
+      "pr_b": 4512,
       "shared_files": [
-        "engine/marketing/content_studio.py",
-        "engine/marketing/copywriter.py",
-        "engine/marketing/movers_source.py",
-        "engine/marketing/publish_time_content.py",
-        "tests/test_marketing_publish_time_content.py"
+        "site/heatmap.js",
+        "site/rotation_events.js",
+        "site/si_workspace.js",
+        "site/theme.js",
+        "templates/heatmap.js",
+        "templates/rotation_events.js",
+        "templates/si_workspace.js",
+        "templates/theme.js"
       ],
-      "shared_count": 5,
+      "shared_count": 8,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4572,
+      "pr_b": 4512,
+      "shared_files": [
+        "site/baskets_desk.js",
+        "site/navigation-refresh.css",
+        "templates/baskets_china_factorwatch.html.j2",
+        "templates/baskets_desk.js",
+        "templates/navigation-refresh.css",
+        "templates/sector_central.html.j2",
+        "templates/sector_central_china.html.j2"
+      ],
+      "shared_count": 7,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4561,
+      "pr_b": 4555,
+      "shared_files": [
+        ".github/workflows/daily.yml",
+        "config/dag.yml",
+        "config/synapse.yml",
+        "data/us_prophet_rank/README.md",
+        "engine/prophet_miss_audit.py",
+        "engine/us_context_vector.py",
+        "tests/test_prophet_miss_audit.py"
+      ],
+      "shared_count": 7,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4562,
+      "pr_b": 4561,
+      "shared_files": [
+        "config/dag.yml",
+        "config/synapse.yml",
+        "research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md"
+      ],
+      "shared_count": 3,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4562,
+      "pr_b": 4558,
+      "shared_files": [
+        "engine/prophet_doors.py",
+        "research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+        "scripts/build_stock_library.py"
+      ],
+      "shared_count": 3,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4562,
+      "pr_b": 4555,
+      "shared_files": [
+        "config/dag.yml",
+        "config/synapse.yml",
+        "research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md"
+      ],
+      "shared_count": 3,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4519,
+      "pr_b": 4512,
+      "shared_files": [
+        "site/theme.js",
+        "site/unsubscribe.html",
+        "templates/theme.js"
+      ],
+      "shared_count": 3,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4574,
+      "pr_b": 4555,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4574,
+      "pr_b": 4545,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4572,
+      "pr_b": 4535,
+      "shared_files": [
+        "site/si_workspace_china.js",
+        "templates/si_workspace_china.js"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4572,
+      "pr_b": 4493,
+      "shared_files": [
+        "templates/dashboard.html.j2",
+        "templates/subsectors.html.j2"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4565,
+      "pr_b": 4473,
+      "shared_files": [
+        "tests/fixtures/hk_board_2026_07_31.json",
+        "tests/test_hk_board_rank.py"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4563,
+      "pr_b": 4562,
+      "shared_files": [
+        "AGENTS.md",
+        "CLAUDE.md"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4562,
+      "pr_b": 4553,
+      "shared_files": [
+        "templates/_theme_tape.html.j2",
+        "tests/test_theme_tape.py"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4562,
+      "pr_b": 4548,
+      "shared_files": [
+        "config/compiled_kill_registry.yml",
+        "research/DO_NOT_REBUILD.md"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4558,
+      "pr_b": 4555,
+      "shared_files": [
+        "engine/us_context_vector.py",
+        "research/PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4555,
+      "pr_b": 4545,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml",
+        ".github/workflows/ci.yml"
+      ],
+      "shared_count": 2,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4535,
+      "pr_b": 4533,
+      "shared_files": [
+        "site/rotation_events.js",
+        "templates/rotation_events.js"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4535,
+      "pr_b": 4519,
+      "shared_files": [
+        "site/theme.js",
+        "templates/theme.js"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4535,
+      "pr_b": 4498,
+      "shared_files": [
+        "site/theme.js",
+        "templates/theme.js"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4533,
+      "pr_b": 4512,
+      "shared_files": [
+        "site/rotation_events.js",
+        "templates/rotation_events.js"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4524,
+      "pr_b": 4509,
+      "shared_files": [
+        "engine/china_standout_track.py",
+        "scripts/build_china_library.py"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4519,
+      "pr_b": 4498,
+      "shared_files": [
+        "site/theme.js",
+        "templates/theme.js"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4512,
+      "pr_b": 4498,
+      "shared_files": [
+        "site/theme.js",
+        "templates/theme.js"
+      ],
+      "shared_count": 2,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4574,
+      "pr_b": 4565,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4572,
+      "pr_b": 4553,
+      "shared_files": [
+        "templates/dashboard.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4572,
+      "pr_b": 4497,
+      "shared_files": [
+        "templates/sector_central.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4572,
+      "pr_b": 4496,
+      "shared_files": [
+        "templates/dashboard.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4565,
+      "pr_b": 4555,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4565,
+      "pr_b": 4545,
+      "shared_files": [
+        ".github/ci/legacy-jobs.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4562,
+      "pr_b": 4557,
+      "shared_files": [
+        "scripts/build_stock_library.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4562,
+      "pr_b": 4550,
+      "shared_files": [
+        "scripts/build_stock_library.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4562,
+      "pr_b": 4549,
+      "shared_files": [
+        "config/dag.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4562,
+      "pr_b": 4532,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4562,
+      "pr_b": 4524,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4561,
+      "pr_b": 4558,
+      "shared_files": [
+        "engine/us_context_vector.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4561,
+      "pr_b": 4549,
+      "shared_files": [
+        "config/dag.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4561,
+      "pr_b": 4545,
+      "shared_files": [
+        "research/CONTEXT_VECTOR_SCHEMA_CONTRACT.md"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4561,
+      "pr_b": 4532,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4561,
+      "pr_b": 4524,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4558,
+      "pr_b": 4557,
+      "shared_files": [
+        "scripts/build_stock_library.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4558,
+      "pr_b": 4550,
+      "shared_files": [
+        "scripts/build_stock_library.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4557,
+      "pr_b": 4550,
+      "shared_files": [
+        "scripts/build_stock_library.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4555,
+      "pr_b": 4549,
+      "shared_files": [
+        "config/dag.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4555,
+      "pr_b": 4532,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4555,
+      "pr_b": 4524,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4554,
+      "pr_b": 4550,
+      "shared_files": [
+        "scripts/grade_us_board.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4554,
+      "pr_b": 4532,
+      "shared_files": [
+        "scripts/grade_us_board.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4553,
+      "pr_b": 4496,
+      "shared_files": [
+        "templates/dashboard.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4553,
+      "pr_b": 4493,
+      "shared_files": [
+        "templates/dashboard.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4550,
+      "pr_b": 4532,
+      "shared_files": [
+        "scripts/grade_us_board.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4532,
+      "pr_b": 4524,
+      "shared_files": [
+        "config/synapse.yml"
+      ],
+      "shared_count": 1,
+      "any_protected": true
+    },
+    {
+      "pr_a": 4512,
+      "pr_b": 4509,
+      "shared_files": [
+        "templates/china.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4512,
+      "pr_b": 4497,
+      "shared_files": [
+        "templates/sector_central.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4512,
+      "pr_b": 4496,
+      "shared_files": [
+        "templates/china.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4509,
+      "pr_b": 4496,
+      "shared_files": [
+        "templates/china.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4509,
+      "pr_b": 4473,
+      "shared_files": [
+        "engine/us_board_rank.py"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4496,
+      "pr_b": 4493,
+      "shared_files": [
+        "templates/dashboard.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4496,
+      "pr_b": 4490,
+      "shared_files": [
+        "templates/_prophet_card.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 4496,
+      "pr_b": 4473,
+      "shared_files": [
+        "templates/hk.html.j2"
+      ],
+      "shared_count": 1,
       "any_protected": false
     }
   ],
   "recent_merged": [
+    {
+      "number": 4569,
+      "title": "fix(ui): sync plan features to the landing, unpack the stretched vignettes",
+      "merged_at": "2026-08-05T06:13:46Z"
+    },
+    {
+      "number": 4568,
+      "title": "fix(ignition): make the suspended radar's background record gradeable before first maturity",
+      "merged_at": "2026-08-05T06:11:12Z"
+    },
+    {
+      "number": 4567,
+      "title": "ci: end the HK board pair's darkness \u2014 unrun-hk-board wires test_hk_board_rank + test_hk_board_ui",
+      "merged_at": "2026-08-05T05:14:52Z"
+    },
+    {
+      "number": 4560,
+      "title": "fix(collect): categorical per-source isolation at _run_one \u2014 escapes from run_adapter must never sever the nightly commit path",
+      "merged_at": "2026-08-05T06:27:03Z"
+    },
+    {
+      "number": 4559,
+      "title": "fix(hk): re-pin G1 fixture after 2338.HK dividend adjustment \u2014 heals base-side red pinning 8 armed PRs",
+      "merged_at": "2026-08-05T03:15:42Z"
+    },
+    {
+      "number": 4552,
+      "title": "fix(brain): Mastermind can see HK / China / Canada charts, technicals and fundamentals",
+      "merged_at": "2026-08-05T04:28:41Z"
+    },
+    {
+      "number": 4551,
+      "title": "research: NewsImpact event-impact teardown \u2192 stock dossier + Company Intelligence",
+      "merged_at": "2026-08-05T02:04:44Z"
+    },
+    {
+      "number": 4543,
+      "title": "refactor(cn-prophet): rename candidate-store stamp column date -> stamp_date (contract \u00a73.1)",
+      "merged_at": "2026-08-04T23:36:31Z"
+    },
+    {
+      "number": 4542,
+      "title": "engine: memoize name_score_grader close-series resolution (grade() byte-identical, ~17\u00d7 faster)",
+      "merged_at": "2026-08-04T23:44:28Z"
+    },
+    {
+      "number": 4541,
+      "title": "tests: fix sys.modules stub leak in test_radar_single_writer",
+      "merged_at": "2026-08-04T23:30:32Z"
+    },
+    {
+      "number": 4540,
+      "title": "prophet-us: US Context Vector nightly PIT store (roadmap \u00a72 keystone)",
+      "merged_at": "2026-08-04T16:56:13Z"
+    },
+    {
+      "number": 4539,
+      "title": "fix(cn-track): adjudicate reversal_watch shelf as known cohort \u2014 heals base-side ci-pack-3 red pinning every PR",
+      "merged_at": "2026-08-04T15:05:15Z"
+    },
+    {
+      "number": 4538,
+      "title": "theme tape: join the Foresight Desk (roadmap \u00a74.2, display-tier)",
+      "merged_at": "2026-08-04T16:11:57Z"
+    },
+    {
+      "number": 4537,
+      "title": "name_score adjudication instruments: nightly scorecard + frozen-frame P@k benchmark + intake prereg (roadmap \u00a74.4)",
+      "merged_at": "2026-08-04T16:37:09Z"
+    },
+    {
+      "number": 4536,
+      "title": "tests: scope build_theme_addons engine stubs via monkeypatch (ordering pollution)",
+      "merged_at": "2026-08-04T14:00:54Z"
+    },
+    {
+      "number": 4534,
+      "title": "fix(collect): duck-type-safe run_adapter \u2014 optional status protocol crashed the nightly collect job",
+      "merged_at": "2026-08-04T16:07:00Z"
+    },
+    {
+      "number": 4531,
+      "title": "tests: make collect_failfast hermetic (no network, no data writes)",
+      "merged_at": "2026-08-04T12:55:50Z"
+    },
+    {
+      "number": 4530,
+      "title": "governance(metabolism): roster-cap reconciliation (66 vs 75) + wire the dark roster governor",
+      "merged_at": "2026-08-04T13:24:02Z"
+    },
+    {
+      "number": 4529,
+      "title": "foresight: reconcile t1_fingerprint health leg with fingerprint-variant stages",
+      "merged_at": "2026-08-04T13:26:38Z"
+    },
+    {
+      "number": 4528,
+      "title": "feat(prophet-doors): record relay/turnover/foresight features on flags \u2014 prereg addendum, zero fire-definition change",
+      "merged_at": "2026-08-04T12:58:37Z"
+    },
+    {
+      "number": 4527,
+      "title": "feat(earnings): replace the dead earnings feed with a real-time SEC EDGAR wire",
+      "merged_at": "2026-08-04T12:55:56Z"
+    },
+    {
+      "number": 4526,
+      "title": "research(prophet-us): Superintelligence Roadmap \u2014 composition layers, context vector, ladder + four stand-ins measured",
+      "merged_at": "2026-08-04T12:46:05Z"
+    },
+    {
+      "number": 4523,
+      "title": "cn_prophet_audit: pin v1_loser_audit to GRADE_ASOF frozen replay",
+      "merged_at": "2026-08-04T12:21:13Z"
+    },
+    {
+      "number": 4518,
+      "title": "macro light mode: lift 25 sub-floor text inks to clear WCAG 4.5:1",
+      "merged_at": "2026-08-04T11:40:23Z"
+    },
+    {
+      "number": 4516,
+      "title": "Fix the stocks dossier chrome: dead nav, overlapping cards, bespoke buttons",
+      "merged_at": "2026-08-04T11:32:43Z"
+    },
+    {
+      "number": 4515,
+      "title": "china-si: adopt the US workspace shell + verdict hero, and revive the dead conviction board",
+      "merged_at": "2026-08-04T11:26:45Z"
+    },
+    {
+      "number": 4514,
+      "title": "Light r3: macro.html depth recipe, china macro \u00a75.8 audit, hub orb kill",
+      "merged_at": "2026-08-04T11:17:35Z"
+    },
+    {
+      "number": 4513,
+      "title": "wire volume: remove the per-account breaking caps",
+      "merged_at": "2026-08-04T11:11:41Z"
+    },
+    {
+      "number": 4511,
+      "title": "feat(wire): a cold read \u2014 can a stranger resolve this post? (ships in shadow)",
+      "merged_at": "2026-08-04T10:35:36Z"
+    },
+    {
+      "number": 4510,
+      "title": "publish-time lane: guard hard-indexed lane keys against _DEFAULTS",
+      "merged_at": "2026-08-04T09:29:36Z"
+    },
+    {
+      "number": 4508,
+      "title": "fix(tests): de-bomb the codex insertion-order test \u2014 pin is_cooling, split the cooldown contract",
+      "merged_at": "2026-08-04T08:57:58Z"
+    },
+    {
+      "number": 4505,
+      "title": "fix(ship-loop): live gate asks /api/health the field that can answer for this merge",
+      "merged_at": "2026-08-04T11:14:44Z"
+    },
+    {
+      "number": 4504,
+      "title": "fix(ship-guard): make the escape ladders reachable \u2014 the report was undetectable, not unfiled",
+      "merged_at": "2026-08-04T11:14:47Z"
+    },
+    {
+      "number": 4503,
+      "title": "feat(cn-prophet): W0 loser+miss telemetry engine + W1 ledger hygiene (ops-tier, zero authority)",
+      "merged_at": "2026-08-04T09:11:18Z"
+    },
+    {
+      "number": 4502,
+      "title": "china stocks: adopt the US stock-dashboard header (shared partial)",
+      "merged_at": "2026-08-04T11:11:45Z"
+    },
+    {
+      "number": 4501,
+      "title": "fix(hk): honest block copy + open the ran lane's above200 door",
+      "merged_at": "2026-08-04T08:53:07Z"
+    },
+    {
+      "number": 4500,
+      "title": "research(china-prophet): V1 loser forensics + missed-winner funnel \u2014 why our buys crashed, what V2 still carries",
+      "merged_at": "2026-08-04T09:17:35Z"
+    },
+    {
+      "number": 4499,
+      "title": "test(hk-board): freeze the board fixtures \u2014 9 red + 9 dark HK gates were live-artifact drift",
+      "merged_at": "2026-08-04T07:09:29Z"
+    },
+    {
+      "number": 4494,
+      "title": "links: retarget SI-consolidation redirect stubs at their real destinations",
+      "merged_at": "2026-08-04T10:49:32Z"
+    },
+    {
+      "number": 4492,
+      "title": "fix(render-lanes): normalize the exact tree every site commit stages (P0 2026-08-04 outage root cause)",
+      "merged_at": "2026-08-04T08:55:34Z"
+    },
+    {
+      "number": 4491,
+      "title": "hk: route \ud83c\udfc3 leaders row clicks to the Terminal (the #4489 defect, HK side)",
+      "merged_at": "2026-08-04T10:45:03Z"
+    },
+    {
+      "number": 4489,
+      "title": "us_stocks: route \u26a1/\ud83c\udfc3 row clicks to the Terminal; make \"Risk radar \u2192\" actually pop",
+      "merged_at": "2026-08-04T11:11:51Z"
+    },
+    {
+      "number": 4488,
+      "title": "feat(us-stocks+prophet): W2 Theme Tape \u2014 theme heat \u00d7 member states with why-not narration (display-tier)",
+      "merged_at": "2026-08-04T09:36:07Z"
+    },
+    {
+      "number": 4487,
+      "title": "feat(prophet): W3 \u2014 shadow doors T (theme-relay) + R (re-arm), prospective ledgers + prereg",
+      "merged_at": "2026-08-04T11:09:02Z"
+    },
+    {
+      "number": 4486,
+      "title": "feat(prophet): W0 miss-audit + conversion telemetry engine \u2014 nightly, zero authority",
+      "merged_at": "2026-08-04T09:01:19Z"
+    },
+    {
+      "number": 4485,
+      "title": "feat(earnings): W4 \u2014 rotation-guaranteed sweep, staleness alarm, catalyst fields on board rows",
+      "merged_at": "2026-08-04T08:58:21Z"
+    },
+    {
+      "number": 4483,
+      "title": "fix(nav): bump immutable asset chain key so cached menus pick up the Sector/Options consolidation",
+      "merged_at": "2026-08-04T10:45:07Z"
+    },
+    {
+      "number": 4482,
+      "title": "sector_central: drawn rail tick + repair the tape strip's mover labels",
+      "merged_at": "2026-08-04T10:45:10Z"
+    },
+    {
+      "number": 4481,
+      "title": "feat(prophet): W1 intake repair \u2014 priority-score ordering, active-plan dedup, index aging (operator-signed)",
+      "merged_at": "2026-08-04T08:58:25Z"
+    },
+    {
+      "number": 4480,
+      "title": "Fix mobile Prophet names and Chinese bull/bear colors",
+      "merged_at": "2026-08-04T08:07:36Z"
+    },
+    {
+      "number": 4479,
+      "title": "feat: add R2 share-count concurrency witness",
+      "merged_at": "2026-08-04T04:43:46Z"
+    },
+    {
+      "number": 4477,
+      "title": "fix(wire): the source's own page is not our post \u2014 relay hygiene + a citation that earns its place",
+      "merged_at": "2026-08-04T04:40:44Z"
+    },
+    {
+      "number": 4476,
+      "title": "Fix Terminal overlay browser Back behavior",
+      "merged_at": "2026-08-04T04:08:12Z"
+    },
+    {
+      "number": 4475,
+      "title": "fix(capital-structure): reconcile retried R2 head writes",
+      "merged_at": "2026-08-04T03:37:44Z"
+    },
+    {
+      "number": 4474,
+      "title": "feat(capital-structure): add isolated R2 CAS conformance witness",
+      "merged_at": "2026-08-04T02:43:15Z"
+    },
+    {
+      "number": 4472,
+      "title": "research(prophet-us): trend-intelligence masterplan + miss forensics \u2014 why winners don't surface",
+      "merged_at": "2026-08-04T08:58:29Z"
+    },
+    {
+      "number": 4471,
+      "title": "fix(tests): de-bomb the welcome-window CLI test \u2014 assert the rule, not the month",
+      "merged_at": "2026-08-04T02:30:52Z"
+    },
+    {
+      "number": 4470,
+      "title": "feat(hk-board): drop the 200-day reclaim veto for HK (hk_prophet_v2)",
+      "merged_at": "2026-08-04T03:08:33Z"
+    },
+    {
+      "number": 4469,
+      "title": "publish-time lane: fix the four defects that shipped on the flagship today",
+      "merged_at": "2026-08-04T08:49:16Z"
+    },
+    {
+      "number": 4468,
+      "title": "Fix Chinese unit leaking into US track record",
+      "merged_at": "2026-08-04T10:45:13Z"
+    },
     {
       "number": 4467,
       "title": "Add private Ollama provider fallback",
@@ -123,6 +1984,11 @@
       "merged_at": "2026-08-04T00:09:20Z"
     },
     {
+      "number": 4465,
+      "title": "ci: register tests/test_copywriter.py in the marketing lane (unrun-suite rot)",
+      "merged_at": "2026-08-04T04:05:45Z"
+    },
+    {
       "number": 4464,
       "title": "fix(contracts): register China reversal surfaces",
       "merged_at": "2026-08-03T23:47:10Z"
@@ -131,6 +1997,11 @@
       "number": 4463,
       "title": "fix(name_score): us_calls ledger integrity \u2014 loud universe disclosures + Russell cache parity, no coverage gate",
       "merged_at": "2026-08-04T00:27:58Z"
+    },
+    {
+      "number": 4462,
+      "title": "mover copy: trend-context stance \u2014 no more 'let it settle' on washed-out reversals (FSLR postmortem)",
+      "merged_at": "2026-08-04T04:02:53Z"
     },
     {
       "number": 4461,
@@ -2301,316 +4172,6 @@
       "number": 4001,
       "title": "ci: wire the three strictly-dark GEX suites \u2014 model layer, engine math, polygon accrual",
       "merged_at": "2026-07-30T03:22:50Z"
-    },
-    {
-      "number": 4000,
-      "title": "fix: publish normalized macro action typography",
-      "merged_at": "2026-07-30T02:24:47Z"
-    },
-    {
-      "number": 3999,
-      "title": "fix(bc2): a hyphen is not a CSS selector \u2014 close the _STRUCTURAL prose gap",
-      "merged_at": "2026-07-30T03:22:53Z"
-    },
-    {
-      "number": 3998,
-      "title": "Restore Wave 1 generated Vector artifact",
-      "merged_at": "2026-07-30T01:41:18Z"
-    },
-    {
-      "number": 3997,
-      "title": "Remove landing hero section gap",
-      "merged_at": "2026-07-30T02:33:49Z"
-    },
-    {
-      "number": 3996,
-      "title": "fix(intl): one shared recovery-naming step so intl.html and macro.html cannot disagree",
-      "merged_at": "2026-07-30T03:22:56Z"
-    },
-    {
-      "number": 3995,
-      "title": "marketing: route content LLM lanes ChatGPT-first, Claude as balanced key_pool fallback",
-      "merged_at": "2026-07-30T03:22:59Z"
-    },
-    {
-      "number": 3993,
-      "title": "Restore Stage Analysis fonts and declutter news score",
-      "merged_at": "2026-07-30T01:47:07Z"
-    },
-    {
-      "number": 3992,
-      "title": "fix(marketing): publisher-side orphan-brief gate \u2014 a hot-tape brief never outlives its recalled alert",
-      "merged_at": "2026-07-30T01:59:56Z"
-    },
-    {
-      "number": 3991,
-      "title": "fix(bc2): enforce the allowlist's `surfaces` scope + gate \u7ecf\u9a8c\u8bc1 / \u7ecf\u8fc7\u9a8c\u8bc1",
-      "merged_at": "2026-07-30T01:59:31Z"
-    },
-    {
-      "number": 3990,
-      "title": "Live official event lifecycle and intraday foundation",
-      "merged_at": "2026-07-30T01:42:33Z"
-    },
-    {
-      "number": 3989,
-      "title": "Wave 1: rebuild Bitcoin Vector as a command deck",
-      "merged_at": "2026-07-30T01:14:08Z"
-    },
-    {
-      "number": 3988,
-      "title": "fix(macro): demote the dislocation page-hijack and stop the regime/radar surfaces overstating what they know",
-      "merged_at": "2026-07-30T07:35:50Z"
-    },
-    {
-      "number": 3987,
-      "title": "Revamp responsive product navigation",
-      "merged_at": "2026-07-30T01:18:08Z"
-    },
-    {
-      "number": 3986,
-      "title": "fix(fred): NFCI family nulled every release-day session \u2014 ffill seam + weekly missed-cycle tripwire",
-      "merged_at": "2026-07-30T01:59:59Z"
-    },
-    {
-      "number": 3985,
-      "title": "fix(whitehouse): sentinel re-renders dropped the page's ?v= stamps \u2014 stamp at render",
-      "merged_at": "2026-07-30T12:29:13Z"
-    },
-    {
-      "number": 3984,
-      "title": "Replace repeated US Stocks preview gates with two CTAs",
-      "merged_at": "2026-07-30T00:46:48Z"
-    },
-    {
-      "number": 3983,
-      "title": "marketing: close the seven open reviewer minors from #3960",
-      "merged_at": "2026-07-30T01:17:53Z"
-    },
-    {
-      "number": 3982,
-      "title": "Normalize macro action-card typography",
-      "merged_at": "2026-07-30T00:42:09Z"
-    },
-    {
-      "number": 3981,
-      "title": "feat(marketing): post-time frame/filler/substance gates (port of #3928's sentinel work)",
-      "merged_at": "2026-07-30T01:16:28Z"
-    },
-    {
-      "number": 3980,
-      "title": "design(landing): W5 voice & polish \u2014 mk size ramp, lede tightening, 390 headroom",
-      "merged_at": "2026-07-30T02:00:06Z"
-    },
-    {
-      "number": 3979,
-      "title": "fix(earnings): nightly swept a 3-ticker demo universe, not the whole board",
-      "merged_at": "2026-07-30T02:00:10Z"
-    },
-    {
-      "number": 3978,
-      "title": "Fix globe label scroll anchoring and transitions",
-      "merged_at": "2026-07-30T00:44:53Z"
-    },
-    {
-      "number": 3977,
-      "title": "fix(oip-e8): options express-lane coverage, earnings sweep root cause, weekend-row + unit-seam sweep",
-      "merged_at": "2026-07-30T23:48:05Z"
-    },
-    {
-      "number": 3976,
-      "title": "feat(oip-e3): light oi_delta_clusters, wall persistence, heal index_gex_history freeze",
-      "merged_at": "2026-07-30T23:48:09Z"
-    },
-    {
-      "number": 3975,
-      "title": "OIP E1: session digest engine \u2014 the Terminal\u2192EOD bridge (data only)",
-      "merged_at": "2026-07-30T06:07:24Z"
-    },
-    {
-      "number": 3974,
-      "title": "docs(oip): W0 build-time amendments to the masterplan",
-      "merged_at": "2026-07-29T23:01:58Z"
-    },
-    {
-      "number": 3973,
-      "title": "feat(prophet-live): P0 \u2014 armed pack, */5 evaluator, event spool, nightly reconciler (measure-dark)",
-      "merged_at": "2026-07-30T10:56:23Z"
-    },
-    {
-      "number": 3972,
-      "title": "feat(live_flow): dated tide/dte archives + zero-vega Newton guard (OIP W0 T-lane)",
-      "merged_at": "2026-07-29T23:28:40Z"
-    },
-    {
-      "number": 3971,
-      "title": "feat(brain): Analyst OS P0 \u2014 market analyst doctrine, live market state packet, news + research tools",
-      "merged_at": "2026-07-30T00:07:03Z"
-    },
-    {
-      "number": 3970,
-      "title": "design(landing): W4 motion & consistency sweep \u2014 one heading system, complete focus states, reduced-motion fix",
-      "merged_at": "2026-07-29T23:02:04Z"
-    },
-    {
-      "number": 3969,
-      "title": "OIP masterplan: EOD options-suite upgrade program (plan only)",
-      "merged_at": "2026-07-29T14:37:38Z"
-    },
-    {
-      "number": 3968,
-      "title": "Refresh Terminal launcher asset stamp",
-      "merged_at": "2026-07-29T13:05:43Z"
-    },
-    {
-      "number": 3967,
-      "title": "feat: initiate Crypto Cockpit Wave 0",
-      "merged_at": "2026-07-29T14:34:23Z"
-    },
-    {
-      "number": 3966,
-      "title": "research(prophet): Prophet Live \u2014 intraday provisional signals masterplan",
-      "merged_at": "2026-07-29T14:37:41Z"
-    },
-    {
-      "number": 3965,
-      "title": "Fix staggered ticker search styling and extend Terminal loader",
-      "merged_at": "2026-07-30T00:21:36Z"
-    },
-    {
-      "number": 3964,
-      "title": "Simplify US stocks without replacing its decision cards",
-      "merged_at": "2026-07-29T14:15:57Z"
-    },
-    {
-      "number": 3963,
-      "title": "Fix live YM and RTY macro tape quotes",
-      "merged_at": "2026-07-29T16:20:22Z"
-    },
-    {
-      "number": 3962,
-      "title": "design(landing): instrument-grade redesign \u2014 Attio-benchmark finish, house voice intact",
-      "merged_at": "2026-07-29T16:07:23Z"
-    },
-    {
-      "number": 3961,
-      "title": "Simplify macro What To Do card",
-      "merged_at": "2026-07-29T13:48:48Z"
-    },
-    {
-      "number": 3960,
-      "title": "feat(x-growth): ecosystem E-waves \u2014 press wire bridge, radar LLM voice, earnings detector, filing lanes, intel loop, reply craft",
-      "merged_at": "2026-07-29T17:36:02Z"
-    },
-    {
-      "number": 3959,
-      "title": "feat: complete real-time intelligence desk",
-      "merged_at": "2026-07-29T12:41:39Z"
-    },
-    {
-      "number": 3958,
-      "title": "Keep embedded Terminal launcher public at the access edge",
-      "merged_at": "2026-07-29T12:48:38Z"
-    },
-    {
-      "number": 3957,
-      "title": "feat: refresh navigation and ticker search",
-      "merged_at": "2026-07-29T11:53:16Z"
-    },
-    {
-      "number": 3956,
-      "title": "fix(intl): UI/UX + layout pass \u2014 kill the grid voids, align type to macro.html",
-      "merged_at": "2026-08-01T23:36:59Z"
-    },
-    {
-      "number": 3955,
-      "title": "research: Crypto Master Cockpit masterplan \u2014 vector.html rebuild + crypto asset-class platform",
-      "merged_at": "2026-07-29T10:07:58Z"
-    },
-    {
-      "number": 3953,
-      "title": "Launch Terminal as a native full-screen workspace",
-      "merged_at": "2026-07-29T11:09:12Z"
-    },
-    {
-      "number": 3952,
-      "title": "Fix fastlane news rail activation and deploy lifecycle",
-      "merged_at": "2026-07-29T10:38:04Z"
-    },
-    {
-      "number": 3951,
-      "title": "Fix Pro entitlement hydration on confluence screener",
-      "merged_at": "2026-07-29T10:36:25Z"
-    },
-    {
-      "number": 3950,
-      "title": "docs: add US stocks dashboard UX handoff",
-      "merged_at": "2026-07-29T08:13:48Z"
-    },
-    {
-      "number": 3949,
-      "title": "Fix Pro users being gated from the free confluence screener",
-      "merged_at": "2026-07-29T09:00:39Z"
-    },
-    {
-      "number": 3948,
-      "title": "fix(marketing): quarantine 6 leftover approved 07-28 template posts",
-      "merged_at": "2026-07-29T07:09:32Z"
-    },
-    {
-      "number": 3947,
-      "title": "feat(marketing): Content Studio LLM-first \u2014 per-post writer, five shapes, selection layer, no template fallback",
-      "merged_at": "2026-07-29T13:50:13Z"
-    },
-    {
-      "number": 3946,
-      "title": "Fix Mastermind international ticker context and model routing",
-      "merged_at": "2026-07-29T07:39:30Z"
-    },
-    {
-      "number": 3945,
-      "title": "fix(marketing): quarantine the 2026-07-29 templated batch (65 posts, 61 auto-approved)",
-      "merged_at": "2026-07-29T07:06:46Z"
-    },
-    {
-      "number": 3944,
-      "title": "fix(research-vault): Pro unlock race \u2014 MDXAuth listener never registered",
-      "merged_at": "2026-07-29T16:07:28Z"
-    },
-    {
-      "number": 3943,
-      "title": "fix(tests): PSS-RH1 parity audit replays on a frozen input grid (data-advance bomb defused)",
-      "merged_at": "2026-07-29T04:34:48Z"
-    },
-    {
-      "number": 3942,
-      "title": "feat: add public dashboard preview tiers",
-      "merged_at": "2026-07-29T08:00:13Z"
-    },
-    {
-      "number": 3941,
-      "title": "feat(marketing): Hot Tape P1 \u2014 intraday attention radar, wire copy with required devices, booked-to-Buffer in minutes",
-      "merged_at": "2026-07-29T05:32:45Z"
-    },
-    {
-      "number": 3940,
-      "title": "Fix Research Vault dark-mode canvas",
-      "merged_at": "2026-07-29T01:34:33Z"
-    },
-    {
-      "number": 3939,
-      "title": "Public Research Vault preview with Pro gating",
-      "merged_at": "2026-07-29T00:52:24Z"
-    },
-    {
-      "number": 3937,
-      "title": "feat(marketing): Hot Tape P2 \u2014 LLM wire desk behind the numeric-consistency gate",
-      "merged_at": "2026-07-29T00:59:07Z"
-    },
-    {
-      "number": 3936,
-      "title": "fix(tests): defuse confluence content-plan date bomb (base-side red since 07-26)",
-      "merged_at": "2026-07-28T22:12:25Z"
     }
   ]
 }

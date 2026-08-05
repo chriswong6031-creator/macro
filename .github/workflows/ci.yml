@@ -1980,6 +1980,23 @@ on:
       - "scripts/build_china_analogs.py"
       - "scripts/build_china_library.py"
       - "scripts/build_hk_library.py"
+      # unrun-hk-board — the HK board resurrection pair (#4421), born dark AFTER
+      # the census sweep: the hk_prophet_v2 rank/lane engine (G1-G5 gates) and
+      # the unified board UI contract.  engine/** and templates/** already cover
+      # the code halves; these are the test halves PLUS the frozen G1 pair (the
+      # panel-replay fixture and the board artifact it excludes against) and the
+      # committed close panel the staleness tripwire replays.  The fixture
+      # entries are the #4559 lesson: that heal was a fixture-only diff that
+      # matched NOTHING in this list, so the PR re-pinning the G1 measurement
+      # merged having triggered zero pack checks.  The panel glob closes the
+      # other input: a hand rewrite of the tripwire's replay grid must start
+      # the workflow (the nightly asia collection pushes to main and never
+      # opens a PR, so the glob costs nothing on the daily bake).
+      - "tests/test_hk_board_rank.py"
+      - "tests/test_hk_board_ui.py"
+      - "tests/fixtures/hk_board_2026_07_31.json"
+      - "tests/fixtures/hk_standouts_2026_07_31.json"
+      - "data/hk_search/**"
       # nyse-calendar-freshness — the exchange-calendar reference under every
       # freshness SLA. lib/** above already triggers on lib/nyse_calendar.py, but
       # a test-only edit must reach its own guard too (#3488: "a guard the guarded
