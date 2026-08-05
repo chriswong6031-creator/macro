@@ -46,9 +46,16 @@ shared `.git` and is deleted only under its own proof. So a worktree is safe iff
 **Liveness (all must clear):**
 - No `git worktree lock` (sessions annotate locks with pid — honored unconditionally).
 - No process with cwd inside (one global `lsof -d cwd` pass; never per-tree `+D` descents over 600 GiB).
-- No git/session activity within `min_age_days` (7 d): newest mtime of gitdir `HEAD`/`index`/reflog,
-  the worktree dir, and the harness session dir `~/.claude/projects/<path-slug>/`.
-  House law is same-day merge; 7 d idle is dead by a wide margin.
+- No STRONG activity within `min_age_days` (7 d). Strong = the last reflog **entry's embedded
+  epoch** (real HEAD movement) and the harness session dir `~/.claude/projects/<path-slug>/`
+  newest mtime. File mtimes are recorded but never gate — the audit caught two systematic
+  stampers that would otherwise hold the gate shut forever: a repo-global `reflog expire`
+  rewrote all 186 trees' `logs/HEAD` at 2026-08-04 15:38:24 (every dead tree read "0.2 d
+  old"), and observer sweeps (`git status` from dashboards writes the index; Finder drops
+  `.DS_Store`) kept 137/143 dead trees under 2 d by index/HEAD/dir mtimes while their
+  reflog entries and transcripts sat weeks old. House law is same-day merge; 7 d without
+  ref movement or transcript writes is dead by a wide margin — and the content proofs
+  below, not the age gate, are the actual loss-prevention layer.
 
 **Content (any one proof suffices):**
 - `HEAD` is an **ancestor of `origin/main`** — nothing unique by construction; or

@@ -7,7 +7,10 @@ COVERAGE
       a head that moved past the merged oid stays UNPUSHED
    3. dirty worktree → DIRTY (kept)
    4. unpushed unique commits → UNPUSHED (kept)
-   5. fresh activity → RECENT (kept) — age gate reads gitdir/worktree mtimes
+   5. fresh activity → RECENT (kept) — age gate reads STRONG signals only
+      (reflog entry epochs, session transcript mtimes); neither observer
+      stamps on index/HEAD/dir mtimes nor a repo-global reflog-expire sweep
+      of logs/HEAD file mtimes may fake recency (both regression-pinned)
    6. `git worktree lock` → LOCKED (kept)
    7. live process cwd inside → LIVE_PROC (kept)
    8. open PR → OPEN_PR (kept) even when clean + old + pushed
@@ -209,6 +212,25 @@ def test_recent_activity_is_kept(repo, tmp_path, monkeypatch):
     _add_worktree(repo, "fresh", branch="claude/fresh")
     _, payload = _run_main(repo, tmp_path, monkeypatch)
     assert _verdict(payload, "fresh")["verdict"] == "RECENT"
+
+
+def test_observer_stamps_do_not_fake_recency(repo, tmp_path, monkeypatch):
+    """Fleet dashboards running plain `git status` rewrite gitdir/index, and
+    Finder/.DS_Store bumps the worktree dir mtime — observation, not activity.
+    Measured on the Studio: 137/143 dead trees were pinned "fresh" purely by
+    such file mtimes while reflog entries and transcripts sat weeks old.
+    Only STRONG signals may gate."""
+    wt = _add_worktree(repo, "observed", branch="claude/observed")
+    _age(repo, wt)
+    gitdir = Path(_git(wt, "rev-parse", "--absolute-git-dir"))
+    now = time.time()
+    for p in [wt, wt / ".git", gitdir / "HEAD", gitdir / "index"]:
+        if p.exists():
+            os.utime(p, (now, now))
+    _, payload = _run_main(repo, tmp_path, monkeypatch)
+    w = _verdict(payload, "observed")
+    assert w["verdict"] == "SAFE_MERGED", f"observer stamps misread as {w['verdict']}"
+    assert w["age_days"] > 7
 
 
 def test_reflog_file_mtime_sweep_does_not_fake_recency(repo, tmp_path, monkeypatch):

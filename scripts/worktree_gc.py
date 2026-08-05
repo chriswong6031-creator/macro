@@ -27,12 +27,13 @@ Verdict lattice (first match wins):
   ERROR        a probe failed → keep
   LIVE_PROC    a process has its cwd inside the worktree (one global
                `lsof -d cwd` pass — never per-tree `+D` descents)
-  RECENT       git/session activity newer than min_age_days (gitdir HEAD /
-               index / worktree dir mtimes, the LAST REFLOG ENTRY's embedded
-               epoch — never the reflog file mtime, which repo-global
-               `reflog expire` sweeps stamp across all trees at once — plus
-               the newest mtime of the session's ~/.claude/projects/<slug>
-               transcript dir)
+  RECENT       STRONG activity newer than min_age_days.  Strong = the last
+               reflog ENTRY's embedded epoch (real HEAD movement) and the
+               session transcript dir ~/.claude/projects/<slug>.  File
+               mtimes never gate: repo-global `reflog expire` stamps every
+               tree's logs/HEAD at once, and observer sweeps (dashboards
+               running `git status`, Finder .DS_Store) stamp index/HEAD/dir
+               mtimes — measured pinning 137/143 dead trees "fresh"
   DIRTY        `git status --porcelain` non-empty (tracked changes or
                non-ignored untracked files) → unsubmitted work, keep
   OPEN_PR      branch has an open PR → live lane, keep (v1)
@@ -290,12 +291,33 @@ def _reflog_last_epoch(gitdir: Path) -> float | None:
 
 
 def activity_age_days(wt: Worktree, gitdir: Path | None, now: float) -> tuple[float | None, dict]:
-    """Age in days of the most recent activity signal.  None = no signal readable."""
-    sources: dict[str, float] = {}
+    """Age in days of the most recent STRONG activity signal.
+
+    Strong signals — things only real usage produces:
+      * the last reflog ENTRY's embedded epoch (actual HEAD movement), and
+      * the session transcript dir's newest mtime (the harness writes it for
+        the owning session only).
+
+    File mtimes (gitdir HEAD/index, the worktree dir, .git) are recorded for
+    the report but NEVER gate: they are observer-stampable.  Measured on the
+    Studio 2026-08-05: 137 of 143 long-dead trees read "active < 2 d" purely
+    from index/HEAD/dir mtimes (fleet dashboards running plain `git status`
+    write the index; Finder drops .DS_Store into the dir) while reflog entries
+    and transcripts sat weeks old — a gate on file mtimes never opens, which
+    is not conservatism but a dead detector.  Content proofs (clean tree +
+    merged/remote) remain the actual loss-prevention layer; locks and live
+    process cwds still veto independently.
+
+    Returns (strong_age_days | None, sources).  None = no strong signal
+    readable — callers fail closed for registered trees; orphans (no git
+    metadata at all) fall back to the weak file mtimes recorded in sources.
+    """
+    strong: dict[str, float] = {}
+    weak: dict[str, float] = {}
 
     def _stat(label: str, p: Path) -> None:
         try:
-            sources[label] = p.stat().st_mtime
+            weak[label] = p.stat().st_mtime
         except OSError:
             pass
 
@@ -306,14 +328,16 @@ def activity_age_days(wt: Worktree, gitdir: Path | None, now: float) -> tuple[fl
         _stat("gitdir_index", gitdir / "index")
         re_epoch = _reflog_last_epoch(gitdir)
         if re_epoch is not None:
-            sources["reflog_entry"] = re_epoch
+            strong["reflog_entry"] = re_epoch
     sm = session_activity_mtime(wt.path)
     if sm is not None:
-        sources["session_dir"] = sm
-    if not sources:
-        return None, {}
-    newest = max(sources.values())
-    return (now - newest) / 86400.0, {k: round((now - v) / 86400.0, 2) for k, v in sources.items()}
+        strong["session_dir"] = sm
+
+    sources = {f"weak:{k}": round((now - v) / 86400.0, 2) for k, v in weak.items()}
+    sources.update({k: round((now - v) / 86400.0, 2) for k, v in strong.items()})
+    if not strong:
+        return None, sources
+    return (now - max(strong.values())) / 86400.0, sources
 
 
 def gitdir_for(wt: Worktree) -> Path | None:
@@ -451,13 +475,19 @@ def classify(
         return
 
     wt.age_days, wt.age_sources = activity_age_days(wt, gitdir, now)
+    if wt.age_days is None and wt.orphan:
+        # Orphans carry no git metadata; their only readable signals are the
+        # weak file mtimes.  Use those for the recency courtesy — deletion is
+        # separately gated behind include_orphans anyway.
+        weak_ages = [v for k, v in wt.age_sources.items() if k.startswith("weak:")]
+        wt.age_days = min(weak_ages) if weak_ages else None
     if wt.age_days is None:
         wt.verdict = "ERROR"
-        wt.reasons.append("no readable activity mtimes")
+        wt.reasons.append("no readable strong activity signal (reflog entry / session dir)")
         return
     if wt.age_days < float(cfg["min_age_days"]):
         wt.verdict = "RECENT"
-        wt.reasons.append(f"activity {wt.age_days:.1f}d < min_age {cfg['min_age_days']}d")
+        wt.reasons.append(f"strong activity {wt.age_days:.1f}d < min_age {cfg['min_age_days']}d")
         return
 
     if wt.orphan:
@@ -649,6 +679,17 @@ def apply_deletions(
 
 # ── report ───────────────────────────────────────────────────────────────────
 
+def display_name(w: Worktree) -> str:
+    """Root-relative path — codex-home trees all end in '<slug>/Macro Dashboard',
+    so the bare dirname is ambiguous in reports."""
+    if w.root:
+        try:
+            return str(w.path.resolve().relative_to(Path(w.root).resolve()))
+        except (ValueError, OSError):
+            pass
+    return w.path.name
+
+
 def summarize(worktrees: list[Worktree]) -> dict:
     by: dict[str, dict] = {}
     for w in worktrees:
@@ -694,10 +735,10 @@ def render_markdown(worktrees: list[Worktree], cfg: dict, meta: dict) -> str:
         if w.procs:
             detail += f" [{', '.join(w.procs[:3])}]"
         age = f"{w.age_days:.0f}" if w.age_days is not None else "?"
-        lines.append(f"| {w.path.name} | {w.verdict} | {_gib(w.size_kb)} | {age} | {detail[:100]} |")
+        lines.append(f"| {display_name(w)} | {w.verdict} | {_gib(w.size_kb)} | {age} | {detail[:100]} |")
     lines += ["", "## Sample of safe deletions", ""]
     for w in [w for w in worktrees if w.verdict in SAFE_VERDICTS][:20]:
-        lines.append(f"- `{w.path.name}` {_gib(w.size_kb)} GiB — {w.proof} (branch {w.branch or '—'})")
+        lines.append(f"- `{display_name(w)}` {_gib(w.size_kb)} GiB — {w.proof} (branch {w.branch or '—'})")
     return "\n".join(lines) + "\n"
 
 
@@ -812,7 +853,7 @@ def main(argv: list[str] | None = None) -> int:
         "apply": apply_summary,
         "worktrees": [
             {
-                "path": str(w.path), "name": w.path.name, "branch": w.branch,
+                "path": str(w.path), "name": display_name(w), "branch": w.branch,
                 "head": w.head, "verdict": w.verdict, "proof": w.proof,
                 "reasons": w.reasons, "size_kb": w.size_kb,
                 "age_days": round(w.age_days, 2) if w.age_days is not None else None,
