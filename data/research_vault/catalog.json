@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T05:56:34.137377+00:00",
-  "count": 783,
+  "generated_at": "2026-08-05T06:11:39.198238+00:00",
+  "count": 784,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -111,6 +111,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qufp8utgvqn-f5526d",
+      "title": "Spotify Technology S.A. (SPOT) Q2'26 Earnings Review Deliberate Investments Aimed at Future Initiatives Scaling",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:19Z",
+      "summary_points": [
+        "**Strategic Growth Drivers**: Targeted 2H 2026 AI investments for personalization leverage scale, sustaining revenue growth with 20%+ operating margin commitment amid healthy user metrics and margin performance.",
+        "**Valuation Risk**: Premium multiples (P/E 53.2x, EV/EBITDA 48.2x) offset by high net debt/EBITDA (45.8x), signaling significant leverage risk despite 55.2% EBITDA growth.",
+        "**Q3'26 Guidance Pressure**: MAU guidance below expectations, Premium Revenue miss, €200M FY2026 opex step-up, and revised 2026 GAAP EPS down to €12.96 (vs €13.41) create near-term EPS headwinds.",
+        "**Valuation Revision**: EV/EBITDA down to 22.5x (vs 24.0x) and EV/FCF-SBC at 21.0x (vs 22.5x) reflect market derating and lowered forward estimates, reducing upside potential.",
+        "**Critical Risk Factor**: Recent stock derating directly reduces valuation multiples, indicating diminished growth expectations and eroded forward estimate confidence."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
