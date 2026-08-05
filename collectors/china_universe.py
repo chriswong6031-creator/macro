@@ -123,6 +123,14 @@ def _code_to_ticker(code: str) -> str | None:
     return None  # 8xxxxx / 4xxxxx = Beijing Stock Exchange — skip
 
 
+# Official CSIndex constituent-table columns (ak.index_stock_cons_csindex). Selected BY
+# NAME, never by a "代码"/"名称" substring scan: the same frame carries 指数代码/指数名称
+# (the INDEX's own code '000852' / name '中证1000'), which such a scan matches FIRST —
+# mapping every row to one bogus ticker.
+_CSINDEX_CODE_COL = "成分券代码"
+_CSINDEX_NAME_COL = "成分券名称"
+
+
 class ChinaUniverseAdapter(Adapter):
     name = "china_universe"
     group = "china_search"
@@ -281,10 +289,44 @@ class ChinaUniverseAdapter(Adapter):
         return members
 
     # -- CSI index constituents (akshare) -------------------------------------
+    @staticmethod
+    def _index_rows(ak, sym: str) -> tuple[list[tuple[str, str]], str]:
+        """(code, name_zh) pairs for one CSI index + the endpoint that served them.
+
+        Official CSIndex first; the legacy index_stock_cons endpoint only when that
+        call is missing (older akshare) or fails."""
+        try:
+            df = ak.index_stock_cons_csindex(symbol=sym)
+            codes, names = df[_CSINDEX_CODE_COL], df[_CSINDEX_NAME_COL]
+            if not len(codes):
+                raise RuntimeError("empty constituent table")
+            return [(str(c), str(n).strip()) for c, n in zip(codes, names)], "csindex"
+        except Exception as e:  # noqa: BLE001 — endpoint absent / CSIndex down / shape change
+            log.warning("china_universe: csindex %s unavailable (%s) — falling back to "
+                        "index_stock_cons, whose list is KNOWN-INCOMPLETE (duplicate codes; "
+                        "772 unique of 1000 rows for CSI 1000, measured 2026-08-04)", sym, e)
+        df = ak.index_stock_cons(symbol=sym)
+        # Legacy frame is ['品种代码','品种名称','纳入日期'] — no index-level columns, so the
+        # version-tolerant substring scan is safe HERE and only here.
+        code_col = next(
+            (c for c in df.columns if "代码" in c or c.lower() in ("code", "symbol")),
+            df.columns[0] if len(df.columns) else None,
+        )
+        name_col = next((c for c in df.columns if "名称" in c or c.lower() == "name"), None)
+        if code_col is None:
+            raise RuntimeError(f"no code column in index_stock_cons: {list(df.columns)}")
+        return [(str(r[code_col]), str(r[name_col]).strip() if name_col else "")
+                for _, r in df.iterrows()], "index_stock_cons"
+
     def _index_constituents(self, symbols: list[str]) -> list[dict]:
         """Fetch constituent lists for named CSI indices (e.g. '000300', '000852')
         via akshare. Returns a list of {ticker, name_zh} dicts. Best-effort: one
-        failed index is logged and skipped, never fatal."""
+        failed index is logged and skipped, never fatal.
+
+        Source is the official CSIndex table (exactly 300 / 1000 unique codes). The
+        legacy index_stock_cons endpoint is a fallback only: it returns the right ROW
+        count carrying duplicate codes — 772 unique of 1000 for CSI 1000 and 288 of 300
+        for CSI 300 (measured 2026-08-04) — silently dropping 228 real constituents."""
         try:
             import akshare as ak  # noqa: PLC0415 — optional dep
         except ImportError:
@@ -293,27 +335,21 @@ class ChinaUniverseAdapter(Adapter):
         rows: list[dict] = []
         for sym in symbols:
             try:
-                df = ak.index_stock_cons(symbol=sym)
-                # akshare column names vary by version — try common patterns
-                code_col = next(
-                    (c for c in df.columns if "代码" in c or c.lower() in ("code", "symbol")),
-                    df.columns[0] if len(df.columns) else None,
-                )
-                name_col = next(
-                    (c for c in df.columns if "名称" in c or c.lower() == "name"),
-                    None,
-                )
-                if code_col is None:
-                    log.warning("china_universe: index %s — no code column found (%s)", sym, list(df.columns))
-                    continue
-                for _, row in df.iterrows():
-                    t = _code_to_ticker(str(row[code_col]))
-                    if t:
-                        zh = str(row[name_col]).strip() if name_col else ""
-                        rows.append({"ticker": t, "name_zh": zh})
-                log.info("china_universe: CSI index %s → %d constituents", sym, len(df))
+                pairs, source = self._index_rows(ak, sym)
             except Exception as e:  # noqa: BLE001 — one bad index must not kill the run
                 log.warning("china_universe: akshare index %s failed (%s) — skipped", sym, e)
+                continue
+            seen: set[str] = set()
+            for code, zh in pairs:
+                t = _code_to_ticker(code)
+                if not t or t in seen:      # dedup per index; Beijing/other codes drop out
+                    continue
+                seen.add(t)
+                rows.append({"ticker": t, "name_zh": zh})
+            # Count what was actually UNIONED (unique + ticker-mappable), never len(df):
+            # a row-count log reported 1000/1000 while 228 CSI 1000 members were missing.
+            log.info("china_universe: CSI index %s → %d constituents from %d %s rows",
+                     sym, len(seen), len(pairs), source)
         return rows
 
     # -- main ------------------------------------------------------------------
