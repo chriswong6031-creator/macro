@@ -11771,7 +11771,7 @@ artifacts:
       world_state transmission_chains lobe + synapse + mastermind _summarize + portfolio_ctx
       per-ticker merge + baked display subset. A chain state is a WATCH item with (eventually)
       printed conditional base rates — display/context tier ONLY, NEVER a signal, rank, size,
-      or escalation (masterplan §4; DNR row 45 / TXI Article 1/2). Per-hop base rates are
+      or escalation (masterplan §4; DNR:KILL-CAUSAL-DAG-ALPHA / TXI Article 1/2). Per-hop base rates are
       UNTESTED in W1 (base_rates=null). is_context_only=true, display_only=true. Absent until
       the first chains run; all consumers fail-open (block=None / honest-null / no emit).
 

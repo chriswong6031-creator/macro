@@ -71,7 +71,7 @@
 {%- set _tt = theme_tape if (theme_tape is defined and theme_tape is mapping) else none -%}
 {%- set _tt_rows = (_tt.get('rows') or []) if _tt else [] -%}
 
-{#- Honest-null gate (DO_NOT_REBUILD row 151 — no forced ranking in a dead tape).
+{#- Honest-null gate (DNR:HOLD-IGNITION-SURFACES — no forced ranking in a dead tape).
     engine/theme_tape.py returns None when nothing clears the constructive floor, so
     reaching this guard with no rows means the tape is dead and the panel emits
     NOTHING AT ALL — no shell, no <style>, no empty box. -#}

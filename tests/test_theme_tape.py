@@ -112,7 +112,7 @@ def test_cold_theme_never_reaches_the_tape():
 
 
 def test_dead_tape_renders_nothing():
-    """DO_NOT_REBUILD row 151 — no forced ranking when nothing is heating."""
+    """DNR:HOLD-IGNITION-SURFACES — no forced ranking when nothing is heating."""
     cold = _rotation()
     for theme in cold["themes"]:
         theme["emerging_score"] = -1.0

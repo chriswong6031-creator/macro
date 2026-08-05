@@ -23,7 +23,7 @@ ordering that exists (which THEMES to show) is the rotation artifact's own
 
 THE THREE FENCES THAT SHAPED IT
 -------------------------------
-1. `research/DO_NOT_REBUILD.md` row 151 (Ignition Radar, suspended 2026-07-23)
+1. `research/DO_NOT_REBUILD.md` DNR:HOLD-IGNITION-SURFACES (Ignition Radar, suspended 2026-07-23)
    requires "an honest-null state, no forced top-K ranking in a dead tape".
    So the tape is FLOOR-gated, not rank-gated: a theme must actually be
    accelerating (`emerging_score > 0`) and sit in a constructive quadrant to

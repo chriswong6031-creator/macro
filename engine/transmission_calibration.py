@@ -30,7 +30,7 @@ per chain -> per hop -> {p_confirm, n, lag_d, per_regime:{cell:{p,n}}, regime_sp
 method}. Nulls / thin cells (n < ``N_FLOOR``) print ``"untested"`` WITH the n, never a
 fabricated rate — honest coverage is the whole point (this is permanent knowledge accrual).
 
-DISCIPLINE (masterplan §4; DNR row 45 / TXI Article 1/2): display / LLM-context ONLY.
+DISCIPLINE (masterplan §4; DNR:KILL-CAUSAL-DAG-ALPHA / TXI Article 1/2): display / LLM-context ONLY.
 A base rate NEVER gates, ranks, sizes, or escalates anything; the word "validated" never
 appears in emitted text; there is no LLM anywhere in this module. Every emit dict carries
 ``display_only=True``. FAIL-OPEN: absent history leaves a hop ``untested``, never raising.
@@ -447,7 +447,7 @@ def cohort_event_study(chain: dict, src: SeriesSource) -> dict:
 # --------------------------------------------------------------------------- #
 CAVEATS = [
     {"en": "Display-only historical context — base rates NEVER gate, size, rank, or escalate "
-           "anything (masterplan §4; DNR row 45). A base rate is a printed conditional "
+           "anything (masterplan §4; DNR:KILL-CAUSAL-DAG-ALPHA). A base rate is a printed conditional "
            "frequency, not a forecast and not a signal.",
      "zh": "仅供展示的历史上下文——基础发生率从不做门控、仓位、排名或升级（总纲§4）。基础发生率是打印的条件频率，既非预测也非信号。"},
     {"en": "A cell with n below the floor prints \"untested\" WITH its n — never a fabricated "
