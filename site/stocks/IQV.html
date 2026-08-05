@@ -767,12 +767,12 @@
     <div class="mod-hd"><h2><span class="l-en">Options positioning</span><span class="l-zh">期权持仓</span></h2><span class="hint"><span class="l-en">as of last close</span><span class="l-zh">截至上一收盘</span> <button class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-options')"><span class="l-en">Full detail</span><span class="l-zh">完整数据</span></button></span></div>
     <p style="margin:0 0 14px;font-size:12.5px;line-height:1.6;"><span class="l-en">Market makers are net long gamma — price pinned near current level</span><span class="l-zh">做市商净持有正伽玛，价格倾向于在当前水平附近震荡</span></p>
     <div class="otiles">
-      <div class="otile"><div class="ok6"><span class="l-en">Expected daily move</span><span class="l-zh">预期日波动</span></div><div class="ov num">±2.56%</div></div>
-      <div class="otile"><div class="ok6"><span class="l-en">Expected weekly move</span><span class="l-zh">预期周波动</span></div><div class="ov num">±5.72%</div></div>
+      <div class="otile"><div class="ok6"><span class="l-en">Expected daily move</span><span class="l-zh">预期日波动</span></div><div class="ov num">±2.34%</div></div>
+      <div class="otile"><div class="ok6"><span class="l-en">Expected weekly move</span><span class="l-zh">预期周波动</span></div><div class="ov num">±5.23%</div></div>
       
       
       
-      
+      <div class="otile"><div class="ok6"><span class="l-en">Gamma flip</span><span class="l-zh">伽玛翻转位</span></div><div class="ov num">$179</div></div>
       
       
       <div class="otile"><div class="ok6"><span class="l-en">25d risk reversal</span><span class="l-zh">25d风险逆转</span></div><div class="ov num neg">-2.8%</div></div>
@@ -780,7 +780,7 @@
     
     
     <div class="hchips" style="margin-top:10px;">
-      <span class="okx q"><span class="l-en">Skew: balanced</span><span class="l-zh">偏斜：balanced</span></span>
+      <span class="okx y"><span class="l-en">Skew: greed</span><span class="l-zh">偏斜：贪婪</span></span>
     </div>
     
     
@@ -980,15 +980,6 @@
     <div>
       
       
-      <div class="lrow ">
-        <span class="lpx num mut">$240</span>
-        <span class="lnode"><span class="ldot wall"></span></span>
-        <span class="lk"><span class="l-en">Call wall</span><span class="l-zh">看涨期权墙</span><small><span class="l-en">rallies tend to stall here</span><span class="l-zh">上攻常在此受阻</span></small></span>
-        <span class="ld num">+2.1%</span>
-      </div>
-      
-      
-      
       <div class="lrow now">
         <span class="lpx num ">$235</span>
         <span class="lnode"><span class="ldot "></span></span>
@@ -1003,6 +994,15 @@
         <span class="lnode"><span class="ldot chase"></span></span>
         <span class="lk"><span class="l-en">Don&#39;t chase above</span><span class="l-zh">勿追高线</span><small><span class="l-en">wait for price to come back</span><span class="l-zh">等待价格回落</span></small></span>
         <span class="ld num">-0.0%</span>
+      </div>
+      
+      
+      
+      <div class="lrow ">
+        <span class="lpx num mut">$230</span>
+        <span class="lnode"><span class="ldot wall"></span></span>
+        <span class="lk"><span class="l-en">Call wall</span><span class="l-zh">看涨期权墙</span><small><span class="l-en">rallies tend to stall here</span><span class="l-zh">上攻常在此受阻</span></small></span>
+        <span class="ld num">-2.1%</span>
       </div>
       
       
@@ -1497,6 +1497,9 @@
           <div class="r6d"><span class="k"><span class="l-en">Call wall</span><span class="l-zh">看涨期权墙</span></span>
             <span class="vv num ">$240</span></div>
           
+          <div class="r6d"><span class="k"><span class="l-en">Gamma flip</span><span class="l-zh">伽玛翻转位</span></span>
+            <span class="vv num ">$179</span></div>
+          
           <div class="r6d"><span class="k"><span class="l-en">Upside magnet</span><span class="l-zh">上方磁吸位</span></span>
             <span class="vv num ">$240</span></div>
           
@@ -1505,6 +1508,9 @@
           
           <div class="r6d"><span class="k"><span class="l-en">Net dealer gamma</span><span class="l-zh">做市商净伽玛</span></span>
             <span class="vv num neg">+$0.0B</span></div>
+          
+          <div class="r6d"><span class="k"><span class="l-en">Distance to flip</span><span class="l-zh">距翻转位</span></span>
+            <span class="vv num ">+21.5%</span></div>
           
         </div>
         
