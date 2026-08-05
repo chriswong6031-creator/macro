@@ -1,0 +1,70 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "WING-2026-06-30-laggards",
+  "ticker": "WING",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "WING",
+    "as_of": "2026-06-30",
+    "lane": "laggards",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "WING",
+    "lane": "laggards",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Consumer Discretionary",
+    "excess_spy": -0.26163323443499187,
+    "excess_sector": -0.24299401192937198,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "WING, in the laggards lane, was stopped out with negative excess return, classified as an idiosyncratic break with clean process.",
+    "root_cause": "WING, in the laggards lane, was stopped out with negative excess return, classified as an idiosyncratic break with clean process.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "WING's reversal signal failed; the pick broke down further, indicating a conditioning gap.",
+    "engines_credit": "The laggards engine signalled a reversal, but the move continued down, so the reversal engine is the laggard here.",
+    "causal_chain": [],
+    "alternate_explanations": [
+      "A Consumer Discretionary sector selloff may have overwhelmed the reversal signal.",
+      "Company-specific negative news could have caused the further decline."
+    ],
+    "missing_evidence": [
+      "Restaurant sector performance",
+      "Company-specific news",
+      "Details of the laggards reversal signal"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "laggard_reversal_vs_sector",
+        "feature": "Risk-adjusted excess return of laggards entries conditioned on sector trend",
+        "measurement": "Compare 10-day excess returns of laggards entries when sector is declining versus rising",
+        "expected_direction": "Laggards should have higher excess returns when sector is rising, indicating conditioning matters",
+        "falsifier": "If excess returns are similar regardless of sector trend, sector conditioning adds no value.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-05",
+  "asof": "2026-08-05",
+  "ts": "2026-08-05T09:23:44+00:00"
+}

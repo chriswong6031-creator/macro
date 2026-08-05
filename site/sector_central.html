@@ -55,28 +55,28 @@
 <link rel="stylesheet" href="cycle.css?v=4">
 <link rel="stylesheet" href="sector_cycles.css?v=f67e9e6a">
 
-<link rel="preload" href="sector_cycles_data.js?v=bf6eede5" as="script">
+<link rel="preload" href="sector_cycles_data.js?v=75b82144" as="script">
 <link rel="preload" href="mm_charts.js?v=244eb769" as="script">
 <link rel="preload" href="sector_cycles.js?v=bc35b288" as="script">
-<link rel="prefetch" href="sector_cycles_series_data.js?v=ad88ea74" as="script">
-<link rel="prefetch" href="sector_cycles_narr_data.js?v=ae7b4553" as="script">
+<link rel="prefetch" href="sector_cycles_series_data.js?v=6de6e6b9" as="script">
+<link rel="prefetch" href="sector_cycles_narr_data.js?v=4f65f0b5" as="script">
 <link rel="prefetch" href="sector_cycles_dna_data.js?v=46b0879d" as="script">
-<link rel="preload" href="sector_central_data.js?v=b6002f8a" as="script">
+<link rel="preload" href="sector_central_data.js?v=39143806" as="script">
 
 <link rel="prefetch" href="subsector_rotation.js?v=be121ce4" as="script">
 <link rel="prefetch" href="rotation_events.js?v=2c98bfa4" as="script">
 <link rel="prefetch" href="desk_watch.js?v=88da781c" as="script">
 <link rel="prefetch" href="time_machine.js?v=508b6e1a" as="script">
-<link rel="prefetch" href="heatmap.js?v=f644ec8e" as="script">
+<link rel="prefetch" href="heatmap.js?v=7eb088ce" as="script">
 <link rel="stylesheet" href="assets/css/aa819f7b.css?v=aa819f7b">
-<link rel="stylesheet" href="assets/css/b94dff24.css?v=b94dff24">
+<link rel="stylesheet" href="assets/css/dbe57038.css?v=dbe57038">
 <link rel="stylesheet" href="macro-desk.css?v=b4966394">
 <link rel="stylesheet" href="assets/css/f310dcaa.css?v=f310dcaa">
 
 <link rel="stylesheet" href="assets/css/0448fe99.css?v=0448fe99">
 <link rel="stylesheet" href="assets/css/363c988e.css?v=363c988e">
-<link rel="stylesheet" href="assets/css/42442d2a.css?v=42442d2a">
-<link rel="stylesheet" href="assets/css/6103edcb.css?v=6103edcb">
+<link rel="stylesheet" href="assets/css/d6fa9047.css?v=d6fa9047">
+<link rel="stylesheet" href="assets/css/9aefbd9c.css?v=9aefbd9c">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 </head>
@@ -400,8 +400,8 @@
       <span id="ftr-strip-token-lbl">—</span>
     </span>
     <span class="ftr-strip-asof" id="ftr-strip-asof"></span>
-    <span id="ftr-strip-leaders"></span>
-    <span id="ftr-strip-laggards"></span>
+    <span class="ftr-strip-grp" id="ftr-strip-leaders"></span>
+    <span class="ftr-strip-grp" id="ftr-strip-laggards"></span>
     <button class="ftr-strip-expand" id="ftr-strip-expand" type="button" aria-expanded="false">
       <span class="l-en">Full tape ▾</span><span class="l-zh">完整榜单 ▾</span>
     </button>
@@ -707,10 +707,15 @@
     all.sort(function(a,b){return b.tape_rank-a.tape_rank;});
     var leadEl=document.getElementById('ftr-strip-leaders');
     var lagEl=document.getElementById('ftr-strip-laggards');
+    /* name and figure are separate spans: they carry different type (the .dtp tape
+       idiom — readable name, mono tabular figure) and the strip prints the ZH name
+       in ZH, like the full band below it already does. */
     function chipHtml(b,cls){
       var chg=b.live_ew_chg_pct;
-      var nm=nameEn(b.id)||b.id;
-      return '<span class="ftr-strip-chip '+cls+'">'+esc(nm)+' '+(chg>=0?'+':'')+chg.toFixed(1)+'%</span>';
+      return '<span class="ftr-strip-chip '+cls+'">'
+        +'<span class="ftr-strip-nm">'+L(esc(nameEn(b.id)),esc(nameZh(b.id)))+'</span>'
+        +'<span class="ftr-strip-pct">'+(chg>=0?'+':'')+chg.toFixed(1)+'%</span>'
+        +'</span>';
     }
     if(leadEl){
       var top3=all.slice(0,3);
@@ -761,6 +766,17 @@
   }
 
   fetchJson('live/basket_pulse.json', function(d){ pulse=d; tryRender(); });
+
+  /* Display names come from window.BASKETS, which the DEFERRED sector_central_data.js
+     assigns via __siInitPage — and a same-origin basket_pulse.json fetch routinely
+     resolves first. When it does, _theme() finds nothing and every label in BOTH the
+     strip and the full band falls back to a prettified slug, in both languages:
+     "Ai Neoclouds", "Non Ai Software", "Us Sector Energy" (operator crop, 2026-08-03).
+     Doctrine §3 bans raw machine slugs from the glance tier — the prettified form is
+     the never-block-render safety net, not the label we ship. __siInitPage calls this
+     once the name map is in and (Equal-Weight)-stripped, and the tape repaints with
+     real names. No file, no call, no change: the fallback still holds the page up. */
+  window.__ftrTapeNamesReady = function(){ if(pulse) tryRender(); };
   })();
   </script>
 
@@ -801,8 +817,8 @@
           <div class="rvx-hoarrow"><svg viewBox="0 0 46 28"><defs><linearGradient id="rvxHo" x1="0" x2="1"><stop offset="0" stop-color="var(--rvx-weak)"/><stop offset="1" stop-color="var(--rvx-lead)"/></linearGradient></defs><path class="ln" d="M3 14 H37"/><path class="hd" d="M33 8 L43 14 L33 20 Z"/></svg></div>
           <div class="rvx-hocol in">
             <div class="lbl"><span class="l-en">Taking the lead</span><span class="l-zh">接过领先</span></div>
-            <div class="nm"><span class="l-en">Energy</span><span class="l-zh">能源</span> · <span class="l-en">US Energy Complex</span><span class="l-zh">美国能源综合</span></div>
-            <div class="meta" id="hero-in-meta" data-id="us_sector_energy"></div>
+            <div class="nm"><span class="l-en">AI Software &amp; Platforms</span><span class="l-zh">AI 软件与平台</span> · <span class="l-en">Energy</span><span class="l-zh">能源</span></div>
+            <div class="meta" id="hero-in-meta" data-id="ai_software"></div>
           </div>
         </div>
       </div>
@@ -825,7 +841,7 @@
   
 
   
-  <p class="si-view-read" id="si-read-overview" hidden data-from-en="Memory, HBM &amp; Storage" data-from-zh="内存、HBM 与存储" data-to-en="Energy" data-to-zh="能源"></p>
+  <p class="si-view-read" id="si-read-overview" hidden data-from-en="Memory, HBM &amp; Storage" data-from-zh="内存、HBM 与存储" data-to-en="AI Software &amp; Platforms" data-to-zh="AI 软件与平台"></p>
 
   
   <section class="rvx-sec rvx-reveal" id="actnow-section" style="animation-delay:.05s">
@@ -847,7 +863,7 @@
   <div class="si-changed">
     <span class="si-changed-l"><span class="l-en">What&#39;s holding</span><span class="l-zh">维持不变</span></span>
     <span class="tc-chip"><span class="l-en">Held for 10 days.</span><span class="l-zh">已持续 10 天。</span></span>
-    <span class="tc-chip"><span class="l-en">Memory, HBM &amp; Storage → Energy</span><span class="l-zh">内存、HBM 与存储 → 能源</span></span>
+    <span class="tc-chip"><span class="l-en">Memory, HBM &amp; Storage → AI Software &amp; Platforms</span><span class="l-zh">内存、HBM 与存储 → AI 软件与平台</span></span>
   </div>
 
   </section>
@@ -1063,7 +1079,7 @@
 
   <footer>
     <span class="l-en">Informational only, not investment advice. Baskets are equal-weighted and benchmarked to the S&amp;P 500. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list.</span><span class="l-zh">仅供参考，非投资建议。篮子等权重，并以标普 500 为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-08-04 09:36 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-08-05 14:58 UTC</span>.
   </footer>
   
   </div>
@@ -1088,6 +1104,10 @@ function deepStrip(obj) {
   }
 }
 deepStrip(BASKETS);
+/* The tape band fetches its quotes from a parse-time script and usually paints before
+   this deferred payload lands, i.e. against an empty name map. Now that the map is in
+   AND de-suffixed, let it repaint with real display names. */
+try{ if(window.__ftrTapeNamesReady) window.__ftrTapeNamesReady(); }catch(e){ console.warn('tape names', e); }
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
 // W4 velocity/heat card-chip helpers removed with the dead FTR chip lane (#4257).
@@ -1188,6 +1208,9 @@ function renderBTable(){
 
 // ---- 02 chart -------------------------------------------------------------
 let chart=null, chartMode='rel', chartRange=parseInt(localStorage.getItem('fw-brange')||'252',10)||252, hidden={};
+/* Set when renderChart() is asked to draw while #chart is still inside a display:none
+   view; si:view clears it the moment Explore is really on screen. See renderChart(). */
+let _chartDeferred=false;
 function chartSets(){
   const sets=Object.entries(CHART.baskets).map(([id,levels])=>{ const b=(BASKETS.baskets||[]).find(x=>x.id===id);
     return {key:id,label:b?b.name:id,color:colorOf[id]||'#888',levels}; });
@@ -1215,6 +1238,14 @@ function _xhTip(){
 }
 function renderChart(){
   const el=document.getElementById('chart'); if(typeof LightweightCharts==='undefined'){ el.innerHTML='<p class="muted">The charting library failed to load — the rest of the page is unaffected.</p>'; return; }
+  /* Under the workspace shell #chart starts inside a display:none view, where it measures
+     0 wide — and the basket payload lands (calling us) long before anyone opens Explore.
+     lightweight-charts binds autoSize at CREATION: a chart born zero-wide never recovers.
+     Measured on the shipped page 2026-08-04: with Explore open, #chart was 0px wide and
+     all seven canvases sat at the library's 300px default inside a ~950px slot, and
+     neither a window resize event nor a container width nudge moved them. So do not
+     create it yet — mark the draw deferred and let the si:view handler run us again. */
+  if(!chart && !el.clientWidth){ _chartDeferred=true; return; }
   if(!chart){ chart=LightweightCharts.createChart(el,chartOpts()); }
   (chart.__series||[]).forEach(s=>chart.removeSeries(s)); chart.__series=[];
   const start=rangeStart(CHART.dates);
@@ -1423,14 +1454,41 @@ function actRow(x){
   const ret=r20!=null?'<span class="tret '+(r20>=0?'rvx-up':'rvx-dn')+'">'+fmtPct(r20)+'</span>':'';
   const kchip=String(x.id||'').indexOf('us_sector_')===0?'<span class="si-kind">'+L('SECTOR EW','等权板块')+'</span>':'';
   const conf=x._conflicted?'<span class="mlcchip">'+L('conflicted','观点冲突')+'</span>':'';
-  return '<a class="rvx-trow" data-mlc-bid="'+esc(x.id)+'" href="basket/'+encodeURIComponent(x.id)+'.html"><span class="tnm">'+L(esc(x.name),esc(x.name_zh))+kchip+conf+'<span class="rsn">'+sub+ern+'</span></span>'+tick+ret+'</a>';
+  // W-A FT-R1 dual read: this row is on reduce/avoid AND on the bottoming lane.
+  // Both rows are kept as-is — never merged, never re-ranked — the chip just tells
+  // the reader the two lenses disagree. (CN precedent: china_act_now.py dual_chip.)
+  const dual=(!x._conflicted&&BOT_DUAL.has(String(x.id)))?'<span class="mlcchip" data-tip-en="The longer trend still says reduce, but the cycle read shows a low forming. This name is also on Bottoming watch — both reads are shown so you can see the disagreement." data-tip-zh="长期趋势仍建议减仓，但周期读数显示底部正在形成。该名称同时出现在筑底观察栏——两种判读并列显示，便于看清分歧。">'+L('may be bottoming','或正筑底')+'</span>':'';
+  return '<a class="rvx-trow" data-mlc-bid="'+esc(x.id)+'" href="basket/'+encodeURIComponent(x.id)+'.html"><span class="tnm">'+L(esc(x.name),esc(x.name_zh))+kchip+conf+dual+'<span class="rsn">'+sub+ern+'</span></span>'+tick+ret+'</a>';
 }
-function actLane(cls,ic,head,desc,arr){
-  const CAP=5, shown=arr.slice(0,CAP);
-  const rows=shown.length?shown.map(actRow).join(''):'<div class="rvx-lane-desc" style="min-height:0;padding-top:8px">'+L('Nothing here right now.','暂无。')+'</div>';
-  const more=arr.length>CAP?'<a class="more" href="us_stocks.html#action-board">+ '+(arr.length-CAP)+' '+L('more →','更多 →')+'</a>':'';
+// W-A bottoming-watch row. Deliberately NOT actRow: these come from the cycle
+// forward log, not from a theme score. Two source fields are payload-only and are
+// never rendered here — `signal` ("BUY") and `timing_state` (whose vocabulary
+// includes the literal "FRESH BUY") — because this lane is a WATCH surface and
+// must carry no buy verb. The cycle organ's registered output is instead quoted
+// as the fixed phrase below, with its trend-gate conflict printed beside it.
+function botRow(x){
+  const pos=(x.pos==null)?'':L('pos ','位置 ')+'<span class="rvx-num">'+Math.round(x.pos)+'</span>/100';
+  const turn=(x.cycle_signal==='BUY')?L('cycle turn signal — watch only','周期转折信号——仅观察'):'';
+  const l1=[pos,turn].filter(Boolean).join(' · ');
+  // Second line only when the cycle turned but the trend gate is shut (D10).
+  const l2=x.gate_conflict?'<span class="rsn">'+L('below 200-day trend — gate shut','低于200日趋势——闸门关闭')+'</span>':'';
+  const slope=(x.osc_slope==null)?'':'<span class="tret rvx-up">↗ '+Number(x.osc_slope).toFixed(1)+'</span>';
+  const href=x.href?esc(x.href):'';
+  const open=href?'<a class="rvx-trow" href="'+href+'">':'<div class="rvx-trow">';
+  const close=href?'</a>':'</div>';
+  return open+'<span class="tnm">'+L(esc(x.name),esc(x.name_zh||x.name))+'<span class="rsn">'+l1+'</span>'+l2+'</span>'+slope+close;
+}
+function actLane(cls,ic,head,desc,arr,opts){
+  const o=opts||{}, CAP=o.cap||5, shown=arr.slice(0,CAP);
+  const empty=o.empty||L('Nothing here right now.','暂无。');
+  const rowFn=o.row||actRow;
+  const rows=shown.length?shown.map(rowFn).join(''):'<div class="rvx-lane-desc" style="min-height:0;padding-top:8px">'+empty+'</div>';
+  const more=(!o.noMore&&arr.length>CAP)?'<a class="more" href="us_stocks.html#action-board">+ '+(arr.length-CAP)+' '+L('more →','更多 →')+'</a>':'';
   return '<div class="rvx-lane '+cls+'"><div class="rvx-lane-h"><span class="ic">'+ic+'</span>'+head+'<span class="ct">'+arr.length+'</span></div><div class="rvx-lane-desc">'+desc+'</div>'+rows+more+'</div>';
 }
+// W-A: ids carried on BOTH the reduce/avoid lane and the bottoming lane (FT-R1).
+// Populated per render from act_now.dual_read_ids; actRow reads it for the chip.
+let BOT_DUAL=new Set();
 function renderActBoard(){
   const el=document.getElementById('actnow'); if(!el) return;
   const a=(THEME&&THEME.act_now)||{};
@@ -1441,13 +1499,24 @@ function renderActBoard(){
   const reduce=a.reduce||[];
   const isTrim=x=>(x.action==='trim'||x.action_en==='TRIM');
   const trim=reduce.filter(isTrim), avoid=reduce.filter(x=>!isTrim(x));
+  // W-A bottoming watch — display tier, read straight off the cycle forward log.
+  // Absent key (older artifact) → empty lane + honest null, never a crash.
+  const bot=a.bottoming_watch||[];
+  BOT_DUAL=new Set((a.dual_read_ids||[]).map(String));
   el.innerHTML=actLane('buy','🟢',L('Buy now','立即买入'),L('In favour and a clean entry is set up right now.','看好且当前有干净入场点。'),buy)
     +actLane('wait','🔵',L('Wait for a pullback','等待回调'),L('In favour, but stretched — no clean entry yet.','看好但已拉伸 — 暂无干净入场点。'),wait)
     +actLane('trim','🟠',L('Take profits','止盈'),L('Was leading — momentum now rolling over.','曾领涨 — 动能正在回落。'),trim)
-    +actLane('avoid','⚪',L('Reduce / avoid','减仓 / 回避'),L('Weak and getting weaker — stand aside.','弱且转弱 — 观望。'),avoid);
+    +actLane('avoid','⚪',L('Reduce / avoid','减仓 / 回避'),L('Weak and getting weaker — stand aside.','弱且转弱 — 观望。'),avoid)
+    +actLane('bottom','🔵',L('Bottoming watch','筑底观察'),L('cycle lows forming — watch, don\'t chase','周期底部形成中——观察，勿追'),bot,
+      {row:botRow,cap:8,noMore:true,empty:L('no basing candidates tonight','今晚无筑底候选')});
   const fn=document.getElementById('actnow-footnote');
-  if(fn){ fn.innerHTML=conflicted.some(x=>x.sector_stance)
-    ?L('Conflicted = in favour on its own read, but its sector view says Reduce.','观点冲突 = 自身信号看好，但所属板块评级为减配。'):''; }
+  if(fn){ const parts=[];
+    if(conflicted.some(x=>x.sector_stance)) parts.push(L('Conflicted = in favour on its own read, but its sector view says Reduce.','观点冲突 = 自身信号看好，但所属板块评级为减配。'));
+    // Honest-null disclosure for the bottoming lane (G0.4) — the engine ships the
+    // wording so the page cannot drift from the measured basis.
+    const ba=a.bottoming_authority;
+    if(bot.length&&ba&&ba.null_disclosure_en) parts.push(L(esc(ba.null_disclosure_en),esc(ba.null_disclosure_zh||ba.null_disclosure_en)));
+    fn.innerHTML=parts.join(' '); }
   try{ renderStanceChips(); }catch(e){}
 }
 // MLC-W2b (#4241, ported): cross-surface stance chips on act-board rows. Fetches
@@ -1618,6 +1687,11 @@ function boot(){
   const rvxRerender=()=>{ try{ renderVerdictHero(); renderActBoard(); renderRotationMap(); renderRotBoard(); renderInternals(); }catch(e){} };
   document.addEventListener('langchange',()=>{ rvxRerender(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
   document.addEventListener('themechange',()=>{ renderRotationMap(); renderRotBoard(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
+  /* The overlay chart could not be built while Explore was hidden (see renderChart);
+     build it the first time the view is actually on screen. */
+  document.addEventListener('si:view',(e)=>{
+    if(e&&e.detail==='explore'&&_chartDeferred){ _chartDeferred=false; renderChart(); }
+  });
 }
 boot();
 try{ __siWireScope(); __siWireTrace(); }catch(e){ console.warn('si glue', e); }
@@ -1667,7 +1741,8 @@ if(document.readyState!=='loading') __siBoot(); else document.addEventListener('
 </script>
 
 
-<script src="sector_central_data.js?v=b6002f8a" defer></script>
+
+<script data-sync src="sector_central_data.js?v=39143806"></script>
 <script>
 (function(){
   "use strict";
@@ -2051,7 +2126,8 @@ if(document.readyState!=='loading') __siBoot(); else document.addEventListener('
 })();
 </script>
 
-<script src="si_workspace.js?v=e9276cf6" defer></script>
+<script src="si_workspace.js?v=04b466de" defer></script>
 <script src="theme.js?v=37ffbce3" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

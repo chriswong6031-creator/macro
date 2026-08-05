@@ -278,6 +278,11 @@ function activate(view,target){
     loadAssets(view);
     try{ window.dispatchEvent(new Event('resize')); }catch(e){}     // nudge autoSize charts
   }
+  /* Announce the switch on every activation, not just the first mount. Organs the page
+     itself builds (the basket overlay chart) cannot be created while their view is
+     display:none — lightweight-charts binds autoSize at creation and a chart born
+     zero-wide never recovers — so they wait for this event to draw with a real box. */
+  try{ document.dispatchEvent(new CustomEvent('si:view',{detail:view})); }catch(e){}
   reads();
   if(target){
     var el=document.getElementById(target);

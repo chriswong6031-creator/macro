@@ -30,7 +30,7 @@
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css">
 <script defer src="../theme.js"></script>
-<script defer src="../assets/js/company-intelligence-dossier.js?v=20260802d"></script>
+<script defer src="../assets/js/company-intelligence-dossier.js?v=20260804a"></script>
 <style>
 /* ══ dossier v6 ═══════════════════════════════════════════════════════════
    One voice: Inter (--font-ui) everywhere; numbers are tabular Inter, never
@@ -118,8 +118,25 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .px-chg .pill6{padding:2px 9px;border-radius:8px;}
 .px-chg.pos .pill6{background:color-mix(in srgb,var(--up) 13%,transparent);border:1px solid color-mix(in srgb,var(--up) 30%,transparent);}
 .px-chg.neg .pill6{background:color-mix(in srgb,var(--down) 13%,transparent);border:1px solid color-mix(in srgb,var(--down) 30%,transparent);}
-.live-dot{width:6px;height:6px;border-radius:50%;background:var(--up);display:inline-block;animation:v6lp 3s ease-in-out infinite;}
-@keyframes v6lp{0%,100%{opacity:1;}50%{opacity:.25;}}
+/* The live pip: one dot, used beside the price AND on the stance stamp so the
+   two read as the same "this is current" signal. The glow is a box-shadow
+   pulse rather than an opacity blink — the dot never disappears, so a glance
+   that lands mid-cycle still sees it. Base state carries the glow, which is
+   what reduced-motion falls back to. */
+/* --ok, not --up: a live pip is a STATUS read, and the standing zh colour law
+   (红涨绿跌) names "live/feed dots" in the list that must NOT flip. Painting it
+   from --up made it turn red in Chinese, where red means "rising" — a
+   directional claim from an indicator that only ever meant "this is current".
+   --ok is the non-flipping status green and is theme-aware in both modes. */
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;
+  box-shadow:0 0 7px 1px color-mix(in srgb,var(--ok) 60%,transparent);animation:v6lp 2.6s ease-in-out infinite;}
+@keyframes v6lp{
+  0%,100%{opacity:1;box-shadow:0 0 7px 1px color-mix(in srgb,var(--ok) 62%,transparent);}
+  50%{opacity:.62;box-shadow:0 0 2px 0 color-mix(in srgb,var(--ok) 14%,transparent);}}
+/* stance stamp — replaces the old "Engine read · <date>" line */
+.livestamp{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ok);white-space:nowrap;}
+[data-lang="zh"] .livestamp{letter-spacing:0;text-transform:none;}
 .wk52{margin-top:16px;}
 .wk52 .lbls{display:flex;justify-content:space-between;gap:14px;font-size:10.5px;color:var(--muted);margin-bottom:5px;}
 .wk52 .lbls b{color:var(--text);font-weight:650;}
@@ -198,12 +215,29 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .ci-next p{margin:0;color:var(--muted);font-size:11.5px;line-height:1.55;}
 .ci-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:auto;padding-top:16px;}
 .ci-actions .gbtn{justify-content:center;}
-.ci-upgrade{position:relative;isolation:isolate;min-height:36px;padding:8px 12px;color:#071219;
-  border-color:transparent;background:linear-gradient(108deg,#8cf0cf,#82c9ff);font-weight:790;
-  box-shadow:0 8px 22px -13px color-mix(in srgb,var(--link) 86%,transparent);}
-.ci-upgrade::after{content:"";position:absolute;z-index:-1;inset:1px;border-radius:inherit;
-  background:linear-gradient(108deg,color-mix(in srgb,#8cf0cf 86%,white),color-mix(in srgb,#82c9ff 86%,white));opacity:.88;}
-.ci-upgrade:hover,.ci-upgrade:focus-visible{transform:translateY(-1px);box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link) 95%,transparent);}
+/* Company Intelligence action row — house .gbtn motion, nothing bespoke.
+   The previous treatment defined its own ::after, which has the same
+   specificity as .gbtn::after and lands later in the cascade, so it REPLACED
+   the house sheen sweep with a static washed overlay at z-index:-1. It also
+   left .gbtn:hover free to overwrite background and color, so hovering the
+   primary swapped its gradient for grey glass and its dark ink for near-white.
+   Both are gone: the buttons now take .gbtn / .gbtn-cta wholesale — the same
+   sweep, lift and breathing halo as every other CTA on the site — and these
+   rules only size them and lift the sweep to a strength that is actually
+   visible against a tinted surface (the shared 13% white reads as nothing). */
+.ci-upgrade{min-height:36px;padding:9px 15px;font-weight:770;color:#fff;border-color:rgba(255,255,255,.22);
+  background:linear-gradient(112deg,#3b82f6,#6366f1 54%,#7c5cff);}
+/* .gbtn:hover repaints background AND color, and it out-specifies a plain
+   class — so a tinted button MUST restate both or it turns into grey glass
+   with near-white ink on hover (which is what it used to do). */
+.ci-upgrade:hover,.ci-upgrade:focus-visible{color:#fff;border-color:rgba(255,255,255,.4);
+  background:linear-gradient(112deg,#4a8dff,#7076f5 54%,#8b6dff);}
+/* Same house sweep, two inks: the secondaries sweep in the text colour so it
+   reads in both themes, the tinted CTA sweeps in white because its surface is
+   saturated blue in both. The shared 13% white is invisible on either. */
+.ci-actions .gbtn:not(.ci-upgrade)::after{
+  background:linear-gradient(105deg,transparent 38%,color-mix(in srgb,var(--text) 26%,transparent) 50%,transparent 62%);}
+.ci-upgrade::after{background:linear-gradient(105deg,transparent 36%,rgba(255,255,255,.5) 50%,transparent 64%);}
 .ci-history{display:flex;align-items:center;gap:10px;min-width:0;padding:13px 18px 14px;border-top:1px solid var(--hair);background:color-mix(in srgb,var(--bg) 14%,transparent);}
 .ci-history-label{flex:0 0 auto;color:var(--muted);font-size:10px;font-weight:760;letter-spacing:.08em;text-transform:uppercase;}
 .ci-history-tabs{display:flex;gap:6px;min-width:0;overflow-x:auto;scrollbar-width:none;}
@@ -216,7 +250,11 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .ci-foot b{color:var(--text);font-weight:650;}.ci-foot .ci-note{margin-left:auto;text-align:right;}
 .ci-sr{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;}
 [data-lang="zh"] .ci-kicker,[data-lang="zh"] .ci-lens-label,[data-lang="zh"] .ci-side-label,[data-lang="zh"] .ci-history-label,[data-lang="zh"] .ci-source-lang,[data-lang="zh"] .ci-metric em{letter-spacing:0;text-transform:none;}
-@media(prefers-reduced-motion:reduce){.ci-orbit::after,.ci-skel{animation:none;}}
+/* Reduced motion: name the pseudo-elements explicitly — a bare element
+   selector does not reach ::after. .live-dot keeps its resting glow, so
+   stopping the pulse leaves a visible dot rather than a blank slot. */
+@media(prefers-reduced-motion:reduce){.ci-orbit::after,.ci-skel,.live-dot{animation:none;}
+  .fcard .fb[data-v]::after,.fcard .fb[data-v]:hover::after{transition:none;transform:translateX(-50%);}}
 @media(max-width:900px){.ci-grid{grid-template-columns:1fr}.ci-story{border-right:0;border-bottom:1px solid var(--hair)}.ci-side{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.65fr);gap:18px}.ci-actions{grid-column:1/-1;padding-top:0}.ci-next{margin-top:0;padding-top:0;border-top:0;border-left:1px solid var(--hair);padding-left:18px}}
 @media(max-width:640px){.ci-top{padding:18px 16px 15px;gap:12px}.ci-top p{font-size:12px}.ci-state{max-width:152px;padding:5px 8px}.ci-loading{grid-template-columns:1fr;min-height:560px;padding:19px 16px}.ci-story{padding:19px 16px 17px}.ci-lenses{grid-template-columns:1fr}.ci-side{display:flex;padding:17px 16px}.ci-next{margin-top:14px;padding:13px 0 0;border-left:0;border-top:1px solid var(--hair)}.ci-actions{padding-top:15px}.ci-actions .ci-upgrade{width:100%;order:-1}.ci-history{align-items:flex-start;flex-wrap:wrap;padding:12px 16px}.ci-history-tabs{order:3;flex-basis:100%;padding-right:18px}.ci-receipt{margin-left:auto}.ci-foot{padding:10px 16px}.ci-foot .ci-note{margin-left:0;text-align:left}.ci-summary{font-size:18px}}
 
@@ -295,18 +333,29 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 
 /* earnings */
 .earn-top{display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:center;}
+/* Countdown ring. "DAYS TO GO" is 10 uppercase characters — it does not fit
+   inside a 78px inner disc, and used to sit on the ring stroke. The ring now
+   holds the number alone (which can therefore be bigger) and the label sits
+   under it, outside the circle. */
+.cring-wrap{display:flex;flex-direction:column;align-items:center;gap:9px;flex-shrink:0;}
+.cring-lbl{font-size:10px;font-weight:680;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+[data-lang="zh"] .cring-lbl{letter-spacing:0;text-transform:none;font-size:11px;}
 .cring{position:relative;width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;
   background:conic-gradient(var(--link) calc(var(--p)*1%),color-mix(in srgb,var(--line) 60%,transparent) 0);}
 .cring::before{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--panel);}
 .cring .cd{position:relative;text-align:center;line-height:1.05;}
-.cring .cd b{font-size:24px;font-weight:800;}
-.cring .cd > span{display:block;font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-top:2px;}
-.sbars{display:flex;align-items:flex-end;gap:10px;height:78px;margin-top:10px;}
-.sbar{flex:1;max-width:64px;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.cring .cd b{font-size:31px;font-weight:800;letter-spacing:-.03em;}
+/* Surprise bars. The old fixed 78px height was smaller than the column it
+   contained (a 56px bar plus two label lines is ~89px), and because the row
+   bottom-aligns, the overflow went UPWARD — the tallest bar drew straight over
+   the post-earnings-drift line above it. No fixed height: the row grows to fit
+   its tallest bar, and bottom-alignment still puts every bar on one baseline. */
+.sbars{display:flex;align-items:flex-end;gap:10px;margin-top:15px;}
+.sbar{flex:1;max-width:64px;display:flex;flex-direction:column;align-items:center;gap:5px;}
 .sbar i{width:100%;max-width:44px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,var(--up),color-mix(in srgb,var(--up) 45%,transparent));}
 .sbar i.m{background:linear-gradient(180deg,var(--down),color-mix(in srgb,var(--down) 45%,transparent));}
-.sbar b{font-size:10.5px;font-weight:700;}
-.sbar span{font-size:9.5px;color:var(--muted);}
+.sbar b{font-size:11px;font-weight:700;}
+.sbar span{font-size:10px;color:var(--muted);}
 
 /* tables */
 .vt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px;padding:0 2px;}
@@ -321,16 +370,34 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .cheapbar .cb i{display:block;height:100%;border-radius:3px;}
 
 /* financials */
+/* Financial history cards. Six per-bar value labels at 8.5px never fit a
+   third-width card: they overlapped each other AND punched up through the
+   card's own eyebrow, because .fbars was 70px tall while the column inside it
+   (label + 50px bar + year) needed ~79px and the row bottom-aligns. The card
+   now leads with the figure that actually carries the story — the latest year,
+   at a readable size — and the bars became the shape of the trend. Per-year
+   numbers are still there, one hover away, which is where six of them belong. */
 .fin3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .fcard{background:color-mix(in srgb,var(--panel2) 55%,transparent);border:1px solid var(--hair);border-radius:13px;padding:13px 14px;min-width:0;}
-.fcard .ft{font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
-.fcard .fbars{display:flex;align-items:flex-end;gap:5px;height:70px;margin-top:10px;}
-.fcard .fb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;}
-.fcard .fb i{width:100%;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,var(--link),color-mix(in srgb,var(--link) 35%,transparent));}
+.fcard .fhd{display:flex;align-items:baseline;justify-content:space-between;gap:9px;min-width:0;}
+.fcard .ft{min-width:0;font-size:10.5px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+[data-lang="zh"] .fcard .ft{letter-spacing:0;text-transform:none;font-size:11.5px;}
+.fcard .flast{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:5px;}
+.fcard .flast b{font-size:15.5px;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+.fcard .flast em{font-style:normal;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.fcard .fbars{display:flex;align-items:flex-end;gap:5px;height:54px;margin-top:13px;}
+.fcard .fb{position:relative;flex:1;min-width:0;display:flex;align-items:flex-end;}
+.fcard .fb i{display:block;width:100%;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,var(--link),color-mix(in srgb,var(--link) 35%,transparent));}
 .fcard .fb i.dn6{background:linear-gradient(180deg,var(--down),color-mix(in srgb,var(--down) 35%,transparent));}
-.fcard .fb b{font-size:8.5px;font-weight:600;color:var(--text);white-space:nowrap;}
-.fcard .fb span{font-size:9px;color:var(--muted);}
-.fcard .fcagr{margin-top:9px;font-size:11px;color:var(--muted);}
+.fcard .fb[data-v]::after{content:attr(data-y) " · " attr(data-v);position:absolute;left:50%;bottom:calc(100% + 7px);
+  transform:translateX(-50%) translateY(3px);padding:3px 8px;border-radius:8px;
+  background:var(--panel);border:1px solid var(--gbtn-brd);box-shadow:0 6px 18px -10px rgba(3,7,18,.7);
+  font:650 10.5px/1 var(--font-ui);color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums;
+  opacity:0;pointer-events:none;z-index:3;transition:opacity .16s ease,transform .16s ease;}
+.fcard .fb[data-v]:hover::after{opacity:1;transform:translateX(-50%) translateY(0);}
+.fcard .fspan{display:flex;justify-content:space-between;gap:8px;margin-top:8px;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.fcard .fcagr{margin-top:9px;padding-top:9px;border-top:1px solid var(--hair);font-size:11px;color:var(--muted);}
 .fcard .fcagr b{color:var(--text);}
 .mrow{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12px;}
 .mrow .mk{color:var(--muted);flex:0 0 130px;}
@@ -587,12 +654,15 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
       <p class="hero-desc hi hi3">{{ t(hero.desc_en, hero.desc_zh) }}</p>
       {% endif %}
       {% if hero %}
+      {# Chip order runs from the fact every reader wants first (size) to the one
+         that only some readers act on (the factor archetype), which is why the
+         archetype chip is last. #}
       <div class="chips hi hi3">
         {% if stats and stats.mktcap %}<span class="chip6">{{ t(hero.mktcap_label_en or 'Market cap', hero.mktcap_label_zh or '市值') }} · {{ stats.mktcap }}</span>
         {% elif hero.mktcap_label_en %}<span class="chip6">{{ t(hero.mktcap_label_en, hero.mktcap_label_zh) }}</span>{% endif %}
-        {% if hero.arch_label_en %}<span class="chip6">{{ t(hero.arch_label_en, hero.arch_label_zh) }}</span>{% endif %}
         {% if hero.sector %}<span class="chip6">{{ hero.sector }}</span>{% endif %}
         {% if hero.index_chips %}{% for c in hero.index_chips %}<span class="chip6">{{ t(c.en, c.zh) }}</span>{% endfor %}{% endif %}
+        {% if hero.arch_label_en %}<span class="chip6">{{ t(hero.arch_label_en, hero.arch_label_zh) }}</span>{% endif %}
       </div>
       {% endif %}
     </div>
@@ -624,7 +694,12 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     {% if hero.inv_en %}
     <span class="stance-line"><span class="l-en">{{ hero.inv_en }}</span><span class="l-zh">{{ hero.inv_zh }}</span></span>
     {% endif %}
-    <span class="asof">{{ t('Engine read', '引擎解读') }} · {{ freshness }}{% if stale %} · <span class="wrn">{{ t('may be stale', '可能过期') }}</span>{% endif %}</span>
+    {# The stamp says whether this read is current, not which machine produced
+       it — "Engine read" named the plumbing. Fresh reads carry the same live
+       pip as the price above; a stale one still prints its date, because that
+       is the case where the date is the whole point. #}
+    {% if stale %}<span class="asof wrn">{{ t('May be stale', '可能过期') }} · {{ freshness }}</span>
+    {% else %}<span class="livestamp"><span class="live-dot"></span>{{ t('Live', '实时') }}</span>{% endif %}
   </div>
   {% endif %}
 </header>
@@ -648,7 +723,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
   <div class="ci-empty" id="ci-empty">
     <h3 id="ci-empty-title">{{ t('Live company record', '实时公司记录') }}</h3>
     <p id="ci-empty-copy">{{ t('JavaScript loads the source-bounded event record here. Open Terminal if the live module does not start.', 'JavaScript 会在此加载受来源约束的事件记录。如实时模块未启动，请打开终端。') }}</p>
-    <a class="gbtn ci-upgrade" id="ci-terminal-upgrade-empty" href="{{ intelligence_upgrade_url }}" rel="noopener noreferrer" target="_blank">{{ t('Continue with full transcript history', '继续查看完整电话会历史') }} ↗</a>
+    <a class="gbtn gbtn-cta ci-upgrade" id="ci-terminal-upgrade-empty" href="{{ intelligence_upgrade_url }}" rel="noopener noreferrer" target="_blank">{{ t('Continue with full transcript history', '继续查看完整电话会历史') }} ↗</a>
   </div>
 
   <div id="ci-content" hidden>
@@ -678,7 +753,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
           <p id="ci-next-copy"></p>
         </div>
         <div class="ci-actions">
-          <a class="gbtn ci-upgrade" id="ci-terminal-upgrade" href="{{ intelligence_upgrade_url }}" rel="noopener noreferrer" target="_blank">{{ t('Continue with full transcript history', '继续查看完整电话会历史') }} ↗</a>
+          <a class="gbtn gbtn-cta ci-upgrade" id="ci-terminal-upgrade" href="{{ intelligence_upgrade_url }}" rel="noopener noreferrer" target="_blank">{{ t('Continue with full transcript history', '继续查看完整电话会历史') }} ↗</a>
           <a class="gbtn" id="ci-transcript" href="{{ terminal_url }}&pane=transcripts" rel="noopener noreferrer" target="_blank">{{ t('Open transcript', '打开电话会原文') }} ↗</a>
           <a class="gbtn" id="ci-earnings-record" href="earnings/">{{ t('Browse earnings records', '浏览财报记录') }}</a>
         </div>
@@ -792,7 +867,10 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     <div class="earn-top">
       {% if earnings.days_to_next is not none and earnings.days_to_next >= 0 %}
       {%- set ep = 100 - ([[earnings.days_to_next, 45]|min, 0]|max / 45 * 100) -%}
-      <div class="cring" style="--p:{{ '%.0f'|format(ep) }};"><div class="cd"><b class="num">{{ earnings.days_to_next }}</b><span>{{ t('days to go', '天后公布') }}</span></div></div>
+      <div class="cring-wrap">
+        <div class="cring" style="--p:{{ '%.0f'|format(ep) }};"><div class="cd"><b class="num">{{ earnings.days_to_next }}</b></div></div>
+        <span class="cring-lbl">{{ t('days to go', '天后公布') }}</span>
+      </div>
       {% endif %}
       <div>
         {% if earnings.last_date and (earnings.days_to_next is none or earnings.days_to_next < 0) %}
@@ -860,44 +938,77 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     {%- set n_years = fyears | length -%}
     <div class="fin3">
       {% if financials.revenue and financials.revenue | select('ne', '') | list %}
-      <div class="fcard"><div class="ft">{{ t('Revenue', '营业收入') }}</div>
+      <div class="fcard">
         {%- set rev_max = namespace(v=1) -%}
-        {%- for v in financials.revenue -%}{%- if v -%}{%- set vn = v|replace('$','')|replace('B','')|replace('M','')|replace('T','')|float(0) -%}{%- if vn > rev_max.v -%}{%- set rev_max.v = vn -%}{%- endif -%}{%- endif -%}{%- endfor -%}
+        {%- set rev_last = namespace(v='', y='') -%}
+        {%- for i in range(n_years) -%}
+          {%- set v = financials.revenue[i] if i < financials.revenue|length else '' -%}
+          {%- if v -%}
+            {%- set vn = v|replace('$','')|replace('B','')|replace('M','')|replace('T','')|float(0) -%}
+            {%- if vn > rev_max.v -%}{%- set rev_max.v = vn -%}{%- endif -%}
+            {%- set rev_last.v = v -%}{%- set rev_last.y = fyears[i] -%}
+          {%- endif -%}
+        {%- endfor -%}
+        <div class="fhd"><span class="ft">{{ t('Revenue', '营业收入') }}</span>
+          {% if rev_last.v %}<span class="flast"><b class="num">{{ rev_last.v }}</b><em>{{ rev_last.y }}</em></span>{% endif %}</div>
         <div class="fbars">
           {% for i in range(n_years) %}
           {%- set rv = financials.revenue[i] if i < financials.revenue|length else '' -%}
           {%- set rv_n = rv|replace('$','')|replace('B','')|replace('M','')|replace('T','')|float(0) if rv else 0 -%}
-          <div class="fb"><b>{{ rv if rv else '' }}</b><i style="height:{{ [((rv_n / rev_max.v) * 50)|int, 2]|max }}px;"></i><span>{{ fyears[i] }}</span></div>
+          <div class="fb"{% if rv %} data-y="{{ fyears[i] }}" data-v="{{ rv }}"{% endif %}><i style="height:{{ [((rv_n / rev_max.v) * 50)|int, 2]|max }}px;"></i></div>
           {% endfor %}
         </div>
+        {% if n_years %}<div class="fspan"><span>{{ fyears[0] }}</span><span>{{ fyears[n_years - 1] }}</span></div>{% endif %}
         {% if financials.rev_cagr %}<div class="fcagr">{{ t('5-yr growth', '5年复合增速') }} <b>{{ financials.rev_cagr }}</b></div>{% endif %}
       </div>
       {% endif %}
       {% if financials.eps and financials.eps | select('ne', '') | list %}
-      <div class="fcard"><div class="ft">{{ t('Earnings per share', '每股收益') }}</div>
+      <div class="fcard">
         {%- set eps_max = namespace(v=0.01) -%}
-        {%- for v in financials.eps -%}{%- if v -%}{%- set vn = v|float(0)|abs -%}{%- if vn > eps_max.v -%}{%- set eps_max.v = vn -%}{%- endif -%}{%- endif -%}{%- endfor -%}
+        {%- set eps_last = namespace(v='', y='') -%}
+        {%- for i in range(n_years) -%}
+          {%- set v = financials.eps[i] if i < financials.eps|length else '' -%}
+          {%- if v -%}
+            {%- set vn = v|float(0)|abs -%}
+            {%- if vn > eps_max.v -%}{%- set eps_max.v = vn -%}{%- endif -%}
+            {%- set eps_last.v = v -%}{%- set eps_last.y = fyears[i] -%}
+          {%- endif -%}
+        {%- endfor -%}
+        <div class="fhd"><span class="ft">{{ t('Earnings per share', '每股收益') }}</span>
+          {% if eps_last.v %}<span class="flast"><b class="num">${{ eps_last.v }}</b><em>{{ eps_last.y }}</em></span>{% endif %}</div>
         <div class="fbars">
           {% for i in range(n_years) %}
           {%- set ev = financials.eps[i] if i < financials.eps|length else '' -%}
           {%- set ev_n = ev|float(0) if ev else 0 -%}
-          <div class="fb"><b>{{ '$'+ev if ev else '' }}</b><i class="{{ 'dn6' if ev_n < 0 else '' }}" style="height:{{ [(ev_n|abs / eps_max.v * 50)|int, 2]|max }}px;"></i><span>{{ fyears[i] }}</span></div>
+          <div class="fb"{% if ev %} data-y="{{ fyears[i] }}" data-v="${{ ev }}"{% endif %}><i class="{{ 'dn6' if ev_n < 0 else '' }}" style="height:{{ [(ev_n|abs / eps_max.v * 50)|int, 2]|max }}px;"></i></div>
           {% endfor %}
         </div>
+        {% if n_years %}<div class="fspan"><span>{{ fyears[0] }}</span><span>{{ fyears[n_years - 1] }}</span></div>{% endif %}
         {% if financials.eps_cagr %}<div class="fcagr">{{ t('5-yr growth', '5年复合增速') }} <b>{{ financials.eps_cagr }}</b></div>{% endif %}
       </div>
       {% endif %}
       {% if financials.fcf and financials.fcf | select('ne', '') | list %}
-      <div class="fcard"><div class="ft">{{ t('Free cash flow', '自由现金流') }}</div>
+      <div class="fcard">
         {%- set fcf_max = namespace(v=0.01) -%}
-        {%- for v in financials.fcf -%}{%- if v -%}{%- set vn = v|replace('$','')|replace('B','')|replace('M','')|float(0)|abs -%}{%- if vn > fcf_max.v -%}{%- set fcf_max.v = vn -%}{%- endif -%}{%- endif -%}{%- endfor -%}
+        {%- set fcf_last = namespace(v='', y='') -%}
+        {%- for i in range(n_years) -%}
+          {%- set v = financials.fcf[i] if i < financials.fcf|length else '' -%}
+          {%- if v -%}
+            {%- set vn = v|replace('$','')|replace('B','')|replace('M','')|float(0)|abs -%}
+            {%- if vn > fcf_max.v -%}{%- set fcf_max.v = vn -%}{%- endif -%}
+            {%- set fcf_last.v = v -%}{%- set fcf_last.y = fyears[i] -%}
+          {%- endif -%}
+        {%- endfor -%}
+        <div class="fhd"><span class="ft">{{ t('Free cash flow', '自由现金流') }}</span>
+          {% if fcf_last.v %}<span class="flast"><b class="num">{{ fcf_last.v }}</b><em>{{ fcf_last.y }}</em></span>{% endif %}</div>
         <div class="fbars">
           {% for i in range(n_years) %}
           {%- set fv = financials.fcf[i] if i < financials.fcf|length else '' -%}
           {%- set fv_n = fv|replace('$','')|replace('B','')|replace('M','')|float(0) if fv else 0 -%}
-          <div class="fb"><b>{{ fv if fv else '' }}</b><i class="{{ 'dn6' if fv_n < 0 else '' }}" style="height:{{ [(fv_n|abs / fcf_max.v * 50)|int, 2]|max }}px;"></i><span>{{ fyears[i] }}</span></div>
+          <div class="fb"{% if fv %} data-y="{{ fyears[i] }}" data-v="{{ fv }}"{% endif %}><i class="{{ 'dn6' if fv_n < 0 else '' }}" style="height:{{ [(fv_n|abs / fcf_max.v * 50)|int, 2]|max }}px;"></i></div>
           {% endfor %}
         </div>
+        {% if n_years %}<div class="fspan"><span>{{ fyears[0] }}</span><span>{{ fyears[n_years - 1] }}</span></div>{% endif %}
       </div>
       {% endif %}
     </div>

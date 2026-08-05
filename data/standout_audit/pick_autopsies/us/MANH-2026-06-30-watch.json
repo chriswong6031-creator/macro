@@ -1,0 +1,69 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "MANH-2026-06-30-watch",
+  "ticker": "MANH",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "MANH",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "MANH",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_alpha",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Information Technology",
+    "excess_spy": 0.3053115327579563,
+    "excess_sector": 0.3623425515771601,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 0.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "CLEAN_LIFTOFF",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "MANH was identified on the watch list and had a clean liftoff, delivering strong positive excess return. This is a clear win with no process fault.",
+    "root_cause": "MANH was identified on the watch list and had a clean liftoff, delivering strong positive excess return. This is a clear win with no process fault.",
+    "mitigation_verdict": "not_a_failure",
+    "lesson": "Watch-list entries can achieve clean liftoffs when timing and momentum align; the process was exemplary here.",
+    "engines_credit": "The watch-list signal engine and the timing confluence model both performed as designed.",
+    "causal_chain": [],
+    "alternate_explanations": [
+      "The positive move could be a broader IT sector rally rather than specific company alpha."
+    ],
+    "missing_evidence": [
+      "company-specific news or earnings leading to the liftoff",
+      "market or sector performance on and after 2026-06-30",
+      "details on the T1-T4 confluence indicators used"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "clean_liftoff_sustainability",
+        "feature": "Proportion of clean liftoffs that continue positive excess return over a 20-day horizon",
+        "measurement": "Track 20-day post-liftoff excess returns for all clean liftoffs",
+        "expected_direction": "Higher proportion (e.g., >60%) for successful names",
+        "falsifier": "If <40% of clean liftoffs sustain positive excess return, the signal is too optimistic and needs review.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-05",
+  "asof": "2026-08-05",
+  "ts": "2026-08-05T09:23:44+00:00"
+}

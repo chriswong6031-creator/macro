@@ -326,10 +326,40 @@ class PaidProviderStub:
 # Public entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _repo_root() -> "Path":
+    from pathlib import Path
+    return Path(__file__).resolve().parents[2]
+
+
+def default_provider(*, root: "Path | None" = None) -> EarningsProvider:
+    """The provider this lane actually uses.
+
+    EDGAR, not FreePollProvider. FreePollProvider polls
+    ``finviz.com/rss.ashx?v=3&auth=0``, which 301s to a 404 HTML page; it has
+    returned zero events for as long as the lane has been armed, and no
+    ``kind="earnings"`` item has ever reached the outbox. It is kept below for
+    reference and for any caller that injects it deliberately, but nothing
+    should default to it again.
+
+    Falls back to FreePollProvider ONLY if the EDGAR module cannot be imported,
+    and says so — a silent fallback to a dead source is how this lane spent
+    months reporting success while doing nothing.
+    """
+    try:
+        from engine.marketing.edgar_earnings_wire import EdgarEarningsProvider
+    except Exception as exc:  # pragma: no cover - import guard
+        print(f"::warning title=earnings-feed-provider::could not load the EDGAR wire "
+              f"({exc}); falling back to the DEAD free poll — this lane will emit nothing",
+              flush=True)
+        return FreePollProvider()
+    return EdgarEarningsProvider(root=root or _repo_root())
+
+
 def fetch_events(
     since: datetime,
     *,
     provider: EarningsProvider | None = None,
+    root: "Path | None" = None,
 ) -> list[dict[str, Any]]:
     """Return earnings events newer than *since*.
 
@@ -337,15 +367,16 @@ def fetch_events(
         since: Only return events whose ``when`` is at or after this datetime.
                Must be timezone-aware (UTC).
         provider: Injectable provider (EarningsProvider protocol).  Defaults to
-                  FreePollProvider().  Tests pass a fixture provider here so the
-                  suite never hits the network.
+                  the EDGAR wire (see ``default_provider``).  Tests pass a
+                  fixture provider here so the suite never hits the network.
+        root:     Repository root, for the provider's calendar and CIK map.
 
     Returns:
         List of event dicts (see module docstring for schema).  Always a list,
         never raises.
     """
     if provider is None:
-        provider = FreePollProvider()
+        provider = default_provider(root=root)
     try:
         return provider.fetch(since)
     except Exception as exc:  # noqa: BLE001

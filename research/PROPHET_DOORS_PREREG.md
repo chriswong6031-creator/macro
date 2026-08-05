@@ -282,10 +282,109 @@ Each line cites the standing kill it stays clear of.
 | Amendment | Date | Change | Reason |
 |---|---|---|---|
 | — | — | none yet | registration |
+| §9 addendum | 2026-08-04 | Recorded features added to the flag payload. **No §1-§6 change**: no constant, leg, ruler, gate, comparator or horizon moved | US Superintelligence Roadmap §4.1 — instrument the relay hypothesis before the ledger matures |
+
+---
+
+## §9 Recorded features (2026-08-04 addendum)
+
+Added **before the first formal read and before any outcome was inspected**. At the time of
+writing `data/prophet_doors/flags.jsonl` does not yet exist — the doors merged 2026-08-03 and
+begin accruing tonight — so no distribution, win rate, or excess figure has been looked at by
+anybody, and every row this ledger will ever hold carries these fields.
+
+**Why now.** `PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md` §4.1 calls for the doors to
+carry relay instrumentation from day one, so the promotion read can test the CN-measured relay
+finding — that relay POSITION, not theme-heat LEVEL, separates chase outcomes — on US forward
+data. A feature added later would only be measurable on rows accrued later; added now it is
+measurable on all of them.
+
+### 9.1 The fields
+
+Every flag row carries all seven keys. A key is **present-and-null** when uncomputable, never
+absent, so `null` always means "computed and unavailable" rather than "predates the addendum".
+
+| Field | Definition as coded |
+|---|---|
+| `relay_count_3d` | Count of **other** cache-covered members of the flag's theme that printed a **fresh 63-session closing high** within the trailing `RELAY_RECENT_SESSIONS = 3` sessions, the flag bar included. Fresh high = `close > max(prior RELAY_HIGH_LOOKBACK = 63 closes)` — the session a NEW high PRINTED, not a session sitting at a standing one. |
+| `relay_position` | Count of **other** covered members whose fresh high printed **strictly before** the flag bar inside the trailing `RELAY_POSITION_WINDOW = 21` sessions, divided by the theme's covered-member count. `0` = first mover, → 1 = late relay. |
+| `relay_members_covered` | `n` — the covered-member count that denominator is taken over. Always recorded, including when `relay_position` is null. |
+| `turnover_pctile` | Share of the flag ticker's own trailing volume window at or below its **admission-day** share volume (`1.0` = the window's highest). Source: `data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet`. |
+| `turnover_window` | The number of sessions that percentile was actually computed over = `min(TURNOVER_WINDOW_MAX = 60, sessions available)`. |
+| `foresight_stage` | The per-theme `stage` string from the Thematic Foresight Desk artifact `site/basketdata/foresight_cascade.json`, when the flag's theme joins a desk-covered theme. Read-only join; this lane never triggers, modifies, or reorders the desk. |
+| `foresight_covered` | Whether that join hit. `false` + `foresight_stage: null` is the disclosed non-coverage. |
+
+**Theme resolution.** Door T uses the flag's own theme. Door R uses the name's best-ranked hot
+theme when it has one, and `null` when it does not — a Door R name outside every hot theme
+records null relay fields, which is a reading, not a gap.
+
+### 9.2 Null rules — what is deliberately NOT computed
+
+Nulls here are printed, never imputed (house epistemics; prereg §0).
+
+- **`relay_position` is null below `RELAY_MIN_MEMBERS = 4` covered members.** A "position"
+  among two names is an artefact of the denominator. `relay_count_3d` is *not* gated this way —
+  a raw count stays honest at any `n` — and `relay_members_covered` discloses `n` either way.
+- **Relay coverage is strict.** A member counts only when it is in the doors' own close-cache
+  universe AND its closes are complete across the whole 63+21 session tail. A hole would make
+  `close > NaN` evaluate False, i.e. would silently record "did not break out" for a name
+  nobody could measure. Measured at registration of this addendum: **81 of 128** top-5 theme
+  members were covered — 45 members of the rotation artifact are absent from the three breadth
+  caches entirely, 2 more carried holes. The rotation artifact's universe is wider than the
+  doors' universe; `relay_members_covered` is the per-flag disclosure of that gap.
+- **`turnover_pctile` is null when the volume cache carries no observation ON the flag bar.**
+  Reading the prior session's volume as "admission-day" would fabricate the feature. A
+  single-observation window is likewise null — its percentile is definitionally `1.0`.
+- **The 60-session window is aspirational, not claimed.** These caches were backfilled
+  2026-05-19 and the median column currently holds ~51 non-null sessions, so most flags will
+  record `turnover_window` in the 50s. The roadmap names this cache depth as known debt; the
+  honest response is to record the window that existed, which is why `turnover_window` is a
+  field rather than a constant.
+- **`foresight_stage` joins on normalised-exact theme names only** (casefold, strip
+  non-alphanumerics; the desk's slug and display name are both indexed). No fuzzy or nearest
+  match — that would invent desk coverage the desk never claimed. The two taxonomies were built
+  independently, so coverage is partial by construction: **2 of 41** rotation themes joined at
+  the time of writing, and **none of the current top-5 hot themes**. Expect this field to be
+  mostly null until the §4.2 Foresight → Theme Tape wiring reconciles the vocabularies.
+
+### 9.3 Authority — none, and the fences that make that structural
+
+**These features have ZERO effect on fire, cap, dedupe, priority, or grading.** They are not a
+filter, not a leg, not a tiebreak, and not a score.
+
+- **Fire definitions are unchanged.** §1's legs and constants are byte-identical to
+  registration. Nothing in §1-§6 moved.
+- **Computed after the fact.** `emit()` settles every fire decision, the frozen priority sort,
+  the `MAX_FLAGS_PER_DOOR` cap and the `DEDUPE_SESSIONS` dedupe, and only then featurises the
+  rows it already kept. Dropped and deduped candidates are never featurised. The ordering is
+  structural, not a convention.
+- **Degrade-to-null.** Any failure inside the feature computer records the all-null block and
+  leaves the night's flags untouched.
+- **The grader stays blind.** `scripts/grade_prophet_doors.py` reads price and nothing else; a
+  test asserts no feature key appears in it. The ruler grades the door, not a feature.
+- **Constants are segregated.** `engine/prophet_doors.py` carries the frozen door constants and
+  the analysis-feature constants in two separately labelled blocks, so a future edit cannot
+  mistake one for the other. Changing a feature constant changes what an analyst can measure;
+  changing a §1 constant changes the door and restarts its accrual clock.
+
+Pinned by `tests/test_prophet_doors.py`: `TestFireInvariance` runs the same synthetic tape
+through `emit(features=True)` and `emit(features=False)` and requires an identical fire set —
+same tickers, same candidate/overflow/dedupe counts — with the feature block purely ADDITIVE
+(no recorded fire receipt overwritten by a colliding key). `TestFeatureScopeFences` pins the
+after-the-cap ordering, the blind grader, and the constant segregation.
+
+### 9.4 What this addendum does not do
+
+It does not add a gate, move a horizon, change the comparator, or grant the features any
+promotion power. §4's four gates are unchanged and remain the only promotion trigger. These
+fields are inputs to the ADJUDICATION that a §4 pass opens (prereg §6 already admits the
+door's fire-rate and concentration profile as adjudication inputs); they are not evidence a
+door can pass a gate with, and a relay result cannot rescue a G3/G4 failure.
 
 ---
 
 *Related: `PROPHET_US_TREND_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` (§5 W3, the program),
+`PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md` (§4.1, the addendum's origin),
 `PROPHET_STAGE_QUALITY_PREREG.md` (the prereg form this follows),
 `US_BOARD_MEASUREMENT.md` (the measurement canon the comparator comes from),
 `DO_NOT_REBUILD.md` (rows 49 / 69 / 117 fenced in §7).*

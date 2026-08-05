@@ -212,3 +212,32 @@ def test_legacy_bool_fragility_does_not_crash():
     rec = _profiled("CN", rev_z=0.8, fragility=True)
     flips = sv.build_view(rec, "CN")["falsifiers"]
     assert any("fragile" in f["en"].lower() for f in flips)
+
+
+def test_every_scored_verdict_has_a_plain_english_gloss():
+    """A verdict string is a LOOKUP KEY into _VERDICT_GLOSS — keep them in step.
+
+    `_gloss()` fails soft to ("", ""), so a verdict whose wording drifts away
+    from its gloss key does not raise, does not log, and does not render an
+    obviously broken page: the plain-English sub-line simply vanishes, leaving
+    the reader with the terse verdict alone. That is the failure this pins.
+
+    It is not hypothetical. Shortening "Extended — don't chase; wait for a
+    pullback" to "Extended — wait for a pullback" (2026-08-04) orphaned this
+    key, and the same rename showed the target string had ALREADY been emitted
+    by a second branch that never had a gloss at all.
+    """
+    import re
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parents[1] / "engine" / "stock_score.py"
+    verdicts = set(re.findall(r'_v\(\s*\n?\s*"([^"]+)"', src.read_text(encoding="utf-8")))
+    assert len(verdicts) > 20, f"verdict scrape found only {len(verdicts)} — regex rotted"
+
+    missing = sorted(v for v in verdicts if v not in sv._VERDICT_GLOSS)
+    assert not missing, (
+        "these conviction verdicts have no _VERDICT_GLOSS entry, so their "
+        f"plain-English sub-line renders empty: {missing}. Add the key to "
+        "engine/stock_view.py._VERDICT_GLOSS (EN, ZH) — and when you reword a "
+        "verdict, reword its gloss key in the same commit."
+    )

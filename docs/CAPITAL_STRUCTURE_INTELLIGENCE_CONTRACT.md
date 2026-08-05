@@ -52,7 +52,7 @@ flowchart LR
 | `data/capital_structure/index_coverage.parquet` | same | Per-index-day complete/retry/not-published ledger; only a structurally valid index can close a zero-target day |
 | `data/capital_structure/retrieval_attempts.parquet` | same | Retryable operational attempts; failures never become source manifests |
 | `data/capital_structure/retrieval_queue_receipt.json` | same | Strict per-lane selection/defer and oldest-backlog-age receipt |
-| `data/capital_structure/source_manifest.parquet` | same | Strict pointers to hash-verified source bytes |
+| `data/capital_structure/source_manifest.jsonl` | same | Strict pointers to hash-verified source bytes. JSON Lines, not parquet: a manifest ID commits to its own canonical body, and pyarrow's nested-struct unification rewrote retained rows whenever a new row introduced a nested key. |
 | R2 `capital_structure/sec/sha256/<prefix>/<sha256>` | same | Unlinked raw complete submissions and selected primary, EX-1, EX-FILING FEES, EX-3/EX-4/EX-10/EX-99 public SEC evidence |
 | `data/capital_structure/event_versions.parquet` | `scripts/compile_capital_structure_events.py` | Immutable `capital_structure.event.v1` versions |
 | `data/capital_structure/event_edges.parquet` | same | Immutable amends/effectuates/withdraws/supersedes edges |

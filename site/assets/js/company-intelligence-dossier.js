@@ -403,9 +403,15 @@
 
     var latest = events[0];
     var incomplete = data.status !== 'ready' || latest.claim_citations_pending === true;
+    // The chip answers one question for the reader: how far can I trust what is
+    // written below? "Source record available · transcript check needed" named
+    // an internal pipeline state and left that question unanswered — a reader
+    // cannot tell whether "transcript check needed" is their job or ours. It is
+    // ours, and until it is done the numbers are from the record but the wording
+    // around them is not yet line-cited. Say exactly that.
     setState(incomplete ? 'partial' : 'ready',
-      incomplete ? 'Source record available · transcript check needed' : 'Source record available',
-      incomplete ? '来源记录可用 · 需核对原文' : '来源记录可用');
+      incomplete ? 'Wording not yet checked' : 'Checked against the source',
+      incomplete ? '措辞尚未核对' : '已核对来源记录');
     loading.hidden = true;
     empty.hidden = true;
     content.hidden = false;
