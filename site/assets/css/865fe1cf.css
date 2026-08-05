@@ -237,9 +237,15 @@
   @media (prefers-reduced-motion:no-preference) {
     .reveal { animation:iftRise .5s cubic-bezier(.2,.7,.3,1) both; }
     .reveal-1{ animation-delay:.04s;} .reveal-2{ animation-delay:.10s;} .reveal-3{ animation-delay:.16s;}
-    .spot-card { animation:iftRise .5s cubic-bezier(.2,.7,.3,1) both; }
-    .spot-card:nth-child(2){ animation-delay:.07s;} .spot-card:nth-child(3){ animation-delay:.14s;}
-    .spot-card.breathe { animation:iftRise .5s cubic-bezier(.2,.7,.3,1) both, iftBreathe 6s ease-in-out 1s infinite; }
+    /* Entrance is keyed to card IDENTITY (.spot-in), never to the DOM node. The grid is
+       rebuilt wholesale by innerHTML on every render, and render() runs once per fetch
+       completion — an unconditional entrance here replayed the fade-from-zero on each
+       rebuild (19 rebuilds in 2.8s at load), which reads as a strobe. buildSpotlight()
+       adds .spot-in only to a ticker that was not already on screen. */
+    .spot-card.spot-in { animation:iftRise .5s cubic-bezier(.2,.7,.3,1) both; }
+    .spot-card.spot-in:nth-child(2){ animation-delay:.07s;} .spot-card.spot-in:nth-child(3){ animation-delay:.14s;}
+    .spot-card.breathe { animation:iftBreathe 6s ease-in-out 1s infinite; }
+    .spot-card.spot-in.breathe { animation:iftRise .5s cubic-bezier(.2,.7,.3,1) both, iftBreathe 6s ease-in-out 1s infinite; }
   }
   @media (prefers-reduced-motion:reduce) { .sess-live .live-dot { animation:none; } }
 

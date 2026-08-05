@@ -56,7 +56,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=315a84eb">
-<link rel="stylesheet" href="assets/css/15428717.css?v=15428717">
+<link rel="stylesheet" href="assets/css/865fe1cf.css?v=865fe1cf">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 </head>
@@ -728,7 +728,7 @@ function fetchQuotes() {
     quotesInflight = false;
     var q = data.quotes || {};
     Object.keys(q).forEach(function(tk){ quoteState[tk] = q[tk]; });
-    render();
+    scheduleRender();
   }).catch(function(){ quotesInflight = false; });
 }
 
@@ -739,7 +739,7 @@ function fetchPulse() {
   fetch(pulseUrl(), {cache:'no-cache'}).then(function(r){ return r.json(); }).then(function(data){
     pulseInflight = false;
     (data.tickers || []).forEach(function(t){ pulseState[t.ticker] = t; });
-    render();
+    scheduleRender();
   }).catch(function(){ pulseInflight = false; });
 }
 
@@ -817,7 +817,7 @@ function fetchFlow() {
         if (it && it.root && LEADERS_BY_TK[it.root]) fetchRootFlow(it.root);
       });
     }
-    render();
+    scheduleRender();
   }).catch(function(){ flowInflight = false; });
 }
 function bestTier(a, b) {
@@ -851,7 +851,7 @@ function fetchRootFlow(root) {
     if (d.day && d.day.call_share != null) ex.call_share = d.day.call_share;
     if (dur != null) ex.flow_dur = dur;
     flowState[root] = ex;
-    render();
+    scheduleRender();
   }).catch(function(){});
 }
 function updateFlowStamp(asof) {
@@ -998,6 +998,11 @@ function buildHero(rows, counts) {
 function laneSuffix(k){ return { act:'act',get_ready:'ready',in_favour:'fav',take_profits:'profit',watch:'watch',stand_aside:'aside' }[k]||'aside'; }
 
 // ══ SPOTLIGHT — Look here first ════════════════════════════════════════════
+// The grid is rebuilt from a string on every render, so the DOM node for a card is a new
+// node each time even when nothing about the card changed. Two pieces of state keep that
+// from being visible: _spotHtml skips the write entirely when the markup is unchanged,
+// and _spotSeen decides which cards are NEW and may therefore play the entrance.
+var _spotHtml = '', _spotSeen = {};
 function buildSpotlight(rows, counts) {
   var grid = document.getElementById('spot-grid'), note = document.getElementById('spot-note');
   if (!grid) return;
@@ -1016,15 +1021,28 @@ function buildSpotlight(rows, counts) {
   if (note) note.innerHTML = noteTxt;
 
   if (!pick.length) {
-    grid.innerHTML = '<div class="spot-empty">'+
+    var emptyHtml = '<div class="spot-empty">'+
       (live ? lz('<b>No fresh setups right now.</b> No leader is being bought back out of a washout — the board below is on watch and will surface names here as they set up.',
                  '<b>当前无新布局。</b> 暂无领涨股在洗盘后被重新买入——下方看板处于观察状态，一旦成形便会在此呈现。')
             : lz('<b>Nothing set up for the open yet.</b> When a leader builds a washout base, it will appear here first.',
                  '<b>暂无为开盘准备的布局。</b> 一旦有领涨股筑成洗盘底部，将优先在此显示。'))
       +'</div>';
+    if (emptyHtml !== _spotHtml) { grid.innerHTML = emptyHtml; _spotHtml = emptyHtml; }
+    _spotSeen = {};   // the grid is empty — whatever comes back next is genuinely new
     return;
   }
-  grid.innerHTML = pick.map(function(r, i){ return spotCard(r, i); }).join('');
+  var tks = pick.map(function(r){ return r.l.ticker; });
+  var html = pick.map(function(r, i){ return spotCard(r, i); }).join('');
+  if (html === _spotHtml) return;   // nothing changed — leave the live nodes alone
+  grid.innerHTML = html;
+  _spotHtml = html;
+  // A card already on screen was just replaced by an identical-looking new node: it is an
+  // update, not an arrival, so it must not fade in from zero. Only a ticker that was NOT
+  // in the previous pick gets the entrance. Set before first paint, so it still animates.
+  var cards = grid.querySelectorAll('.spot-card');
+  for (var ci = 0; ci < cards.length; ci++) { if (!_spotSeen[tks[ci]]) cards[ci].classList.add('spot-in'); }
+  _spotSeen = {};
+  tks.forEach(function(t){ _spotSeen[t] = true; });
 }
 function spotCard(r, i) {
   var l = r.l, meta = r.meta, st = r.st, d = r.d, q = r.q, p = r.p, f = r.f;
@@ -1279,9 +1297,23 @@ function applyView() {
 }
 
 // ── Full render ────────────────────────────────────────────────────────────
-var _rendering = false;
+// _rendering only guards SYNCHRONOUS reentrancy. Every fetch completion asks for a render
+// — quotes, pulse, flow, and one per per-root flow payload (up to 20 roots) — and those
+// land in separate promise callbacks spread over ~1s, so the flag never coalesces them:
+// measured 19 full rebuilds inside 2.8s of page load. Async callers go through
+// scheduleRender() so a burst collapses into a single render per 50ms window.
+var _rendering = false, _renderQueued = false;
+// A timer, NOT requestAnimationFrame: rAF is suspended while the tab is hidden, so an
+// rAF-coalesced render would stall a backgrounded tab at its last paint until refocus.
+// 50ms is below notice and collapses the per-root burst (arrivals land 30-90ms apart).
+function scheduleRender() {
+  if (_renderQueued) return;
+  _renderQueued = true;
+  setTimeout(function(){ _renderQueued = false; render(); }, 50);
+}
 function render() {
-  if (_rendering) return; _rendering = true;
+  if (_rendering) { scheduleRender(); return; }   // re-queue rather than drop the update
+  _rendering = true;
   var tbody = document.getElementById('leaders-body');
   if (!tbody) { _rendering = false; return; }
   var computed = computeAll();
