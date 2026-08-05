@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T17:33:39.718670+00:00",
-  "count": 817,
+  "generated_at": "2026-08-05T17:48:40.189243+00:00",
+  "count": 818,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -768,6 +768,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bik3jx7m10o-e2cf59",
+      "title": "Bond Top List",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:16Z",
+      "summary_points": [
+        "**Issuer Screening Framework**: Categorizes bonds into Preferred (e.g., AXA, Schlumberger), Core (e.g., ABB, Dominion Energy), and Avoid (e.g., Bausch Health, Lufthansa) to guide allocation based on credit quality and risk tolerance.",
+        "**Sovereign Debt Affordability Risk**: \"Sovereign debt affordability strained by higher yields\" (22.05.2026) signals heightened risk for sovereign bond portfolios amid rising yields.",
+        "**Credit Quality & Yield Spread**: 83.3% of bonds (15/18) carry \"Stable\" CIO risk flags with investment-grade ratings; Oracle (Baa2/BBB, \"Deteriorating\" flag) is the sole outlier requiring close monitoring.",
+        "**High-Yield Risk Reduction**: 7 USD High-yield bonds with speculative ratings (Ba2/BBB, Ba3/BBB) removed from hold-to-maturity due to deteriorating credit fundamentals.",
+        "**EUR Financials/Non-Financials Trade-off**: EUR Financials (stable A2/A- ratings, 3.37–4.10% yields) offer lower yields vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 118,
       "language": "en",
       "needs_metadata": false
     },
