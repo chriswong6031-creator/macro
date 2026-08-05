@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T14:17:22.164899+00:00",
-  "count": 807,
+  "generated_at": "2026-08-05T14:32:23.133850+00:00",
+  "count": 808,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -687,6 +687,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-23hnsmcpnjq-e6c128",
+      "title": "Daily Europe",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:07Z",
+      "summary_points": [
+        "**European earnings execution confirmed**: 17% YoY growth (7% ex-energy), with 15-20% expected growth driven by electrification, automation, reshoring, defense focus, and financial services shifts.",
+        "**US Manufacturing PMI Surges to 55.6**: July ISM Manufacturing PMI at 55.6 (vs.",
+        "3 June), strongest expansion since May 2022, signaling sustained cyclical strength supporting equity market broadening.",
+        "**Fed Policy Outlook**: Williams signals gradual rate cuts as inflation declines toward target by 2024-2025; Middle East conflict not expected to drive inflation, leaving room for further cuts.",
+        "**Market Data Signals**: S&P 500 up 11.0% YTD, US 10-year Treasury yields declining, reflecting Fed hold stance and disinflation expectations favoring short/medium-duration bonds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
