@@ -202,6 +202,18 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
   border-color:color-mix(in srgb,var(--warn) 38%,transparent)}
 .pv-mk-theme{color:color-mix(in srgb,var(--muted) 55%,var(--text));
   border-color:color-mix(in srgb,var(--muted) 34%,transparent)}
+{# Blow-off risk — the one marks chip that is a RISK read, so it borrows the caution
+   button's ink family (.pv-cau-btn) rather than the soft --warn wash .pv-mk-warm uses
+   for "Theme just turned".  Deliberately NOT a directional token: the zh board flips
+   up/down inks (红涨绿跌) and a risk chip must read identically in both languages. #}
+{# The 8% wash is measured, not taste: at the 17% this started on, the light theme
+   computed 3.95:1 ink-on-fill — under AA, and under the sibling .pv-mk-feat's 4.84:1
+   (9.5px/800 is NOT "large text", so 3:1 does not apply). Lightening the fill and
+   keeping --ink-warn at full strength reads 6.89:1 dark / 4.77:1 light. #}
+.pv-mk-blow{font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--ink-warn,var(--warn));
+  background:color-mix(in srgb,var(--warn) 8%,var(--panel));
+  border-color:color-mix(in srgb,var(--ink-warn,var(--warn)) 50%,transparent)}
 {# a marks chip carrying a data-tip is a hover target, not a link — say so #}
 .pv-mk-i[data-tip-en]{cursor:help}
 .pv-stp{display:flex;align-items:center;margin:7px 1px 0}

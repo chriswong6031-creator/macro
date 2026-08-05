@@ -452,6 +452,21 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
             rec["anticipation"] = a
     except Exception:  # noqa: BLE001 — additive; one cone error must not drop the name
         pass
+    # Blow-off (terminal) risk context — DISPLAY-ONLY, zero score authority.
+    # Mirrors the measured S-ROC12-TERM construction (engine/roc_blowoff.py; evidence
+    # research/prophet_us_audit/roc_extremes_battery{,_results}.json).  Computed HERE
+    # because `c` is already in hand — no extra store read — and because _one() runs in
+    # the process pool, so the ~1.1 ms/name cost is spread across workers.
+    # US EQUITIES ONLY: the battery's panel was the US equity book, so a crypto name
+    # would be a read on a population that was never measured.  It gets no chip.
+    if kind == "equity":
+        try:
+            from engine import roc_blowoff as _rb
+            _bo = _rb.assess(c)
+            if _bo:
+                rec["blowoff"] = _bo
+        except Exception:  # noqa: BLE001 — display-only; never drops the name
+            pass
     return rec
 
 
@@ -2418,10 +2433,19 @@ def main() -> int:
     # Insider fields (insider_buyers/bps/net_mn) are already attached to the cand row at L1248.
     # evidence_health carries staleness markers: {source: 'stale-Nd'} when the artifact is stale.
     _w3_evidence: dict[str, dict] = {}   # ticker -> evidence payload for board-row propagation
+    # Blow-off risk context (engine/roc_blowoff) — staged here and folded onto board rows
+    # in the enrichment pass below.  Same two-step as the W3 evidence stack: the close
+    # series lives in THIS loop, the board row is assembled later with only ticker-keyed
+    # lookups available.  Read straight off rec — _one() already computed it, so nothing
+    # is recomputed here.  DISPLAY-ONLY: zero admission / ordering / sizing power.
+    _blowoff_map: dict[str, dict] = {}
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
             continue
+        _bo_rec = rec.get("blowoff")
+        if isinstance(_bo_rec, dict):
+            _blowoff_map[ticker] = _bo_rec
         # COMBINE: the confluence T1->T4 cascade is computed alongside main's bottoming-alignment
         # gate. It NEVER changes which names are eligible (alignment stays the inclusion gate) —
         # it only adds the per-card tier badge and re-ranks WITHIN the aligned set (below).
@@ -3825,6 +3849,20 @@ def main() -> int:
                 r["antichase_shadow_blocked"] = bool(_extz_float > _ANTICHASE_Z_THRESH)
             else:
                 r["antichase_shadow_blocked"] = False
+            # Blow-off (terminal) risk context — DISPLAY-ONLY, zero score authority
+            # (engine/us_board_rank.ZERO_SCORE_AUTHORITY lists blowoff_risk).
+            # A DIFFERENT construction from ext_z above: ext_z is px/SMA200 z-scored,
+            # this is a 12-session ROC at its own trailing p99 inside a burst-mover
+            # uptrend.  The battery's PM4 redundancy read puts max |rho| at 0.43 between
+            # them, so both may legitimately appear on one card — but the copy must not
+            # collide, which is why this chip is labelled "Blow-off risk" and never the
+            # bare word "Extended" (see templates/dashboard.html.j2).
+            # Attached whenever measurable (not only when it fires) so a reader can tell
+            # "measured, quiet" from "never measured" — a name under 300 bars carries
+            # no key at all rather than a false-y default.
+            _bo = _blowoff_map.get(t)
+            if _bo:
+                r["blowoff"] = _bo
             # P2.4 Step C: above_trend propagation — final catch-all for rows that
             # weren't captured in Step A (e.g. laggard rows not in buy/watch lists).
             # Source: sig_verdict[t].above200 (consistent with Step A fix above).

@@ -214,6 +214,15 @@
   .help:hover::before { content: ''; position: absolute; bottom: 100%; left: -30px; right: -30px; height: 10px; }
   .help:hover .tip { display: block; }
   .help.edge-left .tip { left: 0; right: auto; transform: none; }
+  /* Blow-off (terminal) risk chip — the per-stock twin of the board card's .pv-mk-blow.
+     Same measured read (engine/roc_blowoff.py), same words, so the two surfaces cannot
+     say different things about one name. NOT a directional token: zh flips up/down inks
+     (红涨绿跌) and a risk chip must read identically in both languages. */
+  .bochip { display:inline-flex; align-items:center; gap:5px; padding:3px 11px; border-radius:11px;
+          font-size:12px; font-weight:800; letter-spacing:.03em; cursor:help; white-space:nowrap;
+          color:var(--ink-warn,var(--warn));
+          background:color-mix(in srgb,var(--warn) 8%,var(--panel));
+          border:1px solid color-mix(in srgb,var(--ink-warn,var(--warn)) 50%,transparent); }
   /* ---- fundamentals suite (Phase 1) ---- */
   .arch { display:inline-flex; align-items:center; gap:5px; padding:3px 11px; border-radius:11px;
           font-size:12.5px; font-weight:700; cursor:help; border:1px solid var(--line); white-space:nowrap; }
@@ -594,6 +603,10 @@
         <span id="r_state" class="state"></span>
         <span id="r_eq" class="eqbadge" style="display:none"></span>
         <span id="r_archetype" class="arch" style="display:none"></span>
+        <!-- Blow-off (terminal) risk — display-only risk context, filled from rec.blowoff.
+             Hover copy rides data-tip-en/zh (the site LENS popover), never a translated
+             title= attribute. -->
+        <span id="r_blowoff" class="bochip" style="display:none"></span>
         <span style="flex:1"></span>
         <span class="af-wrap">
           <button id="r_afbtn" class="af-toggle" type="button" aria-label="Toggle alert feed" aria-expanded="false" aria-controls="af-feed" style="display:none"></button>
@@ -3009,6 +3022,24 @@
       eqEl.title = lz(d.ladder.eq_tip, d.ladder.eq_tip_zh);
       eqEl.style.display = 'inline-flex';
     } else { eqEl.style.display = 'none'; }
+
+    // Blow-off (terminal) risk chip — DISPLAY-ONLY risk context (engine/roc_blowoff.py).
+    // Same construction and the SAME WORDS as the board card's .pv-mk-blow chip, so the
+    // two surfaces cannot disagree about one name. Distinct from the ext_z anti-chase
+    // read the decision band already carries: different measurement, max |rho| 0.43 —
+    // which is why this chip never uses the bare word "Extended".
+    // Bilingual is baked as l-en/l-zh spans (no re-render on language switch); hover copy
+    // rides data-tip-en/zh so the LENS popover owns it, never a translated title=.
+    var boEl = document.getElementById('r_blowoff');
+    if (boEl) {
+      var bo = d.blowoff;
+      if (bo && bo.blowoff_risk) {
+        boEl.innerHTML = '<span class="l-en">Blow-off risk</span><span class="l-zh">冲顶风险</span>';
+        boEl.setAttribute('data-tip-en', '12-day move at its own 1-in-100 extreme near highs. Historically within 5 sessions of a local top 24% of the time (vs 19% base); next-21-session drawdowns ran ~2.5pp deeper. 3 of 4 such extremes are still not the top — risk context, not a sell signal.');
+        boEl.setAttribute('data-tip-zh', '12日涨幅处于自身历史百分之一的极值，且贴近高点。历史上此类情形有24%在5个交易日内就是局部顶部（基准19%）；其后21个交易日的回撤中位数深约2.5个百分点。四次中仍有三次并非顶部——这是风险背景，不是卖出信号。');
+        boEl.style.display = 'inline-flex';
+      } else { boEl.style.display = 'none'; }
+    }
 
     // Bottom Confidence (multi-timeframe) — only on bottoming states
     var bcEl = document.getElementById('r_bc');
