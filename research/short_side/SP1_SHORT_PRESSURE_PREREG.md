@@ -273,6 +273,55 @@ display-tier context and confluence inputs, per house epistemics.
 
 ---
 
+## §5A. AMENDMENT 1 — the runnable subset (pre-outcome, 2026-08-05)
+
+Committed BEFORE any outcome was computed. §5 as written cannot run: its primary
+conditioner does not exist historically. Coverage measured after §5 was frozen:
+
+| Conditioner in §5 | Historical availability | Verdict |
+|---|---|---|
+| revision breadth | `data/revisions/history.parquet` starts **2026-06-16** (~7 weeks) | **NOT RUNNABLE** |
+| options positioning | 2026 only, ~25% of universe | **NOT RUNNABLE** |
+| borrow fee | accrual starts **2026-08-05** | **NOT RUNNABLE** |
+| insider (Form 4) | `filing_date`-keyed, 2006q1→2026q1 | runnable, deferred to A2 |
+| **price action** | `data/yahoo/` 738 tickers, deep | **RUNNABLE** |
+
+So the branch conditioner becomes **price action** — which is the proposal's own
+"price breakout" versus "failed bounce" leg, not a substitute invented to make
+something run. The revisions/options/borrow versions of H1/H2 are deferred until
+their own accrual matures (~2027); this amendment does not weaken their bar.
+
+**SP1-A, exactly:**
+
+- **Universe:** FINRA exchange-listed ∩ not sentinel-capped ∩ ADV ≥ 100k ∩ has a
+  `data/yahoo/` close at the entry date. Overlap measured: 481 names (2018) rising
+  to 660 (2026).
+- **Entry:** the first trading day at/after `knowable_date` (settlement + 10d).
+  Never the settlement date.
+- **Horizons:** 21d and 63d only.
+- **Short-pressure axis:** within-date `dtc_pctile` over the eligible set.
+- **Conditioner:** within-date trailing 63d return percentile — strong vs weak.
+- **H0 (replication):** does high DTC underperform low DTC unconditionally? This
+  is the Hong-Li-Ni-Scheinkman-Yan result; if it does not appear at all, the
+  branch tests are uninterpretable and that is the finding.
+- **H1 (bearish branch):** within the top-DTC quintile, do price-WEAK names
+  underperform the quintile as a whole?
+- **H2 (squeeze branch):** within the top-DTC quintile, do price-STRONG names
+  outperform the quintile as a whole? **Pre-declared expectation: null.**
+- **Statistics:** returns demeaned within date (removes market timing), date-level
+  spread series, Newey-West t (lag = horizon), split-half sign stability
+  2018–2021 vs 2022–2026, BH-FDR q ≤ 0.10 across the family of tests reported.
+
+**SURVIVORSHIP — stated up front, not discovered later.** `data/yahoo/` is the
+*current* 738-name universe, so a 2018-start study sees only names that survived
+to 2026. For a short-pressure study this is the worst possible bias direction to
+be careless about: heavily-shorted names that went to zero are exactly what is
+missing. It biases **against** H1 (the worst outcomes are absent), so a positive
+H1 is conservative and a null H1 is **not** decisive. No effect size from SP1-A
+may be quoted as unbiased, and no result here may promote anything. A clean
+version needs a delisting-inclusive panel (`collectors/edgar_delisting.py` +
+`edgar_deadname_prices.py` exist and are the path).
+
 ## §6. Graveyard seeded at charter
 
 - **Fused short-pressure score** — forbidden by §3 regardless of any result.
