@@ -167,9 +167,26 @@ refuses to score them**, which is the intended behaviour on a one-regime panel.
 
 ## §6 Open decisions for the operator
 
-1. **Surface.** This ships as an engine + payload + ledger. It has **no page**. Whether the
-   reads belong on the options workspace (as a per-name context strip) or on the stock dossier
-   is a design call, not an engine call.
+1. **Surface — DECIDED 2026-08-05: the evidence layer goes to Quant Lab.** Operator call.
+   Quant Lab (`engine/quant_lab/`, PR #4619) and this layer are the same species of object: a
+   model registry with per-leg fidelity grades and provenance, a study harness that already
+   reuses `engine.validation` (same rank-IC, same Newey-West correction for overlapping
+   windows, same BH-FDR), standing limits stamped onto every result, and an explicit
+   display-tier-regardless / nulls-printed contract. `study.py` states its design goal as
+   making its results "directly comparable to the factor IC scorecard" — this gate already
+   emits comparable numbers from that same machinery, and "this family is mostly a repackaged
+   IV-level bet" is the same kind of finding as "Fintel QV reads inverted on our panel".
+
+   **Split:** Quant Lab takes the EVIDENCE (neutralisation table, IC per primitive, the gate,
+   the printed nulls — *does this family rank anything here?*). The options workspace would
+   take only the per-name READS, and that remains a separate, later design call.
+
+   **Sequenced as a follow-up, not stacked:** #4619 is unmerged and currently `merge-blocked`
+   on three of its own failures (`quant_lab.html.j2` takes the shared header without loading
+   `theme.js`; a module-level `warnings.filterwarnings('ignore')` in `build_quant_lab.py`;
+   `quant_lab.html` missing the data-base shim). Integration lands after it does — registering
+   `options_dislocation` as a Quant Lab model in `pit` mode, so its legs are scored by the
+   same harness rather than by a private one.
 2. **Procurement stays denied.** Cboe Open-Close (~$2k/mo) is the only honest route to the
    proposal's top three features. RO-10 denied it; nothing here re-opens that. If it were ever
    bought, `MEASURED_NULLS` names exactly which fields would light up.
