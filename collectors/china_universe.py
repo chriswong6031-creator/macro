@@ -109,18 +109,26 @@ def _to_ticker(sina_symbol: str) -> str | None:
 def _code_to_ticker(code: str) -> str | None:
     """Convert a bare 6-digit A-share code to a Yahoo Finance ticker.
 
-    Shanghai (6xxxxx, 9xxxxx, 688xxx STAR) → .SS
-    Shenzhen (0xxxxx, 3xxxxx ChiNext)       → .SZ
-    Beijing / other                          → None (no yfinance feed)
+    Shanghai (6xxxxx main + 688/689xxx STAR, 900xxx B-shares) → .SS
+    Shenzhen (0xxxxx, 3xxxxx ChiNext)                          → .SZ
+    Beijing / other                                            → None (no yfinance feed)
+
+    The Shanghai test is `900`-exact, NOT a bare `9` prefix: Beijing has issued 92xxxx
+    codes since 2023 (920045, 920807 奔朗新材, 920914 远航精密 — all live in 同花顺
+    concept-board data), and a `9` prefix swept them into `.SS` as a NONEXISTENT
+    '920045.SS'. That fails QUIETLY, not loudly — yfinance returns an all-NaN column
+    and `dropna(axis=1, how='all')` deletes it, so a bad code shrinks the universe with
+    no error. Matches `collectors.china_ths_concepts.to_suffixed`, which maps the same
+    three segments (4xxxxx / 8xxxxx / 92xxxx) to `.BJ`.
     """
     code = str(code).strip().zfill(6)
     if not code.isdigit() or len(code) != 6:
         return None
-    if code[0] in ("6", "9") or code.startswith("688"):
+    if code[0] == "6" or code.startswith("900"):
         return f"{code}.SS"
     if code[0] in ("0", "3"):
         return f"{code}.SZ"
-    return None  # 8xxxxx / 4xxxxx = Beijing Stock Exchange — skip
+    return None  # Beijing Stock Exchange (4xxxxx / 8xxxxx / 92xxxx) + B-shares elsewhere — skip
 
 
 # Official CSIndex constituent-table columns (ak.index_stock_cons_csindex). Selected BY
