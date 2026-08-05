@@ -70,20 +70,51 @@ COLS = ["open", "high", "low", "close", "volume"]
 ALIASES = {"FI": "FISV"}    # Fiserv renamed FISV->FI in 2023; Yahoo still serves the FISV series
 
 
-def _membership_tickers() -> list[str]:
+def _membership_rows() -> list[dict]:
     p = config.data_dir() / "baskets" / "membership.json"
     if not p.exists():
         return []
     mem = json.loads(p.read_text())
     bdict = mem.get("baskets") or {}
     items = bdict.values() if isinstance(bdict, dict) else bdict
+    return [m for b in items for m in b.get("members", []) if m.get("ticker")]
+
+
+def _membership_tickers(active_only: bool = False) -> list[str]:
+    """Membership tickers. Default = every name that has ever been a member (the FETCH
+    universe: a removed member's history still refreshes/repairs on disk).
+
+    active_only=True drops names whose EVERY membership row carries a `removed` stamp —
+    the curator's exit ledger. A ticker still live in ANY other basket stays active (12 of
+    the 15 removed rows are cross-listed exits, e.g. HOOD crypto→fintech), so the filter is
+    per-TICKER, never per-row. This is the set the staleness census judges: a name the
+    curator has exited — or that the market has (a delisting) — must not read as a broken
+    per-member pull forever."""
     out: set[str] = set()
-    for b in items:
-        for m in b.get("members", []):
-            t = m.get("ticker")
-            if t:
-                out.add(t)
-    return sorted(out)
+    active: set[str] = set()
+    for m in _membership_rows():
+        t = m["ticker"]
+        out.add(t)
+        if not m.get("removed"):
+            active.add(t)
+    return sorted(active if active_only else out)
+
+
+def _removed_members() -> dict[str, dict]:
+    """ticker -> {removed, rationale} for names removed from EVERY basket they sat in.
+    Feeds the census's `inactive` disclosure so an exited/delisted member is explained in
+    the freshness marker rather than silently dropped from the count."""
+    active = {m["ticker"] for m in _membership_rows() if not m.get("removed")}
+    out: dict[str, dict] = {}
+    for m in _membership_rows():
+        t = m["ticker"]
+        if t in active:
+            continue
+        prev = out.get(t)
+        rmv = str(m.get("removed") or "")
+        if prev is None or rmv > prev["removed"]:      # last exit wins
+            out[t] = {"removed": rmv, "rationale": str(m.get("rationale") or "")[:240]}
+    return out
 
 
 def _finviz_tickers(filters: list[str]) -> list[str]:
@@ -150,12 +181,20 @@ def check_membership_staleness(odir: Path | None = None, members: list[str] | No
     M7C-R8) is blind to a frozen SUBSET: 2026-07-16, #776 dropped the membership universe
     from the nightly pull and 528 member files froze for 11 sessions while the aggregate
     as_of stayed fresh — basket candles silently rendered from partial membership.
+
+    ACTIVE means `removed` is unset on at least one membership row (see
+    _membership_tickers): a name the curator has exited, or that the market has, is not a
+    broken pull. Such a name is not counted stale — but if its tape has ALSO stopped it is
+    named in `inactive` with its last bar and exit stamp, so the marker EXPLAINS it instead
+    of going quietly green (BLD/TopBuild: acquired by QXO, NYSE-suspended 2026-07-01, no
+    successor symbol — it read as a 22-session red line for a month).
     Writes data/quality/basket_ohlcv_freshness.json and returns the payload."""
     payload: dict = {"status": "error", "checked_at": datetime.now(timezone.utc).isoformat(),
                      "threshold_sessions": threshold}
     try:
         odir = odir or (config.data_dir() / "baskets" / "ohlcv")
-        members = _membership_tickers() if members is None else members
+        explicit_members = members is not None
+        members = _membership_tickers(active_only=True) if members is None else members
         last: dict[str, date] = {}
         for p in odir.glob("*.parquet"):
             try:
@@ -181,13 +220,30 @@ def check_membership_staleness(odir: Path | None = None, members: list[str] | No
                 stale[t] = {"last": d.isoformat(), "sessions_behind": lag}
             elif lag > 0:
                 behind_ok += 1
+        # Disclosure, not silence: an inactive member whose tape has ALSO stopped is named
+        # here with its last real bar and exit stamp. Excluded from n_stale (it is not a
+        # broken pull) but never invisible — a delisting must be readable in the marker.
+        inactive: dict[str, dict] = {}
+        for t, rec in ({} if explicit_members else _removed_members()).items():
+            d = last.get(t)
+            if d is None or d >= store_max:
+                continue
+            lag = _sessions_behind(d, store_max)
+            if lag > threshold:
+                inactive[t] = {"last": d.isoformat(), "sessions_behind": lag, **rec}
         payload.update({
             "status": "stale" if (stale or missing) else "ok",
             "store_max": store_max.isoformat(), "n_members": len(members),
             "n_stale": len(stale), "n_behind_within_threshold": behind_ok,
             "stale": dict(sorted(stale.items(), key=lambda kv: -kv[1]["sessions_behind"])),
             "missing": missing,
+            "inactive": dict(sorted(inactive.items(), key=lambda kv: -kv[1]["sessions_behind"])),
         })
+        if inactive:
+            log.info("staleness census: %d inactive member tape(s) stopped, disclosed not "
+                     "flagged: %s", len(inactive),
+                     ", ".join(f"{t} (last {v['last']}, removed {v['removed']})"
+                               for t, v in inactive.items()))
         if stale or missing:
             worst = max(stale.items(), key=lambda kv: kv[1]["sessions_behind"]) if stale else None
             msg = (f"basket OHLCV store: {len(stale)} active members stale >{threshold} sessions "
