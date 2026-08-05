@@ -73,10 +73,25 @@ _DURABILITY_SYSTEM = (
     "Then a verdict — ENTER (activity leads price, durable) | MONITOR (mixed / too early / priced) | "
     "AVOID (fading or running on fumes) — and a confidence LOW/MED/HIGH.\n"
     "Give one DISSENT (the strongest case against your verdict) and a FALSIFIABLE check.\n\n"
+    "TWO AUDIENCES, TWO FIELDS. `rationale` is the analyst's note: cite evidence_ids and "
+    "quote figures freely. `rationale_plain` is the SAME judgement written for a reader who "
+    "has never seen this system — it is what the site shows, so it must read as ordinary "
+    "English prose:\n"
+    "  - NO evidence tags ([P1]), NO z-values, NO 'dir=', NO score numbers, NO ticker "
+    "symbols for indices (write 'the market', never 'SPY'), NO state names "
+    "(POSITIVE_DIVERGENCE, CONFIRMED_UP), NO 'lifecycle', 'fused acceleration', 'alt-data', "
+    "'evidence pack', 'breadth', 'axis', or verdict enums.\n"
+    "  - Say what is happening in the world and what it means: which real-world activity is "
+    "picking up or slowing, whether price has followed, and what a reader should do about it.\n"
+    "  - Two to four sentences. Percentages and multiples are fine when they carry meaning "
+    "('about twice last year's pace'); bare readings are not.\n"
+    "  - Same discipline in `rationale_plain_zh`: plain Chinese, no English state names or "
+    "untranslated statistics dropped into the text.\n\n"
     "Return ONLY a JSON object (no fences) with keys:\n"
     '  strength: int, durability: int, continuity: int, composite: int,\n'
     '  verdict: "ENTER"|"MONITOR"|"AVOID", confidence: "LOW"|"MED"|"HIGH",\n'
     '  rationale: string (cite evidence_ids like [P3]), rationale_zh: string,\n'
+    '  rationale_plain: string, rationale_plain_zh: string,\n'
     '  evidence_ids: array of strings, dissent: string,\n'
     '  falsifiable_check: { confirm: string, disconfirm: string }'
 )

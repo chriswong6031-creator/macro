@@ -313,7 +313,7 @@
     document.addEventListener('langchange',render);
   })();
   </script>
-{% endif %}  <section id="actnow-section" style="margin-top:6px">
+{% endif %}{% if not si_hide_actnow_desk|default(false) %}  <section id="actnow-section" style="margin-top:6px">
     <h2><span class="idx">★</span>✅ {{ t('What to act on now', '现在该做什么') }}
       <span class="sect-tag">{{ t('buy now · wait for a pullback · reduce / avoid', '立即买入 · 等待回调 · 减仓回避') }}</span>
       {# W8b cross-link to the Act-Now v2 four-lane board on the stock dashboard #}
@@ -323,7 +323,7 @@
       'Shortlist by action: buyable now, wait for a better entry, or reduce / avoid. Click a theme for its stocks.',
       '按操作分组：当前可买、等待更好入场点、或减仓/回避。点击主题查看个股。') }}</p>
     <div id="actnow"></div>
-  </section>
+  </section>{% endif %}
 
   <section id="theme-desk-section" style="margin-top:6px">
     <h2><span class="idx">★</span>🧭 {{ t('Theme Rotation Desk', '主题轮动台') }}

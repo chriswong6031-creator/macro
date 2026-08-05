@@ -5,9 +5,9 @@
     "cn_ai_compute",
     "cn_coal",
     "cn_consumer_elec",
-    "cn_food_bev",
     "cn_metals",
     "cn_pharma_cxo",
+    "cn_rare_earth",
     "cn_robotics",
     "cn_semis"
   ],
@@ -15,7 +15,7 @@
     "cn_ai_compute",
     "cn_metals",
     "cn_pharma_cxo",
-    "cn_food_bev"
+    "cn_robotics"
   ],
   "leader": "cn_ai_compute",
   "names": {

@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
   "as_of": "2026-08-05",
-  "generated_at": "2026-08-05T09:16:55Z",
+  "generated_at": "2026-08-05T16:19:59Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -299,10 +299,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-18",
+      "as_of": "2026-08-05",
       "thesis_id": "data_center_power.v1",
-      "content_hash": "sha256:bdc75996acdf312efc817a8f3fb88253ae8507c244b522f2b335870a76e39564",
-      "prev_content_hash": "sha256:481aaab1108e81997cec7bf32bbf7ce0d8153a371d392fe52b47736877bfd7c8",
+      "content_hash": "sha256:a587a45b2aa0a7df7dae7c0afaf5e0e64df1ae66624512f03de34d3af5964b2e",
+      "prev_content_hash": "sha256:bdc75996acdf312efc817a8f3fb88253ae8507c244b522f2b335870a76e39564",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -361,7 +361,7 @@
           "rule_en": "If revision_breadth for data_center_power falls below 0.2, earnings estimate broadening has peaked and the near-term trade is mature.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.2 → value=0.792"
+          "detail": "threshold check: 'revision_breadth' lt 0.2 → value=0.708"
         },
         {
           "id": "dcp_f2",
@@ -467,8 +467,8 @@
       "schema": "neuralweb.theme_thesis.v1",
       "as_of": "2026-08-05",
       "thesis_id": "robotics_automation.v1",
-      "content_hash": "sha256:e5bda8d9d6ed0fcb3ffe6aa259433ad11fd86552d19e7f295c9a6f9f23cf80ad",
-      "prev_content_hash": "sha256:97f11fd1a64fb5bd44f419e709ffdc10ad63eda37a9c62b28f06d3d4cfc62e54",
+      "content_hash": "sha256:9032e11ba3cf2b7765edb84021e81f954cb436c9e9e0d652e51d7c86655b62da",
+      "prev_content_hash": "sha256:e5bda8d9d6ed0fcb3ffe6aa259433ad11fd86552d19e7f295c9a6f9f23cf80ad",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -527,7 +527,7 @@
           "rule_en": "If revision_breadth for robotics_automation falls below 0.0, earnings upgrades are not broadening — adoption is slower than the ROI case implies.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.544"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.519"
         },
         {
           "id": "robo_f2",
@@ -554,10 +554,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-20",
+      "as_of": "2026-08-05",
       "thesis_id": "fintech_payments.v1",
-      "content_hash": "sha256:396f0c2900b633d41909ba320a485b69b4a11977596d7503bf666499e1155b4b",
-      "prev_content_hash": "sha256:1c3657d108c5d99dede6703b6be0525c861a9b3c5ca49feceb8857485ba6bf6b",
+      "content_hash": "sha256:c7fc28280e1d2102cc9e923bfb88bbb7f88b1617bdaf0d184479831021e78801",
+      "prev_content_hash": "sha256:396f0c2900b633d41909ba320a485b69b4a11977596d7503bf666499e1155b4b",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -611,7 +611,7 @@
           "rule_en": "If revision_breadth for fintech_payments falls negative, earnings consensus is cutting; stablecoin disruption may be larger than the on-ramp toll revenue offset.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.323"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.195"
         },
         {
           "id": "finpay_f2",
@@ -631,10 +631,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-11",
+      "as_of": "2026-08-05",
       "thesis_id": "nuclear_power.v1",
-      "content_hash": "sha256:5276fe9e607f1e1889c9d7b69c67704c891c88d5d0dcf4e77b56951c3bb4ce14",
-      "prev_content_hash": "sha256:04f4cc55532790211bcee36e4a721b237d06fece790e9a76c592d78855719406",
+      "content_hash": "sha256:f2e22dcc9c60e2bfc479b81f6648d45c52cc136451e756883eb4b910436a441b",
+      "prev_content_hash": "sha256:5276fe9e607f1e1889c9d7b69c67704c891c88d5d0dcf4e77b56951c3bb4ce14",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -693,7 +693,7 @@
           "rule_en": "If revision_breadth for nuclear_power turns negative, earnings estimate cuts are spreading — hyperscaler PPA momentum may be stalling.\n",
           "state": "FIRED",
           "fired": true,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=-0.156"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=-0.07"
         },
         {
           "id": "nuke_f2",
@@ -980,10 +980,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-10",
+      "as_of": "2026-08-05",
       "thesis_id": "glp1_obesity.v1",
-      "content_hash": "sha256:cfee0a5226fe15c192a44c150039a35c27393c2da5a91a78479d35fe330f5832",
-      "prev_content_hash": "sha256:ab3a8465f76535ff4922df78c7ad9749bc17b7ce560c327b9eaefeef9bc25db7",
+      "content_hash": "sha256:5d0342fa29c66a3a653eabc5b01dc2c73dc868241c8359e04a1f3699bd1c980f",
+      "prev_content_hash": "sha256:cfee0a5226fe15c192a44c150039a35c27393c2da5a91a78479d35fe330f5832",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1045,7 +1045,7 @@
           "rule_en": "If revision_breadth for glp1_obesity falls below 0.0, earnings estimates are being cut broadly — manufacturing ramp is not meeting demand curve.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.202"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.141"
         },
         {
           "id": "glp1_f2",
@@ -1149,10 +1149,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-10",
+      "as_of": "2026-08-05",
       "thesis_id": "diagnostics_lifesci.v1",
-      "content_hash": "sha256:a9eac86f7299816e8ae8988f767338c7812318356e1336c3fec46c27d786a02a",
-      "prev_content_hash": "sha256:8b101c7a6b5801c9a5766f5fba2d15a197b825fc40f06ef5e05f80a945503543",
+      "content_hash": "sha256:028de6a317efb6331d36a469bb684f236c2b3a082dac297cd93a95cc3c425394",
+      "prev_content_hash": "sha256:a9eac86f7299816e8ae8988f767338c7812318356e1336c3fec46c27d786a02a",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1206,7 +1206,7 @@
           "rule_en": "If revision_breadth for diagnostics_lifesci remains below 0.1 for two consecutive months, biopharma R&D capex recovery is not yet flowing through to tools demand.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.1 → value=0.486"
+          "detail": "threshold check: 'revision_breadth' lt 0.1 → value=0.422"
         },
         {
           "id": "diag_f2",
@@ -1305,8 +1305,8 @@
       "schema": "neuralweb.theme_thesis.v1",
       "as_of": "2026-08-05",
       "thesis_id": "copper_steel_electrify.v1",
-      "content_hash": "sha256:0c8550bf0ca4f3ebc7eb319bbd1c4fafb7122251aca78f752163eef1c0f48e83",
-      "prev_content_hash": "sha256:09f0b2b27891dccfbc72ca3750ba4ca86f14d9ceffb518f87aaebfb2d9959d5f",
+      "content_hash": "sha256:57fa36d2960450c5a439ef4fc8473e76072bba30ab079884d0e3e4f7eadbac5c",
+      "prev_content_hash": "sha256:0c8550bf0ca4f3ebc7eb319bbd1c4fafb7122251aca78f752163eef1c0f48e83",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -1360,7 +1360,7 @@
           "rule_en": "If revision_breadth for copper_steel_electrify falls below 0.0, earnings upgrades from the electrification story are reversing — macro headwinds may be overwhelming structural demand.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.515"
+          "detail": "threshold check: 'revision_breadth' lt 0.0 → value=0.394"
         },
         {
           "id": "cu_f2",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-05T09:16:55Z",
-  "inputs_hash": "sha256:53c16a8012d2f7089471a12b3fc4254f2e1cefb5d83c87c3559daf444bd890a8",
+  "produced_at": "2026-08-05T16:19:59Z",
+  "inputs_hash": "sha256:9c92d2ae79d94f080b57df70bf790f0941efc72b8baba6d446d0e00f1363e96d",
   "tier": "display"
 }
