@@ -122,7 +122,7 @@ def test_merged_template_carries_every_transplanted_organ() -> None:
     """Nothing silently lost (masterplan §0 gate 7)."""
     s = _read(TPL / MERGED)
     for organ in ('id="theme-context-hero"',   # rotation state in plain words
-                  'id="sc-board"', 'id="board"', 'id="grader"',   # gated layer
+                  'id="actnow-section"', '_china_act_now_board',   # V2 four-lane act-now board
                   'id="sc-cyclemap"',                              # cycle map
                   'id="rc-events-cn"',                             # rotation events rail
                   'id="rotation-app"',                             # whole-market rotation

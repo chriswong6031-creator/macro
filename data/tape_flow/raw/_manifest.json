@@ -6948,647 +6948,652 @@
     {
       "date": "2022-07-12",
       "rows": 625559,
-      "bytes_approx": 103677131
+      "bytes_approx": 147691344
     },
     {
       "date": "2022-07-13",
       "rows": 891144,
-      "bytes_approx": 147704364
+      "bytes_approx": 210409729
     },
     {
       "date": "2022-07-14",
       "rows": 825843,
-      "bytes_approx": 136868304
+      "bytes_approx": 194986380
     },
     {
       "date": "2022-07-15",
       "rows": 745858,
-      "bytes_approx": 123635584
+      "bytes_approx": 176115154
     },
     {
       "date": "2022-07-18",
       "rows": 745410,
-      "bytes_approx": 123556183
+      "bytes_approx": 175998253
     },
     {
       "date": "2022-07-19",
       "rows": 716867,
-      "bytes_approx": 118836121
+      "bytes_approx": 169251149
     },
     {
       "date": "2022-07-20",
       "rows": 839795,
-      "bytes_approx": 139220306
+      "bytes_approx": 198293558
     },
     {
       "date": "2022-07-21",
       "rows": 685670,
-      "bytes_approx": 113644973
+      "bytes_approx": 161891835
     },
     {
       "date": "2022-07-22",
       "rows": 846292,
-      "bytes_approx": 140281905
+      "bytes_approx": 199825713
     },
     {
       "date": "2022-07-25",
       "rows": 651108,
-      "bytes_approx": 107927207
+      "bytes_approx": 153716498
     },
     {
       "date": "2022-07-26",
       "rows": 542984,
-      "bytes_approx": 90004147
+      "bytes_approx": 128205994
     },
     {
       "date": "2022-07-27",
       "rows": 795454,
-      "bytes_approx": 131844387
+      "bytes_approx": 187807330
     },
     {
       "date": "2022-07-28",
       "rows": 742444,
-      "bytes_approx": 123062732
+      "bytes_approx": 175292691
     },
     {
       "date": "2022-07-29",
       "rows": 783847,
-      "bytes_approx": 129962374
+      "bytes_approx": 185109902
     },
     {
       "date": "2022-08-01",
       "rows": 742870,
-      "bytes_approx": 123140285
+      "bytes_approx": 175398420
     },
     {
       "date": "2022-08-02",
       "rows": 686828,
-      "bytes_approx": 113835958
+      "bytes_approx": 162160569
     },
     {
       "date": "2022-08-03",
       "rows": 739494,
-      "bytes_approx": 122594759
+      "bytes_approx": 174604929
     },
     {
       "date": "2022-08-04",
       "rows": 534307,
-      "bytes_approx": 88565868
+      "bytes_approx": 126152140
     },
     {
       "date": "2022-08-05",
       "rows": 744206,
-      "bytes_approx": 123368120
+      "bytes_approx": 175721443
     },
     {
       "date": "2022-08-08",
       "rows": 690782,
-      "bytes_approx": 114510275
+      "bytes_approx": 163112166
     },
     {
       "date": "2022-08-09",
       "rows": 491239,
-      "bytes_approx": 81429132
+      "bytes_approx": 115983876
     },
     {
       "date": "2022-08-10",
       "rows": 718423,
-      "bytes_approx": 119087789
+      "bytes_approx": 169638078
     },
     {
       "date": "2022-08-11",
       "rows": 640848,
-      "bytes_approx": 106238125
+      "bytes_approx": 151326533
     },
     {
       "date": "2022-08-12",
       "rows": 640158,
-      "bytes_approx": 106105700
+      "bytes_approx": 151159602
     },
     {
       "date": "2022-08-15",
       "rows": 652791,
-      "bytes_approx": 108206077
+      "bytes_approx": 154140153
     },
     {
       "date": "2022-08-16",
       "rows": 581283,
-      "bytes_approx": 96348930
+      "bytes_approx": 137239195
     },
     {
       "date": "2022-08-17",
       "rows": 774655,
-      "bytes_approx": 128395622
+      "bytes_approx": 182891219
     },
     {
       "date": "2022-08-18",
       "rows": 516131,
-      "bytes_approx": 85554497
+      "bytes_approx": 121853467
     },
     {
       "date": "2022-08-19",
       "rows": 747396,
-      "bytes_approx": 123886935
+      "bytes_approx": 176451858
     },
     {
       "date": "2022-08-22",
       "rows": 780504,
-      "bytes_approx": 129371252
+      "bytes_approx": 184282558
     },
     {
       "date": "2022-08-23",
       "rows": 577833,
-      "bytes_approx": 95769270
+      "bytes_approx": 136412155
     },
     {
       "date": "2022-08-24",
       "rows": 622048,
-      "bytes_approx": 103109119
+      "bytes_approx": 146847254
     },
     {
       "date": "2022-08-25",
       "rows": 551846,
-      "bytes_approx": 91466569
+      "bytes_approx": 130278279
     },
     {
       "date": "2022-08-26",
       "rows": 1054856,
-      "bytes_approx": 174813799
+      "bytes_approx": 249061171
     },
     {
       "date": "2022-08-29",
       "rows": 886047,
-      "bytes_approx": 146830241
+      "bytes_approx": 209189228
     },
     {
       "date": "2022-08-30",
       "rows": 888366,
-      "bytes_approx": 147216422
+      "bytes_approx": 209751462
     },
     {
       "date": "2022-08-31",
       "rows": 870260,
-      "bytes_approx": 144204479
+      "bytes_approx": 205451884
     },
     {
       "date": "2022-09-01",
       "rows": 875630,
-      "bytes_approx": 145077608
+      "bytes_approx": 206725002
     },
     {
       "date": "2022-09-02",
       "rows": 1145953,
-      "bytes_approx": 189894702
+      "bytes_approx": 270549685
     },
     {
       "date": "2022-09-06",
       "rows": 1039312,
-      "bytes_approx": 172259758
+      "bytes_approx": 245340590
     },
     {
       "date": "2022-09-07",
       "rows": 952931,
-      "bytes_approx": 157906478
+      "bytes_approx": 224952224
     },
     {
       "date": "2022-09-08",
       "rows": 947719,
-      "bytes_approx": 157026512
+      "bytes_approx": 223711487
     },
     {
       "date": "2022-09-09",
       "rows": 990965,
-      "bytes_approx": 164221412
+      "bytes_approx": 233927097
     },
     {
       "date": "2022-09-12",
       "rows": 902082,
-      "bytes_approx": 149485758
+      "bytes_approx": 212920725
     },
     {
       "date": "2022-09-13",
       "rows": 1044895,
-      "bytes_approx": 173122508
+      "bytes_approx": 246655796
     },
     {
       "date": "2022-09-14",
       "rows": 981983,
-      "bytes_approx": 162689962
+      "bytes_approx": 231788230
     },
     {
       "date": "2022-09-15",
       "rows": 945070,
-      "bytes_approx": 156587251
+      "bytes_approx": 223087573
     },
     {
       "date": "2022-09-16",
       "rows": 1157128,
-      "bytes_approx": 191733497
+      "bytes_approx": 273188544
     },
     {
       "date": "2022-09-19",
       "rows": 900393,
-      "bytes_approx": 149190892
+      "bytes_approx": 212550462
     },
     {
       "date": "2022-09-20",
       "rows": 809435,
-      "bytes_approx": 134124751
+      "bytes_approx": 191088006
     },
     {
       "date": "2022-09-21",
       "rows": 1153870,
-      "bytes_approx": 191202219
+      "bytes_approx": 272414441
     },
     {
       "date": "2022-09-22",
       "rows": 943831,
-      "bytes_approx": 156389721
+      "bytes_approx": 222833918
     },
     {
       "date": "2022-09-23",
       "rows": 1279779,
-      "bytes_approx": 212074771
+      "bytes_approx": 302168563
     },
     {
       "date": "2022-09-26",
       "rows": 1063077,
-      "bytes_approx": 176154668
+      "bytes_approx": 250986252
     },
     {
       "date": "2022-09-27",
       "rows": 1020479,
-      "bytes_approx": 169110042
+      "bytes_approx": 240921423
     },
     {
       "date": "2022-09-28",
       "rows": 1076717,
-      "bytes_approx": 178434272
+      "bytes_approx": 254191473
     },
     {
       "date": "2022-09-29",
       "rows": 1000999,
-      "bytes_approx": 165901290
+      "bytes_approx": 236326207
     },
     {
       "date": "2022-09-30",
       "rows": 1164037,
-      "bytes_approx": 192952063
+      "bytes_approx": 274826240
     },
     {
       "date": "2022-10-03",
       "rows": 1006522,
-      "bytes_approx": 166804354
+      "bytes_approx": 237650574
     },
     {
       "date": "2022-10-04",
       "rows": 898971,
-      "bytes_approx": 149008883
+      "bytes_approx": 212266830
     },
     {
       "date": "2022-10-05",
       "rows": 1058353,
-      "bytes_approx": 175416114
+      "bytes_approx": 249878729
     },
     {
       "date": "2022-10-06",
       "rows": 841644,
-      "bytes_approx": 139485666
+      "bytes_approx": 198712766
     },
     {
       "date": "2022-10-07",
       "rows": 1129713,
-      "bytes_approx": 187243547
+      "bytes_approx": 266737861
     },
     {
       "date": "2022-10-10",
       "rows": 861255,
-      "bytes_approx": 142728316
+      "bytes_approx": 203343222
     },
     {
       "date": "2022-10-11",
       "rows": 972570,
-      "bytes_approx": 161175945
+      "bytes_approx": 229607059
     },
     {
       "date": "2022-10-12",
       "rows": 897347,
-      "bytes_approx": 148733503
+      "bytes_approx": 211851756
     },
     {
       "date": "2022-10-13",
       "rows": 1242562,
-      "bytes_approx": 205913925
+      "bytes_approx": 293386100
     },
     {
       "date": "2022-10-14",
       "rows": 1229830,
-      "bytes_approx": 203809594
+      "bytes_approx": 290335882
     },
     {
       "date": "2022-10-17",
       "rows": 962729,
-      "bytes_approx": 159574840
+      "bytes_approx": 227263330
     },
     {
       "date": "2022-10-18",
       "rows": 1012734,
-      "bytes_approx": 167823437
+      "bytes_approx": 239045445
     },
     {
       "date": "2022-10-19",
       "rows": 964226,
-      "bytes_approx": 159798659
+      "bytes_approx": 227598212
     },
     {
       "date": "2022-10-20",
       "rows": 906953,
-      "bytes_approx": 150310463
+      "bytes_approx": 214092018
     },
     {
       "date": "2022-10-21",
       "rows": 1221081,
-      "bytes_approx": 202364430
+      "bytes_approx": 288256157
     },
     {
       "date": "2022-10-24",
       "rows": 1049199,
-      "bytes_approx": 173880213
+      "bytes_approx": 247678197
     },
     {
       "date": "2022-10-25",
       "rows": 812874,
-      "bytes_approx": 134722178
+      "bytes_approx": 191903335
     },
     {
       "date": "2022-10-26",
       "rows": 1006511,
-      "bytes_approx": 166811387
+      "bytes_approx": 237589473
     },
     {
       "date": "2022-10-27",
       "rows": 753955,
-      "bytes_approx": 124963883
+      "bytes_approx": 177973670
     },
     {
       "date": "2022-10-28",
       "rows": 1008039,
-      "bytes_approx": 167089067
+      "bytes_approx": 237953210
     },
     {
       "date": "2022-10-31",
       "rows": 800189,
-      "bytes_approx": 132630722
+      "bytes_approx": 188873408
     },
     {
       "date": "2022-11-01",
       "rows": 647976,
-      "bytes_approx": 107372500
+      "bytes_approx": 152948090
     },
     {
       "date": "2022-11-02",
       "rows": 1056840,
-      "bytes_approx": 175161492
+      "bytes_approx": 249481249
     },
     {
       "date": "2022-11-03",
       "rows": 842439,
-      "bytes_approx": 139611189
+      "bytes_approx": 198863292
     },
     {
       "date": "2022-11-04",
       "rows": 1127804,
-      "bytes_approx": 186902741
+      "bytes_approx": 266203912
     },
     {
       "date": "2022-11-07",
       "rows": 835662,
-      "bytes_approx": 138501822
+      "bytes_approx": 197249385
     },
     {
       "date": "2022-11-08",
       "rows": 898266,
-      "bytes_approx": 148860955
+      "bytes_approx": 212014711
     },
     {
       "date": "2022-11-09",
       "rows": 969837,
-      "bytes_approx": 160730438
+      "bytes_approx": 228922528
     },
     {
       "date": "2022-11-10",
       "rows": 1044052,
-      "bytes_approx": 173028505
+      "bytes_approx": 246452003
     },
     {
       "date": "2022-11-11",
       "rows": 928626,
-      "bytes_approx": 153897154
+      "bytes_approx": 219217642
     },
     {
       "date": "2022-11-14",
       "rows": 948855,
-      "bytes_approx": 157268839
+      "bytes_approx": 223962827
     },
     {
       "date": "2022-11-15",
       "rows": 1143048,
-      "bytes_approx": 189413733
+      "bytes_approx": 269793206
     },
     {
       "date": "2022-11-16",
       "rows": 845692,
-      "bytes_approx": 140172775
+      "bytes_approx": 199613721
     },
     {
       "date": "2022-11-17",
       "rows": 938360,
-      "bytes_approx": 155528414
+      "bytes_approx": 221482990
     },
     {
       "date": "2022-11-18",
       "rows": 951891,
-      "bytes_approx": 157765947
+      "bytes_approx": 224685048
     },
     {
       "date": "2022-11-21",
       "rows": 770793,
-      "bytes_approx": 127761553
+      "bytes_approx": 181949375
     },
     {
       "date": "2022-11-22",
       "rows": 772472,
-      "bytes_approx": 128042320
+      "bytes_approx": 182347051
     },
     {
       "date": "2022-11-23",
       "rows": 914701,
-      "bytes_approx": 151621427
+      "bytes_approx": 215923920
     },
     {
       "date": "2022-11-25",
       "rows": 366895,
-      "bytes_approx": 60820253
+      "bytes_approx": 86616809
     },
     {
       "date": "2022-11-28",
       "rows": 802432,
-      "bytes_approx": 133002958
+      "bytes_approx": 189426102
     },
     {
       "date": "2022-11-29",
       "rows": 794206,
-      "bytes_approx": 131644847
+      "bytes_approx": 187470017
     },
     {
       "date": "2022-11-30",
       "rows": 1084871,
-      "bytes_approx": 179826852
+      "bytes_approx": 256133098
     },
     {
       "date": "2022-12-01",
       "rows": 969179,
-      "bytes_approx": 160641688
+      "bytes_approx": 228794423
     },
     {
       "date": "2022-12-02",
       "rows": 934545,
-      "bytes_approx": 154888082
+      "bytes_approx": 220595770
     },
     {
       "date": "2022-12-05",
       "rows": 1016461,
-      "bytes_approx": 168513124
+      "bytes_approx": 239977912
     },
     {
       "date": "2022-12-06",
       "rows": 1084961,
-      "bytes_approx": 179860139
+      "bytes_approx": 256131796
     },
     {
       "date": "2022-12-07",
       "rows": 959893,
-      "bytes_approx": 159109340
+      "bytes_approx": 226580614
     },
     {
       "date": "2022-12-08",
       "rows": 927581,
-      "bytes_approx": 153771389
+      "bytes_approx": 218961465
+    },
+    {
+      "date": "2022-12-09",
+      "rows": 855922,
+      "bytes_approx": 202055738
     },
     {
       "date": "2022-12-12",
       "rows": 810681,
-      "bytes_approx": 134385053
+      "bytes_approx": 191380829
     },
     {
       "date": "2022-12-13",
       "rows": 1208554,
-      "bytes_approx": 200329471
+      "bytes_approx": 285352458
     },
     {
       "date": "2022-12-14",
       "rows": 1049562,
-      "bytes_approx": 173956206
+      "bytes_approx": 247781238
     },
     {
       "date": "2022-12-15",
       "rows": 1029426,
-      "bytes_approx": 170628976
+      "bytes_approx": 243034305
     },
     {
       "date": "2022-12-16",
       "rows": 997525,
-      "bytes_approx": 165339207
+      "bytes_approx": 235502679
     },
     {
       "date": "2022-12-19",
       "rows": 887761,
-      "bytes_approx": 147172179
+      "bytes_approx": 209597648
     },
     {
       "date": "2022-12-20",
       "rows": 915924,
-      "bytes_approx": 151825403
+      "bytes_approx": 216207769
     },
     {
       "date": "2022-12-21",
       "rows": 915804,
-      "bytes_approx": 151824237
+      "bytes_approx": 216199804
     },
     {
       "date": "2022-12-22",
       "rows": 1090253,
-      "bytes_approx": 180713095
+      "bytes_approx": 257383864
     },
     {
       "date": "2022-12-23",
       "rows": 878272,
-      "bytes_approx": 145575262
+      "bytes_approx": 207335480
     },
     {
       "date": "2022-12-27",
       "rows": 773013,
-      "bytes_approx": 128140511
+      "bytes_approx": 182472279
     },
     {
       "date": "2022-12-28",
       "rows": 920975,
-      "bytes_approx": 152647486
+      "bytes_approx": 217387479
     },
     {
       "date": "2022-12-29",
       "rows": 826541,
-      "bytes_approx": 137009313
+      "bytes_approx": 195100909
     },
     {
       "date": "2022-12-30",
       "rows": 812917,
-      "bytes_approx": 134756380
+      "bytes_approx": 191894699
     },
     {
       "date": "2023-01-03",
       "rows": 942719,
-      "bytes_approx": 156263091
+      "bytes_approx": 222545990
     },
     {
       "date": "2023-01-04",
       "rows": 1045413,
-      "bytes_approx": 173268548
+      "bytes_approx": 246788252
     },
     {
       "date": "2023-01-05",
       "rows": 949090,
-      "bytes_approx": 157333124
+      "bytes_approx": 224052913
     },
     {
       "date": "2023-01-06",
       "rows": 1133785,
-      "bytes_approx": 187940112
+      "bytes_approx": 267683811
     },
     {
       "date": "2023-01-09",
       "rows": 1092407,
-      "bytes_approx": 181122667
+      "bytes_approx": 257885612
     },
     {
       "date": "2023-01-10",
       "rows": 952610,
-      "bytes_approx": 157927875
+      "bytes_approx": 224861930
     },
     {
       "date": "2023-01-11",
       "rows": 916633,
-      "bytes_approx": 151981078
+      "bytes_approx": 216377918
     },
     {
       "date": "2023-01-12",
       "rows": 1130628,
-      "bytes_approx": 187435539
+      "bytes_approx": 266915557
     },
     {
       "date": "2023-01-13",
       "rows": 887497,
-      "bytes_approx": 147141087
+      "bytes_approx": 209509291
     },
     {
       "date": "2023-01-17",
@@ -8824,6 +8829,11 @@
       "date": "2026-08-03",
       "rows": 1583809,
       "bytes_approx": 374098205
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 2042996,
+      "bytes_approx": 482542245
     }
   ],
   "DIA": [
@@ -8856,6 +8866,11 @@
       "date": "2026-08-03",
       "rows": 14526,
       "bytes_approx": 3431870
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 17986,
+      "bytes_approx": 4249480
     }
   ],
   "IWM": [
@@ -8888,6 +8903,11 @@
       "date": "2026-08-03",
       "rows": 186037,
       "bytes_approx": 43921122
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 229476,
+      "bytes_approx": 54181939
     }
   ],
   "XLB": [
@@ -8920,6 +8940,11 @@
       "date": "2026-08-03",
       "rows": 1073,
       "bytes_approx": 253548
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 990,
+      "bytes_approx": 233917
     }
   ],
   "XLE": [
@@ -8952,6 +8977,11 @@
       "date": "2026-08-03",
       "rows": 13495,
       "bytes_approx": 3187048
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 10857,
+      "bytes_approx": 2564669
     }
   ],
   "XLF": [
@@ -8984,6 +9014,11 @@
       "date": "2026-08-03",
       "rows": 10603,
       "bytes_approx": 2505182
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 12216,
+      "bytes_approx": 2886051
     }
   ],
   "QQQ": [
@@ -9016,6 +9051,11 @@
       "date": "2026-08-03",
       "rows": 1125707,
       "bytes_approx": 265859527
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 1321158,
+      "bytes_approx": 312032459
     }
   ],
   "XLI": [
@@ -9048,6 +9088,11 @@
       "date": "2026-08-03",
       "rows": 1942,
       "bytes_approx": 458801
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 3365,
+      "bytes_approx": 794514
     }
   ],
   "XLRE": [
@@ -9080,6 +9125,11 @@
       "date": "2026-08-03",
       "rows": 41,
       "bytes_approx": 10000
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 82,
+      "bytes_approx": 19735
     }
   ],
   "XLU": [
@@ -9112,6 +9162,11 @@
       "date": "2026-08-03",
       "rows": 3007,
       "bytes_approx": 710207
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 3067,
+      "bytes_approx": 724201
     }
   ],
   "XLP": [
@@ -9144,6 +9199,11 @@
       "date": "2026-08-03",
       "rows": 5157,
       "bytes_approx": 1218118
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 4809,
+      "bytes_approx": 1136316
     }
   ],
   "XLK": [
@@ -9176,6 +9236,11 @@
       "date": "2026-08-03",
       "rows": 5009,
       "bytes_approx": 1183834
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 6942,
+      "bytes_approx": 1639678
     }
   ],
   "XLY": [
@@ -9208,6 +9273,11 @@
       "date": "2026-08-03",
       "rows": 1100,
       "bytes_approx": 260122
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 515,
+      "bytes_approx": 121884
     }
   ],
   "XLV": [
@@ -9240,6 +9310,11 @@
       "date": "2026-08-03",
       "rows": 2374,
       "bytes_approx": 560825
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 1905,
+      "bytes_approx": 449985
     }
   ],
   "XBI": [
@@ -9272,6 +9347,11 @@
       "date": "2026-08-03",
       "rows": 2618,
       "bytes_approx": 618519
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 4248,
+      "bytes_approx": 1003862
     }
   ],
   "SOXX": [
@@ -9304,6 +9384,11 @@
       "date": "2026-08-03",
       "rows": 9153,
       "bytes_approx": 2171892
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 12016,
+      "bytes_approx": 2851458
     }
   ],
   "SMH": [
@@ -9336,6 +9421,11 @@
       "date": "2026-08-03",
       "rows": 30177,
       "bytes_approx": 7129701
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 42361,
+      "bytes_approx": 10006628
     }
   ],
   "KRE": [
@@ -9368,6 +9458,11 @@
       "date": "2026-08-03",
       "rows": 2951,
       "bytes_approx": 696783
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 3612,
+      "bytes_approx": 852643
     }
   ],
   "XLC": [
@@ -9400,6 +9495,11 @@
       "date": "2026-08-03",
       "rows": 636,
       "bytes_approx": 150514
+    },
+    {
+      "date": "2026-08-04",
+      "rows": 527,
+      "bytes_approx": 124783
     }
   ]
 }

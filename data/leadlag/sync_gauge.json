@@ -10799,11 +10799,11 @@
       },
       {
         "date": "2026-08-31",
-        "sync": 0.8157,
-        "n": 62,
+        "sync": 0.8168,
+        "n": 93,
         "frac": {
-          "trough": 0.919,
-          "advance": 0.081,
+          "trough": 0.914,
+          "advance": 0.086,
           "peak": 0.0,
           "decline": 0.0
         }
@@ -10811,5 +10811,5 @@
     ]
   },
   "definition": "sync = 1 \u2212 circ_var(2\u03c0\u00b7pos/100); mean resultant length of phase angles",
-  "updated_at": "2026-08-05T07:53:35Z"
+  "updated_at": "2026-08-05T15:00:11Z"
 }

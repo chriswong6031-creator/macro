@@ -4,13 +4,13 @@
   "ipo_5y": -0.025263246631106684,
   "spy_5y": 0.13398579327455273,
   "gap_5y": -0.15924903990565942,
-  "priced_90d": 103,
+  "priced_90d": 105,
   "spac_pct_90d": 50,
-  "upcoming_n": 6,
+  "upcoming_n": 7,
   "verdict": "trails",
   "lockups_approaching": 14,
   "lockups_just_expired": 16,
   "next_lockup": "OFRM",
   "next_lockup_date": "2026-08-05",
-  "built": "2026-08-05 08:36 UTC"
+  "built": "2026-08-05 15:39 UTC"
 }
