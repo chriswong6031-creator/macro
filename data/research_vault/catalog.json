@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T19:11:25.576029+00:00",
-  "count": 821,
+  "generated_at": "2026-08-05T19:19:10.679972+00:00",
+  "count": 822,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -19,6 +19,7 @@
     "Franklin",
     "Goldman Sachs",
     "ING",
+    "ING Direct",
     "Ing Econ",
     "J.P. Morgan",
     "Jefferies",
@@ -1011,6 +1012,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-frwlvcyys5j-9966aa",
+      "title": "ING Think webinar the ai race who will fund and fuel the next wave",
+      "institution": "ING Direct",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:57:33Z",
+      "summary_points": [
+        "**Energy Bottlenecks**: Unprecedented capital allocation to AI data centers creates critical energy system strain, requiring assessment of sustainability and power infrastructure capacity as a core risk factor.",
+        "**Investment Viability Metrics**: Key focus on data center investment viability, tech financing trends, and energy cost implications to evaluate portfolio exposure to infrastructure bottlenecks.",
+        "**Expertise Requirements**: TMT sector strategy, ESG integration, and regulatory risk analysis by specialized teams are essential for fundamental portfolio management in AI infrastructure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
