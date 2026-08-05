@@ -1,7 +1,9 @@
 """Backfill script — FINRA CNMSshvol daily short-volume history.
 
-Fetches daily FINRA off-exchange (FINRA-facility) volume files back to
-2018-08-01, appending to data/finra_short_volume/panel.parquet.
+Fetches daily FINRA off-exchange (FINRA-facility) volume files and appends them to
+data/finra_short_volume/**panel_deep.parquet** — NOT the collector's panel.parquet.
+build_darkpool_desk.py reads the union of the two. See PANEL_PATH_KEY below for why
+the split exists (a frozen research family seals the collector's panel).
 
 SIZE LAW (corrected 2026-08-05 — the union was a repo-breaking landmine):
 The historical universe is `engine/options_universe.gex_symbols()` ONLY (~375
@@ -50,14 +52,31 @@ from lib import config
 log = logging.getLogger(__name__)
 
 BASE = "https://cdn.finra.org/equity/regsho/daily"
-PANEL_PATH_KEY = ("finra_short_volume", "panel.parquet")
+# Writes the DEEP store, never the collector's panel.parquet.
+#
+# engine/personality_flow_absorption.py (PSS-AF1, a FROZEN prospective family — see
+# research/DO_NOT_REBUILD.md) seals every panel row dated <= its FINRA_PREFIX_END with a
+# row count + SHA256. That seal is tamper-evidence: deliberately brittle, and unable to
+# tell "legitimately backfilled from the authoritative source" from "edited to
+# manufacture a result". Backfilling straight into panel.parquet broke it — the write was
+# verified purely additive (0 pre-existing rows missing, 0 modified, 258,198 added) and
+# the seal still, correctly, refused. Re-cutting a frozen family's seal is an operator
+# decision, so history lands here and panel.parquet stays exactly as attested.
+PANEL_PATH_KEY = ("finra_short_volume", "panel_deep.parquet")
+SEALED_PANEL_KEY = ("finra_short_volume", "panel.parquet")
 START_DEFAULT = date(2018, 8, 1)
 SLEEP_BETWEEN = 0.4     # seconds — polite crawl rate
 MAX_PANEL_MB = 25.0     # hard stop: refuse to grow the tracked panel past this (30MB git ceiling, 5MB margin)
 
 
 def _panel_path():
+    """The DEEP store this script owns."""
     return config.data_dir() / PANEL_PATH_KEY[0] / PANEL_PATH_KEY[1]
+
+
+def _sealed_panel_path():
+    """The collector's panel — read-only here, and never written."""
+    return config.data_dir() / SEALED_PANEL_KEY[0] / SEALED_PANEL_KEY[1]
 
 
 def _display_universe(mode: str = "display") -> set[str]:
@@ -80,7 +99,7 @@ def _display_universe(mode: str = "display") -> set[str]:
         log.warning("options_universe load failed (%s)", e)
 
     if mode == "union":
-        p = _panel_path()
+        p = _sealed_panel_path()
         if p.exists():
             try:
                 existing = pd.read_parquet(p, columns=["ticker"])["ticker"].unique()
@@ -108,19 +127,38 @@ def _assert_size_lawful(path) -> None:
     mb = _panel_mb(path)
     if mb > MAX_PANEL_MB:
         raise RuntimeError(
-            f"backfill: panel.parquet is {mb:.1f}MB, over the {MAX_PANEL_MB}MB stop "
+            f"backfill: {path.name} is {mb:.1f}MB, over the {MAX_PANEL_MB}MB stop "
             f"(30MB git ceiling). Narrow --start or keep --universe display.")
 
 
+def _assert_not_the_sealed_panel(path) -> None:
+    """Refuse to write the collector's panel — PSS-AF1 attests every row in it.
+
+    A fail-closed backstop for the PANEL_PATH_KEY contract: if someone points this
+    script back at panel.parquet, stop before the write rather than discovering it as
+    a red CI seal two hours later.
+    """
+    if path.resolve() == _sealed_panel_path().resolve():
+        raise RuntimeError(
+            "backfill: refusing to write panel.parquet — it carries the PSS-AF1 frozen "
+            "attestation (engine/personality_flow_absorption.py FINRA_PREFIX_SHA256). "
+            "Backfill history into panel_deep.parquet; the desk unions the two.")
+
+
 def _have_dates() -> set[date]:
-    p = _panel_path()
-    if not p.exists():
-        return set()
-    try:
-        ts = pd.read_parquet(p, columns=["date"])["date"].unique()
-        return {pd.Timestamp(t).date() for t in ts}
-    except Exception:  # noqa: BLE001
-        return set()
+    """Dates already held across BOTH stores — the deep one we own and the sealed one
+    the collector owns. Skipping the collector's dates keeps this from re-fetching (and
+    then trying to re-store) sessions that already exist upstream."""
+    out: set[date] = set()
+    for p in (_panel_path(), _sealed_panel_path()):
+        if not p.exists():
+            continue
+        try:
+            ts = pd.read_parquet(p, columns=["date"])["date"].unique()
+            out.update(pd.Timestamp(t).date() for t in ts)
+        except Exception:  # noqa: BLE001
+            continue
+    return out
 
 
 def _all_business_days(start: date, end: date) -> list[date]:
@@ -237,9 +275,10 @@ def run(start: date = START_DEFAULT, end: date | None = None, dry_run: bool = Fa
 
 
 def _flush(path, frames: list[pd.DataFrame]) -> None:
-    """Append frames to panel, dedup, sort."""
+    """Append frames to the deep store, dedup, sort."""
     if not frames:
         return
+    _assert_not_the_sealed_panel(path)
     fresh = pd.concat(frames, ignore_index=True)
     if path.exists():
         prev = pd.read_parquet(path)

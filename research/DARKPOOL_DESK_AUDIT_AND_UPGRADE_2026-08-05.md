@@ -139,6 +139,33 @@ Copy said *"2–4 wk publication lag"*, hardcoded. The stored latest week was 20
 against a panel date of 2026-08-04 — **44 days (6.3 weeks)**. A staleness chip that is
 itself stale is worse than none.
 
+### F9b — The backfill collided with a frozen research family's tamper seal
+
+Caught by CI on the first push, not by local tests.
+
+`engine/personality_flow_absorption.py` (PSS-AF1 — a **frozen prospective family**, see
+`research/DO_NOT_REBUILD.md`) seals every `panel.parquet` row dated `<= 2026-07-21` with
+a row count (`51,960`) and a `SHA256`. Backfilling history straight into that file
+changed both, so `load_registration()` began failing inert and two gates went red.
+
+The write was verified **purely additive** — 0 pre-existing rows missing, 0 modified,
+258,198 added — so this was not tampering. But the seal is *tamper-evidence*: it is
+deliberately brittle and **cannot distinguish** "rows legitimately backfilled from the
+authoritative source" from "rows edited to manufacture a result". That is the property
+that makes it worth having.
+
+**Resolution: do not re-cut the seal.** Re-freezing a frozen family's attestation is an
+operator decision, and doing it here would teach the seal to yield whenever it is
+inconvenient. Instead the stores are separated:
+
+- `panel.parquet` — the collector's, **byte-identical to what PSS-AF1 attested**
+- `panel_deep.parquet` — pre-collector history, written only by the backfill
+- `build_darkpool_desk._load_panel()` unions them; the collector wins on any overlapping
+  `(date, ticker)` because it carries FINRA's latest restatement
+
+The desk still sees all 755 dates. `_assert_not_the_sealed_panel` fails the backfill
+closed if anyone points it back at `panel.parquet`.
+
 ### F10 — Freshness
 
 Panel stopped at 2026-07-31 while FINRA had 08-03 and 08-04 posted; last commit touching

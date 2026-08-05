@@ -235,3 +235,70 @@ def test_market_gauge_is_dollar_weighted_not_share_weighted():
 def test_market_gauge_reports_nulls_when_inputs_are_missing():
     g = market_gauge([NameMetrics(ticker="X")])
     assert g["participation_dollar_wtd"] is None and g["n_names"] == 0
+
+
+# ---------------------------------------------------------------------------
+# store separation — the backfill must never touch the sealed panel
+# ---------------------------------------------------------------------------
+
+def test_backfill_targets_the_deep_store_not_the_sealed_panel():
+    """engine/personality_flow_absorption (PSS-AF1, frozen) seals every row in
+    panel.parquet with a row count + SHA256. Backfilling history into that file broke
+    the seal even though the write was purely additive (0 rows missing, 0 modified,
+    258,198 added) — the seal is tamper-evidence and cannot tell the two apart.
+    History therefore lands in panel_deep.parquet and the desk unions the two.
+    """
+    from scripts import backfill_finra_short_volume as bf
+
+    assert bf._panel_path().name == "panel_deep.parquet"
+    assert bf._sealed_panel_path().name == "panel.parquet"
+    assert bf._panel_path() != bf._sealed_panel_path()
+
+
+def test_backfill_refuses_to_write_the_sealed_panel():
+    """Fail-closed backstop: pointing the flush at panel.parquet must raise BEFORE the
+    write, not surface as a red attestation two hours later in CI."""
+    from scripts import backfill_finra_short_volume as bf
+
+    with pytest.raises(RuntimeError, match="refusing to write panel.parquet"):
+        bf._flush(bf._sealed_panel_path(), [pd.DataFrame({"date": [], "ticker": []})])
+
+
+def test_desk_unions_both_stores_and_prefers_the_collector_on_overlap(tmp_path, monkeypatch):
+    """The collector carries FINRA's latest restatement of a session, so on an
+    overlapping (date, ticker) its row must win over the deep store's older copy."""
+    import scripts.build_darkpool_desk as bdd
+
+    d = tmp_path / "finra_short_volume"
+    d.mkdir(parents=True)
+    cols = ["date", "ticker", "short_vol", "short_exempt", "total_vol", "short_ratio"]
+    deep = pd.DataFrame([["2023-08-01", "AAA", 1.0, 0.0, 10.0, 0.10],
+                         ["2026-07-30", "AAA", 2.0, 0.0, 20.0, 0.10]], columns=cols)
+    coll = pd.DataFrame([["2026-07-30", "AAA", 9.0, 0.0, 99.0, 0.09],   # restated
+                         ["2026-07-31", "AAA", 3.0, 0.0, 30.0, 0.10]], columns=cols)
+    deep.to_parquet(d / "panel_deep.parquet")
+    coll.to_parquet(d / "panel.parquet")
+    monkeypatch.setattr(bdd, "PANEL_DEEP_PATH", d / "panel_deep.parquet")
+    monkeypatch.setattr(bdd, "PANEL_PATH", d / "panel.parquet")
+
+    out = bdd._load_panel()
+    assert len(out) == 3, "union should dedup the overlapping session, not double it"
+    assert set(out["date"].dt.strftime("%Y-%m-%d")) == {"2023-08-01", "2026-07-30", "2026-07-31"}
+    restated = out[out["date"] == pd.Timestamp("2026-07-30")].iloc[0]
+    assert restated["total_vol"] == 99.0, "collector restatement must win over the deep copy"
+
+
+def test_desk_still_loads_when_the_deep_store_is_absent(tmp_path, monkeypatch):
+    """A fresh checkout has no deep store — that is a shorter panel, not a failure."""
+    import scripts.build_darkpool_desk as bdd
+
+    d = tmp_path / "finra_short_volume"
+    d.mkdir(parents=True)
+    cols = ["date", "ticker", "short_vol", "short_exempt", "total_vol", "short_ratio"]
+    pd.DataFrame([["2026-07-31", "AAA", 3.0, 0.0, 30.0, 0.10]],
+                 columns=cols).to_parquet(d / "panel.parquet")
+    monkeypatch.setattr(bdd, "PANEL_DEEP_PATH", d / "panel_deep.parquet")   # absent
+    monkeypatch.setattr(bdd, "PANEL_PATH", d / "panel.parquet")
+
+    out = bdd._load_panel()
+    assert out is not None and len(out) == 1

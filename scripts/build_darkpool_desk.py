@@ -39,6 +39,19 @@ log = logging.getLogger("build_darkpool_desk")
 # Constants
 # ---------------------------------------------------------------------------
 PANEL_PATH  = config.data_dir() / "finra_short_volume" / "panel.parquet"
+# Deep pre-collector history, written ONLY by scripts/backfill_finra_short_volume.py.
+#
+# WHY THIS IS A SEPARATE FILE (do not merge it back into panel.parquet):
+# engine/personality_flow_absorption.py (PSS-AF1, a FROZEN prospective research family —
+# see research/DO_NOT_REBUILD.md) seals every panel row dated <= FINRA_PREFIX_END with a
+# row count and a SHA256. That seal is tamper-evidence: it is deliberately brittle and
+# cannot distinguish "rows legitimately backfilled from the authoritative source" from
+# "rows edited to manufacture a result". Backfilling history straight into panel.parquet
+# broke it (verified additive-only — 0 pre-existing rows missing, 0 modified, 258,198
+# added — and the seal still, correctly, refused). Re-cutting a frozen family's seal is
+# an operator decision, not a build-time convenience, so the desk keeps its history here
+# and panel.parquet stays byte-identical to what PSS-AF1 attested.
+PANEL_DEEP_PATH = config.data_dir() / "finra_short_volume" / "panel_deep.parquet"
 ATS_DIR     = config.data_dir() / "finra_ats"
 NONATS_DIR  = config.data_dir() / "finra_otc_nonats"
 YAHOO_DIR   = config.data_dir() / "yahoo"
@@ -73,18 +86,33 @@ PANE_JSON_NAME = "darkpool_eod.json"
 # ---------------------------------------------------------------------------
 
 def _load_panel() -> pd.DataFrame | None:
-    if not PANEL_PATH.exists():
-        log.warning("panel not found: %s", PANEL_PATH)
+    """The desk's view = the collector's panel UNION the deep backfill.
+
+    Two files, one logical panel — see PANEL_DEEP_PATH for why they stay separate.
+    The collector's panel wins on any overlapping (date, ticker) because it carries
+    FINRA's latest restatement of a session; the deep store is only ever older history.
+    A missing deep store is normal (fresh checkout) and simply yields a shorter panel.
+    """
+    frames: list[pd.DataFrame] = []
+    for path, label in ((PANEL_DEEP_PATH, "deep"), (PANEL_PATH, "collector")):
+        if not path.exists():
+            if label == "collector":
+                log.warning("panel not found: %s", path)
+            continue
+        try:
+            df = pd.read_parquet(path)
+        except Exception as e:  # noqa: BLE001
+            log.warning("%s panel read failed: %s", label, e)
+            continue
+        if not df.empty:
+            frames.append(df)
+
+    if not frames:
         return None
-    try:
-        df = pd.read_parquet(PANEL_PATH)
-    except Exception as e:  # noqa: BLE001
-        log.warning("panel read failed: %s", e)
-        return None
-    if df.empty:
-        return None
-    df = df.copy()
+    # keep="last" with the collector appended last ⇒ collector restatements win
+    df = pd.concat(frames, ignore_index=True)
     df["date"] = pd.to_datetime(df["date"])
+    df = df.drop_duplicates(subset=["date", "ticker"], keep="last")
     return df.sort_values(["date", "ticker"])
 
 
