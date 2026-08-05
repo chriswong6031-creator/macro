@@ -149,7 +149,7 @@
   "coverage_monitor": {
     "frozen_baseline": null,
     "frozen_baseline_note": "Not yet frozen. Will be anchored at first sensor-maturity date.",
-    "trailing_4wk_buy_count": 357,
+    "trailing_4wk_buy_count": 229,
     "weekly_history": [
       {
         "week": "2026-06-15/2026-06-21",
@@ -173,7 +173,11 @@
       },
       {
         "week": "2026-07-20/2026-07-26",
-        "unique_tickers": 68
+        "unique_tickers": 69
+      },
+      {
+        "week": "2026-07-27/2026-08-02",
+        "unique_tickers": 3
       }
     ],
     "data_gap": null

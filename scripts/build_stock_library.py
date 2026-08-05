@@ -4069,12 +4069,18 @@ def main() -> int:
         # what changes is that a name you cannot act on today can no longer sit at
         # slot 1 above a live one (the 07-31 board opened on an "Extended — don't
         # chase" row, with `avoid`/DOWNTREND names mid-board).
+        # W-E.1 (missed-ignitions §5): the ladder's BOTTOM WATCH state gets its own
+        # `basing` shelf instead of disappearing into `blocked`. DISPLAY-ONLY — this
+        # moves rows between rendered buckets and touches nothing else. The opt-in is
+        # explicit because the shelf is a template surface and only this board has
+        # built it (engine.us_board_rank.stage_for).
         wide["buy"] = us_board_rank.score_rows(
             wide["buy"],
             verdict_by=sig_verdict,
             blackout_by={t: bool((v or {}).get("in_blackout"))
                          for t, v in (_eb_blackout_map or {}).items()},
             board_asof=wide.get("as_of"),
+            bottom_watch_stage=us_board_rank.STAGE_BASING,
         )
         wide["rank_by"] = us_board_rank.BOARD_DEFINITION
         wide["board_definition"] = us_board_rank.BOARD_DEFINITION
@@ -4171,7 +4177,8 @@ def main() -> int:
         wide["lane_counts"] = dict(_lane_ct)
         # us_prophet_v1: the stage buckets the board actually renders. Additive —
         # the bottoming/continuation/watch keys above are untouched.
-        #   live / setting_up / ran / blocked  count BUY rows and sum to len(buy)
+        #   live / setting_up / ran / basing / blocked
+        #                                      count BUY rows and sum to len(buy)
         #   featured                           is the flagged subset of `live`
         #   ran_lane                           is the separate ran ARRAY
         # The rendered "Ran — don't chase" chip is `ran + ran_lane` (masterplan
