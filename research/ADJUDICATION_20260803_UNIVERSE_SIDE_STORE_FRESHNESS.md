@@ -94,9 +94,15 @@ names — membership is intact; the provider went silent per-symbol.
   for search and existing deep links (CSP-R1). Demote: page + search entry stay,
   `feed_stale {behind_days, lib_asof}` disclosed on the page and in the JSON,
   authority stripped. Threshold: strict > 7 calendar days behind the library's
-  own max tip — the SAME law as the ledger gate (import
-  `_MAX_BAR_LAG_DAYS`), self-relative so no wall-clock/calendar dependency;
-  crypto's 24/7 tip leads weekends by ≤3 days, well inside 7.
+  own max tip — the SAME 7-day constant as the ledger gate (import
+  `_MAX_BAR_LAG_DAYS`) but a self-relative reference (library max tip), which is
+  strictly LOOSER than the ledger gate's wall-clock stamp — safe direction, and
+  deliberately free of calendar dependency at admission. Crypto's 24/7 tip leads
+  the max on weekends, so the realistic equity headroom before a false demotion
+  is ~3 calendar days on the worst holiday-weekend build, not 7. Self-relative
+  blindness to a TOTAL freeze (every feed frozen together, tip frozen with them)
+  is closed by a separate wall-clock DISCLOSURE (never a gate): a ::warning when
+  the library tip itself, or a collector audit's ref tip, is >7d behind today.
 - **R2 (mass-staleness circuit breaker — the gate must not fail-dark either).**
   If >20% of full recs would demote, the demotion DISARMS for that run with a
   loud `::warning` (a universe-wide freeze is a collector outage; blanking the
@@ -123,6 +129,16 @@ names — membership is intact; the provider went silent per-symbol.
   NOT by hand-written parquets from a task PR (seed script uses an adjusted
   basis; the nightly lane is `auto_adjust=False` — mixing bases inside one
   series is the #2120 seam-defect class).
+
+- **R5 (accepted residual — cohort population shift, adversarial-review M4).**
+  Removing demoted names from `profiles` shrinks the within-market percentile
+  cohort and the conviction-accrual archive's per-basket n/median with no era
+  marker in those artifacts. At current scale (4 names of ~1,500) this is noise,
+  the 20% breaker caps the blast radius, and the nightly `::notice` prints the
+  demotion count as the log-side marker. RULED accepted rather than built:
+  stamping an era marker into the pre-registered accrual ledger's schema from a
+  hygiene PR is the worse trade. Revisit trigger: any night the demotion count
+  exceeds a handful, the accrual study owner adds the era break.
 
 ## §4. Boundaries honored / deliberately NOT here
 
