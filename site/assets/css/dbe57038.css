@@ -87,6 +87,12 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
 .rvx-lane.wait .ic{background:color-mix(in srgb,var(--rvx-improve) 22%,transparent);color:var(--rvx-improve)}
 .rvx-lane.trim .ic{background:color-mix(in srgb,var(--rvx-weak) 22%,transparent);color:var(--rvx-weak)}
 .rvx-lane.avoid .ic{background:color-mix(in srgb,var(--rvx-lag) 20%,transparent);color:var(--rvx-lag)}
+/* W-A bottoming watch — the "weak but turning up" quadrant ink, reused (no new
+   token). Spans the full row UNDER the existing four so their 4-col geometry is
+   untouched at every breakpoint. */
+.rvx-lane.bottom{grid-column:1/-1}
+.rvx-lane.bottom .ic{background:color-mix(in srgb,var(--rvx-improve) 22%,transparent);color:var(--rvx-improve)}
+.rvx-lane.bottom .rvx-lane-desc{min-height:0}
 .rvx-trow{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--rvx-hair);text-decoration:none;color:var(--text);transition:padding-left .15s ease}
 .rvx-trow:hover{padding-left:4px}
 .rvx-trow .tnm{font-weight:600;font-size:12.5px;flex:1;min-width:0}

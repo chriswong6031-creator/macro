@@ -42,14 +42,12 @@
   @media (max-width:767px) { .si-view-btn.on::before { display:none; } }
   .si-side-out { white-space:nowrap; }
   .si-side-out .si-vb-l { white-space:nowrap; }
-  /* rail: dark = translucent over the aurora (the estate's sticky idiom); light =
-     COMPLETELY open — no fill, no border. On a near-white canvas any column fill
-     reads as a flat cut with a drawn edge (operator crop, 2026-08-03); the active
-     pill and the content cards' shadows do all the structuring light needs. */
-  .si-side { background:color-mix(in srgb, var(--bg) 55%, transparent);
-    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-    border-right:1px solid color-mix(in srgb, var(--line) 38%, transparent); }
-  html[data-theme="light"] .si-side { background:transparent; border-right:0;
+  /* rail: COMPLETELY open in BOTH themes — no fill, no border. The aurora/gradient
+     is the page's identity; any column fill (frosted dark or flat light) reads as a
+     hard seam cutting across it (operator crops 2026-08-03 light + 2026-08-05 dark).
+     The active pill and the content cards' shadows do all the structuring needed;
+     the rail is a grid column, so nothing scrolls under it. */
+  .si-side { background:transparent; border-right:0;
     backdrop-filter:none; -webkit-backdrop-filter:none; }
 
   /* — surfaces: the macro.html container recipe — drop shadow does the definition,
