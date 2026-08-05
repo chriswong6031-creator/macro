@@ -101,12 +101,28 @@ def test_duplicate_codes_collapse_to_one_entry(monkeypatch, adapter):
 
 
 def test_beijing_codes_are_dropped(monkeypatch, adapter):
+    """Beijing's code space is 4xxxxx / 8xxxxx AND 92xxxx — the segment the BSE has
+    issued since 2023 (920045, 920807 奔朗新材, 920914 远航精密, all live in 同花顺
+    concept-board data). 92xxxx used to fall into the .SS branch that exists for
+    Shanghai's 900xxx B-shares, minting a NONEXISTENT '920045.SS': yfinance returns
+    nothing for it and `dropna(axis=1, how='all')` then deletes the column, so the
+    bad mapping shrinks the universe silently instead of raising."""
     _install_ak(monkeypatch, csindex=lambda symbol: _csindex_frame(
-        ["830799", "430418", "688508", "300061"]))
+        ["830799", "430418", "920045", "920914", "688508", "300061"]))
 
     tickers = [r["ticker"] for r in adapter._index_constituents([INDEX_CODE])]
 
     assert tickers == ["688508.SS", "300061.SZ"]
+
+
+def test_shanghai_b_shares_are_not_swept_up_by_the_beijing_exclusion(monkeypatch, adapter):
+    """The other half of the same edge: 900xxx really IS Shanghai (SSE B-shares), so
+    excluding 92xxxx must not degrade into dropping every 9-prefixed code."""
+    _install_ak(monkeypatch, csindex=lambda symbol: _csindex_frame(["900001", "600519"]))
+
+    tickers = [r["ticker"] for r in adapter._index_constituents([INDEX_CODE])]
+
+    assert tickers == ["900001.SS", "600519.SS"]
 
 
 def test_logged_count_is_the_union_not_the_row_count(monkeypatch, adapter, caplog):
