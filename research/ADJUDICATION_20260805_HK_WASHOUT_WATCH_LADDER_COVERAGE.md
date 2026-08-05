@@ -16,8 +16,10 @@ leaders, ran, vetoed, or washout_watch. The operator is asked to rule on one que
 > candidate on the strength of its ladder label alone?**
 
 Recommendation is in §5 (**Option B**, one-line change, display-tier, +1.9 rows/night).
-Two further defects found along the way (§3.1, §3.3) are reported but **not** proposed for
-this ruling — they widen the lane much further and deserve their own decision.
+
+Two further defects surfaced along the way and are reported but **not** proposed here: a
+candidacy criterion that has never been able to fire (§3.1 — repairing it is Option C, which
+admits 44 names and belongs in its own ruling), and the test that let it stay dark (§3.3).
 
 ---
 
@@ -108,10 +110,15 @@ this proposal already exists in the lane, pointing the other way.**
 
 ## §3 — Root cause
 
-### 3.1 The dead criterion (§1) — `dist_200dma` never populated
+### 3.1 The dead criterion — `dist_200dma` never populated
 
-Also silently disables `_above_200_by` at `scripts/build_hk_library.py:2205`, which is
-`None` for every name and flows into `build_hk_core_rows(above_200_by=...)`.
+Diagnosed in §1: the builder asks for `tech["ma200"]`, which nothing emits, while the producer
+publishes the same quantity as `pct_vs_200dma` in percent units.
+
+The blast radius is wider than this one organ. The same `None` silently disables `_above_200_by`
+at `scripts/build_hk_library.py:2205` — `None` for every name — which flows into
+`build_hk_core_rows(above_200_by=...)`. Anything downstream reading "is this name above its
+200-day line" from that snapshot has been reading a null for as long as the key has been wrong.
 
 ### 3.2 The band misalignment — candidacy stops where the reclaim signal starts
 
@@ -201,16 +208,20 @@ line) would still not appear — it earns no confluence signal. That is the corr
 shortfall: the organ requires evidence, and there was none.
 
 **Also worth the operator's eye:** two names carried `NEARING A LOW` while trading *above* their
-200-day line (1347.HK +24.7%, 0669.HK +19.3%). The ladder is a cycle read, not a price-vs-MA
-read, so this is not necessarily wrong — but it is the kind of divergence the basing shelf's copy
-("still falling, but working on a base") does not describe, and it is worth a look.
+200-day line — 1347.HK at +24.7% and 0669.HK at +19.3%, each measured on the date it held that
+label (08-04 and 07-28 respectively). The ladder is a cycle read, not a price-vs-MA read, so this
+is not necessarily wrong — but it is the kind of divergence the basing shelf's copy ("still
+falling, but working on a base") does not describe, and it is worth a look.
 
 ### Not in this ruling
 
-§3.1 (dead `dist_200dma`) and §3.3 (vacuous test) are real defects and should be fixed, but
-repairing §3.1 widens the lane on a different axis and by an unmeasured amount. Recommend a
-separate adjudication rather than smuggling it in behind this one. Whatever is decided, §3.3
-should be fixed with it — a test that pins a field production never sets is not a guard.
+§3.1 (dead `dist_200dma`) and §3.3 (vacuous test) are real defects and should be fixed — but
+§3.1 is Option C, and §4 measures it at **+44 candidates**, the same magnitude as Option A.
+It selects on price alone and reaches a mostly different population (only 2 of its 49 names are
+`NEARING A LOW`). That is a separate organ with a separate cost, and it carries the 100× unit
+trap; it deserves its own PR and its own ruling rather than being smuggled in behind this one.
+Whatever is decided there, §3.3 should be fixed with it — a test that pins a field production
+never sets is not a guard, and it will keep the repaired criterion honest.
 
 ---
 
@@ -220,11 +231,11 @@ should be fixed with it — a test that pins a field production never sets is no
   `hk_entry_ok`, or the staged pool — era-break territory per #4470's law, untouched.
 - **washout_watch not widened.** No engine change was made. This packet is measurement and a
   recommendation; membership is unchanged pending ratification.
-- **Governance checked.** `research/DO_NOT_REBUILD.md` (all three washout rows read; see §5.3),
-  `docs/ACTIVE_BUILD_MAP.md`
-  (no open lane owns `engine/hk_washout_watch.py`; #4605 is theme-tape baskets, #4473 is the
-  HK vetoed/ran anchor, #4393 is China Prophet), and an open-PR search for `washout_watch`
-  returned empty.
+- **Governance checked.** `research/DO_NOT_REBUILD.md` — all three washout rows read; they kill
+  signal constructions, not display homes (§5, point 3). `docs/ACTIVE_BUILD_MAP.md` — no open
+  lane owns `engine/hk_washout_watch.py` (#4605 is theme-tape baskets, #4473 is the HK
+  vetoed/ran anchor, #4393 is China Prophet). An open-PR search for `washout_watch` returned
+  empty.
 
 ## §7 — Reproduce
 
