@@ -1894,16 +1894,13 @@ html[data-theme="light"] .rvx-aurora b{opacity:.22}
 {%- if _vr_l.strength and _vr_l.strength[0] and _vr_l.strength[0].name %} data-to-en="{{ _vr_l.strength[0].name | e }}" data-to-zh="{{ (_vr_l.strength[0].name_zh or _vr_l.strength[0].name) | e }}"{% endif %}
 {%- endif %}></p>
 
-  {# ══ ACT BOARD (revamp) — the shortlist, by action. Filled by renderActBoard(). ══ #}
+  {# ══ ACT BOARD — server-rendered 5-lane sectors+themes board, transplanted from
+     us_stocks.html #action-board (assembled by build_site.action_board(), persisted to
+     basketdata/action_board.json, read fail-soft by build_sector_central). Replaces the old
+     client-rendered 4-lane themes-only board (renderActBoard, removed). #grader is retained:
+     its self-grader scorecard JS reads D.grader independently of the board. ══ #}
   <section class="rvx-sec rvx-reveal" id="actnow-section" style="animation-delay:.05s">
-    <div class="rvx-sec-h">
-      <h2>{{ t('Do this now', '现在该做什么') }}</h2>
-      <span class="q">{{ t('— the shortlist, by action', '— 按操作分类的清单') }}</span>
-      <a class="r" href="us_stocks.html#action-board">{{ t('Full board incl. sectors →', '含板块的完整操作板 →') }}</a>
-    </div>
-    <p class="rvx-sec-sub">{{ t('Every theme sorts into one action. When the honest answer is “wait,” it says so. Click a theme to see its stocks.', '每个主题归入一个操作。若答案是「等待」，也会如实标注。点击主题查看成分股。') }}</p>
-    <div id="actnow" class="rvx-lanes"></div>
-    <div id="actnow-footnote" class="rvx-actfoot"></div>
+    {% if action_board %}{% include "_us_act_now_board.html.j2" %}{% else %}<p class="rvx-sec-sub muted">{{ t('Refreshing the action board — check back after tonight’s close.', '正在刷新操作板 — 今晚收盘后再查看。') }}</p>{% endif %}
     <div class="rvx-sec-sub si-lane-foot">{{ t('Lanes are the only gated, graded calls on this page — everything below is context, measured nightly.', '操作清单是本页唯一的门控与自评分判断 — 下方内容均为背景信息，每晚计算。') }}
       <a href="subsectors.html" style="color:var(--link)">{{ t('Drill to stocks →', '下钻到个股 →') }}</a></div>
     <div id="grader" class="grader grader-inboard" hidden></div>
@@ -2545,135 +2542,6 @@ function renderVerdictHero(){
     im.innerHTML=(r20!=null?'<span class="rvx-num rvx-up">'+fmtPct(r20)+'</span> 20d':'')+(v!=null&&v>0?' · '+(zh?'快速上行':'climbing fast'):''); } }
 }
 
-// ── Act board: buy / wait / take-profits / avoid, from THEME.act_now ──
-const RVX_MOMO={'accelerating':['accelerating','加速'],'decelerating':['decelerating','减速'],'downtrend across timeframes':['downtrend','多周期下行'],'all timeframes aligned up':['aligned up','多周期同向'],'unconfirmed turn vs the bigger trend':['unconfirmed turn','趋势未确认']};
-function actRow(x){
-  const th=themeById(x.id); const r20=th?relPct(th,'20d'):null;
-  let sub;
-  if(x.reason_en){ sub=L(esc(x.reason_en),esc(x.reason_zh||x.reason_en)); }
-  else { const mo=(x.reasons&&x.reasons[1])||''; const m=RVX_MOMO[mo];
-    sub=(r20!=null?'<span class="rvx-num">'+fmtPct(r20)+'</span> '+L('20d vs S&P','20日相对标普'):'')+(m?' · '+L(m[0],m[1]):(mo?' · '+esc(mo):'')); }
-  const ern=x.near_earnings_count?' <span class="ern">· '+L(x.near_earnings_count+' report soon',x.near_earnings_count+'家将公布')+'</span>':'';
-  const tick=x.clean_entry?'<span class="tick">✓</span>':'';
-  const ret=r20!=null?'<span class="tret '+(r20>=0?'rvx-up':'rvx-dn')+'">'+fmtPct(r20)+'</span>':'';
-  const kchip=String(x.id||'').indexOf('us_sector_')===0?'<span class="si-kind">'+L('SECTOR EW','等权板块')+'</span>':'';
-  const conf=x._conflicted?'<span class="mlcchip">'+L('conflicted','观点冲突')+'</span>':'';
-  // W-A FT-R1 dual read: this row is on reduce/avoid AND on the bottoming lane.
-  // Both rows are kept as-is — never merged, never re-ranked — the chip just tells
-  // the reader the two lenses disagree. (CN precedent: china_act_now.py dual_chip.)
-  const dual=(!x._conflicted&&BOT_DUAL.has(String(x.id)))?'<span class="mlcchip" data-tip-en="The longer trend still says reduce, but the cycle read shows a low forming. This name is also on Bottoming watch — both reads are shown so you can see the disagreement." data-tip-zh="长期趋势仍建议减仓，但周期读数显示底部正在形成。该名称同时出现在筑底观察栏——两种判读并列显示，便于看清分歧。">'+L('may be bottoming','或正筑底')+'</span>':'';
-  // W-A graduation gap: the cycle engine has moved this name PAST Trough (so it has
-  // left Bottoming watch) while the momentum label still holds it on reduce/avoid
-  // until its 20d relative flips positive — between those two events it sits on no
-  // lane. Deliberately NOT the FT-R1 chip: that chip's copy says "also on Bottoming
-  // watch", which is false here. Separate id set, separate sentence; the two are
-  // disjoint by construction (phase is exclusive) and gated so a row gets one chip.
-  const recov=(!x._conflicted&&!BOT_DUAL.has(String(x.id))&&BOT_REC.has(String(x.id)))?'<span class="mlcchip" data-tip-en="'+esc(BOT_REC_TIP_EN)+'" data-tip-zh="'+esc(BOT_REC_TIP_ZH)+'">'+L(esc(BOT_REC_EN),esc(BOT_REC_ZH))+'</span>':'';
-  return '<a class="rvx-trow" data-mlc-bid="'+esc(x.id)+'" href="basket/'+encodeURIComponent(x.id)+'.html"><span class="tnm">'+L(esc(x.name),esc(x.name_zh))+kchip+conf+dual+recov+'<span class="rsn">'+sub+ern+'</span></span>'+tick+ret+'</a>';
-}
-// W-A bottoming-watch row. Deliberately NOT actRow: these come from the cycle
-// forward log, not from a theme score. Two source fields are payload-only and are
-// never rendered here — `signal` ("BUY") and `timing_state` (whose vocabulary
-// includes the literal "FRESH BUY") — because this lane is a WATCH surface and
-// must carry no buy verb. The cycle organ's registered output is instead quoted
-// as the fixed phrase below, with its trend-gate conflict printed beside it.
-function botRow(x){
-  const pos=(x.pos==null)?'':L('pos ','位置 ')+'<span class="rvx-num">'+Math.round(x.pos)+'</span>/100';
-  const turn=(x.cycle_signal==='BUY')?L('cycle turn signal — watch only','周期转折信号——仅观察'):'';
-  const l1=[pos,turn].filter(Boolean).join(' · ');
-  // Second line only when the cycle turned but the trend gate is shut (D10).
-  const l2=x.gate_conflict?'<span class="rsn">'+L('below 200-day trend — gate shut','低于200日趋势——闸门关闭')+'</span>':'';
-  const slope=(x.osc_slope==null)?'':'<span class="tret rvx-up">↗ '+Number(x.osc_slope).toFixed(1)+'</span>';
-  const href=x.href?esc(x.href):'';
-  const open=href?'<a class="rvx-trow" href="'+href+'">':'<div class="rvx-trow">';
-  const close=href?'</a>':'</div>';
-  return open+'<span class="tnm">'+L(esc(x.name),esc(x.name_zh||x.name))+'<span class="rsn">'+l1+'</span>'+l2+'</span>'+slope+close;
-}
-function actLane(cls,ic,head,desc,arr,opts){
-  const o=opts||{}, CAP=o.cap||5, shown=arr.slice(0,CAP);
-  const empty=o.empty||L('Nothing here right now.','暂无。');
-  const rowFn=o.row||actRow;
-  const rows=shown.length?shown.map(rowFn).join(''):'<div class="rvx-lane-desc" style="min-height:0;padding-top:8px">'+empty+'</div>';
-  const more=(!o.noMore&&arr.length>CAP)?'<a class="more" href="us_stocks.html#action-board">+ '+(arr.length-CAP)+' '+L('more →','更多 →')+'</a>':'';
-  return '<div class="rvx-lane '+cls+'"><div class="rvx-lane-h"><span class="ic">'+ic+'</span>'+head+'<span class="ct">'+arr.length+'</span></div><div class="rvx-lane-desc">'+desc+'</div>'+rows+more+'</div>';
-}
-// W-A: ids carried on BOTH the reduce/avoid lane and the bottoming lane (FT-R1).
-// Populated per render from act_now.dual_read_ids; actRow reads it for the chip.
-let BOT_DUAL=new Set();
-// W-A graduation gap: reduce/avoid ids the cycle organ reads as recovering off a
-// low, which have already left the bottoming lane. Disjoint from BOT_DUAL. The
-// chip's words ship from the engine (bottoming_authority) so the page cannot
-// drift from the measured basis; an older artifact without them renders no chip.
-let BOT_REC=new Set(), BOT_REC_EN='', BOT_REC_ZH='', BOT_REC_TIP_EN='', BOT_REC_TIP_ZH='';
-function renderActBoard(){
-  const el=document.getElementById('actnow'); if(!el) return;
-  const a=(THEME&&THEME.act_now)||{};
-  // MLC-W2b (#4241, ported): engine-demoted conflicted items ride the wait lane, tagged so
-  // actRow can mark them — their .rsn subline already carries the engine's reason text.
-  const conflicted=(a.conflicted||[]).map(x=>Object.assign({},x,{_conflicted:true}));
-  const buy=a.buy||[], wait=(a.add_on_pullback||[]).concat(conflicted);
-  const reduce=a.reduce||[];
-  const isTrim=x=>(x.action==='trim'||x.action_en==='TRIM');
-  const trim=reduce.filter(isTrim), avoid=reduce.filter(x=>!isTrim(x));
-  // W-A bottoming watch — display tier, read straight off the cycle forward log.
-  // Absent key (older artifact) → empty lane + honest null, never a crash.
-  const bot=a.bottoming_watch||[];
-  BOT_DUAL=new Set((a.dual_read_ids||[]).map(String));
-  const _ba=a.bottoming_authority||{};
-  BOT_REC_EN=_ba.recovering_chip_en||''; BOT_REC_ZH=_ba.recovering_chip_zh||BOT_REC_EN;
-  BOT_REC_TIP_EN=_ba.recovering_tip_en||''; BOT_REC_TIP_ZH=_ba.recovering_tip_zh||BOT_REC_TIP_EN;
-  // No engine-shipped copy → no chip, rather than a blank one.
-  BOT_REC=BOT_REC_EN?new Set((a.recovering_ids||[]).map(String)):new Set();
-  el.innerHTML=actLane('buy','🟢',L('Buy now','立即买入'),L('In favour and a clean entry is set up right now.','看好且当前有干净入场点。'),buy)
-    +actLane('wait','🔵',L('Wait for a pullback','等待回调'),L('In favour, but stretched — no clean entry yet.','看好但已拉伸 — 暂无干净入场点。'),wait)
-    +actLane('trim','🟠',L('Take profits','止盈'),L('Was leading — momentum now rolling over.','曾领涨 — 动能正在回落。'),trim)
-    +actLane('avoid','⚪',L('Reduce / avoid','减仓 / 回避'),L('Weak and getting weaker — stand aside.','弱且转弱 — 观望。'),avoid)
-    +actLane('bottom','🔵',L('Bottoming watch','筑底观察'),L('cycle lows forming — watch, don\'t chase','周期底部形成中——观察，勿追'),bot,
-      {row:botRow,cap:8,noMore:true,empty:L('no basing candidates tonight','今晚无筑底候选')});
-  const fn=document.getElementById('actnow-footnote');
-  if(fn){ const parts=[];
-    if(conflicted.some(x=>x.sector_stance)) parts.push(L('Conflicted = in favour on its own read, but its sector view says Reduce.','观点冲突 = 自身信号看好，但所属板块评级为减配。'));
-    // Honest-null disclosure for the bottoming lane (G0.4) — the engine ships the
-    // wording so the page cannot drift from the measured basis.
-    const ba=a.bottoming_authority;
-    if(bot.length&&ba&&ba.null_disclosure_en) parts.push(L(esc(ba.null_disclosure_en),esc(ba.null_disclosure_zh||ba.null_disclosure_en)));
-    // Graduation-gap disclosure — only when a row actually carries the chip, so
-    // the footnote never explains a chip that is not on the page.
-    if(BOT_REC.size&&ba&&ba.recovering_disclosure_en) parts.push(L(esc(ba.recovering_disclosure_en),esc(ba.recovering_disclosure_zh||ba.recovering_disclosure_en)));
-    fn.innerHTML=parts.join(' '); }
-  try{ renderStanceChips(); }catch(e){}
-}
-// MLC-W2b (#4241, ported): cross-surface stance chips on act-board rows. Fetches
-// mlcdata/stance_matrix.json once (cached so langchange re-renders re-chip without
-// refetching); rows whose four reads disagree get a "mixed reads" / "split view" chip
-// with the matrix tip as the hover receipt. Rows already carrying the conflicted marker
-// keep it (one chip per row). Fail-silent. (Port fix vs #4241: chip/footnote use
-// innerHTML — L() returns an HTML dual-span string; textContent would print raw markup.)
-let MLC_MX=null, MLC_MX_REQ=null;
-function renderStanceChips(){
-  const apply=()=>{ if(!MLC_MX||!MLC_MX.rows) return;
-    const byId={}; MLC_MX.rows.forEach(r=>{ if(r&&r.id) byId[r.id]=r; });
-    document.querySelectorAll('#actnow .rvx-trow[data-mlc-bid]').forEach(row=>{
-      if(row.querySelector('.mlcchip')) return;
-      const m=byId[row.getAttribute('data-mlc-bid')];
-      if(!m||!m.agreement||(m.agreement!=='mixed'&&m.agreement!=='split')) return;
-      const chip=document.createElement('span');
-      chip.className='mlcchip';
-      chip.setAttribute('data-tip-en',m.tip_en||'');
-      chip.setAttribute('data-tip-zh',m.tip_zh||'');
-      chip.innerHTML=m.agreement==='split'?L('split view','严重分歧'):L('mixed reads','观点分歧');
-      const nm=row.querySelector('.tnm');
-      if(nm){ nm.insertBefore(chip,nm.querySelector('.rsn')); } else row.appendChild(chip);
-    });
-  };
-  if(MLC_MX){ apply(); return; }
-  if(!MLC_MX_REQ){
-    MLC_MX_REQ=fetch('mlcdata/stance_matrix.json').then(r=>r.ok?r.json():null)
-      .then(d=>{ MLC_MX=d; }).catch(function(){/* absent file or fetch error — no chip */});
-  }
-  MLC_MX_REQ.then(apply).catch(function(){});
-}
-
 // ── Rotation map (signature) + linked board — one source, many views ──
 const RVX_Q={lead:{c:'var(--rvx-lead)',en:'Leading',zh:'领先',se:'Hold / add',sz:'持有/加仓'},
   weak:{c:'var(--rvx-weak)',en:'Weakening',zh:'走弱',se:'Take profits',sz:'止盈'},
@@ -2795,7 +2663,6 @@ function renderInternals(){
 function boot(){
   const ao=document.getElementById('asof'); if(ao) ao.textContent=BASKETS.as_of||'—';
   try{ renderVerdictHero(); }catch(e){ console.warn('rvx hero',e); }
-  try{ renderActBoard(); }catch(e){ console.warn('rvx act',e); }
   try{ renderRotationMap(); renderRotBoard(); wireRotFilters(); }catch(e){ console.warn('rvx map',e); }
   try{ renderInternals(); }catch(e){ console.warn('rvx internals',e); }
   renderTabs(document.getElementById('btbl-mode'), TBL_MODES, btblMode, v=>{ btblMode=v; localStorage.setItem('fw-btbl-mode',v); renderBTableCats(); renderBTable(); });
@@ -2808,7 +2675,7 @@ function boot(){
   initChartDefaults();
   renderBTable(); renderChart();
   if(location.hash.startsWith('#theme-')) resolveThemeHash();
-  const rvxRerender=()=>{ try{ renderVerdictHero(); renderActBoard(); renderRotationMap(); renderRotBoard(); renderInternals(); }catch(e){} };
+  const rvxRerender=()=>{ try{ renderVerdictHero(); renderRotationMap(); renderRotBoard(); renderInternals(); }catch(e){} };
   document.addEventListener('langchange',()=>{ rvxRerender(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
   document.addEventListener('themechange',()=>{ renderRotationMap(); renderRotBoard(); if(chart){chart.applyOptions(chartOpts());} renderChart(); });
   /* The overlay chart could not be built while Explore was hidden (see renderChart);

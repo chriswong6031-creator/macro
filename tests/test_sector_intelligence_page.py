@@ -94,8 +94,12 @@ def test_merged_template_sections() -> None:
 # on: the router sends every legacy anchor to a specific view, so an organ in the wrong
 # view means a deep link that scrolls to a hidden element and shows the user nothing.
 VIEW_MEMBERSHIP = {
+    # 'id="actnow"' was the OLD client-rendered lanes div; the SI-central transplant
+    # (2026-08) replaced it with the shared server-rendered board include (#action-board
+    # lives inside the include, invisible to raw-source scanning) — pin the include filename,
+    # mirroring how the explore view pins "_forming_narratives.html.j2".
     "overview": ('id="ftr-tape-strip"', 'id="ftr-tape-band"', 'id="regime"',
-                 'id="actnow-section"', 'id="actnow"', 'id="grader"'),
+                 'id="actnow-section"', '_us_act_now_board.html.j2', 'id="grader"'),
     "map": ('id="rotmap-section"', 'id="si-map"', 'id="rvx-rmap"', 'id="rvx-board"',
             'id="sc-cyclemap"', 'id="sc-chart"', 'id="board"'),
     "moving": ('id="si-movement"', 'id="rc-events-mount"', 'id="rotation-app"',

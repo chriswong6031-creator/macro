@@ -4891,6 +4891,19 @@ def main() -> int:
                 if _item.get("kind") == "sector" and _item.get("ticker") in _two_reads_lookup:
                     _item["two_reads_chip"] = _two_reads_lookup[_item["ticker"]]
 
+    # Persist the fully-assembled board so build_sector_central can render the SAME
+    # server-side 5-lane board on the US Sector Intelligence Overview (reader pattern —
+    # build_site runs earlier than build_sector_central in the engine job). The US board
+    # pre-merges every per-item field (sector_setup, EW overlay, two-reads) onto each row,
+    # so the shared include is self-sufficient from action_board alone — no lookup dict.
+    try:
+        _ab_json = site / "basketdata" / "action_board.json"
+        _ab_json.parent.mkdir(parents=True, exist_ok=True)
+        _ab_json.write_text(json.dumps({"action_board": _ab}, ensure_ascii=False),
+                            encoding="utf-8")
+    except Exception as _abe:  # noqa: BLE001 — additive persistence, never fatal
+        log.warning("action_board.json persist failed (%s)", _abe)
+
     # Mag 7 regime panel (data/mag7_regime/latest.json — DISPLAY-ONLY context read).
     # Injected into latest so the template accesses it as latest.mag7_regime.
     # Also published to site/stockdata/mag7_regime.json for potential JS consumption.

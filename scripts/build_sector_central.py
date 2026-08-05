@@ -162,6 +162,17 @@ def main() -> int:
             ctx = json.loads(ctx_p.read_text(encoding="utf-8")) or {}
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("sector_central: theme_context handoff read failed (%s)", e)
+    # Act-Now board (reader pattern) — build_site persists the SAME 5-lane board it renders
+    # on us_stocks.html to site/basketdata/action_board.json (build_site runs earlier in the
+    # engine job); read it fail-soft so an absent/corrupt file just renders the refreshing
+    # fallback. The US board pre-merges every per-row field, so no separate lookup is needed.
+    _action_board = None
+    try:
+        _ab_p = site / "basketdata" / "action_board.json"
+        if _ab_p.exists():
+            _action_board = (json.loads(_ab_p.read_text(encoding="utf-8")) or {}).get("action_board")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("sector_central: action_board read failed (%s)", e)
     try:
         html = env.get_template("sector_central.html.j2").render(
             flows_html=flows_html,
@@ -169,6 +180,7 @@ def main() -> int:
             factor_season=ctx.get("factor_season"),
             flow=ctx.get("flow"),
             basket_member_syms=ctx.get("basket_member_syms") or [],
+            action_board=_action_board,
             generated_utc=ctx.get("generated_utc") or data.get("as_of") or "")
         write_page(site / "sector_central.html", html, encoding="utf-8")
     except Exception as e:  # noqa: BLE001 — a template error must NOT abort the daily engine job
