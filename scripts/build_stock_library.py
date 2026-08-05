@@ -1075,21 +1075,32 @@ def _enforce_blocked_buy_invariant(buy_rows: list[dict]) -> int:
     return touched
 
 
-def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | None" = None) -> dict:
+def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | None" = None,
+                             panel_reach: "dict | None" = None) -> dict:
     """CSP-W5: compute staleness metadata for the US standout board.
 
-    Scans data/baskets/ohlcv/*.parquet to find the maximum (most recent) date
-    present in any per-ticker close store — this is the date the board is priced
-    from, the same store the cascade gate reads.
+    Scans data/baskets/ohlcv/*.parquet (the store the cascade gate reads) AND —
+    when the caller passes panel_reach from _panel_price_reach() — the ranked
+    universe panel's actual last-close distribution. price_through is the MAX
+    across both: the freshest close any input actually contributed to this
+    build. The ohlcv scan alone is a side store that can sit sessions behind
+    the panel (2026-08-03→05: 22 consecutive builds all stamped price_through=
+    2026-07-31 off this scan while half of them ranked yahoo-store closes
+    through 08-03/04 — the buy lane oscillated 55↔76 names with the artifact
+    claiming identical data reach throughout).
 
     Returns:
         {
-          "price_through": "2026-07-15",  # ISO date of most recent close in the store
+          "price_through": "2026-07-15",  # ISO date of freshest close actually used
           "age_days":      0,             # calendar days since price_through (int)
           "delayed":       False,         # True when >= 2 trading sessions behind expected
+          "inputs": {                     # per-input reach disclosure (display-only)
+            "baskets_ohlcv_through": "2026-07-15",  # the cascade-gate store scan (or None)
+            "panel": {...} | None,                   # _panel_price_reach() summary (or None)
+          },
         }
 
-    Fail-soft: if the store is absent or unreadable, returns
+    Fail-soft: if no input is readable, returns
         {"price_through": None, "age_days": None, "delayed": False}
     so the badge is silently suppressed — never crashes a build.
 
@@ -1103,24 +1114,33 @@ def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | N
     try:
         _root = ohlcv_dir or (config.data_dir() / "baskets" / "ohlcv")
         _root = _root if isinstance(_root, Path) else Path(_root)
-        if not _root.is_dir():
-            return _sentinel
-        _max_date: "date | None" = None
-        for _fname in os.listdir(str(_root)):
-            if not _fname.endswith(".parquet"):
-                continue
-            try:
-                _df = pd.read_parquet(str(_root / _fname), columns=["close"])
-                if _df.empty:
+        _ohlcv_through: "date | None" = None
+        if _root.is_dir():
+            for _fname in os.listdir(str(_root)):
+                if not _fname.endswith(".parquet"):
                     continue
-                _idx = pd.to_datetime(_df.index)
-                _last = _idx.max().date()
-                if _max_date is None or _last > _max_date:
-                    _max_date = _last
-            except Exception:  # noqa: BLE001 — per-file failure is non-fatal
-                continue
-        if _max_date is None:
+                try:
+                    _df = pd.read_parquet(str(_root / _fname), columns=["close"])
+                    if _df.empty:
+                        continue
+                    _idx = pd.to_datetime(_df.index)
+                    _last = _idx.max().date()
+                    if _ohlcv_through is None or _last > _ohlcv_through:
+                        _ohlcv_through = _last
+                except Exception:  # noqa: BLE001 — per-file failure is non-fatal
+                    continue
+        # Union with the ranked panel's actual reach (CSP-W5b disclosure): a build
+        # that ranked on fresher closes than the ohlcv scan must not under-claim.
+        _panel_through: "date | None" = None
+        if panel_reach and panel_reach.get("through"):
+            try:
+                _panel_through = _dt.strptime(str(panel_reach["through"]), "%Y-%m-%d").date()
+            except Exception:  # noqa: BLE001 — malformed reach never breaks the badge
+                _panel_through = None
+        _candidates = [d for d in (_ohlcv_through, _panel_through) if d is not None]
+        if not _candidates:
             return _sentinel
+        _max_date = max(_candidates)
 
         _now = now or _dt.now(_tz.utc)
         _expected = _nyse.expected_last_session(_now)
@@ -1148,10 +1168,145 @@ def _compute_board_staleness(ohlcv_dir: "Path | None" = None, now: "datetime | N
             "price_through": str(_max_date),
             "age_days": _age_days,
             "delayed": _delayed,
+            "inputs": {
+                "baskets_ohlcv_through": (str(_ohlcv_through) if _ohlcv_through else None),
+                "panel": panel_reach or None,
+            },
         }
     except Exception as _e:  # noqa: BLE001 — never crashes a build
         log.warning("_compute_board_staleness: failed (%s) — suppressing badge", _e)
         return _sentinel
+
+
+def _panel_price_reach(uni: "list | None",
+                       exclude: "frozenset[str] | set[str] | None" = None) -> "dict | None":
+    """CSP-W5b: measure the actual price reach of the ranked universe panel.
+
+    universe() assembles the panel from stores with independent advancement
+    cadences: data/stocks (nightly data commit), the four breadth
+    _closes_cache.parquet groups (actions/cache restore), and data/yahoo
+    (also re-pulled in-run by check_price_store_freshness --heal lanes).
+    When one store advances without the others, the board ranks a MIXED-
+    vintage cross-section and the buy lane oscillates between lanes with no
+    disclosure anywhere in the artifact — 2026-08-03→05, across 22 builds,
+    the only leak was the display-only donor.asof field (yahoo healed to
+    08-03/04 while the wedged nightly pinned every other store at 07-31).
+
+    24/7 members are EXCLUDED from the measurement (exclude=None → the
+    config.yml yahoo.tickers.crypto block, the same set the extension-panel
+    calendar split uses): the board's staleness is judged on the NYSE session
+    calendar, and a weekend/holiday crypto bar must never claim session reach
+    for — or clear the DELAYED badge of — the equity board. (Measured on the
+    2026-08-04 checkout: 3 crypto members reached 08-04 while no equity close
+    passed 08-03.)
+
+    Returns a compact reach summary for the staleness block (display-only):
+      through              max last-valid close date across members (ISO)
+      majority_through     modal last-valid close date (ISO) — where the bulk
+                           of the panel actually ends
+      members_at_through / members_total — how many members reach `through`
+      mixed_vintage        True when the freshest date is NOT the modal date:
+                           a material bloc of the panel is staler than the
+                           freshest members (delisted stragglers alone never
+                           trigger this — they lose the mode)
+    None when the panel is empty/unreadable. Never raises.
+    """
+    from collections import Counter
+    _skip = _crypto_tickers() if exclude is None else frozenset(exclude)
+    _by_date: "Counter" = Counter()
+    for _item in (uni or []):
+        try:
+            if str(_item[0]) in _skip:
+                continue
+            _close = _item[1]
+            if _close is None:
+                continue
+            _ts = _close.last_valid_index()
+            if _ts is None:
+                continue
+            _by_date[pd.Timestamp(_ts).date()] += 1
+        except Exception:  # noqa: BLE001 — one unreadable member never breaks the summary
+            continue
+    if not _by_date:
+        return None
+    _max_d = max(_by_date)
+    # modal date; ties broken toward the fresher date so a 50/50 split still
+    # reports majority == through (i.e. not flagged as mixed by a coin flip)
+    _majority_d = max(_by_date.items(), key=lambda kv: (kv[1], kv[0]))[0]
+    return {
+        "through": str(_max_d),
+        "majority_through": str(_majority_d),
+        "members_at_through": int(_by_date[_max_d]),
+        "members_total": int(sum(_by_date.values())),
+        "mixed_vintage": _majority_d != _max_d,
+    }
+
+
+# Two consecutive builds claiming the SAME as_of are re-renders of the same
+# board and should agree almost exactly. Measured separation (22 builds,
+# 2026-08-03→05): same-vintage adjacent builds sit at Jaccard >= 0.95 while
+# cross-vintage flips sit at <= 0.87 — 0.90 splits the two populations.
+_BOARD_CONTINUITY_JACCARD_MIN = 0.90
+_BOARD_CONTINUITY_MIN_NAMES = 5   # below this, set overlap is too coarse to judge
+
+
+def _board_continuity_warning(prev_doc: "dict | None", wide: "dict | None") -> "str | None":
+    """CSP-W5b: line-start ::warning when two builds at the same as_of disagree.
+
+    Compares the previous artifact's buy lane (loaded BEFORE overwrite, same
+    idiom as the B4 conviction delta) against the fresh build's. Two builds
+    stamping the SAME as_of that produce materially different buy lanes mean
+    the lanes read different data vintages — 2026-08-03→05 the lane swung
+    55↔76 names (VALE present 7/7 stale-vintage builds, 0/15 fresh) across
+    22 builds all claiming as_of=2026-07-31.
+
+    Returns the fully-formed annotation line (caller prints it BARE at line
+    start with flush=True — repo annotation law: a logger prefix makes GitHub
+    drop it), or None when continuity holds / inputs are unusable.
+    Display-only: never a gate, never changes the artifact. Never raises.
+    """
+    try:
+        _prev_as_of = (prev_doc or {}).get("as_of")
+        _cur_as_of = (wide or {}).get("as_of")
+        if not _prev_as_of or not _cur_as_of or _prev_as_of != _cur_as_of:
+            return None
+
+        def _lane(doc: dict) -> set:
+            return {str(r.get("ticker")) for r in (doc.get("buy") or [])
+                    if isinstance(r, dict) and r.get("ticker")}
+
+        _prev_t, _cur_t = _lane(prev_doc), _lane(wide)
+        if max(len(_prev_t), len(_cur_t)) < _BOARD_CONTINUITY_MIN_NAMES:
+            return None
+        _union = _prev_t | _cur_t
+        if not _union:
+            return None
+        _jac = len(_prev_t & _cur_t) / len(_union)
+        if _jac >= _BOARD_CONTINUITY_JACCARD_MIN:
+            return None
+        _added = sorted(_cur_t - _prev_t)
+        _dropped = sorted(_prev_t - _cur_t)
+        _flips = _added[:4] + _dropped[:4]
+        _more = len(_added) + len(_dropped) - len(_flips)
+
+        def _reach(doc: "dict | None") -> str:
+            _st = (doc or {}).get("staleness") or {}
+            _panel = (_st.get("inputs") or {}).get("panel") or {}
+            return (f"price_through={_st.get('price_through')}"
+                    f" panel_majority={_panel.get('majority_through')}")
+
+        return (
+            f"::warning title=us-board-continuity::buy lane flipped between consecutive "
+            f"builds at the same as_of={_cur_as_of}: {len(_prev_t)}->{len(_cur_t)} names, "
+            f"jaccard={_jac:.2f} (<{_BOARD_CONTINUITY_JACCARD_MIN}), "
+            f"+{len(_added)}/-{len(_dropped)} "
+            f"({', '.join(_flips)}{f' +{_more} more' if _more > 0 else ''}). "
+            f"Same-as_of builds disagreeing this much means the lanes read different "
+            f"data vintages — compare staleness.inputs/donor.asof "
+            f"(prev {_reach(prev_doc)}; new {_reach(wide)})."
+        )
+    except Exception:  # noqa: BLE001 — a guard must never break the render
+        return None
 
 
 def _count_trading_sessions_between(start_date: "date", end_date: "date") -> int:
@@ -4601,20 +4756,32 @@ def main() -> int:
 
         # CSP-W5 — Board staleness block + pending-buy expiry (display-tier, demotion-only)
         # ────────────────────────────────────────────────────────────────────────────────
-        # (1) Staleness: compute price_through / age_days / delayed from the max-date in
-        #     data/baskets/ohlcv — the same store the cascade gate reads.  Emit into
-        #     wide["staleness"] so the template can render the BOARD DELAYED badge.
+        # (1) Staleness: compute price_through / age_days / delayed from the UNION of
+        #     the data/baskets/ohlcv scan (the store the cascade gate reads) and the
+        #     ranked panel's actual reach (_panel_price_reach(uni): data/stocks +
+        #     breadth caches + yahoo extras). CSP-W5b honesty fix — 2026-08-03→05
+        #     the ohlcv scan sat at 07-31 while --heal lanes ranked yahoo closes
+        #     through 08-03/04, so 22 builds claimed identical price_through while
+        #     the buy lane swung 55↔76 names. staleness.inputs now discloses each
+        #     input's reach + the panel majority/mix.  Emit into wide["staleness"]
+        #     so the template can render the BOARD DELAYED badge.
         # (2) Expiry: move any pending buy that is > 3 trading sessions old and still
         #     unconfirmed from buy to watch.  Demotion-only: adds nothing to the buy side.
         # Both are fail-soft: any exception leaves the artifact unchanged.
         try:
-            _staleness = _compute_board_staleness()
+            _staleness = _compute_board_staleness(panel_reach=_panel_price_reach(uni))
             wide["staleness"] = _staleness
+            _st_panel = ((_staleness.get("inputs") or {}).get("panel") or {})
             log.info(
-                "CSP-W5 staleness: price_through=%s age_days=%s delayed=%s",
+                "CSP-W5 staleness: price_through=%s age_days=%s delayed=%s "
+                "(ohlcv_through=%s panel_through=%s panel_majority=%s mixed_vintage=%s)",
                 _staleness.get("price_through"),
                 _staleness.get("age_days"),
                 _staleness.get("delayed"),
+                (_staleness.get("inputs") or {}).get("baskets_ohlcv_through"),
+                _st_panel.get("through"),
+                _st_panel.get("majority_through"),
+                _st_panel.get("mixed_vintage"),
             )
         except Exception as _stale_e:  # noqa: BLE001
             log.warning("CSP-W5 staleness: failed (%s) — block absent from artifact", _stale_e)
@@ -4659,6 +4826,23 @@ def main() -> int:
                          len(_delta.get("entries", [])), _prev_as_of, _cur_as_of)
         except Exception as _dlt_e:  # noqa: BLE001 — display-only; never fatal
             log.debug("conviction_delta: skipped (%s)", _dlt_e)
+
+        # CSP-W5b board-continuity guard: compare the outgoing artifact (still on
+        # disk — same load-prev-before-overwrite idiom as B4 above, own failure
+        # domain) against the fresh build. Two builds at the same as_of that
+        # disagree materially on the buy lane read different data vintages;
+        # 2026-08-03→05 this happened silently across 22 builds. Warn-only,
+        # display-tier: the annotation is a BARE line-start print with flush=True
+        # (house law — a logger prefix makes GitHub drop it silently); it never
+        # gates, never edits the artifact.
+        try:
+            from engine.conviction_delta import load_prev_standouts as _lps_cont
+            _cont_msg = _board_continuity_warning(
+                _lps_cont(site / "factordata" / "us_standouts.json"), wide)
+            if _cont_msg:
+                print(_cont_msg, flush=True)
+        except Exception as _cont_e:  # noqa: BLE001 — guard must never break the render
+            log.debug("board-continuity guard skipped (%s)", _cont_e)
 
         (site / "factordata" / "us_standouts.json").write_text(
             json.dumps(_json_safe(wide), separators=(",", ":"), default=str, allow_nan=False))
