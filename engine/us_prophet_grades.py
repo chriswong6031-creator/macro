@@ -189,7 +189,7 @@ SIGNAL_CLASS_BY_LABEL: dict[str, str] = {
 #: PRE-REGISTERED class -> chartered horizon map.  **FIXED BEFORE ANY LONG-HORIZON DATA
 #: MATURES**, which is the entire point: "grade each class at the horizon that flatters it,
 #: chosen after seeing the results" is the exact sin this map exists to make impossible.
-#: PROPOSED pending commissioner adjudication; every horizon in the ladder is graded and
+#: ADJUDICATED as proposed (Fable commissioner, 2026-08-05); every horizon in the ladder is graded and
 #: reported for every class regardless, so nothing is hidden — this only fixes which
 #: horizon is the class's HEADLINE read before anyone can see which one wins.
 CHARTERED_HORIZON = {
