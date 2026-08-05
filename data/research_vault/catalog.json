@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T05:11:07.219376+00:00",
-  "count": 781,
+  "generated_at": "2026-08-05T05:41:30.481215+00:00",
+  "count": 782,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -92,6 +92,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-sqinbgdmfyp-1d2972",
+      "title": "Trading Earnings When the News Moves Much Faster Than Before",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:05:26Z",
+      "summary_points": [
+        "**Earnings Volatility Surge**: Result-day moves now average 10-12pp (50% above historical), with post-Covid ranges doubling to ±6.5pp vs.",
+        "±3.5pp pre-2000s.",
+        "**PEAD Alpha Erosion**: Long-short 'Beats vs Misses' strategy alpha fell from 5% to 2.5% this decade, requiring selective targeting of specific surprises (e.g., bearish positioning, earnings momentum inflection).",
+        "**Critical Alpha Drivers**: Top alpha sources are low valuation (+4.1), buybacks (+4.0), bearish consensus, improving balance sheets, and cash flow signals (low accruals, high conversion).",
+        "**ASX 300 Valuation Compression**: 90th percentile EV/EBITDA fell 40% since Oct 2020, signaling severe sector undervaluation or risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
