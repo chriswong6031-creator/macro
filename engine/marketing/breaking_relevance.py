@@ -234,6 +234,143 @@ def macro_revision_penalty(event_class: str, headline_lower: str) -> tuple[float
     hit = _MACRO_REVISION_RE.search(headline_lower or "")
     return (_MACRO_REVISION_PENALTY, hit.group(0)) if hit else (0.0, "")
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Release-importance tiering (operator ratification 2026-08-05)
+# ─────────────────────────────────────────────────────────────────────────────
+# `_MACRO_PRINT_KEYWORDS` is a FLAT list: every entry scores the same base 55.0.
+# Measured on the live classifier, "SWITZERLAND (JUL) CPI CORE YOY" and "US CPI
+# rises 0.3% m/m" are byte-identical at 55.0, and "Unite Secures Inflation-
+# Beating 10.5% Pay Package Increase For GXO Drivers In Bellshill" scores 55.0
+# as a macro print off the bare word "inflation". `wire_routing.classes` then
+# sends all three to the flagship, because the routing table knows the CLASS and
+# not the RELEASE.
+#
+# The operator, reading seven consecutive flagship wire posts of which none was
+# a top-tier US release: "These posts are so boring... These arent the ones
+# people really care about."
+#
+# TWO DIMENSIONS, BOTH REQUIRED, because either one alone still ships the
+# complaint. Tier alone keeps GERMANY RETAIL SALES (a tier-1 TOPIC) on the brand
+# account; economy alone keeps the US trade balance and JOLTS there.
+#
+# THIS IS A ROUTING INPUT, NOT A SCORE AND NOT A KILL. Nothing here changes a
+# salience, and nothing here drops an item: a minor print goes to the desk whose
+# charter job is stance-free relay (`macro_print.minor` in wire_routing.classes)
+# rather than to the desk that exists to carry a house view. Same shape as
+# `macro_revision_penalty` above — "stop relaying things that are not news" —
+# except the verdict is an ADDRESS rather than a demotion, so the record stays
+# complete and only the brand account gets quieter.
+#
+# The bare word "inflation" is deliberately ABSENT from the tier-1 vocabulary.
+# It is the token that put a UK trucking-union pay settlement on the flagship,
+# and a genuine CPI/PCE print always says so by name.
+_TIER1_RELEASES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("cpi", ("cpi", "consumer price index")),
+    ("pce", ("pce", "personal consumption expenditure",
+             "personal consumption expenditures")),
+    ("payrolls", ("payrolls", "nonfarm", "non-farm", "jobs report",
+                  "unemployment rate")),
+    ("fomc", ("fomc", "rate decision", "fed funds", "federal reserve decision",
+              "basis points", "beige book")),
+    ("gdp", ("gdp", "gross domestic product")),
+    ("retail_sales", ("retail sales",)),
+    ("ism", ("ism", "purchasing managers")),
+    ("ppi", ("ppi", "producer price index")),
+    ("claims", ("jobless claims", "initial claims", "continuing claims")),
+)
+
+#: A named economy that is not the US. Word-boundary matched, so "swiss" does
+#: not fire on "swissair" and "us" is not in the list at all (see below).
+_FOREIGN_ECONOMY_MARKERS: tuple[str, ...] = (
+    "switzerland", "swiss", "snb",
+    "germany", "german", "bundesbank",
+    "france", "french", "italy", "italian", "spain", "spanish",
+    "netherlands", "dutch", "belgium", "austria", "portugal", "greece",
+    "ireland", "irish", "finland", "poland", "polish", "czech", "hungary",
+    "eurozone", "euro area", "euro-area", "ecb",
+    "uk", "u.k.", "britain", "british", "england", "boe", "bank of england",
+    "canada", "canadian", "bank of canada", "boc",
+    "japan", "japanese", "boj", "bank of japan",
+    "china", "chinese", "pboc", "beijing",
+    "hong kong", "taiwan", "singapore",
+    "south korea", "korea", "korean",
+    "australia", "australian", "rba", "new zealand", "rbnz",
+    "india", "indian", "rbi", "indonesia", "vietnam", "thailand", "malaysia",
+    "philippines", "brazil", "brazilian", "mexico", "mexican", "argentina",
+    "chile", "colombia", "peru",
+    "russia", "russian", "turkey", "turkish", "israel", "saudi",
+    "south africa", "nigeria", "egypt",
+    "sweden", "swedish", "riksbank", "norway", "norwegian", "norges",
+    "denmark", "danish",
+)
+
+#: An explicit US marker OUTRANKS a foreign one, so "US trade deficit with
+#: China" reads as a US print rather than a Chinese one. Bare "us" is
+#: deliberately excluded — word-boundary matched it fires on the pronoun
+#: ("tells us", "gives us"), and the failure it would cause is the one that
+#: matters: a foreign print promoted onto the brand account.
+_US_ECONOMY_MARKERS: tuple[str, ...] = (
+    "u.s.", "usa", "united states", "america", "american",
+    "federal reserve", "fomc", "fed", "bls", "bea",
+    "bureau of labor statistics", "bureau of economic analysis",
+)
+
+
+def _kw_any(text_lower: str, keywords: tuple[str, ...]) -> str:
+    """The FIRST keyword that word-boundary matches, or "" — the `_kw_hits` test."""
+    for kw in keywords:
+        if re.search(r"(?<!\w)" + re.escape(kw) + r"(?!\w)", text_lower or "",
+                     re.IGNORECASE):
+            return kw
+    return ""
+
+
+def macro_print_tier(event_class: str, text_lower: str) -> tuple[str, str, str]:
+    """``(tier, economy, release)`` for a macro print — the ROUTING dimension.
+
+    * ``tier``    — ``"tier1"`` (a tape-moving release, per the ratified list) or
+                    ``"tier2"`` (every other macro print).
+    * ``economy`` — ``"us"`` or ``"foreign"``.
+    * ``release`` — the matched tier-1 release key (``"cpi"``, ``"payrolls"``…),
+                    or ``""`` for a tier-2 print.
+
+    Returns ``("", "", "")`` for every other event class, exactly as
+    :func:`macro_revision_penalty` returns a zero penalty — a function scoped to
+    one class must have NO opinion about the others, so a future class cannot
+    inherit this routing by accident.
+
+    UNMARKED IS US. Our feeds are US-centric and a BLS/BEA headline routinely
+    reads "Retail sales +0.5% vs +0.3% est" with no country at all, so the
+    absence of a marker is not evidence of a foreign print. A NAMED foreign
+    economy is what moves an item, and an explicit US marker outranks it.
+    """
+    if event_class != "macro_print":
+        return "", "", ""
+    text = text_lower or ""
+    foreign = _kw_any(text, _FOREIGN_ECONOMY_MARKERS)
+    economy = "foreign" if (foreign and not _kw_any(text, _US_ECONOMY_MARKERS)) else "us"
+    for release, patterns in _TIER1_RELEASES:
+        if _kw_any(text, patterns):
+            return "tier1", economy, release
+    return "tier2", economy, ""
+
+
+def macro_routing_refinement(event_class: str, text_lower: str) -> str:
+    """``"minor"`` when a macro print must not sit on the brand account, else ``""``.
+
+    The single token :func:`wire_routing.route` appends to an event class to look
+    up a refined owner (``macro_print.minor``). One token rather than one per
+    reason on purpose: WHY an item is minor belongs on the item's provenance
+    (``macro_tier`` / ``macro_economy``, both stamped by :func:`score_item`),
+    while the routing table only needs to know whether the brand desk owns it.
+    """
+    tier, economy, _ = macro_print_tier(event_class, text_lower)
+    if not tier:
+        return ""
+    return "" if (tier == "tier1" and economy == "us") else "minor"
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Static mega-cap + ETF fallback universe (used when parquet unavailable)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -682,6 +819,14 @@ def score_item(
         components["rank_score"] = 0.0
         salience_components.setdefault("pre_demotion", salience)
 
+    # Release-importance tiering (2026-08-05). Read off the SAME text the class
+    # was decided from, so an item can never be a macro print by its snippet and
+    # a tier-1 US release by its headline. Scored here rather than at routing
+    # time so the verdict travels on the item's provenance into the outbox, and
+    # a post that lands on the wrong desk can be diagnosed from the ledger alone.
+    macro_tier, macro_economy, macro_release = macro_print_tier(
+        event_class, full_lower)
+
     result = dict(item)
     result.update({
         "event_class": event_class,
@@ -690,6 +835,10 @@ def score_item(
         "market_hours_weight": mhw,
         "cta_suppress": cta_suppress,
         "relevant": salience >= threshold,
+        # "" on every non-macro_print class — see macro_print_tier.
+        "macro_tier": macro_tier,
+        "macro_economy": macro_economy,
+        "macro_release": macro_release,
         "_salience_components": salience_components,
         # XG-W5: the transparent, greppable breakdown the acceptance gate names.
         # MARKETING-INTERNAL — no reader of this key is user-facing (the news.html
