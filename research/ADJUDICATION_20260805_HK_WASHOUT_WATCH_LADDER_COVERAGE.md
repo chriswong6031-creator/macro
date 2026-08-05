@@ -30,13 +30,23 @@ routes in (`_is_washout_candidate`, `engine/hk_washout_watch.py:393`), and the o
 catch deep-decline names — `dist_200dma <= -12%` — **has never been able to fire in production**.
 Across 166 published washout rows on 10 board dates, `dist_200dma` is non-null on **zero** of them.
 
-That is not a threshold judgement. It is a dead field:
+That is not a threshold judgement. It is a **key-name mismatch** — and the value the code wants
+is sitting right next to the key it asks for:
 
-- `scripts/build_hk_library.py:1195` derives it from `rec["tech"]["ma200"]`.
-- **No HK producer writes `ma200`.** `engine/hk_inputs.py:202` computes a 200-day mean but
-  publishes only the boolean `above_200d_trend` — the scalar is never stored.
+- `scripts/build_hk_library.py:1195` derives `dist_200dma` from `rec["tech"]["ma200"]`.
+- **Nothing writes `ma200`.** The producer is `engine.stock_technicals.snapshot()`
+  (`engine/stock_technicals.py:238`), and it emits the 200-day distance under the name
+  **`pct_vs_200dma`** — plus a `above200` boolean. Verified empirically on 9926.HK:
+  `snapshot()` returns `pct_vs_200dma = -15.8`, and `"ma200" in snap` is `False`.
 - `engine/hk_washout_watch.py:414` and `:619` are the *only* readers of `tech["ma200"]` in the
-  repo. They read a key nothing writes.
+  repo. They read a key no producer emits, next to one that holds the answer.
+
+⚠️ **The obvious one-line fix is a trap.** `pct_vs_200dma` is a **percent**
+(`(px/ref - 1.0) * 100.0`, `engine/stock_technicals.py:229`); `PCT_BELOW_200DMA_THRESH` is a
+**fraction** (`-0.12`). Swapping the key without dividing by 100 makes the test
+`-15.8 <= -0.12` — true for *any* name more than **0.12%** below its 200-day line, i.e. nearly
+every name below trend. That is a 100× over-admission wearing the costume of a typo fix.
+Anyone implementing §4 Option C must convert units and re-measure the admission count.
 
 Had the criterion worked, it would have admitted **12 of the 19 invisible name-days (63%)** on
 its own — including RUSAL at **30% below** its 200-day line. The exclusion is a consequence of a
@@ -53,8 +63,14 @@ authors believed the criterion worked.
 
 Measured over the 10 most recent committed board snapshots (2026-07-23 … 2026-08-05).
 RSI is recomputed from `data/hk_stocks/<ticker>.parquet` with the builder's own
-`engine.stock_technicals.snapshot()`; the script **self-validates at 166/166** against the RSI
-published on each snapshot's washout rows, so a drifted method fails loudly.
+`engine.stock_technicals.snapshot()`, truncated to each snapshot's `as_of`.
+
+**On the obvious objection** — the parquet is today's file, so reconstructing a past date
+assumes the series was not later restated or backfilled. That assumption is not taken on
+faith: the script replays every published `washout_watch` row at its own board date and
+**reproduces the published RSI on 166 of 166**, across all 10 dates. A restated series would
+break that agreement. The reconstruction is empirically sound for these names, and the script
+prints a loud failure if it ever stops being so.
 
 ### 2.1 The task's 2026-08-04 observation is confirmed exactly
 
@@ -111,8 +127,14 @@ visible name (XPeng, 38) is below it. Across all 10 dates, **18 of 19** invisibl
 inside the reclaim zone. These names are not failing for want of a signal; they are refused at
 the door before the signal is consulted.
 
-(That a name in the band is invisible also proves `cycle_blocked` is false for it: were it true,
-the name would be a candidate, `RSI_RECLAIM` would fire, and it would appear.)
+This is not inference. `engine/stock_score.py:219` defines
+`_CYCLE_BLOCK_STATES = {"DECLINE", "ROLLING OVER", "TOP WATCH"}` — **BOTTOM WATCH is not a
+member**, so the ladder's BOTTOM WATCH state never sets `cycle_blocked` by itself. The state
+that the board calls "nearing a low" is, by construction, not one the block-list recognises.
+
+(A name can still be `cycle_blocked` for an unrelated reason — 1347.HK entered the lane on
+08-05 via `_overextended`, trading 30% *above* its 200-day line. That is the lane admitting a
+name for being stretched, not washed out.)
 
 ### 3.3 The tests pass because the fixture supplies what production never does
 
@@ -128,17 +150,22 @@ vouching for it.**
 
 | | Option A — align RSI candidacy 40 → 50 | **Option B — admit on the ladder label** | Option C — revive `dist_200dma` |
 |---|---|---|---|
-| Change | `RSI_OVERSOLD` 40 → 50 | add `NEARING A LOW` / BOTTOM WATCH to `_is_washout_candidate` | produce `ma200`, restoring the −12% route |
-| New rows (08-05) | **+44** | **+2** | +1 (of the 2 invisible that day) |
-| Lane size | 16 → **60 (38% of the board)** | 16 → 18 | 16 → 17 |
+| Change | `RSI_OVERSOLD` 40 → 50 | add `NEARING A LOW` / BOTTOM WATCH to `_is_washout_candidate` | read `pct_vs_200dma` **÷ 100**, restoring the −12% route |
+| New candidates (08-05) | **+44** | **+2** | **+44** |
+| Lane size | 16 → **60 (38% of the board)** | 16 → **18** | 16 → **up to 60** |
 | Mean lane size / night | — | **16.6 → 18.5 (+1.9)** | — |
 | Rescues the cohort? | yes, incidentally | **18 of 19 name-days** | 12 of 19 name-days |
-| Collateral | 29 `BOTTOMING` + 10 `UNCONFIRMED TURN` + 2 `UPTREND` admitted | none — targets the cohort exactly | admits deep-decline names board-wide, count unmeasured |
+| Collateral | 29 `BOTTOMING` + 10 `UNCONFIRMED TURN` + 2 `UPTREND` | none — targets the cohort exactly | 49 names clear −12%; only **2** are `NEARING A LOW` (19 `BOTTOMING`, 10 `BUY ZONE`, 9 `UNCONFIRMED TURN`, 5 `NEARING A HIGH`, 4 `UPTREND`) |
 
 **Option A is a bad trade**: it buys 2 BOTTOM WATCH names at the cost of 44 new rows, and destroys
-what the lane means. **Option C is the honest repair of §3.1** but is a data-production change
-(a new stored field), reaches only 63% of the cohort, and its board-wide admission count is not
-yet measured — it deserves its own ruling.
+what the lane means.
+
+**Option C is the honest repair of §3.1, and it is not cheap.** It is small in *code* — the value
+already exists as `pct_vs_200dma` — but 49 of 156 names clear the −12% line today, so it admits
+**44 new candidates, the same magnitude as Option A**. Only 2 of those 49 are `NEARING A LOW`:
+the −12% route selects on price alone, independent of the ladder, so it is a different organ from
+the one this ruling is about. It also carries the 100× unit trap from §1 — the un-converted form
+admits **98 of 156 names (63% of the board)**. Worth doing, on its own evidence, in its own PR.
 
 **Dilution under Option B:** the lane's `NEARING A LOW` share rises from 10.2% to roughly 20%,
 against a 42% `NEARING A HIGH` share. The proposal moves the lane *toward* its name, not away.

@@ -26,6 +26,25 @@
       "RSI_RECLAIM_MAX": 50.0,
       "PCT_BELOW_200DMA_THRESH": -0.12,
       "CONFLUENCE_WATCH": 1
+    },
+    "option_costs_latest_snapshot": {
+      "as_of": "2026-08-05",
+      "universe": 156,
+      "lane_size_now": 16,
+      "option_a_rsi_band_40_50": 45,
+      "option_a_new": 44,
+      "option_b_new": 2,
+      "option_c_deep_below_200dma": 49,
+      "option_c_new": 44,
+      "option_c_labels": {
+        "UPTREND": 4,
+        "BOTTOMING": 19,
+        "NEARING A HIGH": 5,
+        "UNCONFIRMED TURN": 9,
+        "NEARING A LOW": 2,
+        "BUY ZONE": 10
+      },
+      "option_c_naive_unit_bug_admits": 98
     }
   },
   "per_day": [
@@ -34,10 +53,10 @@
       "universe": 156,
       "washout_watch_size": 16,
       "lane_label_mix": {
-        "BOTTOMING": 2,
         "NEARING A HIGH": 11,
         "UNCONFIRMED TURN": 2,
-        "NEARING A LOW": 1
+        "NEARING A LOW": 1,
+        "BOTTOMING": 2
       },
       "bottom_watch_cohort": 3,
       "bottom_watch_invisible": 2,
@@ -67,10 +86,10 @@
       "universe": 156,
       "washout_watch_size": 11,
       "lane_label_mix": {
-        "UNCONFIRMED TURN": 2,
         "BOTTOMING": 2,
-        "NEARING A LOW": 1,
+        "UNCONFIRMED TURN": 2,
         "NEARING A HIGH": 5,
+        "NEARING A LOW": 1,
         "DOWNTREND": 1
       },
       "bottom_watch_cohort": 5,
@@ -153,10 +172,10 @@
       "washout_watch_size": 19,
       "lane_label_mix": {
         "NEARING A HIGH": 14,
-        "NEARING A LOW": 1,
         "BOTTOMING": 1,
-        "UNCONFIRMED TURN": 2,
-        "DOWNTREND": 1
+        "DOWNTREND": 1,
+        "NEARING A LOW": 1,
+        "UNCONFIRMED TURN": 2
       },
       "bottom_watch_cohort": 4,
       "bottom_watch_invisible": 3,
@@ -194,12 +213,12 @@
       "universe": 156,
       "washout_watch_size": 18,
       "lane_label_mix": {
-        "NEARING A LOW": 2,
         "DOWNTREND": 4,
-        "BOTTOMING": 1,
-        "NEARING A HIGH": 7,
         "UNCONFIRMED TURN": 3,
-        "TURN IN PROGRESS": 1
+        "NEARING A HIGH": 7,
+        "NEARING A LOW": 2,
+        "TURN IN PROGRESS": 1,
+        "BOTTOMING": 1
       },
       "bottom_watch_cohort": 2,
       "bottom_watch_invisible": 0,
@@ -212,10 +231,10 @@
       "universe": 156,
       "washout_watch_size": 13,
       "lane_label_mix": {
-        "NEARING A HIGH": 7,
-        "UPTREND": 1,
-        "NEARING A LOW": 2,
         "UNCONFIRMED TURN": 1,
+        "UPTREND": 1,
+        "NEARING A HIGH": 7,
+        "NEARING A LOW": 2,
         "BOTTOMING": 1,
         "DOWNTREND": 1
       },
@@ -239,12 +258,12 @@
       "universe": 156,
       "washout_watch_size": 18,
       "lane_label_mix": {
+        "UNCONFIRMED TURN": 2,
+        "BOTTOMING": 1,
         "NEARING A HIGH": 7,
         "NEARING A LOW": 3,
         "DOWNTREND": 3,
-        "BOTTOMING": 1,
-        "TURN IN PROGRESS": 2,
-        "UNCONFIRMED TURN": 2
+        "TURN IN PROGRESS": 2
       },
       "bottom_watch_cohort": 8,
       "bottom_watch_invisible": 5,
@@ -298,12 +317,12 @@
       "universe": 156,
       "washout_watch_size": 18,
       "lane_label_mix": {
-        "NEARING A LOW": 2,
-        "TURN IN PROGRESS": 5,
         "UNCONFIRMED TURN": 4,
+        "NEARING A LOW": 2,
         "DOWNTREND": 3,
-        "NEARING A HIGH": 3,
-        "BOTTOMING": 1
+        "TURN IN PROGRESS": 5,
+        "BOTTOMING": 1,
+        "NEARING A HIGH": 3
       },
       "bottom_watch_cohort": 3,
       "bottom_watch_invisible": 0,
@@ -317,10 +336,10 @@
       "washout_watch_size": 20,
       "lane_label_mix": {
         "NEARING A HIGH": 6,
+        "NEARING A LOW": 2,
         "TURN IN PROGRESS": 1,
         "BOTTOMING": 2,
         "DOWNTREND": 3,
-        "NEARING A LOW": 2,
         "UNCONFIRMED TURN": 6
       },
       "bottom_watch_cohort": 4,
@@ -344,10 +363,10 @@
       "washout_watch_size": 20,
       "lane_label_mix": {
         "TURN IN PROGRESS": 10,
-        "BOTTOMING": 1,
-        "NEARING A HIGH": 4,
         "NEARING A LOW": 2,
+        "NEARING A HIGH": 4,
         "UNCONFIRMED TURN": 2,
+        "BOTTOMING": 1,
         "DOWNTREND": 1
       },
       "bottom_watch_cohort": 3,

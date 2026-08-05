@@ -81,13 +81,16 @@ def rsi_asof(ticker: str, as_of: str) -> float | None:
 
 
 def dist_200dma_asof(ticker: str, as_of: str) -> float | None:
-    """What dist_200dma WOULD be if anything produced it.
+    """What dist_200dma WOULD be, as a FRACTION.
 
-    Production always reads None here: the builder derives dist_200dma from
-    ``rec["tech"]["ma200"]`` (scripts/build_hk_library.py), and no HK producer writes
-    that key -- engine/hk_inputs.py computes a 200d mean but publishes only the boolean
-    ``above_200d_trend``.  This recomputes the intended value so the packet can measure
-    what the dead criterion would have caught.
+    Production always reads None: the builder derives dist_200dma from
+    ``rec["tech"]["ma200"]`` (scripts/build_hk_library.py:1195) and nothing emits that key.
+    The producer -- engine.stock_technicals.snapshot() -- publishes the same quantity as
+    ``pct_vs_200dma``, but in PERCENT units ((px/ref - 1) * 100).
+
+    UNITS ARE LOAD-BEARING.  PCT_BELOW_200DMA_THRESH is -0.12, a fraction.  Reading
+    ``pct_vs_200dma`` without dividing by 100 makes the test ``-15.8 <= -0.12`` -- true for
+    anything more than 0.12% below trend.  This returns the FRACTION, matching the threshold.
     """
     p = REPO / "data" / "hk_stocks" / f"{ticker}.parquet"
     if not p.exists():
@@ -212,6 +215,39 @@ def main() -> int:
             "PCT_BELOW_200DMA_THRESH": ww.PCT_BELOW_200DMA_THRESH,
             "CONFLUENCE_WATCH": ww.CONFLUENCE_WATCH,
         },
+    }
+
+    # Option-cost census on the newest snapshot: how many names each candidacy route would
+    # admit board-wide.  Option C's cost is NOT the count of BOTTOM WATCH names it rescues --
+    # the -12% route selects on price alone and pulls in names the ladder never flagged.
+    as_of, sb, st = snaps[0]
+    cyc = {r["ticker"]: r.get("cycle") for r in sb["modes"]["all"]}
+    in_lane = {r["ticker"] for r in (st.get("washout_watch") or [])}
+    band_a, deep_c, naive_c, deep_labels = [], [], 0, {}
+    for t in cyc:
+        r = rsi_asof(t, as_of)
+        if r is not None and 40 < r <= 50:
+            band_a.append(t)
+        d = dist_200dma_asof(t, as_of)
+        if d is not None:
+            if d <= ww.PCT_BELOW_200DMA_THRESH:
+                deep_c.append(t)
+                deep_labels[cyc[t] or "?"] = deep_labels.get(cyc[t] or "?", 0) + 1
+            # The unit trap: comparing the PERCENT form against the fractional threshold.
+            if d * 100.0 <= ww.PCT_BELOW_200DMA_THRESH:
+                naive_c += 1
+    summary["option_costs_latest_snapshot"] = {
+        "as_of": as_of,
+        "universe": len(cyc),
+        "lane_size_now": len(in_lane),
+        "option_a_rsi_band_40_50": len(band_a),
+        "option_a_new": len([t for t in band_a if t not in in_lane]),
+        "option_b_new": sum(1 for d in per_day if d["as_of"] == as_of
+                            for _ in range(d["bottom_watch_invisible"])),
+        "option_c_deep_below_200dma": len(deep_c),
+        "option_c_new": len([t for t in deep_c if t not in in_lane]),
+        "option_c_labels": deep_labels,
+        "option_c_naive_unit_bug_admits": naive_c,
     }
 
     out = {"summary": summary, "per_day": per_day, "validation": validation}
