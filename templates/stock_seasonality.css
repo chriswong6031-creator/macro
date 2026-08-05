@@ -2,96 +2,194 @@
    Paired plain-copy asset: templates/ is the source, site/ must byte-match
    (python -m scripts.check_template_site_sync --fix).
 
-   Two new tokens only; everything else resolves from theme.css so the light
-   theme and the zh 红涨绿跌 swap flow with no re-render.
+   SURFACE LANGUAGE: macro.html. This page adopts the two systems macro.html
+   established rather than inventing a third —
+     * the Attio type roles from templates/_macro_attio_type.css.j2 (display /
+       ui / data, .06em overlines) — see the TYPE block below;
+     * the desk surface from templates/macro-desk.css (hairlines, the two-part
+       card shadow, the 14px card radius, the four-point spacing scale).
+   Colour still resolves from theme.css, so the light theme and the zh 红涨绿跌
+   swap flow with no re-render.
+
+   Page-local colour tokens, two only:
      --sx-ink  median path, gate rules + fill, eyebrows, page accent
      --sx-now  current (incomplete) year thread + today marker
    Per-year outcomes deliberately use --up/--down, NOT the ink, so the sample is
    read in the same colour language as every other price surface on the site. */
 
+/* ── TYPE: Inter Display for the display role ───────────────────────────────
+   The same three faces macro.html loads, declared here because this is a
+   standalone page that links its own sheet. URLs are stylesheet-relative and
+   this file ships to the site root, so they resolve to /fonts/ exactly like
+   theme.css's Inter faces. San Francisco is not redistributed — it arrives
+   through the native -apple-system / "SF Pro Text" fallback in --sx-data. */
+@font-face { font-family: "MX Inter Display"; font-style: normal; font-weight: 500; font-display: swap; src: url("fonts/InterDisplay-500.woff2") format("woff2"); }
+@font-face { font-family: "MX Inter Display"; font-style: normal; font-weight: 600; font-display: swap; src: url("fonts/InterDisplay-600.woff2") format("woff2"); }
+@font-face { font-family: "MX Inter Display"; font-style: normal; font-weight: 700; font-display: swap; src: url("fonts/InterDisplay-700.woff2") format("woff2"); }
+
 :root {
   --sx-ink: #8a7fd4;
   --sx-now: var(--warn);
+
+  /* Type roles, copied from macro.html's --font-display / --font-data so the
+     two pages read as one product. NOTE what is absent: the terminal mono.
+     `--num` is for pure figures and this page has no slot that needs a fixed
+     advance width, so every figure here takes the proportional data face with
+     tabular figures switched on — the same call macro.html makes. */
+  --sx-display: "MX Inter Display", Inter, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans CJK SC", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --sx-data: Inter, "SF Pro Text", "SF Pro Display", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+
+  /* Desk surface, from macro-desk.css. */
+  --sx-hair: color-mix(in srgb, var(--line) 78%, transparent);
+  --sx-text-2: color-mix(in srgb, var(--text) 66%, transparent);
+  --sx-tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+  --sx-card-shadow: inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
+    0 1px 1px rgba(0, 0, 0, .28), 0 14px 30px -18px rgba(0, 0, 0, .55);
+  --sx-r-sm: 8px;
+  --sx-r-md: 10px;
+  --sx-r-lg: 14px;
+  --sx-sp-2: 8px;
+  --sx-sp-3: 12px;
+  --sx-sp-4: 16px;
+  --sx-sp-5: 20px;
+  --sx-sp-6: 24px;
 }
 html[data-theme="light"] {
   --sx-ink: #6a5cc0;
+  --sx-hair: color-mix(in srgb, var(--line) 92%, transparent);
+  --sx-text-2: color-mix(in srgb, var(--text) 70%, transparent);
+  --sx-card-shadow: inset 0 1px 0 rgba(255, 255, 255, .72),
+    0 1px 2px rgba(20, 30, 50, .05), 0 14px 30px -20px rgba(20, 30, 50, .16);
 }
 
-/* ── page frame ─────────────────────────────────────────────────────────── */
-.sx-wrap { max-width: 1180px; margin: 0 auto; padding: 20px 18px 64px; }
-@media (min-width: 1100px) { .sx-wrap { padding: 26px 24px 72px; } }
+/* ── page frame ─────────────────────────────────────────────────────────────
+   THE PAGE MUST PAINT ITS OWN CANVAS. theme.css deliberately does not: its
+   aurora backdrop is a fixed body::before at z-index -1 whose own comment says
+   it paints "over the opaque body { background: var(--bg) }" — the opaque layer
+   is the PAGE's job, and every other template in this repo declares it. This
+   sheet did not, so the dark tokens (--text #d7dce3) rendered straight onto the
+   user agent's white canvas on any browser not in dark mode: unreadable pale
+   text over a white-to-lavender wash. Do not remove this rule. */
+body {
+  background: var(--bg);
+  color: var(--text);
+}
 
+.sx-wrap { max-width: 1180px; margin: 0 auto; padding: var(--sx-sp-5) 18px 64px; }
+@media (min-width: 1100px) { .sx-wrap { padding: 26px var(--sx-sp-6) 72px; } }
+
+/* Overlines: macro.html's single value. The terminal-era .14em tracking this
+   page shipped with fragmented every label it touched; .06em on the Display
+   face at 12/16 is the house rhythm. */
 .sx-eyebrow {
-  font: 600 10.5px/1.2 var(--font-ui);
-  text-transform: uppercase; letter-spacing: .14em; color: var(--muted);
-  margin: 0 0 10px;
+  font: 600 12px/16px var(--sx-display);
+  text-transform: uppercase; letter-spacing: .06em; color: var(--sx-text-2);
+  margin: 0 0 6px;
 }
-.sx-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 18px; margin-bottom: 4px; }
-.sx-head-l { flex: 1 1 320px; min-width: 0; }
-.sx-h1 {
-  font: 700 19px/1.3 var(--font-ui); letter-spacing: -.01em;
-  margin: 0 0 14px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 9px;
-}
-.sx-tick { font: 600 .82em/1 var(--font-mono); color: var(--muted); letter-spacing: .02em; }
+html[data-lang="zh"] .sx-eyebrow { letter-spacing: 0; }
 
-.sx-verdict {
-  font: 800 clamp(21px, 2.5vw, 33px)/1.18 var(--font-ui);
-  letter-spacing: -.02em; max-width: 34ch; margin: 0 0 16px; color: var(--text);
+/* ── masthead: identity left, instrument search right, one baseline ────────
+   Previously two floating blocks that shared no alignment. One hairline-ruled
+   bar puts the symbol and the control that changes it on the same row. */
+.sx-mast {
+  display: flex; flex-wrap: wrap; align-items: flex-end;
+  gap: var(--sx-sp-4) var(--sx-sp-5);
+  padding-bottom: var(--sx-sp-4); margin-bottom: var(--sx-sp-5);
+  border-bottom: 1px solid var(--sx-hair);
 }
+.sx-mast-id { flex: 1 1 340px; min-width: 0; }
+.sx-h1 {
+  font: 700 clamp(19px, 2vw, 23px)/1.25 var(--sx-display);
+  letter-spacing: -.02em; margin: 0;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px;
+}
+html[data-lang="zh"] .sx-h1 { letter-spacing: 0; }
+/* The ticker is the identity, so it leads and carries the weight; the long
+   legal name follows in the secondary ink. */
+.sx-tick {
+  font: 700 1em/1 var(--sx-display); letter-spacing: -.01em;
+  color: var(--text); flex: none;
+  padding: 4px 9px; border-radius: var(--sx-r-sm);
+  background: color-mix(in srgb, var(--sx-ink) 15%, var(--panel2));
+  border: 1px solid color-mix(in srgb, var(--sx-ink) 34%, var(--line));
+}
+.sx-name { font-weight: 600; color: var(--sx-text-2); min-width: 0; }
+
+/* ── the answer, before any evidence ─────────────────────────────────────── */
+.sx-verdict {
+  font: 700 clamp(23px, 2.5vw, 31px)/1.22 var(--sx-display);
+  letter-spacing: -.025em; max-width: 30ch;
+  margin: 0 0 var(--sx-sp-4); color: var(--text);
+  text-wrap: balance;
+}
+html[data-lang="zh"] .sx-verdict { letter-spacing: 0; max-width: 22em; }
 
 /* ── chip strip ─────────────────────────────────────────────────────────── */
-.sx-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; padding: 0; list-style: none; }
+.sx-chips { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 var(--sx-sp-5); padding: 0; list-style: none; }
 .sx-chip {
   display: inline-flex; align-items: center; gap: 6px;
-  font: 500 12px/1 var(--font-ui);
-  padding: 6px 11px; border-radius: 999px;
-  border: 1px solid var(--line); background: var(--panel); color: var(--text);
+  font: 500 12.5px/1 var(--sx-data); letter-spacing: -.005em;
+  padding: 7px 11px; border-radius: var(--sx-r-sm);
+  border: 1px solid var(--sx-hair); background: var(--sx-tile); color: var(--text);
   white-space: nowrap;
 }
-/* House law: mono numerals are for FIGURES, never words. A chip reads as a phrase
-   ("22 of 25 up", "Through Jul 31"), so it keeps the UI face and takes only the
-   tabular figures. The mono face is reserved for the display figure, the years
-   table and the tips — matching mockups/refs/stock_seasonality/window_fan.html. */
-.sx-chip .n { font-variant-numeric: tabular-nums; letter-spacing: .01em; }
-.sx-chip-muted { color: var(--muted); }
+/* House law: the terminal mono is for FIGURES, never words — and a chip reads
+   as a phrase ("22 of 25 up", "Through Aug 3"). Following macro.html, the
+   figures inside take the proportional data face with tabular numerals rather
+   than a second family, so the chip is set in one voice. */
+.sx-chip .n { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+.sx-chip-muted { color: var(--sx-text-2); }
 .sx-chip-up {
   border-color: color-mix(in srgb, var(--up) 46%, var(--line));
   background: color-mix(in srgb, var(--up) 11%, var(--panel));
+  color: var(--ink-up, var(--text));
 }
 .sx-chip-mkt {
   border-color: color-mix(in srgb, var(--info) 46%, var(--line));
   background: color-mix(in srgb, var(--info) 12%, var(--panel));
 }
-.sx-chip-thin { border-style: dashed; color: var(--muted); }
-.sx-chip-expl { border-style: dashed; color: var(--muted); background: transparent; }
+.sx-chip-thin { border-style: dashed; color: var(--sx-text-2); }
+.sx-chip-expl { border-style: dashed; color: var(--sx-text-2); background: transparent; }
 /* [hidden] loses to the class rule above without this — a hidden chip would show. */
 .sx-chip[hidden] { display: none; }
 
 /* ── panels ─────────────────────────────────────────────────────────────── */
 .sx-card {
   background: var(--panel); border: 1px solid var(--line);
-  border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;
+  border-radius: var(--sx-r-lg); padding: 18px var(--sx-sp-5);
+  margin-bottom: var(--sx-sp-4);
+  box-shadow: var(--sx-card-shadow);
 }
+/* Panel titles: macro-desk sets sentence-case headings at 17/1.3, not another
+   row of uppercase overlines. One overline per page (the masthead's) is enough. */
 .sx-card > h2, .sx-sect > h2 {
-  font: 600 10.5px/1.2 var(--font-ui); text-transform: uppercase;
-  letter-spacing: .14em; color: var(--muted); margin: 0 0 12px;
+  font: 600 16px/1.3 var(--sx-display); letter-spacing: -.01em;
+  text-transform: none; color: var(--text); margin: 0 0 var(--sx-sp-3);
 }
+html[data-lang="zh"] .sx-card > h2, html[data-lang="zh"] .sx-sect > h2 { letter-spacing: 0; }
 .sx-body { font: 400 13.5px/1.55 var(--font-ui); color: var(--text); }
-.sx-dim  { color: var(--muted); }
-.sx-num  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.sx-dim  { color: var(--sx-text-2); }
+.sx-num  { font-family: var(--sx-data); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 
 /* ── help tip (house idiom, Tier 2) ─────────────────────────────────────── */
 .sx-help {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 15px; height: 15px; border-radius: 50%;
-  border: 1px solid var(--muted); color: var(--muted);
-  font: 600 10px/1 var(--font-ui); cursor: help;
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--text) 26%, transparent);
+  color: var(--sx-text-2);
+  font: 600 10px/1 var(--sx-data); cursor: help;
   position: relative; vertical-align: middle; margin-left: 5px; flex: none;
+  transition: color .16s ease, border-color .16s ease;
 }
+.sx-help:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 46%, transparent); }
 .sx-help .sx-tip {
   display: none; position: absolute; top: 145%; left: 50%; transform: translateX(-50%);
   width: min(330px, 78vw); background: var(--panel); border: 1px solid var(--line);
-  padding: 10px 12px; border-radius: 9px; z-index: 60;
+  padding: 11px 13px; border-radius: var(--sx-r-md); z-index: 60;
   font: 400 12px/1.5 var(--font-ui); color: var(--text); text-align: left;
   box-shadow: var(--popover-shadow); cursor: auto;
   max-height: min(60vh, 420px); overflow-y: auto; overscroll-behavior: contain;
@@ -99,14 +197,14 @@ html[data-theme="light"] {
 .sx-help:hover::before { content: ""; position: absolute; top: 100%; left: -30px; right: -30px; height: 12px; }
 .sx-help:hover .sx-tip, .sx-help:focus-visible .sx-tip { display: block; }
 .sx-help:focus-visible { outline: 2px solid var(--sx-ink); outline-offset: 2px; }
-.sx-tip b { font-weight: 600; color: var(--muted); font-size: 11px; }
+.sx-tip b { font-weight: 600; color: var(--sx-text-2); font-size: 11px; }
 .sx-tip .r { display: block; margin: 0 0 5px; }
 .sx-tip .r:last-child { margin-bottom: 0; }
 
 /* ── the strand field ───────────────────────────────────────────────────── */
-.sx-fieldcard { padding: 16px 12px 10px; }
-.sxf { display: block; width: 100%; height: 320px; touch-action: pan-y; color: var(--text); }
-.sxf text { font-family: var(--font-ui); }
+.sx-fieldcard { padding: var(--sx-sp-4) var(--sx-sp-3) 10px; }
+.sxf { display: block; width: 100%; height: 340px; touch-action: pan-y; color: var(--text); }
+.sxf text { font-family: var(--sx-display); }
 
 .sxf-rule    { stroke: var(--line); stroke-opacity: .55; stroke-width: 1; }
 .sxf-base    { stroke: var(--line); stroke-opacity: .9; stroke-width: 1; stroke-dasharray: 4 4; }
@@ -117,7 +215,7 @@ html[data-theme="light"] {
 .sxf-cur     { fill: none; stroke: var(--sx-now); stroke-opacity: .62; stroke-width: 1.3; stroke-linejoin: round; }
 .sxf-gate    { stroke: var(--sx-ink); stroke-width: 1; stroke-dasharray: 3 3; stroke-opacity: .75; }
 .sxf-today   { stroke: var(--sx-now); stroke-width: 1; stroke-opacity: .55; }
-.sxf-mlab    { fill: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; }
+.sxf-mlab    { fill: var(--sx-text-2); font-size: 11px; font-weight: 600; letter-spacing: .06em; }
 
 /* No dim/undim state: rendered, in-gate lighting is illegible at the year's
    y-scale (spec §13). The countable per-year outcome lives in the window fan. */
@@ -139,7 +237,8 @@ html[data-theme="light"] {
 .sx-fieldwrap { position: relative; }
 .sx-legend {
   display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
-  margin: 6px 2px 0; font: 500 11px/1.3 var(--font-ui); color: var(--muted);
+  margin: var(--sx-sp-2) 2px 0; font: 500 11.5px/1.3 var(--font-ui);
+  letter-spacing: -.005em; color: var(--sx-text-2);
 }
 .sx-legend i { display: inline-block; width: 16px; height: 0; border-top: 2.6px solid var(--sx-ink); margin-right: 6px; vertical-align: middle; }
 .sx-legend .lg-fan i { border-top-width: 1px; border-top-color: var(--text); opacity: .45; }
@@ -147,61 +246,95 @@ html[data-theme="light"] {
 .sx-legend .lg-up i { border-top-width: 1.4px; border-top-color: var(--up); }
 .sx-legend .lg-dn i { border-top-width: 1.4px; border-top-color: var(--down); }
 
-/* ── controls ───────────────────────────────────────────────────────────── */
-.sx-ctrls { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 2px 0; }
-.sx-seg { display: inline-flex; gap: 4px; }
-.sx-seg .gbtn[aria-pressed="true"] {
-  border-color: color-mix(in srgb, var(--sx-ink) 60%, var(--gbtn-brd));
-  background: color-mix(in srgb, var(--sx-ink) 15%, var(--gbtn-bg));
-  color: var(--text); font-weight: 600;
+/* ── controls: three segmented choices, not nine loose pills ───────────────
+   Each group is one recessed track and the pressed segment is the raised tile
+   inside it, so the row reads as "pick one of these three things" three times
+   over. The shared .gbtn glass (blur, sheen sweep, hover lift) is switched off
+   inside a track: a segmented control that lifts and shines on hover reads as
+   nine independent buttons, which is what it was doing. */
+.sx-ctrls { display: flex; flex-wrap: wrap; gap: var(--sx-sp-3); margin: var(--sx-sp-4) 2px 0; }
+.sx-ctrl { display: inline-flex; align-items: center; gap: 2px; }
+.sx-seg {
+  display: inline-flex; gap: 2px; padding: 3px;
+  border-radius: var(--sx-r-md);
+  border: 1px solid var(--sx-hair);
+  background: color-mix(in srgb, var(--panel2) 62%, transparent);
 }
-.sx-seg .gbtn[disabled] { opacity: .42; cursor: not-allowed; }
-.sx-seg .gbtn[disabled]:hover { background: var(--gbtn-bg); border-color: var(--gbtn-brd); }
+.sx-seg .gbtn {
+  border-color: transparent; background: transparent;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: none; border-radius: 7px;
+  padding: 6px 12px; font: 500 12.5px/1 var(--sx-data);
+  letter-spacing: -.005em; color: var(--sx-text-2);
+  transition: color .16s ease, background .16s ease;
+}
+.sx-seg .gbtn::after { display: none; }
+.sx-seg .gbtn:hover { transform: none; box-shadow: none; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
+.sx-seg .gbtn:active { transform: none; }
+.sx-seg .gbtn[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--sx-ink) 20%, var(--panel));
+  border-color: color-mix(in srgb, var(--sx-ink) 46%, transparent);
+  color: var(--text); font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .18);
+}
+.sx-seg .gbtn[disabled] { opacity: .38; cursor: not-allowed; }
+.sx-seg .gbtn[disabled]:hover { background: transparent; color: var(--sx-text-2); }
 
 /* ── this window / the years ────────────────────────────────────────────── */
-.sx-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
-.sx-fig { font: 600 30px/1.1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.sx-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sx-sp-4); align-items: start; }
+.sx-fig {
+  font: 700 clamp(30px, 3.4vw, 38px)/1 var(--sx-data);
+  font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1;
+  letter-spacing: -.03em;
+}
 .sx-fig.up { color: var(--up); } .sx-fig.dn { color: var(--down); }
-.sx-figlab { font: 400 13.5px/1.55 var(--font-ui); color: var(--muted); margin: 4px 0 16px; }
+.sx-figlab { font: 400 13.5px/1.55 var(--font-ui); color: var(--sx-text-2); margin: 6px 0 var(--sx-sp-4); }
 
 /* ── the window fan — THE signature (spec §5/§13) ───────────────────────
    Every year re-anchored to zero at the window's first day, at the WINDOW's own
    y-scale. The year field answers "when in the year"; this answers "how much,
    how consistently, how many". Its end-dot column is the countable sample. */
-.sx-fan { width: 100%; max-width: 480px; height: auto; display: block; margin: 14px 0 6px; }
+.sx-fan { width: 100%; max-width: 480px; height: auto; display: block; margin: var(--sx-sp-3) 0 6px; }
 .sx-fan .f { fill: none; stroke-opacity: .5; stroke-width: 1.25; }
 .sx-fan .f.up { stroke: var(--up); } .sx-fan .f.dn { stroke: var(--down); }
 .sx-fan .fmed { fill: none; stroke: var(--sx-ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .sx-fan .z { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 3; }
 .sx-fan .e.up { fill: var(--up); } .sx-fan .e.dn { fill: var(--down); }
-.sx-fancap { font: 400 12.5px/1.5 var(--font-ui); color: var(--muted); margin: 0 0 14px; max-width: 44ch; }
-.sx-fancap .n { font-variant-numeric: tabular-nums; }
+.sx-fancap { font: 400 12.5px/1.5 var(--font-ui); color: var(--sx-text-2); margin: 0 0 var(--sx-sp-3); max-width: 44ch; }
+.sx-fancap .n { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 
 /* ── the chance track (spec §3) ─────────────────────────────────────────
    A |t| axis: a soft ink ramp where the shuffles concentrate, one tick where
    this window sits. No axes, no labels — the sentence above carries the number. */
-.sx-track { position: relative; height: 4px; border-radius: 2px; margin: 14px 0 2px;
+.sx-track { position: relative; height: 4px; border-radius: 2px; margin: var(--sx-sp-3) 0 2px;
             background: linear-gradient(90deg, transparent, var(--sx-stops), transparent); }
 .sx-track i { position: absolute; top: -3px; width: 2px; height: 10px;
               background: var(--sx-ink); border-radius: 1px; transform: translateX(-1px); }
 .sx-after { font: 400 13.5px/1.55 var(--font-ui); color: var(--text); margin: 0; }
-.sx-after.sx-dim { color: var(--muted); margin-top: 10px; }
+.sx-after.sx-dim { color: var(--sx-text-2); margin-top: 10px; }
 .sx-after[hidden] { display: none; }
 
-.sx-years { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; }
+.sx-years { max-height: 340px; overflow-y: auto; overscroll-behavior: contain; }
 table.sx-tbl { width: 100%; border-collapse: collapse; font: 400 13px/1.4 var(--font-ui); }
 table.sx-tbl th {
-  font: 600 10.5px/1.2 var(--font-ui); text-transform: uppercase; letter-spacing: .14em;
-  color: var(--muted); text-align: left; padding: 0 8px 8px 0; font-weight: 600;
+  font: 600 11px/16px var(--sx-display); text-transform: uppercase; letter-spacing: .06em;
+  color: var(--sx-text-2); text-align: left; padding: 0 var(--sx-sp-2) var(--sx-sp-2) 0;
   position: sticky; top: 0; background: var(--panel); z-index: 1;
 }
+html[data-lang="zh"] table.sx-tbl th { letter-spacing: 0; }
 table.sx-tbl th:last-child, table.sx-tbl td:last-child { width: 52%; }
-table.sx-tbl td { padding: 5px 8px 5px 0; border-top: 1px solid var(--line); vertical-align: middle; }
-table.sx-tbl td.y, table.sx-tbl td.r { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.sx-tbl td { padding: 6px var(--sx-sp-2) 6px 0; border-top: 1px solid var(--sx-hair); vertical-align: middle; }
+/* Measure columns take the data face + tabular figures; there is no label column
+   on this table that could pick it up by accident. */
+table.sx-tbl td.y, table.sx-tbl td.r {
+  font-family: var(--sx-data); font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1; letter-spacing: -.01em; white-space: nowrap;
+}
 /* The year is the table's AXIS, not a footnote — it must be as legible as the
-   figure beside it. Inheriting --text (not --muted) keeps it readable in both
-   themes; the weight and tracking stop the mono digits reading as noise. */
-table.sx-tbl td.y { color: var(--text); font-weight: 600; letter-spacing: .01em; }
+   figure beside it. Inheriting --text (not the dim ink) keeps it readable in
+   both themes; the weight stops the digits reading as noise. */
+table.sx-tbl td.y { color: var(--text); font-weight: 600; }
+table.sx-tbl td.r { font-weight: 600; }
 table.sx-tbl td.r.up { color: var(--up); } table.sx-tbl td.r.dn { color: var(--down); }
 .sx-bar { position: relative; display: block; height: 9px; background: transparent; }
 .sx-bar i { position: absolute; top: 0; height: 9px; border-radius: 2px; display: block; }
@@ -210,59 +343,130 @@ table.sx-tbl td.r.up { color: var(--up); } table.sx-tbl td.r.dn { color: var(--d
 .sx-yrow.cur td.y::after { content: "·"; color: var(--sx-now); margin-left: 4px; font-weight: 700; }
 
 /* ── small multiples ────────────────────────────────────────────────────── */
-.sx-sm { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.sx-smp h3 { font: 600 10.5px/1.2 var(--font-ui); text-transform: uppercase; letter-spacing: .14em; color: var(--muted); margin: 0 0 8px; display: flex; align-items: center; }
+.sx-sm { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sx-sp-4); }
+.sx-smp h3 {
+  font: 600 11px/16px var(--sx-display); text-transform: uppercase; letter-spacing: .06em;
+  color: var(--sx-text-2); margin: 0 0 var(--sx-sp-2); display: flex; align-items: center;
+}
+html[data-lang="zh"] .sx-smp h3 { letter-spacing: 0; }
 .sx-smp svg { display: block; width: 100%; height: 92px; }
-.sx-smcap { font: 400 12px/1.45 var(--font-ui); color: var(--muted); margin: 6px 0 0; }
+.sx-smcap { font: 400 12px/1.45 var(--font-ui); color: var(--sx-text-2); margin: 6px 0 0; }
 .sx-smbar-up { fill: var(--up); } .sx-smbar-dn { fill: var(--down); }
 .sx-smzero { stroke: var(--line); stroke-width: 1; }
-.sx-smlab { fill: var(--muted); font-size: 8.5px; font-family: var(--font-ui); }
+.sx-smlab { fill: var(--sx-text-2); font-size: 9px; font-family: var(--sx-data); }
+/* <summary> keeps the disclosure triangle but stops rendering as a click target
+   the width of the card. */
+.sx-sect > summary { cursor: pointer; list-style-position: outside; width: max-content; }
+.sx-sect > summary:focus-visible { outline: 2px solid var(--sx-ink); outline-offset: 3px; border-radius: 4px; }
 
-/* ── symbol picker ──────────────────────────────────────────────────────── */
-.sx-pick { flex: 0 1 320px; min-width: 240px; position: relative; }
-.sx-pick input {
-  width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 10px;
-  border: 1px solid var(--line); background: var(--panel2); color: var(--text);
-  font: 400 13px/1.3 var(--font-ui);
+/* ── symbol picker ──────────────────────────────────────────────────────────
+   An instrument control, not a bare text box: the magnifier states what the
+   field does before it is focused, the "/" key hint states how to reach it
+   without the mouse, and the shortcut row underneath is the standing set. */
+.sx-pick { flex: 0 1 380px; min-width: 260px; }
+/* The positioning context is the FIELD's wrapper, so the results open flush
+   under the input rather than under the shortcut row below it. */
+.sx-pick-box { position: relative; }
+.sx-pick-field {
+  display: flex; align-items: center; gap: var(--sx-sp-2);
+  padding: 0 10px 0 11px; border-radius: var(--sx-r-md);
+  border: 1px solid var(--line); background: var(--sx-tile);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .12);
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
 }
-.sx-pick input:focus-visible { outline: 2px solid var(--sx-ink); outline-offset: 1px; }
+.sx-pick-field:hover { border-color: color-mix(in srgb, var(--text) 24%, var(--line)); }
+.sx-pick-field:focus-within {
+  border-color: color-mix(in srgb, var(--sx-ink) 62%, var(--line));
+  background: var(--panel2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sx-ink) 22%, transparent);
+}
+.sx-pick-ic { flex: none; color: var(--sx-text-2); display: block; transition: color .16s ease; }
+.sx-pick-field:focus-within .sx-pick-ic { color: var(--sx-ink); }
+.sx-pick input {
+  flex: 1 1 auto; min-width: 0; padding: 10px 0; border: 0;
+  background: transparent; color: var(--text);
+  font: 500 13.5px/1.3 var(--font-ui); letter-spacing: -.005em;
+}
+.sx-pick input::placeholder { color: var(--sx-text-2); font-weight: 400; }
+.sx-pick input:focus { outline: none; }
+.sx-pick input:focus-visible { outline: none; }
+/* The hint is a keyboard affordance, so it disappears the moment the keyboard
+   is in the field — it has served its purpose by then. */
+.sx-pick-kbd {
+  flex: none; font: 600 10.5px/1 var(--sx-data); color: var(--sx-text-2);
+  padding: 4px 6px; border-radius: 5px; border: 1px solid var(--sx-hair);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  transition: opacity .14s ease;
+}
+.sx-pick-field:focus-within .sx-pick-kbd { opacity: 0; }
+@media (hover: none) { .sx-pick-kbd { display: none; } }
+
 .sx-pop {
-  position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 70;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
-  box-shadow: var(--popover-shadow); max-height: 300px; overflow-y: auto;
-  padding: 4px; margin: 0; list-style: none;
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 70;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--sx-r-md);
+  box-shadow: var(--popover-shadow); max-height: 320px; overflow-y: auto;
+  padding: 5px; margin: 0; list-style: none;
 }
 .sx-pop[hidden] { display: none; }
 .sx-pop li {
-  padding: 7px 10px; border-radius: 7px; cursor: pointer;
-  font: 400 12.5px/1.35 var(--font-ui); display: flex; gap: 8px; align-items: baseline;
+  padding: 8px 10px; border-radius: 7px; cursor: pointer;
+  font: 400 12.5px/1.35 var(--font-ui); display: flex; gap: 10px; align-items: baseline;
 }
-.sx-pop li[aria-selected="true"], .sx-pop li:hover { background: var(--panel2); }
-.sx-pop li .sy { font: 600 12.5px/1 var(--font-mono); min-width: 52px; }
-.sx-pop li .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sx-pop li .ny { color: var(--muted); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 11.5px; white-space: nowrap; }
-.sx-pop li.none { color: var(--muted); cursor: default; }
-.sx-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.sx-quick button { font-family: var(--font-mono); font-size: 11.5px; }
+.sx-pop li[aria-selected="true"], .sx-pop li:hover { background: color-mix(in srgb, var(--sx-ink) 14%, var(--panel2)); }
+/* Ticker = display face, like macro.html's .mx5-mkt-ticker. */
+.sx-pop li .sy { font: 600 12.5px/1 var(--sx-display); letter-spacing: 0; min-width: 56px; color: var(--text); }
+.sx-pop li .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sx-text-2); }
+/* Reads "25 years" / "25 年" — a phrase, so it keeps the UI voice and takes
+   only the tabular figures. This slot carried the terminal mono before, which
+   is the exact defect the house law names. */
+.sx-pop li .ny { color: var(--sx-text-2); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; font-size: 11.5px; white-space: nowrap; }
+.sx-pop li.none { color: var(--sx-text-2); cursor: default; }
+.sx-pop li.none:hover { background: transparent; }
+
+.sx-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--sx-sp-2); align-items: center; }
+.sx-quick-lab {
+  font: 600 11px/16px var(--sx-display); text-transform: uppercase;
+  letter-spacing: .06em; color: var(--sx-text-2); margin-right: 2px;
+}
+html[data-lang="zh"] .sx-quick-lab { letter-spacing: 0; }
+/* Tickers, so the display face — never the mono. */
+.sx-quick button {
+  font: 600 11.5px/1 var(--sx-display); letter-spacing: 0;
+  padding: 5px 9px; border-radius: 6px;
+  background: transparent; border-color: var(--sx-hair);
+  color: var(--sx-text-2); box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.sx-quick button::after { display: none; }
+.sx-quick button:hover {
+  transform: none; box-shadow: none; color: var(--text);
+  background: color-mix(in srgb, var(--sx-ink) 15%, transparent);
+  border-color: color-mix(in srgb, var(--sx-ink) 42%, var(--line));
+}
 
 /* ── notices (honest states) ────────────────────────────────────────────── */
 .sx-note {
-  display: none; align-items: center; gap: 8px; margin: 0 0 16px;
-  padding: 10px 13px; border-radius: 10px;
-  border: 1px dashed var(--line); background: var(--panel);
-  font: 400 13px/1.5 var(--font-ui); color: var(--muted);
+  display: none; align-items: center; gap: var(--sx-sp-2); margin: 0 0 var(--sx-sp-4);
+  padding: 11px 13px; border-radius: var(--sx-r-md);
+  border: 1px dashed var(--line); background: var(--sx-tile);
+  font: 400 13px/1.5 var(--font-ui); color: var(--sx-text-2);
 }
 .sx-note[data-on="1"] { display: flex; }
 .sx-note a { color: var(--link); }
 
 /* ── honesty strip ──────────────────────────────────────────────────────── */
-.sx-honesty dl { margin: 0; display: grid; gap: 12px; }
-.sx-honesty dt { font: 600 12px/1.4 var(--font-ui); color: var(--text); margin: 0 0 2px; }
-.sx-honesty dd { margin: 0; font: 400 13px/1.55 var(--font-ui); color: var(--muted); }
+/* Six disclosures, so a FIXED three-up grid — two clean rows. auto-fit was
+   tried and gives 4+2 at this width, which reads as a wrap accident. */
+.sx-honesty dl { margin: 0; display: grid; gap: var(--sx-sp-5) var(--sx-sp-6); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1000px) { .sx-honesty dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.sx-honesty dt { font: 600 12.5px/1.4 var(--sx-display); letter-spacing: -.005em; color: var(--text); margin: 0 0 3px; }
+html[data-lang="zh"] .sx-honesty dt { letter-spacing: 0; }
+.sx-honesty dd { margin: 0; font: 400 13px/1.55 var(--font-ui); color: var(--sx-text-2); }
 
 /* ── mobile: recompose, never squeeze (§7) ─────────────────────────────── */
 @media (max-width: 720px) {
-  .sx-wrap { padding: 16px 14px 56px; }
+  .sx-wrap { padding: var(--sx-sp-4) 14px 56px; }
+  .sx-mast { align-items: stretch; gap: var(--sx-sp-3); }
   .sx-two { grid-template-columns: 1fr; }
   .sx-sm { grid-template-columns: 1fr; }
   .sxf { height: 260px; }
@@ -278,18 +482,35 @@ table.sx-tbl td.r.up { color: var(--up); } table.sx-tbl td.r.dn { color: var(--d
   #sxf-h2 .hit { x: -5px; width: 145px; }
   .sx-years { max-height: none; overflow: visible; }
   .sx-pick { flex: 1 1 100%; }
+  .sx-honesty dl { grid-template-columns: 1fr; gap: var(--sx-sp-3); }
   /* years table -> cards, 2 per row */
   table.sx-tbl thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   table.sx-tbl, table.sx-tbl tbody { display: block; }
-  table.sx-tbl tbody { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  table.sx-tbl tr { display: block; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
+  table.sx-tbl tbody { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sx-sp-2); }
+  table.sx-tbl tr { display: block; border: 1px solid var(--sx-hair); border-radius: 9px; padding: var(--sx-sp-2) 10px; }
   table.sx-tbl td { display: block; border-top: 0; padding: 0; }
-  table.sx-tbl td.y { font-size: 11.5px; color: var(--text); opacity: .8; }
+  table.sx-tbl td.y { font-size: 11.5px; color: var(--sx-text-2); }
   table.sx-tbl td.r { font-size: 15px; margin: 1px 0 6px; }
   table.sx-tbl th:last-child, table.sx-tbl td:last-child { width: auto; }
 }
 @media (max-width: 420px) {
-  .sx-chip { font-size: 11.5px; padding: 5px 9px; }
+  .sx-chip { font-size: 11.5px; padding: 6px 9px; }
+  .sx-ctrls { gap: var(--sx-sp-2); }
+}
+
+/* Touch targets. The gate handles carry their own user-unit sizing above (the
+   SVG is preserveAspectRatio="none", so CSS px do not survive into it); these
+   are the ordinary HTML controls, which shipped at 23-26px tall — a finger
+   misses those. Keyed on the POINTER, not the width, so a desk mouse keeps the
+   dense row and a touch screen gets the floor. */
+@media (pointer: coarse) {
+  .sx-seg .gbtn { min-height: 40px; padding: 6px 14px; }
+  .sx-quick button { min-height: 40px; padding: 5px 12px; }
+  .sx-pick input { padding: 13px 0; }
+  /* The `?` dot is deliberately NOT given an oversized invisible hit box: it
+     sits 2px from the last segment of a control, and a 44px box centred on it
+     would swallow taps meant for "Detrended" / "Max". A Tier-2 tip that is a
+     little fiddly to reach beats a control that misfires. */
 }
 
 /* ── motion: narrates arrival, never interaction (§4) ──────────────────── */
@@ -310,10 +531,15 @@ table.sx-tbl td.r.up { color: var(--up); } table.sx-tbl td.r.dn { color: var(--d
 
 @media (prefers-reduced-motion: reduce) {
   .sxf-strand, .sxf-band, .sxf-median, .sxf-gate, .sxf-gatefill,
-  .sxf-handle, .sxf-today, .sx-chip, .sx-fan .f, .sx-fan .fmed {
+  .sxf-handle, .sxf-today, .sx-chip, .sx-fan .f, .sx-fan .fmed,
+  .sx-pick-field, .sx-pick-ic, .sx-pick-kbd, .sx-seg .gbtn, .sx-quick button,
+  .sx-help {
     animation: none !important; transition: none !important;
     opacity: 1; transform: none;
   }
   .sxf-median { stroke-dasharray: none; stroke-dashoffset: 0; }
   .sxf-strand { stroke-opacity: .14; }
+  /* The hint fades on focus rather than moving, so parking the transition must
+     not park the state change itself. */
+  .sx-pick-field:focus-within .sx-pick-kbd { opacity: 0; }
 }
