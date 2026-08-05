@@ -13,14 +13,14 @@
         "engagement_trend": {
           "metric": "engagement_trend",
           "n_baseline": 4,
-          "n_recent": 2,
-          "reason": "recent n=2, baseline n=4 — need 5 of each",
+          "n_recent": 3,
+          "reason": "recent n=3, baseline n=4 — need 5 of each",
           "value": null,
           "verdict": "null"
         },
         "last_nine": {
           "metric": "last_nine",
-          "n": 6,
+          "n": 7,
           "problems": [
             "2 near-repeat(s) in the visible grid"
           ],
@@ -29,10 +29,10 @@
             "receipt_floor": 3,
             "unmeasured_ceiling": 6
           },
-          "unmeasured": 5,
-          "value": 6,
+          "unmeasured": 6,
+          "value": 7,
           "verdict": "warn",
-          "with_receipt": 5
+          "with_receipt": 6
         },
         "rejection_reason_mix": {
           "metric": "rejection_reason_mix",
@@ -43,7 +43,7 @@
           "verdict": "null"
         }
       },
-      "n_rows": 6,
+      "n_rows": 7,
       "nulls": [
         "approval_rate",
         "rejection_reason_mix",
@@ -67,7 +67,7 @@
         "engagement_trend": {
           "metric": "engagement_trend",
           "n_baseline": 26,
-          "n_recent": 34,
+          "n_recent": 38,
           "reason": "baseline median is zero — a ratio against zero engagement is undefined, not infinite",
           "value": null,
           "verdict": "null"
@@ -76,6 +76,7 @@
           "metric": "last_nine",
           "n": 9,
           "problems": [
+            "8/9 posts have no measurement yet (ceiling 6)",
             "6 near-repeat(s) in the visible grid"
           ],
           "repeats": 6,
@@ -83,10 +84,10 @@
             "receipt_floor": 3,
             "unmeasured_ceiling": 6
           },
-          "unmeasured": 4,
+          "unmeasured": 8,
           "value": 9,
           "verdict": "warn",
-          "with_receipt": 3
+          "with_receipt": 5
         },
         "rejection_reason_mix": {
           "metric": "rejection_reason_mix",
@@ -97,7 +98,7 @@
           "verdict": "null"
         }
       },
-      "n_rows": 60,
+      "n_rows": 64,
       "nulls": [
         "approval_rate",
         "rejection_reason_mix",
@@ -137,7 +138,7 @@
             "receipt_floor": 3,
             "unmeasured_ceiling": 6
           },
-          "unmeasured": 6,
+          "unmeasured": 5,
           "value": 9,
           "verdict": "warn",
           "with_receipt": 8
@@ -219,8 +220,8 @@
         "engagement_trend": {
           "metric": "engagement_trend",
           "n_baseline": 0,
-          "n_recent": 10,
-          "reason": "recent n=10, baseline n=0 — need 5 of each",
+          "n_recent": 19,
+          "reason": "recent n=19, baseline n=0 — need 5 of each",
           "value": null,
           "verdict": "null"
         },
@@ -228,18 +229,18 @@
           "metric": "last_nine",
           "n": 9,
           "problems": [
-            "7/9 posts have no measurement yet (ceiling 6)",
-            "7 near-repeat(s) in the visible grid"
+            "9/9 posts have no measurement yet (ceiling 6)",
+            "8 near-repeat(s) in the visible grid"
           ],
-          "repeats": 7,
+          "repeats": 8,
           "thresholds": {
             "receipt_floor": 3,
             "unmeasured_ceiling": 6
           },
-          "unmeasured": 7,
+          "unmeasured": 9,
           "value": 9,
           "verdict": "warn",
-          "with_receipt": 6
+          "with_receipt": 5
         },
         "rejection_reason_mix": {
           "metric": "rejection_reason_mix",
@@ -250,7 +251,7 @@
           "verdict": "null"
         }
       },
-      "n_rows": 10,
+      "n_rows": 19,
       "nulls": [
         "approval_rate",
         "rejection_reason_mix",
@@ -367,7 +368,7 @@
     }
   ],
   "apply_halts": true,
-  "as_of": "2026-08-05T09:38:13Z",
+  "as_of": "2026-08-05T16:34:27Z",
   "halted": [],
   "metrics": [
     "approval_rate",

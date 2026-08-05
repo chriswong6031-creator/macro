@@ -125,8 +125,14 @@ def test_decision_card_shell_is_viewport_safe_and_uses_dedicated_variant():
     for page in ("dashboard.html.j2", "china.html.j2", "hk.html.j2", "canada.html.j2"):
         src = (ROOT / "templates" / page).read_text(encoding="utf-8")
         assert '{% import "_decision_card.html.j2" as dc %}' in src, f"{page} does not import the shared card"
-        assert "dc.dc_css()" in src, f"{page} never emits the shared card CSS"
-        assert "dc.dc_card(" in src, f"{page} never renders the shared card"
+        # china's act-now board (which carries the dc.dc_css()/dc.dc_card() calls) was hoisted
+        # into the shared _china_act_now_board.html.j2 include; fold it in so the emit-check
+        # follows the markup to its new home.
+        emit = src
+        if page == "china.html.j2":
+            emit += (ROOT / "templates" / "_china_act_now_board.html.j2").read_text(encoding="utf-8")
+        assert "dc.dc_css()" in emit, f"{page} never emits the shared card CSS"
+        assert "dc.dc_card(" in emit, f"{page} never renders the shared card"
 
 
 def test_score_caption_sits_outside_the_ring():
