@@ -2040,6 +2040,15 @@ on:
       - "scripts/fetch_r2.py"
       - "scripts/notify_turn_events.py"
       - "scripts/research/fetch_dead_name_prices_polygon.py"
+      # subsector-rotation session-stamp hygiene (calendar-asof audit 2026-08-05):
+      # the finviz collector's `asof` is the clock these ledgers were stamped from,
+      # but the track record, its significance guard and the heal were enumerated in
+      # NO workflow — a PR touching them fired no run that could see a failure.
+      - "tests/test_heal_subsector_rotation_ledgers.py"
+      - "tests/test_subsector_significance_guard.py"
+      - "tests/test_subsector_track_record.py"
+      - "engine/subsector_track_record.py"
+      - "scripts/heal_subsector_rotation_ledgers.py"
       # unrun-factor-research — factor registry + measurement disclosure + the study lanes behind them
       - "tests/test_a2_oos_analysis.py"
       - "tests/test_build_measurement_evidence_gap.py"
