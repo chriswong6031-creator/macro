@@ -515,6 +515,12 @@
       "at": "2026-08-05T17:53:05.398648+00:00",
       "activated": false,
       "importance": 25
+    },
+    "tw-2026-07-15-tga-build": {
+      "id": "tw-2026-07-15-tga-build",
+      "at": "2026-08-05T21:32:26.222329+00:00",
+      "activated": true,
+      "importance": 78
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
