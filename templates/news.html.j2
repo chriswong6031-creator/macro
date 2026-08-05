@@ -1534,10 +1534,21 @@ html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
         // The engine's tape stamp is a bare "LABEL ±X.X%"; on X the surrounding
         // sentence supplies the window, so here we say it — a number on a glance
         // surface arrives with its meaning.
+        //
+        // THE WINDOW USED TO READ "since this crossed", AND THAT WAS NOT THE
+        // NUMBER (2026-08-05). tape_stamp.py is explicit that the store persists
+        // no price at detected_at, so it "does NOT claim a 'since the headline'
+        // delta we cannot compute" — every leg is the quote's own changePct,
+        // which is exactly (price / prevClose - 1), a move against the PRIOR
+        // CLOSE. The gloss was therefore labelling a session move with a window
+        // the engine had refused to claim one line earlier. It stayed invisible
+        // because the stamp itself was empty on 83 of 83 recent items; the US
+        // macro reaction basket makes stamps routine, which would have shipped
+        // the false window at volume. Say the window the number actually has.
         if(tape){
           var tw = el('span','nxw-tapewrap');
           tw.appendChild(el('span','nxw-tape', tape));
-          tw.appendChild(el('span','nxw-tapesfx', zh ? '自该消息出现以来' : 'since this crossed'));
+          tw.appendChild(el('span','nxw-tapesfx', zh ? '较前收盘' : 'vs prior close'));
           line.appendChild(tw);
         }
         // Honest ZH disclosure: this item has no Chinese twin yet, so say so

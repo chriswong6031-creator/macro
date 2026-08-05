@@ -1,0 +1,70 @@
+{
+  "schema": "prophet.pick_autopsy/v2",
+  "market": "us",
+  "pick_id": "STAA-2026-06-30-watch",
+  "ticker": "STAA",
+  "entry_date": "2026-06-30",
+  "ledger_key": {
+    "ticker": "STAA",
+    "as_of": "2026-06-30",
+    "lane": "watch",
+    "horizon": "21"
+  },
+  "attribution": {
+    "as_of": "2026-06-30",
+    "ticker": "STAA",
+    "lane": "watch",
+    "horizon": "21",
+    "taxonomy_version": "v2",
+    "outcome_cause": "idio_break",
+    "secondary_flags": "[]",
+    "process_fault": "clean",
+    "sector": "Health Care",
+    "excess_spy": -0.13633883271499248,
+    "excess_sector": -0.1535026496975448,
+    "spy_ret": 0.0017029869054645541,
+    "board_tenure_days": 7.0,
+    "quad_hard_label": NaN,
+    "vol_regime": NaN,
+    "risk_radar_state": NaN,
+    "terminal_state_clean8_21": "STOPPED",
+    "staleness_hours": null,
+    "entry_date": "2026-07-01"
+  },
+  "llm": {
+    "summary": "STAA was on the watch list, stopped out with negative excess return, categorized as an idiosyncratic break with no process fault.",
+    "root_cause": "STAA was on the watch list, stopped out with negative excess return, categorized as an idiosyncratic break with no process fault.",
+    "mitigation_verdict": "mitigable_conditioning",
+    "lesson": "This was an idiosyncratic failure; the conditioning was not sufficient to avoid the break.",
+    "engines_credit": "The process was clean, but the entry-timing book may have missed a company-specific negative catalyst.",
+    "causal_chain": [],
+    "alternate_explanations": [
+      "The break could have been caused by a sector-wide Health Care drop or company-specific news.",
+      "The stop may have been triggered by a known risk that was not adequately conditioned for."
+    ],
+    "missing_evidence": [
+      "Company-specific news or events leading to the break",
+      "Health Care sector performance post-entry",
+      "Details of risk conditioning at entry"
+    ],
+    "signal_hypotheses": [
+      {
+        "feature_key": "watch_failure_prediction",
+        "feature": "Predictive power of prior volatility or stock-specific momentum on watch-list failure rate",
+        "measurement": "Logistic regression using stock's historical vol, momentum, and sector strength to predict STOPPED vs CLEAN_LIFTOFF outcomes",
+        "expected_direction": "Higher volatility and negative momentum should increase failure probability",
+        "falsifier": "If model has low AUC (<0.6), watch-list placement is not conditioned on stock-specific risk.",
+        "authority": "research_only",
+        "direct_authority": false
+      }
+    ],
+    "authority": "research_only",
+    "direct_authority": false
+  },
+  "authority": "research_only",
+  "direct_authority": false,
+  "model": "claude-fable-5",
+  "cycle_id": "2026-08-05",
+  "asof": "2026-08-05",
+  "ts": "2026-08-05T09:23:44+00:00"
+}

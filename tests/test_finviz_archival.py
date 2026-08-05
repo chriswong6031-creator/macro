@@ -1,24 +1,31 @@
 """Tests for the PIT archival additions in scripts/fetch_finviz_themes.py.
 
-Covers four contracts:
+Covers five contracts:
   (a) same-asof rerun does NOT duplicate the subsector_perf_history line
   (b) tree_history appends on changed tree, skips on identical tree
   (c) existing perf_snapshot.json write is untouched (function still writes it)
   (d) torn-line resilience: a partial/corrupt trailing line (runner killed
       mid-append) must NOT block the day's archival — the review-flagged
       failure mode of substring-based dedup.
+  (e) the asof stamp is the NYSE SESSION the EOD board describes, not the
+      calendar day of the fetch (calendar-asof audit 2026-08-05).
 
-All fixtures are synthetic and in-memory (tmp_path). Zero network calls.
+All fixtures are synthetic and in-memory (tmp_path). Zero network calls, and every
+date is pinned — a fixture that reads the wall clock is a scheduled failure.
 """
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
+
+import pytest
 
 # Import the helpers directly — avoids importing main() which triggers argparse.
 from scripts.fetch_finviz_themes import (
     append_subsector_perf_history,
     append_tree_history,
+    _asof_stamp,
     _tree_hash,
     _last_line_hash,
     _last_asof,
@@ -229,3 +236,46 @@ class TestInternalHelpers:
             json.dumps({"sha256": h2}) + "\n"
         )
         assert _last_line_hash(p) == h2
+
+
+# ------------------------------------------------------------------ #
+# (e) the asof stamp is a SESSION, not a calendar day
+#
+# daily.yml fires this collector ~22:30 UTC SEVEN nights a week, and Finviz themes
+# perf is end-of-day — so the Saturday and Sunday runs re-fetch Friday's unchanged
+# board. A clock stamp gave each of those nights a brand-new `asof`, which flowed
+# through build_subsector_rotation into the rotation ledgers and made one Friday's
+# calls count as up to three graded days.
+# ------------------------------------------------------------------ #
+
+class TestAsofStampIsASession:
+    @pytest.mark.parametrize("now_utc, want, why", [
+        ("2026-08-01T22:30:00+00:00", "2026-07-31",
+         "Saturday night run re-reads Friday's board"),
+        ("2026-08-02T22:30:00+00:00", "2026-07-31",
+         "Sunday night run re-reads the SAME Friday board"),
+        ("2026-08-04T23:30:00+00:00", "2026-08-04",
+         "Tuesday post-close: the session that just ended"),
+        ("2026-08-05T00:30:00+00:00", "2026-08-04",
+         "past UTC midnight but still Tuesday evening in ET — the TS-R2 rollover"),
+        ("2026-09-07T22:30:00+00:00", "2026-09-04",
+         "Labor Day: a holiday Monday falls back to the prior Friday"),
+    ])
+    def test_pinned_instants(self, now_utc, want, why):
+        assert _asof_stamp(datetime.fromisoformat(now_utc)) == want, why
+
+    def test_weekend_pair_collapses_onto_one_session(self):
+        """The defect in one line: two nights, one board, one stamp."""
+        sat = _asof_stamp(datetime(2026, 8, 1, 22, 30, tzinfo=timezone.utc))
+        sun = _asof_stamp(datetime(2026, 8, 2, 22, 30, tzinfo=timezone.utc))
+        fri = _asof_stamp(datetime(2026, 7, 31, 22, 30, tzinfo=timezone.utc))
+        assert sat == sun == fri == "2026-07-31"
+
+    def test_naive_datetime_is_read_as_utc(self):
+        """The pipeline convention — daily.yml hands us naive UTC timestamps."""
+        assert _asof_stamp(datetime(2026, 8, 1, 22, 30)) == "2026-07-31"
+
+    def test_stamp_is_a_plain_iso_date(self):
+        """Downstream keys on this string; it must stay YYYY-MM-DD."""
+        stamp = _asof_stamp(datetime(2026, 8, 4, 22, 30, tzinfo=timezone.utc))
+        assert len(stamp) == 10 and stamp.count("-") == 2

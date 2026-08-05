@@ -15,6 +15,22 @@ DATA SOURCE:
   Panel: data/cn_holder_sales/windows.parquet (built by collectors/cn_holder_sale_calendar.py)
   Prices: data/china_stocks_raw/{TICKER}.parquet (per-ticker OHLCV, 15y store)
 
+  JOIN DEFECT, FIXED 2026-08-05 (read before comparing to the committed report):
+  the panel used to key Shanghai names `.SH` while the price store keys them `.SS`,
+  and this script looked tickers up verbatim — so ALL 14,411 Shanghai window-events
+  missed the store and were counted as AM-5 "absent from price store" exclusions.
+  There was no error to see: a missing dict key is an exclusion here, and the loss
+  showed up only as a coverage percentage that looked like universe truncation.
+  (d4 escaped it via a `.SH -> .SS` shim; this script had no equivalent.) The store
+  is relabelled and the lookup now normalizes. Effect on the joinable panel:
+  16.3% -> 30.3% of events, 674 -> 1,381 unique tickers.
+
+  The committed reports/d2-cn-holder-sale-phase0.md — including its DIRECTIONAL FAIL
+  verdict and the Fable ruling quoted in it — was computed on the Shanghai-blind
+  panel. It is NOT superseded by this fix and has NOT been re-run: re-running is a
+  research act requiring a fresh trial budget, not a repair. Treat the committed
+  numbers as conditioned on a panel missing every Shanghai name.
+
 PIT LAW (frozen):
   Signal available = window_open date (START_DATE from the plan).
   The legal pre-disclosure was ≥15 calendar days before window_open.
@@ -57,9 +73,11 @@ AMENDMENTS REGISTERED BEFORE COMPUTING:
   AM-1: pct_float tercile thresholds computed on pre-2022 data only.
         If pre-2022 data has < 100 windows with valid pct_float,
         use full-sample terciles and flag as amendment.
-  AM-2: CSI 300 proxy = data/china_stocks_raw/000300.SH.parquet if present;
-        otherwise use the equal-weight return of all stocks in the price store
-        on each date (index proxy). Report which was used.
+  AM-2: CSI 300 proxy = the 000300 file in data/china_stocks_raw if present
+        (either spelling); otherwise the equal-weight return of all stocks in the
+        price store on each date (index proxy). Report which was used. NOTE: the
+        store carries no 000300 under any suffix today, so the equal-weight
+        fallback is what actually runs; the report states which was used.
   AM-3: Size-matched baseline for C6: compute each stock's 12-month trailing
         median market-cap (close * shares, in 万元) at window_open month,
         assign to market-cap decile. Baseline = equal-weight average return
@@ -120,10 +138,10 @@ RAW_PATH = ROOT / "data" / "cn_holder_sales" / "raw.parquet"
 
 AMENDMENTS = [
     "AM-1: pct_float tercile thresholds from pre-2022 data only; fallback to full-sample if <100 pre-2022 obs with valid pct_float.",
-    "AM-2: CN-A market proxy = 000300.SH if present in price store; otherwise equal-weight daily return of all 729 store tickers.",
+    "AM-2: CN-A market proxy = 000300 (either suffix) if present in price store; otherwise equal-weight daily return of all store tickers. The store holds no 000300 today, so the fallback is what runs.",
     "AM-3: Size-matched baseline requires 12-month trailing market-cap; skipped with report if fewer than 100 stocks have price data.",
     "AM-4: 'Completion' proxy = n_sales>=2 within window record. Descriptive only, not gated.",
-    "AM-5: Windows for tickers absent from price store are excluded; exclusion rate reported.",
+    "AM-5: Windows for tickers absent from price store are excluded; exclusion rate reported. Lookup goes through _store_key (legacy .SH -> .SS); before 2026-08-05 it did not, and every Shanghai name was excluded by suffix rather than by universe.",
 ]
 
 
@@ -142,6 +160,18 @@ def _norm_cdf(z: float) -> float:
 # ---------------------------------------------------------------------------
 # Price store
 # ---------------------------------------------------------------------------
+def _store_key(ticker: str) -> str:
+    """Panel ticker -> price-store key. Legacy `.SH -> .SS`; identity otherwise.
+
+    data/china_stocks_raw is `.SS`/`.SZ` only. Until 2026-08-05 the panel keyed
+    Shanghai `.SH` and this lookup was verbatim, so every Shanghai event silently
+    fell into the AM-5 "absent from price store" bucket. The store is relabelled;
+    this shim keeps a pre-heal panel on disk joining too. Mirrors
+    `scripts/d4_cn_supply_absorption_phase0._norm_ticker`.
+    """
+    return ticker[:-3] + ".SS" if ticker.endswith(".SH") else ticker
+
+
 def load_price_store() -> dict[str, pd.Series]:
     """Load all per-ticker close series from china_stocks_raw."""
     prices: dict[str, pd.Series] = {}
@@ -174,7 +204,7 @@ def load_price_store() -> dict[str, pd.Series]:
 # ---------------------------------------------------------------------------
 def build_market_index(prices: dict[str, pd.Series]) -> pd.Series:
     """Build CN-A market index. Use 000300.SH (CSI 300) if available, else equal-weight."""
-    csi300 = "000300.SH"
+    csi300 = next((k for k in ("000300.SS", "000300.SH") if k in prices), "000300.SS")
     if csi300 in prices:
         s = prices[csi300]
         print(f"\n[market_index] Using CSI 300 ({csi300}): {len(s)} rows, "
@@ -182,7 +212,7 @@ def build_market_index(prices: dict[str, pd.Series]) -> pd.Series:
         return s
 
     # Fallback: equal-weight daily return
-    print("\n[market_index] 000300.SH not found — using equal-weight proxy")
+    print("\n[market_index] no 000300 file under any suffix — using equal-weight proxy")
     all_rets = pd.DataFrame({t: p.pct_change() for t, p in prices.items()})
     eq_ret = all_rets.mean(axis=1).dropna()
     eq_close = (1 + eq_ret).cumprod()
@@ -249,15 +279,16 @@ def compute_returns(
 
     for _, row in panel.iterrows():
         ticker = row["ticker"]
+        key = _store_key(ticker)
         sd = row["signal_date"]
 
-        if ticker not in prices:
+        if key not in prices:
             rows.append({"ticker": ticker, "signal_date": sd,
                          "fwd_ret": None, "mkt_ret_fwd": None,
                          "excess_ret": None, "in_store": False})
             continue
 
-        fwd = forward_return(prices[ticker], sd, horizon)
+        fwd = forward_return(prices[key], sd, horizon)
         if sd not in mkt_ret_fwd:
             mkt_ret_fwd[sd] = forward_return(mkt, sd, horizon)
         mkt_f = mkt_ret_fwd[sd]
@@ -459,7 +490,7 @@ def main() -> None:
 
     # Exclusion audit (AM-5)
     n_total = len(panel)
-    panel["in_store"] = panel["ticker"].isin(prices)
+    panel["in_store"] = panel["ticker"].map(_store_key).isin(prices)
     n_in_store = panel["in_store"].sum()
     n_excl = n_total - n_in_store
     print(f"\n[exclusion_audit] Total windows: {n_total}")
@@ -642,7 +673,8 @@ def main() -> None:
         n_2019_plus=n_2019_plus,
         monotone_pass=monotone_pass,
         use_full_sample_terciles=use_full_sample_terciles,
-        mkt_proxy_used="000300.SH (CSI 300)" if "000300.SH" in prices else "equal-weight proxy",
+        mkt_proxy_used=next((f"{k} (CSI 300)" for k in ("000300.SS", "000300.SH")
+                             if k in prices), "equal-weight proxy"),
     )
     print("\n[done] Report written.")
 
@@ -807,8 +839,12 @@ def _write_report(
     W("")
     W("### Caveats")
     W("")
-    W("1. The price store covers 729 tickers; windows for tickers outside the store are excluded. "
-      f"Exclusion rate: {100*(n_total-n_in_store)/max(n_total,1):.1f}% of total windows.")
+    W(f"1. The price store covers {len(prices):,} tickers; windows for tickers outside the store "
+      f"are excluded. Exclusion rate: {100*(n_total-n_in_store)/max(n_total,1):.1f}% of total windows. "
+      "This is universe truncation only. Runs before 2026-08-05 also excluded every "
+      "Shanghai name here for a second, non-universe reason — the panel keyed them `.SH` "
+      "and the store keys them `.SS`, so the lookup missed — which inflated this rate; see "
+      "the join-defect note in the module docstring.")
     W("2. pct_float is approximated from post-sale HOLD_RATIO and AFTER_HOLDER_NUM; "
       "it is an approximation of the pre-sale float fraction.")
     W("3. The size-matched baseline (C6) uses close price as a market-cap proxy — "

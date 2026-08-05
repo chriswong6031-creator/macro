@@ -3,6 +3,7 @@
   "crash": false,
   "eligible": [
     "hk_banks",
+    "hk_china_tech",
     "hk_conglo",
     "hk_dividend",
     "hk_industrials",

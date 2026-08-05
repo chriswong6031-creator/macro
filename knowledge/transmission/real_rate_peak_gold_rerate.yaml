@@ -1,0 +1,119 @@
+# TXI easing-direction chain — real-rate PEAK → precious-metals re-rate.
+# Operator case 2026-08-05: "this could also mean that real rates have peaked — the
+# implication is a rally in precious metals." The estate tracks real-rate LEVEL and
+# DIRECTION (state.rates, p99 restrictive-rising tonight) but had no staged observable
+# for the PEAK itself. This chain arms on the extreme and stages the rolldown, so the
+# turn the operator watches by eye becomes an engine state with a graded history.
+# Display-tier; never scored (DNR row 45 / TXI Article 1/2). RIC's own honest null
+# stands: repricing flags RISK/context, not return — this chain narrates state.
+chain: real_rate_peak_gold_rerate
+rev: 0
+tier: hypothesis            # every node resolves; per-hop base rates untested until the W3 miner
+title:
+  en: "Real-rate peak → gold re-rates"
+  zh: "实际利率见顶 → 黄金估值修复"
+
+nodes:
+  real_rate_extreme:
+    title: {en: "Real 10y at a restrictive extreme", zh: "实际10年期处于紧缩极值"}
+    src: transmission_state
+    # The armed state: real 10y in its top decile (10y window percentile computed by the
+    # rate/inflation engine) AND the engine's own regime read restrictive. TRUE on
+    # tonight's store (pctile 0.99, restrictive) — the chain arms and WATCHES.
+    test:
+      all:
+        - {path: "state.rates.real_10y_pctile", op: gte, value: 0.90}
+        - {path: "state.rates.regime", op: eq, value: restrictive}
+  real_rate_rolldown:
+    title: {en: "Real 10y rolling down", zh: "实际10年期回落"}
+    src: fred
+    # The peak confirm: real 10y falls >12bp over ~1 month FROM the armed extreme.
+    # Measured 2003→: extreme(p90)+rolldown jointly mark ~4.7% of days (275 days, a
+    # handful of true episodes) — rare enough to mean something. Reads the raw DFII10
+    # series: the state adapter's 63d direction key certifies a turn last, by design.
+    test: {series: "DFII10", metric: ret_bp, window: 22, op: lt, value: -12}
+  gold_bid:
+    title: {en: "Gold bid confirming", zh: "黄金买盘确认"}
+    src: yahoo
+    # Terminal confirm: gold up >4% over ~1 month. Absolute (not RS) — bullion's
+    # opportunity-cost mechanism is vs real carry, not vs equities.
+    test: {series: "GC=F", metric: ret, window: 22, op: gt, value: 4}
+
+hops:
+  - from: real_rate_extreme
+    to: real_rate_rolldown
+    sign: "-"
+    lag_d: [0, 180]
+    label:
+      en: "Restrictive extreme → rolldown"
+      zh: "紧缩极值 → 回落"
+    condition:
+      en: "inflation cooling toward target with the policy path free to reprice lower; a re-acceleration of inflation re-arms the tightening chain instead"
+      zh: "通胀向目标降温、政策路径可向下重定价；若通胀再加速则触发紧缩方向的链"
+    mechanism:
+      en: "restrictive real yields at a decade extreme are the spring: once the market stops needing MORE restriction, the real 10y rolls off the peak — the single discount-rate input the whole duration complex prices from"
+      zh: "处于十年极值的实际收益率如同压缩的弹簧：一旦市场不再需要更紧的政策，实际10年期即从峰值回落——它是整个久期资产共同的贴现率输入"
+    prior: "theory (policy-path repricing at extremes); the peak dates themselves are the W3 miner's episode anchors"
+  - from: real_rate_rolldown
+    to: gold_bid
+    sign: "+"
+    lag_d: [0, 90]
+    label:
+      en: "Real yields fall → gold re-rates"
+      zh: "实际收益率回落 → 黄金修复"
+    condition:
+      en: "dollar not spiking concurrently (a stress bid is the dollar chain's regime, not this one); ETF/CB demand intact"
+      zh: "美元未同步飙升（避险买盘属于美元链的情形）；ETF与央行需求稳定"
+    mechanism:
+      en: "gold pays no carry, so the real yield IS its opportunity cost — when the real 10y rolls over from an extreme, the carry headwind becomes a tailwind and bullion re-rates"
+      zh: "黄金无利息收益，实际收益率即其机会成本——实际10年期自极值回落时，持有成本的逆风转为顺风，金价修复"
+    prior: "transmission_matrix[real_10y→GC=F] IC if present, else theory (opportunity-cost channel)"
+
+falsifiers:
+  # Peak refuted: the real 10y makes a NEW push higher over a quarter while armed —
+  # the extreme was a plateau on the way up, not a peak.
+  - when: {series: "DFII10", metric: ret_bp, window: 63, op: gt, value: 15}
+    src: fred
+    note: "real 10y +15bp over a quarter while armed — no peak; restriction still building"
+  # Terminal falsifier: the rolldown confirmed but gold went nowhere for a quarter —
+  # the opportunity-cost channel is not transmitting (e.g. deflation-scare selling).
+  - when: {series: "GC=F", metric: ret, window: 63, op: lt, value: 0}
+    note: "real yields rolled down with gold flat-to-down over 63d — the re-rate leg is falsified"
+
+null_model: "does conditioning on extreme+rolldown beat unconditional gold momentum over the same forward windows?"
+
+exposure_screens:
+  # Blast radius: the PM complex. The per-name substrate carries the miners via basket
+  # membership; the sensitivity screen keys on the long-duration/real-rate axis.
+  real_rate_beneficiary:
+    label: {en: "Real-rate beneficiary", zh: "实际利率受益"}
+    note: {en: "long-duration names whose discount-rate headwind releases as real yields roll down",
+           zh: "贴现率逆风随实际收益率回落而释放的长久期名字"}
+    any:
+      - {path: macro_sensitivity.duration, op: "==", value: long}
+
+provenance:
+  theory: ["opportunity-cost of carry (real yield vs zero-yield bullion)",
+           "inverse_of: none — the tightening half lives inside oil_inflation_duration_derate's yield_rise leg; a dedicated real_rate_ramp chain is chartered in the masterplan seed list"]
+  episodes: ["2006-06 peak → 2007-08 gold run",
+             "2018-11 peak (~1.17%) → gold +18% in 2019",
+             "2022-10 peak (1.74%) → gold +25% over 12m",
+             "2023-10 peak (2.50%) → record 2024 run"]
+  added_by: "fable (operator case 2026-08-05)"
+  added_on: "2026-08-05"
+
+changelog:
+  - "rev 0 (2026-08-05): first PEAK-grammar chain. Thresholds measured before authoring on
+     the 2003→ DFII10 store: p90-extreme + 22td −12bp rolldown = 4.7% of days (275 days ≈
+     a handful of true episodes: 2006, 2008, 2011-12, 2018-19, 2022-24). Arms TONIGHT on
+     the current store (pctile 0.99, restrictive) and stages the rolldown as its watch."
+
+validator_note: >
+  real_rate_extreme reads the rate/inflation engine's own published percentile + regime
+  (transmission_state state.rates.*) per TXI-R8 — the engine is the hop library, never
+  recomputed. real_rate_rolldown deliberately reads raw fred/DFII10 (2003→ in data/fred/)
+  because the state's direction key is a 63d-window read that certifies a fresh turn LAST,
+  and staging the turn early-but-honestly is this chain's whole purpose. The dollar-spike
+  counter-regime is deliberately NOT a structured falsifier: a concurrent dollar bid can
+  DELAY the gold leg without refuting the peak thesis (2008 stress precedent) — the
+  regime condition carries it as prose, and the dollar chain reads it as its own state.
