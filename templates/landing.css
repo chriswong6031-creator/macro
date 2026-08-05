@@ -1025,9 +1025,16 @@ html.still .ph-belt .phc-ch svg{clip-path:none !important}
 /* §6.7 a segmented control, not a blue button pair: the track holds both periods,
    the active one is lifted out of it in white on --sh-1. Blue leaves this row so the
    only blue above the fold of the pricing block is the Pro card the eye should land on. */
-.toggle{display:inline-flex;margin-top:22px;border:1px solid var(--hair-2);border-radius:99px;padding:4px;font-weight:600;font-size:13px;background:var(--panel-2);box-shadow:inset 0 1px 2px rgba(16,24,40,.03)}
-.toggle button{padding:7px 17px;border-radius:99px;color:var(--muted);transition:color var(--dur-micro) var(--ease-out),background var(--dur-micro) var(--ease-out)}
-.toggle button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:var(--sh-1)}
+/* SEGMENTED CONTROL — the selected half was --panel (#fff) on a --panel-2 (#fbfcfd)
+   track sitting on a --bg (#f7f8fa) page: three shades inside 3% luminance, so the
+   selection read as nothing at all (operator 2026-08-04: "the selection is white, so
+   its basically invisible"). The groove now recesses to --hair and the selected half
+   keeps the white — the step is between the track and the thumb, which is the only
+   place a segmented control can put it. */
+.toggle{display:inline-flex;margin-top:22px;border:1px solid var(--hair-2);border-radius:99px;padding:4px;font-weight:600;font-size:13px;background:var(--hair);box-shadow:inset 0 1px 3px rgba(16,24,40,.07)}
+.toggle button{padding:7px 17px;border-radius:99px;color:var(--muted);transition:color var(--dur-micro) var(--ease-out),background var(--dur-micro) var(--ease-out),box-shadow var(--dur-micro) var(--ease-out)}
+.toggle button:hover{color:var(--ink-soft)}
+.toggle button[aria-pressed="true"]{background:var(--panel);color:var(--ink);font-weight:700;box-shadow:0 0 0 1px var(--hair-strong),var(--sh-1),var(--sh-2)}
 .toggle .save{letter-spacing:.04em;margin-left:6px;color:var(--q-green)}
 .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
 .tier{border:1px solid var(--hair-2);border-radius:var(--r-lg);background:var(--panel);box-shadow:var(--sh-lift);padding:24px;display:flex;flex-direction:column;
@@ -1182,7 +1189,13 @@ html[data-lang="zh"] .tier.hot[data-founding-tier]:has(.price[data-offer-active=
    price story and the hairline that separates it from what you get. Each card's
    rule + list + button then travel together as one bottom-anchored block, so the
    three buttons still land on the same line. */
-.tier .tf{list-style:none;margin:auto 0 18px;padding:16px 0 0;border-top:1px solid var(--hair-weak);flex:0 0 auto;display:flex;flex-direction:column;gap:9px}
+/* The list follows the price block; the CTA takes the slack and sits on the card's
+   bottom edge. It used to be the other way round (.tf carried margin-top:auto), which
+   parked 147px of nothing between Free's price and its feature list — the Pro card's
+   founding meter sets the row height and the other two had no way to spend it. Air
+   above a button is breathing room; air mid-card is a hole. */
+.tier .tf{list-style:none;margin:20px 0 20px;padding:16px 0 0;border-top:1px solid var(--hair-weak);flex:0 0 auto;display:flex;flex-direction:column;gap:9px}
+.tier .btn{margin-top:auto}
 .tier .tf li{position:relative;padding-left:21px;font-size:13px;line-height:1.5;color:var(--muted)}
 .tier .tf li::before{content:"✓";position:absolute;left:1px;top:.05em;font-family:var(--display);font-weight:800;font-size:11px;color:var(--q-green)}
 .tier .tf li b{color:var(--ink);font-weight:600}
@@ -1200,6 +1213,13 @@ table.mx{width:100%;border-collapse:collapse;min-width:760px}
    micro-label on the page */
 .mx .grp td{letter-spacing:.11em;color:var(--blue);background:var(--panel-2);padding:10px 16px;border-bottom-color:var(--hair)}
 .mx .ok{color:var(--q-green);font-weight:700;font-size:14px}
+/* PARTIAL INCLUSION — a grey tick, not a green one. The advanced indicator row used to
+   print "1 / 31 Candle Painter · 15 / 31 core trend + signals · All 31 · 5 complete
+   suites", which asked the reader to hold three fractions and a suite count in their
+   head to learn one thing (operator 2026-08-04: "its confusing"). The ladder still
+   exists — it lives in the row's ⓘ, where a fraction is an explanation rather than a
+   headline. Grey says "some of it", green says "all of it". */
+.mx .ok.some{color:var(--faint)}
 .mx .no{color:#dc8f8f;font-weight:700;font-size:14px}
 .mx .val{font-weight:600;color:var(--ink)}
 .mx .soon{letter-spacing:.07em;color:var(--q-gold);background:var(--gold-wash);border-radius:6px;padding:3px 8px}

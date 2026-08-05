@@ -235,6 +235,11 @@
   .mx .grp td { font-family:var(--display); font-weight:700; font-size:10.5px; letter-spacing:.14em;
     color:var(--blue); background:var(--surface-2); padding:9px 16px; }
   .mx .ok { color:var(--q-green); font-weight:800; font-size:14.5px; }
+  {# Partial inclusion reads grey, full inclusion reads green — the landing matrix
+     makes the same distinction on the same row (templates/landing.css .mx .ok.some).
+     The ladder itself stays in the row's ⓘ, where a fraction explains instead of
+     shouting. #}
+  .mx .ok.some { color:var(--faint); }
   .mx .no { color:var(--x-red); font-weight:700; font-size:13px; }
   .mx .val { font-weight:600; color:var(--ink); }
   .mx .val small { display:block; font-weight:500; font-size:11px; color:var(--muted); margin-top:1px; }
@@ -602,9 +607,9 @@
           </tr>
           <tr>
             <td class="feat has-tip"><span class="ft">{{ t('Advanced indicator modules', '高级指标模块') }}</span><span class="tipbox up">{{ t('Every plan includes 21 core indicators. Free also includes Candle Painter; Essential unlocks 15 of 31 advanced modules; Pro unlocks all five suites and all 31 modules.', '所有方案均含 21 个核心指标。Free 另含 K 线着色器；Essential 解锁 31 个高级模块中的 15 个；Pro 解锁 5 套工具组的全部 31 个模块。') }}</span></td>
-            <td class="val">{{ terminal_indicators.access.free }} / {{ terminal_indicators.advanced_total }}<small>{{ t('Candle Painter', 'K 线着色器') }}</small></td>
-            <td class="val">{{ terminal_indicators.access.essential }} / {{ terminal_indicators.advanced_total }}<small>{{ t('core trend + signals', '核心趋势 + 信号') }}</small></td>
-            <td class="val">{{ t('All', '全部') }} {{ terminal_indicators.access.pro }}<small>{{ t('5 complete suites', '5 套完整工具组') }}</small></td>
+            <td class="no">✗</td>
+            <td class="ok some">✓</td>
+            <td class="ok">✓</td>
           </tr>
           <tr>
             <td class="feat has-tip"><span class="ft">{{ t('Terminal live options', '终端实时期权') }}</span><span class="mchip">{{ essential.name }}</span><span class="tipbox up">{{ t('Live options data inside the terminal — included on the Pro trial too.', '终端内的实时期权数据——Pro 试用期同样包含。') }}</span></td>
