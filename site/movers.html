@@ -55,102 +55,10 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="theme.css">
-<style>
-html:not([data-lang="zh"]) .l-zh{display:none}
-html[data-lang="zh"] .l-en{display:none}
-html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:var(--link);text-decoration:none}
-.wrap{max-width:1080px;margin:0 auto;padding:0 20px 72px}
-.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
-.pg-brand{font-weight:800;font-size:23px;color:var(--text);letter-spacing:-.02em;margin:8px 0 2px;display:flex;align-items:center;gap:9px}
-.pg-brand .gn{color:var(--info)}
-.pg-lead{color:var(--muted);font-size:14px;margin:0 0 22px;max-width:60ch}
-.asof-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--muted);
-  border:1px solid var(--line);border-radius:999px;padding:4px 12px;margin-left:4px;vertical-align:middle}
-.asof-chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--info)}
-
-/* ── two-column tape ── */
-.tape{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
-@media(max-width:720px){.tape{grid-template-columns:1fr}}
-.col{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:6px 6px 8px;overflow:hidden}
-.col-h{display:flex;align-items:center;gap:9px;padding:14px 16px 10px}
-.col-h .dot{width:9px;height:9px;border-radius:50%;flex:none}
-.col.gain .col-h .dot{background:var(--up)}
-.col.lose .col-h .dot{background:var(--down)}
-.col-h .lbl{font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.01em}
-.col-h .cnt{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--muted);font-family:var(--font-mono)}
-
-/* mover row */
-.mv{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
-  padding:10px 14px;border-radius:11px;transition:background .14s}
-.mv:hover{background:color-mix(in srgb,var(--info) 7%,transparent)}
-/* A mover with no dossier page: the heatmap names a wider universe than we
-   render. Keep the row — it is a real move — but stop it offering a click. */
-.mv-off{cursor:default}.mv-off:hover{background:transparent}
-.mv .rank{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--muted);width:16px;text-align:right}
-.mv .mid{min-width:0}
-.mv .tkr{font-family:var(--font-mono);font-weight:800;font-size:14.5px;color:var(--text);letter-spacing:.01em}
-.mv .co{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.mv .co .sect{opacity:.72}
-.mv .chg{font-family:var(--font-mono);font-weight:800;font-size:15px;text-align:right;white-space:nowrap}
-.chg.up{color:var(--up)}.chg.down{color:var(--down)}
-/* subtle magnitude bar under the row — shared scale within a column */
-.mv .bar{grid-column:2 / -1;height:3px;border-radius:2px;margin-top:2px;background:color-mix(in srgb,var(--muted) 18%,transparent);overflow:hidden}
-.mv .bar i{display:block;height:100%;border-radius:2px}
-.col.gain .bar i{background:color-mix(in srgb,var(--up) 65%,transparent)}
-.col.lose .bar i{background:color-mix(in srgb,var(--down) 65%,transparent)}
-
-/* ── theme ribbon (signature) ── */
-.sec-h{display:flex;align-items:baseline;gap:10px;margin:34px 0 4px;flex-wrap:wrap}
-.sec-h h2{margin:0;font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.01em}
-.sec-h .sub{font-size:12.5px;color:var(--muted)}
-.ribbons{display:flex;flex-direction:column;gap:10px;margin-top:14px}
-.rb{display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:center;
-  background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 16px;transition:border-color .16s}
-.rb:hover{border-color:color-mix(in srgb,var(--info) 32%,var(--line))}
-.rb-head{min-width:0}
-.rb-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.25;display:flex;align-items:center;gap:8px}
-.rb-arrow{font-size:13px;font-weight:800}
-.rb.up .rb-arrow{color:var(--up)}.rb.down .rb-arrow{color:var(--down)}
-.rb-agg{font-family:var(--font-mono);font-size:12px;font-weight:700;margin-top:2px}
-.rb.up .rb-agg{color:var(--up)}.rb.down .rb-agg{color:var(--down)}
-.rb-members{display:flex;flex-wrap:wrap;gap:6px}
-.mchip{display:inline-flex;align-items:baseline;gap:5px;font-family:var(--font-mono);font-size:12px;font-weight:700;
-  color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 9px;transition:transform .14s,border-color .14s}
-.mchip:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--info) 40%,var(--line))}
-.mchip-off{cursor:default}.mchip-off:hover{transform:none;border-color:var(--line)}
-.mchip .mp{font-size:10.5px;font-weight:700}
-.mchip .mp.up{color:var(--up)}.mchip .mp.down{color:var(--down)}
-@media(max-width:560px){.rb{grid-template-columns:1fr;gap:9px}}
-
-/* CTA */
-.cta-band{margin-top:26px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
-  background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
-  border:1px solid var(--glass-brd);border-radius:16px;padding:20px 24px;box-shadow:var(--glass-shadow)}
-.cta-band .cb-tx{font-size:15px;font-weight:700;color:var(--text)}
-.cta-band .cb-sub{font-size:12.5px;color:var(--muted);font-weight:400;margin-top:3px}
-.btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;border-radius:10px;padding:9px 16px;
-  background:var(--info);color:#fff;border:0;cursor:pointer;transition:filter .15s,transform .15s;white-space:nowrap}
-.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
-.btn.ghost{background:transparent;color:var(--info);border:1px solid color-mix(in srgb,var(--info) 40%,var(--line))}
-
-/* empty / degraded */
-.empty-col{padding:26px 16px 30px;text-align:center;color:var(--muted);font-size:13px;line-height:1.5}
-.empty-col .ec-ic{font-size:22px;display:block;margin-bottom:6px;opacity:.7}
-.empty-block{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:36px 24px;text-align:center;margin-top:14px}
-.empty-block .ec-ic{font-size:28px;margin-bottom:10px;opacity:.7}
-.empty-block h3{margin:0 0 6px;font-size:17px;font-weight:800;color:var(--text)}
-.empty-block p{margin:0 auto;font-size:13.5px;color:var(--muted);max-width:42ch;line-height:1.55}
-
-.site-foot{max-width:1080px;margin:34px auto 0;padding:18px 20px;border-top:1px solid var(--line);
-  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px}
-
-a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:8px}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-</style>
+<link rel="stylesheet" href="theme.css?v=315a84eb">
+<link rel="stylesheet" href="assets/css/9112056f.css?v=9112056f">
+<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
+<link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 </head>
 <body>
 
@@ -160,7 +68,7 @@ a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css">
+    <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -307,8 +215,6 @@ a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:
             <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
             <div class="item-grid nav-mega-item-grid">
               <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
-              
-              <a class="mega-item nm-feat" href="watchlist.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M25 7a17 17 0 0 1 16 16"/><circle cx="21" cy="26" r="14"/><circle class="ghost" cx="21" cy="26" r="6"/><path class="accent" d="M21 12a14 14 0 0 1 12.1 7L21 26Z"/><path d="M21 12v14l12.1-7"/><circle class="soft-fill" cx="21" cy="26" r="3.2"/><path class="accent" d="M39 41v-9M44 41v-15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Mastermind Portfolio</span><span class="l-zh">Mastermind 组合</span></span><span class="item-desc d"><span class="l-en">Your holdings with tonight’s signals</span><span class="l-zh">你的持仓与今晚信号</span></span></span></a>
               <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
               <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
               <a class="mega-item nm-feat" data-nav-file="earnings_wire" href="stocks/earnings/index.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 7h25l7 7v27H8z"/><path d="M6 5h25l7 7v27H6zM31 5v8h7"/><path class="accent" d="M12 29h5l3-7 5 12 4-9 3 4h3"/><path d="M12 16h14M12 20h9"/><circle class="soft-fill" cx="34" cy="29" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Earnings Wire</span><span class="l-zh">财报情报线</span></span><span class="item-desc d"><span class="l-en">Verified calls, weekly intelligence and company context</span><span class="l-zh">已核验电话会、每周情报与公司语境</span></span></span></a>
@@ -369,10 +275,10 @@ a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:
     </div>
   </div>
   
-  <script src="logo_config.js"></script>
-  <script src="stock-logos.js"></script>
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="logo_config.js?v=b37d33d3" defer></script>
+  <script src="stock-logos.js?v=cc29be53" defer></script>
+  <script src="live_config.js?v=52943e92" defer></script>
+  <script src="live.js?v=e19f6af3" defer></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -449,18 +355,8 @@ a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:
           <span class="bar"><i style="width:80%"></i></span>
         </div>
         
-        <a class="mv" href="stocks/AMZN.html">
-          <span class="rank mono">4</span>
-          <span class="mid">
-            <span class="tkr">AMZN</span>
-            <span class="co">Amazon · <span class="sect">Consumer Cyclical</span></span>
-          </span>
-          <span class="chg up mono">+15.32%</span>
-          <span class="bar"><i style="width:76%"></i></span>
-        </a>
-        
         <div class="mv mv-off">
-          <span class="rank mono">5</span>
+          <span class="rank mono">4</span>
           <span class="mid">
             <span class="tkr">CDNA</span>
             <span class="co">CDNA</span>
@@ -469,24 +365,34 @@ a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:
           <span class="bar"><i style="width:73%"></i></span>
         </div>
         
-        <a class="mv" href="stocks/DXCM.html">
-          <span class="rank mono">6</span>
+        <a class="mv" href="stocks/CRL.html">
+          <span class="rank mono">5</span>
           <span class="mid">
-            <span class="tkr">DXCM</span>
-            <span class="co">Dexcom · <span class="sect">Healthcare</span></span>
+            <span class="tkr">CRL</span>
+            <span class="co">Charles River Laboratories · <span class="sect">Healthcare</span></span>
           </span>
-          <span class="chg up mono">+11.95%</span>
+          <span class="chg up mono">+11.83%</span>
           <span class="bar"><i style="width:59%"></i></span>
         </a>
         
         <a class="mv" href="stocks/SPSC.html">
-          <span class="rank mono">7</span>
+          <span class="rank mono">6</span>
           <span class="mid">
             <span class="tkr">SPSC</span>
             <span class="co">SPSC</span>
           </span>
           <span class="chg up mono">+11.48%</span>
           <span class="bar"><i style="width:57%"></i></span>
+        </a>
+        
+        <a class="mv" href="stocks/WYNN.html">
+          <span class="rank mono">7</span>
+          <span class="mid">
+            <span class="tkr">WYNN</span>
+            <span class="co">Wynn Resorts · <span class="sect">Consumer Cyclical</span></span>
+          </span>
+          <span class="chg up mono">+10.35%</span>
+          <span class="bar"><i style="width:51%"></i></span>
         </a>
         
         <div class="mv mv-off">
@@ -541,8 +447,28 @@ a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:
           <span class="bar"><i style="width:85%"></i></span>
         </a>
         
-        <a class="mv" href="stocks/BTSG.html">
+        <a class="mv" href="stocks/PODD.html">
           <span class="rank mono">4</span>
+          <span class="mid">
+            <span class="tkr">PODD</span>
+            <span class="co">Insulet Corporation · <span class="sect">Healthcare</span></span>
+          </span>
+          <span class="chg down mono">-19.05%</span>
+          <span class="bar"><i style="width:85%"></i></span>
+        </a>
+        
+        <a class="mv" href="stocks/DVA.html">
+          <span class="rank mono">5</span>
+          <span class="mid">
+            <span class="tkr">DVA</span>
+            <span class="co">DaVita · <span class="sect">Healthcare</span></span>
+          </span>
+          <span class="chg down mono">-18.36%</span>
+          <span class="bar"><i style="width:82%"></i></span>
+        </a>
+        
+        <a class="mv" href="stocks/BTSG.html">
+          <span class="rank mono">6</span>
           <span class="mid">
             <span class="tkr">BTSG</span>
             <span class="co">BTSG</span>
@@ -552,7 +478,7 @@ a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:
         </a>
         
         <a class="mv" href="stocks/PRM.html">
-          <span class="rank mono">5</span>
+          <span class="rank mono">7</span>
           <span class="mid">
             <span class="tkr">PRM</span>
             <span class="co">PRM</span>
@@ -562,33 +488,13 @@ a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:
         </a>
         
         <a class="mv" href="stocks/WU.html">
-          <span class="rank mono">6</span>
+          <span class="rank mono">8</span>
           <span class="mid">
             <span class="tkr">WU</span>
             <span class="co">WU</span>
           </span>
           <span class="chg down mono">-17.3%</span>
           <span class="bar"><i style="width:77%"></i></span>
-        </a>
-        
-        <a class="mv" href="stocks/GDDY.html">
-          <span class="rank mono">7</span>
-          <span class="mid">
-            <span class="tkr">GDDY</span>
-            <span class="co">GoDaddy · <span class="sect">Technology</span></span>
-          </span>
-          <span class="chg down mono">-16.7%</span>
-          <span class="bar"><i style="width:74%"></i></span>
-        </a>
-        
-        <a class="mv" href="stocks/IOVA.html">
-          <span class="rank mono">8</span>
-          <span class="mid">
-            <span class="tkr">IOVA</span>
-            <span class="co">IOVA</span>
-          </span>
-          <span class="chg down mono">-13.22%</span>
-          <span class="bar"><i style="width:59%"></i></span>
         </a>
         
       
@@ -776,6 +682,7 @@ a:focus-visible,.btn:focus-visible{outline:2px solid var(--info);outline-offset:
   </div>
 </div>
 
-<script src="theme.js"></script>
+<script src="theme.js?v=37ffbce3" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

@@ -47,6 +47,17 @@ TARGET: data/cn_holder_sales/
   raw.parquet      — all raw records, deduplicated
   windows.parquet  — window-collapsed panel (one row per ticker+window)
 
+TICKER VOCABULARY: `ticker` is the house A-share store key — `.SS` / `.SZ` / `.BJ`,
+stamped by `collectors.china_ths_concepts.to_suffixed`. Eastmoney's SECURITY_CODE is
+bare 6 digits and carries no exchange, so the suffix is ours to choose, and the only
+choice that joins is the one `data/china_stocks_raw` uses. This lane previously emitted
+`.SH` for Shanghai under a comment claiming it matched the price store; it did not —
+that store is 100% `.SS`/`.SZ` and has never held a `.SH` file. The mismatch cost
+`scripts/d2_cn_holder_sale_phase0.py` its entire Shanghai panel (it looks tickers up in
+the store verbatim, so every `.SH` key missed and fell into the AM-5 "absent from price
+store" bucket — a plausible-looking coverage percentage, never an error). See
+`scripts/heal_cn_holder_sale_tickers.py` for the one-time relabel of the two stores.
+
 Nightly wiring (for consolidation):
   Add to scripts/collect.py under the china-altdata section:
     from collectors.cn_holder_sale_calendar import collect; collect()
@@ -61,6 +72,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import requests
+
+from collectors.china_ths_concepts import to_suffixed
 
 logger = logging.getLogger(__name__)
 
@@ -173,17 +186,14 @@ def _clean(df: pd.DataFrame) -> pd.DataFrame:
     )
     df["window_close"] = df["END_DATE"].fillna(df["NOTICE_DATE"])
 
-    # Add exchange suffix to match price store naming
-    # SH: 60xxxx, 68xxxx (STAR Market) | SZ: 000xxx, 001xxx, 002xxx, 003xxx, 300xxx
-    def _suffix(code: str) -> str:
-        if not isinstance(code, str):
-            return ""
-        c = code.strip()
-        if c.startswith(("6",)):
-            return f"{c}.SH"
-        return f"{c}.SZ"
-
-    df["ticker"] = df["SECURITY_CODE"].apply(_suffix)
+    # Add the exchange suffix data/china_stocks_raw actually uses. `to_suffixed` is the
+    # house mapper (see module docstring): .SS for 6xxxxx + 900xxx B-shares, .BJ for
+    # Beijing's 4xxxxx / 8xxxxx / 92xxxx, .SZ for the rest. Do not re-inline a local
+    # copy — the mapper this replaced tested Shanghai with a bare `startswith("6")`,
+    # which quietly sent both Beijing and the 900xxx B-shares to .SZ.
+    df["ticker"] = df["SECURITY_CODE"].apply(
+        lambda c: to_suffixed(c.strip()) if isinstance(c, str) else ""
+    )
 
     # Drop rows with no END_DATE (can't locate window)
     df = df.dropna(subset=["END_DATE"])

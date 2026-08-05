@@ -43,7 +43,14 @@ MAX_ROWS = 2000
 
 # The status vocabulary the `st` field is drawn from. Emitters must stay inside it
 # (the template's status filter chips and dot-legend key off exactly these).
-STATUS_VOCAB = ("up", "stopped", "flat", "early", "beat", "lag", "onboard")
+#
+# `unscored` = the desk admitted the name and can no longer price it. It exists so an
+# admission is never DELETED from the book: pre-2026-08-05 an unpriceable episode was
+# dropped outright, so VALE — five board dates in the buy lane, 6,131 closes sitting in
+# data/yahoo/VALE.parquet — was simply absent from the dialog, indistinguishable from a
+# name that had never been picked. An unscored row carries no numbers and enters no
+# summary; it is the disclosure, not a result.
+STATUS_VOCAB = ("up", "stopped", "flat", "early", "beat", "lag", "onboard", "unscored")
 
 # The flag vocabulary the `fl` list is drawn from.
 FLAG_VOCAB = ("locked", "susp", "delisted")

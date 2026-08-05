@@ -49,70 +49,10 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css">
-<style>
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.5 'Inter',-apple-system,
-         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:24px 0 28px; }
-  a { text-decoration:none; }
-  .wrap { padding:16px; }
-  @media (min-width:1100px){ .wrap{ padding:18px max(28px,calc((100vw - 1680px)/2)); } }
-  .hm-head { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 22px; margin:10px 2px 16px; }
-  .hm-head h1 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.015em; }
-  .hm-head .sub { color:var(--muted); font-size:12.5px; margin-top:5px; max-width:74ch; line-height:1.5; }
-  .hm-foot { color:var(--muted); font-size:11px; margin:14px 2px 0; line-height:1.6; }
-  /* Live-feed badge: populated by live.js when LIVE_FEED_LABEL is set.
-     Hidden (no layout footprint) when the span is empty (no live feed). */
-  .hm-live-badge { display:inline-flex; align-items:center; gap:5px;
-    font-size:11px; color:var(--muted); font-weight:600;
-    background:color-mix(in srgb,#d97706 14%,transparent);
-    border:1px solid color-mix(in srgb,#d97706 35%,transparent);
-    color:#b45309; border-radius:7px; padding:3px 9px; margin-top:6px;
-    white-space:nowrap; align-self:flex-end; }
-  .hm-live-badge:empty { display:none; }
-  /* Hidden live-chg spans that live.js writes to (observer then recolors the tile) */
-  .hm-live-chg { display:none !important; }
-
-  /* ── the server-rendered summary layer (W2 spec §A2.3) ────────────────────
-     Deliberately class-compatible with heatmap.js's own dashboard chrome: the
-     renderer injects the .hx-* stylesheet at boot, so the SSR blocks and the
-     live blocks are the same pixels rather than a second, drifting copy. Only
-     the two rules below are SSR-specific. heatmap.js removes #hm-ssr the moment
-     the live map draws — and LEAVES it standing when the fetch fails, so a
-     visitor who never gets the tile map still keeps the breadth read. */
-  #hm-ssr { margin-bottom:2px; }
-  #hm-ssr .hx-boards { margin-top:14px; }
-
-  /* ── gate elements ────────────────────────────────────────────────────────
-     Transliterated from templates/special_situations.html.j2 (the shipped
-     reference) into THIS page's token vocabulary. That page defines --card /
-     --grid / --ink / --faint / --blue locally; this one has no local token
-     block at all and inherits theme.css, where the same roles are --panel /
-     --line / --text / --muted / --link. Pasting the reference verbatim would
-     resolve every colour to nothing — a note that renders transparent and
-     still "works", which is exactly the failure a review misses.
-
-     #8b5cf6 (the lock violet) stays a hard-coded hex, identical to the
-     reference mockup. The CTA gradient is brand blue → violet and never signal
-     amber (terminal-paywall lesson). The gate elements carry NO directional
-     colour: under html[data-lang="zh"] theme.css swaps --up/--down, and a wall
-     tinted by state would invert its meaning with the language. */
-  .gate-note { display:flex; align-items:flex-start; gap:8px; margin:20px 0 4px;
-    padding:11px 14px; border-radius:12px; font-size:12.5px; line-height:1.5; color:var(--muted);
-    background:color-mix(in srgb,#8b5cf6 7%,transparent);
-    border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent); }
-  .gate-note svg { width:14px; height:14px; flex:none; margin-top:2px; color:#8b5cf6; }
-  .gate-note a { color:var(--link); border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); }
-  .cta-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:16px;
-    padding:14px 16px; border-radius:14px; background:var(--panel); border:1px solid var(--line); }
-  .cta-txt { flex:1; min-width:220px; font-size:12.5px; color:var(--muted); line-height:1.5; }
-  .cta-txt b { color:var(--text); font-weight:700; }
-  .tw-btn { display:inline-flex; align-items:center; justify-content:center; padding:10px 22px;
-    border-radius:12px; font-size:13px; font-weight:700; color:#fff;
-    background:linear-gradient(135deg,var(--link),#8b5cf6);
-    box-shadow:0 8px 22px -10px color-mix(in srgb,#8b5cf6 70%,transparent); }
-  .tw-note { font-size:11px; color:var(--muted); }
-</style>
+<link rel="stylesheet" href="theme.css?v=315a84eb">
+<link rel="stylesheet" href="assets/css/36d1e991.css?v=36d1e991">
+<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
+<link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
 </head>
 <body>
 
@@ -121,7 +61,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css">
+    <link rel="stylesheet" href="navigation-refresh.css?v=073377a0">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -268,8 +208,6 @@
             <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
             <div class="item-grid nav-mega-item-grid">
               <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
-              
-              <a class="mega-item nm-feat" href="watchlist.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M25 7a17 17 0 0 1 16 16"/><circle cx="21" cy="26" r="14"/><circle class="ghost" cx="21" cy="26" r="6"/><path class="accent" d="M21 12a14 14 0 0 1 12.1 7L21 26Z"/><path d="M21 12v14l12.1-7"/><circle class="soft-fill" cx="21" cy="26" r="3.2"/><path class="accent" d="M39 41v-9M44 41v-15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Mastermind Portfolio</span><span class="l-zh">Mastermind 组合</span></span><span class="item-desc d"><span class="l-en">Your holdings with tonight’s signals</span><span class="l-zh">你的持仓与今晚信号</span></span></span></a>
               <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
               <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
               <a class="mega-item nm-feat" data-nav-file="earnings_wire" href="stocks/earnings/index.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 7h25l7 7v27H8z"/><path d="M6 5h25l7 7v27H6zM31 5v8h7"/><path class="accent" d="M12 29h5l3-7 5 12 4-9 3 4h3"/><path d="M12 16h14M12 20h9"/><circle class="soft-fill" cx="34" cy="29" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Earnings Wire</span><span class="l-zh">财报情报线</span></span><span class="item-desc d"><span class="l-en">Verified calls, weekly intelligence and company context</span><span class="l-zh">已核验电话会、每周情报与公司语境</span></span></span></a>
@@ -330,10 +268,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js"></script>
-  <script src="stock-logos.js"></script>
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="logo_config.js?v=b37d33d3" defer></script>
+  <script src="stock-logos.js?v=cc29be53" defer></script>
+  <script src="live_config.js?v=52943e92" defer></script>
+  <script src="live.js?v=e19f6af3" defer></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -442,7 +380,8 @@
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
 
-<script src="theme.js"></script>
-<script src="heatmap.js"></script>
+<script src="theme.js?v=37ffbce3" defer></script>
+<script src="heatmap.js?v=7eb088ce" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
 </body>
 </html>

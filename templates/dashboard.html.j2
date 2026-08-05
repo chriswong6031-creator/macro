@@ -734,8 +734,10 @@
      encoding of the bucket (canonized §7 pattern) and the label is the stance —
      "Live now", "Ran — don't chase" are complete instructions on their own; the
      lighter tail sentence is the ≤14-word Tier-1 subtitle. --sgc carries the tone
-     so one rule set serves four buckets. Tones are --pv-* and follow the active
-     language convention: green-up/red-down in English, red-up/green-down in Chinese. */
+     so one rule set serves all five buckets. Tones are --pv-* and follow the active
+     language convention: green-up/red-down in English, red-up/green-down in Chinese —
+     except the two direction-NEUTRAL tones (--pv-wait, --muted), which mean the same
+     thing in both and are the right home for a stance with no direction in it. */
   .nb-stage-hd { grid-column: 1 / -1; display: flex; align-items: baseline; flex-wrap: wrap;
                  gap: 3px 9px; margin: 15px 0 4px; padding: 5px 11px 5px 9px;
                  border-left: 3px solid var(--sgc, var(--muted)); border-radius: 0 8px 8px 0;
@@ -755,6 +757,11 @@
   .sg-live       { --sgc: var(--pv-buy); }
   .sg-setting_up { --sgc: var(--pv-near); }
   .sg-ran        { --sgc: var(--muted); }
+  /* Basing is the "watch — don't chase" shelf, so it takes the wait tone, not the
+     avoid tone it used to inherit by sitting inside Blocked. --pv-wait is amber and
+     is deliberately one of the two verb tones the zh 红涨绿跌 block does NOT remap
+     (theme.css) — a directionless stance must read the same in both languages. */
+  .sg-basing     { --sgc: var(--pv-wait); }
   .sg-blocked    { --sgc: var(--pv-avoid); }
 
   /* ── stage filter chips (G0.6) ─────────────────────────────────────────────
@@ -792,10 +799,12 @@
   #us-standouts[data-stagef="live"]       [data-stage]:not([data-stage="live"]),
   #us-standouts[data-stagef="setting_up"] [data-stage]:not([data-stage="setting_up"]),
   #us-standouts[data-stagef="ran"]        [data-stage]:not([data-stage="ran"]),
+  #us-standouts[data-stagef="basing"]     [data-stage]:not([data-stage="basing"]),
   #us-standouts[data-stagef="blocked"]    [data-stage]:not([data-stage="blocked"]) { display: none !important; }
   #us-standouts[data-stagef="live"]       .sm-hidden[data-stage="live"],
   #us-standouts[data-stagef="setting_up"] .sm-hidden[data-stage="setting_up"],
   #us-standouts[data-stagef="ran"]        .sm-hidden[data-stage="ran"],
+  #us-standouts[data-stagef="basing"]     .sm-hidden[data-stage="basing"],
   #us-standouts[data-stagef="blocked"]    .sm-hidden[data-stage="blocked"] { display: flex !important; }
   #us-standouts[data-stagef]:not([data-stagef="all"]) .nb-grid-section .sm-bar { display: none !important; }
   /* NOTE: the `.pbf-empty` rules that used to sit here were removed 2026-08-02 — no
@@ -15514,11 +15523,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {%- set _sg = namespace(any=false) -%}
       {%- for _n in _board -%}{%- if _n.get('stage') -%}{%- set _sg.any = true -%}{%- endif -%}{%- endfor -%}
       {%- set _ran_rows = (_su.get('ran') or []) if _sg.any else [] -%}
-      {%- set _stage_order = ['live','setting_up','ran','blocked'] -%}
-      {%- set _stage_en  = {'live':'Live now','setting_up':'Setting up','ran':'Ran — don’t chase','blocked':'Blocked'} -%}
-      {%- set _stage_zh  = {'live':'现在可操作','setting_up':'形成中','ran':'已启动 — 勿追','blocked':'受阻'} -%}
-      {%- set _stage_sub_en = {'live':'entry window is open','setting_up':'not there yet — get ready','ran':'the move already started','blocked':'stand aside for now'} -%}
-      {%- set _stage_sub_zh = {'live':'入场窗口已打开','setting_up':'尚未触发 — 做好准备','ran':'行情已经启动','blocked':'暂时观望'} -%}
+      {# `basing` sits between `ran` and `blocked` (engine.us_board_rank.STAGE_ORDER):
+         nothing to act on, so below every actionable bucket — but not the stand-aside
+         verdict either. It is the cycle read's "this name is working on a low", which
+         used to be filed under Blocked beside the falling knives and so was invisible
+         (missed-ignitions audit D18). Watch words only: this shelf never says buy. #}
+      {%- set _stage_order = ['live','setting_up','ran','basing','blocked'] -%}
+      {%- set _stage_en  = {'live':'Live now','setting_up':'Setting up','ran':'Ran — don’t chase','basing':'Basing','blocked':'Blocked'} -%}
+      {%- set _stage_zh  = {'live':'现在可操作','setting_up':'形成中','ran':'已启动 — 勿追','basing':'筑底中','blocked':'受阻'} -%}
+      {%- set _stage_sub_en = {'live':'entry window is open','setting_up':'not there yet — get ready','ran':'the move already started','basing':'no entry signal yet — watch, don’t chase','blocked':'stand aside for now'} -%}
+      {%- set _stage_sub_zh = {'live':'入场窗口已打开','setting_up':'尚未触发 — 做好准备','ran':'行情已经启动','basing':'尚无入场信号 — 观察，勿追高','blocked':'暂时观望'} -%}
       {# Tier-2 receipts. One shared sentence carries the honest framing on every bucket:
          the ordering is a readiness rank, NOT a return forecast (§G0.7). #}
       {%- set _pri_en = ' Cards inside are in priority order — a 0–100 readiness rank built from signal freshness, entry state, edge, runway and setup quality. Priority order, not a return forecast.' -%}
@@ -15548,11 +15562,13 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
            'live':'The entry signal is open right now — buy now, partial, or buy soon.' ~ _pri_en,
            'setting_up':'The setup is forming but the entry has not fired — awaiting confluence, waiting on a bounce, or on watch. Nothing to do yet.' ~ _pri_en,
            'ran':'The signal fired and price has already moved — extended, topping, or hold. The entry window has passed; wait for the next setup.' ~ _pri_en,
+           'basing':'The cycle read has these names nearing a low — still falling, but working on a base rather than breaking down. No entry has fired and none may; this shelf exists so a name working on a low stays in front of you instead of disappearing into Blocked. Watch, don’t chase.' ~ _pri_en,
            'blocked':'Entry is blocked, exited, avoided, or the trend is down. Stand aside.' ~ _pri_en } -%}
       {%- set _stage_tip_zh = {
            'live':'入场信号当前已打开 — 可买入、部分买入或即将买入。' ~ _pri_zh,
            'setting_up':'形态正在形成但入场尚未触发 — 等待共振、等待回踩或处于观察中。暂时无需操作。' ~ _pri_zh,
            'ran':'信号已触发且价格已经启动 — 过度拉伸、做顶或持有。入场窗口已过，等待下一个买点。' ~ _pri_zh,
+           'basing':'周期读数显示这些个股正在接近低点 —— 仍在下跌，但更像在筑底而非破位。入场信号尚未触发，也可能不会触发；设立此组是为了让正在筑底的个股留在你的视线内，而不是消失在「受阻」里。观察，勿追高。' ~ _pri_zh,
            'blocked':'入场受阻、已离场、建议回避，或趋势向下。请观望。' ~ _pri_zh } -%}
       {%- if _sg.any -%}
       {%- set _render_list = namespace(items=[]) -%}
@@ -15572,7 +15588,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
          a filter chip whose number disagrees with what filtering shows is a defect,
          and the ran bucket spans two artifact arrays (buy-lane ran rows + the separate
          `ran` array), which no single artifact counter covers. #}
-      {%- set _sc = {'live':0,'setting_up':0,'ran':0,'blocked':0} -%}
+      {%- set _sc = {'live':0,'setting_up':0,'ran':0,'basing':0,'blocked':0} -%}
       {%- for _n in _board -%}{%- if _n.get('stage') in _sc -%}{%- set _ = _sc.update({_n.stage: _sc[_n.stage] + 1}) -%}{%- endif -%}{%- endfor -%}
       {%- set _ = _sc.update({'ran': _sc['ran'] + (_ran_rows|length)}) -%}
       {# ── themes in favour (G0.5b) ─────────────────────────────────────────────
