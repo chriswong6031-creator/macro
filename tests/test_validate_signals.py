@@ -137,6 +137,62 @@ def test_quality_on_cut_fails():
     assert vs.validate_ticker_doc(doc, SCHEMA, "fix")
 
 
+# ---- `reasons`: the EXHAUSTIVE buy-filter account (2026-08-04) ---------------
+# `reason` is a FIRST-MATCH label — the buy filter returns on the first leg that refuses a
+# name, so 002155.SZ shipped "veto: bearish divergence" while ALSO failing reclaim-and-hold
+# (research/cn_prophet_audit/CN_DIVERGENCE_VETO_AUDIT.md). `reasons` names every failing leg.
+
+def _over_determined_marker() -> dict:
+    return {"date": "2026-06-17", "type": "buy", "quality": "block",
+            "reason": "veto: bearish divergence",
+            "reasons": ["veto: bearish divergence", "failed next-bar hold"]}
+
+
+def test_exhaustive_reasons_on_a_buy_is_accepted():
+    doc = _valid_ticker()
+    doc["markers"] = [_over_determined_marker()]
+    assert vs.validate_ticker_doc(doc, SCHEMA, "fix") == []
+
+
+def test_single_element_reasons_fails():
+    # A one-element list says exactly what `reason` already said. The writer omits it, so its
+    # ABSENCE means [reason] — a lone element would make that fallback ambiguous.
+    doc = _valid_ticker()
+    m = _over_determined_marker()
+    m["reasons"] = ["veto: bearish divergence"]
+    doc["markers"] = [m]
+    assert vs.validate_ticker_doc(doc, SCHEMA, "fix")
+
+
+def test_reasons_on_sell_fails():
+    doc = _valid_ticker()
+    doc["markers"] = [{"date": "2025-09-30", "type": "sell",
+                       "reasons": ["a", "b"]}]
+    errs = vs.validate_ticker_doc(doc, SCHEMA, "fix")
+    assert errs
+    assert any("reasons" in e for e in errs)
+
+
+def test_reasons_not_opening_on_the_markers_own_reason_fails():
+    # Rule 3. Every downstream reader falls back to [reason] when `reasons` is absent, which is
+    # only sound while reasons[0] IS reason. An account opening on a different leg would ship a
+    # gate_reasons whose first element contradicts the gate_reason beside it.
+    doc = _valid_ticker()
+    m = _over_determined_marker()
+    m["reasons"] = ["failed next-bar hold", "veto: bearish divergence"]
+    doc["markers"] = [m]
+    errs = vs.validate_ticker_doc(doc, SCHEMA, "fix")
+    assert errs
+    assert any("reasons[0]" in e for e in errs), errs
+
+
+def test_reasons_survive_the_brain_leaf_last_marker():
+    # `signalEntry.last` reuses the same $def, so the account rides the brain leaf too.
+    leaf = _valid_leaf()
+    leaf["signals"][0]["last"] = _over_determined_marker()
+    assert vs.validate_brain_leaf(leaf, SCHEMA, "fix") == []
+
+
 def test_non_date_date_fails():
     doc = _valid_ticker()
     doc["markers"] = [{"date": "07/16/2025", "type": "buy", "quality": "take", "reason": "x"}]

@@ -318,6 +318,11 @@ def enrich_and_score_rows(
             key: deepcopy(verdict.get(key))
             for key in (
                 "eligible", "tier_cascade", "tier_sub", "sub", "reason",
+                # `reasons` is the EXHAUSTIVE companion of `reason` (signal_gate._set_reason):
+                # same label at [0], plus every other leg that refused the name. Research-only,
+                # never a gate input — it exists so the PIT store records why a name was
+                # blocked rather than which leg happened to fire first.
+                "reasons",
                 "state", "ticks", "bars_to_cross", "weight", "provisional",
                 # ``asof`` is the 3-business-day indicator bucket label. It is
                 # not proof that the underlying daily input reached the board
