@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T10:30:14.537106+00:00",
-  "count": 796,
+  "generated_at": "2026-08-05T10:44:34.874235+00:00",
+  "count": 797,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -562,6 +562,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-oyhwulsds9o-51b80d",
+      "title": "BNZ Markets Today 04 August 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-05T01:58:03Z",
+      "summary_points": [
+        "**Geopolitical & Data Shock**: US-Japan intervention triggered oil price plunge (Brent crude $82.50–$84.50), while strong US ISM manufacturing (55.6 vs 53.9 exp) and NZ/CH PMI data fueled equity gains and USD strength.",
+        "**NZ Rate Dynamics**: Offshore forces drove NZ rates higher (2-yr 3.71%, 5-yr 4.07%, 10-yr 4.45%), with NZGBs rally adding downward pressure on yields.",
+        "**Critical Upcoming Catalysts**: Australian household spending (Jun) and US JOLTS job openings (Jun) are pivotal for market direction, with NZ rates highly sensitive to these releases."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
