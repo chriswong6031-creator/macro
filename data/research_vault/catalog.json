@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T22:34:44.449743+00:00",
-  "count": 832,
+  "generated_at": "2026-08-05T23:20:43.614367+00:00",
+  "count": 834,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -256,6 +256,46 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jc4mzxd9qhw-a8373b",
+      "title": "Neutron Holdings Inc. (LIME) Q2'26 Review Core Growth Algorithm on Display Against Continued Investments",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:07:07Z",
+      "summary_points": [
+        "**Growth Catalysts & Scalability**: LimePrime traction (double-digit user growth), Canadian market expansion, and fleet/rider growth drive 24% YoY revenue growth (AOV +22%, MAUs +22%); $1.417B 2026 revenue/EBITDA $211.3M/CFO $386.4M signal operational resilience.",
+        "**Valuation Upside & Rating**: Goldman Sachs raises PT to $40 (from $39) with 43% upside vs.",
+        "$27.14 close; 2026 revenue/EBITDA estimates raised by $300M/$3M, supported by EV/Sales and DCF models.",
+        "**Key Risk: Margin Pressure**: Near-term gross margin compression from growth investments (LimePrime, Canadian ops) and SBC expense; sequential Q3 margin improvement expected but short-term profitability at risk.",
+        "**Critical Risks**: Slower micro-mobility growth (consumer spending), city-level regulation, competitive intensity, and elevated R&D/SG&A reducing operating leverage."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8wy3fbyuzy8-336a02",
+      "title": "JPM US AI and the labor",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:05:40Z",
+      "summary_points": [
+        "**Labor Share Depression**: Labor share of national income hit all-time low in Q2 2026, reflecting genuine decline in labor bargaining power (not measurement error); AI models predict further decline, threatening corporate margins and labor costs.",
+        "**Reliable Proxy Metric**: Net capital share (QFR data) mirrors labor share trends despite 2017 tax act distortions, providing a critical alternative metric for portfolio analysis.",
+        "**Elevated Capital Returns**: Nonfinancial corporate sector’s rate of return (before/after tax) remains above historical norms through Q2 2026, indicating persistent capital returns post-pandemic."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
