@@ -3436,40 +3436,40 @@
       "valuation": {
         "table": "valuation",
         "asof": "2026-07-24",
-        "lag_days": 11,
+        "lag_days": 12,
         "state": "dead"
       },
       "margin": {
         "table": "margin",
         "asof": "2026-07-24",
-        "lag_days": 11,
+        "lag_days": 12,
         "state": "dead"
       },
       "moneyflow": {
         "table": "moneyflow",
         "asof": "2026-07-24",
-        "lag_days": 11,
+        "lag_days": 12,
         "state": "dead"
       },
       "chips": {
         "table": "chips",
         "asof": "2026-07-24",
-        "lag_days": 11,
+        "lag_days": 12,
         "state": "dead"
       },
       "broker": {
         "table": "broker",
         "asof": "2026-07-26",
-        "lag_days": 9,
+        "lag_days": 10,
         "state": "fresh"
       },
       "forecast": {
         "table": "forecast",
         "asof": "2026-07-25",
-        "lag_days": 10,
+        "lag_days": 11,
         "state": "fresh"
       }
     },
-    "asof": "2026-08-04 12:41:50.166978+00:00"
+    "asof": "2026-08-05 09:46:35.184546+00:00"
   }
 }
