@@ -41,6 +41,9 @@ from engine import i18n  # real tr() — light (markupsafe only); builders injec
 ROOT = Path(__file__).resolve().parent.parent
 TPL = ROOT / "templates"
 SRC = (TPL / "china.html.j2").read_text()
+# The ACT-NOW v2 four-lane board was hoisted out of china.html.j2 into a shared include
+# (now rendered on china_stocks.html AND the China SI Overview). Its markup lives here now.
+ANV2_SRC = (TPL / "_china_act_now_board.html.j2").read_text()
 
 # Imports the real template carries at file top, OUTSIDE every snippet these
 # helpers slice out. Mirror them here or the slice renders against Undefined —
@@ -827,14 +830,13 @@ def _render_anv2(rows_by_lane: dict, sectors_by_ticker: dict | None = None,
                  as_of: str = "2026-07-10") -> str:
     """Extract and render the ACT-NOW v2 board block with synthetic context.
 
-    The anv2 block lives inside {% if mode == 'stocks' %} (line ~699) so the
-    extracted snippet carries one extra {% endif %} at the end that closes that
-    outer if.  We prepend the matching opening {% if mode == 'stocks' %} to keep
-    the snippet self-balanced.
+    The anv2 board was hoisted into the shared _china_act_now_board.html.j2 include,
+    which is self-balanced ({% if act_now_v2 %}…{% endif %}). We render it from its
+    ACT-NOW comment to EOF — no outer {% if mode %} balancer needed — skipping the
+    include's own dc/lens imports (SNIPPET_IMPORTS re-provides them).
     """
-    start = SRC.index("<!-- ===================== ACT-NOW v2")
-    end = SRC.index("{% if mode != 'stocks' %}", start)
-    snippet = SRC[start:end]
+    start = ANV2_SRC.index("<!-- ===================== ACT-NOW v2")
+    snippet = ANV2_SRC[start:]
 
     macros = (
         '{%- macro t(en, zh="") -%}'
@@ -842,8 +844,6 @@ def _render_anv2(rows_by_lane: dict, sectors_by_ticker: dict | None = None,
         '<span class="l-zh">{{ zh if zh else en }}</span>'
         '{%- endmacro -%}\n'
         '{%- macro help(en, zh="") -%}<span></span>{%- endmacro -%}\n'
-        # Balance the outer {% if mode == 'stocks' %} that opened before the snippet
-        "{% if mode == 'stocks' %}\n"
     )
     full = SNIPPET_IMPORTS + macros + snippet
 

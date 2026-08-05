@@ -5725,9 +5725,12 @@ china:
     min_mktcap_yi: 30               # liquidity floor (亿 RMB total market cap)
     history_period: "5y"            # yfinance close history per name (engine needs >=300 rows)
     enrich_per_run: 120             # max NEW yfinance get_info name/sector lookups per nightly run
-    # Hand-picked individual A-shares kept SEARCHABLE even though they sit BELOW the Sina
-    # top-800 / CSI300+CSI1000 cutoff (small/mid-caps a user explicitly wants in the
-    # analyzer). The China mirror of stock_search.extra_tickers/extra_names — kept OUT of
+    # Hand-picked individual A-shares kept SEARCHABLE even when the Sina top-800 /
+    # CSI300+CSI1000 union does not reach them — either because they sit BELOW the cutoff
+    # (small/mid-caps a user explicitly wants in the analyzer) or because their mktcap rank
+    # STRADDLES it, so membership would otherwise flicker in and out with the tape
+    # (002716.SZ ranked #786 on 2026-08-04, below the 800th cutoff a day earlier).
+    # The China mirror of stock_search.extra_tickers/extra_names — kept OUT of
     # china.constituents so the calibrated breadth/regime engine is never perturbed. The
     # seeded name_en/name_zh/sector win over (and skip) yfinance get_info, which mislabels
     # small caps — e.g. it tags 旗天科技 "Healthcare" from its stale 华谊嘉信 marketing
@@ -5740,6 +5743,7 @@ china:
       - "300470.SZ"                 # 中密控股 Sinoseal Holding
       - "688609.SS"                 # 九联科技 Unionman Technology
       - "301531.SZ"                 # 春光集团 (very recent IPO — gated out until >=300d history)
+      - "002716.SZ"                 # 湖南白银 Hunan Silver — silver/lead/zinc smelter (CSI 1000)
     extra_names:                    # ticker: {name_en, name_zh, sector, mktcap_yi(亿, optional)}
       "300061.SZ": {name_en: "Qitian Technology Group Co., Ltd.", name_zh: "旗天科技", sector: "Technology", mktcap_yi: 47}
       "688508.SS": {name_en: "Wuxi Chipown Micro-electronics", name_zh: "芯朋微", sector: "Technology", mktcap_yi: 108}
@@ -5748,11 +5752,24 @@ china:
       "300470.SZ": {name_en: "Sinoseal Holding", name_zh: "中密控股", sector: "Industrials", mktcap_yi: 59}
       "688609.SS": {name_en: "Unionman Technology", name_zh: "九联科技", sector: "Technology", mktcap_yi: 56}
       "301531.SZ": {name_en: "Shandong Chunguang Technology Group", name_zh: "春光集团", sector: "Industrials", mktcap_yi: 148}
-    # CSI index constituent lists unioned into the search universe (via akshare).
+      "002716.SZ": {name_en: "Hunan Silver Co., Ltd.", name_zh: "湖南白银", sector: "Basic Materials", mktcap_yi: 245}
+    # CSI index constituent lists unioned into the search universe (via akshare's official
+    # CSIndex table — the legacy index_stock_cons endpoint returns duplicate codes and
+    # silently delivers 772 of the 1000 CSI 1000 members; see collectors/china_universe.py).
     # Stocks already in the Sina top-800 are deduplicated; extras get mktcap_yi=30 placeholder.
     index_constituents:
       - "000300"                    # CSI 300 (沪深300) — 300 large-caps
       - "000852"                    # CSI 1000 (中证1000) — 1000 mid-caps
+    index_fetch_timeout_s: 30       # per-attempt HTTP timeout on the CSIndex .xls. akshare's
+                                    # own reader passes NO timeout (bare requests.get), and a
+                                    # probe on 2026-08-05 hung 742s before erroring — the only
+                                    # other bound was the 165-min asia-close job cap.
+    index_shortfall_tol: 0.05       # a list >5% short of the index's known size is DEGRADED:
+                                    # the cached membership is served instead (if fresher than
+                                    # index_cache_max_age_days) and a GitHub annotation fires,
+                                    # so a transient CSIndex blip cannot shrink the universe.
+    index_cache_max_age_days: 30    # past this, a cached membership is staler than a short
+                                    # fresh one — tonight's degraded list stands instead.
     sina:
       url: https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData
       node: hs_a                    # Hu-Shen A-share board (Shanghai + Shenzhen; excludes Beijing)
