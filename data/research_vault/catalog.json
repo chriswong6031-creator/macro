@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T08:42:46.643865+00:00",
-  "count": 791,
+  "generated_at": "2026-08-05T08:58:23.031358+00:00",
+  "count": 792,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -38,6 +38,7 @@
     "S&T",
     "SG Prime",
     "Safra",
+    "ScotiaBank",
     "Scotiabank",
     "Societe Generale",
     "Std Chartered",
@@ -480,6 +481,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8x5pbppqzbk-b0ab30",
+      "title": "dailypoints20260804",
+      "institution": "ScotiaBank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:55:39Z",
+      "summary_points": [
+        "**Canadian Trade Data Confirms Q2 GDP**: Exports outpacing imports and monthly trade data tracking 3.4% q/q SAAR GDP growth validate robust Q2 performance, critical for Canadian market positioning.",
+        "**US Data & Iran Oil Volatility Dominate Risk Factors**: US JOLTS, trade, factory orders releases combined with Iran-driven oil volatility (oil up $2–3) and tariff lawsuits create immediate policy uncertainty and impact risk appetite.",
+        "**EM Central Bank Actions Drive Currency Flows**: Brazil’s -2bps cut and Banxico’s hold directly impact regional market dynamics and EM currency volatility ahead of Banxico (Aug 6), RBA (Aug 11), and BoC (Sep 2) meetings."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
