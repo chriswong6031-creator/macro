@@ -35,6 +35,24 @@ Section 4 covers the W1 ledger hygiene: the skip counter that used to pool a gen
 survivorship hole with an in-flight episode, and the rank/tier lookup that labelled
 every episode of a repeat ticker with its most recent appearance.
 
+Section 7 covers the RANK EFFECTIVENESS block — the score grading itself. Two things
+there deserve calling out, because they fail for opposite reasons:
+
+  * **The orientation pins are the load-bearing half.** Every IC in the block shares one
+    sign convention (lower ordering key = the board's better pick), which means a single
+    missing negation in ``_order_key`` would invert every reading in the artifact while
+    leaving every number plausible. The pins therefore drive a PERFECTLY ordered board
+    and an exactly INVERTED one through both ordering sources and assert the signs from
+    both ends, and separately assert that a cost metric's expected sign is the opposite
+    of a return metric's.
+  * **The calibration assert is what makes the block trustworthy at all.** A detector
+    that has never been shown catching a known defect is not a detector. The legacy era
+    is the defect the program already measured — board rank-IC +0.073 vs H=10 excess,
+    anti-predictive — so the block is run over it on the SAME frozen grid section 1 uses
+    and required to reproduce that number and raise its ``::warning``. If this test ever
+    passes vacuously (empty store, wrong era, un-pinned grid), the whole block is
+    unfalsifiable telemetry.
+
 Run: python3 -m pytest tests/test_cn_prophet_audit.py -q
 """
 from __future__ import annotations
@@ -68,6 +86,18 @@ REPRO_CHASE_FLAGGED = 31
 REPRO_CHASE_LOSERS = 22
 REPRO_CHASE_WINNERS = 9
 RATE_TOL = 0.002
+
+# ── the V1 ordering defect, as measured by the audit this program is built on ──
+# masterplan §2.1 / CN-RC4: "board rank-IC was +0.073 (anti-predictive)". On the frozen
+# REPRO_ASOF grid the block must land ON that number — not merely somewhere positive —
+# or it is not reproducing the audit, it is producing a different one.
+REPRO_RANK_IC_EXCESS = 0.0731
+REPRO_RANK_IC_N_DATES = 12
+IC_TOL = 0.002
+# masterplan §8 M5 (catastrophic ≤ −15% abs) and M2 (median excess), same frozen grid —
+# they cross-check that the block reads the SAME episodes section 1 graded.
+REPRO_CATASTROPHIC = 47
+REPRO_MEDIAN_EXCESS = 4.44
 
 
 # ===========================================================================
@@ -610,7 +640,7 @@ class TestMissFunnel:
         cand = tmp_path / "china_prophet_rank"
         cand.mkdir(parents=True)
         birth = str(idx[-1].date())
-        pd.DataFrame([{"date": birth, "ticker": "600000.SS", "lane": "featured"}]) \
+        pd.DataFrame([{"stamp_date": birth, "ticker": "600000.SS", "lane": "featured"}]) \
             .to_parquet(cand / "candidates.parquet", index=False)
 
         out = cpa.miss_funnel()
@@ -640,7 +670,7 @@ class TestMissFunnel:
                      index=idx[:295]).to_parquet(stocks / "600001.SS.parquet")
         cand = tmp_path / "china_prophet_rank"
         cand.mkdir(parents=True)
-        pd.DataFrame([{"date": str(idx[-1].date()), "ticker": "600000.SS",
+        pd.DataFrame([{"stamp_date": str(idx[-1].date()), "ticker": "600000.SS",
                        "lane": "featured"}]).to_parquet(
             cand / "candidates.parquet", index=False)
 
@@ -659,7 +689,7 @@ class TestMissFunnel:
                      index=short_idx).to_parquet(stocks / "301000.SZ.parquet")
         cand = tmp_path / "china_prophet_rank"
         cand.mkdir(parents=True)
-        pd.DataFrame([{"date": str(short_idx[-1].date()), "ticker": "301000.SZ",
+        pd.DataFrame([{"stamp_date": str(short_idx[-1].date()), "ticker": "301000.SZ",
                        "lane": "forming"}]).to_parquet(
             cand / "candidates.parquet", index=False)
 
@@ -690,3 +720,575 @@ class TestDefinitionNormalisation:
         out = cpa.loser_telemetry(board, None, lambda _t: None, {})
         stamps = {b["board_definition"] for b in out["definitions"]}
         assert stamps == {"legacy", "cn_prophet_v2"}
+
+
+# ===========================================================================
+# 7. rank effectiveness — the score grades itself
+# ===========================================================================
+_RE_DATES = [f"2026-06-{d:02d}" for d in range(1, 21)]
+
+
+def _ep(date: str, ticker: str, **fields) -> dict:
+    """One synthetic MATURED episode record, shaped exactly as episode_telemetry emits.
+
+    Every gradeable field defaults to None so a test states only the axis it is about;
+    an axis a test does not set stays a genuine null and drops out of that metric's IC
+    rather than quietly scoring as a zero.
+    """
+    rec: dict = {
+        "ticker": ticker, "entry_date": date, "matured": True, "state": "matured",
+        "board_rank": None, "prophet_score": None,
+        "excess": None, "pnl": None, "mae_proxy_10": None,
+        "day_of_max_10": None, "day_of_max_21": None,
+        "terminal_state_clean8_21": None, "post_cushion_breach": None,
+    }
+    rec.update({c: None for c in cpa.PROPHET_COMPONENT_COLS})
+    rec.update({c: None for c in cpa.SPINE_MFE_COLS})
+    rec.update(fields)
+    return rec
+
+
+def _defn(name: str, records: list[dict]) -> dict:
+    return {"board_definition": name, "episodes": records}
+
+
+def _ordered_board(n_dates: int = 3, width: int = 8, *, inverted: bool = False,
+                   with_score: bool = True) -> list[dict]:
+    """A board whose ordering is either PERFECT or exactly INVERTED against excess.
+
+    Perfect: rank 1 earns the most excess. Inverted: rank 1 earns the least — the V1
+    shape. ``prophet_score`` is carried alongside ``board_rank`` and moves the opposite
+    way (higher score = better pick), which is precisely the relationship ``_order_key``
+    has to normalise; if it stops negating, the two ladders disagree.
+    """
+    out: list[dict] = []
+    for d in _RE_DATES[:n_dates]:
+        for rank in range(1, width + 1):
+            excess = float(rank) if inverted else float(width - rank)
+            out.append(_ep(
+                d, f"{d}-{rank:02d}",
+                board_rank=float(rank),
+                prophet_score=(100.0 - rank) if with_score else None,
+                excess=excess,
+            ))
+    return out
+
+
+class TestICOrientation:
+    """One sign convention, asserted from both ends.
+
+    A missing negation in ``_order_key`` inverts every number in the artifact while
+    leaving them all individually plausible, so "it looked reasonable" is not a check
+    that can see this failure. Driving a perfectly ordered board AND its exact inverse
+    is.
+    """
+
+    def test_a_perfectly_ordered_board_scores_a_negative_ic(self):
+        blk = cpa._rank_eff_block(_defn("t", _ordered_board()))
+        cell = blk["orderings"]["board_rank"]["ic"]["excess_h10"]
+        assert cell["ic"] == pytest.approx(-1.0)
+        assert cell["good_sign"] == "negative"
+        assert cell["wrong_sign"] is False
+
+    def test_an_inverted_board_scores_a_positive_ic_and_is_flagged(self):
+        blk = cpa._rank_eff_block(_defn("t", _ordered_board(inverted=True)))
+        cell = blk["orderings"]["board_rank"]["ic"]["excess_h10"]
+        assert cell["ic"] == pytest.approx(1.0)
+        assert cell["wrong_sign"] is True
+
+    def test_the_score_ladder_agrees_with_the_rank_ladder_on_the_same_board(self):
+        """The negation pin. prophet_score runs the OTHER way from board_rank.
+
+        Both describe the same ordering of the same names, so both ladders must land on
+        the same IC. Drop the negation in ``_order_key`` and this is the test that goes
+        red — the two would come out at exactly opposite signs.
+        """
+        blk = cpa._rank_eff_block(_defn("t", _ordered_board()))
+        by_rank = blk["orderings"]["board_rank"]["ic"]["excess_h10"]["ic"]
+        by_score = blk["orderings"]["prophet_score"]["ic"]["excess_h10"]["ic"]
+        assert by_rank == pytest.approx(-1.0)
+        assert by_score == pytest.approx(by_rank)
+
+    def test_the_score_is_the_primary_ordering_wherever_the_ledger_stored_it(self):
+        with_score = cpa._rank_eff_block(_defn("t", _ordered_board()))
+        assert with_score["primary_ordering"] == cpa.ORDER_SOURCE_SCORE
+        assert with_score["headline"]["ordering_source"] == cpa.ORDER_SOURCE_SCORE
+
+    def test_a_legacy_board_falls_back_to_board_rank_and_says_so(self):
+        blk = cpa._rank_eff_block(_defn("t", _ordered_board(with_score=False)))
+        assert blk["primary_ordering"] == cpa.ORDER_SOURCE_RANK
+        score_block = blk["orderings"]["prophet_score"]
+        assert score_block["available"] is False
+        assert "board_rank only" in score_block["note"]
+
+    def test_a_cost_metric_expects_the_OPPOSITE_sign_from_a_return_metric(self):
+        """catastrophic is a cost: a good board correlates POSITIVELY with it.
+
+        Reading every metric off one global "negative is good" rule would score a
+        well-behaved board as broken on three of the nine ladder rungs.
+        """
+        recs = []
+        for d in _RE_DATES[:3]:
+            for rank in range(1, 9):
+                # the best-ranked names avoid the catastrophes, the worst take them all
+                pnl = 10.0 - rank if rank <= 5 else -20.0 - rank
+                recs.append(_ep(d, f"{d}-{rank}", board_rank=float(rank),
+                                excess=float(8 - rank), pnl=pnl))
+        cell = cpa._rank_eff_block(_defn("t", recs))["orderings"]["board_rank"]["ic"]
+        cat = cell["catastrophic"]
+        assert cat["good_sign"] == "positive"
+        assert cat["ic"] > 0
+        assert cat["wrong_sign"] is False
+        # and the return metric on the SAME board keeps the opposite expectation
+        assert cell["excess_h10"]["good_sign"] == "negative"
+        assert cell["excess_h10"]["ic"] < 0
+
+    def test_every_ladder_rung_publishes_its_own_sign_expectation(self):
+        """No rung may ship a number without the rule for reading it."""
+        blk = cpa._rank_eff_block(_defn("t", _ordered_board()))
+        ladder = blk["orderings"]["board_rank"]["ic"]
+        assert set(ladder) == {m for m, _b, _n in cpa.RANK_EFF_METRICS}
+        for metric, cell in ladder.items():
+            assert cell["good_sign"] in ("negative", "positive"), metric
+            assert isinstance(cell["metric_note"], str) and cell["metric_note"], metric
+
+    def test_a_metric_the_ledger_cannot_answer_is_a_printed_null_not_a_gap(self):
+        blk = cpa._rank_eff_block(_defn("t", _ordered_board()))
+        mfe = blk["orderings"]["board_rank"]["ic"]["fwd_mfe_63"]
+        assert mfe["ic"] is None and mfe["n"] == 0
+        assert "accruing" in mfe["note"]
+        assert mfe["wrong_sign"] is None, "a null must not read as a passing sign check"
+
+    def test_a_definition_below_the_row_floor_discloses_rather_than_pretends(self):
+        blk = cpa._rank_eff_block(_defn("t", _ordered_board(n_dates=1, width=4)))
+        assert blk["available"] is False
+        assert blk["n_matured"] == 4
+        assert "blocks nothing" in blk["note"]
+
+    def test_definitions_are_never_pooled(self):
+        good = _defn("cn_prophet_v3", _ordered_board())
+        bad = _defn("legacy", _ordered_board(inverted=True))
+        out = cpa.rank_effectiveness([good, bad])
+        by_name = {b["board_definition"]: b for b in out["definitions"]}
+        assert by_name["cn_prophet_v3"]["headline"]["ic_excess_h10"] == pytest.approx(-1.0)
+        assert by_name["legacy"]["headline"]["ic_excess_h10"] == pytest.approx(1.0)
+
+
+class TestNullableOutcomes:
+    """A three-valued column must never collapse its null into a False."""
+
+    def test_a_never_cushioned_episode_is_not_a_breach(self):
+        for null in (None, float("nan"), "", "nan", "None"):
+            rec = _ep("2026-06-01", "A", post_cushion_breach=null)
+            assert cpa._outcome(rec, "post_cushion_breach") is None, null
+
+    def test_the_two_real_answers_still_read_through(self):
+        assert cpa._outcome(_ep("d", "A", post_cushion_breach=True),
+                            "post_cushion_breach") == 1.0
+        assert cpa._outcome(_ep("d", "A", post_cushion_breach=False),
+                            "post_cushion_breach") == 0.0
+
+    def test_a_null_terminal_state_is_not_a_failed_liftoff(self):
+        assert cpa._outcome(_ep("d", "A"), "clean_liftoff_21") is None
+        assert cpa._outcome(_ep("d", "A", terminal_state_clean8_21="CLEAN_LIFTOFF"),
+                            "clean_liftoff_21") == 1.0
+        assert cpa._outcome(_ep("d", "A", terminal_state_clean8_21="STOPPED"),
+                            "clean_liftoff_21") == 0.0
+
+    def test_the_catastrophic_threshold_reads_percent_not_fraction(self):
+        """score_from_fill returns pnl already multiplied by 100 — a −0.20 fraction
+        would be a −20% loss under the wrong reading and a rounding error under this one."""
+        assert cpa._outcome(_ep("d", "A", pnl=-15.1), "catastrophic") == 1.0
+        assert cpa._outcome(_ep("d", "A", pnl=-14.9), "catastrophic") == 0.0
+        assert cpa._outcome(_ep("d", "A", pnl=-0.20), "catastrophic") == 0.0
+
+
+class TestDayOfMax:
+    IDX = pd.bdate_range("2026-06-01", periods=30)
+
+    def test_the_fill_bar_itself_is_day_one(self):
+        """CN fills at the T+1 open, so that session's close is a legitimate exit and
+        must be a candidate for the max — the same window score_from_fill walks."""
+        closes = pd.Series([10.0, 99.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0,
+                            18.0, 19.0], index=self.IDX[:11])
+        assert cpa._day_of_max(closes, self.IDX[1], 10) == 1
+
+    def test_a_later_high_is_reported_on_its_own_session(self):
+        closes = pd.Series([10.0] + [1.0] * 4 + [50.0] + [1.0] * 5, index=self.IDX[:11])
+        assert cpa._day_of_max(closes, self.IDX[1], 10) == 5
+
+    def test_an_unfinished_window_is_null_not_an_early_peak(self):
+        """Reporting day-of-max on a truncated window would say 'peaked on day 3' for
+        the arithmetic reason that days 4-10 have not printed."""
+        closes = pd.Series([10.0, 11.0, 12.0, 13.0], index=self.IDX[:4])
+        assert cpa._day_of_max(closes, self.IDX[1], 10) is None
+        assert cpa._day_of_max(closes, self.IDX[1], 3) == 3
+
+
+class TestOracleRegret:
+    """Arithmetic on one hand-computed date, then the degeneracy the mean would hide."""
+
+    # rank 1..8; the two names the board ranked LAST are the two that actually ran.
+    EXCESS = (1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 100.0, 200.0)
+    ACHIEVED = (1 + 2 + 3 + 4 + 5 + 6) / 6          # 3.5  — the top-6 the board named
+    ORACLE = (200 + 100 + 6 + 5 + 4 + 3) / 6        # 53.0 — the best-6 in hindsight
+    REGRET = ORACLE - ACHIEVED                      # 49.5
+    CAPTURE = 4 / 6                                 # ranks 3-6 are in both sets
+
+    @classmethod
+    def _date(cls, date: str, width: int = 8) -> list[dict]:
+        return [_ep(date, f"{date}-{r}", board_rank=float(r), excess=cls.EXCESS[r - 1])
+                for r in range(1, width + 1)]
+
+    def test_the_arithmetic_on_a_single_date(self):
+        out = cpa._oracle_regret(self._date(_RE_DATES[0]), cpa.ORDER_SOURCE_RANK)
+        assert out["n_dates"] == 1
+        day = out["by_date"][0]
+        assert day["achieved_mean_excess"] == pytest.approx(self.ACHIEVED)
+        assert day["oracle_mean_excess"] == pytest.approx(self.ORACLE)
+        assert day["regret"] == pytest.approx(self.REGRET)
+        assert day["capture"] == pytest.approx(self.CAPTURE, abs=1e-4)
+
+    def test_regret_can_never_be_negative(self):
+        """The oracle picks from the same pool, so it can only tie or beat the board."""
+        out = cpa._oracle_regret(self._date(_RE_DATES[0]), cpa.ORDER_SOURCE_RANK)
+        assert out["regret6"] >= 0
+
+    def test_a_perfectly_ordered_date_leaves_no_regret(self):
+        recs = [_ep(_RE_DATES[0], f"x{r}", board_rank=float(r), excess=float(20 - r))
+                for r in range(1, 9)]
+        out = cpa._oracle_regret(recs, cpa.ORDER_SOURCE_RANK)
+        assert out["regret6"] == pytest.approx(0.0)
+        assert out["capture6"] == pytest.approx(1.0)
+
+    def test_a_pool_of_exactly_k_is_counted_as_degenerate_not_as_a_perfect_score(self):
+        """With a pool of 6 the top-6 IS the pool: regret 0 and capture 1.0 are
+        arithmetic, not skill, and averaging them in flatters the headline."""
+        recs = self._date(_RE_DATES[0]) + self._date(_RE_DATES[1], width=6)
+        out = cpa._oracle_regret(recs, cpa.ORDER_SOURCE_RANK)
+        assert out["n_dates"] == 2
+        assert out["n_dates_with_choice"] == 1
+        assert out["n_dates_degenerate"] == 1
+        assert out["regret6"] == pytest.approx(self.REGRET / 2, abs=1e-3)
+        assert out["regret6_with_choice"] == pytest.approx(self.REGRET, abs=1e-3)
+        assert out["capture6_with_choice"] == pytest.approx(self.CAPTURE, abs=1e-3)
+        assert "no selection was possible" in out["note"]
+
+    def test_a_date_too_thin_to_fill_the_shortlist_is_skipped_and_disclosed(self):
+        out = cpa._oracle_regret(self._date(_RE_DATES[0], width=5),
+                                 cpa.ORDER_SOURCE_RANK)
+        assert out["n_dates"] == 0
+        assert out["regret6"] is None
+        assert "accruing" in out["note"]
+
+
+class TestTerciles:
+    @staticmethod
+    def _recs(n: int) -> list[dict]:
+        """n episodes spread over 2 dates, ranks strictly increasing, excess decreasing."""
+        return [_ep(_RE_DATES[i % 2], f"tk{i}", board_rank=float(i + 1),
+                    excess=float(n - i), pnl=float(n - i),
+                    mae_proxy_10=float(-i), fwd_mfe_21=float(n - i),
+                    day_of_max_10=float((i % 10) + 1))
+                for i in range(n)]
+
+    def test_the_split_is_identical_under_a_shuffled_input(self):
+        """Determinism is the whole reason the split is positional over a total order.
+
+        A quantile cut on this data is not reproducible: real legacy ordering keys are
+        integer ranks 1-60 repeated across 18 dates, so bin edges land on huge ties and
+        a tie-handling change silently moves episodes between buckets.
+        """
+        recs = self._recs(31)
+        first = cpa._tercile_profile(recs, cpa.ORDER_SOURCE_RANK)
+        second = cpa._tercile_profile(list(reversed(recs)), cpa.ORDER_SOURCE_RANK)
+        third = cpa._tercile_profile(recs[7:] + recs[:7], cpa.ORDER_SOURCE_RANK)
+        assert json.dumps(first, sort_keys=True) == json.dumps(second, sort_keys=True)
+        assert json.dumps(first, sort_keys=True) == json.dumps(third, sort_keys=True)
+
+    def test_a_wall_of_tied_keys_still_splits_deterministically(self):
+        """Every episode on the same ordering key — the case a quantile cut cannot do."""
+        recs = [_ep(_RE_DATES[0], f"tk{i}", board_rank=7.0, excess=float(i))
+                for i in range(30)]
+        first = cpa._tercile_profile(recs, cpa.ORDER_SOURCE_RANK)
+        second = cpa._tercile_profile(list(reversed(recs)), cpa.ORDER_SOURCE_RANK)
+        assert [t["n"] for t in first["terciles"]] == [10, 10, 10]
+        assert json.dumps(first, sort_keys=True) == json.dumps(second, sort_keys=True)
+
+    def test_t1_is_the_best_ordered_third(self):
+        prof = cpa._tercile_profile(self._recs(30), cpa.ORDER_SOURCE_RANK)
+        t1, _t2, t3 = prof["terciles"]
+        assert t1["tercile"] == "T1" and t3["tercile"] == "T3"
+        assert t1["ordering_value_range"][1] <= t3["ordering_value_range"][0]
+
+    def test_every_episode_lands_in_exactly_one_tercile(self):
+        for n in (30, 31, 32, 100):
+            prof = cpa._tercile_profile(self._recs(n), cpa.ORDER_SOURCE_RANK)
+            assert sum(t["n"] for t in prof["terciles"]) == n, n
+
+    def test_the_score_orientation_puts_the_best_score_in_t1(self):
+        """The negation again, one layer down: with prophet_score the HIGHEST score is
+        the best pick, so T1's range must be the top of the score band, not the bottom."""
+        recs = [_ep(_RE_DATES[0], f"tk{i}", prophet_score=float(i), excess=float(i))
+                for i in range(30)]
+        prof = cpa._tercile_profile(recs, cpa.ORDER_SOURCE_SCORE)
+        t1, _t2, t3 = prof["terciles"]
+        assert t1["ordering_value_range"] == [20.0, 29.0]
+        assert t3["ordering_value_range"] == [0.0, 9.0]
+
+    def test_the_risk_and_duration_columns_are_all_present(self):
+        """The operator's whole caution: a track record that reports only the loser rate
+        cannot see a pick that is lower-risk or slower-but-bigger."""
+        prof = cpa._tercile_profile(self._recs(30), cpa.ORDER_SOURCE_RANK)
+        for t in prof["terciles"]:
+            for col in ("loser_rate", "median_excess", "median_mae_proxy_10",
+                        "catastrophic_rate", "clean_liftoff_share",
+                        "post_cushion_breach_rate", "median_fwd_mfe_21",
+                        "median_fwd_mfe_63", "median_day_of_max_10",
+                        "median_day_of_max_21"):
+                assert col in t, col
+
+    def test_a_thin_sample_discloses_rather_than_splitting_three_ways(self):
+        prof = cpa._tercile_profile(self._recs(5), cpa.ORDER_SOURCE_RANK)
+        assert prof["terciles"] == []
+        assert "accruing" in prof["note"]
+
+
+class TestComponentAttribution:
+    def test_each_stored_leg_gets_its_own_ic_against_both_metrics(self):
+        recs = []
+        for d in _RE_DATES[:3]:
+            for i in range(8):
+                recs.append(_ep(
+                    d, f"{d}-{i}", prophet_score=float(10 - i),
+                    prophet_signal=float(10 - i), prophet_entry=float(i),
+                    excess=float(10 - i), fwd_mfe_21=float(10 - i),
+                ))
+        out = cpa._component_attribution(recs)
+        # signal moves WITH the outcome → it earns its weight → negative IC
+        assert out["prophet_signal"]["ic"]["excess_h10"]["ic"] == pytest.approx(-1.0)
+        assert out["prophet_signal"]["ic"]["fwd_mfe_21"]["ic"] == pytest.approx(-1.0)
+        assert out["prophet_signal"]["ic"]["excess_h10"]["wrong_sign"] is False
+        # entry moves AGAINST it → it is paying for the wrong thing
+        assert out["prophet_entry"]["ic"]["excess_h10"]["ic"] == pytest.approx(1.0)
+        assert out["prophet_entry"]["ic"]["excess_h10"]["wrong_sign"] is True
+
+    def test_a_leg_the_ledger_does_not_store_is_a_printed_null(self):
+        """``prophet_theme_timing`` is in the V3 score but append_board does not persist
+        it — the attribution must SAY so, so the dark leg is visible rather than absent.
+        """
+        out = cpa._component_attribution(_ordered_board())
+        cell = out["prophet_theme_timing"]
+        assert cell["available"] is False and cell["n"] == 0
+        assert "does not store it" in cell["note"]
+
+    def test_a_constant_leg_reports_the_constancy_rather_than_a_missing_number(self):
+        recs = [_ep(_RE_DATES[0], f"x{i}", prophet_reversal_member=0.0,
+                    excess=float(i)) for i in range(12)]
+        cell = cpa._component_attribution(recs)["prophet_reversal_member"]
+        assert cell["available"] is True and cell["n_distinct_values"] == 1
+        assert "constant" in cell["note"]
+        assert cell["ic"]["excess_h10"]["ic"] is None
+
+    def test_every_component_column_is_reported_even_when_absent(self):
+        out = cpa._component_attribution(_ordered_board())
+        assert set(out) == set(cpa.PROPHET_COMPONENT_COLS)
+
+
+class TestWrongSignWarning:
+    """The alarm, pinned from BOTH sides — a guard that only ever fires is not a guard."""
+
+    @staticmethod
+    def _board(inverted: bool, n_dates: int) -> dict:
+        return _defn("cn_prophet_vX", _ordered_board(n_dates=n_dates, inverted=inverted))
+
+    def test_it_fires_on_an_anti_predictive_ordering(self, capsys):
+        cpa.rank_effectiveness([self._board(inverted=True, n_dates=10)])
+        lines = [ln for ln in capsys.readouterr().out.splitlines()
+                 if ln.startswith("::warning")]
+        assert len(lines) == 1
+        assert "cn-prophet-rank-anti-predictive" in lines[0]
+        assert "ANTI-PREDICTIVELY" in lines[0]
+
+    def test_the_annotation_starts_the_line(self, capsys):
+        """A logger would prefix it and GitHub would silently drop the whole alarm."""
+        cpa.rank_effectiveness([self._board(inverted=True, n_dates=10)])
+        out = [ln for ln in capsys.readouterr().out.splitlines() if "::warning" in ln]
+        assert out and all(ln.startswith("::") for ln in out)
+
+    def test_it_stays_quiet_on_a_well_ordered_board(self, capsys):
+        cpa.rank_effectiveness([self._board(inverted=False, n_dates=10)])
+        assert "cn-prophet-rank-anti-predictive" not in capsys.readouterr().out
+
+    def test_it_stays_quiet_below_the_episode_floor(self, capsys):
+        """Wrong sign, but too few episodes to carry the claim."""
+        thin = self._board(inverted=True, n_dates=5)   # 40 episodes < 60
+        blk = cpa.rank_effectiveness([thin])["definitions"][0]
+        assert blk["n_matured"] < cpa.WRONG_SIGN_MIN_EPISODES
+        assert blk["headline"]["ic_excess_h10"] > 0, "the fixture must still be inverted"
+        assert "cn-prophet-rank-anti-predictive" not in capsys.readouterr().out
+
+    def test_each_definition_gets_its_own_alarm(self, capsys):
+        good = _defn("cn_prophet_v3", _ordered_board(n_dates=10))
+        bad = _defn("legacy", _ordered_board(n_dates=10, inverted=True))
+        cpa.rank_effectiveness([good, bad])
+        lines = [ln for ln in capsys.readouterr().out.splitlines()
+                 if ln.startswith("::warning")]
+        assert len(lines) == 1 and "'legacy'" in lines[0]
+
+
+# ---------------------------------------------------------------------------
+# 7b. THE CALIBRATION RECEIPT — can the block see the defect already measured?
+# ---------------------------------------------------------------------------
+@pytest.fixture(scope="module")
+def legacy_rank_block(legacy_block):
+    """The rank-effectiveness block for the legacy era on the REPRO_ASOF-pinned grid."""
+    return cpa._rank_eff_block(legacy_block)
+
+
+@pytest.mark.skipif(not BOARD_PARQUET.exists(), reason="CN board store not present")
+@pytest.mark.skipif(not any(CHINA_STOCKS.glob("*.parquet")),
+                    reason="china_stocks price store not present")
+class TestLegacyDefectCalibration:
+    """The block must reproduce the audited V1 ordering defect on the frozen grid.
+
+    masterplan §2.1 / CN-RC4: legacy board rank-IC vs H=10 excess = **+0.073**,
+    anti-predictive. A rank grader that cannot see the one ordering failure this program
+    has already measured has no standing to be trusted with the next one, and every
+    other test in section 7 runs on synthetic data that the implementation and the test
+    could be wrong about together.
+
+    The frame is pinned to ``REPRO_ASOF`` through the module-scoped ``legacy_block``
+    fixture. Without that pin the constant is a time bomb: fresh bars mature more legacy
+    episodes every night (the live panel already reads +0.0899 over 441), so the number
+    would drift away from the audit for the one reason that is not a regression.
+    """
+
+    def test_the_frozen_sample_is_the_one_the_audit_was_run_on(self, legacy_rank_block):
+        """Guard the guard — on a different sample the constant below means nothing."""
+        assert legacy_rank_block["available"] is True
+        assert legacy_rank_block["n_matured"] == REPRO_MATURED
+        assert legacy_rank_block["n_matured_with_excess"] == REPRO_MATURED
+
+    def test_it_reproduces_the_audited_anti_predictive_rank_ic(self, legacy_rank_block):
+        cell = legacy_rank_block["orderings"]["board_rank"]["ic"]["excess_h10"]
+        assert cell["ic"] == pytest.approx(REPRO_RANK_IC_EXCESS, abs=IC_TOL)
+        assert cell["n"] == REPRO_MATURED
+        assert cell["n_dates"] == REPRO_RANK_IC_N_DATES
+        assert cell["ic"] > 0, "the V1 defect is a POSITIVE IC — wrong sign"
+        assert cell["wrong_sign"] is True
+        assert legacy_rank_block["headline"]["ic_excess_h10"] == pytest.approx(
+            REPRO_RANK_IC_EXCESS, abs=IC_TOL)
+
+    def test_the_pooled_ic_agrees_with_the_per_date_reading(self, legacy_rank_block):
+        """Two independent estimators landing on the same sign is the check that the
+        defect is real rather than an artefact of the date grouping."""
+        cell = legacy_rank_block["orderings"]["board_rank"]["ic"]["excess_h10"]
+        assert cell["pooled_ic"] > 0
+        assert abs(cell["pooled_ic"] - cell["ic"]) < 0.05
+
+    def test_the_alarm_actually_fires_on_the_real_era(self, legacy_rank_block, capsys):
+        cpa._warn_wrong_sign(legacy_rank_block)
+        lines = [ln for ln in capsys.readouterr().out.splitlines()
+                 if ln.startswith("::warning")]
+        assert len(lines) == 1
+        assert "cn-prophet-rank-anti-predictive" in lines[0]
+        assert "board_rank" in lines[0]
+
+    def test_the_legacy_era_reads_the_ordering_off_board_rank_only(self, legacy_rank_block):
+        assert legacy_rank_block["primary_ordering"] == cpa.ORDER_SOURCE_RANK
+        assert legacy_rank_block["orderings"]["prophet_score"]["available"] is False
+        assert all(c["available"] is False for c in legacy_rank_block["components"].values())
+
+    def test_the_defect_is_visible_on_the_risk_and_duration_axes_too(self, legacy_rank_block):
+        """The reason the block is multi-metric. If the top third were merely
+        slower-but-safer, the risk axes would clear it — they do not: the best-ranked
+        third carried the DEEPEST drawdowns and the MOST catastrophes.
+        """
+        t1, t2, t3 = legacy_rank_block["risk_by_tercile"]["terciles"]
+        assert t1["catastrophic_rate"] > t2["catastrophic_rate"]
+        assert t1["catastrophic_rate"] > t3["catastrophic_rate"]
+        assert t1["median_mae_proxy_10"] < t2["median_mae_proxy_10"]
+        ladder = legacy_rank_block["orderings"]["board_rank"]["ic"]
+        assert ladder["mae_proxy_10"]["wrong_sign"] is True
+        assert ladder["fwd_mfe_10"]["wrong_sign"] is True
+
+    def test_the_catastrophic_and_median_excess_baselines_still_reconcile(self, legacy_rank_block):
+        """Cross-check against masterplan §8 M5/M2 — proof the block is reading the same
+        episodes section 1 graded, not a differently-filtered sample."""
+        terciles = legacy_rank_block["risk_by_tercile"]["terciles"]
+        n_cat = sum(round(t["catastrophic_rate"] * t["n_pnl_graded"])
+                    for t in terciles)
+        assert n_cat == REPRO_CATASTROPHIC
+        assert sum(t["n"] for t in terciles) == REPRO_MATURED
+
+    def test_the_shortlist_left_most_of_its_own_upside_on_the_table(self, legacy_rank_block):
+        orc = legacy_rank_block["oracle_regret"]
+        assert orc["n_dates"] > 0
+        assert orc["regret6"] > 0
+        assert 0.0 <= orc["capture6"] <= 1.0
+        assert orc["n_dates_degenerate"] == 0, \
+            "legacy boards are 60 wide — none can be a degenerate pool"
+
+
+# ---------------------------------------------------------------------------
+# 7c. the block ships in the artifact and the forward log
+# ---------------------------------------------------------------------------
+class TestRankEffectivenessIsPublished:
+    def test_the_artifact_carries_the_block(self, sandbox):
+        cpa.run(asof=_ASOF, lane="asia")
+        doc = json.loads(cpa.latest_path().read_text())
+        blk = doc["rank_effectiveness"]
+        assert blk["tier"] == "ops-telemetry"
+        assert "none" in blk["authority"]
+        assert "NEGATED" in blk["orientation"], "the sign convention must ship with it"
+        assert isinstance(blk["elapsed_seconds"], (int, float))
+        assert [d["board_definition"] for d in blk["definitions"]] == ["cn_prophet_v2"]
+
+    def test_the_forward_log_carries_the_headline_columns(self, sandbox):
+        rank_eff = cpa.rank_effectiveness([_defn("cn_prophet_v2", _ordered_board())])
+        rows = cpa._forward_log_rows(
+            [{"board_definition": "cn_prophet_v2", "n_episodes": 24, "n_matured": 24,
+              "n_winners": 21, "n_losers": 3, "win_rate": 0.875, "loser_rate": 0.125,
+              "median_excess": 3.5, "chase": {}}],
+            _ASOF, rank_eff)
+        cpa.append_forward_log(rows)
+        df = pd.read_parquet(cpa.forward_log_path())
+        assert len(df) == 1
+        row = df.iloc[0]
+        assert row["rank_ordering_source"] == cpa.ORDER_SOURCE_SCORE
+        assert float(row["ic_excess_h10"]) == pytest.approx(-1.0)
+        assert row["capture6"] == pytest.approx(1.0)
+        # the pre-existing columns are untouched
+        assert float(row["win_rate"]) == pytest.approx(0.875)
+
+    def test_keep_first_still_holds_over_the_new_columns(self, sandbox):
+        cpa.append_forward_log([{"date": _ASOF, "board_definition": "legacy",
+                                 "ic_excess_h10": 0.0731}])
+        cpa.append_forward_log([{"date": _ASOF, "board_definition": "legacy",
+                                 "ic_excess_h10": -0.9}])
+        df = pd.read_parquet(cpa.forward_log_path())
+        assert len(df) == 1
+        assert float(df.iloc[0]["ic_excess_h10"]) == pytest.approx(0.0731), \
+            "a re-run rewrote a published rank-effectiveness headline"
+
+    def test_a_definition_with_no_rank_headline_writes_nulls_not_zeros(self, sandbox):
+        rows = cpa._forward_log_rows(
+            [{"board_definition": "cn_reversal_watch_v1", "n_episodes": 0,
+              "n_matured": 0, "n_winners": 0, "n_losers": 0, "win_rate": None,
+              "loser_rate": None, "median_excess": None, "chase": {}}],
+            _ASOF, {"definitions": []})
+        assert rows[0]["ic_excess_h10"] is None
+        assert rows[0]["capture6"] is None
+
+    def test_the_block_stays_inside_its_budget(self, sandbox):
+        res = cpa.run(asof=_ASOF, lane="asia")
+        assert res["rank_effectiveness_seconds"] < 20.0
+
+    def test_it_adds_no_write_outside_the_audit_store(self, sandbox):
+        before = {p.relative_to(sandbox) for p in sandbox.rglob("*") if p.is_file()}
+        cpa.run(asof=_ASOF, lane="asia")
+        new = {str(p) for p in
+               ({p.relative_to(sandbox) for p in sandbox.rglob("*") if p.is_file()}
+                - before)}
+        assert all(p.startswith(cpa.STORE_DIR) for p in new), sorted(new)

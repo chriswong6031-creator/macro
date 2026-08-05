@@ -244,7 +244,10 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
             age = (datetime.now(timezone.utc).date() - last.date()).days
             if age > stale_after_days:
                 status = "stale"
-        declared_status = adapter.fetch_result_status(frames)
+        # fetch_result_status is an OPTIONAL adapter protocol (2 of ~228 define it) —
+        # a missing attribute must never fail an otherwise-successful fetch.
+        declared = getattr(adapter, "fetch_result_status", None)
+        declared_status = declared(frames) if callable(declared) else None
         if declared_status is not None:
             if declared_status not in {"ok", "stale", "blocked"}:
                 raise ValueError(f"{adapter.name}: unsupported declared fetch status {declared_status!r}")
@@ -265,9 +268,12 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
                           last_date=str(last.date()) if last is not None else None,
                           notes=notes)
     except Exception as e:  # noqa: BLE001 — degrade, never crash the run
-        if adapter.expected_failure:
+        # expected_failure is likewise optional — the handler itself must be
+        # attribute-safe or one duck-typing gap crashes the whole collect pass.
+        expected = getattr(adapter, "expected_failure", None)
+        if expected:
             log.info("adapter %s blocked (known): %s", adapter.name, e)
-            res = FetchResult(adapter.name, "blocked", error=adapter.expected_failure)
+            res = FetchResult(adapter.name, "blocked", error=expected)
         else:
             log.error("adapter %s failed: %s\n%s", adapter.name, e, traceback.format_exc(limit=3))
             res = FetchResult(adapter.name, "failed", error=f"{type(e).__name__}: {e}")

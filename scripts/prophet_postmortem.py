@@ -23,6 +23,16 @@ WHERE EVERY FIELD COMES FROM
                                               across the four caches in that order —
                                               the same precedence build_stock_library
                                               uses to assemble its universe.
+  data/baskets/ohlcv/<T>.parquet, then
+  data/baskets/extras.parquet                 FALLBACK RUNGS, consulted only when no
+                                              cache carries the ticker. The board's
+                                              universe (~1,579 names) is wider than the
+                                              caches' S&P-1500, so extras-universe picks
+                                              such as ASTS were structurally ungradeable
+                                              — held, exited, never scored. Appending
+                                              rungs can only turn an ungraded episode
+                                              into a graded one; a cache-resolved name
+                                              keeps the identical series and grade.
   data/yahoo/SPY.parquet                      benchmark leg (excess return).
   data/baskets/latest.json  VIA GIT HISTORY   theme state AS OF the entry date. The file
                                               is overwritten nightly, so the only way to
@@ -102,6 +112,27 @@ REPORT_DIR_REL = Path("reports")
 #: disagree about the same ticker's price.
 CLOSE_CACHE_GROUPS = ("breadth", "smallcap_breadth", "midcap_breadth", "russell_breadth")
 
+#: FALLBACK RUNGS, walked only when the four caches above carry no column for a ticker.
+#: The board admits a wider universe than the caches cover — Russell plus curated extras,
+#: 1,579 names against the caches' S&P-1500 — so an extras-universe name could be picked,
+#: held and exited without ever being gradeable: ASTS sat in `tickers_no_price_path` for
+#: every episode it ever had (D21, missed-ignitions audit). These two stores are where
+#: the board itself reads those names' prices.
+#:
+#: APPEND-ONLY BY CONSTRUCTION. The rungs run AFTER the cache lookup and are consulted
+#: only on a miss, so a name the caches resolve resolves to the identical series it did
+#: before this ladder existed and its grade cannot move. Adding a rung may only turn an
+#: ungraded episode into a graded one — never re-grade a graded one. Reordering these,
+#: or promoting one above the caches, breaks that and is a different change requiring
+#: its own era stamp.
+BASKET_OHLCV_REL = Path("data/baskets/ohlcv")      # per-ticker OHLCV, deep (2014+)
+BASKET_EXTRAS_REL = Path("data/baskets/extras.parquet")   # wide off-index closes (~3y)
+
+#: The rung each episode's price path came from, for the coverage receipt.
+SOURCE_CACHE = "breadth_caches"
+SOURCE_BASKET_OHLCV = "baskets_ohlcv"
+SOURCE_BASKET_EXTRAS = "baskets_extras"
+
 #: The lane this study grades. `buy` is the board's actual call; `watch` and `laggards`
 #: are context the desk publishes but does not claim as a pick.
 LANE = "buy"
@@ -130,6 +161,78 @@ def load_closes(root: Path) -> pd.DataFrame:
     out = out.loc[:, ~out.columns.duplicated()]     # first cache wins
     out.index = pd.to_datetime(out.index)
     return out.sort_index()
+
+
+def close_resolver(root: Path, closes: pd.DataFrame):
+    """A memoized per-ticker close resolver: caches → baskets/ohlcv → baskets/extras.
+
+    Returns ``resolve(ticker) -> (series | None, source | None)``.
+
+    The cache frame is consulted FIRST and returned untouched, so every name the four
+    breadth caches carry resolves exactly as it did before the fallback rungs existed —
+    the byte-identity property this ladder is only allowed to have if it appends.
+    The rungs below are lazy and memoized: only the handful of episodes the caches miss
+    ever open a parquet, so a full postmortem run reads a dozen files, not seven hundred.
+
+    Every rung normalises the same way the cache loader does (numeric coercion, NaNs
+    dropped, DatetimeIndex, sorted) so a fallback-resolved series is the same SHAPE the
+    scorer already handles — a rung that returned a differently-indexed series would
+    grade the right name off the wrong bars.
+    """
+    memo: dict[str, tuple["pd.Series | None", "str | None"]] = {}
+    extras: dict[str, "pd.DataFrame | None"] = {}
+
+    def _clean(series: pd.Series) -> "pd.Series | None":
+        s = pd.to_numeric(series, errors="coerce").dropna()
+        if s.empty:
+            return None
+        s.index = pd.to_datetime(s.index)
+        return s.sort_index()
+
+    def _from_ohlcv(ticker: str) -> "pd.Series | None":
+        path = root / BASKET_OHLCV_REL / f"{ticker}.parquet"
+        if not path.exists():
+            return None
+        try:
+            frame = pd.read_parquet(path, columns=["close"])
+        except Exception as exc:  # noqa: BLE001 — a bad file is a miss, not a crash
+            print(f"::warning title=prophet-postmortem::{ticker} unreadable in "
+                  f"{BASKET_OHLCV_REL} ({exc})", flush=True)
+            return None
+        return _clean(frame["close"])
+
+    def _from_extras(ticker: str) -> "pd.Series | None":
+        if "frame" not in extras:
+            path = root / BASKET_EXTRAS_REL
+            try:
+                extras["frame"] = pd.read_parquet(path) if path.exists() else None
+            except Exception as exc:  # noqa: BLE001
+                print(f"::warning title=prophet-postmortem::{BASKET_EXTRAS_REL} "
+                      f"unreadable ({exc})", flush=True)
+                extras["frame"] = None
+        frame = extras["frame"]
+        if frame is None or ticker not in frame.columns:
+            return None
+        return _clean(frame[ticker])
+
+    def resolve(ticker: str) -> tuple["pd.Series | None", "str | None"]:
+        if ticker in memo:
+            return memo[ticker]
+        result: tuple["pd.Series | None", "str | None"] = (None, None)
+        if ticker in closes.columns:
+            series = closes[ticker].dropna()
+            result = (series, SOURCE_CACHE)
+        else:
+            for source, reader in ((SOURCE_BASKET_OHLCV, _from_ohlcv),
+                                   (SOURCE_BASKET_EXTRAS, _from_extras)):
+                series = reader(ticker)
+                if series is not None:
+                    result = (series, source)
+                    break
+        memo[ticker] = result
+        return result
+
+    return resolve
 
 
 def load_bench(root: Path) -> "pd.Series | None":
@@ -510,16 +613,22 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
     calendar = bench.index if bench is not None else closes.index
 
     # ── pass 1: score every episode ───────────────────────────────────────────
+    resolve_close = close_resolver(root, closes)
     scored: list[dict] = []
     no_price: list[str] = []
+    unresolved: set[str] = set()
+    price_sources: dict[str, int] = {}
     for ep in episodes:
         tk, d0 = ep["ticker"], ep["entry_date"]
-        series = closes[tk].dropna() if tk in closes.columns else None
+        series, source = resolve_close(tk)
+        if series is None:
+            unresolved.add(tk)
         sc = ts.score_episode(series, d0, horizon, bench_close=bench) if series is not None else None
         if sc is None:
             no_price.append(f"{tk}@{d0}")
             scored.append({"ep": ep, "sc": None, "series": None})
             continue
+        price_sources[source] = price_sources.get(source, 0) + 1
         scored.append({"ep": ep, "sc": sc, "series": series})
 
     # ── pass 2: prior-episode scan, per ticker, in entry order ────────────────
@@ -621,6 +730,21 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
         "n_episodes": len(rows),
         "n_no_price_path": len(no_price),
         "tickers_no_price_path": sorted({s.split("@")[0] for s in no_price}),
+        # TWO DIFFERENT FACTS, and the ladder is why they had to be separated. Before
+        # the fallback rungs existed a ticker in `tickers_no_price_path` had no series
+        # anywhere, so the two lists were the same list. Now a name can resolve to a
+        # perfectly good series whose last bar predates this episode's fill (U, whose
+        # store stops 2026-06-29) — a stale STORE, not a missing NAME, and the two want
+        # different fixes. `tickers_no_price_series` is the coverage hole; the wider
+        # list above stays what it always was, "episodes that could not be scored".
+        "tickers_no_price_series": sorted(unresolved),
+        "n_tickers_no_price_series": len(unresolved),
+        # WHICH RUNG each scored episode's path came from. The counts are the ladder's
+        # own receipt: a `baskets_ohlcv` count above zero is the extras-universe class
+        # that used to be ungradeable (D21), and a run where every episode resolves
+        # from `breadth_caches` says the fallback rungs did nothing that night — both
+        # are facts worth being able to read off the artifact rather than infer.
+        "price_path_sources": dict(sorted(price_sources.items())),
         "basket_revisions": len(history),
         "basket_asof_first": history[0][0] if history else None,
         "basket_asof_last": history[-1][0] if history else None,
@@ -671,6 +795,13 @@ def build_rows(root: Path = ROOT, horizon: int = ts.DEFAULT_HORIZON) -> dict:
             "retro_grades": str(RETRO_REL),
             "snapshots": str(SNAPSHOTS_REL),
             "closes": [f"data/{g}/_closes_cache.parquet" for g in CLOSE_CACHE_GROUPS],
+            "closes_fallback": [f"{BASKET_OHLCV_REL}/<TICKER>.parquet",
+                                str(BASKET_EXTRAS_REL)],
+            "closes_ladder": (
+                "the four caches first (first cache carrying the ticker wins), then the "
+                "fallback rungs in order — consulted ONLY when no cache carries the "
+                "column, so a cache-resolved name grades off the same series it always "
+                "did. Per-episode rung counts in coverage.price_path_sources."),
             "benchmark": str(BENCH_REL),
             "baskets_git": str(BASKETS_REL),
             "membership": str(MEMBERSHIP_REL),
@@ -1020,10 +1151,15 @@ def main(argv: list[str] | None = None) -> int:
     # GitHub annotations: bare print at line start, flush=True. A logger here would
     # prefix the line and GitHub would silently drop the annotation (house law).
     if doc["coverage"]["n_no_price_path"]:
+        _cov = doc["coverage"]
+        _gap = _cov.get("tickers_no_price_series") or []
         print(f"::warning title=prophet-postmortem::"
-              f"{doc['coverage']['n_no_price_path']} episodes have no close path — "
+              f"{_cov['n_no_price_path']} episodes unscored — "
               f"their path labels are emitted null, not dropped "
-              f"({', '.join(doc['coverage']['tickers_no_price_path'][:12])})", flush=True)
+              f"({', '.join(_cov['tickers_no_price_path'][:12])}); of those "
+              f"{len(_gap)} ticker(s) resolve to no price series at all after the "
+              f"fallback rungs ({', '.join(_gap[:12]) or 'none'}) — the rest have a "
+              f"series that does not reach the episode's fill bar", flush=True)
     if not doc["coverage"]["basket_revisions"]:
         print("::warning title=prophet-postmortem::no committed revisions of "
               "data/baskets/latest.json found — entry-time theme context is empty",

@@ -663,6 +663,7 @@ def chart_digest(symbol: str, tf: str = "1D", sections: list | None = None,
         if not weekly:
             return {"symbol": sym, "tf": tf_norm, "available": False, "reason": "no data"}
         digest = {"symbol": sym, "tf": tf_norm, "available": True, **weekly}
+        _apply_bar_basis(digest, sym, base_root)
         return _select_sections(digest, sections)
 
     daily = _load_daily(sym, base_root, _DIGEST_BARS)
@@ -671,6 +672,7 @@ def chart_digest(symbol: str, tf: str = "1D", sections: list | None = None,
 
     skel = _skeleton(daily, want_trendlines=True, want_gaps=True, compact=False)
     digest: dict[str, Any] = {"symbol": sym, "tf": tf_norm, "available": True, **skel}
+    _apply_bar_basis(digest, sym, base_root)
     # Weekly context rides along on the 1D digest for cheap multi-TF grounding.
     weekly = _weekly_snapshot(sym, base_root)
     if weekly:
@@ -683,6 +685,60 @@ def chart_digest(symbol: str, tf: str = "1D", sections: list | None = None,
     return _select_sections(digest, sections)
 
 
+def _bar_basis(symbol: str, root: Path) -> str:
+    """'intrabar' | 'close_to_close' | 'none' | 'unknown' for *symbol* (never raises).
+
+    The failure value is 'unknown', NOT 'intrabar': this feeds a disclosure, and a
+    silent default of "real wicks" is the one answer that could make a synthesized
+    chart read as a measured one.
+    """
+    try:
+        from engine.marketing.chart_render import bar_basis  # noqa: PLC0415
+        return bar_basis(symbol, root)
+    except Exception:  # noqa: BLE001 — unknown basis must not cost the digest
+        return "unknown"
+
+
+def _apply_bar_basis(digest: dict, symbol: str, root: Path) -> None:
+    """Stamp the bar basis and, on close-only sources, PRINT the gap null.
+
+    Whole regions have close-only daily history: every TSX single name, the HSI /
+    SSE-composite / TSX-composite index series, the crypto feed. ``load_ohlcv``
+    synthesizes their wicks as ``high = max(prev_close, close)`` and
+    ``low = min(prev_close, close)``, which makes ``low[i] > high[i-1]`` —
+    the up-gap test in ``_unfilled_gaps`` — arithmetically unsatisfiable. The
+    detector therefore returns ``[]`` for EVERY such symbol, always.
+
+    An empty ``gaps`` list reads to the model as the finding "this chart has no
+    unfilled gaps". It is not a finding; it is a blind spot. House epistemics say
+    a null gets printed, not hidden, so on these symbols ``gaps`` is replaced by an
+    explicit unmeasurable marker rather than a clean empty list. Plain words only —
+    no threshold, formula or lookback (anti-distillation).
+    """
+    basis = _bar_basis(symbol, root)
+    digest["bar_basis"] = basis
+    if basis != "close_to_close":
+        return
+    digest["bar_basis_note"] = (
+        "This symbol's daily history is closing prices only — each bar is drawn "
+        "close-to-close, so it has no true intraday high, low or volume. Candle "
+        "wicks, intrabar range and volume are not observable here; closes, trend, "
+        "swing structure and levels are."
+    )
+    # Only the 1D digest carries gaps at all — _weekly_snapshot builds its skeleton
+    # with want_gaps=False, so neither the 1W digest nor the weekly block riding on
+    # a 1D digest has a gaps key to correct.
+    if "gaps" in digest:
+        digest["gaps"] = {
+            "measurable": False,
+            "note": (
+                "Gaps cannot be measured on close-only bars — absence of gaps here "
+                "is a limit of the data, not a fact about the tape. Do not report "
+                "this chart as gap-free."
+            ),
+        }
+
+
 def _select_sections(digest: dict, sections: list | None) -> dict:
     """Keep only requested top-level sections; always retain the header + availability keys."""
     if not sections:
@@ -690,7 +746,10 @@ def _select_sections(digest: dict, sections: list | None) -> dict:
     keep = {s for s in sections if s in _SECTIONS}
     if not keep:
         return digest
-    header = {"symbol", "tf", "available", "reason", "bars"}
+    # bar_basis rides in the header: a caller that narrows to one section must not
+    # be able to filter away the disclosure that the bars are close-only.
+    header = {"symbol", "tf", "available", "reason", "bars",
+              "bar_basis", "bar_basis_note"}
     return {k: v for k, v in digest.items() if k in header or k in keep}
 
 
@@ -741,13 +800,25 @@ def measure_line(symbol: str, tf: str, p1: dict, p2: dict,
 
     fit = _line_fit({"i": i1, "p": pr1}, {"i": i2, "p": pr2}, h, l, c, atr_now)
     verdict = _line_verdict(fit["touches"], fit["max_dev_atr"])
-    return {
+    out = {
         "symbol": sym,
         "tf": tf_norm,
         "touches": fit["touches"],
         "max_dev_atr": fit["max_dev_atr"],
         "verdict": verdict,
     }
+    # A touch is counted against the bar's high/low band. On a close-only symbol that
+    # band IS the close-to-close body, so "touches" means the CLOSE came to the line,
+    # not that the wick tested it — a stricter, different claim than on a US name.
+    # Say so rather than let the same word carry two meanings across regions.
+    basis = _bar_basis(sym, base_root)
+    out["bar_basis"] = basis
+    if basis == "close_to_close":
+        out["bar_basis_note"] = (
+            "Bars here are closing prices only, so a touch means the CLOSE reached "
+            "the line — an intraday wick test would not be counted."
+        )
+    return out
 
 
 def _line_verdict(touches: int, max_dev_atr: float) -> str:

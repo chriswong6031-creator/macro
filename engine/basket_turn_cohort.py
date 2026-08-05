@@ -198,6 +198,32 @@ def _load_graded_cohort_ids(data_root: Path | None = None) -> set[str]:
     return seen
 
 
+def _spy_last_bar(data_root: Path | None = None) -> str | None:
+    """ISO date of the newest bar in data/yahoo/SPY.parquet — the tape bound.
+
+    The maturity clock's data-plane default (forward-ledger audit 2026-08-05,
+    #4568 pattern): a 21-session window is only elapsed as far as the tape
+    actually ran, so the calendar must never advance it.  Deliberately
+    duplicated from engine/tape_disagreement._spy_last_bar (identical twin) —
+    these sibling organs stay self-contained, no cross-import between them.
+    Returns None on any failure so the caller can fall back.
+    """
+    root = data_root if data_root is not None else config.data_dir()
+    spy_p = root / "yahoo" / "SPY.parquet"
+    if not spy_p.exists():
+        return None
+    try:
+        spy_df = pd.read_parquet(spy_p, columns=["close"])
+        spy_df.index = pd.to_datetime(spy_df.index)
+        spy_df = spy_df.sort_index()
+        spy_df = spy_df[~spy_df.index.duplicated(keep="last")]
+        if spy_df.empty:
+            return None
+        return str(pd.Timestamp(spy_df.index[-1]).date())
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _spy_sessions_since(cohort_date: str, as_of: str, data_root: Path | None = None) -> int:
     """Count SPY trading sessions strictly after cohort_date up through as_of.
 
@@ -335,6 +361,12 @@ def grade_cohorts(
     A cohort matures when >= GRADE_HORIZON_SESSIONS (21) trading sessions have
     elapsed since cohort_date, measured from the SPY parquet price index.
 
+    ``as_of`` defaults to the SPY store's newest bar, NOT the calendar
+    (forward-ledger audit 2026-08-05, #4568 pattern): the maturity clock must
+    run on the tape the grader can actually price.  date.today() survives only
+    as a never-fatal last resort — with no SPY store nothing matures anyway
+    (_spy_sessions_since returns -1).
+
     Grades are written to data/basket_turn/cohort_grades.jsonl with keep-first
     semantics per cohort_date.  The qledger claim row remains the registration
     of record.  At the 2026-10-15 read there is zero manual work to obtain
@@ -350,7 +382,7 @@ def grade_cohorts(
         return []
 
     if as_of is None:
-        as_of = date.today().isoformat()
+        as_of = _spy_last_bar(data_root) or date.today().isoformat()
 
     already_graded = _load_graded_cohort_ids(data_root)
     new_grades: list[dict] = []
@@ -384,6 +416,9 @@ def grade_cohorts(
             "horizon_sessions":   GRADE_HORIZON_SESSIONS,
             "excess_vs_spy_21d":  excess,
             "outcome":            "cohort_beat_spy" if excess > 0 else "cohort_lagged_spy",
+            # graded_as_of records the TAPE BOUND the maturity clock ran to
+            # (SPY store's newest bar by default), not the calendar day of the
+            # run — forward-ledger audit 2026-08-05 (#4568 pattern).
             "graded_as_of":       as_of,
             "note": (
                 "Nightly grader (FTR W9): cohort EW basket return vs SPY over "
@@ -583,11 +618,16 @@ def nightly_run(
     per cohort_date).  The qledger claim row remains the registration of record.
     At the 2026-10-15 read there is zero manual work to obtain graded outcomes.
 
+    ``as_of`` defaults to the SPY store's newest bar, NOT the calendar
+    (forward-ledger audit 2026-08-05, #4568 pattern) — the maturity clock runs
+    on the tape, never on the clock.  date.today() is the never-fatal last
+    resort (with no SPY store nothing matures anyway).
+
     Returns summary dict for the build log.
     """
     try:
         if as_of is None:
-            as_of = date.today().isoformat()
+            as_of = _spy_last_bar(data_root) or date.today().isoformat()
 
         ledger_rows = load_turn_watch_ledger(data_root)
         if not ledger_rows:

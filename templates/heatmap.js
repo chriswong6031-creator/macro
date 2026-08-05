@@ -158,29 +158,19 @@
     var la = relLum(a), lb = relLum(b);
     return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
   }
-  // Label ink per tile: ALWAYS WHITE, over a dark halo (see .hm-tile's
-  // text-shadow in injectStyle).
-  //
-  // The previous cut CHOSE the ink by WCAG contrast against each tile's own
-  // fill (SI V2 W3 audit, 2026-08-03 / #4400), which put near-black #080a0e on
-  // roughly a third of the map — 440 of 1468 tiles on the China board. It
-  // measured well (6.8:1 on a saturated green vs white's 2.9:1) and read
-  // terribly: on a treemap the ink is not decoration, it is the constant the
-  // eye tracks while the FILL carries the signal. Flipping it per tile made
-  // neighbouring names look like two different datasets and, on the saturated
-  // bins, like a rendering fault. Operator call, 2026-08-04: white everywhere.
-  //
-  // The trade is real and deliberate: white on the brightest bins sits at
-  // ~2.9:1 against the raw fill, under AA's 4.5:1. The halo below is what buys
-  // the legibility back. If the measured guarantee is wanted again, the fix is
-  // to DEEPEN those fills until white clears 4.5:1 — not to flip the ink.
-  var INK_WHITE = [255, 255, 255];
-  function fgFor(c) { return '#ffffff'; }
-  // Both kept as no-ops so the ~8 call sites keep their shape. The
-  // `.hm-ink-dark{text-shadow:none}` rule they fed is gone from injectStyle —
-  // there is no dark-ink tile left to strip the halo from.
-  function inkCls(c) { return ''; }
-  function inkDark(c) { return false; }
+  // Label ink: WHITE on every tile (operator directive 2026-08-05). The heatmap
+  // now reads as one consistent white-on-colour field — the Finviz/TradingView
+  // idiom — instead of flipping the brightest ±3% bins to near-black, which read
+  // as a jarring inversion against the otherwise-white labels. To keep labels
+  // legible under a blanket-white rule, the two saturated GREEN bins are deepened
+  // in binPalette (below) so white clears AA-large (3:1) on even the strongest
+  // tile; the red extremes already did (~4:1). The white-ink text-shadow halo is
+  // kept on EVERY tile now (no bin drops it), which carries the mid-tones.
+  // Supersedes the SI-V2-W3 dark-ink-on-bright crossover; relLum/contrast remain
+  // as general WCAG utilities used by the palette design.
+  function inkDark() { return false; }
+  function fgFor() { return '#ffffff'; }
+  function inkCls() { return ''; }
   function neutral() {
     // flat ~0% tile: a dark slate in both themes so the white label stays legible
     // (light mode used to be a pale grey that white text vanished on).
@@ -196,7 +186,9 @@
       P[3] = up; P[2] = mix(up, nu, 0.74); P[1] = mix(up, nu, 0.46);
       P[0.5] = mix(up, nu, 0.26); P[0] = nu; P[-0.5] = mix(dn, nu, 0.26);
       P[-1] = mix(dn, nu, 0.46); P[-2] = mix(dn, nu, 0.74); P[-3] = dn;
-      P.na = [150, 156, 166];
+      // no-data grey: deepened from [150,156,166] so the now-always-white label
+      // clears AA-large (2.76:1 → 4.1:1) on the white board too.
+      P.na = [120, 126, 137];
     } else {
       // deep, rich bins for the dark board; white labels throughout.
       P[3] = up; P[2] = mix(up, nu, 0.82); P[1] = mix(up, nu, 0.46);
@@ -1978,10 +1970,10 @@
       // --hm-frame is transparent in both themes: the treemap frame + inter-tile
       // gaps + section-header strips inherit whatever panel the map sits in, so
       // there is no painted background box — just transparent gaps (operator ask).
-      + ':root{--hm-up-v:#14ad6c;--hm-dn-v:#e4435a;--hm-glass:color-mix(in srgb,var(--panel) 70%,transparent);--hm-edge:color-mix(in srgb,#ffffff 8%,var(--line));--hm-frame:transparent;}'
-      + 'html[data-theme="light"]{--hm-up-v:#1aa869;--hm-dn-v:#d83a48;--hm-glass:color-mix(in srgb,#ffffff 78%,transparent);--hm-edge:color-mix(in srgb,#0b1830 13%,var(--line));--hm-frame:transparent;}'
-      + 'html[data-lang="zh"]{--hm-up-v:#e4435a;--hm-dn-v:#14ad6c;}'
-      + 'html[data-theme="light"][data-lang="zh"]{--hm-up-v:#d83a48;--hm-dn-v:#1aa869;}'
+      + ':root{--hm-up-v:#0f9e5c;--hm-dn-v:#e4435a;--hm-glass:color-mix(in srgb,var(--panel) 70%,transparent);--hm-edge:color-mix(in srgb,#ffffff 8%,var(--line));--hm-frame:transparent;}'
+      + 'html[data-theme="light"]{--hm-up-v:#149a5e;--hm-dn-v:#d83a48;--hm-glass:color-mix(in srgb,#ffffff 78%,transparent);--hm-edge:color-mix(in srgb,#0b1830 13%,var(--line));--hm-frame:transparent;}'
+      + 'html[data-lang="zh"]{--hm-up-v:#e4435a;--hm-dn-v:#0f9e5c;}'
+      + 'html[data-theme="light"][data-lang="zh"]{--hm-up-v:#d83a48;--hm-dn-v:#149a5e;}'
       + '.hm-scope{font-family:Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;}'
       + '.hm-scope .up{color:var(--up);} .hm-scope .dn{color:var(--down);}'
       // control bar

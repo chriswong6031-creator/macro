@@ -367,7 +367,14 @@ def test_extension_gate_routes_overbought_buy_to_top_watch() -> None:
     assert lad["score"] <= 0, lad["score"]
     assert lad["entry"]["tag"] == "DON'T CHASE", lad["entry"]
     assert "chase" in lad["why"].lower() and "lagging" in lad["why"].lower()
-    assert "missed" in lad["entry"]["text"].lower()
+    # The reader-facing line must say the entry has passed and what to do now.
+    # Pinned on meaning, not phrasing: this text was cut from ~200 characters to
+    # ~80 on 2026-08-04 because the dossier hero truncates it at 160 and was
+    # printing it clipped mid-clause. The machine-facing tag above still reads
+    # DON'T CHASE, and `why` still carries the mechanics.
+    _txt = lad["entry"]["text"].lower()
+    assert "already" in _txt and "pullback" in _txt, lad["entry"]["text"]
+    assert len(lad["entry"]["text"]) <= 160, "hero truncates this at 160 chars"
 
 
 def test_extension_gate_fires_on_higher_tf_only() -> None:

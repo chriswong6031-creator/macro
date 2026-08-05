@@ -26,6 +26,10 @@ from engine.capital_structure.instrument_candidates import (
     compile_candidate_term_records,
     validate_candidate_term_structure,
 )
+from engine.capital_structure.source_ledger_io import (
+    read_source_ledger,
+    source_ledger_path,
+)
 from engine.capital_structure.source_store import build_source_stores
 from scripts.compile_capital_structure_document_terms import _source_reader_for_store
 
@@ -258,7 +262,7 @@ def compile_from_disk(
 ) -> dict[str, Any]:
     """Compile from a direct ledger after re-verifying its source authority."""
     root = root or _data_root()
-    manifest_path = root / "source_manifest.parquet"
+    manifest_path = source_ledger_path(root)
     source_path = root / "document_term_observations.parquet"
     target_path = root / "instrument_candidate_terms.parquet"
     if not source_path.exists():
@@ -272,7 +276,7 @@ def compile_from_disk(
     candidate_schema = _load_contract("capital_structure_instrument_candidate_term.schema.json")
     if not manifest_path.exists():
         raise ValueError("source-manifest ledger is required to verify document-term authority")
-    manifests = dataframe_records(pd.read_parquet(manifest_path))
+    manifests = read_source_ledger(manifest_path)
     direct_terms = _load_document_terms(source_path, direct_schema)
     existing = _load_existing_candidates(target_path, candidate_schema)
     store = source_store if source_store is not None else build_source_stores()
