@@ -1178,10 +1178,10 @@
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-02",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1345,8 +1345,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1367,8 +1367,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1433,8 +1433,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1488,8 +1488,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1532,8 +1532,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1554,8 +1554,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1576,8 +1576,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1598,8 +1598,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1620,8 +1620,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1708,8 +1708,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1730,8 +1730,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1772,10 +1772,10 @@
       "direction": -1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1805,10 +1805,10 @@
       "direction": -1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1849,10 +1849,10 @@
       "direction": -1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1862,8 +1862,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-28",
-      "n_sessions_in_tape": 3,
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 4,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1871,10 +1871,10 @@
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1933,9 +1933,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "KRMN",
+      "direction": -1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "KVYO",
       "direction": -1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "KVYO",
+      "direction": -1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -2676,8 +2698,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-28",
-      "n_sessions_in_tape": 4,
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 5,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2709,8 +2731,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-28",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2721,6 +2743,17 @@
       "strength_slope": null,
       "state": "gone",
       "last_as_of": "2026-07-27",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "C",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-28",
       "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
     },
@@ -2751,10 +2784,10 @@
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-28",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2770,6 +2803,17 @@
     },
     {
       "subject": "T",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "TFC",
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
@@ -2791,9 +2835,42 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "ETN",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "PG",
       "direction": 1,
       "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "TDG",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "TENB",
+      "direction": 1,
+      "horizon": "5.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -2932,6 +3009,17 @@
       "last_as_of": "2026-08-02",
       "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "MCHP",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-03",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
     }
   ],
   "contradiction_pairs": [
@@ -2956,8 +3044,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-30",
-      "n_sessions_in_tape": 5
+      "last_as_of": "2026-08-04",
+      "n_sessions_in_tape": 6
     },
     {
       "pair_id": "regime-vs-market_state",
@@ -2976,9 +3064,9 @@
       "n_sessions_in_tape": 1
     }
   ],
-  "n_tape_rows": 514,
+  "n_tape_rows": 544,
   "gaps": [],
   "produced_by": "engine/neuralweb/confluence_sequence.py",
-  "produced_at": "2026-08-05T08:56:06Z",
+  "produced_at": "2026-08-05T15:58:59Z",
   "authority_check": []
 }

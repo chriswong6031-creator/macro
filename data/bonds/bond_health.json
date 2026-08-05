@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-08-04",
-    "built": "2026-08-05T07:52:43.749661+00:00",
+    "built": "2026-08-05T14:58:32.440819+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -713,7 +713,7 @@
     "display_only": true
   },
   "corporate_credit": {
-    "as_of": "2026-08-03",
+    "as_of": "2026-08-05",
     "authority": {
       "rank": false,
       "size": false,

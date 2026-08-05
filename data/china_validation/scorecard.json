@@ -1,7 +1,7 @@
 {
   "schema": "china_validation.v1",
   "is_context_only": true,
-  "generated_utc": "2026-08-05T10:13:40.512680+00:00",
+  "generated_utc": "2026-08-05T13:50:11.006068+00:00",
   "fdr_alpha": 0.1,
   "horizons": [
     5,
@@ -20,10 +20,10 @@
       "n_indep": 1,
       "by_horizon": {
         "5": {
-          "mean_ic": 0.2905,
-          "ic_ir": 1.009,
-          "t_hac": 3.398,
-          "p_hac": 0.0007,
+          "mean_ic": 0.295,
+          "ic_ir": 1.024,
+          "t_hac": 3.428,
+          "p_hac": 0.0006,
           "hit": 0.737,
           "n": 19,
           "n_weeks": 5,
@@ -32,14 +32,14 @@
           "hac_lags": 5,
           "overlap_ratio": 5.0,
           "incremental": {
-            "surviving_frac": 0.552,
-            "ic_delta": -0.1301
+            "surviving_frac": 0.541,
+            "ic_delta": -0.1353
           }
         },
         "10": {
-          "mean_ic": 0.411,
-          "ic_ir": 1.834,
-          "t_hac": 6.929,
+          "mean_ic": 0.4141,
+          "ic_ir": 1.864,
+          "t_hac": 6.923,
           "p_hac": 0.0,
           "hit": 0.909,
           "n": 11,
@@ -49,8 +49,8 @@
           "hac_lags": 10,
           "overlap_ratio": 10.0,
           "incremental": {
-            "surviving_frac": 0.623,
-            "ic_delta": -0.1549
+            "surviving_frac": 0.607,
+            "ic_delta": -0.1629
           }
         },
         "21": {
@@ -280,8 +280,8 @@
           "hac_lags": 5,
           "overlap_ratio": 5.0,
           "incremental": {
-            "surviving_frac": -0.899,
-            "ic_delta": 0.1333
+            "surviving_frac": -0.934,
+            "ic_delta": 0.1358
           }
         },
         "10": {
@@ -297,8 +297,8 @@
           "hac_lags": 10,
           "overlap_ratio": 10.0,
           "incremental": {
-            "surviving_frac": -3.191,
-            "ic_delta": 0.158
+            "surviving_frac": -3.188,
+            "ic_delta": 0.1579
           }
         },
         "21": {
@@ -314,8 +314,8 @@
           "hac_lags": 21,
           "overlap_ratio": 21.0,
           "incremental": {
-            "surviving_frac": -1.868,
-            "ic_delta": 0.1107
+            "surviving_frac": -1.938,
+            "ic_delta": 0.1134
           }
         },
         "63": {

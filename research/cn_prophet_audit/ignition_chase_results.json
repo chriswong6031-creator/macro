@@ -1,0 +1,1683 @@
+{
+  "meta": {
+    "generated_at": "2026-08-04T07:46Z",
+    "window_start": "2025-08-01",
+    "window_end": "2026-07-31",
+    "n_sessions_in_window": 241,
+    "horizons": [
+      10,
+      21
+    ],
+    "status": "IN-SAMPLE, MOTIVATING-ONLY — not a backtest, not a promotion",
+    "definitions": {
+      "limit_close": "close/prevclose-1 >= band AND close == high (band from engine.china_signals.board_type: 688/689/300/301 = 18.5%, else 9.5%)",
+      "chase_event": "limit_close OR (trailing-21d return >= +25% AND same-day return >= +3%), deduped to one per ticker per 5 sessions, keep-first",
+      "theme_state": "strongest QUALIFYING basket by rel20 (HOT rel20>=5 and breadth>=0.60; WARMING rel20>=0 and breadth>=0.50; both need >=5 covered members)",
+      "relay_position": "distinct OTHER members of the assigned basket with a limit-close in [d-2, d]: early<=1, mid 2-3, late>=4",
+      "outcome": "T+1 fill (open, else (H+L)/2), locked-limit T+1 excluded, exit at the horizon-th valid bar counting the fill bar as bar 1, excess vs 510300.SS over the same fill->exit window"
+    }
+  },
+  "coverage": {
+    "n_tickers": 1668,
+    "n_baskets_used": 257,
+    "n_basket_members": 1020,
+    "n_members_under_200_sessions_before_window": 26,
+    "n_chase_events": 8127,
+    "n_chase_matured_h10": 7816,
+    "n_chase_matured_h21": 7466,
+    "n_locked_t1_excluded": 68,
+    "theme_state_counts": {
+      "HOT": 3371,
+      "no_basket": 2853,
+      "none_unqualified": 1064,
+      "WARMING": 839
+    }
+  },
+  "tables": {
+    "A_theme_state": {
+      "HOT": {
+        "h10": {
+          "n": 3317,
+          "win_pct": 43.4,
+          "win_ci95": [
+            41.7,
+            45.1
+          ],
+          "median": -2.04,
+          "mean": 0.41,
+          "p10": -15.88,
+          "p90": 20.8,
+          "thin": false
+        },
+        "h21": {
+          "n": 3199,
+          "win_pct": 45.3,
+          "win_ci95": [
+            43.6,
+            47.0
+          ],
+          "median": -2.15,
+          "mean": 1.52,
+          "p10": -21.73,
+          "p90": 30.1,
+          "thin": false
+        }
+      },
+      "WARMING": {
+        "h10": {
+          "n": 805,
+          "win_pct": 47.0,
+          "win_ci95": [
+            43.5,
+            50.4
+          ],
+          "median": -1.35,
+          "mean": 1.11,
+          "p10": -15.71,
+          "p90": 20.56,
+          "thin": false
+        },
+        "h21": {
+          "n": 770,
+          "win_pct": 41.4,
+          "win_ci95": [
+            38.0,
+            44.9
+          ],
+          "median": -3.79,
+          "mean": 0.59,
+          "p10": -23.53,
+          "p90": 27.2,
+          "thin": false
+        }
+      },
+      "none_unqualified": {
+        "h10": {
+          "n": 968,
+          "win_pct": 45.1,
+          "win_ci95": [
+            42.0,
+            48.3
+          ],
+          "median": -1.56,
+          "mean": 0.74,
+          "p10": -17.15,
+          "p90": 22.21,
+          "thin": false
+        },
+        "h21": {
+          "n": 901,
+          "win_pct": 42.0,
+          "win_ci95": [
+            38.8,
+            45.2
+          ],
+          "median": -3.43,
+          "mean": 1.25,
+          "p10": -22.79,
+          "p90": 29.43,
+          "thin": false
+        }
+      },
+      "no_basket": {
+        "h10": {
+          "n": 2726,
+          "win_pct": 45.3,
+          "win_ci95": [
+            43.5,
+            47.2
+          ],
+          "median": -1.5,
+          "mean": 1.71,
+          "p10": -16.4,
+          "p90": 25.0,
+          "thin": false
+        },
+        "h21": {
+          "n": 2596,
+          "win_pct": 44.5,
+          "win_ci95": [
+            42.6,
+            46.4
+          ],
+          "median": -2.71,
+          "mean": 3.64,
+          "p10": -22.21,
+          "p90": 38.23,
+          "thin": false
+        }
+      },
+      "none_pooled(unqualified+no_basket)": {
+        "h10": {
+          "n": 3694,
+          "win_pct": 45.3,
+          "win_ci95": [
+            43.7,
+            46.9
+          ],
+          "median": -1.51,
+          "mean": 1.45,
+          "p10": -16.59,
+          "p90": 24.28,
+          "thin": false
+        },
+        "h21": {
+          "n": 3497,
+          "win_pct": 43.9,
+          "win_ci95": [
+            42.2,
+            45.5
+          ],
+          "median": -2.95,
+          "mean": 3.02,
+          "p10": -22.41,
+          "p90": 36.33,
+          "thin": false
+        }
+      },
+      "ALL": {
+        "h10": {
+          "n": 7816,
+          "win_pct": 44.7,
+          "win_ci95": [
+            43.6,
+            45.8
+          ],
+          "median": -1.72,
+          "mean": 0.98,
+          "p10": -16.24,
+          "p90": 22.37,
+          "thin": false
+        },
+        "h21": {
+          "n": 7466,
+          "win_pct": 44.2,
+          "win_ci95": [
+            43.1,
+            45.4
+          ],
+          "median": -2.64,
+          "mean": 2.13,
+          "p10": -22.19,
+          "p90": 32.42,
+          "thin": false
+        }
+      }
+    },
+    "B_theme_x_relay": {
+      "HOT|early": {
+        "h10": {
+          "n": 2023,
+          "win_pct": 44.9,
+          "win_ci95": [
+            42.8,
+            47.1
+          ],
+          "median": -1.38,
+          "mean": 1.15,
+          "p10": -14.51,
+          "p90": 20.93,
+          "thin": false
+        },
+        "h21": {
+          "n": 1945,
+          "win_pct": 48.0,
+          "win_ci95": [
+            45.8,
+            50.2
+          ],
+          "median": -0.96,
+          "mean": 2.95,
+          "p10": -19.39,
+          "p90": 30.3,
+          "thin": false
+        }
+      },
+      "HOT|mid": {
+        "h10": {
+          "n": 957,
+          "win_pct": 42.8,
+          "win_ci95": [
+            39.7,
+            46.0
+          ],
+          "median": -2.44,
+          "mean": -0.04,
+          "p10": -16.64,
+          "p90": 21.1,
+          "thin": false
+        },
+        "h21": {
+          "n": 923,
+          "win_pct": 44.3,
+          "win_ci95": [
+            41.1,
+            47.5
+          ],
+          "median": -2.85,
+          "mean": 0.59,
+          "p10": -23.32,
+          "p90": 30.31,
+          "thin": false
+        }
+      },
+      "HOT|late": {
+        "h10": {
+          "n": 337,
+          "win_pct": 35.9,
+          "win_ci95": [
+            31.0,
+            41.2
+          ],
+          "median": -5.54,
+          "mean": -2.72,
+          "p10": -21.17,
+          "p90": 19.45,
+          "thin": false
+        },
+        "h21": {
+          "n": 331,
+          "win_pct": 32.3,
+          "win_ci95": [
+            27.5,
+            37.5
+          ],
+          "median": -7.43,
+          "mean": -4.26,
+          "p10": -30.87,
+          "p90": 27.27,
+          "thin": false
+        }
+      },
+      "WARMING|early": {
+        "h10": {
+          "n": 591,
+          "win_pct": 50.6,
+          "win_ci95": [
+            46.6,
+            54.6
+          ],
+          "median": 0.25,
+          "mean": 2.0,
+          "p10": -14.89,
+          "p90": 20.64,
+          "thin": false
+        },
+        "h21": {
+          "n": 569,
+          "win_pct": 44.3,
+          "win_ci95": [
+            40.3,
+            48.4
+          ],
+          "median": -2.3,
+          "mean": 2.5,
+          "p10": -20.55,
+          "p90": 28.41,
+          "thin": false
+        }
+      },
+      "WARMING|mid": {
+        "h10": {
+          "n": 168,
+          "win_pct": 40.5,
+          "win_ci95": [
+            33.3,
+            48.0
+          ],
+          "median": -3.64,
+          "mean": -0.69,
+          "p10": -16.46,
+          "p90": 20.22,
+          "thin": false
+        },
+        "h21": {
+          "n": 156,
+          "win_pct": 38.5,
+          "win_ci95": [
+            31.2,
+            46.3
+          ],
+          "median": -5.18,
+          "mean": -2.67,
+          "p10": -27.18,
+          "p90": 25.07,
+          "thin": false
+        }
+      },
+      "WARMING|late": {
+        "h10": {
+          "n": 46,
+          "win_pct": 23.9,
+          "win_ci95": [
+            13.9,
+            37.9
+          ],
+          "median": -6.0,
+          "mean": -3.66,
+          "p10": -18.19,
+          "p90": 14.82,
+          "thin": false
+        },
+        "h21": {
+          "n": 45,
+          "win_pct": 15.6,
+          "win_ci95": [
+            7.7,
+            28.8
+          ],
+          "median": -13.84,
+          "mean": -12.22,
+          "p10": -36.68,
+          "p90": 6.03,
+          "thin": false
+        }
+      },
+      "none_unqualified|early": {
+        "h10": {
+          "n": 845,
+          "win_pct": 45.3,
+          "win_ci95": [
+            42.0,
+            48.7
+          ],
+          "median": -1.33,
+          "mean": 0.77,
+          "p10": -17.1,
+          "p90": 21.4,
+          "thin": false
+        },
+        "h21": {
+          "n": 791,
+          "win_pct": 41.6,
+          "win_ci95": [
+            38.2,
+            45.1
+          ],
+          "median": -3.43,
+          "mean": 1.26,
+          "p10": -22.79,
+          "p90": 29.93,
+          "thin": false
+        }
+      },
+      "none_unqualified|mid": {
+        "h10": {
+          "n": 100,
+          "win_pct": 40.0,
+          "win_ci95": [
+            30.9,
+            49.8
+          ],
+          "median": -3.76,
+          "mean": -0.61,
+          "p10": -16.9,
+          "p90": 22.02,
+          "thin": false
+        },
+        "h21": {
+          "n": 90,
+          "win_pct": 43.3,
+          "win_ci95": [
+            33.6,
+            53.6
+          ],
+          "median": -3.93,
+          "mean": 0.1,
+          "p10": -26.65,
+          "p90": 27.61,
+          "thin": false
+        }
+      },
+      "none_unqualified|late": {
+        "h10": {
+          "n": 23,
+          "win_pct": 60.9,
+          "win_ci95": [
+            40.8,
+            77.8
+          ],
+          "median": 6.62,
+          "mean": 5.37,
+          "p10": -26.11,
+          "p90": 32.12,
+          "thin": false
+        },
+        "h21": {
+          "n": 20,
+          "win_pct": 50.0,
+          "win_ci95": [
+            29.9,
+            70.1
+          ],
+          "median": 0.08,
+          "mean": 6.02,
+          "p10": -19.77,
+          "p90": 27.35,
+          "thin": false
+        }
+      },
+      "no_basket|na": {
+        "h10": {
+          "n": 2726,
+          "win_pct": 45.3,
+          "win_ci95": [
+            43.5,
+            47.2
+          ],
+          "median": -1.5,
+          "mean": 1.71,
+          "p10": -16.4,
+          "p90": 25.0,
+          "thin": false
+        },
+        "h21": {
+          "n": 2596,
+          "win_pct": 44.5,
+          "win_ci95": [
+            42.6,
+            46.4
+          ],
+          "median": -2.71,
+          "mean": 3.64,
+          "p10": -22.21,
+          "p90": 38.23,
+          "thin": false
+        }
+      },
+      "ANY_THEME|early": {
+        "h10": {
+          "n": 3459,
+          "win_pct": 46.0,
+          "win_ci95": [
+            44.3,
+            47.7
+          ],
+          "median": -1.17,
+          "mean": 1.2,
+          "p10": -14.99,
+          "p90": 21.01,
+          "thin": false
+        },
+        "h21": {
+          "n": 3305,
+          "win_pct": 45.8,
+          "win_ci95": [
+            44.1,
+            47.5
+          ],
+          "median": -1.81,
+          "mean": 2.47,
+          "p10": -20.23,
+          "p90": 29.98,
+          "thin": false
+        }
+      },
+      "ANY_THEME|mid": {
+        "h10": {
+          "n": 1225,
+          "win_pct": 42.3,
+          "win_ci95": [
+            39.5,
+            45.1
+          ],
+          "median": -2.61,
+          "mean": -0.18,
+          "p10": -16.68,
+          "p90": 21.45,
+          "thin": false
+        },
+        "h21": {
+          "n": 1169,
+          "win_pct": 43.5,
+          "win_ci95": [
+            40.6,
+            46.3
+          ],
+          "median": -3.4,
+          "mean": 0.12,
+          "p10": -24.05,
+          "p90": 29.76,
+          "thin": false
+        }
+      },
+      "ANY_THEME|late": {
+        "h10": {
+          "n": 406,
+          "win_pct": 36.0,
+          "win_ci95": [
+            31.4,
+            40.7
+          ],
+          "median": -5.32,
+          "mean": -2.37,
+          "p10": -20.98,
+          "p90": 20.05,
+          "thin": false
+        },
+        "h21": {
+          "n": 396,
+          "win_pct": 31.3,
+          "win_ci95": [
+            26.9,
+            36.0
+          ],
+          "median": -8.36,
+          "mean": -4.65,
+          "p10": -31.07,
+          "p90": 25.43,
+          "thin": false
+        }
+      }
+    },
+    "C_theme_x_washout": {
+      "HOT|deep_dd": {
+        "h10": {
+          "n": 104,
+          "win_pct": 36.5,
+          "win_ci95": [
+            27.9,
+            46.1
+          ],
+          "median": -4.48,
+          "mean": -3.02,
+          "p10": -17.64,
+          "p90": 15.32,
+          "thin": false
+        },
+        "h21": {
+          "n": 88,
+          "win_pct": 27.3,
+          "win_ci95": [
+            19.1,
+            37.4
+          ],
+          "median": -9.24,
+          "mean": -6.49,
+          "p10": -24.66,
+          "p90": 12.52,
+          "thin": false
+        }
+      },
+      "HOT|shallow_dd": {
+        "h10": {
+          "n": 3213,
+          "win_pct": 43.6,
+          "win_ci95": [
+            41.9,
+            45.4
+          ],
+          "median": -1.98,
+          "mean": 0.53,
+          "p10": -15.81,
+          "p90": 20.96,
+          "thin": false
+        },
+        "h21": {
+          "n": 3111,
+          "win_pct": 45.8,
+          "win_ci95": [
+            44.1,
+            47.6
+          ],
+          "median": -1.91,
+          "mean": 1.75,
+          "p10": -21.53,
+          "p90": 30.28,
+          "thin": false
+        }
+      },
+      "WARMING|deep_dd": {
+        "h10": {
+          "n": 60,
+          "win_pct": 41.7,
+          "win_ci95": [
+            30.1,
+            54.3
+          ],
+          "median": -2.88,
+          "mean": -2.69,
+          "p10": -16.48,
+          "p90": 11.23,
+          "thin": false
+        },
+        "h21": {
+          "n": 46,
+          "win_pct": 28.3,
+          "win_ci95": [
+            17.3,
+            42.5
+          ],
+          "median": -9.24,
+          "mean": -5.86,
+          "p10": -22.58,
+          "p90": 9.09,
+          "thin": false
+        }
+      },
+      "WARMING|shallow_dd": {
+        "h10": {
+          "n": 745,
+          "win_pct": 47.4,
+          "win_ci95": [
+            43.8,
+            51.0
+          ],
+          "median": -1.11,
+          "mean": 1.42,
+          "p10": -15.5,
+          "p90": 21.29,
+          "thin": false
+        },
+        "h21": {
+          "n": 724,
+          "win_pct": 42.3,
+          "win_ci95": [
+            38.7,
+            45.9
+          ],
+          "median": -3.57,
+          "mean": 1.0,
+          "p10": -23.64,
+          "p90": 28.05,
+          "thin": false
+        }
+      },
+      "none_unqualified|deep_dd": {
+        "h10": {
+          "n": 142,
+          "win_pct": 32.4,
+          "win_ci95": [
+            25.2,
+            40.5
+          ],
+          "median": -5.44,
+          "mean": -3.96,
+          "p10": -16.99,
+          "p90": 10.45,
+          "thin": false
+        },
+        "h21": {
+          "n": 115,
+          "win_pct": 31.3,
+          "win_ci95": [
+            23.5,
+            40.3
+          ],
+          "median": -8.3,
+          "mean": -4.38,
+          "p10": -22.79,
+          "p90": 19.17,
+          "thin": false
+        }
+      },
+      "none_unqualified|shallow_dd": {
+        "h10": {
+          "n": 826,
+          "win_pct": 47.3,
+          "win_ci95": [
+            44.0,
+            50.7
+          ],
+          "median": -0.88,
+          "mean": 1.54,
+          "p10": -17.25,
+          "p90": 23.36,
+          "thin": false
+        },
+        "h21": {
+          "n": 786,
+          "win_pct": 43.5,
+          "win_ci95": [
+            40.1,
+            47.0
+          ],
+          "median": -2.82,
+          "mean": 2.07,
+          "p10": -22.77,
+          "p90": 30.16,
+          "thin": false
+        }
+      },
+      "no_basket|deep_dd": {
+        "h10": {
+          "n": 215,
+          "win_pct": 37.7,
+          "win_ci95": [
+            31.5,
+            44.3
+          ],
+          "median": -4.0,
+          "mean": -2.57,
+          "p10": -17.47,
+          "p90": 12.25,
+          "thin": false
+        },
+        "h21": {
+          "n": 168,
+          "win_pct": 29.2,
+          "win_ci95": [
+            22.8,
+            36.4
+          ],
+          "median": -9.19,
+          "mean": -5.34,
+          "p10": -23.79,
+          "p90": 10.41,
+          "thin": false
+        }
+      },
+      "no_basket|shallow_dd": {
+        "h10": {
+          "n": 2511,
+          "win_pct": 46.0,
+          "win_ci95": [
+            44.1,
+            48.0
+          ],
+          "median": -1.22,
+          "mean": 2.07,
+          "p10": -16.34,
+          "p90": 25.48,
+          "thin": false
+        },
+        "h21": {
+          "n": 2428,
+          "win_pct": 45.6,
+          "win_ci95": [
+            43.6,
+            47.6
+          ],
+          "median": -2.03,
+          "mean": 4.26,
+          "p10": -22.14,
+          "p90": 39.41,
+          "thin": false
+        }
+      }
+    },
+    "D_blanket_veto": {
+      "all_chase_events_pooled": {
+        "h10": {
+          "n": 7816,
+          "win_pct": 44.7,
+          "win_ci95": [
+            43.6,
+            45.8
+          ],
+          "median": -1.72,
+          "mean": 0.98,
+          "p10": -16.24,
+          "p90": 22.37,
+          "thin": false
+        },
+        "h21": {
+          "n": 7466,
+          "win_pct": 44.2,
+          "win_ci95": [
+            43.1,
+            45.4
+          ],
+          "median": -2.64,
+          "mean": 2.13,
+          "p10": -22.19,
+          "p90": 32.42,
+          "thin": false
+        }
+      },
+      "limit_close_leg_only": {
+        "h10": {
+          "n": 3262,
+          "win_pct": 42.2,
+          "win_ci95": [
+            40.6,
+            43.9
+          ],
+          "median": -2.44,
+          "mean": 0.15,
+          "p10": -16.07,
+          "p90": 19.85,
+          "thin": false
+        },
+        "h21": {
+          "n": 3096,
+          "win_pct": 39.5,
+          "win_ci95": [
+            37.8,
+            41.3
+          ],
+          "median": -4.7,
+          "mean": -0.25,
+          "p10": -22.88,
+          "p90": 26.69,
+          "thin": false
+        }
+      },
+      "trail21_leg_only": {
+        "h10": {
+          "n": 4554,
+          "win_pct": 46.4,
+          "win_ci95": [
+            45.0,
+            47.8
+          ],
+          "median": -1.21,
+          "mean": 1.57,
+          "p10": -16.38,
+          "p90": 23.98,
+          "thin": false
+        },
+        "h21": {
+          "n": 4370,
+          "win_pct": 47.6,
+          "win_ci95": [
+            46.1,
+            49.0
+          ],
+          "median": -1.17,
+          "mean": 3.81,
+          "p10": -21.76,
+          "p90": 35.76,
+          "thin": false
+        }
+      },
+      "universe_cell_baseline": {
+        "h10": {
+          "n": 382333,
+          "win_pct": 43.9,
+          "win_ci95": [
+            43.8,
+            44.1
+          ],
+          "median": -1.04,
+          "mean": 0.25,
+          "p10": -10.1,
+          "p90": 11.64,
+          "thin": false
+        },
+        "h21": {
+          "n": 364021,
+          "win_pct": 42.3,
+          "win_ci95": [
+            42.2,
+            42.5
+          ],
+          "median": -2.05,
+          "mean": 0.7,
+          "p10": -14.55,
+          "p90": 18.34,
+          "thin": false
+        }
+      },
+      "locked_t1_excluded": 68
+    },
+    "E_ignition_lead": {
+      "n_ignition_transitions": 3459,
+      "basket_forward_excess_after_ignition": {
+        "h10": {
+          "n": 3391,
+          "win_pct": 58.0,
+          "win_ci95": [
+            56.3,
+            59.7
+          ],
+          "median": 1.25,
+          "mean": 1.38,
+          "p10": -6.46,
+          "p90": 9.1,
+          "thin": false
+        },
+        "h21": {
+          "n": 3315,
+          "win_pct": 54.1,
+          "win_ci95": [
+            52.4,
+            55.8
+          ],
+          "median": 0.89,
+          "mean": 1.62,
+          "p10": -10.15,
+          "p90": 14.99,
+          "thin": false
+        }
+      },
+      "basket_forward_excess_all_cells_control": {
+        "h10": {
+          "n": 59624,
+          "win_pct": 52.4,
+          "win_ci95": [
+            52.0,
+            52.8
+          ],
+          "median": 0.33,
+          "mean": 0.6,
+          "p10": -6.47,
+          "p90": 8.24,
+          "thin": false
+        },
+        "h21": {
+          "n": 56797,
+          "win_pct": 53.4,
+          "win_ci95": [
+            53.0,
+            53.8
+          ],
+          "median": 0.65,
+          "mean": 1.44,
+          "p10": -8.58,
+          "p90": 12.83,
+          "thin": false
+        }
+      },
+      "member_fresh_admissions_after_ignition": {
+        "h10": {
+          "n": 3564,
+          "win_pct": 44.3,
+          "win_ci95": [
+            42.7,
+            45.9
+          ],
+          "median": -1.46,
+          "mean": 0.04,
+          "p10": -13.56,
+          "p90": 14.53,
+          "thin": false
+        },
+        "h21": {
+          "n": 3352,
+          "win_pct": 42.9,
+          "win_ci95": [
+            41.2,
+            44.6
+          ],
+          "median": -2.72,
+          "mean": -0.1,
+          "p10": -19.28,
+          "p90": 21.84,
+          "thin": false
+        }
+      },
+      "all_admission_like_events_baseline": {
+        "h10": {
+          "n": 9547,
+          "win_pct": 45.3,
+          "win_ci95": [
+            44.3,
+            46.3
+          ],
+          "median": -1.06,
+          "mean": 0.35,
+          "p10": -12.56,
+          "p90": 14.44,
+          "thin": false
+        },
+        "h21": {
+          "n": 8834,
+          "win_pct": 42.7,
+          "win_ci95": [
+            41.7,
+            43.8
+          ],
+          "median": -2.61,
+          "mean": 0.24,
+          "p10": -18.34,
+          "p90": 20.69,
+          "thin": false
+        }
+      },
+      "chase_in_HOT_rising_slope5": {
+        "h10": {
+          "n": 2636,
+          "win_pct": 43.7,
+          "win_ci95": [
+            41.8,
+            45.6
+          ],
+          "median": -1.97,
+          "mean": 0.48,
+          "p10": -15.88,
+          "p90": 20.69,
+          "thin": false
+        },
+        "h21": {
+          "n": 2567,
+          "win_pct": 44.5,
+          "win_ci95": [
+            42.6,
+            46.5
+          ],
+          "median": -2.3,
+          "mean": 1.37,
+          "p10": -21.88,
+          "p90": 30.33,
+          "thin": false
+        }
+      },
+      "chase_in_HOT_fading_slope5": {
+        "h10": {
+          "n": 681,
+          "win_pct": 42.3,
+          "win_ci95": [
+            38.6,
+            46.0
+          ],
+          "median": -2.42,
+          "mean": 0.14,
+          "p10": -15.84,
+          "p90": 21.2,
+          "thin": false
+        },
+        "h21": {
+          "n": 632,
+          "win_pct": 48.4,
+          "win_ci95": [
+            44.5,
+            52.3
+          ],
+          "median": -0.9,
+          "mean": 2.14,
+          "p10": -20.52,
+          "p90": 27.89,
+          "thin": false
+        }
+      },
+      "n_member_events": 3795,
+      "n_all_admission_events": 10304
+    },
+    "F_halves": {
+      "halves": {
+        "H1_2025_08_2026_01": {
+          "HOT": {
+            "h10": {
+              "n": 1878,
+              "win_pct": 42.3,
+              "win_ci95": [
+                40.1,
+                44.6
+              ],
+              "median": -2.25,
+              "mean": 1.03,
+              "p10": -13.78,
+              "p90": 20.26,
+              "thin": false
+            },
+            "h21": {
+              "n": 1878,
+              "win_pct": 46.3,
+              "win_ci95": [
+                44.1,
+                48.6
+              ],
+              "median": -1.67,
+              "mean": 2.9,
+              "p10": -17.44,
+              "p90": 28.81,
+              "thin": false
+            }
+          },
+          "WARMING": {
+            "h10": {
+              "n": 386,
+              "win_pct": 49.2,
+              "win_ci95": [
+                44.3,
+                54.2
+              ],
+              "median": -0.34,
+              "mean": 2.51,
+              "p10": -11.46,
+              "p90": 20.86,
+              "thin": false
+            },
+            "h21": {
+              "n": 386,
+              "win_pct": 43.3,
+              "win_ci95": [
+                38.4,
+                48.2
+              ],
+              "median": -2.63,
+              "mean": 2.54,
+              "p10": -17.18,
+              "p90": 24.61,
+              "thin": false
+            }
+          },
+          "none_unqualified": {
+            "h10": {
+              "n": 318,
+              "win_pct": 43.7,
+              "win_ci95": [
+                38.4,
+                49.2
+              ],
+              "median": -1.78,
+              "mean": 0.52,
+              "p10": -13.35,
+              "p90": 17.07,
+              "thin": false
+            },
+            "h21": {
+              "n": 318,
+              "win_pct": 40.3,
+              "win_ci95": [
+                35.0,
+                45.7
+              ],
+              "median": -4.13,
+              "mean": 0.98,
+              "p10": -17.99,
+              "p90": 24.85,
+              "thin": false
+            }
+          },
+          "no_basket": {
+            "h10": {
+              "n": 1229,
+              "win_pct": 41.7,
+              "win_ci95": [
+                38.9,
+                44.4
+              ],
+              "median": -2.38,
+              "mean": 0.86,
+              "p10": -14.0,
+              "p90": 20.25,
+              "thin": false
+            },
+            "h21": {
+              "n": 1229,
+              "win_pct": 42.8,
+              "win_ci95": [
+                40.1,
+                45.6
+              ],
+              "median": -2.67,
+              "mean": 1.87,
+              "p10": -17.72,
+              "p90": 25.37,
+              "thin": false
+            }
+          }
+        },
+        "H2_2026_02_2026_07": {
+          "HOT": {
+            "h10": {
+              "n": 1439,
+              "win_pct": 44.8,
+              "win_ci95": [
+                42.3,
+                47.4
+              ],
+              "median": -1.79,
+              "mean": -0.39,
+              "p10": -19.79,
+              "p90": 20.98,
+              "thin": false
+            },
+            "h21": {
+              "n": 1321,
+              "win_pct": 43.8,
+              "win_ci95": [
+                41.2,
+                46.5
+              ],
+              "median": -3.14,
+              "mean": -0.43,
+              "p10": -27.64,
+              "p90": 32.51,
+              "thin": false
+            }
+          },
+          "WARMING": {
+            "h10": {
+              "n": 419,
+              "win_pct": 44.9,
+              "win_ci95": [
+                40.2,
+                49.7
+              ],
+              "median": -1.82,
+              "mean": -0.18,
+              "p10": -17.66,
+              "p90": 20.48,
+              "thin": false
+            },
+            "h21": {
+              "n": 384,
+              "win_pct": 39.6,
+              "win_ci95": [
+                34.8,
+                44.6
+              ],
+              "median": -6.46,
+              "mean": -1.37,
+              "p10": -27.62,
+              "p90": 29.19,
+              "thin": false
+            }
+          },
+          "none_unqualified": {
+            "h10": {
+              "n": 650,
+              "win_pct": 45.8,
+              "win_ci95": [
+                42.1,
+                49.7
+              ],
+              "median": -1.3,
+              "mean": 0.84,
+              "p10": -19.41,
+              "p90": 23.61,
+              "thin": false
+            },
+            "h21": {
+              "n": 583,
+              "win_pct": 42.9,
+              "win_ci95": [
+                38.9,
+                46.9
+              ],
+              "median": -3.05,
+              "mean": 1.39,
+              "p10": -25.58,
+              "p90": 30.95,
+              "thin": false
+            }
+          },
+          "no_basket": {
+            "h10": {
+              "n": 1497,
+              "win_pct": 48.4,
+              "win_ci95": [
+                45.8,
+                50.9
+              ],
+              "median": -0.66,
+              "mean": 2.4,
+              "p10": -19.57,
+              "p90": 27.33,
+              "thin": false
+            },
+            "h21": {
+              "n": 1367,
+              "win_pct": 46.1,
+              "win_ci95": [
+                43.5,
+                48.7
+              ],
+              "median": -2.94,
+              "mean": 5.23,
+              "p10": -27.11,
+              "p90": 47.88,
+              "thin": false
+            }
+          }
+        }
+      },
+      "sign_flips": [],
+      "curated_only_theme_assignment": {
+        "HOT": {
+          "h10": {
+            "n": 755,
+            "win_pct": 47.9,
+            "win_ci95": [
+              44.4,
+              51.5
+            ],
+            "median": -0.71,
+            "mean": 2.11,
+            "p10": -13.42,
+            "p90": 21.92,
+            "thin": false
+          },
+          "h21": {
+            "n": 719,
+            "win_pct": 50.3,
+            "win_ci95": [
+              46.7,
+              54.0
+            ],
+            "median": 0.05,
+            "mean": 3.6,
+            "p10": -17.64,
+            "p90": 29.72,
+            "thin": false
+          }
+        },
+        "WARMING": {
+          "h10": {
+            "n": 134,
+            "win_pct": 36.6,
+            "win_ci95": [
+              28.9,
+              45.0
+            ],
+            "median": -3.35,
+            "mean": -1.61,
+            "p10": -16.53,
+            "p90": 15.3,
+            "thin": false
+          },
+          "h21": {
+            "n": 127,
+            "win_pct": 39.4,
+            "win_ci95": [
+              31.3,
+              48.1
+            ],
+            "median": -6.19,
+            "mean": -0.1,
+            "p10": -21.08,
+            "p90": 32.18,
+            "thin": false
+          }
+        },
+        "none_unqualified": {
+          "h10": {
+            "n": 215,
+            "win_pct": 45.1,
+            "win_ci95": [
+              38.6,
+              51.8
+            ],
+            "median": -1.69,
+            "mean": 0.2,
+            "p10": -13.91,
+            "p90": 17.85,
+            "thin": false
+          },
+          "h21": {
+            "n": 194,
+            "win_pct": 43.3,
+            "win_ci95": [
+              36.5,
+              50.3
+            ],
+            "median": -2.95,
+            "mean": 1.04,
+            "p10": -17.84,
+            "p90": 25.41,
+            "thin": false
+          }
+        },
+        "no_basket": {
+          "h10": {
+            "n": 6712,
+            "win_pct": 44.4,
+            "win_ci95": [
+              43.3,
+              45.6
+            ],
+            "median": -1.8,
+            "mean": 0.93,
+            "p10": -16.51,
+            "p90": 22.98,
+            "thin": false
+          },
+          "h21": {
+            "n": 6426,
+            "win_pct": 43.7,
+            "win_ci95": [
+              42.5,
+              44.9
+            ],
+            "median": -2.91,
+            "mean": 2.04,
+            "p10": -22.73,
+            "p90": 32.8,
+            "thin": false
+          }
+        },
+        "none_pooled(unqualified+no_basket)": {
+          "h10": {
+            "n": 6927,
+            "win_pct": 44.5,
+            "win_ci95": [
+              43.3,
+              45.6
+            ],
+            "median": -1.79,
+            "mean": 0.9,
+            "p10": -16.47,
+            "p90": 22.66,
+            "thin": false
+          },
+          "h21": {
+            "n": 6620,
+            "win_pct": 43.7,
+            "win_ci95": [
+              42.5,
+              44.9
+            ],
+            "median": -2.91,
+            "mean": 2.01,
+            "p10": -22.49,
+            "p90": 32.54,
+            "thin": false
+          }
+        },
+        "ALL": {
+          "h10": {
+            "n": 7816,
+            "win_pct": 44.7,
+            "win_ci95": [
+              43.6,
+              45.8
+            ],
+            "median": -1.72,
+            "mean": 0.98,
+            "p10": -16.24,
+            "p90": 22.37,
+            "thin": false
+          },
+          "h21": {
+            "n": 7466,
+            "win_pct": 44.2,
+            "win_ci95": [
+              43.1,
+              45.4
+            ],
+            "median": -2.64,
+            "mean": 2.13,
+            "p10": -22.19,
+            "p90": 32.42,
+            "thin": false
+          }
+        }
+      }
+    }
+  },
+  "caveats": [
+    "**Membership lookahead (the big one).** `data/baskets_china_ths/membership.json` is byte-identical to the 2026-07-08 THS snapshot and carries no `removed` rows and no in-window `added` dates: it is TODAY's composition applied backward for twelve months. The only two point-in-time snapshots in the repo are 8 calendar days apart and already differ by 7.7% of member-slots once both are filtered to the price cache, so a 12-month backward application is a material and unquantified composition bias. Its direction is knowable even if its size is not: a name sits in the 2026 concept board partly BECAUSE it moved with that theme, so every HOT/WARMING cell is flattered and every no-theme cell is the residue. The curated-only pass in table F is the closest available control, not a fix.",
+    "**A chase event helps cause its own theme's HOT tag.** rel20 and breadth are computed over ALL covered members INCLUDING the event name (production's definition, kept deliberately). The median basket here holds 13 covered members, so one member closing limit-up moves its own basket's 20d EW return by roughly 1.5pp single-handedly, and the same close puts that member above its own 20d MA in the breadth count. Part of 'this chase event sat in a HOT theme' is therefore mechanical rather than contextual, which is one plausible reason the theme axis in table A separates nothing. The relay count in table B does NOT have this problem — it excludes the event name by construction.",
+    "**Young names.** 26 of 1020 basket members have under 200 sessions of price history before the window opens, so their early-window breadth and rel20 contributions rest on short series.",
+    "**Overlapping windows.** Events cluster on the same dates and inside the same themes; a 10-session forward window overlaps the next event's. The printed n counts events, not independent observations. Treat every median as descriptive.",
+    "**No CI theater.** The only interval reported is a Wilson interval on win%, which is a binomial statement and still ignores the overlap above. No p-values, no bootstrap on medians, no significance claim anywhere.",
+    "**In-sample.** Thresholds (18.5%/9.5% band, +25%/+3% chase leg, rel20 5/0, breadth 0.60/0.50, relay 1/4, dd -25%) were fixed BEFORE this run from production and from the V1 audit, not fitted here — but the window, the cohorts, and the cuts were all chosen after seeing the V1 result. Nothing here is out-of-sample in the sense that matters.",
+    "**Horizon maturation.** Events late in the window cannot mature: an H=21 outcome needs 21 further sessions and the price store ends 2026-08-03. H=21 cells are therefore built on an earlier, smaller slice of the window than H=10 cells — they are not the same cohort re-measured.",
+    "**Survivorship.** `data/china_stocks` is the live price cache; names delisted before it was built are absent from both the universe and every basket.",
+    "**Theme assignment is coarse.** A name in several baskets is assigned the single strongest qualifying one by rel20 (production's rule). Multi-theme names therefore contribute to exactly one cell, and the choice is made with same-day data only."
+  ],
+  "verdicts": {
+    "q1_chase_x_theme_replicates": "DOES NOT REPLICATE",
+    "q1_evidence": {
+      "hot_h10": {
+        "n": 3317,
+        "win_pct": 43.4,
+        "win_ci95": [
+          41.7,
+          45.1
+        ],
+        "median": -2.04,
+        "mean": 0.41,
+        "p10": -15.88,
+        "p90": 20.8,
+        "thin": false
+      },
+      "none_pooled_h10": {
+        "n": 3694,
+        "win_pct": 45.3,
+        "win_ci95": [
+          43.7,
+          46.9
+        ],
+        "median": -1.51,
+        "mean": 1.45,
+        "p10": -16.59,
+        "p90": 24.28,
+        "thin": false
+      },
+      "gap_pp": -0.53,
+      "half_gaps_pp": [
+        0.01,
+        -0.91
+      ],
+      "stable_across_halves": false,
+      "half_labels": [
+        "H1_2025_08_2026_01",
+        "H2_2026_02_2026_07"
+      ]
+    },
+    "q2_ignition_leads": "PARTIAL (one leg only)",
+    "q2_evidence": {
+      "basket_after_ignition_h10": {
+        "n": 3391,
+        "win_pct": 58.0,
+        "win_ci95": [
+          56.3,
+          59.7
+        ],
+        "median": 1.25,
+        "mean": 1.38,
+        "p10": -6.46,
+        "p90": 9.1,
+        "thin": false
+      },
+      "basket_control_h10": {
+        "n": 59624,
+        "win_pct": 52.4,
+        "win_ci95": [
+          52.0,
+          52.8
+        ],
+        "median": 0.33,
+        "mean": 0.6,
+        "p10": -6.47,
+        "p90": 8.24,
+        "thin": false
+      },
+      "member_fresh_h10": {
+        "n": 3564,
+        "win_pct": 44.3,
+        "win_ci95": [
+          42.7,
+          45.9
+        ],
+        "median": -1.46,
+        "mean": 0.04,
+        "p10": -13.56,
+        "p90": 14.53,
+        "thin": false
+      },
+      "all_admission_baseline_h10": {
+        "n": 9547,
+        "win_pct": 45.3,
+        "win_ci95": [
+          44.3,
+          46.3
+        ],
+        "median": -1.06,
+        "mean": 0.35,
+        "p10": -12.56,
+        "p90": 14.44,
+        "thin": false
+      }
+    },
+    "q3_blanket_veto": "MIXED — the chase cohort is worse on median but better on mean/win_pct; no blanket verdict is honest",
+    "q3_evidence": {
+      "all_chase_pooled_h10": {
+        "n": 7816,
+        "win_pct": 44.7,
+        "win_ci95": [
+          43.6,
+          45.8
+        ],
+        "median": -1.72,
+        "mean": 0.98,
+        "p10": -16.24,
+        "p90": 22.37,
+        "thin": false
+      },
+      "universe_baseline_h10": {
+        "n": 382333,
+        "win_pct": 43.9,
+        "win_ci95": [
+          43.8,
+          44.1
+        ],
+        "median": -1.04,
+        "mean": 0.25,
+        "p10": -10.1,
+        "p90": 11.64,
+        "thin": false
+      },
+      "veto_better_on": {
+        "median": true,
+        "mean": false,
+        "win_pct": false
+      }
+    },
+    "q4_relay_ladder": "MONOTONE early > mid > late",
+    "q4_evidence": {
+      "early": {
+        "n": 3459,
+        "win_pct": 46.0,
+        "win_ci95": [
+          44.3,
+          47.7
+        ],
+        "median": -1.17,
+        "mean": 1.2,
+        "p10": -14.99,
+        "p90": 21.01,
+        "thin": false
+      },
+      "mid": {
+        "n": 1225,
+        "win_pct": 42.3,
+        "win_ci95": [
+          39.5,
+          45.1
+        ],
+        "median": -2.61,
+        "mean": -0.18,
+        "p10": -16.68,
+        "p90": 21.45,
+        "thin": false
+      },
+      "late": {
+        "n": 406,
+        "win_pct": 36.0,
+        "win_ci95": [
+          31.4,
+          40.7
+        ],
+        "median": -5.32,
+        "mean": -2.37,
+        "p10": -20.98,
+        "p90": 20.05,
+        "thin": false
+      }
+    },
+    "above_water_name_level_cells_n_ge_100_h10": [
+      {
+        "table": "B",
+        "cell": "WARMING|early",
+        "n": 591,
+        "median": 0.25,
+        "win_pct": 50.6
+      }
+    ]
+  }
+}
