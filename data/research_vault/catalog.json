@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T22:26:19.991680+00:00",
-  "count": 831,
+  "generated_at": "2026-08-05T22:34:44.449743+00:00",
+  "count": 832,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -230,6 +230,27 @@
         "**Pharma Catalysts**: Nubeqa Ph3 ARATEST-PC trial (completion July 2027) and Kerendia Ph3 RDEFINE-HF trial (completion Nov 2027) underpin near-term growth momentum.",
         "**Growth Momentum**: Projected 41.4% EBIT growth for 12/28E (Growth & Margins), with GSe estimates 3-9% ahead on EBITDA vs.",
         "consensus for FY28-30."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gomginq62xf-cdab0e",
+      "title": "Wayfair Inc. (W) Q2'26 Review Strong Revenue Momentum Across US & Luxury Category As Industry Share Gains Sustain",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:07:09Z",
+      "summary_points": [
+        "**Valuation Risk**: FCF yield drops to 2.5% (12/26E) from 4.0% (12/25), EV/EBITDA surges to 21.9x (12/26E), signaling overvaluation amid slowing revenue growth (6.9% → 5.9% in 12/27E).",
+        "**Margin Strategy**: Management prioritizes fixed-cost leverage, offsetting gross margin investments with customer acquisition efficiencies, enabling clear EBITDA margin expansion path via 2028 convertible note repurchases.",
+        "**Key Risks**: Gross margins expected to stay at lower end of Q3 range (29.5%-30.5%) due to strategic investments; international markets (Canada/UK) pressured by weaker discretionary spending vs.",
+        "US macro improvements.",
+        "**Q2 Performance & Guidance**: Revenue/EBITDA beat estimates (+9% US revenue YoY), active customers +3% YoY, margins held at ~15%; Q3 guidance implies momentum with 2026 revenue raised to $13.32bn (vs."
       ],
       "tags": [],
       "tickers": [],
