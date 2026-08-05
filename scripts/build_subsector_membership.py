@@ -47,7 +47,10 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-MIN_BARS = 220          # the confluence cascade needs >= 220 daily bars (== engine score_group)
+MIN_BARS = 220          # this lane's own floor, == engine score_group. Deliberately ABOVE
+                        # confluence_tiers.MIN_HISTORY (measured warmup max, 159 since
+                        # 2026-08-05): a synthetic index with a churning membership is held
+                        # to a stricter bar than a single name. Not a cascade restatement.
 MIN_PRICED = 3          # a chartable EW index needs a few priced members (== engine MIN_MEMBERS)
 MIN_PRICED_RUT = 5      # Russell small-caps are noisier — demand a few more for a stable index
 MIN_BULK_CORR = 0.50    # a bulk-out peer must track the core basket's daily returns this closely

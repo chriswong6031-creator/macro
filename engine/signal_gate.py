@@ -95,7 +95,7 @@ def is_buyable(v: dict | None) -> bool:
 _VERDICT_KEYS = ("eligible", "tier", "sub", "reason", "state", "above200",
                  "weekly_bull", "early_now", "asof", "last",
                  "tier_cascade", "weight", "tier_sub", "bars_to_cross", "fresh_bars", "ticks",
-                 "provisional", "htf_s1", "htf_s2")
+                 "provisional", "htf_s1", "htf_s2", "young_history", "history_bars")
 
 
 def _bars_since(daily_close, marker) -> int | None:
@@ -232,6 +232,21 @@ def gate(ticker: str, daily_close, *, reclaim_veto: bool = True) -> dict:
     _htf = casc.get("htf") or {}
     v["htf_s1"] = bool(_htf.get("s1", False))
     v["htf_s2"] = bool(_htf.get("s2", False))
+    # ── warmup disclosure (2026-08-05 measured-floor change) ──────────────────────────────
+    # young_history is the GRADED-COHORT LABEL: True = the name tiered on fewer daily bars
+    # than the pre-change 200-bar floor, so the ledger can forever separate the pre/post
+    # populations. Carried on every verdict, eligible or not.
+    v["young_history"] = bool(casc.get("young_history"))
+    v["history_bars"] = casc.get("bars")
+    v["null_legs"] = casc.get("null_legs") or {}
+    # above200 HEALING, not widening. signal_quality.analyze needs ~270 daily bars, so it
+    # returns None for a name the cascade can now grade — leaving above200 None on a series
+    # whose 200dMA IS computable. Every consumer tests `is True`, so that None reads exactly
+    # like False and the name silently leaves every lane (the PLTR narration gap, one layer
+    # deeper). Fill ONLY from the cascade's own measurement and ONLY when the primary source
+    # produced nothing; a genuinely unknowable 200dMA stays None and is named in null_legs.
+    if v.get("above200") is None and casc.get("above200") is not None:
+        v["above200"] = bool(casc.get("above200"))
     if tier_c and not v.get("eligible"):      # T2/T4 (or a fresh re-trigger) extend eligibility
         v.update(eligible=True, reason=f"tier {tier_c} (weight {v['weight']})")
     v["result"] = res
@@ -307,13 +322,14 @@ def compact(v: dict | None) -> dict:
 # payload ("last"/"state"/...) — those can carry NaN, and the boards only need the tier +
 # freshness — so it is safe to persist with allow_nan=False. is_buyable() reads from this.
 _BUY_KEYS = ("eligible", "tier_cascade", "tier_sub", "ticks", "bars_to_cross", "provisional",
-             "htf_s1", "htf_s2")
+             "htf_s1", "htf_s2", "young_history")
 
 
 def buy_signal(v: dict | None) -> dict:
     """Slim, JSON-safe buy verdict: confluence tier + freshness + HTF badges, no markers."""
     if not v:
-        return {"eligible": False, "tier_cascade": None, "htf_s1": False, "htf_s2": False}
+        return {"eligible": False, "tier_cascade": None, "htf_s1": False, "htf_s2": False,
+                "young_history": False}
     return {k: v.get(k) for k in _BUY_KEYS}
 
 

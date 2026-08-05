@@ -2845,12 +2845,18 @@ def main() -> int:
                 "not_topped": bool(_sv.get("not_topped", True)),
                 "htf_s1": bool(_sv.get("htf_s1", False)),
                 "htf_s2": bool(_sv.get("htf_s2", False)),
+                # Graded-cohort label (measured-floor change 2026-08-05): True = this name
+                # tiered on fewer daily bars than the pre-change 200-bar floor. Stamped so
+                # the record can forever separate the pre/post-change populations.
+                "young_history": bool(_sv.get("young_history", False)),
+                "history_bars": _sv.get("history_bars"),
                 "asof": _sv.get("asof"),
             }
         except Exception:  # noqa: BLE001 — additive; never fatal
             rec["confluence"] = {"tier": None, "weight": None, "sub": None, "ticks": None,
                                  "bars_to_cross": None, "provisional": False,
                                  "not_topped": True, "htf_s1": False, "htf_s2": False,
+                                 "young_history": False, "history_bars": None,
                                  "asof": None}
         # ---- sniper pre-compute (frozen Terminal contract, 2026-07-06) -----------
         # Compute w2_washout/w2_stoch_d + days_since_63d_low here (close is in scope).
