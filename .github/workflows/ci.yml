@@ -2324,16 +2324,25 @@ on:
       - "scripts/check_nw_health_escalation.py"
       - "scripts/check_synapse_registry.py"
       # unrun-vector-baskets
+      - "tests/test_basket_turn_grading.py"
       - "tests/test_basket_turn_watch.py"
       - "tests/test_btc_deferred_legs.py"
       - "tests/test_btc_overrides.py"
       - "tests/test_btc_reentry.py"
       - "tests/test_build_basket_pulse.py"
+      - "tests/test_heal_basket_turn_ledger.py"
       - "tests/test_signal_surface_bugfixes.py"
       - "tests/test_spvector_page.py"
       - "tests/test_trial_log_refresh.py"
       - "tests/test_validation_effective_t.py"
       - "tests/test_vector_conviction.py"
+      # basket-turn session-stamp hygiene (forward-ledger audit 2026-08-05): the
+      # W9 grading pack's engines + heal were enumerated in NO workflow before
+      # this — a PR touching them fired no run that could see a failure.
+      - "engine/basket_turn_cohort.py"
+      - "engine/tape_disagreement.py"
+      - "scripts/build_basket_turn_grading.py"
+      - "scripts/heal_basket_turn_ledger.py"
       # unrun-picks-boards
       - "tests/test_b3_forex_consumer.py"
       - "tests/test_board_contradictions.py"

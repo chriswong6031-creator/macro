@@ -192,33 +192,49 @@ def stamp_ledger(
     watch_rows: list[dict],
     as_of: str | None = None,
     data_root: Path | None = None,
+    *,
+    data_session: str | None = None,
 ) -> int:
     """Append rows for baskets in WATCH/IGNITION (plus downgrades).
 
     Idempotent: keep-first per (date, basket_id). Gated by COLLECT_LANE=nightly (US_LANE alias accepted).
     Returns count of appended rows.
+
+    SESSION STAMP COMES FROM THE DATA PLANE (forward-ledger audit 2026-08-05,
+    #4568 pattern).  ``data_session`` is the newest bar the legs actually read;
+    it stamps both ``date`` and ``as_of``.  A run against a frozen store
+    therefore re-derives the session it already recorded and the keep-first
+    dedupe refuses it, instead of re-describing old tape under a fresh calendar
+    date — which defeated asof-keyed idempotency AND made the downstream
+    forward-return graders (basket_turn_cohort._cohort_ew_vs_spy,
+    tape_disagreement._basket_ew_vs_spy_return — both resolve the base close
+    FORWARD from the row date) grade from the wrong base.  ``as_of`` is the
+    caller's explicit override; wall-clock ``_session_date()`` is the
+    last-resort fallback only.
     """
     if not _ledger_advance_enabled():
         log.debug("basket_turn_watch.stamp_ledger: skipped (COLLECT_LANE != nightly)")
         return 0
     if not watch_rows:
         return 0
-    today_str = as_of or _session_date().isoformat()  # TS-R2: NYSE session date, not UTC wall-clock
+    # data plane > caller override > wall clock (last resort; TS-R2 NYSE session
+    # date, not UTC — still a clock read, so it is the fallback, never the default)
+    stamp = data_session or as_of or _session_date().isoformat()
     try:
         rows = load_ledger(data_root)
         existing = {(r.get("basket_id"), r.get("date")) for r in rows}
         appended = 0
         for w in watch_rows:
-            key = (w.get("basket_id"), today_str)
+            key = (w.get("basket_id"), stamp)
             if key in existing:
                 continue
             rows.append({
-                "date":         today_str,
+                "date":         stamp,
                 "basket_id":    w.get("basket_id"),
                 "state":        w.get("state"),
                 "k":            w.get("k"),
                 "legs":         w.get("legs", {}),
-                "as_of":        today_str,
+                "as_of":        stamp,
                 # FT-R9: no per-basket forward-return fields — grading unit is the
                 # catalyst-day cohort (co-firing baskets share members; per-event
                 # forward returns inflate N per DT-R14/ticker-cluster-time-confound).
@@ -984,6 +1000,25 @@ def _compute_inner(
             closes_map[tk] = df["close"].astype(float)
             price_data[tk] = df
 
+    # --- underlying session: the newest bar the legs actually read ---
+    # Forward-ledger audit 2026-08-05 (#4568 pattern): the ledger stamp must key
+    # off the data plane, not the calendar.  A run against a frozen store then
+    # re-derives the session it already logged and dedupes, instead of
+    # re-describing old tape under a fresh date.  The artifact's `as_of` field
+    # is untouched — that stays TS-R2 display semantics.
+    data_session: str | None = None
+    try:
+        _last_bars = []
+        for _s in closes_map.values():
+            _s = _s.dropna()          # one pass per series (render budget is law)
+            if len(_s):
+                _last_bars.append(_s.index.max())
+        if _last_bars:
+            data_session = str(pd.Timestamp(max(_last_bars)).date())
+    except Exception as _ex:  # noqa: BLE001 — stamp derivation is never fatal
+        log.debug("basket_turn_watch: data_session derivation failed: %s", _ex)
+        data_session = None
+
     spy_closes = closes_map.get("SPY")
     spy_ret: float | None = None
     if spy_closes is not None and len(spy_closes) >= 2:
@@ -1085,9 +1120,14 @@ def _compute_inner(
             log.debug("basket_turn_watch: basket %s failed: %s", bid, ex)
             continue
 
-    # Stamp forward ledger (US_LANE gate inside stamp_ledger)
+    # Stamp forward ledger (US_LANE gate inside stamp_ledger).
+    # data_session (the tape the legs read) is the stamp of record; as_of only
+    # survives as the fallback when no member frame was readable.
     try:
-        n = stamp_ledger(ledger_candidates, as_of=as_of, data_root=data_root)
+        n = stamp_ledger(
+            ledger_candidates, as_of=as_of, data_root=data_root,
+            data_session=data_session,
+        )
         if n:
             log.info("basket_turn_watch: stamped %d rows to ledger", n)
     except Exception as ex:  # noqa: BLE001
@@ -1146,6 +1186,10 @@ def _compute_inner(
     result: dict = {
         "schema": "basket_turn_watch.v1",
         "as_of": as_of,
+        # The tape the legs read (newest member bar).  Additive provenance
+        # field — mirrors ignition_radar.snapshot()'s data_session stamp.
+        # `as_of` above keeps its TS-R2 display meaning and is NOT derived here.
+        "data_session": data_session,
         "built": datetime.now(timezone.utc).isoformat(),
         "n_baskets": len(basket_states),
         "baskets": basket_states,
