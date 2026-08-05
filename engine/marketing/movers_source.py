@@ -54,9 +54,14 @@ and they are systematically one calendar day apart:
     (engine/sp500_heatmap.build_heatmap, ``closes_sorted.index[-1]``). That cache
     lags the live session, so at 21:25Z on 2026-07-30 the field read 2026-07-29
     while the tile 1D it labels had already been overlaid with the 07-30 tape.
-  * themes_heatmap.json `asof` = the finviz scrape's own capture date
-    (scripts/fetch_finviz_themes: ``datetime.now(timezone.utc)``) — the session
-    actually being read.
+  * themes_heatmap.json `asof` = the NYSE session the scrape's EOD numbers
+    describe (scripts/fetch_finviz_themes ``_asof_stamp()``, via
+    ``lib.nyse_calendar.session_date()`` since the #4584 calendar-asof heal: a
+    post-close weekday run stamps that weekday; a weekend/holiday run stamps
+    the last completed session) — the session actually being read. The
+    measurement below predates that heal but is undisturbed by it: on weekdays
+    the old ``datetime.now(timezone.utc)`` clock stamp and the session date
+    coincide.
 
 Measured over 14 consecutive commits (2026-07-30 13:34Z .. 2026-07-31 11:58Z)
 the sp500 stamp was EXACTLY one day behind the themes stamp on every single one,

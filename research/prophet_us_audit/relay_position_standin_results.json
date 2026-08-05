@@ -1,0 +1,45 @@
+{
+ "n_events": 14427,
+ "n_names": 310,
+ "date_range": [
+  "2023-10-25",
+  "2026-07-17"
+ ],
+ "H": 10,
+ "relay_win": 21,
+ "high_win": 63,
+ "first_mover_pos0": {
+  "n": 155,
+  "names": 89,
+  "median_excess_pp": 0.45,
+  "mean_excess_pp": 2.1,
+  "win_pct": 53.5,
+  "per_name_median_pp": 0.76
+ },
+ "early_le033": {
+  "n": 2997,
+  "names": 241,
+  "median_excess_pp": 0.49,
+  "mean_excess_pp": 0.9,
+  "win_pct": 53.7,
+  "per_name_median_pp": 0.02
+ },
+ "mid": {
+  "n": 5106,
+  "names": 303,
+  "median_excess_pp": 0.55,
+  "mean_excess_pp": 0.93,
+  "win_pct": 53.9,
+  "per_name_median_pp": 0.4
+ },
+ "late_ge067": {
+  "n": 6324,
+  "names": 295,
+  "median_excess_pp": 0.64,
+  "mean_excess_pp": 1.28,
+  "win_pct": 54.8,
+  "per_name_median_pp": -0.08
+ },
+ "delta_early_minus_late_first_half": -0.11,
+ "delta_early_minus_late_second_half": -0.43
+}

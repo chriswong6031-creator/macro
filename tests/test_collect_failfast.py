@@ -7,10 +7,12 @@ while still trying every series when the failures are merely dead series ids.
 """
 from __future__ import annotations
 
+import socket
 import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -24,6 +26,42 @@ from collectors.intl_macro import (  # noqa: E402
     _ABORT_AFTER_CONSECUTIVE_CONN_ERRORS as INTL_ABORT,
     IntlMacroAdapter,
 )
+from lib import config  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_no_network_no_data_writes(monkeypatch, tmp_path):
+    """Pin these breaker tests to their STUBS, never to the runner's uplink.
+
+    2026-08-04: ``test_intl_aborts_fast_when_host_unreachable`` was RED on a
+    pristine main on any NETWORKED machine, and clobbered a tracked file on
+    every run.  The tests stub only ``a._fetch_fred``, but
+    ``IntlMacroAdapter.fetch()`` grew a SECOND live leg in #4109 — the
+    ``official_series`` loop (``_fetch_official`` -> ``http_get`` -> live
+    ECB/Eurostat, 2 series in config.yml).  With connectivity those officials
+    RESOLVED, so ``frames`` was non-empty, the expected RuntimeError never
+    raised, and ``fetch()`` ran on into ``_write_provenance()`` against the REAL
+    ``data/intl_macro/provenance.json`` — rewriting 358 lines of committed
+    provenance down to the ~28 lines of whichever 2 series happened to resolve.
+    Offline, the identical test passed.  A verdict that depends on the runner's
+    network is not a test.
+
+    Two belts, because the per-test ``_fetch_official`` stubs below only close
+    the leg we know about today:
+      * socket-level block — any FUTURE unstubbed live leg fails LOUDLY right
+        here instead of silently inheriting the machine's connectivity;
+      * ``config.data_dir`` -> tmp_path — the conftest MM_DATA_GUARD idiom, so a
+        provenance write that ever does get reached physically lands outside the
+        repo.  Both collectors.intl_macro and collectors.base call
+        ``config.data_dir()`` through the module reference, so patching the
+        module attribute covers them at call time.
+    """
+    def _boom(*_a, **_k):
+        raise AssertionError("test attempted real network access")
+
+    monkeypatch.setattr(socket, "getaddrinfo", _boom)
+    monkeypatch.setattr(socket, "create_connection", _boom)
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
 
 
 def _intl_plan_len(a: IntlMacroAdapter) -> int:
@@ -51,7 +89,11 @@ def test_intl_aborts_fast_when_host_unreachable():
         calls["n"] += 1
         raise requests.exceptions.ConnectTimeout("Read timed out")
 
+    def official_down(_col, _spec):
+        raise requests.exceptions.ConnectTimeout("Read timed out")
+
     a._fetch_fred = conn_down
+    a._fetch_official = official_down
     try:
         a.fetch()
         raise AssertionError("expected RuntimeError when nothing resolved")
@@ -69,7 +111,11 @@ def test_intl_tries_all_when_failures_are_dead_series():
         calls["n"] += 1
         raise ValueError(f"fred {fid}: no numeric rows")
 
+    def official_down(_col, _spec):
+        raise requests.exceptions.ConnectTimeout("Read timed out")
+
     a._fetch_fred = data_dead
+    a._fetch_official = official_down
     try:
         a.fetch()
     except RuntimeError:
@@ -100,3 +146,94 @@ def test_canada_dead_fred_does_not_starve_boc_statcan():
     frames = c.fetch()
     assert fred_calls["n"] == CA_ABORT, "FRED source should abort fast"
     assert len(frames) == n_boc + n_sc, "healthy BoC/StatsCan series must all resolve"
+
+
+# ---------------------------------------------------------------------------
+# run_adapter duck-typing degradation (daily 2026-08-02/08-03 collect outage).
+#
+# #4311 made run_adapter call adapter.fetch_result_status(frames) UNCONDITIONALLY
+# after a successful fetch, but only 2 of ~228 collector modules define that
+# protocol.  Worse, the except handler read adapter.expected_failure — also
+# optional — so the first adapter lacking BOTH attributes (gaming_ny) raised
+# inside the handler and killed the whole collect pass: every source after it
+# went uncollected for two nights and every source before it took a false
+# "failed" breaker strike.  These tests pin the contract in the step's own
+# name: graceful degradation NEVER fails the build on one source.
+# ---------------------------------------------------------------------------
+from collectors.base import run_adapter  # noqa: E402
+
+
+class _BareAdapter:
+    """The pre-#4311 adapter surface: name/group/stale_after_days/fetch only."""
+
+    name = "bare_test_source"
+    group = "test_group"
+    stale_after_days = 9
+
+    def __init__(self, exc: Exception | None = None):
+        self._exc = exc
+
+    def fetch(self, full_history: bool = False) -> dict:
+        if self._exc is not None:
+            raise self._exc
+        return {}
+
+    def validate(self, series_name, df):
+        return df
+
+
+def test_bare_adapter_success_survives_missing_status_protocol():
+    res = run_adapter(_BareAdapter())
+    assert res.status == "ok"
+
+
+def test_bare_adapter_failure_survives_missing_expected_failure():
+    res = run_adapter(_BareAdapter(exc=RuntimeError("boom")))
+    assert res.status == "failed"
+    assert "RuntimeError" in (res.error or "")
+
+
+def test_declared_status_protocol_still_honored():
+    class _Declaring(_BareAdapter):
+        name = "declaring_test_source"
+
+        def fetch_result_status(self, frames) -> str:
+            return "blocked"
+
+    res = run_adapter(_Declaring())
+    assert res.status == "blocked"
+
+
+def test_runner_escape_degrades_to_failed_at_run_one_boundary():
+    """An exception ESCAPING run_adapter must not crash the collect pass.
+
+    #4534 made run_adapter's two known optional-attribute reads getattr-safe,
+    but the boundary ABOVE it was still bare: run_adapter reads
+    adapter.stale_after_days before its try block, so a plain-class adapter
+    (the gaming_ny pattern — no Adapter base) missing that attribute raises
+    straight through _run_one and kills main(), skipping the night's
+    "commit data" step — the exact 2026-08-02/03 outage shape, one attribute
+    over.  _run_one is the per-source isolation boundary: ANY escape from the
+    runner machinery must degrade to a normal 'failed' FetchResult so one
+    source can never sever the data-collection commit path again.
+    """
+    from scripts.collect import _run_one
+
+    class _NoStaleAttr:
+        # Plain class, deliberately NOT subclassing Adapter and NOT defining
+        # stale_after_days — run_adapter's pre-try read raises AttributeError.
+        name = "no_stale_attr_source"
+        group = "test_group"
+
+        def fetch(self, full_history: bool = False) -> dict:
+            return {}
+
+        def validate(self, series_name, df):
+            return df
+
+    out = _run_one("no_stale_attr_source", _NoStaleAttr, False)
+    assert out is not None, "runner escape must degrade, not abort the source"
+    res, _dt = out
+    assert res.status == "failed"
+    assert res.source == "no_stale_attr_source"
+    assert "AttributeError" in (res.error or "")

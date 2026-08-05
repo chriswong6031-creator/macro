@@ -15,6 +15,7 @@
 {% include "_interfonts.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
+<script defer src="theme.js"></script>
 <title>Market Structure</title>
 {% set seo_title = 'Market Structure — Dealer Positioning, Machine Flows & Dispersion | Mastermind' %}
 {% set seo_desc = 'Shock absorber state, machine money flows, stock-picker conditions, and weekly expected range — all in plain words.' %}
@@ -121,16 +122,42 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
 .kpi-row{display:flex;gap:14px 22px;flex-wrap:wrap;margin:12px 0}
 .kpi{font-size:12px;color:var(--mut)}.kpi b{display:block;font-size:18px;color:var(--ink);font-weight:700;line-height:1.2}
 .kpi small{font-size:11px;color:var(--faint)}
-/* ── chart wrappers ── */
+/* ── chart wrappers ──
+   height:100% is load-bearing, not cosmetic. An inline <svg> that carries a
+   viewBox but no resolved height is sized by its INTRINSIC aspect ratio
+   (wrapperWidth x viewBoxH/viewBoxW), not by its parent's height — so at a
+   1100px-wide panel a `viewBox="0 0 800 160"` chart renders 220px tall inside
+   a 160px wrapper and overflow:hidden silently eats the bottom 27%. Nothing
+   errors: the JS runs, the paths are valid, the data is complete, and the
+   chart just looks half-drawn. Every chart here sets preserveAspectRatio="none"
+   precisely so the viewBox may stretch to fill the wrapper — which it can only
+   do once the height resolves. Guarded by tests/test_svg_wrapper_clipping.py. */
 .chart-wrap{position:relative;width:100%;margin:12px 0 4px;overflow:hidden}
-.chart-wrap svg{display:block;width:100%}
+.chart-wrap svg{display:block;width:100%;height:100%}
 /* ── VIX curve nodes ── */
 .vix-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .vix-node{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);min-width:52px;text-align:center}
 .vix-node .vt{font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase}
 .vix-node .vv{font-size:17px;font-weight:700;color:var(--ink)}
-/* ── week map ── */
-.wm-wrap{position:relative;padding:28px 0 38px;margin:12px 0}
+/* ── week map ──
+   The band SVG is pinned to a literal 56px so its viewBox units map 1:1 to
+   page px; every label offset below is stated in that same coordinate space.
+   Leave the height to intrinsic sizing and the band grows with panel width
+   while the hardcoded label offsets stay put — which is how the spot label
+   ended up sitting ON the spot line and the flip label a full band-height
+   above its own dashes. */
+.wm-wrap{position:relative;padding:42px 0 44px;margin:12px 0}
+.wm-band{display:block;width:100%;height:56px}
+.wm-lbls{position:absolute;top:0;left:0;right:0;pointer-events:none}
+.wm-edge{position:absolute;top:0;font-size:10.5px;line-height:1.35;color:var(--faint);font-variant-numeric:tabular-nums}
+.wm-chip{position:absolute;display:inline-flex;align-items:baseline;gap:5px;padding:2px 9px;
+  border-radius:999px;border:1px solid transparent;white-space:nowrap;line-height:1.45}
+.wm-chip .wm-k{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.78}
+.wm-chip .wm-n{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+/* Flip chip rides just above the band; spot chip just below it. Different rows
+   means the two can never collide no matter how close the prices sit. */
+.wm-flip{top:17px;color:var(--amb);border-color:color-mix(in srgb,var(--amb) 34%,transparent);background:color-mix(in srgb,var(--amb) 12%,transparent)}
+.wm-spot{top:103px;color:var(--blue);border-color:color-mix(in srgb,var(--blue) 38%,transparent);background:color-mix(in srgb,var(--blue) 14%,transparent)}
 /* ── grid ── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
@@ -403,14 +430,19 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
   <div class="kpi-row">
     {% if disp.cor1m is not none %}<div class="kpi"><b>{{ '%.2f'|format(disp.cor1m|float) }}</b>{{ t('implied correlation (1M)', '隐含相关性（1个月）') }}</div>{% endif %}
     {% if disp.cor1m_1y_delta is not none %}<div class="kpi"><b class="{{ 'up' if disp.cor1m_1y_delta|float < 0 else 'dn' }}">{% if disp.cor1m_1y_delta|float >= 0 %}+{% endif %}{{ '%.2f'|format(disp.cor1m_1y_delta|float) }}</b>{{ t('vs 1 year ago', '较一年前') }}</div>{% endif %}
-    {% if disp.cor1m_pctile_2y is not none %}<div class="kpi"><b>{{ '%.0f'|format(disp.cor1m_pctile_2y|float) }}th</b>{{ t('percentile (2-year)', '百分位（2年）') }}</div>{% endif %}
+    {# Ordinal suffix, not a hardcoded "th" — the 3rd percentile was rendering "3th". #}
+    {% if disp.cor1m_pctile_2y is not none %}
+    {% set _pc = disp.cor1m_pctile_2y|float|round|int %}
+    {% set _ord = 'th' if (_pc % 100) in [11, 12, 13] else {1: 'st', 2: 'nd', 3: 'rd'}.get(_pc % 10, 'th') %}
+    <div class="kpi"><b>{{ _pc }}{{ _ord }}</b>{{ t('percentile (2-year)', '百分位（2年）') }}</div>
+    {% endif %}
     {% if disp.cor3m is not none %}<div class="kpi"><b>{{ '%.2f'|format(disp.cor3m|float) }}</b>{{ t('3-month corr', '3个月相关性') }}</div>{% endif %}
     {% if disp.dspx is not none %}<div class="kpi"><b>{{ '%.1f'|format(disp.dspx|float) }}</b>{{ t('CBOE dispersion', 'CBOE离散度') }}</div>{% endif %}
   </div>
   {% if disp.history is not none and disp.history | length > 0 %}
   <div class="chart-wrap" style="height:130px;margin-top:12px"><svg id="cor-chart" viewBox="0 0 800 130" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg></div>
   {% endif %}
-  <div class="sec-foot">{{ t('COR1M area chart — dashed line = dispersion threshold · source: CBOE, series from 2006', 'COR1M面积图 — 虚线=离散阈值 · 来源：CBOE，数据自2006年起') }}</div>
+  <div class="sec-foot">{{ t('COR1M area chart — dashed line = the dispersion threshold, the 20th percentile of the last two years · source: CBOE, series from 2006', 'COR1M面积图 — 虚线=离散阈值，即近两年第20百分位 · 来源：CBOE，数据自2006年起') }}</div>
 </div>
 {% else %}
 <div class="warmup"><b><span class="l-en">Data warming up</span><span class="l-zh">数据预热中</span></b><span class="l-en">Correlation data will appear after the first nightly run.</span><span class="l-zh">首次夜间运行后显示。</span></div>
@@ -507,8 +539,9 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
   {% set p_hi1 = ((hi1 - pr_lo) / pr_r * 100)|round(1) %}
   {% set p_spot = ((wm_spot|float - pr_lo) / pr_r * 100)|round(1) %}
   {% set p_flip = ((wm_flip|float - pr_lo) / pr_r * 100)|round(1) if wm_flip is not none else none %}
-  <div style="position:relative;padding:30px 0 40px">
-    <svg viewBox="0 0 600 56" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+  {% set wm_spot_live = (gamma is not none and gamma.spot is not none) %}
+  <div class="wm-wrap">
+    <svg class="wm-band" viewBox="0 0 600 56" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
       {# 2σ background #}
       <rect x="0" y="18" width="600" height="20" rx="5" fill="var(--blue)" opacity=".09"/>
       {# 1σ band #}
@@ -521,13 +554,19 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
       <line x1="{{ p_spot * 6 }}" y1="10" x2="{{ p_spot * 6 }}" y2="46" stroke="var(--blue)" stroke-width="3" stroke-linecap="round"/>
     </svg>
     {# HTML labels over SVG (avoids svg-span-breakout trap) #}
-    <div style="position:absolute;top:0;left:0;right:0;pointer-events:none;font-size:10.5px;color:var(--mut)">
-      <span style="position:absolute;left:0;top:2px">{{ '%.0f'|format(pr_lo) }}</span>
-      <span style="position:absolute;left:{{ p_lo1 }}%;top:2px">{{ '%.0f'|format(lo1) }}</span>
-      <span style="position:absolute;left:{{ p_hi1 }}%;top:2px;transform:translateX(-100%)">{{ '%.0f'|format(hi1) }}</span>
-      <span style="position:absolute;right:0;top:2px">{{ '%.0f'|format(pr_hi) }}</span>
-      <span style="position:absolute;left:{{ p_spot }}%;top:62px;transform:translateX(-50%);font-weight:700;color:var(--blue)">{{ '%.0f'|format(wm_spot|float) }}</span>
-      {% if p_flip is not none and p_flip >= 5 and p_flip <= 95 %}<span style="position:absolute;left:{{ p_flip }}%;top:-18px;transform:translateX(-50%);color:var(--amb)">{{ t('Flip', '翻转') }} {{ '%.0f'|format(wm_flip|float) }}</span>{% endif %}
+    <div class="wm-lbls">
+      <span class="wm-edge" style="left:0">{{ '%.0f'|format(pr_lo) }}</span>
+      <span class="wm-edge" style="left:{{ p_lo1 }}%">{{ '%.0f'|format(lo1) }}</span>
+      <span class="wm-edge" style="left:{{ p_hi1 }}%;transform:translateX(-100%)">{{ '%.0f'|format(hi1) }}</span>
+      <span class="wm-edge" style="right:0">{{ '%.0f'|format(pr_hi) }}</span>
+      {% if p_flip is not none and p_flip >= 5 and p_flip <= 95 %}
+      <span class="wm-chip wm-flip" style="left:{{ p_flip }}%;transform:translateX(-50%)">
+        <span class="wm-k">{{ t('Flip', '翻转') }}</span><span class="wm-n">{{ '%.0f'|format(wm_flip|float) }}</span>
+      </span>
+      {% endif %}
+      <span class="wm-chip wm-spot" style="left:{{ p_spot }}%;transform:translateX(-50%)">
+        <span class="wm-k">{% if wm_spot_live %}{{ t('Spot', '现价') }}{% else %}{{ t('Close', '收盘') }}{% endif %}</span><span class="wm-n">{{ '%.0f'|format(wm_spot|float) }}</span>
+      </span>
     </div>
   </div>
   <div class="kpi-row" style="margin-top:8px">
@@ -620,7 +659,13 @@ function drawGex(n){
   var spts=data.map(function(d,i){return[tx2(i),ty2(d.spot||0)]});
   var fpts=data.map(function(d,i){return[tx2(i),ty2(d.flip||0)]});
   if(spts.length>1)s.appendChild(polyline(spts,BLUE,'1.5'));
-  if(fpts.length>1)s.appendChild(polyline(fpts,AMB,'1',null,'.45'));
+  if(fpts.length>1){
+    /* The section footer calls this line "amber dashed" — make the drawing
+       match the caption, and keep one flip idiom across the page (the week-map
+       flip line is dashed too). */
+    var fp=polyline(fpts,AMB,'1',null,'.55');fp.setAttribute('stroke-dasharray','4,3');
+    s.appendChild(fp);
+  }
 }
 
 function drawSys(n){
@@ -641,6 +686,23 @@ function drawSys(n){
   if(vcpts.length>1)sv.appendChild(polyline(vcpts,BLUE,'2'));
 }
 
+/* The engine calls "dispersion" at the 20th percentile of the trailing 2-year
+   COR1M window (_COR1M_PCTILE_LO, scripts/build_market_structure.py) — there is
+   no fixed level anywhere in the pipeline. The old hardcoded DT=0.35 was wrong
+   twice over: wrong concept, and wrong units (COR1M ships in percentage points,
+   ~3–45), so it mapped far below the floor and the "dashed line = dispersion
+   threshold" the footer promises was never actually on screen. Read it off the
+   full embedded series so the line holds still when the window toggles. */
+var COR_PCTILE_LO=20;
+function dispThreshold(){
+  var all=MSP_COR_HIST.slice(-504).map(function(d){return d.cor1m})
+    .filter(function(v){return typeof v==='number'&&isFinite(v)});
+  if(all.length<20)return null;
+  all.sort(function(a,b){return a-b});
+  var i=(COR_PCTILE_LO/100)*(all.length-1),lo=Math.floor(i),hi=Math.ceil(i);
+  return lo===hi?all[lo]:all[lo]+(all[hi]-all[lo])*(i-lo);
+}
+
 function drawCor(n){
   if(typeof MSP_COR_HIST==='undefined'||!MSP_COR_HIST.length)return;
   var data=sliceTail(MSP_COR_HIST,n);
@@ -648,8 +710,12 @@ function drawCor(n){
   var W=800,H=130,P=6;
   var vals=data.map(function(d){return d.cor1m||0});
   var mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals);
+  var DT=dispThreshold();
+  /* A reference line the footer names by hand has to be inside the drawn
+     domain, or the chart quietly contradicts its own caption. */
+  if(DT!==null){mn=Math.min(mn,DT);mx=Math.max(mx,DT)}
+  var pad=(mx-mn)*0.08||0.5;mn-=pad;mx+=pad;
   var vr2=mx-mn||0.01;
-  var DT=0.35;
   function ty(v){return H-P-(v-mn)/vr2*(H-P*2)}
   function tx(i){return P+i/(data.length-1||1)*(W-P*2)}
   var pts=data.map(function(d,i){return[tx(i),ty(d.cor1m||0)]});
@@ -658,8 +724,7 @@ function drawCor(n){
     var area=document.createElementNS('http://www.w3.org/2000/svg','path');
     area.setAttribute('d',ad);area.setAttribute('fill',UP);area.setAttribute('opacity','0.10');
     sv.appendChild(area);
-    var thr=ty(DT);
-    sv.appendChild(line(P,thr,W-P,thr,UP,1,'4,3'));
+    if(DT!==null)sv.appendChild(line(P,ty(DT),W-P,ty(DT),UP,1,'4,3'));
     sv.appendChild(polyline(pts,BLUE,'1.5'));
   }
 }

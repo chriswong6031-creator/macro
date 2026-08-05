@@ -232,6 +232,34 @@ def _assess_analyst(analyst: object) -> dict:
     return _leg("LIVE", None, "LLM analyst read present")
 
 
+# Coherence with the stage machine (engine/foresight_cascade.py FINGERPRINT_BANDS /
+# FINGERPRINT_THESIS_STAGES): a (fingerprint) band or stage on a cascade row is proof the
+# bottleneck engine consumed ≥1 live fingerprint leg (theme_fingerprint returns None at 0
+# legs), so this leg must never report fully DARK while such a row exists.
+_FP_BANDS = {"TIGHT (fingerprint)", "TIGHTENING (fingerprint)"}
+_FP_STAGES = {"PRECIPICE (fingerprint)", "BROADENING (fingerprint)"}
+
+
+def _fp_legs_live(t: dict) -> int:
+    """Fingerprint legs live for one cascade row.
+
+    Primary evidence: the `fingerprint` sub-object passed through from the bottleneck
+    payload (n_legs_live 1-2; also covers FRED-mapped themes whose top-level band is
+    numeric while fingerprint data coexists). Fallback for rows without the sub-object
+    (older committed vintages of the cascade JSON): a fingerprint-variant band, the
+    fingerprint_only flag, or a fingerprint-variant stage each imply ≥1 live leg —
+    count 1, the conservative floor (leg identity unknowable from the band alone).
+    """
+    n = (t.get("fingerprint") or {}).get("n_legs_live") or 0
+    if n:
+        return n
+    if (t.get("bottleneck_band") in _FP_BANDS
+            or t.get("bottleneck_fingerprint_only")
+            or t.get("stage") in _FP_STAGES):
+        return 1
+    return 0
+
+
 def _assess_t1_fingerprint(themes: list[dict]) -> dict:
     """T1 XBRL fingerprint (W5a): per-theme member-level inventory-days + RPO legs.
 
@@ -241,16 +269,16 @@ def _assess_t1_fingerprint(themes: list[dict]) -> dict:
       DARK    — no theme has any fingerprint data (statements.parquet absent or
                 no theme reaches the MIN_MEMBERS=3 gate for any leg)
 
-    The detail string surfaces n_themes_live/n_total (themes with ≥1 fingerprint leg).
-    Annual-cadence honesty: fingerprint is labeled "annual" in the payload.
+    Liveness per theme comes from _fp_legs_live (fingerprint sub-object first, band/stage
+    evidence as the fallback floor). The detail string surfaces n_themes_live/n_total
+    (themes with ≥1 fingerprint leg). Annual-cadence honesty: fingerprint is labeled
+    "annual" in the payload.
     """
     if not themes:
         return _leg("DARK", None, "no themes")
 
-    full_live = [t for t in themes
-                 if (t.get("fingerprint") or {}).get("n_legs_live", 0) >= 2]
-    partial_live = [t for t in themes
-                    if (t.get("fingerprint") or {}).get("n_legs_live", 0) == 1]
+    full_live = [t for t in themes if _fp_legs_live(t) >= 2]
+    partial_live = [t for t in themes if _fp_legs_live(t) == 1]
     total_with_fp = len(full_live) + len(partial_live)
     m = len(themes)
 
@@ -267,8 +295,8 @@ def _assess_t1_fingerprint(themes: list[dict]) -> dict:
                     f"{len(partial_live)} have 1 leg; basis=annual; weights PROVISIONAL")
     # Only partial-live themes (1 leg each)
     return _leg("PARTIAL", f"{total_with_fp}/{m}",
-                f"{total_with_fp}/{m} themes have 1 fingerprint leg (inventory-days only — "
-                "RPO coverage thin for non-software themes); basis=annual; weights PROVISIONAL")
+                f"{total_with_fp}/{m} themes have 1 live fingerprint leg (RPO coverage "
+                "thin for non-software themes); basis=annual; weights PROVISIONAL")
 
 
 def _assess_monitor(monitor: object) -> dict:

@@ -817,13 +817,6 @@
        than the injected `.stf-ch-row.st-hide-sm{display:none}`.) */
     body.page-china-stocks .stf-ch-row.st-hide-sm { display:flex; }
   }
-  /* W8-R7 price-tape chip — inline to avoid collision with theme.css in-flight PRs */
-  .anv2-chip-tape { background:color-mix(in srgb,var(--info) 10%,var(--panel)); color:color-mix(in srgb,var(--info) 80%,var(--text)); border-color:color-mix(in srgb,var(--info) 26%,transparent); }
-  /* anv2 click-through name link — colour/decoration intentionally inherit from .anv2-name */
-  .anv2-name-link { color:inherit; text-decoration:none; }
-  .anv2-name-link:hover .l-en, .anv2-name-link:hover .l-zh { text-decoration:underline; }
-  .anv2-name-link:focus-visible { outline:2px solid var(--link); outline-offset:2px; border-radius:4px; }
-  .anv2-go { font-size:10px; opacity:.55; margin-left:3px; }
 {%- if mode != 'stocks' %}
   /* ===== MX5 CHINA GLANCE REDESIGN (body.page-china scope) ===== */
   body.page-china .aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
@@ -838,13 +831,15 @@
   /* State tint: red (Risk-off) */
   body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(239,68,68,.10) 0%,transparent 70%)}
   body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(239,68,68,.06) 0%,transparent 70%)}
-  /* Light-mode variants — much fainter */
-  [data-theme="light"] body.page-china .aurora::before{background:radial-gradient(ellipse,rgba(34,217,122,.05) 0%,transparent 70%)}
-  [data-theme="light"] body.page-china .aurora .au-a3{background:radial-gradient(ellipse,rgba(34,217,122,.03) 0%,transparent 70%)}
-  [data-theme="light"] body.page-china .aurora.au-yellow::before{background:radial-gradient(ellipse,rgba(156,98,18,.05) 0%,transparent 70%)}
-  [data-theme="light"] body.page-china .aurora.au-yellow .au-a3{background:radial-gradient(ellipse,rgba(156,98,18,.035) 0%,transparent 70%)}
-  [data-theme="light"] body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%)}
-  [data-theme="light"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(220,38,38,.035) 0%,transparent 70%)}
+  /* LIGHT: no aurora. "Much fainter" was the wrong fix — an additive bloom that
+     reads as light on a black field reads as INK on paper, and a 90px-blurred
+     colour wash over a pale canvas is a stain, not atmosphere. It was most
+     obvious as the soft concentric wash sitting in the empty canvas below the
+     fold (the layer is position:fixed, so it spans the whole scroll). The state
+     it tints is already said out loud by the score, the verdict word and the
+     regime pill, so nothing is lost. Depth in light comes from the panel/canvas
+     value step and the shadow recipe. Dark keeps the aurora untouched. */
+  [data-theme="light"] body.page-china .aurora{display:none}
   /* Reduced-motion: no animations */
   @media(prefers-reduced-motion:reduce){body.page-china .aurora,body.page-china .aurora::before,body.page-china .aurora::after,body.page-china .aurora .au-a3{animation:none}}
   /* zh direction-convention mirrors (operator ruling 2026-07-21): the aurora state wash
@@ -857,10 +852,8 @@
   html[data-lang="zh"] body.page-china .aurora.au-yellow .au-a3{background:radial-gradient(ellipse,rgba(245,158,11,.06) 0%,transparent 70%)}
   html[data-lang="zh"] body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(34,217,122,.10) 0%,transparent 70%)}
   html[data-lang="zh"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(34,217,122,.06) 0%,transparent 70%)}
-  html[data-theme="light"][data-lang="zh"] body.page-china .aurora::before{background:radial-gradient(ellipse,rgba(220,38,38,.05) 0%,transparent 70%)}
-  html[data-theme="light"][data-lang="zh"] body.page-china .aurora .au-a3{background:radial-gradient(ellipse,rgba(220,38,38,.03) 0%,transparent 70%)}
-  html[data-theme="light"][data-lang="zh"] body.page-china .aurora.au-red::before{background:radial-gradient(ellipse,rgba(34,217,122,.05) 0%,transparent 70%)}
-  html[data-theme="light"][data-lang="zh"] body.page-china .aurora.au-red .au-a3{background:radial-gradient(ellipse,rgba(34,217,122,.035) 0%,transparent 70%)}
+  /* (the light+zh aurora mirrors are gone with the light aurora itself — the dark
+     zh mirrors above still bind, since 红涨绿跌 only has to hold where it renders) */
   html[data-lang="zh"] body.page-china .ms-green .cnx-big-score{text-shadow:0 0 36px rgba(239,68,68,.3)}
   html[data-lang="zh"] body.page-china .ms-red .cnx-big-score{text-shadow:0 0 36px rgba(34,217,122,.3)}
   /* The redesigned macro page lays out with its own .cnx-tiles/.rack grids, so the
@@ -902,16 +895,21 @@
     --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.25);
     --mx5-focus-ring:    0 0 0 2px color-mix(in srgb, var(--up) 55%, transparent);
   }
+  /* Round-3 depth pass — same recipe as body.page-macro, so the two dashboards
+     stay one product: opaque white panels on the deepened estate canvas, a soft
+     hairline, and a two-stop shadow (tight contact + wide ambient) carrying the
+     depth. The old 82%-white fill sat within ~1.07:1 of the canvas — the card
+     and the page were the same value, so nothing read as a card. */
   [data-theme="light"] body.page-china{
     --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
-    --mx5-glass-bg:      rgba(255,255,255,.82);
-    --mx5-pop-bg:        rgba(255,255,255,.97);
-    --mx5-glass-border:  rgba(0,0,0,.06);
-    --mx5-glass-shadow:  0 4px 24px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.95) inset;
-    --mx5-glass-hover:   0 8px 32px rgba(0,0,0,.13), 0 1px 0 rgba(255,255,255,.95) inset;
-    --mx5-hover-bg:      rgba(255,255,255,.92);
-    --mx5-hover-border:  rgba(0,0,0,.14);
-    --mx5-hover-shadow:  0 6px 24px rgba(0,0,0,.12);
+    --mx5-glass-bg:      #ffffff;
+    --mx5-pop-bg:        #ffffff;
+    --mx5-glass-border:  #dde2ea;
+    --mx5-glass-shadow:  0 1px 2px rgba(23,32,55,.05), 0 8px 24px -12px rgba(23,32,55,.10);
+    --mx5-glass-hover:   0 2px 4px rgba(23,32,55,.07), 0 14px 32px -14px rgba(23,32,55,.16);
+    --mx5-hover-bg:      #ffffff;
+    --mx5-hover-border:  #c3cbd9;
+    --mx5-hover-shadow:  0 2px 4px rgba(23,32,55,.07), 0 14px 32px -14px rgba(23,32,55,.16);
   }
   /* glass card */
   body.page-china .cnx-card{background:var(--mx5-glass-bg,rgba(16,22,30,.55));border:1px solid var(--mx5-glass-border,rgba(255,255,255,.12));border-radius:18px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.55),0 1.5px 0 rgba(255,255,255,.07) inset;padding:18px 20px;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s;margin-bottom:14px}
@@ -1192,12 +1190,13 @@
      glass tokens (same values as body.page-macro.mx4-grid) + override every
      hardcoded dark surface. All scoped to [data-theme="light"] so dark mode is
      untouched; colored chips (.hot/.turn) are excluded so their tints survive. */
-  [data-theme="light"] body.page-china{--mx5-glass-bg:rgba(255,255,255,.82);--mx5-glass-border:rgba(0,0,0,.06);--mx5-pop-bg:rgba(255,255,255,.97)}
+  [data-theme="light"] body.page-china{--mx5-glass-bg:#ffffff;--mx5-glass-border:#dde2ea;--mx5-pop-bg:#ffffff}
   /* base card + hover shadows are hardcoded dark (rgba(0,0,0,.55)/.25); light mode
      uses the EXACT body.page-macro.mx4-grid light tokens so the two dashboards
-     match (soft ambient shadow, not the heavy dark one). */
-  [data-theme="light"] body.page-china .cnx-card{box-shadow:0 4px 24px rgba(0,0,0,.09),0 1px 0 rgba(255,255,255,.95) inset}
-  [data-theme="light"] body.page-china .cnx-card[role="button"]:hover{background:rgba(255,255,255,.92);border-color:rgba(0,0,0,.14);box-shadow:0 6px 24px rgba(0,0,0,.12)}
+     match (the estate depth recipe: contact shadow + wide ambient, no inset sheen —
+     a bright inset line on an opaque white card reads as a seam, not a highlight). */
+  [data-theme="light"] body.page-china .cnx-card{box-shadow:0 1px 2px rgba(23,32,55,.05),0 8px 24px -12px rgba(23,32,55,.10)}
+  [data-theme="light"] body.page-china .cnx-card[role="button"]:hover{background:#ffffff;border-color:#c3cbd9;box-shadow:0 2px 4px rgba(23,32,55,.07),0 14px 32px -14px rgba(23,32,55,.16)}
   [data-theme="light"] body.page-china .cnx-pop{background:rgba(255,255,255,.98);border-color:rgba(0,0,0,.1);box-shadow:0 8px 32px rgba(0,0,0,.13)}
   [data-theme="light"] body.page-china .cnx-dlg-panel{background:rgba(255,255,255,.98);border-color:rgba(0,0,0,.1)}
   [data-theme="light"] body.page-china .cnx-dlg-backdrop{background:rgba(20,24,30,.34)}
@@ -1217,7 +1216,13 @@
   [data-theme="light"] body.page-china .cnx-chip.hot,[data-theme="light"] body.page-china .cnx-imp.high,[data-theme="light"] body.page-china .cnx-fq.stag{color:#b4232a}
   [data-theme="light"] body.page-china .cnx-chip.turn{color:#1f7a44}
   [data-theme="light"] body.page-china .cnx-tkr-btn{color:#2456a8}
-  [data-theme="light"] body.page-china .cnx-fq.refl{color:#9a6b0e}
+  /* The reflation pill keeps its own amber wash (rgba(212,160,23,.16) → #f8f0da on a
+     white card), so the ink has to clear 4.5:1 against THAT, not against white:
+     #9a6b0e measured 4.68 on white but only 4.12 on the chip it actually sits in.
+     #8a5f0c lands 4.96 there — and matches the weight of its sibling stagflation
+     pill (#b4232a, 5.12 on its own red wash), so the two regime states read as a
+     matched pair rather than one bold and one washed out. */
+  [data-theme="light"] body.page-china .cnx-fq.refl{color:#8a5f0c}
 
   /* ═══════════════════════════════════════════════════════════════════════
      PORTED US mx5-* SCORECARD COMPONENTS (A hero gauge · B path graph ·
@@ -1240,7 +1245,12 @@
   }
   /* Light mode: the gauge's white-alpha track/ticks/scale-labels vanish on white —
      repaint in dark ink. #mx5-score-numeral keeps its own id rule (state colour). */
-  [data-theme="light"] body.page-china .mx5-gauge-svg > text{fill:rgba(10,16,24,.42);}
+  /* Dial scale labels (0 / 50 / 100) are text, not decoration — they are what makes
+     the needle position mean anything. At .42 they composited to #989b9e = 2.79:1 on
+     a white card, under the 4.5 floor at 10px. .62 lands 5.37:1 and still reads a full
+     step quieter than the body copy, so the big score keeps the hierarchy.
+     (Identical twin rule on body.page-macro — the dial is the same component.) */
+  [data-theme="light"] body.page-china .mx5-gauge-svg > text{fill:rgba(10,16,24,.62);}
   [data-theme="light"] body.page-china .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
   [data-theme="light"] body.page-china .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
   /* Regime pill (sizes to content, never clips) */
@@ -1406,7 +1416,12 @@
     border-radius:12px;padding:16px 18px 12px;position:relative;overflow:hidden;cursor:pointer;
     transition:background .2s ease-out,border-color .2s ease-out,box-shadow .2s ease-out,transform .2s ease-out;
   }
-  [data-theme="light"] body.page-china .mx5-mkt-tile{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
+  /* Index tiles — the exact twin of body.page-macro's futures strip, so the two
+     dashboards keep reading as one product. The dark "3% fill on glass" trick
+     inverts into a grey smudge (#f7f7f7) with a 1.10:1 edge on a white card; each
+     tile becomes its own white surface with the recipe hairline and one contact
+     shadow instead, and the grid gap does the separating. */
+  [data-theme="light"] body.page-china .mx5-mkt-tile{background:#ffffff;border-color:#dde2ea;box-shadow:0 1px 2px rgba(23,32,55,.05);}
   body.page-china .mx5-mkt-tile.up,
   body.page-china .mx5-mkt-tile.dn{border-color:var(--glass-border);}
   body.page-china .mx5-mkt-tile:hover,
@@ -1566,260 +1581,7 @@
     {% endif %}
   </div>
 
-  <!-- ===================== ACT-NOW v2 — FOUR-LANE BOARD (W8-R3) ===================== -->
-  {# act_now_v2: assembled by engine/china_act_now.assemble_act_now() in build_china.py.
-     Sectors + themes co-exist as typed rows (THEME / SECTOR / BASKET chips).
-     Bottoming lane copy law: never BUY-family words (F1/W8-R3).
-     Dual-read law (FT-R1): a name in reduce AND bottoming appears in BOTH lanes.
-     Macro mode: only the legacy actcol sub-panel is used (untouched, see line ~1275). #}
-  {% if act_now_v2 %}
-  {% set _anv2 = act_now_v2 %}
-  {% set _anl = _anv2.lanes %}
-  <div class="panel span12 anv2-board" id="act-now">
-    {{ dc.dc_css() }}
-    <div class="anv2-hd">
-      <h2 style="margin:0">⚡ {{ t('What to Act On Now', '现在行动') }}
-        <span class="anv2-v2pill">v2</span>
-        {{ lens.lens(
-          kind='read', ill=lens.ILL_LANES,
-          kick=('How to read this','如何看懂'),
-          title=('Four lanes, left to right','四个分栏，从左到右'),
-          rows=[
-            {'tone':'up',   'k':('Buy now','立即买入'),        'v':('A clean entry point today.','今天有干净的入场点。')},
-            {'tone':'info', 'k':('In favour','看好'),          'v':('Still good — but it has run. <b>Wait for a dip.</b>','依然看好 — 但已经涨过。<b>等回调。</b>')},
-            {'tone':'warn', 'k':('Bottoming','洗盘观察'),      'v':('Beaten down, first signs of turning up. <b>Watch only — never a buy signal.</b>','超跌后初现回升迹象。<b>仅供观察 — 绝非买入信号。</b>')},
-            {'tone':'dn',   'k':('Reduce / avoid','减仓·回避'),'v':('The trend is weakening.','趋势正在转弱。')},
-          ],
-          body=('A name can honestly sit in two lanes at once — weakening, yet bottoming. We show both reads rather than pick one for you.','同一名称可以同时出现在两栏 — 趋势转弱，却已在筑底。我们把两种判读都显示，而不是替你二选一。'),
-          receipt=('rows mix themes (scored 0-100) and sectors (timed by cycle stage) · re-drawn nightly','行内混合主题（0-100分）与行业板块（按周期阶段定时机）· 每晚重绘')) }}
-      </h2>
-      <div class="anv2-meta">
-        {% if _anv2.as_of %}<span class="muted" style="font-size:11px">{{ t('themes as of','主题截至') }} {{ _anv2.as_of }}</span>{% endif %}
-        <a href="sector_central_china.html#actnow" class="anv2-xlink">{{ t('theme desk →', '主题面板 →') }}</a>
-      </div>
-    </div>
-    {% if _anv2.notes %}
-    <div class="anv2-notes">{% for n in _anv2.notes %}<span class="muted" style="font-size:11px">⚠ {{ n }}</span>{% endfor %}</div>
-    {% endif %}
-    <div class="anv2-grid">
-
-    {# ── Macro: row item helper ─────────────────────────────────────────── #}
-    {%- macro _anrow(row, lane) -%}
-    {# PR-4: resolve sector card for SECTOR rows (O(1) via sectors_by_ticker) #}
-    {%- set _sc = (sectors_by_ticker.get(row.id) if row.kind == 'SECTOR' and sectors_by_ticker is defined else none) -%}
-    {# PR-4: compute tag tone for hover card header #}
-    {%- set _rptag_cls = 'up' if row.reco in ('accumulate','buy','add') else ('dn' if row.reco in ('avoid','trim','reduce','exit') else 'warn') -%}
-    <div class="anv2-row" data-rpop>
-      {# PR-4: hover card payload — cloned by theme.js into a .row-pop overlay #}
-      {#- Hover decision card — the SAME component the US board uses
-          (templates/_decision_card.html.j2). Themes get the score ring + leadership
-          read + breadth + leaders; sectors get the setup read + cycle metrics. -#}
-      {%- set _is_theme = row.kind in ('THEME','BASKET') and row.score is not none -%}
-      {%- set _stats = [] -%}
-      {%- set _trust = [] -%}
-      {%- if _is_theme -%}
-        {%- if row.rel20 is not none -%}
-          {%- set _ = _stats.append({'label': ('20d lead','20日领先'), 'val': '%+.1f%%'|format(row.rel20 * 100),
-                                     'tone': 'up' if row.rel20 >= 0 else 'dn', 'sub': ('vs CSI 300','相对沪深300')}) -%}
-        {%- endif -%}
-        {%- if row.get('breadth_pct50') is not none -%}
-          {%- set _ = _stats.append({'label': ('Breadth','广度'), 'val': '%.0f%%'|format(row.get('breadth_pct50') * 100),
-                                     'sub': ('above 50d','高于50日线')}) -%}
-        {%- endif -%}
-        {%- if row.rel5 is not none -%}
-          {%- set _ = _stats.append({'label': ('5d lead','5日领先'), 'val': '%+.1f%%'|format(row.rel5 * 100),
-                                     'tone': 'up' if row.rel5 >= 0 else 'dn', 'sub': ('vs CSI 300','相对沪深300')}) -%}
-        {%- endif -%}
-        {%- if row.organ_chip_en -%}
-          {%- set _ = _trust.append({'tone': 'up', 'en': row.organ_chip_en,
-                                     'zh': row.organ_chip_zh or tr(row.organ_chip_en)}) -%}
-        {%- endif -%}
-        {%- if row.get('n_members') -%}
-          {%- set _ = _trust.append({'tone': '', 'en': row.get('n_members') ~ ' names', 'zh': row.get('n_members') ~ ' 只成分股'}) -%}
-        {%- endif -%}
-      {%- else -%}
-        {%- if _sc is not none and _sc.get('mom20') is not none -%}
-          {%- set _ = _stats.append({'label': ('20d move','20日动能'), 'val': '%+.1f%%'|format(_sc.get('mom20')),
-                                     'tone': 'up' if _sc.get('mom20') >= 0 else 'dn', 'sub': ('vs CSI 300','相对沪深300')}) -%}
-        {%- endif -%}
-        {%- if _sc is not none and _sc.get('mom60') is not none -%}
-          {%- set _ = _stats.append({'label': ('60d move','60日动能'), 'val': '%+.1f%%'|format(_sc.get('mom60')),
-                                     'tone': 'up' if _sc.get('mom60') >= 0 else 'dn', 'sub': ('vs CSI 300','相对沪深300')}) -%}
-        {%- elif row.rs_63d is not none -%}
-          {%- set _ = _stats.append({'label': ('63d strength','63日强度'), 'val': '%+.1f%%'|format(row.rs_63d),
-                                     'tone': 'up' if row.rs_63d >= 0 else 'dn', 'sub': ('vs CSI 300','相对沪深300')}) -%}
-        {%- endif -%}
-        {%- if _sc is not none and _sc.get('eq_badge') is not none -%}
-          {%- set _ = _stats.append({'label': ('Entry','入场'), 'val': _sc.get('eq_badge'),
-                                     'sub': ('timing quality','时机质量')}) -%}
-        {%- elif row.pos is not none -%}
-          {%- set _ = _stats.append({'label': ('Cycle position','周期位置'), 'val': '%.0f%%'|format(row.pos),
-                                     'sub': ('of the full range','在整段区间中')}) -%}
-        {%- endif -%}
-        {%- if _sc is not none and _sc.get('pctile') is not none -%}
-          {%- set _ = _stats.append({'label': ('Strength rank','强度排名'), 'val': '%.0f'|format(_sc.get('pctile')) ~ 'p',
-                                     'sub': ('vs its own year','对比自身一年')}) -%}
-        {%- endif -%}
-        {%- if _sc is not none and _sc.get('above200') is not none -%}
-          {%- set _ = _trust.append({'tone': 'up' if _sc.get('above200') else '',
-                                     'en': ('▲ Above the 200-day' if _sc.get('above200') else 'Below the 200-day'),
-                                     'zh': ('▲ 高于200日均线' if _sc.get('above200') else '低于200日均线')}) -%}
-        {%- endif -%}
-        {%- if row.organ_chip_en -%}
-          {%- set _ = _trust.append({'tone': 'up', 'en': row.organ_chip_en,
-                                     'zh': row.organ_chip_zh or tr(row.organ_chip_en)}) -%}
-        {%- endif -%}
-      {%- endif -%}
-      {%- if lane == 'reduce' and row.dual_read -%}
-        {%- set _ = _trust.append({'tone': 'warn', 'en': '⇔ ' ~ (row.dual_chip_en or 'Two reads'),
-                                   'zh': '⇔ ' ~ (row.dual_chip_zh or '两个读数')}) -%}
-      {%- endif -%}
-      {%- set _sub_en -%}
-      {%- if _sc is not none and _sc.get('age_short') %}Signal {{ _sc.get('age_short') }}{% endif -%}
-      {%- if _sc is not none and _sc.get('age_short') and _sc.get('dc_day') is not none %} · {% endif -%}
-      {%- if _sc is not none and _sc.get('dc_day') is not none %}cycle day {{ _sc.get('dc_day') }}{% endif -%}
-      {%- endset -%}
-      {%- set _sub_zh -%}
-      {%- if _sc is not none and _sc.get('age_short') %}信号 {{ _sc.get('age_short_zh') or _sc.get('age_short') }}{% endif -%}
-      {%- if _sc is not none and _sc.get('age_short') and _sc.get('dc_day') is not none %} · {% endif -%}
-      {%- if _sc is not none and _sc.get('dc_day') is not none %}周期第 {{ _sc.get('dc_day') }} 日{% endif -%}
-      {%- endset -%}
-      {#- Theme reasons collapse to ONE plain-word line: "accelerating" is real state
-          the stats grid does not carry, and sub is where the US sector card already
-          puts its own state line. tr() is a global, not a filter — hence the loop. -#}
-      {%- set _rsn_en = row.reasons[:2] | join(' · ') if row.reasons else '' -%}
-      {%- set _rsn_zh_parts = [] -%}
-      {%- for _r in (row.reasons[:2] if row.reasons else []) -%}{%- set _ = _rsn_zh_parts.append(tr(_r)) -%}{%- endfor -%}
-      {%- set _rsn_zh = _rsn_zh_parts | join(' · ') -%}
-      {#- The kicker names its own evidence: "Leadership read" only when the row
-          carries theme_intel.leadership, otherwise the neutral "Current read". The
-          pre-parity board had no leadership data at all — that is what the old
-          no-Leadership-word test was protecting against. -#}
-      {{ dc.dc_card({
-        'kind': 'theme' if _is_theme else 'sector',
-        'mark': '◆' if _is_theme else '🏛',
-        'tone': _rptag_cls,
-        'eyebrow': ('Theme basket','主题篮子') if _is_theme
-                   else (('Sector pulse · ' ~ row.id, '板块脉搏 · ' ~ row.id) if row.id else ('Sector pulse','板块脉搏')),
-        'name': (row.name, row.name_zh or tr(row.name)),
-        'tag': (row.reco_en, row.reco_zh or tr(row.reco_en)) if row.reco_en
-               else ((row.tag, row.tag_zh or tr(row.tag)) if row.tag
-               else ((row.phase, tr(row.phase)) if row.phase else none)),
-        'score': row.score if _is_theme else none,
-        'kicker': (('Leadership read','领先度判断') if row.get('leadership') else ('Current read','当前判读'))
-                  if _is_theme else ('Current setup','当前形态'),
-        'read': (
-          (('Led by a few names','少数龙头带动') if row.get('leadership') == 'narrow'
-           else (('Broad and leading','广泛领先') if row.reco in ('accumulate','enter','buy','add')
-           else (('Late and extended','后期且延伸') if row.reco in ('trim','reduce')
-           else (('Breadth weakening','广度转弱') if row.reco in ('avoid','exit')
-           else ('Trend intact','趋势完好')))))
-          if _is_theme else
-          (('Turning up from the low','自低位回升') if lane == 'bot'
-           else (('Entry open today','今日入场窗口开启') if lane == 'buy'
-           else (('Momentum fading','动能转弱') if lane == 'reduce'
-           else ('In favour — but it has run','仍看好 — 但已上涨'))))
-        ),
-        'sub': (_sub_en|trim, _sub_zh|trim) if not _is_theme
-               else ((_rsn_en, _rsn_zh) if _rsn_en else none),
-        'trust': _trust, 'stats': _stats,
-        'leaders': {'label': ('Leaders','龙头'), 'val': (row.get('leaders_en'), row.get('leaders_zh') or row.get('leaders_en'))}
-                   if row.get('leaders_en') else none,
-        'takeaway': (
-          (('Signals disagree. The trend still says reduce while the price shows an early bottom — wait for them to agree.','信号不一致。趋势仍建议减仓，价格却初现筑底 — 等两者一致再动。')
-             if (lane == 'reduce' and row.dual_read)
-           else (('Turning up from the low — watch it, do not chase it.','自低位回升 — 观察为主，不要追。') if lane == 'bot'
-           else ((('Leadership is broad. Add on pullbacks, not into strength.','领先面广。回调时加仓，不要追强势。') if row.get('leadership') == 'broad'
-                  else ('In favour. Add on pullbacks, not into strength.','仍然看好。回调时加仓，不要追强势。')) if row.reco in ('accumulate','enter','buy','add')
-           else (('Momentum is extended. Protect gains into strength.','动能已过度延伸。逢强保护利润。') if row.reco in ('trim','reduce')
-           else (('Breadth is fading. Stand aside until it turns again.','广度转弱。在重新转强之前先观望。') if row.reco in ('avoid','exit')
-           else (('A clean entry is open today.','今日入场窗口干净。') if lane == 'buy'
-           else ('Still in favour, but it has run — wait for a dip.','仍然看好，但已上涨 — 等回调。')))))))
-        ),
-        'foot': ('Click row for holdings and full history','点击查看持仓与完整历史') if _is_theme
-                else ('Click row for the full sector view','点击查看完整板块详情'),
-        'foot_b': ('Open ↗','打开 ↗') if _is_theme else ((row.id ~ ' ↗',) if row.id else none),
-      }) }}
-      <div class="anv2-row-top">
-        {%- if row.href -%}
-        <a class="anv2-name anv2-name-link" href="{{ row.href }}"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or tr(row.name) }}</span><span class="anv2-go" aria-hidden="true">↗</span></a>
-        {%- else -%}
-        <span class="anv2-name"><span class="l-en">{{ row.name }}</span><span class="l-zh">{{ row.name_zh or tr(row.name) }}</span></span>
-        {%- endif -%}
-        {% if row.score is not none %}<span class="anv2-score{% if row.score >= 60 %} anv2-score-hi{% elif row.score >= 40 %} anv2-score-mid{% else %} anv2-score-lo{% endif %}">{{ row.score }}</span>{% endif %}
-      </div>
-      <div class="anv2-chips">
-        {# type chips (THEME/SECTOR/BASKET) removed by operator request 2026-07-10 —
-           row provenance lives in the board help() tooltip instead #}
-        {# reco chip (theme rows) #}
-        {% if row.reco_en %}<span class="anv2-chip anv2-chip-reco-{{ row.reco or 'hold' }}">{{ t(row.reco_en, row.reco_zh or tr(row.reco_en)) }}</span>{% endif %}
-        {# sector urgency/tag chip #}
-        {% if row.tag and row.kind != 'THEME' %}<span class="anv2-chip anv2-chip-tag">{{ t(row.tag, row.tag_zh or tr(row.tag)) }}</span>{% endif %}
-        {# dual-read chip on reduce lane #}
-        {% if lane == 'reduce' and row.dual_read %}
-        <span class="anv2-chip anv2-chip-washout" data-tip-en="Mixed picture: the longer trend still says reduce, but the recent price action shows early signs of a bottom. This name also appears in Bottoming Watch — both reads are shown so you see the disagreement." data-tip-zh="信号矛盾：长期趋势仍建议减仓，但近期价格已初现筑底迹象。该名称同时出现在洗盘观察栏——两种判读并列显示，便于看清分歧。">{{ t(row.dual_chip_en, row.dual_chip_zh) }}</span>
-        {% endif %}
-        {# bottoming lane: trough+slope chip #}
-        {% if lane == 'bot' and row.osc_slope is not none %}
-        <span class="anv2-chip anv2-chip-trough" data-tip-en="At the low point of its cycle — the most beaten-down phase." data-tip-zh="处于周期低谷——最超跌的阶段。">{{ t('TROUGH','低谷') }}</span>
-        <span class="anv2-chip anv2-chip-turn" data-tip-en="Momentum is turning up from the low — higher number = sharper turn. A first hint, not a buy signal." data-tip-zh="动能正从低位回升——数字越大转向越明显。仅是初步迹象，非买入信号。">↗ {{ '%.1f'|format(row.osc_slope) }}</span>
-        {% endif %}
-        {# price-tape chip (W8-R7 rider) — TURNING/CONFIRMED state from basket_turn_cn #}
-        {% if row.organ_chip_en %}<span class="anv2-chip anv2-chip-tape">{{ t(row.organ_chip_en, row.organ_chip_zh or tr(row.organ_chip_en)) }}</span>{% endif %}
-      </div>
-      {# stat line: rel20 for themes, rs_63d+pos for bottoming #}
-      {% if lane == 'bot' %}
-      <div class="anv2-stat">
-        {% if row.rs_63d is not none %}<span class="{% if row.rs_63d < 0 %}anv2-neg{% else %}anv2-pos{% endif %}">{{ '%+.1f'|format(row.rs_63d) }}%</span><span class="muted"> {{ t('63d RS','63日相对强度') }}</span>{% endif %}
-        {% if row.pos is not none %} · <span class="muted">{{ t('pos','位置') }} {{ '%.0f'|format(row.pos) }}%</span>{% endif %}
-      </div>
-      {% elif row.rel20 is not none %}
-      {# 20d + 5d side by side: the fast window exposes a rollover the slow 20d
-         ruler still hides (2026-07-14 semis: 20d +22% while 5d already negative) #}
-      <div class="anv2-stat">
-        <span class="{% if row.rel20 < 0 %}anv2-neg{% else %}anv2-pos{% endif %}">{{ '%+.1f'|format(row.rel20 * 100) }}%</span><span class="muted"> {{ t('20d','20日') }}</span>
-        {%- if row.rel5 is not none %} · <span class="{% if row.rel5 < 0 %}anv2-neg{% else %}anv2-pos{% endif %}">{{ '%+.1f'|format(row.rel5 * 100) }}%</span><span class="muted"> {{ t('5d','5日') }}</span>{% endif -%}
-        <span class="muted"> {{ t('vs CSI 300','相对沪深300') }}</span>
-      </div>
-      {% endif %}
-    </div>
-    {%- endmacro -%}
-
-    {# ── Lane macro ─────────────────────────────────────────────────────── #}
-    {%- macro _anlane(lane_key, cls, title_en, title_zh, subtitle_en, subtitle_zh, items, lane_id) -%}
-    <div class="anv2-lane anv2-lane--{{ cls }}" id="{{ lane_id }}">
-      <div class="anv2-lane-hd">
-        <div class="anv2-lane-title">
-          <span class="l-en">{{ title_en }}</span><span class="l-zh">{{ title_zh }}</span>
-          <span class="anv2-lane-count">({{ items|length }})</span>
-        </div>
-        {% if subtitle_en %}<div class="anv2-lane-sub"><span class="l-en">{{ subtitle_en }}</span><span class="l-zh">{{ subtitle_zh }}</span></div>{% endif %}
-      </div>
-      <div class="anv2-lane-body lst-wrap">
-      <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
-        {% for row in items %}{{ _anrow(row, lane_key) }}{% endfor %}
-      </div>
-      {% if items|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more','显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
-      </div>
-    </div>
-    {%- endmacro -%}
-
-    {{ _anlane('buy',  'buy',  'Buy Now',               '立即买入',
-               'Clean entry point today', '今日有干净入场点',
-               _anl.buy_now, 'anv2-buy') }}
-    {{ _anlane('pull', 'pull', 'In Favour', '看好',
-               'Still in favour — wait for a dip before adding', '仍看好 — 等回调再加仓',
-               _anl.wait_pullback, 'anv2-pull') }}
-    {{ _anlane('bot',  'bot',  'Bottoming Watch',        '洗盘观察',
-               'Beaten down, first signs of turning up — watch only', '超跌初现回升迹象 — 仅观察',
-               _anl.bottoming_watch, 'anv2-bot') }}
-    {{ _anlane('reduce', 'red', 'Reduce / Avoid',        '减仓 / 回避',
-               'Trend weakening — consider trimming', '趋势转弱 — 考虑减仓',
-               _anl.reduce_avoid, 'anv2-red') }}
-
-    </div>{# /.anv2-grid #}
-  </div>{# /.anv2-board #}
-  {% endif %}
+  {% include "_china_act_now_board.html.j2" %}
   {% endif %}
 
   {% if mode != 'stocks' %}

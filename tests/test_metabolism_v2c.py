@@ -640,6 +640,111 @@ class TestRosterGovernor:
             f"Expected conservative default, got {default!r}"
         )
 
+    def test_active_cap_ask_fires_for_genesis_state_proposal(self):
+        """R-V6-3a alignment (2026-08-04 reconciliation): a charter proposal
+        arriving in the genesis flow ('proposed'/'probation' state) still fires
+        the ACTIVE-cap ASK when the active roster is at/over cap.  The genesis
+        screen denies genesis on that same roster-count predicate regardless of
+        the proposal's state, so the ASK must surface on the same predicate —
+        pre-fix, the state-conditioned branch made the active-cap ASK
+        unreachable for the genesis flow."""
+        root = _tmp_root()
+        _write_minimal_charter(root)  # 3 active non-scored lobes
+        _write_minimal_budget(root, max_active=2, max_probation=10)
+
+        from engine.metabolism.roster_governor import check_charter_budget
+        result = check_charter_budget(
+            "newborn-lobe", proposed_lifecycle_state="proposed", root=root
+        )
+        assert result["cap_exceeded"] is True
+        assert result["ok"] is False
+        tap_dir = root / "data" / "metabolism" / "tap"
+        assert (tap_dir / "tap_roster_cap_active.json").exists(), (
+            "active-cap ASK card expected for a genesis-state proposal "
+            "when the active roster is at/over cap"
+        )
+
+    def test_ask_card_filename_stable_across_cycles(self):
+        """Repeated cap-exceeded checks overwrite ONE stable card per cap_type —
+        nightly onboarding must not spam a new timestamped card per cycle while
+        the cap stays exceeded."""
+        root = _tmp_root()
+        _write_minimal_charter(root)
+        _write_minimal_budget(root, max_active=2, max_probation=10)
+
+        from engine.metabolism.roster_governor import check_charter_budget
+        check_charter_budget("newborn-a", proposed_lifecycle_state="proposed", root=root)
+        check_charter_budget("newborn-b", proposed_lifecycle_state="proposed", root=root)
+
+        tap_dir = root / "data" / "metabolism" / "tap"
+        cards = list(tap_dir.glob("*.json"))
+        assert len(cards) == 1, (
+            f"expected one stable roster-cap card, got {[c.name for c in cards]}"
+        )
+        assert cards[0].name == "tap_roster_cap_active.json"
+
+    def test_onboarding_wires_governor_and_never_blocks(self):
+        """consume_charter_proposals calls the governor at onboarding (the
+        documented-but-dark enforcement point, wired 2026-08-04): over-cap →
+        standing ASK card written AND the charter item is still injected when
+        armed (R-V2-7 never-block — the hard deny stays in the ADJUDICATE
+        genesis screen)."""
+        root = _tmp_root()
+        _write_minimal_charter(root)  # 3 active non-scored lobes
+        _write_minimal_budget(root, max_active=2, max_probation=10)
+        cp_dir = root / "data" / "metabolism" / "charter_proposals"
+        cp_dir.mkdir(parents=True, exist_ok=True)
+        (cp_dir / "coverage_gap.json").write_text(json.dumps({
+            "schema": "metabolism.charter_proposal.v1",
+            "lobe_id": "newborn-gap-lobe",
+            "title": "charter: newborn-gap-lobe display lobe",
+            "proposed_tier": "display",
+            "proposed_lifecycle_state": "proposed",
+            "targets_sensor": "liveness",
+            "rationale": "test coverage gap",
+        }), encoding="utf-8")
+
+        from engine.metabolism.applier import consume_charter_proposals
+        injected = consume_charter_proposals(root=root, dry_run=False, armed=True)
+
+        assert injected, "charter item must still be injected (never-block, R-V2-7)"
+        rb = injected[0].get("roster_budget") or {}
+        assert rb.get("cap_exceeded") is True, (
+            f"injected proposal must carry the fresh governor snapshot; got {rb!r}"
+        )
+        tap_dir = root / "data" / "metabolism" / "tap"
+        assert (tap_dir / "tap_roster_cap_active.json").exists(), (
+            "onboarding an over-cap charter must emit the standing ASK card"
+        )
+
+    def test_onboarding_shadow_mode_writes_no_tap_card(self):
+        """Non-armed (shadow/dry-run) onboarding must NOT write operator tap
+        surfaces — the ASK card is an armed-cycle artifact only."""
+        root = _tmp_root()
+        _write_minimal_charter(root)
+        _write_minimal_budget(root, max_active=2, max_probation=10)
+        cp_dir = root / "data" / "metabolism" / "charter_proposals"
+        cp_dir.mkdir(parents=True, exist_ok=True)
+        (cp_dir / "coverage_gap.json").write_text(json.dumps({
+            "schema": "metabolism.charter_proposal.v1",
+            "lobe_id": "newborn-gap-lobe",
+            "title": "charter: newborn-gap-lobe display lobe",
+            "proposed_tier": "display",
+            "proposed_lifecycle_state": "proposed",
+            "targets_sensor": "liveness",
+            "rationale": "test coverage gap",
+        }), encoding="utf-8")
+
+        from engine.metabolism.applier import consume_charter_proposals
+        injected = consume_charter_proposals(root=root, dry_run=True, armed=False)
+
+        assert injected == [], "shadow mode injects nothing (existing contract)"
+        tap_dir = root / "data" / "metabolism" / "tap"
+        cards = list(tap_dir.glob("*.json")) if tap_dir.exists() else []
+        assert cards == [], (
+            f"shadow onboarding must not write tap cards; got {[c.name for c in cards]}"
+        )
+
 
 # ── 9. Authority audit ────────────────────────────────────────────────────────
 

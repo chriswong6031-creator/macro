@@ -1,0 +1,15 @@
+{
+  "quarantine": {
+    "file": "ledger_quarantine.jsonl",
+    "n_rows": 2,
+    "reason": "duplicate re-description of an already-recorded session stamped under a fresh calendar date (store-frozen run; forward-ledger audit 2026-08-05, #4568 sibling)",
+    "healed_by": "scripts/heal_basket_turn_ledger.py",
+    "last_heal": "2026-08-05T06:04:49+00:00"
+  },
+  "known_gaps": [
+    {
+      "session": "2026-08-03",
+      "reason": "engine ran against a frozen store (no member bar after 2026-07-31); whether this session had real candidates is unknowable from committed data"
+    }
+  ]
+}
