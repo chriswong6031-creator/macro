@@ -101,9 +101,11 @@ SCORE_WEIGHTS = {
     "quality": 10.0,
 }
 
-# Frozen definition inputs, not fitted coefficients.  Shared verbatim with
-# engine.china_board_rank — the tier cascade and entry-status vocabularies are
-# market-independent, so the two boards speak one scoring language.
+# Frozen definition inputs, not fitted coefficients.  The tier cascade and
+# entry-status VOCABULARIES are shared with engine.china_board_rank, but the
+# entry VALUES diverged 2026-08-04: CN v3 re-ordered its map to the measured
+# CN prime-window order (patience statuses first) while the US map below keeps
+# the trend-tape order.  tests/test_us_board_rank.py pins the divergence.
 _SIGNAL_BASE = {"T2": 1.0, "T1": 0.9, "T3": 0.7}
 _ENTRY_VALUE = {
     "buy_now": 1.0,
@@ -127,8 +129,12 @@ _ENTRY_VALUE = {
 STAGE_LIVE = "live"
 STAGE_SETTING_UP = "setting_up"
 STAGE_RAN = "ran"
+STAGE_BASING = "basing"
 STAGE_BLOCKED = "blocked"
-STAGE_ORDER = (STAGE_LIVE, STAGE_SETTING_UP, STAGE_RAN, STAGE_BLOCKED)
+# `basing` sits between `ran` and `blocked`: nothing to act on (so it is below every
+# actionable bucket), but it is NOT the stand-aside verdict `blocked` carries — the
+# cycle read says this name is working on a low, which is a state worth watching.
+STAGE_ORDER = (STAGE_LIVE, STAGE_SETTING_UP, STAGE_RAN, STAGE_BASING, STAGE_BLOCKED)
 _STAGE_RANK = {name: index for index, name in enumerate(STAGE_ORDER)}
 
 _LIVE_STATUSES = frozenset(("buy_now", "partial", "buy_soon"))
@@ -136,10 +142,20 @@ _SETTING_UP_STATUSES = frozenset(("await_confluence", "bounce_wait", "watch"))
 _RAN_STATUSES = frozenset(("extended", "topping", "hold"))
 _BLOCKED_STATUSES = frozenset(("blocked", "exit", "avoid"))
 
+# The cycle ladder's basing state (engine.cycles.STATE_DISPLAY).  The internal KEY is
+# the match target — it is the field the calibration JSON and every ladder consumer
+# already agree on — with the display label as the fallback rung for a row that
+# carries only what the template renders.  Both spellings are matched because
+# `engine.setups.setup_score` stamps `state` AND `label` on a board row, while some
+# enrichment paths carry the label alone.
+BOTTOM_WATCH_STATE = "BOTTOM WATCH"
+_BOTTOM_WATCH_LABELS = frozenset(("NEARING A LOW",))
+
 STAGE_LABELS = {
     STAGE_LIVE: {"en": "Live now", "zh": "现在可操作"},
     STAGE_SETTING_UP: {"en": "Setting up", "zh": "形成中"},
     STAGE_RAN: {"en": "Ran — don't chase", "zh": "已启动 — 勿追"},
+    STAGE_BASING: {"en": "Basing", "zh": "筑底中"},
     STAGE_BLOCKED: {"en": "Blocked", "zh": "受阻"},
 }
 
@@ -396,8 +412,55 @@ def is_downtrend(row: Mapping[str, Any]) -> bool:
     return label.strip() == "DOWNTREND"
 
 
-def stage_for(row: Mapping[str, Any], entry: Mapping[str, Any] | None = None) -> str:
-    """Bucket a row into ``live`` / ``setting_up`` / ``ran`` / ``blocked``.
+def is_bottom_watch(row: Mapping[str, Any]) -> bool:
+    """True when the cycle ladder reads this row as BOTTOM WATCH — the basing state.
+
+    BOTTOM WATCH carries ``dir == "down"`` (``engine.cycles.STATE_DISPLAY``) because
+    price is still falling, so :func:`is_downtrend` answers True for it as well.  That
+    is why this test has to run FIRST wherever the two are consulted together: the two
+    predicates overlap, and the more specific one has to win.
+
+    The internal ``state`` key is the primary rung — it is what the calibration JSON
+    and every other ladder consumer key on, and it does not move when display copy is
+    rewritten.  The display label is a fallback for rows carrying only what the
+    template renders, matched on the leading token because
+    ``build_stock_library._enforce_blocked_buy_invariant`` may suffix it (the shipped
+    board carries ``"NEARING A LOW (blocked)"``-style labels — 7 of the 41 buy-lane
+    BOTTOM WATCH rows in the 2026-06-30..07-31 ledger did).
+
+    DECLINE and ROLLING OVER are NOT basing: they are the falling-knife and the
+    topping roll, and they keep routing to ``blocked``.
+    """
+    if str(row.get("state") or "").strip().upper() == BOTTOM_WATCH_STATE:
+        return True
+    label = str(row.get("label") or "").strip().upper()
+    for opener in ("(", "（"):        # ASCII " (blocked)" and its zh "（受阻）" twin
+        label = label.split(opener)[0]
+    return label.strip() in _BOTTOM_WATCH_LABELS
+
+
+def stage_for(row: Mapping[str, Any], entry: Mapping[str, Any] | None = None, *,
+              bottom_watch_stage: str = STAGE_BLOCKED) -> str:
+    """Bucket a row into ``live`` / ``setting_up`` / ``ran`` / ``basing`` / ``blocked``.
+
+    ``bottom_watch_stage`` names the bucket the ladder's BOTTOM WATCH state routes to.
+    The default is ``STAGE_BLOCKED`` — the behaviour every caller had before the basing
+    shelf existed — so a board that has not built the shelf keeps its rendering
+    byte-identical; the US board opts in by passing ``STAGE_BASING`` (see
+    :func:`score_rows`).  It is a PARAMETER rather than a flag day because the shelf is
+    a rendered surface: routing rows to a bucket a template does not know about would
+    drop them below the blocked shelf via the catch-all, which is strictly worse than
+    where they sit today.  DISPLAY-TIER ONLY — this function decides grouping, never
+    membership, never score, never who is featured.
+
+    WHY BOTTOM WATCH NEEDED ITS OWN BUCKET (D18, missed-ignitions audit).  BOTTOM WATCH
+    is ``dir == "down"``, so the DOWNTREND clause below swallowed it: the one ladder
+    state that names a name working on a low was invisible-by-construction, filed under
+    "stand aside" beside the falling knives.  Measured on the board's own ledger
+    (``data/us_board_ledger/snapshots.jsonl``, 2026-06-30..07-31): 41 buy-lane rows
+    across 13 of 17 board days, every one of them routed to ``blocked``.  That clause
+    was an unmeasured implementation choice, not a pre-registered rule (census verdict),
+    and the split changes only which shelf a row renders under.
 
     Blocked wins over everything.  Masterplan §3.1 defines the bucket as
     ``{blocked, exit, avoid} OR label DOWNTREND``, and the DOWNTREND clause is
@@ -417,6 +480,11 @@ def stage_for(row: Mapping[str, Any], entry: Mapping[str, Any] | None = None) ->
     status = _status_of(entry if entry is not None else row.get("entry_signal"))
     if status in _BLOCKED_STATUSES:
         return STAGE_BLOCKED
+    # BEFORE the DOWNTREND clause, and deliberately AFTER the entry-status one: an
+    # explicit blocked/exit/avoid entry verdict is a decision about this name, and it
+    # outranks the cycle read exactly as it does for every other state.
+    if is_bottom_watch(row):
+        return bottom_watch_stage
     if is_downtrend(row):
         return STAGE_BLOCKED
     if status in _LIVE_STATUSES:
@@ -539,6 +607,11 @@ def featured_shortfalls(
     verdict = verdict if verdict is not None else (row.get("signal") or {})
     entry = entry if entry is not None else (row.get("entry_signal") or {})
 
+    # No ``bottom_watch_stage`` here on purpose: this asks one question — "is this row
+    # LIVE" — and both answers the parameter can produce (``basing``/``blocked``) are
+    # not, so the featured flag is provably invariant to the basing split.  Threading
+    # the parameter would add a second place the split could drift without changing a
+    # single verdict.
     if stage_for(row, entry) != STAGE_LIVE:
         reasons.append("stage_not_live")
     status = _status_of(entry)
@@ -600,6 +673,7 @@ def score_rows(
     definition: str = BOARD_DEFINITION,
     alpha_of: Callable[[Mapping[str, Any]], Any] | None = None,
     featured_extra: Callable[[Mapping[str, Any]], Iterable[str]] | None = None,
+    bottom_watch_stage: str = STAGE_BLOCKED,
 ) -> list[dict]:
     """Score, stage, feature and order a buy pool.
 
@@ -617,6 +691,13 @@ def score_rows(
     ``featured_extra`` adds market-specific featured vetoes.  All three default to
     the US answer — the arithmetic, the weights and the stage map are SHARED, and
     only the field names are market parameters.
+
+    ``bottom_watch_stage`` is the one exception to that "US answer by default" rule
+    and it is deliberate: it defaults to ``STAGE_BLOCKED``, the pre-basing behaviour,
+    so a board whose template has no basing shelf keeps rendering byte-identically.
+    The US builder passes ``STAGE_BASING``; see :func:`stage_for`.  It moves rows
+    between DISPLAY buckets and nothing else — membership, score, order-within-bucket
+    and the featured flag are all computed the same way either way.
     """
     pool = list(rows)
     board_date = _as_date(board_asof)
@@ -640,7 +721,7 @@ def score_rows(
         }
         score = max(0.0, min(100.0, sum(points.values())))
 
-        row["stage"] = stage_for(row, entry)
+        row["stage"] = stage_for(row, entry, bottom_watch_stage=bottom_watch_stage)
         row["prophet"] = {
             "version": definition,
             "score": round(score, 1),
