@@ -90,7 +90,7 @@ The gate has to beat `vol-target (Barroso)`, not just `ungated` — one-line vol
 | 2016–2022 | 1511 | -0.06 | 0.02 | 0.16 | 0.27 | -41.7 | -11.3 |
 | 2022–2026 | 1088 | 0.75 | 0.77 | 0.57 | 0.62 | -21.5 | -9.7 |
 
-`gate x vol-target` beats `ungated` in **3 of 4** eras.
+`gate x vol-target` beats `ungated` on Sharpe in **3 of 4** eras and on max drawdown in **4 of 4**. (Eras where the sleeve held no positions at all — too few names to form quintiles early in the deep panel — are excluded rather than padding the denominator with blocks no gate could have affected.)
 
 ---
 
