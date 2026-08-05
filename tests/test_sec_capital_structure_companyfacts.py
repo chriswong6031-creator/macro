@@ -14,6 +14,10 @@ import requests
 import collectors.base as collector_base
 import collectors.sec_capital_structure as filings
 import collectors.sec_capital_structure_companyfacts as companyfacts
+from engine.capital_structure.source_ledger_io import (
+    encode_source_ledger,
+    source_ledger_path,
+)
 from engine.capital_structure.source_store import ContentAddressedSourceStore, LocalStore
 
 
@@ -97,10 +101,12 @@ def _anchor_manifest(store, *, cik: str = "0001234567", ticker: str = "ACME"):
 
 
 def _write_anchor(root, manifest):
-    anchor_path = root.parent / "source_manifest.parquet"
+    anchor_path = source_ledger_path(root.parent)
     anchor_path.parent.mkdir(parents=True, exist_ok=True)
     records = manifest if isinstance(manifest, list) else [manifest]
-    pd.DataFrame(records).to_parquet(anchor_path, index=False)
+    # Fixtures deliberately include manifests this repository's identity law
+    # rejects, so encode without the validating write boundary.
+    anchor_path.write_bytes(encode_source_ledger(records))
 
 
 def _payload(cik: str = "0001234567") -> bytes:
