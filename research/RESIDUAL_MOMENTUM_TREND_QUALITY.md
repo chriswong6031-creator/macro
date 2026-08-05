@@ -4,7 +4,7 @@
 
 > **Status: research / diagnostic. Nothing here ranks, sizes or gates a live board.**
 > The shipped residual leg remains `engine/residual_alpha.py`. This work extends it,
-> measures the extension honestly, and reports three nulls and one live lead.
+> measures the extension honestly, and reports **four nulls and one live lead**.
 
 ---
 
@@ -14,10 +14,11 @@
 |---|---|---|
 | 1 | Do the five requested windows differ? | **They are FOUR.** "12−1 months" and "12 months excluding the last 21 days" are the same construction (form 252 / skip 21). |
 | 2 | Does residual momentum beat total momentum? | **Directionally yes, at every window** — reproducing Blitz–Huij–Martens on our panel. But nothing clears BH-FDR; magnitudes are tiny. |
+| 2b | Do the size/value/quality/low-vol legs (`β_f F`) help? | **No — keep the two-leg form.** The legs do reduce factor exposure, but residual vol *rises* 1.7% (four noisy betas cost more than they remove on a 3-year panel) and the ranking barely moves (ρ 0.94). §4e. |
 | 3 | Which window is best? | **12−1.** The 3−1 window is the worst and turns negative for plain momentum (short-horizon reversal, as the prior work found). |
 | 4 | Do the nine trend-quality measures add anything? | **NULL.** No measure survives BH-FDR, and the composite's edge does **not** survive neutralization against residual momentum — it is repackaged momentum plus noise. |
 | 5 | Does residual acceleration work? | **Still no.** Negative IC again, replicating the earlier pre-registered KILL. Carried as a diagnostic; excluded from the composite by construction. |
-| 6 | Does crash gating help? | **The one live lead.** See §4c — large drawdown and Sharpe improvements, complementary to vol-targeting, but short of the promotion bar. |
+| 6 | Does crash gating help? | **The one live lead.** Stacked with vol-targeting: Sharpe 0.10 → 0.48, max drawdown −64% → −14%, skew −1.42 → −0.35, and drawdown improves in **every** era tested on both panels. Best DSR 0.81 (full history) — short of the 0.90 promotion bar. |
 
 **What this changes today: nothing ships.** Per the repo's epistemics, the gauntlet is a
 *promotion* gate, not a build gate — this is built, measured, and parked at diagnostic
@@ -265,7 +266,96 @@ established.
 
 ---
 
-## 4d. How this can be used
+### 4d. Full history 1964–2026 — and why it does NOT overturn 4a
+
+749 rebalances. Three candidates now survive BH-FDR — **all of them plain momentum**:
+
+| candidate | mean IC | t_HAC | q_FDR | n |
+|---|--:|--:|--:|--:|
+| `w12_1\|mom_tot` | 0.0265 | 3.64 | 0.004 | **749** |
+| `w12_1\|mom_tot\|SN` | 0.0199 | 3.75 | 0.004 | **749** |
+| `w6_1\|mom_tot\|SN` | 0.0131 | 2.76 | 0.046 | **749** |
+| `w12_1\|mom_res\|SN` | 0.0077 | 1.37 | 0.657 | **383** |
+
+**Read the `n` column before the IC column.** The residual candidates are scored on
+**383** dates and the total-momentum candidates on **749** — the residual needs a
+populated GICS sector cross-section, which the deep panel does not have in its earliest
+decades (it holds *current* index members back to inception, so the 1960s–70s carry only
+a handful of names per sector). The two rows therefore describe **different eras**, and
+ranking them against each other compares a modern sample to one that includes the
+pre-2000 golden age. The harness now prints this warning itself rather than leaving it
+to be spotted.
+
+This is the same era-dependence the prior work identified: plain momentum's full-history
+dominance is a **pre-2000 artifact**, inflated further by survivorship. **§4a (269
+rebalances, every candidate at the same n) is the honest residual-vs-total comparison**,
+and there the residual wins at every window.
+
+**Crash gating on full history is stronger, not weaker:**
+
+| variant | Sharpe | max DD % | skew | DSR | P(SR>0) |
+|---|--:|--:|--:|--:|--:|
+| ungated | 0.10 | −64.3 | −1.68 | 0.08 | 0.744 |
+| crash-gated | 0.23 | −33.0 | −2.19 | 0.35 | 0.941 |
+| vol-target | 0.27 | −36.6 | −0.47 | 0.48 | 0.968 |
+| **gate × vol-target** | **0.39** | **−19.7** | **−0.40** | **0.81** | **0.997** |
+
+DSR climbs to **0.81** on the longer sample — approaching but still short of the 0.90
+bar. Across the six eras in which the sleeve actually held positions, `gate × vol-target`
+improves **max drawdown in 6 of 6** and Sharpe in 5 of 6 (losing only 2024–26, a strong
+momentum regime — the same cost visible in §4c).
+
+> The six pre-1994 blocks are excluded from those counts: the sleeve held **no
+> positions** there (too few names to form quintiles), so its returns are zero-variance
+> rather than bad. Counting them would have padded the denominator with eras no gate
+> could have affected — the first version of this report did exactly that and reported a
+> misleadingly weak "5 of 11".
+
+---
+
+### 4e. The `β_f F` extension — the legs work, and they do not pay for themselves
+
+All four legs built successfully on the live panel (`low_vol`, `quality`, `size`,
+`value`; 1,506 names, 2023-06→2026-07, 126d betas). Report:
+`reports/residual-momentum-phase0-live-legs.md`.
+
+| leg | mean abs corr to residual — market+sector | with the leg in |
+|---|--:|--:|
+| `low_vol` | 0.150 | **0.103** |
+| `value` | 0.132 | **0.109** |
+| `size` | 0.127 | **0.096** |
+| `quality` | 0.102 | **0.059** |
+
+**The legs do what they claim** — every one reduces the residual's exposure to its
+factor. But two numbers say the extension is not worth taking:
+
+1. **Residual volatility goes UP, not down: 0.02034 → 0.02068 (−1.7% "absorbed").**
+   Removing a real common component should *reduce* variance. It does not here, because
+   each extra leg is subtracted using a *noisy, lagged, shrunk* rolling beta — and on a
+   126d window with annually-refreshing fundamentals, the estimation noise four extra
+   betas introduce roughly cancels the variance they remove. This is the ordinary cost
+   of a longer regression on a short sample, showing up exactly where theory says it
+   should.
+2. **The ranking barely moves**: sector-neutral score rank correlation **0.938** across
+   1,462 names, top-50 overlap **41/50**. Whatever the legs remove, market + sector had
+   largely removed already.
+
+**Verdict: keep the two-leg construction.** The generalized code stays (it is the
+superset, and it is exactly what a future panel with real point-in-time fundamentals
+would need), but on the data actually available, `β_m` and `β_s` are the legs that earn
+their place.
+
+> Two honest constraints on this test, both pushing the same way. The beta window was
+> shortened to 126d to buy enough rebalances from a 3-year panel, which makes the
+> estimation-noise problem *worse* than a 252d window would; and the 0.66 shrink
+> deliberately under-removes exposure, which is why the leftover correlations settle
+> near 0.06–0.11 rather than the ~0.01 the same code reaches on synthetic data with a
+> clean known factor. A longer panel with real PIT fundamentals could reverse this — it
+> is a "not on this data" result, not a construction kill.
+
+---
+
+## 4f. How this can be used
 
 Ordered by what the evidence actually supports:
 
@@ -282,8 +372,21 @@ Ordered by what the evidence actually supports:
    name's move came from two gap days") — a descriptive read a user can act on, which
    is a different claim from predictive power and needs no gate.
 4. **Do not resurrect acceleration.** Second independent negative.
-5. **Industry momentum stays modeled separately** — which is what stripping `β_s·s̃`
-   already accomplishes. The request's instinct here matches what the engine does.
+5. **Do not add the factor legs to the shipped residual** on current data (§4e). Keep the
+   generalized code — it is the superset and is what a real point-in-time fundamental
+   panel would need — but leave the live construction at market + sector.
+6. **Industry momentum stays modeled separately** — which is what stripping `β_s·s̃`
+   already accomplishes, and the repo carries its own sector/basket momentum engines
+   (`engine/basket_*.py`, `engine/index_momentum.py`) rather than folding industry
+   momentum into the single-stock score. The request's instinct here matches what the
+   engine already does.
+
+**The general lesson.** Across four nulls and one lead, the thing that survived contact
+with the data was not a better *ranker* — it was a better *risk* control. Cross-sectional
+alpha on a crowded, post-publication, survivorship-biased US large-cap panel is worth
+IC ≈ 0.005; a crash gate on the same panel is worth 50 points of drawdown. When a factor
+idea and a risk idea arrive in the same request, the risk half is usually the one that
+pays.
 
 ---
 

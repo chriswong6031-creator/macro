@@ -43,7 +43,6 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-warnings.filterwarnings("ignore")   # rolling betas on truncated history emit benign warnings
 
 from engine import momentum_crash_gate as gate  # noqa: E402
 from engine import residual_momentum as rm  # noqa: E402
@@ -317,6 +316,13 @@ def _era_split(net: pd.Series, gated: pd.Series, volt: pd.Series, both: pd.Serie
             c = (1 + x).cumprod()
             return round(float((c / c.cummax() - 1).min() * 100), 1)
 
+        # An era where the sleeve held NO positions (too few names to form quintiles
+        # early in the deep panel) has zero-variance returns, not bad returns. Including
+        # it would pad the denominator of "the gate wins in N of M eras" with blocks
+        # where nothing was traded and no gate could have helped or hurt.
+        if not n.std():
+            start = end
+            continue
         rows.append({"era": f"{start.year}–{min(end.year, net.index.max().year)}",
                      "n_days": int(len(n)),
                      "sr_ungated": _sr(net), "sr_gated": _sr(gated),
@@ -530,6 +536,23 @@ def render(A, B, C, D, args, closes, grid, legs, ledger) -> str:
     surv = [k for k in rows if rows[k].get("survives_fdr")]
     L += ["", f"**Survive BH-FDR(10%):** {', '.join(f'`{s}`' for s in surv) if surv else '**NONE**'}", ""]
 
+    # Candidates scored on DIFFERENT date sets are not comparable. The residual needs a
+    # populated sector cross-section, so early in the deep panel it has no cross-section
+    # while total momentum already does — ranking the two side by side then compares a
+    # modern sample against one that includes the pre-2000 era, which manufactures a
+    # result. Flag it loudly rather than leaving it to be noticed.
+    ns = {k: r.get("n") for k, r in rows.items() if r.get("n")}
+    if ns and max(ns.values()) - min(ns.values()) > 0.1 * max(ns.values()):
+        lo_k = min(ns, key=lambda k: ns[k])
+        hi_k = max(ns, key=lambda k: ns[k])
+        L += [f"> ⚠️ **Not an apples-to-apples table.** Candidates were scored on "
+              f"materially different date counts (`{lo_k}` n={ns[lo_k]} vs `{hi_k}` "
+              f"n={ns[hi_k]}). The residual signals need a populated sector "
+              "cross-section, which the deep panel does not have in its earliest "
+              "decades, so residual-vs-total rows here span different eras. **Use the "
+              "modern-era report for that comparison** — there every candidate carries "
+              "the same n.", ""]
+
     L += ["## B. Trend quality", "",
           f"Window form {args.tq_form}d / skip {args.tq_skip}d · {B['dates']} scored dates"
           + (f" (**{B['dropped']} rebalances dropped** by the `--max-tq-dates` cap — "
@@ -593,9 +616,15 @@ def render(A, B, C, D, args, closes, grid, legs, ledger) -> str:
                 L.append(f"| {e['era']} | {e['n_days']} | {e['sr_ungated']} | "
                          f"{e['sr_gated']} | {e['sr_vol']} | {e['sr_both']} | "
                          f"{e['dd_ungated']} | {e['dd_both']} |")
+            n_era = len(C["eras"])
             wins = sum(1 for e in C["eras"] if (e["sr_both"] or -9) > (e["sr_ungated"] or -9))
-            L += ["", f"`gate x vol-target` beats `ungated` in **{wins} of "
-                  f"{len(C['eras'])}** eras.", ""]
+            dd_wins = sum(1 for e in C["eras"]
+                          if (e["dd_both"] or -99) > (e["dd_ungated"] or -99))
+            L += ["", f"`gate x vol-target` beats `ungated` on Sharpe in **{wins} of "
+                  f"{n_era}** eras and on max drawdown in **{dd_wins} of {n_era}**. "
+                  "(Eras where the sleeve held no positions at all — too few names to "
+                  "form quintiles early in the deep panel — are excluded rather than "
+                  "padding the denominator with blocks no gate could have affected.)", ""]
 
     if D:
         L += ["## D. Factor-leg impact (descriptive)", "",
@@ -631,4 +660,8 @@ def render(A, B, C, D, args, closes, grid, legs, ledger) -> str:
 
 
 if __name__ == "__main__":
+    # CLI-only: rolling betas on truncated history emit benign numpy/pandas warnings.
+    # Kept under __main__ (the walk_forward.py idiom) because a module-level call would
+    # mute the process-global filter for anything that merely imports this harness.
+    warnings.filterwarnings("ignore")
     sys.exit(main())
