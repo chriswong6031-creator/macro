@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T17:19:21.778169+00:00",
-  "count": 816,
+  "generated_at": "2026-08-05T17:33:39.718670+00:00",
+  "count": 817,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -949,6 +949,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qeecfsqiy65-3fec74",
+      "title": "Focus 260804 SmartGlasses",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-05T01:55:15Z",
+      "summary_points": [
+        "**Trust as Adoption Catalyst**: Market success hinges on user trust over technical capabilities, making it a critical investment consideration for smart glasses adoption.",
+        "**Privacy Risks & Regulatory Exposure**: 67% of French adults view smart glasses as privacy risks; regulatory scrutiny (e.g., NY courts, Royal Caribbean restrictions) and enforcement gaps threaten profitability and growth.",
+        "**AI Hardware Demand & Component Suppliers**: Rising demand for custom AI processors (Qualcomm, MediaTek) and components (Sony cameras, Samsung SDI batteries) drives investment opportunities in key suppliers.",
+        "**Adoption Timeline & Player Dynamics**: Mass adoption overestimated; next 18 months critical (Samsung/Google products, Apple’s 2027 privacy focus), with public comfort determining winners, not features."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
