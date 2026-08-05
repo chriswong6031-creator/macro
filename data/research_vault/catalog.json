@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T12:51:12.305028+00:00",
-  "count": 803,
+  "generated_at": "2026-08-05T13:01:14.866234+00:00",
+  "count": 804,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -54,6 +54,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-uhi2ekheb7u-a2b5bc",
+      "title": "Fidelity National Information Services (FIS) 2Q26 Takeaways Shares decline on capital markets reset",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T11:07:59Z",
+      "summary_points": [
+        "**Capital Markets drag**: Revenue $810mn (-1% below consensus), adjusted EBITDA -$420mn (-51.9% margin) vs consensus $430mn (-53% margin), signaling severe execution issues driving share decline.",
+        "**2027 guidance re-base**: Lower growth rate (mid-3s revenue) and no M&A imply 2027 revenue toward lower end of models, though long-term GAAP FCF improvement remains positive.",
+        "**FIS Q3Q6 guidance**: Revenue $3.415–3.445bn, adjusted EBITDA $1.460–1.480bn (42.8%–43.0% margin), EPS $1.58–1.62; 12m price target $52 (17.5% upside vs.",
+        "$44.26).",
+        "**Downside risks**: Competitive disruption, bank consolidation, and regulatory pressures driving revised EPS guidance ($6.19/$6.49/$7.10 vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-tuzf6phivwb-05e448",
       "title": "JPM International Market Intelligence Morning Briefing Aug 5",
