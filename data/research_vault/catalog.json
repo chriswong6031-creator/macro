@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T14:47:24.268503+00:00",
-  "count": 809,
+  "generated_at": "2026-08-05T15:06:45.818153+00:00",
+  "count": 810,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -174,6 +174,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-14t7vpjy10d-117b0a",
+      "title": "Wynn Macau (1128.HK) 2Q26 results in line with GSe but above market expectations. Solid post World Cup recovery and resilien...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:21:42Z",
+      "summary_points": [
+        "**EBITDA Margin Expansion & Cash Flow Surge**: Net-net EBITDA margin rose +1.3pts qoq to 29.6% (vs.",
+        "3% gross), with operating cash flow up 66.0% (3,212.7 → 5,330.9), signaling robust profitability and liquidity despite market headwinds.",
+        "**Valuation Gap & Dividend Sustainability**: P/E dropped to 10.3 (from 19.2) amid 77.0% net income growth, while maintaining $300mn+ annual dividend (7.4% yield) with capex adjusted to $350-400mn/2026E, confirming cash flow resilience.",
+        "**VIP Segment Deterioration Risk**: VIP rolling chip volume down 23% qoq and table win rate down 39% qoq, driving EBITDA decline (-15% qoq) and eroding VIP GGR share (14.2% Q2 2026 vs.",
+        "prior), signaling high-margin segment contraction."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
