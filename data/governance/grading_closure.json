@@ -1,9 +1,9 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-08-04T12:27:16.938444+00:00",
+  "generated_at": "2026-08-05T09:26:45.739809+00:00",
   "n_ledgers": 34,
-  "n_closed": 14,
-  "n_grader_starved": 20,
+  "n_closed": 15,
+  "n_grader_starved": 19,
   "n_log_only": 0,
   "ledgers": [
     {
@@ -11,9 +11,9 @@
       "path": "data/qledger/claims.jsonl",
       "storage": "present",
       "grader_wired": "Y:scripts/grade_qledger.py",
-      "n_logged": 37185,
-      "n_graded": 40364,
-      "last_graded_at": "2026-08-04T12:26:13.504313+00:00",
+      "n_logged": 38244,
+      "n_graded": 40658,
+      "last_graded_at": "2026-08-05T09:25:43.153304+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -22,9 +22,9 @@
       "path": "data/qledger/grades.jsonl",
       "storage": "present",
       "grader_wired": "Y:scripts/grade_qledger.py",
-      "n_logged": 40364,
-      "n_graded": 40364,
-      "last_graded_at": "2026-08-04T12:26:13.504313+00:00",
+      "n_logged": 40658,
+      "n_graded": 40658,
+      "last_graded_at": "2026-08-05T09:25:43.153304+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -33,11 +33,11 @@
       "path": "data/board_ledger/hk_board.parquet",
       "storage": "present",
       "grader_wired": "Y:engine/board_ledger.py",
-      "n_logged": 359,
-      "n_graded": 0,
+      "n_logged": 370,
+      "n_graded": 9,
       "last_graded_at": null,
       "tune_step": "N",
-      "verdict": "GRADER-STARVED"
+      "verdict": "CLOSED"
     },
     {
       "key": "board_ledger_ca",
@@ -77,8 +77,8 @@
       "path": "data/china_standout_track/board.parquet",
       "storage": "present",
       "grader_wired": "Y:engine/china_standout_track.py",
-      "n_logged": 1121,
-      "n_graded": 179,
+      "n_logged": 1167,
+      "n_graded": 239,
       "last_graded_at": null,
       "tune_step": "N",
       "verdict": "CLOSED"
@@ -99,7 +99,7 @@
       "path": "data/china_sector_cycles/forward_log.parquet",
       "storage": "present",
       "grader_wired": "Y:engine/china_sector_cycles_grader.py",
-      "n_logged": 1166,
+      "n_logged": 1219,
       "n_graded": 5081,
       "last_graded_at": "2026-07-02T18:59:33.219372+00:00",
       "tune_step": "N",
