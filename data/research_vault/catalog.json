@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T07:30:58.281503+00:00",
-  "count": 787,
+  "generated_at": "2026-08-05T07:42:20.827102+00:00",
+  "count": 788,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -208,6 +208,26 @@
         "**Tech Hardware Short Overcrowding**: Technology Hardware & Equipment (SPRCEW) shows low long crowding (0.08) and high short crowding (0.57), indicating concentrated short risk and potential volatility.",
         "**Sector Rotation Divergence**: Consumer Services (Comm.",
         "& Prof."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qvhncxnkoxt-0178ef",
+      "title": "ETF Market Pulse",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:11:28Z",
+      "summary_points": [
+        "**AWS Revenue Beat**: AWS +37% YoY revenue growth drives cloud ETFs higher, with positive catalysts for Datadog, Snowflake, CrowdStrike; key data release impacting sector fundamentals.",
+        "**Geopolitical Reversal**: Korea Defense ETF sold off on Iran de-escalation reducing geopolitical premium and Hyundai Rotem earnings miss; signals delayed export contracts and earnings risk.",
+        "**Asset Rotation**: European/Japan equities (YTD +10.3%/+13.5%) surge while Bitcoin (-28.2% YTD) and commodities fade; weekly returns show equities/fixed income shift right vs crypto/commodities left.",
+        "**Risk-Return Efficiency**: European Equities (VGC US) in \"Efficient\" quadrant (low vol, high return); Bitcoin (IBIT US) and commodities (PDBC US) in \"Inefficient\" (high vol, low return), guiding portfolio construction."
       ],
       "tags": [],
       "tickers": [],
