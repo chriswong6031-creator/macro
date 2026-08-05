@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T16:33:10.789493+00:00",
-  "count": 814,
+  "generated_at": "2026-08-05T16:48:29.812555+00:00",
+  "count": 815,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -606,6 +606,26 @@
       "tickers": [],
       "top_pick": true,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-inkeinlhrw5-a76a61",
+      "title": "On Our Minds",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:10:55Z",
+      "summary_points": [
+        "**Structural Food Sensitivity & Climate Inflation**: India’s CPI (45.86% food weight) systematically driven by heatwaves via farm output, labor productivity, and household incomes; 2022 wheat export ban due to heatwave raised domestic prices.",
+        "**Labor Productivity Erosion**: 181B labor hours lost (50% above 1990-99 avg) in 2023, $141B income loss; ILO projects 34M jobs lost by 2030, disproportionately affecting female/contract workers in agriculture/construction.",
+        "**Policy Imperative Shift**: Must replace post-hoc food management with ex-ante climate adaptation (weather forecasting, cold chains, resilient seeds) to address inflation channels, as monetary policy cannot offset weather-driven supply shocks.",
+        "**Rural Household Vulnerability**: Income-expenditure imbalance (INR 12,698/mo income vs INR 11,262/mo expenditure), 52% indebtedness, and shrinking landholdings amplify climate-driven inflation volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
