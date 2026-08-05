@@ -159,3 +159,27 @@ engines). Display-only ordering changes are lawful per the bottom-radar preceden
 
 *Forensic scripts:* session scratchpad `radar_audit.py` (decomposition) — method
 reproducible from the ledger + `engine/radar_ic.py` v2 alone.
+
+---
+
+## §6 Addendum (2026-08-05 evening) — SAM/Grants keys landed; two dark legs lit
+
+Operator installed `SAM_API_KEY` + `GRANTS_GOV_API_KEY` as repo secrets. Verified live:
+both keys authenticate; full `grants_gov` collect works (124 FOAs / 22 CFDAs → 16
+baskets); `compute_radar` fuses **grants_foa on 16 themes** and **sam_presolicitation on
+6** (max sources 9). This activates the §4.2 "fresher legs" path — pre-award FOAs and
+solicitations lead obligations by weeks-to-months.
+
+**Measured constraint:** the free personal SAM key allows ~**10 requests/day** (docs
+confirm a daily role-based cap; empirically exactly 10 → hard 429s), shared between the
+nightly radar leg (was 14 requests) and the 30-minute government-revenue-live lane
+(≥14/cycle × 48 cycles — could never complete one cycle and would starve the nightly).
+Shipped allocation (radar-first): `SamGovAdapter` v2 batches all NAICS into one probed
+request (accepted only when rows span ≥2 distinct codes), falls back to component-packed
+rotation ≤7 requests/night with a cursor (full sweep ≈3 nights on 90d windows), stops on
+the first 429, and merges per-basket with a 7-day age-out sidecar; the GovRev lane's SAM
+step quiet-skips outside 00-01 UTC. **Lifting the gate properly needs a higher-tier
+(federal system account) SAM key — flagged to the Government Revenue program;** its own
+collector could also adopt comma-batching if its per-shard evidence contract allows.
+Per-source IC attribution (v2 snapshots stamp `source`) begins grading these legs as
+their first episodes mature (~late August at 21d; the promised read later).

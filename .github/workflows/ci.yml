@@ -511,6 +511,9 @@ on:
       - "tests/test_government_revenue_dossier_ui.py"
       - "tests/test_government_revenue_briefcase_ui.py"
       - "tests/test_sam_gov_opportunities.py"
+      # quota-aware radar-leg collector (2026-08-05 SAM key integration): the
+      # batch/rotation/429-stop/merge disciplines that fit the shared ~10/day key.
+      - "tests/test_sam_gov_radar_leg.py"
       - "tests/test_usaspending_awards.py"
       - "tests/test_usaspending_subawards.py"
       - "tests/test_census_trade.py"
