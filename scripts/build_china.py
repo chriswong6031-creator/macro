@@ -857,6 +857,14 @@ def main() -> int:
                 member_names=_member_names,
                 href_exists=lambda h: (site_dir / h).exists(),
             )
+            # W8-R3 rider: persist the assembled board so build_china_sector_central can
+            # read+render the same four-lane act-now board on the China SI Overview
+            # (reader pattern — build_china is a serial head that runs first in asia-close.yml).
+            if act_now_v2 is not None:
+                _anv2_out = {"act_now_v2": act_now_v2,
+                             "sectors_by_ticker": {s["ticker"]: s for s in sectors}}
+                (site_dir / "chinabasketdata" / "act_now_cn.json").write_text(
+                    json.dumps(_anv2_out, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
         except Exception as _e:  # noqa: BLE001 — additive, never fatal
             log.error("china act_now_v2 build failed (%s); skipping", _e)
             act_now_v2 = None

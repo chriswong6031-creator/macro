@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_state.v1",
   "as_of": "2026-08-05",
-  "generated_at": "2026-08-05T09:16:54Z",
+  "generated_at": "2026-08-05T16:19:58Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -65,16 +65,16 @@
           "basket_id": "ai_semiconductors",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -0.096,
-          "salience": 0.096,
+          "divergence": -0.476,
+          "salience": 0.476,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
           "basket_id": "ai_infra",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": 0.717,
-          "salience": 0.717,
+          "divergence": 0.253,
+          "salience": 0.253,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -115,11 +115,11 @@
         ]
       },
       "divergence_board": {
-        "quadrant": "confirmed",
-        "divergence": -0.2353,
-        "narrative_pct": 0.7647,
-        "money_pct": 1.0,
-        "asof": "2026-07-31",
+        "quadrant": "hidden-opportunity",
+        "divergence": -0.0588,
+        "narrative_pct": 0.5882,
+        "money_pct": 0.6471,
+        "asof": "2026-08-05",
         "source": "data/foresight/divergence_log.jsonl"
       },
       "basket_ids": [
@@ -191,10 +191,10 @@
       },
       "divergence_board": {
         "quadrant": "hidden-opportunity",
-        "divergence": -0.3529,
-        "narrative_pct": 0.2941,
-        "money_pct": 0.6471,
-        "asof": "2026-07-29",
+        "divergence": -0.4412,
+        "narrative_pct": 0.2647,
+        "money_pct": 0.7059,
+        "asof": "2026-08-05",
         "source": "data/foresight/divergence_log.jsonl"
       },
       "basket_ids": [
@@ -235,8 +235,8 @@
           "basket_id": "semicap_equipment",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 0.613,
-          "salience": 0.613,
+          "divergence": 1.372,
+          "salience": 1.372,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -263,11 +263,11 @@
         ]
       },
       "divergence_board": {
-        "quadrant": "hidden-opportunity",
-        "divergence": -0.2353,
-        "narrative_pct": 0.5882,
-        "money_pct": 0.8235,
-        "asof": "2026-08-03",
+        "quadrant": "confirmed",
+        "divergence": -0.0588,
+        "narrative_pct": 0.8235,
+        "money_pct": 0.8824,
+        "asof": "2026-08-05",
         "source": "data/foresight/divergence_log.jsonl"
       },
       "basket_ids": [
@@ -328,8 +328,8 @@
           "basket_id": "ai_neoclouds",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 2.145,
-          "salience": 2.145,
+          "divergence": 1.68,
+          "salience": 1.68,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -524,7 +524,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 33.2,
+        "score": 37.1,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -670,7 +670,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 44.4,
+        "score": 43.9,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -773,7 +773,7 @@
       "foresight": {
         "stage": "BROADENING (fingerprint)",
         "tier": "P",
-        "score": 54.9,
+        "score": 38.4,
         "entry_ready": false,
         "bottleneck_band": "TIGHTENING (fingerprint)",
         "source": "site/basketdata/foresight_cascade.json"
@@ -846,7 +846,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 45.0,
+        "score": 35.6,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1016,8 +1016,8 @@
           "basket_id": "critical_minerals",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 2.49,
-          "salience": 2.49,
+          "divergence": 3.164,
+          "salience": 3.164,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1082,8 +1082,8 @@
           "basket_id": "reshoring",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -0.648,
-          "salience": 0.648,
+          "divergence": -0.006,
+          "salience": 0.006,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1188,7 +1188,7 @@
       "foresight": {
         "stage": "PRECIPICE (fingerprint)",
         "tier": "P",
-        "score": 53.4,
+        "score": 54.0,
         "entry_ready": false,
         "bottleneck_band": "TIGHTENING (fingerprint)",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1254,7 +1254,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 34.4,
+        "score": 36.2,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1303,7 +1303,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 35.8,
+        "score": 35.3,
         "entry_ready": false,
         "bottleneck_band": "LOOSE",
         "source": "site/basketdata/foresight_cascade.json"
@@ -1345,9 +1345,7 @@
     "radar: stale (as_of=2026-07-31)",
     "narrative_emergence: stale (as_of=2026-07-31)",
     "divergence_log[robotics_automation]: stale (as_of=2026-07-29)",
-    "divergence_log[ai_semiconductors]: stale (as_of=2026-07-31)",
     "divergence_log[defense_aerospace]: stale (as_of=2026-07-14)",
-    "divergence_log[memory_storage]: stale (as_of=2026-07-29)",
     "divergence_log[diagnostics_lifesci]: stale (as_of=2026-07-27)"
   ],
   "sources": {
@@ -1362,7 +1360,7 @@
   },
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-05T09:16:55Z",
-  "inputs_hash": "sha256:92e08b429646797071272cb588b0d2f38d81e816fc831487fda02f5d7c2310e1",
+  "produced_at": "2026-08-05T16:19:59Z",
+  "inputs_hash": "sha256:b3013d9bcc6a68e605a4ce0f6c664a855d6947b371258b4eac4fc276e70b9e49",
   "tier": "display"
 }

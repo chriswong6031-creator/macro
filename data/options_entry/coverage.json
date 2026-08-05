@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-05T09:26:46.432659+00:00",
+  "generated_at": "2026-08-05T13:11:30.582118+00:00",
   "as_of": "2026-08-05",
   "absent_stores": [],
   "feature_coverage": {
@@ -57,9 +57,9 @@
       },
       {
         "feature": "doi_pc",
-        "n_nonnull": 337,
+        "n_nonnull": 336,
         "n_total": 415,
-        "share_nonnull": 0.812
+        "share_nonnull": 0.8096
       },
       {
         "feature": "fresh_contracts",
@@ -69,9 +69,9 @@
       },
       {
         "feature": "fresh_premium_mn",
-        "n_nonnull": 317,
+        "n_nonnull": 337,
         "n_total": 415,
-        "share_nonnull": 0.7639
+        "share_nonnull": 0.812
       },
       {
         "feature": "zerodte_share",
@@ -467,14 +467,14 @@
       "sources": [
         {
           "source": "options_entry/state.parquet",
-          "latest_as_of": "2026-07-31",
-          "age_days_from_today": 5,
-          "status": "STALE"
+          "latest_as_of": "2026-08-04",
+          "age_days_from_today": 1,
+          "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-08-04 04:12 UTC",
-          "age_days_from_today": 1,
+          "latest_as_of": "2026-08-05 08:53 UTC",
+          "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
@@ -487,7 +487,7 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-05T09:26:46.387102+00:00",
+      "generated_at": "2026-08-05T13:11:30.536027+00:00",
       "ok": false,
       "fail_reasons": [
         "CHAINS STALE: latest chain file is 2026-07-31 (5 trading day(s) behind last_td=2026-08-05); threshold=1d \u2014 OI snapshot may have been missed"
@@ -499,7 +499,7 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-05T09:26:46.432652+00:00",
+    "generated_at_utc": "2026-08-05T13:11:30.582112+00:00",
     "as_of": "2026-08-05",
     "absent_stores": []
   }

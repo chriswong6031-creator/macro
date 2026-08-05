@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-04",
+  "as_of": "2026-08-05",
   "data_session": "2026-08-04",
   "state": "off",
   "k_count": 0,
@@ -313,11 +313,11 @@
         "reason": "geopolitical event sector outside broad ignition (suspension 2026-07-23: single-sector bids \u2260 ignition)"
       }
     ],
-    "n_scored": 59,
+    "n_scored": 60,
     "n_qualifying": 25,
     "null": false,
     "floor": "state in igniting/running (pre-registered ALERT_STATES); empty when nothing clears \u2014 honest null",
-    "as_of": "2026-08-04"
+    "as_of": "2026-08-05"
   },
   "narrow_top": {
     "basket_id": "non_ai_software",
@@ -331,5 +331,5 @@
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 2.44
+  "_timing_s": 2.35
 }

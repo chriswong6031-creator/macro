@@ -3,6 +3,7 @@
   "crash": false,
   "eligible": [
     "hk_banks",
+    "hk_china_tech",
     "hk_conglo",
     "hk_dividend",
     "hk_industrials",
@@ -11,8 +12,8 @@
   "held": [
     "hk_tech_hardware",
     "hk_conglo",
-    "hk_dividend",
-    "hk_industrials"
+    "hk_industrials",
+    "hk_dividend"
   ],
   "leader": "hk_miners",
   "names": {

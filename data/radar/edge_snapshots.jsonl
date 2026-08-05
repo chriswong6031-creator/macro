@@ -9156,3 +9156,4 @@
 {"date":"2026-08-05","kind":"ticker","subject":"SYF","ticker":"SYF","edge_score":1,"state":"POSITIVE_DIVERGENCE"}
 {"date":"2026-08-05","kind":"ticker","subject":"L","ticker":"L","edge_score":1,"state":"POSITIVE_DIVERGENCE"}
 {"date":"2026-08-05","kind":"ticker","subject":"NVDA","ticker":"NVDA","edge_score":0,"state":"CONFIRMED_DOWN"}
+{"date":"2026-08-05","kind":"ticker","subject":"UNP","ticker":"UNP","edge_score":23,"state":"NEGATIVE_DIVERGENCE"}

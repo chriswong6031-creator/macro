@@ -118,7 +118,9 @@ def _board_from_ticker(ticker: str) -> str:
     code = t.split(".")[0]
     if code.startswith(("688", "689")):
         return "star"
-    if code.startswith(("300", "301")):
+    # 302xxx added 2026-08-04 alongside china_signals.board_type — the block is
+    # ChiNext and trades the ±20% band; reading it as "main" applied a 10% band.
+    if code.startswith(("300", "301", "302")):
         return "chinext"
     if code.startswith(("8", "4", "92")):
         return "bse"
