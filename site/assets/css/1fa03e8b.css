@@ -99,16 +99,42 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
 .kpi-row{display:flex;gap:14px 22px;flex-wrap:wrap;margin:12px 0}
 .kpi{font-size:12px;color:var(--mut)}.kpi b{display:block;font-size:18px;color:var(--ink);font-weight:700;line-height:1.2}
 .kpi small{font-size:11px;color:var(--faint)}
-/* ── chart wrappers ── */
+/* ── chart wrappers ──
+   height:100% is load-bearing, not cosmetic. An inline <svg> that carries a
+   viewBox but no resolved height is sized by its INTRINSIC aspect ratio
+   (wrapperWidth x viewBoxH/viewBoxW), not by its parent's height — so at a
+   1100px-wide panel a `viewBox="0 0 800 160"` chart renders 220px tall inside
+   a 160px wrapper and overflow:hidden silently eats the bottom 27%. Nothing
+   errors: the JS runs, the paths are valid, the data is complete, and the
+   chart just looks half-drawn. Every chart here sets preserveAspectRatio="none"
+   precisely so the viewBox may stretch to fill the wrapper — which it can only
+   do once the height resolves. Guarded by tests/test_svg_wrapper_clipping.py. */
 .chart-wrap{position:relative;width:100%;margin:12px 0 4px;overflow:hidden}
-.chart-wrap svg{display:block;width:100%}
+.chart-wrap svg{display:block;width:100%;height:100%}
 /* ── VIX curve nodes ── */
 .vix-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .vix-node{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);min-width:52px;text-align:center}
 .vix-node .vt{font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase}
 .vix-node .vv{font-size:17px;font-weight:700;color:var(--ink)}
-/* ── week map ── */
-.wm-wrap{position:relative;padding:28px 0 38px;margin:12px 0}
+/* ── week map ──
+   The band SVG is pinned to a literal 56px so its viewBox units map 1:1 to
+   page px; every label offset below is stated in that same coordinate space.
+   Leave the height to intrinsic sizing and the band grows with panel width
+   while the hardcoded label offsets stay put — which is how the spot label
+   ended up sitting ON the spot line and the flip label a full band-height
+   above its own dashes. */
+.wm-wrap{position:relative;padding:42px 0 44px;margin:12px 0}
+.wm-band{display:block;width:100%;height:56px}
+.wm-lbls{position:absolute;top:0;left:0;right:0;pointer-events:none}
+.wm-edge{position:absolute;top:0;font-size:10.5px;line-height:1.35;color:var(--faint);font-variant-numeric:tabular-nums}
+.wm-chip{position:absolute;display:inline-flex;align-items:baseline;gap:5px;padding:2px 9px;
+  border-radius:999px;border:1px solid transparent;white-space:nowrap;line-height:1.45}
+.wm-chip .wm-k{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.78}
+.wm-chip .wm-n{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+/* Flip chip rides just above the band; spot chip just below it. Different rows
+   means the two can never collide no matter how close the prices sit. */
+.wm-flip{top:17px;color:var(--amb);border-color:color-mix(in srgb,var(--amb) 34%,transparent);background:color-mix(in srgb,var(--amb) 12%,transparent)}
+.wm-spot{top:103px;color:var(--blue);border-color:color-mix(in srgb,var(--blue) 38%,transparent);background:color-mix(in srgb,var(--blue) 14%,transparent)}
 /* ── grid ── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
