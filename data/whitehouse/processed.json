@@ -503,6 +503,12 @@
       "at": "2026-08-05T04:35:11.230315+00:00",
       "activated": true,
       "importance": 82
+    },
+    "https://www.whitehouse.gov/?p=47553": {
+      "id": "wh-2026-08-05-fbi-secretly-opened-probe-alleging-trump-fired-comey-because-he-was-a-russian-as",
+      "at": "2026-08-05T12:16:00.456063+00:00",
+      "activated": false,
+      "importance": 5
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
