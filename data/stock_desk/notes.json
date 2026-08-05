@@ -1,26 +1,81 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-07-31",
-  "generated_at": "2026-08-04T04:41:38.954926+00:00",
+  "generated_at": "2026-08-05T16:26:32.720499+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-07-31-BIDU-20260804044138-1",
+      "id": "2026-07-31-NUE-20260805162632-1",
+      "ticker": "NUE",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The engine is constructive but identifies a blocked entry and cycle-waiting signal. The extended price and deteriorating Materials basket argue against chasing; no directional edge exists until a pullback materializes.",
+      "evidence": [
+        "verdict: Extended \u2014 wait for a pullback",
+        "entry blocked (z -1.57)",
+        "cycle_blocked true",
+        "cautions: 35% above trend, basket deteriorating"
+      ],
+      "dissent": "The earnings/insider/revision selection axis remains positive and could propel further performance despite the entry warnings.",
+      "falsifier": {
+        "text": "NUE consolidates above its long-term trend without a significant pullback and outperforms the S&P 500 over the next 20 days.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-28",
+      "engine_verdict": "Extended \u2014 wait for a pullback"
+    },
+    {
+      "id": "2026-07-31-SHOO-20260805162632-2",
+      "ticker": "SHOO",
+      "name": null,
+      "lean": "constructive",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The engine labels a constructive leader with earnings, insider, and revisions strength, supported by positive entry and quality metrics. The accounting watch flag tempers confidence but does not override the constructive verdict.",
+      "evidence": [
+        "verdict: Leader \u00b7 accounting watch",
+        "selection z 1.035 (earnings, insider, revisions)",
+        "entry not blocked (z 0.44)",
+        "quality z 0.3 but accounting flag watch"
+      ],
+      "dissent": "The accounting quality concern could indicate potential earnings manipulation or restatements that would undermine the fundamental story.",
+      "falsifier": {
+        "text": "SHOO underperforms the S&P 500 over the next 20 trading days amid negative fundamental news or a broader rotation away from consumer discretionary.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "SHOO",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-28",
+      "engine_verdict": "Leader \u00b7 accounting watch \u2014 confirm before adding"
+    },
+    {
+      "id": "2026-07-31-BIDU-20260805162632-3",
       "ticker": "BIDU",
       "name": null,
       "lean": "constructive",
       "conviction": "medium",
       "horizon_d": 20,
-      "thesis": "Building a base with residual momentum and an unblocked entry; the constructive verdict is supported by positive entry signals (off-high, RSI) and no cycle or caution flags, meriting a measured lean relative to the index.",
+      "thesis": "The engine sees a high-conviction base-building setup with residual momentum and clean entry timing. No cautions or cycle blocks indicate a directional opportunity.",
       "evidence": [
         "verdict: Constructive \u2014 building a base",
-        "selection axis: residual momentum (z=0.79) supports underlying strength",
-        "entry axis unblocked, off-high -30.4%, RSI constructive",
-        "no cycle_blocked, no caution flags"
+        "band high",
+        "selection residual momentum z 0.79",
+        "entry z 0.6, off -30.7% from high",
+        "no cautions"
       ],
-      "dissent": "The base-building pattern could be a pause in a larger downtrend; residual momentum z is modest and the stock remains deeply off highs, leaving room for further downside if the base fails.",
+      "dissent": "Chinese ADRs carry political and regulatory risk not captured by the factors; a sudden adverse policy shift could derail the base-building.",
       "falsifier": {
-        "text": "A close below the 50-day moving average on above-average volume",
+        "text": "BIDU breaks below its recent base support level and underperforms the S&P 500 over the next 20 trading days.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "BIDU",
@@ -34,78 +89,22 @@
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
-      "id": "2026-07-31-NUE-20260804044138-2",
-      "ticker": "NUE",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The engine rightly flags extension and a blocked entry, but the underlying selection (SUE, revisions, momentum) remains strong and the verdict is still in the constructive band. Shorting or leaning against a leader on extension alone is historically unreliable, so the disciplined stance is neutral \u2014 wait for a pullback.",
-      "evidence": [
-        "verdict: Extended \u2014 don't chase; wait for a pullback",
-        "band: constructive (leader profile)",
-        "selection axis: SUE z=0.78, revisions z=1.11, momentum z=1.28 \u2014 firm fundamental tailwinds",
-        "entry axis blocked (z=-1.57), over-200dma, cycle_blocked true",
-        "caution: trades 35% above trend; cycle argues waiting; basket deteriorating"
-      ],
-      "dissent": "The extension caution could prove overly conservative if NUE delivers another positive earnings surprise; the strong fundamentals might push the stock higher from here even without a pullback.",
-      "falsifier": {
-        "text": "A close above 266 on above-average volume",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-08-28",
-      "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
-    },
-    {
-      "id": "2026-07-31-SHOO-20260804044138-3",
-      "ticker": "SHOO",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 20,
-      "thesis": "The constructive base-building verdict is backed by earnings, insider, and revision signals with an unblocked entry setup. Accounting quality is flagged, but the evidence tilts toward outperformance in a mixed tape.",
-      "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "selection axis: SUE z=0.65, revisions z=0.77, momentum z=1.33",
-        "entry axis unblocked, off-high -3.7%, FRESH BUY state",
-        "cycle_blocked false",
-        "caution: accounting quality watch only \u2014 no severe scoring impact"
-      ],
-      "dissent": "The accounting quality flag could presage an unreported fundamental weakness; if markets turn skeptical, the base could break and the stock underperform.",
-      "falsifier": {
-        "text": "A close below the 50-day moving average on above-average volume",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "SHOO",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-08-28",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-07-31-KWR-20260804044138-4",
+      "id": "2026-07-31-KWR-20260805162632-4",
       "ticker": "KWR",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The neutral verdict reflects a lack of a coherent edge: strong SUE is offset by negative revisions and weak residual momentum, leaving the stock without a clear directional signal. The neutral lean matches the engine's read.",
+      "thesis": "The engine sees no clear edge: selection signals cancel out (strong SUE vs negative revisions), and quality is slightly negative. Entry timing is favorable but insufficient alone.",
       "evidence": [
         "verdict: Neutral \u2014 no clear edge",
-        "selection axis: SUE z=1.62 (fresh), but revisions z=-0.76, momentum z=0.25 \u2014 mixed",
-        "entry axis moderately positive but not decisive",
-        "no cautions, cycle_blocked false"
+        "selection z -0.04 (mixed signals: SUE +1.62, revisions -0.75)",
+        "quality z -0.26",
+        "entry not blocked"
       ],
-      "dissent": "If the negative revision trend reverses and the fresh earnings surprise attracts investor interest, KWR could build a base and outperform.",
+      "dissent": "A fresh SUE signal (5 days) could trigger a short-term PEAD effect that overshadows negative revisions.",
       "falsifier": {
-        "text": "A close above 170 on above-average volume",
+        "text": "KWR rallies sharply post-earnings and outperforms the S&P 500 over the next 20 trading days.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -115,22 +114,47 @@
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-07-31-PI-20260804044138-5",
+      "id": "2026-07-31-MDB-20260805162632-5",
+      "ticker": "MDB",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The selection edge is weak residual momentum only, and the engine flags a headwind from its Non-AI Software basket. Entry is favorable but the verdict is neutral, consistent with the basket drag.",
+      "evidence": [
+        "verdict: Neutral \u2014 no clear edge",
+        "selection alpha z 0.39 (52nd pct)",
+        "caution: Non-AI Software basket below trend",
+        "tailwind positive but not strong"
+      ],
+      "dissent": "If AI-related sentiment spills over to MDB's use cases, the stock could ride momentum despite basket weakness.",
+      "falsifier": {
+        "text": "MDB's price breaks above its recent range and outperforms the S&P 500 over the next 20 trading days.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-28",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-07-31-PI-20260805162632-6",
       "ticker": "PI",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Despite a solid entry setup and deep off-high levels, the selection signals are inconclusive (negative SUE, weak momentum) and an accounting quality flag adds uncertainty. The neutral verdict accurately captures the lack of a reliable bullish edge.",
+      "thesis": "The engine finds no clear edge: selection signals are flat with negative SUE, and the accounting watch adds uncertainty. Favorable entry and tailwind do not constitute an edge.",
       "evidence": [
         "verdict: Neutral \u2014 no clear edge",
-        "selection axis: SUE z=-1.01, revisions z=0.70, momentum z=0.10",
-        "entry axis unblocked, off-high -37.4%",
-        "caution: accounting quality watch"
+        "selection z 0.22 but SUE negative -1.01",
+        "quality watch accounting",
+        "tailwind spotlight z 0.4"
       ],
-      "dissent": "A sentiment rebound in the tech sector or a resolution of accounting concerns could trigger a sharp recovery from deeply oversold levels.",
+      "dissent": "PI's tailwind and entry timing could catalyze a mean-reversion trade from a deeply oversold level (-37.4% from high).",
       "falsifier": {
-        "text": "A close above the 50-day moving average on above-average volume",
+        "text": "PI rebounds strongly and outperforms the S&P 500 over the next 20 trading days.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -138,36 +162,6 @@
       },
       "check_by": "2026-08-28",
       "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-31-NET-20260804044138-6",
-      "ticker": "NET",
-      "name": null,
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The name is extended with a blocked entry, weakened selection (no earnings edge, flat residual momentum), and a cycle-blocked state alongside a deteriorating sector basket. The caution is not merely an extension on a leader \u2014 it is a genuine bearish confluence, justifying a lean of underperformance.",
-      "evidence": [
-        "verdict: Extended \u2014 don't chase; wait for a pullback",
-        "band: neutral (not a leader)",
-        "selection axis: residual momentum z=-0.12, no SUE/revision support",
-        "entry axis blocked (z=-1.10), over-200dma, cycle_blocked true",
-        "caution: 32% above trend, cycle bottoming, cybersecurity basket deteriorating"
-      ],
-      "dissent": "Cybersecurity stocks can exhibit strong momentum unrelated to near-term fundamentals; a market-wide risk-on rally could drag NET higher despite the overextension.",
-      "falsifier": {
-        "text": "A close above the all-time high (approximately 283.3) on above-average volume",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "NET",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-08-28",
-      "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."

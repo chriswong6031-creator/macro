@@ -789,79 +789,262 @@
   //   contained so the baskets.html embed (renderDivergenceRadar) is untouched.
   // ══════════════════════════════════════════════════════════════════════════
 
-  // Plain-word state map (Doctrine Law 2 — no DIVERGENCE / CONFIRMED enums on tier 1)
+  // Plain-word state map (Doctrine Law 2 — no DIVERGENCE / CONFIRMED enums on tier 1).
+  // `tone` drives the ONE colour language on this page: green = activity ahead,
+  // amber = price ahead, blue = the two agree, muted = nothing doing. Nothing else
+  // on the page may spend colour, so a hue always means the same thing.
   var PLAIN = {
     POSITIVE_DIVERGENCE: { en: "Activity ahead of price", zh: "活动领先价格", short_en: "Activity leads", short_zh: "活动领先",
       stance_en: "Watch — don't chase", stance_zh: "观察 — 别追", tone: "up",
-      gist_en: "Real work is accelerating faster than the tape. Watch for price to catch up — it may not.",
-      gist_zh: "真实活动加速快于价格。留意价格能否跟上 —— 也可能不会。" },
+      gist_en: "The real work behind this theme is speeding up while price still trails.",
+      gist_zh: "该主题背后的真实活动正在加速，而价格仍未跟上。" },
     NEGATIVE_DIVERGENCE: { en: "Price ahead of activity", zh: "价格领先活动", short_en: "Price leads", short_zh: "价格领先",
       stance_en: "Stand aside", stance_zh: "旁观", tone: "down",
-      gist_en: "The tape is leading; the real-activity engine underneath has cooled. The move may be running on fumes.",
-      gist_zh: "价格在领先，而底层真实活动已降温。这波行情可能已是强弩之末。" },
+      gist_en: "Price has run up while the real work behind it has slowed.",
+      gist_zh: "价格已经上涨，而其背后的真实活动却在放缓。" },
     CONFIRMED_UP: { en: "Both rising", zh: "同步上行", short_en: "Both rising", short_zh: "同步上行",
-      stance_en: "Already in the price", stance_zh: "已反映在价格", tone: "up",
-      gist_en: "Activity and price agree and rise together — corroborated, but largely already priced.",
-      gist_zh: "活动与价格同向上行 —— 已被印证，但大体已反映在价格中。" },
+      stance_en: "Already in the price", stance_zh: "已反映在价格", tone: "agree",
+      gist_en: "Price and the real work behind it are rising together — real, but already paid for.",
+      gist_zh: "价格与其背后的真实活动同步上行 —— 是真的，但已经付过钱了。" },
     CONFIRMED_DOWN: { en: "Both cooling", zh: "同步走弱", short_en: "Both cooling", short_zh: "同步走弱",
-      stance_en: "Already in the price", stance_zh: "已反映在价格", tone: "down",
-      gist_en: "Activity and price agree and fall together — corroborated weakness.",
-      gist_zh: "活动与价格同向下行 —— 走弱已被印证。" },
+      stance_en: "Already in the price", stance_zh: "已反映在价格", tone: "agree",
+      gist_en: "Price and the real work behind it are cooling together.",
+      gist_zh: "价格与其背后的真实活动同步降温。" },
+    BROKEN_LAGGARD: { en: "Falling behind", zh: "掉队", short_en: "Falling behind", short_zh: "掉队",
+      stance_en: "Stand aside", stance_zh: "旁观", tone: "down",
+      gist_en: "This name keeps losing ground to the theme it belongs to.",
+      gist_zh: "该个股持续落后于其所属主题。" },
     QUIET: { en: "In line", zh: "平静", short_en: "In line", short_zh: "平静",
       stance_en: "Nothing to do", stance_zh: "无需操作", tone: "flat",
-      gist_en: "Real activity and price agree. No edge here — the read is already in the tape.",
-      gist_zh: "真实活动与价格一致。此处无边际 —— 价格已经反映。" }
+      gist_en: "Activity and price are moving together. Nothing to act on.",
+      gist_zh: "活动与价格同步变动。无需操作。" }
   };
   function plain(state) { return PLAIN[state] || PLAIN.QUIET; }
-  function toneCol(t) { return t === "up" ? "var(--up)" : t === "down" ? "var(--warn)" : "var(--muted)"; }
-
-  // Numbers with meaning (Doctrine Law 3)
-  function accelPlain(accel, tone) {
-    if (accel == null) return tone === "down" ? bi("activity cooling", "活动降温") : bi("activity rising", "活动上升");
-    var x = accel.toFixed(1);
-    if (accel >= 1.15) return bi("activity ~" + x + "× vs a year ago", "活动约为去年 " + x + " 倍");
-    if (accel <= 0.9) return bi("activity cooling (~" + x + "× vs a year ago)", "活动降温（约为去年 " + x + " 倍）");
-    return bi("activity roughly flat (~" + x + "× vs a year ago)", "活动基本持平（约为去年 " + x + " 倍）");
-  }
-  function relPlain(rel) {
-    if (rel == null) return bi("price in line with market", "价格与大盘一致");
-    var p = (rel > 0 ? "+" : "") + (rel * 100).toFixed(0) + "%";
-    return bi("price " + p + " vs market (60d)", "价格相对大盘 " + p + "（60日）");
-  }
-  // Keep only the theme-specific first sentence of the engine note; the generic
-  // tail ("The narrative may be running ahead…") is a per-card constant the
-  // section sub + stance chip already carry (Doctrine Law 4 — no repeated constants).
-  function oneSentence(s, zhSep) {
-    if (!s) return s;
-    var f = zhSep ? s.split("。")[0] : s.split(/\.\s+/)[0];
-    if (!/[.!?。！？]$/.test(f)) f += zhSep ? "。" : ".";
-    return f;
+  function toneCol(t) {
+    return t === "up" ? "var(--up)" : t === "down" ? "var(--warn)" : t === "agree" ? "var(--info)" : "var(--muted)";
   }
 
-  // Plain source chips — label only on tier 1; raw z-score demoted to hover.
-  function srcChipsRx(o) {
-    var ss = (o || {}).sources || [];
-    if (!ss.length) return "";
-    var chips = ss.slice(0, 4).map(function (s) {
-      var z = s.z == null ? 0 : s.z;
-      var col = z > 0.2 ? "var(--up)" : z < -0.2 ? "var(--down)" : "var(--muted)";
-      var arr = z > 0.2 ? "▲" : z < -0.2 ? "▼" : "·";
-      var tip = "z " + (z > 0 ? "+" : "") + z.toFixed(1);
-      return '<span class="rx-src" style="--sc:' + col + '" data-tip-en="' + esc(tip) + '" data-tip-zh="' + esc(tip) +
-        '">' + bi(s.label_en || s.name, s.label_zh || s.name) + ' <b>' + arr + '</b></span>';
+  // Raw collector slugs → the words a person uses. The engine's own label_en still
+  // carries vendor tags ("Gov contracts (Quiver)") and filing codes ("8-K material
+  // events"); neither belongs in front of a reader, so this map wins and the
+  // fallback strips any trailing "(vendor)" from an unmapped label.
+  var SRC = {
+    quiver_govcontract:     { en: "government contracts", zh: "政府合同" },
+    usaspending:            { en: "federal contracts",    zh: "联邦合同" },
+    usaspending_assistance: { en: "federal grants",       zh: "联邦补助" },
+    congress_netbuy:        { en: "congress trading",     zh: "国会议员交易" },
+    lobbying_ramp:          { en: "lobbying spend",       zh: "游说支出" },
+    edgar_8k_velocity:      { en: "company filings",      zh: "公司公告" },
+    fedreg_velocity:        { en: "new regulations",      zh: "新规发布" },
+    news_velocity:          { en: "news coverage",        zh: "新闻报道" }
+  };
+  function srcName(s) {
+    var m = SRC[s.name];
+    if (m) return m;
+    var en = String(s.label_en || s.name || "").replace(/\s*\([^)]*\)\s*$/, "").toLowerCase();
+    return { en: en, zh: s.label_zh || en };
+  }
+  // Sources ranked by how hard they are pulling, strongest first.
+  function rankedSources(o) {
+    return (((o || {}).sources) || []).slice().sort(function (a, b) {
+      return Math.abs(b.z || 0) - Math.abs(a.z || 0);
     });
-    return '<div class="rx-srcs">' + chips.join("") + "</div>";
+  }
+  function moveWord(z) {
+    if (z >= 0.5) return { en: "picking up", zh: "升温", tone: "up" };
+    if (z <= -0.5) return { en: "slowing", zh: "放缓", tone: "down" };
+    return { en: "steady", zh: "平稳", tone: "flat" };
+  }
+
+  // ── Deep links ────────────────────────────────────────────────────────────
+  // Theme name → its own detail page (site/basket/<id>.html, one per radar flag).
+  // Ticker → stock.html#TICKER, the shape theme.js intercepts in the capture phase
+  // and opens in the Terminal workspace. `?t=` is NOT intercepted — do not use it.
+  function themeHref(basket) {
+    return basket ? "basket/" + encodeURIComponent(basket) + ".html" : "";
+  }
+  function themeLink(f, cls) {
+    var label = bi(f.name || f.basket, f.name_zh || f.name || f.basket);
+    var href = themeHref(f.basket);
+    if (!href) return '<span class="' + cls + '">' + label + "</span>";
+    return '<a class="' + cls + ' rx-tlink" href="' + esc(href) + '">' + label + "</a>";
+  }
+  function tickerLink(t) {
+    var tk = String(t || "").trim();
+    if (!tk) return "";
+    return '<a class="rx-tk" href="stock.html#' + encodeURIComponent(tk) + '">' + esc(tk) + "</a>";
+  }
+  // <option> renders text, not elements, so the bi() dual-span shows BOTH languages
+  // glued together ("All reads全部解读"). Options carry their pair as data and get
+  // repainted on the site's `langchange` event instead.
+  function isZh() { return document.documentElement.getAttribute("data-lang") === "zh"; }
+  function opt(value, en, zh) {
+    return '<option value="' + esc(value) + '" data-l-en="' + esc(en) + '" data-l-zh="' + esc(zh) + '">' +
+      esc(isZh() ? zh : en) + "</option>";
+  }
+  function repaintOptionLang(root) {
+    var zh = isZh();
+    (root || document).querySelectorAll("[data-l-en]").forEach(function (el) {
+      el.textContent = el.getAttribute(zh ? "data-l-zh" : "data-l-en") || "";
+    });
+  }
+
+  function tickerList(list, cap) {
+    var arr = (list || []).filter(Boolean);
+    if (!arr.length) return "";
+    var shown = cap ? arr.slice(0, cap) : arr;
+    var h = shown.map(tickerLink).join('<span class="rx-tk-sep">·</span>');
+    var rest = arr.length - shown.length;
+    if (rest > 0) h += '<span class="rx-tk-more">' + bi("+" + rest + " more", "另 " + rest + " 只") + "</span>";
+    return h;
+  }
+
+  // ── Numbers that arrive with their meaning (Doctrine Law 3) ───────────────
+  function pricePhrase(rel) {
+    if (rel == null) return { en: "price is level with the market", zh: "价格与大盘持平" };
+    var p = Math.round(Math.abs(rel) * 100);
+    if (p < 2) return { en: "price is level with the market", zh: "价格与大盘持平" };
+    return rel > 0
+      ? { en: "price is " + p + "% ahead of the market", zh: "价格领先大盘 " + p + "%" }
+      : { en: "price is " + p + "% behind the market", zh: "价格落后大盘 " + p + "%" };
+  }
+  function activityPhrase(accel) {
+    if (accel == null) return { en: "is holding steady", zh: "保持平稳" };
+    if (accel >= 1.15) return { en: "is speeding up", zh: "正在加速" };
+    if (accel <= 0.9) return { en: "is slowing", zh: "正在放缓" };
+    return { en: "is holding steady", zh: "保持平稳" };
+  }
+  // The card's one line, composed from the same primitives the engine used — the
+  // engine's own note ships raw slugs, a ticker dump and "YoY", none of which
+  // belong on the glance tier.
+  function cardLine(f) {
+    var o = f.observable || {}, c = f.consensus || {};
+    var top = rankedSources(o).slice(0, 2).map(srcName);
+    // "The work" carries the verb in every sentence below, so the source list is
+    // always an aside and never has to agree with a verb of its own.
+    var asideEn = top.length ? " — mostly " + top.map(function (s) { return s.en; }).join(" and ") + " — " : " ";
+    var asideZh = top.length ? " —— 主要来自" + top.map(function (s) { return s.zh; }).join("、") + " —— " : "";
+    var price = pricePhrase(c.rel_60d), act = activityPhrase(o.accel);
+    var st = f.state;
+    if (st === "POSITIVE_DIVERGENCE") {
+      return bi("The work behind this theme" + asideEn + act.en + ", while " + price.en + " over 60 days.",
+        "该主题背后的真实活动" + asideZh + act.zh + "，而" + price.zh + "（过去60天）。");
+    }
+    if (st === "NEGATIVE_DIVERGENCE") {
+      return bi(price.en.charAt(0).toUpperCase() + price.en.slice(1) + " over 60 days, but the work behind it" +
+        asideEn + act.en + ".",
+        price.zh + "（过去60天），但其背后的真实活动" + asideZh + act.zh + "。");
+    }
+    if (st === "CONFIRMED_UP" || st === "CONFIRMED_DOWN") {
+      var dir = st === "CONFIRMED_UP"
+        ? { en: "are rising together", zh: "同步上行" }
+        : { en: "are cooling together", zh: "同步走弱" };
+      return bi("Price and the work behind it " + dir.en + " — " + price.en + " over 60 days.",
+        "价格与其背后的真实活动" + dir.zh + " —— " + price.zh + "（过去60天）。");
+    }
+    return bi("The work and the price are moving together — " + price.en + " over 60 days.",
+      "真实活动与价格同步变动 —— " + price.zh + "（过去60天）。");
+  }
+
+  // ── The gap meter — this page's signature ─────────────────────────────────
+  // One rail, one centre tick ("in line"), two dots and the bar between them.
+  // The BAR is the read: its length is how far the two have come apart and its
+  // colour is which of them is in front. Drawn instead of named, so a card needs
+  // no chip strip to say the same thing.
+  //   real work: 1.0× (unchanged from a year ago) sits dead centre; the scale is
+  //              logarithmic so 4× and 0.25× land on the ends.
+  //   price:     level with the market sits dead centre; ±40% lands on the ends.
+  // Both are clamped, and the exact figures live on the dots' hover (tier 2).
+  function clampPos(x) { return Math.max(4, Math.min(96, x)); }
+  function activityPos(accel) {
+    if (accel == null) return null;
+    var r = Math.log(Math.max(accel, 0.02)) / Math.log(4);
+    return clampPos(50 + Math.max(-1, Math.min(1, r)) * 46);
+  }
+  function pricePos(rel) {
+    if (rel == null) return null;
+    return clampPos(50 + Math.max(-1, Math.min(1, rel / 0.4)) * 46);
+  }
+  // Each marker labels itself, on its own row, so two markers can never collide and
+  // the meter needs no legend repeated under every card.
+  function gapMeter(f) {
+    var o = f.observable || {}, c = f.consensus || {};
+    var a = activityPos(o.accel), p = pricePos(c.rel_60d);
+    if (a == null || p == null) return "";
+    var col = toneCol(plain(f.state).tone);
+    var lo = Math.min(a, p), hi = Math.max(a, p);
+    var accelTip = o.accel == null ? "—" : o.accel.toFixed(2) + "×";
+    var relTip = c.rel_60d == null ? "—" : relpct(c.rel_60d);
+    // A marker parked at either end would centre its label outside the card, so the
+    // label anchors to the marker's near edge there instead of drifting off it.
+    function lab(cls, pos, en, zh, tipEn, tipZh) {
+      var anchor = pos < 16 ? "rx-meter-lab-l" : pos > 84 ? "rx-meter-lab-r" : "";
+      return '<span class="rx-meter-lab ' + cls + " " + anchor + '" style="left:' + pos.toFixed(1) + '%" ' +
+        'data-tip-en="' + esc(tipEn) + '" data-tip-zh="' + esc(tipZh) + '">' + bi(en, zh) + "</span>";
+    }
+    var workTipEn = "The real work behind this theme is running at " + accelTip + " the pace of a year ago.";
+    var workTipZh = "该主题背后的真实活动，为一年前节奏的 " + accelTip + "。";
+    var priceTipEn = "Price against the market over the last 60 days: " + relTip + ".";
+    var priceTipZh = "过去60天价格相对大盘：" + relTip + "。";
+    return '<div class="rx-meter" style="--mc:' + col + '">' +
+      '<div class="rx-meter-row rx-meter-top">' + lab("rx-meter-lwork", a, "real work", "真实活动", workTipEn, workTipZh) + "</div>" +
+      '<div class="rx-meter-rail">' +
+        '<span class="rx-meter-zero"></span>' +
+        '<span class="rx-meter-gap" style="left:' + lo.toFixed(1) + '%;width:' + (hi - lo).toFixed(1) + '%"></span>' +
+        '<span class="rx-meter-dot rx-meter-work" style="left:' + a.toFixed(1) + '%" ' +
+          'data-tip-en="' + esc(workTipEn) + '" data-tip-zh="' + esc(workTipZh) + '"></span>' +
+        '<span class="rx-meter-dot rx-meter-price" style="left:' + p.toFixed(1) + '%" ' +
+          'data-tip-en="' + esc(priceTipEn) + '" data-tip-zh="' + esc(priceTipZh) + '"></span>' +
+      "</div>" +
+      '<div class="rx-meter-row rx-meter-bot">' + lab("rx-meter-lprice", p, "price", "价格", priceTipEn, priceTipZh) + "</div>" +
+    "</div>";
+  }
+  // What every meter on the page encodes, said ONCE, directly above the first one
+  // (Law 4: a constant belongs in the header, not repeated under each card).
+  function meterKey() {
+    return '<p class="rx-key">' +
+      bi("On every bar below, the centre line is normal: the hollow marker is how hard the real work is running, the solid one is how the price is doing against the market. The gap between them is the disagreement.",
+         "下方每根标尺的中线代表常态：空心标记是真实活动的强度，实心标记是价格相对大盘的表现。两者之间的间距就是分歧本身。") + "</p>";
   }
 
   // 14-day state trail — categorical (state over time), the honest encoding.
   function trailRx(strip) {
     if (!strip || !strip.length) return "";
     var dots = strip.slice(-14).map(function (it) {
-      var t = plain(it.s).tone;
-      var col = t === "up" ? "var(--up)" : t === "down" ? "var(--warn)" : it.s && it.s.indexOf("CONFIRM") >= 0 ? "var(--info)" : "var(--line)";
-      return '<i style="background:' + col + '"></i>';
+      return '<i style="background:' + toneCol(plain(it.s).tone) + '"></i>';
     }).join("");
-    return '<span class="rx-trail" data-tip-en="Read over the last 14 days" data-tip-zh="过去14天的解读">' + dots + "</span>";
+    return '<span class="rx-trail">' + dots + "</span>";
+  }
+
+  // ── The one disclosure per card (tier 2 lives here) ───────────────────────
+  // Native <details>: keyboard-accessible, no JS wiring, and it collapses the
+  // per-source breakdown, the 14-day trail, the full member list and the
+  // headlines into a single label instead of nine.
+  function cardDetails(f) {
+    var o = f.observable || {}, news = f._headlines || [];
+    var srcs = rankedSources(o);
+    var rows = srcs.map(function (s) {
+      var n = srcName(s), m = moveWord(s.z || 0);
+      return '<li><span class="rx-sname">' + bi(n.en, n.zh) + "</span>" +
+        '<span class="rx-smove" style="--sc:' + toneCol(m.tone) + '">' + bi(m.en, m.zh) + "</span></li>";
+    }).join("");
+    var members = (o.covered || []);
+    var trail = trailRx(f.state_strip);
+    var heads = news.slice(0, 3).map(function (h) {
+      return '<a class="rx-hl" href="' + esc(/^https?:\/\//i.test(h.url || "") ? h.url : "#") +
+        '" target="_blank" rel="noopener noreferrer">' + esc(h.title || "") +
+        ' <span class="rx-mut">· ' + esc(h.source || "") + "</span></a>";
+    }).join("");
+    if (!rows && !members.length && !trail && !heads) return "";
+    return '<details class="rx-more"><summary>' + bi("What's behind this", "背后是什么") + "</summary>" +
+      '<div class="rx-more-body">' +
+        (rows ? '<ul class="rx-slist">' + rows + "</ul>" : "") +
+        (trail ? '<div class="rx-more-row"><span class="rx-more-k">' + bi("Last 14 days", "过去14天") + "</span>" + trail + "</div>" : "") +
+        (members.length ? '<div class="rx-more-row"><span class="rx-more-k">' + bi("Members", "成分股") + "</span>" +
+          '<span class="rx-tks">' + tickerList(members) + "</span></div>" : "") +
+        (heads ? '<div class="rx-more-row rx-more-news"><span class="rx-more-k">' + bi("In the news", "相关新闻") + "</span>" +
+          "<span>" + heads + "</span></div>" : "") +
+      "</div></details>";
   }
 
   // ── Hero honesty strip (one line; keys off the grader's verdict, never a
@@ -882,83 +1065,99 @@
   }
 
   // ── Hero ──────────────────────────────────────────────────────────────────
+  // The market backdrop, in words rather than the quad label. The internal name
+  // ("Reflation · Q2") is a tier-2 receipt on the hover.
+  var QUAD = {
+    Goldilocks:     { en: "growth up, prices calm",           zh: "增长向上、物价温和" },
+    Reflation:      { en: "growth and prices both rising",    zh: "增长与物价同步上行" },
+    Stagflation:    { en: "prices rising, growth slowing",    zh: "物价上行、增长放缓" },
+    "Growth scare": { en: "growth and prices both cooling",   zh: "增长与物价同步降温" }
+  };
+  function backdropChip(regime) {
+    var q = (regime || {}).quad_name;
+    if (!q) return "";
+    var w = QUAD[q];
+    var liq = regime.liquidity === "expanding" ? { en: "money loosening", zh: "资金面转松" }
+      : regime.liquidity === "contracting" ? { en: "money tightening", zh: "资金面收紧" } : null;
+    var en = (w ? w.en : q) + (liq ? ", " + liq.en : "");
+    var zh = (w ? w.zh : q) + (liq ? "、" + liq.zh : "");
+    var tip = q + (regime.quad ? " (" + regime.quad + ")" : "");
+    return '<span class="rx-chip rx-chip-regime" data-tip-en="Market backdrop the read sits inside: ' + esc(tip) + '" ' +
+      'data-tip-zh="解读所处的市场背景：' + esc(tip) + '">' + bi("Backdrop: " + en, "背景：" + zh) + "</span>";
+  }
+
   function heroHTML(radar, enriched, ic) {
     var cov = radar.coverage || {};
     var regime = (enriched || {}).regime || {};
     var changes = (enriched || {}).changes || {};
     var flags = radar.flags || [];
-    var pos = flags.filter(function (f) { return f.state === "POSITIVE_DIVERGENCE"; }).length;
-    var neg = flags.filter(function (f) { return f.state === "NEGATIVE_DIVERGENCE"; }).length;
-    var confU = flags.filter(function (f) { return f.state === "CONFIRMED_UP"; }).length;
-    var confD = flags.filter(function (f) { return f.state === "CONFIRMED_DOWN"; }).length;
-    var quiet = flags.filter(function (f) { return f.state === "QUIET"; }).length;
+    var pos = 0, neg = 0, rest = 0;
+    flags.forEach(function (f) {
+      if (f.state === "POSITIVE_DIVERGENCE") pos++;
+      else if (f.state === "NEGATIVE_DIVERGENCE") neg++;
+      else rest++;
+    });
     var total = flags.length || 1;
     var divs = pos + neg;
 
-    // Verdict tone: leans on which side of the disagreement dominates.
     var toneCls = divs === 0 ? "rx-flat" : (pos > neg ? "rx-green" : (neg > pos * 2 ? "rx-amber" : "rx-mixed"));
     var headEn, headZh;
     if (divs === 0) {
-      headEn = "Real activity and price agree across all " + total + " themes today";
-      headZh = "今日全部 " + total + " 个主题的真实活动与价格一致";
+      headEn = "Activity and price agree across all " + total + " themes today";
+      headZh = "今日全部 " + total + " 个主题的活动与价格一致";
     } else {
-      headEn = "Real activity and price disagree on " + divs + " of " + total + " themes";
-      headZh = "真实活动与价格在 " + total + " 个主题中的 " + divs + " 个上出现背离";
+      headEn = "Activity and price disagree on " + divs + " of " + total + " themes";
+      headZh = "活动与价格在 " + total + " 个主题中的 " + divs + " 个上出现分歧";
     }
-    var flipEn = pos + " with activity running ahead of price, " + neg + " with price running ahead of activity.";
-    var flipZh = pos + " 个活动领先价格，" + neg + " 个价格领先活动。";
+    var flipEn = pos + " where the real work is ahead, " + neg + " where price is ahead.";
+    var flipZh = pos + " 个真实活动领先，" + neg + " 个价格领先。";
 
-    // Stance (Doctrine Law 1) — this radar is context-only with a weak track record,
-    // so the honest whole-page stance is always "watch, don't chase".
+    // Stance (Law 1) — this radar is context-only with a weak track record, so the
+    // honest whole-page stance is always "watch, don't chase".
     var stanceEn = pos > 0 ? "Watch — don't chase" : "Stand aside";
     var stanceZh = pos > 0 ? "观察 — 别追" : "旁观";
 
-    // Composition bar segments (descriptive, not a predictive score)
     function seg(n, col, en, zh) {
       if (!n) return "";
       return '<span class="rx-seg" style="flex:' + n + ';background:' + col + '" ' +
         'data-tip-en="' + n + " " + en + '" data-tip-zh="' + n + " " + zh + '"></span>';
     }
     var bar = '<div class="rx-comp">' +
-      seg(pos, "var(--up)", "activity ahead of price", "活动领先价格") +
-      seg(neg, "var(--warn)", "price ahead of activity", "价格领先活动") +
-      seg(confU + confD, "var(--info)", "both agree", "同步") +
-      seg(quiet, "color-mix(in srgb,var(--muted) 30%,transparent)", "in line", "平静") +
+      seg(pos, "var(--up)", "with the real work ahead", "真实活动领先") +
+      seg(neg, "var(--warn)", "with price ahead", "价格领先") +
+      seg(rest, "color-mix(in srgb,var(--muted) 30%,transparent)", "moving together", "同步变动") +
       "</div>";
     var legend = '<div class="rx-comp-legend">' +
-      '<span><i style="background:var(--up)"></i>' + bi(pos + " activity-led", pos + " 活动领先") + "</span>" +
-      '<span><i style="background:var(--warn)"></i>' + bi(neg + " price-led", neg + " 价格领先") + "</span>" +
-      '<span><i style="background:var(--info)"></i>' + bi((confU + confD) + " agree", (confU + confD) + " 同步") + "</span>" +
-      '<span><i style="background:color-mix(in srgb,var(--muted) 45%,transparent)"></i>' + bi(quiet + " in line", quiet + " 平静") + "</span>" +
+      '<span><i style="background:var(--up)"></i>' + bi(pos + " real work ahead", pos + " 真实活动领先") + "</span>" +
+      '<span><i style="background:var(--warn)"></i>' + bi(neg + " price ahead", neg + " 价格领先") + "</span>" +
+      '<span><i style="background:color-mix(in srgb,var(--muted) 45%,transparent)"></i>' +
+        bi(rest + " moving together", rest + " 同步变动") + "</span>" +
       "</div>";
 
-    var word = divs === 0 ? bi("Quiet board", "平静") :
-      (pos > neg ? bi("Activity leading", "活动领先") : bi("Mostly price-led — caution", "多为价格领先 — 谨慎"));
+    var word = divs === 0 ? bi("A quiet board", "看板平静") :
+      (pos > neg ? bi("Mostly the real work running ahead", "多为真实活动领先")
+                 : bi("Mostly price running ahead — be careful", "多为价格领先 —— 需谨慎"));
 
-    // Δ since yesterday
     var nd = (changes.new_divergences || []).length, rs = (changes.resolved || []).length, fl = (changes.flips || []).length;
     var deltaLine;
     if (nd + rs + fl === 0) {
-      deltaLine = '<span class="rx-mut">' + bi("No changes since yesterday", "较昨日无变化") + "</span>";
+      deltaLine = '<span class="rx-mut">' + bi("Nothing changed since yesterday", "较昨日无变化") + "</span>";
     } else {
       var parts = [];
-      if (nd) parts.push('<b style="color:var(--warn)">+' + nd + " " + bi("new", "新增") + "</b>");
-      if (rs) parts.push('<b style="color:var(--up)">✓' + rs + " " + bi("cleared", "消除") + "</b>");
-      if (fl) parts.push('<b style="color:var(--info)">⇄' + fl + " " + bi("flipped", "反转") + "</b>");
+      if (nd) parts.push('<b style="color:var(--warn)">' + bi(nd + " newly apart", nd + " 个新增分歧") + "</b>");
+      if (rs) parts.push('<b style="color:var(--up)">' + bi(rs + " back in line", rs + " 个已回归一致") + "</b>");
+      if (fl) parts.push('<b style="color:var(--info)">' + bi(fl + " changed sides", fl + " 个方向反转") + "</b>");
       deltaLine = parts.join(" · ");
     }
 
-    var regimeChip = regime.quad_name
-      ? '<span class="rx-chip rx-chip-regime" data-tip-en="Market regime the read sits inside" data-tip-zh="解读所处的市场周期">' +
-        esc(regime.quad_name) + (regime.liquidity ? " · " + bi("liquidity " + regime.liquidity, "流动性" + (regime.liquidity === "expanding" ? "扩张" : "收缩")) : "") + "</span>"
-      : "";
-
-    var asof = radar.as_of ? '<span class="rx-asof">' + bi("as of ", "截至 ") + esc(radar.as_of) +
-      (radar.lag_months ? " · " + bi("activity lags ~" + radar.lag_months + "mo", "活动滞后约" + radar.lag_months + "月") : "") + "</span>" : "";
+    var asof = radar.as_of ? '<span class="rx-asof" data-tip-en="Activity data reaches us about ' +
+      (radar.lag_months || 3) + ' months behind the tape, so the read is deliberately slow." ' +
+      'data-tip-zh="活动数据比行情滞后约' + (radar.lag_months || 3) + '个月，因此本解读本身就是慢的。">' +
+      bi("Reading of " + esc(radar.as_of), "解读日期 " + esc(radar.as_of)) + "</span>" : "";
 
     return '<section class="rx-hero ' + toneCls + '">' +
       '<div class="rx-eyebrow">🛰️ ' + bi("DIVERGENCE RADAR", "背离雷达") +
-        ' <span class="rx-eyebrow-sub">· ' + bi("real activity vs price", "真实活动 vs 价格") + "</span></div>" +
+        ' <span class="rx-eyebrow-sub">· ' + bi("what companies are doing vs what the market is paying", "企业实际在做什么 vs 市场在付什么价") + "</span></div>" +
       '<h1 class="rx-verdict">' + bi(headEn, headZh) + "</h1>" +
       '<p class="rx-flip">' + bi(flipEn, flipZh) + "</p>" +
       '<div class="rx-stance-row">' +
@@ -968,13 +1167,13 @@
       '<div class="rx-hero-row">' +
         '<div class="rx-score">' +
           '<div class="rx-score-top"><span class="rx-score-num">' + divs + '</span>' +
-            '<div class="rx-score-lab"><span class="rx-score-cap">' + bi("divergences today", "今日背离") + "</span>" +
-            '<span class="rx-score-of">' + bi("of " + total + " themes watched", "共观察 " + total + " 个主题") + "</span></div></div>" +
+            '<div class="rx-score-lab"><span class="rx-score-cap">' + bi("themes disagree", "个主题出现分歧") + "</span>" +
+            '<span class="rx-score-of">' + bi("of " + total + " we watch", "共观察 " + total + " 个") + "</span></div></div>" +
           '<div class="rx-score-word">' + word + "</div>" +
           bar + legend +
         "</div>" +
         '<div class="rx-ctx">' +
-          '<div class="rx-ctx-row">' + regimeChip + asof + "</div>" +
+          '<div class="rx-ctx-row">' + backdropChip(regime) + asof + "</div>" +
           '<div class="rx-ctx-delta"><span class="rx-ctx-k">' + bi("Since yesterday", "较昨日") + "</span> " + deltaLine + "</div>" +
           '<a class="rx-ctx-honesty" href="#rx-honesty"><span class="rx-ctx-k">' + bi("Has this worked?", "这套解读有效吗？") + "</span> " +
             '<span class="rx-mut">' + bi(honestyStripEn(ic), honestyStripZh(ic)) + "</span></a>" +
@@ -983,83 +1182,55 @@
     "</section>";
   }
 
-  // ── Lead card: the single most watch-worthy read (top activity-ahead theme) ──
+  // ── Lead card: the single most watch-worthy read ──────────────────────────
   function leadHTML(f) {
     if (!f) return "";
-    var p = plain(f.state);
-    var o = f.observable || {};
-    var c = f.consensus || {};
-    var tickers = (o.covered || []).slice(0, 6).join(" · ");
+    var p = plain(f.state), o = f.observable || {};
     return '<section class="rx-lead rx-reveal">' +
-      '<div class="rx-lead-tag">⭐ ' + bi("Most watch-worthy today", "今日最值得关注") + "</div>" +
+      '<div class="rx-lead-tag">⭐ ' + bi("Most worth watching today", "今日最值得关注") + "</div>" +
       '<div class="rx-lead-body">' +
         '<div class="rx-lead-main">' +
           '<div class="rx-lead-head">' +
             '<span class="rx-badge rx-badge-up">' + bi(p.short_en, p.short_zh) + "</span>" +
-            '<h2 class="rx-lead-name">' + bi(f.name || f.basket, f.name_zh || f.name || f.basket) + "</h2>" +
+            themeLink(f, "rx-lead-name") +
           "</div>" +
-          '<p class="rx-lead-gist">' + bi(p.gist_en, p.gist_zh) + "</p>" +
-          srcChipsRx(o) +
-          '<div class="rx-metrics">' +
-            '<span class="rx-metric rx-metric-up">' + accelPlain(o.accel, "up") + "</span>" +
-            '<span class="rx-metric">' + relPlain(c.rel_60d) + "</span>" +
-          "</div>" +
-          (tickers ? '<div class="rx-tickers">' + bi("names: ", "成分：") + esc(tickers) + "</div>" : "") +
+          '<p class="rx-lead-gist">' + cardLine(f) + "</p>" +
+          gapMeter(f) +
+          ((o.covered || []).length ? '<div class="rx-tks rx-lead-tks">' + tickerList(o.covered, 8) + "</div>" : "") +
+          cardDetails(f) +
         "</div>" +
         '<div class="rx-lead-side">' +
           '<span class="rx-stance rx-stance-watch">' + bi("Watch — don't chase", "观察 — 别追") + "</span>" +
-          '<span class="rx-lead-side-note">' + bi("Activity is leading. If the tape confirms, the board below upgrades on its own — no need to front-run it.", "活动在领先。若价格随后确认，下方看板会自动升级 —— 无需抢跑。") + "</span>" +
-          trailRx(f.state_strip) +
+          '<span class="rx-lead-side-note">' + bi("The work is running ahead of the price. If price follows, the board below picks it up on its own — there is nothing to front-run.",
+            "活动跑在价格前面。若价格随后跟上，下方看板会自动反映 —— 无需抢跑。") + "</span>" +
         "</div>" +
       "</div>" +
     "</section>";
   }
 
-  // ── Lane card (activity-ahead / price-ahead lanes) ──────────────────────────
+  // ── Lane card ─────────────────────────────────────────────────────────────
   function laneCard(f, i) {
-    var p = plain(f.state);
-    var o = f.observable || {};
-    var c = f.consensus || {};
+    var p = plain(f.state), o = f.observable || {};
     var col = toneCol(p.tone);
-    var expandId = "rx-lx-" + i;
-    var tickers = (o.covered || []).slice(0, 8).join(" · ");
-    var news = f._headlines || [];
-    var newsBtn = news.length
-      ? '<button class="rx-mini" data-news="' + expandId + '">📰 ' + news.length + "</button>" : "";
-    var newsBody = news.length
-      ? '<div class="rx-news" id="' + expandId + '-news">' + news.slice(0, 3).map(function (h) {
-          var sent = h.sentiment === "pos" ? "▲" : h.sentiment === "neg" ? "▼" : "";
-          return '<a class="rx-hl" href="' + esc(/^https?:\/\//i.test(h.url || "") ? h.url : "#") + '" target="_blank" rel="noopener noreferrer">' +
-            esc(h.title || "") + ' <span class="rx-mut">· ' + esc(h.source || "") + " " + sent + "</span></a>";
-        }).join("") + "</div>" : "";
-
     return '<article class="rx-card rx-reveal" style="--cc:' + col + ';animation-delay:' + Math.min(i * 40, 320) + 'ms">' +
       '<div class="rx-card-top">' +
         '<span class="rx-badge" style="--bc:' + col + '">' + bi(p.short_en, p.short_zh) + "</span>" +
-        '<h3 class="rx-card-name">' + bi(f.name || f.basket, f.name_zh || f.name || f.basket) + "</h3>" +
+        themeLink(f, "rx-card-name") +
       "</div>" +
-      '<p class="rx-card-gist">' + bi(oneSentence(f.note) || p.gist_en, oneSentence(f.note_zh, true) || p.gist_zh) + "</p>" +
-      srcChipsRx(o) +
-      '<div class="rx-metrics">' +
-        '<span class="rx-metric">' + accelPlain(o.accel, p.tone) + "</span>" +
-        '<span class="rx-metric">' + relPlain(c.rel_60d) + "</span>" +
-      "</div>" +
+      '<p class="rx-card-gist">' + cardLine(f) + "</p>" +
+      gapMeter(f) +
       '<div class="rx-card-foot">' +
-        '<span class="rx-stance-mini rx-stance-' + (p.tone === "up" ? "watch" : "aside") + '">' + bi(p.stance_en, p.stance_zh) + "</span>" +
-        trailRx(f.state_strip) +
-        (news.length ? newsBtn : "") +
-        (tickers ? '<button class="rx-mini" data-exp="' + expandId + '">' + bi("names", "成分") + "</button>" : "") +
+        '<span class="rx-stance-mini rx-stance-' + (p.tone === "up" ? "watch" : p.tone === "agree" ? "priced" : p.tone === "flat" ? "none" : "aside") + '">' +
+          bi(p.stance_en, p.stance_zh) + "</span>" +
+        ((o.covered || []).length ? '<span class="rx-tks">' + tickerList(o.covered, 4) + "</span>" : "") +
       "</div>" +
-      (tickers ? '<div class="rx-exp" id="' + expandId + '">' + esc(tickers) + "</div>" : "") +
-      newsBody +
+      cardDetails(f) +
     "</article>";
   }
 
-  // ── Board table row ─────────────────────────────────────────────────────────
+  // ── Board table row ───────────────────────────────────────────────────────
   function boardRow(f) {
-    var p = plain(f.state);
-    var o = f.observable || {};
-    var c = f.consensus || {};
+    var p = plain(f.state), o = f.observable || {}, c = f.consensus || {};
     var col = toneCol(p.tone);
     var accel = o.accel;
     var accelStr = accel == null ? "—" : accel.toFixed(1) + "×";
@@ -1067,30 +1238,48 @@
     var rel = c.rel_60d;
     var relCol = rel > 0 ? "var(--up)" : rel < 0 ? "var(--down)" : "var(--muted)";
     return "<tr>" +
-      "<td class=\"rx-t-name\">" + bi(f.name || f.basket, f.name_zh || f.name || f.basket) + "</td>" +
+      '<td class="rx-t-name">' + themeLink(f, "rx-t-namelink") + "</td>" +
       '<td class="rx-num" style="color:' + accelCol + '">' + accelStr + "</td>" +
       '<td class="rx-num" style="color:' + relCol + '">' + relpct(rel) + "</td>" +
-      '<td>' + trailRx(f.state_strip) + "</td>" +
+      "<td>" + trailRx(f.state_strip) + "</td>" +
       '<td><span class="rx-badge rx-badge-sm" style="--bc:' + col + '">' + bi(p.short_en, p.short_zh) + "</span></td>" +
       '<td class="rx-t-stance rx-mut">' + bi(p.stance_en, p.stance_zh) + "</td>" +
       "</tr>";
   }
 
-  // ── Per-name row ────────────────────────────────────────────────────────────
+  // ── Per-name row ──────────────────────────────────────────────────────────
+  // The engine writes these notes with "basket", percentile ranks and a 0-100
+  // score in them; none of that is reader language, so it is rewritten here.
+  function plainNote(note) {
+    if (!note) return "";
+    return String(note)
+      .replace(/\balt-data signal is cooling \((\d+)\/100\)/gi, "the real work behind it is slowing")
+      .replace(/\balt-data\b/gi, "activity")
+      .replace(/\((\d+)(?:st|nd|rd|th) pct(?: of members)?\)/gi, "")
+      .replace(/\bbasket\b/gi, "theme")
+      .replace(/\bvs SPY\b/gi, "vs the market")
+      .replace(/\bthe unpriced member of a moving theme\b/gi, "the part of a moving theme the market has not paid for yet")
+      .replace(/\bdistribution risk\b/gi, "a sign the move may be being sold into")
+      .replace(/\s{2,}/g, " ")
+      .replace(/\s+([,.;:])/g, "$1")
+      .trim();
+  }
   function nameRowRx(t, i) {
-    var p = plain(t.state);
-    var col = toneCol(p.tone);
+    var p = plain(t.state), col = toneCol(p.tone);
     var rs = t.rs_vs_spy_60d;
     var rsCol = rs > 0 ? "var(--up)" : rs < 0 ? "var(--down)" : "var(--muted)";
-    var eid = "rx-nm-" + i;
-    var note = t.note || "";
-    return '<div class="rx-nrow" data-nexp="' + eid + '">' +
-      '<span class="rx-ntk">' + esc(t.ticker) + "</span>" +
+    var note = plainNote(t.note);
+    var themeCell = t.basket
+      ? '<a class="rx-nbasket rx-tlink" href="' + esc(themeHref(t.basket)) + '">' + esc(t.basket_name || t.basket) + "</a>"
+      : '<span class="rx-nbasket">' + esc(t.basket_name || "") + "</span>";
+    return '<div class="rx-nrow">' +
+      tickerLink(t.ticker) +
       '<span class="rx-badge rx-badge-sm" style="--bc:' + col + '">' + bi(p.short_en, p.short_zh) + "</span>" +
-      '<span class="rx-nbasket">' + esc(t.basket_name || t.basket || "") + "</span>" +
-      '<span class="rx-nrs" style="color:' + rsCol + '">' + (rs != null ? (rs > 0 ? "+" : "") + rs.toFixed(0) + "%" : "—") + "</span>" +
+      themeCell +
+      '<span class="rx-nrs" style="color:' + rsCol + '" data-tip-en="Price vs the market over 60 days" ' +
+        'data-tip-zh="60天内价格相对大盘">' + (rs != null ? (rs > 0 ? "+" : "") + rs.toFixed(0) + "%" : "—") + "</span>" +
       "</div>" +
-      (note ? '<div class="rx-nexp" id="' + eid + '">' + esc(note) + "</div>" : "");
+      (note ? '<p class="rx-nnote">' + esc(note) + "</p>" : "");
   }
 
   // ── Honesty / track-record section (plain words; receipt on tier 2) ─────────
@@ -1210,37 +1399,208 @@
         tile(open.toLocaleString(), "3-month theses open", "3个月论点进行中") +
       "</div>" +
       '<details class="rx-receipt"><summary>' + bi("Show the technical receipt", "查看技术明细") + "</summary>" +
-        '<p>' + bi(receipt, receiptZh) + "</p></details>" +
+        "<p>" + bi(receipt, receiptZh) + "</p></details>" +
     "</section>";
   }
 
-  // ── Narrative brain (rx-styled; graceful degraded state) ────────────────────
-  function brainRx(b) {
+  // ── One merged footnote (Law 4: merge, never stack) ───────────────────────
+  // The engine's own caveats name the vendor behind a feed and describe the
+  // weighting in engine terms, so the page states the same three facts — what the
+  // sources are, that coverage is uneven and never faked, and that the data is
+  // lagged and context-only — in words, and keeps the engine's wording verbatim
+  // one click away.
+  function footNote(radar) {
+    var lag = radar.lag_months || 3;
+    var en = "Where this comes from: federal contracts and grants, congressional trading, lobbying spend, " +
+      "company filings, new regulations and news coverage. Coverage differs from theme to theme — where a " +
+      "source is missing it simply counts for less, and is never filled in. All of it reaches us about " +
+      lag + " months behind the market, so this page is deliberately slow. Context only, never a trade signal.";
+    var zh = "数据来源：联邦合同与补助、国会议员交易、游说支出、公司公告、新规发布与新闻报道。各主题的覆盖程度不同 —— " +
+      "缺失的来源只会被降低权重，绝不会被虚构填充。所有数据都比市场行情滞后约 " + lag +
+      " 个月，因此本页本就是慢的。仅供参考，绝非交易信号。";
+    var raw = (radar.caveats || []).filter(Boolean);
+    var rawZh = (radar.caveats_zh || []).filter(Boolean);
+    var detail = raw.length
+      ? '<details class="rx-foot-more"><summary>' + bi("The engine's own wording", "引擎原文") + "</summary>" +
+        raw.map(function (c, i) { return "<p>" + bi(c, rawZh[i] || c) + "</p>"; }).join("") + "</details>"
+      : "";
+    return '<div class="rx-foot"><p>' + bi(en, zh) + "</p>" + detail + "</div>";
+  }
+
+  // ── The AI read ───────────────────────────────────────────────────────────
+  // English terms the model reaches for that a reader would not.
+  var AI_TERMS_EN = [
+    [/\bprice relative strength\b/gi, "price against the market"],
+    [/\brelative strength vs\.?\s*(?:SPY|the market)\b/gi, "performance against the market"],
+    [/\brel(?:ative)? strength\b/gi, "performance against the market"],
+    [/\bPOSITIVE_DIVERGENCE\b/g, "activity ahead of price"],
+    [/\bNEGATIVE_DIVERGENCE\b/g, "price ahead of activity"],
+    [/\bCONFIRMED_UP\b/g, "activity and price both rising"],
+    [/\bCONFIRMED_DOWN\b/g, "activity and price both cooling"],
+    [/\bBROKEN_LAGGARD\b/g, "falling behind its theme"],
+    [/\bQUIET\b/g, "in line"],
+    [/\b(?:radar state is|state is)\s*['"]?(\w+)['"]?\s*(?:lifecycle|stage)\b/gi, "this theme is $1"],
+    [/\blifecycle\b/gi, "stage"],
+    [/\ban ENTER\b/g, "a buy"], [/\bENTER\b/g, "buy"],
+    [/\ba MONITOR\b/g, "a watch"], [/\bMONITOR\b/g, "watch"],
+    [/\bAVOID\b/g, "avoid"],
+    [/\b8-?K (?:material )?events?\b/gi, "company filings"],
+    [/\b8-?K\b/gi, "company filings"],
+    [/\bGov(?:ernment)? contracts?\b/g, "government contracts"],
+    [/\bLobbying ramp\b/gi, "lobbying spend"],
+    [/\bCongress(?:ional)? net-buys?\b/gi, "congress buying"],
+    [/\bnet-buys?\b/gi, "buying"],
+    [/[(（]\s*fused accel(?:eration)?[^)）]*[)）]/gi, ""],
+    [/\bfused accel(?:eration)?\b/gi, "combined activity pickup"],
+    [/\bbreadth of sources\b/gi, "range of sources"],
+    [/\balt-data\b/gi, "activity data"],
+    [/\bevidence pack\b/gi, "evidence"],
+    [/\breal-activity\b/gi, "real activity"],
+    [/\bz-scores?\b/gi, "reading"],
+    [/\bsub-zero\b/gi, "negative"],
+    [/\bSPY\b/g, "the market"]
+  ];
+  // The Chinese note needs its OWN list: running the English one over it leaves
+  // half-translated hybrids ("company filings 重大事项"), and its punctuation is
+  // full-width, which the ASCII bracket rules never touch.
+  var AI_TERMS_ZH = [
+    [/正向?背离|正背離/g, "背离（活动领先）"],
+    [/负背离|負背離/g, "背离（价格领先）"],
+    [/缺乏宽度|缺乏廣度|缺乏寬度/g, "覆盖面不足"],
+    [/生命周期|生命週期/g, "阶段"],
+    [/8-?K\s*(?:重要事件|重大事项|重大事項)?/g, "公司公告"],
+    [/(?:Gov(?:ernment)?\s*)?[Cc]ontracts?|政府合同/g, "政府合同"],
+    [/Congress(?:ional)?\s*(?:net-?buys?)?|国会净买入|國會淨買入/g, "国会议员交易"],
+    [/Lobbying(?:\s*ramp)?|游说活动|遊說活動/g, "游说支出"],
+    [/融合加速度?|融合加速/g, "综合活动强度"],
+    [/另类数据|另類數據/g, "活动数据"],
+    [/证据包|證據包/g, "证据"],
+    [/相对强度|相對強度/g, "相对大盘表现"],
+    [/z-?值|z\s*分数|Z\s*分數/g, "读数"],
+    [/SPY/g, "大盘"],
+    [/ENTER/g, "买入"], [/MONITOR/g, "观察"], [/AVOID/g, "回避"]
+  ];
+
+  // The model writes for an analyst: citation tags ([P3]), readings, state enums
+  // and stage words. `rationale_plain` (engine/narrative_brain.py) is the durable
+  // fix and wins whenever the night that wrote the file produced it; this is the
+  // stopgap that keeps an older payload readable. The untouched original always
+  // stays one click away as the technical note.
+  function plainifyAI(text, zh) {
+    if (!text) return "";
+    var s = String(text);
+    (zh ? AI_TERMS_ZH : AI_TERMS_EN).forEach(function (r) { s = s.replace(r[0], r[1]); });
+    s = s
+      // a bracket or bracketed clause that exists only to carry evidence, in both
+      // ASCII and full-width punctuation
+      .replace(/[(（][^()（）]*(?:\[P\d+[^\]]*\]|z\s*[=＝]?\s*[-+0-9.]|dir\s*[=＝])[^()（）]*[)）]/g, "")
+      .replace(/\[\s*P\d+[^\]]*\]/g, "")
+      .replace(/\[\s*[-+]?[0-9.]+\s*\]/g, "")
+      .replace(/\bz\s*[=＝]?\s*[-+]?[0-9]*\.?[0-9]+/g, "")
+      .replace(/\bdir\s*[=＝]\s*[-+]?[0-9]+/g, "")
+      // machine precision reads as machine talk — two places is a number a person
+      // would say out loud
+      .replace(/([-+]?\d+\.\d{3,})/g, function (m) { return parseFloat(m).toFixed(2); })
+      // whatever the removals left behind
+      .replace(/[(（]\s*[,，;；、]*\s*[)）]/g, "")
+      .replace(/[(（]\s*[,，]\s*/g, "(").replace(/\s*[,，]\s*[)）]/g, ")")
+      .replace(/\s{2,}/g, " ");
+    if (zh) {
+      s = s.replace(/[，、]\s*(?=[，。；、])/g, "")
+           .replace(/\s+(?=[，。；：、！？）])/g, "")
+           .replace(/^[\s，。、；]+/, "");
+    } else {
+      // a preposition orphaned by a removed figure ("negative at, meaning…")
+      s = s.replace(/\s+\b(?:at|of|to|by|from|near|around|only)\b\s*(?=[,.;:])/gi, "")
+           .replace(/\s+([,.;:!?])/g, "$1")
+           .replace(/,\s*,/g, ",")
+           .replace(/\s{2,}/g, " ")
+           // a substitution can land a lower-case word at the head of a sentence
+           .replace(/(^|[.!?]\s+)([a-z])/g, function (m, pre, ch) { return pre + ch.toUpperCase(); });
+    }
+    return s.trim();
+  }
+  // Anything that still smells of the machine after laundering does NOT reach the
+  // glance tier — the deterministic sentence below takes over and the model's own
+  // words stay available, unedited, in the technical note.
+  function aiResidue(s) {
+    return !s || s.length < 24 ||
+      /\[P\d|z\s*[=＝]|dir\s*[=＝]|_[A-Z]{2,}|[(（]\s*[)）]|\b8-?K\b/.test(s);
+  }
+  function verdictLine(verdict, zh) {
+    if (verdict === "ENTER") {
+      return zh ? "AI 认为此处的真实活动领先价格，且可能延续。详见下方完整说明。"
+                : "The AI reads the work here as running ahead of the price, and thinks it may hold. Its reasoning is in the full note below.";
+    }
+    if (verdict === "AVOID") {
+      return zh ? "AI 认为此处价格已跑在其背后的真实活动前面。详见下方完整说明。"
+                : "The AI reads the move here as having run ahead of the work behind it. Its reasoning is in the full note below.";
+    }
+    return zh ? "AI 认为现在下结论还太早 —— 值得观察，但不值得追。详见下方完整说明。"
+              : "The AI reads this as too early to call — worth watching, not worth chasing. Its reasoning is in the full note below.";
+  }
+  // Hand-rolled rather than a lookbehind split: a lookbehind regex LITERAL is a
+  // parse-time SyntaxError on Safari below 16.4, which would blank the whole page
+  // rather than degrade one paragraph.
+  function firstSentences(s, n, zh) {
+    if (!s) return "";
+    var enders = zh ? "。！？" : ".!?";
+    var out = "", kept = 0;
+    for (var i = 0; i < s.length; i++) {
+      out += s.charAt(i);
+      if (enders.indexOf(s.charAt(i)) >= 0) {
+        // a decimal point or an initial is not the end of a sentence
+        var next = s.charAt(i + 1);
+        if (!zh && next && next !== " " && next !== "\n") continue;
+        if (++kept >= n) break;
+      }
+    }
+    return out.trim();
+  }
+  function brainRx(b, flagIndex) {
     if (!b) return "";
     var has = b.assessments && b.assessments.length && !b.degraded_reason;
     if (!has) {
       return '<section class="rx-brain rx-brain-off">' +
         '<div class="rx-brain-head">🧠 ' + bi("The AI read", "AI 解读") + "</div>" +
-        '<p class="rx-mut">' + bi("The AI durability read is unavailable right now — the deterministic radar above stands on its own.",
-          "AI 持续力解读暂不可用 —— 上方的确定性雷达可独立使用。") + "</p></section>";
+        '<p class="rx-mut">' + bi("The AI read is unavailable right now — the rest of this page stands on its own.",
+          "AI 解读暂不可用 —— 本页其余内容可独立使用。") + "</p></section>";
     }
-    var V = { ENTER: { en: "Lean in", zh: "偏多", c: "var(--up)" }, MONITOR: { en: "Just watch", zh: "观察", c: "var(--muted)" }, AVOID: { en: "Steer clear", zh: "回避", c: "var(--warn)" } };
+    var V = {
+      ENTER:   { en: "Worth a look", zh: "值得关注", c: "var(--up)" },
+      MONITOR: { en: "Just watch",   zh: "仅作观察", c: "var(--muted)" },
+      AVOID:   { en: "Steer clear",  zh: "回避",     c: "var(--warn)" }
+    };
     var rows = b.assessments.map(function (a) {
       var v = V[a.verdict] || V.MONITOR;
+      var flag = flagIndex[a.basket] || { basket: a.basket, name: a.name, name_zh: a.name_zh };
+      var leadEn = firstSentences(a.rationale_plain || plainifyAI(a.rationale, false), 2, false);
+      var leadZh = firstSentences(a.rationale_plain_zh || plainifyAI(a.rationale_zh || a.rationale, true), 2, true);
+      if (aiResidue(leadEn)) leadEn = verdictLine(a.verdict, false);
+      if (aiResidue(leadZh)) leadZh = verdictLine(a.verdict, true);
+      var full = (a.rationale || "").trim(), fullZh = (a.rationale_zh || a.rationale || "").trim();
       return '<div class="rx-brain-row">' +
-        '<span class="rx-brain-badge" style="--bc:' + v.c + '">' + bi(v.en, v.zh) + "</span>" +
-        '<b>' + bi(a.name || a.basket, a.name_zh || a.name || a.basket) + "</b>" +
-        '<p class="rx-brain-why">' + bi(a.rationale || "", a.rationale_zh || a.rationale || "") + "</p></div>";
+        '<div class="rx-brain-top">' +
+          '<span class="rx-brain-badge" style="--bc:' + v.c + '">' + bi(v.en, v.zh) + "</span>" +
+          themeLink(flag, "rx-brain-theme") +
+        "</div>" +
+        '<p class="rx-brain-why">' + bi(leadEn, leadZh) + "</p>" +
+        (full ? '<details class="rx-brain-full"><summary>' + bi("The full technical note", "完整技术说明") +
+          "</summary><p>" + bi(full, fullZh) + "</p>" +
+          (a.dissent ? "<p><b>" + bi("The case against", "反方观点") + ":</b> " + bi(a.dissent, a.dissent) + "</p>" : "") +
+          "</details>" : "") +
+      "</div>";
     }).join("");
-    var rot = (b.rotation && b.rotation.summary) ? '<div class="rx-brain-rot">🔁 ' + bi(b.rotation.summary, b.rotation.summary_zh || b.rotation.summary) + "</div>" : "";
+    var rot = (b.rotation && b.rotation.summary)
+      ? '<div class="rx-brain-rot">🔁 ' + bi(b.rotation.summary, b.rotation.summary_zh || b.rotation.summary) + "</div>" : "";
     return '<section class="rx-brain">' +
       '<div class="rx-brain-head">🧠 ' + bi("The AI read", "AI 解读") +
-        ' <span class="rx-mut">· ' + bi("odds, not a forecast — graded later", "是概率而非预测 —— 事后评分") + "</span></div>" +
+        ' <span class="rx-mut">· ' + bi("odds, not a forecast — marked against the tape later", "是概率而非预测 —— 事后对照行情评分") + "</span></div>" +
       rot + rows +
       '<p class="rx-cav">' + bi(b.disclaimer || "", b.disclaimer || "") + "</p></section>";
   }
 
-  // ── CSS for the full page (rx- prefix, id-guarded, injected once) ───────────
+  // ── CSS for the full page (rx- prefix, id-guarded, injected once) ─────────
   function injectFullStyles() {
     if (document.getElementById("rx-styles")) return;
     var el = document.createElement("style");
@@ -1252,17 +1612,32 @@
       /* reveal animation (once, cheap) */
       "@keyframes rxReveal{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}",
       ".rx-reveal{animation:rxReveal .5s cubic-bezier(.2,.7,.3,1) both}",
+      /* Every theme name is a door to that theme's page, so it carries a quiet
+         dotted rule at rest — visible enough to invite the click without turning
+         the page blue — and commits to a solid link underline on hover. */
+      // `color:var(--text)`, never `color:inherit`: theme.js flips data-theme at
+      // runtime and Chromium does not re-resolve an inherited colour on that
+      // subtree, so an inherit here keeps the old theme's ink until a reload.
+      ".rx-tlink{color:var(--text);text-decoration:none;border-bottom:1px dotted color-mix(in srgb,var(--muted) 60%,transparent);" +
+        "transition:border-color .15s ease,color .15s ease}",
+      ".rx-tlink:hover{color:var(--link);border-bottom:1px solid var(--link)}",
+      ".rx-tlink:focus-visible,.rx-tk:focus-visible,.rx-more summary:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:3px}",
+      ".rx-tk{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--muted);text-decoration:none;padding:1px 2px;border-radius:3px}",
+      ".rx-tk:hover{color:var(--link);background:color-mix(in srgb,var(--link) 12%,transparent)}",
+      ".rx-tk-sep{color:var(--line);margin:0 1px;font-size:10px}",
+      ".rx-tk-more{font-size:10.5px;color:var(--muted);margin-left:5px;opacity:.8}",
+      ".rx-tks{display:inline-flex;flex-wrap:wrap;align-items:center;gap:1px;min-width:0}",
       /* ── HERO ── */
       ".rx-hero{position:relative;padding:26px 4px 20px;overflow:hidden}",
       ".rx-hero::before{content:'';position:absolute;inset:-40% -20% auto -20%;height:340px;z-index:0;pointer-events:none;" +
-        "background:radial-gradient(60% 80% at 22% 0%,color-mix(in srgb,var(--hc,var(--warn)) 20%,transparent),transparent 70%);opacity:.5;filter:blur(6px)}",
+        "background:radial-gradient(60% 80% at 22% 0%,color-mix(in srgb, var(--hc,var(--warn)) 20%,transparent),transparent 70%);opacity:.5;filter:blur(6px)}",
       ".rx-hero>*{position:relative;z-index:1}",
       ".rx-green{--hc:var(--up)}.rx-amber{--hc:var(--warn)}.rx-mixed{--hc:var(--info)}.rx-flat{--hc:var(--muted)}",
       ".rx-eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--muted);margin-bottom:10px}",
       ".rx-eyebrow-sub{font-weight:600;letter-spacing:.02em;opacity:.8}",
       ".rx-verdict{font-size:clamp(23px,3.6vw,34px);font-weight:800;line-height:1.14;letter-spacing:-.02em;margin:0 0 6px;" +
         "-webkit-text-fill-color:transparent;background-clip:text;-webkit-background-clip:text;" +
-        "background-image:linear-gradient(115deg,var(--text) 0%,color-mix(in srgb,var(--hc,var(--warn)) 70%,var(--text)) 62%,var(--hc,var(--warn)) 100%)}",
+        "background-image:linear-gradient(115deg,var(--text) 0%,color-mix(in srgb, var(--hc,var(--warn)) 70%,var(--text)) 62%,var(--hc,var(--warn)) 100%)}",
       ".rx-flip{font-size:13.5px;color:var(--muted);margin:0 0 14px;max-width:760px;line-height:1.5}",
       ".rx-stance-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}",
       ".rx-stance{font-size:13px;font-weight:800;padding:5px 14px;border-radius:999px;border:1px solid;letter-spacing:.01em}",
@@ -1272,12 +1647,12 @@
       ".rx-hero-row{display:flex;gap:16px;flex-wrap:wrap;align-items:stretch}",
       /* score block (glass, glow keyed to hero color) */
       ".rx-score{flex:0 0 auto;min-width:290px;max-width:340px;padding:16px 18px 14px;border-radius:16px;" +
-        "background:linear-gradient(150deg,var(--panel) 0%,color-mix(in srgb,var(--hc,var(--warn)) 6%,var(--panel)) 100%);" +
-        "border:1px solid color-mix(in srgb,var(--hc,var(--warn)) 22%,var(--line));" +
-        "box-shadow:0 0 44px -14px color-mix(in srgb,var(--hc,var(--warn)) 30%,transparent)}",
+        "background:linear-gradient(150deg,var(--panel) 0%,color-mix(in srgb, var(--hc,var(--warn)) 6%,var(--panel)) 100%);" +
+        "border:1px solid color-mix(in srgb, var(--hc,var(--warn)) 22%,var(--line));" +
+        "box-shadow:0 0 44px -14px color-mix(in srgb, var(--hc,var(--warn)) 30%,transparent)}",
       ".rx-score-top{display:flex;align-items:center;gap:12px}",
       ".rx-score-num{font-size:58px;font-weight:900;line-height:.9;letter-spacing:-.04em;color:var(--hc,var(--warn));" +
-        "text-shadow:0 0 44px color-mix(in srgb,var(--hc,var(--warn)) 40%,transparent);font-variant-numeric:tabular-nums}",
+        "text-shadow:0 0 44px color-mix(in srgb, var(--hc,var(--warn)) 40%,transparent);font-variant-numeric:tabular-nums}",
       ".rx-score-lab{display:flex;flex-direction:column;gap:2px}",
       ".rx-score-cap{font-size:12px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.05em}",
       ".rx-score-of{font-size:11px;color:var(--muted)}",
@@ -1304,51 +1679,78 @@
       ".rx-sec-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}",
       ".rx-sec-title{font-size:16px;font-weight:800;letter-spacing:-.01em;margin:0}",
       ".rx-sec-cnt{font-size:12px;color:var(--muted);font-weight:600}",
-      ".rx-sec-sub{font-size:12.5px;color:var(--muted);margin:0 0 12px;max-width:760px;line-height:1.5}",
+      ".rx-sec-sub{font-size:12.5px;color:var(--muted);margin:0 0 10px;max-width:760px;line-height:1.5}",
+      /* ── the gap meter — this page's signature ──
+         A 3px rail so the two 11px markers always dominate it, a centre tick for
+         "unchanged / level with the market", and a tinted band spanning the two.
+         The band IS the read: its width is the disagreement, its colour is which
+         side is in front. Each marker carries its own label on its own row, so
+         they cannot collide however far apart they sit. */
+      ".rx-meter{margin:2px 0 12px;max-width:440px}",
+      ".rx-meter-row{position:relative;height:13px}",
+      ".rx-meter-lab{position:absolute;top:0;transform:translateX(-50%);font-size:9.5px;font-weight:700;" +
+        "letter-spacing:.03em;white-space:nowrap;cursor:help}",
+      ".rx-meter-lab-l{transform:translateX(-5px)}",
+      ".rx-meter-lab-r{transform:translateX(calc(-100% + 5px))}",
+      ".rx-meter-lwork,.rx-meter-lprice{color:var(--text);opacity:.82}",
+      ".rx-meter-rail{position:relative;height:3px;border-radius:999px;background:color-mix(in srgb,var(--muted) 22%,transparent);margin:1px 0}",
+      ".rx-meter-zero{position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:color-mix(in srgb,var(--muted) 60%,transparent)}",
+      ".rx-meter-gap{position:absolute;top:0;bottom:0;border-radius:999px;background:var(--mc,var(--muted));opacity:.55;min-width:2px}",
+      ".rx-meter-dot{position:absolute;top:50%;width:11px;height:11px;border-radius:50%;transform:translate(-50%,-50%);cursor:help;z-index:1}",
+      ".rx-meter-work{background:var(--panel2);border:2.5px solid var(--text)}",
+      ".rx-meter-price{background:var(--mc,var(--muted));border:2.5px solid var(--panel2)}",
+      ".rx-key{font-size:11.5px;color:var(--muted);line-height:1.5;margin:0 0 12px;max-width:680px}",
       /* lead card */
       ".rx-lead{margin-top:20px;border-radius:16px;overflow:hidden;border:1px solid color-mix(in srgb,var(--up) 26%,var(--line));" +
         "background:linear-gradient(150deg,var(--panel) 0%,color-mix(in srgb,var(--up) 6%,var(--panel)) 100%);" +
         "box-shadow:0 0 40px -18px color-mix(in srgb,var(--up) 34%,transparent)}",
-      ".rx-lead-tag{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--up);padding:10px 18px 0}",
+      ".rx-lead-tag{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--up);padding:12px 18px 0}",
       ".rx-lead-body{display:flex;gap:18px;padding:8px 18px 18px;flex-wrap:wrap}",
       ".rx-lead-main{flex:1;min-width:280px}",
       ".rx-lead-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}",
-      ".rx-lead-name{font-size:21px;font-weight:800;margin:0;letter-spacing:-.01em}",
-      ".rx-lead-gist{font-size:14px;line-height:1.55;margin:0 0 10px;color:var(--text)}",
-      ".rx-lead-side{flex:0 0 230px;max-width:260px;display:flex;flex-direction:column;gap:9px;" +
+      ".rx-lead-name{font-size:21px;font-weight:800;margin:0;letter-spacing:-.01em;display:inline-block}",
+      ".rx-lead-gist{font-size:14px;line-height:1.55;margin:0 0 12px;color:var(--text)}",
+      ".rx-lead-tks{margin:2px 0 4px;gap:2px}",
+      ".rx-lead-side{flex:0 0 230px;max-width:260px;display:flex;flex-direction:column;gap:9px;align-items:flex-start;" +
         "padding:14px;border-radius:12px;background:color-mix(in srgb,var(--up) 5%,var(--panel));border:1px solid color-mix(in srgb,var(--up) 16%,var(--line))}",
       ".rx-lead-side-note{font-size:11.5px;color:var(--muted);line-height:1.5}",
       /* cards */
       ".rx-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}",
-      ".rx-card{position:relative;border:1px solid var(--line);border-top:2px solid var(--cc,var(--line));border-radius:12px;" +
+      ".rx-card{position:relative;display:flex;flex-direction:column;border:1px solid var(--line);border-top:2px solid var(--cc,var(--line));border-radius:12px;" +
         "padding:13px 15px;background:var(--panel2);transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}",
-      "@media(hover:hover){.rx-card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--cc,var(--line)) 40%,var(--line));" +
-        "box-shadow:0 12px 30px -18px color-mix(in srgb,var(--cc,var(--line)) 60%,transparent)}}",
+      "@media(hover:hover){.rx-card:hover{transform:translateY(-3px);border-color:color-mix(in srgb, var(--cc,var(--line)) 40%,var(--line));" +
+        "box-shadow:0 12px 30px -18px color-mix(in srgb, var(--cc,var(--line)) 60%,transparent)}}",
       ".rx-card-top{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}",
-      ".rx-card-name{font-size:14.5px;font-weight:700;margin:0;letter-spacing:-.01em}",
-      ".rx-card-gist{font-size:12.5px;color:var(--muted);line-height:1.5;margin:0 0 8px}",
+      ".rx-card-name{font-size:14.5px;font-weight:700;margin:0;letter-spacing:-.01em;display:inline-block}",
+      ".rx-card-gist{font-size:12.5px;color:var(--muted);line-height:1.5;margin:0 0 10px}",
       ".rx-badge{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap;" +
-        "color:var(--bc,var(--muted));background:color-mix(in srgb,var(--bc,var(--muted)) 13%,transparent);border:1px solid color-mix(in srgb,var(--bc,var(--muted)) 32%,transparent)}",
+        "color:color-mix(in srgb, var(--bc,var(--muted)) 72%,var(--text));" +
+        "background:color-mix(in srgb, var(--bc,var(--muted)) 13%,transparent);border:1px solid color-mix(in srgb, var(--bc,var(--muted)) 32%,transparent)}",
       ".rx-badge-up{--bc:var(--up)}",
       ".rx-badge-sm{font-size:10px;padding:1px 7px}",
-      ".rx-srcs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}",
-      ".rx-src{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:6px;color:var(--sc,var(--muted));" +
-        "background:color-mix(in srgb,var(--sc,var(--muted)) 9%,transparent);border:1px solid color-mix(in srgb,var(--sc,var(--muted)) 26%,transparent)}",
-      ".rx-src b{font-size:9px}",
-      ".rx-metrics{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}",
-      ".rx-metric{font-size:11.5px;color:var(--text);padding:3px 9px;border-radius:7px;background:color-mix(in srgb,var(--muted) 9%,transparent);border:1px solid var(--line)}",
-      ".rx-metric-up{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 26%,transparent)}",
-      ".rx-card-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px}",
-      ".rx-stance-mini{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px}",
-      ".rx-stance-mini.rx-stance-watch{color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent)}",
-      ".rx-stance-mini.rx-stance-aside{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}",
+      ".rx-card-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:4px}",
+      ".rx-stance-mini{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}",
+      ".rx-stance-mini{color:color-mix(in srgb,var(--sm,var(--muted)) 72%,var(--text));background:color-mix(in srgb,var(--sm,var(--muted)) 12%,transparent)}",
+      ".rx-stance-mini.rx-stance-watch{--sm:var(--up)}",
+      ".rx-stance-mini.rx-stance-aside{--sm:var(--warn)}",
+      ".rx-stance-mini.rx-stance-priced{--sm:var(--info)}",
+      ".rx-stance-mini.rx-stance-none{--sm:var(--muted)}",
       ".rx-trail{display:inline-flex;gap:2px;align-items:center}",
-      ".rx-tickers{font-size:10.5px;color:var(--muted);font-family:var(--font-mono);line-height:1.6;margin-top:6px}",
-      ".rx-mini{font-size:11px;font-weight:600;color:var(--link);background:none;border:none;cursor:pointer;padding:2px 4px;margin-left:auto}",
-      ".rx-mini~.rx-mini{margin-left:0}",
-      ".rx-exp,.rx-news,.rx-nexp{display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);font-family:var(--font-mono);line-height:1.6}",
-      ".rx-exp.rx-open,.rx-news.rx-open,.rx-nexp.rx-open{display:block}",
-      ".rx-hl{display:block;font-family:var(--font-ui);color:var(--link);text-decoration:none;font-size:11.5px;line-height:1.5;margin-bottom:4px}",
+      /* the one disclosure per card */
+      ".rx-more{margin-top:9px;border-top:1px solid var(--line);padding-top:7px}",
+      ".rx-more summary{font-size:11px;font-weight:600;color:var(--link);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px}",
+      ".rx-more summary::-webkit-details-marker{display:none}",
+      ".rx-more summary::before{content:'+';font-weight:700;opacity:.7}",
+      ".rx-more[open] summary::before{content:'\\2212'}",
+      ".rx-more-body{margin-top:8px;display:flex;flex-direction:column;gap:7px}",
+      ".rx-slist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}",
+      ".rx-slist li{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:11.5px}",
+      ".rx-sname{color:var(--text)}",
+      ".rx-smove{color:var(--sc,var(--muted));font-weight:600;font-size:11px;white-space:nowrap}",
+      ".rx-more-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;font-size:11.5px}",
+      ".rx-more-k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700;flex-shrink:0}",
+      ".rx-more-news{flex-direction:column;align-items:flex-start;gap:4px}",
+      ".rx-hl{display:block;color:var(--link);text-decoration:none;font-size:11.5px;line-height:1.5;margin-bottom:3px}",
       ".rx-hl:hover{text-decoration:underline}",
       ".rx-showmore{display:block;width:100%;text-align:center;margin-top:12px;padding:9px;font-size:12px;font-weight:600;" +
         "color:var(--link);background:var(--gbtn-bg,transparent);border:1px solid var(--line);border-radius:9px;cursor:pointer}",
@@ -1381,11 +1783,12 @@
       ".rx-nctrl{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}",
       ".rx-nq,.rx-nsel{padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:12.5px;font-family:inherit;outline:none}",
       ".rx-nq{width:190px}.rx-nq:focus,.rx-nsel:focus{border-color:var(--link)}",
-      ".rx-nrow{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;cursor:pointer;border:1px solid transparent;font-size:12.5px}",
+      ".rx-nrow{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;border:1px solid transparent;font-size:12.5px}",
       ".rx-nrow:hover{background:var(--panel2);border-color:var(--line)}",
-      ".rx-ntk{font-family:var(--font-mono);font-weight:800;min-width:56px}",
+      ".rx-nrow .rx-tk{font-size:12.5px;min-width:52px}",
       ".rx-nbasket{flex:1;min-width:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
-      ".rx-nrs{font-family:var(--font-mono);font-weight:700;min-width:44px;text-align:right}",
+      ".rx-nrs{font-family:var(--font-mono);font-weight:700;min-width:44px;text-align:right;cursor:help}",
+      ".rx-nnote{font-size:11.5px;color:var(--muted);line-height:1.5;margin:0 0 8px;padding:0 9px 0 61px}",
       /* honesty */
       ".rx-honesty{margin-top:28px;padding:20px 20px 16px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}",
       ".rx-h-base,.rx-h-split{font-size:12.5px;line-height:1.55;color:var(--muted);margin:8px 0 0}",
@@ -1403,19 +1806,32 @@
       ".rx-receipt{font-size:12px;color:var(--muted)}",
       ".rx-receipt summary{cursor:pointer;color:var(--link);font-weight:600}",
       ".rx-receipt p{margin:8px 0 0;line-height:1.55}",
-      /* brain */
+      /* the AI read */
       ".rx-brain{margin-top:18px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--info) 4%,var(--panel))}",
       ".rx-brain-off{background:var(--panel)}",
       ".rx-brain-head{font-size:14px;font-weight:800;margin-bottom:8px}",
-      ".rx-brain-rot{font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin-bottom:9px}",
-      ".rx-brain-row{padding:8px 0;border-bottom:1px solid var(--line)}",
-      ".rx-brain-badge{font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:999px;border:1px solid var(--bc,var(--muted));color:var(--bc,var(--muted));margin-right:8px}",
-      ".rx-brain-why{font-size:12px;color:var(--muted);line-height:1.55;margin:5px 0 0}",
+      ".rx-brain-rot{font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin-bottom:9px;line-height:1.5}",
+      ".rx-brain-row{padding:9px 0;border-bottom:1px solid var(--line)}",
+      ".rx-brain-row:last-of-type{border-bottom:none}",
+      ".rx-brain-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}",
+      ".rx-brain-badge{font-size:10.5px;font-weight:800;padding:2px 9px;border-radius:999px;border:1px solid var(--bc,var(--muted));color:var(--bc,var(--muted))}",
+      ".rx-brain-theme{font-size:13px;font-weight:700}",
+      ".rx-brain-why{font-size:12.5px;color:var(--text);line-height:1.6;margin:6px 0 0}",
+      ".rx-brain-full{margin-top:5px;font-size:11.5px;color:var(--muted)}",
+      ".rx-brain-full summary{cursor:pointer;color:var(--link);font-weight:600}",
+      ".rx-brain-full p{margin:7px 0 0;line-height:1.55}",
       ".rx-cav{font-size:10.5px;color:var(--muted);line-height:1.5;margin:10px 0 0}",
       /* footer caveat */
       ".rx-foot{font-size:11px;color:var(--muted);line-height:1.55;margin-top:20px;padding-top:14px;border-top:1px solid var(--line);max-width:900px}",
-      /* tooltips (reuse macro data-tip convention via title fallback: keep simple) */
-      "[data-tip-en]{position:relative}",
+      ".rx-foot p{margin:0 0 6px}",
+      ".rx-foot-more summary{cursor:pointer;color:var(--link);font-weight:600}",
+      ".rx-foot-more p{margin:6px 0 0}",
+      /* NOTE: no `[data-tip-en]{position:relative}` rule here. It used to sit at the
+         end of this sheet and, being later at equal specificity, silently beat
+         `position:absolute` on every tip-bearing element — which collapsed the meter
+         markers to inline slivers. theme.css owns the trigger affordance (cursor) and
+         the Lens popover positions itself from getBoundingClientRect against <body>,
+         so the trigger never needs to be a containing block. */
       /* mobile */
       "@media(max-width:640px){",
       ".rx-hero{padding:18px 2px 14px}",
@@ -1424,6 +1840,7 @@
       ".rx-cards{grid-template-columns:1fr}",
       ".rx-nq,.rx-nsel{width:100%}",
       ".rx-t-stance{display:none}",
+      ".rx-nnote{padding-left:9px}",
       "}",
       /* reduced motion + coarse pointer: no reveal/lift churn */
       "@media(prefers-reduced-motion:reduce){.rx-reveal{animation:none}.rx-seg{transition:none}.rx-card{transition:none}}",
@@ -1476,24 +1893,27 @@
       var h = '<div class="rx-wrap">';
       h += heroHTML(radar, enriched, ic);
 
+      // The meter legend is a page-level constant: said once, above the first meter.
+      if (posDivs.length || negDivs.length) h += meterKey();
+
       // Lead: top activity-ahead theme (the genuinely watch-worthy one)
       if (posDivs.length) h += leadHTML(posDivs[0]);
 
       // Lane: activity ahead of price (rest, if the lead took the first)
       var posRest = posDivs.slice(posDivs.length ? 1 : 0);
       if (posRest.length) {
-        h += '<section class="rx-sec"><div class="rx-sec-head"><h2 class="rx-sec-title">🟢 ' + bi("More activity ahead of price", "更多活动领先价格") +
+        h += '<section class="rx-sec"><div class="rx-sec-head"><h2 class="rx-sec-title">🟢 ' + bi("More work running ahead of price", "更多真实活动领先价格") +
           '</h2><span class="rx-sec-cnt">' + posRest.length + "</span></div>" +
-          '<p class="rx-sec-sub">' + bi("Real work accelerating faster than the tape. Watch for price to catch up — it may not.", "真实活动加速快于价格。留意价格能否跟上 —— 也可能不会。") + "</p>" +
+          '<p class="rx-sec-sub">' + bi("The work behind these themes is speeding up faster than the price. Watch for price to catch up — it may not.", "这些主题背后的真实活动比价格跑得更快。留意价格能否跟上 —— 也可能不会。") + "</p>" +
           '<div class="rx-cards">' + posRest.slice(0, 6).map(function (f, i) { return laneCard(f, i); }).join("") + "</div></section>";
       }
 
       // Lane: price ahead of activity
-      h += '<section class="rx-sec"><div class="rx-sec-head"><h2 class="rx-sec-title">🟠 ' + bi("Price ahead of activity", "价格领先活动") +
+      h += '<section class="rx-sec"><div class="rx-sec-head"><h2 class="rx-sec-title">🟠 ' + bi("Price running ahead of the work", "价格领先真实活动") +
         '</h2><span class="rx-sec-cnt">' + negDivs.length + "</span></div>" +
-        '<p class="rx-sec-sub">' + bi("The tape is leading while the real-activity engine underneath has cooled. These moves may be running on fumes — stand aside.", "价格在领先，而底层真实活动已降温。这些走势可能已是强弩之末 —— 旁观为宜。") + "</p>";
+        '<p class="rx-sec-sub">' + bi("Price has moved while the work behind it has slowed. These moves may be running on little — stand aside.", "价格已经上涨，而其背后的真实活动却在放缓。这些走势可能缺乏支撑 —— 旁观为宜。") + "</p>";
       if (!negDivs.length) {
-        h += '<div class="rx-calm">' + bi("None today — where price leads, real activity is keeping up.", "今日没有 —— 价格领先之处，真实活动仍在跟上。") + "</div>";
+        h += '<div class="rx-calm">' + bi("None today — where price has moved, the work behind it is keeping up.", "今日没有 —— 价格上涨之处，其背后的真实活动仍在跟上。") + "</div>";
       } else {
         var negTop = negDivs.slice(0, 6), negMore = negDivs.slice(6);
         h += '<div class="rx-cards" id="rx-neg-cards">' + negTop.map(function (f, i) { return laneCard(f, 100 + i); }).join("");
@@ -1516,58 +1936,56 @@
       h += '<div class="rx-pane rx-on" id="rx-pane-themes">';
       h += '<div class="rx-filters">' +
         '<button class="rx-fchip rx-on" data-f="all">' + bi("All", "全部") + "</button>" +
-        '<button class="rx-fchip" data-f="pos">' + bi("Activity ahead", "活动领先") + "</button>" +
+        '<button class="rx-fchip" data-f="pos">' + bi("Work ahead", "活动领先") + "</button>" +
         '<button class="rx-fchip" data-f="neg">' + bi("Price ahead", "价格领先") + "</button>" +
-        '<button class="rx-fchip" data-f="conf">' + bi("Both agree", "同步") + "</button>" +
+        '<button class="rx-fchip" data-f="conf">' + bi("Moving together", "同步变动") + "</button>" +
         '<button class="rx-fchip" data-f="quiet">' + bi("In line", "平静") + " (" + quietN + ")</button>" +
         "</div>";
       h += '<div style="overflow-x:auto"><table class="rx-tbl"><thead><tr>' +
         '<th data-col="name">' + bi("Theme", "主题") + '<span class="rx-so">↕</span></th>' +
-        '<th data-col="accel" data-tip-en="How fast real activity is moving vs a year ago — 1.0× is flat, above is speeding up, below is cooling" data-tip-zh="真实活动相对去年的变化速度 —— 1.0× 为持平，高于为加速，低于为降温">' + bi("Real activity", "真实活动") + '<span class="rx-so">↕</span></th>' +
-        '<th data-col="rel60" data-tip-en="Theme price return vs the market over the last 60 days" data-tip-zh="主题价格相对大盘的60日收益">' + bi("Price vs mkt", "相对大盘") + '<span class="rx-so">↕</span></th>' +
-        '<th>' + bi("14d", "14日") + "</th>" +
+        '<th data-col="accel" data-tip-en="How busy the real work is now against a year ago. 1.0× is unchanged, above is speeding up, below is slowing." data-tip-zh="真实活动相对一年前的忙碌程度。1.0× 为持平，高于为加速，低于为放缓。">' + bi("Work vs a year ago", "活动 vs 去年") + '<span class="rx-so">↕</span></th>' +
+        '<th data-col="rel60" data-tip-en="How the theme has done against the market over the last 60 days." data-tip-zh="该主题过去60天相对大盘的表现。">' + bi("Price vs market", "价格 vs 大盘") + '<span class="rx-so">↕</span></th>' +
+        '<th data-tip-en="The read on each of the last 14 days." data-tip-zh="过去14天每天的解读。">' + bi("Last 14 days", "过去14天") + "</th>" +
         '<th data-col="state">' + bi("Read", "解读") + '<span class="rx-so">↕</span></th>' +
-        '<th>' + bi("Stance", "立场") + "</th>" +
+        '<th>' + bi("What to do", "该怎么做") + "</th>" +
         '</tr></thead><tbody id="rx-tbody"></tbody></table></div>';
       h += "</div>";
       // stocks pane
       h += '<div class="rx-pane" id="rx-pane-stocks">';
       h += '<div class="rx-nctrl">' +
-        '<input class="rx-nq" id="rx-nq" placeholder="' + (document.documentElement.getAttribute("data-lang") === "zh" ? "搜索代码…" : "Search ticker…") + '">' +
-        '<select class="rx-nsel" id="rx-nstate">' +
-          '<option value="all">' + bi("All reads", "全部解读") + "</option>" +
-          '<option value="POSITIVE_DIVERGENCE">' + bi("Activity ahead", "活动领先") + "</option>" +
-          '<option value="NEGATIVE_DIVERGENCE">' + bi("Price ahead", "价格领先") + "</option>" +
-          '<option value="CONFIRMED_UP">' + bi("Both rising", "同步上行") + "</option>" +
-          '<option value="QUIET">' + bi("In line", "平静") + "</option>" +
+        '<input class="rx-nq" id="rx-nq" placeholder="' + (isZh() ? "搜索代码或主题…" : "Search a ticker or theme…") + '">' +
+        '<select class="rx-nsel" id="rx-nstate" aria-label="' + (isZh() ? "按解读筛选" : "Filter by read") + '">' +
+          opt("all", "All reads", "全部解读") +
+          opt("POSITIVE_DIVERGENCE", "Work ahead of price", "活动领先价格") +
+          opt("NEGATIVE_DIVERGENCE", "Price ahead of work", "价格领先活动") +
+          opt("CONFIRMED_UP", "Both rising", "同步上行") +
+          opt("CONFIRMED_DOWN", "Both cooling", "同步走弱") +
+          opt("BROKEN_LAGGARD", "Falling behind", "掉队") +
+          opt("QUIET", "In line", "平静") +
         "</select>" +
-        '<select class="rx-nsel" id="rx-nbasket"><option value="all">' + bi("All themes", "全部主题") + "</option></select>" +
+        '<select class="rx-nsel" id="rx-nbasket" aria-label="' + (isZh() ? "按主题筛选" : "Filter by theme") + '">' +
+          opt("all", "All themes", "全部主题") + "</select>" +
         "</div>";
       h += '<div id="rx-nrows"></div>';
       h += '<button class="rx-showmore" id="rx-nmore">' + bi("Show more", "显示更多") + "</button>";
       h += "</div>";
       h += "</div>"; // board
 
-      // Honesty + brain + footer
+      // Honesty + the AI read + footer. The AI read gets a basket→flag index so
+      // its theme names can link to the same detail pages the cards link to.
       h += honestyHTML(ic, track);
-      h += brainRx(brain);
-      var cav = (radar.caveats || [])[0];
-      if (cav) h += '<p class="rx-foot">' + bi(cav, (radar.caveats_zh || [])[0] || cav) + "</p>";
+      var flagIndex = {};
+      radar.flags.forEach(function (f) { if (f.basket) flagIndex[f.basket] = f; });
+      h += brainRx(brain, flagIndex);
+      h += footNote(radar);
 
       h += "</div>"; // rx-wrap
       mount.innerHTML = h;
 
       // ── Wire interactions ──────────────────────────────────────────────────
-      // card expand / news toggles (event delegation)
-      mount.addEventListener("click", function (e) {
-        var t = e.target.closest("[data-exp],[data-news],[data-nexp]");
-        if (!t) return;
-        var id = t.getAttribute("data-exp") || t.getAttribute("data-news") || t.getAttribute("data-nexp");
-        if (!id) return;
-        var suffix = t.hasAttribute("data-news") ? "-news" : "";
-        var el = byId(id + suffix) || byId(id);
-        if (el) el.classList.toggle("rx-open");
-      });
+      // Card / note disclosures are native <details> — no JS, keyboard-accessible
+      // for free. Ticker and theme links are plain anchors: theme.js intercepts
+      // stock.html#TICKER in the capture phase and opens the Terminal workspace.
 
       // tabs
       mount.querySelectorAll(".rx-tab").forEach(function (tab) {
@@ -1668,6 +2086,14 @@
       if (byId("rx-nbasket")) byId("rx-nbasket").addEventListener("change", filterNames);
       if (byId("rx-nmore")) byId("rx-nmore").addEventListener("click", function () { _nameVisible += 24; paintNames(); });
       paintNames();
+
+      // Live language switch: the .l-en/.l-zh spans flip via CSS, but <option> text
+      // has to be rewritten by hand.
+      document.addEventListener("langchange", function () {
+        repaintOptionLang(mount);
+        var ph = byId("rx-nq");
+        if (ph) ph.placeholder = isZh() ? "搜索代码或主题…" : "Search a ticker or theme…";
+      });
     });
   }; // end renderRadarFull
 

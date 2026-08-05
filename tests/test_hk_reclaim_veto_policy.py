@@ -56,7 +56,12 @@ def test_counter_trend_name_that_follows_through_is_admitted_only_under_the_hk_p
 
     us_ok, us_reason = sq._buy_filter(0, sig, False, len(sig), reclaim_veto=True)
     assert us_ok is False
-    assert us_reason == "counter-trend, no 200-reclaim/hold"
+    # This name HELD — the next bar closed higher; the only leg that refused it is the
+    # reclaim.  The string used to read "counter-trend, no 200-reclaim/hold" for all three
+    # failure shapes of this branch, which is why only 40.2% of the rows carrying it were
+    # relieved by dropping the reclaim rule (CN_RECLAIM_HOLD_AUDIT.md §11). It now names the
+    # leg that actually refused, which on this Xiaomi-shaped case is exactly the point.
+    assert us_reason == "counter-trend, held but no 200-reclaim"
 
 
 def test_the_hk_policy_still_requires_next_bar_follow_through():

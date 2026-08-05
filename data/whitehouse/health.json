@@ -1,10 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-05T06:41:00.263253+00:00",
-  "posts_seen": 6,
-  "seen_total": 84,
-  "evaluated": 0,
-  "activated": 0,
+  "as_of": "2026-08-05T21:32:27.798908+00:00",
+  "posts_seen": 8,
+  "seen_total": 87,
+  "evaluated": 1,
+  "activated": 1,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "tw-2026-07-15-tga-build",
+      "importance": 78,
+      "activated": true,
+      "degraded_reason": "served_by:deepseek"
+    }
+  ]
 }
