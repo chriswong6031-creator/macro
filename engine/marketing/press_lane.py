@@ -1604,7 +1604,30 @@ def _apply_wire_voice(
                 opener = ""
                 post = post_no_opener
             else:
-                return base_summary, register, "", fmt, "", False
+                # LADDER RUNG 3 (2026-08-05): shed TAPE LEGS before declining.
+                # A US macro print's stamp is a three-leg basket, and the two
+                # rungs above spend the whole reading to save characters that
+                # the reading is the entire point of — the old ladder went
+                # opener -> decline, and "decline" returns tape="", so the one
+                # post whose value IS the tape read shipped without it. A
+                # two-leg read is still a read; only when even ONE leg cannot
+                # fit do we fall back to the plain body.
+                from engine.marketing.tape_stamp import shorten_stamp  # noqa: PLC0415
+                for n_legs in (2, 1):
+                    short = shorten_stamp(tape, n_legs)
+                    if not short or short == tape:
+                        continue
+                    candidate = wv.compose_post(
+                        opener="", summary=summary_text,
+                        attribution=attribution, tape_stamp=short,
+                    )
+                    if not wf.validate_length(candidate, fmt, cfg=format_cfg):
+                        opener = ""
+                        post = candidate
+                        tape = short
+                        break
+                else:
+                    return base_summary, register, "", fmt, "", False
 
     # Record the chosen opener into the account's no-repeat window (newest last).
     acct_recent.append(opener)
