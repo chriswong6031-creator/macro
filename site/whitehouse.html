@@ -36,7 +36,144 @@
 <link rel="stylesheet" href="theme.css?v=315a84eb">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
-<link rel="stylesheet" href="assets/css/4b59f808.css?v=4b59f808">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  /* XG-W7 follow line — its own row, never appended to the disclaimer sentence:
+     a legal notice and a marketing CTA must not read as one thought. */
+  footer.rfoot .rf-x { display:inline-flex; align-items:center; gap:6px; margin-top:11px; padding:4px 10px;
+    border-radius:100px; border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600;
+    transition:color .16s, border-color .16s; }
+  footer.rfoot .rf-x:hover { color:var(--text); border-color:color-mix(in srgb,var(--text) 26%,transparent); }
+  
+  .wh-hero { max-width:1060px; margin:16px auto 0; background:var(--panel); border:1px solid var(--line);
+             border-radius:16px; padding:24px 28px; position:relative; overflow:hidden; box-shadow:var(--card-shadow); }
+  .wh-hero::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
+             background:linear-gradient(90deg,#1f4ea8,color-mix(in srgb,#1f4ea8 22%,transparent)); }
+  .wh-kick { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 8px; font-weight:700; }
+  .wh-hero h1 { font-size:27px; line-height:1.18; margin:0 0 8px; letter-spacing:-.01em; }
+  .wh-hero p.sub { font-size:14.5px; color:var(--text); opacity:.82; margin:0; max-width:80ch; }
+  .wh-empty { max-width:1060px; margin:22px auto; padding:30px; text-align:center; color:var(--muted);
+              border:1px dashed var(--line); border-radius:14px; }
+
+  .wh-list { max-width:1060px; margin:22px auto 0; display:flex; flex-direction:column; gap:18px; }
+  .wh-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 22px;
+             scroll-margin-top:84px; position:relative; box-shadow:var(--card-shadow); }
+  .wh-card.live { border-color:#b23b4e66; }
+  .wh-card .row1 { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-bottom:8px; }
+  .wh-badge { font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+              padding:4px 9px; border-radius:999px; border:1px solid var(--line); white-space:nowrap; }
+  .wh-badge.live { color:#fff; background:#b23b4e; border-color:#b23b4e; }
+  .wh-badge.tone-tailwind { color:#1f9a55; border-color:#1f9a5566; }
+  .wh-badge.tone-headwind { color:#d23f3f; border-color:#d23f3f66; }
+  html[data-lang="zh"] .wh-badge.tone-tailwind { color:#d23f3f; border-color:#d23f3f66; }
+  html[data-lang="zh"] .wh-badge.tone-headwind { color:#1f9a55; border-color:#1f9a5566; }
+  .wh-badge.tone-mixed    { color:#d9a441; border-color:#d9a44166; }
+  .wh-badge.tone-neutral  { color:var(--muted); }
+  .wh-when { font-size:12px; color:var(--muted); }
+  .wh-card h2 { font-size:20px; line-height:1.25; margin:2px 0 6px; }
+  .wh-summary { font-size:14.5px; opacity:.92; margin:0 0 6px; }
+
+  .wh-meter { display:flex; align-items:center; gap:9px; margin:10px 0 4px; font-size:11.5px; color:var(--muted); }
+  .wh-meter .bar { flex:0 0 130px; height:7px; border-radius:999px; background:var(--panel2); overflow:hidden; border:1px solid var(--line); }
+  .wh-meter .bar > i { display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#1f4ea8,#b23b4e); }
+
+  .wh-body { font-size:14px; line-height:1.7; margin:10px 0; }
+  .wh-body p { margin:8px 0; opacity:.93; }
+
+  .wh-sub-h { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:16px 0 7px; font-weight:700; }
+  table.wh-tbl { border-collapse:collapse; width:100%; font-size:13px; margin:4px 0 2px; }
+  table.wh-tbl th { text-align:left; padding:7px 10px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
+  table.wh-tbl td { padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.wh-tbl tr:hover td { background:var(--panel2); }
+  .wh-dir { font-weight:700; font-size:11.5px; white-space:nowrap; }
+  .wh-dir.benefit { color:#1f9a55; }
+  .wh-dir.hurt { color:#d23f3f; }
+  .wh-dir.neutral { color:var(--muted); }
+  html[data-theme="dark"] .wh-dir.benefit { color:#3fc07e; }
+  html[data-theme="dark"] .wh-dir.hurt { color:#ef6a6a; }
+  html[data-lang="zh"] .wh-dir.benefit { color:#d23f3f; }
+  html[data-lang="zh"] .wh-dir.hurt { color:#1f9a55; }
+  html[data-lang="zh"][data-theme="dark"] .wh-dir.benefit { color:#ef6a6a; }
+  html[data-lang="zh"][data-theme="dark"] .wh-dir.hurt { color:#3fc07e; }
+  .wh-sym { font-weight:700; font-variant-numeric:tabular-nums; }
+  .wh-chg { font-variant-numeric:tabular-nums; font-size:12px; }
+  .wh-chg.up { color:#1f9a55; } .wh-chg.dn { color:#d23f3f; }
+  html[data-theme="dark"] .wh-chg.up { color:#3fc07e; } html[data-theme="dark"] .wh-chg.dn { color:#ef6a6a; }
+  html[data-lang="zh"] .wh-chg.up { color:#d23f3f; } html[data-lang="zh"] .wh-chg.dn { color:#1f9a55; }
+  html[data-lang="zh"][data-theme="dark"] .wh-chg.up { color:#ef6a6a; } html[data-lang="zh"][data-theme="dark"] .wh-chg.dn { color:#3fc07e; }
+
+  .wh-src { font-size:12.5px; margin:14px 0 2px; }
+  .wh-src a { color:var(--link); word-break:break-word; }
+  .wh-disc { font-size:11.5px; color:var(--muted); border-top:1px solid var(--line); margin-top:14px; padding-top:10px; }
+  .wh-pagedisc { max-width:1060px; margin:18px auto 0; font-size:12px; color:var(--muted);
+                 border:1px solid var(--line); border-radius:12px; padding:12px 16px; background:var(--panel2); }
+
+  /* Treasury Watch panel — the TGA liquidity read (money-green → gold accent) */
+  .wh-tre { max-width:1060px; margin:22px auto 0; background:var(--panel); border:1px solid var(--line);
+            border-radius:16px; padding:22px 24px; box-shadow:var(--card-shadow); position:relative; overflow:hidden; }
+  .wh-tre::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
+            background:linear-gradient(90deg,#1f7a4e,#2f8f6f 55%,#d9a441); }
+  .wh-tre .tk { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 6px; font-weight:700; }
+  .wh-tre h2 { font-size:19px; line-height:1.2; margin:0 0 4px; letter-spacing:-.01em; }
+  .wh-tre p.sub { font-size:13px; color:var(--text); opacity:.78; margin:0 0 14px; max-width:78ch; }
+  .wh-stats { display:flex; flex-wrap:wrap; gap:10px 12px; margin:0 0 6px; }
+  .wh-stat { flex:1 1 150px; min-width:138px; background:var(--panel2); border:1px solid var(--line);
+             border-radius:12px; padding:10px 13px; }
+  .wh-stat .lab { font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin:0 0 3px; }
+  .wh-stat .val { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.15; }
+  .wh-stat .val .u { font-size:12px; font-weight:600; opacity:.6; }
+  .wh-stat .delta { font-size:12px; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .wh-stat .delta.up { color:#1f9a55; } .wh-stat .delta.dn { color:#d23f3f; }
+  .wh-stat .val.up { color:#1f9a55; } .wh-stat .val.dn { color:#d23f3f; }
+  html[data-theme="dark"] .wh-stat .delta.up, html[data-theme="dark"] .wh-stat .val.up { color:#3fc07e; }
+  html[data-theme="dark"] .wh-stat .delta.dn, html[data-theme="dark"] .wh-stat .val.dn { color:#ef6a6a; }
+  html[data-lang="zh"] .wh-stat .delta.up, html[data-lang="zh"] .wh-stat .val.up { color:#d23f3f; }
+  html[data-lang="zh"] .wh-stat .delta.dn, html[data-lang="zh"] .wh-stat .val.dn { color:#1f9a55; }
+  html[data-lang="zh"][data-theme="dark"] .wh-stat .delta.up, html[data-lang="zh"][data-theme="dark"] .wh-stat .val.up { color:#ef6a6a; }
+  html[data-lang="zh"][data-theme="dark"] .wh-stat .delta.dn, html[data-lang="zh"][data-theme="dark"] .wh-stat .val.dn { color:#3fc07e; }
+  .wh-chip { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.03em;
+             padding:3px 9px; border-radius:999px; border:1px solid var(--line); }
+  .wh-chip.green { color:#1f9a55; border-color:#1f9a5566; }
+  .wh-chip.amber { color:#d9a441; border-color:#d9a44166; }
+  .wh-chip.red   { color:#d23f3f; border-color:#d23f3f66; }
+  .wh-chip.mut   { color:var(--muted); }
+  html[data-theme="dark"] .wh-chip.green { color:#3fc07e; }
+  .wh-tre .impulse { font-size:13.5px; line-height:1.55; margin:12px 0; padding:10px 13px;
+             background:var(--panel2); border-radius:10px; border-left:3px solid #2f8f6f; }
+  .wh-tre .sparkwrap { margin:12px 0 2px; }
+  .wh-tre .sparkcap { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted);
+             margin:0 0 4px; font-variant-numeric:tabular-nums; }
+  .wh-spark { width:100%; height:64px; display:block; }
+  .wh-tre .foot { font-size:11.5px; color:var(--muted); margin:12px 0 0; border-top:1px solid var(--line); padding-top:9px; }
+  .wh-badge.tre { color:#1f7a4e; border-color:#1f7a4e66; }
+  html[data-theme="dark"] .wh-badge.tre { color:#3fc07e; }
+
+</style>
 
 
 
@@ -377,32 +514,31 @@
 
   <div class="wh-list">
   
-    <section class="wh-card live" id="tw-2026-07-30-tga-release">
+    <section class="wh-card live" id="wh-2026-08-04-manufacturing-jobs-flock-to-the-u-s-thanks-to-president-trumps-america-first-eco">
       <div class="row1">
         <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
-        <span class="wh-badge tre">💵 <span class="l-en">Treasury</span><span class="l-zh">财政部</span></span>
-        <span class="wh-badge tone-tailwind">
-          <span class="l-en">Tailwind</span><span class="l-zh">顺风</span>
-          
+        
+        <span class="wh-badge tone-neutral">
+          <span class="l-en">Neutral</span><span class="l-zh">中性</span>
         </span>
-        <span class="wh-when">🗓 Aug 3, 2026 · treasury</span>
-        <span class="wh-when">· <span class="l-en">confidence</span><span class="l-zh">置信度</span>: medium</span>
+        <span class="wh-when">🗓 Aug 4, 2026 · news</span>
+        <span class="wh-when">· <span class="l-en">confidence</span><span class="l-zh">置信度</span>: high</span>
       </div>
 
-      <h2><span class="l-en">Treasury injects $128bn into drained RRP — reserves backstop the tape</span><span class="l-zh">财政部向已耗尽的逆回购工具注入1280亿美元——准备金为市场提供支撑</span></h2>
+      <h2><span class="l-en">White House touts $345B+ in foreign manufacturing pledges — sentiment boost, no new policy</span><span class="l-zh">白宫宣扬超3450亿美元外资制造业承诺——提振情绪，无新政策</span></h2>
 
-      <p class="wh-summary"><span class="l-en">Treasury spent down $128bn of its TGA cash since July 30, landing directly into bank reserves with the overnight RRP buffer exhausted. This is a high-impact liquidity injection that acts as a tailwind for risk assets amid a contracting Fed liquidity backdrop.</span><span class="l-zh">自7月30日以来，财政部已支出1280亿美元的TGA现金，直接流入银行准备金，隔夜逆回购缓冲已耗尽。在美联储流动性收缩的背景下，这是一次高影响力的流动性注入，对风险资产构成顺风。</span></p>
+      <p class="wh-summary"><span class="l-en">The White House released a fact sheet highlighting recent foreign manufacturing investment announcements totaling over $345 billion, crediting tax cuts and trade policies. No new executive action was announced; the release aggregates previously disclosed plans in pharma, chips, and autos.</span><span class="l-zh">白宫发布情况说明书，强调近期外资制造业投资公告总额超过3450亿美元，归功于减税和贸易政策。未宣布新的行政措施，该新闻稿汇总了制药、芯片和汽车领域先前已披露的计划。</span></p>
 
       
       <div class="wh-meter">
         <span><span class="l-en">Market significance</span><span class="l-zh">市场重要性</span></span>
-        <span class="bar"><i style="width:75%"></i></span>
-        <span>75/100</span>
+        <span class="bar"><i style="width:62%"></i></span>
+        <span>62/100</span>
       </div>
       
 
       
-      <div class="wh-body"><p>Mechanically, the $128bn drop in the TGA over two business days represents Treasury spending cash into the private sector. Because the overnight RRP facility sits at a mere $2.2bn, this injection bypasses the usual RRP drain and lands straight into bank reserves — the highest-impact plumbing scenario. In a ‘neutral_hollow’ liquidity state with reserves already tightening, this flow provides a meaningful, direct liquidity boost.</p><p>For the current tape under a ‘Reflation’ regime with contracting Fed liquidity, this injection acts as a tactical backstop. It does not reverse the broader liquidity trend, which is still negative over a 20-day window, but it forcefully cushions any near-term risk-off pressure or incipient drawdown. The flow is large enough to be felt across the curve, easing marginal funding stress and supporting duration-sensitive assets.</p><p>The read would be falsified if the TGA rebuilds sharply in the coming days — for instance, through large corporate or individual tax receipts that pull cash back out of reserves — reversing the injection. A sudden surge in bill issuance that drains reserves would also offset the effect. Duration-sensitive megacap/tech complex is the primary beneficiary; defensives and low-duration value lose relative appeal in a liquidity-driven squeeze.</p></div>
+      <div class="wh-body"><p>This is a retrospective fact sheet touting previously announced corporate investment commitments, not a new policy directive. It aggregates figures from TSMC, Novartis, Roche, Toyota, and others, framing them as evidence that the &#39;America First&#39; agenda is working. No new tariffs, tax changes, or regulatory actions are introduced.</p><p>For markets, the primary function is sentiment reinforcement within the reflation regime. It validates the industrial-policy and manufacturing-reshoring theme that has supported rallies in domestic industrials, construction, and select technology supply chains. However, because the content is backward-looking, the direct market-moving potential is low—it does not alter the fundamental outlook for any sector.</p><p>The transmission mechanism is purely narrative: by aggregating these headline numbers, the White House aims to accelerate the &#39;animal spirits&#39; around U.S. manufacturing capacity. The key risk is that these remain multi-year plans with uncertain execution; the release does not provide new guarantees or funding mechanisms, so any rally based solely on this fact sheet would be fragile.</p></div>
       
 
       
@@ -412,21 +548,111 @@
         <tbody>
         
           <tr>
-            <td>Long-duration growth / Megacap tech</td>
+            <td>Pharmaceuticals / Biotech</td>
             <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
-            <td>A direct reserves injection eases the discount-rate pressure that hits long-duration assets hardest, favoring growth over value.</td>
+            <td>Aggregates large Swiss pharma investment pledges; reinforces the policy-driven reshoring narrative for drug manufacturing.</td>
           </tr>
         
           <tr>
-            <td>High-beta cyclicals</td>
+            <td>Semiconductors</td>
             <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
-            <td>Liquidity-driven boosts to risk appetite mechanically lift higher-beta names in a reflation backdrop.</td>
+            <td>TSMC&#39;s $265B commitment is prominently featured; supports the regionalization-of-chip-supply thesis.</td>
           </tr>
         
           <tr>
-            <td>Defensive / Low-volatility equities</td>
+            <td>Industrials / Engineering</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Siemens investment cited; broad factory-construction theme benefits engineering and automation firms.</td>
+          </tr>
+        
+          <tr>
+            <td>Autos</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Toyota&#39;s $3.6B plant investment signals continued localization, though the plan was previously known.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names that benefit</span><span class="l-zh">受益标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">TSM</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg up">+0.46%</span></td>
+            <td>TSMC&#39;s reiterated $265B U.S. investment anchors its long-term domestic capacity expansion thesis.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">RHHBY</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg up">+0.75%</span></td>
+            <td>Roche&#39;s $50B pledge showcased; ADR could see positive sentiment on policy alignment.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+
+      <p class="wh-src">🔗 <a href="https://www.whitehouse.gov/releases/2026/08/manufacturing-jobs-flock-to-the-u-s-thanks-to-president-trumps-america-first-economic-agenda/" target="_blank" rel="noopener noreferrer"><span class="l-en">Read the primary White House source</span><span class="l-zh">阅读白宫一手来源</span> →</a></p>
+      <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
+    </section>
+  
+    <section class="wh-card live" id="tw-2026-07-30-tga-release">
+      <div class="row1">
+        <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
+        <span class="wh-badge tre">💵 <span class="l-en">Treasury</span><span class="l-zh">财政部</span></span>
+        <span class="wh-badge tone-tailwind">
+          <span class="l-en">Tailwind</span><span class="l-zh">顺风</span>
+          
+        </span>
+        <span class="wh-when">🗓 Aug 3, 2026 · treasury</span>
+        <span class="wh-when">· <span class="l-en">confidence</span><span class="l-zh">置信度</span>: high</span>
+      </div>
+
+      <h2><span class="l-en">Treasury injects $128bn into an RRP-exhausted system — reserves backstop the tape</span><span class="l-zh">财政部向RRP已耗尽的市场注入1280亿美元——准备金释放为大盘提供支撑</span></h2>
+
+      <p class="wh-summary"><span class="l-en">The Treasury&#39;s ~$128bn cash drawdown since July 30 landed directly in bank reserves with the overnight RRP already exhausted ($2.2bn), maximizing the liquidity injection&#39;s market impact and acting as a powerful tailwind for risk assets.</span><span class="l-zh">自7月30日以来，美国财政部约1280亿美元的现金消耗直接注入了银行准备金，而隔夜逆回购工具（RRP）已基本耗尽（仅剩22亿美元），这最大化了流动性注入的市场影响，对风险资产构成强力顺风。</span></p>
+
+      
+      <div class="wh-meter">
+        <span><span class="l-en">Market significance</span><span class="l-zh">市场重要性</span></span>
+        <span class="bar"><i style="width:82%"></i></span>
+        <span>82/100</span>
+      </div>
+      
+
+      
+      <div class="wh-body"><p>This is not a routine tax-date swing. A $128bn Treasury General Account (TGA) drawdown over two business days into an exhausted RRP buffer ($2.2bn) is a high-impact mechanical liquidity injection. With the RRP no longer capable of absorbing the flow, every dollar lands directly in bank reserves, easing the tightening reserve scarcity flagged by the plumbing state. In the current &#39;Reflation&#39; macro regime with moderate risk, this sudden reserves boost acts as a powerful backstop, reducing the immediate risk of a liquidity-driven deleveraging and providing a clear mechanical bid under the tape.</p><p>The injection is particularly supportive for the rate-sensitive, long-duration complex. When reserves rise in a hollowed-out plumbing system, the marginal discount-rate pressure eases most for assets with extended cash-flow duration. In a Reflation regime, this typically channels into megacap growth and technology names, as their valuations benefit disproportionately from a relenting in the tightening reserve dynamic. Defensive sectors, which already price in earnings stability, receive a less pronounced lift.</p><p>The read would be falsified if the TGA rebuilds sharply within days — a rapid rebound would signal this was a one-off disbursement rather than a sustained easing stance — or if a coincident heavy coupon settlement or a surge in the Fed&#39;s Reverse Repo usage absorbs the reserves. However, with RRP at just $2.2bn, the absorption capacity is negligible, making a material offset from that channel unlikely. The 20-day net-liquidity trend remains negative (-$207bn), which tempers but does not negate the immediate impulse: this injection slows the drain, it does not yet reverse the broader tightening trend.</p></div>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Sector impact</span><span class="l-zh">行业影响</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Sector</span><span class="l-zh">行业</span></th><th><span class="l-en">Impact</span><span class="l-zh">影响</span></th><th><span class="l-en">Why</span><span class="l-zh">原因</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td>Megacap Growth</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Easing reserve scarcity reduces the discount-rate pressure on long-duration cash flows, directly benefiting high-multiple growth names.</td>
+          </tr>
+        
+          <tr>
+            <td>Technology</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>The sector acts as a high-beta duration proxy; a liquidity injection into an RRP-exhausted system eases the financial conditions tightening that most hurts tech.</td>
+          </tr>
+        
+          <tr>
+            <td>Consumer Staples</td>
             <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
-            <td>Liquidity-driven risk-on flows rotate capital out of defensives and into duration-sensitive growth.</td>
+            <td>Relative performance typically lags when a reserves injection backstops risk appetite, rotating capital out of defensive havens.</td>
           </tr>
         
         </tbody>
@@ -442,25 +668,33 @@
           <tr>
             <td><span class="wh-sym">QQQ</span> <span class="wh-dir benefit">▲</span></td>
             <td><span class="wh-chg up">+1.76%</span></td>
-            <td>Nasdaq-100 ETF, a direct proxy for long-duration megacap growth that benefits most from reserve injections.</td>
-          </tr>
-        
-          <tr>
-            <td><span class="wh-sym">IWM</span> <span class="wh-dir benefit">▲</span></td>
-            <td><span class="wh-chg up">+1.72%</span></td>
-            <td>Small-cap ETF; high-beta and rate-sensitive, it benefits from improved banking-system liquidity.</td>
+            <td>Nasdaq-100 ETF serves as a direct proxy for megacap growth; boosted by easing reserve-driven discount rate pressure.</td>
           </tr>
         
           <tr>
             <td><span class="wh-sym">NVDA</span> <span class="wh-dir benefit">▲</span></td>
             <td><span class="wh-chg up">+2.93%</span></td>
-            <td>High-duration megacap; discount-rate relief directly supports stretched valuations.</td>
+            <td>High-duration, high-multiple megacap that benefits disproportionately from a relenting in reserve scarcity and its impact on risk appetite.</td>
           </tr>
         
         </tbody>
       </table>
       
 
+      
+      <div class="wh-sub-h"><span class="l-en">Names under pressure</span><span class="l-zh">承压标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">XLP</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg dn">-0.22%</span></td>
+            <td>Consumer Staples ETF sees relative underperformance as a liquidity tailwind rotates capital toward cyclical and growth exposures.</td>
+          </tr>
+        
+        </tbody>
+      </table>
       
 
       <p class="wh-src">🔗 <a href="https://fiscaldata.treasury.gov/datasets/daily-treasury-statement/operating-cash-balance" target="_blank" rel="noopener noreferrer"><span class="l-en">Read the primary White House source</span><span class="l-zh">阅读白宫一手来源</span> →</a></p>
