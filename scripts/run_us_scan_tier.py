@@ -205,16 +205,26 @@ def main() -> int:
                                     tickers=scan_tickers, floor=floor)
     print_scan_summary(doc, curated_n=len(curated), elapsed=time.time() - t0)
 
-    advance = bool(args.nightly)
+    # Two SEPARATE gates, deliberately not one variable.
+    #   write_artifact — --nightly OR --out-dir (the scratch dir is a real write,
+    #                    just not to the real store).
+    #   stamp_store    — --nightly ONLY. The context vector's monthly part is a
+    #                    shared PIT ledger with no out-dir redirection: passing the
+    #                    out-dir's advance through here would make a "safe local
+    #                    test" append tier="scan" rows to the REAL store whenever
+    #                    the lane env happened to be armed. Nightly is the sole
+    #                    advancer, and --out-dir is not nightly.
+    stamp_store = bool(args.nightly)
     if args.out_dir:
         artifact = Path(args.out_dir) / "latest.json"
         forward = Path(args.out_dir) / "forward_log.jsonl"
-        advance = True
+        write_artifact = True
     else:
         artifact = root / PMA.SCAN_ARTIFACT_REL
         forward = root / PMA.SCAN_FORWARD_LOG_REL
+        write_artifact = bool(args.nightly)
 
-    if advance:
+    if write_artifact:
         PMA._atomic_write_json(artifact, doc)
         wrote = _append_scan_log(doc, forward)
         print(f"  writes: artifact -> {artifact}, "
@@ -226,9 +236,13 @@ def main() -> int:
         # The WHOLE scan tier is stamped, not just the runners: the store's value
         # is that a name which never ran is present too, with its reason — the
         # same law that makes the curated store carry ineligible names.
-        stamp_context_vector(root, scan_tickers, floor, advance=advance,
-                             with_context_dims=not args.no_context_dims,
-                             liquidity=liquidity)
+        if args.out_dir and not args.nightly:
+            print("  context-vector stamp SKIPPED (--out-dir is a scratch run; the "
+                  "store has no out-dir redirection and nightly is its sole advancer)")
+        else:
+            stamp_context_vector(root, scan_tickers, floor, advance=stamp_store,
+                                 with_context_dims=not args.no_context_dims,
+                                 liquidity=liquidity)
     return 0
 
 

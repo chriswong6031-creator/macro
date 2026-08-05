@@ -161,15 +161,30 @@ def census(root: Path, *, limit: int | None = None) -> pd.DataFrame:
         if frame.empty:
             continue
         close = frame["close"]
-        dollar = (close * frame["volume"]).dropna()
         last_close = close.iloc[-1]
+        # ``bars`` counts USABLE closes, not rows. A file padded with NaN closes
+        # would otherwise read as deeper than it is and slip past the >= 200 floor
+        # with nothing to gate on. Same definition the shallow-cache heal uses, so
+        # the two never disagree about how deep a name is.
+        bars = int(close.notna().sum())
+        # MDV over the last MDV_WINDOW BARS — the window the printed rule names —
+        # then the median of whatever is observed inside it. Taking the last 20
+        # NON-NULL observations instead would silently reach back across volume
+        # gaps and median a non-contiguous stretch while still claiming "20 bars".
+        #
+        # Fewer than MDV_WINDOW bars in the file => NULL, never a partial-window
+        # number dressed up as a 20-session median (#4485 null-not-false).
+        mdv20 = None
+        if len(frame) >= MDV_WINDOW:
+            window = (close * frame["volume"]).iloc[-MDV_WINDOW:].dropna()
+            if not window.empty:
+                mdv20 = float(window.median())
         rows.append({
             "ticker": p.stem,
-            "bars": int(len(frame)),
+            "bars": bars,
             "last": str(frame.index[-1])[:10],
             "last_close": (float(last_close) if pd.notna(last_close) else None),
-            "mdv20": (float(dollar.iloc[-MDV_WINDOW:].median())
-                      if len(dollar) >= MDV_WINDOW else None),
+            "mdv20": mdv20,
         })
     return pd.DataFrame(rows, columns=["ticker", "bars", "last", "last_close", "mdv20"])
 
