@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T17:48:40.189243+00:00",
-  "count": 818,
+  "generated_at": "2026-08-05T18:18:44.370700+00:00",
+  "count": 819,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -912,6 +912,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vxggkmvk0xi-6ce4a1",
+      "title": "mfse wp",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-05T01:58:44Z",
+      "summary_points": [
+        "**Policy Uncertainty Reshaping Credit Markets**: Fed's declining transparency narrows margin for error; tight spreads reflect strong fundamentals from better-quality high-yield issuers, not complacency.",
+        "**AI-Driven Credit Market Dynamics**: AI-related capex drives investor appetite and absorbs supply, but supply-demand balance is critical (risk of issuance outpacing demand at inflation peak).",
+        "**Risk-Opportunity Assessment**: Prefer higher-quality investment-grade and EM sovereigns over European/US high-yield; securitized credit offers liquidity via low default risk and embedded amortization/prepayment flows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
