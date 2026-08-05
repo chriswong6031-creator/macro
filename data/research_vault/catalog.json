@@ -1,11 +1,12 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-05T04:30:57.300903+00:00",
-  "count": 769,
+  "generated_at": "2026-08-05T04:41:42.343974+00:00",
+  "count": 779,
   "institutions": [
     "Academy Securities",
     "Alger",
     "Amova",
+    "Andromeda",
     "Apollo",
     "BTIG",
     "Bank of America",
@@ -52,6 +53,214 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-susgn3akbum-7ad578",
+      "title": "BP Plc (BP)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:20:21Z",
+      "summary_points": [
+        "**Strong Earnings Driver**: 10% earnings beat vs.",
+        "consensus driven by oil trading (contributing ~4pp ROACE uplift), refining margins, and downstream resilience during Middle East disruptions; Q2 RC operating profit ($10.3bn) and adjusted net income ($5.7bn) exceeded estimates by 9% and 12%.",
+        "**Deleveraging Execution**: Net debt/equity (excl.",
+        "leases) plummeted to 4.9% (from 48.6% in 12/25); $11.9bn Q2 operating cash flow reduced net debt by $7bn qoq, targeting $14-18bn net debt by YE27 via $20bn disposals (incl.",
+        "Castrol) and zero buybacks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-y5n8wvzqw2o-774cda",
+      "title": "GS Hedge Funds Crowding Monitor — What is crowded in US Equities",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T03:03:37Z",
+      "summary_points": [
+        "**Broad AI/Data Centers Short Crowding Surge**: Short crowding surged to 99th percentile (Broad AI: -0.05→0.19) and 87th percentile (Data Centers: -0.22→0.01), signaling aggressive short covering and potential squeeze risk amid institutional hedging.",
+        "**Rate-Sensitive Sector Shift**: Software short crowding collapsed (z-score 0.50→-0.51) while Utilities (0.14→0.57) and Equity REITs (0.06→0.38) surged, reflecting positioning for higher-for-longer rates.",
+        "**Tech Hardware Short Overcrowding**: Technology Hardware & Equipment (SPRCEW) shows low long crowding (0.08) and high short crowding (0.57), indicating concentrated short risk and potential volatility.",
+        "**Sector Rotation Divergence**: Consumer Services (Comm.",
+        "& Prof."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vv4eaqbkwkj-879842",
+      "title": "4 Aug 2026 US Equity Strategy",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:11:26Z",
+      "summary_points": [
+        "**Hyperscaler Cloud Backlog Surge**: $300B+ cloud backlog growth (Google, Microsoft, Amazon) confirms AI implementation, critical hard data for tech fundamentals beyond revenue growth metrics.",
+        "**Q2 2026 EPS Sustainability Risk**: Recent EPS surge driven by non-recurring private investment events, not sustainable growth, creating potential 2027 downside if expectations aren’t met.",
+        "**CDS-Forward P/E Dynamics**: Rising CDS spreads vs.",
+        "forward P/E signal market pricing FCF improvement; hyperscalers’ capex outlook surged 13% for 2027 (vs.",
+        "4% in 2026), reflecting funding pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dmwuxfa2jd2-659cd1",
+      "title": "Earnings Wrap Up 2Q26 reporting season Focus shifts to cash flows from capex",
+      "institution": "Societe Generale",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:10:59Z",
+      "summary_points": [
+        "**Developed Markets Earnings Strength**: Q2 2026 results show 57% US, 28% Europe, 58% Japan YoY earnings growth, exceeding consensus by 31%/3%/17% respectively; 60% of companies beat estimates, signaling robust fundamentals and broad market resilience.",
+        "**Geopolitical & AI Capex Dynamics**: US-Iran conflict-driven oil price surge boosted energy earnings (120% YoY, +5% vs.",
+        "consensus) but hurt industrials/consumer/healthcare; investors prioritize cash flow from AI capex (not spending), with hyperscalers leading via cloud growth while others face penalties for weak free cash flow.",
+        "**STOXX 200 Small Sales Surprises**: 45% below consensus – critical risk factor for small-cap exposure, signaling significant sales underperformance and potential valuation pressure.",
+        "**S&P 500 vs STOXX 600 Earnings Beat Momentum**: S&P 500 shows 40% EPS beat vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-oj97ii0py3m-c4498d",
+      "title": "Investing in China",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:11Z",
+      "summary_points": [
+        "**China's Fiscal & Tech Policy Acceleration**: Politburo prioritizes fiscal execution (0.8% 1H26 spending growth, accelerating 2H26) and \"Two Majors\" tech policy, driving semiconductor localization (domestic equipment market share rising from 7% to 27% by 2028E) and AI/semiconductor investment despite weak domestic demand (retail sales 0%, FAI -9.6% y/y).",
+        "**CNY Strength Driven by External Flows**: CNY rated Attractive with 6.6 year-end target; strength stems from USD 45bn monthly exporter repatriation and trade surplus (USD 96bn avg.",
+        "6mo), contrasting domestic weakness (industrial growth 4-5%, retail near zero).",
+        "**Sector Opportunities Beyond Tech**: Power/electrical equipment (grid/data center demand) and healthcare (CROs/CDMOs, high-dividend financials) favored for resilient cash flow; internet sector elevated to #2 in tech pecking order via cloud growth, AI monetization, and regulatory stability.",
+        "**Bond & Credit Strategy**: Short/medium-duration bonds favored for stable carry; Asian credit allocation targets Chinese SOEs/financials (IG/HY) and non-USD credits (CNH, AUD, SGD) amid compressing spreads and appealing yields."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-p6zw4vw7i2c-e809d7",
+      "title": "UBS Equity Preference List European Utilities 2026 08 04",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:07Z",
+      "summary_points": [
+        "**Policy Tailwinds**: EU Renewable Directive (42.5% renewables by 2030) and ETS reform (2028+) sustain carbon prices, driving utilities as transition enablers with structural demand from electrification (AI/data centers, EVs, heat pumps).",
+        "**Growth Catalysts**: Electrification trends fuel long-term demand; Q2 2026 results exceeded expectations with raised guidance, supported by 5% dividend yield + earnings growth (6% CAGR target for E.ON).",
+        "**Valuation Paradox**: Sector trades at premium valuations but offers 5% yield + growth potential, with EDP Renewables showing material P/E discount vs peers and 13-15% target IRRs in US/EU.",
+        "**Critical Risks**: Regulatory volatility (carbon pricing mandates, political/tax changes) and execution delays (asset commissioning) threaten profitability, alongside interest rate/currency exposure.",
+        "**Allocation Flows**: UBS allocates 99.9% of CIO global rating to \"Most Preferred\" equities, adding European utilities (Veolia, Orsted, EDP, SSE) in past 12 months signaling strong inflows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tghtfv5ime3-1cfbdb",
+      "title": "Daily Asia",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T02:04:06Z",
+      "summary_points": [
+        "**Earnings & Disinflation Catalyst**: US Q2 earnings beat historical averages, S&P 500 upside risk to 20% growth; Fed holds rates unchanged amid moderating inflation, supporting equity upside.",
+        "**Geopolitical Tension/Recovery Balance**: US-Iran tensions drove oil rebound (Brent +23.6%) and semiconductor drop (-20.6%), but diplomatic hopes for Strait of Hormuz reopening signal energy flow recovery, aiding global equities.",
+        "**Regional Equity Strength**: Europe's Stoxx 600 earnings upgrades (3-yr high), Asia's 72% profit growth; Fed's \"watchful thinking\" (steady rates) drives diversified equity exposure amid tariff fade.",
+        "**Fixed Income Opportunity**: Quality short/medium-duration bonds hedge rate hikes; declining yields expected over 12 months as inflation cools, with current yields appealing for positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pwqofbp0bou-a299a4",
+      "title": "The Silver Bullet AI Credit August 2026",
+      "institution": "Andromeda",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:59:53Z",
+      "summary_points": [
+        "**Worst Credit Entry Point**: Record-tight spreads, inflation/geopolitics uncertainty, and negatively convex payoff (weak credits + tight spreads + inflation cycle) create the worst long-only credit entry point in years, with no upside and high downside risk.",
+        "**Private Credit Systemic Risk**: $3.5T private credit market (360% growth vs.",
+        "subprime peak) concentrated in one sector raises contagion concerns, with concentrated capital misallocation amplifying losses despite structural safeguards.",
+        "**Life Insurers' Circular Leverage**: $1tn of life insurers' $35tn assets owned by private equity firms, which allocate capital to direct lending funds managed by the same firms, creating circular leverage and contagion risk during liquidity events.",
+        "**CoreWeave Debt Sustainability Crisis**: 70% EBITDA required to service debt vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-k95udffqtzt-ecad10",
+      "title": "Weekly fixed income commentary Markets digest a hawkish Fed pause",
+      "institution": "Nuveen",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:58:28Z",
+      "summary_points": [
+        "**Fed Hawkishness**: 9-3 vote to hold rates (3.50%-3.75%) with 3 dissenters, elevating Sept hike odds to 65% amid market pricing; policy-driven technical shift.",
+        "**Treasury Curve Bear-Steepening**: Long bond yield hit 5.27% (YTD high), 30-yr rising 12 bps; credit spreads firm on strong earnings despite oil drop (Brent -7%).",
+        "**Muni Flows & Seasonality**: Tax-exempt municipals outperformed fixed income (+0.13%) with $761m fund flows; July weakest since 2003, August historically strong opportunity.",
+        "**EM Flow Risk**: Retail flows negative (-$369M vs prior +$741M), new issuance subdued ($5.2B), amid geopolitical tensions (Middle East names lagged)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kvatyrzolpx-174a39",
+      "title": "JPM JPM US Market Intell",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-05T01:01:23Z",
+      "summary_points": [
+        "**US TECH RALLY FUNDAMENTALS**: Semiconductors +7%, AI memory/optics/infra >5% driving broad market surge; de-grossing negative (vs 2020/2022) with seasonal re-grossing expected mid-Sept; Mag7/MegaCap ex-Semis trading 2+ std dev below 2018Q3 mean (30% upside potential).",
+        "**CHINA TECH BAN GEOPOLITICS**: Trump FCC drafting ban on Chinese optical transceivers (Innolight, 27% share) for data centers; forces U.S.",
+        "hyperscalers to shift to domestic suppliers (Coherent, Lumentum) amid near-term supply constraints and higher costs.",
+        "**ISM SERVICES OUTLOOK**: July composite expected at 54.5 (up from 54.0), new business at 60.6 (3-yr high); critical macro catalyst for economic momentum ahead of key data releases.",
+        "**TREASURY POLICY FLOW SHIFT**: No coupon size changes anticipated; focus on \"at least\" guidance removal for FY27 flexibility; impacts duration supply and market flows amid yield near highs and midterm election risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-rahh2mlvzwk-bf3a2a",
       "title": "GS John Flood SP 500 making fresh all time highs directly after",
