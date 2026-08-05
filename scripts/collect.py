@@ -407,7 +407,8 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
     cfg = cfg or audit_common.quality_cfg()
     if audit_fns is None:
         from scripts import (audit_prices, audit_macro, audit_universe,
-                             audit_fred_groups, audit_massive_store, audit_price_basis)
+                             audit_fred_groups, audit_massive_store, audit_price_basis,
+                             audit_stocks_freshness)
         audit_fns = [
             ("prices", lambda: audit_prices.run(cfg=cfg)),
             ("macro", lambda: audit_macro.run(cfg=cfg)),
@@ -421,6 +422,11 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
             # hole. Anchor-parquet continuity + manifest-lie tripwire; skips itself on
             # checkouts without the heavy store (CI runners).
             ("massive_store", lambda: audit_massive_store.run(cfg=cfg)),
+            # 2026-08-03 incident: a name that exits every sector SPDR's top-20 froze
+            # its data/stocks parquet forever — invisible to audit_prices (interior
+            # gaps only) and check_price_store_freshness (SPY/yahoo only). Per-name
+            # stale-tip tripwire; flags-only, never gates this run.
+            ("stocks_freshness", lambda: audit_stocks_freshness.run(cfg=cfg)),
         ]
 
     docs: list[tuple[str, dict]] = []
