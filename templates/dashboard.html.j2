@@ -15977,7 +15977,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {# Board-order framing footnote (G0.7, china.html.j2 idiom). One line, once —
          the per-card Priority tooltip carries the same arithmetic on Tier 2. #}
       {% if _su and _sg.any %}
-      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 并非胜率。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
+      {# The per-card Priority and ★ Featured hover cards were removed (operator
+         2026-08-05: they covered the neighbouring cards and restated what the card
+         already shows). Two statements lived ONLY in those tooltips — that Priority is
+         not a return forecast, and what the Featured gate actually tests — so they move
+         here, to the one place a board-wide constant belongs. The Featured wording is
+         load-bearing: "edge above zero (an absolute floor)" describes the gate the
+         engine runs; the older "above the board's midpoint" described a cross-sectional
+         rank it never ran, and promised the opposite of the real gate on a weak board.
+         tests/test_us_board_priority_ui.py pins both sentences here. #}
+      <p class="pb-fn"><span class="l-en">Priority = signal 30% + entry 25% + edge 25% + runway 10% + setup quality 10%. It ranks how ready a name is to be acted on, for ordering this board — it is not a win probability or return forecast. Green cards are the picks: a separate gate on top of the order — fresh signal, entry window open, edge above zero (an absolute floor), price not extended, capped at 12 names and 4 per sector. The us_prophet_v1 forward record is accruing separately.{{ _rw_en }}</span><span class="l-zh">优先级＝信号30%＋入场25%＋优势25%＋上行空间10%＋形态质量10%。它衡量的是一只股票的可操作就绪度，用于给本榜排序 — 不是胜率，也不是收益预测。发绿光的卡片是精选：那是排序之上的另一道门槛 —— 信号新鲜、入场窗口已打开、优势为正（绝对下限，而非同榜排名）、价格未过度拉伸，全板最多12只、每个板块最多4只。us_prophet_v1 的前瞻记录将单独积累。{{ _rw_zh }}</span></p>
       {% endif %}
       </div>{# end .nb-grid-section #}
       {% set _has_outcomes = us_board_outcomes and us_board_outcomes.get('rows') %}
