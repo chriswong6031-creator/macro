@@ -36,7 +36,144 @@
 <link rel="stylesheet" href="theme.css?v=315a84eb">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=073377a0">
-<link rel="stylesheet" href="assets/css/4b59f808.css?v=4b59f808">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  /* XG-W7 follow line — its own row, never appended to the disclaimer sentence:
+     a legal notice and a marketing CTA must not read as one thought. */
+  footer.rfoot .rf-x { display:inline-flex; align-items:center; gap:6px; margin-top:11px; padding:4px 10px;
+    border-radius:100px; border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600;
+    transition:color .16s, border-color .16s; }
+  footer.rfoot .rf-x:hover { color:var(--text); border-color:color-mix(in srgb,var(--text) 26%,transparent); }
+  
+  .wh-hero { max-width:1060px; margin:16px auto 0; background:var(--panel); border:1px solid var(--line);
+             border-radius:16px; padding:24px 28px; position:relative; overflow:hidden; box-shadow:var(--card-shadow); }
+  .wh-hero::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
+             background:linear-gradient(90deg,#1f4ea8,color-mix(in srgb,#1f4ea8 22%,transparent)); }
+  .wh-kick { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 8px; font-weight:700; }
+  .wh-hero h1 { font-size:27px; line-height:1.18; margin:0 0 8px; letter-spacing:-.01em; }
+  .wh-hero p.sub { font-size:14.5px; color:var(--text); opacity:.82; margin:0; max-width:80ch; }
+  .wh-empty { max-width:1060px; margin:22px auto; padding:30px; text-align:center; color:var(--muted);
+              border:1px dashed var(--line); border-radius:14px; }
+
+  .wh-list { max-width:1060px; margin:22px auto 0; display:flex; flex-direction:column; gap:18px; }
+  .wh-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 22px;
+             scroll-margin-top:84px; position:relative; box-shadow:var(--card-shadow); }
+  .wh-card.live { border-color:#b23b4e66; }
+  .wh-card .row1 { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-bottom:8px; }
+  .wh-badge { font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+              padding:4px 9px; border-radius:999px; border:1px solid var(--line); white-space:nowrap; }
+  .wh-badge.live { color:#fff; background:#b23b4e; border-color:#b23b4e; }
+  .wh-badge.tone-tailwind { color:#1f9a55; border-color:#1f9a5566; }
+  .wh-badge.tone-headwind { color:#d23f3f; border-color:#d23f3f66; }
+  html[data-lang="zh"] .wh-badge.tone-tailwind { color:#d23f3f; border-color:#d23f3f66; }
+  html[data-lang="zh"] .wh-badge.tone-headwind { color:#1f9a55; border-color:#1f9a5566; }
+  .wh-badge.tone-mixed    { color:#d9a441; border-color:#d9a44166; }
+  .wh-badge.tone-neutral  { color:var(--muted); }
+  .wh-when { font-size:12px; color:var(--muted); }
+  .wh-card h2 { font-size:20px; line-height:1.25; margin:2px 0 6px; }
+  .wh-summary { font-size:14.5px; opacity:.92; margin:0 0 6px; }
+
+  .wh-meter { display:flex; align-items:center; gap:9px; margin:10px 0 4px; font-size:11.5px; color:var(--muted); }
+  .wh-meter .bar { flex:0 0 130px; height:7px; border-radius:999px; background:var(--panel2); overflow:hidden; border:1px solid var(--line); }
+  .wh-meter .bar > i { display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#1f4ea8,#b23b4e); }
+
+  .wh-body { font-size:14px; line-height:1.7; margin:10px 0; }
+  .wh-body p { margin:8px 0; opacity:.93; }
+
+  .wh-sub-h { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:16px 0 7px; font-weight:700; }
+  table.wh-tbl { border-collapse:collapse; width:100%; font-size:13px; margin:4px 0 2px; }
+  table.wh-tbl th { text-align:left; padding:7px 10px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
+  table.wh-tbl td { padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.wh-tbl tr:hover td { background:var(--panel2); }
+  .wh-dir { font-weight:700; font-size:11.5px; white-space:nowrap; }
+  .wh-dir.benefit { color:#1f9a55; }
+  .wh-dir.hurt { color:#d23f3f; }
+  .wh-dir.neutral { color:var(--muted); }
+  html[data-theme="dark"] .wh-dir.benefit { color:#3fc07e; }
+  html[data-theme="dark"] .wh-dir.hurt { color:#ef6a6a; }
+  html[data-lang="zh"] .wh-dir.benefit { color:#d23f3f; }
+  html[data-lang="zh"] .wh-dir.hurt { color:#1f9a55; }
+  html[data-lang="zh"][data-theme="dark"] .wh-dir.benefit { color:#ef6a6a; }
+  html[data-lang="zh"][data-theme="dark"] .wh-dir.hurt { color:#3fc07e; }
+  .wh-sym { font-weight:700; font-variant-numeric:tabular-nums; }
+  .wh-chg { font-variant-numeric:tabular-nums; font-size:12px; }
+  .wh-chg.up { color:#1f9a55; } .wh-chg.dn { color:#d23f3f; }
+  html[data-theme="dark"] .wh-chg.up { color:#3fc07e; } html[data-theme="dark"] .wh-chg.dn { color:#ef6a6a; }
+  html[data-lang="zh"] .wh-chg.up { color:#d23f3f; } html[data-lang="zh"] .wh-chg.dn { color:#1f9a55; }
+  html[data-lang="zh"][data-theme="dark"] .wh-chg.up { color:#ef6a6a; } html[data-lang="zh"][data-theme="dark"] .wh-chg.dn { color:#3fc07e; }
+
+  .wh-src { font-size:12.5px; margin:14px 0 2px; }
+  .wh-src a { color:var(--link); word-break:break-word; }
+  .wh-disc { font-size:11.5px; color:var(--muted); border-top:1px solid var(--line); margin-top:14px; padding-top:10px; }
+  .wh-pagedisc { max-width:1060px; margin:18px auto 0; font-size:12px; color:var(--muted);
+                 border:1px solid var(--line); border-radius:12px; padding:12px 16px; background:var(--panel2); }
+
+  /* Treasury Watch panel — the TGA liquidity read (money-green → gold accent) */
+  .wh-tre { max-width:1060px; margin:22px auto 0; background:var(--panel); border:1px solid var(--line);
+            border-radius:16px; padding:22px 24px; box-shadow:var(--card-shadow); position:relative; overflow:hidden; }
+  .wh-tre::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
+            background:linear-gradient(90deg,#1f7a4e,#2f8f6f 55%,#d9a441); }
+  .wh-tre .tk { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 6px; font-weight:700; }
+  .wh-tre h2 { font-size:19px; line-height:1.2; margin:0 0 4px; letter-spacing:-.01em; }
+  .wh-tre p.sub { font-size:13px; color:var(--text); opacity:.78; margin:0 0 14px; max-width:78ch; }
+  .wh-stats { display:flex; flex-wrap:wrap; gap:10px 12px; margin:0 0 6px; }
+  .wh-stat { flex:1 1 150px; min-width:138px; background:var(--panel2); border:1px solid var(--line);
+             border-radius:12px; padding:10px 13px; }
+  .wh-stat .lab { font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin:0 0 3px; }
+  .wh-stat .val { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.15; }
+  .wh-stat .val .u { font-size:12px; font-weight:600; opacity:.6; }
+  .wh-stat .delta { font-size:12px; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .wh-stat .delta.up { color:#1f9a55; } .wh-stat .delta.dn { color:#d23f3f; }
+  .wh-stat .val.up { color:#1f9a55; } .wh-stat .val.dn { color:#d23f3f; }
+  html[data-theme="dark"] .wh-stat .delta.up, html[data-theme="dark"] .wh-stat .val.up { color:#3fc07e; }
+  html[data-theme="dark"] .wh-stat .delta.dn, html[data-theme="dark"] .wh-stat .val.dn { color:#ef6a6a; }
+  html[data-lang="zh"] .wh-stat .delta.up, html[data-lang="zh"] .wh-stat .val.up { color:#d23f3f; }
+  html[data-lang="zh"] .wh-stat .delta.dn, html[data-lang="zh"] .wh-stat .val.dn { color:#1f9a55; }
+  html[data-lang="zh"][data-theme="dark"] .wh-stat .delta.up, html[data-lang="zh"][data-theme="dark"] .wh-stat .val.up { color:#ef6a6a; }
+  html[data-lang="zh"][data-theme="dark"] .wh-stat .delta.dn, html[data-lang="zh"][data-theme="dark"] .wh-stat .val.dn { color:#3fc07e; }
+  .wh-chip { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.03em;
+             padding:3px 9px; border-radius:999px; border:1px solid var(--line); }
+  .wh-chip.green { color:#1f9a55; border-color:#1f9a5566; }
+  .wh-chip.amber { color:#d9a441; border-color:#d9a44166; }
+  .wh-chip.red   { color:#d23f3f; border-color:#d23f3f66; }
+  .wh-chip.mut   { color:var(--muted); }
+  html[data-theme="dark"] .wh-chip.green { color:#3fc07e; }
+  .wh-tre .impulse { font-size:13.5px; line-height:1.55; margin:12px 0; padding:10px 13px;
+             background:var(--panel2); border-radius:10px; border-left:3px solid #2f8f6f; }
+  .wh-tre .sparkwrap { margin:12px 0 2px; }
+  .wh-tre .sparkcap { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted);
+             margin:0 0 4px; font-variant-numeric:tabular-nums; }
+  .wh-spark { width:100%; height:64px; display:block; }
+  .wh-tre .foot { font-size:11.5px; color:var(--muted); margin:12px 0 0; border-top:1px solid var(--line); padding-top:9px; }
+  .wh-badge.tre { color:#1f7a4e; border-color:#1f7a4e66; }
+  html[data-theme="dark"] .wh-badge.tre { color:#3fc07e; }
+
+</style>
 
 
 
@@ -319,16 +456,16 @@
   
   <div class="wh-stats">
     <div class="wh-stat">
-      <div class="lab"><span class="l-en">TGA balance</span><span class="l-zh">TGA 余额</span> · 2026-08-03</div>
-      <div class="val">$870<span class="u">bn</span></div>
-      <div class="delta dn">-6.5 <span class="l-en">1d</span><span class="l-zh">单日</span></div>
+      <div class="lab"><span class="l-en">TGA balance</span><span class="l-zh">TGA 余额</span> · 2026-08-04</div>
+      <div class="val">$924<span class="u">bn</span></div>
+      <div class="delta up">+54.1 <span class="l-en">1d</span><span class="l-zh">单日</span></div>
     </div>
 
     
     
     <div class="wh-stat">
       <div class="lab"><span class="l-en">Δ since quarter-end</span><span class="l-zh">较季末</span> (06-30)</div>
-      <div class="val dn">-49<span class="u">bn</span></div>
+      <div class="val up">+5<span class="u">bn</span></div>
     </div>
     
 
@@ -358,14 +495,14 @@
   
 
   
-  <div class="impulse"><span class="l-en">TGA drawdown of $127.9bn over 2 business day(s) since Jul 30 — cash released into bank reserves.</span><span class="l-zh">自Jul 30以来，TGA在2个交易日内减少约1279亿美元——现金释放至银行准备金。</span></div>
+  <div class="impulse"><span class="l-en">TGA rebuild of $128.2bn over 14 business day(s) since Jul 15 — cash drained from bank reserves.</span><span class="l-zh">自Jul 15以来，TGA在14个交易日内回补约1282亿美元——现金从银行准备金抽离。</span></div>
   
 
   
   <div class="sparkwrap">
-    <div class="sparkcap"><span><span class="l-en">TGA · last 60 sessions</span><span class="l-zh">TGA · 近60个交易日</span></span><span>2026-05-08 → 2026-08-03</span></div>
+    <div class="sparkcap"><span><span class="l-en">TGA · last 60 sessions</span><span class="l-zh">TGA · 近60个交易日</span></span><span>2026-05-11 → 2026-08-04</span></div>
     <svg class="wh-spark" viewBox="0 0 560 64" preserveAspectRatio="none" aria-hidden="true">
-      <polyline fill="none" stroke="var(--link)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="0.0,38.2 9.5,34.9 19.0,37.2 28.5,45.1 38.0,46.2 47.5,55.6 56.9,49.7 66.4,41.9 75.9,50.6 85.4,49.7 94.9,41.2 104.4,29.1 113.9,37.5 123.4,36.0 132.9,24.3 142.4,34.4 151.9,32.4 161.4,36.8 170.8,37.1 180.3,41.2 189.8,37.1 199.3,40.1 208.8,46.5 218.3,46.8 227.8,43.2 237.3,7.9 246.8,7.6 256.3,12.9 265.8,21.9 275.3,15.9 284.7,19.5 294.2,24.7 303.7,31.3 313.2,26.1 322.7,30.1 332.2,21.0 341.7,45.1 351.2,53.0 360.7,51.7 370.2,50.3 379.7,49.9 389.2,57.6 398.6,58.6 408.1,60.0 417.6,57.4 427.1,49.3 436.6,47.6 446.1,41.8 455.6,43.4 465.1,40.6 474.6,30.5 484.1,39.1 493.6,30.0 503.1,28.1 512.5,24.5 522.0,10.9 531.5,9.9 541.0,4.0 550.5,30.2 560.0,31.6"></polyline>
+      <polyline fill="none" stroke="var(--link)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="0.0,34.9 9.5,37.2 19.0,45.1 28.5,46.2 38.0,55.6 47.5,49.7 56.9,41.9 66.4,50.6 75.9,49.7 85.4,41.2 94.9,29.1 104.4,37.5 113.9,36.0 123.4,24.3 132.9,34.4 142.4,32.4 151.9,36.8 161.4,37.1 170.8,41.2 180.3,37.1 189.8,40.1 199.3,46.5 208.8,46.8 218.3,43.2 227.8,7.9 237.3,7.6 246.8,12.9 256.3,21.9 265.8,15.9 275.3,19.5 284.7,24.7 294.2,31.3 303.7,26.1 313.2,30.1 322.7,21.0 332.2,45.1 341.7,53.0 351.2,51.7 360.7,50.3 370.2,49.9 379.7,57.6 389.2,58.6 398.6,60.0 408.1,57.4 417.6,49.3 427.1,47.6 436.6,41.8 446.1,43.4 455.6,40.6 465.1,30.5 474.6,39.1 484.1,30.0 493.6,28.1 503.1,24.5 512.5,10.9 522.0,9.9 531.5,4.0 541.0,30.2 550.5,31.6 560.0,19.9"></polyline>
     </svg>
   </div>
   
@@ -463,6 +600,110 @@
       
 
       <p class="wh-src">🔗 <a href="https://www.whitehouse.gov/releases/2026/08/manufacturing-jobs-flock-to-the-u-s-thanks-to-president-trumps-america-first-economic-agenda/" target="_blank" rel="noopener noreferrer"><span class="l-en">Read the primary White House source</span><span class="l-zh">阅读白宫一手来源</span> →</a></p>
+      <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
+    </section>
+  
+    <section class="wh-card live" id="tw-2026-07-15-tga-build">
+      <div class="row1">
+        <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
+        <span class="wh-badge tre">💵 <span class="l-en">Treasury</span><span class="l-zh">财政部</span></span>
+        <span class="wh-badge tone-headwind">
+          <span class="l-en">Headwind</span><span class="l-zh">逆风</span>
+          
+        </span>
+        <span class="wh-when">🗓 Aug 4, 2026 · treasury</span>
+        <span class="wh-when">· <span class="l-en">confidence</span><span class="l-zh">置信度</span>: high</span>
+      </div>
+
+      <h2><span class="l-en">Treasury rebuilt TGA by $128bn with RRP exhausted — a mechanical reserves drain tightens the tape</span><span class="l-zh">财政部在逆回购耗尽时重建TGA 1280亿美元——准备金遭机械性抽取，市场承压</span></h2>
+
+      <p class="wh-summary"><span class="l-en">Treasury pulled $128bn out of reserves since mid-July to rebuild its cash balance, with the overnight RRP facility already exhausted, meaning the full force of the drain hit bank liquidity directly. This mechanical tightening is a headwind for risk assets, especially rate-sensitive sectors, in an already-contracting Fed liquidity regime.</span><span class="l-zh">自7月中旬以来，财政部为补充现金余额从准备金中抽取1280亿美元，且隔夜逆回购工具已耗尽，意味着全部流动性收紧直接冲击银行体系。在美联储流动性本已收缩的背景下，这对风险资产，尤其是利率敏感板块构成阻力。</span></p>
+
+      
+      <div class="wh-meter">
+        <span><span class="l-en">Market significance</span><span class="l-zh">市场重要性</span></span>
+        <span class="bar"><i style="width:78%"></i></span>
+        <span>78/100</span>
+      </div>
+      
+
+      
+      <div class="wh-body"><p>Over fourteen business days, the Treasury General Account swelled from $796bn to $924bn, a mechanical extraction of cash from the banking system. With the overnight RRP facility sitting at just $2.2bn — essentially exhausted — there was no intermediary buffer to absorb the flow. The entire $128bn rebuild came directly out of bank reserves, tightening the most upstream form of market plumbing at a time when the Fed’s balance sheet is already contracting and net liquidity has fallen by $207bn over the past twenty days. This is a textbook higher-impact drain.</p><p>In a Reflation regime where macro risk is moderate and the Fed overlay is still shrinking, the timing matters. The rebuild stretches across the late-July corporate tax window into early August. The sharp single-day drop on July 31 (from $998bn to $877bn) suggests a coupon or bill redemption partially offset the accumulation, but the net trend is unmistakably a build. This steady reserve squeeze removes the marginal bid that has backstopped dips in recent weeks, leaving equities more vulnerable to hawkish re-pricings or growth scares.</p><p>The complexion of the headwind tilts hardest against the long-duration, rate-sensitive complex — megacap growth and tech — whose valuations are mechanically sensitive to rising discount rates when reserve liquidity is scarce. Defensives and value-oriented pockets typically hold up better in a reserves-drain environment, as they are less reliant on the abundant-liquidity risk-taking machinery. The signal would be falsified if the TGA reverses sharply lower in the coming days (e.g., a surprise debt-ceiling-related spend-down) or if a sizeable coupon settlement temporarily refills reserves, offsetting the Treasury’s rebuild path.</p></div>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Sector impact</span><span class="l-zh">行业影响</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Sector</span><span class="l-zh">行业</span></th><th><span class="l-en">Impact</span><span class="l-zh">影响</span></th><th><span class="l-en">Why</span><span class="l-zh">原因</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td>Megacap Growth / Tech</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>Direct mechanical tightening of reserve balances raises the marginal discount rate, compressing valuations for long-duration equity.</td>
+          </tr>
+        
+          <tr>
+            <td>Rate-Sensitive Sectors (Real Estate, Utilities)</td>
+            <td><span class="wh-dir hurt">▼ <span class="l-en">Headwind</span><span class="l-zh">逆风</span></span></td>
+            <td>A reserve drain that lifts front-end funding stress and real yields acts as a headwind for bond-proxy and leverage-sensitive groups.</td>
+          </tr>
+        
+          <tr>
+            <td>Value / Defensives</td>
+            <td><span class="wh-dir benefit">▲ <span class="l-en">Tailwind</span><span class="l-zh">顺风</span></span></td>
+            <td>Tighter liquidity conditions typically favor lower-duration, cash-flow-rich sectors that are less dependent on abundant reserves.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names that benefit</span><span class="l-zh">受益标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">XLP</span> <span class="wh-dir benefit">▲</span></td>
+            <td><span class="wh-chg up">+0.60%</span></td>
+            <td>Consumer Staples SPDR as a defensive, low-duration sector that tends to hold up in liquidity-tightening episodes.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      
+      <div class="wh-sub-h"><span class="l-en">Names under pressure</span><span class="l-zh">承压标的</span></div>
+      <table class="wh-tbl">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Recent</span><span class="l-zh">近期</span></th><th><span class="l-en">Thesis</span><span class="l-zh">逻辑</span></th></tr></thead>
+        <tbody>
+        
+          <tr>
+            <td><span class="wh-sym">QQQ</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg up">+3.40%</span></td>
+            <td>Invesco QQQ Trust tracks Nasdaq-100, the epicenter of long-duration equity most exposed to a reserve-driven discount rate rise.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">IWM</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg up">+1.85%</span></td>
+            <td>iShares Russell 2000 ETF of small-caps, which are more sensitive to domestic funding stress and a tightening liquidity impulse.</td>
+          </tr>
+        
+          <tr>
+            <td><span class="wh-sym">XLF</span> <span class="wh-dir hurt">▼</span></td>
+            <td><span class="wh-chg up">+0.87%</span></td>
+            <td>Financial Select Sector SPDR: a direct drain on bank reserves squeezes balance-sheet capacity and net interest margins.</td>
+          </tr>
+        
+        </tbody>
+      </table>
+      
+
+      <p class="wh-src">🔗 <a href="https://fiscaldata.treasury.gov/datasets/daily-treasury-statement/operating-cash-balance" target="_blank" rel="noopener noreferrer"><span class="l-en">Read the primary White House source</span><span class="l-zh">阅读白宫一手来源</span> →</a></p>
       <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
     </section>
   
@@ -564,9 +805,9 @@
       <div class="wh-disc">AI-generated analysis of a primary-source White House announcement — context only, NOT investment advice and NOT a trade signal. It feeds no score, size or allocation. Policy-to-market reasoning is uncertain; the named tickers are illustrative of plausible exposure, can be wrong, and are not recommendations. Verify against the linked primary source.</div>
     </section>
   
-    <section class="wh-card live" id="wh-2026-07-31-to-facilitate-positive-adjustment-to-competition-from-imports-of-quartz-surface-">
+    <section class="wh-card" id="wh-2026-07-31-to-facilitate-positive-adjustment-to-competition-from-imports-of-quartz-surface-">
       <div class="row1">
-        <span class="wh-badge live">● <span class="l-en">LIVE</span><span class="l-zh">生效中</span></span>
+        
         
         <span class="wh-badge tone-mixed">
           <span class="l-en">Mixed</span><span class="l-zh">涨跌互现</span>

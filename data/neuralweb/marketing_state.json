@@ -82,7 +82,7 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 95,
+    "opportunity_queue_depth": 104,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
@@ -1690,14 +1690,14 @@
   },
   "pipeline": {
     "opportunities": {
-      "open": 95,
-      "scored": 182,
+      "open": 104,
+      "scored": 191,
       "newest": [
         {
           "id": "radar-stage-AAMI-2026-08-05",
           "problem_or_desire": "$AAMI: stage 2D_extended_run, SATA 9, 66w in stage",
           "expected_value": 0.4,
-          "score": 0.384416,
+          "score": 0.373569,
           "half_life_class": "weekly_signal",
           "status": "open"
         },
@@ -1705,7 +1705,7 @@
           "id": "radar-earnings-AAOI-2026-08-05",
           "problem_or_desire": "$AAOI: earnings 2026-08-06 after hours",
           "expected_value": 0.5,
-          "score": 0.378583,
+          "score": 0.309849,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         },
@@ -1713,7 +1713,7 @@
           "id": "radar-earnings-ABCL-2026-08-05",
           "problem_or_desire": "$ABCL: earnings 2026-08-05 after hours",
           "expected_value": 0.5,
-          "score": 0.378583,
+          "score": 0.309849,
           "half_life_class": "earnings_follow_up",
           "status": "open"
         }
@@ -1738,30 +1738,30 @@
       ]
     },
     "publications": {
-      "total": 98,
-      "receipts": 98,
+      "total": 112,
+      "receipts": 112,
       "corrections": 0,
       "newest": [
         {
-          "id": "pub-ob-2026-08-05-0a9e991f40",
+          "id": "pub-ob-2026-08-05-f18ec6b2d7",
           "channel": "x",
           "account": "flagship",
           "status": "clean",
-          "published_at": "2026-08-05T07:08:39Z"
+          "published_at": "2026-08-05T15:40:08Z"
         },
         {
-          "id": "pub-ob-2026-08-05-3f3a1f19c9",
+          "id": "pub-ob-2026-08-05-c7d353ffe6",
           "channel": "x",
           "account": "flagship",
           "status": "clean",
-          "published_at": "2026-08-05T07:08:39Z"
+          "published_at": "2026-08-05T15:35:32Z"
         },
         {
-          "id": "pub-ob-2026-08-05-28b9747586",
+          "id": "pub-ob-2026-08-05-573e3672b4",
           "channel": "x",
-          "account": "flagship",
+          "account": "cici",
           "status": "clean",
-          "published_at": "2026-08-05T04:35:33Z"
+          "published_at": "2026-08-05T15:24:56Z"
         }
       ]
     },
@@ -1985,8 +1985,8 @@
     }
   ],
   "content": {
-    "total_posts": 11,
-    "signal_posts": 1,
+    "total_posts": 2,
+    "signal_posts": 0,
     "charts": 90,
     "accounts": 13,
     "state": "present",
@@ -2000,7 +2000,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-08-05T09:37:54Z",
-  "inputs_hash": "sha256:c307540ac38f696b8675b331f3bd8db5c6590724c09c36553ffd5200ac403df1",
+  "produced_at": "2026-08-05T16:34:08Z",
+  "inputs_hash": "sha256:2d2494b265555f35b35cd9a4c14a94e2f9711d48433cd18829e3d5d050356123",
   "tier": "display"
 }

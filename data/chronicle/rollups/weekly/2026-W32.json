@@ -2,7 +2,7 @@
   "as_of": "2026-08-05",
   "coverage": {
     "end": "2026-08-05",
-    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W32; 13 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W32; 14 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
     "start": "2026-05-06"
   },
   "iso_week": "2026-W32",
@@ -11,7 +11,7 @@
     {
       "clusters": [
         {
-          "n_events": 129,
+          "n_events": 150,
           "source": "research_vault",
           "theme": null,
           "top_events": [
@@ -350,7 +350,7 @@
     {
       "clusters": [
         {
-          "n_events": 1,
+          "n_events": 2,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -367,6 +367,17 @@
     {
       "clusters": [
         {
+          "n_events": 2,
+          "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        }
+      ],
+      "iso_week": "2026-W26"
+    },
+    {
+      "clusters": [
+        {
           "n_events": 1,
           "source": "earnings",
           "theme": "earnings",
@@ -378,7 +389,7 @@
     {
       "clusters": [
         {
-          "n_events": 3,
+          "n_events": 8,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -389,7 +400,7 @@
     {
       "clusters": [
         {
-          "n_events": 4,
+          "n_events": 8,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -400,7 +411,7 @@
     {
       "clusters": [
         {
-          "n_events": 8,
+          "n_events": 19,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -411,7 +422,7 @@
     {
       "clusters": [
         {
-          "n_events": 6,
+          "n_events": 16,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -428,7 +439,7 @@
     {
       "clusters": [
         {
-          "n_events": 21,
+          "n_events": 39,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -451,56 +462,44 @@
     {
       "clusters": [
         {
-          "n_events": 45,
+          "n_events": 91,
           "source": "earnings",
           "theme": "earnings",
           "top_events": [
             {
               "date": "2026-05-06",
-              "id": "cev-earnings-1b48cb840029",
+              "id": "cev-earnings-07264edb9e1f",
               "kind": "earnings",
               "source": "earnings",
-              "source_ref": "APA#2026-05-06",
+              "source_ref": "CENT#2026-05-06",
               "tickers": [
-                "APA"
+                "CENT"
               ],
-              "title": "Earnings: APA actual vs est",
+              "title": "Earnings: CENT actual vs est",
               "weight_hint": 2
             },
             {
               "date": "2026-05-07",
-              "id": "cev-earnings-1bda4d12746a",
+              "id": "cev-earnings-07a317bc3848",
               "kind": "earnings",
               "source": "earnings",
-              "source_ref": "ALRM#2026-05-07",
+              "source_ref": "COLD#2026-05-07",
               "tickers": [
-                "ALRM"
+                "COLD"
               ],
-              "title": "Earnings: ALRM actual vs est",
+              "title": "Earnings: COLD actual vs est",
               "weight_hint": 2
             },
             {
               "date": "2026-05-07",
-              "id": "cev-earnings-260d31e24dea",
+              "id": "cev-earnings-0b5214fd0241",
               "kind": "earnings",
               "source": "earnings",
-              "source_ref": "ARLO#2026-05-07",
+              "source_ref": "CELH#2026-05-07",
               "tickers": [
-                "ARLO"
+                "CELH"
               ],
-              "title": "Earnings: ARLO actual vs est",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-05-07",
-              "id": "cev-earnings-3029d38a026e",
-              "kind": "earnings",
-              "source": "earnings",
-              "source_ref": "ARWR#2026-05-07",
-              "tickers": [
-                "ARWR"
-              ],
-              "title": "Earnings: ARWR actual vs est",
+              "title": "Earnings: CELH actual vs est",
               "weight_hint": 2
             }
           ]

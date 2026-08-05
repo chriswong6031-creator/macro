@@ -61,6 +61,7 @@ _OBJECT_COLUMNS = (
     "gate_tier",
     "gate_sub",
     "gate_reason",
+    "gate_reasons",
     "gate_state",
     "signal_asof",
     "signal_bar_asof",
@@ -381,6 +382,18 @@ def _row_record(
             signal_research.get("tier_sub") or signal_research.get("sub")
         ),
         "gate_reason": _text(signal_research.get("reason")),
+        # ``gate_reason`` is a FIRST-MATCH label: the buy filter returns on the first leg that
+        # refuses a name, so 002155.SZ stamped "veto: bearish divergence" on every board date
+        # while ALSO failing reclaim-and-hold, and 575 of 743 vetoed fires (77%) were blocked
+        # by another leg anyway (research/cn_prophet_audit/CN_DIVERGENCE_VETO_AUDIT.md).
+        # ``gate_reasons`` is the exhaustive account, pipe-joined per the ``lane_reasons``
+        # convention, first element always identical to ``gate_reason``. It falls back to the
+        # single label rather than to null so the column is never emptier than its first-match
+        # sibling, and a reader may always split on "|" without a presence check.
+        "gate_reasons": (
+            _reasons(signal_research.get("reasons"))
+            or _text(signal_research.get("reason"))
+        ),
         "gate_state": _text(signal_research.get("state")),
         "gate_ticks": _finite(signal_research.get("ticks")),
         "gate_bars_to_cross": _finite(
